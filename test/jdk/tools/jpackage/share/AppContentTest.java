@@ -71,6 +71,9 @@ public class AppContentTest {
     // Need to prepare arguments for `--app-content` accordingly.
     private static final boolean copyInResources = TKit.isOSX();
 
+    private static final String RESOURCES_DIR = "Resources";
+    private static final String LINKS_DIR = "Links";
+
     @Test
     // include two files in two options
     @Parameter({TEST_JAVA, TEST_DUKE})
@@ -99,10 +102,12 @@ public class AppContentTest {
                     List<String> paths = Arrays.asList(arg.split(","));
                     for (String p : paths) {
                         Path name = Path.of(p).getFileName();
-                        if (name.toString().contains("Link")) {
-                            TKit.assertSymbolicLinkExists(getAppContentPath(cmd, name));
+                        if (isSymlinkPath(name)) {
+                            TKit.assertSymbolicLinkExists(getAppContentRoot(cmd)
+                                .resolve(LINKS_DIR).resolve(name));
                         } else {
-                            TKit.assertPathExists(getAppContentPath(cmd, name), true);
+                            TKit.assertPathExists(getAppContentRoot(cmd)
+                                .resolve(name), true);
                         }
                     }
                 }
@@ -111,14 +116,17 @@ public class AppContentTest {
             .run();
     }
 
-    private static Path getAppContentPath(JPackageCommand cmd, Path name) {
+    private static Path getAppContentRoot(JPackageCommand cmd) {
         Path contentDir = cmd.appLayout().contentDirectory();
-        // Links are always created in "Resources"
-        if (copyInResources || name.toString().contains("Link")) {
-            return contentDir.resolve("Resources").resolve(name);
+        if (copyInResources) {
+            return contentDir.resolve(RESOURCES_DIR);
         } else {
-            return contentDir.resolve(name);
+            return contentDir;
         }
+    }
+
+    private static boolean isSymlinkPath(Path v) {
+        return v.getFileName().toString().contains("Link");
     }
 
     private static final class AppContentInitializer {
@@ -144,38 +152,51 @@ public class AppContentTest {
         }
 
         private static Path copyAppContentPath(Path appContentPath) throws IOException {
-            Path appContentArg = TKit.createTempDirectory("app-content").resolve("Resources");
+            var appContentArg = TKit.createTempDirectory("app-content").resolve(RESOURCES_DIR);
             var srcPath = TKit.TEST_SRC_ROOT.resolve(appContentPath);
-            Path dstPath = appContentArg.resolve(srcPath.getFileName());
+            var dstPath = appContentArg.resolve(srcPath.getFileName());
             Files.createDirectories(dstPath.getParent());
-            if (dstPath.getFileName().toString().contains("Link")) {
-                String tagetName = dstPath.getFileName().toString().replace("Link", "");
-                Path targetPath = dstPath.getParent().resolve(tagetName);
-                Files.write(targetPath, "foo".getBytes());
-                Files.createSymbolicLink(dstPath, targetPath.getFileName());
-            } else {
-                FileUtils.copyRecursive(srcPath, dstPath);
+            FileUtils.copyRecursive(srcPath, dstPath);
+            return appContentArg;
+        }
+
+        private static Path createAppContentLink(Path appContentPath) throws IOException {
+            var appContentArg = TKit.createTempDirectory("app-content");
+            if (copyInResources) {
+                appContentArg = appContentArg.resolve(RESOURCES_DIR).resolve(LINKS_DIR);
+            }   else {
+                appContentArg = appContentArg.resolve(LINKS_DIR);
             }
+
+            var dstPath = appContentArg.resolve(appContentPath.getFileName());
+            Files.createDirectories(dstPath.getParent());
+
+            // Create target file for a link
+            String tagetName = dstPath.getFileName().toString().replace("Link", "");
+            Path targetPath = dstPath.getParent().resolve(tagetName);
+            Files.write(targetPath, "foo".getBytes());
+            // Create link
+            Files.createSymbolicLink(dstPath, targetPath.getFileName());
+
             return appContentArg;
         }
 
         private static List<Path> initAppContentPaths(List<Path> appContentPaths) {
-            boolean copy = (copyInResources || appContentPaths.stream()
-                            .anyMatch(s -> s.toString().contains("Link")));
-
-            if (copy) {
-                return appContentPaths.stream().map(appContentPath -> {
-                    if (appContentPath.endsWith(TEST_BAD)) {
-                        return appContentPath;
-                    } else {
-                        return ThrowingFunction.toFunction(
-                                AppContentInitializer::copyAppContentPath).apply(
-                                        appContentPath);
-                    }
-                }).toList();
-            } else {
-                return appContentPaths.stream().map(TKit.TEST_SRC_ROOT::resolve).toList();
-            }
+            return appContentPaths.stream().map(appContentPath -> {
+                if (appContentPath.endsWith(TEST_BAD)) {
+                    return appContentPath;
+                } else if (isSymlinkPath(appContentPath)) {
+                    return ThrowingFunction.toFunction(
+                            AppContentInitializer::createAppContentLink).apply(
+                                    appContentPath);
+                } else if (copyInResources) {
+                    return ThrowingFunction.toFunction(
+                            AppContentInitializer::copyAppContentPath).apply(
+                                    appContentPath);
+                } else {
+                    return TKit.TEST_SRC_ROOT.resolve(appContentPath);
+                }
+            }).toList();
         }
 
         private List<String> jpackageArgs;
