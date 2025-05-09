@@ -221,5 +221,3 @@ compiler.warn.restricted.method
 # Pending removal
 compiler.note.implicit.annotation.processing
 compiler.warn.proc.use.proc.or.implicit
-
-compiler.warn.attempt.to.synchronize.on.instance.of.value.based.class2   # synchronization and identity are aliases

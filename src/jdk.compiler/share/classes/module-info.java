@@ -187,7 +187,10 @@ import javax.tools.StandardLocation;
  *                                                      and interfaces
  * <tr><th scope="row">{@code static}               <td>accessing a static member using an instance
  * <tr><th scope="row">{@code strictfp}             <td>unnecessary use of the {@code strictfp} modifier
- * <tr><th scope="row">{@code synchronization}      <td>synchronization attempts on instances of value-based classes
+ * <tr><th scope="row">{@code synchronization}      <td>synchronization attempts on instances of value-based classes,
+ *                                                      superseded by the {@code identity} warning category which has the same
+ *                                                      uses and effects. Users are encouraged to use the {@code identity}
+ *                                                      category for all future an existing uses of {@code synchronization}
  * <tr><th scope="row">{@code text-blocks}          <td>inconsistent white space characters in text block indentation
  * <tr><th scope="row">{@code this-escape}          <td>superclass constructor leaking {@code this} before subclass initialized
  * <tr><th scope="row">{@code try}                  <td>issues relating to use of {@code try} blocks

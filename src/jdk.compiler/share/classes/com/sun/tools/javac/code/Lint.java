@@ -80,6 +80,12 @@ public class Lint {
             Lint lint = new Lint(this);
             lint.values.removeAll(suppressions);
             lint.suppressedValues.addAll(suppressions);
+            for (LintCategory suppressed : suppressions) {
+                if (suppressed.alias != null) {
+                    lint.values.remove(suppressed.alias);
+                    lint.suppressedValues.add(suppressed.alias);
+                }
+            }
             return lint;
         }
         return this;
@@ -93,6 +99,12 @@ public class Lint {
         Lint l = new Lint(this);
         l.values.addAll(Arrays.asList(lc));
         l.suppressedValues.removeAll(Arrays.asList(lc));
+        for (LintCategory lintCategory : lc) {
+            if (lintCategory.alias != null) {
+                l.values.add(lintCategory.alias);
+                l.suppressedValues.remove(lintCategory.alias);
+            }
+        }
         return l;
     }
 
@@ -104,6 +116,12 @@ public class Lint {
         Lint l = new Lint(this);
         l.values.removeAll(Arrays.asList(lc));
         l.suppressedValues.addAll(Arrays.asList(lc));
+        for (LintCategory lintCategory : lc) {
+            if (lintCategory.alias != null) {
+                l.values.remove(lintCategory.alias);
+                l.suppressedValues.add(lintCategory.alias);
+            }
+        }
         return l;
     }
 
@@ -182,8 +200,14 @@ public class Lint {
         for (LintCategory lc : LintCategory.values()) {
             if (options.isSet(Option.XLINT_CUSTOM, lc.option)) {
                 values.add(lc);
+                if (lc.alias != null) {
+                    values.add(lc.alias);
+                }
             } else if (options.isSet(Option.XLINT_CUSTOM, "-" + lc.option)) {
                 values.remove(lc);
+                if (lc.alias != null) {
+                    values.remove(lc.alias);
+                }
             }
         }
 
