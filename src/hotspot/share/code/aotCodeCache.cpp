@@ -1034,7 +1034,7 @@ void AOTCodeAddressTable::init_extrs() {
 #if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
   SET_ADDRESS(_extrs, MacroAssembler::debug64);
 #endif
-#if defined (PPC64)
+#if defined(PPC64)
   SET_ADDRESS(_extrs, Interpreter::dispatch_table());
 #endif
 #endif // ZERO
