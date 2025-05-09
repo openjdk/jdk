@@ -236,8 +236,6 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
   // constructor calls Thread.current(), which must be set here.
   java_lang_Thread::set_thread(thread_oop(), this);
   set_threadOopHandles(thread_oop());
-  // Set the _monitor_owner_id to the next thread_id temporarily while initialization runs.
-  set_monitor_owner_id(ThreadIdentifier::next());
 
   JavaValue result(T_VOID);
   if (thread_name != nullptr) {
@@ -263,8 +261,6 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             Handle(),
                             CHECK);
   }
-  // Update the _monitor_owner_id with the tid value.
-  set_monitor_owner_id(java_lang_Thread::thread_id(thread_oop()));
 
   os::set_priority(this, NormPriority);
 
@@ -427,8 +423,8 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _vframe_array_last(nullptr),
   _jvmti_deferred_updates(nullptr),
   _callee_target(nullptr),
-  _vm_result(nullptr),
-  _vm_result_2(nullptr),
+  _vm_result_oop(nullptr),
+  _vm_result_metadata(nullptr),
 
   _current_pending_monitor(nullptr),
   _current_pending_monitor_is_from_java(true),
@@ -454,6 +450,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _carrier_thread_suspended(false),
   _is_in_VTMS_transition(false),
   _is_disable_suspend(false),
+  _is_in_java_upcall(false),
   _VTMS_transition_mark(false),
   _on_monitor_waited_event(false),
   _contended_entered_monitor(nullptr),
@@ -556,7 +553,7 @@ void JavaThread::interrupt() {
   // All callers should have 'this' thread protected by a
   // ThreadsListHandle so that it cannot terminate and deallocate
   // itself.
-  debug_only(check_for_dangling_thread_pointer(this);)
+  DEBUG_ONLY(check_for_dangling_thread_pointer(this);)
 
   // For Windows _interrupt_event
   WINDOWS_ONLY(osthread()->set_interrupted(true);)
@@ -572,7 +569,7 @@ void JavaThread::interrupt() {
 }
 
 bool JavaThread::is_interrupted(bool clear_interrupted) {
-  debug_only(check_for_dangling_thread_pointer(this);)
+  DEBUG_ONLY(check_for_dangling_thread_pointer(this);)
 
   if (_threadObj.peek() == nullptr) {
     // If there is no j.l.Thread then it is impossible to have
@@ -1196,7 +1193,7 @@ void JavaThread::set_is_VTMS_transition_disabler(bool val) {
 //   - Target thread will not execute any new bytecode.
 //   - Target thread will not enter any new monitors.
 //
-bool JavaThread::java_suspend() {
+bool JavaThread::java_suspend(bool register_vthread_SR) {
 #if INCLUDE_JVMTI
   // Suspending a JavaThread in VTMS transition or disabling VTMS transitions can cause deadlocks.
   assert(!is_in_VTMS_transition(), "no suspend allowed in VTMS transition");
@@ -1205,13 +1202,13 @@ bool JavaThread::java_suspend() {
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");
-  return this->handshake_state()->suspend();
+  return this->handshake_state()->suspend(register_vthread_SR);
 }
 
-bool JavaThread::java_resume() {
+bool JavaThread::java_resume(bool register_vthread_SR) {
   guarantee(Thread::is_JavaThread_protected_by_TLH(/* target */ this),
             "missing ThreadsListHandle in calling context.");
-  return this->handshake_state()->resume();
+  return this->handshake_state()->resume(register_vthread_SR);
 }
 
 // Wait for another thread to perform object reallocation and relocking on behalf of
@@ -1342,7 +1339,7 @@ void JavaThread::make_zombies() {
       // it is a Java nmethod
       nmethod* nm = CodeCache::find_nmethod(fst.current()->pc());
       assert(nm != nullptr, "did not find nmethod");
-      nm->make_not_entrant();
+      nm->make_not_entrant("zombie");
     }
   }
 }
@@ -1415,7 +1412,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
 
   // Traverse instance variables at the end since the GC may be moving things
   // around using this function
-  f->do_oop((oop*) &_vm_result);
+  f->do_oop((oop*) &_vm_result_oop);
   f->do_oop((oop*) &_exception_oop);
 #if INCLUDE_JVMCI
   f->do_oop((oop*) &_jvmci_reserved_oop0);

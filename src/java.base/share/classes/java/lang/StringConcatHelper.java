@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,6 +52,9 @@ final class StringConcatHelper {
             byte coder  = String.LATIN1;
             for (String c : constants) {
                 length += c.length();
+                if (length < 0) {
+                    throw new OutOfMemoryError("Total length of constants is out of range");
+                }
                 coder  |= c.coder();
             }
             this.constants = constants;
@@ -429,7 +432,7 @@ final class StringConcatHelper {
     @ForceInline
     static String doConcat(String s1, String s2) {
         byte coder = (byte) (s1.coder() | s2.coder());
-        int newLength = (s1.length() + s2.length()) << coder;
+        int newLength = checkOverflow(s1.length() + s2.length()) << coder;
         byte[] buf = newArray(newLength);
         s1.getBytes(buf, 0, coder);
         s2.getBytes(buf, s1.length(), coder);

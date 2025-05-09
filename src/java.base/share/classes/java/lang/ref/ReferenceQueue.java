@@ -55,7 +55,7 @@ public class ReferenceQueue<T> {
         }
     }
 
-    static final ReferenceQueue<Object> NULL = new Null();
+    static final ReferenceQueue<Object> NULL_QUEUE = new Null();
     static final ReferenceQueue<Object> ENQUEUED = new Null();
 
     private volatile Reference<? extends T> head;
@@ -74,7 +74,7 @@ public class ReferenceQueue<T> {
         // Check that since getting the lock this reference hasn't already been
         // enqueued (and even then removed)
         ReferenceQueue<?> queue = r.queue;
-        if ((queue == NULL) || (queue == ENQUEUED)) {
+        if ((queue == NULL_QUEUE) || (queue == ENQUEUED)) {
             return false;
         }
         assert queue == this;
@@ -96,7 +96,7 @@ public class ReferenceQueue<T> {
     private Reference<? extends T> poll0() { // must hold lock
         Reference<? extends T> r = head;
         if (r != null) {
-            r.queue = NULL;
+            r.queue = NULL_QUEUE;
             // Update r.queue *before* removing from list, to avoid
             // race with concurrent enqueued checks and fast-path
             // poll().  Volatiles ensure ordering.
@@ -235,7 +235,7 @@ public class ReferenceQueue<T> {
                     // still enqueued -> we reached end of chain
                     r = null;
                 } else {
-                    // already dequeued: r.queue == NULL; ->
+                    // already dequeued: r.queue == NULL_QUEUE; ->
                     // restart from head when overtaken by queue poller(s)
                     r = head;
                 }

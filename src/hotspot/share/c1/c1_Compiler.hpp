@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ class DirectiveSet;
 
 class Compiler: public AbstractCompiler {
  private:
-  static void init_c1_runtime();
+  static bool init_c1_runtime();
   BufferBlob* init_buffer_blob();
 
  public:

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,6 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
-#ifdef COMPILER2
-#include "opto/matcher.hpp"
-#endif
 
 // ----------------------------------------------------------------------------
 
@@ -78,7 +75,6 @@
 const int IC_pos_in_java_to_interp_stub = 8;
 #define __ masm->
 address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address mark/* = nullptr*/) {
-#ifdef COMPILER2
   if (mark == nullptr) {
     // Get the mark within main instrs section which is set to the address of the call.
     mark = __ inst_mark();
@@ -108,7 +104,7 @@ address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address ma
   // - call
   __ calculate_address_from_global_toc(reg_scratch, __ method_toc());
   AddressLiteral ic = __ allocate_metadata_address((Metadata *)nullptr);
-  bool success = __ load_const_from_method_toc(as_Register(Matcher::inline_cache_reg_encode()),
+  bool success = __ load_const_from_method_toc(R19_inline_cache_reg,
                                                ic, reg_scratch, /*fixed_size*/ true);
   if (!success) {
     return nullptr; // CodeCache is full
@@ -134,13 +130,9 @@ address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address ma
   assert(!is_NativeCallTrampolineStub_at(__ addr_at(stub_start_offset)),
          "must not confuse java_to_interp with trampoline stubs");
 
- // End the stub.
+  // End the stub.
   __ end_a_stub();
   return stub;
-#else
-  ShouldNotReachHere();
-  return nullptr;
-#endif
 }
 #undef __
 

@@ -140,7 +140,6 @@ private:
                                         // some expensive operations.
   bool   _has_aot_linked_classes;       // Was the CDS archive created with -XX:+AOTClassLinking
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
-  bool   _has_archived_invokedynamic;   // Does the archive have aot-linked invokedynamic CP entries?
   HeapRootSegments _heap_root_segments; // Heap root segments info
   size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
   size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
@@ -269,7 +268,7 @@ private:
 public:
   FileMapHeader *header() const       { return _header; }
   static bool get_base_archive_name_from_header(const char* archive_name,
-                                                char** base_archive_name);
+                                                const char** base_archive_name);
   static bool is_preimage_static_archive(const char* file);
 
   bool init_from_file(int fd);
@@ -347,9 +346,8 @@ public:
   static void assert_mark(bool check);
 
   // File manipulation.
-  bool  initialize() NOT_CDS_RETURN_(false);
-  bool  open_for_read();
-  void  open_for_write();
+  bool  open_as_input() NOT_CDS_RETURN_(false);
+  void  open_as_output();
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
@@ -370,6 +368,7 @@ public:
   MemRegion get_heap_region_requested_range() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
+  bool  map_aot_code_region(ReservedSpace rs);
   void  unmap_region(int i);
   void  close();
   bool  is_open() { return _file_open; }
@@ -400,7 +399,7 @@ public:
   // The offset of the (exclusive) end of the last core region in this archive, relative to SharedBaseAddress
   size_t mapping_end_offset()  const { return last_core_region()->mapping_end_offset(); }
 
-  char* mapped_base()    const { return first_core_region()->mapped_base(); }
+  char* mapped_base()    const { return header()->mapped_base_address();    }
   char* mapped_end()     const { return last_core_region()->mapped_end();   }
 
   // Non-zero if the archive needs to be mapped a non-default location due to ASLR.
@@ -426,6 +425,7 @@ public:
   }
 
  private:
+  bool  open_for_read();
   void  seek_to_position(size_t pos);
   bool  map_heap_region_impl() NOT_CDS_JAVA_HEAP_RETURN_(false);
   void  dealloc_heap_region() NOT_CDS_JAVA_HEAP_RETURN;

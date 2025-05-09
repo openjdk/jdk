@@ -27,6 +27,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationFailureInfo.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
@@ -135,7 +136,9 @@ static const char* env_list[] = {
   nullptr                       // End marker.
 };
 
-// A simple parser for -XX:OnError, usage:
+// A simple parser for lists of commands such as -XX:OnError and -XX:OnOutOfMemoryError
+// Command list (ptr) is expected to be a sequence of commands delineated by semicolons and/or newlines.
+// Usage:
 //  ptr = OnError;
 //  while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr) != nullptr)
 //     ... ...
@@ -144,13 +147,13 @@ static char* next_OnError_command(char* buf, int buflen, const char** ptr) {
 
   const char* cmd = *ptr;
 
-  // skip leading blanks or ';'
-  while (*cmd == ' ' || *cmd == ';') cmd++;
+  // skip leading blanks, ';' or newlines
+  while (*cmd == ' ' || *cmd == ';' || *cmd == '\n') cmd++;
 
   if (*cmd == '\0') return nullptr;
 
   const char * cmdend = cmd;
-  while (*cmdend != '\0' && *cmdend != ';') cmdend++;
+  while (*cmdend != '\0' && *cmdend != ';' && *cmdend != '\n') cmdend++;
 
   Arguments::copy_expand_pid(cmd, cmdend - cmd, buf, buflen);
 
@@ -323,6 +326,12 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
     }
   }
 #endif // ZERO
+}
+
+const char* VMError::get_filename_only() {
+  char separator = os::file_separator()[0];
+  const char* p = strrchr(_filename, separator);
+  return p ? p + 1 : _filename;
 }
 
 /**
@@ -521,7 +530,8 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                  "", "",
 #endif
                  UseCompressedOops ? ", compressed oops" : "",
-                 UseCompressedClassPointers ? ", compressed class ptrs" : "",
+                 UseCompactObjectHeaders ? ", compact obj headers"
+                                         : (UseCompressedClassPointers ? ", compressed class ptrs" : ""),
                  GCConfig::hs_err_name(),
                  VM_Version::vm_platform_string()
                );
@@ -1000,6 +1010,11 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("printing pending compilation failure",
           _verbose && _thread != nullptr && _thread->is_Compiler_thread())
     CompilationFailureInfo::print_pending_compilation_failure(st);
+  if (CompilationMemoryStatistic::enabled() && CompilationMemoryStatistic::in_oom_crash()) {
+    st->cr();
+    st->print_cr(">> Please see below for a detailed breakdown of compiler memory usage.");
+    st->cr();
+  }
 #endif
 
   STEP_IF("printing registers", _verbose && _context != nullptr)
@@ -1185,7 +1200,16 @@ void VMError::report(outputStream* st, bool _verbose) {
     GCLogPrecious::print_on_error(st);
 
     if (Universe::heap() != nullptr) {
-      Universe::heap()->print_on_error(st);
+      st->print_cr("Heap:");
+      StreamAutoIndentor indentor(st, 1);
+      Universe::heap()->print_heap_on(st);
+      MetaspaceUtils::print_on(st);
+      st->cr();
+    }
+
+  STEP_IF("printing GC information", _verbose)
+    if (Universe::heap() != nullptr) {
+      Universe::heap()->print_gc_on(st);
       st->cr();
     }
 
@@ -1244,6 +1268,10 @@ void VMError::report(outputStream* st, bool _verbose) {
     LogConfiguration::describe_current_configuration(st);
     st->cr();
 
+  STEP_IF("printing release file content", _verbose)
+    st->print_cr("Release file:");
+    os::print_image_release_file(st);
+
   STEP_IF("printing all environment variables", _verbose)
     os::print_environment_variables(st, env_list);
     st->cr();
@@ -1258,6 +1286,10 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP_IF("Native Memory Tracking", _verbose)
     MemTracker::error_report(st);
+    st->cr();
+
+  STEP_IF("printing compiler memory info, if any", _verbose)
+    CompilationMemoryStatistic::print_error_report(st);
     st->cr();
 
   STEP_IF("printing periodic trim state", _verbose)
@@ -1359,15 +1391,32 @@ void VMError::print_vm_info(outputStream* st) {
   }
 #endif
 
-  // STEP("printing heap information")
+  // Take heap lock over both heap and GC printing so that information is
+  // consistent.
+  {
+    MutexLocker ml(Heap_lock);
 
-  if (Universe::is_fully_initialized()) {
-    MutexLocker hl(Heap_lock);
-    GCLogPrecious::print_on_error(st);
-    Universe::heap()->print_on_error(st);
-    st->cr();
-    st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
-    st->cr();
+    // STEP("printing heap information")
+
+    if (Universe::is_fully_initialized()) {
+      GCLogPrecious::print_on_error(st);
+
+      st->print_cr("Heap:");
+      StreamAutoIndentor indentor(st, 1);
+      Universe::heap()->print_heap_on(st);
+      MetaspaceUtils::print_on(st);
+      st->cr();
+    }
+
+    // STEP("printing GC information")
+
+    if (Universe::is_fully_initialized()) {
+      Universe::heap()->print_gc_on(st);
+      st->cr();
+
+      st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
+      st->cr();
+    }
   }
 
   // STEP("printing metaspace information")
@@ -1419,6 +1468,10 @@ void VMError::print_vm_info(outputStream* st) {
   LogConfiguration::describe(st);
   st->cr();
 
+  // STEP("printing release file content")
+  st->print_cr("Release file:");
+  os::print_image_release_file(st);
+
   // STEP("printing all environment variables")
 
   os::print_environment_variables(st, env_list);
@@ -1436,9 +1489,11 @@ void VMError::print_vm_info(outputStream* st) {
   st->cr();
 
   // STEP("Native Memory Tracking")
-
   MemTracker::error_report(st);
   st->cr();
+
+  // STEP("Compiler Memory Statistic")
+  CompilationMemoryStatistic::print_final_report(st);
 
   // STEP("printing periodic trim state")
   NativeHeapTrimmer::print_state(st);
