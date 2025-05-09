@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8350203
  * @summary Confirm that a few special whitespace characters are ignored.
@@ -42,7 +42,6 @@ import java.util.Map;
 public class IgnoredWhitespaceTest {
 
     public static void main(String[] args) throws Exception {
-
         BufferedImage image = new BufferedImage(600, 600, BufferedImage.TYPE_BYTE_BINARY);
         Graphics2D g2d = image.createGraphics();
 
@@ -76,7 +75,6 @@ public class IgnoredWhitespaceTest {
     }
 
     private static void test(BufferedImage image, Graphics2D g2d, Font font, String reference, String text) {
-
         g2d.setFont(font);
         FontRenderContext frc = g2d.getFontRenderContext();
         int w = image.getWidth();
@@ -121,7 +119,9 @@ public class IgnoredWhitespaceTest {
 
     private static void assertEqual(Rectangle r1, Rectangle r2, String text) {
         if (!r1.equals(r2)) {
-            String escaped = text.replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t");
+            String escaped = text.replace("\r", "\\r")
+                                 .replace("\n", "\\n")
+                                 .replace("\t", "\\t");
             String msg = String.format("for text '%s': %s != %s", escaped, r1.toString(), r2.toString());
             throw new RuntimeException(msg);
         }
@@ -155,6 +155,7 @@ public class IgnoredWhitespaceTest {
         int maxY = Integer.MIN_VALUE;
         int width = image.getWidth();
         int height = image.getHeight();
+
         int[] rowPixels = new int[width];
         for (int y = 0; y < height; y++) {
             image.getRGB(0, y, width, 1, rowPixels, 0, width);
@@ -176,6 +177,7 @@ public class IgnoredWhitespaceTest {
                 }
             }
         }
+
         if (minX != Integer.MAX_VALUE) {
             return new Rectangle(minX, minY, maxX - minX, maxY - minY);
         } else {
