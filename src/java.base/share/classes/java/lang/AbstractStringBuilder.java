@@ -250,13 +250,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         return coder != newCoder || newLength > value.length || 0 > newLength;
     }
 
-
     /**
-     * {@return a buffer suitable for storing the bytes up to minimum capacity using the new coder}
+     * {@return the value, with the requested coder, in a buffer with at least the minimum capacity}
      * If the coder matches and there is enough room, the same buffer is returned.
      * Otherwise, a new buffer is allocated and the string is copied or inflated to match the new coder.
      * For positive values of {@code minimumCapacity}, this method
-     * behaves like {@code ensureCapacity}, however it is never synchronized.
+     * behaves like the public {@linkplain #ensureCapacity}, however it is never synchronized.
      * If {@code minimumCapacity} is non-positive due to numeric
      * overflow, this method throws {@code OutOfMemoryError}.
      * @param value the current buffer
@@ -269,21 +268,23 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
                                                  int minimumCapacity, byte newCoder) {
         assert coder == newCoder || newCoder == UTF16 : "bad new coder UTF16 -> LATIN1";
         // overflow-conscious code
-        int growth = minimumCapacity - (value.length >> coder);
+        // Compute the new larger size if growth is requested, otherwise keep the capacity the same
+        int oldCapacity = value.length >> coder;
+        int growth = minimumCapacity - oldCapacity;
+        int newCapacity = (growth <= 0)
+                ? oldCapacity               // Do not reduce capacity even if requested
+                : newCapacity(value, newCoder, minimumCapacity);
+        assert count <= newCapacity : "count exceeds new capacity";
+
         if (coder == newCoder) {
-            if (growth > 0) {
+            if (newCapacity > oldCapacity) {
                 // copy all bytes to new larger buffer
-                value = Arrays.copyOf(value,
-                        newCapacity(value, newCoder, minimumCapacity) << newCoder);
+                value = Arrays.copyOf(value, newCapacity << newCoder);
             }
             return value;
         } else {
             // inflate (and grow if additional length is requested)
-            // always growing might be better but it breaks current Capacity tests
-            int newCap = (growth > 0)
-                ? newCapacity(value, newCoder, minimumCapacity)
-                : value.length;
-            byte[] newValue = StringUTF16.newBytesFor(newCap);
+            byte[] newValue = StringUTF16.newBytesFor(newCapacity);
             StringLatin1.inflate(value, 0, newValue, 0, count);
             return newValue;
         }
@@ -326,10 +327,8 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
 
     /**
      * Returns a capacity at least as large as the given minimum capacity.
-     * Returns the current capacity increased by the current length + 2 if
-     * that suffices.
-     * Will not return a capacity greater than
-     * {@code (SOFT_MAX_ARRAY_LENGTH >> coder)}
+     * Returns the current capacity increased by the current length + 2 if that suffices.
+     * Will not return a capacity greater than {@code (SOFT_MAX_ARRAY_LENGTH >> coder)}
      * unless the given minimum capacity is greater than that.
      *
      * @param value the current buffer
