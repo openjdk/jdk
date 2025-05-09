@@ -31,6 +31,9 @@ on:
       platform:
         required: true
         type: string
+      runs-on:
+        required: true
+        type: string
       extra-conf-options:
         required: false
         type: string
@@ -67,7 +70,7 @@ env:
 jobs:
   build-windows:
     name: build
-    runs-on: windows-2025
+    runs-on: ${{ inputs.runs-on }}
     defaults:
       run:
         shell: bash
@@ -92,7 +95,7 @@ jobs:
         id: bootjdk
         uses: ./.github/actions/get-bootjdk
         with:
-          platform: windows-x64
+          platform: ${{ inputs.platform }}
 
       - name: 'Get JTReg'
         id: jtreg
@@ -106,7 +109,12 @@ jobs:
         id: toolchain-check
         run: |
           set +e
-          '/c/Program Files/Microsoft Visual Studio/2022/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=${{ inputs.msvc-toolset-version }}
+          if [ "${{ inputs.msvc-toolset-architecture }}" = "arm64" ]; then
+            vcvars="vcvarsarm64.bat"
+          else
+            vcvars="vcvars64.bat"
+          fi
+          "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/vc/auxiliary/build/${vcvars}" -vcvars_ver=${{ inputs.msvc-toolset-version }}
           if [ $? -eq 0 ]; then
             echo "Toolchain is already installed"
             echo "toolchain-installed=true" >> $GITHUB_OUTPUT

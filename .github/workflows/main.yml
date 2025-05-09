@@ -366,7 +366,8 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-aarch64
-      msvc-toolset-version: '14.44'
+      runs-on: windows-11-arm
+      msvc-toolset-version: '14.43'
       msvc-toolset-architecture: 'arm64'
       make-target: 'hotspot'
       extra-conf-options: '--openjdk-target=aarch64-unknown-cygwin'
