@@ -49,10 +49,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class PrintSSL {
 
     public static void main(String[] args) throws Throwable {
-        // Using "SunX509" KeyManager which doesn't check peer supported
-        // signature algorithms, so we can make keytool print certificate
-        // with weak MD5withRSA signature algorithm.
-        Security.setProperty("ssl.KeyManagerFactory.algorithm", "SunX509");
+        // Disable KeyManager's algorithm constraints checking.
+        System.setProperty(
+                "jdk.tls.keymanager.disableConstraintsChecking", "true");
 
         Files.deleteIfExists(Paths.get("keystore"));
 
