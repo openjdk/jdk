@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -977,7 +977,15 @@ class ConsoleIOContext extends IOContext {
     public synchronized int readUserInput() throws IOException {
         if (pendingBytes == null || pendingBytes.length <= pendingBytesPointer) {
             char userChar = readUserInputChar();
-            pendingBytes = String.valueOf(userChar).getBytes();
+            StringBuilder dataToConvert = new StringBuilder();
+            dataToConvert.append(userChar);
+            if (Character.isHighSurrogate(userChar)) {
+                if (pendingLine.length() > pendingLinePointer &&
+                    Character.isLowSurrogate(pendingLine.charAt(pendingLinePointer))) {
+                    dataToConvert.append(readUserInputChar());
+                }
+            }
+            pendingBytes = dataToConvert.toString().getBytes();
             pendingBytesPointer = 0;
         }
         return pendingBytes[pendingBytesPointer++];
