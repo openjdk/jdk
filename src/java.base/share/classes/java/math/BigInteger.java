@@ -2744,6 +2744,80 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
+     * Returns the integer {@code n}th root of this BigInteger. The integer
+     * {@code n}th root of the corresponding mathematical integer {@code x} has the
+     * same sign of {@code x}, and its magnitude is the largest integer {@code r}
+     * such that {@code r**n <= abs(x)}. It is equal to the value of
+     * {@code (x.signum() * floor(abs(nthRoot(x, n))))}, where {@code nthRoot(x, n)}
+     * denotes the real {@code n}th root of {@code x} treated as a real. If {@code n}
+     * is even and this BigInteger is negative, an {@code ArithmeticException} will be
+     * thrown.
+     *
+     * <p>Note that the magnitude of the integer {@code n}th root will be less than
+     * the magnitude of the real {@code n}th root if the latter is not representable
+     * as an integral value.
+     *
+     * @param n the root degree
+     * @return the integer {@code n}th root of {@code this}
+     * @throws ArithmeticException if {@code n == 0} (Zeroth roots are not
+     *                             defined.)
+     * @throws ArithmeticException if {@code n} is negative. (This would cause the
+     *                             operation to yield a non-integer value.)
+     * @throws ArithmeticException if {@code n} is even and {@code this} is
+     *                             negative. (This would cause the operation to
+     *                             yield non-real roots.)
+     * @see #sqrt()
+     * @since 25
+     */
+    public BigInteger nthRoot(int n) {
+        if (n == 1)
+            return this;
+
+        if (n == 2)
+            return sqrt();
+
+        if (n <= 0)
+            throw new ArithmeticException("Non-positive root degree");
+
+        if ((n & 1) == 0 && this.signum < 0)
+            throw new ArithmeticException("Negative radicand with even root degree");
+
+        return new MutableBigInteger(this.mag).nthRoot(n).toBigInteger(signum);
+    }
+
+    /**
+     * Returns an array of two BigIntegers containing the integer {@code n}th root
+     * {@code r} of {@code this} and its remainder {@code this - r^n},
+     * respectively.
+     *
+     * @param n the root degree
+     * @return an array of two BigIntegers with the integer {@code n}th root at
+     *         offset 0 and the remainder at offset 1
+     * @throws ArithmeticException if {@code n == 0} (Zeroth roots are not
+     *                             defined.)
+     * @throws ArithmeticException if {@code n} is negative. (This would cause the
+     *                             operation to yield a non-integer value.)
+     * @throws ArithmeticException if {@code n} is even and {@code this} is
+     *                             negative. (This would cause the operation to
+     *                             yield non-real roots.)
+     * @see #sqrt()
+     * @see #sqrtAndRemainder()
+     * @see #nthRoot(int)
+     * @since 25
+     */
+    public BigInteger[] nthRootAndRemainder(int n) {
+        if (n == 1)
+            return new BigInteger[] { this, ZERO };
+
+        if (n == 2)
+            return sqrtAndRemainder();
+
+        BigInteger root = nthRoot(n), rem = this.subtract(root.pow(n));
+        assert rem.signum == 0 || rem.signum == this.signum;
+        return new BigInteger[] { root, rem };
+    }
+
+    /**
      * Returns a BigInteger whose value is the greatest common divisor of
      * {@code abs(this)} and {@code abs(val)}.  Returns 0 if
      * {@code this == 0 && val == 0}.
