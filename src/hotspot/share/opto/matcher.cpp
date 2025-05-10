@@ -1893,7 +1893,15 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
 
   // If the _leaf is an AddP, insert the base edge
   if (leaf->is_AddP()) {
-    mach->ins_req(AddPNode::Base,leaf->in(AddPNode::Base));
+    if (leaf->in(AddPNode::Base) == leaf->in(AddPNode::Address) &&
+        leaf->in(AddPNode::Base)->is_DecodeN() &&
+        leaf->in(AddPNode::Base)->outcnt() == 2 &&
+        leaf->in(AddPNode::Base) != mach->in(1) &&
+        leaf->in(AddPNode::Base)->in(1) == mach->in(1)) {
+      mach->ins_req(AddPNode::Base, mach->in(1));
+    } else {
+      mach->ins_req(AddPNode::Base,leaf->in(AddPNode::Base));
+    }
   }
 
   uint number_of_projections_prior = number_of_projections();
