@@ -30,6 +30,7 @@ import java.lang.classfile.Annotation;
 import java.lang.classfile.AnnotationElement;
 import java.lang.classfile.AnnotationValue;
 import java.lang.classfile.Attribute;
+import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.FieldModel;
@@ -63,6 +64,7 @@ final class ClassInspector {
     private static final ClassDesc ANNOTATION_NAME = classDesc(Name.class);
     private static final ClassDesc ANNOTATION_ENABLED = classDesc(Enabled.class);
     private static final ClassDesc ANNOTATION_REMOVE_FIELDS = classDesc(RemoveFields.class);
+    private static final String[] EMPTY_STRING_ARRAY = {};
 
     private final ClassModel classModel;
     private final Class<?> superClass;
@@ -104,12 +106,12 @@ final class ClassInspector {
     }
 
     String getEventName() {
-        String name = annotationValue(ANNOTATION_NAME, String.class);
+        String name = annotationValue(ANNOTATION_NAME, String.class, null);
         return name == null ? getClassName() : name;
     }
 
     boolean isRegistered() {
-        Boolean result = annotationValue(ANNOTATION_REGISTERED, Boolean.class);
+        Boolean result = annotationValue(ANNOTATION_REGISTERED, Boolean.class, true);
         if (result != null) {
             return result.booleanValue();
         }
@@ -123,7 +125,7 @@ final class ClassInspector {
     }
 
     boolean isEnabled() {
-        Boolean result = annotationValue(ANNOTATION_ENABLED, Boolean.class);
+        Boolean result = annotationValue(ANNOTATION_ENABLED, Boolean.class, true);
         if (result != null) {
             return result.booleanValue();
         }
@@ -201,52 +203,59 @@ final class ClassInspector {
             }
         }
         ImplicitFields ifs = new ImplicitFields(superClass);
-        String[] value = annotationValue(ANNOTATION_REMOVE_FIELDS, String[].class);
+        String[] value = annotationValue(ANNOTATION_REMOVE_FIELDS, String[].class, EMPTY_STRING_ARRAY);
         if (value != null) {
             ifs.removeFields(value);
         }
         return ifs;
     }
 
-    private List<AnnotationValue> getAnnotationValues(ClassDesc classDesc) {
-        List<AnnotationValue> list = new ArrayList<>();
-        for (Attribute<?> attribute: classModel.attributes()) {
-            if (attribute instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
-                for (Annotation a : rvaa.annotations()) {
-                    if (a.classSymbol().equals(classDesc) && a.elements().size() == 1) {
-                        AnnotationElement ae = a.elements().getFirst();
-                        if (ae.name().equalsString("value")) {
-                            list.add(ae.value());
-                        }
-                    }
+    private Annotation getFirstAnnotation(ClassDesc classDesc) {
+        for (RuntimeVisibleAnnotationsAttribute attribute : classModel.findAttributes(Attributes.runtimeVisibleAnnotations())) {
+            for (Annotation a : attribute.annotations()) {
+                if (a.classSymbol().equals(classDesc)) {
+                    return a;
                 }
             }
         }
-        return list;
+        return null;
     }
 
     @SuppressWarnings("unchecked")
     // Only supports String, String[] and Boolean values
-    private <T> T annotationValue(ClassDesc classDesc, Class<T> type) {
-        for (AnnotationValue a : getAnnotationValues(classDesc)) {
-            if (a instanceof AnnotationValue.OfBoolean ofb && type.equals(Boolean.class)) {
-                Boolean b = ofb.booleanValue();
-                return (T) b;
+    private <T> T annotationValue(ClassDesc classDesc, Class<T> type, T defaultValue) {
+        Annotation annotation = getFirstAnnotation(classDesc);
+        if (annotation == null) {
+            return null;
+        }
+        // Default values are not stored in the annotation element, so if the
+        // element-value pair is empty, return the default value.
+        if (annotation.elements().isEmpty()) {
+            return defaultValue;
+        }
+
+        AnnotationElement ae = annotation.elements().getFirst();
+        if (!ae.name().equalsString("value")) {
+            return null;
+        }
+        AnnotationValue a = ae.value();
+        if (a instanceof AnnotationValue.OfBoolean ofb && type.equals(Boolean.class)) {
+            Boolean b = ofb.booleanValue();
+            return (T) b;
+        }
+        if (a instanceof AnnotationValue.OfString ofs && type.equals(String.class)) {
+            String s = ofs.stringValue();
+            return (T) s;
+        }
+        if (a instanceof AnnotationValue.OfArray ofa && type.equals(String[].class)) {
+            List<AnnotationValue> list = ofa.values();
+            String[] array = new String[list.size()];
+            int index = 0;
+            for (AnnotationValue av : list) {
+                var avs = (AnnotationValue.OfString) av;
+                array[index++] = avs.stringValue();
             }
-            if (a instanceof AnnotationValue.OfString ofs && type.equals(String.class)) {
-                String s = ofs.stringValue();
-                return (T) s;
-            }
-            if (a instanceof AnnotationValue.OfArray ofa && type.equals(String[].class)) {
-                List<AnnotationValue> list = ofa.values();
-                String[] array = new String[list.size()];
-                int index = 0;
-                for (AnnotationValue av : list) {
-                    var avs = (AnnotationValue.OfString) av;
-                    array[index++] = avs.stringValue();
-                }
-                return (T) array;
-            }
+            return (T) array;
         }
         return null;
     }
