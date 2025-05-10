@@ -21,6 +21,10 @@
  * questions.
  */
 
+#include "cds/cdsConfig.hpp"
+#include "cds/cds_globals.hpp"
+#include "logging/log.hpp"
+#include "memory/universe.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -273,4 +277,15 @@ JvmtiAgent* JvmtiAgentList::lookup(JvmtiEnv* env, void* f_ptr) {
     }
   }
   return nullptr;
+}
+
+void JvmtiAgentList::disable_agent_list() {
+#if INCLUDE_CDS
+  assert(CDSConfig::is_dumping_final_static_archive(), "use this only for -XX:AOTMode=create!");
+  assert(!Universe::is_bootstrapping() && !Universe::is_fully_initialized(), "must do this very early");
+  if (_list != nullptr) {
+    log_info(aot)("Disabled all JVMTI agents during -XX:AOTMode=create");
+    _list = nullptr;
+  }
+#endif
 }

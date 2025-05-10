@@ -598,7 +598,7 @@ static bool invoke_Agent_OnLoad(JvmtiAgent* agent) {
   assert(!agent->is_xrun(), "invariant");
   assert(!agent->is_dynamic(), "invariant");
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_ONLOAD, "invariant");
-  if (CDSConfig::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive() && !CDSConfig::new_aot_flags_used()) {
     check_cds_dump(agent);
   }
   OnLoadEntry_t on_load_entry = lookup_Agent_OnLoad_entry_point(agent, /* vm exit on error */ true);

@@ -64,7 +64,8 @@
           range(2, 246)                                                     \
                                                                             \
   product(bool, AllowArchivingWithJavaAgent, false, DIAGNOSTIC,             \
-          "Allow Java agent to be run with CDS dumping")                    \
+          "Allow Java agent to be run with CDS dumping (not applicable"     \
+          " to AOT")                                                        \
                                                                             \
   develop(ccstr, ArchiveHeapTestClass, nullptr,                             \
           "For JVM internal testing only. The static field named "          \

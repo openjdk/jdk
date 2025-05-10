@@ -32,6 +32,7 @@
 #include "include/jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
@@ -430,6 +431,12 @@ void CDSConfig::check_aot_flags() {
       check_aotmode_create();
     }
   }
+
+  // This is an old flag used by CDS regression testing only. It doesn't apply
+  // to the AOT workflow.
+  // JVMTI can be specified with all legal AOTModes. However, they are igored
+  // when AOTMode==create.
+  FLAG_SET_ERGO(AllowArchivingWithJavaAgent, false);
 }
 
 void CDSConfig::check_aotmode_off() {
@@ -480,6 +487,9 @@ void CDSConfig::check_aotmode_create() {
   }
 
   CDSConfig::enable_dumping_static_archive();
+
+  // We don't ...
+  JvmtiAgentList::disable_agent_list();
 }
 
 void CDSConfig::ergo_init_aot_paths() {
