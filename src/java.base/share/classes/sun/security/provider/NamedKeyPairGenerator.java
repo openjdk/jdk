@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.security.ProviderException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
-import java.util.Objects;
 
 /// A base class for all `KeyPairGenerator` implementations that can be
 /// configured with a named parameter set.
@@ -52,14 +51,20 @@ import java.util.Objects;
 /// with `getAlgorithm` returning the family name, and `getParams` returning
 /// the parameter set name as a [NamedParameterSpec] object.
 ///
-/// An implementation must include a zero-argument public constructor that
-/// calls `super(fname, pnames)`, where `fname` is the family name of the
-/// algorithm and `pnames` are its supported parameter set names. `pnames`
-/// must contain at least one element. For an implementation of
-/// `NamedKeyPairGenerator`, the first element becomes its default parameter
-/// set, i.e. the parameter set to be used in key pair generation unless
+/// A `NamedKeyPairGenerator` or `NamedKeyFactory` implementation must include
+/// a zero-argument public constructor that calls `super(fname, pnames)`, where
+/// `fname` is the family name of the algorithm and `pnames` are its supported
+/// parameter set names. `pnames` must contain at least one element. For an
+/// implementation of `NamedKeyPairGenerator`, the first element becomes its
+/// default parameter set, i.e. the parameter set used by generated keys unless
 /// [#initialize(AlgorithmParameterSpec, java.security.SecureRandom)]
 /// is called on a different parameter set.
+///
+/// A `NamedKEM` or `NamedSignature` implementation must include a zero-argument
+/// public constructor that calls `super(fname, factory, pnames)`, where
+/// `fname` is the family name of the algorithm and `pnames` are its supported
+/// parameter set names. `pnames` must contain at least one element. `factory`
+/// is the `NamedKeyFactory` object that is used to translate foreign keys.
 ///
 /// An implementation must implement all abstract methods. For all these
 /// methods, the implementation must relinquish any "ownership" of any input
@@ -69,8 +74,8 @@ import java.util.Objects;
 /// array argument and must not retain any reference to an input array argument
 /// after the call.
 ///
-/// Also, an implementation must not keep any extra copy of a private key.
-/// For key generation, the only copy is the one returned in the
+/// Also, an implementation must not keep any extra copy of a private key in
+/// any format. For key generation, the only copy is the one returned in the
 /// [#implGenerateKeyPair] call. For all other methods, it must not make
 /// a copy of the input private key. A `KEM` implementation also must not
 /// keep a copy of the shared secret key, no matter if it's an encapsulator
@@ -83,6 +88,30 @@ import java.util.Objects;
 /// a local type, and this parsed key will be passed to an operational method
 /// (For example, `implSign`) later. An implementation must not retain
 /// a reference of the parsed key.
+///
+/// The private key, represented as a byte array when used in `NamedKEM` or
+/// `NamedSignature`, is referred to as its expanded format. For some
+/// algorithms, this format may differ from the encoding format used in a
+/// PKCS #8 file (i.e. the [NamedPKCS8Key#key] field). For example,
+/// [FIPS 204](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf)
+/// Table 2 defines the ML-DSA-65 private key as a 4032-byte array, which is
+/// used in the ML-DSA.Sign function in Algorithm 2, representing the
+/// expanded format. However, in
+/// [draft-ietf-lamps-dilithium-certificates-08](https://datatracker.ietf.org/doc/html/draft-ietf-lamps-dilithium-certificates#name-private-key-format),
+/// a private key can be encoded into a CHOICE of three formats, none in the
+/// same as the FIPS 204 format. A `NamedKeyPairGenerator` implementation
+/// should return both the expanded key and a preferred encoding in its
+///  [#implGenerateKeyPair] method.
+///
+/// A `NamedKeyFactory` that must override the `implExpand` method to
+/// derive the expanded format from an encoding format.
+/// Implementations may support multiple encoding formats.
+///
+/// A `NamedKeyFactory` must not modify the `key` field, ensuring that when
+/// re-encoded, the key retains its original encoding format.
+///
+/// A `NamedKeyFactory` can choose a differnt encoding format when
+/// `translateKey` is called.
 ///
 /// When constructing a [NamedX509Key] or [NamedPKCS8Key] object from raw key
 /// bytes, the key bytes are directly referenced within the object, so the
@@ -105,9 +134,9 @@ import java.util.Objects;
 public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
 
     private final String fname; // family name
-    private final String[] pnames; // allowed parameter set name (at least one)
+    private final String[] pnames; // allowed parameter set names (at least one)
 
-    protected String name; // init as
+    protected String pname; // parameter set name, if can be determined
     private SecureRandom secureRandom;
 
     /// Creates a new `NamedKeyPairGenerator` object.
@@ -126,22 +155,22 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
         this.pnames = pnames;
     }
 
-    private String checkName(String name) throws InvalidAlgorithmParameterException  {
-        for (var pname : pnames) {
-            if (pname.equalsIgnoreCase(name)) {
-                // return the stored standard name
-                return pname;
+    private String checkName(String pname) throws InvalidAlgorithmParameterException  {
+        for (var n : pnames) {
+            if (n.equalsIgnoreCase(pname)) {
+                // return the stored standard pname
+                return n;
             }
         }
         throw new InvalidAlgorithmParameterException(
-                "Unsupported parameter set name: " + name);
+                "Unsupported parameter set name: " + pname);
     }
 
     @Override
     public void initialize(AlgorithmParameterSpec params, SecureRandom random)
             throws InvalidAlgorithmParameterException {
         if (params instanceof NamedParameterSpec spec) {
-            name = checkName(spec.getName());
+            pname = checkName(spec.getName());
         } else {
             throw new InvalidAlgorithmParameterException(
                     "Unsupported AlgorithmParameterSpec: " + params);
@@ -161,17 +190,19 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
 
     @Override
     public KeyPair generateKeyPair() {
-        String pname = name != null ? name : pnames[0];
-        var keys = implGenerateKeyPair(pname, secureRandom);
-        return new KeyPair(new NamedX509Key(fname, pname, keys[0]),
-                new NamedPKCS8Key(fname, pname, keys[1]));
+        String tmpName = pname != null ? pname : pnames[0];
+        var keys = implGenerateKeyPair(tmpName, secureRandom);
+        return new KeyPair(new NamedX509Key(fname, tmpName, keys[0]),
+                new NamedPKCS8Key(fname, tmpName, keys[1], keys[2]));
     }
 
     /// User-defined key pair generator.
     ///
     /// @param pname parameter set name
     /// @param sr `SecureRandom` object, `null` if not initialized
-    /// @return public key and private key (in this order) in raw bytes
+    /// @return the public key, the private key in its encoding format, and
+    ///         the private key in its expanded format (in this order) in
+    ///         raw bytes.
     /// @throws ProviderException if there is an internal error
     protected abstract byte[][] implGenerateKeyPair(String pname, SecureRandom sr);
 }
