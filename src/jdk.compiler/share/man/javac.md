@@ -645,6 +645,9 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `strictfp`: Warns about unnecessary use of the `strictfp` modifier.
 
+    -   `suppression`: Warns about recognized `@SuppressWarnings` values that
+        don't actually suppress any warnings.
+
     -   `synchronization`: Warns about synchronization attempts on instances
         of value-based classes.
 

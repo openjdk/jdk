@@ -159,21 +159,25 @@ public class Log extends AbstractLog {
         public final void reportWithLint(JCDiagnostic diag, Lint lint) {
 
             // Apply hackery for REQUIRES_TRANSITIVE_AUTOMATIC (see also Check.checkModuleRequires())
-            if (diag.getCode().equals(RequiresTransitiveAutomatic.key()) && !lint.isEnabled(REQUIRES_TRANSITIVE_AUTOMATIC)) {
+            if (diag.getCode().equals(RequiresTransitiveAutomatic.key()) && !lint.isEnabled(REQUIRES_TRANSITIVE_AUTOMATIC, true)) {
                 reportWithLint(diags.warning(diag.getDiagnosticSource(), diag.getDiagnosticPosition(), RequiresAutomatic), lint);
                 return;
             }
 
             // Apply the lint configuration (if any) and discard the warning if it gets filtered out
             if (lint != null) {
+
+                // Gather information
                 LintCategory category = diag.getLintCategory();
                 boolean emit = !diag.isFlagSet(DEFAULT_ENABLED) ?       // is the warning not enabled by default?
-                  lint.isEnabled(category) :                            // then emit if the category is enabled
+                  lint.isEnabled(category, false) :                     // then emit if the category is enabled
                   category.annotationSuppression ?                      // else emit if the category is not suppressed, where
-                    !lint.isSuppressed(category) :                          // ...suppression happens via @SuppressWarnings
+                    !lint.isSuppressed(category, false) :                   // ...suppression happens via @SuppressWarnings
                     !options.isSet(XLINT_CUSTOM, "-" + category.option);    // ...suppression happens via -Xlint:-category
-                if (!emit)
+                if (!emit) {
+                    validateSuppression(new SuppressionValidation(lint, diag));     // validate any suppression
                     return;
+                }
             }
 
             // Proceed
@@ -184,6 +188,11 @@ public class Log extends AbstractLog {
          * Step 3: Handle a diagnostic to which the applicable Lint instance (if any) has been applied.
          */
         protected abstract void reportReady(JCDiagnostic diag);
+
+        /**
+         * Validate a lint suppression.
+         */
+        protected abstract void validateSuppression(SuppressionValidation validation);
 
         protected void addLintWaiter(JavaFileObject sourceFile, JCDiagnostic diagnostic) {
             lintWaitersMap.computeIfAbsent(sourceFile, s -> new LinkedList<>()).add(diagnostic);
@@ -220,6 +229,12 @@ public class Log extends AbstractLog {
                 return diagnosticList.isEmpty();
             });
         }
+
+        protected record SuppressionValidation(Lint lint, JCDiagnostic diag) {
+            void validate() {
+                lint.validateSuppression(diag.getLintCategory());
+            }
+        }
     }
 
     /**
@@ -232,6 +247,9 @@ public class Log extends AbstractLog {
 
         @Override
         protected void reportReady(JCDiagnostic diag) { }
+
+        @Override
+        protected void validateSuppression(SuppressionValidation validation) { }
     }
 
     /**
@@ -243,6 +261,7 @@ public class Log extends AbstractLog {
      */
     public class DeferredDiagnosticHandler extends DiagnosticHandler {
         private List<JCDiagnostic> deferred = new ArrayList<>();
+        private List<SuppressionValidation> validatedSuppressions = new ArrayList<>();
         private final Predicate<JCDiagnostic> filter;
         private final boolean passOnNonDeferrable;
 
@@ -281,6 +300,15 @@ public class Log extends AbstractLog {
             }
         }
 
+        @Override
+        protected void validateSuppression(SuppressionValidation validation) {
+            if (deferrable(validation.diag)) {
+                validatedSuppressions.add(validation);
+            } else {
+                prev.validateSuppression(validation);
+            }
+        }
+
         public List<JCDiagnostic> getDiagnostics() {
             return deferred;
         }
@@ -305,6 +333,12 @@ public class Log extends AbstractLog {
                 .filter(accepter)
                 .forEach(diagnostic -> prev.addLintWaiter(sourceFile, diagnostic)));
             lintWaitersMap = null; // prevent accidental ongoing use
+
+            // Flush matching suppression validations to the previous handler
+            validatedSuppressions.stream()
+              .filter(vs -> accepter.test(vs.diag))
+              .forEach(prev::validateSuppression);
+            validatedSuppressions = null; // prevent accidental ongoing use
         }
 
         /** Report all deferred diagnostics in the specified order. */
@@ -943,9 +977,14 @@ public class Log extends AbstractLog {
                 // Apply the appropriate mandatory warning aggregator, if needed
                 if (diagnostic.isFlagSet(AGGREGATE)) {
                     LintCategory category = diagnostic.getLintCategory();
-                    boolean verbose = lintFor(diagnostic).isEnabled(category);
-                    if (!aggregatorFor(category).aggregate(diagnostic, verbose))
+                    Lint lint = lintFor(diagnostic);
+                    boolean verbose = lint.isEnabled(category, false);
+                    if (!aggregatorFor(category).aggregate(diagnostic, verbose)) {
+
+                        // Aggregation effectively suppresses the warning, so validate that suppression
+                        validateSuppression(new SuppressionValidation(lint, diagnostic));
                         return;
+                    }
                 }
 
                 // Emit warning unless not mandatory and warnings are disabled
@@ -973,6 +1012,11 @@ public class Log extends AbstractLog {
             if (diagnostic.isFlagSet(COMPRESSED)) {
                 compressedOutput = true;
             }
+        }
+
+        @Override
+        protected void validateSuppression(SuppressionValidation validation) {
+            validation.validate();
         }
     }
 

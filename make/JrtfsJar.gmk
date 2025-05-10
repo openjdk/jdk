@@ -51,7 +51,7 @@ JIMAGE_PKGS := \
 # ends up in the image, this will ensure reproducible classes
 $(eval $(call SetupJavaCompilation, BUILD_JRTFS, \
     COMPILER := interim, \
-    DISABLED_WARNINGS := options, \
+    DISABLED_WARNINGS := options suppression, \
     TARGET_RELEASE := $(TARGET_RELEASE_JDK8), \
     SRC := $(TOPDIR)/src/java.base/share/classes, \
     EXCLUDE_FILES := module-info.java, \

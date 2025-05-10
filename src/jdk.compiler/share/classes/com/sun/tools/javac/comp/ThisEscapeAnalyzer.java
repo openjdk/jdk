@@ -263,7 +263,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         Assert.check(methodMap.isEmpty());      // we are not prepared to be used more than once
 
         // Short circuit if this calculation is unnecessary
-        if (!lintMapper.lintAt(env.toplevel.sourcefile, env.tree.pos()).get().isEnabled(THIS_ESCAPE))
+        if (!lintMapper.lintAt(env.toplevel.sourcefile, env.tree.pos()).get().isActive(THIS_ESCAPE))
             return;
 
         // Determine which packages are exported by the containing module, if any.
@@ -343,7 +343,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
           .filter(MethodInfo::analyzable)
           .forEach(this::analyzeConstructor);
 
-        // Manually apply any Lint suppressions
+        // Manually apply (and validate) any Lint suppressions
         filterWarnings(warning -> !warning.isSuppressed());
 
         // Field intitializers and initialization blocks will generate a separate warning for each primary constructor.
@@ -1723,7 +1723,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         boolean isSuppressed() {
-            return suppressible && !lint().isEnabled(THIS_ESCAPE);
+            return suppressible && !lint().isEnabled(THIS_ESCAPE, true);
         }
 
         int comparePos(StackFrame that) {
@@ -1788,12 +1788,12 @@ public class ThisEscapeAnalyzer extends TreeScanner {
             }
         };
 
-        // Determine whether this warning is suppressed. A single "this-escape" warning involves multiple source code
-        // positions, so we must determine suppression manually. We do this as follows: A warning is suppressed if
-        // "this-escape" is disabled at any position in the stack where that stack frame corresponds to a constructor
-        // or field initializer in the target class. That means, for example, @SuppressWarnings("this-escape") annotations
-        // on regular methods are ignored. We work our way back up the call stack from the point of the leak until we
-        // encounter a suppressible stack frame.
+        // Determine whether this warning is suppressed and, if so, validate that suppression. A single "this-escape"
+        // warning involves multiple source code positions, so we must determine and validate suppression manually.
+        // We do this as follows: A warning is suppressed if "this-escape" is disabled at any position in the stack
+        // where that stack frame corresponds to a constructor or field initializer in the target class. That means,
+        // for example, @SuppressWarnings("this-escape") annotations on regular methods are ignored. We work our way
+        // back up the call stack from the point of the leak until we encounter a suppressible stack frame.
         boolean isSuppressed() {
             for (int index = stack.size() - 1; index >= 0; index--) {
                 if (stack.get(index).isSuppressed())

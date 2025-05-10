@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.tools.javac.code.LintMapper;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 
@@ -42,6 +43,7 @@ public class WarningAnalyzer {
 
     private final Log log;
     private final ThisEscapeAnalyzer thisEscapeAnalyzer;
+    private final LintMapper lintMapper;
 
     public static WarningAnalyzer instance(Context context) {
         WarningAnalyzer instance = context.get(contextKey);
@@ -55,9 +57,13 @@ public class WarningAnalyzer {
         context.put(contextKey, this);
         log = Log.instance(context);
         thisEscapeAnalyzer = ThisEscapeAnalyzer.instance(context);
+        lintMapper = LintMapper.instance(context);
     }
 
     public void analyzeTree(Env<AttrContext> env) {
         thisEscapeAnalyzer.analyzeTree(env);
+
+        // This one should go last
+        lintMapper.reportUnnecessarySuppressionAnnotations(env.toplevel.sourcefile, env.tree);
     }
 }
