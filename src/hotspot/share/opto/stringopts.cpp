@@ -1539,7 +1539,7 @@ void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTyp
     for (int i = 0; i < length; i++) {
       Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
       Node* val = __ ConI(src_array->byte_at(i));
-      __ store(__ ctrl(), adr, val, T_BYTE, byte_adr_idx, MemNode::unordered);
+      __ store(__ ctrl(), adr, val, T_BYTE, MemNode::unordered);
       index = __ AddI(index, __ ConI(1));
     }
   }
@@ -1557,7 +1557,7 @@ void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTyp
       } else {
         val = readChar(src_array, i++);
       }
-      __ store(__ ctrl(), adr, __ ConI(val), T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+      __ store(__ ctrl(), adr, __ ConI(val), T_CHAR, MemNode::unordered, false /* require_atomic_access */,
                true /* mismatched */);
       index = __ AddI(index, __ ConI(2));
     }
@@ -1637,7 +1637,7 @@ Node* PhaseStringOpts::copy_char(GraphKit& kit, Node* val, Node* dst_array, Node
   }
   if (!dcon || dbyte) {
     // Destination is Latin1. Store a byte.
-    __ store(__ ctrl(), adr, val, T_BYTE, byte_adr_idx, MemNode::unordered);
+    __ store(__ ctrl(), adr, val, T_BYTE, MemNode::unordered);
     __ set(end, __ AddI(start, __ ConI(1)));
   }
   if (!dcon) {
@@ -1645,7 +1645,7 @@ Node* PhaseStringOpts::copy_char(GraphKit& kit, Node* val, Node* dst_array, Node
   }
   if (!dcon || !dbyte) {
     // Destination is UTF16. Store a char.
-    __ store(__ ctrl(), adr, val, T_CHAR, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+    __ store(__ ctrl(), adr, val, T_CHAR, MemNode::unordered, false /* require_atomic_access */,
              true /* mismatched */);
     __ set(end, __ AddI(start, __ ConI(2)));
   }
