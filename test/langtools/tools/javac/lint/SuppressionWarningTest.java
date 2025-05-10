@@ -814,7 +814,7 @@ public class SuppressionWarningTest extends TestRunner {
     }
 
     // Test a @SuppressWarning annotation that suppresses nothing
-    //@Test
+    @Test
     public void testUselessAnnotation(LintCategory category) throws Exception {
         compileAndExpectWarning(
           "compiler.warn.unnecessary.warning.suppression",
@@ -828,7 +828,7 @@ public class SuppressionWarningTest extends TestRunner {
     }
 
     // Test a -Xlint:-foo flag that suppresses nothing
-    //@Test
+    @Test
     public void testUselessLintFlag(LintCategory category) throws Exception {
         compileAndExpectWarning(
           "compiler.warn.unnecessary.lint.warning.suppression",
@@ -843,7 +843,7 @@ public class SuppressionWarningTest extends TestRunner {
 
     // Test the suppression of SUPPRESSION itself, which should always work,
     // even when the same annotation uselessly suppresses some other category.
-    //@Test
+    @Test
     public void testSelfSuppression(LintCategory category) throws Exception {
 
         // Test category and SUPPRESSION in the same annotation
@@ -874,7 +874,7 @@ public class SuppressionWarningTest extends TestRunner {
     }
 
     // Test OVERLOADS which has tricky "either-or" suppression
-    //@Test
+    @Test
     public void testOverloads() throws Exception {
         compileAndExpectSuccess(
           """
@@ -893,7 +893,7 @@ public class SuppressionWarningTest extends TestRunner {
     }
 
     // Test THIS_ESCAPE which has tricky control-flow based suppression
-    //@Test
+    @Test
     public void testThisEscape() throws Exception {
         compileAndExpectSuccess(
           """
