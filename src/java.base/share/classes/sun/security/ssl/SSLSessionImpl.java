@@ -217,7 +217,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.identificationProtocol = hc.sslConfig.identificationProtocol;
         this.boundValues = new ConcurrentHashMap<>();
 
-        if (SSLLogger.isOn && SSLLogger.isOn("session")) {
+        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SESSION)) {
              SSLLogger.finest("Session initialized:  " + this);
         }
     }
@@ -250,7 +250,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.maximumPacketSize = baseSession.maximumPacketSize;
         this.boundValues = baseSession.boundValues;
 
-        if (SSLLogger.isOn && SSLLogger.isOn("session")) {
+        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SESSION)) {
              SSLLogger.finest("Session initialized:  " + this);
         }
     }
@@ -495,7 +495,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // If there is no getMasterSecret with TLS1.2 or under, do not resume.
         if (!protocolVersion.useTLS13PlusSpec() &&
                 getMasterSecret().getEncoded() == null) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.finest("No MasterSecret, cannot make stateless" +
                         " ticket");
             }
@@ -503,7 +503,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
 
         if (boundValues != null && boundValues.size() > 0) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.finest("There are boundValues, cannot make" +
                         " stateless ticket");
             }
@@ -905,7 +905,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     void setSuite(CipherSuite suite) {
        cipherSuite = suite;
 
-        if (SSLLogger.isOn && SSLLogger.isOn("session")) {
+        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SESSION)) {
              SSLLogger.finest("Negotiating session:  " + this);
        }
     }
@@ -1175,7 +1175,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 return;
             }
             invalidated = true;
-            if (SSLLogger.isOn && SSLLogger.isOn("session")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SESSION)) {
                  SSLLogger.finest("Invalidated session:  " + this);
             }
             for (SSLSessionImpl child : childSessions) {
