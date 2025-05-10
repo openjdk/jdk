@@ -1943,14 +1943,14 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
   case Type::Int: {
     const TypeInt* ti = t1->is_int();
     if (ti->is_con()) {
-      return TypeInt::make(uabs(ti->get_con()));
+      return TypeInt::make(g_uabs(ti->get_con()));
     }
     break;
   }
   case Type::Long: {
     const TypeLong* tl = t1->is_long();
     if (tl->is_con()) {
-      return TypeLong::make(uabs(tl->get_con()));
+      return TypeLong::make(g_uabs(tl->get_con()));
     }
     break;
   }
