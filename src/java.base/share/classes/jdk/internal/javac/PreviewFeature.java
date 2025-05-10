@@ -76,8 +76,7 @@ public @interface PreviewFeature {
         CLASSFILE_API,
         STREAM_GATHERERS,
         MODULE_IMPORTS, //remove when the boot JDK is JDK 25
-        @JEP(number=478, title="Key Derivation Function API", status="Preview")
-        KEY_DERIVATION,
+        KEY_DERIVATION, //remove when the boot JDK is JDK 25
         @JEP(number = 502, title = "Stable Values", status = "Preview")
         STABLE_VALUES,
         LANGUAGE_MODEL,
