@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8194743
+ * @bug 8194743 8349754
  * @summary Test valid placements of super()/this() in constructors
  */
 
@@ -486,6 +486,17 @@ public class SuperInitGood {
             };
             r.run();
             super();
+        }
+    }
+
+    // Test for JDK-8349754
+    public static class Test23 {
+        private int i;
+        class Sub extends Test23 {
+            Sub() {
+                i = 3;      // here "i" refers to "Test23.this.i", not "this.i" - so it's OK
+                super();
+            }
         }
     }
 
