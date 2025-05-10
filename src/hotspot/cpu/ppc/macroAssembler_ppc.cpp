@@ -1072,8 +1072,18 @@ address MacroAssembler::call_c_and_return_to_caller(Register r_function_entry) {
 }
 
 address MacroAssembler::call_c(address function_entry, relocInfo::relocType rt) {
+  if (rt != relocInfo::none) {
+    relocate(rt);
+  }
   load_const(R12, function_entry, R0);
-  return branch_to(R12,  /*and_link=*/true);
+  return branch_to(R12, /*and_link=*/true);
+}
+
+bool MacroAssembler::is_simple_call_c_at(address a) {
+  uint32_t* instruction = (uint32_t*)a;
+  return is_load_const_at(a) &&
+         is_mtctr(instruction[5]) &&
+         is_bctrl(instruction[6]);
 }
 
 #else
