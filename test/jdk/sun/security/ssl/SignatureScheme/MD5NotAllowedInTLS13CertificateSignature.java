@@ -150,10 +150,13 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
         // create SSL context
         SSLContext ctx = SSLContext.getInstance(protocol);
 
-        // Using "SunX509" which doesn't check peer supported signature
-        // algorithms, so we check against local supported signature
+        // Disable KeyManager's algorithm constraints checking,
+        // so we check against local supported signature
         // algorithms which constitutes the fix being tested.
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        System.setProperty(
+                "jdk.tls.keymanager.disableConstraintsChecking", "true");
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(
+                KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(ks, passphrase);
 
         ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);

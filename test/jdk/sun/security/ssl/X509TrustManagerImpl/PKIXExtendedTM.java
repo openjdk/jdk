@@ -1118,6 +1118,9 @@ public class PKIXExtendedTM {
             throw new Exception("Incorrect number of arguments");
         }
         Test test = tests[Integer.parseInt(args[0])];
+        // Disable KeyManager's algorithm constraints checking.
+        System.setProperty(
+                "jdk.tls.keymanager.disableConstraintsChecking", "true");
         Security.setProperty("jdk.tls.disabledAlgorithms", test.tlsDisAlgs);
         Security.setProperty("jdk.certpath.disabledAlgorithms",
                              test.certPathDisAlgs);
