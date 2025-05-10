@@ -4429,6 +4429,36 @@ public final class Arrays {
     }
 
     /**
+     * Computes a hash code for a specified sub-range of the given {@code byte} array.
+     * The sub-range is defined by the indices from {@code fromIndex} (inclusive)
+     * to {@code toIndex} (exclusive).
+     *
+     * <p>The computed hash code is based on the content of the sub-range. Specifically,
+     * it is equivalent to the hash code that would be produced by a {@code List} of
+     * {@code Byte} objects representing the elements in the sub-range, in the same order.
+     * Thus, if two sub-ranges (within the same array) are equal as determined by
+     * {@link #equals(byte[], int, int, byte[], int, int)}, they will yield the same hash code.
+     * If the array {@code a} is {@code null}, this method returns {@code 0}.
+     *
+     * @param a the array from which to compute the sub-range hash code
+     * @param fromIndex the starting index (inclusive) of the sub-range
+     * @param toIndex the ending index (exclusive) of the sub-range
+     * @return a content-based hash code for the specified sub-range of the array,
+     *         or {@code 0} if {@code a} is {@code null}
+     * @throws ArrayIndexOutOfBoundsException if {@code fromIndex} or {@code toIndex}
+     *         are not valid indices for the array {@code a}
+     * @throws IllegalArgumentException if {@code fromIndex} is greater than {@code toIndex}
+     * @since 25
+     */
+    public static int hashCode(byte[] a, int fromIndex, int toIndex) {
+        if (a == null) {
+            return 0;
+        }
+        rangeCheck(a.length, fromIndex, toIndex);
+        return ArraysSupport.hashCode(a, fromIndex, toIndex - fromIndex, 1);
+    }
+
+    /**
      * Returns a hash code based on the contents of the specified array.
      * For any two {@code boolean} arrays {@code a} and {@code b}
      * such that {@code Arrays.equals(a, b)}, it is also the case that
