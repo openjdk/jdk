@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,9 @@
  * questions.
  */
 
-// key: compiler.warn.attempt.to.synchronize.on.instance.of.value.based.class
-// options: -Xlint:identity
+// key: compiler.warn.attempt.to.use.value.based.where.identity.expected
+// options: -Xlint:identity --add-exports java.base/jdk.internal=ALL-UNNAMED
 
-class AttemptToSynchronizeOnInstanceOfVbc {
-    void foo(Integer i) {
-        synchronized(i) {
-        }
-    }
+class RequiresIdentity<@jdk.internal.RequiresIdentity T> {
+    RequiresIdentity<Integer> field; // should warn
 }
