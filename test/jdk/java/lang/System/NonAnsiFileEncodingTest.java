@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * to "utf-8".  This test must be run on Windows 2K/XP in one of Armenian,
  * Georgian, Hindi, Punjabi, Gujarati, Tamil, Telugu, Kannada, Marathi,
  * or Sanskrit languages.
+ * @requires (os.family == "windows")
  */
 
 public class NonAnsiFileEncodingTest {
