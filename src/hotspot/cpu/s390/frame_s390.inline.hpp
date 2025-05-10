@@ -226,18 +226,20 @@ inline void frame::interpreter_frame_set_magic() {
 }
 #endif
 
+inline intptr_t* frame::interpreter_frame_esp() const {
+  return (intptr_t*) at_relative(_z_ijava_idx(esp));
+}
+
 // Where z_ijava_state.esp is saved.
-inline intptr_t** frame::interpreter_frame_esp_addr() const {
-  return (intptr_t**) &(ijava_state()->esp);
+inline void frame::interpreter_frame_set_esp(intptr_t* esp) {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized esp
+  ijava_state()->esp = (intptr_t) (esp - fp());
 }
 
 // top of expression stack (lowest address)
 inline intptr_t* frame::interpreter_frame_tos_address() const {
-  return *interpreter_frame_esp_addr() + 1;
-}
-
-inline void frame::interpreter_frame_set_tos_address(intptr_t* x) {
-  *interpreter_frame_esp_addr() = x - 1;
+  return interpreter_frame_esp() + Interpreter::stackElementWords;
 }
 
 // Stack slot needed for native calls and GC.
