@@ -60,6 +60,7 @@ public class TestDuplicatedLateInliningOutput {
     private static void test(Class<?> launcher, String pattern1, String pattern2) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+PrintCompilation",
                 "-XX:+PrintInlining",
                 "-XX:CICompilerCount=1",
                 "-XX:-TieredCompilation",
