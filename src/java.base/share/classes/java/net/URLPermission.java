@@ -143,7 +143,7 @@ import java.util.Objects;
  * with initial letter of each word capitalized). Either list can contain a wild-card '*'
  * character which signifies all request methods or headers respectively.
  *
- * @apiNote
+ * @deprecated
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
@@ -154,6 +154,7 @@ import java.util.Objects;
  *      RFC 2732: Format for Literal IPv6 Addresses in URL's
  * @since 1.8
  */
+@Deprecated(since = "25", forRemoval = true)
 public final class URLPermission extends Permission {
 
     @java.io.Serial
