@@ -39,7 +39,6 @@ class CSpaceCounters: public CHeapObj<mtGC> {
   PerfVariable*      _capacity;
   PerfVariable*      _used;
   PerfVariable*      _max_capacity;
-  volatile size_t    _last_used_in_bytes;
 
   // Constant PerfData types don't need to retain a reference.
   // However, it's a good idea to document them here.
@@ -47,8 +46,6 @@ class CSpaceCounters: public CHeapObj<mtGC> {
 
   ContiguousSpace*     _space;
   char*                _name_space;
-
-  class UsedHelper;
 
  public:
 
@@ -62,16 +59,6 @@ class CSpaceCounters: public CHeapObj<mtGC> {
   void update_all();
 
   const char* name_space() const        { return _name_space; }
-};
-
-class CSpaceCounters::UsedHelper : public PerfLongSampleHelper {
- private:
-  CSpaceCounters* _counters;
-
- public:
-  UsedHelper(CSpaceCounters* counters) : _counters(counters) { }
-
-  jlong take_sample() override;
 };
 
 #endif // SHARE_GC_SERIAL_CSPACECOUNTERS_HPP
