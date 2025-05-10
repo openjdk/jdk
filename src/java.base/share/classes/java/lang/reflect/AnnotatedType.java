@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,52 +28,123 @@ package java.lang.reflect;
 import java.lang.annotation.Annotation;
 
 /**
- * {@code AnnotatedType} represents the potentially annotated use of a type in
- * the program currently running in this VM. The use may be of any type in the
- * Java programming language, including an array type, a parameterized type, a
- * type variable, or a wildcard type.
- *
+ * {@code AnnotatedType} represents the potentially annotated use of a type or
+ * type argument in the current runtime.  The use of a type (JLS {@jls 4.1}) is
+ * the use of a primitive type or a reference type.  The use of a type argument
+ * (JLS {@jls 4.5.1}) is the use of a reference type or a wildcard type
+ * argument.
+ * <table class="striped">
+ * <caption style="display:none">
+ * Types and Type Arguments Used to Modeling Interfaces
+ * </caption>
+ * <thead>
+ * <tr><th colspan="3">Type or Type Argument Used
+ *     <th>Example
+ *     <th>Modeling interface
+ * </thead>
+ * <tbody>
+ * <tr><td colspan="3">Primitive Types (JLS {@jls 4.2})
+ *     <td>{@code @TA int}
+ *     <td rowspan="3">{@link ##alone AnnotatedType}
+ * <tr><td rowspan="5">Reference<br>Types<br>(JLS {@jls 4.3})
+ *     <td rowspan="3">Class and<br>Interface Types
+ *     <td>Non-generic Class and Interface<br>Types
+ *         (JLS {@jls 8.1.3}, {@jls 9.1.3})
+ *     <td>{@code @TA String}
+ * <tr><td>Raw Types (JLS {@jls 4.8})
+ *     <td>{@code @TA List}
+ * <tr><td>Parameterized Types (JLS {@jls 4.5})
+ *     <td>{@code @TA List<@TB String>}
+ *     <td>{@link AnnotatedParameterizedType}
+ * <tr><td colspan="2">Type Variables (JLS {@jls 4.4})
+ *     <td>{@code @TA T}
+ *     <td>{@link AnnotatedTypeVariable}
+ * <tr><td colspan="2">Array Types (JLS {@jls 10.1})
+ *     <td>{@code @TB int @TA []}
+ *     <td>{@link AnnotatedArrayType}
+ * <tr><td colspan="3">Wildcard Type Arguments (JLS {@jls 4.5.1})
+ *     <td>{@code @TA ? extends @TB String}
+ *     <td>{@link AnnotatedWildcardType}
+ * </tbody>
+ * </table>
+ * <p>
  * Note that any annotations returned by methods on this interface are
  * <em>type annotations</em> (JLS {@jls 9.7.4}) as the entity being
  * potentially annotated is a type.
+ * <p>
+ * Class and Interface Types may be members of other classes and interfaces.
+ * The use of a class or interface that declares another class or interface is
+ * accessible via {@link #getAnnotatedOwnerType()}.
+ * <p>
+ * Two {@code AnnotatedType} objects should be compared using the {@link
+ * Object#equals equals} method.
  *
- * @jls 4.1 The Kinds of Types and Values
- * @jls 4.2 Primitive Types and Values
- * @jls 4.3 Reference Types and Values
- * @jls 4.4 Type Variables
- * @jls 4.5 Parameterized Types
- * @jls 4.8 Raw Types
- * @jls 4.9 Intersection Types
- * @jls 10.1 Array Types
+ * <h2 id="alone">The {@code AnnotatedType} interface alone</h2>
+ * Some {@code AnnotatedType} objects are not instances of the {@link
+ * AnnotatedArrayType}, {@link AnnotatedParameterizedType}, {@link
+ * AnnotatedTypeVariable}, or {@link AnnotatedWildcardType} subinterfaces.
+ * Such a potentially annotated use represents a primitive type, a non-generic
+ * class or interface, or a raw type, and the {@link #getType() getType()}
+ * method returns a {@link Class}.
+ * <p>
+ * For example, an annotated use {@code @TB Outer.@TA Inner} is such an object;
+ * it has an annotation {@code @TA} and represents the non-generic {@code
+ * Outer.Inner} class. The use of its immediately enclosing class is {@code @TB
+ * Outer}, with an annotation {@code @TB}, representing the non-generic {@code
+ * Outer} class.
+ *
+ * @see Type
+ * @jls 4.11 Where Types Are Used
+ * @jls 9.7.4 Where Annotations May Appear
  * @since 1.8
  */
 public interface AnnotatedType extends AnnotatedElement {
 
     /**
-     * Returns the potentially annotated type that this type is a member of, if
-     * this type represents a nested type. For example, if this type is
-     * {@code @TA O<T>.I<S>}, return a representation of {@code @TA O<T>}.
-     *
-     * <p>Returns {@code null} if this {@code AnnotatedType} represents a
-     *     top-level class or interface, or a local or anonymous class, or
-     *     a primitive type, or void.
-     *
-     * <p>Returns {@code null} if this {@code AnnotatedType} is an instance of
-     *     {@code AnnotatedArrayType}, {@code AnnotatedTypeVariable}, or
-     *     {@code AnnotatedWildcardType}.
+     * {@return the potentially annotated use of the type that this type is a
+     * member of, or {@code null} if this type is not a nested type}  The type
+     * of the returned use is the immediately enclosing class or interface of
+     * this type.
+     * <p>
+     * Top-level classes and interfaces, local classes and interfaces, and
+     * anonymous classes are not members of other classes or interfaces.  For
+     * example, if this use is {@code @TA Map<@TB K, V>}, this method returns
+     * {@code null}.
+     * <p>
+     * If this type is explicitly or implicitly {@code static}, the uses of all
+     * enclosing classes and interfaces of this type are unannotated and
+     * represented by an {@link ##alone AnnotatedType} without any other
+     * subinterface.  For example, if this use is {@code Map.@TA Entry<@TB K, V>},
+     * this method returns the unannotated use of the raw type {@code Map}.
+     * <p>
+     * If this type is not {@code static}, the use of enclosing classes and
+     * interfaces of this type are potentially annotated.  For example, if this
+     * use is {@code @TB Outer.@TA Inner}, this method returns a representation
+     * of {@code @TB Outer}.  In particular, if this use is an {@link
+     * AnnotatedParameterizedType}, the enclosing classes and interfaces of this
+     * parameterized type are possibly generic, and the use of type arguments
+     * in these enclosing classes and interfaces are potentially annotated.  For
+     * example, if this use is {@code @TB O<@TC T>.@TA I<S>}, this method
+     * returns the use {@code @TB O<@TC T>}.
+     * <p>
+     * If this use is an {@link ##alone AnnotatedType} without any other
+     * subinterface, this method returns an {@code AnnotatedType} without any
+     * other subinterface or {@code null}.  If this use is an {@link
+     * AnnotatedParameterizedType}, this method returns an {@code
+     * AnnotatedParameterizedType}, an {@code AnnotatedType} without any other
+     * subinterface, or {@code null}.  For all other subinterfaces, this method
+     * returns {@code null}.
      *
      * @implSpec
      * This default implementation returns {@code null} and performs no other
      * action.
      *
-     * @return an {@code AnnotatedType} object representing the potentially
-     *     annotated type that this type is a member of, or {@code null}
-     * @throws TypeNotPresentException if the owner type
-     *     refers to a non-existent class or interface declaration
-     * @throws MalformedParameterizedTypeException if the owner type
-     *     refers to a parameterized type that cannot be instantiated
-     *     for any reason
-     *
+     * @throws TypeNotPresentException if the immediate enclosing class or
+     *     interface refers to a non-existent class or interface declaration
+     * @throws MalformedParameterizedTypeException if the immediate enclosing
+     *     class or interface refers to a parameterized type that cannot be
+     *     instantiated for any reason
+     * @see Class#getDeclaringClass() Class::getDeclaringClass
      * @since 9
      */
     default AnnotatedType getAnnotatedOwnerType() {
@@ -81,11 +152,15 @@ public interface AnnotatedType extends AnnotatedElement {
     }
 
     /**
-     * Returns the underlying type that this annotated type represents.
+     * {@return the type that this potentially annotated use represents}
+     * <p>
+     * If this object is not an instance of {@link AnnotatedArrayType}, {@link
+     * AnnotatedParameterizedType}, {@link AnnotatedTypeVariable}, or {@link
+     * AnnotatedWildcardType}, this method returns a {@link Class}.
      *
-     * @return the type this annotated type represents
+     * @see ##alone The {@code AnnotatedType} interface alone
      */
-    public Type getType();
+    Type getType();
 
     /**
      * {@inheritDoc}
