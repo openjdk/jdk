@@ -62,6 +62,7 @@ void ShenandoahPacer::setup_for_mark() {
 
   size_t live = update_and_get_progress_history();
   size_t free = _heap->free_set()->available();
+  assert(free != ShenandoahFreeSet::FreeSetUnderConstruction, "Avoid this race");
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
@@ -86,6 +87,7 @@ void ShenandoahPacer::setup_for_evac() {
 
   size_t used = _heap->collection_set()->used();
   size_t free = _heap->free_set()->available();
+  assert(free != ShenandoahFreeSet::FreeSetUnderConstruction, "Avoid this race");
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
@@ -111,6 +113,7 @@ void ShenandoahPacer::setup_for_update_refs() {
 
   size_t used = _heap->used();
   size_t free = _heap->free_set()->available();
+  assert(free != ShenandoahFreeSet::FreeSetUnderConstruction, "Avoid this race");
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
