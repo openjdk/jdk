@@ -24,9 +24,9 @@
 import jdk.test.lib.Container;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerTestUtils;
+import jdk.test.lib.containers.docker.ContainerRuntimeVersionTestUtils;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import jdk.internal.platform.Metrics;
 
 import java.util.ArrayList;
@@ -44,8 +44,9 @@ import jtreg.SkippedException;
  * @run main TestMemoryWithSubgroups
  */
 public class TestMemoryWithSubgroups {
-
     private static final String imageName = Common.imageName("subgroup");
+    private static final boolean IS_DOCKER = Container.ENGINE_COMMAND.contains("docker");
+    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
 
     static String getEngineInfo(String format) throws Exception {
         return DockerTestUtils.execute(Container.ENGINE_COMMAND, "info", "-f", format)
@@ -69,6 +70,12 @@ public class TestMemoryWithSubgroups {
         if (!DockerTestUtils.canTestDocker()) {
             System.out.println("Unable to run docker tests.");
             return;
+        }
+        if (IS_DOCKER && ContainerRuntimeVersionTestUtils.DOCKER_VERSION_20_10_0.compareTo(ContainerRuntimeVersionTestUtils.getContainerRuntimeVersion()) > 0) {
+            throw new SkippedException("Docker version too old for this test. Expected >= 20.10.0");
+        }
+        if (IS_PODMAN && ContainerRuntimeVersionTestUtils.PODMAN_VERSION_1_5_0.compareTo(ContainerRuntimeVersionTestUtils.getContainerRuntimeVersion()) > 0) {
+            throw new SkippedException("Podman version too old for this test. Expected >= 1.5.0");
         }
         if (isRootless()) {
             throw new SkippedException("Test skipped in rootless mode");
@@ -139,5 +146,22 @@ public class TestMemoryWithSubgroups {
 
         Common.run(opts)
             .shouldMatch("Lowest limit was:.*" + expectedValue);
+    }
+    // pre: IS_DOCKER == true
+    private static String getDockerVersionStr() {
+        if (!IS_DOCKER) {
+            return null;
+        }
+        try {
+            ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "--version");
+            OutputAnalyzer out = new OutputAnalyzer(pb.start())
+                    .shouldHaveExitValue(0);
+            String result = out.asLines().get(0);
+            System.out.println(Container.ENGINE_COMMAND + " --version returning: " + result);
+            return result;
+        } catch (Exception e) {
+            System.out.println(Container.ENGINE_COMMAND + " --version command failed. Returning null");
+            return null;
+        }
     }
 }
