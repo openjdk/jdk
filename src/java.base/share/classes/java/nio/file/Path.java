@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -749,7 +749,9 @@ public interface Path
 
     /**
      * Returns a {@code Path} object representing the absolute path of this
-     * path.
+     * path. Where this {@code Path} is associated with the default provider,
+     * then the returned absolute path will have a non-{@code null}
+     * {@linkplain #getRoot root component}.
      *
      * <p> If this path is already {@link Path#isAbsolute absolute} then this
      * method simply returns this path. Otherwise, this method resolves the path
