@@ -91,6 +91,24 @@ void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* c
 }
 
 template <typename T, class OopClosureType>
+void InstanceStackChunkKlass::oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute) {
+  InstanceStackChunkKlass* ik = obj->klass()->as_InstanceStackChunkKlass();
+  ik->oop_oop_iterate<T>(obj, closure);
+}
+
+template <typename T, class OopClosureType>
+void InstanceStackChunkKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute) {
+  InstanceStackChunkKlass* ik = obj->klass()->as_InstanceStackChunkKlass();
+  ik->oop_oop_iterate_reverse<T>(obj, closure);
+}
+
+template <typename T, class OopClosureType>
+void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute) {
+  InstanceStackChunkKlass* ik = obj->klass()->as_InstanceStackChunkKlass();
+  ik->oop_oop_iterate_bounded<T>(obj, closure, mr);
+}
+
+template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate_header(stackChunkOop chunk, OopClosureType* closure) {
   T* parent_addr = chunk->field_addr<T>(jdk_internal_vm_StackChunk::parent_offset());
   T* cont_addr = chunk->field_addr<T>(jdk_internal_vm_StackChunk::cont_offset());
@@ -163,5 +181,4 @@ void InstanceStackChunkKlass::oop_oop_iterate_stack_with_bitmap(stackChunkOop ch
     chunk->bitmap().iterate(&bitmap_closure, chunk->bit_index_for((T*)start), chunk->bit_index_for((T*)end));
   }
 }
-
 #endif // SHARE_OOPS_INSTANCESTACKCHUNKKLASS_INLINE_HPP

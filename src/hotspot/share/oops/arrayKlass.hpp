@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_ARRAYKLASS_HPP
 #define SHARE_OOPS_ARRAYKLASS_HPP
 
+#include "oops/klassKind.hpp"
 #include "oops/klass.hpp"
 
 class fieldDescriptor;

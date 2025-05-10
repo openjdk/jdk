@@ -32,6 +32,8 @@
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceKlassFlags.hpp"
 #include "oops/instanceOop.hpp"
+#include "oops/klassInfoLUT.hpp"
+#include "oops/klassKind.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/accessFlags.hpp"
@@ -138,7 +140,7 @@ class InstanceKlass: public Klass {
   friend class CompileReplay;
 
  public:
-  static const KlassKind Kind = InstanceKlassKind;
+  static constexpr KlassKind Kind = InstanceKlassKind;
 
  protected:
   InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind, ReferenceType reference_type = REF_NONE);
@@ -999,53 +1001,42 @@ public:
   //
   // The InstanceKlass iterators also visits the Object's klass.
 
-  // Forward iteration
- public:
-  // Iterate over all oop fields in the oop maps.
+  // Iterate over single oop map entry given by count and offset
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_single_oop_map(oop obj, OopClosureType* closure, unsigned offset, unsigned count);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_single_oop_map_reverse(oop obj, OopClosureType* closure, unsigned offset, unsigned count);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_single_oop_map_bounded(oop obj, OopClosureType* closure, MemRegion mr, unsigned offset, unsigned count);
+
+  // Iterate over all fields in all oop map entries (fallback version for classes with more than two oop map entries)
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_oop_maps(oop obj, OopClosureType* closure);
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_oop_maps_reverse(oop obj, OopClosureType* closure);
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_oop_maps_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
+  template <typename T, class OopClosureType>
+  static inline void do_cld_from_klut_or_klass(oop obj, OopClosureType* closure, klute_raw_t klut);
+
+ public:
+
+  // Forward iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
-
-  // Iterate over all oop fields in one oop map.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_map(OopMapBlock* map, oop obj, OopClosureType* closure);
-
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Reverse iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
-
- private:
-  // Iterate over all oop fields in the oop maps.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_maps_reverse(oop obj, OopClosureType* closure);
-
-  // Iterate over all oop fields in one oop map.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure);
-
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Bounded range iteration
- public:
-  // Iterate over all oop fields in the oop maps.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_maps_bounded(oop obj, OopClosureType* closure, MemRegion mr);
-
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute);
 
- private:
-  // Iterate over all oop fields in one oop map.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_map_bounded(OopMapBlock* map, oop obj, OopClosureType* closure, MemRegion mr);
-
-
- public:
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 
 private:

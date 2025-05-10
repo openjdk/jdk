@@ -33,13 +33,16 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
+#include "oops/klassKind.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceRefKlass.inline.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
+#include "oops/klassInfoLUTEntry.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
-#include "oops/typeArrayKlass.inline.hpp"
+#include "oops/objLayout.inline.hpp"
+#include "oops/typeArrayKlass.hpp"
 #include "utilities/debug.hpp"
 
 // Defaults to strong claiming.
@@ -103,211 +106,458 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_method(Method* m) {
 //   succeeding calls will jump directly to oop_oop_iterate.
 
 
-template <typename OopClosureType>
-class OopOopIterateDispatch : public AllStatic {
-private:
-  typedef void (*FunctionType)(OopClosureType*, oop, Klass*);
+class DispatchBase {
+protected:
 
-  class Table {
-  private:
-    template <typename KlassType, typename T>
-    static void oop_oop_iterate(OopClosureType* cl, oop obj, Klass* k) {
-      ((KlassType*)k)->KlassType::template oop_oop_iterate<T>(obj, cl);
-    }
+  // Return the size of an object; by templatizing over HeaderMode and OopType, we
+  // can move most of the decisions (compressed/compact mode etc) from run time to
+  // build time.
+  // This variant does not work for uncompressed klass pointers or for non-standard
+  // values of ObjAlignmentInBytes.
+  template <class KlassType, HeaderMode mode, class OopType>
+  static inline size_t calculate_size_for_object_fast(klute_raw_t klute, oop obj) {
+    check_oopType<OopType>();
+    check_headerMode<mode>();
+    assert(MinObjAlignmentInBytes == BytesPerWord,
+        "Don't call for non-standard ObjAlignmentInBytes");
+    assert(mode != HeaderMode::Uncompressed && UseCompressedClassPointers,
+        "Don't call for uncompressed Klasspointers");
 
-    template <typename KlassType>
-    static void init(OopClosureType* cl, oop obj, Klass* k) {
-      OopOopIterateDispatch<OopClosureType>::_table.set_resolve_function_and_execute<KlassType>(cl, obj, k);
-    }
-
-    template <typename KlassType>
-    void set_init_function() {
-      _function[KlassType::Kind] = &init<KlassType>;
-    }
-
-    template <typename KlassType>
-    void set_resolve_function() {
-      // Size requirement to prevent word tearing
-      // when functions pointers are updated.
-      STATIC_ASSERT(sizeof(_function[0]) == sizeof(void*));
-      if (UseCompressedOops) {
-        _function[KlassType::Kind] = &oop_oop_iterate<KlassType, narrowOop>;
-      } else {
-        _function[KlassType::Kind] = &oop_oop_iterate<KlassType, oop>;
+    size_t s;
+    const KlassLUTEntry klutehelper(klute);
+    constexpr KlassKind kind = KlassType::Kind;
+    assert(kind == obj->klass<mode>()->kind(), "Bad call");
+    assert(kind == klutehelper.kind(), "Bad call");
+    switch (kind) {
+      case ObjArrayKlassKind: {
+        s = klutehelper.oak_calculate_wordsize_given_oop_fast<mode, OopType>((objArrayOop)obj);
+        break;
+      }
+      case TypeArrayKlassKind: {
+        s = klutehelper.tak_calculate_wordsize_given_oop_fast<mode>((typeArrayOop)obj);
+        break;
+      }
+      default: {
+        // all InstanceKlass variants
+        if (klutehelper.ik_carries_infos()) {
+          s = klutehelper.ik_wordsize();
+        } else {
+          // Rare path: size not statically computable (e.g. for MirrorKlass instances); calculate using regular Klass
+          const Klass* k = obj->klass<mode>();
+          s = obj->size_given_klass(k);
+        }
       }
     }
+    assert(s == obj->size(), "Unexpected size (klute %X, %zu vs %zu)",
+          klute, s, obj->size());
+    return s;
+  }
 
-    template <typename KlassType>
-    void set_resolve_function_and_execute(OopClosureType* cl, oop obj, Klass* k) {
-      set_resolve_function<KlassType>();
-      _function[KlassType::Kind](cl, obj, k);
+  // Returns true if calculate_size_for_object_fast cannot be used
+  static inline bool should_use_slowpath_getsize() {
+    return !UseCompressedClassPointers || ObjectAlignmentInBytes != BytesPerWord;
+  }
+
+  template <HeaderMode mode>
+  static inline void check_headerMode() {
+    assert(ObjLayout::klass_mode() == mode, "Header mode mismatch");
+  }
+
+  template <typename OopType>
+  static inline void check_oopType() {
+    assert(sizeof(OopType) == 8 || sizeof(OopType) == 4, "strange OopType");
+    assert( (sizeof(OopType) == 4) == (UseCompressedOops == true), "OopType mismatch");
+  }
+
+};
+
+////////////////////////////////////////////////
+// Normal forward iteration, returns void
+
+template <typename OopClosureType>
+class OopOopIterateDispatch : public DispatchBase {
+  typedef void (*FunctionType) (oop obj, OopClosureType* cl, klute_raw_t klute);
+
+  struct Table {
+    FunctionType _function [KLASS_KIND_COUNT];
+
+    template <typename KlassType, typename OopType>
+    static void invoke(oop obj, OopClosureType* cl, klute_raw_t klute) {
+      check_oopType<OopType>();
+      KlassType::template oop_oop_iterate<OopType, OopClosureType>(obj, cl, klute);
     }
 
-  public:
-    FunctionType _function[Klass::KLASS_KIND_COUNT];
+    template <typename KlassType>
+    static void init_and_execute(oop obj, OopClosureType* cl, klute_raw_t klute) {
+      _table.resolve<KlassType>();
+      _table._function[KlassType::Kind](obj, cl, klute);
+    }
 
-    Table(){
-      set_init_function<InstanceKlass>();
-      set_init_function<InstanceRefKlass>();
-      set_init_function<InstanceMirrorKlass>();
-      set_init_function<InstanceClassLoaderKlass>();
-      set_init_function<InstanceStackChunkKlass>();
-      set_init_function<ObjArrayKlass>();
-      set_init_function<TypeArrayKlass>();
+    template <typename KlassType>
+    void resolve() {
+      _function[KlassType::Kind] = UseCompressedOops ?
+          &invoke<KlassType, narrowOop> :
+          &invoke<KlassType, oop>;
+    }
+
+    Table() {
+#define WHAT(name, ignored) _function[name::Kind] = &init_and_execute<name>;
+      KLASSKIND_ALL_KINDS_DO(WHAT)
+#undef WHAT
     }
   };
 
   static Table _table;
+
 public:
 
-  static FunctionType function(Klass* klass) {
-    return _table._function[klass->kind()];
+  static void invoke(oop obj, OopClosureType* cl, klute_raw_t klute) {
+    const int slot = KlassLUTEntry(klute).kind();
+    _table._function[slot](obj, cl, klute);
   }
 };
+
+////////////////////////////////////////////////
+// Reverse iteration, returns void
+
+template <typename OopClosureType>
+class OopOopIterateDispatchReverse : public DispatchBase {
+  typedef void (*FunctionType) (oop obj, OopClosureType* cl, klute_raw_t klute);
+
+  struct Table {
+    FunctionType _function [KLASS_KIND_COUNT];
+
+    template <typename KlassType, typename OopType>
+    static void invoke(oop obj, OopClosureType* cl, klute_raw_t klute) {
+      check_oopType<OopType>();
+      KlassType::template oop_oop_iterate_reverse<OopType, OopClosureType>(obj, cl, klute);
+    }
+
+    template <typename KlassType>
+    static void init_and_execute(oop obj, OopClosureType* cl, klute_raw_t klute) {
+      _table.resolve<KlassType>();
+      _table._function[KlassType::Kind](obj, cl, klute);
+    }
+
+    template <typename KlassType>
+    void resolve() {
+      _function[KlassType::Kind] = UseCompressedOops ?
+          &invoke<KlassType, narrowOop> :
+          &invoke<KlassType, oop>;
+    }
+
+    Table() {
+#define WHAT(name, ignored) _function[name::Kind] = &init_and_execute<name>;
+      KLASSKIND_ALL_KINDS_DO(WHAT)
+#undef WHAT
+    }
+  };
+
+  static Table _table;
+
+public:
+
+  static void invoke(oop obj, OopClosureType* cl, klute_raw_t klute) {
+    const int slot = KlassLUTEntry(klute).kind();
+    _table._function[slot](obj, cl, klute);
+  }
+};
+
+////////////////////////////////////////////////
+// Bounded iteration, returns void
+
+template <typename OopClosureType>
+class OopOopIterateDispatchBounded : public DispatchBase {
+  typedef void (*FunctionType) (oop obj, OopClosureType* cl, MemRegion mr, klute_raw_t klute);
+
+  struct Table {
+    FunctionType _function [KLASS_KIND_COUNT];
+
+    template <typename KlassType, typename OopType>
+    static void invoke(oop obj, OopClosureType* cl, MemRegion mr, klute_raw_t klute) {
+      check_oopType<OopType>();
+      KlassType::template oop_oop_iterate_bounded<OopType, OopClosureType>(obj, cl, mr, klute);
+    }
+
+    template <typename KlassType>
+    static void init_and_execute(oop obj, OopClosureType* cl, MemRegion mr, klute_raw_t klute) {
+      _table.resolve<KlassType>();
+      _table._function[KlassType::Kind](obj, cl, mr, klute);
+    }
+
+    template <typename KlassType>
+    void resolve() {
+      _function[KlassType::Kind] = UseCompressedOops ?
+          &invoke<KlassType, narrowOop> :
+          &invoke<KlassType, oop>;
+    }
+
+    Table() {
+#define WHAT(name, ignored) _function[name::Kind] = &init_and_execute<name>;
+      KLASSKIND_ALL_KINDS_DO(WHAT)
+#undef WHAT
+    }
+  };
+
+  static Table _table;
+
+public:
+
+  static void invoke(oop obj, OopClosureType* cl, MemRegion mr, klute_raw_t klute) {
+    const int slot = KlassLUTEntry(klute).kind();
+    _table._function[slot](obj, cl, mr, klute);
+  }
+};
+
+////////////////////////////////////////////////
+// Normal forward iteration, returns size
+
+template <typename OopClosureType>
+class OopOopIterateDispatchReturnSize : public DispatchBase {
+  typedef size_t (*FunctionType) (oop obj, OopClosureType* cl, klute_raw_t klute);
+
+  struct Table {
+    FunctionType _function [KLASS_KIND_COUNT];
+
+    template <typename KlassType, HeaderMode mode, typename OopType>
+    static size_t invoke(oop obj, OopClosureType* cl, klute_raw_t klute) {
+      check_headerMode<mode>();
+      check_oopType<OopType>();
+      KlassType::template oop_oop_iterate<OopType, OopClosureType> (obj, cl, klute);
+      return calculate_size_for_object_fast<KlassType, mode, OopType>(klute, obj);
+    }
+
+    template <class KlassType, class OopType>
+    static size_t invoke_slow(oop obj, OopClosureType* cl, klute_raw_t klute) {
+      check_oopType<OopType>();
+      KlassType::template oop_oop_iterate<OopType, OopClosureType> (obj, cl, klute);
+      return obj->size();
+    }
+
+    template <typename KlassType>
+    static size_t init_and_execute(oop obj, OopClosureType* cl, klute_raw_t klute) {
+      _table.resolve<KlassType>();
+      return _table._function[KlassType::Kind](obj, cl, klute);
+    }
+
+    template <typename KlassType>
+    void resolve() {
+      if (should_use_slowpath_getsize()) { // non-standard obj alignment, or uncompressed klass pointers
+        _function[KlassType::Kind] = UseCompressedOops ?
+            &invoke_slow<KlassType, narrowOop> :
+            &invoke_slow<KlassType, oop>;
+      } else {
+        if (UseCompactObjectHeaders) {
+          _function[KlassType::Kind] = UseCompressedOops ?
+              &invoke<KlassType, HeaderMode::Compact, narrowOop> :
+              &invoke<KlassType, HeaderMode::Compact, oop>;
+        } else {
+          _function[KlassType::Kind] = UseCompressedOops ?
+              &invoke<KlassType, HeaderMode::Compressed, narrowOop> :
+              &invoke<KlassType, HeaderMode::Compressed, oop>;
+        }
+      }
+    }
+
+    Table() {
+#define WHAT(name, ignored) _function[name::Kind] = &init_and_execute<name>;
+      KLASSKIND_ALL_KINDS_DO(WHAT)
+#undef WHAT
+    }
+  };
+
+  static Table _table;
+
+public:
+
+  static size_t invoke(oop obj, OopClosureType* cl, klute_raw_t klute) {
+    const int slot = KlassLUTEntry(klute).kind();
+    return _table._function[slot](obj, cl, klute);
+  }
+};
+
+////////////////////////////////////////////////
+// Bounded forward iteration, returns size
+
+template <typename OopClosureType>
+class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
+  typedef size_t (*FunctionType) (oop obj, OopClosureType* cl, MemRegion mr, klute_raw_t klute);
+
+  struct Table {
+    FunctionType _function[KlassKindCount];
+
+    template <typename KlassType, HeaderMode mode, typename OopType>
+    static size_t invoke(oop obj, OopClosureType* cl, MemRegion mr, klute_raw_t klute) {
+      check_headerMode<mode>();
+      check_oopType<OopType>();
+      KlassType::template oop_oop_iterate_bounded<OopType, OopClosureType> (obj, cl, mr, klute);
+      return calculate_size_for_object_fast<KlassType, mode, OopType>(klute, obj);
+    }
+
+    template <class KlassType, class OopType>
+    static size_t invoke_slow(oop obj, OopClosureType* cl, MemRegion mr, klute_raw_t klute) {
+      check_oopType<OopType>();
+      KlassType::template oop_oop_iterate_bounded<OopType, OopClosureType> (obj, cl, mr, klute);
+      return obj->size();
+    }
+
+    template <typename KlassType>
+    static size_t init_and_execute(oop obj, OopClosureType* cl, MemRegion mr, klute_raw_t klute) {
+      _table.resolve<KlassType>();
+      return _table._function[KlassType::Kind](obj, cl, mr, klute);
+    }
+
+    template <typename KlassType>
+    void resolve() {
+      if (should_use_slowpath_getsize()) { // non-standard obj alignment, or uncompressed klass pointers
+        _function[KlassType::Kind] = UseCompressedOops ?
+            &invoke_slow<KlassType, narrowOop> :
+            &invoke_slow<KlassType, oop>;
+      } else {
+        if (UseCompactObjectHeaders) {
+          _function[KlassType::Kind] = UseCompressedOops ?
+              &invoke<KlassType, HeaderMode::Compact, narrowOop> :
+              &invoke<KlassType, HeaderMode::Compact, oop>;
+        } else {
+          _function[KlassType::Kind] = UseCompressedOops ?
+              //&invoke<KlassType, HeaderMode::Compressed, narrowOop> :
+              &invoke<KlassType, HeaderMode::Compressed, narrowOop> :
+              &invoke<KlassType, HeaderMode::Compressed, oop>;
+        }
+      }
+    }
+
+    Table() {
+#define WHAT(name, ignored) _function[name::Kind] = &init_and_execute<name>;
+      KLASSKIND_ALL_KINDS_DO(WHAT)
+#undef WHAT
+    }
+  };
+
+  static Table _table;
+
+public:
+
+  static size_t invoke(oop obj, OopClosureType* cl, MemRegion mr, klute_raw_t klute) {
+    const int slot = KlassLUTEntry(klute).kind();
+    return _table._function[slot](obj, cl, mr, klute);
+  }
+};
+
+////////////////////////////////////////////////
+// Limited forward iteration, returns void
+// This is a special solution purely to call ObjArrayKlass::oop_oop_iterate_range() (which only
+// exists there). It is used for partial scanning of object arrays. ObjArrayKlass::oop_oop_iterate_range()
+// is templatized by HeaderMode, which makes it possible to emit coding that treats the form of the
+// header (therefore position of length field, position of first array element) as constexpr.
+
+template <typename OopClosureType>
+class OopOopIterateDispatchRange : public DispatchBase {
+  typedef void (*FunctionType) (objArrayOop obj, OopClosureType* cl, int start, int end);
+
+  struct Table {
+    FunctionType _function; // only for ObjArrayKlass
+
+    template <HeaderMode mode, typename OopType>
+    static void invoke(objArrayOop obj, OopClosureType* cl, int start, int end) {
+      check_headerMode<mode>();
+      check_oopType<OopType>();
+      ObjArrayKlass::oop_oop_iterate_range<mode, OopType, OopClosureType>(obj, cl, start, end);
+    }
+
+    static void init_and_execute(objArrayOop obj, OopClosureType* cl, int start, int end) {
+      _table.resolve();
+      _table._function(obj, cl, start, end);
+    }
+
+    void resolve() {
+      switch (ObjLayout::klass_mode()) {
+      case HeaderMode::Compact:
+        _function = UseCompressedOops ? &invoke<HeaderMode::Compact, narrowOop> :
+                                        &invoke<HeaderMode::Compact, oop>;
+        break;
+      case HeaderMode::Compressed:
+        _function = UseCompressedOops ? &invoke<HeaderMode::Compressed, narrowOop> :
+                                        &invoke<HeaderMode::Compressed, oop>;
+        break;
+      case HeaderMode::Uncompressed:
+        _function = UseCompressedOops ? &invoke<HeaderMode::Uncompressed, narrowOop> :
+                                        &invoke<HeaderMode::Uncompressed, oop>;
+        break;
+      };
+    }
+
+    Table() {
+      _function = &init_and_execute;
+    }
+  };
+
+  static Table _table;
+
+public:
+
+  static void invoke(objArrayOop obj, OopClosureType* cl, int start, int end) {
+    _table._function(obj, cl, start, end);
+  }
+};
+
+////////////////////////////////////////////////
+// Dispatcher tables
 
 template <typename OopClosureType>
 typename OopOopIterateDispatch<OopClosureType>::Table OopOopIterateDispatch<OopClosureType>::_table;
 
+template <typename OopClosureType>
+typename OopOopIterateDispatchReverse<OopClosureType>::Table OopOopIterateDispatchReverse<OopClosureType>::_table;
 
 template <typename OopClosureType>
-class OopOopIterateBoundedDispatch {
-private:
-  typedef void (*FunctionType)(OopClosureType*, oop, Klass*, MemRegion);
-
-  class Table {
-  private:
-    template <typename KlassType, typename T>
-    static void oop_oop_iterate_bounded(OopClosureType* cl, oop obj, Klass* k, MemRegion mr) {
-      ((KlassType*)k)->KlassType::template oop_oop_iterate_bounded<T>(obj, cl, mr);
-    }
-
-    template <typename KlassType>
-    static void init(OopClosureType* cl, oop obj, Klass* k, MemRegion mr) {
-      OopOopIterateBoundedDispatch<OopClosureType>::_table.set_resolve_function_and_execute<KlassType>(cl, obj, k, mr);
-    }
-
-    template <typename KlassType>
-    void set_init_function() {
-      _function[KlassType::Kind] = &init<KlassType>;
-    }
-
-    template <typename KlassType>
-    void set_resolve_function() {
-      if (UseCompressedOops) {
-        _function[KlassType::Kind] = &oop_oop_iterate_bounded<KlassType, narrowOop>;
-      } else {
-        _function[KlassType::Kind] = &oop_oop_iterate_bounded<KlassType, oop>;
-      }
-    }
-
-    template <typename KlassType>
-    void set_resolve_function_and_execute(OopClosureType* cl, oop obj, Klass* k, MemRegion mr) {
-      set_resolve_function<KlassType>();
-      _function[KlassType::Kind](cl, obj, k, mr);
-    }
-
-  public:
-    FunctionType _function[Klass::KLASS_KIND_COUNT];
-
-    Table(){
-      set_init_function<InstanceKlass>();
-      set_init_function<InstanceRefKlass>();
-      set_init_function<InstanceMirrorKlass>();
-      set_init_function<InstanceClassLoaderKlass>();
-      set_init_function<InstanceStackChunkKlass>();
-      set_init_function<ObjArrayKlass>();
-      set_init_function<TypeArrayKlass>();
-    }
-  };
-
-  static Table _table;
-public:
-
-  static FunctionType function(Klass* klass) {
-    return _table._function[klass->kind()];
-  }
-};
+typename OopOopIterateDispatchBounded<OopClosureType>::Table OopOopIterateDispatchBounded<OopClosureType>::_table;
 
 template <typename OopClosureType>
-typename OopOopIterateBoundedDispatch<OopClosureType>::Table OopOopIterateBoundedDispatch<OopClosureType>::_table;
-
-
-template <typename OopClosureType>
-class OopOopIterateBackwardsDispatch {
-private:
-  typedef void (*FunctionType)(OopClosureType*, oop, Klass*);
-
-  class Table {
-  private:
-    template <typename KlassType, typename T>
-    static void oop_oop_iterate_backwards(OopClosureType* cl, oop obj, Klass* k) {
-      ((KlassType*)k)->KlassType::template oop_oop_iterate_reverse<T>(obj, cl);
-    }
-
-    template <typename KlassType>
-    static void init(OopClosureType* cl, oop obj, Klass* k) {
-      OopOopIterateBackwardsDispatch<OopClosureType>::_table.set_resolve_function_and_execute<KlassType>(cl, obj, k);
-    }
-
-    template <typename KlassType>
-    void set_init_function() {
-      _function[KlassType::Kind] = &init<KlassType>;
-    }
-
-    template <typename KlassType>
-    void set_resolve_function() {
-      if (UseCompressedOops) {
-        _function[KlassType::Kind] = &oop_oop_iterate_backwards<KlassType, narrowOop>;
-      } else {
-        _function[KlassType::Kind] = &oop_oop_iterate_backwards<KlassType, oop>;
-      }
-    }
-
-    template <typename KlassType>
-    void set_resolve_function_and_execute(OopClosureType* cl, oop obj, Klass* k) {
-      set_resolve_function<KlassType>();
-      _function[KlassType::Kind](cl, obj, k);
-    }
-
-  public:
-    FunctionType _function[Klass::KLASS_KIND_COUNT];
-
-    Table(){
-      set_init_function<InstanceKlass>();
-      set_init_function<InstanceRefKlass>();
-      set_init_function<InstanceMirrorKlass>();
-      set_init_function<InstanceClassLoaderKlass>();
-      set_init_function<InstanceStackChunkKlass>();
-      set_init_function<ObjArrayKlass>();
-      set_init_function<TypeArrayKlass>();
-    }
-  };
-
-  static Table _table;
-public:
-
-  static FunctionType function(Klass* klass) {
-    return _table._function[klass->kind()];
-  }
-};
+typename OopOopIterateDispatchReturnSize<OopClosureType>::Table OopOopIterateDispatchReturnSize<OopClosureType>::_table;
 
 template <typename OopClosureType>
-typename OopOopIterateBackwardsDispatch<OopClosureType>::Table OopOopIterateBackwardsDispatch<OopClosureType>::_table;
-
+typename OopOopIterateDispatchBoundedReturnSize<OopClosureType>::Table OopOopIterateDispatchBoundedReturnSize<OopClosureType>::_table;
 
 template <typename OopClosureType>
-void OopIteratorClosureDispatch::oop_oop_iterate(OopClosureType* cl, oop obj, Klass* klass) {
-  OopOopIterateDispatch<OopClosureType>::function(klass)(cl, obj, klass);
+typename OopOopIterateDispatchRange<OopClosureType>::Table OopOopIterateDispatchRange<OopClosureType>::_table;
+
+////////////////////////////////////////////////
+// Dispatcher external entry points
+
+template <typename OopClosureType>
+void OopIteratorClosureDispatch::oop_oop_iterate(oop obj, OopClosureType* cl) {
+  const klute_raw_t klute = obj->get_klute();
+  OopOopIterateDispatch<OopClosureType>::invoke(obj, cl, klute);
 }
 
 template <typename OopClosureType>
-void OopIteratorClosureDispatch::oop_oop_iterate(OopClosureType* cl, oop obj, Klass* klass, MemRegion mr) {
-  OopOopIterateBoundedDispatch<OopClosureType>::function(klass)(cl, obj, klass, mr);
+void OopIteratorClosureDispatch::oop_oop_iterate_reverse(oop obj, OopClosureType* cl) {
+  const klute_raw_t klute = obj->get_klute();
+  OopOopIterateDispatchReverse<OopClosureType>::invoke (obj, cl, klute);
 }
 
 template <typename OopClosureType>
-void OopIteratorClosureDispatch::oop_oop_iterate_backwards(OopClosureType* cl, oop obj, Klass* klass) {
-  OopOopIterateBackwardsDispatch<OopClosureType>::function(klass)(cl, obj, klass);
+void OopIteratorClosureDispatch::oop_oop_iterate_bounded(oop obj, OopClosureType* cl, MemRegion mr) {
+  const klute_raw_t klute = obj->get_klute();
+  OopOopIterateDispatchBounded<OopClosureType>::invoke(obj, cl, mr, klute);
+}
+
+template <typename OopClosureType>
+size_t OopIteratorClosureDispatch::oop_oop_iterate_size(oop obj, OopClosureType* cl) {
+  const klute_raw_t klute = obj->get_klute();
+  return OopOopIterateDispatchReturnSize<OopClosureType>::invoke(obj, cl, klute);
+}
+
+template <typename OopClosureType>
+size_t OopIteratorClosureDispatch::oop_oop_iterate_bounded_size(oop obj, OopClosureType* cl, MemRegion mr) {
+  const klute_raw_t klute = obj->get_klute();
+  return OopOopIterateDispatchBoundedReturnSize<OopClosureType>::invoke(obj, cl, mr, klute);
+}
+
+template <typename OopClosureType>
+void OopIteratorClosureDispatch::oop_oop_iterate_range(objArrayOop obj, OopClosureType* cl, int start, int end) {
+  OopOopIterateDispatchRange<OopClosureType>::invoke(obj, cl, start, end);
 }
 
 #endif // SHARE_MEMORY_ITERATOR_INLINE_HPP

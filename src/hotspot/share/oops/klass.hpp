@@ -26,6 +26,8 @@
 #define SHARE_OOPS_KLASS_HPP
 
 #include "oops/klassFlags.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
+#include "oops/klassKind.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
@@ -65,19 +67,15 @@ class Klass : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  public:
-  // Klass Kinds for all subclasses of Klass
-  enum KlassKind : u2 {
-    InstanceKlassKind,
-    InstanceRefKlassKind,
-    InstanceMirrorKlassKind,
-    InstanceClassLoaderKlassKind,
-    InstanceStackChunkKlassKind,
-    TypeArrayKlassKind,
-    ObjArrayKlassKind,
-    UnknownKlassKind
-  };
 
-  static const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
+  // Define a set of handy cast functions (e.g. "as_InstanceStackChunkKlass()")
+#define WHAT(name, shortname)                       \
+  name* as_##name() {                               \
+    assert(_kind == name ## Kind, "not a " #name ); \
+    return (name*) this; }
+  KLASSKIND_ALL_KINDS_DO(WHAT)
+#undef WHAT
+
  protected:
 
   // If you add a new field that points to any metaspace object, you
@@ -114,6 +112,9 @@ class Klass : public Metadata {
   // Final note:  This comes first, immediately after C++ vtable,
   // because it is frequently queried.
   jint _layout_helper;
+
+  // KLUT entry
+  klute_raw_t _klute;
 
   // Klass kind used to resolve the runtime type of the instance.
   //  - Used to implement devirtualized oop closure dispatching.
@@ -197,6 +198,8 @@ private:
                                 // Keep it away from the beginning of a Klass to avoid cacheline
                                 // contention that may happen when a nearby object is modified.
 
+  const uint64_t _stamp;
+
   CDS_JAVA_HEAP_ONLY(int _archived_mirror_index;)
 
 public:
@@ -209,12 +212,16 @@ protected:
   Klass();
 
  public:
-  int kind() { return _kind; }
+  int kind() const { return _kind; }
 
   enum class DefaultsLookupMode { find, skip };
   enum class OverpassLookupMode { find, skip };
   enum class StaticLookupMode   { find, skip };
   enum class PrivateLookupMode  { find, skip };
+
+  // Klute handling
+  klute_raw_t klute() const     { return _klute; }
+  void register_with_klut();
 
   virtual bool is_klass() const { return true; }
 
@@ -787,6 +794,8 @@ public:
 
   // Returns true if this Klass needs to be addressable via narrow Klass ID.
   inline bool needs_narrow_id() const;
+
+  bool check_stamp() const;
 
 };
 

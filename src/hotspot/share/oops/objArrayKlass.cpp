@@ -50,7 +50,16 @@ ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klas
 
   int size = ArrayKlass::static_size(ObjArrayKlass::header_size());
 
-  return new (loader_data, size, THREAD) ObjArrayKlass(n, k, name);
+  ObjArrayKlass* oak = new (loader_data, size, THREAD) ObjArrayKlass(n, k, name);
+
+  {
+    char tmp[1024];
+    log_debug(metaspace)("Returning new OAK @" PTR_FORMAT " for %s, nKlass=%u, word size=%d",
+                          p2i(oak),
+                          oak->name()->as_C_string(tmp, sizeof(tmp)),
+                          CompressedKlassPointers::encode(oak), size);
+  }
+  return oak;
 }
 
 ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
@@ -139,6 +148,9 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayK
   set_layout_helper(array_layout_helper(T_OBJECT));
   assert(is_array_klass(), "sanity");
   assert(is_objArray_klass(), "sanity");
+
+  // Add to KLUT
+  register_with_klut();
 }
 
 size_t ObjArrayKlass::oop_size(oop obj) const {
