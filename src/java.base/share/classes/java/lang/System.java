@@ -55,7 +55,6 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -2084,17 +2083,29 @@ public final class System {
             public boolean isReflectivelyOpened(Module m, String pn, Module other) {
                 return m.isReflectivelyOpened(pn, other);
             }
-            public Module addEnableNativeAccess(Module m) {
-                return m.implAddEnableNativeAccess();
+            public void addEnableNativeAccess(Module m) {
+                m.implAddEnableNativeAccess();
             }
             public boolean addEnableNativeAccess(ModuleLayer layer, String name) {
                 return layer.addEnableNativeAccess(name);
             }
             public void addEnableNativeAccessToAllUnnamed() {
-                Module.implAddEnableNativeAccessToAllUnnamed();
+                Module.addEnableNativeAccessToAllUnnamed();
             }
             public void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass, boolean jni) {
                 m.ensureNativeAccess(owner, methodName, currentClass, jni);
+            }
+            public boolean isStaticallyOpened(Module m, String pn, Module other) {
+                return m.isStaticallyOpened(pn, other);
+            }
+            public boolean isFinalMutationEnabled(Module m) {
+                return m.isFinalMutationEnabled();
+            }
+            public boolean tryEnableFinalMutation(Module m) {
+                return m.tryEnableFinalMutation();
+            }
+            public void addEnableFinalMutationToAllUnnamed() {
+                Module.addEnableFinalMutationToAllUnnamed();
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();
