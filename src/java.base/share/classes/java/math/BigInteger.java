@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1247,6 +1247,16 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
+     * Constructs a BigInteger with magnitude specified by the long,
+     * which may not be zero, and the signum specified by the int.
+     */
+    private BigInteger(long mag, int signum) {
+        assert mag != 0 && signum != 0;
+        this.signum = signum;
+        this.mag = toMagArray(mag);
+    }
+
+    /**
      * Constructs a BigInteger with the specified value, which may not be zero.
      */
     private BigInteger(long val) {
@@ -1256,16 +1266,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         } else {
             signum = 1;
         }
+        mag = toMagArray(val);
+    }
 
-        int highWord = (int)(val >>> 32);
-        if (highWord == 0) {
-            mag = new int[1];
-            mag[0] = (int)val;
-        } else {
-            mag = new int[2];
-            mag[0] = highWord;
-            mag[1] = (int)val;
-        }
+    private static int[] toMagArray(long mag) {
+        int highWord = (int) (mag >>> 32);
+        return highWord == 0
+                ? new int[] { (int) mag }
+                : new int[] { highWord, (int) mag };
     }
 
     /**
@@ -2592,167 +2600,73 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (exponent == 0 || this.equals(ONE))
             return ONE;
 
-        if (signum == 0)
-            return ZERO;
+        if (signum == 0 || exponent == 1)
+            return this;
 
         BigInteger base = this.abs();
+        final boolean negative = signum < 0 && (exponent & 1) == 1;
 
         // Factor out powers of two from the base, as the exponentiation of
         // these can be done by left shifts only.
         // The remaining part can then be exponentiated faster.  The
         // powers of two will be multiplied back at the end.
-        int powersOfTwo = base.getLowestSetBit();
-        long bitsToShiftLong = (long)powersOfTwo * exponent;
-        if (bitsToShiftLong > Integer.MAX_VALUE) {
+        final int powersOfTwo = base.getLowestSetBit();
+        final long bitsToShiftLong = (long) powersOfTwo * exponent;
+        final int bitsToShift = (int) bitsToShiftLong;
+        if (bitsToShift != bitsToShiftLong) {
             reportOverflow();
         }
-        int bitsToShift = (int)bitsToShiftLong;
 
-        int remainingBits;
-
-        // Factor the powers of two out quickly by shifting right, if needed.
-        if (powersOfTwo > 0) {
-            base = base.shiftRight(powersOfTwo);
-            remainingBits = base.bitLength();
-            if (remainingBits == 1) {  // Nothing left but +/- 1?
-                if (signum < 0 && (exponent&1) == 1) {
-                    return NEGATIVE_ONE.shiftLeft(bitsToShift);
-                } else {
-                    return ONE.shiftLeft(bitsToShift);
-                }
-            }
-        } else {
-            remainingBits = base.bitLength();
-            if (remainingBits == 1) { // Nothing left but +/- 1?
-                if (signum < 0  && (exponent&1) == 1) {
-                    return NEGATIVE_ONE;
-                } else {
-                    return ONE;
-                }
-            }
-        }
+        // Factor the powers of two out quickly by shifting right.
+        base = base.shiftRight(powersOfTwo);
+        final int remainingBits = base.bitLength();
+        if (remainingBits == 1) // Nothing left but +/- 1?
+            return (negative ? NEGATIVE_ONE : ONE).shiftLeft(bitsToShift);
 
         // This is a quick way to approximate the size of the result,
         // similar to doing log2[n] * exponent.  This will give an upper bound
         // of how big the result can be, and which algorithm to use.
-        long scaleFactor = (long)remainingBits * exponent;
+        final long scaleFactor = (long) remainingBits * exponent;
 
         // Use slightly different algorithms for small and large operands.
-        // See if the result will safely fit into a long. (Largest 2^63-1)
-        if (base.mag.length == 1 && scaleFactor <= 62) {
-            // Small number algorithm.  Everything fits into a long.
-            int newSign = (signum <0  && (exponent&1) == 1 ? -1 : 1);
-            long result = unsignedLongPow(base.mag[0] & LONG_MASK, exponent);
+        // See if the result will safely fit into an unsigned long. (Largest 2^64-1)
+        if (scaleFactor <= Long.SIZE) {
+            // Small number algorithm.  Everything fits into an unsigned long.
+            final int newSign = negative ? -1 : 1;
+            final long result = unsignedLongPow(base.mag[0] & LONG_MASK, exponent);
 
             // Multiply back the powers of two (quickly, by shifting left)
-            if (powersOfTwo > 0) {
-                if (bitsToShift + scaleFactor <= 62) { // Fits in long?
-                    return valueOf((result << bitsToShift) * newSign);
-                } else {
-                    return valueOf(result*newSign).shiftLeft(bitsToShift);
-                }
-            } else {
-                return valueOf(result*newSign);
-            }
-        } else {
-            if ((long)bitLength() * exponent / Integer.SIZE > MAX_MAG_LENGTH) {
-                reportOverflow();
-            }
-
-            // Large number algorithm.  This is basically identical to
-            // the algorithm above, but calls multiply()
-            // which may use more efficient algorithms for large numbers.
-            BigInteger answer;
-            if (base.mag.length == 1) {
-                answer = unsignedIntPow(base.mag[0], exponent);
-            } else {
-                answer = ONE;
-
-                final int expZeros = Integer.numberOfLeadingZeros(exponent);
-                int workingExp = exponent << expZeros;
-                // Perform exponentiation using repeated squaring trick
-                for (int expLen = Integer.SIZE - expZeros; expLen > 0; expLen--) {
-                    answer = answer.multiply(answer);
-                    if (workingExp < 0) // leading bit is set
-                        answer = answer.multiply(base);
-
-                    workingExp <<= 1;
-                }
-            }
-
-            // Multiply back the (exponentiated) powers of two (quickly,
-            // by shifting left)
-            if (powersOfTwo > 0) {
-                answer = answer.shiftLeft(bitsToShift);
-            }
-
-            if (signum < 0 && (exponent&1) == 1) {
-                return answer.negate();
-            } else {
-                return answer;
-            }
-        }
-    }
-
-    /**
-     * Computes {@code x^n} using repeated squaring trick.
-     * Assumes {@code x != 0}.
-     */
-    private static BigInteger unsignedIntPow(int x, int n) {
-        if (x == 1)
-            return ONE;
-        // Double.PRECISION / bitLength(x) is the largest integer e
-        // such that x^e fits into a double. If e <= 2, we won't use fp arithmetic.
-        // This allows to use fp arithmetic where possible.
-        final int maxExp = Math.max(2, Double.PRECISION / bitLengthForInt(x));
-        final int maxExpLen = bitLengthForInt(maxExp);
-        final BigInteger[] powerCache = new BigInteger[1 << maxExpLen];
-
-        final int nZeros = Integer.numberOfLeadingZeros(n);
-        n <<= nZeros;
-
-        BigInteger pow = ONE;
-        int blockLen;
-        for (int nLen = Integer.SIZE - nZeros; nLen > 0; nLen -= blockLen) {
-            blockLen = maxExpLen < nLen ? maxExpLen : nLen;
-            // compute pow^(2^blockLen)
-            if (!pow.equals(ONE)) {
-                for (int i = 0; i < blockLen; i++)
-                    pow = pow.multiply(pow);
-            }
-
-            // add exp to power's exponent
-            int exp = n >>> -blockLen;
-            if (exp > 0) {
-                BigInteger xToExp = powerCache[exp];
-                if (xToExp == null) {
-                    // adjust exp to fit x^expAdj into a double
-                    int expAdj = exp <= maxExp ? exp : exp >>> 1;
-
-                    long xLong = x & LONG_MASK;
-                    // don't use fp arithmetic if expAdj <= 2
-                    long xToExpAdj = expAdj == 1 ? xLong :
-                                    (expAdj == 2 ? xLong*xLong : (long) Math.pow(xLong, expAdj));
-
-                    xToExp = new BigInteger(1, new int[] { (int) (xToExpAdj >>> 32), (int) xToExpAdj });
-                    powerCache[expAdj] = xToExp;
-                    // append exp's rightmost bit to expAdj
-                    if (expAdj != exp) {
-                        xToExp = xToExp.multiply(xToExp);
-                        powerCache[expAdj << 1] = xToExp;
-
-                        if ((exp & 1) == 1) {
-                            xToExp = xToExp.multiply(xLong);
-                            powerCache[exp] = xToExp;
-                        }
-                    }
-                }
-                pow = pow.multiply(xToExp);
-            }
-            n <<= blockLen; // shift to next block of bits
+            return bitsToShift + scaleFactor <= Long.SIZE  // Fits in long?
+                    ? new BigInteger(result << bitsToShift, newSign)
+                    : new BigInteger(result, newSign).shiftLeft(bitsToShift);
         }
 
-        return pow;
+        if ((bitLength() - 1L) * exponent >= Integer.MAX_VALUE) {
+            reportOverflow();
+        }
+
+        // Large number algorithm.  This is basically identical to
+        // the algorithm above, but calls multiply()
+        // which may use more efficient algorithms for large numbers.
+        BigInteger answer = ONE;
+
+        final int expZeros = Integer.numberOfLeadingZeros(exponent);
+        int workingExp = exponent << expZeros;
+        // Perform exponentiation using repeated squaring trick
+        // The loop relies on this invariant:
+        // base^exponent == answer^(2^expLen) * base^(workingExp >>> (32-expLen))
+        for (int expLen = Integer.SIZE - expZeros; expLen > 0; expLen--) {
+            answer = answer.multiply(answer);
+            if (workingExp < 0) // leading bit is set
+                answer = answer.multiply(base);
+
+            workingExp <<= 1;
+        }
+
+        // Multiply back the (exponentiated) powers of two (quickly,
+        // by shifting left)
+        answer = answer.shiftLeft(bitsToShift);
+        return negative ? answer.negate() : answer;
     }
 
     /**
@@ -2760,62 +2674,24 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Assumes {@code x != 0 && x^n < 2^Long.SIZE}.
      */
     static long unsignedLongPow(long x, int n) {
-        if (x == 1L)
+        if (x == 1L || n == 0)
             return 1L;
 
         if (x == 2L)
             return 1L << n;
-        // Double.PRECISION / bitLength(x) is the largest integer e
-        // such that x^e fits into a double. If e <= 3, we won't use fp arithmetic.
-        // This allows to use fp arithmetic where possible.
-        final int maxExp = Math.max(3, Double.PRECISION / bitLengthForLong(x));
-        final int maxExpLen = bitLengthForInt(maxExp);
-        final long[] powerCache = new long[1 << maxExpLen];
 
-        final int nZeros = Integer.numberOfLeadingZeros(n);
-        n <<= nZeros;
-
+        /*
+         * The method assumption means that n <= 40 here.
+         * Thus, the loop body executes at most 5 times.
+         */
         long pow = 1L;
-        int blockLen;
-        for (int nLen = Integer.SIZE - nZeros; nLen > 0; nLen -= blockLen) {
-            blockLen = maxExpLen < nLen ? maxExpLen : nLen;
-            // compute pow^(2^blockLen)
-            if (pow != 1L) {
-                for (int i = 0; i < blockLen; i++)
-                    pow *= pow;
-            }
+        for (; n != 1; n >>>= 1) {
+            if ((n & 1) != 0)
+                pow *= x;
 
-            // add exp to power's exponent
-            int exp = n >>> -blockLen;
-            if (exp > 0) {
-                long xToExp = powerCache[exp];
-                if (xToExp == 0) {
-                    // adjust exp to fit x^expAdj into a double
-                    int expAdj = exp <= maxExp ? exp : exp >>> 1;
-
-                    // don't use fp arithmetic if expAdj <= 3
-                    xToExp = expAdj == 1 ? x :
-                            (expAdj == 2 ? x*x :
-                            (expAdj == 3 ? x*x*x : (long) Math.pow(x, expAdj)));
-                    powerCache[expAdj] = xToExp;
-
-                    // append exp's rightmost bit to expAdj
-                    if (expAdj != exp) {
-                        xToExp *= xToExp;
-                        powerCache[expAdj << 1] = xToExp;
-
-                        if ((exp & 1) == 1) {
-                            xToExp *= x;
-                            powerCache[exp] = xToExp;
-                        }
-                    }
-                }
-                pow *= xToExp;
-            }
-            n <<= blockLen; // shift to next block of bits
+            x *= x;
         }
-
-        return pow;
+        return pow * x;
     }
 
     /**
@@ -2865,80 +2741,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         MutableBigInteger[] sqrtRem = new MutableBigInteger(this.mag).sqrtRem(true);
         return new BigInteger[] { sqrtRem[0].toBigInteger(), sqrtRem[1].toBigInteger() };
-    }
-
-    /**
-     * Returns the integer {@code n}th root of this BigInteger. The integer
-     * {@code n}th root of the corresponding mathematical integer {@code x} has the
-     * same sign of {@code x}, and its magnitude is the largest integer {@code r}
-     * such that {@code r**n <= abs(x)}. It is equal to the value of
-     * {@code (x.signum() * floor(abs(nthRoot(x, n))))}, where {@code nthRoot(x, n)}
-     * denotes the real {@code n}th root of {@code x} treated as a real. If {@code n}
-     * is even and this BigInteger is negative, an {@code ArithmeticException} will be
-     * thrown.
-     *
-     * <p>Note that the magnitude of the integer {@code n}th root will be less than
-     * the magnitude of the real {@code n}th root if the latter is not representable
-     * as an integral value.
-     *
-     * @param n the root degree
-     * @return the integer {@code n}th root of {@code this}
-     * @throws ArithmeticException if {@code n == 0} (Zeroth roots are not
-     *                             defined.)
-     * @throws ArithmeticException if {@code n} is negative. (This would cause the
-     *                             operation to yield a non-integer value.)
-     * @throws ArithmeticException if {@code n} is even and {@code this} is
-     *                             negative. (This would cause the operation to
-     *                             yield non-real roots.)
-     * @see #sqrt()
-     * @since 25
-     */
-    public BigInteger nthRoot(int n) {
-        if (n == 1)
-            return this;
-
-        if (n == 2)
-            return sqrt();
-
-        if (n <= 0)
-            throw new ArithmeticException("Non-positive root degree");
-
-        if ((n & 1) == 0 && this.signum < 0)
-            throw new ArithmeticException("Negative radicand with even root degree");
-
-        return new MutableBigInteger(this.mag).nthRoot(n).toBigInteger(signum);
-    }
-
-    /**
-     * Returns an array of two BigIntegers containing the integer {@code n}th root
-     * {@code r} of {@code this} and its remainder {@code this - r^n},
-     * respectively.
-     *
-     * @param n the root degree
-     * @return an array of two BigIntegers with the integer {@code n}th root at
-     *         offset 0 and the remainder at offset 1
-     * @throws ArithmeticException if {@code n == 0} (Zeroth roots are not
-     *                             defined.)
-     * @throws ArithmeticException if {@code n} is negative. (This would cause the
-     *                             operation to yield a non-integer value.)
-     * @throws ArithmeticException if {@code n} is even and {@code this} is
-     *                             negative. (This would cause the operation to
-     *                             yield non-real roots.)
-     * @see #sqrt()
-     * @see #sqrtAndRemainder()
-     * @see #nthRoot(int)
-     * @since 25
-     */
-    public BigInteger[] nthRootAndRemainder(int n) {
-        if (n == 1)
-            return new BigInteger[] { this, ZERO };
-
-        if (n == 2)
-            return sqrtAndRemainder();
-
-        BigInteger root = nthRoot(n), rem = this.subtract(root.pow(n));
-        assert rem.signum == 0 || rem.signum == this.signum;
-        return new BigInteger[] { root, rem };
     }
 
     /**
