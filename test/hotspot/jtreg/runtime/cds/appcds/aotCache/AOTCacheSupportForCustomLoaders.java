@@ -47,12 +47,12 @@ public class AOTCacheSupportForCustomLoaders {
     public static void main(String... args) throws Exception {
         SimpleCDSAppTester.of("AOTCacheSupportForCustomLoaders")
             .classpath("app.jar")
-            .addVmArgs("-Xlog:cds+class=debug", "-Xlog:cds")
+            .addVmArgs("-Xlog:aot+class=debug", "-Xlog:aot", "-Xlog:cds")
             .appCommandLine("AppWithCustomLoaders")
             .setAssemblyChecker((OutputAnalyzer out) -> {
-                    out.shouldMatch("cds,class.*unreg AppWithCustomLoaders[$]MyLoadeeA")
-                       .shouldMatch("cds,class.*array \\[LAppWithCustomLoaders[$]MyLoadeeA;")
-                       .shouldNotMatch("cds,class.* ReturnIntegerAsString");
+                    out.shouldMatch(",class.*unreg AppWithCustomLoaders[$]MyLoadeeA")
+                       .shouldMatch(",class.*array \\[LAppWithCustomLoaders[$]MyLoadeeA;")
+                       .shouldNotMatch(",class.* ReturnIntegerAsString");
                 })
             .setProductionChecker((OutputAnalyzer out) -> {
                     out.shouldContain("Using AOT-linked classes: true");

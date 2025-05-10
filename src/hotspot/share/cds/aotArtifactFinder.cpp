@@ -97,7 +97,7 @@ void AOTArtifactFinder::find_artifacts() {
         oop orig_mirror = Universe::java_mirror(bt);
         oop scratch_mirror = HeapShared::scratch_java_mirror(bt);
         HeapShared::scan_java_mirror(orig_mirror);
-        log_trace(cds, heap, mirror)(
+        log_trace(aot, heap, mirror)(
             "Archived %s mirror object from " PTR_FORMAT,
             type2name(bt), p2i(scratch_mirror));
         Universe::set_archived_basic_type_mirror_index(bt, HeapShared::append_root(scratch_mirror));

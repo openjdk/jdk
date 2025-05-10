@@ -197,24 +197,24 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
     if (needs_special_cleanup && (referent == nullptr || !_keep_alive_objs_table->contains(referent))) {
       ResourceMark rm;
 
-      log_error(cds, heap)("Cannot archive reference object " PTR_FORMAT " of class %s",
+      log_error(aot, heap)("Cannot archive reference object " PTR_FORMAT " of class %s",
                            p2i(obj), obj->klass()->external_name());
-      log_error(cds, heap)("referent = " PTR_FORMAT
+      log_error(aot, heap)("referent = " PTR_FORMAT
                            ", queue = " PTR_FORMAT
                            ", next = " PTR_FORMAT
                            ", discovered = " PTR_FORMAT,
                            p2i(referent), p2i(queue), p2i(next), p2i(discovered));
-      log_error(cds, heap)("This object requires special clean up as its queue is not ReferenceQueue::N" "ULL ("
+      log_error(aot, heap)("This object requires special clean up as its queue is not ReferenceQueue::N" "ULL ("
                            PTR_FORMAT ")", p2i(_null_queue.resolve()));
-      log_error(cds, heap)("%s", (referent == nullptr) ?
+      log_error(aot, heap)("%s", (referent == nullptr) ?
                            "referent cannot be null" : "referent is not registered with CDS.keepAlive()");
       HeapShared::debug_trace();
       MetaspaceShared::unrecoverable_writing_error();
     }
 
-    if (log_is_enabled(Info, cds, ref)) {
+    if (log_is_enabled(Info, aot, ref)) {
       ResourceMark rm;
-      log_info(cds, ref)("Reference obj:"
+      log_info(aot, ref)("Reference obj:"
                          " r=" PTR_FORMAT
                          " q=" PTR_FORMAT
                          " n=" PTR_FORMAT

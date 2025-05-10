@@ -408,7 +408,7 @@ void ArchiveHeapLoader::finish_loaded_heap() {
 }
 
 void ArchiveHeapLoader::verify_loaded_heap() {
-  log_info(cds, heap)("Verify all oops and pointers in loaded heap");
+  log_info(aot, heap)("Verify all oops and pointers in loaded heap");
 
   ResourceMark rm;
   ResourceHashtable<uintptr_t, bool> table;
@@ -459,7 +459,7 @@ void ArchiveHeapLoader::patch_native_pointers() {
 
   FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::hp);
   if (r->mapped_base() != nullptr && r->has_ptrmap()) {
-    log_info(cds, heap)("Patching native pointers in heap region");
+    log_info(aot, heap)("Patching native pointers in heap region");
     BitMapView bm = FileMapInfo::current_info()->ptrmap_view(MetaspaceShared::hp);
     PatchNativePointers patcher((Metadata**)r->mapped_base() + FileMapInfo::current_info()->heap_ptrmap_start_pos());
     bm.iterate(&patcher);
