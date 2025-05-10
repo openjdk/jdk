@@ -128,7 +128,7 @@ const size_t minimumSymbolTableSize = 1024;
           "(Deprecated) Use 32-bit class pointers in 64-bit VM. "           \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
-  product(bool, UseCompactObjectHeaders, false, EXPERIMENTAL,               \
+  product(bool, UseCompactObjectHeaders, false,                             \
           "Use compact 64-bit object headers in 64-bit VM")                 \
                                                                             \
   product(int, ObjectAlignmentInBytes, 8,                                   \

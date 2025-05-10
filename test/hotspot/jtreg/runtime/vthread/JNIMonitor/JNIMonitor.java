@@ -122,7 +122,6 @@ public class JNIMonitor {
             // We only count monitors in LM_LEGACY mode
             "-XX:LockingMode=1",
             // Disable compact headers since that switches locking mode to LM_LIGHTWEIGHT
-            "-XX:+UnlockExperimentalVMOptions",
             "-XX:-UseCompactObjectHeaders",
             "JNIMonitor$" + test,
         };
