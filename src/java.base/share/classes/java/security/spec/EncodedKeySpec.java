@@ -26,7 +26,9 @@
 package java.security.spec;
 
 import jdk.internal.access.SharedSecrets;
+import sun.security.util.KeyUtil;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 /**
@@ -47,7 +49,7 @@ import java.util.Arrays;
 public abstract class EncodedKeySpec implements KeySpec {
 
     private final byte[] encodedKey;
-    private String algorithmName;
+    private final String algorithmName;
 
     static {
         SharedSecrets.setJavaSecuritySpecAccess(
@@ -56,6 +58,9 @@ public abstract class EncodedKeySpec implements KeySpec {
 
     /**
      * Creates a new {@code EncodedKeySpec} with the given encoded key.
+     * This constructor extracts the algorithm name from the encoded bytes,
+     * which may be an OID if no standard algorithm name is defined. If the
+     * algorithm name cannot be extracted, it is set to null.
      *
      * @param encodedKey the encoded key. The contents of the
      * array are copied to protect against subsequent modification.
@@ -64,6 +69,13 @@ public abstract class EncodedKeySpec implements KeySpec {
      */
     public EncodedKeySpec(byte[] encodedKey) {
         this.encodedKey = encodedKey.clone();
+        String algName = null;
+        try {
+            algName = KeyUtil.getAlgorithm(this.encodedKey).getName();
+        } catch (IOException e) {
+            // On error leave algorithmName as null.
+        }
+        algorithmName = algName;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Objects;
 
 import sun.security.util.HexDumpEncoder;
 import sun.security.util.*;
@@ -83,7 +82,8 @@ public class X509Key implements PublicKey, DerEncoder {
      * data is stored and transmitted losslessly, but no knowledge
      * about this particular algorithm is available.
      */
-    private X509Key(AlgorithmId algid, BitArray key) {
+    @SuppressWarnings("this-escape")
+    public X509Key(AlgorithmId algid, BitArray key) {
         this.algid = algid;
         setKey(key);
         encode();
@@ -100,7 +100,7 @@ public class X509Key implements PublicKey, DerEncoder {
      * Gets the key. The key may or may not be byte aligned.
      * @return a BitArray containing the key.
      */
-    protected BitArray getKey() {
+    public BitArray getKey() {
         return (BitArray)bitStringKey.clone();
     }
 
@@ -129,7 +129,7 @@ public class X509Key implements PublicKey, DerEncoder {
         algorithm = AlgorithmId.parse(in.data.getDerValue());
         try {
             subjectKey = buildX509Key(algorithm,
-                                      in.data.getUnalignedBitString());
+                in.data.getUnalignedBitString());
 
         } catch (InvalidKeyException e) {
             throw new IOException("subject key, " + e.getMessage(), e);
@@ -138,6 +138,27 @@ public class X509Key implements PublicKey, DerEncoder {
         if (in.data.available() != 0)
             throw new IOException("excess subject key");
         return subjectKey;
+    }
+
+    /*
+     * Parses X.509 subject public key DER and return it as a
+     * X509Key.  Useful for PKCS8v2.
+     */
+    public static X509Key parse(byte[] encoded) throws IOException
+    {
+        DerValue in = new DerValue(encoded);
+        AlgorithmId algorithm;
+
+        if (in.tag != DerValue.tag_Sequence)
+            throw new IOException("corrupt subject key");
+
+        algorithm = AlgorithmId.parse(in.data.getDerValue());
+        BitArray keyBits = in.data.getUnalignedBitString();
+
+        if (in.data.available() != 0)
+            throw new IOException("excess subject key");
+
+        return new X509Key(algorithm, keyBits);
     }
 
     /**
@@ -154,7 +175,7 @@ public class X509Key implements PublicKey, DerEncoder {
      * @exception InvalidKeyException on invalid key encodings.
      */
     protected void parseKeyBits() throws InvalidKeyException {
-        encode();
+        getEncodedInternal();
     }
 
     /*
@@ -243,7 +264,7 @@ public class X509Key implements PublicKey, DerEncoder {
     /**
      * Returns the algorithm ID to be used with this key.
      */
-    public AlgorithmId  getAlgorithmId() { return algid; }
+    public AlgorithmId getAlgorithmId() { return algid; }
 
     /**
      * Encode SubjectPublicKeyInfo sequence on the DER output stream.
@@ -260,7 +281,7 @@ public class X509Key implements PublicKey, DerEncoder {
         return getEncodedInternal().clone();
     }
 
-    public byte[] getEncodedInternal() {
+    private byte[] getEncodedInternal() {
         byte[] encoded = encodedKey;
         if (encoded == null) {
             DerOutputStream out = new DerOutputStream();
@@ -314,7 +335,7 @@ public class X509Key implements PublicKey, DerEncoder {
      * @param val a DER-encoded X.509 SubjectPublicKeyInfo value
      * @exception InvalidKeyException on parsing errors.
      */
-    void decode(DerValue val) throws InvalidKeyException {
+    public void decode(DerValue val) throws InvalidKeyException {
         try {
             if (val.tag != DerValue.tag_Sequence)
                 throw new InvalidKeyException("invalid key format");
@@ -338,6 +359,20 @@ public class X509Key implements PublicKey, DerEncoder {
         }
     }
 
+  /*  public static PublicKey parseKey(byte[] encoded) throws IOException {
+        PublicKey pubKey;
+        try {
+
+            X509EncodedKeySpec spec = new X509EncodedKeySpec(encoded);
+            pubKey = KeyFactory.getInstance(spec.getAlgorithm())
+                .generatePublic(spec);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            // Ignore and return raw key
+            throw new IOException("error with encoding");
+        }
+        return pubKey;
+    }
+*/
     /**
      * Serialization write ... X.509 keys serialize as
      * themselves, and they're parsed when they get read back.
