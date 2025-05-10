@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -491,8 +491,8 @@ public class VectorSupport {
     V loadWithMap(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
                   int length,
                   Class<? extends Vector<Integer>> vectorIndexClass,
-                  Object base, long offset,
-                  W index_vector,
+                  int indexLength, Object base, long offset,
+                  W indexVector1, W indexVector2, W indexVector3, W indexVector4,
                   M m, C container, int index, int[] indexMap, int indexM, S s,
                   LoadVectorOperationWithMap<C, V, S, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -558,7 +558,7 @@ public class VectorSupport {
     void storeWithMap(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
                       int length,
                       Class<? extends Vector<Integer>> vectorIndexClass,
-                      Object base, long offset,
+                      int indexLength, Object base, long offset,
                       W index_vector,
                       V v, M m, C container, int index, int[] indexMap, int indexM,
                       StoreVectorOperationWithMap<C, V, M> defaultImpl) {
