@@ -23,13 +23,9 @@
 package org.openjdk.bench.java.net;
 
 import java.io.IOException;
-import java.net.StandardProtocolFamily;
-import java.net.UnixDomainSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.file.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
@@ -48,64 +44,44 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @Fork(value = 3)
 public class SocketChannelConnectionSetup {
 
-    private ServerSocketChannel ssc;
-    private SocketChannel s1, s2;
+    private ServerSocketChannelHolder sscHolder;
 
-    private static volatile String tempDir;
-    private static final AtomicInteger count = new AtomicInteger(0);
-    private volatile Path socket;
+    private SocketChannel s1, s2;
 
     @Param({"inet", "unix"})
     private volatile String family;
 
-    static {
-        try {
-            Path p = Files.createTempDirectory("readWriteTest");
-            tempDir = p.toString();
-        } catch (IOException e) {
-            tempDir = null;
-        }
-    }
+    private record ServerSocketChannelHolder(ServerSocketChannel channel, AutoCloseable terminator) {}
 
-    private ServerSocketChannel getServerSocketChannel() throws IOException {
-        if (family.equals("inet"))
-            return getInetServerSocketChannel();
-        else if (family.equals("unix"))
-            return getUnixServerSocketChannel();
-        throw new InternalError();
-    }
-
-
-    private ServerSocketChannel getInetServerSocketChannel() throws IOException {
-        return ServerSocketChannel.open().bind(null);
-    }
-
-    private ServerSocketChannel getUnixServerSocketChannel() throws IOException {
-        int next = count.incrementAndGet();
-        socket = Paths.get(tempDir, Integer.toString(next));
-        UnixDomainSocketAddress addr = UnixDomainSocketAddress.of(socket);
-        return ServerSocketChannel.open(StandardProtocolFamily.UNIX).bind(addr);
+    private ServerSocketChannelHolder createServerSocketChannelHolder() throws IOException {
+        return switch (family) {
+            case "inet" -> {
+                ServerSocketChannel channel = ServerSocketChannel.open().bind(null);
+                yield new ServerSocketChannelHolder(channel, channel);
+            }
+            case "unix" -> {
+                ServerUdsChannelHolder holder = ServerUdsChannelHolder.forClass(SocketChannelConnectionSetup.class);
+                yield new ServerSocketChannelHolder(holder.channel, holder);
+            }
+            default -> throw new InternalError("unknown family: " + family);
+        };
     }
 
     @Setup(Level.Trial)
     public void beforeRun() throws IOException {
-        ssc = getServerSocketChannel();
+        sscHolder = createServerSocketChannelHolder();
     }
 
     @TearDown(Level.Trial)
-    public void afterRun() throws IOException {
-        ssc.close();
-        if (family.equals("unix")) {
-            Files.deleteIfExists(socket);
-            Files.deleteIfExists(Path.of(tempDir));
-        }
+    public void afterRun() throws Exception {
+        sscHolder.terminator.close();
     }
 
     @Benchmark
     @Measurement(iterations = 5, batchSize=200)
     public void test() throws IOException {
-        s1 = SocketChannel.open(ssc.getLocalAddress());
-        s2 = ssc.accept();
+        s1 = SocketChannel.open(sscHolder.channel.getLocalAddress());
+        s2 = sscHolder.channel.accept();
         s1.close();
         s2.close();
     }
