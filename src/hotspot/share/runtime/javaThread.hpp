@@ -1167,16 +1167,14 @@ private:
   // It can be set to zero asynchronously to this threads execution (i.e., without
   // safepoint/handshake or a lock) so we have to be very careful.
   // Accesses by other threads are synchronized using JvmtiThreadState_lock though.
+  // This field is checked by the interpreter which expects it to be an integer.
   int               _interp_only_mode;
 
  public:
   // used by the interpreter for fullspeed debugging support (see above)
   static ByteSize interp_only_mode_offset() { return byte_offset_of(JavaThread, _interp_only_mode); }
   bool is_interp_only_mode()                { return (_interp_only_mode != 0); }
-  int get_interp_only_mode()                { return _interp_only_mode; }
-  int set_interp_only_mode(int val)         { return _interp_only_mode = val; }
-  void increment_interp_only_mode()         { ++_interp_only_mode; }
-  void decrement_interp_only_mode()         { --_interp_only_mode; }
+  void set_interp_only_mode(bool val)       { _interp_only_mode = val ? 1 : 0; }
 
   // support for cached flag that indicates whether exceptions need to be posted for this thread
   // if this is false, we can avoid deoptimizing when events are thrown
