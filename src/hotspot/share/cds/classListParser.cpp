@@ -570,23 +570,22 @@ void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int
   cii->add_item(pool->symbol_at(name_index)->as_C_string());
   int sig_index = pool->signature_ref_index_at(type_index);
   cii->add_item(pool->symbol_at(sig_index)->as_C_string());
-  int argc = pool->bootstrap_argument_count_at(cp_index);
-  if (argc > 0) {
-    for (int arg_i = 0; arg_i < argc; arg_i++) {
-      int arg = pool->bootstrap_argument_index_at(cp_index, arg_i);
-      jbyte tag = pool->tag_at(arg).value();
-      if (tag == JVM_CONSTANT_MethodType) {
-        cii->add_item(pool->method_type_signature_at(arg)->as_C_string());
-      } else if (tag == JVM_CONSTANT_MethodHandle) {
-        cii->add_ref_kind(pool->method_handle_ref_kind_at(arg));
-        int callee_index = pool->method_handle_klass_index_at(arg);
-        Klass* callee = pool->klass_at(callee_index, CHECK);
-        cii->add_item(callee->name()->as_C_string());
-        cii->add_item(pool->method_handle_name_ref_at(arg)->as_C_string());
-        cii->add_item(pool->method_handle_signature_ref_at(arg)->as_C_string());
-      } else {
-        ShouldNotReachHere();
-      }
+  BSMAttributeEntry* bsme = pool->bootstrap_methods_attribute_entry(cp_index);
+  int argc = bsme->argument_count();
+  for (int arg_i = 0; arg_i < argc; arg_i++) {
+    int arg = bsme->argument_index(arg_i);
+    jbyte tag = pool->tag_at(arg).value();
+    if (tag == JVM_CONSTANT_MethodType) {
+      cii->add_item(pool->method_type_signature_at(arg)->as_C_string());
+    } else if (tag == JVM_CONSTANT_MethodHandle) {
+      cii->add_ref_kind(pool->method_handle_ref_kind_at(arg));
+      int callee_index = pool->method_handle_klass_index_at(arg);
+      Klass* callee = pool->klass_at(callee_index, CHECK);
+      cii->add_item(callee->name()->as_C_string());
+      cii->add_item(pool->method_handle_name_ref_at(arg)->as_C_string());
+      cii->add_item(pool->method_handle_signature_ref_at(arg)->as_C_string());
+    } else {
+      ShouldNotReachHere();
     }
   }
 }

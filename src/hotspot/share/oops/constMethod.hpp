@@ -81,7 +81,7 @@
 //     (access flags bit tells whether table is present)
 //     (indexed from end of ConstMethod*)
 //    [EMBEDDED generic signature index (u2)]
-//     (indexed from end of constMethodOop)
+//     (indexed from end of ConstMethod*)
 //    [EMBEDDED annotations arrays - method, parameter, type, default]
 //      pointer to Array<u1> if annotation is present
 //

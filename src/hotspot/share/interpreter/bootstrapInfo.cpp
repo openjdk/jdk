@@ -48,15 +48,22 @@
 BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int indy_index)
   : _pool(pool),
     _bss_index(bss_index),
-    _indy_index(indy_index),
-    // derived and eagerly cached:
-    _argc(      pool->bootstrap_argument_count_at(bss_index) ),
-    _name(      pool->uncached_name_ref_at(bss_index) ),
-    _signature( pool->uncached_signature_ref_at(bss_index) )
+    _indy_index(indy_index)
 {
-  _is_resolved = false;
+  assert(bss_index != 0, "");
+  _bsm_attr_index = _pool->bootstrap_methods_attribute_index(_bss_index);
+  _name = pool->uncached_name_ref_at(bss_index);
+  _signature = pool->uncached_signature_ref_at(bss_index);
   assert(pool->tag_at(bss_index).has_bootstrap(), "");
   assert(indy_index == -1 || pool->resolved_indy_entry_at(indy_index)->constant_pool_index() == bss_index, "invalid bootstrap specifier index");
+  _is_resolved = false;
+}
+
+ResolvedIndyEntry* BootstrapInfo::indy_entry() const {
+  if (_indy_index >= 0) {
+    return _pool->resolved_indy_entry_at(_indy_index);
+  }
+  return nullptr;
 }
 
 // If there is evidence this call site was already linked, set the
@@ -130,7 +137,9 @@ void BootstrapInfo::resolve_args(TRAPS) {
   assert(_bsm.not_null(), "resolve_bsm first");
 
   // if there are no static arguments, return leaving _arg_values as null
-  if (_argc == 0 && UseBootstrapCallInfo < 2) return;
+  BSMAttributeEntry& attr = bsm_attr();
+  int argc = attr.argument_count();
+  if (argc == 0 && UseBootstrapCallInfo < 2) return;
 
   bool use_BSCI;
   switch (UseBootstrapCallInfo) {
@@ -156,41 +165,50 @@ void BootstrapInfo::resolve_args(TRAPS) {
   // potentially cyclic cases from C to Java.
   if (!use_BSCI && _pool->tag_at(_bss_index).is_dynamic_constant()) {
     bool found_unresolved_condy = false;
-    for (int i = 0; i < _argc; i++) {
-      int arg_index = _pool->bootstrap_argument_index_at(_bss_index, i);
+    for (int i = 0; i < argc; i++) {
+      int arg_index = attr.argument_index(i);
       if (_pool->tag_at(arg_index).is_dynamic_constant()) {
         // potential recursion point condy -> condy
         bool found_it = false;
         _pool->find_cached_constant_at(arg_index, found_it, CHECK);
-        if (!found_it) { found_unresolved_condy = true; break; }
+        if (!found_it) {
+          found_unresolved_condy = true;
+          break;
+        }
       }
     }
-    if (found_unresolved_condy)
+    if (found_unresolved_condy) {
       use_BSCI = true;
+    }
   }
 
   const int SMALL_ARITY = 5;
-  if (use_BSCI && _argc <= SMALL_ARITY && UseBootstrapCallInfo <= 2) {
+  if (use_BSCI && argc <= SMALL_ARITY && UseBootstrapCallInfo <= 2) {
     // If there are only a few arguments, and none of them need linking,
     // push them, instead of asking the JDK runtime to turn around and
     // pull them, saving a JVM/JDK transition in some simple cases.
     bool all_resolved = true;
-    for (int i = 0; i < _argc; i++) {
+    for (int i = 0; i < argc; i++) {
       bool found_it = false;
-      int arg_index = _pool->bootstrap_argument_index_at(_bss_index, i);
+      int arg_index = attr.argument_index(i);
       _pool->find_cached_constant_at(arg_index, found_it, CHECK);
-      if (!found_it) { all_resolved = false; break; }
+      if (!found_it) {
+        all_resolved = false;
+        break;
+      }
     }
-    if (all_resolved)
+    if (all_resolved) {
       use_BSCI = false;
+    }
   }
 
   if (!use_BSCI) {
     // return {arg...}; resolution of arguments is done immediately, before JDK code is called
-    objArrayOop args_oop = oopFactory::new_objArray(vmClasses::Object_klass(), _argc, CHECK);
+    objArrayOop args_oop = oopFactory::new_objArray(vmClasses::Object_klass(), argc, CHECK);
     objArrayHandle args(THREAD, args_oop);
-    _pool->copy_bootstrap_arguments_at(_bss_index, 0, _argc, args, 0, true, Handle(), CHECK);
-    oop arg_oop = ((_argc == 1) ? args->obj_at(0) : (oop)nullptr);
+    _pool->copy_bootstrap_arguments_at(_bsm_attr_index,
+                                       0, argc, args, 0, true, Handle(), CHECK);
+    oop arg_oop = ((argc == 1) ? args->obj_at(0) : (oop)nullptr);
     // try to discard the singleton array
     if (arg_oop != nullptr && !arg_oop->is_array()) {
       // JVM treats arrays and nulls specially in this position,
@@ -200,10 +218,12 @@ void BootstrapInfo::resolve_args(TRAPS) {
       _arg_values = args;
     }
   } else {
-    // return {arg_count, pool_index}; JDK code must pull the arguments as needed
-    typeArrayOop ints_oop = oopFactory::new_typeArray(T_INT, 2, CHECK);
-    ints_oop->int_at_put(0, _argc);
+    // return {arg_count, pool_index, indy_index}
+    // JDK code must pull the arguments as needed
+    typeArrayOop ints_oop = oopFactory::new_typeArray(T_INT, 3, CHECK);
+    ints_oop->int_at_put(0, argc);
     ints_oop->int_at_put(1, _bss_index);
+    ints_oop->int_at_put(2, _indy_index);
     _arg_values = Handle(THREAD, ints_oop);
   }
 }
@@ -236,6 +256,7 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
     os::snprintf_checked(what, sizeof(what), "condy");
   }
   bool have_msg = (msg != nullptr && strlen(msg) > 0);
+  int argc = arg_count();
   st->print_cr("%s%sBootstrap in %s %s@CP[%d] %s:%s%s BSMS[%d] BSM@CP[%d]%s argc=%d%s",
                 (have_msg ? msg : ""), (have_msg ? " " : ""),
                 caller()->name()->as_C_string(),
@@ -244,13 +265,13 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
                 _name->as_C_string(),
                 _signature->as_C_string(),
                 (_type_arg.is_null() ? "" : "(resolved)"),
-                bsms_attr_index(),
+                bsm_attr_index(),
                 bsm_index(), (_bsm.is_null() ? "" : "(resolved)"),
-                _argc, (_arg_values.is_null() ? "" : "(resolved)"));
-  if (_argc > 0) {
+                argc, (_arg_values.is_null() ? "" : "(resolved)"));
+  if (argc > 0) {
     char argbuf[80];
     argbuf[0] = 0;
-    for (int i = 0; i < _argc; i++) {
+    for (int i = 0; i < argc; i++) {
       int pos = (int) strlen(argbuf);
       if (pos + 20 > (int)sizeof(argbuf)) {
         os::snprintf_checked(argbuf + pos, sizeof(argbuf) - pos, "...");
@@ -272,11 +293,11 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
     // Find the static arguments within the first element of _arg_values.
     objArrayOop static_args = (objArrayOop)_arg_values();
     if (!static_args->is_array()) {
-      assert(_argc == 1, "Invalid BSM _arg_values for non-array");
+      assert(argc == 1, "Invalid BSM _arg_values for non-array");
       st->print("  resolved arg[0]: "); static_args->print_on(st);
     } else if (static_args->is_objArray()) {
       int lines = 0;
-      for (int i = 0; i < _argc; i++) {
+      for (int i = 0; i < argc; i++) {
         oop x = static_args->obj_at(i);
         if (x != nullptr) {
           if (++lines > 6) {

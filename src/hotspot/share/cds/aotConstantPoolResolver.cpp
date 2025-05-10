@@ -392,7 +392,7 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_signature(ConstantPool* c
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mt_index = cp->operand_argument_index_at(bsms_attribute_index, arg_i);
+  int mt_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
   if (!cp->tag_at(mt_index).is_method_type()) {
     // malformed class?
     return false;
@@ -408,7 +408,7 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPo
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mh_index = cp->operand_argument_index_at(bsms_attribute_index, arg_i);
+  int mh_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
   if (!cp->tag_at(mh_index).is_method_handle()) {
     // malformed class?
     return false;
@@ -433,7 +433,8 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
     return false;
   }
 
-  int bsm = cp->bootstrap_method_ref_index_at(cp_index);
+  int bsms_attribute_index = cp->bootstrap_methods_attribute_index(cp_index);
+  int bsm = cp->bsm_attribute_entry(bsms_attribute_index)->bootstrap_method_index();
   int bsm_ref = cp->method_handle_index_at(bsm);
   Symbol* bsm_name = cp->uncached_name_ref_at(bsm_ref);
   Symbol* bsm_signature = cp->uncached_signature_ref_at(bsm_ref);
@@ -513,8 +514,7 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
       return false;
     }
 
-    int bsms_attribute_index = cp->bootstrap_methods_attribute_index(cp_index);
-    int arg_count = cp->operand_argument_count_at(bsms_attribute_index);
+    int arg_count = cp->bsm_attribute_entry(bsms_attribute_index)->argument_count();
     if (arg_count != 3) {
       // Malformed class?
       return false;
