@@ -2,7 +2,7 @@ round: 1
 round: 2
 
 @java.lang.Deprecated
-public class GeneratedSource<T> extends java.util.ArrayList<java.lang.String> implements java.lang.Runnable {
+public class GeneratedSource<T extends java.lang.CharSequence> extends java.util.ArrayList<java.lang.String> implements java.lang.Runnable {
 
   public GeneratedSource();
 
@@ -12,7 +12,7 @@ public class GeneratedSource<T> extends java.util.ArrayList<java.lang.String> im
 }
 
 @java.lang.Deprecated
-public class GeneratedClass<T> extends java.util.ArrayList<java.lang.String> implements java.lang.Runnable {
+public class GeneratedClass<T extends java.lang.CharSequence> extends java.util.ArrayList<java.lang.String> implements java.lang.Runnable {
 
   public GeneratedClass();
 
@@ -23,7 +23,7 @@ public class GeneratedClass<T> extends java.util.ArrayList<java.lang.String> imp
 round: 3
 
 @java.lang.Deprecated
-public class GeneratedSource<T> extends java.util.ArrayList<java.lang.String> implements java.lang.Runnable {
+public class GeneratedSource<T extends java.lang.CharSequence> extends java.util.ArrayList<java.lang.String> implements java.lang.Runnable {
 
   public GeneratedSource();
 
@@ -33,7 +33,7 @@ public class GeneratedSource<T> extends java.util.ArrayList<java.lang.String> im
 }
 
 @java.lang.Deprecated
-public class GeneratedClass<T> extends java.util.ArrayList<java.lang.String> implements java.lang.Runnable {
+public class GeneratedClass<T extends java.lang.CharSequence> extends java.util.ArrayList<java.lang.String> implements java.lang.Runnable {
 
   public GeneratedClass();
 
