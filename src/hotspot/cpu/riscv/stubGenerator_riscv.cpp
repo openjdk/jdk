@@ -2042,13 +2042,11 @@ class StubGenerator: public StubCodeGenerator {
         // Zero extend value
         // 8 bit -> 16 bit
         __ zext(value, value, 8);
-        __ mv(tmp_reg, value);
-        __ slli(tmp_reg, tmp_reg, 8);
+        __ slli(tmp_reg, value, 8);
         __ orr(value, value, tmp_reg);
 
         // 16 bit -> 32 bit
-        __ mv(tmp_reg, value);
-        __ slli(tmp_reg, tmp_reg, 16);
+        __ slli(tmp_reg, value, 16);
         __ orr(value, value, tmp_reg);
         break;
       case T_SHORT:
@@ -2060,8 +2058,7 @@ class StubGenerator: public StubCodeGenerator {
         // Zero extend value
         // 16 bit -> 32 bit
         __ zext(value, value, 16);
-        __ mv(tmp_reg, value);
-        __ slli(tmp_reg, tmp_reg, 16);
+        __ slli(tmp_reg, value, 16);
         __ orr(value, value, tmp_reg);
         break;
       case T_INT:
