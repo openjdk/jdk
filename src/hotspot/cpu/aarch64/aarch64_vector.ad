@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2024, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2025, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -222,6 +222,26 @@ source %{
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
         if (!VM_Version::supports_svebitperm()) {
+          return false;
+        }
+        break;
+      case Op_AddVHF:
+      case Op_SubVHF:
+      case Op_MulVHF:
+      case Op_DivVHF:
+      case Op_MinVHF:
+      case Op_MaxVHF:
+      case Op_SqrtVHF:
+        // FEAT_FP16 is enabled if both "fphp" and "asimdhp" features are supported.
+        // Only the Neon instructions need this check. SVE supports half-precision floats
+        // by default.
+        if (UseSVE == 0 && !is_feat_fp16_supported()) {
+          return false;
+        }
+        break;
+      case Op_FmaVHF:
+        // UseFMA flag needs to be checked along with FEAT_FP16
+        if (!UseFMA || (UseSVE == 0 && !is_feat_fp16_supported())) {
           return false;
         }
         break;
@@ -583,6 +603,22 @@ instruct vaddL(vReg dst, vReg src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct vaddHF(vReg dst, vReg src1, vReg src2) %{
+  match(Set dst (AddVHF src1 src2));
+  format %{ "vaddHF $dst, $src1, $src2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ fadd($dst$$FloatRegister, get_arrangement(this),
+              $src1$$FloatRegister, $src2$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_fadd($dst$$FloatRegister, __ H, $src1$$FloatRegister, $src2$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vaddF(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (AddVF src1 src2));
   format %{ "vaddF $dst, $src1, $src2" %}
@@ -653,6 +689,16 @@ instruct vaddL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   format %{ "vaddL_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
     __ sve_add($dst_src1$$FloatRegister, __ D, $pg$$PRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vaddHF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (AddVHF (Binary dst_src1 src2) pg));
+  format %{ "vaddHF_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    __ sve_fadd($dst_src1$$FloatRegister, __ H, $pg$$PRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -807,6 +853,22 @@ instruct vsubL(vReg dst, vReg src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct vsubHF(vReg dst, vReg src1, vReg src2) %{
+  match(Set dst (SubVHF src1 src2));
+  format %{ "vsubHF $dst, $src1, $src2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ fsub($dst$$FloatRegister, get_arrangement(this),
+              $src1$$FloatRegister, $src2$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_fsub($dst$$FloatRegister, __ H, $src1$$FloatRegister, $src2$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vsubF(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (SubVF src1 src2));
   format %{ "vsubF $dst, $src1, $src2" %}
@@ -877,6 +939,16 @@ instruct vsubL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   format %{ "vsubL_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
     __ sve_sub($dst_src1$$FloatRegister, __ D, $pg$$PRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsubHF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (SubVHF (Binary dst_src1 src2) pg));
+  format %{ "vsubHF_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    __ sve_fsub($dst_src1$$FloatRegister, __ H, $pg$$PRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1004,6 +1076,22 @@ instruct vmulL_sve(vReg dst_src1, vReg src2) %{
 
 // vector mul - floating-point
 
+instruct vmulHF(vReg dst, vReg src1, vReg src2) %{
+  match(Set dst (MulVHF src1 src2));
+  format %{ "vmulHF $dst, $src1, $src2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ fmul($dst$$FloatRegister, get_arrangement(this),
+              $src1$$FloatRegister, $src2$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_fmul($dst$$FloatRegister, __ H, $src1$$FloatRegister, $src2$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vmulF(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (MulVF src1 src2));
   format %{ "vmulF $dst, $src1, $src2" %}
@@ -1078,6 +1166,16 @@ instruct vmulL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct vmulHF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (MulVHF (Binary dst_src1 src2) pg));
+  format %{ "vmulHF_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    __ sve_fmul($dst_src1$$FloatRegister, __ H, $pg$$PRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vmulF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst_src1 (MulVF (Binary dst_src1 src2) pg));
@@ -1101,6 +1199,28 @@ instruct vmulD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 // ------------------------------ Vector float div -----------------------------
 
 // vector float div
+
+instruct vdivHF_neon(vReg dst, vReg src1, vReg src2) %{
+  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst (DivVHF src1 src2));
+  format %{ "vdivHF_neon $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fdiv($dst$$FloatRegister, get_arrangement(this),
+            $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vdivHF_sve(vReg dst_src1, vReg src2) %{
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src1 (DivVHF dst_src1 src2));
+  format %{ "vdivHF_sve $dst_src1, $dst_src1, $src2" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    __ sve_fdiv($dst_src1$$FloatRegister, __ H, ptrue, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
 
 instruct vdivF_neon(vReg dst, vReg src1, vReg src2) %{
   predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
@@ -1147,6 +1267,16 @@ instruct vdivD_sve(vReg dst_src1, vReg src2) %{
 %}
 
 // vector float div - predicated
+
+instruct vdivHF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (DivVHF (Binary dst_src1 src2) pg));
+  format %{ "vdivHF_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    __ sve_fdiv($dst_src1$$FloatRegister, __ H, $pg$$PRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
 
 instruct vdivF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   predicate(UseSVE > 0);
@@ -1991,6 +2121,21 @@ instruct vnegD_masked(vReg dst_src, pRegGov pg) %{
 
 // vector sqrt
 
+instruct vsqrtHF(vReg dst, vReg src) %{
+  match(Set dst (SqrtVHF src));
+  format %{ "vsqrtHF $dst, $src" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ fsqrt($dst$$FloatRegister, get_arrangement(this), $src$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_fsqrt($dst$$FloatRegister, __ H, ptrue, $src$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vsqrtF(vReg dst, vReg src) %{
   match(Set dst (SqrtVF src));
   format %{ "vsqrtF $dst, $src" %}
@@ -2022,6 +2167,16 @@ instruct vsqrtD(vReg dst, vReg src) %{
 %}
 
 // vector sqrt - predicated
+
+instruct vsqrtHF_masked(vReg dst_src, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (SqrtVHF dst_src pg));
+  format %{ "vsqrtHF_masked $dst_src, $pg, $dst_src" %}
+  ins_encode %{
+    __ sve_fsqrt($dst_src$$FloatRegister, __ H, $pg$$PRegister, $dst_src$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
 
 instruct vsqrtF_masked(vReg dst_src, pRegGov pg) %{
   predicate(UseSVE > 0);
@@ -2069,7 +2224,7 @@ instruct vminL_sve(vReg dst_src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
-// vector min - B/S/I/F/D
+// vector min - B/S/I/HF/F/D
 
 instruct vmin_neon(vReg dst, vReg src1, vReg src2) %{
   predicate(Matcher::vector_element_basic_type(n) != T_LONG &&
@@ -2110,6 +2265,29 @@ instruct vmin_sve(vReg dst_src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct vmin_HF_neon(vReg dst, vReg src1, vReg src2) %{
+  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst (MinVHF src1 src2));
+  format %{ "vmin_HF_neon $dst, $src1, $src2\t# Half float" %}
+  ins_encode %{
+    __ fmin($dst$$FloatRegister, get_arrangement(this),
+            $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmin_HF_sve(vReg dst_src1, vReg src2) %{
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src1 (MinVHF dst_src1 src2));
+  format %{ "vmin_HF_sve $dst_src1, $dst_src1, $src2\t# Half float" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    __ sve_fmin($dst_src1$$FloatRegister, __ H,
+                ptrue, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector min - predicated
 
 instruct vmin_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
@@ -2126,6 +2304,17 @@ instruct vmin_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
       __ sve_smin($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
                   $pg$$PRegister, $src2$$FloatRegister);
     }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmin_HF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (MinVHF (Binary dst_src1 src2) pg));
+  format %{ "vmin_HF_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    __ sve_fmin($dst_src1$$FloatRegister, __ H,
+                $pg$$PRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2226,7 +2415,7 @@ instruct vmaxL_sve(vReg dst_src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
-// vector max - B/S/I/F/D
+// vector max - B/S/I/HF/F/D
 
 instruct vmax_neon(vReg dst, vReg src1, vReg src2) %{
   predicate(Matcher::vector_element_basic_type(n) != T_LONG &&
@@ -2267,6 +2456,29 @@ instruct vmax_sve(vReg dst_src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct vmax_HF_neon(vReg dst, vReg src1, vReg src2) %{
+  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst (MaxVHF src1 src2));
+  format %{ "vmax_HF_neon $dst, $src1, $src2\t# Half float" %}
+  ins_encode %{
+    __ fmax($dst$$FloatRegister, get_arrangement(this),
+            $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmax_HF_sve(vReg dst_src1, vReg src2) %{
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src1 (MaxVHF dst_src1 src2));
+  format %{ "vmax_HF_sve $dst_src1, $dst_src1, $src2\t# Half float" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    __ sve_fmax($dst_src1$$FloatRegister, __ H,
+                ptrue, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector max - predicated
 
 instruct vmax_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
@@ -2283,6 +2495,17 @@ instruct vmax_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
       __ sve_smax($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
                   $pg$$PRegister, $src2$$FloatRegister);
     }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmax_HF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (MaxVHF (Binary dst_src1 src2) pg));
+  format %{ "vmax_HF_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    __ sve_fmax($dst_src1$$FloatRegister, __ H,
+                $pg$$PRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2413,8 +2636,9 @@ instruct vmla_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
 // dst_src1 = src2 * src3 + dst_src1
 
 instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
-  match(Set dst_src1 (FmaVF dst_src1 (Binary src2 src3)));
-  match(Set dst_src1 (FmaVD dst_src1 (Binary src2 src3)));
+  match(Set dst_src1 (FmaVHF dst_src1 (Binary src2 src3)));
+  match(Set dst_src1 (FmaVF  dst_src1 (Binary src2 src3)));
+  match(Set dst_src1 (FmaVD  dst_src1 (Binary src2 src3)));
   format %{ "vfmla $dst_src1, $src2, $src3" %}
   ins_encode %{
     assert(UseFMA, "Needs FMA instructions support.");
@@ -2437,8 +2661,9 @@ instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
 
 instruct vfmad_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src1 (FmaVF (Binary dst_src1 src2) (Binary src3 pg)));
-  match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary src3 pg)));
+  match(Set dst_src1 (FmaVHF (Binary dst_src1 src2) (Binary src3 pg)));
+  match(Set dst_src1 (FmaVF  (Binary dst_src1 src2) (Binary src3 pg)));
+  match(Set dst_src1 (FmaVD  (Binary dst_src1 src2) (Binary src3 pg)));
   format %{ "vfmad_masked $dst_src1, $pg, $src2, $src3" %}
   ins_encode %{
     assert(UseFMA, "Needs FMA instructions support.");
@@ -4613,6 +4838,23 @@ instruct replicateD(vReg dst, vRegD src) %{
   ins_pipe(pipe_slow);
 %}
 
+// Replicate a half-precision float value held in a floating point register
+instruct replicateHF(vReg dst, vRegF src) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (Replicate src));
+  format %{ "replicateHF $dst, $src\t# replicate half-precision float" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ dup($dst$$FloatRegister, get_arrangement(this), $src$$FloatRegister);
+    } else { // length_in_bytes must be > 16 and SVE should be enabled
+      assert(UseSVE > 0, "must be sve");
+      __ sve_cpy($dst$$FloatRegister, __ H, ptrue, $src$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // replicate from imm
 
 instruct replicateI_imm_le128b(vReg dst, immI con) %{
@@ -4677,6 +4919,23 @@ instruct replicateL_imm8_gt128b(vReg dst, immL8_shift8 con) %{
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     __ sve_dup($dst$$FloatRegister, __ D, (int)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Replicate a 16-bit half precision float value
+instruct replicateHF_imm(vReg dst, immH con) %{
+  match(Set dst (Replicate con));
+  format %{ "replicateHF_imm $dst, $con\t# replicate immediate half-precision float" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    int imm = (int)($con$$constant) & 0xffff;
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ mov($dst$$FloatRegister, get_arrangement(this), imm);
+    } else { // length_in_bytes must be > 16 and SVE should be enabled
+      assert(UseSVE > 0, "must be sve");
+      __ sve_dup($dst$$FloatRegister, __ H, imm);
+    }
   %}
   ins_pipe(pipe_slow);
 %}
