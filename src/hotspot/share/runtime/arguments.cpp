@@ -536,6 +536,23 @@ static SpecialFlag const special_jvm_flags[] = {
   { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::undefined() },
   { "ZMarkStackSpaceLimit",         JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
 
+  { "AdaptiveSizeMajorGCDecayTimeScale",                JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "AdaptiveSizePolicyInitializingSteps",              JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "AdaptiveSizePolicyOutputInterval",                 JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "AdaptiveSizeThroughPutPolicy",                     JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "AdaptiveTimeWeight",                               JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "PausePadding",                                     JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "SurvivorPadding",                                  JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "TenuredGenerationSizeIncrement",                   JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "TenuredGenerationSizeSupplement",                  JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "TenuredGenerationSizeSupplementDecay",             JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "UseAdaptiveGenerationSizePolicyAtMajorCollection", JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "UseAdaptiveGenerationSizePolicyAtMinorCollection", JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "UseAdaptiveSizeDecayMajorGCCost",                  JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "UseAdaptiveSizePolicyFootprintGoal",               JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "UseAdaptiveSizePolicyWithSystemGC",                JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "UsePSAdaptiveSurvivorSizePolicy",                  JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif

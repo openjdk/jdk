@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_PARALLEL_PARALLELSCAVENGEHEAP_HPP
 #define SHARE_GC_PARALLEL_PARALLELSCAVENGEHEAP_HPP
 
-#include "gc/parallel/psGCAdaptivePolicyCounters.hpp"
+#include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -60,11 +60,11 @@ class ReservedSpace;
 //                          +-- generation boundary (fixed after startup)
 //                          |
 // |<- old gen (reserved) ->|<-       young gen (reserved)             ->|
-// +---------------+--------+-----------------+--------+--------+--------+
-// |      old      |        |       eden      |  from  |   to   |        |
-// |               |        |                 |  (to)  | (from) |        |
-// +---------------+--------+-----------------+--------+--------+--------+
-// |<- committed ->|        |<-          committed            ->|
+// +---------------+--------+--------+--------+------------------+-------+
+// |      old      |        |  from  |   to   |        eden      |       |
+// |               |        |  (to)  | (from) |                  |       |
+// +---------------+--------+--------+--------+------------------+-------+
+// |<- committed ->|        |<-          committed             ->|
 //
 class ParallelScavengeHeap : public CollectedHeap {
   friend class VMStructs;
@@ -74,7 +74,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // Sizing policy for entire heap
   static PSAdaptiveSizePolicy*       _size_policy;
-  static PSGCAdaptivePolicyCounters* _gc_policy_counters;
+  static GCPolicyCounters*           _gc_policy_counters;
 
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
@@ -85,13 +85,14 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   WorkerThreads _workers;
 
+  uint _gc_overhead_counter;
+
+  bool _is_heap_almost_full;
+
   void initialize_serviceability() override;
 
   void trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs);
   void trace_heap(GCWhen::Type when, const GCTracer* tracer) override;
-
-  // Allocate in oldgen and record the allocation with the size_policy.
-  HeapWord* allocate_old_gen_and_record(size_t word_size);
 
   void update_parallel_worker_threads_cpu_time();
 
@@ -101,8 +102,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   inline bool should_alloc_in_eden(size_t size) const;
 
-  HeapWord* mem_allocate_old_gen(size_t size);
-
   HeapWord* mem_allocate_work(size_t size,
                               bool is_tlab,
                               bool* gc_overhead_limit_was_exceeded);
@@ -110,6 +109,12 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
   void do_full_collection(bool clear_all_soft_refs) override;
+
+  bool is_gc_overhead_limit_reached();
+
+  size_t calculate_desired_old_gen_capacity(size_t old_gen_live_size);
+
+  void resize_old_gen_after_full_gc();
 
 public:
   ParallelScavengeHeap() :
@@ -119,7 +124,9 @@ public:
     _eden_pool(nullptr),
     _survivor_pool(nullptr),
     _old_pool(nullptr),
-    _workers("GC Thread", ParallelGCThreads) { }
+    _workers("GC Thread", ParallelGCThreads),
+    _gc_overhead_counter(0),
+    _is_heap_almost_full(false) {}
 
   Name kind() const override {
     return CollectedHeap::Parallel;
@@ -129,6 +136,9 @@ public:
     return "Parallel";
   }
 
+  // Invoked at gc-pause-end
+  void gc_epilogue(bool full);
+
   GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;
 
@@ -137,7 +147,7 @@ public:
 
   PSAdaptiveSizePolicy* size_policy() { return _size_policy; }
 
-  static PSGCAdaptivePolicyCounters* gc_policy_counters() { return _gc_policy_counters; }
+  static GCPolicyCounters* gc_policy_counters() { return _gc_policy_counters; }
 
   static ParallelScavengeHeap* heap() {
     return named_heap<ParallelScavengeHeap>(CollectedHeap::Parallel);
@@ -229,13 +239,8 @@ public:
 
   void verify(VerifyOption option /* ignored */) override;
 
-  // Resize the young generation.  The reserved space for the
-  // generation may be expanded in preparation for the resize.
-  void resize_young_gen(size_t eden_size, size_t survivor_size);
-
-  // Resize the old generation.  The reserved space for the
-  // generation may be expanded in preparation for the resize.
-  void resize_old_gen(size_t desired_free_space);
+  void resize_after_young_gc(bool is_survivor_overflowing);
+  void resize_after_full_gc();
 
   GCMemoryManager* old_gc_manager() const { return _old_manager; }
   GCMemoryManager* young_gc_manager() const { return _young_manager; }
@@ -251,35 +256,6 @@ public:
 
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
-};
-
-// Class that can be used to print information about the
-// adaptive size policy at intervals specified by
-// AdaptiveSizePolicyOutputInterval.  Only print information
-// if an adaptive size policy is in use.
-class AdaptiveSizePolicyOutput : AllStatic {
-  static bool enabled() {
-    return UseParallelGC &&
-           UseAdaptiveSizePolicy &&
-           log_is_enabled(Debug, gc, ergo);
-  }
- public:
-  static void print() {
-    if (enabled()) {
-      ParallelScavengeHeap::heap()->size_policy()->print();
-    }
-  }
-
-  static void print(AdaptiveSizePolicy* size_policy, uint count) {
-    bool do_print =
-        enabled() &&
-        (AdaptiveSizePolicyOutputInterval > 0) &&
-        (count % AdaptiveSizePolicyOutputInterval) == 0;
-
-    if (do_print) {
-      size_policy->print();
-    }
-  }
 };
 
 #endif // SHARE_GC_PARALLEL_PARALLELSCAVENGEHEAP_HPP
