@@ -720,7 +720,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   if (x->id() == vmIntrinsics::_dexp || x->id() == vmIntrinsics::_dlog ||
       x->id() == vmIntrinsics::_dpow || x->id() == vmIntrinsics::_dcos ||
       x->id() == vmIntrinsics::_dsin || x->id() == vmIntrinsics::_dtan ||
-      x->id() == vmIntrinsics::_dlog10 || x->id() == vmIntrinsics::_dtanh
+      x->id() == vmIntrinsics::_dlog10
+      || x->id() == vmIntrinsics::_dtanh || x->id() == vmIntrinsics::_dcbrt
       ) {
     do_LibmIntrinsic(x);
     return;
@@ -807,7 +808,7 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       }
       break;
     case vmIntrinsics::_dpow:
-       if (StubRoutines::dpow() != nullptr) {
+      if (StubRoutines::dpow() != nullptr) {
         __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args());
       } else {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dpow), getThreadTemp(), result_reg, cc->args());
@@ -828,16 +829,22 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       }
       break;
     case vmIntrinsics::_dtan:
-       if (StubRoutines::dtan() != nullptr) {
+      if (StubRoutines::dtan() != nullptr) {
         __ call_runtime_leaf(StubRoutines::dtan(), getThreadTemp(), result_reg, cc->args());
       } else {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtan), getThreadTemp(), result_reg, cc->args());
       }
       break;
     case vmIntrinsics::_dtanh:
-       assert(StubRoutines::dtanh() != nullptr, "tanh intrinsic not found");
-       if (StubRoutines::dtanh() != nullptr) {
+      assert(StubRoutines::dtanh() != nullptr, "tanh intrinsic not found");
+      if (StubRoutines::dtanh() != nullptr) {
         __ call_runtime_leaf(StubRoutines::dtanh(), getThreadTemp(), result_reg, cc->args());
+      }
+      break;
+    case vmIntrinsics::_dcbrt:
+      assert(StubRoutines::dcbrt() != nullptr, "cbrt intrinsic not found");
+      if (StubRoutines::dcbrt() != nullptr) {
+        __ call_runtime_leaf(StubRoutines::dcbrt(), getThreadTemp(), result_reg, cc->args());
       }
       break;
     default:  ShouldNotReachHere();
