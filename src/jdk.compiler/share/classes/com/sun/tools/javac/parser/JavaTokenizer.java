@@ -389,6 +389,10 @@ public class JavaTokenizer extends UnicodeReader {
                     break;
             }
         } else {
+            if (!isString && !Character.isBmpCodePoint(getCodepoint())) {
+                lexError(pos, Errors.IllegalCharLiteralMultipleSurrogates);
+            }
+
             putThenNext();
         }
     }
