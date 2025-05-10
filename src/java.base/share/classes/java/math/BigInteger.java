@@ -5037,13 +5037,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Returns the mag array as an array of bytes.
      */
     private byte[] magSerializedForm() {
-        int len = mag.length;
+        byte[] result = new byte[(bitLength(mag, mag.length) + 7) >>> 3];
 
-        int bitLen = bitLength(mag, len);
-        int byteLen = (bitLen + 7) >>> 3;
-        byte[] result = new byte[byteLen];
-
-        for (int i = byteLen - 1, bytesCopied = 4, intIndex = len - 1, nextInt = 0;
+        for (int i = result.length - 1, bytesCopied = 4, intIndex = mag.length - 1, nextInt = 0;
              i >= 0; i--) {
             if (bytesCopied == 4) {
                 nextInt = mag[intIndex--];
