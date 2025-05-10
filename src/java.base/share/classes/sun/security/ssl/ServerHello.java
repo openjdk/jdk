@@ -32,7 +32,9 @@ import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.*;
+import javax.crypto.KDF;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -585,7 +587,7 @@ final class ServerHello {
 
             SSLKeyDerivation handshakeKD = ke.createKeyDerivation(shc);
             SecretKey handshakeSecret = handshakeKD.deriveKey(
-                    "TlsHandshakeSecret", null);
+                    "TlsHandshakeSecret");
 
             SSLTrafficKeyDerivation kdg =
                 SSLTrafficKeyDerivation.valueOf(shc.negotiatedProtocol);
@@ -601,15 +603,12 @@ final class ServerHello {
 
             // update the handshake traffic read keys.
             SecretKey readSecret = kd.deriveKey(
-                    "TlsClientHandshakeTrafficSecret", null);
+                    "TlsClientHandshakeTrafficSecret");
             SSLKeyDerivation readKD =
                     kdg.createKeyDerivation(shc, readSecret);
-            SecretKey readKey = readKD.deriveKey(
-                    "TlsKey", null);
-            SecretKey readIvSecret = readKD.deriveKey(
-                    "TlsIv", null);
+            SecretKey readKey = readKD.deriveKey("TlsKey");
             IvParameterSpec readIv =
-                    new IvParameterSpec(readIvSecret.getEncoded());
+                    new IvParameterSpec(readKD.deriveData("TlsIv"));
             SSLReadCipher readCipher;
             try {
                 readCipher =
@@ -635,15 +634,12 @@ final class ServerHello {
 
             // update the handshake traffic write secret.
             SecretKey writeSecret = kd.deriveKey(
-                    "TlsServerHandshakeTrafficSecret", null);
+                    "TlsServerHandshakeTrafficSecret");
             SSLKeyDerivation writeKD =
                     kdg.createKeyDerivation(shc, writeSecret);
-            SecretKey writeKey = writeKD.deriveKey(
-                    "TlsKey", null);
-            SecretKey writeIvSecret = writeKD.deriveKey(
-                    "TlsIv", null);
+            SecretKey writeKey = writeKD.deriveKey("TlsKey");
             IvParameterSpec writeIv =
-                    new IvParameterSpec(writeIvSecret.getEncoded());
+                    new IvParameterSpec(writeKD.deriveData("TlsIv"));
             SSLWriteCipher writeCipher;
             try {
                 writeCipher =
@@ -1195,12 +1191,13 @@ final class ServerHello {
 
         try {
             CipherSuite.HashAlg hashAlg = hc.negotiatedCipherSuite.hashAlg;
-            HKDF hkdf = new HKDF(hashAlg.name);
-            byte[] zeros = new byte[hashAlg.hashLength];
-            SecretKey earlySecret = hkdf.extract(zeros, psk, "TlsEarlySecret");
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
+            SecretKey earlySecret = hkdf.deriveKey("TlsEarlySecret",
+                    HKDFParameterSpec.ofExtract().addIKM(psk)
+                    .addSalt(new byte[hashAlg.hashLength]).extractOnly());
             hc.handshakeKeyDerivation =
                     new SSLSecretDerivation(hc, earlySecret);
-        } catch  (GeneralSecurityException gse) {
+        } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);
         }
     }
@@ -1284,7 +1281,7 @@ final class ServerHello {
 
             SSLKeyDerivation handshakeKD = ke.createKeyDerivation(chc);
             SecretKey handshakeSecret = handshakeKD.deriveKey(
-                    "TlsHandshakeSecret", null);
+                    "TlsHandshakeSecret");
             SSLTrafficKeyDerivation kdg =
                 SSLTrafficKeyDerivation.valueOf(chc.negotiatedProtocol);
             if (kdg == null) {
@@ -1299,16 +1296,13 @@ final class ServerHello {
 
             // update the handshake traffic read keys.
             SecretKey readSecret = secretKD.deriveKey(
-                    "TlsServerHandshakeTrafficSecret", null);
+                    "TlsServerHandshakeTrafficSecret");
 
             SSLKeyDerivation readKD =
                     kdg.createKeyDerivation(chc, readSecret);
-            SecretKey readKey = readKD.deriveKey(
-                    "TlsKey", null);
-            SecretKey readIvSecret = readKD.deriveKey(
-                    "TlsIv", null);
+            SecretKey readKey = readKD.deriveKey("TlsKey");
             IvParameterSpec readIv =
-                    new IvParameterSpec(readIvSecret.getEncoded());
+                    new IvParameterSpec(readKD.deriveData("TlsIv"));
             SSLReadCipher readCipher;
             try {
                 readCipher =
@@ -1334,15 +1328,12 @@ final class ServerHello {
 
             // update the handshake traffic write keys.
             SecretKey writeSecret = secretKD.deriveKey(
-                    "TlsClientHandshakeTrafficSecret", null);
+                    "TlsClientHandshakeTrafficSecret");
             SSLKeyDerivation writeKD =
                     kdg.createKeyDerivation(chc, writeSecret);
-            SecretKey writeKey = writeKD.deriveKey(
-                    "TlsKey", null);
-            SecretKey writeIvSecret = writeKD.deriveKey(
-                    "TlsIv", null);
+            SecretKey writeKey = writeKD.deriveKey("TlsKey");
             IvParameterSpec writeIv =
-                    new IvParameterSpec(writeIvSecret.getEncoded());
+                    new IvParameterSpec(writeKD.deriveData("TlsIv"));
             SSLWriteCipher writeCipher;
             try {
                 writeCipher =

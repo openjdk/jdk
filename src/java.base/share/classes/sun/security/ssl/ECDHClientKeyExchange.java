@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,8 +218,7 @@ final class ECDHClientKeyExchange {
                         "Not supported key exchange type");
             } else {
                 SSLKeyDerivation masterKD = ke.createKeyDerivation(chc);
-                SecretKey masterSecret =
-                        masterKD.deriveKey("MasterSecret", null);
+                SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
                 chc.handshakeSession.setMasterSecret(masterSecret);
 
                 SSLTrafficKeyDerivation kd =
@@ -338,8 +337,7 @@ final class ECDHClientKeyExchange {
 
             // update the states
             SSLKeyDerivation masterKD = ke.createKeyDerivation(shc);
-            SecretKey masterSecret =
-                    masterKD.deriveKey("MasterSecret", null);
+            SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
             shc.handshakeSession.setMasterSecret(masterSecret);
 
             SSLTrafficKeyDerivation kd =
@@ -418,8 +416,7 @@ final class ECDHClientKeyExchange {
                         "Not supported key exchange type");
             } else {
                 SSLKeyDerivation masterKD = ke.createKeyDerivation(chc);
-                SecretKey masterSecret =
-                        masterKD.deriveKey("MasterSecret", null);
+                SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
                 chc.handshakeSession.setMasterSecret(masterSecret);
 
                 SSLTrafficKeyDerivation kd =
@@ -522,8 +519,7 @@ final class ECDHClientKeyExchange {
 
             // update the states
             SSLKeyDerivation masterKD = ke.createKeyDerivation(shc);
-            SecretKey masterSecret =
-                    masterKD.deriveKey("MasterSecret", null);
+            SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
             shc.handshakeSession.setMasterSecret(masterSecret);
 
             SSLTrafficKeyDerivation kd =

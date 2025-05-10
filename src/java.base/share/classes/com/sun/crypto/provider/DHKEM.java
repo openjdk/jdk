@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,12 @@ import java.util.Arrays;
 import java.util.Objects;
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.HKDFParameterSpec;
 
 import sun.security.jca.JCAUtil;
-import sun.security.ssl.HKDF;
 import sun.security.util.*;
+
+import jdk.internal.access.SharedSecrets;
 
 // Implementing DHKEM defined inside https://www.rfc-editor.org/rfc/rfc9180.html,
 // without the AuthEncap and AuthDecap functions
@@ -153,19 +155,19 @@ public class DHKEM implements KEMSpi {
     private enum Params {
 
         P256(0x10, 32, 32, 2 * 32 + 1,
-                "ECDH", "EC", CurveDB.P_256, "SHA-256"),
+                "ECDH", "EC", CurveDB.P_256, "HKDF-SHA256"),
 
         P384(0x11, 48, 48, 2 * 48 + 1,
-                "ECDH", "EC", CurveDB.P_384, "SHA-384"),
+                "ECDH", "EC", CurveDB.P_384, "HKDF-SHA384"),
 
         P521(0x12, 64, 66, 2 * 66 + 1,
-                "ECDH", "EC", CurveDB.P_521, "SHA-512"),
+                "ECDH", "EC", CurveDB.P_521, "HKDF-SHA512"),
 
         X25519(0x20, 32, 32, 32,
-                "XDH", "XDH", NamedParameterSpec.X25519, "SHA-256"),
+                "XDH", "XDH", NamedParameterSpec.X25519, "HKDF-SHA256"),
 
         X448(0x21, 64, 56, 56,
-                "XDH", "XDH", NamedParameterSpec.X448, "SHA-512"),
+                "XDH", "XDH", NamedParameterSpec.X448, "HKDF-SHA512"),
         ;
 
         private final int kem_id;
@@ -247,10 +249,17 @@ public class DHKEM implements KEMSpi {
 
         private byte[] ExtractAndExpand(byte[] dh, byte[] kem_context)
                 throws NoSuchAlgorithmException, InvalidKeyException {
-            HKDF kdf = new HKDF(hkdfAlgorithm);
-            SecretKey eae_prk = LabeledExtract(kdf, suiteId, null, EAE_PRK, dh);
-            return LabeledExpand(kdf, suiteId, eae_prk, SHARED_SECRET,
-                    kem_context, Nsecret);
+            KDF hkdf = KDF.getInstance(hkdfAlgorithm);
+            SecretKey eae_prk = LabeledExtract(hkdf, suiteId, EAE_PRK, dh);
+            try {
+                return LabeledExpand(hkdf, suiteId, eae_prk, SHARED_SECRET,
+                        kem_context, Nsecret);
+            } finally {
+                if (eae_prk instanceof SecretKeySpec s) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(s);
+                }
+            }
         }
 
         private PublicKey getPublicKey(PrivateKey sk)
@@ -277,31 +286,41 @@ public class DHKEM implements KEMSpi {
 
         // For KAT tests only. See RFC9180DeriveKeyPairSR.
         public KeyPair deriveKeyPair(byte[] ikm) throws Exception {
-            HKDF kdf = new HKDF(hkdfAlgorithm);
-            SecretKey dkp_prk = LabeledExtract(kdf, suiteId, null, DKP_PRK, ikm);
-            if (isEC()) {
-                NamedCurve curve = (NamedCurve) spec;
-                BigInteger sk = BigInteger.ZERO;
-                int counter = 0;
-                while (sk.signum() == 0 || sk.compareTo(curve.getOrder()) >= 0) {
-                    if (counter > 255) {
-                        throw new RuntimeException();
+            KDF hkdf = KDF.getInstance(hkdfAlgorithm);
+            SecretKey dkp_prk = LabeledExtract(hkdf, suiteId, DKP_PRK, ikm);
+            try {
+                if (isEC()) {
+                    NamedCurve curve = (NamedCurve) spec;
+                    BigInteger sk = BigInteger.ZERO;
+                    int counter = 0;
+                    while (sk.signum() == 0 ||
+                            sk.compareTo(curve.getOrder()) >= 0) {
+                        if (counter > 255) {
+                            throw new RuntimeException();
+                        }
+                        byte[] bytes = LabeledExpand(hkdf, suiteId, dkp_prk,
+                                CANDIDATE, I2OSP(counter, 1), Nsk);
+                        // bitmask is defined to be 0xFF for P-256 and P-384,
+                        // and 0x01 for P-521
+                        if (this == Params.P521) {
+                            bytes[0] = (byte) (bytes[0] & 0x01);
+                        }
+                        sk = new BigInteger(1, (bytes));
+                        counter = counter + 1;
                     }
-                    byte[] bytes = LabeledExpand(kdf, suiteId, dkp_prk,
-                            CANDIDATE, I2OSP(counter, 1), Nsk);
-                    // bitmask is defined to be 0xFF for P-256 and P-384, and 0x01 for P-521
-                    if (this == Params.P521) {
-                        bytes[0] = (byte) (bytes[0] & 0x01);
-                    }
-                    sk = new BigInteger(1, (bytes));
-                    counter = counter + 1;
+                    PrivateKey k = DeserializePrivateKey(sk.toByteArray());
+                    return new KeyPair(getPublicKey(k), k);
+                } else {
+                    byte[] sk = LabeledExpand(hkdf, suiteId, dkp_prk, SK, EMPTY,
+                            Nsk);
+                    PrivateKey k = DeserializePrivateKey(sk);
+                    return new KeyPair(getPublicKey(k), k);
                 }
-                PrivateKey k = DeserializePrivateKey(sk.toByteArray());
-                return new KeyPair(getPublicKey(k), k);
-            } else {
-                byte[] sk = LabeledExpand(kdf, suiteId, dkp_prk, SK, EMPTY, Nsk);
-                PrivateKey k = DeserializePrivateKey(sk);
-                return new KeyPair(getPublicKey(k), k);
+            } finally {
+                if (dkp_prk instanceof SecretKeySpec s) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(s);
+                }
             }
         }
 
@@ -380,18 +399,32 @@ public class DHKEM implements KEMSpi {
         }
     }
 
-    private static SecretKey LabeledExtract(HKDF kdf, byte[] suite_id,
-            byte[] salt, byte[] label, byte[] ikm) throws InvalidKeyException {
-        return kdf.extract(salt,
-                new SecretKeySpec(concat(HPKE_V1, suite_id, label, ikm), "IKM"),
-                    "HKDF-PRK");
+    private static SecretKey LabeledExtract(KDF hkdf, byte[] suite_id,
+            byte[] label, byte[] ikm) throws InvalidKeyException {
+        SecretKeySpec s = new SecretKeySpec(concat(HPKE_V1, suite_id, label,
+                ikm), "IKM");
+        try {
+            HKDFParameterSpec spec =
+                    HKDFParameterSpec.ofExtract().addIKM(s).extractOnly();
+            return hkdf.deriveKey("Generic", spec);
+        } catch (InvalidAlgorithmParameterException |
+                 NoSuchAlgorithmException e) {
+            throw new InvalidKeyException(e.getMessage(), e);
+        } finally {
+            SharedSecrets.getJavaxCryptoSpecAccess().clearSecretKeySpec(s);
+        }
     }
 
-    private static byte[] LabeledExpand(HKDF kdf, byte[] suite_id,
+    private static byte[] LabeledExpand(KDF hkdf, byte[] suite_id,
             SecretKey prk, byte[] label, byte[] info, int L)
             throws InvalidKeyException {
-        byte[] labeled_info = concat(I2OSP(L, 2), HPKE_V1,
-                suite_id, label, info);
-        return kdf.expand(prk, labeled_info, L, "NONE").getEncoded();
+        byte[] labeled_info = concat(I2OSP(L, 2), HPKE_V1, suite_id, label,
+                info);
+        try {
+            return hkdf.deriveData(HKDFParameterSpec.expandOnly(
+                    prk, labeled_info, L));
+        } catch (InvalidAlgorithmParameterException iape) {
+            throw new InvalidKeyException(iape.getMessage(), iape);
+        }
     }
 }

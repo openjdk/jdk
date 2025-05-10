@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
 import sun.security.util.Cache;
-
+import sun.security.util.KeyUtil;
 
 /**
  * {@systemProperty jdk.tls.server.enableSessionTicketExtension} determines if the
@@ -197,11 +197,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
             SessionTicketExtension.StatelessKey k = entry.getValue();
             if (k.isInvalid(this)) {
                 it.remove();
-                try {
-                    k.key.destroy();
-                } catch (Exception e) {
-                    // Suppress
-                }
+                KeyUtil.destroySecretKeys(k.key);
             }
         }
     }
