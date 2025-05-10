@@ -2029,44 +2029,40 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter();
 
-    Label L_fill_elements, L_exit1;
+    Label L_fill_elements;
 
     int shift = -1;
     switch (t) {
       case T_BYTE:
         shift = 0;
+        // Short arrays (< 8 bytes) fill by element
+        __ mv(tmp_reg, 8 >> shift);
+        __ bltu(count, tmp_reg, L_fill_elements);
 
         // Zero extend value
         // 8 bit -> 16 bit
         __ zext(value, value, 8);
-        __ mv(tmp_reg, value);
-        __ slli(tmp_reg, tmp_reg, 8);
+        __ slli(tmp_reg, value, 8);
         __ orr(value, value, tmp_reg);
 
         // 16 bit -> 32 bit
-        __ mv(tmp_reg, value);
-        __ slli(tmp_reg, tmp_reg, 16);
+        __ slli(tmp_reg, value, 16);
         __ orr(value, value, tmp_reg);
-
-        __ mv(tmp_reg, 8 >> shift); // Short arrays (< 8 bytes) fill by element
-        __ bltu(count, tmp_reg, L_fill_elements);
         break;
       case T_SHORT:
         shift = 1;
-        // Zero extend value
-        // 16 bit -> 32 bit
-        __ zext(value, value, 16);
-        __ mv(tmp_reg, value);
-        __ slli(tmp_reg, tmp_reg, 16);
-        __ orr(value, value, tmp_reg);
-
         // Short arrays (< 8 bytes) fill by element
         __ mv(tmp_reg, 8 >> shift);
         __ bltu(count, tmp_reg, L_fill_elements);
+
+        // Zero extend value
+        // 16 bit -> 32 bit
+        __ zext(value, value, 16);
+        __ slli(tmp_reg, value, 16);
+        __ orr(value, value, tmp_reg);
         break;
       case T_INT:
         shift = 2;
-
         // Short arrays (< 8 bytes) fill by element
         __ mv(tmp_reg, 8 >> shift);
         __ bltu(count, tmp_reg, L_fill_elements);
@@ -2125,20 +2121,8 @@ class StubGenerator: public StubCodeGenerator {
       __ fill_words(to, cnt_words, value);
     }
 
-    // Remaining count is less than 8 bytes. Fill it by a single store.
-    // Note that the total length is no less than 8 bytes.
-    if (!AvoidUnalignedAccesses && (t == T_BYTE || t == T_SHORT)) {
-      __ beqz(count, L_exit1);
-      __ shadd(to, count, to, tmp_reg, shift); // points to the end
-      __ sd(value, Address(to, -8)); // overwrite some elements
-      __ bind(L_exit1);
-      __ leave();
-      __ ret();
-    }
-
-    // Handle copies less than 8 bytes.
-    Label L_fill_2, L_fill_4, L_exit2;
-    __ bind(L_fill_elements);
+    // Remaining count is less than 8 bytes and address is heapword aligned.
+    Label L_fill_2, L_fill_4, L_exit1;
     switch (t) {
       case T_BYTE:
         __ test_bit(t0, count, 0);
@@ -2152,7 +2136,7 @@ class StubGenerator: public StubCodeGenerator {
         __ addi(to, to, 2);
         __ bind(L_fill_4);
         __ test_bit(t0, count, 2);
-        __ beqz(t0, L_exit2);
+        __ beqz(t0, L_exit1);
         __ sw(value, Address(to, 0));
         break;
       case T_SHORT:
@@ -2162,11 +2146,39 @@ class StubGenerator: public StubCodeGenerator {
         __ addi(to, to, 2);
         __ bind(L_fill_4);
         __ test_bit(t0, count, 1);
-        __ beqz(t0, L_exit2);
+        __ beqz(t0, L_exit1);
         __ sw(value, Address(to, 0));
         break;
       case T_INT:
-        __ beqz(count, L_exit2);
+        __ beqz(count, L_exit1);
+        __ sw(value, Address(to, 0));
+        break;
+      default: ShouldNotReachHere();
+    }
+    __ bind(L_exit1);
+    __ leave();
+    __ ret();
+
+    // Handle copies less than 8 bytes.
+    Label L_loop1, L_loop2, L_exit2;
+    __ bind(L_fill_elements);
+    __ beqz(count, L_exit2);
+    switch (t) {
+      case T_BYTE:
+        __ bind(L_loop1);
+        __ sb(value, Address(to, 0));
+        __ addi(to, to, 1);
+        __ subiw(count, count, 1);
+        __ bnez(count, L_loop1);
+        break;
+      case T_SHORT:
+        __ bind(L_loop2);
+        __ sh(value, Address(to, 0));
+        __ addi(to, to, 2);
+        __ subiw(count, count, 2 >> shift);
+        __ bnez(count, L_loop2);
+        break;
+      case T_INT:
         __ sw(value, Address(to, 0));
         break;
       default: ShouldNotReachHere();
@@ -2174,6 +2186,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_exit2);
     __ leave();
     __ ret();
+
     return start;
   }
 
