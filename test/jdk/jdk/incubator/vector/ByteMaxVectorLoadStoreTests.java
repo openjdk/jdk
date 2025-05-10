@@ -701,6 +701,57 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
        }
     }
 
+    @Test(dataProvider = "shuffleIndexMemoryProvider")
+    static void loadStoreShuffleMemorySegment(IntFunction<int[]> fa,
+                                              IntFunction<MemorySegment> fm,
+                                              Supplier<ByteOrder> fbo) {
+        int[] a = fa.apply(SPECIES.length());
+        MemorySegment mem = fm.apply(SPECIES.length());
+
+        VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(SPECIES, a, 0);
+
+        shuffle.intoMemorySegment(mem, 0, fbo.get());
+
+        VectorShuffle<Byte> memShuffle = VectorShuffle.fromMemorySegment(SPECIES, mem, 0, fbo.get());
+
+        Assert.assertEquals(shuffle, memShuffle);
+    }
+
+    @Test(dataProvider = "shuffleIndexIOOBEProvider")
+    static void storeShuffleMemorySegmentIOOBE(IntFunction<int[]> fa,
+                                              IntFunction<MemorySegment> fm) {
+        int[] a = fa.apply(SPECIES.length());
+
+        VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(SPECIES, a, 0);
+
+        MemorySegment badmem = fm.apply(a.length);
+        try {
+            shuffle.intoMemorySegment(badmem, 0, ByteOrder.nativeOrder());
+            Assert.fail("Expected IndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
+    }
+
+
+    @Test(dataProvider = "shuffleIndexMemoryProvider")
+    static void loadShuffleMemorySegmentIOOBE(IntFunction<int[]> fa,
+                                              IntFunction<MemorySegment> fm,
+                                              Supplier<ByteOrder> bo) {
+        int[] a = fa.apply(SPECIES.length());
+
+        VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(SPECIES, a, 0);
+
+        MemorySegment mem = fm.apply(a.length);
+        shuffle.intoMemorySegment(mem, 0, bo.get());
+
+        try {
+            VectorShuffle<Byte> badShuffle = VectorShuffle.fromMemorySegment(SPECIES, mem, 1, bo.get());
+            Assert.fail("Expected IndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+           // expected
+        }
+    }
 
 
     static void assertArraysEquals(boolean[] r, byte[] a) {

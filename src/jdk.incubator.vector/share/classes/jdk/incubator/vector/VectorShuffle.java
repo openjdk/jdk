@@ -25,6 +25,10 @@
 package jdk.incubator.vector;
 
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Arrays;
 import java.util.function.IntUnaryOperator;
@@ -522,6 +526,32 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      *         {@code offset > a.length - this.length()}
      */
     public abstract void intoArray(int[] a, int offset);
+
+    /**
+     * Stores this shuffle into a {@link MemorySegment} starting at the given offset.
+     * @param ms the memory segment
+     * @param offset the offset into the segment
+     * @param bo the byte order
+     */
+    public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
+
+    /**
+     * Load a VectorShuffle from a {@link MemorySegment} starting at the given offset.
+     * @param vsp the {@link VectorSpecies} corresponding to the shuffle
+     * @param segment the memory segment
+     * @param offset the offset into the segment
+     * @param order the byte order
+     * @param <E> the boxed element type
+     * @return a VectorShuffle from the {@link MemorySegment}
+     */
+    @ForceInline
+    public static final <E> VectorShuffle<E> fromMemorySegment(VectorSpecies<E> vsp, MemorySegment segment,
+                                                                   long offset, ByteOrder order) {
+        long memsize = vsp.length() * 4;
+        MemorySegment arraySlice = segment.asSlice(offset, memsize);
+        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT.withOrder(order));
+        return vsp.shuffleFromArray(indices,0);
+    }
 
     /**
      * Converts this shuffle into a vector, creating a vector

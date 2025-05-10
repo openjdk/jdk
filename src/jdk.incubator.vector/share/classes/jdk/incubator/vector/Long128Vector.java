@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -865,8 +867,39 @@ final class Long128Vector extends LongVector {
                         a[offset + i] = laneSource(i);
                     }
                 }
-            }
+           }
+
         }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+                      switch (length()) {
+                          case 1 -> ms.set(ValueLayout.OfInt.JAVA_INT, offset, laneSource(0));
+                          case 2 -> toBitsVector()
+                                  .convertShape(VectorOperators.L2I, IntVector.SPECIES_64, 0)
+                                  .reinterpretAsInts()
+                                  .intoMemorySegment(ms, offset, bo);
+                          case 4 -> toBitsVector()
+                                  .convertShape(VectorOperators.L2I, IntVector.SPECIES_128, 0)
+                                  .reinterpretAsInts()
+                                  .intoMemorySegment(ms, offset, bo);
+                          case 8 -> toBitsVector()
+                                  .convertShape(VectorOperators.L2I, IntVector.SPECIES_256, 0)
+                                  .reinterpretAsInts()
+                                  .intoMemorySegment(ms, offset, bo);
+                          case 16 -> toBitsVector()
+                                  .convertShape(VectorOperators.L2I, IntVector.SPECIES_512, 0)
+                                  .reinterpretAsInts()
+                                  .intoMemorySegment(ms, offset, bo);
+                          default -> {
+                              VectorIntrinsics.checkFromIndexSize(offset, length(), ms.byteSize() / 4);
+                              for (int i = 0; i < length(); i++) {
+                                  ms.setAtIndex(ValueLayout.JAVA_INT, i, laneSource(i));
+                              }
+                          }
+                      }
+         }
 
         @Override
         @ForceInline

@@ -24,9 +24,14 @@
  */
 package jdk.incubator.vector;
 
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.function.IntUnaryOperator;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
+
+import static jdk.incubator.vector.VectorIntrinsics.checkFromIndexSize;
 
 abstract class AbstractShuffle<E> extends VectorShuffle<E> {
     static final IntUnaryOperator IDENTITY = i -> i;
@@ -64,6 +69,11 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
 
     abstract AbstractVector<?> toBitsVector0();
 
+    /**
+     * {@inheritDoc} <!--workaround-->
+     * @since 19
+     */
+
     @Override
     @ForceInline
     public final int[] toArray() {
@@ -95,6 +105,7 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
         }
         return this;
     }
+
 
     @Override
     @ForceInline
