@@ -25,9 +25,11 @@
 #ifndef SHARE_GC_SHARED_TASKTERMINATOR_HPP
 #define SHARE_GC_SHARED_TASKTERMINATOR_HPP
 
+#include "workerThread.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.hpp"
 
 class TaskQueueSetSuper;
 class TerminatorTerminator;
@@ -51,7 +53,12 @@ class Thread;
  * The intention of above enhancement is to reduce spin-master's latency on
  * detecting new tasks for stealing and termination condition.
  */
+class TaskTerminationTracker;
+
+#define TERMINATION_EVENT_NAME(task_name) "Termination:" task_name ""
+
 class TaskTerminator : public CHeapObj<mtGC> {
+  friend class TaskTerminationTracker;
   class DelayContext {
     uint _yield_count;
     // Number of hard spin loops done since last yield
@@ -71,6 +78,7 @@ class TaskTerminator : public CHeapObj<mtGC> {
 
   uint _n_threads;
   TaskQueueSetSuper* _queue_set;
+  const char* _termination_event_name;
 
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
   volatile uint _offered_termination;
@@ -94,7 +102,7 @@ class TaskTerminator : public CHeapObj<mtGC> {
   NONCOPYABLE(TaskTerminator);
 
 public:
-  TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set);
+  TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set, const char* termination_event_name = nullptr);
   ~TaskTerminator();
 
   // The current thread has no work, and is ready to terminate if everyone
@@ -118,6 +126,10 @@ public:
   // Same as above but the number of parallel threads is set to the
   // given number.
   void reset_for_reuse(uint n_threads);
+  // Same as above but task name is set to new task name.
+  void reset_for_reuse(uint n_threads, const char* termination_event_name);
+  // Set termination event name
+  void set_termination_event_name(const char* termination_event_name);
 };
 
 #endif // SHARE_GC_SHARED_TASKTERMINATOR_HPP
