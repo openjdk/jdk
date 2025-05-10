@@ -307,7 +307,7 @@ OGLSD_InitOGLWindow(JNIEnv *env, OGLSDOps *oglsdo)
     glxsdo->drawable = window;
     glxsdo->xdrawable = window;
 
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  created window: w=%d h=%d",
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  created window: w=%d h=%d",
                 oglsdo->width, oglsdo->height);
 
     return JNI_TRUE;

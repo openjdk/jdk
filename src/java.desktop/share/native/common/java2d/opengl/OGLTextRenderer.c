@@ -347,7 +347,7 @@ OGLTR_UpdateLCDTextContrast(jint contrast)
     double ig = 1.0 / g;
     GLint loc;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "OGLTR_UpdateLCDTextContrast: contrast=%d", contrast);
 
     loc = j2d_glGetUniformLocationARB(lcdTextProgram, "gamma");
@@ -376,7 +376,7 @@ OGLTR_UpdateLCDTextColor(jint contrast)
     GLfloat clr[4];
     GLint loc;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "OGLTR_UpdateLCDTextColor: contrast=%d", contrast);
 
     /*

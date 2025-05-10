@@ -248,7 +248,7 @@ JNICALL Java_sun_java2d_d3d_D3DSurfaceData_initTexture
                       isRTT, isOpaque,
                       &format, 0/*usage*/, &d3dsdo->pResource);
     if (SUCCEEDED(res)) {
-        J2dTraceLn1(J2D_TRACE_VERBOSE,
+        J2dTraceLn(J2D_TRACE_VERBOSE,
                     "  created texture pResource=%x", d3dsdo->pResource);
         d3dsdo->pResource->SetSDOps(d3dsdo);
     } else {
@@ -293,7 +293,7 @@ Java_sun_java2d_d3d_D3DSurfaceData_initRTSurface
                             isOpaque, FALSE /*lockable*/,
                             &format, &d3dsdo->pResource);
     if (SUCCEEDED(res)) {
-        J2dTraceLn1(J2D_TRACE_VERBOSE, "  created RT surface pResource=0x%x",
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  created RT surface pResource=0x%x",
                     d3dsdo->pResource);
         d3dsdo->pResource->SetSDOps(d3dsdo);
     } else {
@@ -390,7 +390,7 @@ JNICALL Java_sun_java2d_d3d_D3DSurfaceData_initFlipBackbuffer
                         d3dsdo->swapEffect, presentationInterval,
                         &d3dsdo->pResource);
     if (SUCCEEDED(res)) {
-        J2dTraceLn1(J2D_TRACE_VERBOSE, "  created swap chain pResource=0x%x",
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  created swap chain pResource=0x%x",
                     d3dsdo->pResource);
         d3dsdo->pResource->SetSDOps(d3dsdo);
     } else {
@@ -531,7 +531,7 @@ JNIEXPORT jlong JNICALL
 {
     D3DSDOps *d3dsdo;
 
-    J2dTraceLn(J2D_TRACE_INFO, "D3DSurfaceData_getNativeResourceNative")
+    J2dTraceLn(J2D_TRACE_INFO, "D3DSurfaceData_getNativeResourceNative");
 
     RETURN_STATUS_IF_NULL(d3dsdo = (D3DSDOps *)jlong_to_ptr(pData), 0L);
 

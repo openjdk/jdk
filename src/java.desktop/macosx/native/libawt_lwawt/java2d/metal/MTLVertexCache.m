@@ -95,7 +95,7 @@ MTLVertexCache_FlushVertexCache(MTLContext *mtlc)
                                                 atIndex:MeshVertexBuffer];
 
         [encoder setFragmentTexture:maskCacheTex.texture atIndex: 0];
-        J2dTraceLn1(J2D_TRACE_INFO,
+        J2dTraceLn(J2D_TRACE_INFO,
             "MTLVertexCache_FlushVertexCache : encode %d characters", (vertexCacheIndex / 6));
         [encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:vertexCacheIndex];
     }
@@ -119,7 +119,7 @@ MTLVertexCache_FlushGlyphVertexCache()
                                                 atIndex:MeshVertexBuffer];
         id<MTLTexture> glyphCacheTex = MTLTR_GetGlyphCacheTexture();
         [encoder setFragmentTexture:glyphCacheTex atIndex: 0];
-        J2dTraceLn1(J2D_TRACE_INFO,
+        J2dTraceLn(J2D_TRACE_INFO,
             "MTLVertexCache_FlushGlyphVertexCache : encode %d characters", (vertexCacheIndex / 6));
         [encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:vertexCacheIndex];
     }
@@ -220,7 +220,7 @@ MTLVertexCache_AddMaskQuad(MTLContext *mtlc,
     jfloat tx1, ty1, tx2, ty2;
     jfloat dx1, dy1, dx2, dy2;
 
-    J2dTraceLn1(J2D_TRACE_INFO, "MTLVertexCache_AddMaskQuad: %d",
+    J2dTraceLn(J2D_TRACE_INFO, "MTLVertexCache_AddMaskQuad: %d",
                 maskCacheIndex);
 
     // MTLVC_ADD_TRIANGLES at the end of this function
@@ -229,7 +229,7 @@ MTLVertexCache_AddMaskQuad(MTLContext *mtlc,
     if ((maskCacheIndex >= MTLVC_MASK_CACHE_MAX_INDEX) ||
          ((vertexCacheIndex + VERTS_FOR_A_QUAD) >= MTLVC_MAX_INDEX))
     {
-        J2dTraceLn2(J2D_TRACE_INFO, "maskCacheIndex = %d, vertexCacheIndex = %d", maskCacheIndex, vertexCacheIndex);
+        J2dTraceLn(J2D_TRACE_INFO, "maskCacheIndex = %d, vertexCacheIndex = %d", maskCacheIndex, vertexCacheIndex);
         MTLVertexCache_FlushVertexCache(mtlc);
         MTLVertexCache_EnableMaskCache(mtlc, dstOps);
         maskCacheIndex = 0;
@@ -240,7 +240,7 @@ MTLVertexCache_AddMaskQuad(MTLContext *mtlc,
                     (maskCacheIndex % MTLVC_MASK_CACHE_WIDTH_IN_TILES);
         jint texy = MTLVC_MASK_CACHE_TILE_HEIGHT *
                     (maskCacheIndex / MTLVC_MASK_CACHE_WIDTH_IN_TILES);
-        J2dTraceLn5(J2D_TRACE_INFO, "texx = %d texy = %d width = %d height = %d maskscan = %d", texx, texy, width,
+        J2dTraceLn(J2D_TRACE_INFO, "texx = %d texy = %d width = %d height = %d maskscan = %d", texx, texy, width,
                     height, maskscan);
         NSUInteger bytesPerRow = 1 * width;
         NSUInteger slice = bytesPerRow * srcy + srcx;
@@ -271,9 +271,9 @@ MTLVertexCache_AddMaskQuad(MTLContext *mtlc,
             char tile[size];
             dst_offset = 0;
             for (int i = srcy; i < srcy + height; i++) {
-                J2dTraceLn2(J2D_TRACE_INFO, "srcx = %d srcy = %d", srcx, srcy);
+                J2dTraceLn(J2D_TRACE_INFO, "srcx = %d srcy = %d", srcx, srcy);
                 src_offset = maskscan * i + srcx;
-                J2dTraceLn2(J2D_TRACE_INFO, "src_offset = %d dst_offset = %d", src_offset, dst_offset);
+                J2dTraceLn(J2D_TRACE_INFO, "src_offset = %d dst_offset = %d", src_offset, dst_offset);
                 memcpy(tile + dst_offset, mask + src_offset, width);
                 dst_offset = dst_offset + width;
             }
@@ -301,7 +301,7 @@ MTLVertexCache_AddMaskQuad(MTLContext *mtlc,
     dx2 = dx1 + width;
     dy2 = dy1 + height;
 
-    J2dTraceLn8(J2D_TRACE_INFO, "tx1 = %f ty1 = %f tx2 = %f ty2 = %f dx1 = %f dy1 = %f dx2 = %f dy2 = %f", tx1, ty1, tx2, ty2, dx1, dy1, dx2, dy2);
+    J2dTraceLn(J2D_TRACE_INFO, "tx1 = %f ty1 = %f tx2 = %f ty2 = %f dx1 = %f dy1 = %f dx2 = %f dy2 = %f", tx1, ty1, tx2, ty2, dx1, dy1, dx2, dy2);
     MTLVC_ADD_TRIANGLES(tx1, ty1, tx2, ty2,
                         dx1, dy1, dx2, dy2);
 }
@@ -317,7 +317,7 @@ MTLVertexCache_AddGlyphQuad(MTLContext *mtlc,
     // so need to check space for VERTS_FOR_A_QUAD elements
     if ((vertexCacheIndex + VERTS_FOR_A_QUAD) >= MTLVC_MAX_INDEX)
     {
-        J2dTraceLn2(J2D_TRACE_INFO, "maskCacheIndex = %d, vertexCacheIndex = %d", maskCacheIndex, vertexCacheIndex);
+        J2dTraceLn(J2D_TRACE_INFO, "maskCacheIndex = %d, vertexCacheIndex = %d", maskCacheIndex, vertexCacheIndex);
         MTLVertexCache_FlushGlyphVertexCache();
     }
 

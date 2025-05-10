@@ -37,7 +37,7 @@
 #include "Trace.h"
 
 #define DebugPrintD3DError(res, msg) \
-    J2dTraceLn1(J2D_TRACE_ERROR, "D3D Error: " msg " res=%d", res)
+    J2dTraceLn(J2D_TRACE_ERROR, "D3D Error: " msg " res=%d", res)
 
 // some helper macros
 #define SAFE_RELEASE(RES) \
@@ -60,7 +60,7 @@ do {                      \
 #define SAFE_PRINTLN(RES) \
 do {                      \
     if ((RES)!= NULL) {   \
-        J2dTraceLn1(J2D_TRACE_VERBOSE, "  " #RES "=0x%x", (RES)); \
+        J2dTraceLn(J2D_TRACE_VERBOSE, "  " #RES "=0x%x", (RES)); \
     } else {              \
         J2dTraceLn(J2D_TRACE_VERBOSE, "  " #RES "=NULL"); \
     }                     \
@@ -76,7 +76,7 @@ do {                      \
  */
 #define ACT_IF_NULL(ACTION, value)         \
     if ((value) == NULL) {                 \
-        J2dTraceLn3(J2D_TRACE_ERROR,       \
+        J2dTraceLn(J2D_TRACE_ERROR,       \
                     "%s is null in %s:%d", #value, __FILE__, __LINE__); \
         ACTION;                            \
     } else do { } while (0)

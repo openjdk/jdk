@@ -181,7 +181,7 @@ typedef void (GLAPIENTRY *glTextureBarrierNVType) (void);
  * REMIND: this caused an internal error in the MS compiler!?!?
  *
  *#define OGL_CHECK_FUNC_ERR(f) \
- *    J2dTrace1(J2D_TRACE_ERROR, "could not load function: %s", #f)
+ *    J2dTrace(J2D_TRACE_ERROR, "could not load function: %s", #f)
  */
 
 #define OGL_CHECK_FUNC_ERR(f) \
