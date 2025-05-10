@@ -223,11 +223,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * least significant int has int-number 0, the next int in order of
      * increasing significance has int-number 1, and so forth.
      *
-     * <p>Note: never used for a BigInteger with a magnitude of zero.
-     *
-     * @see #firstNonzeroIntNum()
+     * @see #numberOfTrailingZeroInts()
      */
-    private int firstNonzeroIntNumPlusTwo;
+    private int numberOfTrailingZeroIntsPlusTwo;
 
     /**
      * This mask is used to obtain the value of an int as if it were unsigned.
@@ -2640,8 +2638,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     ? new BigInteger(result << bitsToShift, newSign)
                     : new BigInteger(result, newSign).shiftLeft(bitsToShift);
         }
-
-        if ((bitLength() - 1L) * exponent >= Integer.MAX_VALUE) {
+        // (this.abs().bitLength() - 1L) * exponent + 1L > Integer.MAX_VALUE
+        if (scaleFactor + bitsToShift - exponent >= Integer.MAX_VALUE) {
             reportOverflow();
         }
 
@@ -2828,9 +2826,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * assuming there are no leading zero ints.
      */
     private static int bitLength(int[] val, int len) {
-        if (len == 0)
-            return 0;
-        return ((len - 1) << 5) + bitLengthForInt(val[0]);
+        return len == 0 ? 0 : len * Integer.SIZE - Integer.numberOfLeadingZeros(val[0]);
     }
 
     /**
@@ -3835,16 +3831,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     public int getLowestSetBit() {
         int lsb = lowestSetBitPlusTwo - 2;
         if (lsb == -2) {  // lowestSetBit not initialized yet
-            lsb = 0;
-            if (signum == 0) {
-                lsb -= 1;
-            } else {
-                // Search for lowest order nonzero int
-                int i,b;
-                for (i=0; (b = getInt(i)) == 0; i++)
-                    ;
-                lsb += (i << 5) + Integer.numberOfTrailingZeros(b);
-            }
+            lsb = signum == 0 ? -1 : numberOfTrailingZeros();
             lowestSetBitPlusTwo = lsb + 2;
         }
         return lsb;
@@ -3866,23 +3853,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     public int bitLength() {
         int n = bitLengthPlusOne - 1;
         if (n == -1) { // bitLength not initialized yet
-            int[] m = mag;
-            int len = m.length;
-            if (len == 0) {
-                n = 0; // offset by one to initialize
-            }  else {
-                // Calculate the bit length of the magnitude
-                int magBitLength = ((len - 1) << 5) + bitLengthForInt(mag[0]);
-                 if (signum < 0) {
-                     // Check if magnitude is a power of two
-                     boolean pow2 = (Integer.bitCount(mag[0]) == 1);
-                     for (int i=1; i< len && pow2; i++)
-                         pow2 = (mag[i] == 0);
-
-                     n = (pow2 ? magBitLength - 1 : magBitLength);
-                 } else {
-                     n = magBitLength;
-                 }
+            // Calculate the bit length of the magnitude
+            n = bitLength(mag, mag.length);
+            if (signum < 0
+                    // Check if magnitude is a power of two
+                    && Integer.bitCount(mag[0]) == 1
+                    && numberOfTrailingZeroInts() == mag.length - 1) {
+                n--;
             }
             bitLengthPlusOne = n + 1;
         }
@@ -3901,17 +3878,15 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         int bc = bitCountPlusOne - 1;
         if (bc == -1) {  // bitCount not initialized yet
             bc = 0;      // offset by one to initialize
+
+            final int firstZeroInt = mag.length - numberOfTrailingZeroInts();
             // Count the bits in the magnitude
-            for (int i=0; i < mag.length; i++)
+            for (int i = 0; i < firstZeroInt; i++)
                 bc += Integer.bitCount(mag[i]);
-            if (signum < 0) {
-                // Count the trailing zeros in the magnitude
-                int magTrailingZeroCount = 0, j;
-                for (j=mag.length-1; mag[j] == 0; j--)
-                    magTrailingZeroCount += 32;
-                magTrailingZeroCount += Integer.numberOfTrailingZeros(mag[j]);
-                bc += magTrailingZeroCount - 1;
-            }
+
+            if (signum < 0)
+                bc += numberOfTrailingZeros() - 1;
+
             bitCountPlusOne = bc + 1;
         }
         return bc;
@@ -4416,7 +4391,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return 0.0f;
         }
 
-        int exponent = ((mag.length - 1) << 5) + bitLengthForInt(mag[0]) - 1;
+        int exponent = bitLength(mag, mag.length) - 1;
 
         // exponent == floor(log2(abs(this)))
         if (exponent < Long.SIZE - 1) {
@@ -4501,7 +4476,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return 0.0;
         }
 
-        int exponent = ((mag.length - 1) << 5) + bitLengthForInt(mag[0]) - 1;
+        int exponent = bitLength(mag, mag.length) - 1;
 
         // exponent == floor(log2(abs(this))Double)
         if (exponent < Long.SIZE - 1) {
@@ -4883,27 +4858,37 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         int magInt = mag[mag.length-n-1];
 
         return (signum >= 0 ? magInt :
-                (n <= firstNonzeroIntNum() ? -magInt : ~magInt));
+                (n <= numberOfTrailingZeroInts() ? -magInt : ~magInt));
+    }
+
+    /**
+     * Returns the number of zero bits following the lowest-order ("rightmost")
+     * one-bit in the magnitude. Assumes {@code mag.length != 0}.
+     *
+     * @see #numberOfTrailingZeroInts
+     */
+    private int numberOfTrailingZeros() {
+        int tz = numberOfTrailingZeroInts();
+        return tz * Integer.SIZE + Integer.numberOfTrailingZeros(mag[mag.length - 1 - tz]);
     }
 
     /**
      * Returns the index of the int that contains the first nonzero int in the
      * little-endian binary representation of the magnitude (int 0 is the
-     * least significant). If the magnitude is zero, return value is undefined.
+     * least significant). If the magnitude is zero, return value is zero.
      *
-     * <p>Note: never used for a BigInteger with a magnitude of zero.
      * @see #getInt
      */
-    private int firstNonzeroIntNum() {
-        int fn = firstNonzeroIntNumPlusTwo - 2;
+    private int numberOfTrailingZeroInts() {
+        int fn = numberOfTrailingZeroIntsPlusTwo - 2;
         if (fn == -2) { // firstNonzeroIntNum not initialized yet
             // Search for the first nonzero int
             int i;
-            int mlen = mag.length;
-            for (i = mlen - 1; i >= 0 && mag[i] == 0; i--)
+            final int lowest = mag.length - 1;
+            for (i = lowest; i >= 0 && mag[i] == 0; i--)
                 ;
-            fn = mlen - i - 1;
-            firstNonzeroIntNumPlusTwo = fn + 2; // offset by two to initialize
+            fn = lowest - i;
+            numberOfTrailingZeroIntsPlusTwo = fn + 2; // offset by two to initialize
         }
         return fn;
     }
@@ -5052,13 +5037,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Returns the mag array as an array of bytes.
      */
     private byte[] magSerializedForm() {
-        int len = mag.length;
+        byte[] result = new byte[(bitLength(mag, mag.length) + 7) >>> 3];
 
-        int bitLen = (len == 0 ? 0 : ((len - 1) << 5) + bitLengthForInt(mag[0]));
-        int byteLen = (bitLen + 7) >>> 3;
-        byte[] result = new byte[byteLen];
-
-        for (int i = byteLen - 1, bytesCopied = 4, intIndex = len - 1, nextInt = 0;
+        for (int i = result.length - 1, bytesCopied = 4, intIndex = mag.length - 1, nextInt = 0;
              i >= 0; i--) {
             if (bytesCopied == 4) {
                 nextInt = mag[intIndex--];
