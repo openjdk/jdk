@@ -2826,9 +2826,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * assuming there are no leading zero ints.
      */
     private static int bitLength(int[] val, int len) {
-        if (len == 0)
-            return 0;
-        return ((len - 1) << 5) + bitLengthForInt(val[0]);
+        return len == 0 ? 0 : len * Integer.SIZE - Integer.numberOfLeadingZeros(val[0]);
     }
 
     /**
@@ -4393,7 +4391,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return 0.0f;
         }
 
-        int exponent = ((mag.length - 1) << 5) + bitLengthForInt(mag[0]) - 1;
+        int exponent = bitLength(mag, mag.length) - 1;
 
         // exponent == floor(log2(abs(this)))
         if (exponent < Long.SIZE - 1) {
@@ -4478,7 +4476,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return 0.0;
         }
 
-        int exponent = ((mag.length - 1) << 5) + bitLengthForInt(mag[0]) - 1;
+        int exponent = bitLength(mag, mag.length) - 1;
 
         // exponent == floor(log2(abs(this))Double)
         if (exponent < Long.SIZE - 1) {
@@ -5041,7 +5039,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private byte[] magSerializedForm() {
         int len = mag.length;
 
-        int bitLen = (len == 0 ? 0 : ((len - 1) << 5) + bitLengthForInt(mag[0]));
+        int bitLen = bitLength(mag, len);
         int byteLen = (bitLen + 7) >>> 3;
         byte[] result = new byte[byteLen];
 
