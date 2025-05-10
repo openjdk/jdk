@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.*;
 import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+
 import javax.net.ssl.*;
 import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
@@ -242,6 +243,43 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                     null, checkClientTrusted ? null : authType);
         }
 
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+            SSLLogger.fine("Found trusted certificate",
+                    trustedChain[trustedChain.length - 1]);
+        }
+    }
+
+    void checkServerTrusted(X509Certificate[] chain, String authType,
+            QuicTLSEngineImpl quicTLSEngine) throws CertificateException {
+        final SSLSession handshakeSession = quicTLSEngine.getHandshakeSession();
+        final List<byte[]> responseList;
+        final AlgorithmConstraints constraints;
+        // determine the AlgorithmConstraints and the OCSP responses
+        // to be applied when validating the certificate chain
+        if (handshakeSession instanceof ExtendedSSLSession extSession) {
+            final String[] localSupportedSignAlgs =
+                    extSession.getLocalSupportedSignatureAlgorithms();
+            constraints = SSLAlgorithmConstraints.forQUIC(
+                    quicTLSEngine, localSupportedSignAlgs, false);
+            // grab any stapled OCSP responses for use in validation
+            responseList = extSession.getStatusResponses();
+        } else {
+            constraints = SSLAlgorithmConstraints.forQUIC(quicTLSEngine, false);
+            responseList = Collections.emptyList();
+        }
+        final SSLParameters sslParameters = quicTLSEngine.getSSLParameters();
+        final Validator v = checkTrustedInit(chain, authType, false);
+        // do the certificate chain validation
+        final X509Certificate[] trustedChain = v.validate(chain, null,
+                responseList, constraints, authType);
+        if (sslParameters != null && handshakeSession != null) {
+            // check endpoint identity
+            String identityAlg =
+                    sslParameters.getEndpointIdentificationAlgorithm();
+            if (identityAlg != null && !identityAlg.isEmpty()) {
+                checkIdentity(handshakeSession, trustedChain, identityAlg, false);
+            }
+        }
         if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
             SSLLogger.fine("Found trusted certificate",
                     trustedChain[trustedChain.length - 1]);

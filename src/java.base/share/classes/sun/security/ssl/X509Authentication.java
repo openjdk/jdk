@@ -218,6 +218,17 @@ enum X509Authentication implements SSLAuthentication {
                     chc.peerSupportedAuthorities == null ? null :
                             chc.peerSupportedAuthorities.clone(),
                     engine);
+            // TODO should we have a method that can take QuicTLSEngine?
+        } else if (km instanceof X509KeyManagerImpl xkm) {
+            clientAlias = xkm.chooseClientAlias(keyTypes,
+                    chc.peerSupportedAuthorities == null ? null :
+                            chc.peerSupportedAuthorities.clone(),
+                    chc.algorithmConstraints);
+        } else {
+            clientAlias = km.chooseClientAlias(keyTypes,
+                    chc.peerSupportedAuthorities == null ? null :
+                            chc.peerSupportedAuthorities.clone(),
+                    null);
         }
 
         if (clientAlias == null) {
@@ -290,6 +301,18 @@ enum X509Authentication implements SSLAuthentication {
                         shc.peerSupportedAuthorities == null ? null :
                                 shc.peerSupportedAuthorities.clone(),
                         engine);
+                // TODO should we have a method that can take QuicTLSEngine?
+            } else if (km instanceof X509KeyManagerImpl xkm) {
+                serverAlias = xkm.chooseServerAlias(keyType,
+                        shc.peerSupportedAuthorities == null ? null :
+                                shc.peerSupportedAuthorities.clone(),
+                        shc.algorithmConstraints,
+                        shc.requestedServerNames);
+            } else {
+                serverAlias = km.chooseServerAlias(keyType,
+                        shc.peerSupportedAuthorities == null ? null :
+                                shc.peerSupportedAuthorities.clone(),
+                        null);
             }
 
             if (serverAlias == null) {
