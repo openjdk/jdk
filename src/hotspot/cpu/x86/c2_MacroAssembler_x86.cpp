@@ -5731,7 +5731,7 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
   // in a permute table row contains either a valid permute index or a -1 (default)
   // value, this can potentially be used as a blending mask after
   // compressing/expanding the source vector lanes.
-  vblendvps(dst, dst, xtmp, permv, vec_enc, false, permv);
+  vblendvps(dst, dst, xtmp, permv, vec_enc, true, permv);
 }
 
 void C2_MacroAssembler::vector_compress_expand(int opcode, XMMRegister dst, XMMRegister src, KRegister mask,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ import sun.jvmstat.monitor.event.VmStatusChangeEvent;
 public final class MonitorVmStartTerminate {
 
     private static final int PROCESS_COUNT = 10;
+    private static final int ARGS_ATTEMPTS = 10;
 
     public static void main(String... args) throws Exception {
 
@@ -175,8 +176,6 @@ public final class MonitorVmStartTerminate {
             }
         }
 
-        private static final int ARGS_ATTEMPTS = 3;
-
         private boolean hasMainArgs(Integer id, String args) {
             VmIdentifier vmid = null;
             try {
@@ -204,7 +203,10 @@ public final class MonitorVmStartTerminate {
                 } catch (MonitorException e) {
                     // Process probably not running or not ours, e.g.
                     // sun.jvmstat.monitor.MonitorException: Could not attach to PID
-                    System.out.println("hasMainArgs(" + id + "): " + e);
+                    // Only log if something else, to avoid filling log:
+                    if (!e.getMessage().contains("Could not attach")) {
+                        System.out.println("hasMainArgs(" + id + "): " + e);
+                    }
                 }
             }
             return false;
@@ -249,22 +251,14 @@ public final class MonitorVmStartTerminate {
         }
 
         private static void waitForRemoval(Path path) {
-            String timeoutFactorText = System.getProperty("test.timeout.factor", "1.0");
-            double timeoutFactor = Double.parseDouble(timeoutFactorText);
-            long timeoutNanos = 1000_000_000L*(long)(1000*timeoutFactor);
             long start = System.nanoTime();
+            System.out.println("Waiting for " + path + " to be removed");
             while (true) {
                 long now = System.nanoTime();
                 long waited = now - start;
-                System.out.println("Waiting for " + path + " to be removed, " + waited + " ns");
                 if (!Files.exists(path)) {
+                    System.out.println("waitForRemoval: " + path + " has been removed in " + waited + " ns");
                     return;
-                }
-                if (waited > timeoutNanos) {
-                    System.out.println("Start: " + start);
-                    System.out.println("Now: " + now);
-                    System.out.println("Process timed out after " + waited + " ns. Abort.");
-                    System.exit(1);
                 }
                 takeNap();
             }

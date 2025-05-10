@@ -455,7 +455,7 @@ class AbstractDumpWriter : public CHeapObj<mtInternal> {
 void AbstractDumpWriter::write_fast(const void* s, size_t len) {
   assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
   assert(buffer_size() - position() >= len, "Must fit");
-  debug_only(_sub_record_left -= len);
+  DEBUG_ONLY(_sub_record_left -= len);
   memcpy(buffer() + position(), s, len);
   set_position(position() + len);
 }
@@ -467,7 +467,7 @@ bool AbstractDumpWriter::can_write_fast(size_t len) {
 // write raw bytes
 void AbstractDumpWriter::write_raw(const void* s, size_t len) {
   assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
-  debug_only(_sub_record_left -= len);
+  DEBUG_ONLY(_sub_record_left -= len);
 
   // flush buffer to make room.
   while (len > buffer_size() - position()) {
@@ -591,8 +591,8 @@ void AbstractDumpWriter::start_sub_record(u1 tag, u4 len) {
     return;
   }
 
-  debug_only(_sub_record_left = len);
-  debug_only(_sub_record_ended = false);
+  DEBUG_ONLY(_sub_record_left = len);
+  DEBUG_ONLY(_sub_record_ended = false);
 
   write_u1(tag);
 }
@@ -601,7 +601,7 @@ void AbstractDumpWriter::end_sub_record() {
   assert(_in_dump_segment, "must be in dump segment");
   assert(_sub_record_left == 0, "sub-record not written completely");
   assert(!_sub_record_ended, "Must not have ended yet");
-  debug_only(_sub_record_ended = true);
+  DEBUG_ONLY(_sub_record_ended = true);
 }
 
 // Supports I/O operations for a dump
