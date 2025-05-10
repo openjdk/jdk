@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,8 @@ inline VMReg FloatRegister::as_VMReg() const {
 }
 
 inline VMReg VectorSRegister::as_VMReg() const {
-  return VMRegImpl::as_VMReg((encoding()) + ConcreteRegisterImpl::max_fpr);
+  // Four halves, multiply by 4.
+  return VMRegImpl::as_VMReg((encoding() << 2) + ConcreteRegisterImpl::max_fpr);
 }
 
 inline VMReg ConditionRegister::as_VMReg() const {
