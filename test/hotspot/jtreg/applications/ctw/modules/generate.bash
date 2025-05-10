@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#  Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,8 @@
 
 # generates CTW tests for modules passed as argument
 
-for module in $@
-do
-    file=${module//./_}.java
-    echo creating $file for $module...
+# generates a wrapper file
+generate_file() {
     cat > $file <<EOF
 /*
  * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
@@ -68,5 +66,12 @@ do
  * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:$module
  */
 EOF
+}
+
+for module in $@
+do
+    file=${module//./_}.java
+    echo creating $file for $module...
+    generate_file
 
 done
