@@ -116,6 +116,10 @@ class LogTagSet {
     _output_list.set_output_level(output, level);
   }
 
+  const LogDecorators& decorators() {
+    return _decorators;
+  }
+
   // Refresh the decorators for this tagset to contain the decorators for all
   // of its current outputs combined with the given decorators.
   void update_decorators(const LogDecorators& decorator = LogDecorators::None);
