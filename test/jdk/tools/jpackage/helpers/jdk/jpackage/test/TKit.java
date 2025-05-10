@@ -293,8 +293,8 @@ public final class TKit {
         }
     }
 
-    private static Path createUniquePath(String defaultName) {
-        return createUniquePath(defaultName, workDir());
+    static Path createUniquePath(Path pathTemplate) {
+        return createUniquePath(pathTemplate.getFileName().toString(), pathTemplate.getParent());
     }
 
     private static Path createUniquePath(String defaultName, Path basedir) {
