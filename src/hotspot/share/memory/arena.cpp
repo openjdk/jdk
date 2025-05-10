@@ -150,6 +150,16 @@ Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType allo
   //   aligning (D)
 
   assert(is_aligned(length, ARENA_AMALLOC_ALIGNMENT), "chunk payload length misaligned: %zu.", length);
+
+  #ifdef ASSERT
+  Thread* t = Thread::current_or_null_safe();
+  if (t != nullptr && t->resource_area() != nullptr) {
+    // Just to make sure that we're allowed to allocate
+    t->resource_area()->verify_no_NoResourceMark();
+  }
+  #endif
+
+
   // Try to reuse a freed chunk from the pool
   ChunkPool* pool = ChunkPool::get_pool_for_size(length);
   Chunk* chunk = nullptr;

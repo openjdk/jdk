@@ -27,12 +27,25 @@
 
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "runtime/vframe.hpp"
 
 class frame;
 class InstanceKlass;
 class JavaThread;
 class JfrCheckpointWriter;
 class JfrChunkWriter;
+
+class JfrVframeStream : public vframeStreamCommon {
+ private:
+  bool _vthread;
+  const ContinuationEntry* _cont_entry;
+  bool _async_mode;
+  bool step_to_sender();
+  void next_frame();
+ public:
+  JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode, bool allow_continuation_walk);
+  void next_vframe();
+};
 
 class JfrStackFrame {
   friend class ObjectSampleCheckpoint;
@@ -69,6 +82,9 @@ class JfrStackTrace : public JfrCHeapObj {
   friend class ObjectSampler;
   friend class OSThreadSampler;
   friend class StackTraceResolver;
+  friend class JfrCPUTimeTrace;
+  friend class JfrAsyncStackTrace;
+  friend class JfrCPUTimeThreadSampler;
  private:
   const JfrStackTrace* _next;
   JfrStackFrame* _frames;
@@ -101,10 +117,10 @@ class JfrStackTrace : public JfrCHeapObj {
   bool full_stacktrace() const { return _reached_root; }
 
   JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrStackTrace* next);
-  JfrStackTrace(JfrStackFrame* frames, u4 max_frames);
   ~JfrStackTrace();
 
  public:
+  JfrStackTrace(JfrStackFrame* frames, u4 max_frames);
   traceid hash() const { return _hash; }
   traceid id() const { return _id; }
   bool should_write() const { return !_written; }

@@ -148,3 +148,7 @@ bool Jfr::on_flight_recorder_option(const JavaVMOption** option, char* delimiter
 bool Jfr::on_start_flight_recording_option(const JavaVMOption** option, char* delimiter) {
   return JfrOptionSet::parse_start_flight_recording_option(option, delimiter);
 }
+
+void Jfr::on_safepoint(JavaThread* jt) {
+  JfrRecorder::on_safepoint(jt);
+}
