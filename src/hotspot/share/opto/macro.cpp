@@ -1007,7 +1007,6 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
       if (use->is_Initialize()) {
         // Eliminate Initialize node.
         InitializeNode *init = use->as_Initialize();
-        assert(init->outcnt() <= 2, "only a control and memory projection expected");
         Node *ctrl_proj = init->proj_out_or_null(TypeFunc::Control);
         if (ctrl_proj != nullptr) {
           _igvn.replace_node(ctrl_proj, init->in(TypeFunc::Control));
@@ -1017,18 +1016,19 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
           assert(tmp == nullptr || tmp == _callprojs.fallthrough_catchproj, "allocation control projection");
 #endif
         }
-        Node *mem_proj = init->proj_out_or_null(TypeFunc::Memory);
-        if (mem_proj != nullptr) {
-          Node *mem = init->in(TypeFunc::Memory);
+        Node* mem = init->in(TypeFunc::Memory);
 #ifdef ASSERT
+        Node* mem_proj = init->proj_out_or_null(TypeFunc::Memory);
+        if (mem_proj != nullptr) {
           if (mem->is_MergeMem()) {
-            assert(mem->in(TypeFunc::Memory) == _callprojs.fallthrough_memproj, "allocation memory projection");
+            assert(mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw) == _callprojs.fallthrough_memproj, "allocation memory projection");
           } else {
             assert(mem == _callprojs.fallthrough_memproj, "allocation memory projection");
           }
-#endif
-          _igvn.replace_node(mem_proj, mem);
         }
+#endif
+        init->replace_mem_projs_by(mem, &_igvn);
+        assert(init->outcnt() == 0, "only a control and some memory projections expected");
       } else  {
         assert(false, "only Initialize or AddP expected");
       }
