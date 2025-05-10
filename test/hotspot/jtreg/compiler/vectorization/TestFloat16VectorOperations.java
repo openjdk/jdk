@@ -96,6 +96,7 @@ public class TestFloat16VectorOperations {
         }
     }
 
+
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.SUB_VHF, ">= 1"},
@@ -116,6 +117,7 @@ public class TestFloat16VectorOperations {
             }
         }
     }
+
 
     @Test
     @Warmup(10000)
@@ -315,6 +317,69 @@ public class TestFloat16VectorOperations {
             if (assertResults(expected, output[i])) {
                 throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1 + " input2 = " + input2 +
                                            "input3 = " + input3 + " output = " + output[i] + " expected = " + expected);
+            }
+        }
+    }
+
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.ADD_VHF, ">= 1"},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void vectorAddConstInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            output[i] = float16ToRawShortBits(add(shortBitsToFloat16(input1[i]), shortBitsToFloat16((short)22080)));
+        }
+    }
+
+    @Check(test="vectorAddConstInputFloat16")
+    public void checkResultAddConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            short expected = floatToFloat16(float16ToFloat(input1[i]) + float16ToFloat((short)22080));
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
+                                           " output = " + output[i] + " expected = " + expected);
+            }
+        }
+    }
+
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.MUL_VHF, ">= 1"},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void vectorMulConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            output[i] = float16ToRawShortBits(multiply(Float16.valueOf(65550.0f), shortBitsToFloat16(input2[i])));
+        }
+    }
+
+    @Check(test="vectorMulConstantInputFloat16")
+    public void checkResultMulConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            short expected = floatToFloat16(float16ToFloat(floatToFloat16(65550.0f)) * float16ToFloat(input2[i]));
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
+                                           " output = " + output[i] + " expected = " + expected);
+            }
+        }
+    }
+
+    @Test
+    @Warmup(10000)
+    @IR(counts = {IRNode.SUB_VHF, ">= 1"},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void vectorSubConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            output[i] = float16ToRawShortBits(subtract(shortBitsToFloat16((short)22080), shortBitsToFloat16(input2[i])));
+        }
+    }
+
+    @Check(test="vectorSubConstantInputFloat16")
+    public void checkResultSubConstantInputFloat16() {
+        for (int i = 0; i < LEN; ++i) {
+            short expected = floatToFloat16(float16ToFloat((short)22080) - float16ToFloat(input2[i]));
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
+                                           " output = " + output[i] + " expected = " + expected);
             }
         }
     }
