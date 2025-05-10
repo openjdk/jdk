@@ -26,12 +26,13 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "compiler/compileTask.hpp"
+#include "compiler/compileTask.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/unloadableMethodHandle.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -66,14 +67,8 @@ void CompileTask::free(CompileTask* task) {
   MutexLocker locker(CompileTaskAlloc_lock);
   if (!task->is_free()) {
     assert(!task->lock()->is_locked(), "Should not be locked when freed");
-    if ((task->_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_method_holder)) ||
-        (task->_hot_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_hot_method_holder))) {
-      JNIHandles::destroy_weak_global(task->_method_holder);
-      JNIHandles::destroy_weak_global(task->_hot_method_holder);
-    } else {
-      JNIHandles::destroy_global(task->_method_holder);
-      JNIHandles::destroy_global(task->_hot_method_holder);
-    }
+    task->_method_handle.release();
+    task->_hot_method_handle.release();
     if (task->_failure_reason_on_C_heap && task->_failure_reason != nullptr) {
       os::free((void*) task->_failure_reason);
     }
@@ -96,10 +91,8 @@ void CompileTask::initialize(int compile_id,
                              bool is_blocking) {
   assert(!_lock->is_locked(), "bad locking");
 
-  Thread* thread = Thread::current();
   _compile_id = compile_id;
-  _method = method();
-  _method_holder = JNIHandles::make_weak_global(Handle(thread, method->method_holder()->klass_holder()));
+  _method_handle = UnloadableMethodHandle(method());
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
@@ -112,8 +105,6 @@ void CompileTask::initialize(int compile_id,
   _is_complete = false;
   _is_success = false;
 
-  _hot_method = nullptr;
-  _hot_method_holder = nullptr;
   _hot_count = hot_count;
   _time_queued = os::elapsed_counter();
   _time_started = 0;
@@ -127,16 +118,12 @@ void CompileTask::initialize(int compile_id,
   _failure_reason_on_C_heap = false;
   _arena_bytes = 0;
 
-  if (LogCompilation) {
-    if (hot_method.not_null()) {
-      if (hot_method == method) {
-        _hot_method = _method;
-      } else {
-        _hot_method = hot_method();
-        // only add loader or mirror if different from _method_holder
-        _hot_method_holder = JNIHandles::make_weak_global(Handle(thread, hot_method->method_holder()->klass_holder()));
-      }
-    }
+  // Only capture unload blocker if _hot_method is different from _method.
+  // Otherwise, re-initialize it to empty handle to avoid keeping old hot method alive.
+  if (hot_method.not_null() && hot_method() != method()) {
+    _hot_method_handle = UnloadableMethodHandle(hot_method());
+  } else {
+    _hot_method_handle = UnloadableMethodHandle();
   }
 
   _next = nullptr;
@@ -149,42 +136,35 @@ AbstractCompiler* CompileTask::compiler() const {
   return CompileBroker::compiler(_comp_level);
 }
 
-// Replace weak handles by strong handles to avoid unloading during compilation.
 CompileTask* CompileTask::select_for_compilation() {
-  if (is_unloaded()) {
-    // Guard against concurrent class unloading
+  if (!is_safe()) {
     return nullptr;
   }
-  Thread* thread = Thread::current();
-  assert(_method->method_holder()->is_loader_alive(), "should be alive");
-  Handle method_holder(thread, _method->method_holder()->klass_holder());
-  JNIHandles::destroy_weak_global(_method_holder);
-  JNIHandles::destroy_weak_global(_hot_method_holder);
-  _method_holder = JNIHandles::make_global(method_holder);
-  if (_hot_method != nullptr) {
-    _hot_method_holder = JNIHandles::make_global(Handle(thread, _hot_method->method_holder()->klass_holder()));
-  }
+
+  _method_handle.make_always_safe();
+  _hot_method_handle.make_always_safe();
+
   return this;
 }
 
 void CompileTask::mark_on_stack() {
-  if (is_unloaded()) {
+  if (!is_safe()) {
     return;
   }
   // Mark these methods as something redefine classes cannot remove.
-  _method->set_on_stack(true);
-  if (_hot_method != nullptr) {
-    _hot_method->set_on_stack(true);
+  _method_handle.method()->set_on_stack(true);
+  if (_hot_method_handle.method() != nullptr) {
+    _hot_method_handle.method()->set_on_stack(true);
   }
 }
 
-bool CompileTask::is_unloaded() const {
-  return _method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder) && JNIHandles::is_weak_global_cleared(_method_holder);
+bool CompileTask::is_safe() const {
+  return _method_handle.is_safe() && _hot_method_handle.is_safe();
 }
 
 // RedefineClasses support
 void CompileTask::metadata_do(MetadataClosure* f) {
-  if (is_unloaded()) {
+  if (!is_safe()) {
     return;
   }
   f->do_metadata(method());
@@ -289,7 +269,7 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
 // CompileTask::print_compilation
 void CompileTask::print(outputStream* st, const char* msg, bool short_form, bool cr) {
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_impl(st, is_unloaded() ? nullptr : method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr, _time_queued, _time_started);
+  print_impl(st, is_safe() ? method() : nullptr, compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr, _time_queued, _time_started);
 }
 
 // ------------------------------------------------------------------
@@ -329,8 +309,8 @@ void CompileTask::log_task_queued() {
   assert(_compile_reason > CompileTask::Reason_None && _compile_reason < CompileTask::Reason_Count, "Valid values");
   xtty->print(" comment='%s'", reason_name(_compile_reason));
 
-  if (_hot_method != nullptr && _hot_method != _method) {
-    xtty->method(_hot_method);
+  if (_hot_method_handle.method() != nullptr) {
+    xtty->method(_hot_method_handle.method());
   }
   if (_hot_count != 0) {
     xtty->print(" hot_count='%d'", _hot_count);

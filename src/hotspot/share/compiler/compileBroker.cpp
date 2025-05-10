@@ -36,6 +36,7 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "compiler/compileTask.inline.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -217,14 +218,14 @@ CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
   CompileLog*     log  = thread->log();
-  if (log != nullptr && !task->is_unloaded())  task->log_task_start(log);
+  if (log != nullptr && task->is_safe())  task->log_task_start(log);
 }
 
 CompileTaskWrapper::~CompileTaskWrapper() {
   CompilerThread* thread = CompilerThread::current();
   CompileTask* task = thread->task();
   CompileLog*  log  = thread->log();
-  if (log != nullptr && !task->is_unloaded())  task->log_task_done(log);
+  if (log != nullptr && task->is_safe())  task->log_task_done(log);
   thread->set_task(nullptr);
   thread->set_env(nullptr);
   if (task->is_blocking()) {
@@ -1694,7 +1695,8 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
 
   JavaThread* thread = JavaThread::current();
 
-  methodHandle method(thread, task->method());
+  methodHandle method(thread, task->is_safe() ? task->method() : nullptr);
+
   bool free_task;
 #if INCLUDE_JVMCI
   AbstractCompiler* comp = compiler(task->comp_level());

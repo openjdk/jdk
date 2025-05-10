@@ -27,6 +27,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "compiler/compileTask.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
@@ -162,7 +163,7 @@ CompileTask* CompilationPolicy::select_task_helper(CompileQueue* compile_queue) 
   // Remove unloaded methods from the queue
   for (CompileTask* task = compile_queue->first(); task != nullptr; ) {
     CompileTask* next = task->next();
-    if (task->is_unloaded()) {
+    if (!task->is_safe()) {
       compile_queue->remove_and_mark_stale(task);
     }
     task = next;
@@ -628,7 +629,7 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue) {
     CompileTask* next_task = task->next();
     // If a method was unloaded or has been stale for some time, remove it from the queue.
     // Blocking tasks and tasks submitted from whitebox API don't become stale
-    if (task->is_unloaded()) {
+    if (!task->is_safe()) {
       compile_queue->remove_and_mark_stale(task);
       task = next_task;
       continue;
