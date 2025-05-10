@@ -29,10 +29,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import com.sun.tools.javac.main.Option;
@@ -122,7 +123,7 @@ public class Lint {
     private EnumSet<LintCategory> values;
     private EnumSet<LintCategory> suppressedValues;
 
-    private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(20);
+    private static final Map<String, LintCategory> map = new LinkedHashMap<>(40);
 
     @SuppressWarnings("this-escape")
     protected Lint(Context context) {
@@ -420,7 +421,7 @@ public class Lint {
             optionList.add(option);
             Stream.of(aliases).forEach(optionList::add);
             this.optionList = Collections.unmodifiableList(optionList);
-            this.optionList.forEach(string -> map.put(string, this));
+            this.optionList.forEach(ident -> map.put(ident, this));
         }
 
         /**
@@ -431,6 +432,13 @@ public class Lint {
          */
         public static Optional<LintCategory> get(String option) {
             return Optional.ofNullable(map.get(option));
+        }
+
+        /**
+         * Get all lint category option strings and aliases.
+         */
+        public static Set<String> options() {
+            return Collections.unmodifiableSet(map.keySet());
         }
 
         public static EnumSet<LintCategory> newEmptySet() {

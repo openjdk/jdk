@@ -39,7 +39,6 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -495,21 +494,10 @@ public enum Option {
                               String.format(LINT_KEY_FORMAT,
                                             LINT_CUSTOM_ALL,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.all")));
-            for (LintCategory lc : LintCategory.values()) {
-                log.printRawLines(WriterKind.STDOUT,
-                                  String.format(LINT_KEY_FORMAT,
-                                                lc.option,
-                                                log.localize(PrefixKind.JAVAC,
-                                                             "opt.Xlint.desc." + lc.option)));
-                int numOptions = lc.optionList.size();
-                if (numOptions > 1) {
-                    String aliases = lc.optionList.subList(1, numOptions).stream().collect(Collectors.joining(", "));
-                    log.printRawLines(WriterKind.STDOUT,
-                                      String.format(LINT_KEY_FORMAT,
-                                                    "",
-                                                    (numOptions > 2 ? "Aliases" : "Alias") + ": " + aliases));
-                }
-            }
+            LintCategory.options().forEach(ident -> log.printRawLines(WriterKind.STDOUT,
+                              String.format(LINT_KEY_FORMAT,
+                                            ident,
+                                            log.localize(PrefixKind.JAVAC, "opt.Xlint.desc." + ident))));
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
                                             LINT_CUSTOM_NONE,
@@ -1396,8 +1384,7 @@ public enum Option {
     private static Set<String> getXLintChoices() {
         Set<String> choices = new LinkedHashSet<>();
         choices.add(LINT_CUSTOM_ALL);
-        Stream.of(Lint.LintCategory.values())
-          .flatMap(lc -> lc.optionList.stream())
+        Lint.LintCategory.options().stream()
           .flatMap(ident -> Stream.of(ident, "-" + ident))
           .forEach(choices::add);
         choices.add(LINT_CUSTOM_NONE);

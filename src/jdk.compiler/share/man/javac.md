@@ -649,9 +649,9 @@ file system locations may be directories, JAR files or JMOD files.
     -   `strictfp`: Warns about unnecessary use of the `strictfp` modifier.
 
     -   `synchronization`: Warns about synchronization attempts on instances
-        of value-based classes. Superseded by the `identity` warning category
+        of value-based classes. This key is a deprecated alias for `identity`,
         which has the same uses and effects. Users are encouraged to use the
-        `identity` category for all future an existing uses of `synchronization`.
+        `identity` category for all future and existing uses of `synchronization`.
 
     -   `text-blocks`: Warns about inconsistent white space characters in text
         block indentation.
