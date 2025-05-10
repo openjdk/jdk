@@ -25,6 +25,7 @@
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
+#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
@@ -34,6 +35,7 @@
 #include "jfr/support/jfrResolution.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
 
 bool Jfr::is_enabled() {
   return JfrRecorder::is_enabled();
@@ -147,4 +149,15 @@ bool Jfr::on_flight_recorder_option(const JavaVMOption** option, char* delimiter
 
 bool Jfr::on_start_flight_recording_option(const JavaVMOption** option, char* delimiter) {
   return JfrOptionSet::parse_start_flight_recording_option(option, delimiter);
+}
+
+bool Jfr::has_sample_request(JavaThread* jt) {
+  return jt->jfr_thread_local()->has_sample_request();
+}
+
+void Jfr::check_and_process_sample_request(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  if (has_sample_request(jt)) {
+    JfrThreadSampling::process_sample_request(jt);
+  }
 }

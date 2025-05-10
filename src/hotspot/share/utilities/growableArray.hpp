@@ -88,6 +88,8 @@ protected:
 
 public:
   int   length() const          { return _len; }
+  void  set_length(int len)     { _len = len; }
+
   int   capacity() const        { return _capacity; }
 
   bool  is_empty() const        { return _len == 0; }

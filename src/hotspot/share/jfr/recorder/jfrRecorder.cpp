@@ -301,7 +301,7 @@ bool JfrRecorder::create_components() {
   if (!create_stringpool()) {
     return false;
   }
-  if (!create_thread_sampling()) {
+  if (!create_thread_sampler()) {
     return false;
   }
   if (!create_event_throttler()) {
@@ -317,7 +317,7 @@ static JfrRepository* _repository = nullptr;
 static JfrStackTraceRepository* _stack_trace_repository;
 static JfrStringPool* _stringpool = nullptr;
 static JfrOSInterface* _os_interface = nullptr;
-static JfrThreadSampling* _thread_sampling = nullptr;
+static JfrThreadSampler* _thread_sampler = nullptr;
 static JfrCheckpointManager* _checkpoint_manager = nullptr;
 
 bool JfrRecorder::create_java_event_writer() {
@@ -384,10 +384,10 @@ bool JfrRecorder::create_stringpool() {
   return _stringpool != nullptr && _stringpool->initialize();
 }
 
-bool JfrRecorder::create_thread_sampling() {
-  assert(_thread_sampling == nullptr, "invariant");
-  _thread_sampling = JfrThreadSampling::create();
-  return _thread_sampling != nullptr;
+bool JfrRecorder::create_thread_sampler() {
+  assert(_thread_sampler == nullptr, "invariant");
+  _thread_sampler = JfrThreadSampler::create();
+  return _thread_sampler != nullptr;
 }
 
 bool JfrRecorder::create_event_throttler() {
@@ -424,15 +424,15 @@ void JfrRecorder::destroy_components() {
     JfrOSInterface::destroy();
     _os_interface = nullptr;
   }
-  if (_thread_sampling != nullptr) {
-    JfrThreadSampling::destroy();
-    _thread_sampling = nullptr;
+  if (_thread_sampler != nullptr) {
+    JfrThreadSampler::destroy();
+    _thread_sampler = nullptr;
   }
   JfrEventThrottler::destroy();
 }
 
 bool JfrRecorder::create_recorder_thread() {
-  return JfrRecorderThread::start(_checkpoint_manager, _post_box, JavaThread::current());
+  return JfrRecorderThreadEntry::start(_checkpoint_manager, _post_box, JavaThread::current());
 }
 
 void JfrRecorder::destroy() {
