@@ -54,7 +54,7 @@ public class ContinuationSupport {
      * Pins the current continuation if the VM has continuations support.
      */
     public static void pinIfSupported() {
-        if (ContinuationSupport.isSupported()) {
+        if (isSupported()) {
             Continuation.pin();
         }
     }
@@ -63,7 +63,7 @@ public class ContinuationSupport {
      * Unpins the current continuation if the VM has continuations support.
      */
     public static void unpinIfSupported() {
-        if (ContinuationSupport.isSupported()) {
+        if (isSupported()) {
             Continuation.unpin();
         }
     }
