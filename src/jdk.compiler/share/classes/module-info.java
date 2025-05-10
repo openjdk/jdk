@@ -186,6 +186,7 @@ import javax.tools.StandardLocation;
  *                                                      and interfaces
  * <tr><th scope="row">{@code static}               <td>accessing a static member using an instance
  * <tr><th scope="row">{@code strictfp}             <td>unnecessary use of the {@code strictfp} modifier
+ * <tr><th scope="row">{@code suppression}          <td>unnecessary suppressions in {@code @SuppressWarnings} annotations
  * <tr><th scope="row">{@code synchronization}      <td>synchronization attempts on instances of value-based classes
  * <tr><th scope="row">{@code text-blocks}          <td>inconsistent white space characters in text block indentation
  * <tr><th scope="row">{@code this-escape}          <td>superclass constructor leaking {@code this} before subclass initialized
