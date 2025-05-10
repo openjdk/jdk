@@ -3855,17 +3855,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     public int bitLength() {
         int n = bitLengthPlusOne - 1;
         if (n == -1) { // bitLength not initialized yet
-            if (mag.length == 0) {
-                n = 0; // offset by one to initialize
-            }  else {
-                // Calculate the bit length of the magnitude
-                n = (mag.length - 1) * Integer.SIZE + bitLengthForInt(mag[0]);
-                if (signum < 0
-                        // Check if magnitude is a power of two
-                        && Integer.bitCount(mag[0]) == 1
-                        && numberOfTrailingZeroInts() == mag.length - 1) {
-                    n--;
-                }
+            // Calculate the bit length of the magnitude
+            n = bitLength(mag, mag.length);
+            if (signum < 0
+                    // Check if magnitude is a power of two
+                    && Integer.bitCount(mag[0]) == 1
+                    && numberOfTrailingZeroInts() == mag.length - 1) {
+                n--;
             }
             bitLengthPlusOne = n + 1;
         }
