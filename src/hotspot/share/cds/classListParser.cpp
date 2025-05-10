@@ -395,17 +395,13 @@ bool ClassListParser::parse_uint_option(const char* option_name, int* value) {
   return false;
 }
 
-objArrayOop ClassListParser::get_specified_interfaces(TRAPS) {
+GrowableArray<InstanceKlass *> ClassListParser::get_specified_interfaces() {
   const int n = _interfaces->length();
-  if (n == 0) {
-    return nullptr;
-  } else {
-    objArrayOop array = oopFactory::new_objArray(vmClasses::Class_klass(), n, CHECK_NULL);
-    for (int i = 0; i < n; i++) {
-      array->obj_at_put(i, lookup_class_by_id(_interfaces->at(i))->java_mirror());
-    }
-    return array;
+  GrowableArray<InstanceKlass *> specified_interfaces(n);
+  for (int i = 0; i < n; i++) {
+    specified_interfaces.append(lookup_class_by_id(_interfaces->at(i)));
   }
+  return specified_interfaces;
 }
 
 void ClassListParser::print_specified_interfaces() {
@@ -509,6 +505,22 @@ void ClassListParser::constant_pool_resolution_warning(const char* msg, ...) {
   va_end(ap);
 }
 
+// If an unregistered class U is specified to have a registered supertype S1
+// named SN but an unregistered class S2 also named SN has already been loaded
+// S2 will be incorrectly used as the supertype of U instead of S1 due to
+// limitations in the loading mechanism of unregistered classes.
+void ClassListParser::check_supertype_overshadowing(int supertype_id, const InstanceKlass* supertype, TRAPS) {
+  const InstanceKlass* overshadower = SystemDictionaryShared::get_unregistered_class(supertype->name());
+  if (overshadower == nullptr || overshadower == supertype) {
+    return;
+  }
+  assert(!supertype->is_shared_unregistered_class(), "unregistered supertype cannot be overshadowed");
+  ResourceMark rm;
+  THROW_MSG(vmSymbols::java_lang_UnsupportedOperationException(),
+            err_msg("%s (id %d) has super-type %s (id %d) overshadowed by another class with the same name",
+                    _class_name, _id, supertype->external_name(), supertype_id));
+}
+
 // This function is used for loading classes for customized class loaders
 // during archive dumping.
 InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS) {
@@ -533,13 +545,18 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   }
 
   ResourceMark rm;
-  char * source_path = os::strdup_check_oom(ClassLoader::uri_to_path(_source));
   InstanceKlass* specified_super = lookup_class_by_id(_super);
-  Handle super_class(THREAD, specified_super->java_mirror());
-  objArrayOop r = get_specified_interfaces(CHECK_NULL);
-  objArrayHandle interfaces(THREAD, r);
-  InstanceKlass* k = UnregisteredClasses::load_class(class_name, source_path,
-                                                     super_class, interfaces, CHECK_NULL);
+  GrowableArray<InstanceKlass*> specified_interfaces = get_specified_interfaces();
+  // Overshadowing must be checked before the class loading attempt because it
+  // may cause class loading errors (JVMS 5.3.5.3-5.3.5.4)
+  check_supertype_overshadowing(_super, specified_super, CHECK_NULL);
+  for (int i = 0; i < _interfaces->length(); i++) {
+    check_supertype_overshadowing(_interfaces->at(i), specified_interfaces.at(i), CHECK_NULL);
+  }
+
+  const char* source_path = ClassLoader::uri_to_path(_source);
+  InstanceKlass* k = UnregisteredClasses::load_class(class_name, source_path, CHECK_NULL);
+
   if (k->java_super() != specified_super) {
     error("The specified super class %s (id %d) does not match actual super class %s",
           specified_super->external_name(), _super,
@@ -550,6 +567,15 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
     print_actual_interfaces(k);
     error("The number of interfaces (%d) specified in class list does not match the class file (%d)",
           _interfaces->length(), k->local_interfaces()->length());
+  }
+  for (int i = 0; i < _interfaces->length(); i++) {
+    InstanceKlass* specified_interface = specified_interfaces.at(i);
+    if (!k->local_interfaces()->contains(specified_interface)) {
+      print_specified_interfaces();
+      print_actual_interfaces(k);
+      error("Specified interface %s (id %d) is not directly implemented",
+            specified_interface->external_name(), _interfaces->at(i));
+      }
   }
 
   assert(k->is_shared_unregistered_class(), "must be");
