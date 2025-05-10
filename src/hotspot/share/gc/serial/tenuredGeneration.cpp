@@ -445,6 +445,6 @@ void TenuredGeneration::print_on(outputStream* st)  const {
             capacity()/K, used()/K);
   _virtual_space.print_space_boundaries_on(st);
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
   _the_space->print_on(st, "the  ");
 }

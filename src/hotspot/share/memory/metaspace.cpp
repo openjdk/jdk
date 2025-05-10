@@ -227,7 +227,7 @@ void MetaspaceUtils::print_on(outputStream* out) {
                 stats.reserved()/K);
 
   if (Metaspace::using_class_space()) {
-    StreamAutoIndentor indentor(out, 1);
+    StreamIndentor si(out, 1);
     out->print("class space ");
     out->fill_to(17);
     out->print_cr("used %zuK, "

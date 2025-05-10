@@ -143,8 +143,8 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
 
     if (_do_print_classes) {
       // Print a detailed description of all loaded classes.
-      streamIndentor sti(_out, 6);
-      _out->cr_indent();
+      _out->cr();
+      StreamIndentor sai(_out, 6);
       _out->print("Loaded classes");
       if (ckc._num_classes_shared > 0) {
         _out->print("('s' = shared)");
@@ -152,7 +152,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
       _out->print(":");
       PrintMetaspaceInfoKlassClosure pkic(_out, true);
       cld->classes_do(&pkic);
-      _out->cr_indent();
+      _out->cr();
       _out->print("-total-: ");
       print_number_of_classes(_out, ckc._num_classes, ckc._num_classes_shared);
     } else {
