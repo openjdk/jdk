@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,7 +58,7 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
         if (latin1) {
             str[index] = (byte) c;
         } else {
-            JLA.putCharUTF16(str, index, (char) c);
+            JLA.uncheckedPutCharUTF16(str, index, (char) c);
         }
         return index + 1;
     }
@@ -93,7 +93,7 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
         int y = y(m);
         for (int i = 0; i < 8; ++i) {
             int t = 10 * y;
-            JLA.putCharUTF16(str, index + i, '0' + (t >>> 28));
+            JLA.uncheckedPutCharUTF16(str, index + i, '0' + (t >>> 28));
             y = t & MASK_28;
         }
     }
@@ -122,11 +122,11 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
                 ++index;
             }
         } else {
-            while (JLA.getUTF16Char(str, index - 1) == '0') {
+            while (JLA.uncheckedGetUTF16Char(str, index - 1) == '0') {
                 --index;
             }
             /* ... but do not remove the one directly to the right of '.' */
-            if (JLA.getUTF16Char(str, index - 1) == '.') {
+            if (JLA.uncheckedGetUTF16Char(str, index - 1) == '.') {
                 ++index;
             }
         }

@@ -218,7 +218,7 @@ public abstract sealed class AbstractPoolEntry {
          * two-times-three-byte format instead.
          */
         private void inflate() {
-            int singleBytes = JLA.countPositives(rawBytes, offset, rawLen);
+            int singleBytes = JLA.uncheckedCountPositives(rawBytes, offset, rawLen);
             int hash = ArraysSupport.hashCodeOfUnsigned(rawBytes, offset, singleBytes, 0);
             if (singleBytes == rawLen) {
                 this.contentHash = hash;
@@ -233,7 +233,7 @@ public abstract sealed class AbstractPoolEntry {
             char[] chararr = new char[rawLen];
             int chararr_count = singleBytes;
             // Inflate prefix of bytes to characters
-            JLA.inflateBytesToChars(rawBytes, offset, chararr, 0, singleBytes);
+            JLA.uncheckedInflateBytesToChars(rawBytes, offset, chararr, 0, singleBytes);
 
             int px = offset + singleBytes;
             int utfend = offset + rawLen;
