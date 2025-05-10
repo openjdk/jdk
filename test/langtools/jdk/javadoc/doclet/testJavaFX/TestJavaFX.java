@@ -25,7 +25,7 @@
  * @test
  * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363
  *      8167967 8172528 8175200 8178830 8182257 8186332 8182765 8025091
- *      8203791 8184205 8249633 8261976
+ *      8203791 8184205 8249633 8261976 8350920
  * @summary Test of the JavaFX doclet features.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -241,7 +241,29 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <h3 id="properties-inherited-from-class-pkg1.C">Properties inherited from class&\
                     nbsp;<a href="C.html#property-summary" title="class in pkg1">C</a></h3>
-                    <code><a href="C.html#pausedProperty">paused</a>, <a href="C.html#rateProperty">rate</a></code></div>""");
+                    <code><a href="C.html#pausedProperty">paused</a>, <a href="C.html#rateProperty">rate</a></code>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Type</div>
+                    <div class="table-header col-second">Property</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>final <a href="C.BooleanProperty.htm\
+                    l" title="class in pkg1">C.BooleanProperty</a></code></div>
+                    <div class="col-second even-row-color"><code><a href="C.html#pausedProperty" cla\
+                    ss="member-name-link">paused</a></code></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">Defines if paused.</div>
+                    </div>
+                    <div class="col-first odd-row-color"><code>final <a href="C.DoubleProperty.html"\
+                     title="class in pkg1">C.DoubleProperty</a></code></div>
+                    <div class="col-second odd-row-color"><code><a href="C.html#rateProperty" class=\
+                    "member-name-link">rate</a></code></div>
+                    <div class="col-last odd-row-color">
+                    <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
+                    be played.</div>
+                    </div>
+                    </div>
+                    </div>
+                    </section>""");
 
         checkOutput("pkg1/D.html", false, "shouldNotAppear");
     }

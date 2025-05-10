@@ -25,9 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.Arrays;
-import java.util.List;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
@@ -36,7 +33,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
-import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -94,13 +91,19 @@ public class NestedClassWriter extends AbstractMemberWriter {
 
     @Override
     protected Table<Element> createSummaryTable() {
-        List<HtmlStyle> bodyRowStyles = Arrays.asList(HtmlStyles.colFirst, HtmlStyles.colSecond,
-                HtmlStyles.colLast);
-
         return new Table<Element>(HtmlStyles.summaryTable)
                 .setCaption(contents.getContent("doclet.Nested_Classes"))
                 .setHeader(getSummaryTableHeader(typeElement))
-                .setColumnStyles(bodyRowStyles);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colSecond,
+                        HtmlStyles.colLast);
+    }
+
+    @Override
+    protected Table<Element> createInheritedSummaryTable(TypeElement typeElement) {
+        return new Table<Element>(HtmlStyles.summaryTable)
+                .setHeader(getSummaryTableHeader(typeElement))
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colSecond, HtmlStyles.colLast)
+                .setRenderTabs(false);
     }
 
     @Override
@@ -117,10 +120,15 @@ public class NestedClassWriter extends AbstractMemberWriter {
                     : resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
         }
         var labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING, label);
-        labelHeading.setId(htmlIds.forInheritedClasses(typeElement));
+        labelHeading.setId(getInheritedSummaryId(typeElement));
         labelHeading.add(Entity.NO_BREAK_SPACE);
         labelHeading.add(classLink);
         content.add(labelHeading);
+    }
+
+    @Override
+    protected HtmlId getInheritedSummaryId(TypeElement typeElement) {
+        return htmlIds.forInheritedClasses(typeElement);
     }
 
     @Override

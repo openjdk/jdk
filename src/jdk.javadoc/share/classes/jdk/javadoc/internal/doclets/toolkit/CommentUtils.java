@@ -361,6 +361,10 @@ public class CommentUtils {
      */
     public void updatePropertyMethodComment(ExecutableElement member,
                                  Element property) {
+        // Check if member was already processed
+        if (dcInfoMap.containsKey(member)) {
+            return;
+        }
         final String memberName = member.getSimpleName().toString();
         final boolean isSetter = memberName.startsWith("set");
         final boolean isGetter = memberName.startsWith("get") || memberName.startsWith("is");
