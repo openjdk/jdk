@@ -768,7 +768,7 @@ Method* nmethod::attached_method_before_pc(address pc) {
 }
 
 void nmethod::clear_inline_caches() {
-  assert(SafepointSynchronize::is_at_safepoint(), "clearing of IC's only allowed at safepoint");
+  assert(SafepointSynchronize::is_at_safepoint() || is_not_installed(), "clearing of IC's only allowed at safepoint");
   RelocIterator iter(this);
   while (iter.next()) {
     iter.reloc()->clear_inline_cache();
@@ -1164,7 +1164,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 #if INCLUDE_JVMCI
     + align_up(speculations_len                  , oopSize)
 #endif
-    + align_up(debug_info->data_size()           , oopSize);
+    + align_up(debug_info->data_size()           , oopSize)
+    + align_up((int)sizeof(int)                  , oopSize);
 
   // First, allocate space for immutable data in C heap.
   address immutable_data = nullptr;
@@ -1391,8 +1392,243 @@ nmethod::nmethod(
   }
 }
 
+
+nmethod::nmethod(nmethod* nm) : CodeBlob(nm->_name, nm->_kind, nm->_size, nm->_header_size)
+{
+
+  if (nm->_oop_maps != nullptr) {
+    _oop_maps                   = nm->_oop_maps->clone();
+  } else {
+    _oop_maps                   = nullptr;
+  }
+
+  _size                         = nm->_size;
+  _relocation_size              = nm->_relocation_size;
+  _content_offset               = nm->_content_offset;
+  _code_offset                  = nm->_code_offset;
+  _data_offset                  = nm->_data_offset;
+  _frame_size                   = nm->_frame_size;
+
+  S390_ONLY( _ctable_offset     = nm->_ctable_offset; )
+
+  _header_size                  = nm->_header_size;
+  _frame_complete_offset        = nm->_frame_complete_offset;
+
+  _kind                         = nm->_kind;
+
+  _caller_must_gc_arguments     = nm->_caller_must_gc_arguments;
+
+#ifndef PRODUCT
+  _asm_remarks.share(nm->_asm_remarks);
+  _dbg_strings.share(nm->_dbg_strings);
+#endif
+
+  // Allocate memory and copy mutable data to C heap
+  _mutable_data_size            = nm->_mutable_data_size;
+  if (_mutable_data_size > 0) {
+    _mutable_data = (address)os::malloc(_mutable_data_size, mtCode);
+    if (_mutable_data == nullptr) {
+      vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "nmethod: no space for mutable data");
+    }
+    memcpy(mutable_data_begin(), nm->mutable_data_begin(), nm->mutable_data_size());
+  } else {
+    _mutable_data               = nullptr;
+  }
+
+  _deoptimization_generation    = 0;
+  _gc_epoch                     = CodeCache::gc_epoch();
+  _method                       = nm->_method;
+  _osr_link                     = nullptr;
+
+  // Increment number of references to immutable data to share it between nmethods
+  _immutable_data_size          = nm->_immutable_data_size;
+  if (_immutable_data_size > 0) {
+    _immutable_data             = nm->_immutable_data;
+    set_immutable_data_references(get_immutable_data_references() + 1);
+  } else {
+    _immutable_data             = blob_end();
+  }
+
+  _exception_cache              = nullptr;
+  _gc_data                      = nullptr;
+  _oops_do_mark_nmethods        = nullptr;
+  _oops_do_mark_link            = nullptr;
+  _compiled_ic_data             = nullptr;
+
+  if (nm->_osr_entry_point != nullptr) {
+    _osr_entry_point            = (nm->_osr_entry_point - (address) nm) + (address) this;
+  } else {
+    _osr_entry_point            = nullptr;
+  }
+
+  _entry_offset                 = nm->_entry_offset;
+  _verified_entry_offset        = nm->_verified_entry_offset;
+  _entry_bci                    = nm->_entry_bci;
+
+  _skipped_instructions_size    = nm->_skipped_instructions_size;
+  _stub_offset                  = nm->_stub_offset;
+  _exception_offset             = nm->_exception_offset;
+  _deopt_handler_offset         = nm->_deopt_handler_offset;
+  _deopt_mh_handler_offset      = nm->_deopt_mh_handler_offset;
+  _unwind_handler_offset        = nm->_unwind_handler_offset;
+  _num_stack_arg_slots          = nm->_num_stack_arg_slots;
+  _oops_size                    = nm->_oops_size;
+#if INCLUDE_JVMCI
+  _jvmci_data_size              = nm->_jvmci_data_size;
+#endif
+  _nul_chk_table_offset         = nm->_nul_chk_table_offset;
+  _handler_table_offset         = nm->_handler_table_offset;
+  _scopes_pcs_offset            = nm->_scopes_pcs_offset;
+  _scopes_data_offset           = nm->_scopes_data_offset;
+#if INCLUDE_JVMCI
+  _speculations_offset          = nm->_speculations_offset;
+#endif
+
+  _orig_pc_offset               = nm->_orig_pc_offset;
+  _compile_id                   = nm->_compile_id;
+  _comp_level                   = nm->_comp_level;
+  _compiler_type                = nm->_compiler_type;
+  _is_unloading_state           = nm->_is_unloading_state;
+  _state                        = not_installed;
+
+  _has_unsafe_access            = nm->_has_unsafe_access;
+  _has_method_handle_invokes    = nm->_has_method_handle_invokes;
+  _has_wide_vectors             = nm->_has_wide_vectors;
+  _has_monitors                 = nm->_has_monitors;
+  _has_scoped_access            = nm->_has_scoped_access;
+  _has_flushed_dependencies     = nm->_has_flushed_dependencies;
+  _is_unlinked                  = nm->_is_unlinked;
+  _load_reported                = nm->_load_reported;
+
+  _deoptimization_status        = nm->_deoptimization_status;
+
+  if (nm->_pc_desc_container != nullptr) {
+    _pc_desc_container          = new PcDescContainer(scopes_pcs_begin());
+  } else {
+    _pc_desc_container          = nullptr;
+  }
+
+  // Copy nmethod contents excluding header
+  // - Constant part          (doubles, longs and floats used in nmethod)
+  // - Code part:
+  //   - Code body
+  //   - Exception handler
+  //   - Stub code
+  //   - OOP table
+  memcpy(consts_begin(), nm->consts_begin(), nm->data_end() - nm->consts_begin());
+
+  post_init();
+}
+
+nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
+  if (!is_relocatable()) {
+    return nullptr;
+  }
+
+  // Check if memory should be freed before allocation
+  CodeCache::gc_on_allocation();
+
+  MutexLocker ml_Compile_lock(Compile_lock);
+  MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+
+  run_nmethod_entry_barrier();
+  nmethod* nm_copy = new (size(), code_blob_type) nmethod(this);
+
+  if (nm_copy == nullptr) {
+    return nullptr;
+  }
+
+  // Fix relocation
+  RelocIterator iter(nm_copy);
+  CodeBuffer src(this);
+  CodeBuffer dst(nm_copy);
+  while (iter.next()) {
+    iter.reloc()->fix_relocation_after_move(&src, &dst);
+  }
+
+  nm_copy->clear_inline_caches();
+
+  // To make dependency checking during class loading fast, record
+  // the nmethod dependencies in the classes it is dependent on.
+  // This allows the dependency checking code to simply walk the
+  // class hierarchy above the loaded class, checking only nmethods
+  // which are dependent on those classes.  The slow way is to
+  // check every nmethod for dependencies which makes it linear in
+  // the number of methods compiled.  For applications with a lot
+  // classes the slow way is too slow.
+  for (Dependencies::DepStream deps(nm_copy); deps.next(); ) {
+    if (deps.type() == Dependencies::call_site_target_value) {
+      // CallSite dependencies are managed on per-CallSite instance basis.
+      oop call_site = deps.argument_oop(0);
+      MethodHandles::add_dependent_nmethod(call_site, nm_copy);
+    } else {
+      InstanceKlass* ik = deps.context_type();
+      if (ik == nullptr) {
+        continue;  // ignore things like evol_method
+      }
+      // record this nmethod as dependent on this klass
+      ik->add_dependent_nmethod(nm_copy);
+    }
+  }
+
+  ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
+
+  // Update corresponding Java method to point to this nmethod
+  MutexLocker ml_NMethodState_lock(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+  if (nm_copy->method() != nullptr && nm_copy->method()->code() == this && nm_copy->make_in_use()) {
+    methodHandle mh(Thread::current(), nm_copy->method());
+    nm_copy->method()->set_code(mh, nm_copy);
+
+#if INCLUDE_JVMCI
+    if (jvmci_nmethod_data() != nullptr) {
+      nm_copy->jvmci_nmethod_data()->relocate_nmethod_mirror(nm_copy);
+      jvmci_nmethod_data()->clear_nmethod_mirror_index();
+    }
+#endif
+
+    make_not_used();
+  }
+
+  return nm_copy;
+}
+
+bool nmethod::is_relocatable() {
+  if (is_marked_for_deoptimization()) {
+    return false;
+  }
+
+  if (is_unloading()) {
+    return false;
+  }
+
+  if (is_osr_method()) {
+    return false;
+  }
+
+  if (!is_java_method()) {
+    return false;
+  }
+
+  if (!is_in_use()) {
+    return false;
+  }
+
+  {
+    CompiledICLocker ic_locker(this);
+    if (has_evol_metadata()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
   return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
+}
+
+void* nmethod::operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw () {
+  return CodeCache::allocate(nmethod_size, code_blob_type);
 }
 
 void* nmethod::operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw () {
@@ -1524,9 +1760,9 @@ nmethod::nmethod(
 
 #if INCLUDE_JVMCI
     _speculations_offset  = _scopes_data_offset   + align_up(debug_info->data_size(), oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _speculations_offset  + align_up(speculations_len, oopSize); )
+    DEBUG_ONLY( int immutable_data_end_offset = _speculations_offset + align_up(speculations_len, oopSize) + align_up((int)sizeof(int), oopSize); )
 #else
-    DEBUG_ONLY( int immutable_data_end_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize); )
+    DEBUG_ONLY( int immutable_data_end_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize) + align_up((int)sizeof(int), oopSize); )
 #endif
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
@@ -1559,6 +1795,7 @@ nmethod::nmethod(
       memcpy(speculations_begin(), speculations, speculations_len);
     }
 #endif
+    set_immutable_data_references(1);
 
     post_init();
 
@@ -2161,7 +2398,13 @@ void nmethod::purge(bool unregister_nmethod) {
   delete[] _compiled_ic_data;
 
   if (_immutable_data != blob_end()) {
-    os::free(_immutable_data);
+    // Free memory if this is the last nmethod referencing immutable data
+    if (get_immutable_data_references() == 1) {
+      os::free(_immutable_data);
+    } else {
+      set_immutable_data_references(get_immutable_data_references() - 1);
+    }
+
     _immutable_data = blob_end(); // Valid not null address
   }
   if (unregister_nmethod) {

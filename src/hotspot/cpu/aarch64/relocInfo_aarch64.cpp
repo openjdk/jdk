@@ -81,6 +81,12 @@ void Relocation::pd_set_call_destination(address x) {
   assert(is_call(), "should be a call here");
   if (NativeCall::is_call_at(addr())) {
     NativeCall* call = nativeCall_at(addr());
+    if (!Assembler::reachable_from_branch_at(addr(), x)) {
+      address trampoline = call->get_trampoline();
+      if (trampoline != nullptr) {
+        x = call->get_trampoline();
+      }
+    }
     call->set_destination(x);
   } else {
     MacroAssembler::pd_patch_instruction(addr(), x);
@@ -90,7 +96,6 @@ void Relocation::pd_set_call_destination(address x) {
 
 void trampoline_stub_Relocation::pd_fix_owner_after_move() {
   NativeCall* call = nativeCall_at(owner());
-  assert(call->raw_destination() == owner(), "destination should be empty");
   address trampoline = addr();
   address dest = nativeCallTrampolineStub_at(trampoline)->destination();
   if (!Assembler::reachable_from_branch_at(owner(), dest)) {
