@@ -737,7 +737,7 @@ public class Infer {
             //step 4:
             return types.upward(substituted, freshVars);
         } catch (Infer.InferenceException ex) {
-            return null;
+            return types.createErrorType(expressionType);
         }
     }
 
