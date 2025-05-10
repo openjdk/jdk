@@ -491,7 +491,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
   assert(!phase->exceeding_node_budget(), "sanity");
 
   // Peeling does loop cloning which can result in O(N^2) node construction.
-  if (_body.size() > 255) {
+  if (_body.size() > 255 && !StressLoopPeeling) {
     return 0;   // Suppress too large body size.
   }
   // Optimistic estimate that approximates loop body complexity via data and
@@ -503,12 +503,28 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
   }
 
   // Check for vectorized loops, any peeling done was already applied.
+  // Peeling is not legal here, we don't even stress peel!
   if (_head->is_CountedLoop()) {
     CountedLoopNode* cl = _head->as_CountedLoop();
     if (cl->is_unroll_only() || cl->trip_count() == 1) {
       return 0;
     }
   }
+
+#ifndef PRODUCT
+  // It is now safe to peel or not.
+  if (StressLoopPeeling) {
+    static constexpr uint max_peeling_opportunities = 5;
+    uint& rounds = phase->C->peeling_rounds_at_node(_head);
+    if (rounds < max_peeling_opportunities) {
+      rounds++;
+      // In case of stress, let's just pick randomly...
+      return phase->C->random() % 2 == 0 ? estimate : 0;
+    }
+    return 0;
+  }
+  // ...otherwise, let's apply our heuristic.
+#endif
 
   Node* test = tail();
 
