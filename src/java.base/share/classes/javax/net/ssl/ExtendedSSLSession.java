@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.net.ssl;
 
 import java.util.List;
+import javax.crypto.SecretKey;
 
 /**
  * Extends the {@code SSLSession} interface to support additional
@@ -161,6 +162,101 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * @since 9
      */
     public List<byte[]> getStatusResponses() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Generate Exported Keying Material (EKM) calculated according to the
+     * algorithms defined in RFCs 5705/8446.
+     * <P>
+     * Note RFC 5705 (for (D)TLSv1.2 and earlier) calculates different EKM
+     * values depending on whether {@code context} is null or non-null/empty.
+     * RFC 8446 (TLSv1.3) treats a null context as non-null/empty.
+     * <P>
+     * The {@code label} {@code String} will be converted to bytes using
+     * the {@link java.nio.charset.StandardCharsets#UTF_8}
+     * character encoding.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc5705
+     *     RFC 5705: Keying Material Exporters for Transport Layer
+     *     Security (TLS)
+     * @spec https://www.rfc-editor.org/info/rfc8446
+     *     RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3
+     *
+     * @implSpec The default implementation throws
+     *           {@code UnsupportedOperationException}
+     *
+     * @param label   the label bytes used in the EKM calculation.
+     *                {@code label} will be converted to a {@code byte[]}
+     *                before the operation begins
+     * @param context the context bytes used in the EKM calculation
+     * @param length  the number of bytes of EKM material needed
+     *
+     * @throws SSLKeyException if the key could not be generated
+     * @throws IllegalArgumentException if {@code length} is non-positive,
+     *         or if the {@code label} or {@code context} length can
+     *         not be accommodated
+     * @throws NullPointerException if {@code label} is null
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation
+     *
+     * @return a {@code SecretKey} that contains {@code length} bytes of the
+     *         EKM material.
+     *
+     * @since 25
+     */
+    public SecretKey exportKeyingMaterialKey(
+            String label, byte[] context, int length) throws SSLKeyException {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Generate Exported Keying Material (EKM) calculated according to the
+     * algorithms defined in RFCs 5705/8446.
+     * <P>
+     * Note RFC 5705 (for (D)TLSv1.2 and earlier) calculates different EKM
+     * values depending on whether {@code context} is null or non-null/empty.
+     * RFC 8446 (TLSv1.3) treats a null context as non-null/empty.
+     * <P>
+     * The {@code label} {@code String} will be converted to bytes using
+     * the {@link java.nio.charset.StandardCharsets#UTF_8}
+     * character encoding.
+     * <P>
+     * Depending on the chosen underlying key derivation mechanism, the
+     * raw bytes might not be extractable/exportable.  In such cases, the
+     * {@link #exportKeyingMaterialKey(String, byte[], int)} method should be
+     * used instead to access the generated key material.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc5705
+     *     RFC 5705: Keying Material Exporters for Transport Layer
+     *     Security (TLS)
+     * @spec https://www.rfc-editor.org/info/rfc8446
+     *     RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3
+     *
+     * @implSpec The default implementation throws
+     *           {@code UnsupportedOperationException}
+     *
+     * @param label   the label bytes used in the EKM calculation.
+     *                {@code label} will be converted to a {@code byte[]}
+     *                before the operation begins
+     * @param context the context bytes used in the EKM calculation
+     * @param length  the number of bytes of EKM material needed
+     *
+     * @throws SSLKeyException if the key could not be generated
+     * @throws IllegalArgumentException if {@code length} is non-positive,
+     *         or if the {@code label} or {@code context} length can
+     *         not be accommodated
+     * @throws NullPointerException if {@code label} is null
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation
+     *
+     * @return a byte array of size {@code length} that contains the EKM
+     *         material, or null if the derived key material does not support
+     *         encoding
+     * @since 25
+     */
+    public byte[] exportKeyingMaterialData(
+            String label, byte[] context, int length) throws SSLKeyException {
         throw new UnsupportedOperationException();
     }
 }
