@@ -875,14 +875,6 @@ final class Float512Vector extends FloatVector {
 
         @Override
         @ForceInline
-        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Float> mask){
-                   Int512Vector bitsVector = toBitsVector();
-                   VectorMask<Integer> m = mask.cast(bitsVector.species());
-                   bitsVector.intoMemorySegment(ms, offset, bo);
-       }
-
-        @Override
-        @ForceInline
         public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
                       toBitsVector().intoMemorySegment(ms, offset, bo);
          }

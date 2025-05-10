@@ -1222,93 +1222,6 @@ final class $vectortype$ extends $abstractvectortype$ {
 
         @Override
         @ForceInline
-        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<$Boxtype$> mask){
-#if[byte]
-                   VectorSpecies<Integer> species = IntVector.SPECIES_$BITS$;
-                   Vector<Byte> v = toBitsVector();
-                   boolean[] maskBits = mask.toArray();
-                   VectorMask<Integer> m = VectorMask.fromArray(species, maskBits, 0);
-                   v.convertShape(VectorOperators.B2I, species, 0)
-                           .reinterpretAsInts()
-                           .intoMemorySegment(ms, offset, bo, m);
-                   m = VectorMask.fromArray(species, maskBits, species.length());
-                   v.convertShape(VectorOperators.B2I, species, 1)
-                           .reinterpretAsInts()
-                           .intoMemorySegment(ms, offset + species.length(), bo, m);
-                   m = VectorMask.fromArray(species, maskBits, species.length() * 2);
-                   v.convertShape(VectorOperators.B2I, species, 2)
-                           .reinterpretAsInts()
-                           .intoMemorySegment(ms, offset + species.length() * 2, bo, m);
-                   m = VectorMask.fromArray(species, maskBits, species.length() * 3);
-                   v.convertShape(VectorOperators.B2I, species, 3)
-                           .reinterpretAsInts()
-                           .intoMemorySegment(ms, offset + species.length() * 3, bo, m);
-#end[byte]
-#if[short]
-                   VectorSpecies<Integer> species = IntVector.SPECIES_$BITS$;
-                   Vector<Short> v = toBitsVector();
-                   boolean[] maskBits = mask.toArray();
-                   VectorMask<Integer> m = VectorMask.fromArray(species, maskBits, 0);
-                   v.convertShape(VectorOperators.S2I, species, 0)
-                           .reinterpretAsInts()
-                           .intoMemorySegment(ms, offset, bo, m);
-                   m = VectorMask.fromArray(species, maskBits, species.length());
-                   v.convertShape(VectorOperators.S2I, species, 1)
-                           .reinterpretAsInts()
-                           .intoMemorySegment(ms, offset + species.length(), bo, m);
-#end[short]
-#if[intOrFloat]
-                   $bitsvectortype$ bitsVector = toBitsVector();
-                   VectorMask<Integer> m = mask.cast(bitsVector.species());
-                   bitsVector.intoMemorySegment(ms, offset, bo);
-#end[intOrFloat]
-#if[longOrDouble]
-                   boolean[] maskBits = mask.toArray();
-                   switch (length()) {
-                       case 1 -> ms.set(ValueLayout.OfInt.JAVA_INT, offset, laneSource(0));
-                       case 2 -> {
-                           VectorMask<Integer> imask = mask.cast(IntVector.SPECIES_64);
-                           toBitsVector()
-                               .convertShape(VectorOperators.L2I, IntVector.SPECIES_64, 0)
-                               .reinterpretAsInts()
-                               .intoMemorySegment(ms, offset, bo, imask);
-                       }
-                       case 4 -> {
-                           VectorMask<Integer> imask = mask.cast(IntVector.SPECIES_128);
-                           toBitsVector()
-                               .convertShape(VectorOperators.L2I, IntVector.SPECIES_128, 0)
-                               .reinterpretAsInts()
-                               .intoMemorySegment(ms, offset, bo, imask);
-                       }
-                       case 8 -> {
-                           VectorMask<Integer> imask = mask.cast(IntVector.SPECIES_256);
-                           toBitsVector()
-                               .convertShape(VectorOperators.L2I, IntVector.SPECIES_256, 0)
-                               .reinterpretAsInts()
-                               .intoMemorySegment(ms, offset, bo, imask);
-                       }
-                       case 16 -> {
-                           VectorMask<Integer> imask = mask.cast(IntVector.SPECIES_512);
-                           toBitsVector()
-                               .convertShape(VectorOperators.L2I, IntVector.SPECIES_512, 0)
-                               .reinterpretAsInts()
-                               .intoMemorySegment(ms, offset, bo, imask);
-                       }
-                       default -> {
-                           VectorIntrinsics.checkFromIndexSize(offset, length(), ms.byteSize() / 4);
-                           for (int i = 0; i < length(); i++) {
-                               if (mask.laneIsSet(i)) {
-                                  ms.setAtIndex(ValueLayout.JAVA_INT, i, laneSource(i));
-                               }
-                           }
-                       }
-                     }
-
-#end[longOrDouble]
-       }
-
-        @Override
-        @ForceInline
         public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
 #if[byte]
                       VectorSpecies<Integer> species = IntVector.SPECIES_$BITS$;
@@ -1318,13 +1231,13 @@ final class $vectortype$ extends $abstractvectortype$ {
                               .intoMemorySegment(ms, offset, bo);
                       v.convertShape(VectorOperators.B2I, species, 1)
                               .reinterpretAsInts()
-                              .intoMemorySegment(ms, offset + species.length(), bo);
+                              .intoMemorySegment(ms, offset + species.vectorByteSize(), bo);
                       v.convertShape(VectorOperators.B2I, species, 2)
                               .reinterpretAsInts()
-                              .intoMemorySegment(ms, offset + species.length() * 2, bo);
+                              .intoMemorySegment(ms, offset + species.vectorByteSize() * 2, bo);
                       v.convertShape(VectorOperators.B2I, species, 3)
                               .reinterpretAsInts()
-                              .intoMemorySegment(ms, offset + species.length() * 3, bo);
+                              .intoMemorySegment(ms, offset + species.vectorByteSize() * 3, bo);
 #end[byte]
 #if[short]
                       VectorSpecies<Integer> species = IntVector.SPECIES_$BITS$;
@@ -1334,7 +1247,7 @@ final class $vectortype$ extends $abstractvectortype$ {
                               .intoMemorySegment(ms, offset, bo);
                       v.convertShape(VectorOperators.S2I, species, 1)
                               .reinterpretAsInts()
-                              .intoMemorySegment(ms, offset + species.length(), bo);
+                              .intoMemorySegment(ms, offset + species.vectorByteSize(), bo);
 #end[short]
 #if[intOrFloat]
                       toBitsVector().intoMemorySegment(ms, offset, bo);

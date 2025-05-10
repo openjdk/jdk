@@ -844,14 +844,6 @@ final class FloatMaxVector extends FloatVector {
 
         @Override
         @ForceInline
-        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Float> mask){
-                   IntMaxVector bitsVector = toBitsVector();
-                   VectorMask<Integer> m = mask.cast(bitsVector.species());
-                   bitsVector.intoMemorySegment(ms, offset, bo);
-       }
-
-        @Override
-        @ForceInline
         public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
                       toBitsVector().intoMemorySegment(ms, offset, bo);
          }

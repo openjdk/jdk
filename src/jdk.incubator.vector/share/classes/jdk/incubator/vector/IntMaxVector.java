@@ -867,14 +867,6 @@ final class IntMaxVector extends IntVector {
 
         @Override
         @ForceInline
-        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Integer> mask){
-                   IntMaxVector bitsVector = toBitsVector();
-                   VectorMask<Integer> m = mask.cast(bitsVector.species());
-                   bitsVector.intoMemorySegment(ms, offset, bo);
-       }
-
-        @Override
-        @ForceInline
         public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
                       toBitsVector().intoMemorySegment(ms, offset, bo);
          }

@@ -885,52 +885,6 @@ final class Long512Vector extends LongVector {
 
         @Override
         @ForceInline
-        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Long> mask){
-                   boolean[] maskBits = mask.toArray();
-                   switch (length()) {
-                       case 1 -> ms.set(ValueLayout.OfInt.JAVA_INT, offset, laneSource(0));
-                       case 2 -> {
-                           VectorMask<Integer> imask = mask.cast(IntVector.SPECIES_64);
-                           toBitsVector()
-                               .convertShape(VectorOperators.L2I, IntVector.SPECIES_64, 0)
-                               .reinterpretAsInts()
-                               .intoMemorySegment(ms, offset, bo, imask);
-                       }
-                       case 4 -> {
-                           VectorMask<Integer> imask = mask.cast(IntVector.SPECIES_128);
-                           toBitsVector()
-                               .convertShape(VectorOperators.L2I, IntVector.SPECIES_128, 0)
-                               .reinterpretAsInts()
-                               .intoMemorySegment(ms, offset, bo, imask);
-                       }
-                       case 8 -> {
-                           VectorMask<Integer> imask = mask.cast(IntVector.SPECIES_256);
-                           toBitsVector()
-                               .convertShape(VectorOperators.L2I, IntVector.SPECIES_256, 0)
-                               .reinterpretAsInts()
-                               .intoMemorySegment(ms, offset, bo, imask);
-                       }
-                       case 16 -> {
-                           VectorMask<Integer> imask = mask.cast(IntVector.SPECIES_512);
-                           toBitsVector()
-                               .convertShape(VectorOperators.L2I, IntVector.SPECIES_512, 0)
-                               .reinterpretAsInts()
-                               .intoMemorySegment(ms, offset, bo, imask);
-                       }
-                       default -> {
-                           VectorIntrinsics.checkFromIndexSize(offset, length(), ms.byteSize() / 4);
-                           for (int i = 0; i < length(); i++) {
-                               if (mask.laneIsSet(i)) {
-                                  ms.setAtIndex(ValueLayout.JAVA_INT, i, laneSource(i));
-                               }
-                           }
-                       }
-                     }
-
-       }
-
-        @Override
-        @ForceInline
         public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
                       switch (length()) {
                           case 1 -> ms.set(ValueLayout.OfInt.JAVA_INT, offset, laneSource(0));

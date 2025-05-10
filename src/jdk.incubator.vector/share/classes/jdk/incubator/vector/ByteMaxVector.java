@@ -869,30 +869,6 @@ final class ByteMaxVector extends ByteVector {
 
         @Override
         @ForceInline
-        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Byte> mask){
-                   VectorSpecies<Integer> species = IntVector.SPECIES_MAX;
-                   Vector<Byte> v = toBitsVector();
-                   boolean[] maskBits = mask.toArray();
-                   VectorMask<Integer> m = VectorMask.fromArray(species, maskBits, 0);
-                   v.convertShape(VectorOperators.B2I, species, 0)
-                           .reinterpretAsInts()
-                           .intoMemorySegment(ms, offset, bo, m);
-                   m = VectorMask.fromArray(species, maskBits, species.length());
-                   v.convertShape(VectorOperators.B2I, species, 1)
-                           .reinterpretAsInts()
-                           .intoMemorySegment(ms, offset + species.length(), bo, m);
-                   m = VectorMask.fromArray(species, maskBits, species.length() * 2);
-                   v.convertShape(VectorOperators.B2I, species, 2)
-                           .reinterpretAsInts()
-                           .intoMemorySegment(ms, offset + species.length() * 2, bo, m);
-                   m = VectorMask.fromArray(species, maskBits, species.length() * 3);
-                   v.convertShape(VectorOperators.B2I, species, 3)
-                           .reinterpretAsInts()
-                           .intoMemorySegment(ms, offset + species.length() * 3, bo, m);
-       }
-
-        @Override
-        @ForceInline
         public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
                       VectorSpecies<Integer> species = IntVector.SPECIES_MAX;
                       Vector<Byte> v = toBitsVector();
@@ -901,13 +877,13 @@ final class ByteMaxVector extends ByteVector {
                               .intoMemorySegment(ms, offset, bo);
                       v.convertShape(VectorOperators.B2I, species, 1)
                               .reinterpretAsInts()
-                              .intoMemorySegment(ms, offset + species.length(), bo);
+                              .intoMemorySegment(ms, offset + species.vectorByteSize(), bo);
                       v.convertShape(VectorOperators.B2I, species, 2)
                               .reinterpretAsInts()
-                              .intoMemorySegment(ms, offset + species.length() * 2, bo);
+                              .intoMemorySegment(ms, offset + species.vectorByteSize() * 2, bo);
                       v.convertShape(VectorOperators.B2I, species, 3)
                               .reinterpretAsInts()
-                              .intoMemorySegment(ms, offset + species.length() * 3, bo);
+                              .intoMemorySegment(ms, offset + species.vectorByteSize() * 3, bo);
          }
 
         @Override

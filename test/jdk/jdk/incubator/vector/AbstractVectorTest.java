@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
@@ -63,6 +64,20 @@ public class AbstractVectorTest {
             @Override
             public R apply(int v) {
                 return f.apply(v);
+            }
+
+            @Override
+            public String toString() {
+                return s;
+            }
+        };
+    }
+
+    static <R> Supplier<R> withToStringP(String s, Supplier<R> f) {
+        return new Supplier<R>() {
+            @Override
+            public R get() {
+                return f.get();
             }
 
             @Override

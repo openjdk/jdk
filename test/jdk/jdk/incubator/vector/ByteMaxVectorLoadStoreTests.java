@@ -701,20 +701,57 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
        }
     }
 
-    @Test
-    static void loadStoreShuffleMemorySegment() {
-        IntUnaryOperator fn = a -> a + 5;
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            var shuffle = VectorShuffle.fromOp(SPECIES, fn);
-            MemorySegment ms = Arena.ofAuto().allocate(SPECIES.length() * SPECIES.elementSize() / 8);
-            shuffle.intoMemorySegment(ms, 0, ByteOrder.nativeOrder());
+    @Test(dataProvider = "shuffleIndexMemoryProvider")
+    static void loadStoreShuffleMemorySegment(IntFunction<int[]> fa,
+                                              IntFunction<MemorySegment> fm,
+                                              Supplier<ByteOrder> fbo) {
+        int[] a = fa.apply(SPECIES.length());
+        MemorySegment mem = fm.apply(SPECIES.length());
 
-            int [] a = expectedShuffle(SPECIES.length(), fn);
-            int [] r = ms.toArray(ValueLayout.JAVA_INT, 0);
-            Assert.assertEquals(r, a);
+        VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(SPECIES, a, 0);
+
+        shuffle.intoMemorySegment(mem, 0, fbo.get());
+
+        VectorShuffle<Byte> memShuffle = VectorShuffle.fromMemorySegment(SPECIES, mem, 0, fbo.get());
+
+        Assert.assertEquals(shuffle, memShuffle);
+    }
+
+    @Test(dataProvider = "shuffleIndexIOOBEProvider")
+    static void storeShuffleMemorySegmentIOOBE(IntFunction<int[]> fa,
+                                              IntFunction<MemorySegment> fm) {
+        int[] a = fa.apply(SPECIES.length());
+
+        VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(SPECIES, a, 0);
+
+        MemorySegment badmem = fm.apply(a.length);
+        try {
+            shuffle.intoMemorySegment(badmem, 0, ByteOrder.nativeOrder());
+            Assert.fail("Expected IndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
         }
     }
 
+
+    @Test(dataProvider = "shuffleIndexMemoryProvider")
+    static void loadShuffleMemorySegmentIOOBE(IntFunction<int[]> fa,
+                                              IntFunction<MemorySegment> fm,
+                                              Supplier<ByteOrder> bo) {
+        int[] a = fa.apply(SPECIES.length());
+
+        VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(SPECIES, a, 0);
+
+        MemorySegment mem = fm.apply(a.length);
+        shuffle.intoMemorySegment(mem, 0, bo.get());
+
+        try {
+            VectorShuffle<Byte> badShuffle = VectorShuffle.fromMemorySegment(SPECIES, mem, 1, bo.get());
+            Assert.fail("Expected IndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+           // expected
+        }
+    }
 
 
     static void assertArraysEquals(boolean[] r, byte[] a) {

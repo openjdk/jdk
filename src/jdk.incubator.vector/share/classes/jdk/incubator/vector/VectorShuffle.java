@@ -536,16 +536,6 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
     public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
 
     /**
-     * Stores this shuffle into a {@link MemorySegment} starting at the given offset filtering with the given mask.
-     * @param ms the memory segment
-     * @param offset the offset into the segment
-     * @param m the mask to filter the shuffle
-     * @param bo the byte order
-     */
-    public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<E> m);
-
-
-    /**
      * Load a VectorShuffle from a {@link MemorySegment} starting at the given offset.
      * @param vsp the {@link VectorSpecies} corresponding to the shuffle
      * @param segment the memory segment
@@ -563,29 +553,6 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
         return vsp.shuffleFromArray(indices,0);
     }
 
-    /**
-     * Load a VectorShuffle from a {@link MemorySegment} starting at the given offset.
-     * @param vsp the {@link VectorSpecies} corresponding to the shuffle
-     * @param segment the memory segment
-     * @param offset the offset into the segment
-     * @param order the byte order
-     * @param mask the mask to filter the shuffle
-     * @param <E> the boxed element type
-     * @return a VectorShuffle from the {@link MemorySegment}
-     */
-    @ForceInline
-    public static final <E> VectorShuffle<E> fromMemorySegment(VectorSpecies<E> vsp, MemorySegment segment,
-                                                     long offset, ByteOrder order, VectorMask<E> mask) {
-        long memsize = vsp.length() * 4;
-        MemorySegment arraySlice = segment.asSlice(offset, memsize);
-        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT.withOrder(order));
-        for (int i = 0; i < indices.length; i++) {
-            if (!mask.laneIsSet(i)) {
-                indices[i] = i; // identity
-            }
-        }
-        return vsp.shuffleFromArray(indices,0);
-    }
     /**
      * Converts this shuffle into a vector, creating a vector
      * of integral values corresponding to the lane source

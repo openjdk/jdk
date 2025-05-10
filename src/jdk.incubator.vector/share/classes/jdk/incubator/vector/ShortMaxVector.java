@@ -863,22 +863,6 @@ final class ShortMaxVector extends ShortVector {
 
         @Override
         @ForceInline
-        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo, VectorMask<Short> mask){
-                   VectorSpecies<Integer> species = IntVector.SPECIES_MAX;
-                   Vector<Short> v = toBitsVector();
-                   boolean[] maskBits = mask.toArray();
-                   VectorMask<Integer> m = VectorMask.fromArray(species, maskBits, 0);
-                   v.convertShape(VectorOperators.S2I, species, 0)
-                           .reinterpretAsInts()
-                           .intoMemorySegment(ms, offset, bo, m);
-                   m = VectorMask.fromArray(species, maskBits, species.length());
-                   v.convertShape(VectorOperators.S2I, species, 1)
-                           .reinterpretAsInts()
-                           .intoMemorySegment(ms, offset + species.length(), bo, m);
-       }
-
-        @Override
-        @ForceInline
         public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
                       VectorSpecies<Integer> species = IntVector.SPECIES_MAX;
                       Vector<Short> v = toBitsVector();
@@ -887,7 +871,7 @@ final class ShortMaxVector extends ShortVector {
                               .intoMemorySegment(ms, offset, bo);
                       v.convertShape(VectorOperators.S2I, species, 1)
                               .reinterpretAsInts()
-                              .intoMemorySegment(ms, offset + species.length(), bo);
+                              .intoMemorySegment(ms, offset + species.vectorByteSize(), bo);
          }
 
         @Override
