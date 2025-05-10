@@ -74,7 +74,7 @@ public class AOTFlags {
             "-cp", appJar);
         out = CDSTestUtils.executeAndLog(pb, "asm");
         out.shouldContain("Dumping shared data to file:");
-        out.shouldMatch("cds.*hello[.]aot");
+        out.shouldMatch("hello[.]aot");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
@@ -142,7 +142,7 @@ public class AOTFlags {
             "-cp", appJar);
         out = CDSTestUtils.executeAndLog(pb, "asm");
         out.shouldContain("Dumping shared data to file:");
-        out.shouldMatch("cds.*hello[.]aot");
+        out.shouldMatch("hello[.]aot");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------

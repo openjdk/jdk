@@ -99,6 +99,9 @@
            "do not map the archive")                                        \
            range(0, 2)                                                      \
                                                                             \
+  product(bool, PrintCDSLogsAsAOTLogs, true, DIAGNOSTIC,                    \
+          "Print [cds] logs as [aot] logs when AOT cache is used")          \
+                                                                            \
   /*========== New "AOT" flags =========================================*/  \
   /* The following 3 flags are aliases of -Xshare:dump,                 */  \
   /* -XX:SharedArchiveFile=..., etc. See CDSConfig::check_flag_aliases()*/  \
