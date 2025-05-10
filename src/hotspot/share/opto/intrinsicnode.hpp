@@ -198,6 +198,11 @@ class EncodeISOArrayNode: public Node {
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual uint size_of() const { return sizeof(EncodeISOArrayNode); }
+  virtual uint hash() const { return Node::hash() + ascii; }
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && ascii == ((EncodeISOArrayNode&)n).is_ascii();
+  }
 };
 
 //-------------------------------DigitNode----------------------------------------
