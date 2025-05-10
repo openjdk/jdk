@@ -1500,6 +1500,9 @@ void ShenandoahHeap::labs_make_parsable() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     ThreadLocalAllocBuffer& tlab = t->tlab();
     tlab.make_parsable();
+    if (ZeroTLAB) {
+      t->retire_tlab();
+    }
     cl.do_thread(t);
   }
 
@@ -1517,10 +1520,9 @@ void ShenandoahHeap::tlabs_retire(bool resize) {
   ThreadLocalAllocStats stats;
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    ThreadLocalAllocBuffer& tlab = t->tlab();
-    tlab.retire(&stats);
+    t->retire_tlab(&stats);
     if (resize) {
-      tlab.resize();
+      t->tlab().resize();
     }
   }
 

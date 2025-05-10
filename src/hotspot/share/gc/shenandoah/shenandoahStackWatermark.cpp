@@ -119,7 +119,7 @@ void ShenandoahStackWatermark::retire_tlab() {
   // Retire TLAB
   if (UseTLAB) {
     _stats.reset();
-    _jt->tlab().retire(&_stats);
+    _jt->retire_tlab(&_stats);
     if (ResizeTLAB) {
       _jt->tlab().resize();
     }
