@@ -62,7 +62,6 @@ public:
   zaddress alloc_object(size_t size);
 
   // Statistics
-  size_t tlab_used() const;
   size_t remaining() const;
 };
 

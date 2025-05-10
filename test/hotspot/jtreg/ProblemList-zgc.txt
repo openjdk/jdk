@@ -116,6 +116,9 @@ serviceability/sa/sadebugd/PmapOnDebugdTest.java              8307393   generic-
 serviceability/sa/sadebugd/RunCommandOnServerTest.java        8307393   generic-all
 serviceability/sa/sadebugd/SADebugDTest.java                  8307393   generic-all
 
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorInterpreterObjectTest.java                8356372 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatObjectCorrectnessTest.java	          8356372 generic-all
+
 vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64
 
 compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/DataPatchTest.java                   8343233 generic-all
