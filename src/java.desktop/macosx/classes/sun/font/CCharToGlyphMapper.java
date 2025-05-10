@@ -92,7 +92,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
         int glyph = cache.get(unicode);
         if (glyph != 0) return glyph;
 
-        if (FontUtilities.isDefaultIgnorable(unicode)) {
+        if (FontUtilities.isDefaultIgnorable(unicode) || isIgnorableWhitespace(unicode)) {
             glyph = INVISIBLE_GLYPH_ID;
         } else {
             final char[] unicodeArray = new char[] { unicode };
@@ -128,6 +128,12 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
         for (int i = 0; i < count; i++) {
             glyphs[i] = charToGlyph(unicodes[i]);
         }
+    }
+
+    // Matches behavior in e.g. CMap.getControlCodeGlyph(int, boolean)
+    // and RasterPrinterJob.removeControlChars(String)
+    private static boolean isIgnorableWhitespace(int code) {
+        return code == 0x0009 || code == 0x000a || code == 0x000d;
     }
 
     // This mapper returns either the glyph code, or if the character can be
@@ -253,7 +259,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
                         values[i+1] = INVISIBLE_GLYPH_ID;
                         i++;
                     }
-                } else if (FontUtilities.isDefaultIgnorable(code)) {
+                } else if (FontUtilities.isDefaultIgnorable(code) || isIgnorableWhitespace(code)) {
                     values[i] = INVISIBLE_GLYPH_ID;
                     put(code, INVISIBLE_GLYPH_ID);
                 } else {
