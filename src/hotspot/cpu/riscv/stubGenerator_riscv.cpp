@@ -1633,6 +1633,120 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("arraycopy_range_checks done");
   }
 
+  // Helper for generate_unsafe_setmemory
+  // from fill Byte in generate_fill
+  static void do_setmemory_atomic_loop(Register to, Register count, Register value,
+                                       MacroAssembler *_masm) {
+    const Register cnt_words = x29;      // temp register
+    const Register tmp_reg   = t1;
+
+    Label L_fill_elements, L_exit1;
+
+    // Zero extend value
+    // 8 bit -> 32 bit
+    __ zext(value, value, 8);
+    __ mv(tmp_reg, value);
+    __ slli(tmp_reg, tmp_reg, 8);
+    __ orr(value, value, tmp_reg);
+    __ mv(tmp_reg, value);
+    __ slli(tmp_reg, tmp_reg, 16);
+    __ orr(value, value, tmp_reg);
+    __ mv(tmp_reg, 8); // 8 bytes fill by element
+    __ bltu(count, tmp_reg, L_fill_elements);
+
+    // Align source address at 8 bytes address boundary.
+    Label L_skip_align1, L_skip_align2, L_skip_align4;
+
+    // One byte misalignment happens only for byte arrays.
+    __ test_bit(t0, to, 0);
+    __ beqz(t0, L_skip_align1);
+    __ sb(value, Address(to, 0));
+    __ addi(to, to, 1);
+    __ subiw(count, count, 1);
+    __ bind(L_skip_align1);
+    // Two bytes misalignment happens only for byte and short (char) arrays.
+    __ test_bit(t0, to, 1);
+    __ beqz(t0, L_skip_align2);
+    __ sh(value, Address(to, 0));
+    __ addi(to, to, 2);
+    __ subiw(count, count, 2);
+    __ bind(L_skip_align2);
+    // Align to 8 bytes, we know we are 4 byte aligned to start.
+    __ test_bit(t0, to, 2);
+    __ beqz(t0, L_skip_align4);
+    __ sw(value, Address(to, 0));
+    __ addi(to, to, 4);
+    __ subiw(count, count, 4);
+    __ bind(L_skip_align4);
+
+    //  Fill large chunks
+    __ srliw(cnt_words, count, 3); // number of words
+
+    // 32 bit -> 64 bit
+    __ zext(value, value, 32);
+    __ slli(tmp_reg, value, 32);
+    __ orr(value, value, tmp_reg);
+
+    __ slli(tmp_reg, cnt_words, 3);
+    __ subw(count, count, tmp_reg);
+    {
+      __ fill_words(to, cnt_words, value);
+    }
+
+    // Handle copies less than 8 bytes.
+    Label L_exit2;
+
+    __ bind(L_fill_elements);
+    __ beqz(count, L_exit2);
+    __ sb(value, Address(to, 0));
+    __ addi(to, to, 1);
+    __ subiw(count, count, 1);
+    __ j(L_fill_elements);
+
+    __ bind(L_exit2);
+  }
+
+  //
+  //  Generate 'unsafe' set memory stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t (# bytes) argument instead of an element count.
+  //
+  //  Input:
+  //    c_rarg0   - destination array address
+  //    c_rarg1   - byte count (size_t)
+  //    c_rarg2   - byte value
+  //
+  address generate_unsafe_setmemory() {
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::unsafe_setmemory_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+
+    // bump this on entry, not on exit:
+    inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
+
+    {
+      Label L_exit;
+
+      const Register dest = c_rarg0;
+      const Register size = c_rarg1;
+      const Register byteVal = c_rarg2;
+
+      __ beqz(size, L_exit);
+
+      {
+        // Mark remaining code as such which performs Unsafe accesses.
+        UnsafeMemoryAccessMark umam(this, true, false);
+        do_setmemory_atomic_loop(dest, size, byteVal, _masm);
+      }
+
+      __ BIND(L_exit);
+    }
+    __ ret();
+
+    return start;
+  }
+
   //
   //  Generate 'unsafe' array copy stub
   //  Though just as safe as the other stubs, it takes an unscaled
@@ -2259,6 +2373,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jbyte_fill = generate_fill(StubGenStubId::arrayof_jbyte_fill_id);
     StubRoutines::_arrayof_jshort_fill = generate_fill(StubGenStubId::arrayof_jshort_fill_id);
     StubRoutines::_arrayof_jint_fill = generate_fill(StubGenStubId::arrayof_jint_fill_id);
+
+    StubRoutines::_unsafe_setmemory    = generate_unsafe_setmemory();
   }
 
   void generate_aes_loadkeys(const Register &key, VectorRegister *working_vregs, int rounds) {
