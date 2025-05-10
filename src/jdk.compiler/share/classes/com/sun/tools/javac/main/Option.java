@@ -39,6 +39,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -46,6 +47,7 @@ import java.util.StringJoiner;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.lang.model.SourceVersion;
@@ -491,7 +493,7 @@ public enum Option {
             log.printRawLines(WriterKind.STDOUT, log.localize(PrefixKind.JAVAC, "opt.help.lint.header"));
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
-                                            "all",
+                                            LINT_CUSTOM_ALL,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.all")));
             for (LintCategory lc : LintCategory.values()) {
                 log.printRawLines(WriterKind.STDOUT,
@@ -499,17 +501,18 @@ public enum Option {
                                                 lc.option,
                                                 log.localize(PrefixKind.JAVAC,
                                                              "opt.Xlint.desc." + lc.option)));
-                if (lc.alias != null) {
+                int numOptions = lc.optionList.size();
+                if (numOptions > 1) {
+                    String aliases = lc.optionList.subList(1, numOptions).stream().collect(Collectors.joining(", "));
                     log.printRawLines(WriterKind.STDOUT,
-                            String.format(LINT_KEY_FORMAT,
-                                    lc.alias,
-                                    log.localize(PrefixKind.JAVAC,
-                                            "opt.Xlint.desc." + lc.alias)));
+                                      String.format(LINT_KEY_FORMAT,
+                                                    "",
+                                                    (numOptions > 2 ? "Aliases" : "Alias") + ": " + aliases));
                 }
             }
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
-                                            "none",
+                                            LINT_CUSTOM_NONE,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.none")));
             super.process(helper, option);
         }
@@ -843,6 +846,16 @@ public enum Option {
     };
 
     /**
+     * Special lint category key meaning "all lint categories".
+     */
+    public static final String LINT_CUSTOM_ALL = "all";
+
+    /**
+     * Special lint category key meaning "no lint categories".
+     */
+    public static final String LINT_CUSTOM_NONE = "none";
+
+    /**
      * This exception is thrown when an invalid value is given for an option.
      * The detail string gives a detailed, localized message, suitable for use
      * in error messages reported to the user.
@@ -1086,6 +1099,17 @@ public enum Option {
 
     public OptionKind getKind() {
         return kind;
+    }
+
+    /**
+     * If this option is named {@code FOO}, obtain the option named {@code FOO_CUSTOM}.
+     *
+     * @param option regular option
+     * @return corresponding custom option
+     * @throws IllegalArgumentException if no such option exists
+     */
+    public Option getCustom() {
+        return Option.valueOf(name() + "_CUSTOM");
     }
 
     public boolean isInBasicOptionGroup() {
@@ -1371,16 +1395,12 @@ public enum Option {
 
     private static Set<String> getXLintChoices() {
         Set<String> choices = new LinkedHashSet<>();
-        choices.add("all");
-        for (Lint.LintCategory c : Lint.LintCategory.values()) {
-            choices.add(c.option);
-            choices.add("-" + c.option);
-            if (c.alias != null) {
-                choices.add(c.alias);
-                choices.add("-" + c.alias);
-            }
-        }
-        choices.add("none");
+        choices.add(LINT_CUSTOM_ALL);
+        Stream.of(Lint.LintCategory.values())
+          .flatMap(lc -> lc.optionList.stream())
+          .flatMap(ident -> Stream.of(ident, "-" + ident))
+          .forEach(choices::add);
+        choices.add(LINT_CUSTOM_NONE);
         return choices;
     }
 

@@ -25,8 +25,11 @@
 
 package com.sun.tools.javac.code;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -149,10 +152,10 @@ public class Lint {
             return;
 
         // Initialize enabled categories based on "-Xlint" flags
-        if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, "all")) {
+        if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_ALL)) {
             // If -Xlint or -Xlint:all is given, enable all categories by default
             values = EnumSet.allOf(LintCategory.class);
-        } else if (options.isSet(Option.XLINT_CUSTOM, "none")) {
+        } else if (options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_NONE)) {
             // if -Xlint:none is given, disable all categories by default
             values = LintCategory.newEmptySet();
         } else {
@@ -179,11 +182,9 @@ public class Lint {
 
         // Look for specific overrides
         for (LintCategory lc : LintCategory.values()) {
-            if (options.isSet(Option.XLINT_CUSTOM, lc.option) ||
-                    (lc.alias != null && options.isSet(Option.XLINT_CUSTOM, lc.alias))) {
+            if (options.isExplicitlyEnabled(Option.XLINT, lc)) {
                 values.add(lc);
-            } else if (options.isSet(Option.XLINT_CUSTOM, "-" + lc.option) ||
-                    (lc.alias != null && options.isSet(Option.XLINT_CUSTOM, "-" + lc.alias))) {
+            } else if (options.isExplicitlyDisabled(Option.XLINT, lc)) {
                 values.remove(lc);
             }
         }
@@ -266,7 +267,7 @@ public class Lint {
         /**
          * Warn about uses of @ValueBased classes where an identity class is expected.
          */
-        IDENTITY("identity", "synchronization"),
+        IDENTITY("identity", true, "synchronization"),
 
         /**
          * Warn about use of incubating modules.
@@ -412,23 +413,14 @@ public class Lint {
             this(option, true);
         }
 
-        LintCategory(String option, boolean annotationSuppression) {
-            this(option, annotationSuppression, null);
-        }
-
-        LintCategory(String option, String alias) {
-            this(option, true, alias);
-        }
-
-        LintCategory(String option, boolean annotationSuppression, String alias) {
+        LintCategory(String option, boolean annotationSuppression, String... aliases) {
             this.option = option;
             this.annotationSuppression = annotationSuppression;
-            this.alias = alias;
-            map.put(option, this);
-            // we need to do this as forward references are not allowed
-            if (alias != null) {
-                map.put(alias, this);
-            }
+            ArrayList<String> optionList = new ArrayList<>(1 + aliases.length);
+            optionList.add(option);
+            Stream.of(aliases).forEach(optionList::add);
+            this.optionList = Collections.unmodifiableList(optionList);
+            this.optionList.forEach(string -> map.put(string, this));
         }
 
         /**
@@ -445,13 +437,14 @@ public class Lint {
             return EnumSet.noneOf(LintCategory.class);
         }
 
-        /** Get the string representing this category in @SuppressAnnotations and -Xlint options. */
+        /** Get the "canonical" string representing this category in @SuppressAnnotations and -Xlint options. */
         public final String option;
+
+        /** Get a list containing "option" followed by zero or more aliases. */
+        public final List<String> optionList;
 
         /** Does this category support being suppressed by the {@code @SuppressWarnings} annotation? */
         public final boolean annotationSuppression;
-
-        public String alias;
     }
 
     /**
@@ -511,6 +504,20 @@ public class Lint {
         if (symbol.isDeprecated() && symbol.isDeprecatableViaAnnotation())
             suppressions.add(LintCategory.DEPRECATION);
         return suppressions;
+    }
+
+    /**
+     * Retrieve the recognized lint categories suppressed by the given @SuppressWarnings annotation.
+     *
+     * @param annotation @SuppressWarnings annotation, or null
+     * @return set of lint categories, possibly empty but never null
+     */
+    private EnumSet<LintCategory> suppressionsFrom(JCAnnotation annotation) {
+        initializeSymbolsIfNeeded();
+        if (annotation == null)
+            return LintCategory.newEmptySet();
+        Assert.check(annotation.attribute.type.tsym == syms.suppressWarningsType.tsym);
+        return suppressionsFrom(Stream.of(annotation).map(anno -> anno.attribute));
     }
 
     // Find the @SuppressWarnings annotation in the given stream and extract the recognized suppressions
