@@ -62,6 +62,9 @@ public final class InterfaceAddress {
      * <p>
      * Only IPv4 networks have broadcast address therefore, in the case
      * of an IPv6 network, {@code null} will be returned.
+     * <p>
+     * Certain network interfaces, such as the loopback interface, do not support
+     * broadcasting and will also return {@code null}.
      *
      * @return the {@code InetAddress} representing the broadcast
      *         address or {@code null} if there is no broadcast address.
