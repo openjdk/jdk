@@ -38,6 +38,8 @@ class AOTCodeCache;
 class AdapterBlob;
 class ExceptionBlob;
 class ImmutableOopMapSet;
+class AsmRemarks;
+class DbgStrings;
 
 enum class vmIntrinsicID : int;
 enum CompLevel : signed char;
@@ -47,11 +49,17 @@ class AOTCodeEntry {
 public:
   enum Kind {
     None    = 0,
+    First_kind = 1,
     Adapter = 1,
-    Blob    = 2
+    SharedBlob = 2,
+    C1Blob = 3,
+    C2Blob = 4,
+    Last_kind = 4
   };
 
 private:
+  static const char* _kind_string[Last_kind+1];
+
   AOTCodeEntry* _next;
   Kind   _kind;
   uint   _id;          // Adapter's id, vmIntrinsic::ID for stub or name's hash for nmethod
@@ -100,34 +108,50 @@ public:
   bool has_oop_maps() const { return _has_oop_maps; }
   address dumptime_content_start_addr() const { return _dumptime_content_start_addr; }
 
-  static bool is_valid_entry_kind(Kind kind) { return kind == Adapter || kind == Blob; }
+  static const char* kind_string(Kind kind) { return _kind_string[(int)kind]; }
+  static bool is_valid_entry_kind(Kind kind) { return kind >= First_kind && kind <= Last_kind; }
+  static bool is_blob(Kind kind) { return kind == SharedBlob || kind == C1Blob || kind == C2Blob; }
+  static bool is_adapter(Kind kind) { return kind == Adapter; }
 };
 
 // Addresses of stubs, blobs and runtime finctions called from compiled code.
 class AOTCodeAddressTable : public CHeapObj<mtCode> {
 private:
   address* _extrs_addr;
-  address* _blobs_addr;
+  address* _stubs_addr;
+  address* _shared_blobs_addr;
+  address* _C1_blobs_addr;
   uint     _extrs_length;
-  uint     _blobs_length;
+  uint     _stubs_length;
+  uint     _shared_blobs_length;
+  uint     _C1_blobs_length;
 
   bool _extrs_complete;
+  bool _early_stubs_complete;
   bool _shared_blobs_complete;
+  bool _early_c1_complete;
   bool _complete;
 
 public:
   AOTCodeAddressTable() :
     _extrs_addr(nullptr),
-    _blobs_addr(nullptr),
+    _shared_blobs_addr(nullptr),
+    _C1_blobs_addr(nullptr),
     _extrs_length(0),
-    _blobs_length(0),
+    _stubs_length(0),
+    _shared_blobs_length(0),
+    _C1_blobs_length(0),
     _extrs_complete(false),
+    _early_stubs_complete(false),
     _shared_blobs_complete(false),
+    _early_c1_complete(false),
     _complete(false)
   { }
   ~AOTCodeAddressTable();
   void init_extrs();
+  void init_early_stubs();
   void init_shared_blobs();
+  void init_early_c1();
   const char* add_C_string(const char* str);
   int  id_for_C_string(address str);
   address address_for_C_string(int idx);
@@ -175,14 +199,17 @@ protected:
     uint   _entries_count;   // number of recorded entries
     uint   _entries_offset;  // offset of AOTCodeEntry array describing entries
     uint   _adapters_count;
-    uint   _blobs_count;
+    uint   _shared_blobs_count;
+    uint   _C1_blobs_count;
+    uint   _C2_blobs_count;
     Config _config;
 
 public:
     void init(uint cache_size,
               uint strings_count,  uint strings_offset,
               uint entries_count,  uint entries_offset,
-              uint adapters_count, uint blobs_count) {
+              uint adapters_count, uint shared_blobs_count,
+              uint C1_blobs_count, uint C2_blobs_count) {
       _version        = AOT_CODE_VERSION;
       _cache_size     = cache_size;
       _strings_count  = strings_count;
@@ -190,8 +217,9 @@ public:
       _entries_count  = entries_count;
       _entries_offset = entries_offset;
       _adapters_count = adapters_count;
-      _blobs_count    = blobs_count;
-
+      _shared_blobs_count = shared_blobs_count;
+      _C1_blobs_count = C1_blobs_count;
+      _C2_blobs_count = C2_blobs_count;
       _config.record();
     }
 
@@ -202,7 +230,9 @@ public:
     uint entries_count()  const { return _entries_count; }
     uint entries_offset() const { return _entries_offset; }
     uint adapters_count() const { return _adapters_count; }
-    uint blobs_count()    const { return _blobs_count; }
+    uint shared_blobs_count()    const { return _shared_blobs_count; }
+    uint C1_blobs_count() const { return _C1_blobs_count; }
+    uint C2_blobs_count() const { return _C2_blobs_count; }
 
     bool verify_config(uint load_size)  const;
     bool verify_vm_config() const { // Called after Universe initialized
@@ -267,8 +297,11 @@ public:
   int store_strings();
 
   static void init_extrs_table() NOT_CDS_RETURN;
+  static void init_early_stubs_table() NOT_CDS_RETURN;
   static void init_shared_blobs_table() NOT_CDS_RETURN;
+  static void init_early_c1_table() NOT_CDS_RETURN;
 
+  address address_for_C_string(int idx) const { return _table->address_for_C_string(idx); }
   address address_for_id(int id) const { return _table->address_for_id(id); }
 
   bool for_use()  const { return _for_use  && !_failed; }
@@ -288,17 +321,21 @@ public:
 
   bool write_relocations(CodeBlob& code_blob);
   bool write_oop_map_set(CodeBlob& cb);
+#ifndef PRODUCT
+  bool write_asm_remarks(CodeBlob& cb);
+  bool write_dbg_strings(CodeBlob& cb);
+#endif // PRODUCT
 
   static bool store_code_blob(CodeBlob& blob,
                               AOTCodeEntry::Kind entry_kind,
                               uint id, const char* name,
-                              int entry_offset_count,
-                              int* entry_offsets) NOT_CDS_RETURN_(false);
+                              int entry_offset_count = 0,
+                              int* entry_offsets = nullptr) NOT_CDS_RETURN_(false);
 
   static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
                                   uint id, const char* name,
-                                  int entry_offset_count,
-                                  int* entry_offsets) NOT_CDS_RETURN_(nullptr);
+                                  int entry_offset_count = 0,
+                                  int* entry_offsets = nullptr) NOT_CDS_RETURN_(nullptr);
 
   static uint store_entries_cnt() {
     if (is_on_for_dump()) {
@@ -331,6 +368,9 @@ public:
   static bool is_dumping_adapters() NOT_CDS_RETURN_(false);
   static bool is_using_adapters() NOT_CDS_RETURN_(false);
 
+  static bool is_dumping_stubs() NOT_CDS_RETURN_(false);
+  static bool is_using_stubs() NOT_CDS_RETURN_(false);
+
   static const char* add_C_string(const char* str) NOT_CDS_RETURN_(str);
 
   static void print_on(outputStream* st) NOT_CDS_RETURN;
@@ -361,5 +401,10 @@ public:
   ImmutableOopMapSet* read_oop_map_set();
 
   void fix_relocations(CodeBlob* code_blob);
+#ifndef PRODUCT
+  void read_asm_remarks(AsmRemarks& asm_remarks);
+  void read_dbg_strings(DbgStrings& dbg_strings);
+#endif // PRODUCT
 };
-#endif // SHARE_CODE_AOTCODECACH_HPP
+
+#endif // SHARE_CODE_AOTCODECACHE_HPP

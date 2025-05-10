@@ -31,6 +31,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/compiledIC.hpp"
 #include "code/scopeDesc.hpp"
@@ -198,6 +199,13 @@ class C1StubIdStubAssemblerCodeGenClosure: public StubAssemblerCodeGenClosure {
 };
 
 CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, C1StubId id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure* cl) {
+  if ((int)id >= 0) {
+    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C1Blob, (uint)id, name, 0, nullptr);
+    if (blob != nullptr) {
+      return blob;
+    }
+  }
+
   ResourceMark rm;
   // create code buffer for code storage
   CodeBuffer code(buffer_blob);
@@ -231,6 +239,9 @@ CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, C1StubId id, const ch
                                                  oop_maps,
                                                  must_gc_arguments,
                                                  false /* alloc_fail_is_fatal */ );
+  if (blob != nullptr && (int)id >= 0) {
+    AOTCodeCache::store_code_blob(*blob, AOTCodeEntry::C1Blob, (uint)id, name, 0, nullptr);
+  }
   return blob;
 }
 
@@ -265,7 +276,13 @@ bool Runtime1::initialize(BufferBlob* blob) {
   initialize_pd();
   // generate stubs
   int limit = (int)C1StubId::NUM_STUBIDS;
-  for (int id = 0; id < limit; id++) {
+  for (int id = 0; id <= (int)C1StubId::forward_exception_id; id++) {
+    if (!generate_blob_for(blob, (C1StubId) id)) {
+      return false;
+    }
+  }
+  AOTCodeCache::init_early_c1_table();
+  for (int id = (int)C1StubId::forward_exception_id+1; id < limit; id++) {
     if (!generate_blob_for(blob, (C1StubId) id)) {
       return false;
     }

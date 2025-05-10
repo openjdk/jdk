@@ -264,7 +264,11 @@ void CodeBlob::post_restore() {
   vptr(_kind)->post_restore(this);
 }
 
-CodeBlob* CodeBlob::restore(address code_cache_buffer, const char* name, address archived_reloc_data, ImmutableOopMapSet* archived_oop_maps) {
+CodeBlob* CodeBlob::restore(address code_cache_buffer,
+                            const char* name,
+                            address archived_reloc_data,
+                            ImmutableOopMapSet* archived_oop_maps)
+{
   copy_to(code_cache_buffer);
   CodeBlob* code_blob = (CodeBlob*)code_cache_buffer;
   code_blob->set_name(name);
@@ -273,7 +277,16 @@ CodeBlob* CodeBlob::restore(address code_cache_buffer, const char* name, address
   return code_blob;
 }
 
-CodeBlob* CodeBlob::create(CodeBlob* archived_blob, const char* name, address archived_reloc_data, ImmutableOopMapSet* archived_oop_maps) {
+CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
+                           const char* name,
+                           address archived_reloc_data,
+                           ImmutableOopMapSet* archived_oop_maps
+#ifndef PRODUCT
+                           , AsmRemarks& archived_asm_remarks
+                           , DbgStrings& archived_dbg_strings
+#endif // PRODUCT
+                          )
+{
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   CodeCache::gc_on_allocation();
@@ -284,7 +297,17 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob, const char* name, address ar
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     address code_cache_buffer = (address)CodeCache::allocate(size, CodeBlobType::NonNMethod);
     if (code_cache_buffer != nullptr) {
-      blob = archived_blob->restore(code_cache_buffer, name, archived_reloc_data, archived_oop_maps);
+      blob = archived_blob->restore(code_cache_buffer,
+                                    name,
+                                    archived_reloc_data,
+                                    archived_oop_maps);
+#ifndef PRODUCT
+      blob->use_remarks(archived_asm_remarks);
+      archived_asm_remarks.clear();
+      blob->use_strings(archived_dbg_strings);
+      archived_dbg_strings.clear();
+#endif // PRODUCT
+
       assert(blob != nullptr, "sanity check");
       // Flush the code block
       ICache::invalidate_range(blob->code_begin(), blob->code_size());

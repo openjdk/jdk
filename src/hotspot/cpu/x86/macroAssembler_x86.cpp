@@ -5404,7 +5404,11 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
 void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
   assert_different_registers(r, tmp);
   if (CompressedKlassPointers::base() != nullptr) {
-    mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    if (AOTCodeCache::is_on_for_dump()) {
+      movptr(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+    } else {
+      mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    }
     subq(r, tmp);
   }
   if (CompressedKlassPointers::shift() != 0) {
@@ -5436,7 +5440,11 @@ void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
     shlq(r, CompressedKlassPointers::shift());
   }
   if (CompressedKlassPointers::base() != nullptr) {
-    mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    if (AOTCodeCache::is_on_for_dump()) {
+      movptr(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+    } else {
+      mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    }
     addq(r, tmp);
   }
 }

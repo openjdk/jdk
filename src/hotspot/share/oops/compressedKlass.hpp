@@ -213,6 +213,7 @@ public:
 
   // Can only be used after initialization
   static address  base()             { check_init(_base); return  _base; }
+  static address  base_addr()        { return  (address)&_base; }
   static int      shift()            { check_init(_shift); return  _shift; }
 
   static address  klass_range_start()  { return  _klass_range_start; }

@@ -28,6 +28,7 @@
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
@@ -291,8 +292,129 @@ class CodeSection {
 
 #ifndef PRODUCT
 
-class AsmRemarkCollection;
-class DbgStringCollection;
+// ----- CHeapString -----------------------------------------------------------
+
+class CHeapString : public CHeapObj<mtCode> {
+ public:
+  CHeapString(const char* str) : _string(os::strdup(str)) {}
+  ~CHeapString();
+  const char* string() const { return _string; }
+
+ private:
+  const char* _string;
+};
+
+// ----- AsmRemarkCollection ---------------------------------------------------
+
+class AsmRemarkCollection : public CHeapObj<mtCode> {
+ public:
+  AsmRemarkCollection() : _ref_cnt(1), _remarks(nullptr), _next(nullptr) {}
+ ~AsmRemarkCollection() {
+    assert(is_empty(), "Must 'clear()' before deleting!");
+    assert(_ref_cnt == 0, "No uses must remain when deleting!");
+  }
+  AsmRemarkCollection* reuse() {
+    precond(_ref_cnt > 0);
+    return _ref_cnt++, this;
+  }
+
+  const char* insert(uint offset, const char* remark);
+  const char* lookup(uint offset) const;
+  const char* next(uint offset) const;
+
+  bool is_empty() const { return _remarks == nullptr; }
+  uint clear();
+
+  template<typename Function>
+  bool iterate(Function function) const { // lambda enabled API
+    if (_remarks != nullptr) {
+      Cell* tmp = _remarks;
+      do {
+        if(!function(tmp->offset, tmp->string())) {
+          return false;
+        }
+        tmp = tmp->next;
+      } while (tmp != _remarks);
+    }
+    return true;
+  }
+
+ private:
+  struct Cell : CHeapString {
+    Cell(const char* remark, uint offset) :
+        CHeapString(remark), offset(offset), prev(nullptr), next(nullptr) {}
+    void push_back(Cell* cell) {
+      Cell* head = this;
+      Cell* tail = prev;
+      tail->next = cell;
+      cell->next = head;
+      cell->prev = tail;
+      prev = cell;
+    }
+    uint offset;
+    Cell* prev;
+    Cell* next;
+  };
+  uint  _ref_cnt;
+  Cell* _remarks;
+  // Using a 'mutable' iteration pointer to allow 'const' on lookup/next (that
+  // does not change the state of the list per se), supportig a simplistic
+  // iteration scheme.
+  mutable Cell* _next;
+};
+
+// ----- DbgStringCollection ---------------------------------------------------
+
+class DbgStringCollection : public CHeapObj<mtCode> {
+ public:
+  DbgStringCollection() : _ref_cnt(1), _strings(nullptr) {}
+ ~DbgStringCollection() {
+    assert(is_empty(), "Must 'clear()' before deleting!");
+    assert(_ref_cnt == 0, "No uses must remain when deleting!");
+  }
+  DbgStringCollection* reuse() {
+    precond(_ref_cnt > 0);
+    return _ref_cnt++, this;
+  }
+
+  const char* insert(const char* str);
+  const char* lookup(const char* str) const;
+
+  bool is_empty() const { return _strings == nullptr; }
+  uint clear();
+
+  template<typename Function>
+  bool iterate(Function function) const { // lambda enabled API
+    if (_strings != nullptr) {
+      Cell* tmp = _strings;
+      do {
+        if (!function(tmp->string())) {
+          return false;
+        }
+        tmp = tmp->next;
+      } while (tmp != _strings);
+    }
+    return true;
+  }
+
+ private:
+  struct Cell : CHeapString {
+    Cell(const char* dbgstr) :
+        CHeapString(dbgstr), prev(nullptr), next(nullptr) {}
+    void push_back(Cell* cell) {
+      Cell* head = this;
+      Cell* tail = prev;
+      tail->next = cell;
+      cell->next = head;
+      cell->prev = tail;
+      prev = cell;
+    }
+    Cell* prev;
+    Cell* next;
+  };
+  uint  _ref_cnt;
+  Cell* _strings;
+};
 
 // The assumption made here is that most code remarks (or comments) added to
 // the generated assembly code are unique, i.e. there is very little gain in
@@ -315,6 +437,9 @@ class AsmRemarks {
   // For testing purposes only.
   const AsmRemarkCollection* ref() const { return _remarks; }
 
+  template<typename Function>
+  inline bool iterate(Function function) const { return _remarks->iterate(function); }
+
 private:
   AsmRemarkCollection* _remarks;
 };
@@ -336,6 +461,9 @@ class DbgStrings {
 
   // For testing purposes only.
   const DbgStringCollection* ref() const { return _strings; }
+
+  template<typename Function>
+  bool iterate(Function function) const { return _strings->iterate(function); }
 
 private:
   DbgStringCollection* _strings;
