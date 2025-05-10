@@ -57,7 +57,7 @@ import java.util.HexFormat;
  * @summary Test Signature with variation of serialized EDDSA Keys.
  * @library /test/lib
  * @build jdk.test.lib.Convert
- * @run main EdDSATest
+ * @run main/timeout=480 EdDSATest
  */
 public class EdDSATest {
 

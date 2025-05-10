@@ -24,8 +24,9 @@
 /**
  * @test
  * @bug 7110149 8184306 6341887
- * @summary Test basic deflater & inflater functionality
+ * @summary Test basic deflater and inflater functionality
  * @key randomness
+ * @run main/timeout=480 DeInflate
  */
 
 import java.io.*;

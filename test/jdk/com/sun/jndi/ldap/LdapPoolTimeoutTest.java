@@ -27,7 +27,7 @@
  * @summary Multi-threaded client timeout tests for ldap pool
  * @library /test/lib
  *          lib/
- * @run testng/othervm LdapPoolTimeoutTest
+ * @run testng/othervm/timeout=480 LdapPoolTimeoutTest
  */
 
 import org.testng.annotations.Test;

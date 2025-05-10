@@ -27,7 +27,7 @@
  * @library /test/lib
  * @requires vm.continuations & vm.opt.LockingMode != 1
  * @modules java.base/java.lang:+open
- * @run junit/othervm MiscMonitorTests
+ * @run junit/othervm/timeout=480 MiscMonitorTests
  */
 
 /*
@@ -35,7 +35,7 @@
  * @library /test/lib
  * @requires vm.continuations & vm.opt.LockingMode != 1
  * @modules java.base/java.lang:+open
- * @run junit/othervm -Xint MiscMonitorTests
+ * @run junit/othervm/timeout=480 -Xint MiscMonitorTests
  */
 
 /*
@@ -43,7 +43,7 @@
  * @library /test/lib
  * @requires vm.continuations & vm.opt.LockingMode != 1
  * @modules java.base/java.lang:+open
- * @run junit/othervm -Xcomp MiscMonitorTests
+ * @run junit/othervm/timeout=480 -Xcomp MiscMonitorTests
  */
 
 /*
@@ -51,7 +51,7 @@
  * @library /test/lib
  * @requires vm.continuations & vm.opt.LockingMode != 1
  * @modules java.base/java.lang:+open
- * @run junit/othervm -Xcomp -XX:TieredStopAtLevel=3 MiscMonitorTests
+ * @run junit/othervm/timeout=480 -Xcomp -XX:TieredStopAtLevel=3 MiscMonitorTests
  */
 
 /*
@@ -60,7 +60,7 @@
  * @library /test/lib
  * @requires vm.continuations & vm.opt.LockingMode != 1
  * @modules java.base/java.lang:+open
- * @run junit/othervm -Xcomp -XX:-TieredCompilation MiscMonitorTests
+ * @run junit/othervm/timeout=480 -Xcomp -XX:-TieredCompilation MiscMonitorTests
  */
 
 /*
@@ -68,7 +68,7 @@
  * @requires vm.debug == true & vm.continuations & vm.opt.LockingMode != 1
  * @library /test/lib
  * @modules java.base/java.lang:+open
- * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:+FullGCALot -XX:FullGCALotInterval=1000 MiscMonitorTests
+ * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+FullGCALot -XX:FullGCALotInterval=1000 MiscMonitorTests
  */
 
 import java.util.concurrent.atomic.AtomicInteger;

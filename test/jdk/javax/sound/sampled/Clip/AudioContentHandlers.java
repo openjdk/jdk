@@ -46,7 +46,7 @@ import static javax.sound.sampled.AudioFileFormat.Type.WAVE;
  * @test
  * @bug 8204454
  * @summary URL.getContent() should return AudioClip for supported formats
- * @run main/othervm -Xmx128m AudioContentHandlers
+ * @run main/othervm/timeout=480 -Xmx128m AudioContentHandlers
  */
 public final class AudioContentHandlers {
 

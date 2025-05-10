@@ -28,7 +28,7 @@
  *          immediately with a Publisher<List<ByteBuffer>>
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm ResponsePublisher
+ * @run testng/othervm/timeout=480 ResponsePublisher
  */
 
 import com.sun.net.httpserver.HttpExchange;

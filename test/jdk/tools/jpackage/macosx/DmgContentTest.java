@@ -42,7 +42,7 @@ import java.util.List;
  * @build jdk.jpackage.test.*
  * @build DmgContentTest
  * @requires (os.family == "mac")
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=DmgContentTest
  */
 public class DmgContentTest {

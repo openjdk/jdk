@@ -31,10 +31,10 @@
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.net.SimpleSSLContext
  * @requires (vm.compMode != "Xcomp")
- * @run testng/othervm
+ * @run testng/othervm/timeout=480
  *       -Djdk.httpclient.HttpClient.log=requests,headers,errors
  *       SpecialHeadersTest
- * @run testng/othervm -Djdk.httpclient.allowRestrictedHeaders=Host
+ * @run testng/othervm/timeout=480 -Djdk.httpclient.allowRestrictedHeaders=Host
  *       -Djdk.httpclient.HttpClient.log=requests,headers,errors
  *       SpecialHeadersTest
  */

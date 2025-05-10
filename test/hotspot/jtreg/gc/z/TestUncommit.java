@@ -110,7 +110,7 @@ public class TestUncommit {
             throw new Exception("Uncommitted too fast");
         }
 
-        if (actualDelay > delay * 2 * Utils.TIMEOUT_FACTOR) {
+        if (actualDelay > delay * 4) {
             throw new Exception("Uncommitted too slow");
         }
 

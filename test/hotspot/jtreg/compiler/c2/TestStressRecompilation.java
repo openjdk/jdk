@@ -26,7 +26,7 @@
  * @bug 8245801
  * @requires vm.debug
  * @summary Test running with StressRecompilation enabled.
- * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+StressRecompilation
+ * @run main/othervm/timeout=480 -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+StressRecompilation
  *                   compiler.c2.TestStressRecompilation
  */
 

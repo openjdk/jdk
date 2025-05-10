@@ -28,7 +28,7 @@
  * @summary Test that javac and java find files in similar ways
  * @library /tools/lib
  * @build toolbox.ToolBox Util MineField
- * @run main MineField
+ * @run main/timeout=480 MineField
  */
 
 /*

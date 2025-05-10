@@ -27,7 +27,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm/native --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
@@ -35,7 +35,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm/native -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
@@ -43,7 +43,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm/native -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
@@ -51,7 +51,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm/native -Xint -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -Xint -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
@@ -59,7 +59,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm/native -Xint -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -Xint -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
@@ -67,7 +67,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm/native -Xcomp -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -Xcomp -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
@@ -75,7 +75,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm/native -Xcomp -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -Xcomp -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
@@ -83,7 +83,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
@@ -91,7 +91,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
@@ -99,7 +99,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm/native -Xcomp -XX:-TieredCompilation -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -Xcomp -XX:-TieredCompilation -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 /*
@@ -107,7 +107,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm/native -Xcomp -XX:-TieredCompilation -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ * @run junit/othervm/native/timeout=480 -Xcomp -XX:-TieredCompilation -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 import java.time.Duration;

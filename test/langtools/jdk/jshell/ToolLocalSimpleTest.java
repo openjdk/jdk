@@ -30,7 +30,7 @@
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @build KullaTesting TestingInputStream ToolSimpleTest
- * @run testng/othervm ToolLocalSimpleTest
+ * @run testng/othervm/timeout=480 ToolLocalSimpleTest
  */
 
 import java.util.Locale;

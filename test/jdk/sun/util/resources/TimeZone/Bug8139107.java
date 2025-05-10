@@ -27,7 +27,7 @@
  * @summary Test that date parsing with DateTimeFormatter pattern
  *   that contains timezone field doesn't trigger NPE. All supported
  *   locales are tested.
- * @run testng Bug8139107
+ * @run testng/timeout=480 Bug8139107
  */
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -56,4 +56,3 @@ public class Bug8139107 {
     // Pattern with time zone field
     static final String pattern = "dd-MM-yyyy HH:mm:ss z";
 }
-

@@ -25,7 +25,7 @@
  * @test id=Xbatch
  * @bug 8332920
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
- * @run main/othervm -Xbatch -XX:-TieredCompilation
+ * @run main/othervm/timeout=480 -Xbatch -XX:-TieredCompilation
  *                   -XX:CompileOnly=*TestPartialPeel*::original*,*TestPartialPeel*::test*
  *                   compiler.loopopts.TestPartialPeelAtUnsignedTestsNegativeLimit
  */
@@ -34,7 +34,7 @@
  * @test id=Xcomp-run-inline
  * @bug 8332920
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
- * @run main/othervm -Xcomp -XX:-TieredCompilation
+ * @run main/othervm/timeout=480 -Xcomp -XX:-TieredCompilation
  *                   -XX:CompileOnly=*TestPartialPeel*::original*,*TestPartialPeel*::run*,*TestPartialPeel*::test*
  *                   -XX:CompileCommand=inline,*TestPartialPeelAtUnsignedTestsNegativeLimit::test*
  *                   -XX:CompileCommand=dontinline,*TestPartialPeelAtUnsignedTestsNegativeLimit::check
@@ -45,7 +45,7 @@
  * @test id=Xcomp-compile-test
  * @bug 8332920
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=*TestPartialPeel*::original*,*TestPartialPeel*::test*
+ * @run main/othervm/timeout=480 -Xcomp -XX:-TieredCompilation -XX:CompileOnly=*TestPartialPeel*::original*,*TestPartialPeel*::test*
  *                   compiler.loopopts.TestPartialPeelAtUnsignedTestsNegativeLimit
  */
 
@@ -55,7 +55,7 @@
  * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @summary Tests partial peeling at unsigned tests with limit being negative in exit tests "i >u limit".
  *          Only run this test with C2 since it is time-consuming and only tests a C2 issue.
- * @run main compiler.loopopts.TestPartialPeelAtUnsignedTestsNegativeLimit
+ * @run main/timeout=480 compiler.loopopts.TestPartialPeelAtUnsignedTestsNegativeLimit
  */
 
 package compiler.loopopts;

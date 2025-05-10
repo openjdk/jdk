@@ -131,18 +131,7 @@ public class UITesting {
         public void test(Writer inputSink, StringBuilder out) throws Exception;
     }
 
-    private static final long TIMEOUT;
-
-    static {
-        long factor;
-
-        try {
-            factor = (long) Double.parseDouble(System.getProperty("test.timeout.factor", "1"));
-        } catch (NumberFormatException ex) {
-            factor = 1;
-        }
-        TIMEOUT = 60_000 * factor;
-    }
+    private static final long TIMEOUT = (long) (60_000 * Double.parseDouble(System.getProperty("test.timeout.factor", "1.0")));
 
     protected void waitOutput(StringBuilder out, String expected) {
         waitOutput(out, expected, null);

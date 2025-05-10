@@ -33,7 +33,7 @@
  *     lower than the main thread.
  *
  * @library /test/lib
- * @run main/othervm nsk.stress.thread.thread001 500 2m 5s
+ * @run main/othervm/timeout=480 nsk.stress.thread.thread001 500 2m 5s
  */
 
 package nsk.stress.thread;

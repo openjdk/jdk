@@ -41,7 +41,7 @@ import jtreg.SkippedException;
  * @requires vm.compiler1.enabled
  * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
- * @run main/othervm/timeout=480 ClhsdbFindPC true false
+ * @run main/othervm/timeout=1920 ClhsdbFindPC true false
  */
 
 /**
@@ -53,7 +53,7 @@ import jtreg.SkippedException;
  * @requires vm.compiler1.enabled
  * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
- * @run main/othervm/timeout=480 ClhsdbFindPC true true
+ * @run main/othervm/timeout=1920 ClhsdbFindPC true true
  */
 
 /**
@@ -64,7 +64,7 @@ import jtreg.SkippedException;
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires vm.compiler1.enabled
  * @library /test/lib
- * @run main/othervm/timeout=480 ClhsdbFindPC false false
+ * @run main/othervm/timeout=1920 ClhsdbFindPC false false
  */
 
 /**
@@ -74,7 +74,7 @@ import jtreg.SkippedException;
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
  * @library /test/lib
- * @run main/othervm/timeout=480 ClhsdbFindPC false true
+ * @run main/othervm/timeout=1920 ClhsdbFindPC false true
  */
 
 public class ClhsdbFindPC {

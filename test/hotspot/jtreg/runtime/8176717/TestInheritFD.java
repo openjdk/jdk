@@ -78,6 +78,8 @@ import java.util.stream.Stream;
  * the third VM.
  */
 
+import jdk.test.lib.Utils;
+
 public class TestInheritFD {
 
     public static final String LEAKS_FD = "VM RESULT => LEAKS FD";
@@ -90,8 +92,7 @@ public class TestInheritFD {
     public static final String THIRD_VM_PID_PREFIX = "Third VM pid=";
     public static final String THIRD_VM_WAITING_PREFIX = "Third VM waiting for second VM pid=";
 
-    public static float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-    public static long subProcessTimeout = (long)(15L * timeoutFactor);
+    public static long subProcessTimeout = (long)(15L * Utils.TIMEOUT_FACTOR);
 
     // Extract a pid from the specified String at the specified start offset.
     private static long extractPidFromStringOffset(String str, int start) {

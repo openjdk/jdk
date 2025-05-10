@@ -31,7 +31,7 @@
  *          java.base/sun.util.resources
  * @build com.foobar.Utils
  *        com.bar.*
- * @run main/othervm -Djava.locale.providers=CLDR,SPI CurrencyNameProviderTest
+ * @run main/othervm/timeout=480 -Djava.locale.providers=CLDR,SPI CurrencyNameProviderTest
  */
 
 import java.text.DecimalFormat;

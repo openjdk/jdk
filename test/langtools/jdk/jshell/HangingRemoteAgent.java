@@ -35,9 +35,7 @@ import jdk.jshell.spi.ExecutionControlProvider;
  */
 class HangingRemoteAgent extends RemoteExecutionControl {
 
-    private static float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-
-    private static final int TIMEOUT = (int)(2000 * timeoutFactor);
+    private static final int TIMEOUT = (int)(2000 * Double.parseDouble(System.getProperty("test.timeout.factor", "1.0")));
     private static final long DELAY = TIMEOUT * 2L;
     private static final boolean INFRA_VERIFY = false;
 

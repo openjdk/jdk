@@ -59,7 +59,7 @@
  * @comment generate and compile nsk.share.gc.newclass.* classes
  * @run driver nsk.share.gc.GenClassesBuilder
  *
- * @run main/othervm/timeout=300
+ * @run main/othervm/timeout=1200
  *      -XX:-UseGCOverheadLimit
  *      -Xlog:gc*
  *      gc.gctests.LargeObjects.large001.large001

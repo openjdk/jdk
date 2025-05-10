@@ -32,7 +32,7 @@
  *     Try to start the given number of threads of the same
  *     priority that the main thread.
  *
- * @run main/othervm nsk.stress.thread.thread002 500 2m 5s
+ * @run main/othervm/timeout=480 nsk.stress.thread.thread002 500 2m 5s
  */
 
 package nsk.stress.thread;

@@ -26,7 +26,7 @@
  * @bug 8145239 8129559 8080354 8189248 8010319 8246353 8247456 8282160 8292755 8319532
  * @summary Tests for EvaluationState.classes
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
- * @run testng ClassesTest
+ * @run testng/timeout=480 ClassesTest
  */
 
 import java.util.ArrayList;

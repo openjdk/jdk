@@ -26,6 +26,7 @@
  * @bug 7030150 7039931
  * @summary Type inference for generic instance creation failed for formal type parameter
  * @modules jdk.compiler
+ * @run main/timeout=480 GenericConstructorAndDiamondTest
  */
 
 import com.sun.source.util.JavacTask;

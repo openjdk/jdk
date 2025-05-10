@@ -40,14 +40,13 @@
  * @comment btree classes import nsk.sysdict.share.*
  * @build nsk.sysdict.share.*
  * @comment build btree.jar
- * @run driver nsk.sysdict.share.GenClassesBuilder btree
+ * @run driver/timeout=480 nsk.sysdict.share.GenClassesBuilder btree
  * @comment build fats.jar
- * @run driver nsk.sysdict.share.GenClassesBuilder fats
+ * @run driver/timeout=480 nsk.sysdict.share.GenClassesBuilder fats
  * @build nsk.sysdict.share.BTreeTest
- * @run main/othervm
+ * @run main/othervm/timeout=480
  *      -XX:-UseGCOverheadLimit
  *      nsk.sysdict.share.BTreeTest
  *      -jarpath btree.jar${path.separator}fats.jar
  *      -t 1
  */
-

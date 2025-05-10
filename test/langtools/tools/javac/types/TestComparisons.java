@@ -26,6 +26,7 @@
  * @bug 8013357
  * @summary javac should correctly enforce binary comparison rules.
  * @modules jdk.compiler
+ * @run main/timeout=480 TestComparisons
  */
 
 import java.io.*;

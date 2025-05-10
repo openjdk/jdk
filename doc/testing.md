@@ -324,7 +324,7 @@ Currently only applies to JTReg.
 
 #### TIMEOUT_FACTOR
 
-Currently only applies to JTReg.
+Currently only applies to [JTReg -timeoutFactor](#timeout_factor-1).
 
 #### JAVA_OPTIONS
 
@@ -379,9 +379,12 @@ never more than *memory size in GB/2*.
 
 #### TIMEOUT_FACTOR
 
-The timeout factor (`-timeoutFactor`).
-
-Defaults to 4.
+The `TIMEOUT_FACTOR` is forwarded to JTReg framework itself
+(`-timeoutFactor`). Also, some test cases that programmatically wait a
+certain amount of time will apply this factor. If we run in
+interpreted mode (`-Xcomp`), [RunTest.gmk](../make/RunTests.gmk)
+will automatically adjust this factor to compensate for the
+interpreter not being as fast as JITed code. Defaults to 1.
 
 #### FAILURE_HANDLER_TIMEOUT
 

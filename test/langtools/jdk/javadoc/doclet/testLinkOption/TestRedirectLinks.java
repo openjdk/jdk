@@ -33,7 +33,7 @@
  * @build toolbox.ToolBox toolbox.JavacTask javadoc.tester.*
  * @build jtreg.SkippedException
  * @build jdk.test.lib.Platform jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
- * @run main TestRedirectLinks
+ * @run main/timeout=480 TestRedirectLinks
  */
 
 import java.io.File;

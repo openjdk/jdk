@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8323552
- * @run testng TestMismatch
+ * @run testng/timeout=480 TestMismatch
  */
 
 import java.lang.foreign.Arena;

@@ -40,7 +40,7 @@
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  * @build AbstractTreeScannerTest SourceDocTreeScannerTest
- * @run main SourceDocTreeScannerTest -q -r .
+ * @run main/timeout=480 SourceDocTreeScannerTest -q -r .
  */
 
 import java.io.*;

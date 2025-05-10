@@ -52,7 +52,7 @@ import static java.net.http.HttpResponse.BodyHandlers.ofString;
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  * @build MockServer
- * @run main/othervm
+ * @run main/othervm/timeout=480
  *     -Djdk.internal.httpclient.debug=true
  *     -Djdk.httpclient.HttpClient.log=all
  *     SplitResponse HTTP connection:CLOSE mode:SYNC

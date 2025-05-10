@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
  * @test
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng/othervm/timeout=180 TransferTo_2GB_transferTo
+ * @run testng/othervm/timeout=720 TransferTo_2GB_transferTo
  * @bug 8265891
  * @summary Tests if ChannelInputStream.transferTo correctly
  *     transfers 2GB+ using FileChannel.transferTo(WritableByteChannel).

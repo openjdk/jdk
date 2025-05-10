@@ -34,7 +34,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @run driver/timeout=480 gc.g1.ihop.TestIHOPErgo
+ * @run driver/timeout=1920 gc.g1.ihop.TestIHOPErgo
  */
 package gc.g1.ihop;
 

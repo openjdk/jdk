@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6602600
- * @run main/othervm -Xmx64m BasicCancelTest
+ * @run main/othervm/timeout=480 -Xmx64m BasicCancelTest
  * @summary Check effectiveness of RemoveOnCancelPolicy
  */
 

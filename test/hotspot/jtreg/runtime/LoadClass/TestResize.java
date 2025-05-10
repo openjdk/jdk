@@ -31,7 +31,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile TriggerResize.java
- * @run driver TestResize
+ * @run driver/timeout=480 TestResize
  */
 
 import jdk.test.lib.Platform;

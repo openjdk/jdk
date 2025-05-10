@@ -25,7 +25,7 @@
  * @bug 8198928
  * @library /test/lib
  * @build jdk.test.lib.Utils
- * @run main CloseDuringConnect
+ * @run main/timeout=480 CloseDuringConnect
  * @summary Attempt to cause a deadlock by closing a SocketChannel in one thread
  *     where another thread is closing the channel after a connect fail
  */

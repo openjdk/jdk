@@ -26,7 +26,7 @@
  * @bug 8200698
  * @summary Tests that exceptions are thrown for ops which would overflow
  * @requires (sun.arch.data.model == "64" & os.maxMemory >= 4g)
- * @run testng/othervm -Xmx4g LargeValueExceptions
+ * @run testng/othervm/timeout=480 -Xmx4g LargeValueExceptions
  */
 import java.math.BigInteger;
 import static java.math.BigInteger.ONE;

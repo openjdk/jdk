@@ -27,7 +27,7 @@
  * @summary Tests for JDI connector timeout failure
  * @modules jdk.jshell/jdk.jshell jdk.jshell/jdk.jshell.spi jdk.jshell/jdk.jshell.execution
  * @build HangingRemoteAgent
- * @run testng JdiHangingLaunchExecutionControlTest
+ * @run testng/timeout=480 JdiHangingLaunchExecutionControlTest
  */
 
 import org.testng.annotations.Test;

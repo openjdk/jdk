@@ -27,8 +27,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * BridgeMethodsTemplateTest
- *
+ * @test
+ * @comment BridgeMethodsTemplateTest
+ * @library /lib/combo
+ * @run junit/timeout=480 BridgeMethodsTemplateTest
  * @author Brian Goetz
  */
 class BridgeMethodsTemplateTest extends BridgeMethodTestCase {

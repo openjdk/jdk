@@ -30,7 +30,7 @@
  * @build java.base/sun.security.util.FilePaths
  * @modules java.base/sun.security.util
  *          java.base/jdk.internal.misc
- * @run main TrustedCert
+ * @run main/timeout=480 TrustedCert
  */
 
 import jdk.test.lib.SecurityTools;

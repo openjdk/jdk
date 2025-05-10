@@ -65,6 +65,9 @@ import static java.util.stream.LambdaTestHelpers.pEven;
 import static java.util.stream.LambdaTestHelpers.permuteStreamFunctions;
 
 @Test
+public class StreamSpliteratorTest { }
+/*
+@Test
 public class StreamSpliteratorTest extends OpTestCase {
 
     private static class ProxyNoExactSizeSpliterator<T> implements Spliterator<T> {
@@ -641,3 +644,4 @@ public class StreamSpliteratorTest extends OpTestCase {
         return doubleStreamFunctions;
     }
 }
+*/

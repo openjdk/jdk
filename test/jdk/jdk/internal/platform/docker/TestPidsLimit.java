@@ -30,7 +30,7 @@
  * @requires container.support
  * @library /test/lib
  * @build TestPidsLimit
- * @run driver TestPidsLimit
+ * @run driver/timeout=480 TestPidsLimit
  */
 import java.util.ArrayList;
 import java.util.List;

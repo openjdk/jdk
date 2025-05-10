@@ -28,7 +28,7 @@
  * @requires vm.cds.write.archived.java.heap
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @build HelloString
- * @run driver/timeout=650 SharedStringsStress
+ * @run driver/timeout=2600 SharedStringsStress
  */
 import java.io.File;
 import java.io.FileOutputStream;
