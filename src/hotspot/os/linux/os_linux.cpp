@@ -4432,6 +4432,18 @@ void os::pd_init_container_support() {
   OSContainer::init();
 }
 
+// Called before ergonomic flags processing
+void os::initialize_max_ram_percentage() {
+  if (OSContainer::is_containerized()) {
+    // Increase the default MaxRAMPercentage for
+    // containerized work-loads to 75%. The expectation
+    // is for them to limit resources on the container
+    // level and the default scenario is to deploy a single
+    // application per container.
+    FLAG_SET_ERGO_IF_DEFAULT(MaxRAMPercentage, 75.0);
+  }
+}
+
 void os::Linux::numa_init() {
 
   // Java can be invoked as
