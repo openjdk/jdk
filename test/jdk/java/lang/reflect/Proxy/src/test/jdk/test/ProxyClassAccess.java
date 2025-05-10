@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ import jdk.test.internal.*;
 import jdk.test.internal.foo.*;
 import p.two.Bar;
 import p.three.P;
+import p.two.WithPackageReference;
+import p.two.alt.AltPackageReference;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -43,6 +45,7 @@ public class ProxyClassAccess {
         testProxyClass1();
         testProxyClass2();
         testNonPublicProxy();
+        testProxyWithNonPublicInSignature();
     }
 
     /*
@@ -90,6 +93,32 @@ public class ProxyClassAccess {
             URLClassLoader loader = new URLClassLoader(new URL[0]);
             proxy = (NP) Proxy.newProxyInstance(loader,
                     new Class<?>[]{NP.class}, handler);
+            throw new RuntimeException("IllegalArgumentException not thrown");
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    static void testProxyWithNonPublicInSignature() {
+        var proxy = (WithPackageReference) Proxy.newProxyInstance(WithPackageReference.class.getClassLoader(),
+                new Class<?>[]{WithPackageReference.class}, (_, _, args) -> args[0]);
+        var bar = new Bar();
+        Cloneable c = proxy.process(bar);
+        if (c != bar) {
+            throw new RuntimeException("Cannot call proxy method with non public type in signature successfully");
+        }
+
+        try {
+            URLClassLoader loader = new URLClassLoader(new URL[0]);
+            Proxy.newProxyInstance(loader, new Class<?>[]{WithPackageReference.class}, handler);
+            throw new RuntimeException("IllegalArgumentException not thrown");
+        } catch (IllegalArgumentException e) {
+        }
+
+        assert WithPackageReference.class.getModule() == AltPackageReference.class.getModule();
+        assert WithPackageReference.class.getPackage() != AltPackageReference.class.getPackage();
+        try {
+            Proxy.newProxyInstance(WithPackageReference.class.getClassLoader(),
+                    new Class<?>[]{WithPackageReference.class, AltPackageReference.class}, handler);
             throw new RuntimeException("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
         }
