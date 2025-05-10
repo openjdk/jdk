@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @summary Tests file permission checks during the creation of a `FileServerHandler`
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
- * @run main/othervm -ea RootDirPermissionsTest true
- * @run main/othervm -ea RootDirPermissionsTest false
+ * @run main/manual/othervm -ea RootDirPermissionsTest true
+ * @run main/manual/othervm -ea RootDirPermissionsTest false
  */
 
 import java.io.IOException;
