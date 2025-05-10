@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,10 @@ public final class DataPusher implements Runnable {
 
     public synchronized void start() {
         start(false);
+    }
+
+    public synchronized boolean isPlaying() {
+        return threadState == STATE_PLAYING;
     }
 
     public synchronized void start(boolean loop) {
