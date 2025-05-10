@@ -56,6 +56,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memLogRecorder.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -557,6 +558,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->initialize_thread_current();
   // Once mutexes and main_thread are ready, we can use NmtVirtualMemoryLocker.
   MemTracker::NmtVirtualMemoryLocker::set_safe_to_use();
+  NMTRecorder_Locker::set_safe_to_use();
   // must do this before set_active_handles
   main_thread->record_stack_base_and_size();
   main_thread->register_thread_stack_with_NMT();
