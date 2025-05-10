@@ -58,21 +58,32 @@ AC_DEFUN([UTIL_PREPEND_TO_PATH],
 # 2) The path will be absolute, and it will be in unix-style (on
 #     cygwin).
 # $1: The name of the variable to fix
-# $2: if NOFAIL, errors will be silently ignored
+# $2: if NOFAIL, if the path cannot be resolved then errors will not be
+#     reported and an empty path will be set
 AC_DEFUN([UTIL_FIXUP_PATH],
 [
   # Only process if variable expands to non-empty
   path="[$]$1"
   if test "x$path" != x; then
     if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-      if test "x$2" = "xNOFAIL"; then
-        quiet_option="-q"
+      imported_path=`$FIXPATH_BASE -q import "$path"`
+      if test $? -ne 0 || test ! -e $imported_path; then
+        if test "x$2" != "xNOFAIL"; then
+          AC_MSG_NOTICE([The path of $1, which is given as "$path", can not be properly resolved.])
+          AC_MSG_NOTICE([Please see the section "Special Considerations" in building.md.])
+          AC_MSG_NOTICE([This is the error message given by fixpath:])
+          # Rerun fixpath without -q to get an error message
+          $FIXPATH_BASE import "$path"
+          AC_MSG_ERROR([Cannot continue])
+        else
+          imported_path=""
+        fi
       fi
-      imported_path=`$FIXPATH_BASE $quiet_option import "$path"`
-      $FIXPATH_BASE verify "$imported_path"
+
+      $FIXPATH_BASE -q verify "$imported_path"
       if test $? -ne 0; then
         if test "x$2" != "xNOFAIL"; then
-          AC_MSG_ERROR([The path of $1, which resolves as "$path", could not be imported.])
+          AC_MSG_ERROR([The path of $1, which resolves as "$path", could not be verified.])
         else
           imported_path=""
         fi
@@ -83,7 +94,7 @@ AC_DEFUN([UTIL_FIXUP_PATH],
       if test "x$imported_path_lower" != "x$orig_path_lower"; then
         $1="$imported_path"
       fi
-    else
+    else # non-Windows
       [ if [[ "$path" =~ " " ]]; then ]
         if test "x$2" != "xNOFAIL"; then
           AC_MSG_NOTICE([The path of $1, which resolves as "$path", is invalid.])
@@ -232,15 +243,19 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
       # This is a path with slashes, don't look at $PATH
       if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
         # fixpath.sh import will do all heavy lifting for us
-        new_path=`$FIXPATH_BASE import "$path"`
+        new_path=`$FIXPATH_BASE -q import "$path"`
 
-        if test ! -e $new_path; then
+        if test $? -ne 0 || test ! -e $new_path; then
           # It failed, but maybe spaces were part of the path and not separating
           # the command and argument. Retry using that assumption.
-          new_path=`$FIXPATH_BASE import "$input"`
-          if test ! -e $new_path; then
-            AC_MSG_NOTICE([The command for $1, which resolves as "$input", can not be found.])
-            AC_MSG_ERROR([Cannot locate $input])
+          new_path=`$FIXPATH_BASE -q import "$input"`
+          if test $? -ne 0 || test ! -e $new_path; then
+            AC_MSG_NOTICE([The command for $1, which is given as "$input", can not be properly resolved.])
+            AC_MSG_NOTICE([Please see the section "Special Considerations" in building.md.])
+            AC_MSG_NOTICE([This is the error message given by fixpath:])
+            # Rerun fixpath without -q to get an error message
+            $FIXPATH_BASE import "$input"
+            AC_MSG_ERROR([Cannot continue])
           fi
           # It worked, clear all "arguments"
           arguments=""
@@ -348,7 +363,15 @@ AC_DEFUN([UTIL_SETUP_TOOL],
         else
           # Otherwise we believe it is a complete path. Use it as it is.
           if test ! -x "$tool_command" && test ! -x "${tool_command}.exe"; then
-            AC_MSG_ERROR([User supplied tool $1="$tool_command" does not exist or is not executable])
+            # Maybe the path had spaces in it; try again with the entire argument
+            if test ! -x "$tool_override" && test ! -x "${tool_override}.exe"; then
+              AC_MSG_ERROR([User supplied tool $1="$tool_override" does not exist or is not executable])
+            else
+              # We successfully located the executable assuming the spaces were part of the path.
+              # We can't combine using paths with spaces and arguments, so assume tool_args is empty.
+              tool_command="$tool_override"
+              tool_args=""
+            fi
           fi
           if test ! -x "$tool_command"; then
             tool_command="${tool_command}.exe"
