@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public:
 
   // Returns the amount of bytes to resize the heap; if expand is set, the heap
   // should by expanded by that amount, shrunk otherwise.
-  size_t full_collection_resize_amount(bool& expand);
+  size_t full_collection_resize_amount(bool& expand, size_t allocation_word_size);
   // Clear ratio tracking data used by expansion_amount().
   void clear_ratio_check_data();
 
