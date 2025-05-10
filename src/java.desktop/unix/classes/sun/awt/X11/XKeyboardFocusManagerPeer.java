@@ -32,7 +32,7 @@ import java.awt.event.FocusEvent;
 import sun.awt.KeyboardFocusManagerPeerImpl;
 import sun.util.logging.PlatformLogger;
 
-public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
+public final class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
     private static final PlatformLogger focusLog = PlatformLogger.getLogger("sun.awt.X11.focus.XKeyboardFocusManagerPeer");
     private static final XKeyboardFocusManagerPeer inst = new XKeyboardFocusManagerPeer();
 

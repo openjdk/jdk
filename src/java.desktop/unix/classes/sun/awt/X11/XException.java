@@ -31,7 +31,7 @@ package sun.awt.X11;
  * @since 1.5
  */
 @SuppressWarnings("serial") // JDK-implementation class
-public class XException extends RuntimeException {
+public final class XException extends RuntimeException {
     public XException() {
         super();
     }

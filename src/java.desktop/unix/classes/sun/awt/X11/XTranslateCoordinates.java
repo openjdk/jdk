@@ -29,7 +29,7 @@ package sun.awt.X11;
 
 import jdk.internal.misc.Unsafe;
 
-public class XTranslateCoordinates {
+public final class XTranslateCoordinates {
         private static Unsafe unsafe = XlibWrapper.unsafe;
         private boolean __executed = false;
         long _scr_w;

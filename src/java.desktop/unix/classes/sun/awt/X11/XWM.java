@@ -106,6 +106,7 @@ final class XWM
         CWM_WM = 14,
         MUTTER_WM = 15,
         UNITY_COMPIZ_WM = 16;
+    @Override
     public String toString() {
         switch  (WMID) {
           case NO_WM:

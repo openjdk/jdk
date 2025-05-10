@@ -25,7 +25,7 @@
 package sun.awt.X11;
 import sun.awt.IconInfo;
 
-class XWindowAttributesData {
+final class XWindowAttributesData {
     static int NORMAL           = 0;
     static int ICONIC           = 1;
     static int MAXIMIZED        = 2;

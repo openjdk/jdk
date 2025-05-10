@@ -46,7 +46,7 @@ import java.util.List;
  *
  * @see DesktopPeer
  */
-public class XDesktopPeer implements DesktopPeer {
+public final class XDesktopPeer implements DesktopPeer {
 
     // supportedActions may be changed from native within an init() call
     private static final List<Action> supportedActions
@@ -78,10 +78,12 @@ public class XDesktopPeer implements DesktopPeer {
         return nativeLibraryLoaded && !supportedActions.isEmpty();
     }
 
+    @Override
     public boolean isSupported(Action type) {
         return supportedActions.contains(type);
     }
 
+    @Override
     public void open(File file) throws IOException {
         try {
             launch(file.toURI());
@@ -90,20 +92,24 @@ public class XDesktopPeer implements DesktopPeer {
         }
     }
 
+    @Override
     public void edit(File file) throws IOException {
         throw new UnsupportedOperationException("The current platform " +
             "doesn't support the EDIT action.");
     }
 
+    @Override
     public void print(File file) throws IOException {
         throw new UnsupportedOperationException("The current platform " +
             "doesn't support the PRINT action.");
     }
 
+    @Override
     public void mail(URI uri) throws IOException {
         launch(uri);
     }
 
+    @Override
     public void browse(URI uri) throws IOException {
         launch(uri);
     }

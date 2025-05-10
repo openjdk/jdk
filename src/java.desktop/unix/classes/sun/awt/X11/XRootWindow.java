@@ -30,8 +30,8 @@ package sun.awt.X11;
  * Object of this class is singleton, all window reference it to have
  * common logical ancestor
  */
-class XRootWindow extends XBaseWindow {
-    private static class LazyHolder {
+final class XRootWindow extends XBaseWindow {
+    private static final class LazyHolder {
         private static final XRootWindow xawtRootWindow;
 
         static {
@@ -54,11 +54,13 @@ class XRootWindow extends XBaseWindow {
                                                      EVENT_MASK, XConstants.StructureNotifyMask }));
     }
 
+    @Override
     public void postInit(XCreateWindowParams params){
         super.postInit(params);
         setWMClass(getWMClass());
     }
 
+    @Override
     protected String getWMName() {
         return XToolkit.getAWTAppClassName();
     }

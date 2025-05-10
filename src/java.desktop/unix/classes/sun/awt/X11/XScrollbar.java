@@ -858,13 +858,14 @@ abstract class XScrollbar {
         return retVal;
     }
 
+    @Override
     public String toString() {
         return getClass() + "[" + width + "x" + height + "," + barWidth + "x" + barLength + "]";
     }
 }
 
 
-class XScrollRepeater implements Runnable {
+final class XScrollRepeater implements Runnable {
     /**
      * Time to pause before the first scroll repeat.
      */
@@ -922,6 +923,7 @@ class XScrollRepeater implements Runnable {
         newScroll = true;
     }
 
+    @Override
     public void run () {
         synchronized(this) {
             if (shouldSkip) {

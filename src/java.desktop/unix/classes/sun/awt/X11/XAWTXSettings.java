@@ -38,7 +38,7 @@ import sun.awt.XSettings;
 import sun.util.logging.PlatformLogger;
 
 
-class XAWTXSettings extends XSettings implements XMSelectionListener {
+final class XAWTXSettings extends XSettings implements XMSelectionListener {
 
     private final XAtom xSettingsPropertyAtom = XAtom.get("_XSETTINGS_SETTINGS");
 
@@ -67,6 +67,7 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
         settings.removeSelectionListener(this);
     }
 
+    @Override
     public void ownerDeath(int screen, XMSelection sel, long deadOwner) {
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Owner " + deadOwner + " died for selection " + sel + " screen "+ screen);
@@ -74,12 +75,14 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
     }
 
 
+    @Override
     public void ownerChanged(int screen, XMSelection sel, long newOwner, long data, long timestamp) {
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("New Owner "+ newOwner + " for selection = " + sel + " screen " +screen );
         }
     }
 
+    @Override
     public void selectionChanged(int screen, XMSelection sel, long owner , XPropertyEvent event) {
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Selection changed on sel " + sel + " screen = " + screen + " owner = " + owner + " event = " + event);

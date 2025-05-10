@@ -44,7 +44,7 @@ import sun.java2d.pipe.Region;
  * This class is a collection of utility methods that operate
  * with native windows.
  */
-public class XlibUtil
+public final class XlibUtil
 {
     /**
      * The constructor is made private to eliminate any

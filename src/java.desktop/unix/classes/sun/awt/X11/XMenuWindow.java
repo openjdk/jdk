@@ -81,7 +81,7 @@ public class XMenuWindow extends XBaseMenuWindow {
      *
      ************************************************/
 
-    static class MappingData extends XBaseMenuWindow.MappingData {
+    static final class MappingData extends XBaseMenuWindow.MappingData {
         /**
          * Rectangle for the caption
          * Necessary to fix 6267144: PIT: Popup menu label is not shown, XToolkit
@@ -183,6 +183,7 @@ public class XMenuWindow extends XBaseMenuWindow {
     /*
      * Overridden initialization
      */
+    @Override
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
         //Fixed 6267182: PIT: Menu is not visible after
@@ -199,6 +200,7 @@ public class XMenuWindow extends XBaseMenuWindow {
     /**
      * @see XBaseMenuWindow#getParentMenuWindow()
      */
+    @Override
     protected XBaseMenuWindow getParentMenuWindow() {
         return (menuPeer != null) ? menuPeer.getContainer() : null;
     }
@@ -206,6 +208,7 @@ public class XMenuWindow extends XBaseMenuWindow {
     /**
      * @see XBaseMenuWindow#map()
      */
+    @Override
     protected MappingData map() {
         //TODO:Implement popup-menu caption mapping and painting and tear-off
         int itemCnt;
@@ -281,6 +284,7 @@ public class XMenuWindow extends XBaseMenuWindow {
     /**
      * @see XBaseMenuWindow#getSubmenuBounds
      */
+    @Override
     protected Rectangle getSubmenuBounds(Rectangle itemBounds, Dimension windowSize) {
         Rectangle globalBounds = toGlobal(itemBounds);
         Rectangle screenBounds = getCurrentGraphicsConfiguration().getBounds();
@@ -308,6 +312,7 @@ public class XMenuWindow extends XBaseMenuWindow {
      * It's likely that size of items was changed
      * invoke resizing of window on eventHandlerThread
      */
+    @Override
     protected void updateSize() {
         resetMapping();
         if (isShowing()) {

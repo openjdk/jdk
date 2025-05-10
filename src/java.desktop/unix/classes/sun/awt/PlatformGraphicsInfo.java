@@ -29,7 +29,7 @@ import java.io.File;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 
-public class PlatformGraphicsInfo {
+public final class PlatformGraphicsInfo {
 
     public static GraphicsEnvironment createGE() {
         return new X11GraphicsEnvironment();

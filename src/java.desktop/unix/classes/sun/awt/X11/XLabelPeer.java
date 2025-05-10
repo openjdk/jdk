@@ -28,7 +28,7 @@ package sun.awt.X11;
 import java.awt.*;
 import java.awt.peer.*;
 
-class XLabelPeer extends XComponentPeer implements LabelPeer {
+final class XLabelPeer extends XComponentPeer implements LabelPeer {
     /**
      * Create the label
      */
@@ -49,6 +49,7 @@ class XLabelPeer extends XComponentPeer implements LabelPeer {
 
     }
 
+    @Override
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
         Label target = (Label) this.target;
@@ -66,6 +67,7 @@ class XLabelPeer extends XComponentPeer implements LabelPeer {
     /**
      * Minimum size.
      */
+    @Override
     public Dimension getMinimumSize() {
         FontMetrics fm = getFontMetrics();
         int w;

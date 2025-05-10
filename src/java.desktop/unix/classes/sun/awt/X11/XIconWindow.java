@@ -46,7 +46,7 @@ import sun.awt.image.ImageRepresentation;
 import sun.awt.image.ToolkitImage;
 import sun.util.logging.PlatformLogger;
 
-public class XIconWindow extends XBaseWindow {
+public final class XIconWindow extends XBaseWindow {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XIconWindow");
     XDecoratedPeer parent;
     Dimension size;
@@ -60,6 +60,7 @@ public class XIconWindow extends XBaseWindow {
             DELAYED, Boolean.TRUE}));
     }
 
+    @Override
     void instantPreInit(XCreateWindowParams params) {
         super.instantPreInit(params);
         this.parent = (XDecoratedPeer)params.get(PARENT);

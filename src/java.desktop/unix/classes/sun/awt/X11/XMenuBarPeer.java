@@ -32,7 +32,7 @@ import java.util.Vector;
 import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
 
-public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
+public final class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
 
     /************************************************
      *
@@ -76,7 +76,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * XBaseMenuWindow's mappingData is extended with
      * desired height of menu bar
      */
-    static class MappingData extends XBaseMenuWindow.MappingData {
+    static final class MappingData extends XBaseMenuWindow.MappingData {
         int desiredHeight;
 
         MappingData(XMenuItemPeer[] items, int desiredHeight) {
@@ -115,6 +115,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     /*
      * From MenuComponentPeer
      */
+    @Override
     public void setFont(Font f) {
         resetMapping();
         setItemsFont(f);
@@ -147,11 +148,13 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * Note that these functions don't perform
      * type checks and checks for nulls or duplicates
      */
+    @Override
     public void addMenu(Menu m) {
         addItem(m);
         postPaintEvent();
     }
 
+    @Override
     public void delMenu(int index) {
         synchronized(getMenuTreeLock()) {
             XMenuItemPeer item = getItem(index);
@@ -163,6 +166,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
         postPaintEvent();
     }
 
+    @Override
     public void addHelpMenu(Menu m) {
         XMenuPeer mp = AWTAccessor.getMenuComponentAccessor().getPeer(m);
         synchronized(getMenuTreeLock()) {
@@ -192,6 +196,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     /**
      * Overridden initialization
      */
+    @Override
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
         // Get menus from the target.
@@ -217,6 +222,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * Menu bar is always root window in menu window's
      * hierarchy
      */
+    @Override
     protected XBaseMenuWindow getParentMenuWindow() {
         return null;
     }
@@ -224,6 +230,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     /**
      * @see XBaseMenuWindow#map
      */
+    @Override
     protected MappingData map() {
         XMenuItemPeer[] itemVector = copyItems();
         int itemCnt = itemVector.length;
@@ -296,6 +303,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     /**
      * @see XBaseMenuWindow#getSubmenuBounds
      */
+    @Override
     protected Rectangle getSubmenuBounds(Rectangle itemBounds, Dimension windowSize) {
         Rectangle globalBounds = toGlobal(itemBounds);
         Rectangle screenBounds = getCurrentGraphicsConfiguration().getBounds();
@@ -324,6 +332,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * size of items has changed.
      * Invokes framePeer's updateChildrenSizes()
      */
+    @Override
     protected void updateSize() {
         resetMapping();
         if (framePeer != null) {
@@ -366,6 +375,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     /**
      * @see XBaseMenuWindow#doDispose()
      */
+    @Override
     protected void doDispose() {
         super.doDispose();
         XToolkit.targetDisposedPeer(menuBarTarget, this);
@@ -381,6 +391,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * For menu bars this function is called from framePeer's
      * reshape(...) and updateChildrenSizes()
      */
+    @Override
     public void reshape(int x, int y, int width, int height) {
         if ((width != this.width) || (height != this.height)) {
             resetMapping();
@@ -392,6 +403,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * Performs ungrabbing of input
      * @see XBaseWindow#ungrabInputImpl()
      */
+    @Override
     void ungrabInputImpl() {
         selectItem(null, false);
         super.ungrabInputImpl();
@@ -403,6 +415,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * Overridden XWindow painting & printing
      *
      ************************************************/
+    @Override
     public void paintPeer(Graphics g) {
         resetColors();
         /* Calculate menubar dimension. */
@@ -453,6 +466,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * Overridden XBaseMenuWindow event handling
      *
      ************************************************/
+    @Override
     protected void handleEvent(AWTEvent event) {
         // explicitly block all events except PaintEvent.PAINT for menus,
         // that are in the modal blocked window
@@ -520,6 +534,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * Now we override this function do disable F10 explicit
      * processing. All processing is done using KeyEvent.
      */
+    @Override
     public void handleKeyPress(XEvent xev) {
         XKeyEvent xkey = xev.get_xkey();
         if (log.isLoggable(PlatformLogger.Level.FINE)) {

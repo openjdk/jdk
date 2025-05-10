@@ -38,7 +38,7 @@ import jdk.internal.misc.Unsafe;
  *
  * @since 1.5
  */
-class MotifDnDConstants {
+final class MotifDnDConstants {
     // utility class can not be instantiated
     private MotifDnDConstants() {}
     // Note that offsets in all native structures below do not depend on the
