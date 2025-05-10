@@ -30,7 +30,7 @@ runs:
   using: composite
   steps:
     - name: 'Install MSYS2'
-      uses: msys2/setup-msys2@v2.22.0
+      uses: msys2/setup-msys2@v2.25.0
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal
