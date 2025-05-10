@@ -584,6 +584,7 @@ Modules::ArchivedProperty Modules::_archived_props[] = {
   {"jdk.module.addmods", true},                // --add-modules
   {"jdk.module.enable.native.access", true},   // --enable-native-access
   {"jdk.module.addopens", true},               // --add-opens
+  {"jdk.module.addreads", true},               // --add-reads
 };
 
 constexpr size_t Modules::num_archived_props() {
