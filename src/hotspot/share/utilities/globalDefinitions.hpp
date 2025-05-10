@@ -148,6 +148,9 @@ class oopDesc;
 #ifndef JULONG_FORMAT_X
 #define JULONG_FORMAT_X          UINT64_FORMAT_X
 #endif
+#ifndef JULONG_FORMAT_W
+#define JULONG_FORMAT_W(width)   UINT64_FORMAT_W(width)
+#endif
 
 // Format pointers and padded integral values which change size between 32- and 64-bit.
 #ifdef  _LP64
@@ -769,6 +772,14 @@ inline jlong min_signed_integer(BasicType bt) {
   }
   assert(bt == T_LONG, "unsupported");
   return min_jlong;
+}
+
+inline julong max_unsigned_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return max_juint;
+  }
+  assert(bt == T_LONG, "unsupported");
+  return max_julong;
 }
 
 inline uint bits_per_java_integer(BasicType bt) {
