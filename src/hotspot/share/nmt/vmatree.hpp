@@ -175,6 +175,7 @@ public:
 
   struct SummaryDiff {
     SingleDiff tag[mt_number_of_tags];
+
     SummaryDiff() {
       for (int i = 0; i < mt_number_of_tags; i++) {
         tag[i] = SingleDiff{0, 0};
