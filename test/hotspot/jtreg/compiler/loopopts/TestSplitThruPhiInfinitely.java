@@ -27,6 +27,7 @@
  * @summary The phi of cnt is split from the inner to the outer loop,
  *          and then from outer loop to the inner loop again.
  *          This ended in a endless optimization cycle.
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.c2.loopopts.TestSplitThruPhiInfinitely
  */

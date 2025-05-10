@@ -27,6 +27,7 @@
  * @key stress randomness
  * @bug 8288204
  * @summary GVN Crash: assert() failed: correct memory chain
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:CompileCommand=compileonly,compiler.c2.TestGVNCrash::test compiler.c2.TestGVNCrash
  */

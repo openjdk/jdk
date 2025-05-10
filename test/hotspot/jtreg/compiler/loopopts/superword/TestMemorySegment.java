@@ -43,6 +43,7 @@ import java.lang.foreign.*;
  * @test id=byte-array-AlignVector
  * @bug 8329273 8348263
  * @summary Test vectorization of loops over MemorySegment
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray AlignVector
  */
@@ -75,6 +76,7 @@ import java.lang.foreign.*;
  * @test id=int-array-AlignVector
  * @bug 8329273 8348263
  * @summary Test vectorization of loops over MemorySegment
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment IntArray AlignVector
  */
@@ -91,6 +93,7 @@ import java.lang.foreign.*;
  * @test id=long-array-AlignVector
  * @bug 8329273 8348263
  * @summary Test vectorization of loops over MemorySegment
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment LongArray AlignVector
  */
@@ -139,6 +142,7 @@ import java.lang.foreign.*;
  * @test id=native-AlignVector
  * @bug 8329273 8348263
  * @summary Test vectorization of loops over MemorySegment
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment Native AlignVector
  */

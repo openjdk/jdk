@@ -59,7 +59,7 @@ import java.util.ArrayList;
  * @test id=stress
  * @bug 8267532
  * @summary basic smoke test for stressing ex. handler pruning
- * @requires vm.debug
+ * @requires vm.compiler2.enabled & vm.debug
  *
  * @run main/othervm
  *   -Xbatch

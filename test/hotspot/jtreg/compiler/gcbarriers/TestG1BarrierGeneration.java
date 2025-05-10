@@ -37,7 +37,7 @@ import jdk.test.lib.Asserts;
  * @test
  * @summary Test that G1 barriers are generated and optimized as expected.
  * @library /test/lib /
- * @requires vm.gc.G1
+ * @requires vm.gc.G1 & vm.compiler2.enabled
  * @run driver compiler.gcbarriers.TestG1BarrierGeneration
  */
 

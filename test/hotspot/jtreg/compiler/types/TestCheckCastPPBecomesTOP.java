@@ -25,7 +25,7 @@
  * @test
  * @bug 8297345
  * @summary C2: SIGSEGV in PhaseIdealLoop::push_pinned_nodes_thru_region
- * @requires vm.gc.Parallel
+ * @requires vm.gc.Parallel & vm.compiler2.enabled
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
  *                   -XX:CompileOnly=TestCheckCastPPBecomesTOP::test1 -XX:LoopMaxUnroll=0

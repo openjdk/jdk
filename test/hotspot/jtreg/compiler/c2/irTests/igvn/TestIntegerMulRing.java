@@ -29,6 +29,7 @@ import jdk.test.lib.Asserts;
  * @test
  * @bug 8299546
  * @summary Test that IntegerMulRing works correctly and returns correct (and optimized) types.
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.c2.irTests.igvn.TestIntegerMulRing
  */
