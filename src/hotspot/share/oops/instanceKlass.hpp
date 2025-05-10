@@ -355,9 +355,9 @@ class InstanceKlass: public Klass {
   // methods
   Array<Method*>* methods() const          { return _methods; }
   void set_methods(Array<Method*>* a)      { _methods = a; }
-  Method* method_with_idnum(int idnum);
-  Method* method_with_orig_idnum(int idnum);
-  Method* method_with_orig_idnum(int idnum, int version);
+  Method* method_with_idnum(int idnum) const;
+  Method* method_with_orig_idnum(int idnum) const;
+  Method* method_with_orig_idnum(int idnum, int version) const;
 
   // method ordering
   Array<int>* method_ordering() const     { return _method_ordering; }
@@ -694,7 +694,7 @@ public:
   InstanceKlass* previous_versions() const { return nullptr; }
 #endif
 
-  InstanceKlass* get_klass_version(int version);
+  const InstanceKlass* get_klass_version(int version) const;
 
   bool has_been_redefined() const { return _misc_flags.has_been_redefined(); }
   void set_has_been_redefined() { _misc_flags.set_has_been_redefined(true); }
