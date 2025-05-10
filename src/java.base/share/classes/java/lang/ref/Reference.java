@@ -359,8 +359,13 @@ public abstract sealed class Reference<T>
      */
     @IntrinsicCandidate
     public T get() {
-        return this.referent;
+        return get0();
     }
+
+    /* Implementation of unintrinsified get().  Making get() native may lead
+     * C2 to sometimes prefer the native implementation over the intrinsic.
+     */
+    private native T get0();
 
     /**
      * Tests if the referent of this reference object is {@code obj}.
