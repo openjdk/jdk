@@ -25,8 +25,16 @@
 # generates CTW tests for modules passed as argument
 
 # generates a wrapper file
+# arguments:
+#   $1 - file number. Like '_2' (can be empty)
+#   $2 - classes range in perecents. Like ' 0% 50%' (can be empty)
 generate_file() {
-    cat > $file <<EOF
+    local full_name=${file}${1}.java
+    echo creating $full_name for $module...
+
+    [[ -z $2 ]] && scope_str="all" || scope_str="some"
+
+    cat > ${full_name} <<EOF
 /*
  * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -52,7 +60,7 @@ generate_file() {
 
 /*
  * @test
- * @summary run CTW for all classes from $module module
+ * @summary run CTW for ${scope_str} classes from $module module
  *
  * @library /test/lib / /testlibrary/ctw/src
  * @modules java.base/jdk.internal.access
@@ -63,7 +71,7 @@ generate_file() {
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:$module
+ * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:${module}${2}
  */
 EOF
 }
@@ -80,8 +88,16 @@ fi
 
 for module in $MODULES
 do
-    file=${module//./_}.java
-    echo creating $file for $module...
-    generate_file
+    file=${module//./_}
 
+    case $module in
+        # Those are too large, we split them into 2 wrappers
+        "java.base")      generate_file "" " 0% 50%"; generate_file "_2" " 50% 100%" ;;
+        "java.desktop")   generate_file "" " 0% 50%"; generate_file "_2" " 50% 100%" ;;
+        "jdk.localedata") generate_file "" " 0% 50%"; generate_file "_2" " 50% 100%" ;;
+
+        # a more-or-less "standard" module
+        *) generate_file "" ""
+
+    esac
 done
