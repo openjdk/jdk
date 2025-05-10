@@ -3238,7 +3238,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_MulF:
   case Op_DivF:
   case Op_NegF:
-  case Op_ModF:
   case Op_ConvI2F:
   case Op_ConF:
   case Op_CmpF:
@@ -3261,7 +3260,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_MulD:
   case Op_DivD:
   case Op_NegD:
-  case Op_ModD:
   case Op_ConvI2D:
   case Op_ConvD2I:
   // case Op_ConvL2D: // handled by leaf call
@@ -3282,7 +3280,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_CallDynamicJava:
     frc.inc_java_call_count(); // Count java call site;
   case Op_CallRuntime:
-  case Op_CallLeaf:
+  case Op_CallLeaf: // including expanded PureCallNode
   case Op_CallLeafVector:
   case Op_CallLeafNoFP: {
     assert (n->is_Call(), "");
