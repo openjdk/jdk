@@ -25,7 +25,7 @@
  * @test
  * @bug     4494762 6491939
  * @summary Request for Clarification of JLS 15.12.2.2
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile T4494762.java
  */
 

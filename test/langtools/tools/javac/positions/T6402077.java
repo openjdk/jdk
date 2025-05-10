@@ -25,7 +25,7 @@
  * @test
  * @bug     6402077
  * @summary Start position is wrong for package private constructors
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules jdk.compiler
  */
 

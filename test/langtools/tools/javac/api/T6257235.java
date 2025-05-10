@@ -25,7 +25,7 @@
  * @test
  * @bug     6257235
  * @summary setOption() and setExtendedOption() of JavacTool throws NullPointerException for undefined options
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules java.compiler
  *          jdk.compiler
  */

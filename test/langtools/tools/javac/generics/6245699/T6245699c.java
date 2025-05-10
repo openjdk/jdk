@@ -25,7 +25,7 @@
  * @test
  * @bug     6245699
  * @summary Missing bridge for final method (gives AbstractMethodError at runtime)
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  */
 
 public class T6245699c {

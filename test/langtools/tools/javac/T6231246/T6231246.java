@@ -25,7 +25,7 @@
  * @test
  * @bug     6231246
  * @summary Javac crash with -g:none
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile -g:none T6231246.java
  */
 

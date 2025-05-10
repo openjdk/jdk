@@ -25,7 +25,7 @@
  * @test
  * @bug     6452876
  * @summary JSR 199: DiagnosticCollector.report(null) should throw NPE
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler

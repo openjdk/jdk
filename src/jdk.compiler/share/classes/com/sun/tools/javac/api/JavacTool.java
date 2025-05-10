@@ -63,7 +63,7 @@ import com.sun.tools.javac.util.PropagatedException;
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
  *
- * @author Peter von der Ah\u00e9
+ * @author Peter von der Ahé
  */
 public final class JavacTool implements JavaCompiler {
     /**

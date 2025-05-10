@@ -25,7 +25,7 @@
  * @test
  * @bug 5078378
  * @summary REGRESSION: Some calls to Collections.binarySearch no longer compile
- * @author Peter von der Ah\u00e9
+ * @author Peter von der Ahé
  *
  * @compile T5078378.java
  * @compile/fail -Xlint:unchecked -Werror T5078378.java

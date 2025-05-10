@@ -25,7 +25,7 @@
  * @test
  * @bug     6392998
  * @summary Mustang compiler throws AssertionError (beta2-b71 and higher)
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile T6392998.java
  */
 

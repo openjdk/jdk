@@ -25,7 +25,7 @@
  * @test
  * @bug     6400205
  * @summary getClassLoader(location) returns null if getLocation(location) returns null
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules java.compiler
  *          jdk.compiler
  */

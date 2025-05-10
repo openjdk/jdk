@@ -25,7 +25,7 @@
  * @test
  * @bug     6265137
  * @summary setOption() and setExtendedOption() of JavacTool will throw exception for some defined options
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules java.compiler
  *          jdk.compiler
  */
