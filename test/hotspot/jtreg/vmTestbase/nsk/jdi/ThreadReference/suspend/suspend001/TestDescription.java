@@ -76,6 +76,7 @@
  *        nsk.jdi.ThreadReference.suspend.suspend001a
  * @run main/othervm/timeout=420
  *      nsk.jdi.ThreadReference.suspend.suspend001
+ *      -includevirtualthreads
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

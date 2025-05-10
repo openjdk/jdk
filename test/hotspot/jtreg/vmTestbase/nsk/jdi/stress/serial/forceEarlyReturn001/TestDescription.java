@@ -63,6 +63,7 @@
  * @build nsk.share.jdi.SerialExecutionDebugger
  * @run main/othervm/native
  *      nsk.share.jdi.SerialExecutionDebugger
+ *      -includevirtualthreads
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

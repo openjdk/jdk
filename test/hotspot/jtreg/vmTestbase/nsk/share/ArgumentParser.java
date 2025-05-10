@@ -476,7 +476,7 @@ public class ArgumentParser {
         if (option.equals("verbose")
                 || option.equals("vbs")
                 || option.equals("trace.time")) {
-            if (!(value == null || value.length() <= 0)) {
+            if (!(value == null || value.length() == 0)) {
                 throw new BadOption(option + ": no value must be specified");
             }
             return true;

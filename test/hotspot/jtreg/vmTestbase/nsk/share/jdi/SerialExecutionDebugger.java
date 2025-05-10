@@ -111,8 +111,9 @@ public class SerialExecutionDebugger extends TestDebuggerType2 {
             if (args[i].equals("-configFile") && (i < args.length - 1)) {
                 configFileName = args[i + 1];
                 i++;
-            } else
+            } else {
                 standardArgs.add(args[i]);
+            }
         }
 
         if (configFileName == null) {
