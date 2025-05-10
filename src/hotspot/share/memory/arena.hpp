@@ -37,6 +37,11 @@
 #define ARENA_AMALLOC_ALIGNMENT BytesPerLong
 #define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
+class ChunkPoolLocker : public StackObj {
+ public:
+  ChunkPoolLocker();
+  ~ChunkPoolLocker();
+};
 
 // Linked list of raw memory chunks
 class Chunk {
@@ -150,6 +155,8 @@ protected:
   }
 
  public:
+  static void initialize_chunk_pool();
+
   // Start the chunk_pool cleaner task
   static void start_chunk_pool_cleaner_task();
   Arena(MemTag mem_tag, Tag tag = Tag::tag_other, size_t init_size = Chunk::init_size);

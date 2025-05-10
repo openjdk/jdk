@@ -22,6 +22,7 @@
  *
  */
 
+#include "memory/arena.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/memTracker.hpp"
@@ -29,7 +30,6 @@
 #include "nmt/nmtUsage.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
-#include "runtime/threadCritical.hpp"
 
 // Enabled all options for snapshot.
 const NMTUsageOptions NMTUsage::OptionsAll = { true, true, true };
@@ -52,10 +52,13 @@ void NMTUsage::walk_thread_stacks() {
 }
 
 void NMTUsage::update_malloc_usage() {
-  // Thread critical needed keep values in sync, total area size
+  MallocMemorySnapshot* ms;
+  // Lock needed to keep values in sync, total area size
   // is deducted from mtChunk in the end to give correct values.
-  ThreadCritical tc;
-  const MallocMemorySnapshot* ms = MallocMemorySummary::as_snapshot();
+  {
+    ChunkPoolLocker lock;
+    ms = MallocMemorySummary::as_snapshot();
+  }
 
   size_t total_arena_size = 0;
   for (int i = 0; i < mt_number_of_tags; i++) {

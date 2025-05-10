@@ -111,7 +111,7 @@ public:
     if (_count == _capacity) {
       // Enlarge if needed
       const size_t new_capacity = MAX2((size_t)4096, 2 * _capacity);
-      // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
+      // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks.
       _ranges = (Range*)permit_forbidden_function::realloc(_ranges, new_capacity * sizeof(Range));
       _mem_tags = (MemTag*)permit_forbidden_function::realloc(_mem_tags, new_capacity * sizeof(MemTag));
       if (_ranges == nullptr || _mem_tags == nullptr) {

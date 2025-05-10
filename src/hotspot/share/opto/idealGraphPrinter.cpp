@@ -28,7 +28,6 @@
 #include "opto/machnode.hpp"
 #include "opto/parse.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/stringUtils.hpp"

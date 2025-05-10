@@ -31,11 +31,33 @@
 #include "nmt/memTracker.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/trimNativeHeap.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+
+// One global static mutex for chunk pools.
+// It is used very early in the vm initialization, in allocation
+// code and other areas.  For many calls, the current thread has not
+// been created so we cannot use Mutex.
+static PlatformMutex* _global_chunk_pool_mutex = nullptr;
+static int _recursion_count = 0;
+
+void Arena::initialize_chunk_pool() {
+  _global_chunk_pool_mutex = new PlatformMutex();
+}
+
+ChunkPoolLocker::ChunkPoolLocker() {
+  assert(_global_chunk_pool_mutex != nullptr, "must be initialized");
+  _global_chunk_pool_mutex->lock();
+  assert(_recursion_count == 0, "not recursive");
+  _recursion_count++;
+};
+
+ChunkPoolLocker::~ChunkPoolLocker() {
+  _recursion_count--;
+  _global_chunk_pool_mutex->unlock();
+};
 
 // Pre-defined default chunk sizes must be arena-aligned, see Chunk::operator new()
 STATIC_ASSERT(is_aligned((int)Chunk::tiny_size, ARENA_AMALLOC_ALIGNMENT));
@@ -68,7 +90,7 @@ class ChunkPool {
 
   // Returns null if pool is empty.
   Chunk* take_from_pool() {
-    ThreadCritical tc;
+    ChunkPoolLocker lock;
     Chunk* c = _first;
     if (_first != nullptr) {
       _first = _first->next();
@@ -77,16 +99,16 @@ class ChunkPool {
   }
   void return_to_pool(Chunk* chunk) {
     assert(chunk->length() == _size, "wrong pool for this chunk");
-    ThreadCritical tc;
+    ChunkPoolLocker lock;
     chunk->set_next(_first);
     _first = chunk;
   }
 
   // Clear this pool of all contained chunks
   void prune() {
-    // Free all chunks while in ThreadCritical lock
+    // Free all chunks with ChunkPoolLocker lock
     // so NMT adjustment is stable.
-    ThreadCritical tc;
+    ChunkPoolLocker lock;
     Chunk* cur = _first;
     Chunk* next = nullptr;
     while (cur != nullptr) {
@@ -198,7 +220,8 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
   if (pool != nullptr) {
     pool->return_to_pool(c);
   } else {
-    ThreadCritical tc;  // Free chunks under TC lock so that NMT adjustment is stable.
+    // Free chunks under a lock so that NMT adjustment is stable.
+    ChunkPoolLocker lock;
     os::free(c);
   }
 }
