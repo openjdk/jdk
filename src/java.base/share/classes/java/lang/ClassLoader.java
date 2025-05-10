@@ -2036,14 +2036,19 @@ public abstract class ClassLoader {
      *         respect to the given code source {@link java.net.URL URL}
      *         object.  Otherwise, the package is not sealed.
      *
-     * @return  The newly defined {@code Package} object
+     * @return  The {@code Package} object for the given implementation
+     *          and specification title/version/vendor and seal-base
+     *          properties.
      *
      * @throws  NullPointerException
      *          if {@code name} is {@code null}.
      *
      * @throws  IllegalArgumentException
      *          if a package of the given {@code name} is already
-     *          defined by this class loader
+     *          defined by this class loader with non-equal values for
+     *          the package properties (implementation and specification
+     *          version, vendor, title) or a different {@code sealBase}
+     *          or module.
      *
      *
      * @since  1.2
@@ -2064,10 +2069,32 @@ public abstract class ClassLoader {
                                 implTitle, implVersion, implVendor,
                                 sealBase, this);
 
-        if (packages.putIfAbsent(name, p) != null)
-            throw new IllegalArgumentException(name);
+        NamedPackage ex = packages.putIfAbsent(name, p);
+        if (ex == null)
+            return p;
 
-        return p;
+        // passing 'm==null' is fine here, because 'ex' is guaranteed to be non-null.
+        Package pEx = toPackage(name, ex, null);
+
+        if (Objects.equals(p.getImplementationTitle(), pEx.getImplementationTitle())
+                && Objects.equals(p.getImplementationVendor(), pEx.getImplementationVendor())
+                && Objects.equals(p.getImplementationVersion(), pEx.getImplementationVersion())
+                && Objects.equals(p.getSpecificationTitle(), pEx.getSpecificationTitle())
+                && Objects.equals(p.getSpecificationVendor(), pEx.getSpecificationVendor())
+                && Objects.equals(p.getSpecificationVersion(), pEx.getSpecificationVersion())
+                && p.module() == pEx.module()) {
+
+            boolean pSealed = p.isSealed();
+            boolean exSealed = pEx.isSealed();
+
+            if (pSealed == exSealed) {
+                if (!pSealed || pEx.isSealed(sealBase)) {
+                    return pEx;
+                }
+            }
+        }
+
+        throw new IllegalArgumentException("Incompatible redefinition of package " + name);
     }
 
     /**
