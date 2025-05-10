@@ -56,18 +56,20 @@ class FieldStreamBase : public StackObj {
 
   inline FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants, int start, int limit);
 
-  inline FieldStreamBase(Array<u1>* fieldinfo_stream, ConstantPool* constants);
+  inline FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants);
 
-  private:
+ private:
    void initialize() {
-    int java_fields_count = _reader.next_uint();
-    int injected_fields_count = _reader.next_uint();
+    int java_fields_count;
+    int injected_fields_count;
+    _reader.read_field_counts(&java_fields_count, &injected_fields_count);
     assert( _limit <= java_fields_count + injected_fields_count, "Safety check");
     if (_limit != 0) {
       _reader.read_field_info(_fi_buf);
     }
    }
  public:
+
   inline FieldStreamBase(InstanceKlass* klass);
 
   // accessors
@@ -149,7 +151,6 @@ class JavaFieldStream : public FieldStreamBase {
   u2 signature_index() const {
     assert(!field()->field_flags().is_injected(), "regular only");
     return field()->signature_index();
-    return -1;
   }
 
   u2 generic_signature_index() const {
@@ -164,6 +165,8 @@ class JavaFieldStream : public FieldStreamBase {
     assert(!field()->field_flags().is_injected(), "regular only");
     return field()->initializer_index();
   }
+
+  void skip_fields_until(const Symbol *name, ConstantPool *cp);
 };
 
 
@@ -176,7 +179,6 @@ class InternalFieldStream : public FieldStreamBase {
 
 class AllFieldStream : public FieldStreamBase {
  public:
-  AllFieldStream(Array<u1>* fieldinfo, ConstantPool* constants): FieldStreamBase(fieldinfo, constants) {}
   AllFieldStream(const InstanceKlass* k):      FieldStreamBase(k->fieldinfo_stream(), k->constants()) {}
 };
 

@@ -43,7 +43,7 @@ FieldStreamBase::FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool
   initialize();
 }
 
-FieldStreamBase::FieldStreamBase(Array<u1>* fieldinfo_stream, ConstantPool* constants) :
+FieldStreamBase::FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants) :
         _fieldinfo_stream(fieldinfo_stream),
         _reader(FieldInfoReader(_fieldinfo_stream)),
         _constants(constantPoolHandle(Thread::current(), constants)),
@@ -60,6 +60,19 @@ FieldStreamBase::FieldStreamBase(InstanceKlass* klass) :
          _limit(FieldInfoStream::num_total_fields(_fieldinfo_stream)) {
   assert(klass == field_holder(), "");
   initialize();
+}
+
+inline void JavaFieldStream::skip_fields_until(const Symbol *name, ConstantPool *cp) {
+  if (done()) {
+    return;
+  }
+  int index = _reader.skip_fields_until(name, cp, _limit);
+  if (index < 0) {
+    return;
+  }
+  assert(index > 0 && index < _limit && index % JUMP_TABLE_STRIDE == 0, "must be");
+  _index = index;
+  _reader.read_field_info(_fi_buf);
 }
 
 #endif // SHARE_OOPS_FIELDSTREAMS_INLINE_HPP
