@@ -4540,7 +4540,7 @@ public class Attr extends JCTree.Visitor {
                     return rs.resolveQualifiedMethod(
                         pos, env, location, site, name, resultInfo.pt.getParameterTypes(), resultInfo.pt.getTypeArguments());
                 } else if (name == names._this || name == names._super) {
-                    return rs.resolveSelf(pos, env, site.tsym, name);
+                    return rs.resolveSelf(pos, env, site.tsym, tree);
                 } else if (name == names._class) {
                     // In this case, we have already made sure in
                     // visitSelect that qualifier expression is a type.
