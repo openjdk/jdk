@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package java.net;
 import java.util.Formatter;
 import java.util.Locale;
 import sun.net.util.IPAddressUtil;
+
+import static jdk.internal.util.Exceptions.filterNetInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * Parses a string containing a host/domain name and port range
@@ -67,7 +70,7 @@ class HostPortrange {
         // Refer to RFC 2732 for more information.
 
         // first separate string into two fields: hoststr, portstr
-        String hoststr, portstr = null;
+        String hoststr = null, portstr = null;
         this.scheme = scheme;
 
         // check for IPv6 address
@@ -77,7 +80,9 @@ class HostPortrange {
             if (rb != -1) {
                 hoststr = str.substring(1, rb);
             } else {
-                throw new IllegalArgumentException("invalid IPv6 address: " + str);
+                throw new IllegalArgumentException(
+                           formatMsg("invalid IPv6 address%s",
+                                     filterNetInfo(str).prefixWith(": ")));
             }
             int sep = str.indexOf(':', rb + 1);
             if (sep != -1 && str.length() > sep) {
@@ -156,7 +161,8 @@ class HostPortrange {
         try {
             portrange = parsePort(portstr);
         } catch (Exception e) {
-            throw new IllegalArgumentException("invalid port range: " + portstr);
+            throw new IllegalArgumentException(
+                formatMsg("invalid port range%s", filterNetInfo(portstr).prefixWith(": ")));
         }
     }
 
