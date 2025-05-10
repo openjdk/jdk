@@ -1945,7 +1945,7 @@ public class FloatingDecimal{
             /* Scan the exponent digits. Accumulate in ep, clamping at 10^10. */
             while (i < len && isDigit(ch = in.charAt(i), true)) {  // ep is decimal
                 ++i;
-                ep = appendDigit(ep, ch);
+                ep = appendDecDigit(ep, ch);
             }
             check(in, i - stop >= 3  // at least 3 chars after significand
                     || i - stop == 2 && esign == ' ');  // 2 chars, one is digit
@@ -2002,7 +2002,7 @@ public class FloatingDecimal{
          *         |lz          |pt   |tnz     |stop
          * 00000000123456000000.234567000000000
          *
-         *         |lz            |pt |tnz  |stop
+         *         |lz            |pt |tnz     |stop
          * 0000000012345600000023.4567000000000
          *
          *         |lz                |pt=tnz  |stop
@@ -2261,8 +2261,8 @@ public class FloatingDecimal{
         }
     }
 
-    /* Arithmetically "appends the digit" ch to v >= 0, clamping at 10^10. */
-    private static long appendDigit(long v, int ch) {
+    /* Arithmetically "appends the dec digit" ch to v >= 0, clamping at 10^10. */
+    private static long appendDecDigit(long v, int ch) {
         return v < 10_000_000_000L / 10 ? 10 * v + (ch - '0') : 10_000_000_000L;
     }
 
