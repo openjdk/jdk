@@ -2566,6 +2566,106 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_unsafecopy_common_error_exit() {
+    address start_pc = __ pc();
+      __ mov(r0, 0);
+      __ ret(lr);
+    return start_pc;
+  }
+
+  //
+  //  Generate 'unsafe' set memory stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t (# bytes) argument instead of an element count.
+  //
+  //  This fill operation is atomicity preserving: as long as the
+  //  address supplied is sufficiently aligned, all writes of up to 64
+  //  bits in size are single-copy atomic.
+  //
+  //  Input:
+  //    c_rarg0   - destination array address
+  //    c_rarg1   - byte count (size_t)
+  //    c_rarg2   - byte value
+  //
+  address generate_unsafe_setmemory() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, StubGenStubId::unsafe_setmemory_id);
+    address start = __ pc();
+
+    Register dest = c_rarg0, count = c_rarg1, value = c_rarg2;
+    Label tail;
+
+    UnsafeMemoryAccessMark umam(this, true, false);
+
+    __ dup(v0, __ T16B, value);
+
+    __ subs(count, count, (u1)64);
+    __ br(__ LO, tail);
+    {
+      Label again;
+      __ bind(again);
+      __ stpq(v0, v0, Address(dest));
+      __ stpq(v0, v0, Address(dest, 32));
+
+      __ subs(count, count, 64);
+      __ add(dest, dest, 64);
+      __ br(__ HS, again);
+    }
+
+    __ bind(tail);
+    __ add(count, count, 64);
+
+    {
+      Label dont;
+      __ tbz(count, exact_log2(32), dont);
+      __ stpq(v0, v0, __ post(dest, 32));
+      __ bind(dont);
+    }
+    {
+      Label dont;
+      __ tbz(count, exact_log2(16), dont);
+      __ strq(v0, __ post(dest, 16));
+      __ bind(dont);
+    }
+    {
+      Label dont;
+      __ tbz(count, exact_log2(8), dont);
+      __ strd(v0, __ post(dest, 8));
+      __ bind(dont);
+    }
+
+    Label finished;
+    __ tst(count, 7);
+    __ br(__ EQ, finished);
+
+    __ orr(value, value, value, __ LSL, 8);
+    __ orr(value, value, value, __ LSL, 16);
+
+    {
+      Label dont;
+      __ tbz(count, exact_log2(4), dont);
+      __ strw(value, __ post(dest, 4));
+      __ bind(dont);
+    }
+    {
+      Label dont;
+      __ tbz(count, exact_log2(2), dont);
+      __ strh(value, __ post(dest, 2));
+      __ bind(dont);
+    }
+    {
+      Label dont;
+      __ tbz(count, exact_log2(1), dont);
+      __ strb(value, Address(dest));
+      __ bind(dont);
+    }
+
+    __ bind(finished);
+    __ ret(lr);
+
+    return start;
+  }
+
   address generate_data_cache_writeback() {
     const Register line        = c_rarg0;  // address of line to write back
 
@@ -2614,6 +2714,9 @@ class StubGenerator: public StubCodeGenerator {
     address entry_oop_arraycopy;
     address entry_jlong_arraycopy;
     address entry_checkcast_arraycopy;
+
+    address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
+    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
 
     generate_copy_longs(StubGenStubId::copy_byte_f_id, IN_HEAP | IS_ARRAY, copy_f, r0, r1, r15);
     generate_copy_longs(StubGenStubId::copy_byte_b_id, IN_HEAP | IS_ARRAY, copy_b, r0, r1, r15);
@@ -11252,6 +11355,8 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 #endif
+
+    StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory();
 
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }
