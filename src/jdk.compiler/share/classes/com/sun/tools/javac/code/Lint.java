@@ -419,7 +419,7 @@ public class Lint {
             this.annotationSuppression = annotationSuppression;
             ArrayList<String> optionList = new ArrayList<>(1 + aliases.length);
             optionList.add(option);
-            Stream.of(aliases).forEach(optionList::add);
+            Collections.addAll(optionList, aliases);
             this.optionList = Collections.unmodifiableList(optionList);
             this.optionList.forEach(ident -> map.put(ident, this));
         }
