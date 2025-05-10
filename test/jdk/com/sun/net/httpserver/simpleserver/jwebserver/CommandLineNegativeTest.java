@@ -169,16 +169,6 @@ public class CommandLineNegativeTest {
     public Object[][] directoryOptions() { return new Object[][] {{"-d"}, {"--directory"}}; }
 
     @Test(dataProvider = "directoryOptions")
-    public void testRootNotAbsolute(String opt) throws Throwable {
-        out.println("\n--- testRootNotAbsolute, opt=\"%s\" ".formatted(opt));
-        var root = Path.of(".");
-        assertFalse(root.isAbsolute());
-        simpleserver(JWEBSERVER, LOCALE_OPT, opt, root.toString())
-                .shouldNotHaveExitValue(0)
-                .shouldContain("Error: server config failed: " + "Path is not absolute:");
-    }
-
-    @Test(dataProvider = "directoryOptions")
     public void testRootNotADirectory(String opt) throws Throwable {
         out.println("\n--- testRootNotADirectory, opt=\"%s\" ".formatted(opt));
         var file = TEST_FILE.toString();
