@@ -122,6 +122,50 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
   }
 
+  if (UseAES || UseAESIntrinsics) {
+    if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
+      warning("AES instructions are not available on this CPU");
+      FLAG_SET_DEFAULT(UseAES, false);
+    }
+    if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+      warning("AES intrinsics are not available on this CPU");
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    }
+  }
+
+  if (UseAESCTRIntrinsics) {
+    warning("AES/CTR intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+  }
+
+  if (UseSHA1Intrinsics) {
+    warning("Intrinsics for SHA-1 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
+  }
+
+  if (UseSHA3Intrinsics) {
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+  }
+
+  if (UseCRC32Intrinsics) {
+    warning("CRC32 intrinsics are not available on this CPU.");
+    FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
+  }
+
+  if (UseCRC32CIntrinsics) {
+    warning("CRC32C intrinsics are not available on this CPU.");
+    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+  }
+
+  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+  }
+
   if (UseVectorizedMismatchIntrinsic) {
     warning("VectorizedMismatch intrinsic is not available on this CPU.");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
@@ -205,9 +249,50 @@ void VM_Version::common_initialize() {
 
   // Misc Intrinsics could depend on RVV
 
-  if (UseZba || UseRVV) {
-    if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
-      FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
+  // NOTE: Make sure codes dependent on UseRVV are put after c2_initialize(),
+  //       as there are extra checks inside it which could disable UseRVV
+  //       in some situations.
+  if (UseZvkn && !UseRVV) {
+    FLAG_SET_DEFAULT(UseZvkn, false);
+    warning("Cannot enable Zvkn on cpu without RVV support.");
+  }
+
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+      UseVectorizedMismatchIntrinsic = true;
+    }
+  } else if (UseVectorizedMismatchIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic))
+      warning("VectorizedMismatch intrinsic is not available on this CPU.");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
+    }
+  } else if (UseChaCha20Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
+    }
+    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
+  if (!UseZvkn && UseSHA) {
+    warning("SHA instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseSHA, false);
+  } else if (UseZvkn && FLAG_IS_DEFAULT(UseSHA)) {
+    FLAG_SET_DEFAULT(UseSHA, true);
+  }
+
+  if (!UseSHA) {
+    if (UseSHA256Intrinsics) {
+      warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU, UseZvkn needed.");
+      FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
+    }
+    if (UseSHA512Intrinsics) {
+      warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU, UseZvkn needed.");
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
     }
   } else {
     if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
