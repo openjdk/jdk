@@ -405,10 +405,19 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
       JCOV_FILTERS="$with_jcov_filters"
     fi
   fi
+
+  UTIL_ARG_WITH(NAME: jcov-modules, TYPE: string,
+      DEFAULT: [], RESULT: JCOV_MODULES_COMMMA_SEPARATED,
+      DESC: [which modules to include in jcov (comma-separated)],
+      OPTIONAL: true)
+
+  # Replace ","  with " ".
+  JCOV_MODULES=${JCOV_MODULES_COMMMA_SEPARATED//,/ }
   AC_SUBST(JCOV_ENABLED)
   AC_SUBST(JCOV_HOME)
   AC_SUBST(JCOV_INPUT_JDK)
   AC_SUBST(JCOV_FILTERS)
+  AC_SUBST(JCOV_MODULES)
 ])
 
 ################################################################################
@@ -520,7 +529,10 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
   # Silence them for now.
   UBSAN_CHECKS="-fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize=shift-base -fno-sanitize=alignment \
       $ADDITIONAL_UBSAN_CHECKS"
-  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-stringop-truncation -Wno-format-overflow -Wno-array-bounds -Wno-stringop-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-array-bounds -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+    UBSAN_CFLAGS="$UBSAN_CFLAGS -Wno-format-overflow -Wno-stringop-overflow -Wno-stringop-truncation"
+  fi
   UBSAN_LDFLAGS="$UBSAN_CHECKS"
   # On AIX, the llvm_symbolizer is not found out of the box, so we have to provide the
   # full qualified llvm_symbolizer path in the __ubsan_default_options() function in
