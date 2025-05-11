@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@
  */
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import jdk.test.lib.Container;
 import jdk.test.lib.JDKToolFinder;
@@ -264,14 +266,16 @@ public class TestJcmd {
         }
 
         private static PodmanVersion fromVersionString(String version) {
-            try {
-                // Example 'podman version 3.2.1'
-                String versNums = version.split("\\s+", 3)[2];
-                String[] numbers = versNums.split("\\.", 3);
-                return new PodmanVersion(Integer.parseInt(numbers[0]),
-                                         Integer.parseInt(numbers[1]),
-                                         Integer.parseInt(numbers[2]));
-            } catch (Exception e) {
+            // Examples: 'podman version 3.2.1', 'podman version 4.9.4-rhel'
+            final Pattern pattern = Pattern.compile("podman version (\\d+)\\.(\\d+)\\.(\\d+).*");
+            final Matcher matcher = pattern.matcher(version);
+
+            if (matcher.matches()) {
+                return new PodmanVersion(
+                        Integer.parseInt(matcher.group(1)),
+                        Integer.parseInt(matcher.group(2)),
+                        Integer.parseInt(matcher.group(3)));
+            } else {
                 System.out.println("Failed to parse podman version: " + version);
                 return DEFAULT;
             }

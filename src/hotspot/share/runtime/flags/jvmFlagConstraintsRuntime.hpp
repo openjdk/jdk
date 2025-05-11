@@ -34,6 +34,8 @@
  */
 
 #define RUNTIME_CONSTRAINTS(f)                        \
+  f(ccstr,  AOTCacheConstraintFunc)                   \
+  f(ccstr,  AOTConfigurationConstraintFunc)           \
   f(ccstr,  AOTModeConstraintFunc)                    \
   f(int,    ObjectAlignmentInBytesConstraintFunc)     \
   f(int,    ContendedPaddingWidthConstraintFunc)      \

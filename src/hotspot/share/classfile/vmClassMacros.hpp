@@ -114,6 +114,7 @@
   do_klass(VarHandle_klass,                             java_lang_invoke_VarHandle                            ) \
   do_klass(MemberName_klass,                            java_lang_invoke_MemberName                           ) \
   do_klass(ResolvedMethodName_klass,                    java_lang_invoke_ResolvedMethodName                   ) \
+  do_klass(MethodHandleImpl_klass,                      java_lang_invoke_MethodHandleImpl                     ) \
   do_klass(MethodHandleNatives_klass,                   java_lang_invoke_MethodHandleNatives                  ) \
   do_klass(LambdaForm_klass,                            java_lang_invoke_LambdaForm                           ) \
   do_klass(MethodType_klass,                            java_lang_invoke_MethodType                           ) \
