@@ -82,8 +82,16 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
             withToString("SetSized", (int s) -> MemorySegment.ofArray(new int[s]))
     );
 
+    static final List<IntFunction<int[]>> SHUFFLE_ARRAY_GENERATOR = List.of(
+            withToString("Sized", (int s) -> new int[s])
+    );
+
     static final List<IntFunction<MemorySegment>> SHUFFLE_MEMORY_IOOBE_GENERATOR = List.of(
             withToString("Sized - 1", (int s) -> MemorySegment.ofArray(new int[s - 1]))
+    );
+
+    static final List<IntFunction<int[]>> SHUFFLE_ARRAY_IOOBE_GENERATOR = List.of(
+            withToString("Sized - 1", (int s) -> new int[s - 1])
     );
 
     static final List<Supplier<ByteOrder>> SHUFFLE_BYTE_ORDER = List.of(
@@ -97,6 +105,28 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
                     ByteOrder.nativeOrder()
             )
     );
+
+    @DataProvider
+    public Object[][] shuffleIndexArrayProvider() {
+        return SHUFFLE_INDEX_GENERATOR.stream()
+                .map(i -> new Object[]{i})
+                .toArray(Object[][]::new);
+
+    }
+
+    @DataProvider
+    public Object[][] shuffleIndexStoreIOOBEArrayProvider() {
+        return SHUFFLE_INDEX_GENERATOR.stream()
+                .flatMap(idx -> SHUFFLE_ARRAY_IOOBE_GENERATOR.stream()
+                        .map(oob -> new Object[]{idx, oob})).toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] shuffleIndexLoadIOOBEArrayProvider() {
+        return SHUFFLE_ARRAY_IOOBE_GENERATOR.stream()
+                .map(i -> new Object[]{i})
+                .toArray(Object[][]::new);
+    }
 
     @DataProvider
     public Object[][] shuffleIndexMemoryProvider() {

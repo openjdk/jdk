@@ -694,6 +694,49 @@ public class Byte64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
        }
     }
 
+    @Test(dataProvider = "shuffleIndexArrayProvider")
+    static void loadStoreShuffleArray(IntFunction<int[]> fa) {
+        int[] a = fa.apply(SPECIES.length());
+        VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(SPECIES, a, 0);
+
+        int[] r = shuffle.toArray();
+
+        int[] dest = new int[a.length];
+        shuffle.intoArray(dest, 0);
+
+        Assert.assertEquals(r, dest);
+
+    }
+
+    @Test(dataProvider = "shuffleIndexStoreIOOBEArrayProvider")
+    static void storeShuffleArrayIOOBE(IntFunction<int[]> fload,
+                                       IntFunction<int[]> fstore) {
+        int[] aLoad = fload.apply(SPECIES.length());
+
+        VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(SPECIES, aLoad, 0);
+
+        int[] badArray = fstore.apply(SPECIES.length());
+        try {
+            shuffle.intoArray(badArray, 0);
+            Assert.fail("Expected IndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
+    }
+
+    @Test(dataProvider = "shuffleIndexLoadIOOBEArrayProvider")
+    static void loadShuffleArrayIOOBE(IntFunction<int[]> fload) {
+
+        int[] aLoad = fload.apply(SPECIES.length());
+        try {
+            VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(SPECIES, aLoad, 0);
+            Assert.fail("Expected IndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
+
+    }
+
     @Test(dataProvider = "shuffleIndexMemoryProvider")
     static void loadStoreShuffleMemorySegment(IntFunction<int[]> fa,
                                               IntFunction<MemorySegment> fm,
