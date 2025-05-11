@@ -36,7 +36,7 @@ generate_file() {
 
     cat > ${full_name} <<EOF
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, ${YEAR}, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,8 @@ else
     echo "Using provided arguments as module(s) list"
     MODULES=$@
 fi
+
+YEAR=$(date +%Y)
 
 for module in $MODULES
 do
