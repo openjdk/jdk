@@ -53,7 +53,7 @@ public class Pem {
     // Lazy initialized PBES2 OID value
     private static ObjectIdentifier PBES2OID;
 
-    // Lazy initialize singleton encoder.
+    // Lazy initialized singleton encoder.
     private static Base64.Encoder b64Encoder;
 
     static {
@@ -63,7 +63,9 @@ public class Pem {
 
     public static final String CERTIFICATE = "CERTIFICATE";
     public static final String X509_CERTIFICATE = "X509 CERTIFICATE";
+    public static final String X_509_CERTIFICATE = "X.509 CERTIFICATE";
     public static final String X509_CRL = "X509 CRL";
+    public static final String CRL = "CRL";
     public static final String PUBLIC_KEY = "PUBLIC KEY";
     public static final String RSA_PRIVATE_KEY = "RSA PRIVATE KEY";
     public static final String ENCRYPTED_PRIVATE_KEY = "ENCRYPTED PRIVATE KEY";
@@ -115,6 +117,19 @@ public class Pem {
             }
         }
         return PBES2OID;
+    }
+
+    /*
+     * RFC 7468 has some rules what generators should return given a historical
+     * type name.  This converts read in PEM to the RFC.  Change the type to
+     * be uniform is likely to help apps from not using all 3 certificate names.
+     */
+    private static String typeConverter(String type) {
+        return switch (type) {
+            case Pem.X509_CERTIFICATE, Pem.X_509_CERTIFICATE -> Pem.CERTIFICATE;
+            case Pem.CRL -> Pem.X509_CRL;
+            default -> type;
+        };
     }
 
     /**
@@ -285,33 +300,26 @@ public class Pem {
             preData = Arrays.copyOf(os.toByteArray(), os.size() - 5);
         }
 
-        return new PEMRecord(headerType, data, preData);
+        return new PEMRecord(typeConverter(headerType), data, preData);
     }
 
     public static PEMRecord readPEM(InputStream is) throws IOException {
         return readPEM(is, false);
     }
 
-    /**
-     * Construct a String-based encoding based off the type.  leadingData
-     * is not used with this method.
-     * @return the string
-     */
-    public static String pemEncoded(String type, byte[] data) {
-        StringBuilder sb = new StringBuilder(1024);
-        sb.append("-----BEGIN ").append(type).append("-----");
-        sb.append(System.lineSeparator());
+    public static String pemEncoded(String type, byte[] der) {
         if (b64Encoder == null) {
             b64Encoder = Base64.getMimeEncoder(64,
                 System.lineSeparator().getBytes());
         }
-        sb.append(b64Encoder.encodeToString(data));
-        sb.append(System.lineSeparator());
-        sb.append("-----END ").append(type).append("-----");
-        sb.append(System.lineSeparator());
-        return sb.toString();
+        return pemEncoded(new PEMRecord(type, b64Encoder.encodeToString(der)));
     }
 
+    /**
+     * Construct a String-based encoding based off the type.  leadingData
+     * is not used with this method.
+     * @return PEM in a string
+     */
     public static String pemEncoded(PEMRecord pem) {
         StringBuilder sb = new StringBuilder(1024);
         sb.append("-----BEGIN ").append(pem.type()).append("-----");

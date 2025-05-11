@@ -1553,7 +1553,8 @@ jdk.tls.alpnCharset=ISO_8859_1
 #
 # Default algorithm for PEMEncoder Encrypted PKCS#8
 #
-# This property defines default Public-based Encryption algorithm for
-# java.security.PEMEncoder is configured for encryption with `withEncryption()`.
+# This property defines the default password-based encryption algorithm for
+# java.security.PEMEncoder when configured for encryption with the
+# withEncryption method.
 #
 jdk.epkcs8.defaultAlgorithm=PBEWithHmacSHA256AndAES_128

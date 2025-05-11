@@ -58,9 +58,6 @@ public abstract class EncodedKeySpec implements KeySpec {
 
     /**
      * Creates a new {@code EncodedKeySpec} with the given encoded key.
-     * This constructor extracts the algorithm name from the encoded bytes,
-     * which may be an OID if no standard algorithm name is defined. If the
-     * algorithm name cannot be extracted, it is set to null.
      *
      * @param encodedKey the encoded key. The contents of the
      * array are copied to protect against subsequent modification.

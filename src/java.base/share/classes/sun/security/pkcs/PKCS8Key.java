@@ -76,7 +76,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     protected byte[] attributes;
 
     /* PKCS8 version of the PEM */
-    protected int version;
+    private int version;
 
     /* The version for this key */
     public static final int V1 = 0;
@@ -190,7 +190,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      * handling, that specific need can be accommodated.
      *
      * @param encoded the DER-encoded SubjectPublicKeyInfo value
-     * @exception IOException on data format errors
+     * @exception InvalidKeyException on data format errors
      */
     public static PrivateKey parseKey(byte[] encoded)
         throws InvalidKeyException {
@@ -240,12 +240,8 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
         return pubKeyEncoded;
     }
 
-    public byte[] getPrivKeyMaterial() {
-        return privKeyMaterial;
-    }
-
     public boolean hasPublicKey() {
-        return (pubKeyEncoded == null ? false : true);
+        return (pubKeyEncoded != null);
     }
 
     /**
@@ -281,13 +277,12 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      */
     public static byte[] getEncoded(byte[] pubKeyEncoded, byte[] privKeyEncoded)
         throws IOException {
-        PKCS8Key privKey;
         try {
-            privKey = new PKCS8Key(privKeyEncoded, pubKeyEncoded);
+            return new PKCS8Key(privKeyEncoded, pubKeyEncoded).
+                generateEncoding();
         } catch (InvalidKeyException e) {
             throw new IOException(e);
         }
-        return privKey.generateEncoding();
     }
 
     /**
@@ -301,8 +296,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
             try {
                 encodedKey = generateEncoding();
             } catch (IOException e) {
-                // encodedKey is still null
-                throw new SecurityException(e);
+               return null;
             }
         }
         return encodedKey;

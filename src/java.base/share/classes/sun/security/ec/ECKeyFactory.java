@@ -240,9 +240,8 @@ public final class ECKeyFactory extends KeyFactorySpi {
             case ECPrivateKeySpec e ->
                 new ECPrivateKeyImpl(e.getS(), e.getParams());
             default ->
-                throw new InvalidKeySpecException("Only ECPrivateKeySpec " +
-                    "and PKCS8EncodedKeySpec supported for EC private keys. " +
-                    keySpec.getClass().getName() + " provided.");
+                throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                    " not supported.");
         };
     }
 

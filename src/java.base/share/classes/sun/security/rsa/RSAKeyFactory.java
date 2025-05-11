@@ -341,8 +341,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
             return RSAPublicKeyImpl.newKey(type, "X.509",
                 p8key.getPubKeyEncoded());
         } else {
-            throw new InvalidKeySpecException("Only RSAPublicKeySpec "
-                + "and X509EncodedKeySpec supported for RSA public keys");
+            throw new InvalidKeySpecException(keySpec.getClass().getName() + " not supported.");
         }
     }
 

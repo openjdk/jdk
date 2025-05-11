@@ -25,20 +25,23 @@
 
 package java.security.spec;
 
+import sun.security.util.KeyUtil;
+
+import java.io.IOException;
 import java.security.DEREncodable;
 
 /**
  * This class represents the ASN.1 encoding of a private key,
- * encoded according to the ASN.1 type {@code PrivateKeyInfo}.
- * The {@code PrivateKeyInfo} syntax is defined in the PKCS#8 standard
+ * encoded according to the ASN.1 type {@code OneAsymmetricKey}.
+ * The {@code OneAsymmetricKey} syntax is defined in the PKCS#8 standard
  * as follows:
  *
  * <pre>
- * PrivateKeyInfo ::= SEQUENCE {
+ * OneAsymmetricKey ::= SEQUENCE {
  *   version Version,
  *   privateKeyAlgorithm PrivateKeyAlgorithmIdentifier,
  *   privateKey PrivateKey,
- *   attributes       [0] IMPLICIT Attributes OPTIONAL,
+ *   attributes       [0] Attributes OPTIONAL,
  *   ...,
  *   [[2: publicKey  [1] PublicKey OPTIONAL ]],
  *   ...
@@ -77,6 +80,9 @@ public non-sealed class PKCS8EncodedKeySpec extends EncodedKeySpec implements
 
     /**
      * Creates a new {@code PKCS8EncodedKeySpec} with the given encoded key.
+     * This constructor extracts the algorithm name from the encoded bytes,
+     * which may be an OID if no standard algorithm name is defined. If the
+     * algorithm name cannot be extracted, it is set to null.
      *
      * @param encodedKey the key, which is assumed to be
      * encoded according to the PKCS #8 standard. The contents of
@@ -85,6 +91,15 @@ public non-sealed class PKCS8EncodedKeySpec extends EncodedKeySpec implements
      * is null.
      */
     public PKCS8EncodedKeySpec(byte[] encodedKey) {
+        /* Uncomment when JEP 513 integrates
+        String algorithm = null;
+        try {
+            algorithm = KeyUtil.getAlgorithm(encodedKey).getName();
+        } catch (IOException e) {
+            // On error leave algorithmName as null.
+        }
+        super(encodedKey, algorithm);
+         */
         super(encodedKey);
     }
 

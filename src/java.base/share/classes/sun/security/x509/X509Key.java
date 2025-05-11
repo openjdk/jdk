@@ -359,20 +359,6 @@ public class X509Key implements PublicKey, DerEncoder {
         }
     }
 
-  /*  public static PublicKey parseKey(byte[] encoded) throws IOException {
-        PublicKey pubKey;
-        try {
-
-            X509EncodedKeySpec spec = new X509EncodedKeySpec(encoded);
-            pubKey = KeyFactory.getInstance(spec.getAlgorithm())
-                .generatePublic(spec);
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            // Ignore and return raw key
-            throw new IOException("error with encoding");
-        }
-        return pubKey;
-    }
-*/
     /**
      * Serialization write ... X.509 keys serialize as
      * themselves, and they're parsed when they get read back.

@@ -359,7 +359,6 @@ public final class RSAPrivateCrtKeyImpl
      * @return KeySpec
      * @throws InvalidKeyException on decoding failure
      */
-
     public static KeySpec getKeySpec(byte[] encoded) throws
         InvalidKeyException {
         try {
