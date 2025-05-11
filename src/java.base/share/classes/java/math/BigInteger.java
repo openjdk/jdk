@@ -3607,9 +3607,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             shiftRightImplWorker(newMag, mag, i, nBits, numIter);
         }
 
-        // Find out whether any one-bits were shifted off the end.
-        if (signum < 0 && Integer.compareUnsigned(n, numberOfTrailingZeros()) > 0)
-            newMag = javaIncrement(newMag);
+        if (signum < 0) {
+            // Find out whether any one-bits were shifted off the end.
+            int nzInts = numberOfTrailingZeroInts();
+            if (nInts > nzInts || nInts == nzInts
+                    && nBits > Integer.numberOfTrailingZeros(magLen - 1 - nzInts)) {
+                newMag = javaIncrement(newMag);
+            }
+        }
 
         return new BigInteger(newMag, signum);
     }
