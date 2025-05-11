@@ -790,8 +790,10 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   RegionCount = align_up(max_heap_size, RegionSizeBytes) / RegionSizeBytes;
   guarantee(RegionCount >= MIN_NUM_REGIONS, "Should have at least minimum regions");
 
+  // Limit TLAB size to 1/4 the region size for better startup behavior and fairer contention for limited memory between
+  // multiple mutator threads.
   guarantee(MaxTLABSizeWords == 0, "we should only set it once");
-  MaxTLABSizeWords = align_down(RegionSizeWords, MinObjAlignment);
+  MaxTLABSizeWords = align_down(RegionSizeWords / 4, MinObjAlignment);
 
   guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
   MaxTLABSizeBytes = MaxTLABSizeWords * HeapWordSize;
