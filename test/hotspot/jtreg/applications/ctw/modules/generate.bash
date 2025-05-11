@@ -68,7 +68,17 @@ generate_file() {
 EOF
 }
 
-for module in $@
+if [ "$#" -eq 0 ]; then
+    echo "No arguments given, scanning open/src for modules"
+    MODULES=$(find ../../../../../../src -name module-info.java | \
+        grep share/classes/module-info.java |                         `# only standard modules are taken` \
+        sed 's/.*src\///' | sed 's/\/.*//')                            # cleaning the module name of leading and trailing paths
+else
+    echo "Using provided arguments as module(s) list"
+    MODULES=$@
+fi
+
+for module in $MODULES
 do
     file=${module//./_}.java
     echo creating $file for $module...
