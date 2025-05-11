@@ -227,4 +227,23 @@ public class BigDecimals {
             bh.consume(c.compareTo(s));
         }
     }
+
+
+    /** Invokes the valueOf(double) of BigDecimal with various different values. */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testValueOfWithDouble(Blackhole bh) {
+        for (double s : doubleInputs) {
+            bh.consume(BigDecimal.valueOf(s));
+        }
+    }
+
+    /** Create BigDecimal from double with Double.toString on different values. */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testValueOfWithDoubleString(Blackhole bh) {
+        for (double s : doubleInputs) {
+            bh.consume(new BigDecimal(Double.toString(s)));
+        }
+    }
 }
