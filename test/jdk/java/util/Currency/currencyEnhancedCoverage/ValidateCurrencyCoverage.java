@@ -22,9 +22,9 @@
  */
 /*
  * @test
- * @run main/othervm ValidateCurrencyCoverage
  * @summary Validates that all currency codes and country-currency mappings
  * in the input file are consistent with the Java Currency API.
+ * @run main/othervm ValidateCurrencyCoverage
  */
 
 import java.io.*;
@@ -87,8 +87,12 @@ public class ValidateCurrencyCoverage {
 
     /**
      * Reads the currency definitions from the input file and validates each entry.
+     * Lines are expected to be tab-delimited with country code, currency code, numeric code,
+     * and minor unit. Optionally, a future transition date and replacement values can be included.
      *
-     * @return
+     * @return a list of String arrays, each representing a parsed line with country code,
+     *         currency code, numeric code, and minor unit
+     * @throws Exception if an error occurs while reading or parsing the file
      */
     private static List<String[]> parseCurrencyTextFile() throws Exception {
         List<String[]> inputList = new ArrayList<String[]>();
@@ -146,6 +150,7 @@ public class ValidateCurrencyCoverage {
 
             }
         }
+
         return inputList;
     }
 
@@ -157,7 +162,15 @@ public class ValidateCurrencyCoverage {
     }
 
     /**
-     * Validates the locale based currency instance returned.
+     * Validates the currency instance returned for a given country (Locale) and checks
+     * it against expected values.
+     *
+     * @param country code (e.g., "US", "JP")
+     * @param currencyCode for the given country
+     * @param numericCode
+     * @param digits
+     * @param index of a two-letter country code
+     * @return null if the currency validation passes; otherwise, a failure message indicating the issue
      */
     private static String testCountryCurrencyWithLocale(String country, String currencyCode, int numericCode,
             int digits, int index) {
@@ -184,9 +197,12 @@ public class ValidateCurrencyCoverage {
     }
 
     /**
-     * Validates the currencycode based currency instance.
+     * Validates the currency code-based currency instance.
      *
-     * @return
+     * @param currencyCode the currency code
+     * @param numericCode the expected numeric code for the currency
+     * @param digits the expected default number of fraction digits
+     * @return null if validation passes; otherwise, a failure message indicating the reason
      */
     private static String testCountryCurrencyWithCurrencyCode(String currencyCode, int numericCode, int digits) {
         String failMessage = null;

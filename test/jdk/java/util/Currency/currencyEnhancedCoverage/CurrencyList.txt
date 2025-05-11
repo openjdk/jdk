@@ -1,7 +1,7 @@
 #
 #Currencies List to cross validate the values returned by Currency.getInstance() in ValidateCurrencyCoverage.java test file
 #
-#Format <ISO 3166 country code>	<currency code>	<numeric code>	<default fraction digits>	<cutover timestamp>	<new currency code>	<new numeric code>	<new default fraction digits>
+#Format <country code>	<currency code>	<numeric code>	<default fraction digits>	<cutover timestamp>	<new currency code>	<new numeric code>	<new default fraction digits>
 #
 
 CW	XCG	532	2	2099-04-22-00-00-00	ANG	532	2
