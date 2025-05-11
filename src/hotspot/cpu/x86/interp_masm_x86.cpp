@@ -1011,7 +1011,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   // we must save the current rbp in a temporary register, this_fp, for use
   // as the last java fp should we decide to unwind.
   // The asynchronous profiler will only see the updated rbp, either using the
-  // CPU context or by reading the saved_Java_fp() field as part of the ljf.
+  // CPU context or by reading the last_sender_Java_fp() field as part of the ljf.
   const Register this_fp = rscratch2;
   make_sender_fp_current(this_fp, rscratch1);
 
