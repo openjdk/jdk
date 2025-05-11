@@ -492,7 +492,7 @@ void CDSConfig::check_aotmode_create() {
   // are cached.
   //
   // Since application is not executed in the assembly phase, there's no need to load
-  // the agents anyway -- no one will notice that the agents are not loaded. 
+  // the agents anyway -- no one will notice that the agents are not loaded.
   JvmtiAgentList::disable_agent_list();
 }
 
