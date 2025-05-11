@@ -25,7 +25,8 @@
 
 /*
  * @test
- * @summary ??????
+ * @summary -javaagent should be allowed in AOT workflow. However, classes transformed/redefined by agents will not
+ *          be cached.
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
@@ -81,17 +82,23 @@ public class JavaAgent {
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
-            String premainMsg = "JavaAgentTransformer.premain() is called";
+            String agentLoadedMsg = "JavaAgentTransformer.premain() is called";
             if (runMode.isApplicationExecuted()) {
-                out.shouldContain(premainMsg);
-                out.shouldContain("Transforming: JavaAgentApp$ShouldBeTransformed class = null");
-                out.shouldContain("Result: YYYY");
+                out.shouldContain(agentLoadedMsg);
+                out.shouldContain("Transforming: JavaAgentApp$ShouldBeTransformed; Class<?> = null");
+                out.shouldContain("Result: YYYY"); // "XXXX" has been changed to "YYYY" by the agent
             } else {
-                out.shouldNotContain(premainMsg);
+                out.shouldNotContain(agentLoadedMsg);
             }
-            if (runMode == RunMode.TRAINING) {
+
+            switch (runMode) {
+            case RunMode.TRAINING:
                 out.shouldContain("Skipping JavaAgentApp$ShouldBeTransformed: From ClassFileLoadHook");
                 out.shouldContain("Skipping JavaAgentTransformer: Unsupported location");
+                break;
+            case RunMode.ASSEMBLY:
+                out.shouldContain("Disabled all JVMTI agents during -XX:AOTMode=create");
+                break;
             }
         }
     }

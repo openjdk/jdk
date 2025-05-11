@@ -27,7 +27,7 @@ import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 
-// This class is available on the classpath so it can be accessed by InstrumentationApp
+// This class is available on the classpath so it can be accessed by JavaAgentApp
 public class JavaAgentTransformer  implements ClassFileTransformer {
     private static Instrumentation savedInstrumentation;
 
@@ -48,7 +48,7 @@ public class JavaAgentTransformer  implements ClassFileTransformer {
     public byte[] transform(ClassLoader loader, String name, Class<?> classBeingRedefined,
                             ProtectionDomain pd, byte[] buffer) throws IllegalClassFormatException {
         if (name.equals("JavaAgentApp$ShouldBeTransformed")) {
-            System.out.println("Transforming: " + name + " class = " + classBeingRedefined);
+            System.out.println("Transforming: " + name + "; Class<?> = " + classBeingRedefined);
             try {
                 replace(buffer, "XXXX", "YYYY");
             } catch (Throwable t) {

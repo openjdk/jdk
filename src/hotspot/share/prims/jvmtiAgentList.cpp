@@ -66,6 +66,7 @@ static inline JvmtiAgent* head(JvmtiAgent** list) {
   return Atomic::load_acquire(list);
 }
 
+static bool _disable_agent_list = false;
 
 // The storage list is a single cas-linked-list, to allow for concurrent iterations.
 // Especially during initial loading of agents, there exist an order requirement to iterate oldest -> newest.
@@ -74,6 +75,12 @@ static inline JvmtiAgent* head(JvmtiAgent** list) {
 JvmtiAgentList::Iterator::Iterator(JvmtiAgent** list, Filter filter) :
   _stack(new GrowableArrayCHeap<JvmtiAgent*, mtServiceability>(16)), _filter(filter) {
   JvmtiAgent* next = head(list);
+#if INCLUDE_CDS
+  if (_disable_agent_list) {
+    assert(CDSConfig::is_dumping_final_static_archive(), "use this only for -XX:AOTMode=create!");
+    next = nullptr;
+  }
+#endif
   while (next != nullptr) {
     next = select(next);
     if (next != nullptr) {
@@ -283,9 +290,7 @@ void JvmtiAgentList::disable_agent_list() {
 #if INCLUDE_CDS
   assert(CDSConfig::is_dumping_final_static_archive(), "use this only for -XX:AOTMode=create!");
   assert(!Universe::is_bootstrapping() && !Universe::is_fully_initialized(), "must do this very early");
-  if (_list != nullptr) {
-    log_info(aot)("Disabled all JVMTI agents during -XX:AOTMode=create");
-    _list = nullptr;
-  }
+  log_info(aot)("Disabled all JVMTI agents during -XX:AOTMode=create");
+  _disable_agent_list = true;
 #endif
 }
