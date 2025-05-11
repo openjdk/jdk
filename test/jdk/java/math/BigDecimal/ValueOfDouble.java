@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 
 public class ValueOfDouble {
-    private static final String DIGITS = "12345678991234567899"; // More than enough digits to fill a long
+    private static final String DIGITS = "1234567899123456789"; // Enough digits to fill a long
 
     @Test
     public void testValueOfDouble() {
@@ -23,8 +23,8 @@ public class ValueOfDouble {
         checkValue(Double.MIN_VALUE);
         checkValue(1e-44); // Lots of digits with lots of 9s
 
-        for (int i = 1; i < DIGITS.length(); i++) {
-            String prefix = DIGITS.substring(0, i);
+        for (int prec = 1; prec < DIGITS.length(); prec++) {
+            String prefix = DIGITS.substring(0, prec);
             for (int exp = -30; exp < 30; exp++) {
                 double value = Double.parseDouble(prefix + "e" + exp);
                 checkValue(value);

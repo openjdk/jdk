@@ -35,7 +35,7 @@ package jdk.internal.math;
  * the decimal d selected by Double.toString(double) as a pair of integers
  * f and e meeting d = f 10^e.
  * It then rounds d to the appropriate number of digits, as per specification,
- * and extracts the digits of both the significand and, where required, the
+ * and extracts the digits of both the significand and, where required, the®
  * exponent of the rounded value.
  *
  * Further processing like padding, sign, grouping, localization, etc., is the
@@ -89,7 +89,7 @@ public final class FormattedFPDecimal {
         // force a digit after the decimal. No additional rounding is performed;
         // no significant trailing digits are removed.
 
-        final int nTarget = switch (expR) {
+        final int targetPrec = switch (expR) {
             case -3, -2, -1 ->
                 // No extra trailing digit needed
                     1;
@@ -106,24 +106,24 @@ public final class FormattedFPDecimal {
         };
 
         long s = fd.f;
-        int n = fd.n;
+        int prec = fd.n;
 
-        if (n < nTarget) {
+        if (prec < targetPrec) {
             // Add zeros needed to reach target precision
-            int addZeros = nTarget - n;
+            int addZeros = targetPrec - prec;
             s *= MathUtils.pow10(addZeros); // addZeros will be at most 8
-            n = nTarget;
+            prec = targetPrec;
         } else {
             // Remove trailing zeros to try to reach target precision
-            while (n > nTarget && s % 10 == 0) {
+            while (prec > targetPrec && s % 10 == 0) {
                 s = s / 10;
-                n--;
+                prec--;
             }
         }
 
         // Calculate new e based on updated precision
-        int eNew = expR - n + 1;  // expR is defined as n + e - 1
-        fd.set(s, eNew, n);
+        int eNew = expR - prec + 1;  // expR is defined as prec + e - 1
+        fd.set(s, eNew, prec);
 
         return fd;
     }
