@@ -96,6 +96,13 @@ do
         "java.desktop")   generate_file "" " 0% 50%"; generate_file "_2" " 50% 100%" ;;
         "jdk.localedata") generate_file "" " 0% 50%"; generate_file "_2" " 50% 100%" ;;
 
+        # Those have no classes (needs to be checked on re-generations)!
+        "jdk.jdwp.agent") ;;
+        "jdk.graal.compiler") ;;
+        "jdk.graal.compiler.management") ;;
+        "jdk.crypto.ec") ;;
+        "java.se") ;;
+
         # a more-or-less "standard" module
         *) generate_file "" ""
 
