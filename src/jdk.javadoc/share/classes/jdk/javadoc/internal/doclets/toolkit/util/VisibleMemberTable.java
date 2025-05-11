@@ -262,6 +262,10 @@ public class VisibleMemberTable {
      * Returns a list of all enclosed members including any extra members.
      * Typically called by various builders.
      *
+     * For methods, any interface method coming from an undocumented supertype
+     * will be removed if this class (or one of its superclasses) provides
+     * an override.
+     *
      * @param kind the member kind
      * @return a list of visible enclosed members
      */
@@ -270,7 +274,45 @@ public class VisibleMemberTable {
             TypeElement encl = utils.getEnclosingTypeElement(e);
             return Objects.equals(encl, te) || utils.isUndocumentedEnclosure(encl);
         };
-        return getVisibleMembers(kind, declaredAndLeafMembers);
+        List<Element> members = getVisibleMembers(kind, declaredAndLeafMembers);
+
+        if (kind == Kind.METHODS) {
+            members = removeDuplicates(members);
+        }
+
+        return members;
+    }
+
+    /**
+     * Drop any that were inlined from an undocumented interface
+     * and that have a local override in this class hierarchy.
+     */
+    private List<Element> removeDuplicates(List<Element> methods) {
+        List<ExecutableElement> localMethods = getMembers(Kind.METHODS).stream()
+                .map(ExecutableElement.class::cast)
+                .toList();
+
+        return methods.stream()
+                .filter(e -> shouldKeepInheritedMethod(e, localMethods))
+                .toList();
+    }
+
+    private boolean shouldKeepInheritedMethod(Element e, List<ExecutableElement> localMethods) {
+        TypeElement encl = utils.getEnclosingTypeElement(e);
+
+        boolean isHiddenInterfaceMethod =
+                !Objects.equals(encl, te) && utils.isUndocumentedEnclosure(encl)
+                        && e instanceof ExecutableElement;
+
+        if (isHiddenInterfaceMethod) {
+            ExecutableElement inherited = (ExecutableElement) e;
+            for (var local : localMethods) {
+                if (utils.elementUtils.overrides(local, inherited, te)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
