@@ -24,7 +24,7 @@
 /*
  * @test
  *
- * If the VM does not have continuations, then no VTs can ever be scheduled
+ * @comment If the VM does not have continuations, then VTs will be scheduled on OS threads.
  * @requires vm.continuations
  *
  * @modules java.base/jdk.internal.foreign
@@ -45,7 +45,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinWorkerThread;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
