@@ -284,8 +284,8 @@ public class VisibleMemberTable {
     }
 
     /**
-     * Drop any that were inlined from an undocumented interface
-     * and that have a local override in this class hierarchy.
+     * Drop any methods that were inlined from an undocumented interface
+     * and have a local override in this class hierarchy.
      */
     private List<Element> removeDuplicates(List<Element> methods) {
         List<ExecutableElement> localMethods = getMembers(Kind.METHODS).stream()
