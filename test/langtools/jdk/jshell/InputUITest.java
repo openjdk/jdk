@@ -49,8 +49,12 @@ public class InputUITest extends UITesting {
 
     public void testUserInputWithSurrogates() throws Exception {
         doRunTest((inputSink, out) -> {
-            inputSink.write("new String(System.in.readNBytes(4))\n\uD83D\uDE03\n");
-            waitOutput(out, "\"\uD83D\uDE03\"");
+            inputSink.write("new String(System.in.readNBytes(5))\n\uD83D\uDE03\n");
+            waitOutput(out, patternQuote("\"\uD83D\uDE03\\n\""));
+            inputSink.write("new String(System.in.readNBytes(2))\n\uD83D\n");
+            waitOutput(out, patternQuote("\"?\\n\""));
+            inputSink.write("new String(System.in.readNBytes(2))\n\uDE03\n");
+            waitOutput(out, patternQuote("\"?\\n\""));
         }, false);
     }
 

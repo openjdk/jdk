@@ -980,9 +980,14 @@ class ConsoleIOContext extends IOContext {
             StringBuilder dataToConvert = new StringBuilder();
             dataToConvert.append(userChar);
             if (Character.isHighSurrogate(userChar)) {
-                if (pendingLine.length() > pendingLinePointer &&
-                    Character.isLowSurrogate(pendingLine.charAt(pendingLinePointer))) {
-                    dataToConvert.append(readUserInputChar());
+                //surrogates cannot be converted independently,
+                //read the low surrogate and append it to dataToConvert:
+                char lowSurrogate = readUserInputChar();
+                if (Character.isLowSurrogate(lowSurrogate)) {
+                    dataToConvert.append(lowSurrogate);
+                } else {
+                    //if not the low surrogate, rollback the reading of the character:
+                    pendingLinePointer--;
                 }
             }
             pendingBytes = dataToConvert.toString().getBytes();
