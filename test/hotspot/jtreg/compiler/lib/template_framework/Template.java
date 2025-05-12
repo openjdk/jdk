@@ -143,7 +143,7 @@ import java.util.List;
  * A Template can have zero or more arguments. A template can be created with {@code make} methods like
  * {@link Template#make(String, Function)}. At first, the Template is an {@link UnfilledTemplate}, i.e.
  * a Template where the arguments are not yet filled. For each number of arguments there is an implementation
- * (e.g. {@link UnfilledTemplate.TwoArgs} for two arguments). This allows the use of Generics for the
+ * (e.g. {@code UnfilledTemplate.TwoArgs} for two arguments). This allows the use of Generics for the
  * Template argument types, i.e. the Template arguments can be type checked.
  *
  * <p>
@@ -172,7 +172,7 @@ import java.util.List;
  *
  * <p>
  * To render a Template to a {@link String}, one first has to apply the arguments (e.g. with
- * {@link TwoArgs#fillWith}) and then the resulting {@link FilledTemplate} can either be used as a
+ * {@link UnfilledTemplate.TwoArgs#fillWith}) and then the resulting {@link FilledTemplate} can either be used as a
  * {@link Token} inside another {@link Template#body}, or rendered to a {@link String} with {@link FilledTemplate#render}.
  *
  * <p>

@@ -27,6 +27,11 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * Represents a Template with arguments that are not yet filled, but can be filled
+ * by calling {@code fillWith} (e.g. {@link OneArgs#fillWith(Object)} to obtain
+ * a {@link FilledTemplate}.
+ */
 public interface UnfilledTemplate {
     /**
      * A {@link UnfilledTemplate} with no arguments.
