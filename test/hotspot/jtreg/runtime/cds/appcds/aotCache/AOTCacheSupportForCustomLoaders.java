@@ -29,10 +29,11 @@
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
- * @library /test/lib
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @build ReturnIntegerAsString
  * @build AOTCacheSupportForCustomLoaders
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AppWithCustomLoaders AppWithCustomLoaders$MyLoader
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar AppWithCustomLoaders$MyLoadeeA AppWithCustomLoaders$MyLoadeeB
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar AppWithCustomLoaders$MyLoadeeA AppWithCustomLoaders$MyLoadeeB ReturnIntegerAsString
  * @run driver AOTCacheSupportForCustomLoaders AOT
  */
 
@@ -50,7 +51,8 @@ public class AOTCacheSupportForCustomLoaders {
             .appCommandLine("AppWithCustomLoaders")
             .setAssemblyChecker((OutputAnalyzer out) -> {
                     out.shouldMatch("cds,class.*unreg AppWithCustomLoaders[$]MyLoadeeA")
-                       .shouldMatch("cds,class.*array \\[LAppWithCustomLoaders[$]MyLoadeeA;");
+                       .shouldMatch("cds,class.*array \\[LAppWithCustomLoaders[$]MyLoadeeA;")
+                       .shouldNotMatch("cds,class.* ReturnIntegerAsString");
                 })
             .setProductionChecker((OutputAnalyzer out) -> {
                     out.shouldContain("Using AOT-linked classes: true");
@@ -68,6 +70,16 @@ class AppWithCustomLoaders {
         // Test 1: array class of MyLoadeeA (JDK-8353298)
         Class klass = loader.loadClass("AppWithCustomLoaders$MyLoadeeA");
         klass.newInstance();
+
+        // Test 2: VerificationType::is_reference_assignable_from() cannot be skipped (JDK-8356407)
+        try {
+            Class bad = loader.loadClass("ReturnIntegerAsString");
+            Object o = bad.newInstance(); // force verification
+            System.out.println("Expected String but got: " + o.toString().getClass());
+            throw new RuntimeException("VerifyError expected but not thrown");
+        } catch (VerifyError ve) {
+            System.out.println("Expected: " + ve);
+        }
 
         // TODO: more test cases JDK-8354557
     }

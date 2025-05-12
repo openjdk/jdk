@@ -105,8 +105,8 @@ import jdk.internal.util.DecimalDigits;
  * considers members of the same cohort to be equal to each other. In
  * contrast, the {@link equals equals} method requires both the
  * numerical value and representation to be the same for equality to
- * hold. The results of methods like {@link scale} and {@link
- * unscaledValue} will differ for numerically equal values with
+ * hold. The results of methods like {@link #scale()} and {@link
+ * #unscaledValue()} will differ for numerically equal values with
  * different representations.
  *
  * <p>In general the rounding modes and precision setting determine
@@ -360,10 +360,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private final BigInteger intVal;
 
     /**
-     * The scale of this BigDecimal, as returned by {@link #scale}.
+     * The scale of this BigDecimal, as returned by {@link #scale()}.
      *
      * @serial
-     * @see #scale
+     * @see #scale()
      */
     private final int scale;  // Note: this may have any value, so
                               // calculations must be done in longs
