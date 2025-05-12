@@ -6267,6 +6267,7 @@ instruct cmovI_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
 instruct cmovI_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src1, rRegI src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpl  $dst, $src1, $src2\n\t"
@@ -6283,6 +6284,7 @@ instruct cmovI_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI s
 instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
   predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveI (Binary cop cr) (Binary src dst)));
+  effect(TEMP dst);
 
   ins_cost(200); // XXX
   format %{ "cmovpl  $dst, $src\n\t"
@@ -6299,6 +6301,7 @@ instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
 instruct cmovI_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src1, rRegI src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveI (Binary cop cr) (Binary src2 src1)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpl  $dst, $src1, $src2\n\t"
@@ -6584,6 +6587,7 @@ instruct cmovP_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) 
 instruct cmovP_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src1, rRegP src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
@@ -6614,6 +6618,7 @@ instruct cmovP_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) 
 instruct cmovP_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src1, rRegP src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveP (Binary cop cr) (Binary src2 src1)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
@@ -6783,6 +6788,7 @@ instruct cmovL_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
 instruct cmovL_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src1, rRegL src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
@@ -6813,6 +6819,7 @@ instruct cmovL_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
 instruct cmovL_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src1, rRegL src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveL (Binary cop cr) (Binary src2 src1)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
