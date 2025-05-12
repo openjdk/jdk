@@ -226,6 +226,10 @@ public:
   static int klass_alignment_in_bytes() { return nth_bit(MAX2(3, _shift)); }
   static int klass_alignment_in_words() { return klass_alignment_in_bytes() / BytesPerWord; }
 
+  // Returns the alignment a Klass* is guaranteed to have, for COH
+  static constexpr int klass_alignment_in_bytes_coh = nth_bit(max_shift_coh);
+  static constexpr int klass_alignment_in_words_coh = nth_bit(max_shift_coh) / BytesPerWord;
+
   // Returns the highest possible narrowKlass value given the current Klass range
   static narrowKlass highest_valid_narrow_klass_id() { return _highest_valid_narrow_klass_id; }
 

@@ -31,6 +31,7 @@
 #include "oops/klassInfoLUT.inline.hpp"
 #include "oops/klassInfoLUTEntry.inline.hpp"
 #include "oops/klassKind.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/atomic.hpp"
 
 #include "utilities/debug.hpp"
@@ -466,7 +467,52 @@ void KlassInfoLUT::update_registration_counters(const Klass* k, klute_raw_t klut
 void KlassInfoLUT::update_hit_counters(const Klass* k, klute_raw_t klute) {
   update_counters(_hit_counters, k, klute);
 }
-
-
-
 #endif // KLUT_ENABLE_HIT_STATS
+
+static bool matches_one_of(const Symbol* name, const char* names[]) {
+  char tmp[256];
+  name->as_C_string(tmp, sizeof(tmp));
+  for (int i = 0; names[i] != nullptr; i++) {
+    if (strcmp(names[i], tmp) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool KlassInfoLUT::is_preferred_instanceklass(const Symbol* name) {
+  static const char* names[] = {
+    "java/lang/String",                                       // 1
+    "java/lang/Object",                                       // 2
+    "java/util/HashMap$Node",                                 // 3
+    "java/util/concurrent/ConcurrentHashMap$Node",            // 4
+    "java/util/LinkedHashMap$Entry",                          // 5
+    "java/lang/Long",                                         // 6
+    "java/lang/Integer",                                      // 7
+    "java/math/BigInteger",                                   // 8
+    "java/util/concurrent/locks/ReentrantLock",               // 9
+    "java/util/concurrent/locks/ReentrantLock$NonfairSync",   // 10
+    nullptr
+  };
+  return matches_one_of(name, names);
+}
+
+bool KlassInfoLUT::is_preferred_objectarrayklass(const Symbol* element_class_name) {
+  static const char* names[] = {
+      "java/lang/Object",                                       // 11
+      "java/lang/String",                                       // 12
+      "java/util/HashMap$Node",                                 // 13
+      "java/util/concurrent/ConcurrentHashMap$Node",            // 14
+      nullptr
+  };
+  return matches_one_of(element_class_name, names);
+}
+
+bool KlassInfoLUT::is_preferred_typearrayklass(const Symbol* name) {
+  static const char* names[] = {
+      "[B",                                                     // 15  Note: [B but not filler element
+      "[I",                                                     // 16
+      nullptr
+  };
+  return matches_one_of(name, names);
+}

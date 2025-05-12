@@ -55,9 +55,10 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
   {
     char tmp[1024];
     const int size = ArrayKlass::static_size(TypeArrayKlass::header_size());
-    log_debug(metaspace)("Returning new TAK @" PTR_FORMAT " for %s, nKlass=%u, word size=%d",
+    log_debug(metaspace)("Returning new TAK @" PTR_FORMAT " for %s, BasicType %d, nKlass=%u, word size=%d",
                           p2i(ak),
                           ak->name()->as_C_string(tmp, sizeof(tmp)),
+                          (int)type,
                           CompressedKlassPointers::encode(ak), size);
   }
 
@@ -83,8 +84,9 @@ TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType
       "array klasses must be same size as InstanceKlass");
 
   int size = ArrayKlass::static_size(TypeArrayKlass::header_size());
+  const bool preferred = UseCompactObjectHeaders && KlassInfoLUT::is_preferred_typearrayklass(name);
 
-  return new (loader_data, size, THREAD) TypeArrayKlass(type, name);
+  return new (loader_data, size, preferred, THREAD) TypeArrayKlass(type, name);
 }
 
 u2 TypeArrayKlass::compute_modifier_flags() const {

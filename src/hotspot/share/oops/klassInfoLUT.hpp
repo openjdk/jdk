@@ -33,6 +33,7 @@
 
 class Klass;
 class ClassLoaderData;
+class Symbol;
 
 // Unexpensive stats
 #define KLUT_ENABLE_REGISTRATION_STATS
@@ -183,6 +184,10 @@ public:
 #endif
 
   static void print_statistics(outputStream* out);
+
+  static bool is_preferred_instanceklass(const Symbol* name);
+  static bool is_preferred_objectarrayklass(const Symbol* element_class_name);
+  static bool is_preferred_typearrayklass(const Symbol* name);
 };
 
 #endif // SHARE_OOPS_KLASSINFOLUT_HPP

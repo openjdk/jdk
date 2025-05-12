@@ -66,12 +66,50 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
+using metaspace::Metachunk;
 using metaspace::ChunkManager;
 using metaspace::CommitLimiter;
 using metaspace::MetaspaceContext;
 using metaspace::MetaspaceReporter;
 using metaspace::RunningCounters;
 using metaspace::VirtualSpaceList;
+
+class PreferredKlassSlots : public CHeapObj<mtMetaspace> {
+  static constexpr unsigned slots = 16;
+  static constexpr size_t slot_size = (size_t)CompressedKlassPointers::klass_alignment_in_words_coh;
+  static constexpr size_t backing_storage_size = slot_size * slots;
+
+  Metachunk* const _chunk; // An immortal chunk
+
+  static Metachunk* allocate_chunk() {
+    const metaspace::chunklevel_t lvl = metaspace::chunklevel::level_fitting_word_size(backing_storage_size);
+    metaspace::Metachunk* const chunk = MetaspaceContext::context_class()->cm()->get_chunk(lvl);
+    assert(chunk->word_size() == backing_storage_size, "must be");
+    assert(is_aligned(chunk->base(), slot_size), "must be");
+    return chunk; // Note: not yet committed
+  }
+
+public:
+
+  PreferredKlassSlots() : _chunk(allocate_chunk()) {
+    log_info(metaspace)("Reserved chunk for preferred classes " METACHUNK_FORMAT,
+                        METACHUNK_FORMAT_ARGS(_chunk));
+  }
+
+  MetaWord* allocate(size_t word_size) {
+    assert(UseCompactObjectHeaders, "Sanity");
+    assert(word_size <= slot_size, "Klass too large? Does not fit into one slot (%zu)", word_size);
+    _chunk->ensure_committed(backing_storage_size);
+    // Should not fire unless we added too many preferred classes
+    assert(_chunk->free_below_committed_words() >= slot_size, "Too many preferred classes?");
+    MetaWord* const result = _chunk->allocate(slot_size);
+    assert(is_aligned(result, slot_size), "must be");
+    log_debug(metaspace)("Reserved preferred Klass slot at " PTR_FORMAT, p2i(result));
+    return result;
+  }
+};
+
+static PreferredKlassSlots* preferred_klass_slots = nullptr;
 
 size_t MetaspaceUtils::used_words() {
   return RunningCounters::used_words();
@@ -835,6 +873,10 @@ void Metaspace::global_initialize() {
       assert(CompressedKlassPointers::base() == nullptr, "Zero-based encoding expected");
     }
 
+    // Initialize storage for preferred Klasses
+    if (UseCompactObjectHeaders) {
+      preferred_klass_slots = new PreferredKlassSlots();
+    }
   }
 
 #endif // _LP64
@@ -871,7 +913,7 @@ size_t Metaspace::max_allocation_word_size() {
 // is suitable for calling from non-Java threads.
 // Callers are responsible for checking null.
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
-                              MetaspaceObj::Type type, bool use_class_space) {
+                              MetaspaceObj::Type type, bool use_class_space, bool preferred) {
   assert(word_size <= Metaspace::max_allocation_word_size(),
          "allocation size too large (%zu)", word_size);
 
@@ -905,7 +947,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
 }
 
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
-                              MetaspaceObj::Type type, bool use_class_space, TRAPS) {
+                              MetaspaceObj::Type type, bool use_class_space, bool preferred, TRAPS) {
 
   if (HAS_PENDING_EXCEPTION) {
     assert(false, "Should not allocate with exception pending");
@@ -913,7 +955,13 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   }
   assert(!THREAD->owns_locks(), "allocating metaspace while holding mutex");
 
-  MetaWord* result = allocate(loader_data, word_size, type, use_class_space);
+  MetaWord* result = nullptr;
+  if (preferred && preferred_klass_slots != nullptr) {
+    result = preferred_klass_slots->allocate(word_size);
+  }
+  if (result == nullptr) {
+    result = allocate(loader_data, word_size, type, use_class_space, preferred);
+  }
 
   if (result == nullptr) {
     MetadataType mdtype = use_class_space ? ClassType : NonClassType;

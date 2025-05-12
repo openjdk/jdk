@@ -50,7 +50,7 @@ class ArrayKlass: public Klass {
   ArrayKlass(Symbol* name, KlassKind kind);
   ArrayKlass();
 
-  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
+  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, bool preferred, TRAPS) throw();
 
  public:
   // Testing operation

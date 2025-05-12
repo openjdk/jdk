@@ -36,6 +36,7 @@
 #include "oops/arrayKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/klassInfoLUT.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -49,8 +50,12 @@ ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klas
       "array klasses must be same size as InstanceKlass");
 
   int size = ArrayKlass::static_size(ObjArrayKlass::header_size());
+  const bool preferred =
+      UseCompactObjectHeaders &&
+      loader_data->is_the_null_class_loader_data() &&
+      KlassInfoLUT::is_preferred_objectarrayklass(k->name());
 
-  ObjArrayKlass* oak = new (loader_data, size, THREAD) ObjArrayKlass(n, k, name);
+  ObjArrayKlass* oak = new (loader_data, size, preferred, THREAD) ObjArrayKlass(n, k, name);
 
   {
     char tmp[1024];
