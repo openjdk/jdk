@@ -855,6 +855,7 @@ static bool falls_through(Bytecodes::Code bc) {
     case Bytecodes::_freturn:
     case Bytecodes::_ireturn:
     case Bytecodes::_lreturn:
+    case Bytecodes::_jsr:
     case Bytecodes::_ret:
     case Bytecodes::_return:
     case Bytecodes::_lookupswitch:
