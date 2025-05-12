@@ -137,11 +137,11 @@ class ImmutableCollections {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
                 }
                 public <E> List<E> stableList(int size, IntFunction<? extends E> mapper) {
-                    // A stable list is not Serializable so, we cannot return `List.of()` if `size == 0`
+                    // A stable list is not Serializable, so we cannot return `List.of()` if `size == 0`
                     return new StableList<>(size, mapper);
                 }
                 public <K, V> Map<K, V> stableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
-                    // A stable map is not Serializable so, we cannot return `Map.of()` if `keys.isEmpty()`
+                    // A stable map is not Serializable, so we cannot return `Map.of()` if `keys.isEmpty()`
                     return new StableMap<>(keys, mapper);
                 }
             });
@@ -875,8 +875,7 @@ class ImmutableCollections {
 
         @Override
         public List<E> subList(int fromIndex, int toIndex) {
-            final int size = size();
-            subListRangeCheck(fromIndex, toIndex, size);
+            subListRangeCheck(fromIndex, toIndex, size());
             return StableSubList.fromStableList(this, fromIndex, toIndex);
         }
 
@@ -942,11 +941,6 @@ class ImmutableCollections {
             @Override
             public String toString() {
                 return StableUtil.renderElements(this, "StableCollection", delegates());
-            }
-
-            @Override
-            public List<E> reversed() {
-                return base;
             }
 
             @Override
@@ -1667,7 +1661,7 @@ class ImmutableCollections {
             }
 
             // For @ValueBased
-            static private <K, V> StableMapEntrySet<K, V> of(StableMap<K, V> outer) {
+            private static <K, V> StableMapEntrySet<K, V> of(StableMap<K, V> outer) {
                 return new StableMapEntrySet<>(outer);
             }
 
