@@ -99,7 +99,7 @@ public class newinstance009 {
         ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
         ClassType clsType = (ClassType) rType;
 
-        ThreadReference thrRef = debuggee.threadByFieldNameOrThrow(rType, "thread", DEBUGGEE_THRNAME);
+        ThreadReference thrRef = debuggee.threadByFieldName(rType, "thread", DEBUGGEE_THRNAME);
         if (thrRef == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);

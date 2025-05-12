@@ -110,7 +110,7 @@ public class popframes007 {
         ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
 
         ThreadReference mainThread =
-            debuggee.threadByFieldNameOrThrow(rType, "mainThread", DEBUGGEE_MAIN_THREAD_NAME);
+            debuggee.threadByFieldName(rType, "mainThread", DEBUGGEE_MAIN_THREAD_NAME);
         if (mainThread == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                          + DEBUGGEE_MAIN_THREAD_NAME);
@@ -119,7 +119,7 @@ public class popframes007 {
         }
 
         ThreadReference auxThread =
-            debuggee.threadByFieldNameOrThrow(rType, "auxThr", DEBUGGEE_AUX_THREAD_NAME);
+            debuggee.threadByFieldName(rType, "auxThr", DEBUGGEE_AUX_THREAD_NAME);
         if (mainThread == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                          + DEBUGGEE_AUX_THREAD_NAME);

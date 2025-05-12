@@ -118,7 +118,7 @@ public class stop002 {
         // debuggee main class
         mainClass = debuggee.classByName(DEBUGGEE_CLASS);
 
-        ThreadReference thrRef = debuggee.threadByFieldNameOrThrow(mainClass, "testThread", DEBUGGEE_THRNAME);
+        ThreadReference thrRef = debuggee.threadByFieldName(mainClass, "testThread", DEBUGGEE_THRNAME);
         if (thrRef == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);

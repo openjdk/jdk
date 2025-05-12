@@ -95,7 +95,7 @@ public class ownedmonitors002 {
         ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
 
         ThreadReference thrRef =
-            debuggee.threadByFieldNameOrThrow(rType, "testThread", DEBUGGEE_THRNAME);
+            debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
         if (thrRef == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);

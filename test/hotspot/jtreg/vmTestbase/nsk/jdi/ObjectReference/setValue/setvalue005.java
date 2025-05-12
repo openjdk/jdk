@@ -111,7 +111,7 @@ public class setvalue005 {
 
         ReferenceType debuggeeClass = debuggee.classByName(DEBUGGEE_CLASS); // debuggee main class
 
-        thrRef = debuggee.threadByFieldNameOrThrow(debuggeeClass, "testThread", DEBUGGEE_THRNAME);
+        thrRef = debuggee.threadByFieldName(debuggeeClass, "testThread", DEBUGGEE_THRNAME);
         if (thrRef == null) {
             log.complain("TEST FAILURE: Method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);

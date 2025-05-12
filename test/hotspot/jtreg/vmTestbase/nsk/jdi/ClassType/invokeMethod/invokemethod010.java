@@ -114,7 +114,7 @@ public class invokemethod010 {
         // debuggee main class
         ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
         
-        thrRef = debuggee.threadByFieldNameOrThrow(rType, "testThread", DEBUGGEE_THRNAME);
+        thrRef = debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
         if (thrRef == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);

@@ -207,7 +207,7 @@ public class interrupt001 {
     private void executeCase(int testCase, String threadName2) {
         ReferenceType debuggeeClass = debuggee.classByName(debuggeeName);
         ThreadReference thread2 =
-            debuggee.threadByFieldNameOrThrow(debuggeeClass, "thread2", threadName2);
+            debuggee.threadByFieldName(debuggeeClass, "thread2", threadName2);
         if (thread2 == null) {
             debuggee.quit();
             throw new TestBug("ERROR: Not found ThreadReference for name :" + threadName2);
