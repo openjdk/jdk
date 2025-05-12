@@ -46,7 +46,7 @@ import java.util.stream.IntStream;
  * org.freedesktop.portal.ScreenCast API</a>
  */
 
-public class ScreencastHelper {
+public final class ScreencastHelper {
 
     static final boolean SCREENCAST_DEBUG;
     private static final boolean IS_NATIVE_LOADED;

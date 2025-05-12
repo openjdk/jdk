@@ -105,6 +105,7 @@ public:
 
   // input archive(s)
   static bool is_using_archive()                             NOT_CDS_RETURN_(false);
+  static bool is_using_only_default_archive()                NOT_CDS_RETURN_(false);
 
   // static_archive
   static bool is_dumping_static_archive()                    { return CDS_ONLY(_is_dumping_static_archive) NOT_CDS(false); }

@@ -359,7 +359,7 @@ void ZHeap::print_page_table_on(outputStream* st) const {
   // Print all pages
   st->print_cr("ZGC Page Table:");
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
 
   ZPageTableIterator iter(&_page_table);
   for (ZPage* page; iter.next(&page);) {

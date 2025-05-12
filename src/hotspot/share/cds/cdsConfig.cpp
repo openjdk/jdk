@@ -718,6 +718,14 @@ bool CDSConfig::is_using_archive() {
   return UseSharedSpaces;
 }
 
+bool CDSConfig::is_using_only_default_archive() {
+  return is_using_archive() &&
+         input_static_archive_path() != nullptr &&
+         default_archive_path() != nullptr &&
+         strcmp(input_static_archive_path(), default_archive_path()) == 0 &&
+         input_dynamic_archive_path() == nullptr;
+}
+
 bool CDSConfig::is_logging_lambda_form_invokers() {
   return ClassListWriter::is_enabled() || is_dumping_dynamic_archive();
 }

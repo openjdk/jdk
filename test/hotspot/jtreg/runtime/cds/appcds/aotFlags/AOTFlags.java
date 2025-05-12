@@ -443,6 +443,20 @@ public class AOTFlags {
         out.shouldContain("Unable to use AOT cache.");
         out.shouldContain("Not a valid AOT cache (dynamic.jsa)");
         out.shouldHaveExitValue(1);
+
+        //----------------------------------------------------------------------
+        testEmptyValue("AOTCache");
+        testEmptyValue("AOTConfiguration");
+        testEmptyValue("AOTMode");
+    }
+
+    static void testEmptyValue(String option) throws Exception {
+        printTestCase("Empty values for " + option);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:" + option + "=", "--version");
+        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "neg");
+        out.shouldContain("Improperly specified VM option '" + option + "='");
+        out.shouldHaveExitValue(1);
     }
 
     static int testNum = 0;
