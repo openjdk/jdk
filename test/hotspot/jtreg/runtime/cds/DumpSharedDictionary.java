@@ -45,11 +45,12 @@ public class DumpSharedDictionary {
                 .setArchiveName("./DumpSharedDictionary.jsa");
             CDSTestUtils.createArchiveAndCheck(opts);
 
+            String testjdkPath = System.getProperty("test.jdk");
+
             opts = (new CDSOptions())
                 .setUseVersion(false)
                 .addSuffix("-XX:SharedArchiveFile=./DumpSharedDictionary.jsa",
-                           "-Dtest.jdk=" + System.getProperty("test.jdk"),
-                           "-Dcompile.jdk=" + System.getProperty("compile.jdk"),
+                           "-Dtest.jdk=" + testjdkPath,
                            "DumpSharedDictionary", "test");
             CDSTestUtils.run(opts)
                         .assertNormalExit();
