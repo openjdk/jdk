@@ -296,15 +296,13 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         return buffered.get();
     }
 
-    boolean stopReading() {
+    boolean readingPaused() {
         return readingStalled;
     }
 
     abstract void resumeReading();
 
     abstract void pauseReading();
-
-    boolean readingStalled() { return readingStalled; }
 
     private QuicEndpoint(QuicInstance quicInstance,
                          DatagramChannel channel,
@@ -623,9 +621,9 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
 
         @Override
-        boolean stopReading() {
+        boolean readingPaused() {
             synchronized (this) {
-                return readingDone = super.stopReading();
+                return readingDone = super.readingPaused();
             }
         }
 
@@ -646,7 +644,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 }
             }
             if (resumedInOtherThread) {
-                // last time stopReading() was called it returned true, so we know
+                // last time readingPaused() was called it returned true, so we know
                 //    the previous poller thread has stopped reading and will exit.
                 //    We attached a new poller above, so reading will resume in that
                 //    other thread
@@ -751,7 +749,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         int totalpkt = 0;
         try {
             int sincepkt = 0;
-            while (!isClosed() && !stopReading()) {
+            while (!isClosed() && !readingPaused()) {
                 var pos = buffer.position();
                 var limit = buffer.limit();
                 if (debug.on())
