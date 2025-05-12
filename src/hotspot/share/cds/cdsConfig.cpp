@@ -410,16 +410,25 @@ void CDSConfig::check_aot_flags() {
     log_debug(aot,codecache,init)("AOTCache is not specified - AOTAdapterCaching is ignored");
   }
 
-  if (FLAG_IS_DEFAULT(AOTCache) &&
-      FLAG_IS_DEFAULT(AOTMode)) {
-    bool has_cache_output = !FLAG_IS_DEFAULT(AOTCacheOutput);
-    bool has_config = !FLAG_IS_DEFAULT(AOTConfiguration);
-    if (!has_cache_output && !has_config) {
-      // AOT flags are not used. Use classic CDS workflow
-      return;
-    } else if (has_cache_output) {
-      // If AOTCacheOutput has been set, default mode is "record".
+  bool has_cache = !FLAG_IS_DEFAULT(AOTCache);
+  bool has_cache_output = !FLAG_IS_DEFAULT(AOTCacheOutput);
+  bool has_config = !FLAG_IS_DEFAULT(AOTConfiguration);
+  bool has_mode = !FLAG_IS_DEFAULT(AOTMode);
+
+  if (!has_cache && !has_cache_output && !has_config && !has_mode) {
+    // AOT flags are not used. Use classic CDS workflow
+    return;
+  }
+
+  if (has_cache && has_cache_output) {
+    vm_exit_during_initialization("Only one of AOTCache or AOTCacheOutput can be specified");
+  }
+
+  if (!has_cache && (!has_mode || strcmp(AOTMode, "auto") == 0)) {
+    if (has_cache_output) {
+      // If AOTCacheOutput has been set, effective mode is "record".
       // Default value for AOTConfiguration, if necessary, will be assigned in check_aotmode_record().
+      log_info(cds)("Selected AOTMode=record because AOTCacheOutput is specified");
       FLAG_SET_ERGO(AOTMode, "record");
     }
   }
@@ -446,7 +455,8 @@ void CDSConfig::check_aotmode_off() {
 
 void CDSConfig::check_aotmode_auto_or_on() {
   if (!FLAG_IS_DEFAULT(AOTConfiguration)) {
-    vm_exit_during_initialization("AOTConfiguration can only be used with -XX:AOTMode=record or -XX:AOTMode=create");
+    vm_exit_during_initialization(err_msg("AOTConfiguration can only be used with when AOTMode is record or create (selected AOTMode = %s)", 
+                                          FLAG_IS_DEFAULT(AOTMode) ? "auto" : AOTMode));
   }
 
   UseSharedSpaces = true;
@@ -529,16 +539,17 @@ void CDSConfig::check_aotmode_create() {
   bool has_cache = !FLAG_IS_DEFAULT(AOTCache);
   bool has_cache_output = !FLAG_IS_DEFAULT(AOTCacheOutput);
 
+  assert(!(has_cache && has_cache_output), "already checked");
+
   if (!has_cache && !has_cache_output) {
     vm_exit_during_initialization("AOTCache or AOTCacheOutput must be specified when using -XX:AOTMode=create");
-  } else if (has_cache && has_cache_output) {
-    vm_exit_during_initialization("Only one of AOTCache or AOTCacheOutput can be specified");
   }
 
   if (!has_cache) {
     precond(has_cache_output);
     FLAG_SET_ERGO(AOTCache, AOTCacheOutput);
   }
+  // No need to check for (!has_cache_output), as we don't look at AOTCacheOutput after here.
 
   substitute_aot_filename(FLAG_MEMBER_ENUM(AOTCache));
 

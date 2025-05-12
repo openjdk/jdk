@@ -4050,17 +4050,29 @@ The AOT cache can be used with the following command-line options:
     If `-XX:AOTCache` is specified but `-XX:AOTMode` is not specified,
     then `AOTMode` will be given the value of `auto`.
 
+    This option cannot be used together with `-XX:AOTCacheOutput`.
+
 `-XX:AOTCacheOutput:=`*cachefile*
 :   Specifies the location of the AOT cache to write. The standard extension for *cachefile* is `.aot`.
-    This option can be used only with `-XX:AOTMode=record` and `-XX:AOTMode=create`.
+    This option cannot be used together with `-XX:AOTCache`.
 
-    If `-XX:AOTCacheOutput` is specified but `-XX:AOTMode` is not specified,
-    then `AOTMode` will be given the value of `record`.
+    When `-XX:AOTCacheOutput` is specified:
+
+    - If `-XX:AOTMode` is not specified, then `AOTMode` will be given the value of `record`.
+    - If `-XX:AOTMode=auto` is specified, the JVM behaves if `-XX:AOTMode=record` were specified.
+    - If `-XX:AOTMode=on` is specified, the JVM will exit with an error.
 
 `-XX:AOTConfiguration:=`*configfile*
 :   Specifies the AOT Configuration file for the JVM to write to or read from.
-    This option can be used only with `-XX:AOTMode=record` and `-XX:AOTMode=create`.
     The standard extension for *configfile* is `.aotconfig`.
+
+    When `-XX:AOTConfiguration` can be used only if:
+
+    - `-XX:AOTMode=record` is specified, or
+    - `-XX:AOTCacheOutput` is specified, and `-XX:AOTMode=auto` is specified, or
+    - `-XX:AOTCacheOutput` is specified, and `-XX:AOTMode` is not specidied.
+
+    In all other cases, the JVM will exit with an error.
 
 `-XX:+AOTMode:=`*mode*
 :   *mode* must be one of the following: `off`, `record`, `create`, `auto`, or `on`.
