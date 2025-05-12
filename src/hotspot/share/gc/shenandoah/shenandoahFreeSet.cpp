@@ -247,7 +247,7 @@ void ShenandoahRegionPartitions::establish_mutator_intervals(idx_t mutator_leftm
   _region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_region_count;
   _used[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_used;
   _capacity[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_region_count * _region_size_bytes;
-  _available[int(ShenandoahFreeSetPartitionId::Mutator)] = 
+  _available[int(ShenandoahFreeSetPartitionId::Mutator)] =
     _capacity[int(ShenandoahFreeSetPartitionId::Mutator)] - _used[int(ShenandoahFreeSetPartitionId::Mutator)];
 
   _leftmosts[int(ShenandoahFreeSetPartitionId::Collector)] = _max;
