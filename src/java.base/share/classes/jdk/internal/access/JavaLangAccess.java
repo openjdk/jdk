@@ -325,7 +325,7 @@ public interface JavaLangAccess {
      * Encode the given string into a sequence of bytes using the specified
      * {@linkplain java.nio.charset.Charset charset}.
      * <p>
-     * <b>WARNING: This method return the {@code byte[]} backing the provided
+     * <b>WARNING: This method returns the {@code byte[]} backing the provided
      * {@code String}, if the input is ASCII.</b>
      * <p>
      * This method throws {@code CharacterCodingException} instead of replacing
@@ -410,7 +410,7 @@ public interface JavaLangAccess {
     PrintStream initialSystemErr();
 
     /**
-     * Encodes ASCII codepoints as possible from the source array into
+     * Encodes as many ASCII codepoints as possible from the source array into
      * the destination byte array, assuming that the encoding is ASCII
      * compatible.
      * <p>
