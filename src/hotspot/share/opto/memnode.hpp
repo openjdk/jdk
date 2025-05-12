@@ -1367,6 +1367,11 @@ public:
   void replace_mem_projs_by(Node* mem, PhaseIterGVN* ivn);
 
   bool already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const;
+  template <class Callback> ProjNode* apply_to_narrow_mem_projs(DUIterator& i, Callback callback) const {
+    return apply_to_narrow_mem_projs_<Callback, UsesIterator>(UsesIterator(i, this), callback);
+    // ApplyToProjs<Callback, UsesIterator> apply_obj(callback, UsesIterator(i, this), this);
+    // return apply_obj.do_it();
+  }
   template <class Callback> ProjNode* apply_to_narrow_mem_projs(Callback callback) const;
   template <class Callback> ProjNode* apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const;
 
@@ -1387,6 +1392,16 @@ private:
                                PhaseGVN* phase);
 
   intptr_t find_next_fullword_store(uint i, PhaseGVN* phase);
+
+  template <class Callback, class Iterator> ProjNode* apply_to_narrow_mem_projs_(Iterator i, Callback callback) const {
+    auto filter = [callback](ProjNode* proj) {
+      if (proj->is_NarrowMemProj() && callback(proj->as_NarrowMemProj())) {
+        return true;
+      }
+      return false;
+    };
+    return apply_to_projs_(i, filter);
+  }
 };
 
 //------------------------------MergeMem---------------------------------------

@@ -2677,19 +2677,15 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         if (head->is_strip_mined() && mode != IgnoreStripMined) {
           CountedLoopNode* cl = head->as_CountedLoop();
           CountedLoopEndNode* cle = cl->loopexit();
-          Node* cle_out = nullptr; //cle->proj_out_or_null(false);
-          for( DUIterator_Fast imax, i = cle->fast_outs(imax); i < imax; i++ ) {
-            Node *p = cle->fast_out(i);
-            if (p->is_Proj()) {
-              ProjNode *proj = p->as_Proj();
-              if (proj->_con == false) {
-                assert(cle_out == nullptr || old_new[cle_out->_idx] == proj, "");
-                if (cle_out == nullptr) {
-                  cle_out = proj;
-                }
-              }
+          Node* cle_out = nullptr;
+          auto find_cle_out = [&](ProjNode* proj) {
+            assert(cle_out == nullptr || old_new[cle_out->_idx] == proj, "");
+            if (cle_out == nullptr) {
+              cle_out = proj;
             }
-          }
+            return false;
+          };
+          cle->apply_to_projs(find_cle_out, false);
           if (use == cle_out) {
             IfNode* le = cl->outer_loop_end();
             use = le->proj_out(false);

@@ -1637,13 +1637,14 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
       Node* ctrl = new ProjNode(init, TypeFunc::Control);
       transform_later(ctrl);
       Node* existing_raw_mem_proj = nullptr;
-      for (DUIterator_Fast imax, i = init->fast_outs(imax); i < imax; i++) {
-        ProjNode* proj = init->fast_out(i)->isa_Proj();
-        if (proj->_con == TypeFunc::Memory && C->get_alias_index(proj->adr_type()) == Compile::AliasIdxRaw) {
+      auto find_raw_mem = [&, this](ProjNode* proj) {
+        if (C->get_alias_index(proj->adr_type()) == Compile::AliasIdxRaw) {
           assert(existing_raw_mem_proj == nullptr, "");
           existing_raw_mem_proj = proj;
         }
-      }
+        return false;
+      };
+      init->apply_to_projs(find_raw_mem, TypeFunc::Memory);
       Node* raw_mem_proj = new ProjNode(init, TypeFunc::Memory);
       transform_later(raw_mem_proj);
       assert(existing_raw_mem_proj != nullptr, "");

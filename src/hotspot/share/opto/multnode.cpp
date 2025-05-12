@@ -62,17 +62,6 @@ ProjNode* MultiNode::proj_out_or_null(uint which_proj, bool is_io_use) const {
   return apply_to_projs(find_proj, which_proj, is_io_use);
 }
 
-// template<class Callback> ProjNode* MultiNode::apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const {
-//   auto filter = [which_proj, callback](ProjNode* proj) {
-//     if (proj->_con == which_proj && callback(proj)) {
-//       return true;
-//     }
-//     return false;
-//   };
-//   return apply_to_projs(imax, i, filter);
-// }
-
-
 template<class Callback> ProjNode* MultiNode::apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const {
   auto filter = [is_io_use,callback](ProjNode* proj) {
     if (proj->_is_io_use == is_io_use && callback(proj)) {

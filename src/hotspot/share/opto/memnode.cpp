@@ -5460,7 +5460,7 @@ void InitializeNode::replace_mem_projs_by(Node* mem, Compile* C) {
 }
 
 void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
-  DUIterator_Fast imax, i;
+  DUIterator_Fast imax, i = fast_outs(imax);
   auto replace_proj = [mem, igvn, &i, &imax](ProjNode* proj) {
     igvn->replace_node(proj, mem);
     --i; --imax;
@@ -5469,15 +5469,11 @@ void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
   apply_to_projs(imax, i, replace_proj, TypeFunc::Memory);
 }
 
-template<class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback) const {
-  auto filter = [callback](ProjNode* proj) {
-    if (proj->is_NarrowMemProj() && callback(proj->as_NarrowMemProj())) {
-      return true;
-    }
-    return false;
-  };
-  return apply_to_projs(filter);
+template <class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback) const {
+  DUIterator_Fast imax, i = fast_outs(imax);
+  return apply_to_narrow_mem_projs_(UsesIteratorFast(imax, i, this), callback);
 }
+
 
 template<class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const {
   auto filter = [callback, adr_type](NarrowMemProjNode* proj) {

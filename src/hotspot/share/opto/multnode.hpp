@@ -52,9 +52,9 @@ public:
   uint number_of_projs(uint which_proj) const;
   uint number_of_projs(uint which_proj, bool is_io_use) const;
 
-  class IteratorFast {
-    DUIterator_Fast _imax;
-    DUIterator_Fast _i;
+  class UsesIteratorFast {
+    DUIterator_Fast& _imax;
+    DUIterator_Fast& _i;
     const Node* _node;
 
   public:
@@ -67,8 +67,27 @@ public:
     Node* current() {
       return _node->fast_out(_i);;
     }
-    IteratorFast(DUIterator_Fast imax, DUIterator_Fast i, const Node* node)
+    UsesIteratorFast(DUIterator_Fast& imax, DUIterator_Fast& i, const Node* node)
       : _imax(imax), _i(i), _node(node) {
+    }
+  };
+
+  class UsesIterator {
+    DUIterator& _i;
+    const Node* _node;
+
+  public:
+    bool cont() {
+      return _node->has_out(_i);
+    }
+    void next() {
+      _i++;
+    }
+    Node* current() {
+      return _node->out(_i);;
+    }
+    UsesIterator(DUIterator& i, const Node* node)
+      : _i(i), _node(node) {
     }
   };
 
@@ -99,19 +118,26 @@ public:
     DUIterator_Fast imax, i = fast_outs(imax);
     return apply_to_projs(imax, i, callback);
   }
+
   template<class Callback> ProjNode* apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback) const {
-    ApplyToProjs<Callback, IteratorFast> apply_obj(callback, IteratorFast(imax, i, this), this);
-    return apply_obj.do_it();
+    return apply_to_projs_<Callback, UsesIteratorFast>(UsesIteratorFast(imax, i, this), callback);
   }
 
   template <class Callback> ProjNode* apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const;
 
-  template <class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj) const {
-      DUIterator_Fast imax, i = fast_outs(imax);
-      return apply_to_projs(imax, i, callback, which_proj);
+  template<class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj) const {
+    DUIterator_Fast imax, i = fast_outs(imax);
+    return apply_to_projs(imax, i, callback, which_proj);
   }
 
   template <class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const;
+
+protected:
+  template<class Callback, class Iterator> ProjNode* apply_to_projs_(Iterator i, Callback callback) const {
+    ApplyToProjs<Callback, Iterator> apply_obj(callback, i, this);
+    return apply_obj.do_it();
+  }
+
 };
 
 //------------------------------ProjNode---------------------------------------
