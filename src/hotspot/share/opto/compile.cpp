@@ -578,7 +578,7 @@ void Compile::print_compile_messages() {
 #ifndef PRODUCT
 void Compile::print_phase(const char* phase_name) {
   ttyLocker ttyl;
-  tty->print_cr("%lu.\t%s", ++_phase_counter, phase_name);
+  tty->print_cr("%u.\t%s", ++_phase_counter, phase_name);
 }
 
 void Compile::print_ideal_ir(const char* phase_name) {
