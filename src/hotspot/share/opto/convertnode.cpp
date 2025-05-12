@@ -260,42 +260,50 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
 
-  Node* const_input = nullptr;
-  Node* non_const_input = nullptr;
-  // Check for incoming binary operations with one of its input being a floating point constant
-  // and other as a half precision to single precision upcasting node.
-  if (in(1)->req() == 3 && in(1)->in(1)->is_Con() &&  in(1)->in(2)->Opcode() == Op_ConvHF2F) {
-    const_input = in(1)->in(1);
-    non_const_input = in(1)->in(2)->in(1);
-  } else if (in(1)->req() == 3 && in(1)->in(2)->is_Con() &&  in(1)->in(1)->Opcode() == Op_ConvHF2F) {
-    const_input = in(1)->in(2);
-    non_const_input = in(1)->in(1)->in(1);
-  }
-  if (const_input && non_const_input &&
-      const_input->bottom_type()->is_float_constant() &&
-      Matcher::match_rule_supported(Float16NodeFactory::get_float16_binary_oper(in(1)->Opcode())) &&
-      Matcher::match_rule_supported(Op_ReinterpretS2HF) &&
-      Matcher::match_rule_supported(Op_ReinterpretHF2S) &&
-      StubRoutines::hf2f_adr() != nullptr &&
-      StubRoutines::f2hf_adr() != nullptr) {
-    jfloat val = const_input->bottom_type()->getf();
-    // If value lies within Float16 value range convert it to
-    // a half-float constant.
-    if (StubRoutines::hf2f(StubRoutines::f2hf(val)) == val) {
-      Node* new_non_const_inp = phase->transform(new ReinterpretS2HFNode(non_const_input));
-      Node* new_const_inp = phase->makecon(TypeH::make(val));
-      Node* binop = nullptr;
-      if (in(1)->in(1) == const_input) {
-        binop = phase->transform(Float16NodeFactory::make(in(1)->Opcode(), in(1)->in(0), new_const_inp, new_non_const_inp));
-      } else {
-        binop = phase->transform(Float16NodeFactory::make(in(1)->Opcode(), in(1)->in(0), new_non_const_inp, new_const_inp));
+  Node* con_inp = nullptr;
+  Node* var_inp = nullptr;
+  if (Float16NodeFactory::is_float32_binary_oper(in(1)->Opcode())) {
+    Node* f32bOp = in(1);
+    // Check if incoming binary operation has one floating point constant
+    // input and other a half precision to single precision upcasting node.
+    // We land here because prior HalfFloat to Float conversion promotes
+    // integral constant holding Float16 value to a floating point constant
+    // i.e. ConvHF2F ConI(short) => ConF
+    if (f32bOp->in(1)->is_Con() && f32bOp->in(2)->Opcode() == Op_ConvHF2F) {
+      con_inp = f32bOp->in(1);
+      var_inp = f32bOp->in(2)->in(1);
+    } else if (f32bOp->in(2)->is_Con() &&  f32bOp->in(1)->Opcode() == Op_ConvHF2F) {
+      con_inp = f32bOp->in(2);
+      var_inp = f32bOp->in(1)->in(1);
+    }
+
+    if (con_inp && var_inp &&
+        con_inp->bottom_type()->is_float_constant() &&
+        Matcher::match_rule_supported(Float16NodeFactory::get_float16_binary_oper(f32bOp->Opcode())) &&
+        Matcher::match_rule_supported(Op_ReinterpretS2HF) &&
+        Matcher::match_rule_supported(Op_ReinterpretHF2S) &&
+        StubRoutines::hf2f_adr() != nullptr &&
+        StubRoutines::f2hf_adr() != nullptr) {
+      jfloat conF = con_inp->bottom_type()->getf();
+      // If constant lie within Float16 value range, convert it to
+      // a half-float constant.
+      if (StubRoutines::hf2f(StubRoutines::f2hf(conF)) == conF) {
+        Node* new_var_inp = phase->transform(new ReinterpretS2HFNode(var_inp));
+        Node* new_con_inp = phase->makecon(TypeH::make(conF));
+        Node* f16bOp = nullptr;
+        if (f32bOp->in(1) == con_inp) {
+          f16bOp = phase->transform(Float16NodeFactory::make(f32bOp->Opcode(), f32bOp->in(0), new_con_inp, new_var_inp));
+        } else {
+          f16bOp = phase->transform(Float16NodeFactory::make(f32bOp->Opcode(), f32bOp->in(0), new_var_inp, new_con_inp));
+        }
+        return new ReinterpretHF2SNode(f16bOp);
       }
-      return new ReinterpretHF2SNode(binop);
     }
   }
 
   return nullptr;
 }
+
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvF2INode::Value(PhaseGVN* phase) const {
