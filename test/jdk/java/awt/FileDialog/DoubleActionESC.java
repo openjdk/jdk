@@ -34,6 +34,8 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.concurrent.CountDownLatch;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /*
  * @test
  * @bug 5097243
@@ -51,6 +53,7 @@ public class DoubleActionESC {
     private static volatile Dimension d;
     private static volatile CountDownLatch latch;
     private static final int REPEAT_COUNT = 2;
+    private static final long LATCH_TIMEOUT = 4;
 
     public static void main(String[] args) throws Exception {
         latch = new CountDownLatch(REPEAT_COUNT);
@@ -83,7 +86,7 @@ public class DoubleActionESC {
                 robot.delay(1000);
             }
 
-            latch.await();
+            latch.await(LATCH_TIMEOUT, SECONDS);
             if (fd.isVisible()) {
                 throw new RuntimeException("File Dialog is not closed");
             }
