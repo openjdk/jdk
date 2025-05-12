@@ -558,7 +558,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeature = { "avx", "true" },
+    @IR(applyIfCPUFeature = { "avx2", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_L2B, IRNode.VECTOR_SIZE + "min(max_long, max_byte)", ">0" })
     public Object[] testLongToByte(long[] longs, byte[] res) {
@@ -668,7 +668,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeature = { "avx", "true" },
+    @IR(applyIfCPUFeature = { "avx2", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_B2L, IRNode.VECTOR_SIZE + "min(max_byte, max_long)", ">0" })
     public Object[] testByteToLong(byte[] bytes, long[] res) {
