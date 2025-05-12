@@ -79,6 +79,7 @@ static address kyberAvx512ConstsAddr() {
 }
 
 ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512NttPerms[] = {
+// 0
     0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
     0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
     0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
@@ -128,7 +129,6 @@ ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512NttPerms[] = {
 static address kyberAvx512NttPermsAddr() {
   return (address) kyberAvx512NttPerms;
 }
-
 
 ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512InverseNttPerms[] = {
 // 0
@@ -182,7 +182,33 @@ static address kyberAvx512InverseNttPermsAddr() {
   return (address) kyberAvx512InverseNttPerms;
 }
 
-ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_12To16Perms[] = {
+ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_nttMultPerms[] = {
+    0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0E,
+    0x10, 0x12, 0x14, 0x16, 0x18, 0x1A, 0x1C, 0x1E,
+    0x20, 0x22, 0x24, 0x26, 0x28, 0x2A, 0x2C, 0x2E,
+    0x30, 0x32, 0x34, 0x36, 0x38, 0x3A, 0x3C, 0x3E,
+
+    0x01, 0x03, 0x05, 0x07, 0x09, 0x0B, 0x0D, 0x0F,
+    0x11, 0x13, 0x15, 0x17, 0x19, 0x1B, 0x1D, 0x1F,
+    0x21, 0x23, 0x25, 0x27, 0x29, 0x2B, 0x2D, 0x2F,
+    0x31, 0x33, 0x35, 0x37, 0x39, 0x3B, 0x3D, 0x3F,
+
+    0x00, 0x20, 0x01, 0x21, 0x02, 0x22, 0x03, 0x23,
+    0x04, 0x24, 0x05, 0x25, 0x06, 0x26, 0x07, 0x27,
+    0x08, 0x28, 0x09, 0x29, 0x0A, 0x2A, 0x0B, 0x2B,
+    0x0C, 0x2C, 0x0D, 0x2D, 0x0E, 0x2E, 0x0F, 0x2F,
+
+    0x10, 0x30, 0x11, 0x31, 0x12, 0x32, 0x13, 0x33,
+    0x14, 0x34, 0x15, 0x35, 0x16, 0x36, 0x17, 0x37,
+    0x18, 0x38, 0x19, 0x39, 0x1A, 0x3A, 0x1B, 0x3B,
+    0x1C, 0x3C, 0x1D, 0x3D, 0x1E, 0x3E, 0x1F, 0x3F
+  };
+
+static address kyberAvx512_nttMultPermsAddr() {
+  return (address) kyberAvx512_nttMultPerms;
+}
+
+  ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_12To16Perms[] = {
 // 0
     0x00, 0x03, 0x06, 0x09, 0x0C, 0x0F, 0x12, 0x15,
     0x18, 0x1B, 0x1E, 0x21, 0x24, 0x27, 0x2A, 0x2D,
@@ -223,31 +249,6 @@ ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_12To16Perms[] = {
 
 static address kyberAvx512_12To16PermsAddr() {
   return (address) kyberAvx512_12To16Perms;
-}
-ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512_nttMultPerms[] = {
-    0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0E,
-    0x10, 0x12, 0x14, 0x16, 0x18, 0x1A, 0x1C, 0x1E,
-    0x20, 0x22, 0x24, 0x26, 0x28, 0x2A, 0x2C, 0x2E,
-    0x30, 0x32, 0x34, 0x36, 0x38, 0x3A, 0x3C, 0x3E,
-
-    0x01, 0x03, 0x05, 0x07, 0x09, 0x0B, 0x0D, 0x0F,
-    0x11, 0x13, 0x15, 0x17, 0x19, 0x1B, 0x1D, 0x1F,
-    0x21, 0x23, 0x25, 0x27, 0x29, 0x2B, 0x2D, 0x2F,
-    0x31, 0x33, 0x35, 0x37, 0x39, 0x3B, 0x3D, 0x3F,
-
-    0x00, 0x20, 0x01, 0x21, 0x02, 0x22, 0x03, 0x23,
-    0x04, 0x24, 0x05, 0x25, 0x06, 0x26, 0x07, 0x27,
-    0x08, 0x28, 0x09, 0x29, 0x0A, 0x2A, 0x0B, 0x2B,
-    0x0C, 0x2C, 0x0D, 0x2D, 0x0E, 0x2E, 0x0F, 0x2F,
-
-    0x10, 0x30, 0x11, 0x31, 0x12, 0x32, 0x13, 0x33,
-    0x14, 0x34, 0x15, 0x35, 0x16, 0x36, 0x17, 0x37,
-    0x18, 0x38, 0x19, 0x39, 0x1A, 0x3A, 0x1B, 0x3B,
-    0x1C, 0x3C, 0x1D, 0x3D, 0x1E, 0x3E, 0x1F, 0x3F
-  };
-
-static address kyberAvx512_nttMultPermsAddr() {
-  return (address) kyberAvx512_nttMultPerms;
 }
 
 static void load4regs(int destRegs[], Register address, int offset,
@@ -791,8 +792,9 @@ address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
 // Kyber parse XOF output to polynomial coefficient candidates.
 //
 // condensed (byte[168]) = c_rarg0
-// parsed (short[112]) = c_rarg1
-// kyberConsts (short[]) = c_rarg2
+// condensedOffs (int) = c_rarg1
+// parsed (short[112]) = c_rarg2
+// parsedLength (int) = c_rarg3
 address generate_kyber12To16_avx512(StubGenerator *stubgen,
                                     MacroAssembler *_masm) {
 
@@ -837,38 +839,35 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
     __ evmovdquw(xmm3, xmm24, Assembler::AVX_512bit);
     __ evmovdquw(xmm4, xmm25, Assembler::AVX_512bit);
     __ evmovdquw(xmm5, xmm26, Assembler::AVX_512bit);
-    __ evmovdquw(xmm6, xmm27, Assembler::AVX_512bit);
-    __ evmovdquw(xmm7, xmm28, Assembler::AVX_512bit);
     __ evmovdquw(xmm11, xmm24, Assembler::AVX_512bit);
     __ evmovdquw(xmm12, xmm25, Assembler::AVX_512bit);
     __ evmovdquw(xmm13, xmm26, Assembler::AVX_512bit);
-    __ evmovdquw(xmm14, xmm27, Assembler::AVX_512bit);
-    __ evmovdquw(xmm15, xmm28, Assembler::AVX_512bit);
     __ evpermi2w(xmm3, xmm0, xmm1, Assembler::AVX_512bit);
     __ evpermi2w(xmm4, xmm0, xmm1, Assembler::AVX_512bit);
     __ evpermi2w(xmm5, xmm0, xmm1, Assembler::AVX_512bit);
     __ evpermi2w(xmm11, xmm8, xmm9, Assembler::AVX_512bit);
     __ evpermi2w(xmm12, xmm8, xmm9, Assembler::AVX_512bit);
     __ evpermi2w(xmm13, xmm8, xmm9, Assembler::AVX_512bit);
-    __ evpermi2w(xmm6, xmm3, xmm2, Assembler::AVX_512bit);
-    __ evpermi2w(xmm7, xmm4, xmm2, Assembler::AVX_512bit);
+    __ evpermt2w(xmm3, xmm27, xmm2, Assembler::AVX_512bit);
+    __ evpermt2w(xmm4, xmm28, xmm2, Assembler::AVX_512bit);
     __ evpermt2w(xmm5, xmm29, xmm2, Assembler::AVX_512bit);
-    __ evpermi2w(xmm14, xmm11, xmm10, Assembler::AVX_512bit);
-    __ evpermi2w(xmm15, xmm12, xmm10, Assembler::AVX_512bit);
+    __ evpermt2w(xmm11, xmm27, xmm10, Assembler::AVX_512bit);
+    __ evpermt2w(xmm12, xmm28, xmm10, Assembler::AVX_512bit);
     __ evpermt2w(xmm13, xmm29, xmm10, Assembler::AVX_512bit);
-    __ evpsraw(xmm2, k0, xmm7, 4, false, Assembler::AVX_512bit);
-    __ evpsllw(xmm0, k0, xmm7, 8, false, Assembler::AVX_512bit);
+
+    __ evpsraw(xmm2, k0, xmm4, 4, false, Assembler::AVX_512bit);
+    __ evpsllw(xmm0, k0, xmm4, 8, false, Assembler::AVX_512bit);
     __ evpsllw(xmm1, k0, xmm5, 4, false, Assembler::AVX_512bit);
-    __ evpsllw(xmm8, k0, xmm15, 8, false, Assembler::AVX_512bit);
-    __ evpsraw(xmm10, k0, xmm15, 4, false, Assembler::AVX_512bit);
+    __ evpsllw(xmm8, k0, xmm12, 8, false, Assembler::AVX_512bit);
+    __ evpsraw(xmm10, k0, xmm12, 4, false, Assembler::AVX_512bit);
     __ evpsllw(xmm9, k0, xmm13, 4, false, Assembler::AVX_512bit);
     __ evpandq(xmm0, k0, xmm0, xmm23, false, Assembler::AVX_512bit);
     __ evpandq(xmm8, k0, xmm8, xmm23, false, Assembler::AVX_512bit);
     __ evpaddw(xmm1, k0, xmm1, xmm2, false, Assembler::AVX_512bit);
-    __ evpaddw(xmm0, k0, xmm0, xmm6, false, Assembler::AVX_512bit);
-    __ evpaddw(xmm9, k0, xmm9, xmm10, false, Assembler::AVX_512bit);
-    __ evpaddw(xmm8, k0, xmm8, xmm14, false, Assembler::AVX_512bit);
+    __ evpaddw(xmm0, k0, xmm0, xmm3, false, Assembler::AVX_512bit);
     __ evmovdquw(xmm2, xmm30, Assembler::AVX_512bit);
+    __ evpaddw(xmm9, k0, xmm9, xmm10, false, Assembler::AVX_512bit);
+    __ evpaddw(xmm8, k0, xmm8, xmm11, false, Assembler::AVX_512bit);
     __ evmovdquw(xmm10, xmm30, Assembler::AVX_512bit);
     __ evpermi2w(xmm2, xmm0, xmm1, Assembler::AVX_512bit);
     __ evpermt2w(xmm0, xmm31, xmm1, Assembler::AVX_512bit);
