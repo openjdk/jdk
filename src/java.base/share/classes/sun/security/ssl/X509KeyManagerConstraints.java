@@ -48,7 +48,17 @@ import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.util.KnownOIDs;
 import sun.security.validator.Validator;
 
+/**
+ * Layer that adds algorithm constraints functionality and certificate
+ * key usage check to a key manager. Algorithm constraints check can be
+ * disabled by setting "jdk.tls.keymanager.disableConstraintsChecking"
+ * system property to "true".
+ */
+
 abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
+
+    private static final String PROPERTY_KEYMANAGER_DISABLE_CONSTRAINTS =
+            "jdk.tls.keymanager.disableConstraintsChecking";
 
     // Indicates whether we should skip the constraints check.
     private final boolean constraintsDisabled;
@@ -159,7 +169,7 @@ abstract class X509KeyManagerConstraints extends X509ExtendedKeyManager {
 
     protected boolean isConstraintsDisabled() {
         return "true".equals(System.getProperty(
-                "jdk.tls.keymanager.disableConstraintsChecking"));
+                PROPERTY_KEYMANAGER_DISABLE_CONSTRAINTS));
     }
 
     // enum for the result of the extension check

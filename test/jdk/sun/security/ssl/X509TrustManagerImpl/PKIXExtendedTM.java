@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1114,13 +1114,15 @@ public class PKIXExtendedTM {
     };
 
     public static void main(String args[]) throws Exception {
+        // Disable KeyManager's algorithm constraints checking as this test
+        // is about TrustManager's constraints check.
+        System.setProperty(
+                "jdk.tls.keymanager.disableConstraintsChecking", "true");
+
         if (args.length != 1) {
             throw new Exception("Incorrect number of arguments");
         }
         Test test = tests[Integer.parseInt(args[0])];
-        // Disable KeyManager's algorithm constraints checking.
-        System.setProperty(
-                "jdk.tls.keymanager.disableConstraintsChecking", "true");
         Security.setProperty("jdk.tls.disabledAlgorithms", test.tlsDisAlgs);
         Security.setProperty("jdk.certpath.disabledAlgorithms",
                              test.certPathDisAlgs);
