@@ -82,8 +82,6 @@ public class AOTCodeCompressedOopsTest {
         }
     }
     static class Tester extends CDSAppTester {
-        Base baseInAsmPhase, baseInProdPhase;
-        Shift shiftInAsmPhase, shiftInProdPhase;
         boolean zeroBaseInAsmPhase, zeroBaseInProdPhase;
         boolean zeroShiftInAsmPhase, zeroShiftInProdPhase;
 
