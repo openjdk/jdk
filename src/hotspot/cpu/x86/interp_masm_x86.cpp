@@ -801,12 +801,12 @@ void InterpreterMacroAssembler::call_VM_with_sender_Java_fp(Register fp_reg, Reg
   bind(L_ljf);
 #endif
 
-  movptr(Address(r15_thread, JavaThread::last_Java_fp_offset()), fp_reg);
+  Address last_java_fp_offset(r15_thread, JavaThread::last_Java_fp_offset());
+  movptr(last_java_fp_offset, fp_reg);
   movptr(fp_reg, Address(rsp, 0)); // last_java_pc
   movptr(Address(r15_thread, JavaThread::last_Java_pc_offset()), fp_reg);
   movptr(Address(r15_thread, JavaThread::last_Java_sp_offset()), last_java_sp);
   MacroAssembler::call_VM_leaf_base(entry_point, 0);
-  Address last_java_fp_offset(r15_thread, JavaThread::last_Java_fp_offset());
   movptr(fp_reg, last_java_fp_offset); // restore fp_reg
   reset_last_Java_frame(true);
   JFR_ONLY(movptr(last_sender_Java_fp_offset, NULL_WORD);)

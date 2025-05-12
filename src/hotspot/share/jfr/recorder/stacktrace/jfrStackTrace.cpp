@@ -80,7 +80,6 @@ JfrStackTrace::JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrSt
 JfrStackTrace::~JfrStackTrace() {
   if (_frames_ownership) {
     delete _frames;
-    return;
   }
 }
 
