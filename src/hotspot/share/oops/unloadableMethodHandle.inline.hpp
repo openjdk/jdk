@@ -34,12 +34,12 @@
 #include "runtime/javaThread.inline.hpp"
 
 inline UnloadableMethodHandle::UnloadableMethodHandle() :
-  _spin_lock(0), _spin_lock_owner(nullptr), _method(nullptr) {
+  _spin_lock(0) DEBUG_ONLY(COMMA _spin_lock_owner(nullptr)), _method(nullptr) {
   set_state(EMPTY);
 }
 
 inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) :
-  _spin_lock(0), _spin_lock_owner(nullptr), _method(method) {
+  _spin_lock(0) DEBUG_ONLY(COMMA _spin_lock_owner(nullptr)), _method(method) {
   assert(method != nullptr, "Should be");
 
   oop obj = get_unload_blocker(method);
