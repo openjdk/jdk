@@ -862,7 +862,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             profiles[cmpBaselineName].configure_args = concat(
                 profiles[cmpBaselineName].configure_args,
                 "--with-hotspot-build-time=n/a",
-                "--disable-precompiled-headers");
+                "--disable-precompiled-headers",
+                "--with-source-date=version");
             // Do not inherit artifact definitions from base profile
             delete profiles[cmpBaselineName].artifacts;
         });
