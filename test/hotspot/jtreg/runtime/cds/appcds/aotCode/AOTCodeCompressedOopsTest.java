@@ -36,7 +36,7 @@
  *             JavacBenchApp$ClassFile
  *             JavacBenchApp$FileManager
  *             JavacBenchApp$SourceFile
- * @run driver AOTCodeCompressedOopsTest 
+ * @run driver AOTCodeCompressedOopsTest
  */
 
 import java.util.ArrayList;
@@ -46,14 +46,6 @@ import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class AOTCodeCompressedOopsTest {
-    private enum Base {
-        ZERO,
-        NON_ZERO
-    }
-    private enum Shift {
-        ZERO,
-        NON_ZERO
-    }
     public static void main(String... args) throws Exception {
         {
             Tester t = new Tester();
