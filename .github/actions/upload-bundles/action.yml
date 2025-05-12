@@ -79,7 +79,7 @@ runs:
           mv "$static_libs_bundle" "bundles/static-libs-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
         fi
 
-        if [[ "$jdk_bundle_zip$jdk_bundle_tar_gz$symbols_bundle$tests_bundle$static_libs_bundle" != "" ]]; then
+        if [[ "$jdk_bundle_zip$jdk_bundle_tar_gz$static_jdk_bundle_zip$static_jdk_bundle_tar_gz$symbols_bundle$tests_bundle$static_libs_bundle" != "" ]]; then
           echo 'bundles-found=true' >> $GITHUB_OUTPUT
         else
           echo 'bundles-found=false' >> $GITHUB_OUTPUT
