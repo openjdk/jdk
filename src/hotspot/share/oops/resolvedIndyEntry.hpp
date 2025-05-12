@@ -69,8 +69,8 @@ public:
 
   // Bit shift to get flags
   enum {
-    resolution_failed_shift    = 0,
-    has_appendix_shift        = 1,
+    resolution_failed_shift = 0,
+    has_appendix_shift      = 1,
   };
 
   // Getters
