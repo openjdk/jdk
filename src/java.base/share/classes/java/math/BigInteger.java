@@ -2638,7 +2638,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     ? new BigInteger(result << bitsToShift, newSign)
                     : new BigInteger(result, newSign).shiftLeft(bitsToShift);
         }
-        // (this.abs().bitLength() - 1L) * exponent + 1L > Integer.MAX_VALUE
+        // (bitLength(mag, mag.length) - 1L) * exponent + 1L > Integer.MAX_VALUE
         if (scaleFactor + bitsToShift - exponent >= Integer.MAX_VALUE) {
             reportOverflow();
         }
