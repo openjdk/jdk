@@ -132,6 +132,17 @@ public class TestTutorial {
         var templateCompare = Template.make("arg", (Integer arg) -> body(
             "System.out.println(", arg, ");\n",  // capture arg via lambda argument
             "System.out.println(#arg);\n",       // capture arg via hashtag replacement
+            // The Template Framework allows two ways of formatting Strings, either
+            // by appending to the comma-separated list of Tokens, or by hashtag
+            // replacements. Appending as a Token works whenever one has a reference
+            // to the Object in Java code. But often, this is rather cumbersome and
+            // looks awkward, given al the additional quotes and commans required.
+            // Optimal would have been Java String Templates, but since those do not
+            // currently exist, we use hashtag replacements. These can be either
+            // defined by capturing arguments as string names, or by a "let" definition,
+            // see further down for examples. Which one should be preferred is a code
+            // style question. Generally, we prefer the use of hashtag replacements
+            // because that allows easy use of multiline strings (i.e. text blocks).
             "if (#arg != ", arg, ") { throw new RuntimeException(\"mismatch\"); }\n"
         ));
 
