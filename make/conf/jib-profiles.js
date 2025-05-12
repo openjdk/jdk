@@ -1152,10 +1152,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             module: "devkit-" + devkit_cross_prefix + devkit_platform,
-            revision: devkit_platform_revisions[devkit_platform],
-            environment: {
-                "DEVKIT_HOME": input.get("devkit", "home_path"),
-            }
+            revision: devkit_platform_revisions[devkit_platform]
         },
 
         build_devkit: {
