@@ -2568,6 +2568,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_unsafecopy_common_error_exit() {
     address start_pc = __ pc();
+      __ leave();
       __ mov(r0, 0);
       __ ret(lr);
     return start_pc;
@@ -2597,6 +2598,8 @@ class StubGenerator: public StubCodeGenerator {
 
     UnsafeMemoryAccessMark umam(this, true, false);
 
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
     __ dup(v0, __ T16B, value);
 
     __ subs(count, count, (u1)64);
@@ -2613,7 +2616,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ bind(tail);
-    __ add(count, count, 64);
+    // __ add(count, count, 64);
 
     {
       Label dont;
@@ -2661,6 +2664,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ bind(finished);
+    __ leave();
     __ ret(lr);
 
     return start;
