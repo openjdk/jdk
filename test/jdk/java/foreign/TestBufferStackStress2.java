@@ -27,7 +27,7 @@
  * @comment If the VM does not have continuations, then VTs will be scheduled on OS threads.
  * @requires vm.continuations
  *
- * @bug 8356114, 8356658
+ * @bug 8356114 8356658
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper TestBufferStackStress2
  * @run junit TestBufferStackStress2
