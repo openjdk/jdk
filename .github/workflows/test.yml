@@ -168,7 +168,10 @@ jobs:
             echo "value=$PATH" >> $GITHUB_OUTPUT
           fi
           if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
-            echo "static-problemlist-path=`pwd`/test/hotspot/jtreg/ProblemList-StaticJdk.txt" >> $GITHUB_OUTPUT
+            echo "static-hotspot-problemlist-path=`pwd`/test/hotspot/jtreg/ProblemList-StaticJdk.txt" >> $GITHUB_OUTPUT
+            echo "static-jdk-problemlist-path=`pwd`/test/jdk/ProblemList-StaticJdk.txt" >> $GITHUB_OUTPUT
+            echo "static-langtools-problemlist-path=`pwd`/test/langtools/ProblemList-StaticJdk.txt" >> $GITHUB_OUTPUT
+            echo "static-lib-test-problemlist-path=`pwd`/test/lib-test/ProblemList-StaticJdk.txt" >> $GITHUB_OUTPUT
           fi
 
       - name: 'Run tests on static JDK'
@@ -184,7 +187,7 @@ jobs:
           JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
           SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
           TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
-          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;EXTRA_PROBLEM_LISTS=${{ steps.path.outputs.static-problemlist-path }}'
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;EXTRA_PROBLEM_LISTS=${{ steps.path.outputs.static-hotspot-problemlist-path }}%20${{ steps.path.outputs.static-jdk-problemlist-path }}%20${{ steps.path.outputs.static-langtools-problemlist-path }}%20${{ steps.path.outputs.static-lib-test-problemlist-path }}'
           && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}
