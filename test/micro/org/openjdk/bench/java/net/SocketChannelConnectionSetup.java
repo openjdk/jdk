@@ -55,7 +55,7 @@ public class SocketChannelConnectionSetup {
     private SocketChannel s1, s2;
 
     @Param({"INET", "UNIX"})
-    private volatile String family;
+    private String family;
 
     @Setup(Level.Trial)
     public void beforeRun() throws IOException {
