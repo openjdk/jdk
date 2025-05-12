@@ -97,21 +97,24 @@ const char* KlassInfoEntry::name() const {
 
 void KlassInfoEntry::print_on(outputStream* st) const {
   ResourceMark rm;
+  const narrowKlass nk = CompressedKlassPointers::is_encodable(_klass) ? CompressedKlassPointers::encode(_klass) : 0;
 
   // simplify the formatting (ILP32 vs LP64) - always cast the numbers to 64-bit
   ModuleEntry* module = _klass->module();
   if (module->is_named()) {
-    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s (%s%s%s)",
+    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  " PTR_FORMAT "  %u  %s (%s%s%s)",
                  (int64_t)_instance_count,
                  (uint64_t)_instance_words * HeapWordSize,
+                 p2i(_klass), nk,
                  name(),
                  module->name()->as_C_string(),
                  module->version() != nullptr ? "@" : "",
                  module->version() != nullptr ? module->version()->as_C_string() : "");
   } else {
-    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s",
+    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  " PTR_FORMAT "  %u  %s",
                  (int64_t)_instance_count,
                  (uint64_t)_instance_words * HeapWordSize,
+                 p2i(_klass), nk,
                  name());
   }
 }
@@ -492,8 +495,9 @@ void KlassHierarchy::print_class(outputStream* st, KlassInfoEntry* cie, bool pri
 }
 
 void KlassInfoHisto::print_histo_on(outputStream* st) {
-  st->print_cr(" num     #instances         #bytes  class name (module)");
-  st->print_cr("-------------------------------------------------------");
+  int len_divider = 0;
+  st->print_cr(" num     #instances         #bytes      Klass             nKlass     class name (module)");
+  st->print_cr(" ---------------------------------------------------------------------------------------");
   print_elements(st);
 }
 
