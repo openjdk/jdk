@@ -735,7 +735,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="su" to="su_Latn_ID"/>		<!--Sundanese‧?‧?	➡ Sundanese‧Latin‧Indonesia-->
 		<likelySubtag from="suk" to="suk_Latn_TZ"/>		<!--Sukuma‧?‧?	➡ Sukuma‧Latin‧Tanzania-->
 		<likelySubtag from="sus" to="sus_Latn_GN"/>		<!--Susu‧?‧?	➡ Susu‧Latin‧Guinea-->
-		<likelySubtag from="suz" to="suz_Sunu_NP"/>		<!--Sunwar‧?‧?	➡ Sunwar‧Sunuwar‧Nepal-->
+		<likelySubtag from="suz" to="suz_Deva_NP"/>		<!--Sunwar‧?‧?	➡ Sunwar‧Devanagari‧Nepal-->
 		<likelySubtag from="sv" to="sv_Latn_SE"/>		<!--Swedish‧?‧?	➡ Swedish‧Latin‧Sweden-->
 		<likelySubtag from="sw" to="sw_Latn_TZ"/>		<!--Swahili‧?‧?	➡ Swahili‧Latin‧Tanzania-->
 		<likelySubtag from="swb" to="swb_Arab_YT"/>		<!--Comorian‧?‧?	➡ Comorian‧Arabic‧Mayotte-->
