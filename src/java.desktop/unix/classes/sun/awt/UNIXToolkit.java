@@ -70,7 +70,7 @@ public abstract class UNIXToolkit extends SunToolkit
         ANY(0),
         GTK3(Constants.GTK3_MAJOR_NUMBER);
 
-        static class Constants {
+        static final class Constants {
             static final int GTK3_MAJOR_NUMBER = 3;
         }
 

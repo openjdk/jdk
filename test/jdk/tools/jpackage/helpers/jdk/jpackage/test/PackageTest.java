@@ -42,7 +42,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -365,27 +364,37 @@ public final class PackageTest extends RunnablePackageTest {
 
     public static class Group extends RunnablePackageTest {
         public Group(PackageTest... tests) {
-            handlers = Stream.of(tests)
-                    .map(PackageTest::createPackageTypeHandlers)
-                    .flatMap(List<Consumer<Action>>::stream)
-                    .collect(Collectors.toUnmodifiableList());
+            typeHandlers = Stream.of(PackageType.values()).map(type -> {
+                return Map.entry(type, Stream.of(tests).map(test -> {
+                    return test.createPackageTypeHandler(type);
+                }).filter(Optional::isPresent).map(Optional::orElseThrow).toList());
+            }).filter(e -> {
+                return !e.getValue().isEmpty();
+            }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
 
         @Override
         protected void runAction(Action... action) {
-            if (Set.of(action).contains(Action.UNINSTALL)) {
-                ListIterator<Consumer<Action>> listIterator = handlers.listIterator(
-                        handlers.size());
+            typeHandlers.entrySet().stream()
+                    .sorted(Comparator.comparing(Map.Entry::getKey))
+                    .map(Map.Entry::getValue).forEachOrdered(handlers -> {
+                        runAction(handlers, List.of(action));
+                    });
+        }
+
+        private static void runAction(List<Consumer<Action>> handlers, List<Action> actions) {
+            if (actions.contains(Action.UNINSTALL)) {
+                final var listIterator = handlers.listIterator(handlers.size());
                 while (listIterator.hasPrevious()) {
-                    var handler = listIterator.previous();
-                    List.of(action).forEach(handler::accept);
+                    final var handler = listIterator.previous();
+                    actions.forEach(handler::accept);
                 }
             } else {
-                handlers.forEach(handler -> List.of(action).forEach(handler::accept));
+                handlers.forEach(handler -> actions.forEach(handler::accept));
             }
         }
 
-        private final List<Consumer<Action>> handlers;
+        private final Map<PackageType, List<Consumer<Action>>> typeHandlers;
     }
 
     PackageTest packageHandlers(PackageHandlers v) {
@@ -455,16 +464,22 @@ public final class PackageTest extends RunnablePackageTest {
         throw new UnsupportedOperationException();
     }
 
+    private Optional<Consumer<Action>> createPackageTypeHandler(PackageType type) {
+        Objects.requireNonNull(type);
+        return Optional.ofNullable(handlers.get(type)).filter(Predicate.not(Handler::isVoid)).map(h -> {
+            return createPackageTypeHandler(type, h);
+        });
+    }
+
     private List<Consumer<Action>> createPackageTypeHandlers() {
         if (handlers.keySet().stream().noneMatch(isPackageTypeEnabled)) {
             PackageType.throwSkippedExceptionIfNativePackagingUnavailable();
         }
-        return handlers.entrySet().stream()
-                .filter(entry -> !entry.getValue().isVoid())
-                .sorted(Comparator.comparing(Map.Entry::getKey))
-                .map(entry -> {
-                    return  createPackageTypeHandler(entry.getKey(), entry.getValue());
-                }).toList();
+        return Stream.of(PackageType.values()).sorted()
+                .map(this::createPackageTypeHandler)
+                .filter(Optional::isPresent)
+                .map(Optional::orElseThrow)
+                .toList();
     }
 
     private record PackageTypePipeline(PackageType type, int expectedJPackageExitCode,

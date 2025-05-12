@@ -45,7 +45,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 import sun.util.logging.PlatformLogger;
 
-public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
+public final class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
 
     /************************************************
      *
