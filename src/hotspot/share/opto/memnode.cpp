@@ -5453,15 +5453,18 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
 
 void InitializeNode::replace_mem_projs_by(Node* mem, Compile* C) {
   auto replace_proj = [C, mem](ProjNode* proj) {
-    if (proj->_con == TypeFunc::Memory) {
-      C->gvn_replace_by(proj, mem);
-    }
+    C->gvn_replace_by(proj, mem);
     return false;
   };
-  apply_to_projs(replace_proj);
+  apply_to_projs(replace_proj, TypeFunc::Memory);
 }
 
 void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
+  // auto replace_proj = [igvn, mem](ProjNode* proj, ApplyToProjsBase* apply) {
+  //   igvn->replace_node(proj, mem);
+  //   apply->remove_uses(1);
+  // };
+  // ApplyToProjs apply(replace_proj, this);
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     ProjNode* proj = fast_out(i)->as_Proj();
     if (proj->_con == TypeFunc::Memory) {
