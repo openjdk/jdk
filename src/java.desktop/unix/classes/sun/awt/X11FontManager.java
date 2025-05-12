@@ -673,6 +673,7 @@ public final class X11FontManager extends FcFontManager {
     }
 
     // Implements SunGraphicsEnvironment.createFontConfiguration.
+    @Override
     protected FontConfiguration createFontConfiguration() {
         /* The logic here decides whether to use a preconfigured
          * fontconfig.properties file, or synthesise one using platform APIs.
@@ -697,6 +698,7 @@ public final class X11FontManager extends FcFontManager {
         return mFontConfig;
     }
 
+    @Override
     public FontConfiguration
         createFontConfiguration(boolean preferLocaleFonts,
                                 boolean preferPropFonts) {
@@ -705,6 +707,7 @@ public final class X11FontManager extends FcFontManager {
                                       preferLocaleFonts, preferPropFonts);
     }
 
+    @Override
     protected synchronized String getFontPath(boolean noType1Fonts) {
         isHeadless(); // make sure GE is inited, as its the X11 lock.
         return getFontPathNative(noType1Fonts, true);
