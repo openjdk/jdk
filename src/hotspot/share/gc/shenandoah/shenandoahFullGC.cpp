@@ -239,7 +239,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     worker_slices[i] = new ShenandoahHeapRegionSet();
   }
 
-  ShenandoahGenerationalHeap::TransferResult result;;
+  ShenandoahGenerationalHeap::TransferResult result;
   {
     // The rest of code performs region moves, where region status is undefined
     // until all phases run together.

@@ -232,7 +232,7 @@ public:
   }
 
   // Acquire heap lock and return available_in, assuming heap lock is not acquired by the caller.
-  inline size_t available_in_under_lock(ShenandoahFreeSetPartitionId which_partition) const {
+  inline size_t available_in_not_locked(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
     shenandoah_assert_not_heaplocked();
 #ifdef ASSERT
@@ -478,7 +478,7 @@ public:
   // locked action can be seen by these unlocked functions.
   inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);             }
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
-  inline size_t available() const { return _partitions.available_in_under_lock(ShenandoahFreeSetPartitionId::Mutator); }
+  inline size_t available() const { return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator); }
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
