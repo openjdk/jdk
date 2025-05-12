@@ -50,6 +50,8 @@ public class SocketChannelConnectionSetup {
 
     private ServerSocketChannel ssc;
 
+    private Path sscFilePath;
+
     private SocketChannel s1, s2;
 
     @Param({"INET", "UNIX"})
@@ -59,16 +61,19 @@ public class SocketChannelConnectionSetup {
     public void beforeRun() throws IOException {
         StandardProtocolFamily typedFamily = StandardProtocolFamily.valueOf(family);
         ssc = ServerSocketChannel.open(typedFamily).bind(null);
+        // Record the UDS file path right after binding, as the socket may be
+        // closed later due to a failure, and subsequent calls to `getPath()`
+        // will throw.
+        sscFilePath = ssc.getLocalAddress() instanceof UnixDomainSocketAddress udsChannel
+                ? udsChannel.getPath()
+                : null;
     }
 
     @TearDown(Level.Trial)
     public void afterRun() throws Exception {
-        Path udsFilePath = ssc.getLocalAddress() instanceof UnixDomainSocketAddress udsChannel
-                ? udsChannel.getPath()
-                : null;
         ssc.close();
-        if (udsFilePath != null) {
-            Files.delete(udsFilePath);
+        if (sscFilePath != null) {
+            Files.delete(sscFilePath);
         }
     }
 

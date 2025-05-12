@@ -47,6 +47,7 @@ import org.openjdk.jmh.annotations.*;
 public class UnixSocketChannelReadWrite {
 
     private ServerSocketChannel ssc;
+    private Path sscFilePath;
     private SocketChannel s1, s2;
     private ReadThread rt;
     private ByteBuffer bb = ByteBuffer.allocate(1);
@@ -54,6 +55,10 @@ public class UnixSocketChannelReadWrite {
     @Setup(Level.Trial)
     public void beforeRun() throws IOException {
         ssc = ServerSocketChannel.open(StandardProtocolFamily.UNIX).bind(null);
+        // Record the UDS file path right after binding, as the socket may be
+        // closed later due to a failure, and subsequent calls to `getPath()`
+        // will throw.
+        sscFilePath = ((UnixDomainSocketAddress) ssc.getLocalAddress()).getPath();
         s1 = SocketChannel.open(ssc.getLocalAddress());
         s2 = ssc.accept();
 
@@ -68,9 +73,8 @@ public class UnixSocketChannelReadWrite {
     public void afterRun() throws IOException, InterruptedException {
         s1.close();
         s2.close();
-        Path udsFilePath = ((UnixDomainSocketAddress) ssc.getLocalAddress()).getPath();
         ssc.close();
-        Files.delete(udsFilePath);
+        Files.delete(sscFilePath);
         rt.join();
     }
 
