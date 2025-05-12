@@ -1557,19 +1557,21 @@ struct CodeBlobStub {
       name(os::strdup(blob->name())),
       size(blob->size()),
       blob_type(static_cast<jint>(WhiteBox::get_blob_type(blob))),
-      address((jlong) blob) { }
+      address((jlong) blob),
+      is_nmethod((jboolean) blob->is_nmethod()) { }
   ~CodeBlobStub() { os::free((void*) name); }
   const char* const name;
   const jint        size;
   const jint        blob_type;
   const jlong       address;
+  const jboolean    is_nmethod;
 };
 
 static jobjectArray codeBlob2objectArray(JavaThread* thread, JNIEnv* env, CodeBlobStub* cb) {
   ResourceMark rm;
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, nullptr);
-  jobjectArray result = env->NewObjectArray(4, clazz, nullptr);
+  jobjectArray result = env->NewObjectArray(5, clazz, nullptr);
 
   jstring name = env->NewStringUTF(cb->name);
   CHECK_JNI_EXCEPTION_(env, nullptr);
@@ -1586,6 +1588,10 @@ static jobjectArray codeBlob2objectArray(JavaThread* thread, JNIEnv* env, CodeBl
   obj = longBox(thread, env, cb->address);
   CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 3, obj);
+
+  obj = booleanBox(thread, env, cb->is_nmethod);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  env->SetObjectArrayElement(result, 4, obj);
 
   return result;
 }
@@ -1642,6 +1648,15 @@ WB_ENTRY(void, WB_RelocateNMethodTo(JNIEnv* env, jobject o, jobject method, jint
   CHECK_JNI_EXCEPTION(env);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   nmethod* code = mh->code();
+  if (code != nullptr) {
+    code->relocate(static_cast<CodeBlobType>(blob_type));
+  }
+WB_END
+
+WB_ENTRY(void, WB_RelocateMemNMethodTo(JNIEnv* env, jobject o, jlong addr, jint blob_type))
+  ResourceMark rm(THREAD);
+  CHECK_JNI_EXCEPTION(env);
+  nmethod* code = (nmethod*) addr;
   if (code != nullptr) {
     code->relocate(static_cast<CodeBlobType>(blob_type));
   }
@@ -2894,6 +2909,8 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetNMethod         },
   {CC"relocateNMethodTo0", CC"(Ljava/lang/reflect/Executable;I)V",
                                                       (void*)&WB_RelocateNMethodTo  },
+  {CC"relocateMemNMethodTo0", CC"(JI)V",
+                                                      (void*)&WB_RelocateMemNMethodTo  },
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },
