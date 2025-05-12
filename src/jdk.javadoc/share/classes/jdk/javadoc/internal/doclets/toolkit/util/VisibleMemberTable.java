@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -288,31 +289,21 @@ public class VisibleMemberTable {
      * and have a local override in this class hierarchy.
      */
     private List<Element> removeDuplicates(List<Element> methods) {
-        List<ExecutableElement> localMethods = getMembers(Kind.METHODS).stream()
-                .map(ExecutableElement.class::cast)
-                .toList();
+        Set<ExecutableElement> localMethods = overriddenMethodTable.values().stream()
+                .map(info -> info.overriddenMethod)
+                .collect(Collectors.toSet());
 
         return methods.stream()
                 .filter(e -> shouldKeepInheritedMethod(e, localMethods))
                 .toList();
     }
 
-    private boolean shouldKeepInheritedMethod(Element e, List<ExecutableElement> localMethods) {
-        TypeElement encl = utils.getEnclosingTypeElement(e);
-
-        boolean isHiddenInterfaceMethod =
-                !Objects.equals(encl, te) && utils.isUndocumentedEnclosure(encl)
-                        && e instanceof ExecutableElement;
-
-        if (isHiddenInterfaceMethod) {
-            ExecutableElement inherited = (ExecutableElement) e;
-            for (var local : localMethods) {
-                if (utils.elementUtils.overrides(local, inherited, te)) {
-                    return false;
-                }
-            }
-        }
-        return true;
+    private boolean shouldKeepInheritedMethod(Element e, Set<ExecutableElement> overridden) {
+        if (!(e instanceof ExecutableElement ee)) return true;
+        TypeElement encl = utils.getEnclosingTypeElement(ee);
+        boolean hiddenInterface = !Objects.equals(encl, te)
+                && utils.isUndocumentedEnclosure(encl);
+        return !hiddenInterface || !overridden.contains(ee);
     }
 
     /**

@@ -28,7 +28,7 @@
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build toolbox.ToolBox javadoc.tester.*
- * @run main TestDuplicateMethodsWarn
+ * @run main TestDuplicateMethods
  */
 
 import java.io.IOException;
@@ -37,10 +37,10 @@ import java.nio.file.Path;
 import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
-public class TestDuplicateMethodsWarn extends JavadocTester {
+public class TestDuplicateMethods extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        var tester = new TestDuplicateMethodsWarn();
+        var tester = new TestDuplicateMethods();
         tester.runTests();
     }
 
@@ -48,7 +48,7 @@ public class TestDuplicateMethodsWarn extends JavadocTester {
     Path src = Path.of("src");
 
 
-    TestDuplicateMethodsWarn() throws IOException {
+    TestDuplicateMethods() throws IOException {
         tb.writeJavaFiles(src, """
                 package p;
                  interface A {
