@@ -748,6 +748,20 @@ define SetupAOTBody
   $$($1_AOT_JDK_CACHE): $$(JDK_IMAGE_DIR)/release
 	$$(call MakeDir, $$($1_AOT_JDK_OUTPUT_DIR))
 
+  ifeq ($$(JTREG_AOT_JDK), onestep)
+
+	$$(call LogWarn, AOT: Create AOT cache $$($1_AOT_JDK_CACHE) in one step with flags: $$($1_VM_OPTIONS)) \
+	$$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
+            cd $$($1_AOT_JDK_OUTPUT_DIR); \
+	    $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
+	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
+	        -Xlog:class+load,cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log  -Xlog:cds*=error \
+	        -XX:AOTMode=record -XX:AOTCacheOutput=$$($1_AOT_JDK_CACHE) \
+	        TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
+	))
+
+  else
+
 	$$(call LogWarn, AOT: Create cache configuration) \
 	$$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
             cd $$($1_AOT_JDK_OUTPUT_DIR); \
@@ -765,6 +779,8 @@ define SetupAOTBody
 	        -XX:ExtraSharedClassListFile=$(JDK_UNDER_TEST)/lib/classlist \
 	        -XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
 	))
+
+  endif
 
   $1_AOT_TARGETS += $$($1_AOT_JDK_CACHE)
 
@@ -970,12 +986,10 @@ define SetupRunJtregTestBody
     endif
   endif
 
-  ifeq ($$(JTREG_AOT_JDK), true)
+  ifneq ($$(filter $$(JTREG_AOT_JDK), onestep twostep), )
     $$(call LogWarn, Add AOT target for $1)
     $$(eval $$(call SetupAOT, $1, VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
-
     $$(call LogWarn, AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
-
     $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:AOTCache="$$($1_AOT_JDK_CACHE)"
   endif
 
