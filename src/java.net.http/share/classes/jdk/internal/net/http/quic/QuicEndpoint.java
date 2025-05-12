@@ -488,6 +488,9 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 int event = readyOps & interestOps;
                 if ((event & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
                     onReadEvent();
+                    if (isClosed()) {
+                        key.interestOpsAnd(~SelectionKey.OP_READ);
+                    }
                 }
                 if ((event & SelectionKey.OP_WRITE) == SelectionKey.OP_WRITE) {
                     onWriteEvent();
