@@ -116,7 +116,7 @@ public class invokemethod014 {
         // debuggee main class
         ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
         ClassType clsType = (ClassType) rType;
-       
+
         ThreadReference thrRef =
             debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
         if (thrRef == null) {
