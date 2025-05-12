@@ -450,8 +450,8 @@ public class TestFloat16ScalarOperations {
         assertResult(subtract(Float16.NEGATIVE_INFINITY, Float16.NEGATIVE_INFINITY).floatValue(), Float.NaN, "testSubConstantFolding");
 
         // The difference of an infinity and a finite value is equal to the infinite operand.
-        //assertResult(subtract(Float16.POSITIVE_INFINITY, valueOf(2.0f)).floatValue(), Float.POSITIVE_INFINITY, "testSubConstantFolding");
-        //assertResult(subtract(Float16.NEGATIVE_INFINITY, valueOf(2.0f)).floatValue(), Float.NEGATIVE_INFINITY, "testSubConstantFolding");
+        assertResult(subtract(Float16.POSITIVE_INFINITY, valueOf(2.0f)).floatValue(), Float.POSITIVE_INFINITY, "testSubConstantFolding");
+        assertResult(subtract(Float16.NEGATIVE_INFINITY, valueOf(2.0f)).floatValue(), Float.NEGATIVE_INFINITY, "testSubConstantFolding");
 
         // The difference of two zeros of opposite sign is positive zero.
         assertResult(subtract(NEGATIVE_ZERO, POSITIVE_ZERO).floatValue(), 0.0f, "testSubConstantFolding");
@@ -538,8 +538,9 @@ public class TestFloat16ScalarOperations {
 
         // Division of a nonzero finite value by a zero results in a signed infinity. The sign
         // is determined by the rule stated above
-        //assertResult(divide(valueOf(2.0f), NEGATIVE_ZERO).floatValue(), Float.NEGATIVE_INFINITY, "testDivConstantFolding");
-        //assertResult(divide(valueOf(2.0f), POSITIVE_ZERO).floatValue(), Float.POSITIVE_INFINITY, "testDivConstantFolding");
+        // FIXME : C2 compiler limitaition to identify sign of ZERO value.
+        // assertResult(divide(valueOf(2.0f), NEGATIVE_ZERO).floatValue(), Float.NEGATIVE_INFINITY, "testDivConstantFolding");
+        // assertResult(divide(valueOf(2.0f), POSITIVE_ZERO).floatValue(), Float.POSITIVE_INFINITY, "testDivConstantFolding");
 
         // If the magnitude of the quotient is too large to represent, we say the operation
         // overflows; the result is then an infinity of appropriate sign.
