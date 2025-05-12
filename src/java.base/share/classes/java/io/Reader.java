@@ -416,11 +416,18 @@ public abstract class Reader implements Readable, Closeable {
     }
 
     /**
-     * Reads all remaining characters as lines of text. A line is considered to
-     * be terminated by any one of a line feed ('\n'), a carriage return ('\r'),
-     * a carriage return followed immediately by a line feed, or by reaching the
-     * end-of-stream. There is no empty line following a line terminator at the
-     * end of a stream.
+     * Reads all remaining characters as lines of text.
+     * <p>
+     * A <i>line</i> is either a sequence of zero or more characters
+     * followed by a line terminator, or it is a sequence of one or
+     * more characters followed by the end of the stream.
+     * A line does not include the line terminator.
+     * <p>
+     * A <i>line terminator</i> is one of the following:
+     * a line feed character {@code "\n"} (U+000A),
+     * a carriage return character {@code "\r"} (U+000D),
+     * or a carriage return followed immediately by a line feed
+     * {@code "\r\n"} (U+000D U+000A).
      *
      * <p>  The method does not close this reader nor its underlying stream.
      * If an I/O error occurs, the states of the reader and its underlying
@@ -429,12 +436,14 @@ public abstract class Reader implements Readable, Closeable {
      * @apiNote
      * This method is intended for simple cases where it is convenient
      * to read all remaining characters in a single operation. It is not
-     * intended for reading a large number of characters.
+     * intended for reading a large number of characters, for example, greater than 1G.
      *
      * @return     the remaining characters as lines of text stored in an
-     *             unmodifiable {@code List} in the order that they are read
+     *             unmodifiable {@code List} of strings in the order they are read
      *
      * @throws     IOException  If an I/O error occurs
+     * @throws     OutOfMemoryError  If the number of remaining characters exceeds the
+     *              implementation limit for String.
      *
      * @see String#lines
      * @see #readAllAsString
