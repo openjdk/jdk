@@ -32,7 +32,7 @@
  * @library /test/lib
  * @build SpecialCacheNames
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar MyTestApp
- * @run driver SpecialCacheNames AOT --onestep-training
+ * @run driver SpecialCacheNames AOT --one-step-training
  */
 
 import java.io.File;

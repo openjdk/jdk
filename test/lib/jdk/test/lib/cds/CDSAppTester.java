@@ -35,7 +35,12 @@ import jtreg.SkippedException;
  * This is a base class used for testing CDS functionalities with complex applications.
  * You can define the application by overridding the vmArgs(), classpath() and appCommandLine()
  * methods. Application-specific validation checks can be implemented with checkExecution().
-*/
+ *
+ * The AOT workflow runs with one-step training by default. For debugging purposes, run
+ * jtreg with -vmoption:-DCDSAppTester.two.step.training=true. This will run -XX:AOTMode=record
+ * and -XX:AOTMode=record in two separate processes that you can rerun easily inside a debugger.
+ * Also, the log files are easier to read.
+ */
 abstract public class CDSAppTester {
     private final String name;
     private final String classListFile;
@@ -182,12 +187,11 @@ abstract public class CDSAppTester {
     }
 
     private String logToFile(String logFile, String... logTags) {
-        StringBuilder sb = new StringBuilder("-Xlog:");
-        String prefix = "";
+        StringBuilder sb = new StringBuilder("-Xlog:arguments");
+        String prefix = ",";
         for (String tag : logTags) {
             sb.append(prefix);
             sb.append(tag);
-            prefix = ",";
         }
         sb.append(":file=" + logFile + "::filesize=0");
         return sb.toString();
@@ -457,7 +461,25 @@ abstract public class CDSAppTester {
     // See JEP 483
     public void runAOTWorkflow(String... args) throws Exception {
         this.workflow = Workflow.AOT;
-        if (args.length > 1 && args[1].equals("--onestep-training")) {
+        boolean oneStepTraining = true; // by default use onestep trainning
+
+        if (System.getProperty("CDSAppTester.two.step.training") != null) {
+            oneStepTraining = false;
+        }
+
+        if (args.length > 1) {
+            // Tests such as test/hotspot/jtreg/runtime/cds/appcds/aotCache/SpecialCacheNames.java
+            // use --one-step-training or --two-step-training to force a certain training workflow.
+            if (args[1].equals("--one-step-training")) {
+                oneStepTraining = true;
+            } else if (args[1].equals("--two-step-training")) {
+                oneStepTraining = false;
+            } else {
+                throw new RuntimeException("Unknown option: " + args[1]);
+            }
+        }
+
+        if (oneStepTraining) {
             try {
                 inOneStepTraining = true;
                 createAOTCacheOneStep();

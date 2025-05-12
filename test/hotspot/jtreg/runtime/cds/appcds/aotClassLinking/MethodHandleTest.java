@@ -33,7 +33,7 @@
  * @build MethodHandleTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar mh.jar
  *             MethodHandleTestApp MethodHandleTestApp$A MethodHandleTestApp$B
- * @run driver MethodHandleTest AOT
+ * @run driver MethodHandleTest AOT --two-step-training
  */
 
 import java.lang.invoke.MethodHandle;
