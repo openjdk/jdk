@@ -344,8 +344,8 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
                 goto flushit;
             }
 
+            curCode = oldCode;
             if (curCode != 4095) {
-                curCode = oldCode;
                 outCode[--outCount] = prevChar;
             }
         }
