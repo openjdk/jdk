@@ -5184,7 +5184,7 @@ bool Compile::should_print_phase(const int level) const {
 #endif
 }
 
-bool Compile::should_print_ideal_phase(CompilerPhaseType cpt) {
+bool Compile::should_print_ideal_phase(CompilerPhaseType cpt) const {
 #ifndef PRODUCT
   if (_directive->should_print_ideal_phase(cpt)) {
     return true;
