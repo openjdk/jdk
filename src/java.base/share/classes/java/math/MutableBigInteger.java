@@ -2002,13 +2002,7 @@ class MutableBigInteger {
             if (removedBits > trailingZeros)
                 x.add(ONE); // round up to ensure r is an upper bound of the root
 
-            MutableBigInteger rToN1 = new MutableBigInteger(r.toBigInteger().pow(n - 1).mag);
-            MutableBigInteger dividend = new MutableBigInteger();
-            r.mul(n - 1, dividend);
-            MutableBigInteger xDivRToN1 = new MutableBigInteger();
-            x.divide(rToN1, xDivRToN1, false);
-            dividend.add(xDivRToN1);
-            dividend.divideOneWord(n, r);
+            newtonRecurrenceNthRoot(x, r, n, r);
         }
 
         // Refine the estimate.
@@ -2016,16 +2010,25 @@ class MutableBigInteger {
         MutableBigInteger r1 = r;
         do {
             r = r1;
-            MutableBigInteger rToN1 = new MutableBigInteger(r.toBigInteger().pow(n - 1).mag);
-            MutableBigInteger dividend = new MutableBigInteger();
-            r.mul(n - 1, dividend);
-            MutableBigInteger xDivRToN1 = new MutableBigInteger();
-            this.divide(rToN1, xDivRToN1, false);
-            dividend.add(xDivRToN1);
-            dividend.divideOneWord(n, r1);
+            newtonRecurrenceNthRoot(this, r, n, r1);
         } while (r1.compare(r) < 0); // Terminate when non-decreasing.
 
         return r;
+    }
+
+    /**
+     * Computes {@code ((n-1)*r + x/r^(n-1))/n} and places the result in {@code res}.
+     * {@code res} and {@code r} can be the same object.
+     */
+    private static void newtonRecurrenceNthRoot(
+            MutableBigInteger x, MutableBigInteger r, int n, MutableBigInteger res) {
+        MutableBigInteger rToN1 = new MutableBigInteger(r.toBigInteger().pow(n - 1).mag);
+        MutableBigInteger dividend = new MutableBigInteger();
+        r.mul(n - 1, dividend);
+        MutableBigInteger xDivRToN1 = new MutableBigInteger();
+        x.divide(rToN1, xDivRToN1, false);
+        dividend.add(xDivRToN1);
+        dividend.divideOneWord(n, res);
     }
 
     /**
