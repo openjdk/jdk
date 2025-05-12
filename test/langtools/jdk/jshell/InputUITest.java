@@ -38,23 +38,32 @@
  * @run testng InputUITest
  */
 
+import java.util.function.Function;
 import org.testng.annotations.Test;
 
 @Test
 public class InputUITest extends UITesting {
+
+    static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    static final String LINE_SEPARATOR_ESCAPED = LINE_SEPARATOR.replace("\n", "\\n")
+                                                               .replace("\r", "\\r");
 
     public InputUITest() {
         super(true);
     }
 
     public void testUserInputWithSurrogates() throws Exception {
+        Function<Integer, String> genSnippet =
+                realCharsToRead -> "new String(System.in.readNBytes(" +
+                                   (realCharsToRead + LINE_SEPARATOR.length()) +
+                                   "))\n";
         doRunTest((inputSink, out) -> {
-            inputSink.write("new String(System.in.readNBytes(5))\n\uD83D\uDE03\n");
-            waitOutput(out, patternQuote("\"\uD83D\uDE03\\n\""));
-            inputSink.write("new String(System.in.readNBytes(2))\n\uD83D\n");
-            waitOutput(out, patternQuote("\"?\\n\""));
-            inputSink.write("new String(System.in.readNBytes(2))\n\uDE03\n");
-            waitOutput(out, patternQuote("\"?\\n\""));
+            inputSink.write(genSnippet.apply(4) + "\uD83D\uDE03\n");
+            waitOutput(out, patternQuote("\"\uD83D\uDE03" + LINE_SEPARATOR_ESCAPED + "\""));
+            inputSink.write(genSnippet.apply(1) + "\uD83D\n");
+            waitOutput(out, patternQuote("\"?" + LINE_SEPARATOR_ESCAPED + "\""));
+            inputSink.write(genSnippet.apply(1) + "\uDE03\n");
+            waitOutput(out, patternQuote("\"?" + LINE_SEPARATOR_ESCAPED + "\""));
         }, false);
     }
 
