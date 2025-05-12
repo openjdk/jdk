@@ -4050,6 +4050,13 @@ The AOT cache can be used with the following command-line options:
     If `-XX:AOTCache` is specified but `-XX:AOTMode` is not specified,
     then `AOTMode` will be given the value of `auto`.
 
+`-XX:AOTCacheOutput:=`*cachefile*
+:   Specifies the location of the AOT cache to write. The standard extension for *cachefile* is `.aot`.
+    This option can be used only with `-XX:AOTMode=record` and `-XX:AOTMode=create`.
+
+    If `-XX:AOTCacheOutput` is specified but `-XX:AOTMode` is not specified,
+    then `AOTMode` will be given the value of `record`.
+
 `-XX:AOTConfiguration:=`*configfile*
 :   Specifies the AOT Configuration file for the JVM to write to or read from.
     This option can be used only with `-XX:AOTMode=record` and `-XX:AOTMode=create`.
@@ -4061,11 +4068,20 @@ The AOT cache can be used with the following command-line options:
 -   `off`: no AOT cache is used.
 
 -   `record`: Execute the application in the Training phase.
-    `-XX:AOTConfiguration=`*configfile* must be specified. The JVM gathers
+     At least one of `-XX:AOTConfiguration=`*configfile* and/or
+     `-XX:AOTCache=`*cachefile* must be specified.
+     If `-XX:AOTConfiguration=`*configfile* is specified, the JVM gathers
      statistical data and stores them into *configfile*.
+     If `-XX:AOTCache=`*cachefile* is specified, a second JVM process is launched
+     to perform the Assembly phase to write the optimization artifacts into *cachefile*.
 
--   `create`: Perform the Assembly phase. `-XX:AOTConfiguration=`*configfile*
-     and `-XX:AOTCache=`*cachefile*  must be specified. The JVM reads the statistical
+     Extra JVM options can be passed to the second JVM process using the environment
+     variable `JAVA_AOT_OPTIONS`, with the same format as the environment variable
+     `JDK_JAVA_OPTIONS` described above.
+
+-   `create`: Perform the Assembly phase. `-XX:AOTConfiguration=`*configfile* must be
+     specified. Exactly one of `-XX:AOTCache=`*cachefile* or -XX:AOTCacheOutput=`*cachefile*
+     must be specifed. The JVM reads the statistical
      data from *configfile* and writes the optimization artifacts into *cachefile*.
      Note that the application itself is not executed in this phase.
 
@@ -4086,7 +4102,7 @@ The AOT cache can be used with the following command-line options:
        Since the AOT cache is an optimization feature, there's no guarantee that it will be
        compatible with all possible JVM options. See [JEP 483](https://openjdk.org/jeps/483),
        section **Consistency of training and subsequent runs** for a representative
-       list of scenarios that may be incompatible with the AOT cache for JDK 24.
+       list of scenarios that may be incompatible with the AOT cache.
 
        These scenarios usually involve arbitrary modification of classes for diagnostic
        purposes and are typically not relevant for production environments.
@@ -4120,6 +4136,13 @@ The AOT cache can be used with the following command-line options:
     When `-XX:AOTMode` *is not used* in the command-line,  `AOTClassLinking` is disabled by
     default to provide full compatibility with traditional CDS options such as `-Xshare:dump.
 
+The first occurrence of the special sequence `%p` in `*configfile* and `*cachefile* is replaced
+with the process ID of the JVM process launched in the command-line. For example:
+
+>   `java -XX:AOTConfiguration=foo%p.aotconfig -XX:AOTCacheOutput=foo%p.aot -cp foo.jar Foo`
+
+will create two files: `foopid123.aotconfig` and `foopid123.aot`, where `123` is the
+process ID of the JVM that has executed the application `Foo`.
 
 ## Performance Tuning Examples
 
