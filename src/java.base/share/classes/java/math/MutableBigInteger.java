@@ -1984,8 +1984,15 @@ class MutableBigInteger {
 
             // Use the root of the shifted value as an estimate.
             rad = Math.nextUp(rad);
-            final double approx = n == 3 ? Math.cbrt(rad) : Math.pow(rad, Math.nextUp(1.0 / n));
-            r = valueOf(Math.ceil(Math.nextUp(approx)));
+            double approx = n == 3 ? Math.cbrt(rad) : Math.pow(rad, Math.nextUp(1.0 / n));
+            approx = Math.ceil(Math.nextUp(approx));
+            if (shift == 0L) {
+                r = valueOf(approx);
+            } else {
+                // Allocate sufficient space to store the final root
+                r = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
+                r.copyValue(valueOf(approx));
+            }
         }
 
         // Refine the estimate, avoiding to compute non-significant bits
@@ -2007,13 +2014,14 @@ class MutableBigInteger {
 
         // Refine the estimate.
         r.safeLeftShift(rootShift);
-        MutableBigInteger r1 = r;
+        MutableBigInteger r1 = new MutableBigInteger(new int[r.intLen]);
         do {
-            r = r1;
             newtonRecurrenceNthRoot(this, r, n, r1);
-        } while (r1.compare(r) < 0); // Terminate when non-decreasing.
+            if (r1.compare(r) >= 0) // Terminate when non-decreasing.
+                return r;
 
-        return r;
+            r.copyValue(r1);
+        } while (true);
     }
 
     /**
