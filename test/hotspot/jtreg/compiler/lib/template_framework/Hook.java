@@ -53,7 +53,7 @@ import java.util.List;
  *         System.out.println("$field: " + $field)
  *         """,
  *         // Reach out to where the hook was set, and insert the code of template1.
- *         myHook.insert(template1.withArgs($("field"))),
+ *         myHook.insert(template1.fillWith($("field"))),
  *         """
  *         }
  *         """
@@ -80,14 +80,14 @@ public record Hook(String name) {
     }
 
     /**
-     * Inserts a {@link TemplateWithArgs} to the innermost location where this {@link Hook} was {@link #set}.
+     * Inserts a {@link FilledTemplate} to the innermost location where this {@link Hook} was {@link #set}.
      * This could be in the same {@link Template}, or one nested further out.
      *
-     * @param templateWithArgs The {@link Template} with applied arguments to be inserted at the {@link Hook}.
+     * @param filledTemplate The {@link Template} with applied arguments to be inserted at the {@link Hook}.
      * @return The {@link Token} which when used inside a {@link Template#body} performs the code insertion into the {@link Hook}.
      */
-    public Token insert(TemplateWithArgs templateWithArgs) {
-        return new HookInsertToken(this, templateWithArgs);
+    public Token insert(FilledTemplate filledTemplate) {
+        return new HookInsertToken(this, filledTemplate);
     }
 
     /**

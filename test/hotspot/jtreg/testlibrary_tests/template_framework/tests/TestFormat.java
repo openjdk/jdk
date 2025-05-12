@@ -100,12 +100,12 @@ public class TestFormat {
             package p.xyz;
             public class InnerTest {
             """,
-            list.stream().map(info -> template1.withArgs(info)).toList(),
+            list.stream().map(info -> template1.fillWith(info)).toList(),
             """
             }
             """
         ));
 
-        return template2.withArgs().render();
+        return template2.render();
     }
 }

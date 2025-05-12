@@ -23,4 +23,4 @@
 
 package compiler.lib.template_framework;
 
-record HookInsertToken(Hook hook, TemplateWithArgs templateWithArgs) implements Token {}
+record HookInsertToken(Hook hook, FilledTemplate filledTemplate) implements Token {}

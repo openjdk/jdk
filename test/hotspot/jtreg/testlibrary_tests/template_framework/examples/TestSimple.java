@@ -73,6 +73,6 @@ public class TestSimple {
         ));
 
         // Use the template with two arguments, and render it to a String.
-        return template.withArgs(42, "7").render();
+        return template.fillWith(42, "7").render();
     }
 }

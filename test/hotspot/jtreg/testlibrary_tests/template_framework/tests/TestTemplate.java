@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.HashSet;
 
 import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.FilledTemplate;
+import compiler.lib.template_framework.UnfilledTemplate;
 import compiler.lib.template_framework.Name;
 import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
@@ -120,7 +122,7 @@ public class TestTemplate {
 
     public static void testSingleLine() {
         var template = Template.make(() -> body("Hello World!"));
-        String code = template.withArgs().render();
+        String code = template.render();
         checkEQ(code, "Hello World!");
     }
 
@@ -131,7 +133,7 @@ public class TestTemplate {
             than a single line
             """
         ));
-        String code = template.withArgs().render();
+        String code = template.render();
         String expected =
             """
             Code on more
@@ -152,92 +154,92 @@ public class TestTemplate {
             List.of(" ", 1, " and ", 2),
             " end"
         ));
-        String code = template.withArgs().render();
+        String code = template.render();
         checkEQ(code, "start 112L2L3.43.45.6f5.6f 1 and 2 end");
     }
 
     public static void testWithOneArguments() {
         // Capture String argument via String name.
         var template1 = Template.make("a", (String a) -> body("start #a end"));
-        checkEQ(template1.withArgs("x").render(), "start x end");
-        checkEQ(template1.withArgs("a").render(), "start a end");
-        checkEQ(template1.withArgs("" ).render(), "start  end");
+        checkEQ(template1.fillWith("x").render(), "start x end");
+        checkEQ(template1.fillWith("a").render(), "start a end");
+        checkEQ(template1.fillWith("" ).render(), "start  end");
 
         // Capture String argument via typed lambda argument.
         var template2 = Template.make("a", (String a) -> body("start ", a, " end"));
-        checkEQ(template2.withArgs("x").render(), "start x end");
-        checkEQ(template2.withArgs("a").render(), "start a end");
-        checkEQ(template2.withArgs("" ).render(), "start  end");
+        checkEQ(template2.fillWith("x").render(), "start x end");
+        checkEQ(template2.fillWith("a").render(), "start a end");
+        checkEQ(template2.fillWith("" ).render(), "start  end");
 
         // Capture Integer argument via String name.
         var template3 = Template.make("a", (Integer a) -> body("start #a end"));
-        checkEQ(template3.withArgs(0  ).render(), "start 0 end");
-        checkEQ(template3.withArgs(22 ).render(), "start 22 end");
-        checkEQ(template3.withArgs(444).render(), "start 444 end");
+        checkEQ(template3.fillWith(0  ).render(), "start 0 end");
+        checkEQ(template3.fillWith(22 ).render(), "start 22 end");
+        checkEQ(template3.fillWith(444).render(), "start 444 end");
 
         // Capture Integer argument via templated lambda argument.
         var template4 = Template.make("a", (Integer a) -> body("start ", a, " end"));
-        checkEQ(template4.withArgs(0  ).render(), "start 0 end");
-        checkEQ(template4.withArgs(22 ).render(), "start 22 end");
-        checkEQ(template4.withArgs(444).render(), "start 444 end");
+        checkEQ(template4.fillWith(0  ).render(), "start 0 end");
+        checkEQ(template4.fillWith(22 ).render(), "start 22 end");
+        checkEQ(template4.fillWith(444).render(), "start 444 end");
 
         // Test Strings with backslashes:
         var template5 = Template.make("a", (String a) -> body("start #a " + a + " end"));
-        checkEQ(template5.withArgs("/").render(), "start / / end");
-        checkEQ(template5.withArgs("\\").render(), "start \\ \\ end");
-        checkEQ(template5.withArgs("\\\\").render(), "start \\\\ \\\\ end");
+        checkEQ(template5.fillWith("/").render(), "start / / end");
+        checkEQ(template5.fillWith("\\").render(), "start \\ \\ end");
+        checkEQ(template5.fillWith("\\\\").render(), "start \\\\ \\\\ end");
     }
 
     public static void testWithTwoArguments() {
         // Capture 2 String arguments via String names.
         var template1 = Template.make("a1", "a2", (String a1, String a2) -> body("start #a1 #a2 end"));
-        checkEQ(template1.withArgs("x", "y").render(), "start x y end");
-        checkEQ(template1.withArgs("a", "b").render(), "start a b end");
-        checkEQ(template1.withArgs("",  "" ).render(), "start   end");
+        checkEQ(template1.fillWith("x", "y").render(), "start x y end");
+        checkEQ(template1.fillWith("a", "b").render(), "start a b end");
+        checkEQ(template1.fillWith("",  "" ).render(), "start   end");
 
         // Capture 2 String arguments via typed lambda arguments.
         var template2 = Template.make("a1", "a2", (String a1, String a2) -> body("start ", a1, " ", a2, " end"));
-        checkEQ(template2.withArgs("x", "y").render(), "start x y end");
-        checkEQ(template2.withArgs("a", "b").render(), "start a b end");
-        checkEQ(template2.withArgs("",  "" ).render(), "start   end");
+        checkEQ(template2.fillWith("x", "y").render(), "start x y end");
+        checkEQ(template2.fillWith("a", "b").render(), "start a b end");
+        checkEQ(template2.fillWith("",  "" ).render(), "start   end");
 
         // Capture 2 Integer arguments via String names.
         var template3 = Template.make("a1", "a2", (Integer a1, Integer a2) -> body("start #a1 #a2 end"));
-        checkEQ(template3.withArgs(0,   1  ).render(), "start 0 1 end");
-        checkEQ(template3.withArgs(22,  33 ).render(), "start 22 33 end");
-        checkEQ(template3.withArgs(444, 555).render(), "start 444 555 end");
+        checkEQ(template3.fillWith(0,   1  ).render(), "start 0 1 end");
+        checkEQ(template3.fillWith(22,  33 ).render(), "start 22 33 end");
+        checkEQ(template3.fillWith(444, 555).render(), "start 444 555 end");
 
         // Capture 2 Integer arguments via templated lambda arguments.
         var template4 = Template.make("a1", "a2", (Integer a1, Integer a2) -> body("start ", a1, " ", a2, " end"));
-        checkEQ(template4.withArgs(0,   1  ).render(), "start 0 1 end");
-        checkEQ(template4.withArgs(22,  33 ).render(), "start 22 33 end");
-        checkEQ(template4.withArgs(444, 555).render(), "start 444 555 end");
+        checkEQ(template4.fillWith(0,   1  ).render(), "start 0 1 end");
+        checkEQ(template4.fillWith(22,  33 ).render(), "start 22 33 end");
+        checkEQ(template4.fillWith(444, 555).render(), "start 444 555 end");
     }
 
     public static void testWithThreeArguments() {
         // Capture 3 String arguments via String names.
         var template1 = Template.make("a1", "a2", "a3", (String a1, String a2, String a3) -> body("start #a1 #a2 #a3 end"));
-        checkEQ(template1.withArgs("x", "y", "z").render(), "start x y z end");
-        checkEQ(template1.withArgs("a", "b", "c").render(), "start a b c end");
-        checkEQ(template1.withArgs("",  "", "" ).render(),  "start    end");
+        checkEQ(template1.fillWith("x", "y", "z").render(), "start x y z end");
+        checkEQ(template1.fillWith("a", "b", "c").render(), "start a b c end");
+        checkEQ(template1.fillWith("",  "", "" ).render(),  "start    end");
 
         // Capture 3 String arguments via typed lambda arguments.
         var template2 = Template.make("a1", "a2", "a3", (String a1, String a2, String a3) -> body("start ", a1, " ", a2, " ", a3, " end"));
-        checkEQ(template1.withArgs("x", "y", "z").render(), "start x y z end");
-        checkEQ(template1.withArgs("a", "b", "c").render(), "start a b c end");
-        checkEQ(template1.withArgs("",  "", "" ).render(),  "start    end");
+        checkEQ(template1.fillWith("x", "y", "z").render(), "start x y z end");
+        checkEQ(template1.fillWith("a", "b", "c").render(), "start a b c end");
+        checkEQ(template1.fillWith("",  "", "" ).render(),  "start    end");
 
         // Capture 3 Integer arguments via String names.
         var template3 = Template.make("a1", "a2", "a3", (Integer a1, Integer a2, Integer a3) -> body("start #a1 #a2 #a3 end"));
-        checkEQ(template3.withArgs(0,   1  , 2  ).render(), "start 0 1 2 end");
-        checkEQ(template3.withArgs(22,  33 , 44 ).render(), "start 22 33 44 end");
-        checkEQ(template3.withArgs(444, 555, 666).render(), "start 444 555 666 end");
+        checkEQ(template3.fillWith(0,   1  , 2  ).render(), "start 0 1 2 end");
+        checkEQ(template3.fillWith(22,  33 , 44 ).render(), "start 22 33 44 end");
+        checkEQ(template3.fillWith(444, 555, 666).render(), "start 444 555 666 end");
 
         // Capture 2 Integer arguments via templated lambda arguments.
         var template4 = Template.make("a1", "a2", "a3", (Integer a1, Integer a2, Integer a3) -> body("start ", a1, " ", a2, " ", a3, " end"));
-        checkEQ(template3.withArgs(0,   1  , 2  ).render(), "start 0 1 2 end");
-        checkEQ(template3.withArgs(22,  33 , 44 ).render(), "start 22 33 44 end");
-        checkEQ(template3.withArgs(444, 555, 666).render(), "start 444 555 666 end");
+        checkEQ(template3.fillWith(0,   1  , 2  ).render(), "start 0 1 2 end");
+        checkEQ(template3.fillWith(22,  33 , 44 ).render(), "start 22 33 44 end");
+        checkEQ(template3.fillWith(444, 555, 666).render(), "start 444 555 666 end");
     }
 
     public static void testNested() {
@@ -249,20 +251,20 @@ public class TestTemplate {
         ));
 
         var template3 = Template.make("a1", "a2", (String a1, String a2) -> body(
-            "Universe ", template1.withArgs(), " {\n",
-                template2.withArgs("up", "down"),
-                template2.withArgs(a1, a2),
+            "Universe ", template1, " {\n",
+                template2.fillWith("up", "down"),
+                template2.fillWith(a1, a2),
             "}\n"
         ));
 
         var template4 = Template.make(() -> body(
-            template3.withArgs("low", "high"),
+            template3.fillWith("low", "high"),
             "{\n",
-                template3.withArgs("42", "24"),
+                template3.fillWith("42", "24"),
             "}"
         ));
 
-        String code = template4.withArgs().render();
+        String code = template4.render();
         String expected =
             """
             Universe proton {
@@ -291,12 +293,12 @@ public class TestTemplate {
             "{\n",
             hook1.set(
                 "World\n",
-                hook1.insert(template1.withArgs())
+                hook1.insert(template1)
             ),
             "}"
         ));
 
-        String code = template2.withArgs().render();
+        String code = template2.render();
         String expected =
             """
             {
@@ -311,21 +313,21 @@ public class TestTemplate {
 
         var template0 = Template.make(() -> body("isSet: ", hook1.isSet(), "\n"));
 
-        var template1 = Template.make(() -> body("Hello\n", template0.withArgs()));
+        var template1 = Template.make(() -> body("Hello\n", template0));
 
         var template2 = Template.make(() -> body(
             "{\n",
-            template0.withArgs(),
+            template0,
             hook1.set(
                 "World\n",
-                template0.withArgs(),
-                hook1.insert(template1.withArgs())
+                template0,
+                hook1.insert(template1)
             ),
-            template0.withArgs(),
+            template0,
             "}"
         ));
 
-        String code = template2.withArgs().render();
+        String code = template2.render();
         String expected =
             """
             {
@@ -350,32 +352,32 @@ public class TestTemplate {
             hook1.set(), // empty
             "zero\n",
             hook1.set(
-                template1.withArgs("one"),
-                template1.withArgs("two"),
-                hook1.insert(template1.withArgs("intoHook1a")),
-                hook1.insert(template1.withArgs("intoHook1b")),
-                template1.withArgs("three"),
+                template1.fillWith("one"),
+                template1.fillWith("two"),
+                hook1.insert(template1.fillWith("intoHook1a")),
+                hook1.insert(template1.fillWith("intoHook1b")),
+                template1.fillWith("three"),
                 hook1.set(
-                    template1.withArgs("four"),
-                    hook1.insert(template1.withArgs("intoHook1c")),
-                    template1.withArgs("five")
+                    template1.fillWith("four"),
+                    hook1.insert(template1.fillWith("intoHook1c")),
+                    template1.fillWith("five")
                 ),
-                template1.withArgs("six"),
+                template1.fillWith("six"),
                 hook1.set(), // empty
-                template1.withArgs("seven"),
-                hook1.insert(template1.withArgs("intoHook1d")),
-                template1.withArgs("eight"),
+                template1.fillWith("seven"),
+                hook1.insert(template1.fillWith("intoHook1d")),
+                template1.fillWith("eight"),
                 hook1.set(
-                    template1.withArgs("nine"),
-                    hook1.insert(template1.withArgs("intoHook1e")),
-                    template1.withArgs("ten")
+                    template1.fillWith("nine"),
+                    hook1.insert(template1.fillWith("intoHook1e")),
+                    template1.fillWith("ten")
                 ),
-                template1.withArgs("eleven")
+                template1.fillWith("eleven")
             ),
             "}"
         ));
 
-        String code = template2.withArgs().render();
+        String code = template2.render();
         String expected =
             """
             {
@@ -408,30 +410,30 @@ public class TestTemplate {
 
         var template2 = Template.make("b", (String b) -> body(
             "{\n",
-            template1.withArgs(b + "A"),
-            hook1.insert(template1.withArgs(b + "B")),
-            hook2.insert(template1.withArgs(b + "C")),
-            template1.withArgs(b + "D"),
+            template1.fillWith(b + "A"),
+            hook1.insert(template1.fillWith(b + "B")),
+            hook2.insert(template1.fillWith(b + "C")),
+            template1.fillWith(b + "D"),
             hook1.set(
-                template1.withArgs(b + "E"),
-                hook1.insert(template1.withArgs(b + "F")),
-                hook2.insert(template1.withArgs(b + "G")),
-                template1.withArgs(b + "H"),
+                template1.fillWith(b + "E"),
+                hook1.insert(template1.fillWith(b + "F")),
+                hook2.insert(template1.fillWith(b + "G")),
+                template1.fillWith(b + "H"),
                 hook2.set(
-                    template1.withArgs(b + "I"),
-                    hook1.insert(template1.withArgs(b + "J")),
-                    hook2.insert(template1.withArgs(b + "K")),
-                    template1.withArgs(b + "L")
+                    template1.fillWith(b + "I"),
+                    hook1.insert(template1.fillWith(b + "J")),
+                    hook2.insert(template1.fillWith(b + "K")),
+                    template1.fillWith(b + "L")
                 ),
-                template1.withArgs(b + "M"),
-                hook1.insert(template1.withArgs(b + "N")),
-                hook2.insert(template1.withArgs(b + "O")),
-                template1.withArgs(b + "O")
+                template1.fillWith(b + "M"),
+                hook1.insert(template1.fillWith(b + "N")),
+                hook2.insert(template1.fillWith(b + "O")),
+                template1.fillWith(b + "O")
             ),
-            template1.withArgs(b + "P"),
-            hook1.insert(template1.withArgs(b + "Q")),
-            hook2.insert(template1.withArgs(b + "R")),
-            template1.withArgs(b + "S"),
+            template1.fillWith(b + "P"),
+            hook1.insert(template1.fillWith(b + "Q")),
+            hook2.insert(template1.fillWith(b + "R")),
+            template1.fillWith(b + "S"),
             "}\n"
         ));
 
@@ -443,7 +445,7 @@ public class TestTemplate {
                 "base-B\n",
                 hook2.set(
                     "base-C\n",
-                    template2.withArgs("sub-"),
+                    template2.fillWith("sub-"),
                     "base-D\n"
                 ),
                 "base-E\n"
@@ -452,7 +454,7 @@ public class TestTemplate {
             "}\n"
         ));
 
-        String code = template3.withArgs().render();
+        String code = template3.render();
         String expected =
             """
             {
@@ -496,15 +498,15 @@ public class TestTemplate {
 
         var template2 = Template.make("b", (String b) -> body(
             "<\n",
-            template1.withArgs(b + "A"),
-            hook1.insert(template1.withArgs(b + "B")), // sub-B is rendered before template2.
-            template1.withArgs(b + "C"),
+            template1.fillWith(b + "A"),
+            hook1.insert(template1.fillWith(b + "B")), // sub-B is rendered before template2.
+            template1.fillWith(b + "C"),
             "inner-hook-start\n",
             hook1.set(
                 "inner-hook-end\n",
-                template1.withArgs(b + "E"),
-                hook1.insert(template1.withArgs(b + "E")),
-                template1.withArgs(b + "F")
+                template1.fillWith(b + "E"),
+                hook1.insert(template1.fillWith(b + "E")),
+                template1.fillWith(b + "F")
             ),
             ">\n"
         ));
@@ -515,14 +517,14 @@ public class TestTemplate {
             "hook-start\n",
             hook1.set(
                 "hook-end\n",
-                hook1.insert(template2.withArgs("sub-")),
+                hook1.insert(template2.fillWith("sub-")),
                 "base-C\n"
             ),
             "base-D\n",
             "}\n"
         ));
 
-        String code = template3.withArgs().render();
+        String code = template3.render();
         String expected =
             """
             {
@@ -553,7 +555,7 @@ public class TestTemplate {
         var template2 = Template.make("a", (String a) -> body(
             "{\n",
             "y $name #a y\n",
-            template1.withArgs($("name")),
+            template1.fillWith($("name")),
             "}\n"
         ));
 
@@ -563,26 +565,26 @@ public class TestTemplate {
             "$name", "\n",
             "z $name z\n",
             "z$name z\n",
-            template1.withArgs("name"),     // does not capture -> literal "$name"
-            template1.withArgs("$name"),    // does not capture -> literal "$name"
-            template1.withArgs($("name")),  // capture replacement name "name_1"
+            template1.fillWith("name"),     // does not capture -> literal "$name"
+            template1.fillWith("$name"),    // does not capture -> literal "$name"
+            template1.fillWith($("name")),  // capture replacement name "name_1"
             hook1.set(
                 "$name\n"
             ),
             "break\n",
             hook1.set(
                 "one\n",
-                hook1.insert(template1.withArgs($("name"))),
+                hook1.insert(template1.fillWith($("name"))),
                 "two\n",
-                template1.withArgs($("name")),
+                template1.fillWith($("name")),
                 "three\n",
-                hook1.insert(template2.withArgs($("name"))),
+                hook1.insert(template2.fillWith($("name"))),
                 "four\n"
             ),
             "}\n"
         ));
 
-        String code = template3.withArgs().render();
+        String code = template3.render();
         String expected =
             """
             {
@@ -631,23 +633,23 @@ public class TestTemplate {
         var template3 = Template.make(() -> body(
             "{\n",
             let("x", "abc"),
-            template1.withArgs("alpha"),
+            template1.fillWith("alpha"),
             "break\n",
             "x1 = #x\n",
             hook1.set(
                 "x2 = #x\n", // leaks inside
-                template1.withArgs("beta"),
+                template1.fillWith("beta"),
                 let("y", "one"),
                 "y1 = #y\n"
             ),
             "break\n",
             "y2 = #y\n", // leaks outside
             "break\n",
-            template2.withArgs(5),
+            template2.fillWith(5),
             "}\n"
         ));
 
-        String code = template3.withArgs().render();
+        String code = template3.render();
         String expected =
             """
             {
@@ -689,24 +691,24 @@ public class TestTemplate {
             "[\n",
             "z #a z\n",
             // Select which template should be used:
-            a > 0 ? template1.withArgs("A_" + a)
-                  : template2.withArgs("B_" + a),
+            a > 0 ? template1.fillWith("A_" + a)
+                  : template2.fillWith("B_" + a),
             "]\n"
         ));
 
         var template4 = Template.make(() -> body(
             "{\n",
-            template3.withArgs(-1),
+            template3.fillWith(-1),
             "break\n",
-            template3.withArgs(0),
+            template3.fillWith(0),
             "break\n",
-            template3.withArgs(1),
+            template3.fillWith(1),
             "break\n",
-            template3.withArgs(2),
+            template3.fillWith(2),
             "}\n"
         ));
 
-        String code = template4.withArgs().render();
+        String code = template4.render();
         String expected =
             """
             {
@@ -744,13 +746,13 @@ public class TestTemplate {
 
     public static void testRecursion() {
         // Binding allows use of template1 inside template1, via the Binding indirection.
-        var binding1 = new TemplateBinding<Template.OneArgs<Integer>>();
+        var binding1 = new TemplateBinding<UnfilledTemplate.OneArgs<Integer>>();
 
         var template1 = Template.make("i", (Integer i) -> body(
             "[ #i\n",
             // We cannot yet use the template1 directly, as it is being defined.
             // So we use binding1 instead.
-            i < 0 ? "done\n" : binding1.get().withArgs(i - 1),
+            i < 0 ? "done\n" : binding1.get().fillWith(i - 1),
             "] #i\n"
         ));
         binding1.bind(template1);
@@ -758,11 +760,11 @@ public class TestTemplate {
         var template2 = Template.make(() -> body(
             "{\n",
             // Now, we can use template1 normally, as it is already defined.
-            template1.withArgs(3),
+            template1.fillWith(3),
             "}\n"
         ));
 
-        String code = template2.withArgs().render();
+        String code = template2.render();
         String expected =
             """
             {
@@ -790,24 +792,24 @@ public class TestTemplate {
         ));
 
         // Binding allows use of template2 inside template2, via the Binding indirection.
-        var binding2 = new TemplateBinding<Template.OneArgs<Integer>>();
+        var binding2 = new TemplateBinding<UnfilledTemplate.OneArgs<Integer>>();
         var template2 = Template.make("i", (Integer i) -> body(
             let("f", fuel()),
 
             "[ #i #f\n",
-            template1.withArgs(),
-            fuel() <= 60.f ? "done" : binding2.get().withArgs(i - 1),
+            template1,
+            fuel() <= 60.f ? "done" : binding2.get().fillWith(i - 1),
             "] #i #f\n"
         ));
         binding2.bind(template2);
 
         var template3 = Template.make(() -> body(
             "{\n",
-            template2.withArgs(3),
+            template2.fillWith(3),
             "}\n"
         ));
 
-        String code = template3.withArgs().render();
+        String code = template3.render();
         String expected =
             """
             {
@@ -837,14 +839,14 @@ public class TestTemplate {
         ));
 
         // Binding allows use of template2 inside template2, via the Binding indirection.
-        var binding2 = new TemplateBinding<Template.OneArgs<Integer>>();
+        var binding2 = new TemplateBinding<UnfilledTemplate.OneArgs<Integer>>();
         var template2 = Template.make("i", (Integer i) -> body(
             setFuelCost(3.0f),
             let("f", fuel()),
 
             "[ #i #f\n",
-            template1.withArgs(),
-            fuel() <= 5.f ? "done\n" : binding2.get().withArgs(i - 1),
+            template1,
+            fuel() <= 5.f ? "done\n" : binding2.get().fillWith(i - 1),
             "] #i #f\n"
         ));
         binding2.bind(template2);
@@ -854,11 +856,11 @@ public class TestTemplate {
             let("f", fuel()),
 
             "{ #f\n",
-            template2.withArgs(3),
+            template2.fillWith(3),
             "} #f\n"
         ));
 
-        String code = template3.withArgs().render(20.0f);
+        String code = template3.render(20.0f);
         String expected =
             """
             { 20.0f
@@ -893,35 +895,35 @@ public class TestTemplate {
         var template2 = Template.make("name", "type", (String name, Name.Type type) -> body(
             addName(new Name(name, type, true, 1)),
             "define #type #name\n",
-            template1.withArgs()
+            template1
         ));
 
         var template3 = Template.make(() -> body(
             "<\n",
-            hook1.insert(template2.withArgs($("name"), myInt)),
+            hook1.insert(template2.fillWith($("name"), myInt)),
             "$name = 5\n",
             ">\n"
         ));
 
         var template4 = Template.make(() -> body(
             "{\n",
-            template1.withArgs(),
+            template1,
             hook1.set(
-                template1.withArgs(),
+                template1,
                 "something\n",
-                template3.withArgs(),
+                template3,
                 "more\n",
-                template1.withArgs(),
+                template1,
                 "more\n",
-                template2.withArgs($("name"), myInt),
+                template2.fillWith($("name"), myInt),
                 "more\n",
-                template1.withArgs()
+                template1
             ),
-            template1.withArgs(),
+            template1,
             "}\n"
         ));
 
-        String code = template4.withArgs().render();
+        String code = template4.render();
         String expected =
             """
             {
@@ -957,25 +959,25 @@ public class TestTemplate {
         var template2 = Template.make("name", "type", (String name, Name.Type type) -> body(
             addName(new Name(name, type, true, 1)),
             "define mutable #type #name\n",
-            template1.withArgs(type)
+            template1.fillWith(type)
         ));
 
         var template3 = Template.make("name", "type", (String name, Name.Type type) -> body(
             addName(new Name(name, type, false, 1)),
             "define immutable #type #name\n",
-            template1.withArgs(type)
+            template1.fillWith(type)
         ));
 
         var template4 = Template.make("type", (Name.Type type) -> body(
             "{ $store\n",
-            hook1.insert(template2.withArgs($("name"), type)),
+            hook1.insert(template2.fillWith($("name"), type)),
             "$name = 5\n",
             "} $store\n"
         ));
 
         var template5 = Template.make("type", (Name.Type type) -> body(
             "{ $load\n",
-            hook1.insert(template3.withArgs($("name"), type)),
+            hook1.insert(template3.fillWith($("name"), type)),
             "blackhole($name)\n",
             "} $load\n"
         ));
@@ -996,26 +998,26 @@ public class TestTemplate {
 
         var template8 = Template.make(() -> body(
             "class $X {\n",
-            template1.withArgs(myInt),
+            template1.fillWith(myInt),
             hook1.set(
                 "begin $body\n",
-                template1.withArgs(myInt),
+                template1.fillWith(myInt),
                 "start with immutable\n",
-                template5.withArgs(myInt),
+                template5.fillWith(myInt),
                 "then load from it\n",
-                template7.withArgs(myInt),
-                template1.withArgs(myInt),
+                template7.fillWith(myInt),
+                template1.fillWith(myInt),
                 "now make something mutable\n",
-                template4.withArgs(myInt),
+                template4.fillWith(myInt),
                 "then store to it\n",
-                template6.withArgs(myInt),
-                template1.withArgs(myInt)
+                template6.fillWith(myInt),
+                template1.fillWith(myInt)
             ),
-            template1.withArgs(myInt),
+            template1.fillWith(myInt),
             "}\n"
         ));
 
-        String code = template8.withArgs().render();
+        String code = template8.render();
         String expected =
             """
             class X_1 {
@@ -1061,22 +1063,22 @@ public class TestTemplate {
         // To avoid this behaviour, you have to wrap the addName in their own template.
         var template2 = Template.make(() -> body(
             "class $Y {\n",
-            template1.withArgs(myInt),
+            template1.fillWith(myInt),
             hook1.set(
                 "begin $body\n",
-                template1.withArgs(myInt),
+                template1.fillWith(myInt),
                 "define mutable\n",
                 addName(new Name($("v1"), myInt, true, 1)),
-                template1.withArgs(myInt),
+                template1.fillWith(myInt),
                 "define immutable\n",
                 addName(new Name($("v1"), myInt, false, 1)),
-                template1.withArgs(myInt)
+                template1.fillWith(myInt)
             ),
-            template1.withArgs(myInt),
+            template1.fillWith(myInt),
             "}\n"
         ));
 
-        String code = template2.withArgs().render();
+        String code = template2.render();
         String expected =
             """
             class Y_1 {
@@ -1105,7 +1107,7 @@ public class TestTemplate {
         var template2 = Template.make("list", (List<MyItem> list) -> body(
             "class $Z {\n",
             // Use template1 for every item in the list.
-            list.stream().map(item -> template1.withArgs(item)).toList(),
+            list.stream().map(item -> template1.fillWith(item)).toList(),
             "}\n"
         ));
 
@@ -1118,7 +1120,7 @@ public class TestTemplate {
                                     new MyItem(myLong, "*"),
                                     new MyItem(myLong, "/"));
 
-        String code = template2.withArgs(list).render();
+        String code = template2.fillWith(list).render();
         String expected =
             """
             class Z_1 {
@@ -1143,11 +1145,11 @@ public class TestTemplate {
         var template2 = Template.make(() -> body(
             "beta\n",
             // Nested "render" call not allowed!
-            template1.withArgs().render(),
+            template1.render(),
             "gamma\n"
         ));
 
-        String code = template2.withArgs().render();
+        String code = template2.render();
     }
 
     public static void testFailingHook() {
@@ -1160,11 +1162,11 @@ public class TestTemplate {
         var template2 = Template.make(() -> body(
             "beta\n",
             // Use hook without hook1.set
-            hook1.insert(template1.withArgs()),
+            hook1.insert(template1),
             "gamma\n"
         ));
 
-        String code = template2.withArgs().render();
+        String code = template2.render();
     }
 
     public static void testFailingSample() {
@@ -1173,7 +1175,7 @@ public class TestTemplate {
             "v is #v\n"
         ));
 
-        String code = template1.withArgs().render();
+        String code = template1.render();
     }
 
     public static void testFailingHashtag1() {
@@ -1181,7 +1183,7 @@ public class TestTemplate {
             "nothing\n"
         ));
 
-        String code = template1.withArgs("x", "y").render();
+        String code = template1.fillWith("x", "y").render();
     }
 
     public static void testFailingHashtag2() {
@@ -1190,7 +1192,7 @@ public class TestTemplate {
             "nothing\n"
         ));
 
-        String code = template1.withArgs("y").render();
+        String code = template1.fillWith("y").render();
     }
 
     public static void testFailingHashtag3() {
@@ -1200,7 +1202,7 @@ public class TestTemplate {
             "nothing\n"
         ));
 
-        String code = template1.withArgs().render();
+        String code = template1.render();
     }
 
     public static void testFailingHashtag4() {
@@ -1208,11 +1210,11 @@ public class TestTemplate {
             "#a\n"
         ));
 
-        String code = template1.withArgs().render();
+        String code = template1.render();
     }
 
     public static void testFailingBinding1() {
-        var binding = new TemplateBinding<Template.ZeroArgs>();
+        var binding = new TemplateBinding<FilledTemplate.ZeroArgs>();
         var template1 = Template.make(() -> body(
             "nothing\n"
         ));
@@ -1221,12 +1223,12 @@ public class TestTemplate {
     }
 
     public static void testFailingBinding2() {
-        var binding = new TemplateBinding<Template.ZeroArgs>();
+        var binding = new TemplateBinding<FilledTemplate.ZeroArgs>();
         var template1 = Template.make(() -> body(
             "nothing\n",
-            binding.get().withArgs()
+            binding.get()
         ));
-        String code = template1.withArgs().render();
+        String code = template1.render();
     }
 
     public static void expectRendererException(FailingTest test, String errorPrefix) {

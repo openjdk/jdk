@@ -39,6 +39,7 @@ import java.util.List;
 import compiler.lib.compile_framework.*;
 
 import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.UnfilledTemplate;
 import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
 import compiler.lib.template_framework.Name;
@@ -116,7 +117,7 @@ public class TestTutorial {
         ));
 
         // Render templateClass to String.
-        return templateClass.withArgs().render();
+        return templateClass.render();
     }
 
     // This example shows the use of Templates, with and without arguments.
@@ -155,9 +156,9 @@ public class TestTutorial {
             public class InnerTest2 {
                 public static void main() {
             """,
-                    templateHello.withArgs(),
-                    templateCompare.withArgs(7),
-                    templateCompare.withArgs(42),
+                    templateHello,
+                    templateCompare.fillWith(7),
+                    templateCompare.fillWith(42),
             """
                 }
             }
@@ -165,7 +166,7 @@ public class TestTutorial {
         ));
 
         // Render templateClass to String.
-        return templateClass.withArgs().render();
+        return templateClass.render();
     }
 
     // Example with hashtag replacements (arguments and let), and $-name renamings.
@@ -194,7 +195,7 @@ public class TestTutorial {
                     """
                     System.out.println("T2: #x, #y");
                     """,
-                    template1.withArgs(y)
+                    template1.fillWith(y)
                 )
             )
         );
@@ -213,7 +214,7 @@ public class TestTutorial {
             // We will define the variable $var:
             """,
             // We can capture the $-name programmatically, and pass it to other templates:
-            template3.withArgs($("var"), 42),
+            template3.fillWith($("var"), 42),
             """
             if ($var != 42) { throw new RuntimeException("Wrong value!"); }
             """
@@ -226,11 +227,11 @@ public class TestTutorial {
             public class InnerTest3 {
                 public static void main() {
             """,
-                    template1.withArgs(1),
-                    template1.withArgs(7),
-                    template2.withArgs(2),
-                    template2.withArgs(5),
-                    template4.withArgs(),
+                    template1.fillWith(1),
+                    template1.fillWith(7),
+                    template2.fillWith(2),
+                    template2.fillWith(5),
+                    template4,
             """
                 }
             }
@@ -238,7 +239,7 @@ public class TestTutorial {
         ));
 
         // Render templateClass to String.
-        return templateClass.withArgs().render();
+        return templateClass.render();
     }
 
     // In this example, we look at the use of Hooks.
@@ -258,7 +259,7 @@ public class TestTutorial {
             """
             // Let us go back to the hook, and define a field named $field...
             """,
-            myHook.insert(template1.withArgs($("field"), x)),
+            myHook.insert(template1.fillWith($("field"), x)),
             """
             System.out.println("$field: " + $field);
             if ($field != #x) { throw new RuntimeException("Wrong value!"); }
@@ -279,8 +280,8 @@ public class TestTutorial {
                 """
                 public static void main() {
                 """,
-                    template2.withArgs(5),
-                    template2.withArgs(7),
+                    template2.fillWith(5),
+                    template2.fillWith(7),
                 """
                 }
                 """
@@ -291,7 +292,7 @@ public class TestTutorial {
         ));
 
         // Render templateClass to String.
-        return templateClass.withArgs().render();
+        return templateClass.render();
     }
 
     // We saw the use of custom hooks above, but now we look at the use of CLASS_HOOK and METHOD_HOOK
@@ -315,8 +316,8 @@ public class TestTutorial {
             """
             // Let's define a local variable $var and a static field $field.
             """,
-            Hooks.CLASS_HOOK.insert(templateStaticField.withArgs($("field"), 5)),
-            Hooks.METHOD_HOOK.insert(templateLocalVariable.withArgs($("var"), 11)),
+            Hooks.CLASS_HOOK.insert(templateStaticField.fillWith($("field"), 5)),
+            Hooks.METHOD_HOOK.insert(templateLocalVariable.fillWith($("var"), 11)),
             """
             System.out.println("$field: " + $field);
             System.out.println("$var: " + $var);
@@ -341,7 +342,7 @@ public class TestTutorial {
                     // This is the beginning of the "main" method body.
                     System.out.println("Welcome to main!");
                     """,
-                    templateMethodBody.withArgs(),
+                    templateMethodBody,
                     """
                     System.out.println("Going to call other...");
                     other();
@@ -358,7 +359,7 @@ public class TestTutorial {
                     """
                     System.out.println("Welcome to other!");
                     """,
-                    templateMethodBody.withArgs(),
+                    templateMethodBody,
                     """
                     System.out.println("Done with other.");
                     """
@@ -373,7 +374,7 @@ public class TestTutorial {
         ));
 
         // Render templateClass to String.
-        return templateClass.withArgs().render();
+        return templateClass.render();
     }
 
     // This example shows the use of bindings to allow cyclic references of Templates,
@@ -381,7 +382,7 @@ public class TestTutorial {
     // recursion.
     public static String generateWithRecursionAndBindingsAndFuel() {
         // Binding allows the use of template1 inside of template1, via the binding indirection.
-        var binding1 = new TemplateBinding<Template.OneArgs<Integer>>();
+        var binding1 = new TemplateBinding<UnfilledTemplate.OneArgs<Integer>>();
         var template1 = Template.make("depth", (Integer depth) -> body(
             let("fuel", fuel()),
             """
@@ -392,7 +393,7 @@ public class TestTutorial {
             // For every recursion depth, some fuel is automatically subtracted
             // so that the fuel slowly depletes with the depth.
             // We keep the recursion going until the fuel is depleted.
-            (fuel() > 0) ? binding1.get().withArgs(depth + 1)
+            (fuel() > 0) ? binding1.get().fillWith(depth + 1)
                         : "System.out.println(\"Fuel depleted.\");\n",
             """
             System.out.println("Exit depth #depth.");
@@ -408,7 +409,7 @@ public class TestTutorial {
                 public static void main() {
                     System.out.println("Welcome to main!");
                     """,
-                    template1.withArgs(0),
+                    template1.fillWith(0),
                     """
                 }
             }
@@ -416,7 +417,7 @@ public class TestTutorial {
         ));
 
         // Render templateClass to String.
-        return templateClass.withArgs().render();
+        return templateClass.render();
     }
 
     // In the example below ("generateWithNames"), we see the use of Names to add
@@ -471,16 +472,16 @@ public class TestTutorial {
             """
             System.out.println("Starting inside main...");
             """,
-            templateStatus.withArgs(),
-            Hooks.METHOD_HOOK.insert(templateLocalVariable.withArgs(myInt)),
-            Hooks.METHOD_HOOK.insert(templateLocalVariable.withArgs(myLong)),
-            Hooks.CLASS_HOOK.insert(templateStaticField.withArgs(myInt)),
-            Hooks.CLASS_HOOK.insert(templateStaticField.withArgs(myLong)),
-            templateStatus.withArgs(),
+            templateStatus,
+            Hooks.METHOD_HOOK.insert(templateLocalVariable.fillWith(myInt)),
+            Hooks.METHOD_HOOK.insert(templateLocalVariable.fillWith(myLong)),
+            Hooks.CLASS_HOOK.insert(templateStaticField.fillWith(myInt)),
+            Hooks.CLASS_HOOK.insert(templateStaticField.fillWith(myLong)),
+            templateStatus,
             // We should see a mix if fields and variables sampled.
-            Collections.nCopies(5, templateSample.withArgs(myInt)),
-            Collections.nCopies(5, templateSample.withArgs(myLong)),
-            templateStatus.withArgs(),
+            Collections.nCopies(5, templateSample.fillWith(myInt)),
+            Collections.nCopies(5, templateSample.fillWith(myLong)),
+            templateStatus,
             """
             System.out.println("Finishing inside main.");
             """
@@ -490,11 +491,11 @@ public class TestTutorial {
             """
             System.out.println("Starting inside other...");
             """,
-            templateStatus.withArgs(),
+            templateStatus,
             // We still have all the field definitions from main.
-            Collections.nCopies(5, templateSample.withArgs(myInt)),
-            Collections.nCopies(5, templateSample.withArgs(myLong)),
-            templateStatus.withArgs(),
+            Collections.nCopies(5, templateSample.fillWith(myInt)),
+            Collections.nCopies(5, templateSample.fillWith(myLong)),
+            templateStatus,
             """
             System.out.println("Finishing inside other.");
             """
@@ -517,7 +518,7 @@ public class TestTutorial {
                     // This is the beginning of the "main" method body.
                     System.out.println("Welcome to main!");
                     """,
-                    templateMain.withArgs(),
+                    templateMain,
                     """
                     System.out.println("Going to call other...");
                     other();
@@ -534,7 +535,7 @@ public class TestTutorial {
                     """
                     System.out.println("Welcome to other!");
                     """,
-                    templateOther.withArgs(),
+                    templateOther,
                     """
                     System.out.println("Done with other.");
                     """
@@ -549,6 +550,6 @@ public class TestTutorial {
         ));
 
         // Render templateClass to String.
-        return templateClass.withArgs().render();
+        return templateClass.render();
     }
 }

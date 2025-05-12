@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The {@link TemplateFrame} is the frame for a {@link TemplateWithArgs}. It ensures
+ * The {@link TemplateFrame} is the frame for a {@link FilledTemplate}. It ensures
  * that each template use has its own unique {@link id} used to deconflict names
  * using {@link Template#$}. It also has a set of hashtag replacements, which combine the
  * key-value pairs from the template argument and the {@link Template#let} definitions.

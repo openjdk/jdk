@@ -34,8 +34,13 @@ package compiler.lib.template_framework;
  *
  * @param <T> Type of the template.
  */
-public class TemplateBinding<T extends Template> {
+public class TemplateBinding<T extends TemplateBinding.Bindable> {
     private T template = null;
+
+    public sealed interface Bindable permits UnfilledTemplate.OneArgs,
+                                             UnfilledTemplate.TwoArgs,
+                                             UnfilledTemplate.ThreeArgs,
+                                             FilledTemplate.ZeroArgs {}
 
     /**
      * Creates a new {@link TemplateBinding} that has no {@link Template} bound to it yet.
