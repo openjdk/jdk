@@ -351,6 +351,50 @@ public class ArrayDeque<E> extends AbstractCollection<E>
         return true;
     }
 
+    // *** Indexed methods ***
+
+    /**
+     * Returns the element at the specified position in this deque.
+     *
+     * @param index index of the element to return
+     * @return the element at the specified position in this deque
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *         ({@code index < 0 || index >= size()})
+     */
+    public E get(int index) {
+        return getset(index, null);
+    }
+
+    /**
+     * Replaces the element at the specified position in this deque
+     * with the specified element.
+     *
+     * @param index index of the element to replace
+     * @param element element to be stored at the specified position
+     * @return the element previously at the specified position
+     * @throws ClassCastException if the class of the specified element
+     *         prevents it from being added to this deque
+     * @throws NullPointerException if the specified element is null
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *         ({@code index < 0 || index >= size()})
+     */
+    public E set(int index, E element) {
+        if (element == null)
+            throw new NullPointerException();
+        return getset(index, element);
+    }
+
+    private E getset(int index, E newValue) {
+        Objects.checkIndex(index, size());
+        index = inc(head, index, elements.length);
+        E oldValue = elementAt(elements, index);
+        if (newValue != null)
+            elements[index] = newValue;
+        return oldValue;
+    }
+
+    // *** Deque methods ***
+
     /**
      * @throws NoSuchElementException {@inheritDoc}
      */
