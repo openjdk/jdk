@@ -72,7 +72,7 @@ public class MallocTrackingVerify {
 
         NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
                 "Test (reserved=4KB, committed=4KB)",
-                "(malloc=4KB #" + mallocd_memory.size() + ") (at peak)"
+                "(malloc=4KB tag=Test #" + mallocd_memory.size() + ") (at peak)"
         );
 
         // Free
@@ -83,7 +83,7 @@ public class MallocTrackingVerify {
         // Run 'jcmd <pid> VM.native_memory summary', check for expected output
         NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
                 "Test (reserved=0KB, committed=0KB)",
-                "(malloc=0KB) (peak=4KB #" + + mallocd_memory.size() + ")"
+                "(malloc=0KB tag=Test) (peak=4KB #" + + mallocd_memory.size() + ")"
         );
 
     }

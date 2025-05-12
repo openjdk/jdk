@@ -32,7 +32,7 @@
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
-MemoryFileTracker* MemoryFileTracker::Instance::_tracker = nullptr;
+Deferred<MemoryFileTracker> MemoryFileTracker::Instance::_tracker;
 
 MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
   : _stack_storage(is_detailed_mode), _files() {}
@@ -126,9 +126,8 @@ const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTrack
 
 bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
   if (tracking_level == NMT_TrackingLevel::NMT_off) return true;
-  _tracker = static_cast<MemoryFileTracker*>(os::malloc(sizeof(MemoryFileTracker), mtNMT));
-  if (_tracker == nullptr) return false;
-  new (_tracker) MemoryFileTracker(tracking_level == NMT_TrackingLevel::NMT_detail);
+  bool is_detailed_mode = tracking_level == NMT_TrackingLevel::NMT_detail;
+  _tracker.initialize(is_detailed_mode);
   return true;
 }
 

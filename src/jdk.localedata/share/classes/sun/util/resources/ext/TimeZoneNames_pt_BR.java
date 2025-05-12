@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -903,9 +903,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Japan", JST},
             {"Kwajalein", MHT},
             {"Libya", EET},
-            {"MET", new String[] {"Fuso hor\u00e1rio da Europa M\u00e9dia", "MET",
-                                  "Fuso hor\u00e1rio de ver\u00e3o da Europa M\u00e9dia", "MEST",
-                                  "MET", "MET"}},
+            {"MET", CET},
             {"Mexico/BajaNorte", PST},
             {"Mexico/BajaSur", MST},
             {"Mexico/General", CST},

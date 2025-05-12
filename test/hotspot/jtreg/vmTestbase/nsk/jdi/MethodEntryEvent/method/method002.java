@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,9 @@ public class method002 {
 
         pipe = debuggee.createIOPipe();
 
+        ClassPrepareEvent cpEvent = debuggee.waitForClassPrepare(DEBUGGEE_NAME);
+        debuggee.setMainThread(cpEvent.thread());
+
         // resume debuggee
         log.display("Resuming debuggee");
         debuggee.resume();
@@ -135,7 +138,7 @@ public class method002 {
             checkedClass = debuggee.classByName(CHILD_NAME);
 
             log.display("Getting <main> thread in debuggee");
-            checkedThread = debuggee.threadByName("main");
+            checkedThread = debuggee.mainThread();
             if (checkedThread == null) {
                 throw new Failure("TEST BUG: unable to find reference to main thread");
             }
