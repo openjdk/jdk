@@ -79,8 +79,8 @@ import static jdk.nio.zipfs.ZipUtils.*;
 class ZipFileSystem extends FileSystem {
     // statics
     private static final boolean isWindows = System.getProperty("os.name")
-            .startsWith("Windows");
-    private static final byte[] ROOTPATH = new byte[]{'/'};
+                                             .startsWith("Windows");
+    private static final byte[] ROOTPATH = new byte[] { '/' };
 
     // Global access mode for "mounted" file system ("readOnly" or "readWrite").
     private static final String PROPERTY_ACCESS_MODE = "accessMode";
