@@ -5460,18 +5460,13 @@ void InitializeNode::replace_mem_projs_by(Node* mem, Compile* C) {
 }
 
 void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
-  // auto replace_proj = [igvn, mem](ProjNode* proj, ApplyToProjsBase* apply) {
-  //   igvn->replace_node(proj, mem);
-  //   apply->remove_uses(1);
-  // };
-  // ApplyToProjs apply(replace_proj, this);
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    ProjNode* proj = fast_out(i)->as_Proj();
-    if (proj->_con == TypeFunc::Memory) {
-      igvn->replace_node(proj, mem);
-      --i; --imax;
-    }
-  }
+  DUIterator_Fast imax, i;
+  auto replace_proj = [mem, igvn, &i, &imax](ProjNode* proj) {
+    igvn->replace_node(proj, mem);
+    --i; --imax;
+    return false;
+  };
+  apply_to_projs(imax, i, replace_proj, TypeFunc::Memory);
 }
 
 template<class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback) const {
