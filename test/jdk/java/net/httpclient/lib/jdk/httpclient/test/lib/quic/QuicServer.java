@@ -65,6 +65,7 @@ import jdk.internal.net.http.quic.QuicSelector;
 import jdk.internal.net.http.quic.QuicTransportParameters;
 import jdk.internal.net.http.quic.packets.LongHeader;
 import jdk.internal.net.http.quic.packets.QuicPacket;
+import jdk.internal.net.http.quic.packets.QuicPacketDecoder;
 import jdk.internal.net.http.quic.packets.QuicPacketEncoder;
 import jdk.internal.net.quic.QuicTLSContext;
 import jdk.internal.net.quic.QuicVersion;
@@ -498,7 +499,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
         //          be used until the client receives our response,
         //       => the new connection id that we are sending back to the
         //          client?
-        LongHeader header = QuicPacket.peekLongHeader(buffer);
+        LongHeader header = QuicPacketDecoder.peekLongHeader(buffer);
         if (header == null) {
             if (debug.on()) {
                 debug.log("Dropping invalid datagram %s(src=%s, payload(%d))",
@@ -546,7 +547,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
         }
         assert availableQuicVersions.contains(version);
         final InetSocketAddress peerAddress = (InetSocketAddress) source;
-        final ByteBuffer token = QuicPacket.peekInitialPacketToken(buffer);
+        final ByteBuffer token = QuicPacketDecoder.peekInitialPacketToken(buffer);
         if (token == null) {
             // packet is malformed: token will be an empty ByteBuffer if
             //      the packet doesn't contain a token.
@@ -687,7 +688,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
     }
 
     void sendDatagram(final SocketAddress dest, final ByteBuffer datagram) {
-        final QuicPacket.HeadersType headersType = QuicPacket.peekHeaderType(datagram,
+        final QuicPacket.HeadersType headersType = QuicPacketDecoder.peekHeaderType(datagram,
                 datagram.position());
         if (this.outgoingDeliveryPolicy.shouldDrop(dest, datagram, headersType)) {
             silentIgnorePacket(dest, datagram, headersType, true);

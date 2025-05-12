@@ -435,9 +435,9 @@ public class PacketEncodingTest {
                                          PacketType packetType, int versionNumber,
                                          QuicConnectionId srcConnectionId,
                                          QuicConnectionId destConnectionId) {
-        assertEquals(QuicPacket.peekHeaderType(datagram, offset), HeadersType.LONG);
+        assertEquals(QuicPacketDecoder.peekHeaderType(datagram, offset), HeadersType.LONG);
         assertEquals(QuicPacketDecoder.of(datagram, offset).peekPacketType(datagram, offset), packetType);
-        LongHeader header = QuicPacket.peekLongHeader(datagram, offset);
+        LongHeader header = QuicPacketDecoder.peekLongHeader(datagram, offset);
         assertNotNull(header, "Could not parse packet header");
         assertEquals(header.version(), versionNumber);
         assertTrue(header.destinationId()
@@ -522,13 +522,13 @@ public class PacketEncodingTest {
                                           PacketType packetType,
                                           QuicConnectionId destConnectionId,
                                           CodingContext context) {
-        assertEquals(QuicPacket.peekHeaderType(datagram, offset), HeadersType.SHORT);
+        assertEquals(QuicPacketDecoder.peekHeaderType(datagram, offset), HeadersType.SHORT);
         assertEquals(QuicPacketDecoder.of(QuicVersion.QUIC_V1).peekPacketType(datagram, offset), packetType);
-        assertEquals(QuicPacket.peekVersion(datagram, offset), 0);
+        assertEquals(QuicPacketDecoder.peekVersion(datagram, offset), 0);
         int pos = datagram.position();
         if (pos != offset) datagram.position(offset);
         try {
-            assertEquals(QuicPacket.peekShortConnectionId(datagram, destConnectionId.length())
+            assertEquals(QuicPacketDecoder.peekShortConnectionId(datagram, destConnectionId.length())
                     .mismatch(destConnectionId.asReadOnlyBuffer()), -1);
         } finally {
             if (pos != offset) datagram.position(pos);

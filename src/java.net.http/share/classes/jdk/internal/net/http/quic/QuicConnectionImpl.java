@@ -1832,12 +1832,12 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             while(buffer.hasRemaining()) {
                 int startPos = buffer.position();
                 packetIndex++;
-                boolean isLongHeader = QuicPacket.peekHeaderType(buffer, startPos) == QuicPacket.HeadersType.LONG;
+                boolean isLongHeader = QuicPacketDecoder.peekHeaderType(buffer, startPos) == QuicPacket.HeadersType.LONG;
                 // It's only safe to check version here if versionNegotiated is true.
                 // We might be receiving an INITIAL packet before the version negotiation
                 // has been handled.
                 if (isLongHeader) {
-                    LongHeader header = QuicPacket.peekLongHeader(buffer);
+                    LongHeader header = QuicPacketDecoder.peekLongHeader(buffer);
                     if (header == null) {
                         if (debug.on()) {
                             debug.log("Dropping long header packet (%s in datagram): too short", packetIndex);
@@ -1917,7 +1917,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                         continue;
                     }
                 } else {
-                    var cid = QuicPacket.peekShortConnectionId(buffer, destConnId.remaining());
+                    var cid = QuicPacketDecoder.peekShortConnectionId(buffer, destConnId.remaining());
                     if (cid == null) {
                         if (debug.on()) {
                             debug.log("Dropping short header packet (%s in datagram):" +

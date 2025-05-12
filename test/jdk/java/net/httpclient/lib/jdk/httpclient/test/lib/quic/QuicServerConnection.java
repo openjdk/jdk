@@ -22,8 +22,6 @@
  */
 package jdk.httpclient.test.lib.quic;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -60,6 +58,7 @@ import jdk.internal.net.http.quic.packets.OneRttPacket;
 import jdk.internal.net.http.quic.packets.QuicPacket;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketNumberSpace;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketType;
+import jdk.internal.net.http.quic.packets.QuicPacketDecoder;
 import jdk.internal.net.quic.QuicKeyUnavailableException;
 import jdk.internal.net.quic.QuicTLSEngine;
 import jdk.internal.net.quic.QuicTLSEngine.HandshakeState;
@@ -228,7 +227,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
 
     @Override
     protected void pushDatagram(final SocketAddress destination, final ByteBuffer datagram) {
-        final QuicPacket.HeadersType headersType = QuicPacket.peekHeaderType(datagram,
+        final QuicPacket.HeadersType headersType = QuicPacketDecoder.peekHeaderType(datagram,
                 datagram.position());
         // consult the delivery policy if this packet should be dropped
         if (this.server.outgoingDeliveryPolicy().shouldDrop(destination, datagram,

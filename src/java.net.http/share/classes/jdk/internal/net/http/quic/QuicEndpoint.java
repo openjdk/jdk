@@ -64,8 +64,8 @@ import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.quic.QuicSelector.QuicNioSelector;
 import jdk.internal.net.http.quic.QuicSelector.QuicVirtualThreadPoller;
-import jdk.internal.net.http.quic.packets.QuicPacket;
 import jdk.internal.net.http.quic.packets.QuicPacket.HeadersType;
+import jdk.internal.net.http.quic.packets.QuicPacketDecoder;
 import jdk.internal.util.OperatingSystem;
 
 import javax.crypto.BadPaddingException;
@@ -858,7 +858,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      *   immediately
      */
     private Datagram matchDatagram(SocketAddress source, ByteBuffer buffer) {
-        HeadersType headersType = QuicPacket.peekHeaderType(buffer, buffer.position());
+        HeadersType headersType = QuicPacketDecoder.peekHeaderType(buffer, buffer.position());
         // short header packets whose length is < 21 are never valid
         if (headersType == HeadersType.SHORT && buffer.remaining() < 21) {
             return null;
@@ -1015,8 +1015,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     private ByteBuffer peekConnectionBytes(HeadersType headersType, ByteBuffer payload) {
         var cidlen = idFactory.connectionIdLength();
         return switch (headersType) {
-            case LONG -> QuicPacket.peekLongConnectionId(payload);
-            case SHORT -> QuicPacket.peekShortConnectionId(payload, cidlen);
+            case LONG -> QuicPacketDecoder.peekLongConnectionId(payload);
+            case SHORT -> QuicPacketDecoder.peekShortConnectionId(payload, cidlen);
             default -> null;
         };
     }
@@ -1048,12 +1048,12 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                     }
                     switch (datagram) {
                         case QuicDatagram(var connection, var _, var _) -> {
-                            var headersType = QuicPacket.peekHeaderType(payload, pos);
+                            var headersType = QuicPacketDecoder.peekHeaderType(payload, pos);
                             var destConnId = peekConnectionBytes(headersType, payload);
                             connection.processIncoming(source, destConnId, headersType, payload);
                         }
                         case UnmatchedDatagram(var _, var _) -> {
-                            var headersType = QuicPacket.peekHeaderType(payload, pos);
+                            var headersType = QuicPacketDecoder.peekHeaderType(payload, pos);
                             unmatchedQuicPacket(datagram, headersType, payload);
                         }
                         case StatelessReset(var connection, var _, var _) -> {
