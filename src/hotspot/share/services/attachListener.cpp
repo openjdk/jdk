@@ -172,8 +172,8 @@ volatile AttachListenerState AttachListener::_state = AL_NOT_INITIALIZED;
 
 AttachAPIVersion AttachListener::_supported_version = ATTACH_API_V1;
 
-// Default is false (if jdk.attach.vm.streaming property is not set).
-bool AttachListener::_default_streaming_output = false;
+// Default is true (if jdk.attach.vm.streaming property is not set).
+bool AttachListener::_default_streaming_output = true;
 
 static bool get_bool_sys_prop(const char* name, bool default_value, TRAPS) {
   ResourceMark rm(THREAD);
