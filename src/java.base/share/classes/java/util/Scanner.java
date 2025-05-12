@@ -78,8 +78,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     }
  * }
  *
- * <p>This code reads lines from {@link System#in} with {@link
- * System##stdin.encoding stdin.encoding}:
+ * <p>This code uses a {@code Scanner} to read lines from {@link System#in}. The
+ * {@code Scanner} uses the system property value of
+ * {@link System##stdin.encoding stdin.encoding} as the {@code Charset}:
  * {@snippet :
  *      Scanner sc = new Scanner(System.in, System.getProperty("stdin.encoding"));
  *      while (sc.hasNextLine()) {

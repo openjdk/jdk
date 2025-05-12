@@ -47,15 +47,20 @@ import sun.nio.cs.StreamDecoder;
  * BufferedReader.  For example:
  *
  * {@snippet lang=java :
- *     BufferedReader in = new BufferedReader(
- *         new InputStreamReader(System.in, System.getProperty("stdin.encoding")));
+ *     BufferedReader in = new BufferedReader(new InputStreamReader(anInputStream));
  * }
- * This example also demonstrates how to wrap {@link System#in} with {@link
- * System##stdin.encoding stdin.encoding}.
+ *
+ * <P>To read from {@link System#in}, use the system property value
+ * {@link System##stdin.encoding stdin.encoding} as the {@code Charset}:
+ *
+ * {@snippet lang=java :
+ *     new InputStreamReader(System.in, System.getProperty("stdin.encoding"));
+ * }
  *
  * @see BufferedReader
  * @see InputStream
  * @see Charset
+ * @see System##stdin.encoding stdin.encoding
  *
  * @author      Mark Reinhold
  * @since       1.1
