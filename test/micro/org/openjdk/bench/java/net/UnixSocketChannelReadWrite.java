@@ -23,8 +23,11 @@
 package org.openjdk.bench.java.net;
 
 import java.io.IOException;
+import java.net.StandardProtocolFamily;
+import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.*;
 import java.util.concurrent.TimeUnit;
@@ -43,18 +46,16 @@ import org.openjdk.jmh.annotations.*;
 @Fork(value = 3)
 public class UnixSocketChannelReadWrite {
 
-    private ServerUdsChannelHolder sscHolder;
+    private ServerSocketChannel ssc;
     private SocketChannel s1, s2;
     private ReadThread rt;
     private ByteBuffer bb = ByteBuffer.allocate(1);
 
-    private volatile Path socket;
-
     @Setup(Level.Trial)
     public void beforeRun() throws IOException {
-        sscHolder = ServerUdsChannelHolder.forClass(UnixSocketChannelReadWrite.class);
-        s1 = SocketChannel.open(sscHolder.channel.getLocalAddress());
-        s2 = sscHolder.channel.accept();
+        ssc = ServerSocketChannel.open(StandardProtocolFamily.UNIX).bind(null);
+        s1 = SocketChannel.open(ssc.getLocalAddress());
+        s2 = ssc.accept();
 
         rt = new ReadThread(s2);
         rt.start();
@@ -67,7 +68,9 @@ public class UnixSocketChannelReadWrite {
     public void afterRun() throws IOException, InterruptedException {
         s1.close();
         s2.close();
-        sscHolder.close();
+        Path udsFilePath = ((UnixDomainSocketAddress) ssc.getLocalAddress()).getPath();
+        ssc.close();
+        Files.delete(udsFilePath);
         rt.join();
     }
 

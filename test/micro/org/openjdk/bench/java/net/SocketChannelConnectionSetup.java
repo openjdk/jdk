@@ -23,8 +23,12 @@
 package org.openjdk.bench.java.net;
 
 import java.io.IOException;
+import java.net.StandardProtocolFamily;
+import java.net.UnixDomainSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.*;
@@ -44,44 +48,35 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @Fork(value = 3)
 public class SocketChannelConnectionSetup {
 
-    private ServerSocketChannelHolder sscHolder;
+    private ServerSocketChannel ssc;
 
     private SocketChannel s1, s2;
 
-    @Param({"inet", "unix"})
+    @Param({"INET", "UNIX"})
     private volatile String family;
-
-    private record ServerSocketChannelHolder(ServerSocketChannel channel, AutoCloseable terminator) {}
-
-    private ServerSocketChannelHolder createServerSocketChannelHolder() throws IOException {
-        return switch (family) {
-            case "inet" -> {
-                ServerSocketChannel channel = ServerSocketChannel.open().bind(null);
-                yield new ServerSocketChannelHolder(channel, channel);
-            }
-            case "unix" -> {
-                ServerUdsChannelHolder holder = ServerUdsChannelHolder.forClass(SocketChannelConnectionSetup.class);
-                yield new ServerSocketChannelHolder(holder.channel, holder);
-            }
-            default -> throw new InternalError("unknown family: " + family);
-        };
-    }
 
     @Setup(Level.Trial)
     public void beforeRun() throws IOException {
-        sscHolder = createServerSocketChannelHolder();
+        StandardProtocolFamily typedFamily = StandardProtocolFamily.valueOf(family);
+        ssc = ServerSocketChannel.open(typedFamily).bind(null);
     }
 
     @TearDown(Level.Trial)
     public void afterRun() throws Exception {
-        sscHolder.terminator.close();
+        Path udsFilePath = ssc.getLocalAddress() instanceof UnixDomainSocketAddress udsChannel
+                ? udsChannel.getPath()
+                : null;
+        ssc.close();
+        if (udsFilePath != null) {
+            Files.delete(udsFilePath);
+        }
     }
 
     @Benchmark
     @Measurement(iterations = 5, batchSize=200)
     public void test() throws IOException {
-        s1 = SocketChannel.open(sscHolder.channel.getLocalAddress());
-        s2 = sscHolder.channel.accept();
+        s1 = SocketChannel.open(ssc.getLocalAddress());
+        s2 = ssc.accept();
         s1.close();
         s2.close();
     }
