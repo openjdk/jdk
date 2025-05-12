@@ -2177,7 +2177,7 @@ public final class System {
                 return StringConcatHelper.mix(lengthCoder, value);
             }
 
-            public Object stringConcat1(String[] constants) {
+            public Object uncheckedStringConcat1(String[] constants) {
                 return new StringConcatHelper.Concat1(constants);
             }
 

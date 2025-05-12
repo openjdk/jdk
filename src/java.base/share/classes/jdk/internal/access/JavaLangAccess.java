@@ -458,7 +458,7 @@ public interface JavaLangAccess {
      * ownership of the string array to the callee</b>, since the latter will not
      * make a copy.
      */
-    Object stringConcat1(String[] constants);
+    Object uncheckedStringConcat1(String[] constants);
 
     /**
      * Get the string initial coder, When COMPACT_STRINGS is on, it returns 0, and when it is off, it returns 1.
