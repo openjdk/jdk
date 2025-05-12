@@ -668,7 +668,7 @@ public:
   void end_method();
   bool should_print_igv(int level);
   bool should_print_phase(int level) const;
-  bool should_print_ideal_phase(CompilerPhaseType cpt);
+  bool should_print_ideal_phase(CompilerPhaseType cpt) const;
 
   void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
