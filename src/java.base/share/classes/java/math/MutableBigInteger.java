@@ -1916,14 +1916,14 @@ class MutableBigInteger {
     /**
      * Calculate the integer {@code n}th root {@code floor(nthRoot(this, n))} where
      * {@code nthRoot(., n)} denotes the mathematical {@code n}th root. The contents of
-     * {@code this} are <b>not</b> changed. The value of {@code this} is assumed
+     * {@code this} are <em>not</em> changed. The value of {@code this} is assumed
      * to be non-negative and the root degree {@code n >= 3}.
      *
      * @implNote The implementation is based on the material in Richard P. Brent
      * and Paul Zimmermann, <a href="https://maths-people.anu.edu.au/~brent/pd/mca-cup-0.5.9.pdf">
      * Modern Computer Arithmetic</a>, 27-28.
      *
-     * @return the integer {@code n}th of {@code this}
+     * @return the integer {@code n}th root of {@code this}
      */
     MutableBigInteger nthRoot(int n) {
         // Special cases.
