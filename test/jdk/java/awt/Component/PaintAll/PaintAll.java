@@ -48,7 +48,6 @@ import java.awt.image.BufferedImage;
   @bug 6596915
   @summary Test Component.paintAll() method
   @author sergey.bylokhov@oracle.com: area=awt.component
-  @library /lib/client/
   @run main PaintAll
 */
 public class PaintAll {

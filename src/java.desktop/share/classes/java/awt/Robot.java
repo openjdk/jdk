@@ -127,13 +127,13 @@ public class Robot {
     private DirectColorModel screenCapCM = null;
 
     /**
-     * Default 20 milliseconds delay for mouse {@code click} and
+     * Default delay for mouse {@code click} and
      * step delay for mouse {@code glide}.
      */
     public static final int DEFAULT_DELAY = 20;
 
     /**
-     * Default 2 pixel step length for mouse {@code glide}.
+     * Default pixel step length for mouse {@code glide}.
      */
     public static final int DEFAULT_STEP_LENGTH = 2;
 
@@ -850,6 +850,9 @@ public class Robot {
      *
      * @param   x   Destination point x coordinate
      * @param   y   Destination point y coordinate
+     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
      * @see     #DEFAULT_STEP_LENGTH
      * @see     #DEFAULT_DELAY
      * @see     #glide(int, int, int, int, int, int)
@@ -869,6 +872,9 @@ public class Robot {
      * @param   fromY   Source point y coordinate
      * @param   toX     Destination point x coordinate
      * @param   toY     Destination point y coordinate
+     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
      * @see     #DEFAULT_STEP_LENGTH
      * @see     #DEFAULT_DELAY
      * @see     #glide(int, int, int, int, int, int)
@@ -894,6 +900,8 @@ public class Robot {
      *          greater than the distance between source and destination points
      * @throws  IllegalArgumentException if {@code stepDelay} is not between {@code 0}
      *          and {@code 60,000} milliseconds inclusive
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
      * @see     #mouseMove(int, int)
      * @see     #delay(int)
      * @since   25
