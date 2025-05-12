@@ -41,7 +41,6 @@
 // code and other areas.  For many calls, the current thread has not
 // been created so we cannot use Mutex.
 static PlatformMutex* _global_chunk_pool_mutex = nullptr;
-static int _recursion_count = 0;
 
 void Arena::initialize_chunk_pool() {
   _global_chunk_pool_mutex = new PlatformMutex();
@@ -50,12 +49,9 @@ void Arena::initialize_chunk_pool() {
 ChunkPoolLocker::ChunkPoolLocker() {
   assert(_global_chunk_pool_mutex != nullptr, "must be initialized");
   _global_chunk_pool_mutex->lock();
-  assert(_recursion_count == 0, "not recursive");
-  _recursion_count++;
 };
 
 ChunkPoolLocker::~ChunkPoolLocker() {
-  _recursion_count--;
   _global_chunk_pool_mutex->unlock();
 };
 
