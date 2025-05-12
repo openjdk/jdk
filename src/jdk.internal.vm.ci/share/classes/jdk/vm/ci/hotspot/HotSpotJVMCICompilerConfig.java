@@ -52,7 +52,13 @@ final class HotSpotJVMCICompilerConfig {
             this.reason = reason;
             this.runtime = runtime;
             if (runtime.getConfig().getFlag("EagerJVMCI", Boolean.class)) {
-                throw noCompilerError();
+                if (runtime.getCompilerToVM().isCompilerThread()) {
+                    throw noCompilerError();
+                } else {
+                    // This path will be taken when initializing JVMCI on a non-JIT thread.
+                    // Such a usage of JVMCI might never request a compilation so delay the
+                    // noCompilerError until such a request is made.
+                }
             }
         }
 
