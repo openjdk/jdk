@@ -210,8 +210,6 @@ typedef int (*malloc_info_func_t)(int options, FILE *stream);
 static malloc_info_func_t g_malloc_info = nullptr;
 #endif // __GLIBC__
 
-static int clock_tics_per_sec = 100;
-
 // If the VM might have been created on the primordial thread, we need to resolve the
 // primordial thread stack bounds and check if the current thread might be the
 // primordial thread in places. If we know that the primordial thread is never used,
@@ -1664,7 +1662,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
           }
 
           ThreadInVMfromNative tiv(jt);
-          debug_only(VMNativeEntryWrapper vew;)
+          DEBUG_ONLY(VMNativeEntryWrapper vew;)
 
           VM_LinuxDllLoad op(filename, ebuf, ebuflen);
           VMThread::execute(&op);
@@ -4378,8 +4376,6 @@ static void check_pax(void) {
 // this is called _before_ most of the global arguments have been parsed
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
-
-  clock_tics_per_sec = checked_cast<int>(sysconf(_SC_CLK_TCK));
   int sys_pg_size = checked_cast<int>(sysconf(_SC_PAGESIZE));
   if (sys_pg_size < 0) {
     fatal("os_linux.cpp: os::init: sysconf failed (%s)",
@@ -4572,7 +4568,7 @@ static void workaround_expand_exec_shield_cs_limit() {
    */
   char* hint = (char*)(os::Linux::initial_thread_stack_bottom() -
                        (StackOverflow::stack_guard_zone_size() + page_size));
-  char* codebuf = os::attempt_reserve_memory_at(hint, page_size, false, mtThread);
+  char* codebuf = os::attempt_reserve_memory_at(hint, page_size, mtThread);
 
   if (codebuf == nullptr) {
     // JDK-8197429: There may be a stack gap of one megabyte between
@@ -4580,7 +4576,7 @@ static void workaround_expand_exec_shield_cs_limit() {
     // Linux kernel workaround for CVE-2017-1000364.  If we failed to
     // map our codebuf, try again at an address one megabyte lower.
     hint -= 1 * M;
-    codebuf = os::attempt_reserve_memory_at(hint, page_size, false, mtThread);
+    codebuf = os::attempt_reserve_memory_at(hint, page_size, mtThread);
   }
 
   if ((codebuf == nullptr) || (!os::commit_memory(codebuf, page_size, true))) {
@@ -5132,9 +5128,9 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
                  &user_time, &sys_time);
   if (count != 13) return -1;
   if (user_sys_cpu_time) {
-    return ((jlong)sys_time + (jlong)user_time) * (1000000000 / clock_tics_per_sec);
+    return ((jlong)sys_time + (jlong)user_time) * (1000000000 / os::Posix::clock_tics_per_second());
   } else {
-    return (jlong)user_time * (1000000000 / clock_tics_per_sec);
+    return (jlong)user_time * (1000000000 / os::Posix::clock_tics_per_second());
   }
 }
 

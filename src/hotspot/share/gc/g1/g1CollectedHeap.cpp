@@ -547,7 +547,6 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   MemRegion reserved = _hrm.reserved();
   size_t size_used = 0;
-  uint shrink_count = 0;
 
   // Free the G1 regions that are within the specified range.
   MutexLocker x(Heap_lock);
@@ -559,21 +558,32 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
          p2i(start_address), p2i(last_address));
   size_used += range.byte_size();
 
+  uint max_shrink_count = 0;
+  if (capacity() > MinHeapSize) {
+    size_t max_shrink_bytes = capacity() - MinHeapSize;
+    max_shrink_count = (uint)(max_shrink_bytes / G1HeapRegion::GrainBytes);
+  }
+
+  uint shrink_count = 0;
   // Free, empty and uncommit regions with CDS archive content.
   auto dealloc_archive_region = [&] (G1HeapRegion* r, bool is_last) {
     guarantee(r->is_old(), "Expected old region at index %u", r->hrm_index());
     _old_set.remove(r);
     r->set_free();
     r->set_top(r->bottom());
-    _hrm.shrink_at(r->hrm_index(), 1);
-    shrink_count++;
+    if (shrink_count < max_shrink_count) {
+      _hrm.shrink_at(r->hrm_index(), 1);
+      shrink_count++;
+    } else {
+      _hrm.insert_into_free_list(r);
+    }
   };
 
   iterate_regions_in_range(range, dealloc_archive_region);
 
   if (shrink_count != 0) {
-    log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: %zuB",
-                              G1HeapRegion::GrainWords * HeapWordSize * shrink_count);
+    log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: %zuB (%u Regions)",
+                              G1HeapRegion::GrainWords * HeapWordSize * shrink_count, shrink_count);
     // Explicit uncommit.
     uncommit_regions(shrink_count);
   }
@@ -1230,7 +1240,8 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
   // Allocate a new reserved space, preferring to use large pages.
   ReservedSpace rs = MemoryReserver::reserve(size,
                                              alignment,
-                                             preferred_page_size);
+                                             preferred_page_size,
+                                             mtGC);
 
   size_t page_size = rs.page_size();
   G1RegionToSpaceMapper* result  =

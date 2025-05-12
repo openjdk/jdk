@@ -1333,6 +1333,46 @@ public class IRNode {
         vectorNode(MUL_ADD_VS2VI, "MulAddVS2VI", TYPE_INT);
     }
 
+    public static final String UMIN_VB = VECTOR_PREFIX + "UMIN_VB" + POSTFIX;
+    static {
+        vectorNode(UMIN_VB, "UMinV", TYPE_BYTE);
+    }
+
+    public static final String UMIN_VS = VECTOR_PREFIX + "UMIN_VS" + POSTFIX;
+    static {
+        vectorNode(UMIN_VS, "UMinV", TYPE_SHORT);
+    }
+
+    public static final String UMIN_VI = VECTOR_PREFIX + "UMIN_VI" + POSTFIX;
+    static {
+        vectorNode(UMIN_VI, "UMinV", TYPE_INT);
+    }
+
+    public static final String UMIN_VL = VECTOR_PREFIX + "UMIN_VL" + POSTFIX;
+    static {
+        vectorNode(UMIN_VL, "UMinV", TYPE_LONG);
+    }
+
+    public static final String UMAX_VB = VECTOR_PREFIX + "UMAX_VB" + POSTFIX;
+    static {
+        vectorNode(UMAX_VB, "UMaxV", TYPE_BYTE);
+    }
+
+    public static final String UMAX_VS = VECTOR_PREFIX + "UMAX_VS" + POSTFIX;
+    static {
+        vectorNode(UMAX_VS, "UMaxV", TYPE_SHORT);
+    }
+
+    public static final String UMAX_VI = VECTOR_PREFIX + "UMAX_VI" + POSTFIX;
+    static {
+        vectorNode(UMAX_VI, "UMaxV", TYPE_INT);
+    }
+
+    public static final String UMAX_VL = VECTOR_PREFIX + "UMAX_VL" + POSTFIX;
+    static {
+        vectorNode(UMAX_VL, "UMaxV", TYPE_LONG);
+    }
+
     // Can only be used if avx512_vnni is available.
     public static final String MUL_ADD_VS2VI_VNNI = PREFIX + "MUL_ADD_VS2VI_VNNI" + POSTFIX;
     static {
@@ -2136,6 +2176,26 @@ public class IRNode {
         machOnlyNameRegex(VAND_NOT_L_MASKED, "vand_notL_masked");
     }
 
+    public static final String RISCV_VAND_NOTI_VX = PREFIX + "RISCV_VAND_NOTI_VX" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VAND_NOTI_VX, "vand_notI_vx");
+    }
+
+    public static final String RISCV_VAND_NOTL_VX = PREFIX + "RISCV_VAND_NOTL_VX" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VAND_NOTL_VX, "vand_notL_vx");
+    }
+
+    public static final String RISCV_VAND_NOTI_VX_MASKED = PREFIX + "RISCV_VAND_NOTI_VX_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VAND_NOTI_VX_MASKED, "vand_notI_vx_masked");
+    }
+
+    public static final String RISCV_VAND_NOTL_VX_MASKED = PREFIX + "RISCV_VAND_NOTL_VX_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VAND_NOTL_VX_MASKED, "vand_notL_vx_masked");
+    }
+
     public static final String VECTOR_BLEND_B = VECTOR_PREFIX + "VECTOR_BLEND_B" + POSTFIX;
     static {
         vectorNode(VECTOR_BLEND_B, "VectorBlend", TYPE_BYTE);
@@ -2449,6 +2509,16 @@ public class IRNode {
     public static final String FNMSUB = PREFIX + "FNMSUB" + POSTFIX;
     static {
         machOnlyNameRegex(FNMSUB, "mnsub(F|D)_reg_reg");
+    }
+
+    public static final String FMA_F = PREFIX + "FMA_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(FMA_F, "FmaF");
+    }
+
+    public static final String FMA_D = PREFIX + "FMA_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(FMA_D, "FmaD");
     }
 
     public static final String VFMLA = PREFIX + "VFMLA" + POSTFIX;

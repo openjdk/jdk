@@ -530,7 +530,8 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                  "", "",
 #endif
                  UseCompressedOops ? ", compressed oops" : "",
-                 UseCompressedClassPointers ? ", compressed class ptrs" : "",
+                 UseCompactObjectHeaders ? ", compact obj headers"
+                                         : (UseCompressedClassPointers ? ", compressed class ptrs" : ""),
                  GCConfig::hs_err_name(),
                  VM_Version::vm_platform_string()
                );

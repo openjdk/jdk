@@ -25,6 +25,7 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveHeapWriter.hpp"
@@ -605,11 +606,8 @@ static objArrayOop get_archived_resolved_references(InstanceKlass* src_ik) {
 }
 
 void HeapShared::archive_strings() {
-  oop shared_strings_array = StringTable::init_shared_strings_array(_dumped_interned_strings);
+  oop shared_strings_array = StringTable::init_shared_strings_array();
   bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, shared_strings_array);
-  // We must succeed because:
-  // - _dumped_interned_strings do not contain any large strings.
-  // - StringTable::init_shared_table() doesn't create any large arrays.
   assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
   StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
 }
@@ -682,7 +680,7 @@ void HeapShared::write_heap(ArchiveHeapInfo *heap_info) {
     check_special_subgraph_classes();
   }
 
-  StringTable::write_shared_table(_dumped_interned_strings);
+  StringTable::write_shared_table();
   ArchiveHeapWriter::write(_pending_roots, heap_info);
 
   ArchiveBuilder::OtherROAllocMark mark;
@@ -709,8 +707,6 @@ void HeapShared::scan_java_class(Klass* orig_k) {
       bool success = HeapShared::archive_reachable_objects_from(1, _dump_time_special_subgraph, rr);
       assert(success, "must be");
     }
-
-    orig_ik->constants()->add_dumped_interned_strings();
   }
 }
 
@@ -1363,34 +1359,37 @@ void HeapShared::clear_archived_roots_of(Klass* k) {
   }
 }
 
-// Push all oops that are referenced by _referencing_obj onto the _stack.
-class HeapShared::ReferentPusher: public BasicOopIterateClosure {
+// Push all oop fields (or oop array elemenets in case of an objArray) in
+// _referencing_obj onto the _stack.
+class HeapShared::OopFieldPusher: public BasicOopIterateClosure {
   PendingOopStack* _stack;
   GrowableArray<oop> _found_oop_fields;
   int _level;
   bool _record_klasses_only;
   KlassSubGraphInfo* _subgraph_info;
   oop _referencing_obj;
+  bool _is_java_lang_ref;
  public:
-  ReferentPusher(PendingOopStack* stack,
-                           int level,
-                           bool record_klasses_only,
-                           KlassSubGraphInfo* subgraph_info,
-                           oop orig) :
+  OopFieldPusher(PendingOopStack* stack,
+                 int level,
+                 bool record_klasses_only,
+                 KlassSubGraphInfo* subgraph_info,
+                 oop orig) :
     _stack(stack),
     _found_oop_fields(),
     _level(level),
     _record_klasses_only(record_klasses_only),
     _subgraph_info(subgraph_info),
     _referencing_obj(orig) {
+    _is_java_lang_ref = AOTReferenceObjSupport::check_if_ref_obj(orig);
   }
-  void do_oop(narrowOop *p) { ReferentPusher::do_oop_work(p); }
-  void do_oop(      oop *p) { ReferentPusher::do_oop_work(p); }
+  void do_oop(narrowOop *p) { OopFieldPusher::do_oop_work(p); }
+  void do_oop(      oop *p) { OopFieldPusher::do_oop_work(p); }
 
-  ~ReferentPusher() {
+  ~OopFieldPusher() {
     while (_found_oop_fields.length() > 0) {
       // This produces the exact same traversal order as the previous version
-      // of ReferentPusher that recurses on the C stack -- a depth-first search,
+      // of OopFieldPusher that recurses on the C stack -- a depth-first search,
       // walking the oop fields in _referencing_obj by ascending field offsets.
       oop obj = _found_oop_fields.pop();
       _stack->push(PendingOop(obj, _referencing_obj, _level + 1));
@@ -1399,14 +1398,18 @@ class HeapShared::ReferentPusher: public BasicOopIterateClosure {
 
  protected:
   template <class T> void do_oop_work(T *p) {
-    oop obj = RawAccess<>::oop_load(p);
+    int field_offset = pointer_delta_as_int((char*)p, cast_from_oop<char*>(_referencing_obj));
+    oop obj = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(_referencing_obj, field_offset);
     if (!CompressedOops::is_null(obj)) {
-      size_t field_delta = pointer_delta(p, _referencing_obj, sizeof(char));
+      if (_is_java_lang_ref && AOTReferenceObjSupport::skip_field(field_offset)) {
+        // Do not follow these fields. They will be cleared to null.
+        return;
+      }
 
       if (!_record_klasses_only && log_is_enabled(Debug, cds, heap)) {
         ResourceMark rm;
-        log_debug(cds, heap)("(%d) %s[%zu] ==> " PTR_FORMAT " size %zu %s", _level,
-                             _referencing_obj->klass()->external_name(), field_delta,
+        log_debug(cds, heap)("(%d) %s[%d] ==> " PTR_FORMAT " size %zu %s", _level,
+                             _referencing_obj->klass()->external_name(), field_offset,
                              p2i(obj), obj->size() * HeapWordSize, obj->klass()->external_name());
         if (log_is_enabled(Trace, cds, heap)) {
           LogTarget(Trace, cds, heap) log;
@@ -1586,7 +1589,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
     // Find all the oops that are referenced by orig_obj, push them onto the stack
     // so we can work on them next.
     ResourceMark rm;
-    ReferentPusher pusher(stack, level, record_klasses_only, subgraph_info, orig_obj);
+    OopFieldPusher pusher(stack, level, record_klasses_only, subgraph_info, orig_obj);
     orig_obj->oop_iterate(&pusher);
   }
 
@@ -1613,7 +1616,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
 // - No java.lang.Class instance (java mirror) can be included inside
 //   an archived sub-graph. Mirror can only be the sub-graph entry object.
 //
-// The Java heap object sub-graph archiving process (see ReferentPusher):
+// The Java heap object sub-graph archiving process (see OopFieldPusher):
 //
 // 1) Java object sub-graph archiving starts from a given static field
 // within a Class instance (java mirror). If the static field is a
@@ -2059,11 +2062,8 @@ void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
 #endif
 }
 
-// Not all the strings in the global StringTable are dumped into the archive, because
-// some of those strings may be only referenced by classes that are excluded from
-// the archive. We need to explicitly mark the strings that are:
-//   [1] used by classes that WILL be archived;
-//   [2] included in the SharedArchiveConfigFile.
+// Keep track of the contents of the archived interned string table. This table
+// is used only by CDSHeapVerifier.
 void HeapShared::add_to_dumped_interned_strings(oop string) {
   assert_at_safepoint(); // DumpedInternedStrings uses raw oops
   assert(!ArchiveHeapWriter::is_string_too_large_to_archive(string), "must be");
