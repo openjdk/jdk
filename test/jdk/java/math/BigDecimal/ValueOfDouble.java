@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8356709
  * @summary Test Double.toString(double)
  * @run junit ValueOfDouble
  */
