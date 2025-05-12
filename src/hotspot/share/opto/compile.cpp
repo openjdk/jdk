@@ -5178,7 +5178,7 @@ void Compile::end_method() {
 bool Compile::should_print_phase(const int level) const {
 #ifndef PRODUCT
   return PrintPhaseLevel > 0 && directive()->PhasePrintLevelOption >= level &&
-    env() != nullptr && env()->task() != nullptr && is_c2_compile(env()->task()->comp_level());
+    _method != nullptr; // Do not print phases for stubs.
 #else
   return false;
 #endif
