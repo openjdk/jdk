@@ -41,6 +41,7 @@ import java.util.Date;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import jdk.test.lib.security.CertificateBuilder;
+import jdk.test.lib.security.SecurityUtils;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 import sun.security.x509.GeneralName;
 import sun.security.x509.GeneralNames;
@@ -78,8 +79,7 @@ public class AlgorithmConstraintsCheck {
 
         System.setProperty(
                 "jdk.tls.keymanager.disableConstraintsChecking", disabled);
-        Security.setProperty("jdk.tls.disabledAlgorithms",
-                certSignatureAlg);
+        SecurityUtils.addToDisabledTlsAlgs(certSignatureAlg);
 
         X509KeyManager km = getKeyManager(kmAlg, certSignatureAlg);
         String serverAlias = km.chooseServerAlias(KEY_TYPE, null, null);
@@ -90,12 +90,13 @@ public class AlgorithmConstraintsCheck {
         String serverAliasPrefix = kmAlg.equalsIgnoreCase("PKIX") ? "1.0." : "";
         String clientAliasPrefix = kmAlg.equalsIgnoreCase("PKIX") ? "2.0." : "";
 
-        if ("false".equals(disabled)) {
-            assertNull(serverAlias);
-            assertNull(clientAlias);
-        } else {
+        if ("true".equals(disabled)) {
             assertEquals(serverAliasPrefix + CERT_ALIAS, serverAlias);
             assertEquals(clientAliasPrefix + CERT_ALIAS, clientAlias);
+        } else {
+            assertNull(serverAlias);
+            assertNull(clientAlias);
+
         }
     }
 
