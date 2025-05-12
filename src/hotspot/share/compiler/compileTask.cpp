@@ -27,6 +27,7 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compileTask.inline.hpp"
+#include "gc/g1/g1CollectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -147,29 +148,33 @@ CompileTask* CompileTask::select_for_compilation() {
   return this;
 }
 
-void CompileTask::mark_on_stack() {
-  if (!is_safe()) {
-    return;
-  }
-  // Mark these methods as something redefine classes cannot remove.
-  _method_handle.method()->set_on_stack(true);
-  if (_hot_method_handle.method() != nullptr) {
-    _hot_method_handle.method()->set_on_stack(true);
-  }
-}
-
-bool CompileTask::is_safe() const {
+bool CompileTask::is_safe() {
   return _method_handle.is_safe() && _hot_method_handle.is_safe();
 }
 
+// ------------------------------------------------------------------
 // RedefineClasses support
-void CompileTask::metadata_do(MetadataClosure* f) {
-  if (!is_safe()) {
-    return;
+
+void CompileTask::mark_on_stack() {
+  // Mark these methods as something redefine classes cannot remove.
+  // Redefinition runs in VM thread, which cannot ask about the method
+  // safety. This is why we end up asking for method unsafely.
+  assert_at_safepoint();
+  assert(Thread::current()->is_VM_thread(), "Sanity");
+  _method_handle.method_unsafe()->set_on_stack(true);
+  if (_hot_method_handle.method_unsafe() != nullptr) {
+    _hot_method_handle.method_unsafe()->set_on_stack(true);
   }
-  f->do_metadata(method());
-  if (hot_method() != nullptr && hot_method() != method()) {
-    f->do_metadata(hot_method());
+}
+
+void CompileTask::metadata_do(MetadataClosure* f) {
+  // Redefinition runs in VM thread, which cannot ask about the method
+  // safety. This is why we end up asking for method unsafely.
+  assert_at_safepoint();
+  assert(Thread::current()->is_VM_thread(), "Sanity");
+  f->do_metadata(_method_handle.method_unsafe());
+  if (_hot_method_handle.method_unsafe() != nullptr) {
+    f->do_metadata(_hot_method_handle.method_unsafe());
   }
 }
 

@@ -29,11 +29,11 @@
 
 #include "oops/unloadableMethodHandle.inline.hpp"
 
-inline Method* CompileTask::method() const {
+inline Method* CompileTask::method() {
   return _method_handle.method();
 }
 
-inline Method* CompileTask::hot_method() const {
+inline Method* CompileTask::hot_method() {
   return _hot_method_handle.method();
 }
 

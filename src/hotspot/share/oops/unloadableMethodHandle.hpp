@@ -85,6 +85,23 @@ private:
   } volatile _state;
 
   volatile int _spin_lock;
+  DEBUG_ONLY(volatile Thread* _spin_lock_owner;)
+
+  class Lock : StackObj {
+  private:
+    UnloadableMethodHandle* const _handle;
+
+  public:
+    Lock(UnloadableMethodHandle* handle) : _handle(handle) {
+      assert(_handle->_spin_lock_owner != Thread::current(), "Re-entering already owned lock, about to deadlock");
+      Thread::SpinAcquire(&_handle->_spin_lock);
+      DEBUG_ONLY(_handle->_spin_lock_owner = Thread::current();)
+    }
+    ~Lock() {
+      DEBUG_ONLY(_handle->_spin_lock_owner = nullptr;)
+      Thread::SpinRelease(&_handle->_spin_lock);
+    }
+  };
 
   Method* _method;
   WeakHandle _weak_handle;
@@ -99,9 +116,10 @@ public:
   UnloadableMethodHandle(Method* method);
   inline void release();
 
-  inline Method* method() const;
+  inline Method* method();
+  inline Method* method_unsafe();
 
-  inline bool is_safe() const;
+  inline bool is_safe();
   void make_always_safe();
 };
 
