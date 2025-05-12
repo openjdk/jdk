@@ -51,15 +51,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ZipInputStreamCRCCheck {
 
     static List<Arguments> args() {
-        final int[] entrySizes = {10, 0, 1024};
-        final int[] methods = new int[]{ZipOutputStream.STORED, ZipOutputStream.DEFLATED};
-        final List<Arguments> args = new ArrayList<>();
-        for (int method : methods) {
-            for (int size : entrySizes) {
-                args.add(Arguments.of(method, size));
-            }
-        }
-        return args;
+        return List.of(
+                Arguments.of(ZipOutputStream.STORED, 10),
+                Arguments.of(ZipOutputStream.STORED, 0),
+                Arguments.of(ZipOutputStream.STORED, 1024),
+                Arguments.of(ZipOutputStream.DEFLATED, 10),
+                Arguments.of(ZipOutputStream.DEFLATED, 0),
+                Arguments.of(ZipOutputStream.DEFLATED, 1024)
+        );
     }
 
     /*
