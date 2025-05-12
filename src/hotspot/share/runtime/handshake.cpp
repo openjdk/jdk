@@ -256,6 +256,8 @@ class VM_HandshakeAllThreads: public VM_Operation {
     // the read of JavaThread state in the try_process() call below.
     if (UseSystemMemoryBarrier) {
       SystemMemoryBarrier::emit();
+    } else {
+      OrderAccess::fence();
     }
 
     if (number_of_threads_issued < 1) {
@@ -383,6 +385,8 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
   // the read of JavaThread state in the try_process() call below.
   if (UseSystemMemoryBarrier) {
     SystemMemoryBarrier::emit();
+  } else {
+    OrderAccess::fence();
   }
 
   // Keeps count on how many of own emitted handshakes
@@ -562,9 +566,9 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
 
-  // Separation of all the writes above for other threade reading state
-  // set by this thread in case the operation is ThreadSuspendHandshake
-  // is addressed by OrderAccess::fence() in the mutex code
+  // Separate all the writes above for other threads reading state
+  // set by this thread in case the operation is ThreadSuspendHandshake.
+  OrderAccess::fence();
 
   while (has_operation()) {
     // Handshakes cannot safely safepoint. The exceptions to this rule are
