@@ -60,6 +60,17 @@ inline void UnloadableMethodHandle::set_state(State s) {
   Atomic::release_store_fence(&_state, s);
 }
 
+inline void UnloadableMethodHandle::spin_lock() {
+  assert(_spin_lock_owner != Thread::current(), "Re-entering already owned lock, about to deadlock");
+  Thread::SpinAcquire(&_spin_lock);
+  DEBUG_ONLY(_spin_lock_owner = Thread::current();)
+}
+
+inline void UnloadableMethodHandle::spin_unlock() {
+  DEBUG_ONLY(_spin_lock_owner = nullptr;)
+  Thread::SpinRelease(&_spin_lock);
+}
+
 oop UnloadableMethodHandle::get_unload_blocker(Method* method) {
   assert(method != nullptr, "Should be");
 
@@ -91,7 +102,7 @@ void UnloadableMethodHandle::release() {
     case WEAK: {
       // Release only once.
       // This also coordinates with is_safe check.
-      Lock lock(this);
+      SpinLocker locker(this);
       if (get_state() == STRONG || get_state() == WEAK) {
         _strong_handle.release(Universe::vm_global());
         _weak_handle.release(Universe::vm_weak());
@@ -131,7 +142,7 @@ bool UnloadableMethodHandle::is_safe() {
 
       // Safety 2: Need to take a lock to coordinate with concurrent
       // release that would change the weak handle state.
-      Lock lock(this);
+      SpinLocker locker(this);
       if (get_state() != WEAK) {
         // State changed. Circle back to act accordingly.
         return is_safe();
@@ -159,7 +170,7 @@ inline void UnloadableMethodHandle::make_always_safe() {
     case WEAK: {
       // Transition WEAK -> STRONG only once.
       // Otherwise, this leaks strong handles.
-      Lock lock(this);
+      SpinLocker locker(this);
       if (get_state() == WEAK) {
         oop obj = get_unload_blocker(_method);
         assert(obj != nullptr, "Should have one");

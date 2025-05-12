@@ -87,19 +87,19 @@ private:
   volatile int _spin_lock;
   DEBUG_ONLY(volatile Thread* _spin_lock_owner;)
 
-  class Lock : StackObj {
+  void spin_lock();
+  void spin_unlock();
+
+  class SpinLocker : StackObj {
   private:
     UnloadableMethodHandle* const _handle;
 
   public:
-    Lock(UnloadableMethodHandle* handle) : _handle(handle) {
-      assert(_handle->_spin_lock_owner != Thread::current(), "Re-entering already owned lock, about to deadlock");
-      Thread::SpinAcquire(&_handle->_spin_lock);
-      DEBUG_ONLY(_handle->_spin_lock_owner = Thread::current();)
+    SpinLocker(UnloadableMethodHandle* handle) : _handle(handle) {
+      _handle->spin_lock();
     }
-    ~Lock() {
-      DEBUG_ONLY(_handle->_spin_lock_owner = nullptr;)
-      Thread::SpinRelease(&_handle->_spin_lock);
+    ~SpinLocker() {
+      _handle->spin_unlock();
     }
   };
 

@@ -27,7 +27,6 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compileTask.inline.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
