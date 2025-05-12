@@ -157,7 +157,8 @@ public class newinstance007 {
 
             thread = brkpEvent.thread();
 
-            suspendedThread = debugee.threadByName(newinstance007a.testedThread);
+            suspendedThread = debugee.threadByFieldNameOrThrow(testedClass, "thread",
+                                                               newinstance007a.testedThread);
             switch (i) {
             case 0:
                 suspendedThread.suspend();

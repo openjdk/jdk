@@ -31,6 +31,8 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class setvalue003t {
+    static Thread testThread = null;
+
     // tested static fields
     static byte    sByteFld = Byte.MAX_VALUE;
     static short   sShortFld = Short.MAX_VALUE;
@@ -53,7 +55,6 @@ public class setvalue003t {
     boolean booleanFld = false;
     String  strFld = "instance field";
 
-
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);
     }
@@ -66,7 +67,8 @@ public class setvalue003t {
         ArgumentHandler argHandler = new ArgumentHandler(args);
         IOPipe setvalue003tPipe = argHandler.createDebugeeIOPipe();
 
-        Thread.currentThread().setName(setvalue003.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(setvalue003.DEBUGGEE_THRNAME);
 
         setvalue003tPipe.println(setvalue003.COMMAND_READY);
         String cmd = setvalue003tPipe.readln();

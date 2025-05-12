@@ -95,9 +95,12 @@ public class newinstance009 {
             return quitDebuggee();
         }
 
-        ThreadReference thrRef = null;
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
+        // debuggee main class
+        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+        ClassType clsType = (ClassType) rType;
+
+        ThreadReference thrRef = debuggee.threadByFieldNameOrThrow(rType, "thread", DEBUGGEE_THRNAME);
+        if (thrRef == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;
@@ -123,10 +126,6 @@ public class newinstance009 {
         }
 
         try {
-            // debuggee main class
-            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
-            ClassType clsType = (ClassType) rType;
-
             List methList = rType.methodsByName("<init>");
             if (methList.isEmpty()) {
                 log.complain("TEST FAILURE: the expected constructor "

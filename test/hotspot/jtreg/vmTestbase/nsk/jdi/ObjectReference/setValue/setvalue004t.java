@@ -31,6 +31,8 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class setvalue004t {
+    static Thread testThread = null;
+
     // tested static final fields
     static final byte    sByteFld = 127;
     static final short   sShortFld = -32768;
@@ -65,7 +67,8 @@ public class setvalue004t {
         ArgumentHandler argHandler = new ArgumentHandler(args);
         IOPipe setvalue004tPipe = argHandler.createDebugeeIOPipe();
 
-        Thread.currentThread().setName(setvalue004.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(setvalue004.DEBUGGEE_THRNAME);
 
         setvalue004tPipe.println(setvalue004.COMMAND_READY);
         String cmd = setvalue004tPipe.readln();

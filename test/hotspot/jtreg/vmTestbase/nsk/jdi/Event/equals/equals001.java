@@ -126,7 +126,8 @@ public class equals001 {
             switch (i) {
 
                 case 0:
-                       ThreadReference thread = debuggee.threadByName(threadName);
+                       ThreadReference thread =
+                           debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName);
 
                        display("setting up StepRequest");
                        eventRequest = eventRequestManager.createStepRequest

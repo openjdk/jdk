@@ -55,7 +55,7 @@ public class invokemethod009 {
     static final String DEBUGGEE_THRNAME = "invokemethod009tThr";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 57;
+    static final int DEBUGGEE_STOPATLINE = 60;
 
     // tested debuggee methods, fields and reference types
     static final int METH_NUM = 2;
@@ -112,15 +112,16 @@ public class invokemethod009 {
             return quitDebuggee();
         }
 
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
+        // debuggee main class
+        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+        thrRef = debuggee.threadByFieldNameOrThrow(rType, "testThread", DEBUGGEE_THRNAME);
+        if (thrRef == null) {
             log.complain("TEST FAILURE: Method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;
             return quitDebuggee();
         }
-        // debuggee main class
-        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
 
 // Check the tested assersion
         try {

@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class invokemethod009t {
+    static Thread testThread = null;
+
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);
     }
@@ -44,7 +46,8 @@ public class invokemethod009t {
     private int runIt(String args[]) {
         ArgumentHandler argHandler = new ArgumentHandler(args);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
-        Thread.currentThread().setName(invokemethod009.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(invokemethod009.DEBUGGEE_THRNAME);
 
         pipe.println(invokemethod009.COMMAND_READY);
         String cmd = pipe.readln();

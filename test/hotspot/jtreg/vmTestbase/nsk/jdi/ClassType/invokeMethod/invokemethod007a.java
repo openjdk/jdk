@@ -40,13 +40,13 @@ public class invokemethod007a {
     public static Log log;
     public static long waitTime;
     private static IOPipe pipe;
+    static Thread thread = null;
 
     public static void main (String argv[]) {
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         log = new Log(System.err, argHandler);
         waitTime = argHandler.getWaitTime() * 60000;
         pipe = argHandler.createDebugeeIOPipe(log);
-        Thread thread = null;
         pipe.println(invokemethod007.SGNL_READY);
 
         String instr = pipe.readln();
@@ -54,7 +54,7 @@ public class invokemethod007a {
 
             // create new thread and start it
             if (instr.equals(invokemethod007.SGNL_STRTHRD)) {
-                thread = JDIThreadFactory.newThread(new im007aThread01("im007aThread01"));
+                thread = JDIThreadFactory.newThread(new im007aThread01(testedThread));
                 synchronized(im007aThread01.waitStarting) {
                     thread.start();
                     try {

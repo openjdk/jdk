@@ -64,6 +64,7 @@ public class hashcode001a {
 
     static Object lock = new Object();
     static Object wait = new Object();
+    static Thread thread1 = null;
 
     //------------------------------------------------------ mutable common method
 
@@ -73,7 +74,7 @@ public class hashcode001a {
         log = new Log(System.err, argHandler);
         pipe = argHandler.createDebugeeIOPipe(log);
         try {
-            Thread thread1 = JDIThreadFactory.newThread(new hashcode001aThread("thread1"));
+            thread1 = JDIThreadFactory.newThread(new hashcode001aThread("thread1"));
 
             synchronized (lock) {
                  synchronized(wait) {

@@ -71,7 +71,7 @@ public class invokemethod002 {
     static final String DEBUGGEE_THRNAME = "invokemethod002tThr";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 62;
+    static final int DEBUGGEE_STOPATLINE = 64;
 
     // debuggee local var used to find needed stack frame
     static final String DEBUGGEE_LOCALVAR = "invokemethod002tdummyCls";
@@ -124,14 +124,15 @@ public class invokemethod002 {
             return quitDebuggee();
         }
 
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
+        rType[0] = debuggee.classByName(DEBUGGEE_CLASS); // debuggee main class
+
+        thrRef = debuggee.threadByFieldNameOrThrow(rType[0], "testThread", DEBUGGEE_THRNAME);
+        if (thrRef == null) {
             log.complain("TEST FAILURE: Method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;
             return quitDebuggee();
         }
-        rType[0] = debuggee.classByName(DEBUGGEE_CLASS); // debuggee main class
 
 // Check the tested assersion
         try {

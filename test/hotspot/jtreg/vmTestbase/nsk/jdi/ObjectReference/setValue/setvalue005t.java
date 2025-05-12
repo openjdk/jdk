@@ -31,6 +31,8 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class setvalue005t {
+    static Thread testThread = null;
+
     // dummy instance uninitialized fields of reference types
     setvalue005tDummyType dummyType;
     setvalue005tAbsDummyType absDummyType;
@@ -48,7 +50,8 @@ public class setvalue005t {
         ArgumentHandler argHandler = new ArgumentHandler(args);
         IOPipe setvalue005tPipe = argHandler.createDebugeeIOPipe();
 
-        Thread.currentThread().setName(setvalue005.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(setvalue005.DEBUGGEE_THRNAME);
 
         setvalue005tPipe.println(setvalue005.COMMAND_READY);
         String cmd = setvalue005tPipe.readln();

@@ -34,6 +34,7 @@ import nsk.share.jdi.*;
  */
 public class invokemethod014t {
     public static Log log;
+    static Thread testThread = null;
 
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);
@@ -58,7 +59,8 @@ public class invokemethod014t {
 
         log = argHandler.createDebugeeLog();
 
-        Thread.currentThread().setName(invokemethod014.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(invokemethod014.DEBUGGEE_THRNAME);
 
         // Now the debuggee is ready for testing
         pipe.println(invokemethod014.COMMAND_READY);

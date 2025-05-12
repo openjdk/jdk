@@ -73,7 +73,9 @@ package nsk.jdi.StepEvent._itself_.stepEvent003;
 
 import java.io.*;
 import java.util.*;
+import com.sun.jdi.ReferenceType;
 import com.sun.jdi.request.StepRequest;
+import com.sun.jdi.ThreadReference;
 import nsk.share.Consts;
 import nsk.share.jdi.EventHandler;
 import nsk.share.jdi.sde.*;
@@ -165,8 +167,12 @@ public class stepEvent003 extends SDEDebugger {
         StepEventListener stepEventListener = new StepEventListener();
         eventHandler.addListener(stepEventListener);
 
+        ReferenceType debuggeeClass = debuggee.classByName(SDEDebuggee.class.getName());
+        ThreadReference mainThread =
+            debuggee.threadByFieldNameOrThrow(debuggeeClass, "mainThread",
+                                              SDEDebuggee.mainThreadName);
         StepRequest stepRequest = debuggee.getEventRequestManager().createStepRequest(
-                debuggee.threadByName(SDEDebuggee.mainThreadName),
+                mainThread,
                 StepRequest.STEP_LINE,
                 StepRequest.STEP_INTO);
 

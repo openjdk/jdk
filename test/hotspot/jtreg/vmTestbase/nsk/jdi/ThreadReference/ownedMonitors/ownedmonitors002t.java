@@ -31,13 +31,16 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class ownedmonitors002t {
+    static Thread testThread = null;
+
     public static void main(String args[]) {
         ArgumentHandler argHandler = new ArgumentHandler(args);
 
         Log log = argHandler.createDebugeeLog();
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
-        Thread.currentThread().setName(ownedmonitors002.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(ownedmonitors002.DEBUGGEE_THRNAME);
 
         // Now the debuggee is ready for testing
         pipe.println(ownedmonitors002.COMMAND_READY);

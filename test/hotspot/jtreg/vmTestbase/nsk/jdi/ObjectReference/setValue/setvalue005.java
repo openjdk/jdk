@@ -109,8 +109,10 @@ public class setvalue005 {
             return quitDebuggee();
         }
 
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
+        ReferenceType debuggeeClass = debuggee.classByName(DEBUGGEE_CLASS); // debuggee main class
+
+        thrRef = debuggee.threadByFieldNameOrThrow(debuggeeClass, "testThread", DEBUGGEE_THRNAME);
+        if (thrRef == null) {
             log.complain("TEST FAILURE: Method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;

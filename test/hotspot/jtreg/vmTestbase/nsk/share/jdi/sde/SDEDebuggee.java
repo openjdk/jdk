@@ -28,6 +28,7 @@ import nsk.share.jdi.*;
 
 public class SDEDebuggee extends AbstractJDIDebuggee {
     public static String mainThreadName = "SDEDebuggee_mainThread";
+    public static Thread mainThread = null;
 
     // command:class_name
     public static String COMMAND_EXECUTE_TEST_METHODS = "executeTestMethods";
@@ -42,7 +43,8 @@ public class SDEDebuggee extends AbstractJDIDebuggee {
         if (classpath == null)
             throw new TestBug("Debuggee requires '-testClassPath' parameter");
 
-        Thread.currentThread().setName(mainThreadName);
+        mainThread = Thread.currentThread();
+        mainThread.setName(mainThreadName);
 
         return args;
     }

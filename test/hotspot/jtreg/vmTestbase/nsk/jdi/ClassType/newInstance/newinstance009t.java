@@ -31,6 +31,8 @@ import nsk.share.jdi.*;
  * This is debuggee class.
  */
 public class newinstance009t {
+    static Thread thread = null;
+
     // constructor used only to check IncompatibleThreadStateException throwing
     // in the debugger
     newinstance009t() {
@@ -48,7 +50,8 @@ public class newinstance009t {
     private int runIt(String args[]) {
         ArgumentHandler argHandler = new ArgumentHandler(args);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
-        Thread.currentThread().setName(newinstance009.DEBUGGEE_THRNAME);
+        thread = Thread.currentThread();
+        thread.setName(newinstance009.DEBUGGEE_THRNAME);
 
         pipe.println(newinstance009.COMMAND_READY);
         String cmd = pipe.readln();

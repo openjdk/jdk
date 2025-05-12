@@ -158,7 +158,8 @@ public class invokemethod007 {
 
             thread = brkpEvent.thread();
 
-            suspendedThread = debugee.threadByName(invokemethod007a.testedThread);
+            suspendedThread = debugee.threadByFieldNameOrThrow(testedClass, "thread",
+                                                               invokemethod007a.testedThread);
             switch (i) {
             case 0:
                 suspendedThread.suspend();

@@ -111,8 +111,11 @@ public class invokemethod010 {
             return quitDebuggee();
         }
 
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
+        // debuggee main class
+        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+        
+        thrRef = debuggee.threadByFieldNameOrThrow(rType, "testThread", DEBUGGEE_THRNAME);
+        if (thrRef == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;
@@ -139,7 +142,6 @@ public class invokemethod010 {
 
         try {
             // debuggee main class
-            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
             ClassType clsType = (ClassType) rType;
 
             for (int i=0; i<METH_NUM; i++) {

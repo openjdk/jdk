@@ -33,6 +33,7 @@ import nsk.share.jdi.*;
  */
 public class invokemethod002t {
     static {} // force javac to produce <clinit> method
+    static Thread testThread = null;
 
     invokemethod002t() {} // force javac to produce <init> method
 
@@ -49,7 +50,8 @@ public class invokemethod002t {
         IOPipe pipe = argHandler.createDebugeeIOPipe();
         invokemethod002tDummyClass invokemethod002tdummyCls = new invokemethod002tDummyClass();
 
-        Thread.currentThread().setName(invokemethod002.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(invokemethod002.DEBUGGEE_THRNAME);
 
         pipe.println(invokemethod002.COMMAND_READY);
         String cmd = pipe.readln();

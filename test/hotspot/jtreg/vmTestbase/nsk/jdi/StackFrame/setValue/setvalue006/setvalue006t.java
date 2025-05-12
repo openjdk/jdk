@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class setvalue006t {
+    static Thread mainThread = null;
+
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);
     }
@@ -46,7 +48,8 @@ public class setvalue006t {
         Log log = argHandler.createDebugeeLog();
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
-        Thread.currentThread().setName(setvalue006.DEBUGGEE_THRDNAME);
+        mainThread = Thread.currentThread();
+        mainThread.setName(setvalue006.DEBUGGEE_THRDNAME);
 
         // dummy local vars used by debugger to provoke InvalidTypeException
         byte    byteVar = Byte.MAX_VALUE;

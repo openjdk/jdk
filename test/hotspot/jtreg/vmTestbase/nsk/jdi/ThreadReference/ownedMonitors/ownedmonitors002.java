@@ -91,9 +91,12 @@ public class ownedmonitors002 {
             return quitDebuggee();
         }
 
-        ThreadReference thrRef;
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
+        // debuggee main class
+        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+        ThreadReference thrRef =
+            debuggee.threadByFieldNameOrThrow(rType, "testThread", DEBUGGEE_THRNAME);
+        if (thrRef == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;

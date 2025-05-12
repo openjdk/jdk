@@ -68,7 +68,7 @@ public class invokemethod014 {
     static final String DEBUGGEE_THRNAME = "invokemethod014tThr";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 61;
+    static final int DEBUGGEE_STOPATLINE = 63;
 
     static final int TIMEOUT_DELTA = 1000; // in milliseconds
 
@@ -113,9 +113,13 @@ public class invokemethod014 {
             return quitDebuggee();
         }
 
-        ThreadReference thrRef = null;
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
+        // debuggee main class
+        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+        ClassType clsType = (ClassType) rType;
+       
+        ThreadReference thrRef =
+            debuggee.threadByFieldNameOrThrow(rType, "testThread", DEBUGGEE_THRNAME);
+        if (thrRef == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;
@@ -123,9 +127,6 @@ public class invokemethod014 {
         }
 
         try {
-            // debuggee main class
-            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
-            ClassType clsType = (ClassType) rType;
             suspendAtBP(rType, DEBUGGEE_STOPATLINE);
 
             for (int i=0; i<METH_NUM; i++) {

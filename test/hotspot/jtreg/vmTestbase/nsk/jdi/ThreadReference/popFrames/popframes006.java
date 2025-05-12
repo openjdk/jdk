@@ -59,7 +59,7 @@ public class popframes006 {
     static final String DEBUGGEE_FIELD = "wasPopped";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 80;
+    static final int DEBUGGEE_STOPATLINE = 83;
 
     static final int ATTEMPTS = 5;
     static final int DELAY = 500; // in milliseconds
@@ -106,9 +106,12 @@ public class popframes006 {
             return quitDebuggee();
         }
 
-        ThreadReference thrRef = null;
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
+        // debuggee main class
+        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+        ThreadReference thrRef =
+            debuggee.threadByFieldNameOrThrow(rType, "testThread", DEBUGGEE_THRNAME);
+        if (thrRef == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;
@@ -117,9 +120,6 @@ public class popframes006 {
 
         Field doExit = null;
         try {
-            // debuggee main class
-            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
-
             suspendAtBP(rType, DEBUGGEE_STOPATLINE);
 
             // debuggee field used to indicate that popping has been done

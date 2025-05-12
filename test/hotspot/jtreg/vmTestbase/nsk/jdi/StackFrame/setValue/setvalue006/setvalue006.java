@@ -132,7 +132,7 @@ public class setvalue006 {
     };
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 72;
+    static final int DEBUGGEE_STOPATLINE = 75;
 
     static final int DELAY = 500; // in milliseconds
 
@@ -177,9 +177,12 @@ public class setvalue006 {
             return quitDebuggee();
         }
 
-        ThreadReference thrRef = null;
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRDNAME)) == null) {
+        // debuggee main class
+        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+        ThreadReference thrRef =
+            debuggee.threadByFieldNameOrThrow(rType, "mainThread", DEBUGGEE_THRDNAME);
+        if (thrRef == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                 + DEBUGGEE_THRDNAME);
             tot_res = Consts.TEST_FAILED;
@@ -187,9 +190,6 @@ public class setvalue006 {
         }
 
         try {
-            // debuggee main class
-            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
-
             suspendAtBP(rType, DEBUGGEE_STOPATLINE);
 
             // find a stack frame which belongs to the "setvalue006tMainThr" thread
