@@ -119,6 +119,8 @@ void ShenandoahDirectCardMarkRememberedSet::mark_read_table_as_clean() {
   while (bp <= end_bp) {
     *bp++ = CardTable::clean_card_val();
   }
+
+  log_develop_debug(gc, barrier)("Cleaned read_table from " PTR_FORMAT " to " PTR_FORMAT, p2i(&(read_table[0])), p2i(end_bp));
 }
 
 // No lock required because arguments align with card boundaries.
@@ -613,6 +615,8 @@ void ShenandoahDirectCardMarkRememberedSet::merge_write_table(HeapWord* start, s
   for (size_t i = 0; i < num; i++) {
     read_table[i] &= write_table[i];
   }
+
+  log_develop_debug(gc, remset)("Finished merging write_table into read_table.");
 }
 
 void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
@@ -638,6 +642,8 @@ void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
 
   // Iterate on threads and adjust thread local data
   Threads::threads_do(&swap_it);
+
+  log_develop_debug(gc, barrier)("Current write_card_table: " PTR_FORMAT, p2i(swap_it._new_ptr));
 }
 
 ShenandoahScanRememberedTask::ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
