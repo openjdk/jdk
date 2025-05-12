@@ -386,6 +386,15 @@
           "Limit of ops to make speculative when using CMOVE")              \
           range(0, max_jint)                                                \
                                                                             \
+  develop(intx, PrintPhaseLevel, 0,                                         \
+          "Level of detail of the phase trace print. "                      \
+          "System-wide value, -1=printing is disabled, "                    \
+          "0=print nothing except PhasePrintLevel directives, "             \
+          "6=all details printed. "                                         \
+          "Level of detail of printouts can be set on a per-method level "  \
+          "as well by using CompileCommand=option.")                        \
+          range(-1, 6)                                                      \
+                                                                            \
   develop(bool, PrintIdealGraph, false,                                     \
           "Print ideal graph to XML file / network interface. "             \
           "By default attempts to connect to the visualizer on a socket.")  \

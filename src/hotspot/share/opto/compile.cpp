@@ -32,6 +32,7 @@
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
@@ -575,6 +576,11 @@ void Compile::print_compile_messages() {
 }
 
 #ifndef PRODUCT
+void Compile::print_phase(const char* phase_name) {
+  ttyLocker ttyl;
+  tty->print_cr("%lu.\t%s", ++_phase_counter, phase_name);
+}
+
 void Compile::print_ideal_ir(const char* phase_name) {
   // keep the following output all in one block
   // This output goes directly to the tty, not the compiler log.
@@ -1054,6 +1060,7 @@ void Compile::Init(bool aliasing) {
   set_decompile_count(0);
 
 #ifndef PRODUCT
+  _phase_counter = 0;
   Copy::zero_to_bytes(_igv_phase_iter, sizeof(_igv_phase_iter));
 #endif
 
@@ -5134,6 +5141,9 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   if (should_print_igv(level)) {
     _igv_printer->print_graph(name);
   }
+  if (should_print_phase(level)) {
+    print_phase(name);
+  }
   if (should_print_ideal_phase(cpt)) {
     print_ideal_ir(CompilerPhaseTypeHelper::to_name(cpt));
   }
@@ -5162,6 +5172,15 @@ void Compile::end_method() {
   if (_method != nullptr && should_print_igv(1)) {
     _igv_printer->end_method();
   }
+#endif
+}
+
+bool Compile::should_print_phase(const int level) const {
+#ifndef PRODUCT
+  return PrintPhaseLevel > 0 && directive()->PhasePrintLevelOption >= level &&
+    env() != nullptr && env()->task() != nullptr && is_c2_compile(env()->task()->comp_level());
+#else
+  return false;
 #endif
 }
 
