@@ -105,7 +105,7 @@ public class filter_rt001 extends TestDebuggerType1 {
 
                 case 0:
                 testClassReference = (ReferenceType)debuggee.classByName(testedClassName);
-                thread1 = debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName1);
+                thread1 = debuggee.threadByFieldName(debuggeeClass, threadName1);
                 if (thread1 == null)
                     throw new Failure("Cannot get ThreadReference for " + threadName1);
                 eventRequest1 = setting21StepRequest(thread1, testClassReference,

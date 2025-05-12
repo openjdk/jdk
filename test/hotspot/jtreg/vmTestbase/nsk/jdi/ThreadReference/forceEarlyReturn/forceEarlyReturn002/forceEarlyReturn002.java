@@ -118,7 +118,7 @@ public class forceEarlyReturn002 extends ForceEarlyReturnDebugger {
         }
 
         ThreadReference threadReference =
-            debuggee.threadByFieldName(debuggeeClass, "mainThread", forceEarlyReturn002a.mainThreadName);
+            debuggee.threadByFieldNameOrThrow(debuggeeClass, "mainThread", forceEarlyReturn002a.mainThreadName);
 
         try {
             if (testClassIsLoaded) {

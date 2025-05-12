@@ -120,7 +120,7 @@ public class popframes007 {
 
         ThreadReference auxThread =
             debuggee.threadByFieldName(rType, "auxThr", DEBUGGEE_AUX_THREAD_NAME);
-        if (mainThread == null) {
+        if (auxThread == null) {
             log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
                          + DEBUGGEE_AUX_THREAD_NAME);
             tot_res = Consts.TEST_FAILED;
