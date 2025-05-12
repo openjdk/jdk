@@ -131,6 +131,7 @@ final class TestBufferStackStress2 {
 
         System.out.println(duration(begin) + "CLOSING EXECUTOR");
 
+        executor.shutdown();
         if (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
             // The VT never got scheduled or the VT was "quiescent.notify()":ed
             // by the main thread before the VT "quiescent.wait()":ed.
