@@ -60,6 +60,9 @@ class TypeVariableWithBound5<T extends CharSequence> {
 class TypeVariableWithBound6<T extends Object & CharSequence> {
 }
 
+class TypeVariableWithBoundRecursive<T extends TypeVariableWithBoundRecursive<T>> {
+}
+
 class TypeVariableBoundsOnMethods {
     public <@TA T> void test1() {}
     public <@TA T extends Object> void test2() {}

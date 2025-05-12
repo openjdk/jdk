@@ -49,6 +49,11 @@ class TypeVariableWithBound6<T extends java.lang.CharSequence> {
   TypeVariableWithBound6();
 }
 
+class TypeVariableWithBoundRecursive<T extends TypeVariableWithBoundRecursive<T>> {
+
+  TypeVariableWithBoundRecursive();
+}
+
 class TypeVariableBoundsOnMethods {
 
   TypeVariableBoundsOnMethods();
