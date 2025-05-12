@@ -56,7 +56,7 @@ class Thread;
 #define TERMINATION_EVENT_NAME_PREFIX "Termination"
 #define TERMINATION_EVENT_NAME(task_name) "" TERMINATION_EVENT_NAME_PREFIX ":" task_name ""
 #define TERMINATION_EVENT_NAME_PREFIX_ASSERT(name) \
-assert(name == nullptr || strncmp(name, TERMINATION_EVENT_NAME_PREFIX, strlen(TERMINATION_EVENT_NAME_PREFIX)) == 0, "Must be")
+  assert(name == nullptr || strncmp(name, TERMINATION_EVENT_NAME_PREFIX, strlen(TERMINATION_EVENT_NAME_PREFIX)) == 0, "Must be")
 
 class TaskTerminationTracker;
 
