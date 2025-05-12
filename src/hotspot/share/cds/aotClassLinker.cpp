@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassTable.hpp"
@@ -65,8 +64,6 @@ void AOTClassLinker::initialize() {
   }
 
   assert(is_initialized(), "sanity");
-
-  AOTConstantPoolResolver::initialize();
 }
 
 void AOTClassLinker::dispose() {
@@ -80,8 +77,6 @@ void AOTClassLinker::dispose() {
   _sorted_candidates = nullptr;
 
   assert(!is_initialized(), "sanity");
-
-  AOTConstantPoolResolver::dispose();
 }
 
 bool AOTClassLinker::is_vm_class(InstanceKlass* ik) {
@@ -143,10 +138,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
 
   if (ik->is_hidden()) {
     assert(ik->shared_class_loader_type() != ClassLoader::OTHER, "must have been set");
-    if (!CDSConfig::is_dumping_invokedynamic()) {
-      return false;
-    }
-    if (!SystemDictionaryShared::should_hidden_class_be_archived(ik)) {
+    if (!CDSConfig::is_dumping_method_handles()) {
       return false;
     }
     if (HeapShared::is_lambda_proxy_klass(ik)) {
@@ -316,4 +308,3 @@ const char* AOTClassLinker::class_category_name(AOTLinkedClassCategory category)
       return "unreg";
   }
 }
-

@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +23,9 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSetPreselector.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -37,55 +38,44 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-
 #include "utilities/quickSort.hpp"
 
-
-class ShenandoahResetUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
+template <bool PREPARE_FOR_CURRENT_CYCLE, bool FULL_GC = false>
+class ShenandoahResetBitmapClosure final : public ShenandoahHeapRegionClosure {
 private:
-  ShenandoahHeap* _heap;
-  ShenandoahMarkingContext* const _ctx;
-public:
-  ShenandoahResetUpdateRegionStateClosure() :
-    _heap(ShenandoahHeap::heap()),
-    _ctx(_heap->marking_context()) {}
+  ShenandoahHeap*           _heap;
+  ShenandoahMarkingContext* _ctx;
 
-  void heap_region_do(ShenandoahHeapRegion* r) override {
-    if (r->is_active()) {
-      // Reset live data and set TAMS optimistically. We would recheck these under the pause
-      // anyway to capture any updates that happened since now.
-      _ctx->capture_top_at_mark_start(r);
-      r->clear_live_data();
+public:
+  explicit ShenandoahResetBitmapClosure() :
+    ShenandoahHeapRegionClosure(), _heap(ShenandoahHeap::heap()), _ctx(_heap->marking_context()) {}
+
+  void heap_region_do(ShenandoahHeapRegion* region) override {
+    assert(!_heap->is_uncommit_in_progress(), "Cannot uncommit bitmaps while resetting them.");
+    if (PREPARE_FOR_CURRENT_CYCLE) {
+      if (region->need_bitmap_reset() && _heap->is_bitmap_slice_committed(region)) {
+        _ctx->clear_bitmap(region);
+      } else {
+        region->set_needs_bitmap_reset();
+      }
+      // Capture Top At Mark Start for this generation.
+      if (FULL_GC || region->is_active()) {
+        // Reset live data and set TAMS optimistically. We would recheck these under the pause
+        // anyway to capture any updates that happened since now.
+        _ctx->capture_top_at_mark_start(region);
+        region->clear_live_data();
+      }
+    } else {
+      if (_heap->is_bitmap_slice_committed(region)) {
+        _ctx->clear_bitmap(region);
+        region->unset_needs_bitmap_reset();
+      } else {
+        region->set_needs_bitmap_reset();
+      }
     }
   }
 
   bool is_thread_safe() override { return true; }
-};
-
-class ShenandoahResetBitmapTask : public WorkerTask {
-private:
-  ShenandoahRegionIterator _regions;
-  ShenandoahGeneration* _generation;
-
-public:
-  ShenandoahResetBitmapTask(ShenandoahGeneration* generation) :
-    WorkerTask("Shenandoah Reset Bitmap"), _generation(generation) {}
-
-  void work(uint worker_id) {
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-    assert(!heap->is_uncommit_in_progress(), "Cannot uncommit bitmaps while resetting them.");
-    ShenandoahHeapRegion* region = _regions.next();
-    ShenandoahMarkingContext* const ctx = heap->marking_context();
-    while (region != nullptr) {
-      auto const affiliation = region->affiliation();
-      bool needs_reset = affiliation == FREE || _generation->contains(affiliation);
-      if (needs_reset && heap->is_bitmap_slice_committed(region)) {
-        ctx->clear_bitmap(region);
-      }
-      region = _regions.next();
-    }
-  }
 };
 
 // Copy the write-version of the card-table into the read-version, clearing the
@@ -104,20 +94,6 @@ public:
   bool is_thread_safe() override {
     return true;
   }
-};
-
-class ShenandoahCopyWriteCardTableToRead: public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahScanRemembered* _scanner;
-public:
-  ShenandoahCopyWriteCardTableToRead(ShenandoahScanRemembered* scanner) : _scanner(scanner) {}
-
-  void heap_region_do(ShenandoahHeapRegion* region) override {
-    assert(region->is_old(), "Don't waste time doing this for non-old regions");
-    _scanner->reset_remset(region->bottom(), ShenandoahHeapRegion::region_size_words());
-  }
-
-  bool is_thread_safe() override { return true; }
 };
 
 // Add [TAMS, top) volume over young regions. Used to correct age 0 cohort census
@@ -225,29 +201,33 @@ void ShenandoahGeneration::log_status(const char *msg) const {
               PROPERFMTARGS(v_soft_max_capacity), PROPERFMTARGS(v_max_capacity), PROPERFMTARGS(v_available));
 }
 
+template <bool PREPARE_FOR_CURRENT_CYCLE, bool FULL_GC>
 void ShenandoahGeneration::reset_mark_bitmap() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
 
   set_mark_incomplete();
 
-  ShenandoahResetBitmapTask task(this);
-  heap->workers()->run_task(&task);
+  ShenandoahResetBitmapClosure<PREPARE_FOR_CURRENT_CYCLE, FULL_GC> closure;
+  parallel_heap_region_iterate_free(&closure);
 }
+// Explicit specializations
+template void ShenandoahGeneration::reset_mark_bitmap<true, false>();
+template void ShenandoahGeneration::reset_mark_bitmap<true, true>();
+template void ShenandoahGeneration::reset_mark_bitmap<false, false>();
 
-// The ideal is to swap the remembered set so the safepoint effort is no more than a few pointer manipulations.
-// However, limitations in the implementation of the mutator write-barrier make it difficult to simply change the
-// location of the card table.  So the interim implementation of swap_remembered_set will copy the write-table
-// onto the read-table and will then clear the write-table.
-void ShenandoahGeneration::swap_remembered_set() {
+// Swap the read and write card table pointers prior to the next remset scan.
+// This avoids the need to synchronize reads of the table by the GC workers
+// doing remset scanning, on the one hand, with the dirtying of the table by
+// mutators on the other.
+void ShenandoahGeneration::swap_card_tables() {
   // Must be sure that marking is complete before we swap remembered set.
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
   shenandoah_assert_safepoint();
 
   ShenandoahOldGeneration* old_generation = heap->old_generation();
-  ShenandoahCopyWriteCardTableToRead task(old_generation->card_scan());
-  old_generation->parallel_heap_region_iterate(&task);
+  old_generation->card_scan()->swap_card_tables();
 }
 
 // Copy the write-version of the card-table into the read-version, clearing the
@@ -265,12 +245,7 @@ void ShenandoahGeneration::merge_write_table() {
 }
 
 void ShenandoahGeneration::prepare_gc() {
-
-  reset_mark_bitmap();
-
-  // Capture Top At Mark Start for this generation (typically young) and reset mark bitmap.
-  ShenandoahResetUpdateRegionStateClosure cl;
-  parallel_heap_region_iterate_free(&cl);
+  reset_mark_bitmap<true>();
 }
 
 void ShenandoahGeneration::parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
@@ -419,7 +394,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   if (old_evacuated_committed > old_evacuation_reserve) {
     // This should only happen due to round-off errors when enforcing ShenandoahOldEvacWaste
     assert(old_evacuated_committed <= (33 * old_evacuation_reserve) / 32,
-           "Round-off errors should be less than 3.125%%, committed: " SIZE_FORMAT ", reserved: " SIZE_FORMAT,
+           "Round-off errors should be less than 3.125%%, committed: %zu, reserved: %zu",
            old_evacuated_committed, old_evacuation_reserve);
     old_evacuated_committed = old_evacuation_reserve;
     // Leave old_evac_reserve as previously configured
@@ -449,13 +424,13 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     // This can happen due to round-off errors when adding the results of truncated integer arithmetic.
     // We've already truncated old_evacuated_committed.  Truncate young_advance_promoted_reserve_used here.
     assert(young_advance_promoted_reserve_used <= (33 * (old_available - old_evacuated_committed)) / 32,
-           "Round-off errors should be less than 3.125%%, committed: " SIZE_FORMAT ", reserved: " SIZE_FORMAT,
+           "Round-off errors should be less than 3.125%%, committed: %zu, reserved: %zu",
            young_advance_promoted_reserve_used, old_available - old_evacuated_committed);
     young_advance_promoted_reserve_used = old_available - old_evacuated_committed;
     old_consumed = old_evacuated_committed + young_advance_promoted_reserve_used;
   }
 
-  assert(old_available >= old_consumed, "Cannot consume (" SIZE_FORMAT ") more than is available (" SIZE_FORMAT ")",
+  assert(old_available >= old_consumed, "Cannot consume (%zu) more than is available (%zu)",
          old_consumed, old_available);
   size_t excess_old = old_available - old_consumed;
   size_t unaffiliated_old_regions = old_generation->free_unaffiliated_regions();
@@ -494,10 +469,10 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   if (regions_to_xfer > 0) {
     bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
     assert(excess_old >= regions_to_xfer * region_size_bytes,
-           "Cannot transfer (" SIZE_FORMAT ", " SIZE_FORMAT ") more than excess old (" SIZE_FORMAT ")",
+           "Cannot transfer (%zu, %zu) more than excess old (%zu)",
            regions_to_xfer, region_size_bytes, excess_old);
     excess_old -= regions_to_xfer * region_size_bytes;
-    log_debug(gc, ergo)("%s transferred " SIZE_FORMAT " excess regions to young before start of evacuation",
+    log_debug(gc, ergo)("%s transferred %zu excess regions to young before start of evacuation",
                        result? "Successfully": "Unsuccessfully", regions_to_xfer);
   }
 
@@ -527,7 +502,7 @@ inline void assert_no_in_place_promotions() {
   public:
     void heap_region_do(ShenandoahHeapRegion *r) override {
       assert(r->get_top_before_promote() == nullptr,
-             "Region " SIZE_FORMAT " should not be ready for in-place promotion", r->index());
+             "Region %zu should not be ready for in-place promotion", r->index());
     }
   } cl;
   ShenandoahHeap::heap()->heap_region_iterate(&cl);
@@ -671,8 +646,8 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // We keep going even if one region is excluded from selection because we need to accumulate all eligible
       // regions that are not preselected into promo_potential
     }
-    log_debug(gc)("Preselected " SIZE_FORMAT " regions containing " SIZE_FORMAT " live bytes,"
-                 " consuming: " SIZE_FORMAT " of budgeted: " SIZE_FORMAT,
+    log_debug(gc)("Preselected %zu regions containing %zu live bytes,"
+                 " consuming: %zu of budgeted: %zu",
                  selected_regions, selected_live, old_consumed, old_available);
   }
 
@@ -724,7 +699,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     // We use integer division so anything up to just less than 2 is considered
     // reasonable, and the "+1" is to avoid divide-by-zero.
     assert((total_pop+1)/(total_census+1) ==  1, "Extreme divergence: "
-           SIZE_FORMAT "/" SIZE_FORMAT, total_pop, total_census);
+           "%zu/%zu", total_pop, total_census);
 #endif
   }
 
@@ -797,10 +772,6 @@ bool ShenandoahGeneration::is_bitmap_clear() {
     }
   }
   return true;
-}
-
-bool ShenandoahGeneration::is_mark_complete() {
-  return _is_marking_complete.is_set();
 }
 
 void ShenandoahGeneration::set_mark_complete() {
@@ -941,7 +912,7 @@ void ShenandoahGeneration::increase_humongous_waste(size_t bytes) {
 void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
   if (bytes > 0) {
     assert(ShenandoahHeap::heap()->is_full_gc_in_progress() || (_humongous_waste >= bytes),
-           "Waste (" SIZE_FORMAT ") cannot be negative (after subtracting " SIZE_FORMAT ")", _humongous_waste, bytes);
+           "Waste (%zu) cannot be negative (after subtracting %zu)", _humongous_waste, bytes);
     Atomic::sub(&_humongous_waste, bytes);
   }
 }

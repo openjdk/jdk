@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
@@ -58,7 +57,7 @@ bool VirtualSpace::initialize(ReservedSpace rs, size_t committed_size) {
 }
 
 bool VirtualSpace::initialize_with_granularity(ReservedSpace rs, size_t committed_size, size_t max_commit_granularity) {
-  if(!rs.is_reserved()) return false;  // allocation failed.
+  assert(rs.is_reserved(), "ReservedSpace should have been initialized");
   assert(_low_boundary == nullptr, "VirtualSpace already initialized");
   assert(max_commit_granularity > 0, "Granularity must be non-zero.");
 
@@ -201,9 +200,9 @@ static bool commit_expanded(char* start, size_t size, size_t alignment, bool pre
     return true;
   }
 
-  debug_only(warning(
+  DEBUG_ONLY(warning(
       "INFO: os::commit_memory(" PTR_FORMAT ", " PTR_FORMAT
-      " size=" SIZE_FORMAT ", executable=%d) failed",
+      " size=%zu, executable=%d) failed",
       p2i(start), p2i(start + size), size, executable);)
 
   return false;
@@ -372,7 +371,7 @@ void VirtualSpace::shrink_by(size_t size) {
            aligned_upper_new_high + upper_needs <= upper_high_boundary(),
            "must not shrink beyond region");
     if (!os::uncommit_memory(aligned_upper_new_high, upper_needs, _executable)) {
-      debug_only(warning("os::uncommit_memory failed"));
+      DEBUG_ONLY(warning("os::uncommit_memory failed"));
       return;
     } else {
       _upper_high -= upper_needs;
@@ -383,7 +382,7 @@ void VirtualSpace::shrink_by(size_t size) {
            aligned_middle_new_high + middle_needs <= middle_high_boundary(),
            "must not shrink beyond region");
     if (!os::uncommit_memory(aligned_middle_new_high, middle_needs, _executable)) {
-      debug_only(warning("os::uncommit_memory failed"));
+      DEBUG_ONLY(warning("os::uncommit_memory failed"));
       return;
     } else {
       _middle_high -= middle_needs;
@@ -394,7 +393,7 @@ void VirtualSpace::shrink_by(size_t size) {
            aligned_lower_new_high + lower_needs <= lower_high_boundary(),
            "must not shrink beyond region");
     if (!os::uncommit_memory(aligned_lower_new_high, lower_needs, _executable)) {
-      debug_only(warning("os::uncommit_memory failed"));
+      DEBUG_ONLY(warning("os::uncommit_memory failed"));
       return;
     } else {
       _lower_high -= lower_needs;
@@ -423,13 +422,13 @@ void VirtualSpace::check_for_contiguity() {
 }
 
 void VirtualSpace::print_on(outputStream* out) const {
-  out->print   ("Virtual space:");
-  if (special()) out->print(" (pinned in memory)");
-  out->cr();
-  out->print_cr(" - committed: " SIZE_FORMAT, committed_size());
-  out->print_cr(" - reserved:  " SIZE_FORMAT, reserved_size());
-  out->print_cr(" - [low, high]:     [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low()), p2i(high()));
-  out->print_cr(" - [low_b, high_b]: [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
+  out->print_cr("Virtual space:%s", special() ? " (pinned in memory)" : "");
+
+  StreamAutoIndentor indentor(out, 1);
+  out->print_cr("- committed: %zu", committed_size());
+  out->print_cr("- reserved:  %zu", reserved_size());
+  out->print_cr("- [low, high]:     [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low()), p2i(high()));
+  out->print_cr("- [low_b, high_b]: [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
 }
 
 void VirtualSpace::print() const {
@@ -437,3 +436,8 @@ void VirtualSpace::print() const {
 }
 
 #endif
+
+void VirtualSpace::print_space_boundaries_on(outputStream* out) const {
+  out->print_cr("[" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+                p2i(low_boundary()), p2i(high()), p2i(high_boundary()));
+}

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
@@ -53,6 +52,7 @@ void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(Shena
 
 bool ShenandoahAggressiveHeuristics::should_start_gc() {
   log_trigger("Start next cycle immediately");
+  accept_trigger();
   return true;
 }
 

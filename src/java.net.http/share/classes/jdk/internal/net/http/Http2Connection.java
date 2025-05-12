@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.ValidatingHeadersConsumer;
+import jdk.internal.net.http.common.ValidatingHeadersConsumer.Context;
 import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.ErrorFrame;
@@ -89,7 +90,6 @@ import jdk.internal.net.http.hpack.Decoder;
 import jdk.internal.net.http.hpack.DecodingCallback;
 import jdk.internal.net.http.hpack.Encoder;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static jdk.internal.net.http.frame.SettingsFrame.DEFAULT_INITIAL_WINDOW_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.ENABLE_PUSH;
 import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.INITIAL_CONNECTION_WINDOW_SIZE;
@@ -340,6 +340,7 @@ class Http2Connection  {
         final AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
         PushPromiseDecoder(int parentStreamId, int pushPromiseStreamId, Stream<?> parent) {
+            super(Context.REQUEST);
             this.parentStreamId = parentStreamId;
             this.pushPromiseStreamId = pushPromiseStreamId;
             this.parent = parent;
@@ -691,7 +692,7 @@ class Http2Connection  {
                     if (t != null && t instanceof SSLException) {
                         // something went wrong during the initial handshake
                         // close the connection
-                        aconn.close();
+                        aconn.close(t);
                     }
                 })
                 .thenCompose(checkAlpnCF);
@@ -910,7 +911,7 @@ class Http2Connection  {
                 Log.logError("Failed to close stream {0}: {1}", s.streamid, e);
             }
         }
-        connection.close();
+        connection.close(cause.get());
     }
 
     /**
@@ -971,7 +972,8 @@ class Http2Connection  {
                 protocolError(ResetFrame.PROTOCOL_ERROR, protocolError);
                 return;
             }
-            if (stream == null && pushContinuationState == null) {
+            PushContinuationState pcs = pushContinuationState;
+            if (stream == null && pcs == null) {
                 // Should never receive a frame with unknown stream id
 
                 if (frame instanceof HeaderFrame hf) {
@@ -983,7 +985,10 @@ class Http2Connection  {
                     // always decode the headers as they may affect
                     // connection-level HPACK decoding state
                     if (orphanedConsumer == null || frame.getClass() != ContinuationFrame.class) {
-                        orphanedConsumer = new ValidatingHeadersConsumer();
+                        orphanedConsumer = new ValidatingHeadersConsumer(
+                                frame instanceof PushPromiseFrame ?
+                                        Context.REQUEST :
+                                        Context.RESPONSE);
                     }
                     DecodingCallback decoder = orphanedConsumer::onDecoded;
                     try {
@@ -1016,7 +1021,6 @@ class Http2Connection  {
 
             // While push frame is not null, the only acceptable frame on this
             // stream is a Continuation frame
-            PushContinuationState pcs = pushContinuationState;
             if (pcs != null) {
                 if (frame instanceof ContinuationFrame cf) {
                     if (stream == null) {
@@ -1602,7 +1606,7 @@ class Http2Connection  {
             stateLock.unlock();
         }
         if (debug.on()) debug.log("connection closed: closing stream %d", stream);
-        stream.cancel();
+        stream.cancel(new IOException("Stream " + streamid + " cancelled", cause.get()));
     }
 
     /**
@@ -1960,7 +1964,8 @@ class Http2Connection  {
             if (connection.isOpen()) {
                 try {
                     connection.protocolError(ErrorFrame.FLOW_CONTROL_ERROR,
-                            "connection window exceeded");
+                            "connection window exceeded (%s > %s)"
+                                    .formatted(received, windowSize));
                 } catch (IOException io) {
                     connection.shutdown(io);
                 }

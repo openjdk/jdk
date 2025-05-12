@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/modRefBarrierSetAssembler.hpp"
 
@@ -32,10 +31,9 @@ void ModRefBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Decorat
                                                    Register src, Register dst, Register count) {
   bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
   bool disjoint = (decorators & ARRAYCOPY_DISJOINT) != 0;
-  bool obj_int = type == T_OBJECT LP64_ONLY(&& UseCompressedOops);
+  bool obj_int = (type == T_OBJECT) && UseCompressedOops;
 
   if (is_reference_type(type)) {
-#ifdef _LP64
     if (!checkcast) {
       if (!obj_int) {
         // Save count for barrier
@@ -45,11 +43,6 @@ void ModRefBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Decorat
         __ movq(r11, dst);
       }
     }
-#else
-    if (disjoint) {
-      __ mov(rdx, dst);          // save 'to'
-    }
-#endif
     gen_write_ref_array_pre_barrier(masm, decorators, dst, count);
   }
 }
@@ -58,11 +51,10 @@ void ModRefBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Decorat
                                                    Register src, Register dst, Register count) {
   bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
   bool disjoint = (decorators & ARRAYCOPY_DISJOINT) != 0;
-  bool obj_int = type == T_OBJECT LP64_ONLY(&& UseCompressedOops);
+  bool obj_int = (type == T_OBJECT) && UseCompressedOops;
   Register tmp = rax;
 
   if (is_reference_type(type)) {
-#ifdef _LP64
     if (!checkcast) {
       if (!obj_int) {
         // Save count for barrier
@@ -74,11 +66,6 @@ void ModRefBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Decorat
     } else {
       tmp = rscratch1;
     }
-#else
-    if (disjoint) {
-      __ mov(dst, rdx); // restore 'to'
-    }
-#endif
     gen_write_ref_array_post_barrier(masm, decorators, dst, count, tmp);
   }
 }

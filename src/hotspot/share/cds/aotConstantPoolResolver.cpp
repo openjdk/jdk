@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -37,19 +36,6 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
-
-AOTConstantPoolResolver::ClassesTable* AOTConstantPoolResolver::_processed_classes = nullptr;
-
-void AOTConstantPoolResolver::initialize() {
-  assert(_processed_classes == nullptr, "must be");
-  _processed_classes = new (mtClass)ClassesTable();
-}
-
-void AOTConstantPoolResolver::dispose() {
-  assert(_processed_classes != nullptr, "must be");
-  delete _processed_classes;
-  _processed_classes = nullptr;
-}
 
 // Returns true if we CAN PROVE that cp_index will always resolve to
 // the same information at both dump time and run time. This is a
@@ -145,17 +131,11 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
   }
 }
 
-void AOTConstantPoolResolver::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
+void AOTConstantPoolResolver::preresolve_string_cp_entries(InstanceKlass* ik, TRAPS) {
   if (!ik->is_linked()) {
+    // The cp->resolved_referenced() array is not ready yet, so we can't call resolve_string().
     return;
   }
-  bool first_time;
-  _processed_classes->put_if_absent(ik, &first_time);
-  if (!first_time) {
-    // We have already resolved the constants in class, so no need to do it again.
-    return;
-  }
-
   constantPoolHandle cp(THREAD, ik->constants());
   for (int cp_index = 1; cp_index < cp->length(); cp_index++) { // Index 0 is unused
     switch (cp->tag_at(cp_index).value()) {
@@ -526,7 +506,7 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
     Symbol* factory_type_sig = cp->uncached_signature_ref_at(cp_index);
     if (log_is_enabled(Debug, cds, resolve)) {
       ResourceMark rm;
-      log_debug(cds, resolve)("Checking indy callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
+      log_debug(cds, resolve)("Checking lambda callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
     }
 
     if (!check_lambda_metafactory_signature(cp, factory_type_sig)) {

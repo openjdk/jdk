@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8356126
  * @library ../ /test/lib
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestCaptureCallState
+ * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestCaptureCallState
  */
 
 import org.testng.annotations.DataProvider;
@@ -47,8 +48,7 @@ import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 public class TestCaptureCallState extends NativeTestHelper {
 
@@ -59,6 +59,17 @@ public class TestCaptureCallState extends NativeTestHelper {
             System.load(system32 + "\\Kernel32.dll");
             System.load(system32 + "\\Ws2_32.dll");
         }
+    }
+
+    // Basic sanity tests around Java API contracts
+    @Test
+    public void testApiContracts() {
+        assertThrows(IllegalArgumentException.class, () -> Linker.Option.captureCallState("Does not exist"));
+        var duplicateOpt = Linker.Option.captureCallState("errno", "errno"); // duplicates
+        var noDuplicateOpt = Linker.Option.captureCallState("errno");
+        assertEquals(duplicateOpt, noDuplicateOpt, "auto deduplication");
+        var display = duplicateOpt.toString();
+        assertTrue(display.contains("errno"), "toString should contain state name 'errno': " + display);
     }
 
     private record SaveValuesCase(String nativeTarget, FunctionDescriptor nativeDesc, String threadLocalName,

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
@@ -64,7 +63,7 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   // subsystem for mapping not-yet-written-to pages to a single physical backing page,
   // but this is not guaranteed, and would confuse NMT and other memory accounting tools.
 
-  MemTracker::record_virtual_memory_tag(_map_space.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(_map_space, mtGC);
 
   size_t page_size = os::vm_page_size();
 
@@ -186,16 +185,16 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::next() {
 
 void ShenandoahCollectionSet::print_on(outputStream* out) const {
   out->print_cr("Collection Set: Regions: "
-                SIZE_FORMAT ", Garbage: " SIZE_FORMAT "%s, Live: " SIZE_FORMAT "%s, Used: " SIZE_FORMAT "%s", count(),
+                "%zu, Garbage: %zu%s, Live: %zu%s, Used: %zu%s", count(),
                 byte_size_in_proper_unit(garbage()), proper_unit_for_byte_size(garbage()),
                 byte_size_in_proper_unit(live()),    proper_unit_for_byte_size(live()),
                 byte_size_in_proper_unit(used()),    proper_unit_for_byte_size(used()));
 
-  debug_only(size_t regions = 0;)
+  DEBUG_ONLY(size_t regions = 0;)
   for (size_t index = 0; index < _heap->num_regions(); index ++) {
     if (is_in(index)) {
       _heap->get_region(index)->print_on(out);
-      debug_only(regions ++;)
+      DEBUG_ONLY(regions ++;)
     }
   }
   assert(regions == count(), "Must match");

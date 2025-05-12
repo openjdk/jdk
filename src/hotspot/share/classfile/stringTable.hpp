@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,12 @@
 #include "utilities/tableStatistics.hpp"
 
 class CompactHashtableWriter;
-class DumpedInternedStrings;
 class JavaThread;
 class SerializeClosure;
 
 class StringTableConfig;
 
 class StringTable : AllStatic {
-  friend class VMStructs;
   friend class StringTableConfig;
 
   static volatile bool _has_work;
@@ -148,7 +146,8 @@ private:
   static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static size_t shared_entry_count() NOT_CDS_JAVA_HEAP_RETURN_(0);
   static void allocate_shared_strings_array(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static oop init_shared_table(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static oop init_shared_strings_array() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static void write_shared_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void set_shared_strings_array_index(int root_index) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 

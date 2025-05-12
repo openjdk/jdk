@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,11 +236,15 @@ public final class Class<T> implements java.io.Serializable,
      * This constructor is not used and prevents the default constructor being
      * generated.
      */
-    private Class(ClassLoader loader, Class<?> arrayComponentType) {
+    private Class(ClassLoader loader, Class<?> arrayComponentType, char mods, ProtectionDomain pd, boolean isPrim) {
         // Initialize final field for classLoader.  The initialization value of non-null
         // prevents future JIT optimizations from assuming this final field is null.
+        // The following assignments are done directly by the VM without calling this constructor.
         classLoader = loader;
         componentType = arrayComponentType;
+        modifiers = mods;
+        protectionDomain = pd;
+        primitive = isPrim;
     }
 
     /**
@@ -788,8 +792,9 @@ public final class Class<T> implements java.io.Serializable,
      * @return  {@code true} if this {@code Class} object represents an interface;
      *          {@code false} otherwise.
      */
-    @IntrinsicCandidate
-    public native boolean isInterface();
+    public boolean isInterface() {
+        return Modifier.isInterface(modifiers);
+    }
 
 
     /**
@@ -799,8 +804,9 @@ public final class Class<T> implements java.io.Serializable,
      *          {@code false} otherwise.
      * @since   1.1
      */
-    @IntrinsicCandidate
-    public native boolean isArray();
+    public boolean isArray() {
+        return componentType != null;
+    }
 
 
     /**
@@ -841,8 +847,9 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.1
      * @jls 15.8.2 Class Literals
      */
-    @IntrinsicCandidate
-    public native boolean isPrimitive();
+    public boolean isPrimitive() {
+        return primitive;
+    }
 
     /**
      * Returns true if this {@code Class} object represents an annotation
@@ -1000,6 +1007,8 @@ public final class Class<T> implements java.io.Serializable,
 
     private transient Object classData; // Set by VM
     private transient Object[] signers; // Read by VM, mutable
+    private final transient char modifiers;  // Set by the VM
+    private final transient boolean primitive;  // Set by the VM if the Class is a primitive type.
 
     // package-private
     Object getClassData() {
@@ -1205,18 +1214,13 @@ public final class Class<T> implements java.io.Serializable,
 
     private Class<?>[] getInterfaces(boolean cloneArray) {
         ReflectionData<T> rd = reflectionData();
-        if (rd == null) {
-            // no cloning required
-            return getInterfaces0();
-        } else {
-            Class<?>[] interfaces = rd.interfaces;
-            if (interfaces == null) {
-                interfaces = getInterfaces0();
-                rd.interfaces = interfaces;
-            }
-            // defensively copy if requested
-            return cloneArray ? interfaces.clone() : interfaces;
+        Class<?>[] interfaces = rd.interfaces;
+        if (interfaces == null) {
+            interfaces = getInterfaces0();
+            rd.interfaces = interfaces;
         }
+        // defensively copy if requested
+        return cloneArray ? interfaces.clone() : interfaces;
     }
 
     private native Class<?>[] getInterfaces0();
@@ -1286,15 +1290,12 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.1
      */
     public Class<?> getComponentType() {
-        // Only return for array types. Storage may be reused for Class for instance types.
-        if (isArray()) {
-            return componentType;
-        } else {
-            return null;
-        }
+        return componentType;
     }
 
-    private final Class<?> componentType;
+    // The componentType field's null value is the sole indication that the class
+    // is an array - see isArray().
+    private transient final Class<?> componentType;
 
     /*
      * Returns the {@code Class} representing the element type of an array class.
@@ -1349,8 +1350,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 9.1.1 Interface Modifiers
      * @jvms 4.1 The {@code ClassFile} Structure
      */
-    @IntrinsicCandidate
-    public native int getModifiers();
+    public int getModifiers() { return modifiers; }
 
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag access
@@ -1384,10 +1384,8 @@ public final class Class<T> implements java.io.Serializable,
                         isAnonymousClass() || isArray()) ?
             AccessFlag.Location.INNER_CLASS :
             AccessFlag.Location.CLASS;
-        return AccessFlag.maskToAccessFlags((location == AccessFlag.Location.CLASS) ?
-                                            getClassAccessFlagsRaw() :
-                                            getModifiers(),
-                                            location);
+        return getReflectionFactory().parseAccessFlags((location == AccessFlag.Location.CLASS) ?
+                        getClassAccessFlagsRaw() : getModifiers(), location, this);
     }
 
     /**
@@ -2701,17 +2699,7 @@ public final class Class<T> implements java.io.Serializable,
         return true;
     }
 
-    /**
-     * Returns the {@code ProtectionDomain} of this class.
-     *
-     * @return the ProtectionDomain of this class
-     *
-     * @see java.security.ProtectionDomain
-     * @since 1.2
-     */
-    public ProtectionDomain getProtectionDomain() {
-        return protectionDomain();
-    }
+    private transient final ProtectionDomain protectionDomain;
 
     /** Holder for the protection domain returned when the internal domain is null */
     private static class Holder {
@@ -2723,20 +2711,21 @@ public final class Class<T> implements java.io.Serializable,
         }
     }
 
-    // package-private
-    ProtectionDomain protectionDomain() {
-        ProtectionDomain pd = getProtectionDomain0();
-        if (pd == null) {
+    /**
+     * Returns the {@code ProtectionDomain} of this class.
+     *
+     * @return the ProtectionDomain of this class
+     *
+     * @see java.security.ProtectionDomain
+     * @since 1.2
+     */
+    public ProtectionDomain getProtectionDomain() {
+        if (protectionDomain == null) {
             return Holder.allPermDomain;
         } else {
-            return pd;
+            return protectionDomain;
         }
     }
-
-    /**
-     * Returns the ProtectionDomain of this class.
-     */
-    private native ProtectionDomain getProtectionDomain0();
 
     /*
      * Returns the Class object for the named primitive type. Type parameter T
@@ -2922,18 +2911,14 @@ public final class Class<T> implements java.io.Serializable,
     private Field[] privateGetDeclaredFields(boolean publicOnly) {
         Field[] res;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = publicOnly ? rd.declaredPublicFields : rd.declaredFields;
-            if (res != null) return res;
-        }
+        res = publicOnly ? rd.declaredPublicFields : rd.declaredFields;
+        if (res != null) return res;
         // No cached value available; request value from VM
         res = Reflection.filterFields(this, getDeclaredFields0(publicOnly));
-        if (rd != null) {
-            if (publicOnly) {
-                rd.declaredPublicFields = res;
-            } else {
-                rd.declaredFields = res;
-            }
+        if (publicOnly) {
+            rd.declaredPublicFields = res;
+        } else {
+            rd.declaredFields = res;
         }
         return res;
     }
@@ -2944,10 +2929,8 @@ public final class Class<T> implements java.io.Serializable,
     private Field[] privateGetPublicFields() {
         Field[] res;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = rd.publicFields;
-            if (res != null) return res;
-        }
+        res = rd.publicFields;
+        if (res != null) return res;
 
         // Use a linked hash set to ensure order is preserved and
         // fields from common super interfaces are not duplicated
@@ -2968,9 +2951,7 @@ public final class Class<T> implements java.io.Serializable,
         }
 
         res = fields.toArray(new Field[0]);
-        if (rd != null) {
-            rd.publicFields = res;
-        }
+        rd.publicFields = res;
         return res;
     }
 
@@ -2993,10 +2974,8 @@ public final class Class<T> implements java.io.Serializable,
     private Constructor<T>[] privateGetDeclaredConstructors(boolean publicOnly) {
         Constructor<T>[] res;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = publicOnly ? rd.publicConstructors : rd.declaredConstructors;
-            if (res != null) return res;
-        }
+        res = publicOnly ? rd.publicConstructors : rd.declaredConstructors;
+        if (res != null) return res;
         // No cached value available; request value from VM
         if (isInterface()) {
             @SuppressWarnings("unchecked")
@@ -3005,12 +2984,10 @@ public final class Class<T> implements java.io.Serializable,
         } else {
             res = getDeclaredConstructors0(publicOnly);
         }
-        if (rd != null) {
-            if (publicOnly) {
-                rd.publicConstructors = res;
-            } else {
-                rd.declaredConstructors = res;
-            }
+        if (publicOnly) {
+            rd.publicConstructors = res;
+        } else {
+            rd.declaredConstructors = res;
         }
         return res;
     }
@@ -3027,18 +3004,14 @@ public final class Class<T> implements java.io.Serializable,
     private Method[] privateGetDeclaredMethods(boolean publicOnly) {
         Method[] res;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = publicOnly ? rd.declaredPublicMethods : rd.declaredMethods;
-            if (res != null) return res;
-        }
+        res = publicOnly ? rd.declaredPublicMethods : rd.declaredMethods;
+        if (res != null) return res;
         // No cached value available; request value from VM
         res = Reflection.filterMethods(this, getDeclaredMethods0(publicOnly));
-        if (rd != null) {
-            if (publicOnly) {
-                rd.declaredPublicMethods = res;
-            } else {
-                rd.declaredMethods = res;
-            }
+        if (publicOnly) {
+            rd.declaredPublicMethods = res;
+        } else {
+            rd.declaredMethods = res;
         }
         return res;
     }
@@ -3049,10 +3022,8 @@ public final class Class<T> implements java.io.Serializable,
     private Method[] privateGetPublicMethods() {
         Method[] res;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = rd.publicMethods;
-            if (res != null) return res;
-        }
+        res = rd.publicMethods;
+        if (res != null) return res;
 
         // No cached value available; compute value recursively.
         // Start by fetching public declared methods...
@@ -3078,9 +3049,7 @@ public final class Class<T> implements java.io.Serializable,
         }
 
         res = pms.toArray();
-        if (rd != null) {
-            rd.publicMethods = res;
-        }
+        rd.publicMethods = res;
         return res;
     }
 
@@ -4154,7 +4123,7 @@ public final class Class<T> implements java.io.Serializable,
      * type is returned.  If the class is a primitive type then the latest class
      * file major version is returned and zero is returned for the minor version.
      */
-    private int getClassFileVersion() {
+    int getClassFileVersion() {
         Class<?> c = isArray() ? elementType() : this;
         return c.getClassFileVersion0();
     }

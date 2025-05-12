@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,9 @@ import java.util.regex.Matcher;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import jdk.internal.module.ModulePath;
+import jdk.jpackage.internal.model.PackagerException;
 
 
 final class JLinkBundlerHelper {
@@ -99,8 +101,10 @@ final class JLinkBundlerHelper {
 
         ModuleFinder finder = createModuleFinder(paths);
 
+        // Don't perform service bindings by default as outlined by JEP 343
+        // and JEP 392
         return Configuration.empty()
-                .resolveAndBind(finder, ModuleFinder.of(), roots)
+                .resolve(finder, ModuleFinder.of(), roots)
                 .modules()
                 .stream()
                 .map(ResolvedModule::name)

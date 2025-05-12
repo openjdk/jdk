@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package jdk.jfr.internal.periodic;
 
-import java.security.AccessControlContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -58,16 +57,12 @@ public final class PeriodicEvents {
     // State only to be read and modified by periodic task thread
     private static long lastTimeMillis;
 
-    public static void addJDKEvent(Class<? extends Event> eventClass, Runnable runnable) {
-        taskRepository.add(new JDKEventTask(eventClass, runnable));
+    public static void addJavaEvent(Class<? extends Event> eventClass, Runnable runnable) {
+        taskRepository.add(new JavaEventTask(eventClass, runnable));
     }
 
     public static void addJVMEvent(PlatformEventType eventType) {
         taskRepository.add(new JVMEventTask(eventType));
-    }
-
-    public static void addUserEvent(@SuppressWarnings("removal") AccessControlContext acc, Class<? extends Event> eventClass, Runnable runnable) {
-        taskRepository.add(new UserEventTask(acc, eventClass, runnable));
     }
 
     public static boolean removeEvent(Runnable runnable) {

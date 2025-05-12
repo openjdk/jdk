@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  */
 package sun.util.locale;
 
+import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -180,14 +181,10 @@ public class LanguageTag {
      * privateuse    = "x" 1*("-" (1*8alphanum))
      *
      */
-    public static LanguageTag parse(String languageTag, ParseStatus sts) {
-        if (sts == null) {
-            sts = new ParseStatus();
-        } else {
-            sts.reset();
-        }
-
+    public static LanguageTag parse(String languageTag, ParsePosition pp,
+                                    boolean lenient) {
         StringTokenIterator itr;
+        var errorMsg = new StringBuilder();
 
         // Check if the tag is a legacy language tag
         String[] gfmap = LEGACY.get(LocaleUtils.toLowerString(languageTag));
@@ -201,23 +198,29 @@ public class LanguageTag {
         LanguageTag tag = new LanguageTag();
 
         // langtag must start with either language or privateuse
-        if (tag.parseLanguage(itr, sts)) {
-            tag.parseExtlangs(itr, sts);
-            tag.parseScript(itr, sts);
-            tag.parseRegion(itr, sts);
-            tag.parseVariants(itr, sts);
-            tag.parseExtensions(itr, sts);
+        if (tag.parseLanguage(itr, pp)) {
+            tag.parseExtlangs(itr, pp);
+            tag.parseScript(itr, pp);
+            tag.parseRegion(itr, pp);
+            tag.parseVariants(itr, pp);
+            tag.parseExtensions(itr, pp, errorMsg);
         }
-        tag.parsePrivateuse(itr, sts);
-        if (!itr.isDone() && !sts.isError()) {
+        tag.parsePrivateuse(itr, pp, errorMsg);
+
+        if (!itr.isDone() && pp.getErrorIndex() == -1) {
             String s = itr.current();
-            sts.errorIndex = itr.currentStart();
+            pp.setErrorIndex(itr.currentStart());
             if (s.isEmpty()) {
-                sts.errorMsg = "Empty subtag";
+                errorMsg.append("Empty subtag");
             } else {
-                sts.errorMsg = "Invalid subtag: " + s;
+                errorMsg.append("Invalid subtag: ").append(s);
             }
         }
+
+        if (!lenient && pp.getErrorIndex() != -1) {
+            throw new IllformedLocaleException(errorMsg.toString(), pp.getErrorIndex());
+        }
+
         return tag;
     }
 
@@ -225,8 +228,8 @@ public class LanguageTag {
     // Language subtag parsers
     //
 
-    private boolean parseLanguage(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
+    private boolean parseLanguage(StringTokenIterator itr, ParsePosition pp) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
             return false;
         }
 
@@ -236,15 +239,15 @@ public class LanguageTag {
         if (isLanguage(s)) {
             found = true;
             language = s;
-            sts.parseLength = itr.currentEnd();
+            pp.setIndex(itr.currentEnd());
             itr.next();
         }
 
         return found;
     }
 
-    private boolean parseExtlangs(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
+    private boolean parseExtlangs(StringTokenIterator itr, ParsePosition pp) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
             return false;
         }
 
@@ -260,7 +263,7 @@ public class LanguageTag {
                 extlangs = new ArrayList<>(3);
             }
             extlangs.add(s);
-            sts.parseLength = itr.currentEnd();
+            pp.setIndex(itr.currentEnd());
             itr.next();
 
             if (extlangs.size() == 3) {
@@ -272,8 +275,8 @@ public class LanguageTag {
         return found;
     }
 
-    private boolean parseScript(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
+    private boolean parseScript(StringTokenIterator itr, ParsePosition pp) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
             return false;
         }
 
@@ -283,15 +286,15 @@ public class LanguageTag {
         if (isScript(s)) {
             found = true;
             script = s;
-            sts.parseLength = itr.currentEnd();
+            pp.setIndex(itr.currentEnd());
             itr.next();
         }
 
         return found;
     }
 
-    private boolean parseRegion(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
+    private boolean parseRegion(StringTokenIterator itr, ParsePosition pp) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
             return false;
         }
 
@@ -301,15 +304,15 @@ public class LanguageTag {
         if (isRegion(s)) {
             found = true;
             region = s;
-            sts.parseLength = itr.currentEnd();
+            pp.setIndex(itr.currentEnd());
             itr.next();
         }
 
         return found;
     }
 
-    private boolean parseVariants(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
+    private boolean parseVariants(StringTokenIterator itr, ParsePosition pp) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
             return false;
         }
 
@@ -325,15 +328,16 @@ public class LanguageTag {
                 variants = new ArrayList<>(3);
             }
             variants.add(s);
-            sts.parseLength = itr.currentEnd();
+            pp.setIndex(itr.currentEnd());
             itr.next();
         }
 
         return found;
     }
 
-    private boolean parseExtensions(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
+    private boolean parseExtensions(StringTokenIterator itr, ParsePosition pp,
+                                    StringBuilder err) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
             return false;
         }
 
@@ -351,16 +355,16 @@ public class LanguageTag {
                     s = itr.current();
                     if (isExtensionSubtag(s)) {
                         sb.append(SEP).append(s);
-                        sts.parseLength = itr.currentEnd();
+                        pp.setIndex(itr.currentEnd());
                     } else {
                         break;
                     }
                     itr.next();
                 }
 
-                if (sts.parseLength <= start) {
-                    sts.errorIndex = start;
-                    sts.errorMsg = "Incomplete extension '" + singleton + "'";
+                if (pp.getIndex() <= start) {
+                    pp.setErrorIndex(start);
+                    err.append("Incomplete extension '").append(singleton).append("'");
                     break;
                 }
 
@@ -376,8 +380,9 @@ public class LanguageTag {
         return found;
     }
 
-    private boolean parsePrivateuse(StringTokenIterator itr, ParseStatus sts) {
-        if (itr.isDone() || sts.isError()) {
+    private boolean parsePrivateuse(StringTokenIterator itr, ParsePosition pp,
+                                    StringBuilder err) {
+        if (itr.isDone() || pp.getErrorIndex() != -1) {
             return false;
         }
 
@@ -395,15 +400,15 @@ public class LanguageTag {
                     break;
                 }
                 sb.append(SEP).append(s);
-                sts.parseLength = itr.currentEnd();
+                pp.setIndex(itr.currentEnd());
 
                 itr.next();
             }
 
-            if (sts.parseLength <= start) {
+            if (pp.getIndex() <= start) {
                 // need at least 1 private subtag
-                sts.errorIndex = start;
-                sts.errorMsg = "Incomplete privateuse";
+                pp.setErrorIndex(start);
+                err.append("Incomplete privateuse");
             } else {
                 privateuse = sb.toString();
                 found = true;
@@ -414,13 +419,8 @@ public class LanguageTag {
     }
 
     public static String caseFoldTag(String tag) {
-        ParseStatus sts = new ParseStatus();
-        parse(tag, sts);
-        // Illegal tags
-        if (sts.errorMsg != null) {
-            throw new IllformedLocaleException(String.format("Ill formed tag:" +
-                    " %s", sts.errorMsg));
-        }
+        parse(tag, new ParsePosition(0), false);
+
         // Legacy tags
         String potentialLegacy = tag.toLowerCase(Locale.ROOT);
         if (LEGACY.containsKey(potentialLegacy)) {

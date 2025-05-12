@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 
 import sun.awt.X11.XBaseWindow;
 import com.sun.java.swing.plaf.gtk.GTKConstants.TextDirection;
@@ -71,7 +70,7 @@ public abstract class UNIXToolkit extends SunToolkit
         ANY(0),
         GTK3(Constants.GTK3_MAJOR_NUMBER);
 
-        static class Constants {
+        static final class Constants {
             static final int GTK3_MAJOR_NUMBER = 3;
         }
 
@@ -521,6 +520,20 @@ public abstract class UNIXToolkit extends SunToolkit
     // application icons).
     private static final WindowFocusListener waylandWindowFocusListener;
 
+    private static boolean containsWaylandWindowFocusListener(Window window) {
+        if (window == null) {
+            return false;
+        }
+
+        for (WindowFocusListener focusListener : window.getWindowFocusListeners()) {
+            if (focusListener == waylandWindowFocusListener) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     static {
         if (isOnWayland()) {
             waylandWindowFocusListener = new WindowAdapter() {
@@ -530,13 +543,22 @@ public abstract class UNIXToolkit extends SunToolkit
                     Window oppositeWindow = e.getOppositeWindow();
 
                     // The focus can move between the window calling the popup,
-                    // and the popup window itself.
+                    // and the popup window itself or its children.
                     // We only dismiss the popup in other cases.
                     if (oppositeWindow != null) {
-                        if (window == oppositeWindow.getParent() ) {
+                        if (containsWaylandWindowFocusListener(oppositeWindow.getOwner())) {
                             addWaylandWindowFocusListenerToWindow(oppositeWindow);
                             return;
                         }
+
+                        Window owner = window.getOwner();
+                        while (owner != null) {
+                            if (owner == oppositeWindow) {
+                                return;
+                            }
+                            owner = owner.getOwner();
+                        }
+
                         if (window.getParent() == oppositeWindow) {
                             return;
                         }
@@ -557,11 +579,11 @@ public abstract class UNIXToolkit extends SunToolkit
     }
 
     private static void addWaylandWindowFocusListenerToWindow(Window window) {
-        if (!Arrays
-                .asList(window.getWindowFocusListeners())
-                .contains(waylandWindowFocusListener)
-        ) {
+        if (!containsWaylandWindowFocusListener(window)) {
             window.addWindowFocusListener(waylandWindowFocusListener);
+            for (Window ownedWindow : window.getOwnedWindows()) {
+                addWaylandWindowFocusListenerToWindow(ownedWindow);
+            }
         }
     }
 

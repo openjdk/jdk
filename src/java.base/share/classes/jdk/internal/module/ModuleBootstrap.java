@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,9 +142,7 @@ public final class ModuleBootstrap {
         return getProperty("jdk.module.upgrade.path") == null &&
                getProperty("jdk.module.patch.0") == null &&       // --patch-module
                getProperty("jdk.module.limitmods") == null &&     // --limit-modules
-               getProperty("jdk.module.addreads.0") == null &&    // --add-reads
-               getProperty("jdk.module.addexports.0") == null &&  // --add-exports
-               getProperty("jdk.module.addopens.0") == null;      // --add-opens
+               getProperty("jdk.module.addreads.0") == null;      // --add-reads
     }
 
     /**
@@ -453,7 +451,7 @@ public final class ModuleBootstrap {
 
         // --add-reads, --add-exports/--add-opens
         addExtraReads(bootLayer);
-        boolean extraExportsOrOpens = addExtraExportsAndOpens(bootLayer);
+        addExtraExportsAndOpens(bootLayer);
 
         // add enable native access
         addEnableNativeAccess(bootLayer);
@@ -723,15 +721,13 @@ public final class ModuleBootstrap {
      * Process the --add-exports and --add-opens options to export/open
      * additional packages specified on the command-line.
      */
-    private static boolean addExtraExportsAndOpens(ModuleLayer bootLayer) {
-        boolean extraExportsOrOpens = false;
+    private static void addExtraExportsAndOpens(ModuleLayer bootLayer) {
 
         // --add-exports
         String prefix = "jdk.module.addexports.";
         Map<String, List<String>> extraExports = decode(prefix);
         if (!extraExports.isEmpty()) {
             addExtraExportsOrOpens(bootLayer, extraExports, false);
-            extraExportsOrOpens = true;
         }
 
 
@@ -740,10 +736,8 @@ public final class ModuleBootstrap {
         Map<String, List<String>> extraOpens = decode(prefix);
         if (!extraOpens.isEmpty()) {
             addExtraExportsOrOpens(bootLayer, extraOpens, true);
-            extraExportsOrOpens = true;
         }
 
-        return extraExportsOrOpens;
     }
 
     private static void addExtraExportsOrOpens(ModuleLayer bootLayer,
@@ -834,9 +828,15 @@ public final class ModuleBootstrap {
     /**
      * Grants native access to modules selected using the --enable-native-access
      * command line option, and also to JDK modules that need the access.
+     * <p>
+     * In case of being in "source" launcher mode, warnings about unknown modules are
+     * deferred to the source launcher logic in the jdk.compiler module, as those
+     * modules might be not compiled, yet.
      */
     private static void addEnableNativeAccess(ModuleLayer layer) {
-        addEnableNativeAccess(layer, USER_NATIVE_ACCESS_MODULES, true);
+        String launcherMode = getAndRemoveProperty("sun.java.launcher.mode");
+        boolean shouldWarn = !"source".equals(launcherMode);
+        addEnableNativeAccess(layer, USER_NATIVE_ACCESS_MODULES, shouldWarn);
         addEnableNativeAccess(layer, JDK_NATIVE_ACCESS_MODULES, false);
     }
 

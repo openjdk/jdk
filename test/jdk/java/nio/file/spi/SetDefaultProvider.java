@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 4313887 7006126 8142968 8178380 8183320 8210112 8266345 8263940 8331467 8346573
+ * @bug 4313887 7006126 8142968 8178380 8183320 8210112 8266345 8263940 8331467
+ *      8346573 8346722
  * @modules jdk.jartool jdk.jlink
  * @library /test/lib
  * @build testfsp/* testapp/* CustomSystemClassLoader

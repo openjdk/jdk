@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -339,7 +338,7 @@ class AnnotationIterator : public StackObj {
                                                                      _buffer(_limit > 2 ? ar->adr_at(2) : nullptr),
                                                                      _current(0),
                                                                      _next(0) {
-    if (_buffer != nullptr) {
+    if (_limit >= 2) {
       _limit -= 2; // subtract sizeof(u2) number of annotations field
     }
   }
@@ -370,7 +369,7 @@ class AnnotationIterator : public StackObj {
 };
 
 static const char value_name[] = "value";
-static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_type, bool& value) {
+static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_type, bool default_value, bool& value) {
   assert(annotation_type != nullptr, "invariant");
   AnnotationArray* class_annotations = ik->class_annotations();
   if (class_annotations == nullptr) {
@@ -386,6 +385,12 @@ static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_typ
         SymbolTable::probe(value_name, sizeof value_name - 1);
       assert(value_symbol != nullptr, "invariant");
       const AnnotationElementIterator element_iterator = annotation_iterator.elements();
+      if (!element_iterator.has_next()) {
+        // Default values are not stored in the annotation element, so if the
+        // element-value pair is empty, return the default value.
+        value = default_value;
+        return true;
+      }
       while (element_iterator.has_next()) {
         element_iterator.move_to_next();
         if (value_symbol == element_iterator.name()) {
@@ -403,15 +408,15 @@ static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_typ
 // Evaluate to the value of the first found Symbol* annotation type.
 // Searching moves upwards in the klass hierarchy in order to support
 // inherited annotations in addition to the ability to override.
-static bool annotation_value(const InstanceKlass* ik, const Symbol* annotation_type, bool& value) {
+static bool annotation_value(const InstanceKlass* ik, const Symbol* annotation_type, bool default_value, bool& value) {
   assert(ik != nullptr, "invariant");
   assert(annotation_type != nullptr, "invariant");
   assert(JdkJfrEvent::is_a(ik), "invariant");
-  if (has_annotation(ik, annotation_type, value)) {
+  if (has_annotation(ik, annotation_type, default_value, value)) {
     return true;
   }
   InstanceKlass* const super = InstanceKlass::cast(ik->super());
-  return super != nullptr && JdkJfrEvent::is_a(super) ? annotation_value(super, annotation_type, value) : false;
+  return super != nullptr && JdkJfrEvent::is_a(super) ? annotation_value(super, annotation_type, default_value, value) : false;
 }
 
 static const char jdk_jfr_module_name[] = "jdk.jfr";
@@ -470,7 +475,7 @@ static bool should_register_klass(const InstanceKlass* ik, bool& untypedEventHan
   }
   assert(registered_symbol != nullptr, "invariant");
   bool value = false; // to be set by annotation_value
-  untypedEventHandler = !(annotation_value(ik, registered_symbol, value) || java_base_can_read_jdk_jfr());
+  untypedEventHandler = !(annotation_value(ik, registered_symbol, true, value) || java_base_can_read_jdk_jfr());
   return value;
 }
 
@@ -1322,7 +1327,7 @@ static u1* schema_extend_event_subklass_bytes(const InstanceKlass* ik,
   const jint new_buffer_size = extra_stream_bytes + orig_stream_size;
   u1* const new_buffer = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, u1, new_buffer_size);
   if (new_buffer == nullptr) {
-    log_error(jfr, system) ("Thread local allocation (native) for " SIZE_FORMAT
+    log_error(jfr, system) ("Thread local allocation (native) for %zu"
       " bytes failed in JfrEventClassTransformer::on_klass_creation", static_cast<size_t>(new_buffer_size));
     return nullptr;
   }
@@ -1563,7 +1568,7 @@ static void cache_class_file_data(InstanceKlass* new_ik, const ClassFileStream* 
   JvmtiCachedClassFileData* p =
     (JvmtiCachedClassFileData*)NEW_C_HEAP_ARRAY_RETURN_NULL(u1, offset_of(JvmtiCachedClassFileData, data) + stream_len, mtInternal);
   if (p == nullptr) {
-    log_error(jfr, system)("Allocation using C_HEAP_ARRAY for " SIZE_FORMAT " bytes failed in JfrEventClassTransformer::cache_class_file_data",
+    log_error(jfr, system)("Allocation using C_HEAP_ARRAY for %zu bytes failed in JfrEventClassTransformer::cache_class_file_data",
       static_cast<size_t>(offset_of(JvmtiCachedClassFileData, data) + stream_len));
     return;
   }

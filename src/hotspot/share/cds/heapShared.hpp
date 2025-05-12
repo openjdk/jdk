@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,26 +143,6 @@ class HeapShared: AllStatic {
   friend class VerifySharedOopClosure;
 
 public:
-  // Can this VM write a heap region into the CDS archive?
-  static bool can_write() {
-    CDS_JAVA_HEAP_ONLY(
-      if (_disable_writing) {
-        return false;
-      }
-      // Need compressed class pointers for heap region dump.
-      if (!UseCompressedClassPointers) {
-        return false;
-      }
-      // Almost all GCs support heap region dump, except ZGC (so far).
-      return !UseZGC;
-    )
-    NOT_CDS_JAVA_HEAP(return false;)
-  }
-
-  static void disable_writing() {
-    CDS_JAVA_HEAP_ONLY(_disable_writing = true;)
-  }
-
   static bool is_subgraph_root_class(InstanceKlass* ik);
 
   // Scratch objects for archiving Klass::java_mirror()
@@ -171,14 +151,8 @@ public:
   static oop scratch_java_mirror(oop java_mirror) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static bool is_archived_boot_layer_available(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
-  // Look for all hidden classes that are referenced by archived objects.
-  static void start_finding_required_hidden_classes() NOT_CDS_JAVA_HEAP_RETURN;
-  static void find_required_hidden_classes_in_object(oop o) NOT_CDS_JAVA_HEAP_RETURN;
-  static void end_finding_required_hidden_classes() NOT_CDS_JAVA_HEAP_RETURN;
-
 private:
 #if INCLUDE_CDS_JAVA_HEAP
-  static bool _disable_writing;
   static DumpedInternedStrings *_dumped_interned_strings;
 
   // statistics
@@ -190,8 +164,8 @@ private:
 
   static void count_allocation(size_t size);
   static void print_stats();
-  static void debug_trace();
 public:
+  static void debug_trace();
   static unsigned oop_hash(oop const& p);
   static unsigned string_oop_hash(oop const& string) {
     return java_lang_String::hash_code(string);
@@ -260,10 +234,7 @@ private:
   static DumpTimeKlassSubGraphInfoTable* _dump_time_subgraph_info_table;
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
-  class FindRequiredHiddenClassesOopClosure;
-  static void find_required_hidden_classes_helper(ArchivableStaticFieldInfo fields[]);
-
-  static CachedOopInfo make_cached_oop_info(oop obj);
+  static CachedOopInfo make_cached_oop_info(oop obj, oop referrer);
   static ArchivedKlassSubGraphInfoRecord* archive_subgraph_info(KlassSubGraphInfo* info);
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        bool is_full_module_graph);
@@ -313,8 +284,7 @@ private:
   static GrowableArrayCHeap<OopHandle, mtClassShared>* _root_segments;
   static int _root_segment_max_size_elems;
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
-  static MetaspaceObjToOopHandleTable* _scratch_java_mirror_table;
-  static MetaspaceObjToOopHandleTable* _scratch_references_table;
+  static MetaspaceObjToOopHandleTable* _scratch_objects_table;
 
   static void init_seen_objects_table() {
     assert(_seen_objects_table == nullptr, "must be");
@@ -344,9 +314,7 @@ private:
 
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
-  static bool archive_object(oop obj);
-  static void copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop m);
-  static void copy_interned_strings();
+  static bool archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgraph_info);
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
   static void resolve_classes_for_subgraph_of(JavaThread* current, Klass* k);
@@ -369,14 +337,32 @@ private:
   static void mark_native_pointers(oop orig_obj);
   static bool has_been_archived(oop orig_obj);
   static void prepare_resolved_references();
-  static void archive_java_mirrors();
   static void archive_strings();
-  static void copy_special_subgraph();
+  static void archive_subgraphs();
 
-  class AOTInitializedClassScanner;
-  static void find_all_aot_initialized_classes();
-  static void find_all_aot_initialized_classes_helper();
-  static bool scan_for_aot_initialized_classes(oop obj);
+  // PendingOop and PendingOopStack are used for recursively discovering all cacheable
+  // heap objects. The recursion is done using PendingOopStack so we won't overflow the
+  // C stack with deep reference chains.
+  class PendingOop {
+    oop _obj;
+    oop _referrer;
+    int _level;
+
+  public:
+    PendingOop() : _obj(nullptr), _referrer(nullptr), _level(-1) {}
+    PendingOop(oop obj, oop referrer, int level) : _obj(obj), _referrer(referrer), _level(level) {}
+
+    oop obj()      const { return _obj; }
+    oop referrer() const { return _referrer; }
+    int level()    const { return _level; }
+  };
+
+  class OopFieldPusher;
+  using PendingOopStack = GrowableArrayCHeap<PendingOop, mtClassShared>;
+
+  static PendingOop _object_being_archived;
+  static bool walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
+                              oop orig_obj, oop referrer);
 
  public:
   static void reset_archived_object_states(TRAPS);
@@ -393,14 +379,13 @@ private:
   }
 
   static int archive_exception_instance(oop exception);
-  static void archive_objects(ArchiveHeapInfo* heap_info);
-  static void copy_objects();
 
   static bool archive_reachable_objects_from(int level,
                                              KlassSubGraphInfo* subgraph_info,
                                              oop orig_obj);
 
   static void add_to_dumped_interned_strings(oop string);
+  static bool is_dumped_interned_string(oop o);
 
   // Scratch objects for archiving Klass::java_mirror()
   static void set_scratch_java_mirror(Klass* k, oop mirror);
@@ -440,9 +425,11 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static void write_heap(ArchiveHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN;
   static objArrayOop scratch_resolved_references(ConstantPool* src);
   static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
-  static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_dumping() NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_scratch_objects_for_basic_type_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_box_classes(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
     CDS_JAVA_HEAP_ONLY(return (idx == MetaspaceShared::hp);)
@@ -470,6 +457,13 @@ private:
   static bool is_lambda_proxy_klass(InstanceKlass* ik) NOT_CDS_JAVA_HEAP_RETURN_(false);
   static bool is_string_concat_klass(InstanceKlass* ik) NOT_CDS_JAVA_HEAP_RETURN_(false);
   static bool is_archivable_hidden_klass(InstanceKlass* ik) NOT_CDS_JAVA_HEAP_RETURN_(false);
+
+  // Used by AOTArtifactFinder
+  static void start_scanning_for_oops();
+  static void end_scanning_for_oops();
+  static void scan_java_class(Klass* k);
+  static void scan_java_mirror(oop orig_mirror);
+  static void copy_and_rescan_aot_inited_mirror(InstanceKlass* ik);
 };
 
 #if INCLUDE_CDS_JAVA_HEAP

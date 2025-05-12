@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciCallProfile.hpp"
 #include "ci/ciExceptionHandler.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodBlocks.hpp"
 #include "ci/ciMethodData.hpp"
+#include "ci/ciReplay.hpp"
 #include "ci/ciStreams.hpp"
 #include "ci/ciSymbol.hpp"
-#include "ci/ciReplay.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
@@ -915,8 +914,14 @@ int ciMethod::scale_count(int count, float prof_factor) {
       method_life = counter_life;
     }
     if (counter_life > 0) {
-      count = (int)((double)count * prof_factor * method_life / counter_life + 0.5);
-      count = (count > 0) ? count : 1;
+      double count_d = (double)count * prof_factor * method_life / counter_life + 0.5;
+      if (count_d >= static_cast<double>(INT_MAX)) {
+        // Clamp in case of overflowing int range.
+        count = INT_MAX;
+      } else {
+        count = int(count_d);
+        count = (count > 0) ? count : 1;
+      }
     } else {
       count = 1;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -367,7 +366,6 @@ void G1HeapVerifier::verify(VerifyOption vo) {
     // help us track down what went wrong. This is why we call
     // print_extended_on() instead of print_on().
     Log(gc, verify) log;
-    ResourceMark rm;
     LogStream ls(log.error());
     _g1h->print_extended_on(&ls);
 

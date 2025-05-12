@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-// no precompiled headers
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -53,6 +52,10 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#endif
 
 int CompilerToVM::Data::oopDesc_klass_offset_in_bytes;
 int CompilerToVM::Data::arrayOopDesc_length_offset_in_bytes;
@@ -86,6 +89,11 @@ address CompilerToVM::Data::ZBarrierSetRuntime_clone;
 address CompilerToVM::Data::ZPointerVectorLoadBadMask_address;
 address CompilerToVM::Data::ZPointerVectorStoreBadMask_address;
 address CompilerToVM::Data::ZPointerVectorStoreGoodMask_address;
+
+#if INCLUDE_SHENANDOAHGC
+address CompilerToVM::Data::shenandoah_in_cset_fast_test_addr;
+int CompilerToVM::Data::shenandoah_region_size_bytes_shift;
+#endif
 
 bool CompilerToVM::Data::continuations_enabled;
 
@@ -166,13 +174,11 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   SharedRuntime_throw_delayed_StackOverflowError_entry = SharedRuntime::throw_delayed_StackOverflowError_entry();
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    thread_disarmed_guard_value_offset = in_bytes(bs_nm->thread_disarmed_guard_value_offset());
-    nmethod_entry_barrier = StubRoutines::method_entry_barrier();
-    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-    AARCH64_ONLY(BarrierSetAssembler_nmethod_patching_type = (int) bs_asm->nmethod_patching_type());
-    AARCH64_ONLY(BarrierSetAssembler_patching_epoch_addr = bs_asm->patching_epoch_addr());
-  }
+  thread_disarmed_guard_value_offset = in_bytes(bs_nm->thread_disarmed_guard_value_offset());
+  nmethod_entry_barrier = StubRoutines::method_entry_barrier();
+  BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+  AARCH64_ONLY(BarrierSetAssembler_nmethod_patching_type = (int) bs_asm->nmethod_patching_type());
+  AARCH64_ONLY(BarrierSetAssembler_patching_epoch_addr = bs_asm->patching_epoch_addr());
 
 #if INCLUDE_ZGC
   if (UseZGC) {
@@ -230,11 +236,23 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     assert(base != nullptr, "unexpected byte_map_base");
     cardtable_start_address = base;
     cardtable_shift = CardTable::card_shift();
+#if INCLUDE_SHENANDOAHGC
+  } else if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+    cardtable_start_address = nullptr;
+    cardtable_shift = CardTable::card_shift();
+#endif
   } else {
     // No card mark barriers
     cardtable_start_address = nullptr;
     cardtable_shift = 0;
   }
+
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    shenandoah_in_cset_fast_test_addr = ShenandoahHeap::in_cset_fast_test_addr();
+    shenandoah_region_size_bytes_shift = ShenandoahHeapRegion::region_size_bytes_shift_jint();
+  }
+#endif
 
 #ifdef X86
   L1_line_size = VM_Version::L1_line_size();
@@ -452,6 +470,7 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
                  strcmp(vmField.typeString, "intptr_t") == 0 ||
                  strcmp(vmField.typeString, "uintptr_t") == 0 ||
                  strcmp(vmField.typeString, "OopHandle") == 0 ||
+                 strcmp(vmField.typeString, "VM_Version::VM_Features") == 0 ||
                  strcmp(vmField.typeString, "size_t") == 0 ||
                  // All foo* types are addresses.
                  vmField.typeString[strlen(vmField.typeString) - 1] == '*') {

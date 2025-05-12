@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/threadIdentifier.hpp"
 
@@ -49,3 +48,10 @@ int64_t ThreadIdentifier::next() {
   } while (Atomic::cmpxchg(&next_thread_id, next_tid, next_tid + 1) != next_tid);
   return next_tid;
 }
+
+#ifdef ASSERT
+void ThreadIdentifier::verify_id(int64_t id) {
+  int64_t current_id = current();
+  assert(id >= initial() && id < current_id, "invalid id, " INT64_FORMAT " and current is " INT64_FORMAT, id, current_id);
+}
+#endif

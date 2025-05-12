@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,32 @@
 package java.lang.classfile.attribute;
 
 import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.MethodElement;
+import java.lang.reflect.Executable;
 import java.util.List;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code MethodParameters} attribute (JVMS {@jvms 4.7.24}), which can
- * appear on methods, and records optional information about the method's
- * parameters.  Delivered as a {@link java.lang.classfile.MethodElement} when
- * traversing the elements of a {@link java.lang.classfile.MethodModel}.
+ * Models the {@link Attributes#methodParameters() MethodParameters} attribute
+ * (JVMS {@jvms 4.7.24}), which records reflective information about this
+ * method's parameters such as access modifiers.
  * <p>
- * The attribute does not permit multiple instances in a given location.
- * Subsequent occurrence of the attribute takes precedence during the attributed
- * element build or transformation.
+ * This attribute only appears on methods, and does not permit {@linkplain
+ * AttributeMapper#allowMultiple multiple instances} in a method.  It has a
+ * data dependency on the {@linkplain AttributeMapper.AttributeStability#CP_REFS
+ * constant pool}.
  * <p>
- * The attribute was introduced in the Java SE Platform version 8.
+ * The attribute was introduced in the Java SE Platform version 8, major version
+ * {@value ClassFile#JAVA_8_VERSION}.
  *
+ * @see Attributes#methodParameters()
+ * @see Executable#getParameters()
+ * @jvms 4.7.24 The {@code MethodParameters} Attribute
  * @since 24
  */
 public sealed interface MethodParametersAttribute
@@ -53,7 +61,7 @@ public sealed interface MethodParametersAttribute
 
     /**
      * {@return information about the parameters of the method}  The i'th entry
-     * in the list corresponds to the i'th parameter in the method declaration.
+     * in the list corresponds to the i'th parameter in the method descriptor.
      */
     List<MethodParameterInfo> parameters();
 

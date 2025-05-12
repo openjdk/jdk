@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsHeapVerifier.hpp"
@@ -42,7 +41,11 @@
 #if INCLUDE_CDS_JAVA_HEAP
 
 // CDSHeapVerifier is used to check for problems where an archived object references a
-// static field that may be get a different value at runtime. In the following example,
+// static field that may be get a different value at runtime.
+//
+// *Please see comments in aotClassInitializer.cpp for how to avoid such problems*,
+//
+// In the following example,
 //      Foo.get.test()
 // correctly returns true when CDS disabled, but incorrectly returns false when CDS is enabled,
 // because the archived archivedFoo.bar value is different than Bar.bar.
@@ -107,6 +110,8 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
   ADD_EXCL("java/lang/System",                           "bootLayer");             // A
 
+  ADD_EXCL("java/util/Collections",                      "EMPTY_LIST");           // E
+
   // A dummy object used by HashSet. The value doesn't matter and it's never
   // tested for equality.
   ADD_EXCL("java/util/HashSet",                          "PRESENT");               // E
@@ -128,10 +133,15 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   ADD_EXCL("sun/invoke/util/ValueConversions",           "ONE_INT",                // E
                                                          "ZERO_INT");              // E
 
-  if (CDSConfig::is_dumping_invokedynamic()) {
+  if (CDSConfig::is_dumping_method_handles()) {
     ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator", "MEMBERNAME_FACTORY",    // D
                                                           "CD_Object_array",       // E same as <...>ConstantUtils.CD_Object_array::CD_Object
                                                           "INVOKER_SUPER_DESC");   // E same as java.lang.constant.ConstantDescs::CD_Object
+
+    ADD_EXCL("java/lang/runtime/ObjectMethods",           "CLASS_IS_INSTANCE",     // D
+                                                          "FALSE",                 // D
+                                                          "TRUE",                  // D
+                                                          "ZERO");                 // D
   }
 
 # undef ADD_EXCL
@@ -144,6 +154,7 @@ CDSHeapVerifier::~CDSHeapVerifier() {
     log_error(cds, heap)("Scanned %d objects. Found %d case(s) where "
                          "an object points to a static field that "
                          "may hold a different value at runtime.", _archived_objs, _problems);
+    log_error(cds, heap)("Please see cdsHeapVerifier.cpp and aotClassInitializer.cpp for details");
     MetaspaceShared::unrecoverable_writing_error();
   }
 }
@@ -258,20 +269,19 @@ void CDSHeapVerifier::add_static_obj_field(InstanceKlass* ik, oop field, Symbol*
   _table.put(field, info);
 }
 
+// This function is called once for every archived heap object. Warn if this object is referenced by
+// a static field of a class that's not aot-initialized.
 inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value) {
   _archived_objs++;
 
+  if (java_lang_String::is_instance(orig_obj) && HeapShared::is_dumped_interned_string(orig_obj)) {
+    // It's quite often for static fields to have interned strings. These are most likely not
+    // problematic (and are hard to filter). So we will ignore them.
+    return true; /* keep on iterating */
+  }
+
   StaticFieldInfo* info = _table.get(orig_obj);
   if (info != nullptr) {
-    if (value.orig_referrer() == nullptr && java_lang_String::is_instance(orig_obj)) {
-      // This string object is not referenced by any of the archived object graphs. It's archived
-      // only because it's in the interned string table. So we are not in a condition that
-      // should be flagged by CDSHeapVerifier.
-      return true; /* keep on iterating */
-    }
-    if (info->_holder->is_hidden()) {
-      return true;
-    }
     ResourceMark rm;
     char* class_name = info->_holder->name()->as_C_string();
     char* field_name = info->_name->as_C_string();

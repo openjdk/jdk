@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -290,10 +289,17 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
         toop->isa_instptr() &&
         toop->is_instptr()->instance_klass()->is_java_lang_Object() &&
         toop->offset() == Type::OffsetBot)) {
-    // compress paths and change unreachable cycles to TOP
-    // If not, we can update the input infinitely along a MergeMem cycle
-    // Equivalent code in PhiNode::Ideal
-    Node* m  = phase->transform(mmem);
+    // IGVN _delay_transform may be set to true and if that is the case and mmem
+    // is already a registered node then the validation inside transform will
+    // complain.
+    Node* m = mmem;
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    if (igvn == nullptr || !igvn->delay_transform()) {
+      // compress paths and change unreachable cycles to TOP
+      // If not, we can update the input infinitely along a MergeMem cycle
+      // Equivalent code in PhiNode::Ideal
+      m = phase->transform(mmem);
+    }
     // If transformed to a MergeMem, get the desired slice
     // Otherwise the returned node represents memory for every slice
     mem = (m->is_MergeMem())? m->as_MergeMem()->memory_at(alias_idx) : m;
@@ -1207,12 +1213,12 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
       // (This is one of the few places where a generic PhaseTransform
       // can create new nodes.  Think of it as lazily manifesting
       // virtually pre-existing constants.)
-      if (memory_type() != T_VOID) {
+      if (value_basic_type() != T_VOID) {
         if (ReduceBulkZeroing || find_array_copy_clone(ld_alloc, in(MemNode::Memory)) == nullptr) {
           // If ReduceBulkZeroing is disabled, we need to check if the allocation does not belong to an
           // ArrayCopyNode clone. If it does, then we cannot assume zero since the initialization is done
           // by the ArrayCopyNode.
-          return phase->zerocon(memory_type());
+          return phase->zerocon(value_basic_type());
         }
       } else {
         // TODO: materialize all-zero vector constant
@@ -1977,27 +1983,21 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
                                  ciKlass* klass) const {
   assert(!UseCompactObjectHeaders || tkls->offset() != in_bytes(Klass::prototype_header_offset()),
          "must not happen");
-  if (tkls->offset() == in_bytes(Klass::modifier_flags_offset())) {
-    // The field is Klass::_modifier_flags.  Return its (constant) value.
-    // (Folds up the 2nd indirection in aClassConstant.getModifiers().)
-    assert(this->Opcode() == Op_LoadI, "must load an int from _modifier_flags");
-    return TypeInt::make(klass->modifier_flags());
-  }
   if (tkls->offset() == in_bytes(Klass::access_flags_offset())) {
     // The field is Klass::_access_flags.  Return its (constant) value.
     // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
-    assert(this->Opcode() == Op_LoadI, "must load an int from _access_flags");
+    assert(Opcode() == Op_LoadUS, "must load an unsigned short from _access_flags");
     return TypeInt::make(klass->access_flags());
   }
   if (tkls->offset() == in_bytes(Klass::misc_flags_offset())) {
     // The field is Klass::_misc_flags.  Return its (constant) value.
     // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
-    assert(this->Opcode() == Op_LoadUB, "must load an unsigned byte from _misc_flags");
+    assert(Opcode() == Op_LoadUB, "must load an unsigned byte from _misc_flags");
     return TypeInt::make(klass->misc_flags());
   }
   if (tkls->offset() == in_bytes(Klass::layout_helper_offset())) {
     // The field is Klass::_layout_helper.  Return its constant value if known.
-    assert(this->Opcode() == Op_LoadI, "must load an int from _layout_helper");
+    assert(Opcode() == Op_LoadI, "must load an int from _layout_helper");
     return TypeInt::make(klass->layout_helper());
   }
 
@@ -2017,6 +2017,17 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   int off = tp->offset();
   assert(off != Type::OffsetTop, "case covered by TypePtr::empty");
   Compile* C = phase->C;
+
+  // If we are loading from a freshly-allocated object, produce a zero,
+  // if the load is provably beyond the header of the object.
+  // (Also allow a variable load from a fresh array to produce zero.)
+  const TypeOopPtr* tinst = tp->isa_oopptr();
+  bool is_instance = (tinst != nullptr) && tinst->is_known_instance_field();
+  Node* value = can_see_stored_value(mem, phase);
+  if (value != nullptr && value->is_Con()) {
+    assert(value->bottom_type()->higher_equal(_type), "sanity");
+    return value->bottom_type();
+  }
 
   // Try to guess loaded type from pointer type
   if (tp->isa_aryptr()) {
@@ -2040,7 +2051,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         int stable_dimension = (ary->stable_dimension() > 0 ? ary->stable_dimension() - 1 : 0);
         const Type* con_type = Type::make_constant_from_array_element(aobj->as_array(), off,
                                                                       stable_dimension,
-                                                                      memory_type(), is_unsigned());
+                                                                      value_basic_type(), is_unsigned());
         if (con_type != nullptr) {
           return con_type;
         }
@@ -2108,7 +2119,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     const TypeInstPtr* tinst = tp->is_instptr();
     ciObject* const_oop = tinst->const_oop();
     if (!is_mismatched_access() && off != Type::OffsetBot && const_oop != nullptr && const_oop->is_instance()) {
-      const Type* con_type = Type::make_constant_from_field(const_oop->as_instance(), off, is_unsigned(), memory_type());
+      const Type* con_type = Type::make_constant_from_field(const_oop->as_instance(), off, is_unsigned(), value_basic_type());
       if (con_type != nullptr) {
         return con_type;
       }
@@ -2211,30 +2222,14 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     // This will help short-circuit some reflective code.
     if (tkls->offset() == in_bytes(Klass::layout_helper_offset()) &&
         tkls->isa_instklassptr() && // not directly typed as an array
-        !tkls->is_instklassptr()->instance_klass()->is_java_lang_Object() // not the supertype of all T[] and specifically not Serializable & Cloneable
-        ) {
-      // Note:  When interfaces are reliable, we can narrow the interface
-      // test to (klass != Serializable && klass != Cloneable).
+        !tkls->is_instklassptr()->might_be_an_array() // not the supertype of all T[] (java.lang.Object) or has an interface that is not Serializable or Cloneable
+    ) {
       assert(Opcode() == Op_LoadI, "must load an int from _layout_helper");
       jint min_size = Klass::instance_layout_helper(oopDesc::header_size(), false);
       // The key property of this type is that it folds up tests
       // for array-ness, since it proves that the layout_helper is positive.
       // Thus, a generic value like the basic object layout helper works fine.
       return TypeInt::make(min_size, max_jint, Type::WidenMin);
-    }
-  }
-
-  // If we are loading from a freshly-allocated object, produce a zero,
-  // if the load is provably beyond the header of the object.
-  // (Also allow a variable load from a fresh array to produce zero.)
-  const TypeOopPtr *tinst = tp->isa_oopptr();
-  bool is_instance = (tinst != nullptr) && tinst->is_known_instance_field();
-  bool is_boxed_value = (tinst != nullptr) && tinst->is_ptr_to_boxed_value();
-  if (ReduceFieldZeroing || is_instance || is_boxed_value) {
-    Node* value = can_see_stored_value(mem,phase);
-    if (value != nullptr && value->is_Con()) {
-      assert(value->bottom_type()->higher_equal(_type),"sanity");
-      return value->bottom_type();
     }
   }
 
@@ -2406,30 +2401,24 @@ const Type* LoadSNode::Value(PhaseGVN* phase) const {
 //=============================================================================
 //----------------------------LoadKlassNode::make------------------------------
 // Polymorphic factory method:
-Node* LoadKlassNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* at, const TypeKlassPtr* tk) {
+Node* LoadKlassNode::make(PhaseGVN& gvn, Node* mem, Node* adr, const TypePtr* at, const TypeKlassPtr* tk) {
   // sanity check the alias category against the created node type
-  const TypePtr *adr_type = adr->bottom_type()->isa_ptr();
+  const TypePtr* adr_type = adr->bottom_type()->isa_ptr();
   assert(adr_type != nullptr, "expecting TypeKlassPtr");
 #ifdef _LP64
   if (adr_type->is_ptr_to_narrowklass()) {
     assert(UseCompressedClassPointers, "no compressed klasses");
-    Node* load_klass = gvn.transform(new LoadNKlassNode(ctl, mem, adr, at, tk->make_narrowklass(), MemNode::unordered));
+    Node* load_klass = gvn.transform(new LoadNKlassNode(mem, adr, at, tk->make_narrowklass(), MemNode::unordered));
     return new DecodeNKlassNode(load_klass, load_klass->bottom_type()->make_ptr());
   }
 #endif
   assert(!adr_type->is_ptr_to_narrowklass() && !adr_type->is_ptr_to_narrowoop(), "should have got back a narrow oop");
-  return new LoadKlassNode(ctl, mem, adr, at, tk, MemNode::unordered);
+  return new LoadKlassNode(mem, adr, at, tk, MemNode::unordered);
 }
 
 //------------------------------Value------------------------------------------
 const Type* LoadKlassNode::Value(PhaseGVN* phase) const {
   return klass_value_common(phase);
-}
-
-// In most cases, LoadKlassNode does not have the control input set. If the control
-// input is set, it must not be removed (by LoadNode::Ideal()).
-bool LoadKlassNode::can_remove_control() const {
-  return false;
 }
 
 const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
@@ -2469,7 +2458,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
           // a primitive Class (e.g., int.class) has null for a klass field
           return TypePtr::NULL_PTR;
         }
-        // (Folds up the 1st indirection in aClassConstant.getModifiers().)
+        // Fold up the load of the hidden field
         return TypeKlassPtr::make(t->as_klass(), Type::trust_interfaces);
       }
       // non-constant mirror, so we can't tell what's going on
@@ -2794,12 +2783,33 @@ class MergePrimitiveStores : public StackObj {
 private:
   PhaseGVN* const _phase;
   StoreNode* const _store;
+  // State machine with initial state Unknown
+  // Allowed transitions:
+  //   Unknown     -> Const
+  //   Unknown     -> Platform
+  //   Unknown     -> Reverse
+  //   Unknown     -> NotAdjacent
+  //   Const       -> Const
+  //   Const       -> NotAdjacent
+  //   Platform    -> Platform
+  //   Platform    -> NotAdjacent
+  //   Reverse     -> Reverse
+  //   Reverse     -> NotAdjacent
+  //   NotAdjacent -> NotAdjacent
+  enum ValueOrder : uint8_t {
+    Unknown,     // Initial state
+    Const,       // Input values are const
+    Platform,    // Platform order
+    Reverse,     // Reverse platform order
+    NotAdjacent  // Not adjacent
+  };
+  ValueOrder  _value_order;
 
   NOT_PRODUCT( const CHeapBitMap &_trace_tags; )
 
 public:
   MergePrimitiveStores(PhaseGVN* phase, StoreNode* store) :
-    _phase(phase), _store(store)
+    _phase(phase), _store(store), _value_order(ValueOrder::Unknown)
     NOT_PRODUCT( COMMA _trace_tags(Compile::current()->directive()->trace_merge_stores_tags()) )
     {}
 
@@ -2809,7 +2819,7 @@ private:
   bool is_compatible_store(const StoreNode* other_store) const;
   bool is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) const;
   bool is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) const;
-  static bool is_con_RShift(const Node* n, Node const*& base_out, jint& shift_out);
+  static bool is_con_RShift(const Node* n, Node const*& base_out, jint& shift_out, PhaseGVN* phase);
   enum CFGStatus { SuccessNoRangeCheck, SuccessWithRangeCheck, Failure };
   static CFGStatus cfg_status_for_pair(const StoreNode* use_store, const StoreNode* def_store);
 
@@ -2845,6 +2855,7 @@ private:
 #endif
   };
 
+  enum ValueOrder find_adjacent_input_value_order(const Node* n1, const Node* n2, const int memory_size) const;
   Status find_adjacent_use_store(const StoreNode* def_store) const;
   Status find_adjacent_def_store(const StoreNode* use_store) const;
   Status find_use_store(const StoreNode* def_store) const;
@@ -2866,16 +2877,16 @@ private:
     return is_trace(TraceMergeStores::Tag::BASIC);
   }
 
-  bool is_trace_pointer() const {
-    return is_trace(TraceMergeStores::Tag::POINTER);
+  bool is_trace_pointer_parsing() const {
+    return is_trace(TraceMergeStores::Tag::POINTER_PARSING);
   }
 
-  bool is_trace_aliasing() const {
-    return is_trace(TraceMergeStores::Tag::ALIASING);
+  bool is_trace_pointer_aliasing() const {
+    return is_trace(TraceMergeStores::Tag::POINTER_ALIASING);
   }
 
-  bool is_trace_adjacency() const {
-    return is_trace(TraceMergeStores::Tag::ADJACENCY);
+  bool is_trace_pointer_adjacency() const {
+    return is_trace(TraceMergeStores::Tag::POINTER_ADJACENCY);
   }
 
   bool is_trace_success() const {
@@ -2906,9 +2917,16 @@ StoreNode* MergePrimitiveStores::run() {
   // Check if we can merge with at least one def, so that we have at least 2 stores to merge.
   Status status_def = find_adjacent_def_store(_store);
   NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeStores] expect def: "); status_def.print_on(tty); })
-  if (status_def.found_store() == nullptr) {
+  Node* def_store = status_def.found_store();
+  if (def_store == nullptr) {
     return nullptr;
   }
+
+  // Initialize value order
+  _value_order = find_adjacent_input_value_order(def_store->in(MemNode::ValueIn),
+                                                 _store->in(MemNode::ValueIn),
+                                                 _store->memory_size());
+  assert(_value_order != ValueOrder::NotAdjacent && _value_order != ValueOrder::Unknown, "Order should be checked");
 
   ResourceMark rm;
   Node_List merge_list;
@@ -2946,58 +2964,85 @@ bool MergePrimitiveStores::is_adjacent_pair(const StoreNode* use_store, const St
 
   ResourceMark rm;
 #ifndef PRODUCT
-  const TraceMemPointer trace(is_trace_pointer(),
-                              is_trace_aliasing(),
-                              is_trace_adjacency());
+  const TraceMemPointer trace(is_trace_pointer_parsing(),
+                              is_trace_pointer_aliasing(),
+                              is_trace_pointer_adjacency(),
+                              true);
 #endif
-  const MemPointer pointer_use(use_store NOT_PRODUCT( COMMA trace ));
-  const MemPointer pointer_def(def_store NOT_PRODUCT( COMMA trace ));
+  const MemPointer pointer_use(use_store NOT_PRODUCT(COMMA trace));
+  const MemPointer pointer_def(def_store NOT_PRODUCT(COMMA trace));
   return pointer_def.is_adjacent_to_and_before(pointer_use);
 }
 
-bool MergePrimitiveStores::is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) const {
+// Check input values n1 and n2 can be merged and return the value order
+MergePrimitiveStores::ValueOrder MergePrimitiveStores::find_adjacent_input_value_order(const Node* n1, const Node* n2,
+                                                                                       const int memory_size) const {
   // Pattern: [n1 = ConI, n2 = ConI]
-  if (n1->Opcode() == Op_ConI) {
-    return n2->Opcode() == Op_ConI;
+  if (n1->Opcode() == Op_ConI && n2->Opcode() == Op_ConI) {
+    return ValueOrder::Const;
   }
 
-  // Pattern: [n1 = base >> shift, n2 = base >> (shift + memory_size)]
-#ifndef VM_LITTLE_ENDIAN
-  // Pattern: [n1 = base >> (shift + memory_size), n2 = base >> shift]
-  // Swapping n1 with n2 gives same pattern as on little endian platforms.
-  swap(n1, n2);
-#endif // !VM_LITTLE_ENDIAN
-  Node const* base_n2;
+  Node const *base_n2;
   jint shift_n2;
-  if (!is_con_RShift(n2, base_n2, shift_n2)) {
-    return false;
+  if (!is_con_RShift(n2, base_n2, shift_n2, _phase)) {
+    return ValueOrder::NotAdjacent;
   }
-  if (n1->Opcode() == Op_ConvL2I) {
-    // look through
-    n1 = n1->in(1);
-  }
-  Node const* base_n1;
+  Node const *base_n1;
   jint shift_n1;
-  if (n1 == base_n2) {
-    // n1 = base = base >> 0
-    base_n1 = n1;
-    shift_n1 = 0;
-  } else if (!is_con_RShift(n1, base_n1, shift_n1)) {
-    return false;
+  if (!is_con_RShift(n1, base_n1, shift_n1, _phase)) {
+    return ValueOrder::NotAdjacent;
   }
+
   int bits_per_store = memory_size * 8;
   if (base_n1 != base_n2 ||
-      shift_n1 + bits_per_store != shift_n2 ||
+      abs(shift_n1 - shift_n2) != bits_per_store ||
       shift_n1 % bits_per_store != 0) {
-    return false;
+    // Values are not adjacent
+    return ValueOrder::NotAdjacent;
   }
 
-  // both load from same value with correct shift
-  return true;
+  // Detect value order
+#ifdef VM_LITTLE_ENDIAN
+  return shift_n1 < shift_n2 ? ValueOrder::Platform     // Pattern: [n1 = base >> shift, n2 = base >> (shift + memory_size)]
+                             : ValueOrder::Reverse;     // Pattern: [n1 = base >> (shift + memory_size), n2 = base >> shift]
+#else
+  return shift_n1 > shift_n2 ? ValueOrder::Platform     // Pattern: [n1 = base >> (shift + memory_size), n2 = base >> shift]
+                             : ValueOrder::Reverse;     // Pattern: [n1 = base >> shift, n2 = base >> (shift + memory_size)]
+#endif
+}
+
+bool MergePrimitiveStores::is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) const {
+  ValueOrder input_value_order = find_adjacent_input_value_order(n1, n2, memory_size);
+
+  switch (input_value_order) {
+    case ValueOrder::NotAdjacent:
+      return false;
+    case ValueOrder::Reverse:
+      if (memory_size != 1 ||
+          !Matcher::match_rule_supported(Op_ReverseBytesS) ||
+          !Matcher::match_rule_supported(Op_ReverseBytesI) ||
+          !Matcher::match_rule_supported(Op_ReverseBytesL)) {
+        // ReverseBytes are not supported by platform
+        return false;
+      }
+      // fall-through.
+    case ValueOrder::Const:
+    case ValueOrder::Platform:
+      if (_value_order == ValueOrder::Unknown) {
+        // Initial state is Unknown, and we find a valid input value order
+        return true;
+      }
+      // The value order can not be changed
+      return _value_order == input_value_order;
+    case ValueOrder::Unknown:
+    default:
+      ShouldNotReachHere();
+  }
+  return false;
 }
 
 // Detect pattern: n = base_out >> shift_out
-bool MergePrimitiveStores::is_con_RShift(const Node* n, Node const*& base_out, jint& shift_out) {
+bool MergePrimitiveStores::is_con_RShift(const Node* n, Node const*& base_out, jint& shift_out, PhaseGVN* phase) {
   assert(n != nullptr, "precondition");
 
   int opc = n->Opcode();
@@ -3015,6 +3060,14 @@ bool MergePrimitiveStores::is_con_RShift(const Node* n, Node const*& base_out, j
     shift_out = n->in(2)->get_int();
     // The shift must be positive:
     return shift_out >= 0;
+  }
+
+  if (phase->type(n)->isa_int()  != nullptr ||
+      phase->type(n)->isa_long() != nullptr) {
+    // (base >> 0)
+    base_out = n;
+    shift_out = 0;
+    return true;
   }
   return false;
 }
@@ -3182,6 +3235,7 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
   Node* first = merge_list.at(merge_list.size()-1);
   Node* merged_input_value = nullptr;
   if (_store->in(MemNode::ValueIn)->Opcode() == Op_ConI) {
+    assert(_value_order == ValueOrder::Const, "must match");
     // Pattern: [ConI, ConI, ...] -> new constant
     jlong con = 0;
     jlong bits_per_store = _store->memory_size() * 8;
@@ -3198,6 +3252,7 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
     }
     merged_input_value = _phase->longcon(con);
   } else {
+    assert(_value_order == ValueOrder::Platform || _value_order == ValueOrder::Reverse, "must match");
     // Pattern: [base >> 24, base >> 16, base >> 8, base] -> base
     //             |                                  |
     //           _store                             first
@@ -3208,10 +3263,13 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
     // `_store` and `first` are swapped in the diagram above
     swap(hi, lo);
 #endif // !VM_LITTLE_ENDIAN
+    if (_value_order == ValueOrder::Reverse) {
+      swap(hi, lo);
+    }
     Node const* hi_base;
     jint hi_shift;
     merged_input_value = lo;
-    bool is_true = is_con_RShift(hi, hi_base, hi_shift);
+    bool is_true = is_con_RShift(hi, hi_base, hi_shift, _phase);
     assert(is_true, "must detect con RShift");
     if (merged_input_value != hi_base && merged_input_value->Opcode() == Op_ConvL2I) {
       // look through
@@ -3237,6 +3295,17 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
          (_phase->type(merged_input_value)->isa_long() != nullptr && new_memory_size == 8),
          "merged_input_value is either int or long, and new_memory_size is small enough");
 
+  if (_value_order == ValueOrder::Reverse) {
+    assert(_store->memory_size() == 1, "only implemented for bytes");
+    if (new_memory_size == 8) {
+      merged_input_value = _phase->transform(new ReverseBytesLNode(merged_input_value));
+    } else if (new_memory_size == 4) {
+      merged_input_value = _phase->transform(new ReverseBytesINode(merged_input_value));
+    } else {
+      assert(new_memory_size == 2, "sanity check");
+      merged_input_value = _phase->transform(new ReverseBytesSNode(merged_input_value));
+    }
+  }
   return merged_input_value;
 }
 
@@ -3390,12 +3459,23 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   if (MergeStores && UseUnalignedAccesses) {
-    if (phase->C->post_loop_opts_phase()) {
+    if (phase->C->merge_stores_phase()) {
       MergePrimitiveStores merge(phase, this);
       Node* progress = merge.run();
       if (progress != nullptr) { return progress; }
     } else {
-      phase->C->record_for_post_loop_opts_igvn(this);
+      // We need to wait with merging stores until RangeCheck smearing has removed the RangeChecks during
+      // the post loops IGVN phase. If we do it earlier, then there may still be some RangeChecks between
+      // the stores, and we merge the wrong sequence of stores.
+      // Example:
+      //   StoreI RangeCheck StoreI StoreI RangeCheck StoreI
+      // Apply MergeStores:
+      //   StoreI RangeCheck [   StoreL  ] RangeCheck StoreI
+      // Remove more RangeChecks:
+      //   StoreI            [   StoreL  ]            StoreI
+      // But now it would have been better to do this instead:
+      //   [         StoreL       ] [       StoreL         ]
+      phase->C->record_for_merge_stores_igvn(this);
     }
   }
 
@@ -3535,20 +3615,208 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 
 //------------------------------Ideal_sign_extended_input----------------------
 // Check for useless sign-extension before a partial-word store
-// (StoreB ... (RShiftI _ (LShiftI _ valIn conIL ) conIR) )
-// If (conIL == conIR && conIR <= num_bits)  this simplifies to
-// (StoreB ... (valIn) )
-Node *StoreNode::Ideal_sign_extended_input(PhaseGVN *phase, int num_bits) {
-  Node *val = in(MemNode::ValueIn);
-  if( val->Opcode() == Op_RShiftI ) {
-    const TypeInt *t = phase->type( val->in(2) )->isa_int();
-    if( t && t->is_con() && (t->get_con() <= num_bits) ) {
-      Node *shl = val->in(1);
-      if( shl->Opcode() == Op_LShiftI ) {
-        const TypeInt *t2 = phase->type( shl->in(2) )->isa_int();
-        if( t2 && t2->is_con() && (t2->get_con() == t->get_con()) ) {
-          set_req_X(MemNode::ValueIn, shl->in(1), phase);
-          return this;
+// (StoreB ... (RShiftI _ (LShiftI _ v conIL) conIR))
+// If (conIL == conIR && conIR <= num_rejected_bits) this simplifies to
+// (StoreB ... (v))
+// If (conIL > conIR) under some conditions, it can be simplified into
+// (StoreB ... (LShiftI _ v (conIL - conIR)))
+// This case happens when the value of the store was itself a left shift, that
+// gets merged into the inner left shift of the sign-extension. For instance,
+// if we have
+// array_of_shorts[0] = (short)(v << 2)
+// We get a structure such as:
+// (StoreB ... (RShiftI _ (LShiftI _ (LShiftI _ v 2) 16) 16))
+// that is simplified into
+// (StoreB ... (RShiftI _ (LShiftI _ v 18) 16)).
+// It is thus useful to handle cases where conIL > conIR. But this simplification
+// does not always hold. Let's see in which cases it's valid.
+//
+// Let's assume we have the following 32 bits integer v:
+// +----------------------------------+
+// |             v[0..31]             |
+// +----------------------------------+
+//  31                               0
+// that will be stuffed in 8 bits byte after a shift left and a shift right of
+// potentially different magnitudes.
+// We denote num_rejected_bits the number of bits of the discarded part. In this
+// case, num_rejected_bits == 24.
+//
+// Statement (proved further below in case analysis):
+//   Given:
+//   - 0 <= conIL < BitsPerJavaInteger   (no wrap in shift, enforced by maskShiftAmount)
+//   - 0 <= conIR < BitsPerJavaInteger   (no wrap in shift, enforced by maskShiftAmount)
+//   - conIL >= conIR
+//   - num_rejected_bits >= conIR
+//   Then this form:
+//      (RShiftI _ (LShiftI _ v conIL) conIR)
+//   can be replaced with this form:
+//      (LShiftI _ v (conIL-conIR))
+//
+// Note: We only have to show that the non-rejected lowest bits (8 bits for byte)
+//       have to be correct, as the higher bits are rejected / truncated by the store.
+//
+// The hypotheses
+//   0 <= conIL < BitsPerJavaInteger
+//   0 <= conIR < BitsPerJavaInteger
+// are ensured by maskShiftAmount (called from ::Ideal of shift nodes). Indeed,
+// (v << 31) << 2 must be simplified into 0, not into v << 33 (which is equivalent
+// to v << 1).
+//
+//
+// If you don't like case analysis, jump after the conclusion.
+// ### Case 1 : conIL == conIR
+// ###### Case 1.1: conIL == conIR == num_rejected_bits
+// If we do the shift left then right by 24 bits, we get:
+// after: v << 24
+// +---------+------------------------+
+// | v[0..7] |           0            |
+// +---------+------------------------+
+//  31     24 23                      0
+// after: (v << 24) >> 24
+// +------------------------+---------+
+// |        sign bit        | v[0..7] |
+// +------------------------+---------+
+//  31                     8 7        0
+// The non-rejected bits (bits kept by the store, that is the 8 lower bits of the
+// result) are the same before and after, so, indeed, simplifying is correct.
+
+// ###### Case 1.2: conIL == conIR < num_rejected_bits
+// If we do the shift left then right by 22 bits, we get:
+// after: v << 22
+// +---------+------------------------+
+// | v[0..9] |           0            |
+// +---------+------------------------+
+//  31     22 21                      0
+// after: (v << 22) >> 22
+// +------------------------+---------+
+// |        sign bit        | v[0..9] |
+// +------------------------+---------+
+//  31                    10 9        0
+// The non-rejected bits are the 8 lower bits of v. The bits 8 and 9 of v are still
+// present in (v << 22) >> 22 but will be dropped by the store. The simplification is
+// still correct.
+
+// ###### But! Case 1.3: conIL == conIR > num_rejected_bits
+// If we do the shift left then right by 26 bits, we get:
+// after: v << 26
+// +---------+------------------------+
+// | v[0..5] |           0            |
+// +---------+------------------------+
+//  31     26 25                      0
+// after: (v << 26) >> 26
+// +------------------------+---------+
+// |        sign bit        | v[0..5] |
+// +------------------------+---------+
+//  31                     6 5        0
+// The non-rejected bits are made of
+// - 0-5 => the bits 0 to 5 of v
+// - 6-7 => the sign bit of v[0..5] (that is v[5])
+// Simplifying this as v is not correct.
+// The condition conIR <= num_rejected_bits is indeed necessary in Case 1
+//
+// ### Case 2: conIL > conIR
+// ###### Case 2.1: num_rejected_bits == conIR
+// We take conIL == 26 for this example.
+// after: v << 26
+// +---------+------------------------+
+// | v[0..5] |           0            |
+// +---------+------------------------+
+//  31     26 25                      0
+// after: (v << 26) >> 24
+// +------------------+---------+-----+
+// |     sign bit     | v[0..5] |  0  |
+// +------------------+---------+-----+
+//  31               8 7       2 1   0
+// The non-rejected bits are the 8 lower ones of (v << conIL - conIR).
+// The bits 6 and 7 of v have been thrown away after the shift left.
+// The simplification is still correct.
+//
+// ###### Case 2.2: num_rejected_bits > conIR.
+// Let's say conIL == 26 and conIR == 22.
+// after: v << 26
+// +---------+------------------------+
+// | v[0..5] |           0            |
+// +---------+------------------------+
+//  31     26 25                      0
+// after: (v << 26) >> 22
+// +------------------+---------+-----+
+// |     sign bit     | v[0..5] |  0  |
+// +------------------+---------+-----+
+//  31              10 9       4 3   0
+// The bits non-rejected by the store are exactly the 8 lower ones of (v << (conIL - conIR)):
+// - 0-3 => 0
+// - 4-7 => bits 0 to 3 of v
+// The simplification is still correct.
+// The bits 4 and 5 of v are still present in (v << (conIL - conIR)) but they don't
+// matter as they are not in the 8 lower bits: they will be cut out by the store.
+//
+// ###### But! Case 2.3: num_rejected_bits < conIR.
+// Let's see that this case is not as easy to simplify.
+// Let's say conIL == 28 and conIR == 26.
+// after: v << 28
+// +---------+------------------------+
+// | v[0..3] |           0            |
+// +---------+------------------------+
+//  31     28 27                      0
+// after: (v << 28) >> 26
+// +------------------+---------+-----+
+// |     sign bit     | v[0..3] |  0  |
+// +------------------+---------+-----+
+//  31               6 5       2 1   0
+// The non-rejected bits are made of
+// - 0-1 => 0
+// - 2-5 => the bits 0 to 3 of v
+// - 6-7 => the sign bit of v[0..3] (that is v[3])
+// Simplifying this as (v << 2) is not correct.
+// The condition conIR <= num_rejected_bits is indeed necessary in Case 2.
+//
+// ### Conclusion:
+// Our hypotheses are indeed sufficient:
+//   - 0 <= conIL < BitsPerJavaInteger
+//   - 0 <= conIR < BitsPerJavaInteger
+//   - conIL >= conIR
+//   - num_rejected_bits >= conIR
+//
+// ### A rationale without case analysis:
+// After the shift left, conIL upper  bits of v are discarded and conIL lower bit
+// zeroes are added. After the shift right, conIR lower bits of the previous result
+// are discarded. If conIL >= conIR, we discard only the zeroes we made up during
+// the shift left, but if conIL < conIR, then we discard also lower bits of v. But
+// the point of the simplification is to get an expression of the form
+// (v << (conIL - conIR)). This expression discard only higher bits of v, thus the
+// simplification is not correct if conIL < conIR.
+//
+// Moreover, after the shift right, the higher bit of (v << conIL) is repeated on the
+// conIR higher bits of ((v << conIL) >> conIR), it's the sign-extension. If
+// conIR > num_rejected_bits, then at least one artificial copy of this sign bit will
+// be in the window of the store. Thus ((v << conIL) >> conIR) is not equivalent to
+// (v << (conIL-conIR)) if conIR > num_rejected_bits.
+//
+// We do not treat the case conIL < conIR here since the point of this function is
+// to skip sign-extensions (that is conIL == conIR == num_rejected_bits). The need
+// of treating conIL > conIR comes from the cases where the sign-extended value is
+// also left-shift expression. Computing the sign-extension of a right-shift expression
+// doesn't yield a situation such as
+// (StoreB ... (RShiftI _ (LShiftI _ v conIL) conIR))
+// where conIL < conIR.
+Node* StoreNode::Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bits) {
+  Node* shr = in(MemNode::ValueIn);
+  if (shr->Opcode() == Op_RShiftI) {
+    const TypeInt* conIR = phase->type(shr->in(2))->isa_int();
+    if (conIR != nullptr && conIR->is_con() && conIR->get_con() >= 0 && conIR->get_con() < BitsPerJavaInteger && conIR->get_con() <= num_rejected_bits) {
+      Node* shl = shr->in(1);
+      if (shl->Opcode() == Op_LShiftI) {
+        const TypeInt* conIL = phase->type(shl->in(2))->isa_int();
+        if (conIL != nullptr && conIL->is_con() && conIL->get_con() >= 0 && conIL->get_con() < BitsPerJavaInteger) {
+          if (conIL->get_con() == conIR->get_con()) {
+            set_req_X(MemNode::ValueIn, shl->in(1), phase);
+            return this;
+          }
+          if (conIL->get_con() > conIR->get_con()) {
+            Node* new_shl = phase->transform(new LShiftINode(shl->in(1), phase->intcon(conIL->get_con() - conIR->get_con())));
+            set_req_X(MemNode::ValueIn, new_shl, phase);
+            return this;
+          }
         }
       }
     }
@@ -5198,7 +5466,7 @@ bool InitializeNode::stores_are_sane(PhaseValues* phase) {
     intptr_t st_off = get_store_offset(st, phase);
     if (st_off < 0)  continue;  // ignore dead garbage
     if (last_off > st_off) {
-      tty->print_cr("*** bad store offset at %d: " INTX_FORMAT " > " INTX_FORMAT, i, last_off, st_off);
+      tty->print_cr("*** bad store offset at %d: %zd > %zd", i, last_off, st_off);
       this->dump(2);
       assert(false, "ascending store offsets");
       return false;

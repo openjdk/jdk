@@ -104,11 +104,10 @@ public abstract class FileFont extends PhysicalFont {
     }
 
     static void setFileToRemove(List<Font2D> fonts,
-                                File file, int cnt,
-                                CreatedFontTracker tracker)
+                                File file, int cnt)
     {
         CreatedFontFileDisposerRecord dr =
-            new CreatedFontFileDisposerRecord(file, cnt, tracker);
+            new CreatedFontFileDisposerRecord(file, cnt);
 
         for (Font2D f : fonts) {
             Disposer.addObjectRecord(f, dr);
@@ -239,13 +238,10 @@ public abstract class FileFont extends PhysicalFont {
 
         File fontFile = null;
         int count = 0; // number of fonts referencing this file object.
-        CreatedFontTracker tracker;
 
-        private CreatedFontFileDisposerRecord(File file, int cnt,
-                                              CreatedFontTracker tracker) {
+        private CreatedFontFileDisposerRecord(File file, int cnt) {
             fontFile = file;
             count = (cnt > 0) ? cnt : 1;
-            this.tracker = tracker;
         }
 
         public void dispose() {
@@ -257,9 +253,6 @@ public abstract class FileFont extends PhysicalFont {
               }
               if (fontFile != null) {
                   try {
-                      if (tracker != null) {
-                          tracker.subBytes((int)fontFile.length());
-                      }
                       /* REMIND: is it possible that the file is
                        * still open? It will be closed when the
                        * font2D is disposed but could this code

@@ -114,17 +114,6 @@ void *safe_Realloc(void *memblock, size_t size) {
     return ptr;
 }
 
-#if !defined(DEBUG)
-// This function exists because VC++ 5.0 currently does not conform to the
-// Standard C++ specification which requires that operator new throw
-// std::bad_alloc in an out of memory situation. Instead, VC++ 5.0 returns 0.
-//
-// This function can be safely removed when the problem is corrected.
-void * operator new(size_t size) {
-    return safe_Malloc(size);
-}
-#endif
-
 // This function is called at the beginning of an entry point.
 // Entry points are functions which are declared:
 //   1. CALLBACK,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
@@ -251,7 +250,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
 
   // Generation counters -- generation 0, 3 subspaces
   _gen_counters = new GenerationCounters("new", 0, 3,
-      min_size, max_size, &_virtual_space);
+      min_size, max_size, _virtual_space.committed_size());
   _gc_counters = new CollectorCounters(policy, 0);
 
   _eden_counters = new CSpaceCounters("eden", 0, _max_eden_size, _eden_space,
@@ -368,18 +367,6 @@ bool DefNewGeneration::expand(size_t bytes) {
     SpaceMangler::mangle_region(mangle_region);
   }
 
-  // Do not attempt an expand-to-the reserve size.  The
-  // request should properly observe the maximum size of
-  // the generation so an expand-to-reserve should be
-  // unnecessary.  Also a second call to expand-to-reserve
-  // value potentially can cause an undue expansion.
-  // For example if the first expand fail for unknown reasons,
-  // but the second succeeds and expands the heap to its maximum
-  // value.
-  if (GCLocker::is_active()) {
-    log_debug(gc)("Garbage collection disabled, expanded heap instead");
-  }
-
   return success;
 }
 
@@ -480,11 +467,11 @@ void DefNewGeneration::compute_new_size() {
     gch->rem_set()->resize_covered_region(cmr);
 
     log_debug(gc, ergo, heap)(
-        "New generation size " SIZE_FORMAT "K->" SIZE_FORMAT "K [eden=" SIZE_FORMAT "K,survivor=" SIZE_FORMAT "K]",
+        "New generation size %zuK->%zuK [eden=%zuK,survivor=%zuK]",
         new_size_before/K, _virtual_space.committed_size()/K,
         eden()->capacity()/K, from()->capacity()/K);
     log_trace(gc, ergo, heap)(
-        "  [allowed " SIZE_FORMAT "K extra for %d threads]",
+        "  [allowed %zuK extra for %d threads]",
           thread_increase_size/K, threads_count);
       }
 }
@@ -715,7 +702,7 @@ void DefNewGeneration::remove_forwarding_pointers() {
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
-  log_debug(gc, promotion)("Promotion failure size = " SIZE_FORMAT ") ", old->size());
+  log_debug(gc, promotion)("Promotion failure size = %zu) ", old->size());
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
@@ -827,7 +814,7 @@ void DefNewGeneration::update_counters() {
     _eden_counters->update_all();
     _from_counters->update_all();
     _to_counters->update_all();
-    _gen_counters->update_all();
+    _gen_counters->update_all(_virtual_space.committed_size());
   }
 }
 
@@ -838,21 +825,15 @@ void DefNewGeneration::verify() {
 }
 
 void DefNewGeneration::print_on(outputStream* st) const {
-  st->print(" %-10s", name());
+  st->print("%-10s", name());
 
-  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
-            capacity()/K, used()/K);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-               p2i(_virtual_space.low_boundary()),
-               p2i(_virtual_space.high()),
-               p2i(_virtual_space.high_boundary()));
+  st->print(" total %zuK, used %zuK ", capacity() / K, used() / K);
+  _virtual_space.print_space_boundaries_on(st);
 
-  st->print("  eden");
-  eden()->print_on(st);
-  st->print("  from");
-  from()->print_on(st);
-  st->print("  to  ");
-  to()->print_on(st);
+  StreamAutoIndentor indentor(st, 1);
+  eden()->print_on(st, "eden ");
+  from()->print_on(st, "from ");
+  to()->print_on(st, "to   ");
 }
 
 HeapWord* DefNewGeneration::allocate(size_t word_size) {

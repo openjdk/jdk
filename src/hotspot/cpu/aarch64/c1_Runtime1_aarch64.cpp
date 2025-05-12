@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Defs.hpp"
@@ -92,10 +91,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
     // exception pending => remove activation and forward to exception handler
     // make sure that the vm_results are cleared
     if (oop_result1->is_valid()) {
-      str(zr, Address(rthread, JavaThread::vm_result_offset()));
+      str(zr, Address(rthread, JavaThread::vm_result_oop_offset()));
     }
     if (metadata_result->is_valid()) {
-      str(zr, Address(rthread, JavaThread::vm_result_2_offset()));
+      str(zr, Address(rthread, JavaThread::vm_result_metadata_offset()));
     }
     if (frame_size() == no_frame_size) {
       leave();
@@ -109,10 +108,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   }
   // get oop results if there are any and reset the values in the thread
   if (oop_result1->is_valid()) {
-    get_vm_result(oop_result1, rthread);
+    get_vm_result_oop(oop_result1, rthread);
   }
   if (metadata_result->is_valid()) {
-    get_vm_result_2(metadata_result, rthread);
+    get_vm_result_metadata(metadata_result, rthread);
   }
   return call_offset;
 }
@@ -258,14 +257,17 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
   int frame_size_in_slots = frame_size_in_bytes / sizeof(jint);
   OopMap* oop_map = new OopMap(frame_size_in_slots, 0);
 
-  for (int i = 0; i < FrameMap::nof_cpu_regs; i++) {
-    Register r = as_Register(i);
-    if (r == rthread || (i <= 18 && i != rscratch1->encoding() && i != rscratch2->encoding())) {
-      int sp_offset = cpu_reg_save_offsets[i];
-      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
-                                r->as_VMReg());
-    }
+  for (int i = 0; i < FrameMap::nof_caller_save_cpu_regs(); i++) {
+    LIR_Opr opr = FrameMap::caller_save_cpu_reg_at(i);
+    Register r = opr->as_register();
+    int reg_num = r->encoding();
+    int sp_offset = cpu_reg_save_offsets[reg_num];
+    oop_map->set_callee_saved(VMRegImpl::stack2reg(cpu_reg_save_offsets[reg_num]), r->as_VMReg());
   }
+
+  Register r = rthread;
+  int reg_num = r->encoding();
+  oop_map->set_callee_saved(VMRegImpl::stack2reg(cpu_reg_save_offsets[reg_num]), r->as_VMReg());
 
   if (save_fpu_registers) {
     for (int i = 0; i < FrameMap::nof_fpu_regs; i++) {
@@ -404,8 +406,8 @@ OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler *sasm)
     __ authenticate_return_address(exception_pc);
 
     // make sure that the vm_results are cleared (may be unnecessary)
-    __ str(zr, Address(rthread, JavaThread::vm_result_offset()));
-    __ str(zr, Address(rthread, JavaThread::vm_result_2_offset()));
+    __ str(zr, Address(rthread, JavaThread::vm_result_oop_offset()));
+    __ str(zr, Address(rthread, JavaThread::vm_result_metadata_offset()));
     break;
   case C1StubId::handle_exception_nofpu_id:
   case C1StubId::handle_exception_id:
@@ -898,6 +900,55 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
         restore_live_registers(sasm, save_fpu_registers);
+      }
+      break;
+
+    case C1StubId::is_instance_of_id:
+      {
+        // Mirror: c_rarg0
+        // Object: c_rarg1
+        // Temps: r3, r4, r5, r6
+        // Result: r0
+
+        // Get the Klass* into c_rarg6
+        Register klass = c_rarg6, obj = c_rarg1, result = r0;
+        __ ldr(klass, Address(c_rarg0, java_lang_Class::klass_offset()));
+
+        Label fail, is_secondary, success;
+
+        __ cbz(klass, fail); // Klass is null
+        __ cbz(obj, fail); // obj is null
+
+        __ ldrw(r3, Address(klass, in_bytes(Klass::super_check_offset_offset())));
+        __ cmpw(r3, in_bytes(Klass::secondary_super_cache_offset()));
+        __ br(Assembler::EQ, is_secondary); // Klass is a secondary superclass
+
+        // Klass is a concrete class
+        __ load_klass(r5, obj);
+        __ ldr(rscratch1, Address(r5, r3));
+        __ cmp(klass, rscratch1);
+        __ cset(result, Assembler::EQ);
+        __ ret(lr);
+
+        __ bind(is_secondary);
+
+        __ load_klass(obj, obj);
+
+        // This is necessary because I am never in my own secondary_super list.
+        __ cmp(obj, klass);
+        __ br(Assembler::EQ, success);
+
+        __ lookup_secondary_supers_table_var(obj, klass,
+                                             /*temps*/r3, r4, r5, v0,
+                                             result,
+                                             &success);
+        __ bind(fail);
+        __ mov(result, 0);
+        __ ret(lr);
+
+        __ bind(success);
+        __ mov(result, 1);
+        __ ret(lr);
       }
       break;
 

@@ -25,8 +25,10 @@
  * @test
  * @bug 8035968
  * @summary Verify UseSHA option processing on supported CPU.
+ *          ( Disable this test on riscv, because on riscv UseSHA could depend UseSHA1Intrinsics which depends on !AvoidUnalignedAccesses. )
  * @library /test/lib /
  * @requires vm.flagless
+ * @requires os.arch != "riscv64"
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

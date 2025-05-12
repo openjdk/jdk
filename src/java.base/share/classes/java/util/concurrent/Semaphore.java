@@ -161,7 +161,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  */
 public class Semaphore implements java.io.Serializable {
     private static final long serialVersionUID = -3222578661600680210L;
-    /** All mechanics via AbstractQueuedSynchronizer subclass */
+    /** @serial All mechanics via AbstractQueuedSynchronizer subclass */
     private final Sync sync;
 
     /**

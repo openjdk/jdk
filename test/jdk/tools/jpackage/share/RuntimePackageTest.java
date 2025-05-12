@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,18 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.LinuxHelper;
 import static jdk.jpackage.test.TKit.assertTrue;
 import static jdk.jpackage.test.TKit.assertFalse;
+import static jdk.internal.util.OperatingSystem.LINUX;
 
 /**
  * Test --runtime-image parameter.
@@ -59,7 +62,7 @@ import static jdk.jpackage.test.TKit.assertFalse;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest == null)
- * @compile RuntimePackageTest.java
+ * @compile -Xlint:all -Werror RuntimePackageTest.java
  * @run main/othervm/timeout=1400 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest
  */
@@ -71,7 +74,7 @@ import static jdk.jpackage.test.TKit.assertFalse;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest != null)
- * @compile RuntimePackageTest.java
+ * @compile -Xlint:all -Werror RuntimePackageTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest.test
  */
@@ -79,29 +82,34 @@ public class RuntimePackageTest {
 
     @Test
     public static void test() {
-        init(PackageType.NATIVE).run();
+        init().run();
     }
 
-    @Test
-    public static void testUsrInstallDir() {
-        init(PackageType.LINUX)
-        .addInitializer(cmd -> cmd.addArguments("--install-dir", "/usr"))
+    @Test(ifOS = LINUX)
+    @Parameter("/usr")
+    @Parameter("/usr/lib/Java")
+    public static void testUsrInstallDir(String installDir) {
+        init()
+        .addInitializer(cmd -> cmd.addArguments("--install-dir", installDir))
         .run();
     }
 
     @Test
-    public static void testUsrInstallDir2() {
-        init(PackageType.LINUX)
-        .addInitializer(cmd -> cmd.addArguments("--install-dir", "/usr/lib/Java"))
-        .run();
+    public static void testName() {
+        // Test that jpackage can derive package name from the path to runtime image.
+        init()
+        .addInitializer(cmd -> cmd.removeArgumentWithValue("--name"))
+        // Don't attempt to install this package as it may have an odd name derived from
+        // the runtime image path. Say, on Linux for `--runtime-image foo/bar/sed`
+        // command line jpackage will create a package named 'sed' that will conflict
+        // with the default 'sed' package.
+        .run(Action.CREATE_AND_UNPACK);
     }
 
-    private static PackageTest init(Set<PackageType> types) {
+    private static PackageTest init() {
         return new PackageTest()
-        .forTypes(types)
         .addInitializer(cmd -> {
             final Path runtimeImageDir;
-            final Path jmods = Path.of(System.getProperty("java.home"), "jmods");
 
             if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
                 runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
@@ -113,8 +121,7 @@ public class RuntimePackageTest {
                 .dumpOutput()
                 .addArguments(
                         "--output", runtimeImageDir.toString(),
-                        "--add-modules", "ALL-MODULE-PATH",
-                        "--module-path", jmods.toString(),
+                        "--add-modules", "java.desktop",
                         "--strip-debug",
                         "--no-header-files",
                         "--no-man-pages")

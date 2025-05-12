@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1CommittedRegionMap.inline.hpp"
+#include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionManager.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
@@ -479,7 +478,7 @@ uint G1HeapRegionManager::find_contiguous_in_free_list(uint num_regions) {
 
 uint G1HeapRegionManager::find_contiguous_allow_expand(uint num_regions) {
   // Check if we can actually satisfy the allocation.
-  if (num_regions > available()) {
+  if (num_regions > (num_free_regions() + available())) {
     return G1_NO_HRM_INDEX;
   }
   // Find any candidate.

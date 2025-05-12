@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
@@ -71,19 +70,6 @@ CompactHashtableWriter::~CompactHashtableWriter() {
   }
 
   FREE_C_HEAP_ARRAY(GrowableArray<Entry>*, _buckets);
-}
-
-size_t CompactHashtableWriter::estimate_size(int num_entries) {
-  int num_buckets = calculate_num_buckets(num_entries);
-  size_t bucket_bytes = ArchiveBuilder::ro_array_bytesize<u4>(num_buckets + 1);
-
-  // In worst case, we have no VALUE_ONLY_BUCKET_TYPE, so each entry takes 2 slots
-  int entries_space = 2 * num_entries;
-  size_t entry_bytes = ArchiveBuilder::ro_array_bytesize<u4>(entries_space);
-
-  return bucket_bytes
-       + entry_bytes
-       + SimpleCompactHashtable::calculate_header_size();
 }
 
 // Add a symbol entry to the temporary hash table
@@ -240,7 +226,7 @@ HashtableTextDump::HashtableTextDump(const char* filename) : _fd(-1) {
   if (_fd < 0) {
     quit("Unable to open hashtable dump file", filename);
   }
-  _base = os::map_memory(_fd, filename, 0, nullptr, _size, true, false);
+  _base = os::map_memory(_fd, filename, 0, nullptr, _size, mtNone, true, false);
   if (_base == nullptr) {
     quit("Unable to map hashtable dump file", filename);
   }

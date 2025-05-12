@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
@@ -30,6 +29,7 @@
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectionSet.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
@@ -40,12 +40,12 @@
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/g1RootClosures.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
-#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -107,7 +107,7 @@ public:
   // dirty card, i.e. actually needs scanning.
   bool chunk_needs_scan(uint const region_idx, uint const card_in_region) const {
     size_t const idx = ((size_t)region_idx << _log_scan_chunks_per_region) + (card_in_region >> _scan_chunks_shift);
-    assert(idx < _num_total_scan_chunks, "Index " SIZE_FORMAT " out of bounds " SIZE_FORMAT,
+    assert(idx < _num_total_scan_chunks, "Index %zu out of bounds %zu",
            idx, _num_total_scan_chunks);
     return _region_scan_chunks[idx];
   }
@@ -347,7 +347,7 @@ public:
 
   void set_chunk_dirty(size_t const card_idx) {
     assert((card_idx >> _scan_chunks_shift) < _num_total_scan_chunks,
-           "Trying to access index " SIZE_FORMAT " out of bounds " SIZE_FORMAT,
+           "Trying to access index %zu out of bounds %zu",
            card_idx >> _scan_chunks_shift, _num_total_scan_chunks);
     size_t const chunk_idx = card_idx >> _scan_chunks_shift;
     _region_scan_chunks[chunk_idx] = true;
@@ -1119,6 +1119,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
   // This is needed to be able to use the bitmap for evacuation failure handling.
   class G1ClearBitmapClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
+    G1RemSetScanState* _scan_state;
 
     void assert_bitmap_clear(G1HeapRegion* hr, const G1CMBitMap* bitmap) {
       assert(bitmap->get_next_marked_addr(hr->bottom(), hr->end()) == hr->end(),
@@ -1143,7 +1144,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
 
   public:
-    G1ClearBitmapClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
+    G1ClearBitmapClosure(G1CollectedHeap* g1h, G1RemSetScanState* scan_state) :
+      _g1h(g1h),
+      _scan_state(scan_state)
+    { }
 
     bool do_heap_region(G1HeapRegion* hr) {
       assert(_g1h->is_in_cset(hr), "Should only be used iterating the collection set");
@@ -1157,23 +1161,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }
       _g1h->concurrent_mark()->clear_statistics(hr);
+      _scan_state->add_all_dirty_region(hr->hrm_index());
       return false;
-    }
-  };
-
-  // Helper to allow two closure to be applied when
-  // iterating through the collection set.
-  class G1CombinedClosure : public G1HeapRegionClosure {
-    G1HeapRegionClosure* _closure1;
-    G1HeapRegionClosure* _closure2;
-  public:
-    G1CombinedClosure(G1HeapRegionClosure* cl1, G1HeapRegionClosure* cl2) :
-      _closure1(cl1),
-      _closure2(cl2) { }
-
-    bool do_heap_region(G1HeapRegion* hr) {
-      return _closure1->do_heap_region(hr) ||
-             _closure2->do_heap_region(hr);
     }
   };
 
@@ -1277,6 +1266,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
   };
 
   uint _num_workers;
+  G1HeapRegionClaimer _hr_claimer;
   G1RemSetScanState* _scan_state;
 
   // To mitigate contention due multiple threads accessing and popping BufferNodes from a shared
@@ -1306,6 +1296,7 @@ public:
   G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool initial_evacuation) :
     WorkerTask("G1 Merge Heap Roots"),
     _num_workers(num_workers),
+    _hr_claimer(num_workers),
     _scan_state(scan_state),
     _dirty_card_buffers(nullptr),
     _initial_evacuation(initial_evacuation),
@@ -1395,20 +1386,25 @@ public:
       {
         // 2. collection set
         G1MergeCardSetClosure merge(_scan_state);
-        G1ClearBitmapClosure clear(g1h);
-        G1CombinedClosure combined(&merge, &clear);
 
         if (_initial_evacuation) {
           G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
         }
 
-        g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
+        g1h->collection_set()->merge_cardsets_for_collection_groups(merge, worker_id, _num_workers);
+
         G1MergeCardSetStats stats = merge.stats();
 
         for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
           p->record_or_add_thread_work_item(merge_remset_phase, worker_id, stats.merged(i), i);
         }
       }
+    }
+
+    // Preparation for evacuation failure handling.
+    {
+      G1ClearBitmapClosure clear(g1h, _scan_state);
+      g1h->collection_set_iterate_increment_from(&clear, &_hr_claimer, worker_id);
     }
 
     // Now apply the closure to all remaining log entries.
@@ -1438,7 +1434,7 @@ void G1RemSet::print_merge_heap_roots_stats() {
     size_t total_old_region_cards =
       (g1h->num_regions() - (g1h->num_free_regions() - g1h->collection_set()->cur_length())) * G1HeapRegion::CardsPerRegion;
 
-    ls.print_cr("Visited cards " SIZE_FORMAT " Total dirty " SIZE_FORMAT " (%.2lf%%) Total old " SIZE_FORMAT " (%.2lf%%)",
+    ls.print_cr("Visited cards %zu Total dirty %zu (%.2lf%%) Total old %zu (%.2lf%%)",
                 num_visited_cards,
                 total_dirty_region_cards,
                 percent_of(num_visited_cards, total_dirty_region_cards),
@@ -1449,6 +1445,7 @@ void G1RemSet::print_merge_heap_roots_stats() {
 
 void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1GCPhaseTimes* pt = g1h->phase_times();
 
   {
     Ticks start = Ticks::now();
@@ -1457,9 +1454,9 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
 
     Tickspan total = Ticks::now() - start;
     if (initial_evacuation) {
-      g1h->phase_times()->record_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
+      pt->record_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
     } else {
-      g1h->phase_times()->record_or_add_optional_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
+      pt->record_or_add_optional_prepare_merge_heap_roots_time(total.seconds() * 1000.0);
     }
   }
 
@@ -1469,14 +1466,32 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   uint const num_workers = initial_evacuation ? workers->active_workers() :
                                                 MIN2(workers->active_workers(), (uint)increment_length);
 
+  Ticks start = Ticks::now();
+
   {
     G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
-    log_debug(gc, ergo)("Running %s using %u workers for " SIZE_FORMAT " regions",
+    log_debug(gc, ergo)("Running %s using %u workers for %zu regions",
                         cl.name(), num_workers, increment_length);
     workers->run_task(&cl, num_workers);
   }
 
+  {
+    size_t young_rs_length = g1h->young_regions_cardset()->occupied();
+    // We only use young_rs_length statistics to estimate young regions length.
+    g1h->policy()->record_card_rs_length(young_rs_length);
+
+    // Clear current young only collection set. Survivor regions will be added
+    // to the set during evacuation.
+    g1h->young_regions_cset_group()->clear();
+  }
+
   print_merge_heap_roots_stats();
+
+  if (initial_evacuation) {
+    pt->record_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
+  } else {
+    pt->record_or_add_optional_merge_heap_roots_time((Ticks::now() - start).seconds() * 1000.0);
+  }
 }
 
 void G1RemSet::complete_evac_phase(bool has_more_than_one_evacuation_phase) {
@@ -1504,7 +1519,7 @@ inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 #ifdef ASSERT
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   assert(g1h->is_in(ct->addr_for(card_ptr)),
-         "Card at " PTR_FORMAT " index " SIZE_FORMAT " representing heap at " PTR_FORMAT " (%u) must be in committed heap",
+         "Card at " PTR_FORMAT " index %zu representing heap at " PTR_FORMAT " (%u) must be in committed heap",
          p2i(card_ptr),
          ct->index_for(ct->addr_for(card_ptr)),
          p2i(ct->addr_for(card_ptr)),
@@ -1659,7 +1674,6 @@ void G1RemSet::print_periodic_summary_info(const char* header, uint period_count
 
     Log(gc, remset) log;
     log.trace("%s", header);
-    ResourceMark rm;
     LogStream ls(log.trace());
     _prev_period_summary.print_on(&ls, show_thread_times);
 
@@ -1672,7 +1686,6 @@ void G1RemSet::print_summary_info() {
   if (log.is_trace()) {
     log.trace(" Cumulative RS summary");
     G1RemSetSummary current;
-    ResourceMark rm;
     LogStream ls(log.trace());
     current.print_on(&ls, true /* show_thread_times*/);
   }

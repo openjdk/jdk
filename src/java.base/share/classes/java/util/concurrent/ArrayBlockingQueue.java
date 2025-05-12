@@ -100,17 +100,17 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      */
     private static final long serialVersionUID = -817911632652898426L;
 
-    /** The queued items */
+    /** @serial The queued items */
     @SuppressWarnings("serial") // Conditionally serializable
     final Object[] items;
 
-    /** items index for next take, poll, peek or remove */
+    /** @serial items index for next take, poll, peek or remove */
     int takeIndex;
 
-    /** items index for next put, offer, or add */
+    /** @serial items index for next put, offer, or add */
     int putIndex;
 
-    /** Number of elements in the queue */
+    /** @serial Number of elements in the queue */
     int count;
 
     /*
@@ -118,14 +118,14 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * found in any textbook.
      */
 
-    /** Main lock guarding all access */
+    /** @serial Main lock guarding all access */
     final ReentrantLock lock;
 
-    /** Condition for waiting takes */
+    /** @serial Condition for waiting takes */
     @SuppressWarnings("serial")  // Classes implementing Condition may be serializable.
     private final Condition notEmpty;
 
-    /** Condition for waiting puts */
+    /** @serial Condition for waiting puts */
     @SuppressWarnings("serial")  // Classes implementing Condition may be serializable.
     private final Condition notFull;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
@@ -32,7 +31,27 @@
 #include "runtime/task.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+JVMFlag::Error AOTCacheConstraintFunc(ccstr value, bool verbose) {
+  if (value == nullptr) {
+    JVMFlag::printError(verbose, "AOTCache cannot be empty\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error AOTConfigurationConstraintFunc(ccstr value, bool verbose) {
+  if (value == nullptr) {
+    JVMFlag::printError(verbose, "AOTConfiguration cannot be empty\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
 JVMFlag::Error AOTModeConstraintFunc(ccstr value, bool verbose) {
+  if (value == nullptr) {
+    JVMFlag::printError(verbose, "AOTMode cannot be empty\n");
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
   if (strcmp(value, "off") != 0 &&
       strcmp(value, "record") != 0 &&
       strcmp(value, "create") != 0 &&
@@ -44,9 +63,9 @@ JVMFlag::Error AOTModeConstraintFunc(ccstr value, bool verbose) {
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
-
   return JVMFlag::SUCCESS;
 }
+
 JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
@@ -59,7 +78,7 @@ JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
   if (value >= (intx)os::vm_page_size()) {
     JVMFlag::printError(verbose,
                         "ObjectAlignmentInBytes (%d) must be "
-                        "less than page size (" SIZE_FORMAT ")\n",
+                        "less than page size (%zu)\n",
                         value, os::vm_page_size());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -96,8 +115,8 @@ JVMFlag::Error VMPageSizeConstraintFunc(uintx value, bool verbose) {
   uintx min = (uintx)os::vm_page_size();
   if (value < min) {
     JVMFlag::printError(verbose,
-                        "%s %s=" UINTX_FORMAT " is outside the allowed range [ " UINTX_FORMAT
-                        " ... " UINTX_FORMAT " ]\n",
+                        "%s %s=%zu is outside the allowed range [ %zu"
+                        " ... %zu ]\n",
                         JVMFlagLimit::last_checked_flag()->type_string(),
                         JVMFlagLimit::last_checked_flag()->name(),
                         value, min, max_uintx);
@@ -113,8 +132,8 @@ JVMFlag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbos
 
   if (value < min || value > max) {
     JVMFlag::printError(verbose,
-                        "size_t NUMAInterleaveGranularity=" UINTX_FORMAT " is outside the allowed range [ " UINTX_FORMAT
-                        " ... " UINTX_FORMAT " ]\n", value, min, max);
+                        "size_t NUMAInterleaveGranularity=%zu is outside the allowed range [ %zu"
+                        " ... %zu ]\n", value, min, max);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
