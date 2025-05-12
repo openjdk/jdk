@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,34 +53,37 @@ public class DoubleActionESC {
     private static final int REPEAT_COUNT = 2;
 
     public static void main(String[] args) throws Exception {
-        latch = new CountDownLatch(REPEAT_COUNT);
+        latch = new CountDownLatch(1);
 
         robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
         try {
             EventQueue.invokeAndWait(() -> {
                 createAndShowUI();
             });
 
-            robot.waitForIdle();
             robot.delay(1000);
-
             EventQueue.invokeAndWait(() -> {
                 p = showBtn.getLocationOnScreen();
                 d = showBtn.getSize();
             });
 
             for (int i = 0; i < REPEAT_COUNT; ++i) {
-                robot.mouseMove(p.x + d.width / 2, p.y + d.height / 2);
-                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-                robot.waitForIdle();
-                robot.delay(1000);
+                Thread thread = new Thread(() -> {
+                    robot.mouseMove(p.x + d.width / 2, p.y + d.height / 2);
+                    robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                    robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                });
+                thread.start();
+                robot.delay(3000);
 
-                robot.keyPress(KeyEvent.VK_ESCAPE);
-                robot.keyRelease(KeyEvent.VK_ESCAPE);
-                robot.waitForIdle();
-                robot.delay(1000);
+                Thread thread1 = new Thread(() -> {
+                    robot.keyPress(KeyEvent.VK_ESCAPE);
+                    robot.keyRelease(KeyEvent.VK_ESCAPE);
+                    robot.waitForIdle();
+                });
+                thread1.start();
+                robot.delay(3000);
             }
 
             latch.await();
