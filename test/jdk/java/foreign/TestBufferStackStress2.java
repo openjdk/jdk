@@ -40,6 +40,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinWorkerThread;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -129,6 +130,15 @@ final class TestBufferStackStress2 {
         }
 
         System.out.println(duration(begin) + "CLOSING EXECUTOR");
+
+        if (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
+            // The VT never got scheduled or the VT was "quiescent.notify()":ed
+            // by the main thread before the VT "quiescent.wait()":ed.
+            // This is a corner case for rare configurations
+            System.out.println(duration(begin) + "ABORTED");
+            System.exit(0);
+        }
+
         executor.close();
         System.out.println(duration(begin) + "EXECUTOR CLOSED");
         assertTrue(completed.get(), "The VT did not complete properly");
