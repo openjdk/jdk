@@ -32,7 +32,7 @@ import java.awt.*;
  * it instead sets focus to this proxy. This proxy is mapped but invisible(it is kept at (-1,-1))
  * and therefore X doesn't control focus after we have set it to proxy.
  */
-public class XFocusProxyWindow extends XBaseWindow {
+public final class XFocusProxyWindow extends XBaseWindow {
     XWindowPeer owner;
 
     public XFocusProxyWindow(XWindowPeer owner) {
@@ -45,12 +45,14 @@ public class XFocusProxyWindow extends XBaseWindow {
         this.owner = owner;
     }
 
+    @Override
     public void postInit(XCreateWindowParams params){
         super.postInit(params);
         setWMClass(getWMClass());
         xSetVisible(true);
     }
 
+    @Override
     protected String getWMName() {
         return "FocusProxy";
     }
@@ -62,6 +64,7 @@ public class XFocusProxyWindow extends XBaseWindow {
         return owner;
     }
 
+    @Override
     public void dispatchEvent(XEvent ev) {
         int type = ev.get_type();
         switch (type)
@@ -78,10 +81,12 @@ public class XFocusProxyWindow extends XBaseWindow {
         owner.handleFocusEvent(xev);
     }
 
+    @Override
     public void handleKeyPress(XEvent xev) {
         owner.handleKeyPress(xev);
     }
 
+    @Override
     public void handleKeyRelease(XEvent xev) {
         owner.handleKeyRelease(xev);
     }

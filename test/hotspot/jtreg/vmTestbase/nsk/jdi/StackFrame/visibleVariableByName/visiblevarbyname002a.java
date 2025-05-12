@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,9 @@ public class visiblevarbyname002a {
     }
 
     //====================================================== test program
+
+    static Thread test_thread = null;
+
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
@@ -93,8 +96,8 @@ public class visiblevarbyname002a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Thread test_thread =
-                                 JDIThreadFactory.newThread(new Threadvisiblevarbyname002a("testedThread"));
+                         test_thread =
+                             JDIThreadFactory.newThread(new Threadvisiblevarbyname002a("testedThread"));
                          log1("       thread2 is created");
 
                          label:
