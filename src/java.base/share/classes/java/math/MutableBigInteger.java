@@ -1932,11 +1932,8 @@ class MutableBigInteger {
 
         final int bitLength = (int) this.bitLength();
         // if this < 2^n, result is unity
-        if (bitLength <= n) {
-            MutableBigInteger rem = new MutableBigInteger(this);
-            rem.subtract(ONE);
+        if (bitLength <= n)
             return new MutableBigInteger(1);
-        }
 
         MutableBigInteger r;
         long shift = 0L;
