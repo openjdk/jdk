@@ -119,6 +119,7 @@ java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generi
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java 6849364 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
+java/awt/Frame/MaximizedToMaximized/MaximizedToMaximized.java 8340374 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linux-all
 java/awt/Frame/InitialIconifiedTest.java 7144049,8203920 macosx-all,linux-all
@@ -127,8 +128,9 @@ java/awt/Frame/FocusTest.java 8341480 macosx-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
+java/awt/dnd/FileListBetweenJVMsTest/FileListBetweenJVMsTest.java 8353673 macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.java 8171510 macosx-all
-java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 windows-x64
+java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 windows-x64,macosx-all
 java/awt/dnd/DragExitBeforeDropTest.java 8242805 macosx-all
 java/awt/dnd/DragThresholdTest.java 8076299 macosx-all
 java/awt/dnd/CustomDragCursorTest.java 8242805 macosx-all
@@ -148,6 +150,8 @@ java/awt/EventQueue/6980209/bug6980209.java 8198615 macosx-all
 java/awt/EventQueue/PushPopDeadlock/PushPopDeadlock.java 8024034 generic-all
 java/awt/grab/EmbeddedFrameTest1/EmbeddedFrameTest1.java 7080150 macosx-all
 java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
+java/awt/List/KeyEventsTest/KeyEventsTest.java 8201307 linux-all
+java/awt/Paint/ListRepaint.java 8201307 linux-all
 java/awt/Mixing/AWT_Mixing/HierarchyBoundsListenerMixingTest.java 8049405 macosx-all
 java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
 java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
@@ -189,6 +193,9 @@ java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8298823 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
 java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
+java/awt/datatransfer/ClipboardPerformanceTest.java 8029022 windows-all
+java/awt/datatransfer/HTMLTransferConsoleOutputTest.java 8237254 macosx-all
+java/awt/datatransfer/ImageTransferCrashTest.java 8237253 macosx-all
 java/awt/Toolkit/RealSync/Test.java 6849383 linux-all
 java/awt/LightweightComponent/LightweightEventTest/LightweightEventTest.java 8159252 windows-all
 java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 8072110 macosx-all
@@ -737,7 +744,6 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # jdk_util
 java/util/zip/CloseInflaterDeflaterTest.java  8339216 linux-s390x
-java/util/logging/LoggingDeadlock5.java       8354424 generic-all
 
 ############################################################################
 
@@ -781,6 +787,8 @@ jdk/jfr/jvm/TestWaste.java                                      8282427 generic-
 ############################################################################
 
 # jdk_foreign
+
+java/foreign/TestBufferStackStress.java                         8350455 macosx-all
 
 ############################################################################
 # Client manual tests
