@@ -1937,21 +1937,27 @@ template<typename IntegerType>
 static const IntegerType* integral_abs_value(const IntegerType* t) {
   typedef typename IntegerType::NativeType NativeType;
 
-  assert(!t->is_con(), "Constant types must have already been handled");
+  if (t->is_con()) {
+    // Handle minimum value separately to avoid overflow
+    if (t->get_con() == IntegerType::MIN->_lo) {
+      return IntegerType::MIN;
+    }
 
-  NativeType lo_abs = uabs(t->_lo);
-  NativeType hi_abs = uabs(t->_hi);
+    return IntegerType::make(ABS(t->get_con()));
+  }
 
-  if (lo_abs < 0) {
-    assert(lo_abs == std::numeric_limits<NativeType>::min(), "uabs(t->_lo) must be min value if negative!");
-
+  if (t->_lo == IntegerType::MIN->_lo) {
     // If lo is type_min, then hi must be type_max. This is because:
     // - An integer type is defined as type_min <= lo <= hi <= type_max.
     // - Since t is not a constant, it must be that lo < hi.
     // - Therefore, hi must be >= type_min+1.
     // - As abs(type_min+1) == type_max and for all n from type_min+1 to hi, abs(n) <= type_max, the upper bound must be type_max.
+
     return IntegerType::TYPE_DOMAIN;
   }
+
+  NativeType lo_abs = ABS(t->_lo);
+  NativeType hi_abs = ABS(t->_hi);
 
   NativeType lo = 0;
   if (t->_hi < 0 || t->_lo >= 0) {
@@ -1974,17 +1980,11 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
   switch (t1->base()) {
   case Type::Int: {
     const TypeInt* ti = t1->is_int();
-    if (ti->is_con()) {
-      return TypeInt::make(uabs(ti->get_con()));
-    }
 
     return integral_abs_value(ti);
   }
   case Type::Long: {
     const TypeLong* tl = t1->is_long();
-    if (tl->is_con()) {
-      return TypeLong::make(uabs(tl->get_con()));
-    }
 
     return integral_abs_value(tl);
   }
