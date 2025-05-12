@@ -56,16 +56,25 @@ runs:
       id: download-bundles
       uses: actions/download-artifact@v4
       with:
-        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}
+        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
         path: bundles
       continue-on-error: true
 
     - name: 'Download bundles artifact (retry)'
       uses: actions/download-artifact@v4
       with:
-        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}
+        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
         path: bundles
       if: steps.download-bundles.outcome == 'failure'
+
+    - name: 'Download static bundles artifact'
+      id: download-static-bundles
+      uses: actions/download-artifact@v4
+      with:
+        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}
+        path: bundles
+      continue-on-error: true
+      if: ${{ inputs.static-suffix == '-static' }}
 
     - name: 'Unpack bundles'
       run: |
