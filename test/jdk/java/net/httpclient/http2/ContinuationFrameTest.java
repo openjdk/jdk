@@ -66,7 +66,6 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_2;
-import static java.net.http.HttpClient.Version.HTTP_3;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -200,12 +199,7 @@ public class ContinuationFrameTest {
                 out.println("Got response: " + resp);
                 assertTrue(resp.statusCode() == 204,
                     "Expected 204, got:" + resp.statusCode());
-                if (HTTP_3.equals(resp.version())) {
-                    assertTrue(uri.contains("/https2/"),
-                            "HTTP/3 not expected with " + uri);
-                } else {
-                    assertEquals(resp.version(), HTTP_2);
-                }
+                assertEquals(resp.version(), HTTP_2);
                 continue;
             }
             out.println("Got response: " + resp);
@@ -213,12 +207,7 @@ public class ContinuationFrameTest {
             assertTrue(resp.statusCode() == 200,
                        "Expected 200, got:" + resp.statusCode());
             assertEquals(resp.body(), "Hello there!");
-            if (HTTP_3.equals(resp.version())) {
-                assertTrue(uri.contains("/https2/"),
-                        "HTTP/3 not expected with " + uri);
-            } else {
-                assertEquals(resp.version(), HTTP_2);
-            }
+            assertEquals(resp.version(), HTTP_2);
         }
     }
 
