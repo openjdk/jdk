@@ -449,9 +449,9 @@ public abstract class Reader implements Readable, Closeable {
     /**
      * Reads all remaining characters into a string.
      *
-     * <p> This method reads all remaining content including the line separators
-     * in the middle and/or at the end. The resulting string will contain line
-     * separators as they appear in the original content.
+     * <p> This method reads all remaining characters including all line separators
+     * to the end of the stream. The resulting string will contain line
+     * separators as they appear in the stream.
      *
      * <p>  The method does not close this reader nor its underlying stream.
      * If an I/O error occurs, the states of the reader and its underlying
@@ -460,13 +460,13 @@ public abstract class Reader implements Readable, Closeable {
      * @apiNote
      * This method is intended for simple cases where it is appropriate and
      * convenient to read all remaining characters into a String. It is not
-     * intended for reading a large number of characters.
+     * intended for reading a large number of characters, for example, greater than 1G.
      *
      * @return     a String containing all remaining characters
      *
      * @throws     IOException       If an I/O error occurs
-     * @throws     OutOfMemoryError  If the remaining content is extremely
-     *                               large, for example larger than {@code 2GB}
+     * @throws     OutOfMemoryError  If the number of remaining characters exceeds the
+     *              implementation limit for String.
      *
      * @see #readAllLines
      * @see java.nio.file.Files#readString
