@@ -46,6 +46,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.Function;
+import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -3127,6 +3128,42 @@ public final class String
      */
     public String replaceAll(String regex, String replacement) {
         return Pattern.compile(regex).matcher(this).replaceAll(replacement);
+    }
+
+    /**
+     * Replaces each substring of this string that matches the given
+     * <a href="../util/regex/Pattern.html#sum">regular expression</a> with the result
+     * of applying the given function to the corresponding match result.
+     *
+     * <p> An invocation of this method of the form
+     * <i>str</i>{@code .replaceAllMapped(}<i>regex</i>{@code ,} <i>replacer</i>{@code )}
+     * yields exactly the same result as the expression
+     *
+     * <blockquote>
+     * <code>
+     * {@link java.util.regex.Pattern}.{@link
+     * java.util.regex.Pattern#compile(String) compile}(<i>regex</i>).{@link
+     * java.util.regex.Pattern#matcher(java.lang.CharSequence) matcher}(<i>str</i>).{@link
+     * java.util.regex.Matcher#replaceAll(Function) replaceAll}(<i>replacer</i>)
+     * </code>
+     * </blockquote>
+     *
+     * @param   regex
+     *          the regular expression to which this string is to be matched
+     * @param   replacer
+     *          the function to be applied to each match
+     *
+     * @return  The resulting {@code String}
+     *
+     * @throws  PatternSyntaxException
+     *          if the regular expression's syntax is invalid
+     * @throws  NullPointerException
+     *          if the replacement function is null
+     *
+     * @since 25
+     */
+    public String replaceAllMapped(String regex, Function<MatchResult, String> replacer) {
+        return Pattern.compile(regex).matcher(this).replaceAll(replacer);
     }
 
     /**

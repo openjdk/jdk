@@ -29,6 +29,9 @@
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.util.function.Function;
+import java.util.regex.MatchResult;
+import java.util.regex.PatternSyntaxException;
 
 public class Exceptions {
     private static final byte [] b = { 0x48, 0x69, 0x2c, 0x20,
@@ -536,6 +539,22 @@ public class Exceptions {
                 }});
     }
 
+    private static void replaceAllMapped() {
+        System.out.println("replaceAllMapped(String regex,  Function<MatchResult, String> replacer)");
+        tryCatch("  \".\", null", NullPointerException.class, new Runnable() {
+            public void run() {
+                "foo".replaceAllMapped(".", null);
+            }});
+        tryCatch("  null, \"-\"", NullPointerException.class, new Runnable() {
+            public void run() {
+                "foo".replaceAllMapped(null, mr -> "-");
+            }});
+        tryCatch("  null, \"-\"", PatternSyntaxException.class, new Runnable() {
+            public void run() {
+                "foo".replaceAllMapped("[", mr -> "-");
+            }});
+    }
+
     private static void split() {
         System.out.println("split(String regex, int limit)");
         tryCatch("  null, 1", NullPointerException.class, new Runnable() {
@@ -653,6 +672,7 @@ public class Exceptions {
         matches();            // matches(String)
         replaceFirst();       // replaceFirst(String, String)
         replaceAll();         // replaceAll(String, String)
+        replaceAllMapped();   // replaceAllMapped(String, Function<MatchResult, String>)
         split();              // split(String, int), split(String)
         toLowerCase();        // toLowerCase(Locale)
         toUpperCase();        // toUpperCase(Locale)

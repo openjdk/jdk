@@ -82,6 +82,9 @@ public class Regex {
         ck(foo.replaceAll("oo", "uu"), "buu:and:fuu");
         ck(foo.replaceAll("o+", "<$0>"), "b<oo>:and:f<oo>");
 
+        ck(foo.replaceAllMapped("\\w+", mr -> mr.group().toUpperCase()), "BOO:AND:FOO");
+        ck(foo.replaceAllMapped("\\w+", mr -> mr.group() + "(" + ")"), "boo():and():foo()");
+
         ck(foo.replaceFirst("oo", "uu"), "buu:and:foo");
         ck(foo.replaceFirst("o+", "<$0>"), "b<oo>:and:foo");
 
