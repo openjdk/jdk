@@ -223,7 +223,13 @@ class Http1Response<T> {
                                         HTTP_1_1);
 
                 if (Log.headers()) {
-                    StringBuilder sb = new StringBuilder("RESPONSE HEADERS:\n");
+                    StringBuilder sb = new StringBuilder("RESPONSE HEADERS:\n  ")
+                            .append(request.method())
+                            .append(' ')
+                            .append(request.uri())
+                            .append(' ')
+                            .append(responseCode)
+                            .append('\n');
                     Log.dumpHeaders(sb, "    ", headers);
                     Log.logHeaders(sb.toString());
                 }
