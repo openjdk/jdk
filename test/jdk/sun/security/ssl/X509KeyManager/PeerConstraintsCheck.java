@@ -40,14 +40,11 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.List;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedTrustManager;
-import javax.net.ssl.X509TrustManager;
 import jdk.test.lib.security.CertificateBuilder;
-import jdk.test.lib.security.SecurityUtils;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 import sun.security.x509.GeneralName;
 import sun.security.x509.GeneralNames;
@@ -90,14 +87,12 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
-        // Make sure only server's certificate signature algorithm is disabled.
-        SecurityUtils.removeFromDisabledAlgs("jdk.certpath.disabledAlgorithms",
-                List.of(CLIENT_CERT_SIG_ALG, TRUSTED_CERT_SIG_ALG));
-
-        SecurityUtils.removeFromDisabledAlgs("jdk.tls.disabledAlgorithms",
-                List.of(CLIENT_CERT_SIG_ALG, TRUSTED_CERT_SIG_ALG));
-
-        SecurityUtils.addToDisabledTlsAlgs(SERVER_CERT_SIG_ALG);
+        // Make sure both client and server support client's signature scheme,
+        // so the exception happens later during KeyManager's algorithm check.
+        System.setProperty(
+                "jdk.tls.client.SignatureSchemes", "rsa_pkcs1_sha384");
+        System.setProperty(
+                "jdk.tls.server.SignatureSchemes", "rsa_pkcs1_sha384");
 
         String disabled = args[0];
         String kmAlg = args[1];
@@ -111,9 +106,10 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
             runAndCheckException(
                     () -> new PeerConstraintsCheck(kmAlg).run(),
                     ex -> {
-                        assertTrue(ex instanceof javax.net.ssl.SSLHandshakeException);
+                        assertTrue(
+                                ex instanceof javax.net.ssl.SSLHandshakeException);
                         assertEquals(ex.getMessage(), "(handshake_failure) "
-                                + "No available authentication scheme");
+                                + "no cipher suites in common");
                     }
             );
         }
@@ -152,8 +148,9 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
         final char[] passphrase = "passphrase".toCharArray();
         ks.setKeyEntry("Whatever", privateKey, passphrase, chain);
 
-        // create SSL context
-        SSLContext ctx = SSLContext.getInstance("TLS");
+        // Use TLSv1.2 which supports SHA*withRSA algorithms for both handshake
+        // and certificate signatures.
+        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(kmAlg);
         kmf.init(ks, passphrase);
