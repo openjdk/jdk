@@ -4147,6 +4147,7 @@ instruct vsqrt_hfp(vReg dst, vReg src) %{
   ins_cost(VEC_COST);
   format %{ "vsqrt_hfp $dst, $src" %}
   ins_encode %{
+    assert(UseZvfh, "must");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vfsqrt_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
