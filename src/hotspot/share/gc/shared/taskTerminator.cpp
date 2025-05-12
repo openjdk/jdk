@@ -74,7 +74,9 @@ TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set, con
   _termination_event_name(termination_event_name),
   _offered_termination(0),
   _blocker(Mutex::nosafepoint, "TaskTerminator_lock"),
-  _spin_master(nullptr) { }
+  _spin_master(nullptr) {
+  TERMINATION_EVENT_NAME_PREFIX_ASSERT(termination_event_name);
+}
 
 TaskTerminator::~TaskTerminator() {
   if (_offered_termination != 0) {
@@ -105,6 +107,7 @@ void TaskTerminator::reset_for_reuse(uint n_threads) {
 }
 
 void TaskTerminator::reset_for_reuse(uint n_threads, const char* termination_event_name) {
+  TERMINATION_EVENT_NAME_PREFIX_ASSERT(termination_event_name);
   reset_for_reuse(n_threads);
   _termination_event_name = termination_event_name;
 }
@@ -114,6 +117,7 @@ const char* TaskTerminator::termination_event_name() {
 }
 
 void TaskTerminator::set_termination_event_name(const char* termination_event_name) {
+  TERMINATION_EVENT_NAME_PREFIX_ASSERT(termination_event_name);
   _termination_event_name = termination_event_name;
 }
 

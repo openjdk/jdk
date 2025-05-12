@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHARED_TASKTERMINATOR_HPP
 #define SHARE_GC_SHARED_TASKTERMINATOR_HPP
 
-#include "workerThread.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "runtime/mutex.hpp"
@@ -53,9 +52,13 @@ class Thread;
  * The intention of above enhancement is to reduce spin-master's latency on
  * detecting new tasks for stealing and termination condition.
  */
-class TaskTerminationTracker;
 
-#define TERMINATION_EVENT_NAME(task_name) "Termination:" task_name ""
+#define TERMINATION_EVENT_NAME_PREFIX "Termination"
+#define TERMINATION_EVENT_NAME(task_name) "" TERMINATION_EVENT_NAME_PREFIX ":" task_name ""
+#define TERMINATION_EVENT_NAME_PREFIX_ASSERT(name) \
+assert(name == nullptr || strncmp(name, TERMINATION_EVENT_NAME_PREFIX, strlen(TERMINATION_EVENT_NAME_PREFIX)) == 0, "Must be")
+
+class TaskTerminationTracker;
 
 class TaskTerminator : public CHeapObj<mtGC> {
   friend class TaskTerminationTracker;
