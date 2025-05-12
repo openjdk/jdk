@@ -124,8 +124,7 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
       assert_different_registers(rscratch2, $dst$$Register);
       int size = 8;
       assert(!this->is_late_expanded_null_check_candidate() ||
-             // Condition required by legitimize_address() to avoid inserting a preceding lea:
-             Address::offset_ok_for_immed(ref_addr.offset(), exact_log2(size)),
+             !MacroAssembler::legitimize_address_requires_lea(ref_addr, size),
              "an instruction that can be used for implicit null checking should emit the candidate memory access first");
       ref_addr = __ legitimize_address(ref_addr, size, rscratch2);
     }
