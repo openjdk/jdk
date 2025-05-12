@@ -28,11 +28,15 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/os.hpp"
 
 class TaskQueueSetSuper;
 class TerminatorTerminator;
 class Thread;
+
+#define TERMINATION_EVENT_NAME_PREFIX "Termination"
+#define TERMINATION_EVENT_NAME(task_name) "" TERMINATION_EVENT_NAME_PREFIX ":" task_name ""
+
+class TaskTerminationTracker;
 
 /*
  * Provides a task termination protocol.
@@ -52,14 +56,6 @@ class Thread;
  * The intention of above enhancement is to reduce spin-master's latency on
  * detecting new tasks for stealing and termination condition.
  */
-
-#define TERMINATION_EVENT_NAME_PREFIX "Termination"
-#define TERMINATION_EVENT_NAME(task_name) "" TERMINATION_EVENT_NAME_PREFIX ":" task_name ""
-#define TERMINATION_EVENT_NAME_PREFIX_ASSERT(name) \
-  assert(name == nullptr || strncmp(name, TERMINATION_EVENT_NAME_PREFIX, strlen(TERMINATION_EVENT_NAME_PREFIX)) == 0, "Must be")
-
-class TaskTerminationTracker;
-
 class TaskTerminator : public CHeapObj<mtGC> {
   friend class TaskTerminationTracker;
   class DelayContext {

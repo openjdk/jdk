@@ -32,6 +32,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "jfr/jfrEvents.hpp"
 
+#define TERMINATION_EVENT_NAME_PREFIX_ASSERT(name) \
+assert(name == nullptr || strncmp(name, TERMINATION_EVENT_NAME_PREFIX, strlen(TERMINATION_EVENT_NAME_PREFIX)) == 0, "Must be")
+
 TaskTerminator::DelayContext::DelayContext() {
   _yield_count = 0;
   reset_hard_spin_information();
@@ -238,4 +241,4 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
     }
   }
 }
-
+#undef TERMINATION_EVENT_NAME_PREFIX_ASSERT
