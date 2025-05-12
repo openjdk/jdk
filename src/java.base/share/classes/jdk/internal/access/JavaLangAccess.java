@@ -326,7 +326,8 @@ public interface JavaLangAccess {
      * {@linkplain java.nio.charset.Charset charset}.
      * <p>
      * <b>WARNING: This method returns the {@code byte[]} backing the provided
-     * {@code String}, if the input is ASCII.</b>
+     * {@code String}, if the input is ASCII. Hence, the returned byte array
+     * must not be modified.</b>
      * <p>
      * This method throws {@code CharacterCodingException} instead of replacing
      * when malformed input or unmappable characters are encountered.
