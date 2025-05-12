@@ -58,7 +58,7 @@ public class XSettings {
     /**
      * TBS ...
      */
-    class Update {
+    final class Update {
 
         /* byte order mark */
         private static final int LITTLE_ENDIAN = 0;
@@ -232,7 +232,7 @@ public class XSettings {
         /**
          * Parses a particular x setting.
          *
-         * @exception IndexOutOfBoundsException if there isn't enough
+         * @throws IndexOutOfBoundsException if there isn't enough
          *     data for a setting.
          */
         private void updateOne(long currentSerial)

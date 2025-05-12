@@ -44,6 +44,9 @@ public:
                              Register t, Register thread);
   void fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread);
 
+  void verify_int_in_range(uint idx, const TypeInt* t, Register val);
+  void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);
+
   // Generic instructions support for use in .ad files C2 code generation
   void vabsnegd(int opcode, XMMRegister dst, XMMRegister src);
   void vabsnegd(int opcode, XMMRegister dst, XMMRegister src, int vector_len);
@@ -565,6 +568,16 @@ public:
 
   void select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 
+  void evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc);
+
+  void vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
+
   void scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                           KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
+                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2);
+
+  void reconstruct_frame_pointer(Register rtmp);
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

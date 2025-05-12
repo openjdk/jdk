@@ -465,6 +465,21 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
   return (klass == *v);
 }
 
+void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlass* klass) {
+  precond(CDSConfig::is_dumping_final_static_archive());
+  precond(klass->is_shared());
+
+  // A shared class must have a RunTimeClassInfo record
+  const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
+                                               nullptr, klass->name());
+  precond(record != nullptr);
+  precond(record->klass() == klass);
+
+  DumpTimeClassInfo* info = get_info(klass);
+  info->_clsfile_size = record->crc()->_clsfile_size;
+  info->_clsfile_crc32 = record->crc()->_clsfile_crc32;
+}
+
 void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(!is_builtin(k), "must be unregistered class");
@@ -667,7 +682,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
 }
 
 void SystemDictionaryShared::finish_exclusion_checks() {
-  if (CDSConfig::is_dumping_dynamic_archive()) {
+  if (CDSConfig::is_dumping_dynamic_archive() || CDSConfig::is_dumping_preimage_static_archive()) {
     // Do this first -- if a base class is excluded due to duplication,
     // all of its subclasses will also be excluded.
     ResourceMark rm;
@@ -737,29 +752,43 @@ void SystemDictionaryShared::dumptime_classes_do(MetaspaceClosure* it) {
   }
 }
 
-bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbol* name,
-         Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
+// Called from VerificationType::is_reference_assignable_from() before performing the assignability check of
+//     T1 must be assignable from T2
+// Where:
+//     L is the class loader of <k>
+//     T1 is the type resolved by L using the name <name>
+//     T2 is the type resolved by L using the name <from_name>
+//
+// The meaning of (*skip_assignability_check):
+//     true:  is_reference_assignable_from() should SKIP the assignability check
+//     false: is_reference_assignable_from() should COMPLETE the assignability check
+void SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbol* name,
+         Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object,
+         bool* skip_assignability_check) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* info = get_info(k);
   info->add_verification_constraint(k, name, from_name, from_field_is_protected,
                                     from_is_array, from_is_object);
 
-  if (CDSConfig::is_dumping_dynamic_archive()) {
-    // For dynamic dumping, we can resolve all the constraint classes for all class loaders during
-    // the initial run prior to creating the archive before vm exit. We will also perform verification
-    // check when running with the archive.
-    return false;
+  if (CDSConfig::is_dumping_classic_static_archive() && !is_builtin(k)) {
+    // This applies ONLY to the "classic" CDS static dump, which reads the list of
+    // unregistered classes (those intended for custom class loaders) from the classlist
+    // and loads them using jdk.internal.misc.CDS$UnregisteredClassLoader.
+    //
+    // When the classlist contains an unregistered class k, the supertypes of k are also
+    // recorded in the classlist. However, the classlist does not contain information about
+    // any class X that's not a supertype of k but is needed in the verification of k.
+    // As a result, CDS$UnregisteredClassLoader will not know how to resolve X.
+    //
+    // Therefore, we tell the verifier to refrain from resolving X. Instead, X is recorded
+    // (symbolically) in the verification constraints of k. In the production run,
+    // when k is loaded, we will go through its verification constraints and resolve X to complete
+    // the is_reference_assignable_from() checks.
+    *skip_assignability_check = true;
   } else {
-    if (is_builtin(k)) {
-      // For builtin class loaders, we can try to complete the verification check at dump time,
-      // because we can resolve all the constraint classes. We will also perform verification check
-      // when running with the archive.
-      return false;
-    } else {
-      // For non-builtin class loaders, we cannot complete the verification check at dump time,
-      // because at dump time we don't know how to resolve classes for such loaders.
-      return true;
-    }
+    // In all other cases, we are using an *actual* class loader to load k, so it should be able
+    // to resolve any types that are needed for the verification of k.
+    *skip_assignability_check = false;
   }
 }
 

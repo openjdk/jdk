@@ -403,7 +403,7 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new SubLNode(sub2, in21);
     } else {
       Node* sub2 = phase->transform(new SubLNode(in1, in21));
-      Node* neg_c0 = phase->longcon(-c0);
+      Node* neg_c0 = phase->longcon(java_negate(c0));
       return new AddLNode(sub2, neg_c0);
     }
   }
@@ -2019,6 +2019,27 @@ const Type* SqrtHFNode::Value(PhaseGVN* phase) const {
   float f = t1->getf();
   if (f < 0.0f) return Type::HALF_FLOAT;
   return TypeH::make((float)sqrt((double)f));
+}
+
+static const Type* reverse_bytes(int opcode, const Type* con) {
+  switch (opcode) {
+    case Op_ReverseBytesS:  return TypeInt::make(byteswap(checked_cast<jshort>(con->is_int()->get_con())));
+    case Op_ReverseBytesUS: return TypeInt::make(byteswap(checked_cast<jchar>(con->is_int()->get_con())));
+    case Op_ReverseBytesI:  return TypeInt::make(byteswap(checked_cast<jint>(con->is_int()->get_con())));
+    case Op_ReverseBytesL:  return TypeLong::make(byteswap(checked_cast<jlong>(con->is_long()->get_con())));
+    default: ShouldNotReachHere();
+  }
+}
+
+const Type* ReverseBytesNode::Value(PhaseGVN* phase) const {
+  const Type* type = phase->type(in(1));
+  if (type == Type::TOP) {
+    return Type::TOP;
+  }
+  if (type->singleton()) {
+    return reverse_bytes(Opcode(), type);
+  }
+  return bottom_type();
 }
 
 const Type* ReverseINode::Value(PhaseGVN* phase) const {

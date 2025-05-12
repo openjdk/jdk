@@ -41,10 +41,8 @@ import java.util.function.Function;
 public abstract class CompilerWhiteBoxTest {
     /** {@code CompLevel::CompLevel_none} -- Interpreter */
     public static final int COMP_LEVEL_NONE = 0;
-    /** {@code CompLevel::CompLevel_any} */
-    public static final int COMP_LEVEL_ANY = -2;
-    /** {@code CompLevel::CompLevel_all} */
-    public static final int COMP_LEVEL_ALL = -1;
+    /** {@code CompLevel::CompLevel_any}, {@code CompLevel::CompLevel_all} */
+    public static final int COMP_LEVEL_ANY = -1;
     /** {@code CompLevel::CompLevel_simple} -- C1 */
     public static final int COMP_LEVEL_SIMPLE = 1;
     /** {@code CompLevel::CompLevel_limited_profile} -- C1, invocation &amp; backedge counters */
@@ -286,7 +284,7 @@ public abstract class CompilerWhiteBoxTest {
     }
 
     protected final void makeNotCompilable() {
-        WHITE_BOX.makeMethodNotCompilable(method, COMP_LEVEL_ALL,
+        WHITE_BOX.makeMethodNotCompilable(method, COMP_LEVEL_ANY,
                 testCase.isOsr());
     }
 

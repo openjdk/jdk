@@ -1368,11 +1368,6 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-    case Op_AddReductionVL:
-      if (UseSSE < 2) { // requires at least SSE2
-        return false;
-      }
-      break;
     case Op_AbsVB:
     case Op_AbsVS:
     case Op_AbsVI:
@@ -1556,28 +1551,8 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-    case Op_SignumF:
-      if (UseSSE < 1) {
-        return false;
-      }
-      break;
-    case Op_SignumD:
-      if (UseSSE < 2) {
-        return false;
-      }
-      break;
     case Op_CompressM:
       if (!VM_Version::supports_avx512vl() || !VM_Version::supports_bmi2()) {
-        return false;
-      }
-      break;
-    case Op_SqrtF:
-      if (UseSSE < 1) {
-        return false;
-      }
-      break;
-    case Op_SqrtD:
-      if (UseSSE < 2) {
         return false;
       }
       break;
@@ -1631,6 +1606,24 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   //   * 128bit vroundpd instruction is present only in AVX1
   int size_in_bits = vlen * type2aelembytes(bt) * BitsPerByte;
   switch (opcode) {
+    case Op_MaxVHF:
+    case Op_MinVHF:
+      if (!VM_Version::supports_avx512bw()) {
+        return false;
+      }
+    case Op_AddVHF:
+    case Op_DivVHF:
+    case Op_FmaVHF:
+    case Op_MulVHF:
+    case Op_SubVHF:
+    case Op_SqrtVHF:
+      if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      if (!VM_Version::supports_avx512_fp16()) {
+        return false;
+      }
+      break;
     case Op_AbsVF:
     case Op_NegVF:
       if ((vlen == 16) && (VM_Version::supports_avx512dq() == false)) {
@@ -2173,7 +2166,6 @@ const RegMask* Matcher::predicate_reg_mask(void) {
 // Max vector size in bytes. 0 if not supported.
 int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
-  if (UseSSE < 2) return 0;
   // SSE2 supports 128bit vectors for all types.
   // AVX2 supports 256bit vectors for all types.
   // AVX2/EVEX supports 512bit vectors for all types.
@@ -2874,7 +2866,8 @@ instruct ShouldNotReachHere() %{
   format %{ "stop\t# ShouldNotReachHere" %}
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
   ins_pipe(pipe_slow);
@@ -2883,7 +2876,7 @@ instruct ShouldNotReachHere() %{
 // ============================================================================
 
 instruct addF_reg(regF dst, regF src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AddF dst src));
 
   format %{ "addss   $dst, $src" %}
@@ -2895,7 +2888,7 @@ instruct addF_reg(regF dst, regF src) %{
 %}
 
 instruct addF_mem(regF dst, memory src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AddF dst (LoadF src)));
 
   format %{ "addss   $dst, $src" %}
@@ -2907,7 +2900,7 @@ instruct addF_mem(regF dst, memory src) %{
 %}
 
 instruct addF_imm(regF dst, immF con) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AddF dst con));
   format %{ "addss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150);
@@ -2954,7 +2947,7 @@ instruct addF_reg_imm(regF dst, regF src, immF con) %{
 %}
 
 instruct addD_reg(regD dst, regD src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AddD dst src));
 
   format %{ "addsd   $dst, $src" %}
@@ -2966,7 +2959,7 @@ instruct addD_reg(regD dst, regD src) %{
 %}
 
 instruct addD_mem(regD dst, memory src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AddD dst (LoadD src)));
 
   format %{ "addsd   $dst, $src" %}
@@ -2978,7 +2971,7 @@ instruct addD_mem(regD dst, memory src) %{
 %}
 
 instruct addD_imm(regD dst, immD con) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AddD dst con));
   format %{ "addsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150);
@@ -3025,7 +3018,7 @@ instruct addD_reg_imm(regD dst, regD src, immD con) %{
 %}
 
 instruct subF_reg(regF dst, regF src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (SubF dst src));
 
   format %{ "subss   $dst, $src" %}
@@ -3037,7 +3030,7 @@ instruct subF_reg(regF dst, regF src) %{
 %}
 
 instruct subF_mem(regF dst, memory src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (SubF dst (LoadF src)));
 
   format %{ "subss   $dst, $src" %}
@@ -3049,7 +3042,7 @@ instruct subF_mem(regF dst, memory src) %{
 %}
 
 instruct subF_imm(regF dst, immF con) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (SubF dst con));
   format %{ "subss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150);
@@ -3096,7 +3089,7 @@ instruct subF_reg_imm(regF dst, regF src, immF con) %{
 %}
 
 instruct subD_reg(regD dst, regD src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (SubD dst src));
 
   format %{ "subsd   $dst, $src" %}
@@ -3108,7 +3101,7 @@ instruct subD_reg(regD dst, regD src) %{
 %}
 
 instruct subD_mem(regD dst, memory src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (SubD dst (LoadD src)));
 
   format %{ "subsd   $dst, $src" %}
@@ -3120,7 +3113,7 @@ instruct subD_mem(regD dst, memory src) %{
 %}
 
 instruct subD_imm(regD dst, immD con) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (SubD dst con));
   format %{ "subsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150);
@@ -3167,7 +3160,7 @@ instruct subD_reg_imm(regD dst, regD src, immD con) %{
 %}
 
 instruct mulF_reg(regF dst, regF src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (MulF dst src));
 
   format %{ "mulss   $dst, $src" %}
@@ -3179,7 +3172,7 @@ instruct mulF_reg(regF dst, regF src) %{
 %}
 
 instruct mulF_mem(regF dst, memory src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (MulF dst (LoadF src)));
 
   format %{ "mulss   $dst, $src" %}
@@ -3191,7 +3184,7 @@ instruct mulF_mem(regF dst, memory src) %{
 %}
 
 instruct mulF_imm(regF dst, immF con) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (MulF dst con));
   format %{ "mulss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150);
@@ -3238,7 +3231,7 @@ instruct mulF_reg_imm(regF dst, regF src, immF con) %{
 %}
 
 instruct mulD_reg(regD dst, regD src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (MulD dst src));
 
   format %{ "mulsd   $dst, $src" %}
@@ -3250,7 +3243,7 @@ instruct mulD_reg(regD dst, regD src) %{
 %}
 
 instruct mulD_mem(regD dst, memory src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (MulD dst (LoadD src)));
 
   format %{ "mulsd   $dst, $src" %}
@@ -3262,7 +3255,7 @@ instruct mulD_mem(regD dst, memory src) %{
 %}
 
 instruct mulD_imm(regD dst, immD con) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (MulD dst con));
   format %{ "mulsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150);
@@ -3309,7 +3302,7 @@ instruct mulD_reg_imm(regD dst, regD src, immD con) %{
 %}
 
 instruct divF_reg(regF dst, regF src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (DivF dst src));
 
   format %{ "divss   $dst, $src" %}
@@ -3321,7 +3314,7 @@ instruct divF_reg(regF dst, regF src) %{
 %}
 
 instruct divF_mem(regF dst, memory src) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (DivF dst (LoadF src)));
 
   format %{ "divss   $dst, $src" %}
@@ -3333,7 +3326,7 @@ instruct divF_mem(regF dst, memory src) %{
 %}
 
 instruct divF_imm(regF dst, immF con) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (DivF dst con));
   format %{ "divss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150);
@@ -3380,7 +3373,7 @@ instruct divF_reg_imm(regF dst, regF src, immF con) %{
 %}
 
 instruct divD_reg(regD dst, regD src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (DivD dst src));
 
   format %{ "divsd   $dst, $src" %}
@@ -3392,7 +3385,7 @@ instruct divD_reg(regD dst, regD src) %{
 %}
 
 instruct divD_mem(regD dst, memory src) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (DivD dst (LoadD src)));
 
   format %{ "divsd   $dst, $src" %}
@@ -3404,7 +3397,7 @@ instruct divD_mem(regD dst, memory src) %{
 %}
 
 instruct divD_imm(regD dst, immD con) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (DivD dst con));
   format %{ "divsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150);
@@ -3451,7 +3444,7 @@ instruct divD_reg_imm(regD dst, regD src, immD con) %{
 %}
 
 instruct absF_reg(regF dst) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AbsF dst));
   ins_cost(150);
   format %{ "andps   $dst, [0x7fffffff]\t# abs float by sign masking" %}
@@ -3475,7 +3468,7 @@ instruct absF_reg_reg(vlRegF dst, vlRegF src) %{
 %}
 
 instruct absD_reg(regD dst) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (AbsD dst));
   ins_cost(150);
   format %{ "andpd   $dst, [0x7fffffffffffffff]\t"
@@ -3501,7 +3494,7 @@ instruct absD_reg_reg(vlRegD dst, vlRegD src) %{
 %}
 
 instruct negF_reg(regF dst) %{
-  predicate((UseSSE>=1) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (NegF dst));
   ins_cost(150);
   format %{ "xorps   $dst, [0x80000000]\t# neg float by sign flipping" %}
@@ -3524,7 +3517,7 @@ instruct negF_reg_reg(vlRegF dst, vlRegF src) %{
 %}
 
 instruct negD_reg(regD dst) %{
-  predicate((UseSSE>=2) && (UseAVX == 0));
+  predicate(UseAVX == 0);
   match(Set dst (NegD dst));
   ins_cost(150);
   format %{ "xorpd   $dst, [0x8000000000000000]\t"
@@ -3551,7 +3544,6 @@ instruct negD_reg_reg(vlRegD dst, vlRegD src) %{
 // sqrtss instruction needs destination register to be pre initialized for best performance
 // Therefore only the instruct rule where the input is pre-loaded into dst register is defined below
 instruct sqrtF_reg(regF dst) %{
-  predicate(UseSSE>=1);
   match(Set dst (SqrtF dst));
   format %{ "sqrtss  $dst, $dst" %}
   ins_encode %{
@@ -3563,7 +3555,6 @@ instruct sqrtF_reg(regF dst) %{
 // sqrtsd instruction needs destination register to be pre initialized for best performance
 // Therefore only the instruct rule where the input is pre-loaded into dst register is defined below
 instruct sqrtD_reg(regD dst) %{
-  predicate(UseSSE>=2);
   match(Set dst (SqrtD dst));
   format %{ "sqrtsd  $dst, $dst" %}
   ins_encode %{
@@ -4485,7 +4476,7 @@ instruct ReplI_zero(vec dst, immI_0 zero) %{
 %}
 
 instruct ReplI_M1(vec dst, immI_M1 con) %{
-  predicate(UseSSE >= 2 && Matcher::is_non_long_integral_vector(n));
+  predicate(Matcher::is_non_long_integral_vector(n));
   match(Set dst (Replicate con));
   format %{ "vallones $dst" %}
   ins_encode %{
@@ -4565,7 +4556,7 @@ instruct ReplL_zero(vec dst, immL0 zero) %{
 %}
 
 instruct ReplL_M1(vec dst, immL_M1 con) %{
-  predicate(UseSSE >= 2 && Matcher::vector_element_basic_type(n) == T_LONG);
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (Replicate con));
   format %{ "vallones $dst" %}
   ins_encode %{
@@ -6937,7 +6928,6 @@ instruct vshiftL_arith_reg(vec dst, vec src, vec shift, vec tmp) %{
   ins_encode %{
     uint vlen = Matcher::vector_length(this);
     if (vlen == 2) {
-      assert(UseSSE >= 2, "required");
       __ movdqu($dst$$XMMRegister, $src$$XMMRegister);
       __ psrlq($dst$$XMMRegister, $shift$$XMMRegister);
       __ movdqu($tmp$$XMMRegister, ExternalAddress(vector_long_sign_mask()), noreg);
@@ -8311,7 +8301,6 @@ instruct vabsnegD(vec dst, vec src) %{
     int opcode = this->ideal_Opcode();
     uint vlen = Matcher::vector_length(this);
     if (vlen == 2) {
-      assert(UseSSE >= 2, "required");
       __ vabsnegd(opcode, $dst$$XMMRegister, $src$$XMMRegister);
     } else {
       int vlen_enc = vector_length_encoding(this);
@@ -10643,6 +10632,16 @@ instruct reinterpretS2HF(regF dst, rRegI src)
   ins_pipe(pipe_slow);
 %}
 
+instruct reinterpretHF2S(rRegI dst, regF src)
+%{
+  match(Set dst (ReinterpretHF2S src));
+  format %{ "vmovw $dst, $src" %}
+  ins_encode %{
+    __ vmovw($dst$$Register, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct convF2HFAndS2HF(regF dst, regF src)
 %{
   match(Set dst (ReinterpretS2HF (ConvF2HF src)));
@@ -10659,16 +10658,6 @@ instruct convHF2SAndHF2F(regF dst, regF src)
   format %{ "convHF2SAndHF2F $dst, $src" %}
   ins_encode %{
     __ vcvtph2ps($dst$$XMMRegister, $src$$XMMRegister, Assembler::AVX_128bit);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct reinterpretHF2S(rRegI dst, regF src)
-%{
-  match(Set dst (ReinterpretHF2S src));
-  format %{ "vmovw $dst, $src" %}
-  ins_encode %{
-    __ vmovw($dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10706,7 +10695,7 @@ instruct scalar_minmax_HF_reg(regF dst, regF src1, regF src2, kReg ktmp, regF xt
   ins_encode %{
     int opcode = this->ideal_Opcode();
     __ scalar_max_min_fp16(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $ktmp$$KRegister,
-                           $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, Assembler::AVX_128bit);
+                           $xtmp1$$XMMRegister, $xtmp2$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -10718,6 +10707,97 @@ instruct scalar_fma_HF_reg(regF dst, regF src1, regF src2)
   format %{ "scalar_fma_fp16 $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
   ins_encode %{
     __ vfmadd132sh($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+
+instruct vector_sqrt_HF_reg(vec dst, vec src)
+%{
+  match(Set dst (SqrtVHF src));
+  format %{ "vector_sqrt_fp16 $dst, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evsqrtph($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_sqrt_HF_mem(vec dst, memory src)
+%{
+  match(Set dst (SqrtVHF (VectorReinterpret (LoadVector src))));
+  format %{ "vector_sqrt_fp16_mem $dst, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evsqrtph($dst$$XMMRegister, $src$$Address, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_binOps_HF_reg(vec dst, vec src1, vec src2)
+%{
+  match(Set dst (AddVHF src1 src2));
+  match(Set dst (DivVHF src1 src2));
+  match(Set dst (MulVHF src1 src2));
+  match(Set dst (SubVHF src1 src2));
+  format %{ "vector_binop_fp16 $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int opcode = this->ideal_Opcode();
+    __ evfp16ph(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+instruct vector_binOps_HF_mem(vec dst, vec src1, memory src2)
+%{
+  match(Set dst (AddVHF src1 (VectorReinterpret (LoadVector src2))));
+  match(Set dst (DivVHF src1 (VectorReinterpret (LoadVector src2))));
+  match(Set dst (MulVHF src1 (VectorReinterpret (LoadVector src2))));
+  match(Set dst (SubVHF src1 (VectorReinterpret (LoadVector src2))));
+  format %{ "vector_binop_fp16_mem $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int opcode = this->ideal_Opcode();
+    __ evfp16ph(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_fma_HF_reg(vec dst, vec src1, vec src2)
+%{
+  match(Set dst (FmaVHF src2 (Binary dst src1)));
+  format %{ "vector_fma_fp16 $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evfmadd132ph($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_fma_HF_mem(vec dst, memory src1, vec src2)
+%{
+  match(Set dst (FmaVHF src2 (Binary dst (VectorReinterpret (LoadVector src1)))));
+  format %{ "vector_fma_fp16_mem $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evfmadd132ph($dst$$XMMRegister, $src2$$XMMRegister, $src1$$Address, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_minmax_HF_reg(vec dst, vec src1, vec src2, kReg ktmp, vec xtmp1, vec xtmp2)
+%{
+  match(Set dst (MinVHF src1 src2));
+  match(Set dst (MaxVHF src1 src2));
+  effect(TEMP_DEF dst, TEMP ktmp, TEMP xtmp1, TEMP xtmp2);
+  format %{ "vector_min_max_fp16 $dst, $src1, $src2\t using $ktmp, $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int opcode = this->ideal_Opcode();
+    __ vector_max_min_fp16(opcode, $dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, $ktmp$$KRegister,
+                           $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

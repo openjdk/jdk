@@ -24,10 +24,9 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMT.hpp"
-#include "gc/z/zVirtualMemory.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/memoryFileTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 MemoryFileTracker::MemoryFile* ZNMT::_device = nullptr;
@@ -60,15 +59,15 @@ void ZNMT::unreserve(zaddress_unsafe start, size_t size) {
   }
 }
 
-void ZNMT::commit(zoffset offset, size_t size) {
+void ZNMT::commit(zbacking_offset offset, size_t size) {
   MemTracker::allocate_memory_in(ZNMT::_device, untype(offset), size, CALLER_PC, mtJavaHeap);
 }
 
-void ZNMT::uncommit(zoffset offset, size_t size) {
+void ZNMT::uncommit(zbacking_offset offset, size_t size) {
   MemTracker::free_memory_in(ZNMT::_device, untype(offset), size);
 }
 
-void ZNMT::map(zaddress_unsafe addr, size_t size, zoffset offset) {
+void ZNMT::map(zaddress_unsafe addr, size_t size, zbacking_offset offset) {
   // NMT doesn't track mappings at the moment.
 }
 
