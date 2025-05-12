@@ -31,6 +31,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 
 inline UnloadableMethodHandle::UnloadableMethodHandle() : _spin_lock(0), _method(nullptr) {
   set_state(EMPTY);
