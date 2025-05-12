@@ -39,7 +39,7 @@ public class Space {
             if (echo.length() == 6)
                 throw new RuntimeException("Extra space in command.");
         } catch (IOException e) {
-            // not Win NT - cmd doesnt exist
+            // not Win NT - cmd doesn't exist
             return;
         }
     }
