@@ -784,6 +784,12 @@ public class PrintingProcessor extends AbstractProcessor {
             writer.print(spaces[indentation]);
         }
 
+        /**{@return true if this type is either not {@code java.lang.Object},
+         * or is annotated, and hence needs to be included in the output,
+         * even for cases where there's implicit {@code java.lang.Object} type.}
+         *
+         * @param type the type to check.
+         */
         private boolean isImportantType(TypeMirror type) {
             if (!type.getAnnotationMirrors().isEmpty()) {
                 return true;
