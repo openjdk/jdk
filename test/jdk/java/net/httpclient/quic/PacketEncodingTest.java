@@ -70,6 +70,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static jdk.internal.net.http.quic.packets.QuicPacketNumbers.computePacketNumberLength;
 import static org.testng.Assert.*;
 
 /**
@@ -579,7 +580,9 @@ public class PacketEncodingTest {
                 return srcIdLength;
             }
         };
-        int minsize = encoder.computeMaxInitialPayloadSize(context, packetNumber,
+        int minsize = encoder.computeMaxInitialPayloadSize(context,
+                computePacketNumberLength(packetNumber,
+                        context.largestAckedPN(PacketNumberSpace.INITIAL)),
                 tokenLength, srcIdLength,
                 destIdLength, 1200);
         int padding =  (payloadSize < minsize) ? minsize - payloadSize : 0;

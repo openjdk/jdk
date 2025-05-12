@@ -1386,28 +1386,27 @@ public class QuicPacketEncoder {
      *     Packet Payload (1 to ... bytes),
      * }
      * </pre>
-     * @param codingContext the coding context, used to compute the
-     *                      encoded packet number
-     * @param packetNumber the full packet number
-     * @param tokenLength  the length of the token (or {@code 0})
-     * @param scidLength   the length of the source connection id
-     * @param dstidLength  the length of the destination connection id
+     *
+     * @param codingContext   the coding context, used to compute the
+     *                        encoded packet number
+     * @param pnsize          packet number length
+     * @param tokenLength     the length of the token (or {@code 0})
+     * @param scidLength      the length of the source connection id
+     * @param dstidLength     the length of the destination connection id
      * @param maxDatagramSize the desired total maximum size
-     *                                       of the packet after encryption
+     *                        of the packet after encryption
      * @return the maximum size of the payload that can be fit into this
      * initial packet
      */
     public static int computeMaxInitialPayloadSize(CodingContext codingContext,
-                                            long packetNumber,
-                                            int tokenLength,
-                                            int scidLength,
-                                            int dstidLength,
-                                            int maxDatagramSize) {
+                                                   int pnsize,
+                                                   int tokenLength,
+                                                   int scidLength,
+                                                   int dstidLength,
+                                                   int maxDatagramSize) {
         // header=1, version=4, len(scidlen)+len(dstidlen)=2
         int overhead = 1 + 4 + 2 + scidLength + dstidLength + tokenLength +
                 VariableLengthEncoder.getEncodedSize(tokenLength);
-        int pnsize = computePacketNumberLength(packetNumber,
-                codingContext.largestAckedPN(PacketNumberSpace.INITIAL));
         // encryption tag, included in the payload, but not usable for frames
         int tagSize = codingContext.getTLSEngine().getAuthTagSize();
         int length = maxDatagramSize - overhead - 1; // at least 1 byte for length encoding
@@ -1423,29 +1422,6 @@ public class QuicPacketEncoder {
         return available;
     }
 
-    public static int computeReservedInitialPayloadSize(CodingContext codingContext,
-                                                   int tokenLength,
-                                                   int scidLength,
-                                                   int dstidLength,
-                                                   int maxDatagramSize) {
-        // header=1, version=4, len(scidlen)+len(dstidlen)=2
-        int overhead = 1 + 4 + 2 + scidLength + dstidLength + tokenLength +
-                VariableLengthEncoder.getEncodedSize(tokenLength);
-        int pnsize = 4; // reserve 4 bytes
-        // encryption tag, included in the payload, but not usable for frames
-        int tagSize = codingContext.getTLSEngine().getAuthTagSize();
-        int length = maxDatagramSize - overhead - 1; // at least 1 byte for length encoding
-        if (length <= 0) return 0;
-        int lenbefore = VariableLengthEncoder.getEncodedSize(length);
-        length = length - lenbefore + 1; // discount length encoding
-        // int lenafter = VariableLengthEncoder.getEncodedSize(length); // check
-        // assert lenafter == lenbefore : "%s -> %s (before:%s, after:%s)"
-        //        .formatted(maxDatagramSize - overhead -1, length, lenbefore, lenafter);
-        if (length <= 0) return 0;
-        int available = length - pnsize - tagSize;
-        if (available < 0) return 0;
-        return available;
-    }
     /**
      * Compute the max size of the usable payload of a handshake
      * packet, given the max size of the datagram.

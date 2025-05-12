@@ -148,6 +148,7 @@ import static jdk.internal.net.http.quic.QuicConnectionId.MAX_CONNECTION_ID_LENG
 import static jdk.internal.net.http.quic.QuicRttEstimator.MAX_PTO_BACKOFF_TIMEOUT;
 import static jdk.internal.net.http.quic.QuicRttEstimator.MIN_PTO_BACKOFF_TIMEOUT;
 import static jdk.internal.net.http.quic.frames.QuicFrame.MAX_VL_INTEGER;
+import static jdk.internal.net.http.quic.packets.QuicPacketNumbers.computePacketNumberLength;
 import static jdk.internal.net.http.quic.streams.QuicStreams.isUnidirectional;
 import static jdk.internal.net.http.quic.streams.QuicStreams.streamType;
 import static jdk.internal.net.quic.QuicTLSEngine.HandshakeState.HANDSHAKE_CONFIRMED;
@@ -263,7 +264,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     final ConnectionTerminatorImpl terminator;
     protected final IdleTimeoutManager idleTimeoutManager;
     protected final QuicTransportParameters transportParams;
-    // the current (local) connection ID
+    // the initial (local) connection ID
     private final QuicConnectionId connectionId;
     private final PeerConnIdManager peerConnIdManager;
     private final LocalConnIdManager localConnIdManager;
@@ -3185,17 +3186,21 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             byte[] token = initialToken();
             int tksize = token == null ? 0 : token.length;
             PacketSpace packetSpace = packetSpaces.get(PacketNumberSpace.INITIAL);
-            int maxDstIdLength = MAX_CONNECTION_ID_LENGTH; // reserve space for the id to grow
-            int maxSrcIdLength = isClientConnection() ? connectionId.length() : MAX_CONNECTION_ID_LENGTH;
+            int maxDstIdLength = isClientConnection() ?
+                    MAX_CONNECTION_ID_LENGTH :  // reserve space for the id to grow
+                    peerConnId.length();
+            int maxSrcIdLength = connectionId.length();
             // compute maxPayloadSize given maxSizeBeforeEncryption
             var largestAckedPN = packetSpace.getLargestPeerAckedPN();
             var packetNumber = packetSpace.allocateNextPN();
-            int maxPayloadSize = QuicPacketEncoder.computeReservedInitialPayloadSize(codingContext,
-                    tksize, maxSrcIdLength, maxDstIdLength, SMALLEST_MAXIMUM_DATAGRAM_SIZE);
+            int maxPayloadSize = QuicPacketEncoder.computeMaxInitialPayloadSize(codingContext, 4, tksize,
+                    maxSrcIdLength, maxDstIdLength, SMALLEST_MAXIMUM_DATAGRAM_SIZE);
             // compute how many bytes were reserved to allow smooth retransmission
             // of packets
             int reserved = QuicPacketEncoder.computeMaxInitialPayloadSize(codingContext,
-                    packetNumber, tksize, connectionId.length(), peerConnId.length(),
+                    computePacketNumberLength(packetNumber,
+                            codingContext.largestAckedPN(PacketNumberSpace.INITIAL)),
+                    tksize, connectionId.length(), peerConnId.length(),
                     SMALLEST_MAXIMUM_DATAGRAM_SIZE) - maxPayloadSize;
             assert reserved >= 0 : "reserved is negative: " + reserved;
             if (debug.on()) {
@@ -3622,7 +3627,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             case APPLICATION -> QuicPacketEncoder.computeMaxOneRTTPayloadSize(
                         codingContext, newPacketNumber, dstIdLength, maxDatagramSize, largestAckedPN);
             case INITIAL -> QuicPacketEncoder.computeMaxInitialPayloadSize(
-                        codingContext, newPacketNumber, ((InitialPacket) packet).tokenLength(),
+                        codingContext, computePacketNumberLength(newPacketNumber,
+                                codingContext.largestAckedPN(PacketNumberSpace.INITIAL)),
+                        ((InitialPacket) packet).tokenLength(),
                         localConnectionId().length(), initialDstIdLength, maxDatagramSize);
             case HANDSHAKE -> QuicPacketEncoder.computeMaxHandshakePayloadSize(
                     codingContext, newPacketNumber, localConnectionId().length(),
