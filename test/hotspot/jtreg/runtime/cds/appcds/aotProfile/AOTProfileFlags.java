@@ -46,10 +46,6 @@ public class AOTProfileFlags {
     public static void main(String... args) throws Exception {
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j ++) {
-                if (i == 1 && j == 1) {
-                    // They are both on by default. No need to test this combination.
-                    break;
-                }
                 SimpleCDSAppTester.of("AOTProfileFlags" + i + "" + j)
                     .addVmArgs("-XX:+UnlockDiagnosticVMOptions",
                                "-XX:" + (i == 0 ? "-" : "+") + "AOTRecordTraining",
