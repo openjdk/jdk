@@ -26,8 +26,8 @@ package compiler.lib.template_framework;
 import java.util.List;
 
 /**
- * {@link Hook}s can be {@link #set} for a certain scope in a {@link Template}, and all nested
- * {@link Template}s in this scope, and then from within this scope, any {@link Template} can
+ * {@link Hook}s can be {@link #set} for a certain scope in a Template, and all nested
+ * Templates in this scope, and then from within this scope, any Template can
  * {@link #insert} code to where the {@link Hook} was {@link #set}. This can be useful to reach
  * "back" or to some outer scope, e.g. while generating code for a method, one can reach out
  * to the class scope to insert fields.
@@ -69,7 +69,7 @@ import java.util.List;
 public record Hook(String name) {
     /**
      * Set this {@link Hook} for the scope of the provided {@code 'tokens'}.
-     * From anywhere inside this scope, even in nested {@link Template}s, code can be
+     * From anywhere inside this scope, even in nested Templates, code can be
      * {@link #insert}ed back to the location where this {@link Hook} was {@link #set}.
      *
      * @param tokens A list of tokens, which have the same restrictions as {@link Template#body}.
@@ -81,9 +81,9 @@ public record Hook(String name) {
 
     /**
      * Inserts a {@link FilledTemplate} to the innermost location where this {@link Hook} was {@link #set}.
-     * This could be in the same {@link Template}, or one nested further out.
+     * This could be in the same Template, or one nested further out.
      *
-     * @param filledTemplate The {@link Template} with applied arguments to be inserted at the {@link Hook}.
+     * @param filledTemplate The Template with applied arguments to be inserted at the {@link Hook}.
      * @return The {@link Token} which when used inside a {@link Template#body} performs the code insertion into the {@link Hook}.
      */
     public Token insert(FilledTemplate filledTemplate) {

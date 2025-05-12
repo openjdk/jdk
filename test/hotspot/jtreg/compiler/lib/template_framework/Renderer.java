@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 
 /**
  * The {@link Renderer} class is used to keep track of the states during a nested
- * {@link Template} rendering. There can only be a single {@link Renderer} active
+ * Template rendering. There can only be a single {@link Renderer} active
  * at any point, since there are static methods that reference {@link Renderer#getCurrent}.
  *
  * The {@link Renderer} instance keeps track of the current frames,

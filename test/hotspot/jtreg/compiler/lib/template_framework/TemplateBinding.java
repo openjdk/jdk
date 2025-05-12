@@ -24,34 +24,37 @@
 package compiler.lib.template_framework;
 
 /**
- * To facilitate recursive uses of {@link Template}s, e.g. where a template uses
+ * To facilitate recursive uses of Templates, e.g. where a template uses
  * itself, where a template needs to be referenced before it is fully defined,
  * one can use the indirection of a {@link TemplateBinding}. The {@link TemplateBinding}
- * is allocated first without any {@link Template} bound to it yet. At this stage,
- * it can be used with {@link #get} inside a {@link Template}. Later, we can {@link #bind}
- * a {@link Template} to the binding, such that {@link #get} returns that bound
- * {@link Template}.
+ * is allocated first without any Template bound to it yet. At this stage,
+ * it can be used with {@link #get} inside a Template. Later, we can {@link #bind}
+ * a Template to the binding, such that {@link #get} returns that bound
+ * Template.
  *
  * @param <T> Type of the template.
  */
 public class TemplateBinding<T extends TemplateBinding.Bindable> {
     private T template = null;
 
+    /**
+     * A collection of Bindable types.
+     */
     public sealed interface Bindable permits UnfilledTemplate.OneArgs,
                                              UnfilledTemplate.TwoArgs,
                                              UnfilledTemplate.ThreeArgs,
                                              FilledTemplate.ZeroArgs {}
 
     /**
-     * Creates a new {@link TemplateBinding} that has no {@link Template} bound to it yet.
+     * Creates a new {@link TemplateBinding} that has no Template bound to it yet.
      */
     public TemplateBinding() {}
 
     /**
-     * Retrieve the {@link Template} that was previously bound to the binding.
+     * Retrieve the Template that was previously bound to the binding.
      *
-     * @return The {@link Template} that was previously bound with {@link #bind}.
-     * @throws RendererException if no {@link Template} was bound yet.
+     * @return The Template that was previously bound with {@link #bind}.
+     * @throws RendererException if no Template was bound yet.
      */
     public T get() {
         if (template == null) {
@@ -62,10 +65,10 @@ public class TemplateBinding<T extends TemplateBinding.Bindable> {
 
 
     /**
-     * Binds a {@link Template} for future reference using {@link #get}.
+     * Binds a Template for future reference using {@link #get}.
      *
-     * @param template The {@link Template} to be bound.
-     * @throws RendererException if a {@link Template} was already bound.
+     * @param template The Template to be bound.
+     * @throws RendererException if a Template was already bound.
      */
     public void bind(T template) {
          if (this.template != null) {

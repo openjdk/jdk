@@ -32,16 +32,16 @@ import java.util.List;
  * The {@link CodeFrame} represents a frame (i.e. scope) of code, appending {@link Code} to the {@code 'codeList'}
  * as {@link Token}s are rendered, and adding names to the {@link NameSet}s as they get defined by {@link Template#define}.
  * {@link Hook}s can be added to a frame, which allows code to be inserted at that location later.
- * When a {@link Hook} is {@link Hook#set}, this separates the {@link Template} into an outer and inner
+ * When a {@link Hook} is {@link Hook#set}, this separates the Template into an outer and inner
  * {@link CodeFrame}, ensuring that names that are {@link Template#defineName}'d inside the inner frame
  * are only available inside that frame.
  *
  * <p>
  * On the other hand, each {@link TemplateFrame} represents the frame (or scope) of exactly one use of a
- * {@link Template}.
+ * Template.
  *
  * <p>
- * For simple {@link Template} nesting, the {@link CodeFrame}s and {@link TemplateFrame}s overlap exactly.
+ * For simple Template nesting, the {@link CodeFrame}s and {@link TemplateFrame}s overlap exactly.
  * However, when using {@link Hook#insert}, we simply nest {@link TemplateFrame}s, going further "in",
  * but we jump to an outer {@link CodeFrame}, ensuring that we insert {@link Code} at the outer frame,
  * and operating on the names of the outer frame. Once the {@link Hook#insert}ion is complete, we jump
