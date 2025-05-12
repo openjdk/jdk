@@ -2878,7 +2878,7 @@ RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address ru
 
   __ mov(c_rarg0, rthread);
   BLOCK_COMMENT("call runtime_entry");
-  __ mov(rscratch1, runtime_entry);
+  __ lea(rscratch1, RuntimeAddress(runtime_entry));
   __ blr(rscratch1);
 
   // Generate oop map

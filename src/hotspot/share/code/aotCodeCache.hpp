@@ -44,22 +44,24 @@ class DbgStrings;
 enum class vmIntrinsicID : int;
 enum CompLevel : signed char;
 
+#define DO_AOTCODEENTRY_KIND(Fn) \
+  Fn(None) \
+  Fn(Adapter) \
+  Fn(SharedBlob) \
+  Fn(C1Blob) \
+  Fn(C2Blob) \
+
 // Descriptor of AOT Code Cache's entry
 class AOTCodeEntry {
 public:
-  enum Kind {
-    None    = 0,
-    First_kind = 1,
-    Adapter = 1,
-    SharedBlob = 2,
-    C1Blob = 3,
-    C2Blob = 4,
-    Last_kind = 4
+  enum Kind : s1 {
+#define DECL_KIND_ENUM(kind) kind,
+    DO_AOTCODEENTRY_KIND(DECL_KIND_ENUM)
+#undef DECL_KIND_ENUM
+    Kind_count
   };
 
 private:
-  static const char* _kind_string[Last_kind+1];
-
   AOTCodeEntry* _next;
   Kind   _kind;
   uint   _id;          // Adapter's id, vmIntrinsic::ID for stub or name's hash for nmethod
@@ -108,8 +110,7 @@ public:
   bool has_oop_maps() const { return _has_oop_maps; }
   address dumptime_content_start_addr() const { return _dumptime_content_start_addr; }
 
-  static const char* kind_string(Kind kind) { return _kind_string[(int)kind]; }
-  static bool is_valid_entry_kind(Kind kind) { return kind >= First_kind && kind <= Last_kind; }
+  static bool is_valid_entry_kind(Kind kind) { return kind > None && kind < Kind_count; }
   static bool is_blob(Kind kind) { return kind == SharedBlob || kind == C1Blob || kind == C2Blob; }
   static bool is_adapter(Kind kind) { return kind == Adapter; }
 };
@@ -165,6 +166,7 @@ class AOTCodeCache : public CHeapObj<mtCode> {
 protected:
   class Config {
     uint _compressedOopShift;
+    address _compressedOopBase;
     uint _compressedKlassShift;
     uint _contendedPaddingWidth;
     uint _objectAlignment;

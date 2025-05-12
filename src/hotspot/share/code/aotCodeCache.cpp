@@ -63,6 +63,12 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+const char* aot_code_entry_kind_name[] = {
+#define DECL_KIND_STRING(kind) XSTR(kind),
+  DO_AOTCODEENTRY_KIND(DECL_KIND_STRING)
+#undef DECL_KIND_STRING
+};
+
 static void report_load_failure() {
   if (AbortVMOnAOTCodeFailure) {
     vm_exit_during_initialization("Unable to use AOT Code Cache.", nullptr);
@@ -113,14 +119,6 @@ static uint32_t encode_id(AOTCodeEntry::Kind kind, int id) {
     return (int)SharedStubId::NUM_STUBIDS + COMPILER1_PRESENT((int)C1StubId::NUM_STUBIDS) + id;
   }
 }
-
-const char* AOTCodeEntry::_kind_string[] = {
-  "None",
-  "Adapter",
-  "SharedBlob",
-  "C1Blob",
-  "C2Blob"
-};
 
 static uint _max_aot_code_size = 0;
 uint AOTCodeCache::max_aot_code_size() {
@@ -357,6 +355,7 @@ void AOTCodeCache::Config::record() {
     _flags |= restrictContendedPadding;
   }
   _compressedOopShift    = CompressedOops::shift();
+  _compressedOopBase     = CompressedOops::base();
   _compressedKlassShift  = CompressedKlassPointers::shift();
   _contendedPaddingWidth = ContendedPaddingWidth;
   _objectAlignment       = ObjectAlignmentInBytes;
@@ -409,7 +408,7 @@ bool AOTCodeCache::Config::verify() const {
     return false;
   }
   if (_compressedOopShift != (uint)CompressedOops::shift()) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedOops::shift() = %d vs current %d", _compressedOopShift, CompressedOops::shift());
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with different CompressedOops::shift(): %d vs current %d", _compressedOopShift, CompressedOops::shift());
     return false;
   }
   if (_compressedKlassShift != (uint)CompressedKlassPointers::shift()) {
@@ -424,6 +423,13 @@ bool AOTCodeCache::Config::verify() const {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with ObjectAlignmentInBytes = %d vs current %d", _objectAlignment, ObjectAlignmentInBytes);
     return false;
   }
+
+  // This should be the last check as it only disables AOTStubCaching
+  if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
+    log_debug(aot, codecache, init)("AOTStubCaching is disabled: incompatible CompressedOops::base(): %p vs current %p", _compressedOopBase, CompressedOops::base());
+    AOTStubCaching = false;
+  }
+
   return true;
 }
 
@@ -761,13 +767,13 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   }
   assert(AOTCodeEntry::is_valid_entry_kind(entry_kind), "invalid entry_kind %d", entry_kind);
 
-  if (AOTCodeEntry::is_adapter(entry_kind) && !AOTAdapterCaching) {
+  if (AOTCodeEntry::is_adapter(entry_kind) && !is_dumping_adapters()) {
     return false;
   }
-  if (AOTCodeEntry::is_blob(entry_kind) && !AOTStubCaching) {
+  if (AOTCodeEntry::is_blob(entry_kind) && !is_dumping_stubs()) {
     return false;
   }
-  log_debug(aot, codecache, stubs)("Writing blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, AOTCodeEntry::kind_string(entry_kind));
+  log_debug(aot, codecache, stubs)("Writing blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
 
 #ifdef ASSERT
   LogStreamHandle(Trace, aot, codecache, stubs) log;
@@ -847,7 +853,7 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   AOTCodeEntry* entry = new(cache) AOTCodeEntry(entry_kind, encode_id(entry_kind, id),
                                                 entry_position, entry_size, name_offset, name_size,
                                                 blob_offset, has_oop_maps, blob.content_begin());
-  log_debug(aot, codecache, stubs)("Wrote code blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, AOTCodeEntry::kind_string(entry_kind));
+  log_debug(aot, codecache, stubs)("Wrote code blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
   return true;
 }
 
@@ -858,13 +864,13 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
   }
   assert(AOTCodeEntry::is_valid_entry_kind(entry_kind), "invalid entry_kind %d", entry_kind);
 
-  if (AOTCodeEntry::is_adapter(entry_kind) && !AOTAdapterCaching) {
+  if (AOTCodeEntry::is_adapter(entry_kind) && !is_using_adapters()) {
     return nullptr;
   }
-  if (AOTCodeEntry::is_blob(entry_kind) && !AOTStubCaching) {
+  if (AOTCodeEntry::is_blob(entry_kind) && !is_using_stubs()) {
     return nullptr;
   }
-  log_debug(aot, codecache, stubs)("Reading blob '%s' (id=%u, kind=%s) from AOT Code Cache", name, id, AOTCodeEntry::kind_string(entry_kind));
+  log_debug(aot, codecache, stubs)("Reading blob '%s' (id=%u, kind=%s) from AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
 
   AOTCodeEntry* entry = cache->find_entry(entry_kind, encode_id(entry_kind, id));
   if (entry == nullptr) {
@@ -873,7 +879,7 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
   AOTCodeReader reader(cache, entry);
   CodeBlob* blob = reader.compile_code_blob(name, entry_offset_count, entry_offsets);
 
-  log_debug(aot, codecache, stubs)("Read blob '%s' (id=%u, kind=%s) from AOT Code Cache", name, id, AOTCodeEntry::kind_string(entry_kind));
+  log_debug(aot, codecache, stubs)("Read blob '%s' (id=%u, kind=%s) from AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
   return blob;
 }
 
