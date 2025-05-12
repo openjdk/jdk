@@ -40,6 +40,7 @@ import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.LinuxHelper;
 import static jdk.jpackage.test.TKit.assertTrue;
 import static jdk.jpackage.test.TKit.assertFalse;
+import static jdk.internal.util.OperatingSystem.LINUX;
 
 /**
  * Test --runtime-image parameter.
@@ -81,22 +82,22 @@ public class RuntimePackageTest {
 
     @Test
     public static void test() {
-        init(PackageType.NATIVE).run();
+        init().run();
     }
 
-    @Test
+    @Test(ifOS = LINUX)
     @Parameter("/usr")
     @Parameter("/usr/lib/Java")
     public static void testUsrInstallDir(String installDir) {
-        init(PackageType.LINUX)
-        .addInitializer(cmd -> cmd.addArguments("--install-dir", "/usr"))
+        init()
+        .addInitializer(cmd -> cmd.addArguments("--install-dir", installDir))
         .run();
     }
 
     @Test
     public static void testName() {
         // Test that jpackage can derive package name from the path to runtime image.
-        init(PackageType.NATIVE)
+        init()
         .addInitializer(cmd -> cmd.removeArgumentWithValue("--name"))
         // Don't attempt to install this package as it may have an odd name derived from
         // the runtime image path. Say, on Linux for `--runtime-image foo/bar/sed`
@@ -105,9 +106,8 @@ public class RuntimePackageTest {
         .run(Action.CREATE_AND_UNPACK);
     }
 
-    private static PackageTest init(Set<PackageType> types) {
+    private static PackageTest init() {
         return new PackageTest()
-        .forTypes(types)
         .addInitializer(cmd -> {
             final Path runtimeImageDir;
 
@@ -166,8 +166,7 @@ public class RuntimePackageTest {
                         "Check the package doesn't deliver [%s] copyright file",
                         copyright));
             }
-        })
-        .forTypes(types);
+        });
     }
 
     private static Set<Path> listFiles(Path root) throws IOException {

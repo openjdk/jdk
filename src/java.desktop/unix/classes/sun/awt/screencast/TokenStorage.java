@@ -176,7 +176,7 @@ final class TokenStorage {
         return false;
     }
 
-    private static class WatcherThread extends Thread {
+    private static final class WatcherThread extends Thread {
         private final WatchService watcher;
 
         public WatcherThread(WatchService watchService) {
