@@ -407,34 +407,47 @@ public abstract class Reader implements Readable, Closeable {
     }
 
     /**
-     * Reads all remaining characters as lines of text.
-     * <p>
-     * A <i>line</i> is either a sequence of zero or more characters
+     * Reads all remaining characters as lines of text. This method blocks until
+     * all remaining characters have been read and end of stream is detected,
+     * or an exception is thrown. This method does not close the reader.
+     *
+     * <p> When this reader reaches the end of the stream, further
+     * invocations of this method will return an empty list.
+     *
+     * <p> A <i>line</i> is either a sequence of zero or more characters
      * followed by a line terminator, or it is a sequence of one or
      * more characters followed by the end of the stream.
      * A line does not include the line terminator.
-     * <p>
-     * A <i>line terminator</i> is one of the following:
+     *
+     * <p> A <i>line terminator</i> is one of the following:
      * a line feed character {@code "\n"} (U+000A),
      * a carriage return character {@code "\r"} (U+000D),
      * or a carriage return followed immediately by a line feed
      * {@code "\r\n"} (U+000D U+000A).
      *
-     * <p>  The method does not close this reader nor its underlying stream.
-     * If an I/O error occurs, the states of the reader and its underlying
-     * stream are unspecified.
+     * <p> The behavior for the case where the reader is
+     * <i>asynchronously closed</i>, or the thread interrupted during the
+     * read, is highly input stream specific, and therefore not specified.
+     *
+     * <p> If an I/O error occurs reading from the stream, then it
+     * may do so after some, but not all, characters have been read.
+     * Consequently the stream may not be at end of stream and may
+     * be in an inconsistent state. It is strongly recommended that the reader
+     * be promptly closed if an I/O error occurs.
      *
      * @apiNote
      * This method is intended for simple cases where it is convenient
      * to read all remaining characters in a single operation. It is not
-     * intended for reading a large number of characters, for example, greater than 1G.
+     * intended for reading a large number of characters, for example,
+     * greater than {@code 1G}.
      *
      * @return     the remaining characters as lines of text stored in an
-     *             unmodifiable {@code List} of strings in the order they are read
+     *             unmodifiable {@code List} of {@code String}s in the order
+     *             they are read
      *
      * @throws     IOException  If an I/O error occurs
-     * @throws     OutOfMemoryError  If the number of remaining characters exceeds the
-     *              implementation limit for String.
+     * @throws     OutOfMemoryError  If the number of remaining characters
+     *             exceeds the implementation limit for {@code String}.
      *
      * @see String#lines
      * @see #readAllAsString
@@ -447,26 +460,37 @@ public abstract class Reader implements Readable, Closeable {
     }
 
     /**
-     * Reads all remaining characters into a string.
+     * Reads all remaining characters into a string. This method blocks until
+     * all remaining characters including all line separators have been read
+     * and end of stream is detected, or an exception is thrown. The resulting
+     * string will contain line separators as they appear in the stream. This
+     * method does not close the reader.
      *
-     * <p> This method reads all remaining characters including all line separators
-     * to the end of the stream. The resulting string will contain line
-     * separators as they appear in the stream.
+     * <p> When this reader reaches the end of the stream, further
+     * invocations of this method will return an empty string.
      *
-     * <p>  The method does not close this reader nor its underlying stream.
-     * If an I/O error occurs, the states of the reader and its underlying
-     * stream are unspecified.
+     * <p> The behavior for the case where the reader
+     * is <i>asynchronously closed</i>, or the thread interrupted during the
+     * read, is highly input stream specific, and therefore not specified.
+     *
+     * <p> If an I/O error occurs reading from the stream, then it
+     * may do so after some, but not all, characters have been read.
+     * Consequently the stream may not be at end of stream and may
+     * be in an inconsistent state. It is strongly recommended that the reader
+     * be promptly closed if an I/O error occurs.
      *
      * @apiNote
      * This method is intended for simple cases where it is appropriate and
-     * convenient to read all remaining characters into a String. It is not
-     * intended for reading a large number of characters, for example, greater than 1G.
+     * convenient to read all remaining characters into a {@code String}. It
+     * is not intended for reading a large number of characters, for example,
+     * greater than {@code 1G}.
      *
-     * @return     a String containing all remaining characters
+     * @return     a {@code String} containing all remaining characters
      *
      * @throws     IOException       If an I/O error occurs
-     * @throws     OutOfMemoryError  If the number of remaining characters exceeds the
-     *              implementation limit for String.
+     * @throws     OutOfMemoryError  If the number of remaining characters
+     *                               exceeds the implementation limit for
+     *                               {@code String}.
      *
      * @see #readAllLines
      * @see java.nio.file.Files#readString
