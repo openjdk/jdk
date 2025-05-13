@@ -95,12 +95,12 @@ void PhaseCFG::move_node_and_its_projections_to_block(Node* n, Block* b) {
 void PhaseCFG::ensure_node_is_at_block_or_above(Node* n, Block* b) {
   Block* current = get_block_for_node(n);
   if (current->dominates(b)) {
-    return;
+    return; // n is already placed above b, do nothing.
   }
-  assert(b->dominates(current), "sanity check: temp node placement");
   // We only expect nodes without further inputs, like MachTemp or load Base.
   assert(n->req() == 0 || (n->req() == 1 && n->in(0) == (Node*)C->root()),
          "need for recursive hoisting not expected");
+  assert(b->dominates(current), "precondition: can only move n to b if b dominates n");
   move_node_and_its_projections_to_block(n, b);
 }
 
