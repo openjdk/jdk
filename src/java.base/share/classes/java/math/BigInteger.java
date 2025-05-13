@@ -1767,7 +1767,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     private static BigInteger multiplyByInt(int[] x, int y, int sign) {
-        if (Integer.bitCount(y) == 1) {
+        if (Integer.lowestOneBit(y) == y) {
             return new BigInteger(shiftLeft(x,Integer.numberOfTrailingZeros(y)), sign);
         }
         int xlen = x.length;
