@@ -354,10 +354,9 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     // *** Indexed methods ***
 
     /**
-     * Returns the element at the specified position in this deque.
+     * {@return the element at the specified position in this deque}
      *
      * @param index index of the element to return
-     * @return the element at the specified position in this deque
      * @throws IndexOutOfBoundsException if the index is out of range
      *         ({@code index < 0 || index >= size()})
      */
