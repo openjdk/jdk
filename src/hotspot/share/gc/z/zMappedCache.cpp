@@ -303,7 +303,7 @@ ZVirtualMemory ZMappedCache::remove_vmem(ZMappedCacheEntry* const entry, size_t 
 
   // Update statistics
   _size -= to_remove;
-  _min_last_uncommit_cycle = MIN2(_size, _min_last_uncommit_cycle);
+  _min_size_watermark = MIN2(_size, _min_size_watermark);
 
   postcond(to_remove == vmem.size());
   return vmem;
@@ -452,7 +452,7 @@ ZMappedCache::ZMappedCache()
     _entry_count(0),
     _size_class_lists{},
     _size(0),
-    _min_last_uncommit_cycle(_size),
+    _min_size_watermark(_size),
     _removed_last_uncommit_cycle(0) {}
 
 void ZMappedCache::insert(const ZVirtualMemory& vmem) {
@@ -556,16 +556,16 @@ size_t ZMappedCache::reset_uncommit_cycle() {
   const size_t old_min = _min_last_uncommit_cycle;
 
   _removed_last_uncommit_cycle = 0;
-  _min_last_uncommit_cycle = _size;
+  _min_size_watermark = _size;
 
   return old_min;
 }
 
 size_t ZMappedCache::remove_for_uncommit(size_t max_size, ZArray<ZVirtualMemory>* out) {
   const size_t remove_allowed =
-      _min_last_uncommit_cycle < _removed_last_uncommit_cycle
+      _min_size_watermark < _removed_last_uncommit_cycle
           ? 0
-          : _min_last_uncommit_cycle - _removed_last_uncommit_cycle;
+          : _min_size_watermark - _removed_last_uncommit_cycle;
   const size_t size = MIN2(remove_allowed, max_size);
 
   if (size == 0) {

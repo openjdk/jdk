@@ -63,7 +63,7 @@ private:
   size_t        _entry_count;
   SizeClassList _size_class_lists[NumSizeClasses];
   size_t        _size;
-  size_t        _min_last_uncommit_cycle;
+  size_t        _min_size_watermark;
   size_t        _removed_last_uncommit_cycle;
 
   static int size_class_index(size_t size);
