@@ -95,7 +95,7 @@ public abstract class ClassValue<T> {
      * <li>The most recent {@link #remove remove} call, if it exists, does not
      * happen-before (JLS {@jls 17.4.5}) the finish of the {@code computeValue}
      * that computed the value to associate.  A new invocation to {@code
-     * computeValue}, which that {@code remove} call happens-before, happens to
+     * computeValue}, which that {@code remove} call happens-before, will
      * re-establish this happens-before relationship.</li>
      * <li>Otherwise, this value is successfully associated and returned.</li>
      * </ul>
@@ -345,10 +345,10 @@ public abstract class ClassValue<T> {
         }
 
         // Arguments are intentionally nullable, to allow initial tokens
-        static boolean areCompatible(RemovalToken current, RemovalToken original) {
+        private static boolean allowsAssociation(RemovalToken current, RemovalToken start) {
             // No removal token after the initial can be null
-            assert current != null || original == null : current + " : " + original;
-            return current == original || current.actorId == Thread.currentThread().threadId();
+            assert current != null || start == null : current + " : " + start;
+            return current == start || current.actorId == Thread.currentThread().threadId();
         }
     }
 
@@ -486,7 +486,7 @@ public abstract class ClassValue<T> {
             if (item instanceof Entry)
                 return item; // value already associated
             var currentToken = (RemovalToken) item;
-            if (RemovalToken.areCompatible(currentToken, startToken)) {
+            if (RemovalToken.allowsAssociation(currentToken, startToken)) {
                 var entry = makeEntry(classValue.version, value);
                 put(classValue.identity, entry);
                 // Add to the cache, to enable the fast path, next time.
