@@ -31,6 +31,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "workerThread.hpp"
 
 #define TERMINATION_EVENT_NAME_PREFIX_ASSERT(name) \
 assert(name == nullptr || strncmp(name, TERMINATION_EVENT_NAME_PREFIX, strlen(TERMINATION_EVENT_NAME_PREFIX)) == 0, "Must be")
