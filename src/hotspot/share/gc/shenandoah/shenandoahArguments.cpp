@@ -187,16 +187,7 @@ void ShenandoahArguments::initialize() {
   if (strcmp(ShenandoahGCMode, "generational") && FLAG_IS_DEFAULT(TLABAllocationWeight)) {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
   }
-#ifdef KELVIN_DEPRECATE
-  // Deprecating this so we can use the default value of 35, which is
-  // what G1 uses.  Seems to deliver very slightly better performance
-  // at most percentiles, even though GenShen GC is far less frequent
-  // than G1.
-  else {
-    // Generational Shenandoah runs GC more frequently than traditional Shenandoah, but far less frequently than G1 GC
-    FLAG_SET_DEFAULT(TLABAllocationWeight, 75);
-  }
-#endif
+  // In generational mode, let TLABAllocationWeight keeps its default value of 35.
 
   if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
     vm_exit_during_initialization(
