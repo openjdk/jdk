@@ -25,6 +25,7 @@
  * @test
  * @summary Test the native process builder API.
  * @library /test/lib
+ * @requires !jdk.static
  * @run main/native TestNativeProcessBuilder
  */
 
