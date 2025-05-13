@@ -354,6 +354,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       if (mach->in(j)->is_MachTemp()) {
         assert(mach->in(j)->outcnt() == 1, "MachTemp nodes should not be shared");
         // Ignore MachTemp inputs, they can be safely hoisted with the candidate.
+        // MachTemp nodes have no inputs themselves and are only used to reserve
+        // a scratch register for the implementation of the node (e.g. in
+        // late-expanded GC barriers).
         continue;
       }
       // Block of memory-op input
