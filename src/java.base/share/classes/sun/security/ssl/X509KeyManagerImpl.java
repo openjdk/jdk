@@ -231,6 +231,28 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
         return SSLAlgorithmConstraints.forEngine(engine, true);
     }
 
+    // Gets algorithm constraints of QUIC TLS engine.
+    private AlgorithmConstraints getAlgorithmConstraints(QuicTLSEngineImpl engine) {
+        // we don't expect the engine to be null
+        Objects.requireNonNull(engine, "QuicTLSEngine");
+        SSLSession session = engine.getHandshakeSession();
+        if (session == null) {
+            return SSLAlgorithmConstraints.forQUIC(engine, true);
+        }
+        // QUIC TLS version is mandated to be always TLSv1.3
+        if (!ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
+            throw new IllegalStateException("unexpected protocol version "
+                    + session.getProtocol() + " in handshake session");
+        }
+        String[] peerSupportedSignAlgs = null;
+        if (session instanceof ExtendedSSLSession extSession) {
+            peerSupportedSignAlgs =
+                    extSession.getPeerSupportedSignatureAlgorithms();
+        }
+        return SSLAlgorithmConstraints.forQUIC(engine,
+                peerSupportedSignAlgs, true);
+    }
+
     // we construct the alias we return to JSSE as seen in the code below
     // a unique id is included to allow us to reliably cache entries
     // between the calls to getCertificateChain() and getPrivateKey()
@@ -365,17 +387,18 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
 
     String chooseServerAlias(String keyType,
             X500Principal[] x500Principals,
-            AlgorithmConstraints algorithmConstraints,
-            List<SNIServerName> requestedServerNames) {
+            QuicTLSEngineImpl quicTLSEngine) {
         return chooseAlias(getKeyTypes(keyType), x500Principals,
-                CheckType.SERVER, algorithmConstraints, requestedServerNames,
+                CheckType.SERVER,
+                getAlgorithmConstraints(quicTLSEngine),
+                X509TrustManagerImpl.getRequestedServerNames(quicTLSEngine),
                 "HTTPS");
     }
 
     String chooseClientAlias(String[] keyTypes, Principal[] issuers,
-            AlgorithmConstraints algorithmConstraints) {
+            QuicTLSEngineImpl quicTLSEngine) {
         return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
-                algorithmConstraints);
+                getAlgorithmConstraints(quicTLSEngine));
     }
 
     private String chooseAlias(List<KeyType> keyTypeList, Principal[] issuers,

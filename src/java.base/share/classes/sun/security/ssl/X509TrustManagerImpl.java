@@ -32,6 +32,8 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.net.ssl.*;
+
+import jdk.internal.net.quic.QuicTLSEngine;
 import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
 import sun.security.validator.*;
@@ -406,6 +408,13 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             return getRequestedServerNames(engine.getHandshakeSession());
         }
 
+        return Collections.emptyList();
+    }
+
+    static List<SNIServerName> getRequestedServerNames(QuicTLSEngineImpl engine) {
+        if (engine != null) {
+            return getRequestedServerNames(engine.getHandshakeSession());
+        }
         return Collections.emptyList();
     }
 

@@ -218,12 +218,28 @@ enum X509Authentication implements SSLAuthentication {
                     chc.peerSupportedAuthorities == null ? null :
                             chc.peerSupportedAuthorities.clone(),
                     engine);
-            // TODO should we have a method that can take QuicTLSEngine?
-        } else if (km instanceof X509KeyManagerImpl xkm) {
-            clientAlias = xkm.chooseClientAlias(keyTypes,
-                    chc.peerSupportedAuthorities == null ? null :
-                            chc.peerSupportedAuthorities.clone(),
-                    chc.algorithmConstraints);
+        } else if (chc.conContext.transport instanceof QuicTLSEngineImpl quicEngineImpl) {
+            // TODO in future, when QuicTLSEngine might become a public exported interface
+            // we should have a method on javax.net.ssl.X509ExtendedKeyManager that
+            // takes QuicTLSEngine.
+            // For now, in context of QUIC, for KeyManager implementations other than
+            // sun.security.ssl.X509KeyManagerImpl we don't take into account
+            // any algorithm constraints when choosing the client alias and
+            // just call the functionally limited
+            // javax.net.ssl.X509KeyManager.chooseClientAlias(...)
+            if (km instanceof X509KeyManagerImpl xkm) {
+                clientAlias = xkm.chooseClientAlias(keyTypes,
+                        chc.peerSupportedAuthorities == null
+                                ? null
+                                : chc.peerSupportedAuthorities.clone(),
+                        quicEngineImpl);
+            } else {
+                clientAlias = km.chooseClientAlias(keyTypes,
+                        chc.peerSupportedAuthorities == null
+                                ? null
+                                : chc.peerSupportedAuthorities.clone(),
+                        null);
+            }
         } else {
             clientAlias = km.chooseClientAlias(keyTypes,
                     chc.peerSupportedAuthorities == null ? null :
@@ -301,13 +317,28 @@ enum X509Authentication implements SSLAuthentication {
                         shc.peerSupportedAuthorities == null ? null :
                                 shc.peerSupportedAuthorities.clone(),
                         engine);
-                // TODO should we have a method that can take QuicTLSEngine?
-            } else if (km instanceof X509KeyManagerImpl xkm) {
-                serverAlias = xkm.chooseServerAlias(keyType,
-                        shc.peerSupportedAuthorities == null ? null :
-                                shc.peerSupportedAuthorities.clone(),
-                        shc.algorithmConstraints,
-                        shc.requestedServerNames);
+            } else if (shc.conContext.transport instanceof QuicTLSEngineImpl quicEngineImpl) {
+                // TODO in future, when QuicTLSEngine might become a public exported interface
+                // we should have a method on javax.net.ssl.X509ExtendedKeyManager that
+                // takes QuicTLSEngine.
+                // For now, in context of QUIC, for KeyManager implementations other than
+                // sun.security.ssl.X509KeyManagerImpl we don't take into account
+                // any algorithm constraints when choosing the server alias
+                // and just call the functionally limited
+                // javax.net.ssl.X509KeyManager.chooseServerAlias(...)
+                if (km instanceof X509KeyManagerImpl xkm) {
+                    serverAlias = xkm.chooseServerAlias(keyType,
+                            shc.peerSupportedAuthorities == null
+                                    ? null
+                                    : shc.peerSupportedAuthorities.clone(),
+                            quicEngineImpl);
+                } else {
+                    serverAlias = km.chooseServerAlias(keyType,
+                            shc.peerSupportedAuthorities == null
+                                    ? null
+                                    : shc.peerSupportedAuthorities.clone(),
+                            null);
+                }
             } else {
                 serverAlias = km.chooseServerAlias(keyType,
                         shc.peerSupportedAuthorities == null ? null :
