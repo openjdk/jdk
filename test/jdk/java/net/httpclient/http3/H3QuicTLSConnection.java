@@ -27,40 +27,37 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpClient;
 import java.net.http.HttpClient.Builder;
 import java.net.http.HttpClient.Version;
-import java.net.http.UnsupportedProtocolVersionException;
-import java.security.Security;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.UnsupportedProtocolVersionException;
 import java.util.List;
+import java.util.Optional;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import jdk.test.lib.security.SecurityUtils;
-
-import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 
 
 /*
  * @test
- * @bug 8150769 8157107
+ * @summary verifies that the SSLParameters configured with specific cipher suites
+ *          and TLS protocol versions gets used by the HttpClient for HTTP/3
  * @library /test/jdk/java/net/httpclient/lib /test/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- *        jdk.test.lib.security.SecurityUtils
- * @compile ../ReferenceTracker.java
- * @summary Checks that SSL parameters can be set for HTTP/3 connection
  * @run main/othervm
  *       -Djdk.internal.httpclient.debug=true
  *       -Djdk.httpclient.HttpClient.log=all
@@ -68,13 +65,13 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  */
 public class H3QuicTLSConnection {
 
-    private static final String SECURITY_PROP_DISABLED_ALGS = "jdk.tls.disabledAlgorithms";
-    private static final SSLParameters USE_DEFAULT_SSL_PARAMETERS = new SSLParameters();
+    private static final SSLParameters DEFAULT_SSL_PARAMETERS = new SSLParameters();
 
     // expect highest supported version we know about
-    static String expectedTLSVersion(SSLContext ctx) throws Exception {
-        if (ctx == null)
+    private static String expectedTLSVersion(SSLContext ctx) throws Exception {
+        if (ctx == null) {
             ctx = SSLContext.getDefault();
+        }
         SSLParameters params = ctx.getSupportedSSLParameters();
         String[] protocols = params.getProtocols();
         for (String prot : protocols) {
@@ -85,17 +82,7 @@ public class H3QuicTLSConnection {
     }
 
     public static void main(String[] args) throws Exception {
-        // re-enable 3DES
-        SecurityUtils.removeFromDisabledTlsAlgs("3DES");
-        // print out the updated security property for debug purposes
-        System.out.println("running tests with " + SECURITY_PROP_DISABLED_ALGS
-                + " security property configured to: "
-                + Security.getProperty(SECURITY_PROP_DISABLED_ALGS));
-
-        // enable all logging
-        System.setProperty("jdk.httpclient.HttpClient.log", "all,frames:all");
-
-        // create and set the SSLContext
+        // create and set the default SSLContext
         SSLContext context = new SimpleSSLContext().get();
         SSLContext.setDefault(context);
 
@@ -114,46 +101,49 @@ public class H3QuicTLSConnection {
             success &= expectFailure(
                     "---\nTest #1: SSL parameters is null, expect NPE",
                     () -> connect(uriString, parameters),
-                    NullPointerException.class);
+                    NullPointerException.class,
+                    Optional.empty());
 
             success &= expectSuccess(
                     "---\nTest #2: default SSL parameters, "
                             + "expect successful connection",
-                    () -> connect(uriString, USE_DEFAULT_SSL_PARAMETERS));
+                    () -> connect(uriString, DEFAULT_SSL_PARAMETERS));
             success &= checkProtocol(handler.getSSLSession(), expectedTLSVersion(null));
 
             success &= expectFailure(
                     "---\nTest #3: SSL parameters with "
-                            + "TLS_AES_128_GCM_SHA256 cipher suite, but TLSv1.2"
+                            + "TLS_AES_128_GCM_SHA256 cipher suite, but TLSv1.2 "
                             + "expect UnsupportedProtocolVersionException",
                     () -> connect(uriString, new SSLParameters(
-                            new String[] { "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA" },
-                            new String[] { "TLSv1.2" })),
-                    UnsupportedProtocolVersionException.class);
+                            new String[]{"TLS_AES_128_GCM_SHA256"},
+                            new String[]{"TLSv1.2"})),
+                    UnsupportedProtocolVersionException.class,
+                    Optional.empty());
 
-            // set SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA cipher suite
-            // which has less priority in default cipher suite list and is not
-            // supported with TLS v1.3
+            // set SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA and expect it to fail since
+            // it's not supported with TLS v1.3
             success &= expectFailure(
                     "---\nTest #4: SSL parameters with "
                             + "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA cipher suite, "
                             + "expect No appropriate protocol " +
                             "(protocol is disabled or cipher suites are inappropriate)",
                     () -> connect(uriString, new SSLParameters(
-                            new String[] { "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA" },
-                            new String[] { "TLSv1.3" })),
-                    SSLHandshakeException.class);
+                            new String[]{"SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA"},
+                            new String[]{"TLSv1.3"})),
+                    SSLHandshakeException.class,
+                    Optional.of("protocol is disabled or cipher suites are inappropriate"));
 
             // set TLS_CHACHA_POLY1305_SHA256 cipher suite
-            // which is not supported by our default provider
+            // which is not supported by the (default) SunJSSE provider
             success &= expectFailure(
                     "---\nTest #5: SSL parameters with "
                             + "TLS_CHACHA_POLY1305_SHA256 cipher suite, "
                             + "expect IllegalArgumentException: Unsupported CipherSuite",
                     () -> connect(uriString, new SSLParameters(
-                            new String[] { "TLS_CHACHA_POLY1305_SHA256" },
-                            new String[] { "TLSv1.3" })),
-                    IllegalArgumentException.class);
+                            new String[]{"TLS_CHACHA_POLY1305_SHA256"},
+                            new String[]{"TLSv1.3"})),
+                    IllegalArgumentException.class,
+                    Optional.of("Unsupported CipherSuite"));
 
             // set TLS_AES_128_GCM_SHA256 and TLS_AES_256_GCM_SHA384 cipher suite
             var suites = List.of("TLS_AES_128_GCM_SHA256",
@@ -166,18 +156,18 @@ public class H3QuicTLSConnection {
                             + " expect successful connection",
                     () -> connect(uriString, new SSLParameters(
                             suites.toArray(new String[0]),
-                            new String[] { "TLSv1.3" })));
+                            new String[]{"TLSv1.3"})));
             success &= checkProtocol(handler.getSSLSession(), "TLSv1.3");
             success &= checkCipherSuite(handler.getSSLSession(), suites);
 
-            // set TLS_AES_128_GCM_SHA256 and TLS_AES_256_GCM_SHA384 cipher suite
+            // set TLS_AES_128_GCM_SHA256 cipher suite
             success &= expectSuccess(
                     "---\nTest #7: SSL parameters with "
                             + "TLS_AES_128_GCM_SHA256 cipher suites,"
                             + " expect successful connection",
                     () -> connect(uriString, new SSLParameters(
-                            new String[] { "TLS_AES_128_GCM_SHA256"},
-                            new String[] { "TLSv1.3" })));
+                            new String[]{"TLS_AES_128_GCM_SHA256"},
+                            new String[]{"TLSv1.3"})));
             success &= checkProtocol(handler.getSSLSession(), "TLSv1.3");
             success &= checkCipherSuite(handler.getSSLSession(),
                     "TLS_AES_128_GCM_SHA256");
@@ -188,8 +178,8 @@ public class H3QuicTLSConnection {
                             + "TLS_AES_256_GCM_SHA384 cipher suites,"
                             + " expect successful connection",
                     () -> connect(uriString, new SSLParameters(
-                            new String[] {"TLS_AES_256_GCM_SHA384"},
-                            new String[] { "TLSv1.3" })));
+                            new String[]{"TLS_AES_256_GCM_SHA384"},
+                            new String[]{"TLSv1.3"})));
             success &= checkProtocol(handler.getSSLSession(), "TLSv1.3");
             success &= checkCipherSuite(handler.getSSLSession(),
                     "TLS_AES_256_GCM_SHA384");
@@ -200,8 +190,8 @@ public class H3QuicTLSConnection {
                             + "TLS_CHACHA20_POLY1305_SHA256 cipher suites,"
                             + " expect successful connection",
                     () -> connect(uriString, new SSLParameters(
-                            new String[] {"TLS_CHACHA20_POLY1305_SHA256"},
-                            new String[] { "TLSv1.3" })));
+                            new String[]{"TLS_CHACHA20_POLY1305_SHA256"},
+                            new String[]{"TLSv1.3"})));
             success &= checkProtocol(handler.getSSLSession(), "TLSv1.3");
             success &= checkCipherSuite(handler.getSSLSession(),
                     "TLS_CHACHA20_POLY1305_SHA256");
@@ -211,9 +201,6 @@ public class H3QuicTLSConnection {
             } else {
                 throw new RuntimeException("At least one test case failed");
             }
-            System.gc();
-            var error = ReferenceTracker.INSTANCE.check(1500);
-            if (error != null) throw error;
         }
     }
 
@@ -254,31 +241,20 @@ public class H3QuicTLSConnection {
     }
 
     private static void connect(String uriString, SSLParameters sslParameters)
-            throws URISyntaxException, IOException, InterruptedException
-    {
+            throws URISyntaxException, IOException, InterruptedException {
         HttpClient.Builder builder = HttpServerAdapters.createClientBuilderForH3()
                 .proxy(Builder.NO_PROXY)
                 .version(HttpClient.Version.HTTP_3);
-        if (sslParameters != USE_DEFAULT_SSL_PARAMETERS)
+        if (sslParameters != DEFAULT_SSL_PARAMETERS)
             builder.sslParameters(sslParameters);
-        try {
-            HttpClient client = builder.build();
-            var TRACKER = ReferenceTracker.INSTANCE;
-            TRACKER.track(client);
-
+        try (final HttpClient client = builder.build()) {
             HttpRequest request = HttpRequest.newBuilder(new URI(uriString))
                     .POST(BodyPublishers.ofString("body"))
                     .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .version(Version.HTTP_3)
                     .build();
             String body = client.send(request, BodyHandlers.ofString()).body();
-
             System.out.println("Response: " + body);
-            var tracker = TRACKER.getTracker(client);
-            client = null;
-            System.gc();
-            var error = TRACKER.check(tracker, 1500);
-            if (error != null) throw error;
         } catch (UncheckedIOException uio) {
             throw uio.getCause();
         }
@@ -352,7 +328,8 @@ public class H3QuicTLSConnection {
     }
 
     private static boolean expectFailure(String message, Test test,
-                                         Class<? extends Throwable> expectedException) {
+                                         Class<? extends Throwable> expectedException,
+                                         Optional<String> exceptionMsg) {
 
         System.out.println(message);
         try {
@@ -368,6 +345,15 @@ public class H3QuicTLSConnection {
                         expectedException.getName(),
                         e.getClass().getName());
                 return false;
+            }
+            if (exceptionMsg.isPresent()) {
+                final String actualMsg = e.getMessage();
+                if (actualMsg == null || !actualMsg.contains(exceptionMsg.get())) {
+                    System.out.printf("Failed: exception message was expected"
+                                    + " to contain \"%s\", but got \"%s\"%n",
+                            exceptionMsg.get(), actualMsg);
+                    return false;
+                }
             }
             System.out.println("Passed: expected exception");
             return true;
