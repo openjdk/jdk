@@ -721,6 +721,7 @@ endef
 # Parameter 1 is the name of the rule.
 #
 # Remaining parameters are named arguments.
+#   TRAINING    The AOT training mode: onestep or twostep
 #   VM_OPTIONS  List of JVM arguments to use when creating AOT cache
 #
 #  After calling this, the following variables are defined
@@ -749,7 +750,7 @@ define SetupAOTBody
   $$($1_AOT_JDK_CACHE): $$(JDK_IMAGE_DIR)/release
 	$$(call MakeDir, $$($1_AOT_JDK_OUTPUT_DIR))
 
-  ifeq ($$(JTREG_AOT_JDK), onestep)
+  ifeq ($$($1_TRAINING), onestep)
 
 	$$(call LogWarn, AOT: Create AOT cache $$($1_AOT_JDK_CACHE) in one step with flags: $$($1_VM_OPTIONS)) \
 	$$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
@@ -847,7 +848,7 @@ define SetupRunJtregTestBody
   JTREG_RETRY_COUNT ?= 0
   JTREG_REPEAT_COUNT ?= 0
   JTREG_REPORT ?= files
-  JTREG_AOT_JDK ?= false
+  JTREG_AOT_JDK ?= none
 
   ifneq ($$(JTREG_RETRY_COUNT), 0)
     ifneq ($$(JTREG_REPEAT_COUNT), 0)
@@ -989,7 +990,9 @@ define SetupRunJtregTestBody
 
   ifneq ($$(filter $$(JTREG_AOT_JDK), onestep twostep), )
     $$(call LogWarn, Add AOT target for $1)
-    $$(eval $$(call SetupAOT, $1, VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
+    $$(eval $$(call SetupAOT, $1, \
+        TRAINING := $$(JTREG_AOT_JDK), \
+        VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
     $$(call LogWarn, AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
     $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:AOTCache="$$($1_AOT_JDK_CACHE)"
   endif
