@@ -123,7 +123,7 @@ public abstract class ClassValue<T> {
      * This method first performs a read-only access, and returns the associated
      * value if it exists.  Otherwise, this method tries to associate a value
      * from a {@link #computeValue computeValue} invocation until the associated
-     * value exists, which may be from another thread.
+     * value exists, which could be associated by a competing thread.
      * <p>
      * This method may throw an exception from a {@code computeValue} invocation.
      * In this case, no association happens.
@@ -344,7 +344,7 @@ public abstract class ClassValue<T> {
             this.actorId = Thread.currentThread().threadId();
         }
 
-        // Arguments are nullable, intentionally to allow initial tokens
+        // Arguments are intentionally nullable, to allow initial tokens
         static boolean areCompatible(RemovalToken current, RemovalToken original) {
             // No removal token after the initial can be null
             assert current != null || original == null : current + " : " + original;
