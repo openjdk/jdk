@@ -5174,35 +5174,26 @@ void Compile::end_method() {
 #endif
 }
 
-bool Compile::should_print_phase(const int level) const {
 #ifndef PRODUCT
+bool Compile::should_print_phase(const int level) const {
   return PrintPhaseLevel > 0 && directive()->PhasePrintLevelOption >= level &&
     _method != nullptr; // Do not print phases for stubs.
-#else
-  return false;
-#endif
 }
 
 bool Compile::should_print_ideal_phase(CompilerPhaseType cpt) const {
-#ifndef PRODUCT
-  if (_directive->should_print_ideal_phase(cpt)) {
-    return true;
-  }
-#endif
-  return false;
+  return _directive->should_print_ideal_phase(cpt);
 }
 
-#ifndef PRODUCT
 void Compile::init_igv() {
   if (_igv_printer == nullptr) {
     _igv_printer = IdealGraphPrinter::printer();
     _igv_printer->set_compile(this);
   }
 }
-#endif
 
 bool Compile::should_print_igv(const int level) {
-#ifndef PRODUCT
+  PRODUCT_RETURN_(return false;);
+
   if (PrintIdealGraphLevel < 0) { // disabled by the user
     return false;
   }
@@ -5212,12 +5203,8 @@ bool Compile::should_print_igv(const int level) {
     Compile::init_igv();
   }
   return need;
-#else
-  return false;
-#endif
 }
 
-#ifndef PRODUCT
 IdealGraphPrinter* Compile::_debug_file_printer = nullptr;
 IdealGraphPrinter* Compile::_debug_network_printer = nullptr;
 
@@ -5306,7 +5293,7 @@ void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const N
   tty->print_cr("Method printed over network stream to IGV");
   _debug_network_printer->print(name, C->root(), visible_nodes, fr);
 }
-#endif
+#endif // !PRODUCT
 
 Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res) {
   if (type != nullptr && phase->type(value)->higher_equal(type)) {

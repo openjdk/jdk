@@ -666,13 +666,13 @@ public:
 
   void begin_method();
   void end_method();
-  bool should_print_igv(int level);
-  bool should_print_phase(int level) const;
-  bool should_print_ideal_phase(CompilerPhaseType cpt) const;
 
   void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
+  bool should_print_igv(int level);
+  bool should_print_phase(int level) const;
+  bool should_print_ideal_phase(CompilerPhaseType cpt) const;
   void init_igv();
   void dump_igv(const char* graph_name, int level = 3) {
     if (should_print_igv(level)) {
