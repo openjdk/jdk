@@ -78,9 +78,42 @@ import java.util.stream.Stream;
  * process I/O can also be redirected</a>
  * using methods of the {@link ProcessBuilder} class.
  *
- * <p>The process is not killed when there are no more references to
- * the {@code Process} object, but rather the process
- * continues executing asynchronously.
+ * <p>{@linkplain ProcessBuilder#start() Starting a process} uses resources in both the invoking process and the invoked
+ * process and for the communication streams between them.
+ * The resources to control the process and for communication between the processes are retained
+ * until there are no longer any references to the Process or the input, error, and output streams
+ * or readers, or they have been closed.
+ *
+ * <p>The process is not killed when there are no more references to the {@code Process} object,
+ * but rather the process continues executing asynchronously.
+ * The process implementation closes file descriptors and handles for streams
+ * that are no longer referenced to prevent leaking operating system resources.
+ * Processes that have terminated or been terminated are monitored and their resources released.
+ *
+ * <p>Streams should be {@code closed} when they are no longer needed, to avoid delaying
+ * releasing the operating system resources.
+ * {@code Try-with-resources} can be used to open and close the streams.
+ * <p>For example, to capture the output of a program known to produce some output and then exit:
+ * {@snippet lang = "java" :
+ * List<String> capture(List<String> args) throws Exception {
+ *     ProcessBuilder pb = new ProcessBuilder().command(args);
+ *     Process process = pb.start();
+ *     try (BufferedReader in = process.inputReader()) {
+ *         List<String> captured = in.lines().toList();
+ *         int status = process.waitFor();
+ *         if (status != 0) {
+ *             throw new RuntimeException("Process %d: %s failed with %d"
+ *                         .formatted(process.pid(), args, status));
+ *         }
+ *         return captured;
+ *     }
+ * }
+ * }
+ * <p>Stream resources (file descriptor or handle) are always paired; one in the invoking process
+ * and the other end of that connection in the invoked process.
+ * Closing a stream at either end terminates communication but does not have any direct effect
+ * on the other Process. Typically, the other process responds to the closing of the stream
+ * by exiting.
  *
  * <p>There is no requirement that the process represented by a {@code
  * Process} object execute asynchronously or concurrently with respect
@@ -97,16 +130,6 @@ import java.util.stream.Stream;
  * {@linkplain #descendants() direct children plus descendants of those children} of the process.
  * Delegating to the underlying Process or ProcessHandle is typically
  * easiest and most efficient.
- *
- * @implNote Starting a process uses resources in both the invoking process and the invoked
- * process and for the communication streams between them while the processes are running.
- * The resources to control the process and for communication between the processes are retained until
- * there are no longer any references to the Process or the input, error, and output streams,
- * or they have been closed.
- * Streams should be {@code closed} when they are no longer needed, releasing the operating system
- * resources. The process implementation closes file descriptors and handles for streams
- * that are no longer referenced to prevent leaking operating system resources.
- * Processes that have terminated or been terminated are monitored and their resources released.
  *
  * @since   1.0
  */
@@ -717,11 +740,12 @@ public abstract class Process {
      * free the current thread and block only if and when the value is needed.
      * <br>
      * For example, launching a process to compare two files and get a boolean if they are identical:
-     * <pre> {@code   Process p = new ProcessBuilder("cmp", "f1", "f2").start();
-     *    Future<Boolean> identical = p.onExit().thenApply(p1 -> p1.exitValue() == 0);
-     *    ...
-     *    if (identical.get()) { ... }
-     * }</pre>
+     * {@snippet lang = "java" :
+     *     Process p = new ProcessBuilder("cmp", "f1", "f2").start();
+     *     Future<Boolean> identical = p.onExit().thenApply(p1 -> p1.exitValue() == 0);
+     *     ...
+     *     if (identical.get()) { ... }
+     * }
      *
      * @implSpec
      * This implementation executes {@link #waitFor()} in a separate thread
@@ -738,11 +762,11 @@ public abstract class Process {
      * External implementations should override this method and provide
      * a more efficient implementation. For example, to delegate to the underlying
      * process, it can do the following:
-     * <pre>{@code
+     * {@snippet lang = "java" :
      *    public CompletableFuture<Process> onExit() {
      *       return delegate.onExit().thenApply(p -> this);
      *    }
-     * }</pre>
+     * }
      * @apiNote
      * The process may be observed to have terminated with {@link #isAlive}
      * before the ComputableFuture is completed and dependent actions are invoked.
