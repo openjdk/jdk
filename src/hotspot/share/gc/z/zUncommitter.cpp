@@ -189,8 +189,18 @@ void ZUncommitter::activate_uncommit_cycle(ZMappedCache* cache, size_t uncommit_
 
   // Claim and reset the cache cycle tracking and register the cycle start time.
   _cycle_start = os::elapsedTime();
-  _to_uncommit = MIN2(uncommit_limit, cache->reset_uncommit_cycle());
+
+  // Read watermark from cache
+  const size_t uncommit_watermark = cache->uncommit_watermark();
+
+  // Keep 10% as a headroom
+  const size_t to_uncommit = align_up(size_t(double(uncommit_watermark) * 0.9), ZGranuleSize);
+
+  _to_uncommit = MIN2(uncommit_limit, to_uncommit);
   _uncommitted = 0;
+
+  // Reset cache for next uncommit cycle
+  cache->reset_uncommit_cycle();
 
   postcond(is_aligned(_to_uncommit, ZGranuleSize));
 }

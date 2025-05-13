@@ -552,13 +552,13 @@ size_t ZMappedCache::remove_discontiguous(size_t size, ZArray<ZVirtualMemory>* o
   return remove_discontiguous_with_strategy<RemovalStrategy::SizeClasses>(size, out);
 }
 
-size_t ZMappedCache::reset_uncommit_cycle() {
-  const size_t old_min = _min_last_uncommit_cycle;
-
+void ZMappedCache::reset_uncommit_cycle() {
   _removed_last_uncommit_cycle = 0;
   _min_size_watermark = _size;
+}
 
-  return old_min;
+size_t ZMappedCache::uncommit_watermark() {
+  return _min_size_watermark;
 }
 
 size_t ZMappedCache::remove_for_uncommit(size_t max_size, ZArray<ZVirtualMemory>* out) {
