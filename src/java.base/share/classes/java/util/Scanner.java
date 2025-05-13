@@ -91,7 +91,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * {@code Scanner} uses the system property value of
  * {@link System##stdin.encoding stdin.encoding} as the {@code Charset}. Specifying
  * the charset explicitly is important when reading from {@code System.in}, as it
- * may differ from the {@link Charset#defaultCharset()} default charset} depending
+ * may differ from the {@link Charset#defaultCharset() default charset} depending
  * on the host environment or user configuration:
  * {@snippet :
  *      Scanner sc = new Scanner(System.in, System.getProperty("stdin.encoding"));
