@@ -1294,14 +1294,16 @@ public final class PassFailJFrame {
 
     /**
      * Forcibly pass the test.
-     * <p>The sample usage:
-     * <pre><code>
-     *      PrinterJob pj = PrinterJob.getPrinterJob();
-     *      if (pj == null || pj.getPrintService() == null) {
-     *          System.out.println(""Printer not configured or available.");
-     *          PassFailJFrame.forcePass();
-     *      }
-     * </code></pre>
+     * <p>
+     * Use this method in semi-automatic tests when
+     * the test determines that all the conditions for passing the test are met.
+     * <p>
+     * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
+     * feature isn't supported, throw {@code jtreg.SkippedException} instead.
+     *
+     * <p>A sample usage can be found in
+     * <a href="https://github.com/openjdk/jdk/blob/7283c8b/test/jdk/java/awt/FileDialog/SaveFileNameOverrideTest.java#L84">{@code
+     * SaveFileNameOverrideTest.java}</a>
      */
     public static void forcePass() {
         latch.countDown();
