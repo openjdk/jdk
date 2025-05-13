@@ -1511,29 +1511,57 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
     return TypeLong::ZERO;
   }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
+  const TypeLong *i1 = t1->isa_long();
+  const TypeLong *i2 = t2->isa_long();
 
-  const TypeLong *i1 = t1->is_long();
-  const TypeLong *i2 = t2->is_long();
-  if( !i1->is_con() || !i2->is_con() ) {
-    if( i1->_lo >= CONST64(0) && i2->_lo >= CONST64(0) )
-      return TypeLong::POS;
-    // If both numbers are not constants, we know little.
-    return TypeLong::LONG;
+  if (i1 == nullptr || i2 == nullptr) {
+    return bottom_type();
   }
+
   // Mod by zero?  Throw exception at runtime!
-  if( !i2->get_con() ) return TypeLong::POS;
-
-  // We must be modulo'ing 2 float constants.
-  // Check for min_jint % '-1', result is defined to be '0'.
-  if( i1->get_con() == min_jlong && i2->get_con() == -1 )
-    return TypeLong::ZERO;
-
-  return TypeLong::make( i1->get_con() % i2->get_con() );
+  if (i2->is_con() && i2->get_con() == 0) {
+    return TypeLong::POS;
+  }
+  if (i1->is_con() && i2->is_con()) {
+    // We must be modulo'ing 2 long constants.
+    // Check for min_jlong % '-1', result is defined to be '0'.
+    if (i1->get_con() == min_jint && i2->get_con() == -1) {
+      return TypeLong::ZERO;
+    }
+    return TypeLong::make(i1->get_con() % i2->get_con());
+  }
+  // The magnitude of the divisor is in range [1, 2^63].
+  // We know it isn't 0 as we handled that above.
+  // That means at least one value is nonzero, so its absolute value is bigger than zero.
+  julong divisor_magnitude = MAX2(uabs(i2->_lo), uabs(i2->_hi));
+  // JVMS irem bytecode: "the magnitude of the result is always less than the magnitude of the divisor"
+  // "less than" means we can subtract 1 to get an inclusive upper bound in [0, 2^31-1]
+  jlong hi = static_cast<jlong>(divisor_magnitude - 1);
+  jlong lo = -hi;
+  // JVMS lrem bytecode: "the result of the remainder operation can be negative only if the dividend
+  // is negative and can be positive only if the dividend is positive"
+  // Note that with a dividend with bounds e.g. lo == -4 and hi == -1 can still result in values
+  // below lo; i.e., -3 % 3 == 0.
+  // That means we cannot restrict the bound that is closer to zero beyond knowing its sign (or zero).
+  if (i1->_hi <= 0) {
+    // all dividends are not positive, so the result is not positive
+    hi = 0;
+    // if the dividend is known to be closer to zero, use that as a lower limit
+    lo = MAX2(lo, i1->_lo);
+  } else if (i1->_lo >= 0) {
+    // all dividends are not negative, so the result is not negative
+    lo = 0;
+    // if the dividend is known to be closer to zero, use that as an upper limit
+    hi = MIN2(hi, i1->_hi);
+  } else {
+    // Mixed signs, so  we don't know the sign of the result, but the result is
+    // either the dividend itself or a value closer to zero than the dividend,
+    // and it is closer to zero than the divisor.
+    // As we know i1->_lo < 0 and i1->_hi > 0, we can use these bounds directly.
+    lo = MAX2(lo, i1->_lo);
+    hi = MIN2(hi, i1->_hi);
+  }
+  return TypeLong::make(lo, hi, MAX2(i1->_widen,i2->_widen));
 }
 
 Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
