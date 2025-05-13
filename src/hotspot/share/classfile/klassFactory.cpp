@@ -175,10 +175,6 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   assert(stream != nullptr, "invariant");
   assert(loader_data != nullptr, "invariant");
 
-  //if (name->equals("jck/java/util/ResourceBundle/LoadBundleTests/bundles/MyResources")) {
-  //  tty->print_cr("Hello");
-  //}
-
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
 

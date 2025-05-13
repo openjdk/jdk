@@ -1190,10 +1190,6 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     return;
   }
 
-  if (ik->name()->equals("jck/java/util/ResourceBundle/LoadBundleTests/bundles/MyResources")) {
-    tty->print_cr("Hello0");
-  }
-
   oop loader = ik->class_loader();
   char* src = (char*)stream->source();
   if (src == nullptr) {
@@ -1217,6 +1213,8 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
 
   ResourceMark rm(current);
   int classpath_index = -1;
+  bool found_invalid = false;
+
   PackageEntry* pkg_entry = ik->package();
 
   if (!AOTClassLocationConfig::dumptime_is_ready()) {
@@ -1231,7 +1229,6 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     // must be valid since the class has been successfully parsed.
     const char* path = ClassLoader::uri_to_path(src);
     assert(path != nullptr, "sanity");
-    bool found_invalid = false;
     AOTClassLocationConfig::dumptime_iterate([&] (AOTClassLocation* cl) {
       int i = cl->index();
       // for index 0 and the stream->source() is the modules image or has the jrt: protocol.
@@ -1275,22 +1272,20 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
         }
       }
       if (classpath_index >= 0 || found_invalid) {
-        return false; // quit iterating
+        return false; // Break the AOTClassLocationConfig::dumptime_iterate() loop.
       } else {
         return true; // Keep iterating
       }
     });
-
-    if (found_invalid) {
-      return;
-    }
   }
 
-  const char* const class_name = ik->name()->as_C_string();
-  const char* const file_name = file_name_for_class_name(class_name,
-                                                         ik->name()->utf8_length());
-  assert(file_name != nullptr, "invariant");
-  ClassLoaderExt::record_result(checked_cast<s2>(classpath_index), ik, redefined);
+  if (!found_invalid) {
+    const char* const class_name = ik->name()->as_C_string();
+    const char* const file_name = file_name_for_class_name(class_name,
+                                                           ik->name()->utf8_length());
+    assert(file_name != nullptr, "invariant");
+    ClassLoaderExt::record_result(checked_cast<s2>(classpath_index), ik, redefined);
+  }
 }
 
 void ClassLoader::record_hidden_class(InstanceKlass* ik) {
