@@ -559,6 +559,10 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
         assert diff >= 0;
         if (diff <= 0) return;
         synchronized (this) {
+            if (requestedStopSending) {
+                // once we request stop sending, updates are handled by increaseProcessedData
+                return;
+            }
             assert processed + diff <= received : processed+"+"+diff+">"+received+"("+maxReceivedData+")";
             processed += diff;
         }
