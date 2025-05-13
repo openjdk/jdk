@@ -27,7 +27,6 @@ package java.lang.ref;
 
 import java.util.function.Consumer;
 import jdk.internal.misc.VM;
-import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationSupport;
 
 /**
@@ -145,19 +144,6 @@ public class ReferenceQueue<@jdk.internal.RequiresIdentity T> {
         }
     }
 
-    private boolean tryDisablePreempt() {
-        if (Thread.currentThread().isVirtual() && ContinuationSupport.isSupported()) {
-            Continuation.pin();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private void enablePreempt() {
-        Continuation.unpin();
-    }
-
     /**
      * Polls this queue to see if a reference object is available.  If one is
      * available without further delay then it is removed from the queue and
@@ -173,13 +159,13 @@ public class ReferenceQueue<@jdk.internal.RequiresIdentity T> {
 
         // Prevent a virtual thread from being preempted as this could potentially
         // deadlock with a carrier that is polling the same reference queue.
-        boolean disabled = tryDisablePreempt();
+        ContinuationSupport.pinIfSupported();
         try {
             synchronized (lock) {
                 return poll0();
             }
         } finally {
-            if (disabled) enablePreempt();
+            ContinuationSupport.unpinIfSupported();
         }
     }
 

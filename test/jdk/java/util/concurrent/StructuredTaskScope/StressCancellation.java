@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,15 @@
 
 /*
  * @test
- * @bug 8311867
- * @summary Stress test of StructuredTaskScope.shutdown with running and starting threads
+ * @summary Stress test of StructuredTaskScope cancellation with running and starting threads
  * @enablePreview
- * @run junit StressShutdown
+ * @run junit StressCancellation
  */
 
 import java.time.Duration;
-import java.util.concurrent.Callable;
 import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.StructuredTaskScope.Joiner;
+import java.util.concurrent.StructuredTaskScope.Subtask;
 import java.util.concurrent.ThreadFactory;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -41,12 +41,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
-class StressShutdown {
-
-    static final Callable<Void> SLEEP_FOR_A_DAY = () -> {
-        Thread.sleep(Duration.ofDays(1));
-        return null;
-    };
+class StressCancellation {
 
     static Stream<Arguments> testCases() {
         Stream<ThreadFactory> factories = Stream.of(
@@ -59,34 +54,47 @@ class StressShutdown {
     }
 
     /**
-     * Test StructuredTaskScope.shutdown with running threads and concurrently with
-     * threads that are starting. The shutdown should interrupt all threads so that
-     * join wakes up.
+     * Test StructuredTaskScope cancellation with running threads and concurrently with
+     * threads that are starting. The cancellation should interrupt all running threads,
+     * join should wakeup, and close would complete quickly.
      *
      * @param factory the ThreadFactory to use
-     * @param beforeShutdown the number of subtasks to fork before shutdown
-     * @param afterShutdown the number of subtasks to fork after shutdown
+     * @param beforeCancel the number of subtasks to fork before cancel
+     * @param afterCancel the number of subtasks to fork after cancel
      */
     @ParameterizedTest
     @MethodSource("testCases")
-    void testShutdown(ThreadFactory factory, int beforeShutdown, int afterShutdown)
-        throws InterruptedException
-    {
-        try (var scope = new StructuredTaskScope<>(null, factory)) {
+    void test(ThreadFactory factory, int beforeCancel, int afterCancel) throws Exception {
+        var joiner = new Joiner<Boolean, Void>() {
+            @Override
+            public boolean onComplete(Subtask<? extends Boolean> subtask) {
+                boolean cancel = subtask.get();
+                return cancel;
+            }
+            @Override
+            public Void result() {
+                return null;
+            }
+        };
+
+        try (var scope = StructuredTaskScope.open(joiner, cf -> cf.withThreadFactory(factory))) {
             // fork subtasks
-            for (int i = 0; i < beforeShutdown; i++) {
-                scope.fork(SLEEP_FOR_A_DAY);
+            for (int i = 0; i < beforeCancel; i++) {
+                scope.fork(() -> {
+                    Thread.sleep(Duration.ofDays(1));
+                    return false;
+                });
             }
 
-            // fork subtask to shutdown
-            scope.fork(() -> {
-                scope.shutdown();
-                return null;
-            });
+            // fork subtask to cancel
+            scope.fork(() -> true);
 
-            // fork after forking subtask to shutdown
-            for (int i = 0; i < afterShutdown; i++) {
-                scope.fork(SLEEP_FOR_A_DAY);
+            // fork after forking subtask to cancel
+            for (int i = 0; i < afterCancel; i++) {
+                scope.fork(() -> {
+                    Thread.sleep(Duration.ofDays(1));
+                    return false;
+                });
             }
 
             scope.join();

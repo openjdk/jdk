@@ -306,11 +306,11 @@ public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
         handler.start();
     }
 
-    // Called from JVM when loading an AOT cache
     static {
         runtimeSetup();
     }
 
+    // Also called from JVM when loading an AOT cache
     private static void runtimeSetup() {
         // provide access in SharedSecrets
         SharedSecrets.setJavaLangRefAccess(new JavaLangRefAccess() {

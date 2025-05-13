@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
@@ -107,7 +108,8 @@ public abstract class AbstractAppImageBuilder {
         List<String> items = APP_CONTENT.fetchFrom(params);
         for (String item : items) {
             FileUtils.copyRecursive(Path.of(item),
-                appLayout.contentDirectory().resolve(Path.of(item).getFileName()));
+                appLayout.contentDirectory().resolve(Path.of(item).getFileName()),
+                LinkOption.NOFOLLOW_LINKS);
         }
     }
 
