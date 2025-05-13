@@ -4141,9 +4141,9 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
         if (alloc == nullptr || alloc->_idx != (uint)toop->instance_id()) {
           result = proj_in->in(TypeFunc::Memory);
         } else if (C->get_alias_index(result->adr_type()) != alias_idx) {
-          assert(C->get_general_index(alias_idx) == C->get_alias_index(result->adr_type()), "");
+          assert(C->get_general_index(alias_idx) == C->get_alias_index(result->adr_type()), "should be projection for the same field/array element");
           result = get_map(result->_idx);
-          assert(result != nullptr, "");
+          assert(result != nullptr, "new projection should have been allocated");
           break;
         }
       } else if (proj_in->is_MemBar()) {
@@ -4441,7 +4441,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       _compile->get_alias_index(tinst->add_offset(oopDesc::mark_offset_in_bytes()));
       _compile->get_alias_index(tinst->add_offset(oopDesc::klass_offset_in_bytes()));
       if (alloc->is_Allocate() && (t->isa_instptr() || t->isa_aryptr())) {
-        // Update adr type captured by NarrowMem projections to new type
+        // Add a new NarrowMem projection for each existing NarrowMem projection with new adr type
         InitializeNode* init = alloc->as_Allocate()->initialization();
         assert(init != nullptr, "can't find Initialization node for this Allocate node");
         DUIterator i = init->outs();
@@ -4455,7 +4455,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
             NarrowMemProjNode* new_proj = new NarrowMemProjNode(init, new_adr_type);
             igvn->set_type(new_proj, new_proj->bottom_type());
             record_for_optimizer(new_proj);
-            set_map(proj, new_proj);
+            set_map(proj, new_proj); // record it so ConnectionGraph::find_inst_mem() can find it
           }
           return false;
         };
