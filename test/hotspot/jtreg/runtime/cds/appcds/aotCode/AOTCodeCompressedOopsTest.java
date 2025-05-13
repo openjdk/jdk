@@ -41,6 +41,8 @@
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -106,10 +108,12 @@ public class AOTCodeCompressedOopsTest {
 
         List<String> getVMArgsForHeapConfig(boolean isBaseZero, boolean isShiftZero) {
             List<String> list = new ArrayList<String>();
+            // Note the VM options used are best-effort to get the desired base and shift,
+            // but it is OS dependent, so we may not get the desired configuration.
             if (isBaseZero && isShiftZero) {
-                list.add("-Xmx1g"); // Set max heap < 4G
+                list.add("-Xmx128m"); // Set max heap < 4G;
             } else if (isBaseZero && !isShiftZero) {
-                list.add("-Xmx6g"); // Set max heap > 4G
+                list.add("-Xmx6g"); // Set max heap > 4G for shift to be non-zero
             } else if (!isBaseZero && !isShiftZero) {
                 list.add("-Xmx6g");
                 list.add("-XX:HeapBaseMinAddress=32g");
@@ -131,7 +135,7 @@ public class AOTCodeCompressedOopsTest {
             case RunMode.PRODUCTION: {
                     List<String> args = getVMArgsForHeapConfig(zeroBaseInProdPhase, zeroShiftInProdPhase);
                     args.addAll(List.of("-XX:+UnlockDiagnosticVMOptions",
-                                        "-Xlog:cds=info",
+                                        "-Xlog:cds=info", // we need this to parse CompressedOops settings
                                         "-Xlog:aot+codecache+init=debug",
                                         "-Xlog:aot+codecache+exit=debug"));
                     return args.toArray(new String[0]);
@@ -150,9 +154,53 @@ public class AOTCodeCompressedOopsTest {
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (runMode == RunMode.PRODUCTION) {
-                 if (zeroShiftInAsmPhase != zeroShiftInProdPhase) {
+                 int aotCacheShift = -1, currentShift = -1;
+                 long aotCacheBase = -1, currentBase = -1;
+                 List<String> list = out.asLines();
+                 /* We tried to have CompressedOops settings as per the test requirement,
+                  * but it ultimately depends on OS and is not guaranteed that we have got the desired settings.
+                  * So we parse the log output from the production run to get the real settings.
+                  *
+                  * Parse the following Xlog:cds output to get the values of CompressedOops::base and CompressedOops::shift
+                  * used during the AOTCache assembly and production run:
+                  *
+                  *    [0.022s][info][cds] CDS archive was created with max heap size = 1024M, and the following configuration:
+                  *    [0.022s][info][cds]     narrow_klass_base at mapping start address, narrow_klass_pointer_bits = 32, narrow_klass_shift = 0
+                  *    [0.022s][info][cds]     narrow_oop_mode = 1, narrow_oop_base = 0x0000000000000000, narrow_oop_shift = 3
+                  *    [0.022s][info][cds] The current max heap size = 31744M, G1HeapRegion::GrainBytes = 16777216
+                  *    [0.022s][info][cds]     narrow_klass_base = 0x000007fc00000000, arrow_klass_pointer_bits = 32, narrow_klass_shift = 0
+                  *    [0.022s][info][cds]     narrow_oop_mode = 3, narrow_oop_base = 0x0000000300000000, narrow_oop_shift = 3
+                  *    [0.022s][info][cds]     heap range = [0x0000000301000000 - 0x0000000ac1000000]
+                  */
+                 Pattern p = Pattern.compile("narrow_oop_base = 0x(\\d+), narrow_oop_shift = (\\d)");
+                 for (int i = 0; i < list.size(); i++) {
+                     String line = list.get(i);
+                     if (line.indexOf("CDS archive was created with max heap size") != -1) {
+                         // Parse AOT Cache CompressedOops settings
+                         line = list.get(i+2);
+                         Matcher m = p.matcher(line);
+                         if (!m.find()) {
+                             throw new RuntimeException("Pattern \"" + p + "\" not found in the output");
+                         }
+                         aotCacheBase = Long.valueOf(m.group(1), 16);
+                         aotCacheShift = Integer.valueOf(m.group(2));
+                         // Parse current CompressedOops settings
+                         line = list.get(i+5);
+                         m = p.matcher(line);
+                         if (!m.find()) {
+                             throw new RuntimeException("Pattern \"" + p + "\" not found in the output");
+                         }
+                         currentBase = Long.valueOf(m.group(1), 16);
+                         currentShift = Integer.valueOf(m.group(2));
+                         break;
+                     }
+                 }
+                 if (aotCacheShift == -1 || currentShift == -1 || aotCacheBase == -1 || currentBase == -1) {
+                     throw new RuntimeException("Failed to find CompressedOops settings");
+                 }
+                 if (aotCacheShift != currentShift) {
                      out.shouldContain("AOT Code Cache disabled: it was created with different CompressedOops::shift()");
-                 } else if (zeroBaseInAsmPhase != zeroBaseInProdPhase) {
+                 } else if (aotCacheBase != currentBase) {
                      out.shouldContain("AOTStubCaching is disabled: incompatible CompressedOops::base()");
                  } else {
                      out.shouldMatch("Read \\d+ entries table at offset \\d+ from AOT Code Cache");
