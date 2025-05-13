@@ -23,6 +23,7 @@
  */
 
 #include "code/codeCache.hpp"
+#include "code/nmethod.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -800,6 +801,30 @@
                                                                           \
   declare_constant(MethodFlags::_misc_force_inline)                       \
   declare_constant(MethodFlags::_misc_dont_inline)                        \
+                                                                          \
+  declare_constant(nmethod::NMethodChangeReason::C1_deoptimize)                             \
+  declare_constant(nmethod::NMethodChangeReason::C1_codepatch)                              \
+  declare_constant(nmethod::NMethodChangeReason::C1_predicate_failed_trap)                  \
+  declare_constant(nmethod::NMethodChangeReason::C1_deoptimize_for_patching)                \
+  declare_constant(nmethod::NMethodChangeReason::CI_replay)                                 \
+  declare_constant(nmethod::NMethodChangeReason::marked_for_deoptimization)                 \
+  declare_constant(nmethod::NMethodChangeReason::not_used)                                  \
+  declare_constant(nmethod::NMethodChangeReason::OSR_invalidation_for_compiling_with_C1)    \
+  declare_constant(nmethod::NMethodChangeReason::OSR_invalidation_back_branch)              \
+  declare_constant(nmethod::NMethodChangeReason::JVMCI_reprofile)                           \
+  declare_constant(nmethod::NMethodChangeReason::JVMCI_materialize_virtual_object)          \
+  declare_constant(nmethod::NMethodChangeReason::JVMCI_invalidate_nmethod_mirror)           \
+  declare_constant(nmethod::NMethodChangeReason::JVMCI_register_method)                     \
+  declare_constant(nmethod::NMethodChangeReason::OSR_invalidation_of_lower_level)           \
+  declare_constant(nmethod::NMethodChangeReason::set_native_function)                       \
+  declare_constant(nmethod::NMethodChangeReason::whitebox_deoptimization)                   \
+  declare_constant(nmethod::NMethodChangeReason::missing_exception_handler)                 \
+  declare_constant(nmethod::NMethodChangeReason::uncommon_trap)                             \
+  declare_constant(nmethod::NMethodChangeReason::zombie)                                    \
+  declare_constant(nmethod::NMethodChangeReason::gc_unlinking)                              \
+  declare_constant(nmethod::NMethodChangeReason::gc_unlinking_cold)                         \
+  declare_constant(nmethod::NMethodChangeReason::JVMCI_new_installation)                    \
+  declare_constant(nmethod::NMethodChangeReason::JVMCI_replacing_with_new_code)             \
                                                                           \
   declare_constant(Method::nonvirtual_vtable_index)                       \
   declare_constant(Method::invalid_vtable_index)                          \
