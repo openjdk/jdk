@@ -426,6 +426,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       // Hoist it up to the end of the test block together with its inputs if they exist.
       for (uint i = 2; i < val->req(); i++) {
         // DecodeN has 2 regular inputs + optional MachTemp or load Base inputs.
+        // Inputs of val may already be early enough, but if not move them together with val.
         ensure_node_is_at_block_or_above(val->in(i), block);
       }
       move_node_and_its_projections_to_block(val, block);
