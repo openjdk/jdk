@@ -129,13 +129,8 @@ public final class Http3Connection implements AutoCloseable {
     // -1 is used to imply no GOAWAY received so far
     private final AtomicLong lowestGoAwayReceipt = new AtomicLong(-1);
     private volatile IdleConnectionTimeoutEvent idleConnectionTimeoutEvent;
-    private final AtomicLong nextStreamId = new AtomicLong();
-    // represents the final stream (if any) on this connection. once a final stream id is
-    // set on a connection, no more streams are allowed to be initiated on that connection
+    // value of true implies no more streams will be initiated on this connection,
     // and the connection will be closed once the in-progress streams complete.
-    private final AtomicLong finalStreamId = new AtomicLong(-1);
-    // this is just convenience boolean representing the same state as finalStreamId.
-    // value of true implies no more streams will be initiated on this connection.
     private volatile boolean finalStream;
 
     private static final int GOAWAY_SENT = 1; // local endpoint sent GOAWAY
@@ -315,7 +310,7 @@ public final class Http3Connection implements AutoCloseable {
                         if (debug.on())
                             debug.log("creating Http3Connection for %s", httpQuicConnection);
                         Http3Connection hc = new Http3Connection(request, h3client, httpQuicConnection);
-                        if (hc.reserveStream()) {
+                        if (!hc.isFinalStream()) {
                             exchange.connectionAborter.clear(httpQuicConnection);
                             cf.complete(hc);
                         } else {
@@ -366,21 +361,7 @@ public final class Http3Connection implements AutoCloseable {
      * the connection. No other stream will be opened after this.
      */
     void setFinalStream() {
-        setFinalStream(nextStreamId.get());
-    }
-
-    /**
-     * Sets the given stream to be the last and final stream opened on
-     * the connection. No other stream will be opened after this.
-     */
-    void setFinalStream(long streamId) {
-        lock();
-        try {
-            this.finalStreamId.set(streamId);
-            this.finalStream = true;
-        } finally {
-            unlock();
-        }
+        this.finalStream = true;
     }
 
     boolean isClosed() {
@@ -401,52 +382,14 @@ public final class Http3Connection implements AutoCloseable {
         return peerSettingsCF;
     }
 
-    /**
-     * Attempts to make sure that at least one more stream can be opened
-     * on the connection. If true, the next creation of a new stream should
-     * succeed. If false, no stream creation should be attempted.
-     * @return false if creation of a new stream should not be attempted
-     * @throws IOException if something failed
-     */
-    boolean reserveStream() throws IOException {
-        if (finalStream) {
-            // no more streams allowed on this connection
-            return false;
-        }
-        // check that the next streamId will not be > to 2^62 - 1.
-        // we bail out a little before that...
-        if (nextStreamId.get() >= VariableLengthEncoder.MAX_ENCODED_INTEGER - 1024)
-            return false;
-        return true;
-    }
-
-    /**
-     * When opening a client initiated stream, this method checks whether
-     * the new stream id is expected to exceed the finalStreamId (if any) set on the
-     * connection. If yes, then this method returns false, otherwise, it increments the
-     * nextStreamId by 4 and returns true.
-     *
-     * @return true if creation of the new stream is allowed. Note that, subsequently,
-     * it could still be denied by the underlying quic connection.
-     */
-    boolean isBeforeFinalStream() {
+    private boolean reserveStream() {
         lock();
         try {
-            final long finalStrmId = this.finalStreamId.get();
-            final long nextStreamId = this.nextStreamId.getAndAccumulate(
-                    4, (v, a) -> finalStrmId == -1 ? v + a : v > finalStrmId ? v : (v + a));
-            if (debug.on()) {
-                debug.log("isBeforeFinalStream(finalStreamId: %s, nextStreamId: %s):%s",
-                        finalStrmId, nextStreamId,
-                        (finalStrmId == -1 || nextStreamId <= finalStrmId));
+            if (finalStream) {
+                return false;
             }
-            if (finalStrmId == -1 || nextStreamId <= finalStrmId) {
-                // allowed to create the stream
-                reservedStreamCount.incrementAndGet();
-                return true;
-            }
-            // no more streams allowed on this connection
-            return false;
+            reservedStreamCount.incrementAndGet();
+            return true;
         } finally {
             unlock();
         }
@@ -454,8 +397,8 @@ public final class Http3Connection implements AutoCloseable {
 
     <U> CompletableFuture<? extends ExchangeImpl<U>>
     createStream(final Exchange<U> exchange) throws IOException {
-        // check if this connection has a final stream id set before initiating this new stream
-        if (!isBeforeFinalStream()) {
+        // check if this connection is closing before initiating this new stream
+        if (!reserveStream()) {
             if (Log.http3()) {
                 Log.logHttp3("Cannot initiate new stream on connection {0} for exchange {1}" ,
                         quicConnectionTag(), exchange);
@@ -1435,7 +1378,7 @@ public final class Http3Connection implements AutoCloseable {
         // connection.
         // RFC-9114, section 5.2: Endpoints MUST NOT initiate new requests or promise new pushes on
         // the connection after receipt of a GOAWAY frame from the peer.
-        setFinalStream(quicStreamId);
+        setFinalStream();
         if (debug.on()) {
             debug.log("Connection will no longer allow new streams due to receipt of GOAWAY" +
                     " from peer");

@@ -244,7 +244,7 @@ public final class Http3ClientImpl implements AutoCloseable {
             if (pooled == null) {
                 return null;
             }
-            if (pooled.tryReserveForPoolCheckout() && pooled.reserveStream()) {
+            if (pooled.tryReserveForPoolCheckout() && !pooled.isFinalStream()) {
                 final var altService = pooled.connection()
                         .getSourceAltService().orElse(null);
                 if (altService != null) {
@@ -625,11 +625,8 @@ public final class Http3ClientImpl implements AutoCloseable {
             }
             Http3Connection c1 = connections.putIfAbsent(key, c);
             if (c1 != null) {
-                // stream 0 is the last stream that can be opened.
-                // this will be the first (and only) client initiated bidirectional
-                // stream
                 if (!c1.isFinalStream() || c.isFinalStream()) {
-                    c.setFinalStream(0);
+                    c.setFinalStream();
                     if (debug.on())
                         debug.log("existing entry %s in connection pool for %s", c1, key);
 
