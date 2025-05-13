@@ -4877,17 +4877,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @see #getInt
      */
     private int numberOfTrailingZeroInts() {
-        int fn = numberOfTrailingZeroIntsPlusTwo - 2;
-        if (fn == -2) { // firstNonzeroIntNum not initialized yet
+        int nz = numberOfTrailingZeroIntsPlusTwo - 2;
+        if (nz == -2) { // numberOfTrailingZeroInts not initialized yet
             // Search for the first nonzero int
             int i;
             final int lowest = mag.length - 1;
             for (i = lowest; i >= 0 && mag[i] == 0; i--)
                 ;
-            fn = lowest - i;
-            numberOfTrailingZeroIntsPlusTwo = fn + 2; // offset by two to initialize
+            nz = lowest - i;
+            numberOfTrailingZeroIntsPlusTwo = nz + 2; // offset by two to initialize
         }
-        return fn;
+        return nz;
     }
 
     /** use serialVersionUID from JDK 1.1. for interoperability */
