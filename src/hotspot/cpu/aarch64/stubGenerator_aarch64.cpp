@@ -2616,6 +2616,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ bind(tail);
+    // The count of bytes is off by 64, but we don't need to correct
+    // it because we're only going to use the least-significant few
+    // count bits from here on.
     // __ add(count, count, 64);
 
     {
@@ -2641,9 +2644,8 @@ class StubGenerator: public StubCodeGenerator {
     __ tst(count, 7);
     __ br(__ EQ, finished);
 
-    __ orr(value, value, value, __ LSL, 8);
-    __ orr(value, value, value, __ LSL, 16);
-
+    __ bfi(value, value, 8, 8);
+    __ bfi(value, value, 16, 16);
     {
       Label dont;
       __ tbz(count, exact_log2(4), dont);
