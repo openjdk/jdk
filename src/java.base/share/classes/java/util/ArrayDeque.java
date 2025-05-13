@@ -359,6 +359,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      * @param index index of the element to return
      * @throws IndexOutOfBoundsException if the index is out of range
      *         ({@code index < 0 || index >= size()})
+     * @since 25
      */
     public E get(int index) {
         return getset(index, null);
@@ -376,6 +377,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      * @throws NullPointerException if the specified element is null
      * @throws IndexOutOfBoundsException if the index is out of range
      *         ({@code index < 0 || index >= size()})
+     * @since 25
      */
     public E set(int index, E element) {
         if (element == null)
