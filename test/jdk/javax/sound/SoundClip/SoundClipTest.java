@@ -22,6 +22,7 @@
  */
 
 import java.io.File;
+import java.io.IOException;
 import javax.sound.SoundClip;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Mixer;
@@ -31,12 +32,20 @@ import javax.sound.sampled.Mixer;
  * @bug 8356049
  * @key sound headful
  * @summary basic testing of javax.sound.SoundClip
- * @run main/othervm SoundClipTest javasound.wav
+ * @run main/othervm SoundClipTest javasound.wav good
+ * @run main/othervm SoundClipTest badsound.wav bad
  */
 
 public class SoundClipTest {
 
     public static void main(String[] args) throws Exception {
+
+        // First verify IOException
+        try {
+            SoundClip.createSoundClip(new File("notafile.wav"));
+            throw new RuntimeException("No IOException");
+        } catch (IOException e) {
+        }
 
         if (!isSoundcardInstalled()) {
             return;
@@ -47,9 +56,19 @@ public class SoundClipTest {
 
         SoundClip clip = SoundClip.createSoundClip(file);
 
-        if (!clip.canPlay()) {
-            throw new RuntimeException("Cannot play clip");
+        // Check for bad clip case
+        boolean bad = (args.length > 1) && (args[1].equals("bad"));
+        if (bad) {
+            if (clip.canPlay()) {
+                throw new RuntimeException("Should not be able play clip");
+            }
+            return;
+        } else {
+            if (!clip.canPlay()) {
+                throw new RuntimeException("Cannot play clip");
+            }
         }
+
         boolean playing = false;
         int waitCount = 0;
         System.out.println("Call loop()");
