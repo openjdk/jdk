@@ -38,8 +38,6 @@ class ZObjectAllocator {
 private:
   ZPageAge           _age;
   const bool         _use_per_cpu_shared_small_pages;
-  ZPerCPU<size_t>    _used;
-  ZPerCPU<size_t>    _undone;
   ZPerCPU<ZPage*>    _shared_small_page;
   ZContended<ZPage*> _shared_medium_page;
   ZLock              _medium_page_alloc_lock;
@@ -80,7 +78,6 @@ public:
 
   ZPageAge age() const;
 
-  size_t used() const;
   size_t remaining() const;
 
   void retire_pages();

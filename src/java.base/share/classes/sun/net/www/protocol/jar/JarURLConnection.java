@@ -80,6 +80,9 @@ public class JarURLConnection extends java.net.JarURLConnection {
         return jarEntry;
     }
 
+    @Override
+    @Deprecated(since = "25", forRemoval = true)
+    @SuppressWarnings("removal")
     public Permission getPermission() throws IOException {
         return jarFileURLConnection.getPermission();
     }
