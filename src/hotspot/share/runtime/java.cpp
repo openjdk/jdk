@@ -331,6 +331,13 @@ void print_statistics() {
 
   print_bytecode_count();
 
+  if (PrintVMInfoAtExit) {
+    // Use an intermediate stream to prevent deadlocking on tty_lock
+    stringStream ss;
+    VMError::print_vm_info(&ss);
+    tty->print_raw(ss.base());
+  }
+
   if (PrintSystemDictionaryAtExit) {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);

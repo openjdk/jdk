@@ -31,11 +31,11 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
-#include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "runtime/timer.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "runtime/timer.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
 
@@ -193,6 +193,7 @@ void G1GCPhaseTimes::reset() {
   _cur_region_register_time = 0.0;
   _cur_verify_before_time_ms = 0.0;
   _cur_verify_after_time_ms = 0.0;
+  _cur_prepare_concurrent_task_time_ms = 0.0;
 
   for (int i = 0; i < GCParPhasesSentinel; i++) {
     if (_gc_par_phases[i] != nullptr) {
@@ -407,10 +408,7 @@ void G1GCPhaseTimes::trace_count(const char* name, size_t value) const {
 }
 
 double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
-  const double pre_concurrent_start_ms = average_time_ms(ResetMarkingState) +
-                                         average_time_ms(NoteStartOfMark);
-
-  const double sum_ms = pre_concurrent_start_ms +
+  const double sum_ms = _cur_prepare_concurrent_task_time_ms +
                         _cur_pre_evacuate_prepare_time_ms +
                         _recorded_young_cset_choice_time_ms +
                         _recorded_non_young_cset_choice_time_ms +
@@ -419,9 +417,12 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
 
   info_time("Pre Evacuate Collection Set", sum_ms);
 
-  if (pre_concurrent_start_ms > 0.0) {
-    debug_phase(_gc_par_phases[ResetMarkingState]);
-    debug_phase(_gc_par_phases[NoteStartOfMark]);
+  // Concurrent tasks of ResetMarkingState and NoteStartOfMark are triggered during
+  // young collection. However, their execution time are not included in _gc_pause_time_ms.
+  if (_cur_prepare_concurrent_task_time_ms > 0.0) {
+    debug_time("Prepare Concurrent Start", _cur_prepare_concurrent_task_time_ms);
+    debug_phase(_gc_par_phases[ResetMarkingState], 1);
+    debug_phase(_gc_par_phases[NoteStartOfMark], 1);
   }
 
   debug_time("Pre Evacuate Prepare", _cur_pre_evacuate_prepare_time_ms);
@@ -545,6 +546,11 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
   info_time("Other", _gc_pause_time_ms - accounted_ms);
 }
 
+// Root-region-scan-wait, verify-before and verify-after are part of young GC,
+// but these are not measured by G1Policy. i.e. these are not included in
+// G1Policy::record_young_collection_start() and record_young_collection_end().
+// In addition, these are not included in G1GCPhaseTimes::_gc_pause_time_ms.
+// See G1YoungCollector::collect().
 void G1GCPhaseTimes::print(bool evacuation_failed) {
   if (_root_region_scan_wait_time_ms > 0.0) {
     debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
@@ -559,15 +565,13 @@ void G1GCPhaseTimes::print(bool evacuation_failed) {
 
   double accounted_ms = 0.0;
 
-  accounted_ms += _root_region_scan_wait_time_ms;
-  accounted_ms += _cur_verify_before_time_ms;
-
   accounted_ms += print_pre_evacuate_collection_set();
   accounted_ms += print_evacuate_initial_collection_set();
   accounted_ms += print_evacuate_optional_collection_set();
   accounted_ms += print_post_evacuate_collection_set(evacuation_failed);
 
-  accounted_ms += _cur_verify_after_time_ms;
+  assert(_gc_pause_time_ms >= accounted_ms, "GC pause time(%.3lfms) cannot be "
+         "smaller than the sum of each phase(%.3lfms).", _gc_pause_time_ms, accounted_ms);
 
   print_other(accounted_ms);
 
