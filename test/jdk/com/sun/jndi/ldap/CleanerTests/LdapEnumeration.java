@@ -25,10 +25,16 @@
  * @test
  * @bug 8283660
  * @summary Verify the AbstractLdapNamingEnumeration Cleaner performs cleanup correctly
- * @modules java.naming/com.sun.jndi.ldap:+open
+ * @modules java.naming/com.sun.jndi.ldap:+open java.base/java.lang.ref:open
  * @library /test/lib ../lib/ /javax/naming/module/src/test/test/
- * @build LDAPServer LDAPTestUtils
- * @run main/othervm LdapEnumeration
+ * @build LDAPServer LDAPTestUtils jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI
+ *      LdapEnumeration
+
  */
 
 import javax.naming.NamingEnumeration;
@@ -40,6 +46,8 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -49,7 +57,7 @@ import java.util.Hashtable;
 import java.util.WeakHashMap;
 
 import jdk.test.lib.net.URIBuilder;
-import jdk.test.lib.util.ForceGC;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * This test is a copy of com/sun/jndi/ldap/blits/AddTests/AddNewEntry.java,
@@ -136,25 +144,33 @@ public class LdapEnumeration {
             // fetch enumCount from homeCtx, from EnumCtx, from results
             Object enumCtx = getField(results.getClass().getSuperclass(), "enumCtx", results);
             Object homeCtx = getField(enumCtx.getClass(), "homeCtx", enumCtx);
-            int enumCountBefore = (Integer) getField(homeCtx.getClass(), "enumCount", homeCtx);
+
+            // Need volatile read of enumCount, as it will be written on the Cleaner thread
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            Class homeCtxClass = lookup.findClass("com.sun.jndi.ldap.LdapCtx");
+            MethodHandles.Lookup privateLookup = MethodHandles.privateLookupIn(homeCtxClass, lookup);
+            VarHandle enumCountVH = privateLookup.findVarHandle(homeCtxClass, "enumCount", int.class);
+            int enumCountBefore = (int) enumCountVH.getVolatile(homeCtx);
 
             whm.put(results, null);
             results = null;
 
-            // If the Cleaner holds a reference to 'results', it won't be cleared from the map
-            ForceGC gc = new ForceGC();
-            if (!gc.wait(() -> whm.size() == 0)) {
+            // Perform GC and wait for reference processing
+            WhiteBox wb = WhiteBox.getWhiteBox();
+            wb.fullGC();
+            wb.waitForReferenceProcessing();
+
+            // If EnumCtx mistakenly holds a reference to enclosing 'results',
+            // it won't be cleared from the map
+            if (whm.size() != 0) {
                 throw new RuntimeException("NamingEnumeration is still strongly reachable");
             }
+
             // Check that the enum count was decremented by the cleaning action
             final int expected = enumCountBefore - 1;
-            final Object finalHomeCtx = homeCtx;
-            if (!gc.wait(() -> {
-                    int enumCountAfter = (Integer)getField(finalHomeCtx.getClass(), "enumCount", finalHomeCtx);
-                    System.out.println("enumCountAfter: " + enumCountAfter);
-                    return expected == enumCountAfter;
-                }
-            )) {
+            int enumCountAfter = (int) enumCountVH.getVolatile(homeCtx);
+            System.out.println("enumCountAfter: " + enumCountAfter);
+            if (expected != enumCountAfter) {
                 throw new RuntimeException("enumCount was not decremented. Expected: " +
                         expected);
             }
