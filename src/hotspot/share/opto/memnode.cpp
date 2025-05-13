@@ -5471,7 +5471,7 @@ void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
 
 template <class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback) const {
   DUIterator_Fast imax, i = fast_outs(imax);
-  return apply_to_narrow_mem_projs_(UsesIteratorFast(imax, i, this), callback);
+  return apply_to_narrow_mem_projs_any_iterator(UsesIteratorFast(imax, i, this), callback);
 }
 
 

@@ -1631,6 +1631,13 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
 
       Node* init_ctrl = init->proj_out_or_null(TypeFunc::Control);
 
+      // What we want is to prevent the compiler and the cpu from re-ordering the stores that initialize this object
+      // with subsequent stores to any slice. As a consequence, this MemBar should capture the entire memory state at
+      // this point in the IR and produce a new memory state that should cover all slices. However, the Initialize node
+      // only captures/produces a partial memory state making it complicated to insert such a MemBar. Because
+      // re-ordering by the compiler can't happen by construction (a later Store that publishes the just allocated
+      // object reference is indirectly control dependent on the Initialize node), preventing reordering by the cpu is
+      // sufficient. For that a MemBar on the raw memory slice is good enough.
       MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxRaw);
       transform_later(mb);
 
@@ -1639,7 +1646,7 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
       Node* existing_raw_mem_proj = nullptr;
       auto find_raw_mem = [&, this](ProjNode* proj) {
         if (C->get_alias_index(proj->adr_type()) == Compile::AliasIdxRaw) {
-          assert(existing_raw_mem_proj == nullptr, "");
+          assert(existing_raw_mem_proj == nullptr, "only one expected");
           existing_raw_mem_proj = proj;
         }
         return false;

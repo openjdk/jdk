@@ -52,6 +52,32 @@ public:
   uint number_of_projs(uint which_proj) const;
   uint number_of_projs(uint which_proj, bool is_io_use) const;
 
+  // Run callback on all Proj projection from this node
+  template<class Callback> ProjNode* apply_to_projs(Callback callback) const {
+    DUIterator_Fast imax, i = fast_outs(imax);
+    return apply_to_projs(imax, i, callback);
+  }
+
+  // Same but with provided iterators
+  template<class Callback> ProjNode* apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback) const {
+    return apply_to_projs_any_iterator<Callback, UsesIteratorFast>(UsesIteratorFast(imax, i, this), callback);
+  }
+
+  // Same but only for Proj node whose _con matches which_proj
+  template <class Callback> ProjNode* apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const;
+
+  // Same but with default iterators
+  template<class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj) const {
+    DUIterator_Fast imax, i = fast_outs(imax);
+    return apply_to_projs(imax, i, callback, which_proj);
+  }
+
+  // Same but for matching _con and _is_io_use
+  template <class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const;
+
+protected:
+
+  // Provide single interface for DUIterator_Fast/DUIterator for template method below
   class UsesIteratorFast {
     DUIterator_Fast& _imax;
     DUIterator_Fast& _i;
@@ -91,53 +117,21 @@ public:
     }
   };
 
-  template <class Callback, class Iterator> class ApplyToProjs : public StackObj {
-    Callback _callback;
-    Iterator _iterator;
-    const MultiNode* _node;
-  public:
-    ApplyToProjs(Callback callback, Iterator iterator, const MultiNode* node) : _callback(callback), _iterator(iterator), _node(node) {}
-
-    ProjNode* do_it() {
-      for (; _iterator.cont(); _iterator.next()) {
-        Node* p = _iterator.current();
-        if (p->is_Proj()) {
-          ProjNode* proj = p->as_Proj();
-          if (_callback(proj)) {
-            return proj;
-          }
-        } else {
-          assert(p == _node && _node->is_Start(), "else must be proj");
+  // Iterate with i over all Proj uses calling callback
+  template<class Callback, class Iterator> ProjNode* apply_to_projs_any_iterator(Iterator i, Callback callback) const {
+    for (; i.cont(); i.next()) {
+      Node* p = i.current();
+      if (p->is_Proj()) {
+        ProjNode* proj = p->as_Proj();
+        if (callback(proj)) {
+          return proj;
         }
+      } else {
+        assert(p == this && is_Start(), "else must be proj");
       }
-      return nullptr;
     }
-  };
-
-  template<class Callback> ProjNode* apply_to_projs(Callback callback) const {
-    DUIterator_Fast imax, i = fast_outs(imax);
-    return apply_to_projs(imax, i, callback);
+    return nullptr;
   }
-
-  template<class Callback> ProjNode* apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback) const {
-    return apply_to_projs_<Callback, UsesIteratorFast>(UsesIteratorFast(imax, i, this), callback);
-  }
-
-  template <class Callback> ProjNode* apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const;
-
-  template<class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj) const {
-    DUIterator_Fast imax, i = fast_outs(imax);
-    return apply_to_projs(imax, i, callback, which_proj);
-  }
-
-  template <class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const;
-
-protected:
-  template<class Callback, class Iterator> ProjNode* apply_to_projs_(Iterator i, Callback callback) const {
-    ApplyToProjs<Callback, Iterator> apply_obj(callback, i, this);
-    return apply_obj.do_it();
-  }
-
 };
 
 //------------------------------ProjNode---------------------------------------
