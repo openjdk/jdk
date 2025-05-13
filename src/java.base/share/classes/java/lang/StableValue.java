@@ -683,7 +683,7 @@ public sealed interface StableValue<T>
      * If invoking the provided {@code mapper} function throws an exception, it
      * is rethrown to the initial caller and no value for the element is recorded.
      * <p>
-     * Any direct {@link List#subList(int, int) subList} or {@link List#reversed()} views
+     * Any {@link List#subList(int, int) subList} or {@link List#reversed()} views
      * of the returned list are also stable.
      * <p>
      * The returned list and its {@link List#subList(int, int) subList} or

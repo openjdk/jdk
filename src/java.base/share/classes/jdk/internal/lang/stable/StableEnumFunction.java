@@ -67,7 +67,6 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
         final int index = value.ordinal() - firstOrdinal;
-        final StableValueImpl<R> delegate;
         // Since we did the member.test above, we know the index is in bounds
         return delegates[index].orElseSet(new Supplier<R>() {
                     @Override public R get() { return original.apply(value); }});

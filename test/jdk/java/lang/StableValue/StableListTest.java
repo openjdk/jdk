@@ -315,6 +315,23 @@ final class StableListTest {
         assertEquals("Recursive initialization of a stable value is illegal", x.getMessage());
     }
 
+    @Test
+    void indexOfNullInViews() {
+        final int size = 5;
+        final int middle = 2;
+        viewOperations().forEach(op0 -> {
+            viewOperations().forEach( op1 -> {
+                viewOperations().forEach(op2 -> {
+                    var list = StableValue.list(size, x -> x == middle ? null : x);;
+                    var view1 = op0.apply(list);
+                    var view2 = op1.apply(view1);
+                    var view3 = op2.apply(view2);
+                    assertEquals(middle, view3.indexOf(null));
+                });
+            });
+        });
+    }
+
     // Immutability
 
     @ParameterizedTest

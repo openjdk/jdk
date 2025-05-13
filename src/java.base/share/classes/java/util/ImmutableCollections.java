@@ -47,7 +47,6 @@ import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StableValueImpl;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.NullableKeyValueHolder;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -514,7 +513,7 @@ class ImmutableCollections {
             }
         }
 
-        private boolean allowNulls() {
+        boolean allowNulls() {
             return root instanceof ListN<?> listN && listN.allowNulls;
         }
 
@@ -881,7 +880,7 @@ class ImmutableCollections {
 
         @Override
         public String toString() {
-            return StableUtil.renderElements(this, "StableList", delegates);
+            return StableUtil.renderElements(this, "StableCollection", delegates);
         }
 
         @Override
@@ -910,6 +909,11 @@ class ImmutableCollections {
             @Override
             public String toString() {
                 return StableUtil.renderElements(this, "StableCollection", delegates());
+            }
+
+            @Override
+            boolean allowNulls() {
+                return true;
             }
 
             @Override
@@ -1657,7 +1661,7 @@ class ImmutableCollections {
 
             @Override
             public String toString() {
-                return StableUtil.renderMappings(this, "StableSet", delegateEntrySet, false);
+                return StableUtil.renderMappings(this, "StableCollection", delegateEntrySet, false);
             }
 
             // For @ValueBased
@@ -1687,8 +1691,8 @@ class ImmutableCollections {
                 public Entry<K, V> next() {
                     final Map.Entry<K, StableValueImpl<V>> inner = delegateIterator.next();
                     final K k = inner.getKey();
-                    return new NullableKeyValueHolder<>(k, inner.getValue().orElseSet(new Supplier<V>() {
-                        @Override public V get() { return outer.outer.mapper.apply(k); }}));
+                    return new StableEntry<>(k, inner.getValue(), new Supplier<V>() {
+                        @Override public V get() { return outer.outer.mapper.apply(k); }});
                 }
 
                 @Override
@@ -1698,19 +1702,37 @@ class ImmutableCollections {
                                 @Override
                                 public void accept(Entry<K, StableValueImpl<V>> inner) {
                                     final K k = inner.getKey();
-                                    action.accept(new NullableKeyValueHolder<>(k, inner.getValue().orElseSet(new Supplier<V>() {
-                                        @Override public V get() { return outer.outer.mapper.apply(k); }})));
+                                    action.accept(new StableEntry<>(k, inner.getValue(), new Supplier<V>() {
+                                        @Override public V get() { return outer.outer.mapper.apply(k); }}));
                                 }
                             };
                     delegateIterator.forEachRemaining(innerAction);
                 }
 
                 // For @ValueBased
-                static private <K, V> LazyMapIterator<K, V> of(StableMapEntrySet<K, V> outer) {
+                private static  <K, V> LazyMapIterator<K, V> of(StableMapEntrySet<K, V> outer) {
                     return new LazyMapIterator<>(outer);
                 }
 
             }
+        }
+
+        private record StableEntry<K, V>(K getKey, // trick
+                                         StableValueImpl<V> stableValue,
+                                         Supplier<? extends V> supplier) implements Map.Entry<K, V> {
+
+            @Override public V setValue(V value) { throw uoe(); }
+            @Override public V getValue() { return stableValue.orElseSet(supplier); }
+            @Override public int hashCode() { return hash(getKey()) ^ hash(getValue()); }
+            @Override public String toString() { return getKey() + "=" + stableValue.toString(); }
+            @Override public boolean equals(Object o) {
+                return o instanceof Map.Entry<?, ?> e
+                        && Objects.equals(getKey(), e.getKey())
+                        // Invoke `getValue()` as late as possible to avoid evaluation
+                        && Objects.equals(getValue(), e.getValue());
+            }
+
+            private int hash(Object obj) { return (obj == null) ? 0 : obj.hashCode(); }
         }
 
         @Override

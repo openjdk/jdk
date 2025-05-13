@@ -54,7 +54,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     private static final long CONTENTS_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "contents");
 
-    // Used to indicate a holder value is `null` (see field `value` below)
+    // Used to indicate a holder value is `null` (see field `contents` below)
     private static final Object NULL_SENTINEL = new Object();
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
