@@ -106,10 +106,15 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
   match(Set dst (LoadP mem));
   predicate(UseZGC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst, KILL cr);
-  // The vast majority of memory operands seen in practice are of indOffL8 type.
-  // By construction, these memory operands do not lead to out-of-range offsets
-  // (see definition of immLoffset8), so ldr is guaranteed to be the first
-  // instruction emitted by legitimize_address() (no preceding lea).
+  // The main load is a candidate to implement implicit null checks, as long as
+  // legitimize_address() does not require a preceding lea instruction to
+  // materialize the memory operand. The absence of a preceding lea instruction
+  // is guaranteed for immLoffset8 memory operands, because these do not lead to
+  // out-of-range offsets (see definition of immLoffset8). Fortunately,
+  // immLoffset8 memory operands are the most common ones in practice.
+  // The barrier's slow path includes a reload that is identical to the main
+  // load. The reload does not need to be registered in the exception table,
+  // because it is dominated by the main one.
   ins_is_late_expanded_null_check_candidate(opnd_array(1)->opcode() == INDOFFL8);
 
   ins_cost(4 * INSN_COST);
