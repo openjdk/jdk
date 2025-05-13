@@ -1282,18 +1282,57 @@ void LIR_Assembler::type_profile_helper(Register mdo,
 
   Label L_loop, L_found, L_not_null, L_update;
 
-  // The slots in MDO are filled sequentially, and the updates are intrinsically imprecise:
-  // under initial slot installations, we may transiently have the same slot for different
-  // receivers. This imprecision skews profile a little, but is otherwise safe.
-  // It also allows us to perform a single scan. When the scan encounters the first nullptr,
-  // it can assume we are in unallocated tail, there were no matching receivers, and thus
-  // we can just take this free slot.
+  // The slots in MDO are filled sequentially. When the scan encounters the first nullptr,
+  // it can assume we are in unallocated tail, there were no matching receivers. Then, the
+  // scan may attempt to claim the slot for a new receiver. Since this claim is racy, we
+  // need to make sure that slots are only installed once. This makes sure we never overwrite
+  // slot for another receiver, never duplicate the receivers in the list, and never leave
+  // any empty slots on top of the list.
 
   __ movptr(offset, base_receiver_offset);
   __ bind(L_loop);
     __ cmpptr(Address(mdo, offset), NULL_WORD);
     __ jccb(Assembler::notEqual, L_not_null);
-      __ movptr(Address(mdo, offset), recv);
+      // Atomic slot installation. This code is tight on registers, and CAS wants
+      // RAX specifically, so we need to borrow registers a bit.
+      Register temp_reg = noreg;
+      Register recv_reg = recv;
+      Address slot(mdo, offset);
+      if (recv == rax) {
+        // Need to swap recv (RAX) with some other register.
+        // Pick any register, as long as it does not carry offset/mdo.
+        temp_reg = (offset != rbx && mdo != rbx) ? rbx :
+                   (offset != rcx && mdo != rcx) ? rcx :
+                   rdx;
+        __ push(temp_reg);
+        __ movptr(temp_reg, recv);
+        recv_reg = temp_reg;
+      } else if (mdo == rax || offset == rax) {
+        // Use the *other* register as temporary, collapse the address into it,
+        // and use it as slot address.
+        temp_reg = (mdo == rax) ? offset : mdo;
+        __ push(temp_reg);
+        __ lea(temp_reg, Address(mdo, offset));
+        slot = Address(temp_reg, 0);
+      } else {
+        // Nothing to do, just go with defaults.
+        assert_different_registers(rax, mdo, recv, offset);
+      }
+      // CAS: null -> recv
+      __ push(rax);
+      __ xorptr(rax, rax);
+      __ cmpxchgptr(recv_reg, slot);
+      __ pop(rax);
+      // Restore recv, if needed.
+      if (recv_reg != recv) {
+        __ movptr(recv, recv_reg);
+      }
+      // Pop temp, if needed.
+      if (temp_reg != noreg) {
+        __ pop(temp_reg);
+      }
+      // Fall-through to check if current slot now has the recv we need.
+      // This covers both successful and failed installation cases.
     __ bind(L_not_null);
     __ cmpptr(recv, Address(mdo, offset));
     __ jccb(Assembler::equal, L_found);
