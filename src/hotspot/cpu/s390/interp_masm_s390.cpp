@@ -665,10 +665,13 @@ void InterpreterMacroAssembler::restore_bcp() {
   z_lg(Z_bcp, Address(Z_fp, _z_ijava_state_neg(bcp)));
 }
 
-void InterpreterMacroAssembler::save_esp() {
-  z_sgrk(Z_R0, Z_esp, Z_fp);
+void InterpreterMacroAssembler::save_esp(Register fp) {
+  if (fp == noreg) {
+    fp = Z_fp;
+  }
+  z_sgrk(Z_R0, Z_esp, fp);
   z_srag(Z_R0, Z_R0, Interpreter::logStackElementSize);
-  z_stg(Z_R0, Address(Z_fp, _z_ijava_state_neg(esp)));
+  z_stg(Z_R0, Address(fp, _z_ijava_state_neg(esp)));
 }
 
 void InterpreterMacroAssembler::restore_esp() {

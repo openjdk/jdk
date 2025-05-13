@@ -1181,9 +1181,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   __ add2reg(Z_esp, -Interpreter::stackElementSize);
 
-  __ z_sgrk(Z_R0, Z_esp, fp);
-  __ z_srag(Z_R0, Z_R0, Interpreter::logStackElementSize);
-  __ z_stg(Z_R0, _z_ijava_state_neg(esp), fp);
+  __ save_esp(fp);
 
   // z_ijava_state->cpoolCache = Z_R1_scratch (see load above);
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(cpoolCache), fp);
