@@ -321,6 +321,10 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     if (is_allowed(indy_specs, ik)) {
       return true;
     }
+
+    if (ik->name()->starts_with("java/lang/invoke/MethodHandleImpl")) {
+      return true;
+    }
   }
 
 #ifdef ASSERT
@@ -339,6 +343,7 @@ bool AOTClassInitializer::is_runtime_setup_required(InstanceKlass* ik) {
   return ik == vmClasses::Class_klass() ||
          ik == vmClasses::internal_Unsafe_klass() ||
          ik == vmClasses::ConcurrentHashMap_klass() ||
+         ik == vmClasses::MethodHandleImpl_klass() ||
          ik == vmClasses::Reference_klass();
 }
 

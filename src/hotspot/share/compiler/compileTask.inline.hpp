@@ -33,8 +33,4 @@ inline Method* CompileTask::method() {
   return _method_handle.method();
 }
 
-inline Method* CompileTask::hot_method() {
-  return _hot_method_handle.method();
-}
-
 #endif // SHARE_COMPILER_COMPILETASK_INLINE_HPP

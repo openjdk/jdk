@@ -68,7 +68,6 @@ void CompileTask::free(CompileTask* task) {
   if (!task->is_free()) {
     assert(!task->lock()->is_locked(), "Should not be locked when freed");
     task->_method_handle.release();
-    task->_hot_method_handle.release();
     if (task->_failure_reason_on_C_heap && task->_failure_reason != nullptr) {
       os::free((void*) task->_failure_reason);
     }
@@ -85,7 +84,6 @@ void CompileTask::initialize(int compile_id,
                              const methodHandle& method,
                              int osr_bci,
                              int comp_level,
-                             const methodHandle& hot_method,
                              int hot_count,
                              CompileTask::CompileReason compile_reason,
                              bool is_blocking) {
@@ -118,14 +116,6 @@ void CompileTask::initialize(int compile_id,
   _failure_reason_on_C_heap = false;
   _arena_bytes = 0;
 
-  // Only capture unload blocker if _hot_method is different from _method.
-  // Otherwise, re-initialize it to empty handle to avoid keeping old hot method alive.
-  if (hot_method.not_null() && hot_method() != method()) {
-    _hot_method_handle = UnloadableMethodHandle(hot_method());
-  } else {
-    _hot_method_handle = UnloadableMethodHandle();
-  }
-
   _next = nullptr;
 }
 
@@ -142,13 +132,12 @@ CompileTask* CompileTask::select_for_compilation() {
   }
 
   _method_handle.make_always_safe();
-  _hot_method_handle.make_always_safe();
 
   return this;
 }
 
 bool CompileTask::is_safe() {
-  return _method_handle.is_safe() && _hot_method_handle.is_safe();
+  return _method_handle.is_safe();
 }
 
 // ------------------------------------------------------------------
@@ -161,9 +150,6 @@ void CompileTask::mark_on_stack() {
   assert_at_safepoint();
   assert(Thread::current()->is_VM_thread(), "Sanity");
   _method_handle.method_unsafe()->set_on_stack(true);
-  if (_hot_method_handle.method_unsafe() != nullptr) {
-    _hot_method_handle.method_unsafe()->set_on_stack(true);
-  }
 }
 
 void CompileTask::metadata_do(MetadataClosure* f) {
@@ -172,9 +158,6 @@ void CompileTask::metadata_do(MetadataClosure* f) {
   assert_at_safepoint();
   assert(Thread::current()->is_VM_thread(), "Sanity");
   f->do_metadata(_method_handle.method_unsafe());
-  if (_hot_method_handle.method_unsafe() != nullptr) {
-    f->do_metadata(_hot_method_handle.method_unsafe());
-  }
 }
 
 // ------------------------------------------------------------------
@@ -313,9 +296,6 @@ void CompileTask::log_task_queued() {
   assert(_compile_reason > CompileTask::Reason_None && _compile_reason < CompileTask::Reason_Count, "Valid values");
   xtty->print(" comment='%s'", reason_name(_compile_reason));
 
-  if (_hot_method_handle.method() != nullptr) {
-    xtty->method(_hot_method_handle.method());
-  }
   if (_hot_count != 0) {
     xtty->print(" hot_count='%d'", _hot_count);
   }

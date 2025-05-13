@@ -106,7 +106,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   // Fields used for logging why the compilation was initiated:
   jlong                _time_queued;  // time when task was enqueued
   jlong                _time_started; // time when compilation started
-  UnloadableMethodHandle _hot_method_handle;  // which method actually triggered this task
   int                  _hot_count;    // information about its invocation counter
   CompileReason        _compile_reason;      // more info about the task
   const char*          _failure_reason;
@@ -121,14 +120,13 @@ class CompileTask : public CHeapObj<mtCompiler> {
   }
 
   void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
-                  const methodHandle& hot_method, int hot_count,
+                  int hot_count,
                   CompileTask::CompileReason compile_reason, bool is_blocking);
 
   static CompileTask* allocate();
   static void         free(CompileTask* task);
 
   inline Method* method();
-  inline Method* hot_method();
 
   int          compile_id() const                { return _compile_id; }
   int          osr_bci() const                   { return _osr_bci; }
