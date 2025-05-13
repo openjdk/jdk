@@ -95,9 +95,6 @@ source %{
           return false;
         }
         break;
-      case Op_VectorCastHF2F:
-      case Op_VectorCastF2HF:
-        return UseZvfh;
       case Op_VectorLoadShuffle:
       case Op_VectorRearrange:
         // vlen >= 4 is required, because min vector size for byte is 4 on riscv,
@@ -113,6 +110,8 @@ source %{
         if (vlen < 4) {
           return false;
         }
+      case Op_VectorCastHF2F:
+      case Op_VectorCastF2HF:
       case Op_AddVHF:
       case Op_DivVHF:
       case Op_MaxVHF:
@@ -380,6 +379,7 @@ instruct vadd_hfp(vReg dst, vReg src1, vReg src2) %{
   ins_encode %{
     assert(UseZvfh, "must");
     BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_SHORT, "must");
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vfadd_vv(as_VectorRegister($dst$$reg),
                 as_VectorRegister($src1$$reg),
@@ -578,6 +578,7 @@ instruct vsub_hfp(vReg dst, vReg src1, vReg src2) %{
   ins_encode %{
     assert(UseZvfh, "must");
     BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_SHORT, "must");
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vfsub_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src1$$reg),
                 as_VectorRegister($src2$$reg));
@@ -1588,6 +1589,7 @@ instruct vdiv_hfp(vReg dst, vReg src1, vReg src2) %{
   ins_encode %{
     assert(UseZvfh, "must");
     BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_SHORT, "must");
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vfdiv_vv(as_VectorRegister($dst$$reg),
                 as_VectorRegister($src1$$reg),
@@ -1762,6 +1764,7 @@ instruct vmax_hfp(vReg dst, vReg src1, vReg src2, vRegMask_V0 v0) %{
   ins_encode %{
     assert(UseZvfh, "must");
     BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_SHORT, "must");
     __ minmax_fp_v(as_VectorRegister($dst$$reg),
                    as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg),
                    bt, false /* is_min */, Matcher::vector_length(this));
@@ -1777,6 +1780,7 @@ instruct vmin_hfp(vReg dst, vReg src1, vReg src2, vRegMask_V0 v0) %{
   ins_encode %{
     assert(UseZvfh, "must");
     BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_SHORT, "must");
     __ minmax_fp_v(as_VectorRegister($dst$$reg),
                    as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg),
                    bt, true /* is_min */, Matcher::vector_length(this));
@@ -1865,6 +1869,7 @@ instruct vhfmla(vReg dst_src1, vReg src2, vReg src3) %{
     assert(UseFMA, "Needs FMA instructions support.");
     assert(UseZvfh, "must");
     BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_SHORT, "must");
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vfmacc_vv(as_VectorRegister($dst_src1$$reg),
                  as_VectorRegister($src2$$reg), as_VectorRegister($src3$$reg));
@@ -2147,6 +2152,7 @@ instruct vmul_hfp(vReg dst, vReg src1, vReg src2) %{
   ins_encode %{
     assert(UseZvfh, "must");
     BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_SHORT, "must");
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vfmul_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src1$$reg),
                 as_VectorRegister($src2$$reg));
@@ -3088,6 +3094,7 @@ instruct replicateL_imm5(vReg dst, immL5 con) %{
 %}
 
 instruct replicateHF(vReg dst, fRegF src) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (Replicate src));
   ins_cost(VEC_COST);
   format %{ "replicateHF $dst, $src" %}
@@ -4149,6 +4156,7 @@ instruct vsqrt_hfp(vReg dst, vReg src) %{
   ins_encode %{
     assert(UseZvfh, "must");
     BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_SHORT, "must");
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vfsqrt_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
