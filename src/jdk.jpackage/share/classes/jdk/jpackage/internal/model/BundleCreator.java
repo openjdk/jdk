@@ -30,18 +30,18 @@ import java.nio.file.Path;
 
 
 /**
- * Creates native package from the given {@link jdk.jpackage.internal.model.Package} object.
- *
- * @ see ApplicationWriter
+ * Creates a bundle from the given specification.
  */
 @FunctionalInterface
-public interface PackageWriter {
+public interface BundleCreator<T extends BundleSpec> {
+
     /**
-     * Creates native package from the given {@link jdk.jpackage.internal.model.Package} object in the given directory.
-     * @param pkg the source package
-     * @param dst the directory where to create a native package
+     * Creates a bundle from the given specification in the given directory.
+     *
+     * @param spec the bundle specification
+     * @param dst the directory where to create the bundle
      * @throws PackagerException if packaging error occurs
      * @throws IOException if an I/O error occurs
      */
-    void write(Package pkg, Path dst) throws PackagerException, IOException;
+    void create(T spec, Path dst) throws PackagerException, IOException;
 }
