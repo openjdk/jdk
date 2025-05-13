@@ -779,11 +779,10 @@ public final class SwitchBootstraps {
         }
         else if (selectorType.equals(targetType) ||
                 (targetType.isPrimitive() && selectorType.isPrimitive() &&
-                    ((selectorType.equals(byte.class) && !targetType.equals(char.class)) ||
-                     (selectorType.equals(short.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper))) ||
-                     (selectorType.equals(char.class)  && (selectorWrapper.isStrictSubRangeOf(targetWrapper)))  ||
-                     (selectorType.equals(int.class)   && (targetType.equals(double.class) || targetType.equals(long.class))) ||
-                     (selectorType.equals(float.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper)))))) return true;
+                    (selectorWrapper.isStrictSubRangeOf(targetWrapper) &&
+                            !((selectorType.equals(byte.class) && targetType.equals(char.class)) ||
+                              (selectorType.equals(int.class)  && targetType.equals(float.class)) ||
+                              (selectorType.equals(long.class) && (targetType.equals(double.class) || targetType.equals(float.class))))))) return true;
         return false;
     }
 
