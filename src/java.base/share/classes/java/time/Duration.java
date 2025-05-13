@@ -1460,7 +1460,7 @@ public final class Duration
      */
     @Override
     public int hashCode() {
-        return ((int) (seconds ^ (seconds >>> 32))) + (51 * nanos);
+        return Long.hashCode(seconds) + (51 * nanos);
     }
 
     //-----------------------------------------------------------------------

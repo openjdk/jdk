@@ -78,7 +78,7 @@ Array<T>* ArchiveUtils::archive_ptr_array(GrowableArray<T>* tmp_array) {
   Array<T>* archived_array = ArchiveBuilder::new_ro_array<T>(tmp_array->length());
   for (int i = 0; i < tmp_array->length(); i++) {
       T ptr = tmp_array->at(i);
-      if (!builder->is_in_buffer_space(ptr)) {
+      if (ptr != nullptr && !builder->is_in_buffer_space(ptr)) {
         if (is_dynamic_dump && MetaspaceShared::is_in_shared_metaspace(ptr)) {
           // We have a pointer that lives in the dynamic archive but points into
           // the static archive.
