@@ -88,6 +88,7 @@
  * @run driver
  *      nsk.jdi.ThreadStartEvent.thread.thread001
  *      -verbose
+ *      -includevirtualthreads
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

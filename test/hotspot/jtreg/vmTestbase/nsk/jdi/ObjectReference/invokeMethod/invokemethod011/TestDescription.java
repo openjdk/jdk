@@ -65,6 +65,7 @@
  * @run driver
  *      nsk.jdi.ObjectReference.invokeMethod.invokemethod011
  *      -verbose
+ *      -includevirtualthreads
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

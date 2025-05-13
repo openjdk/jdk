@@ -71,6 +71,7 @@
  * @run driver
  *      nsk.jdi.EventRequestManager.createStepRequest.crstepreq005
  *      -verbose
+ *      -includevirtualthreads
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

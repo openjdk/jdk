@@ -73,6 +73,7 @@
  * @run driver
  *      nsk.jdi.VirtualMachine.allThreads.allthreads001
  *      -verbose
+ *      -includevirtualthreads
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

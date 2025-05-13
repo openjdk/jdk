@@ -62,6 +62,7 @@
  * @run driver
  *      nsk.jdi.ObjectReference.waitingThreads.waitingthreads002
  *      -verbose
+ *      -includevirtualthreads
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

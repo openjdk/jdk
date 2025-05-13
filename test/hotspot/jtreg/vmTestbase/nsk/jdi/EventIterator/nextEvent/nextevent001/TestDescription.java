@@ -66,6 +66,7 @@
  * @run driver
  *      nsk.jdi.EventIterator.nextEvent.nextevent001
  *      -verbose
+ *      -includevirtualthreads
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
