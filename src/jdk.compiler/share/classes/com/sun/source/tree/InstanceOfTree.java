@@ -48,8 +48,11 @@ public interface InstanceOfTree extends ExpressionTree {
     ExpressionTree getExpression();
 
     /**
-     * Returns the type for which to check.
-     * @return the type
+     * Returns the type for which to check, or {@code null} if this instanceof
+     * uses a pattern other the {@link BindingPatternTree}.
+     *
+     * @return the type or {@code null} if this instanceof uses a pattern other than
+     *         the {@linkplain BindingPatternTree}
      * @see #getPattern()
      */
     Tree getType();
