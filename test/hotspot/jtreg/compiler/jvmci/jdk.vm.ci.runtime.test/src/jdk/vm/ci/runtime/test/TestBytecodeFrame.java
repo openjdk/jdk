@@ -29,7 +29,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.code
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          java.base/jdk.internal.misc
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestBytecodeFrame
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestBytecodeFrame
  */
 
 package jdk.vm.ci.runtime.test;

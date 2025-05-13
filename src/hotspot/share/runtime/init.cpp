@@ -180,7 +180,9 @@ jint init_globals2() {
     return JNI_EINVAL;
   }
 #if INCLUDE_JVMCI
-  JVMCI::initialize_globals();
+  if (EnableJVMCI) {
+    JVMCI::initialize_globals();
+  }
 #endif
 
   if (!universe_post_init()) {

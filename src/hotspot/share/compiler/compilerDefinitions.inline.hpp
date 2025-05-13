@@ -35,7 +35,7 @@ inline bool CompilerConfig::is_interpreter_only() {
 }
 
 inline bool CompilerConfig::is_jvmci_compiler()    { return JVMCI_ONLY(has_jvmci() && UseJVMCICompiler) NOT_JVMCI(false); }
-inline bool CompilerConfig::is_jvmci()             { return JVMCI_ONLY(has_jvmci()    ) NOT_JVMCI(false); }
+inline bool CompilerConfig::is_jvmci()             { return JVMCI_ONLY(has_jvmci() && EnableJVMCI     ) NOT_JVMCI(false); }
 
 // is_*_only() functions describe situations in which the JVM is in one way or another
 // forced to use a particular compiler or their combination. The constraint functions

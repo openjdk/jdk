@@ -28,7 +28,7 @@
  * @library /test/lib
  * @build TestValidateModules jdk.test.lib.process.*
  * @run main TestValidateModules
- * @summary Ensure java --validate-modules works with --add-modules=jdk.internal.vm.ci
+ * @summary Ensure java --validate-modules works with --XX:+EnableJVMCI
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -36,7 +36,7 @@ import jdk.test.lib.process.ProcessTools;
 public class TestValidateModules {
     public static void main(String... args) throws Exception {
         ProcessTools.executeTestJava("-XX:+UnlockExperimentalVMOptions",
-                                     "--add-modules=jdk.internal.vm.ci",
+                                     "-XX:+EnableJVMCI",
                                      "--validate-modules",
                                      "--list-modules")
                 .outputTo(System.out)

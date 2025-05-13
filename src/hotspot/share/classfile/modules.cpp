@@ -54,9 +54,6 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/stringUtils.hpp"
 #include "utilities/utf8.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 static bool verify_module_name(const char *module_name, int len) {
   assert(module_name != nullptr, "invariant");
@@ -321,12 +318,6 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
   // Only modules defined to either the boot or platform class loader, can define a "java/" package.
   bool java_pkg_disallowed = !h_loader.is_null() &&
         !SystemDictionary::is_platform_class_loader(h_loader());
-
- #if INCLUDE_JVMCI
-   if (h_loader.is_null() && !strcmp(module_name, "jdk.internal.vm.ci")) {
-    JVMCI::jvmci_module_defined();
-   }
- #endif
 
   // Check that the list of packages has no duplicates and that the
   // packages are syntactically ok.

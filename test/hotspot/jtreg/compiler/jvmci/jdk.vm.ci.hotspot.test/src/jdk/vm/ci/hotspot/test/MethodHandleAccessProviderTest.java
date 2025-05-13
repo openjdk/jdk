@@ -31,7 +31,7 @@
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
- * @run testng/othervm -XX:+UnlockExperimentalVMOptions
+ * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *      -XX:-UseJVMCICompiler jdk.vm.ci.hotspot.test.MethodHandleAccessProviderTest
  */
 

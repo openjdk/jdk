@@ -44,7 +44,7 @@ bool JVMCICleaningTask::claim_cleaning_task() {
 
 void JVMCICleaningTask::work(bool unloading_occurred) {
   // One worker will clean JVMCI metadata handles.
-  if (unloading_occurred && claim_cleaning_task()) {
+  if (unloading_occurred && EnableJVMCI && claim_cleaning_task()) {
     JVMCI::do_unloading(unloading_occurred);
   }
 }

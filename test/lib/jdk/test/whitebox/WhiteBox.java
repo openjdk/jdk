@@ -331,6 +331,7 @@ public class WhiteBox {
   // Determines if the libgraal shared library file is present.
   public native boolean hasLibgraal();
   public native boolean isC2OrJVMCIIncluded();
+  public native boolean isJVMCISupportedByGC();
 
   public native int     matchesMethod(Executable method, String pattern);
   public native int     matchesInline(Executable method, String pattern);

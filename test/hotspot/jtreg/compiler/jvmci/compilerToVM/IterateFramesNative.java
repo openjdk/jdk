@@ -40,13 +40,13 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbatch -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   compiler.jvmci.compilerToVM.IterateFramesNative
  * @run main/othervm -Xcomp -Xbootclasspath/a:.
  *                   -XX:CompileOnly=compiler.jvmci.compilerToVM.IterateFramesNative::callerNative
  *                   -XX:CompileOnly=jdk.vm.ci.hotspot.CompilerToVM::iterateFrames
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   -Dcompiler.jvmci.compilerToVM.IterateFramesNative.checkCompiled=true
  *                   compiler.jvmci.compilerToVM.IterateFramesNative
  */

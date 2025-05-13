@@ -31,7 +31,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run main/othervm -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                  -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                  compiler.jvmci.compilerToVM.GetFlagValueTest
  */
@@ -65,7 +65,7 @@ public class GetFlagValueTest {
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
-            "--add-modules=jdk.internal.vm.ci",
+            "-XX:+EnableJVMCI",
             "-XX:+PrintFlagsFinal",
             "-version");
         out = new OutputAnalyzer(pb.start());

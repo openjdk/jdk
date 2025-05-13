@@ -527,7 +527,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   } while (should_repeat == true);
 
 #if INCLUDE_JVMCI
-  if (h_method->method_data() != nullptr) {
+  if (EnableJVMCI && h_method->method_data() != nullptr) {
     ResourceMark rm(current);
     MethodData* mdo = h_method->method_data();
 

@@ -626,24 +626,26 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
   _c2_count = CompilationPolicy::c2_count();
 
 #if INCLUDE_JVMCI
-  // This is creating a JVMCICompiler singleton.
-  JVMCICompiler* jvmci = new JVMCICompiler();
+  if (EnableJVMCI) {
+    // This is creating a JVMCICompiler singleton.
+    JVMCICompiler* jvmci = new JVMCICompiler();
 
-  if (UseJVMCICompiler) {
-    _compilers[1] = jvmci;
-    if (FLAG_IS_DEFAULT(JVMCIThreads)) {
-      if (BootstrapJVMCI) {
-        // JVMCI will bootstrap so give it more threads
-        _c2_count = MIN2(32, os::active_processor_count());
+    if (UseJVMCICompiler) {
+      _compilers[1] = jvmci;
+      if (FLAG_IS_DEFAULT(JVMCIThreads)) {
+        if (BootstrapJVMCI) {
+          // JVMCI will bootstrap so give it more threads
+          _c2_count = MIN2(32, os::active_processor_count());
+        }
+      } else {
+        _c2_count = JVMCIThreads;
       }
-    } else {
-      _c2_count = JVMCIThreads;
-    }
-    if (FLAG_IS_DEFAULT(JVMCIHostThreads)) {
-    } else {
+      if (FLAG_IS_DEFAULT(JVMCIHostThreads)) {
+      } else {
 #ifdef COMPILER1
-      _c1_count = JVMCIHostThreads;
+        _c1_count = JVMCIHostThreads;
 #endif // COMPILER1
+      }
     }
   }
 #endif // INCLUDE_JVMCI
@@ -666,9 +668,11 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
 #endif // COMPILER2
 
 #if INCLUDE_JVMCI
-  // Register after c2 registration.
-  // JVMCI CompilerPhaseType idToPhase mapping is dynamic.
-  JFR_ONLY(register_jfr_phasetype_serializer(compiler_jvmci);)
+   // Register after c2 registration.
+   // JVMCI CompilerPhaseType idToPhase mapping is dynamic.
+   if (EnableJVMCI) {
+     JFR_ONLY(register_jfr_phasetype_serializer(compiler_jvmci);)
+   }
 #endif // INCLUDE_JVMCI
 
   if (CompilerOracle::should_collect_memstat()) {
@@ -2724,10 +2728,12 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
     comp->print_timers();
   }
 #if INCLUDE_JVMCI
-  JVMCICompiler *jvmci_comp = JVMCICompiler::instance(false, JavaThread::current_or_null());
-  if (jvmci_comp != nullptr && jvmci_comp != comp) {
-    tty->cr();
-    jvmci_comp->print_timers();
+  if (EnableJVMCI) {
+    JVMCICompiler *jvmci_comp = JVMCICompiler::instance(false, JavaThread::current_or_null());
+    if (jvmci_comp != nullptr && jvmci_comp != comp) {
+      tty->cr();
+      jvmci_comp->print_timers();
+    }
   }
 #endif
 

@@ -3133,6 +3133,12 @@ public class IRNode {
      */
     public static void checkIRNodeSupported(String node) throws CheckedTestFrameworkException {
         switch (node) {
+            case INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP -> {
+                if (!WhiteBox.getWhiteBox().isJVMCISupportedByGC()) {
+                    throw new CheckedTestFrameworkException("INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP is unsupported " +
+                                                            "in builds without JVMCI.");
+                }
+            }
             case CHECKCAST_ARRAYCOPY -> {
                 if (Platform.isS390x()) {
                     throw new CheckedTestFrameworkException("CHECKCAST_ARRAYCOPY is unsupported on s390.");

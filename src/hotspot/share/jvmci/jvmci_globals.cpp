@@ -60,28 +60,18 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   }
 
   if (EnableJVMCIProduct) {
-    if (FLAG_IS_DEFAULT(UseJVMCICompiler)) {
+    if (FLAG_IS_DEFAULT(EnableJVMCI)) {
+      FLAG_SET_DEFAULT(EnableJVMCI, true);
+    }
+    if (EnableJVMCI && FLAG_IS_DEFAULT(UseJVMCICompiler)) {
       FLAG_SET_DEFAULT(UseJVMCICompiler, true);
     }
   }
 
   JVMCI_FLAG_CHECKED(UseJVMCICompiler)
-  // JVMCI_FLAG_CHECKED(EnableJVMCI)
+  JVMCI_FLAG_CHECKED(EnableJVMCI)
   JVMCI_FLAG_CHECKED(EnableJVMCIProduct)
   JVMCI_FLAG_CHECKED(UseGraalJIT)
-  JVMCI_FLAG_CHECKED(JVMCIEventLogLevel)
-  JVMCI_FLAG_CHECKED(JVMCITraceLevel)
-  JVMCI_FLAG_CHECKED(JVMCICounterSize)
-  JVMCI_FLAG_CHECKED(JVMCICountersExcludeCompiler)
-  JVMCI_FLAG_CHECKED(JVMCINMethodSizeLimit)
-  JVMCI_FLAG_CHECKED(JVMCIPrintProperties)
-  JVMCI_FLAG_CHECKED(JVMCIThreadsPerNativeLibraryRuntime)
-  JVMCI_FLAG_CHECKED(JVMCICompilerIdleDelay)
-  JVMCI_FLAG_CHECKED(UseJVMCINativeLibrary)
-  JVMCI_FLAG_CHECKED(JVMCINativeLibraryThreadFraction)
-  JVMCI_FLAG_CHECKED(JVMCILibPath)
-  JVMCI_FLAG_CHECKED(JVMCINativeLibraryErrorFile)
-  JVMCI_FLAG_CHECKED(JVMCILibDumpJNIConfig)
 
   CHECK_NOT_SET(BootstrapJVMCI,               UseJVMCICompiler)
   CHECK_NOT_SET(PrintBootstrap,               UseJVMCICompiler)
@@ -89,19 +79,26 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   CHECK_NOT_SET(JVMCIHostThreads,             UseJVMCICompiler)
   CHECK_NOT_SET(LibJVMCICompilerThreadHidden, UseJVMCICompiler)
 
-  if (FLAG_IS_DEFAULT(UseJVMCINativeLibrary) && !UseJVMCINativeLibrary) {
-    if (JVMCI::shared_library_exists()) {
-      // If a JVMCI native library is present,
-      // we enable UseJVMCINativeLibrary by default.
-      FLAG_SET_DEFAULT(UseJVMCINativeLibrary, true);
+  if (UseJVMCICompiler) {
+    if (!FLAG_IS_DEFAULT(EnableJVMCI) && !EnableJVMCI) {
+      jio_fprintf(defaultStream::error_stream(),
+          "Improperly specified VM option UseJVMCICompiler: EnableJVMCI cannot be disabled\n");
+      return false;
+    }
+    FLAG_SET_DEFAULT(EnableJVMCI, true);
+  }
+
+  if (EnableJVMCI) {
+    if (FLAG_IS_DEFAULT(UseJVMCINativeLibrary) && !UseJVMCINativeLibrary) {
+      if (JVMCI::shared_library_exists()) {
+        // If a JVMCI native library is present,
+        // we enable UseJVMCINativeLibrary by default.
+        FLAG_SET_DEFAULT(UseJVMCINativeLibrary, true);
+      }
     }
   }
 
   if (UseJVMCICompiler) {
-    // if (!UseJVMCINativeLibrary && !EnableJVMCI) {
-    //   jio_fprintf(defaultStream::error_stream(), "Using JVMCI compiler requires -XX:+EnableJVMCI when no JVMCI shared library is available\n");
-    //   FLAG_SET_DEFAULT(EnableJVMCI, true);
-    // }
     if (BootstrapJVMCI && UseJVMCINativeLibrary) {
       jio_fprintf(defaultStream::error_stream(), "-XX:+BootstrapJVMCI is not compatible with -XX:+UseJVMCINativeLibrary\n");
       return false;
@@ -113,7 +110,28 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
     }
   }
 
+  if (!EnableJVMCI) {
+    // Switch off eager JVMCI initialization if JVMCI is disabled.
+    // Don't throw error if EagerJVMCI is set to allow testing.
+    if (EagerJVMCI) {
+      FLAG_SET_DEFAULT(EagerJVMCI, false);
+    }
+  }
   JVMCI_FLAG_CHECKED(EagerJVMCI)
+
+  CHECK_NOT_SET(JVMCIEventLogLevel,                  EnableJVMCI)
+  CHECK_NOT_SET(JVMCITraceLevel,                     EnableJVMCI)
+  CHECK_NOT_SET(JVMCICounterSize,                    EnableJVMCI)
+  CHECK_NOT_SET(JVMCICountersExcludeCompiler,        EnableJVMCI)
+  CHECK_NOT_SET(JVMCINMethodSizeLimit,               EnableJVMCI)
+  CHECK_NOT_SET(JVMCIPrintProperties,                EnableJVMCI)
+  CHECK_NOT_SET(JVMCIThreadsPerNativeLibraryRuntime, EnableJVMCI)
+  CHECK_NOT_SET(JVMCICompilerIdleDelay,              EnableJVMCI)
+  CHECK_NOT_SET(UseJVMCINativeLibrary,               EnableJVMCI)
+  CHECK_NOT_SET(JVMCINativeLibraryThreadFraction,    EnableJVMCI)
+  CHECK_NOT_SET(JVMCILibPath,                        EnableJVMCI)
+  CHECK_NOT_SET(JVMCINativeLibraryErrorFile,         EnableJVMCI)
+  CHECK_NOT_SET(JVMCILibDumpJNIConfig,               EnableJVMCI)
 
 #ifndef COMPILER2
   JVMCI_FLAG_CHECKED(EnableVectorAggressiveReboxing)
@@ -159,6 +177,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
 // Convert JVMCI flags from experimental to product
 bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin, bool use_graal_jit) {
   const char *JVMCIFlags[] = {
+    "EnableJVMCI",
     "EnableJVMCIProduct",
     "UseJVMCICompiler",
     "JVMCIThreadsPerNativeLibraryRuntime",
@@ -201,10 +220,23 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin, bool use_graa
     }
   }
 
-  // Effect of EnableJVMCIProduct on changing defaults of
-  // UseJVMCICompiler is deferred to check_jvmci_flags_are_consistent
+  // Effect of EnableJVMCIProduct on changing defaults of EnableJVMCI
+  // and UseJVMCICompiler is deferred to check_jvmci_flags_are_consistent
   // so that setting these flags explicitly (e.g. on the command line)
   // takes precedence.
 
   return true;
+}
+
+bool JVMCIGlobals::gc_supports_jvmci() {
+  return UseSerialGC || UseParallelGC || UseG1GC || UseZGC || UseEpsilonGC;
+}
+
+void JVMCIGlobals::check_jvmci_supported_gc() {
+  if (EnableJVMCI) {
+    // Check if selected GC is supported by JVMCI and Java compiler
+    if (!gc_supports_jvmci()) {
+      fatal("JVMCI does not support the selected GC");
+    }
+  }
 }

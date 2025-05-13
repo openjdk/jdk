@@ -44,6 +44,9 @@ class fileStream;
                     range,                                                  \
                     constraint)                                             \
                                                                             \
+  product(bool, EnableJVMCI, false, EXPERIMENTAL,                           \
+          "Enable JVMCI. Defaults to true if UseJVMCICompiler is true.")    \
+                                                                            \
   product(bool, UseGraalJIT, false, EXPERIMENTAL,                           \
           "Select the Graal JVMCI compiler. This is an alias for: "         \
           "  -XX:+EnableJVMCIProduct "                                      \
@@ -52,8 +55,8 @@ class fileStream;
   product(bool, EnableJVMCIProduct, false, EXPERIMENTAL,                    \
           "Allow JVMCI to be used in product mode. This alters a subset of "\
           "JVMCI flags to be non-experimental, defaults UseJVMCICompiler "  \
-          "to true and defaults UseJVMCINativeLibrary to true if a JVMCI "  \
-          "native library is available.")                                   \
+          "and EnableJVMCI to true and defaults UseJVMCINativeLibrary "     \
+          "to true if a JVMCI native library is available.")                \
                                                                             \
   product(bool, UseJVMCICompiler, false, EXPERIMENTAL,                      \
           "Use JVMCI as the default compiler. Defaults to true if "         \
@@ -137,8 +140,8 @@ class fileStream;
   product(bool, UseJVMCINativeLibrary, false, EXPERIMENTAL,                 \
           "Execute JVMCI Java code from a shared library (\"libjvmci\") "   \
           "instead of loading it from class files and executing it "        \
-          "on the HotSpot heap. Defaults to true if UseJVMCICompiler "   \
-          "is true and a JVMCI native library is available.")   \
+          "on the HotSpot heap. Defaults to true if UseJVMCICompiler or "   \
+          "EnableJVMCI is true and a JVMCI native library is available.")   \
                                                                             \
   product(double, JVMCINativeLibraryThreadFraction, 0.66, EXPERIMENTAL,     \
           "The fraction of compiler threads used by libjvmci. "             \
@@ -203,6 +206,12 @@ class JVMCIGlobals {
 
   // Convert JVMCI experimental flags to product
   static bool enable_jvmci_product_mode(JVMFlagOrigin origin, bool use_graal_jit);
+
+  // Returns true iff the GC fully supports JVMCI.
+  static bool gc_supports_jvmci();
+
+  // Check and turn off EnableJVMCI if selected GC does not support JVMCI.
+  static void check_jvmci_supported_gc();
 
   static fileStream* get_jni_config_file() { return _jni_config_file; }
 };

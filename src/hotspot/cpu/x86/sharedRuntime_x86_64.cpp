@@ -936,13 +936,15 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   __ movptr(r11, Address(rbx, in_bytes(Method::from_compiled_offset())));
 
 #if INCLUDE_JVMCI
-  // check if this call should be routed towards a specific entry point
-  __ cmpptr(Address(r15_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())), 0);
-  Label no_alternative_target;
-  __ jcc(Assembler::equal, no_alternative_target);
-  __ movptr(r11, Address(r15_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
-  __ movptr(Address(r15_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())), 0);
-  __ bind(no_alternative_target);
+  if (EnableJVMCI) {
+    // check if this call should be routed towards a specific entry point
+    __ cmpptr(Address(r15_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())), 0);
+    Label no_alternative_target;
+    __ jcc(Assembler::equal, no_alternative_target);
+    __ movptr(r11, Address(r15_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    __ movptr(Address(r15_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())), 0);
+    __ bind(no_alternative_target);
+  }
 #endif // INCLUDE_JVMCI
 
   // Now generate the shuffle code.  Pick up all register args and move the
@@ -2641,7 +2643,9 @@ void SharedRuntime::generate_deopt_blob() {
     pad += 1024;
   }
 #if INCLUDE_JVMCI
-  pad += 512; // Increase the buffer size for JVMCI
+  if (EnableJVMCI) {
+    pad += 512; // Increase the buffer size when compiling for JVMCI
+  }
 #endif
   const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
   CodeBuffer buffer(name, 2560+pad, 1024);
@@ -2711,30 +2715,35 @@ void SharedRuntime::generate_deopt_blob() {
 
 #if INCLUDE_JVMCI
   Label after_fetch_unroll_info_call;
-  int implicit_exception_uncommon_trap_offset = __ pc() - start;
+  int implicit_exception_uncommon_trap_offset = 0;
+  int uncommon_trap_offset = 0;
 
-  __ pushptr(Address(r15_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
-  __ movptr(Address(r15_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())), NULL_WORD);
+  if (EnableJVMCI) {
+    implicit_exception_uncommon_trap_offset = __ pc() - start;
 
-  int uncommon_trap_offset = __ pc() - start;
+    __ pushptr(Address(r15_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+    __ movptr(Address(r15_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())), NULL_WORD);
 
-  // Save everything in sight.
-  RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_wide_vectors*/ true);
-  // fetch_unroll_info needs to call last_java_frame()
-  __ set_last_Java_frame(noreg, noreg, nullptr, rscratch1);
+    uncommon_trap_offset = __ pc() - start;
 
-  __ movl(c_rarg1, Address(r15_thread, in_bytes(JavaThread::pending_deoptimization_offset())));
-  __ movl(Address(r15_thread, in_bytes(JavaThread::pending_deoptimization_offset())), -1);
+    // Save everything in sight.
+    RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_wide_vectors*/ true);
+    // fetch_unroll_info needs to call last_java_frame()
+    __ set_last_Java_frame(noreg, noreg, nullptr, rscratch1);
 
-  __ movl(r14, Deoptimization::Unpack_reexecute);
-  __ mov(c_rarg0, r15_thread);
-  __ movl(c_rarg2, r14); // exec mode
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap)));
-  oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
+    __ movl(c_rarg1, Address(r15_thread, in_bytes(JavaThread::pending_deoptimization_offset())));
+    __ movl(Address(r15_thread, in_bytes(JavaThread::pending_deoptimization_offset())), -1);
 
-  __ reset_last_Java_frame(false);
+    __ movl(r14, Deoptimization::Unpack_reexecute);
+    __ mov(c_rarg0, r15_thread);
+    __ movl(c_rarg2, r14); // exec mode
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap)));
+    oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
 
-  __ jmp(after_fetch_unroll_info_call);
+    __ reset_last_Java_frame(false);
+
+    __ jmp(after_fetch_unroll_info_call);
+  } // EnableJVMCI
 #endif // INCLUDE_JVMCI
 
   int exception_offset = __ pc() - start;
@@ -2822,7 +2831,9 @@ void SharedRuntime::generate_deopt_blob() {
   __ reset_last_Java_frame(false);
 
 #if INCLUDE_JVMCI
-  __ bind(after_fetch_unroll_info_call);
+  if (EnableJVMCI) {
+    __ bind(after_fetch_unroll_info_call);
+  }
 #endif
 
   // Load UnrollBlock* into rdi
@@ -2983,8 +2994,10 @@ void SharedRuntime::generate_deopt_blob() {
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
 #if INCLUDE_JVMCI
-  _deopt_blob->set_uncommon_trap_offset(uncommon_trap_offset);
-  _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
+  if (EnableJVMCI) {
+    _deopt_blob->set_uncommon_trap_offset(uncommon_trap_offset);
+    _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
+  }
 #endif
 }
 

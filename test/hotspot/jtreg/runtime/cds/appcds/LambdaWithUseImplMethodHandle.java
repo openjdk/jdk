@@ -29,6 +29,7 @@
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
+ * @requires !vm.jvmci.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build pkg1.BaseWithProtectedMethod
  * @build pkg2.Child

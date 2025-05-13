@@ -32,7 +32,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
  *          java.base/jdk.internal.misc
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestSingleImplementor
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestSingleImplementor
  */
 
 package jdk.vm.ci.runtime.test;

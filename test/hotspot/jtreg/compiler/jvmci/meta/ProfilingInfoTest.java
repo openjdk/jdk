@@ -33,7 +33,7 @@
  * @requires vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel > 1
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler -Xbootclasspath/a:. compiler.jvmci.meta.ProfilingInfoTest
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler -Xbootclasspath/a:. compiler.jvmci.meta.ProfilingInfoTest
  */
 package compiler.jvmci.meta;
 

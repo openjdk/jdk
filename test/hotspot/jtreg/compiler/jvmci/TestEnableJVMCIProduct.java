@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8235539 8245717
- * @summary Tests effect of -XX:+EnableJVMCIProduct on UseJVMCICompiler
+ * @summary Tests effect of -XX:+EnableJVMCIProduct on EnableJVMCI and UseJVMCICompiler
  * @requires vm.flagless
  * @requires vm.jvmci
  * @library /test/lib
@@ -66,13 +66,23 @@ public class TestEnableJVMCIProduct {
         }
         // Test EnableJVMCIProduct without any other explicit JVMCI option
         test("-XX:-PrintWarnings",
+            new Expectation("EnableJVMCI", "true", "default"),
             new Expectation("UseJVMCICompiler", "true", "default"));
         test("-XX:+UseJVMCICompiler",
+            new Expectation("EnableJVMCI", "true", "default"),
             new Expectation("UseJVMCICompiler", "true", "command line"));
         test("-XX:-UseJVMCICompiler",
+            new Expectation("EnableJVMCI", "true", "default"),
             new Expectation("UseJVMCICompiler", "false", "command line"));
+        test("-XX:+EnableJVMCI",
+            new Expectation("EnableJVMCI", "true", "command line"),
+            new Expectation("UseJVMCICompiler", "true", "default"));
+        test("-XX:-EnableJVMCI",
+            new Expectation("EnableJVMCI", "false", "command line"),
+            new Expectation("UseJVMCICompiler", "false", "default"));
         test("-XX:+EnableJVMCIProduct",
             new Expectation("EnableJVMCIProduct", "true", "(?:command line|jimage)"),
+            new Expectation("EnableJVMCI", "true", "default"),
             new Expectation("UseJVMCICompiler", "true", "default"));
     }
 
@@ -84,7 +94,6 @@ public class TestEnableJVMCIProduct {
         for (String flag : flags) {
             Path propsPath = Path.of("props." + id++);
             ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "--add-modules=jdk.internal.vm.ci",
                 "-XX:+UnlockExperimentalVMOptions", flag, "-XX:-UnlockExperimentalVMOptions",
                 explicitFlag,
                 "-XX:+PrintFlagsFinal",

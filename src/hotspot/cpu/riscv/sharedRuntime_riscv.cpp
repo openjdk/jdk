@@ -493,13 +493,15 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   __ ld(t1, Address(xmethod, in_bytes(Method::from_compiled_offset())));
 
 #if INCLUDE_JVMCI
-  // check if this call should be routed towards a specific entry point
-  __ ld(t0, Address(xthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
-  Label no_alternative_target;
-  __ beqz(t0, no_alternative_target);
-  __ mv(t1, t0);
-  __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
-  __ bind(no_alternative_target);
+  if (EnableJVMCI) {
+    // check if this call should be routed towards a specific entry point
+    __ ld(t0, Address(xthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    Label no_alternative_target;
+    __ beqz(t0, no_alternative_target);
+    __ mv(t1, t0);
+    __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    __ bind(no_alternative_target);
+  }
 #endif // INCLUDE_JVMCI
 
   // Now generate the shuffle code.
@@ -2082,7 +2084,9 @@ void SharedRuntime::generate_deopt_blob() {
   // Setup code generation tools
   int pad = 0;
 #if INCLUDE_JVMCI
-  pad += 512; // Increase the buffer size for JVMCI
+  if (EnableJVMCI) {
+    pad += 512; // Increase the buffer size when compiling for JVMCI
+  }
 #endif
   const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
   CodeBuffer buffer(name, 2048 + pad, 1024);
@@ -2154,33 +2158,38 @@ void SharedRuntime::generate_deopt_blob() {
 
 #if INCLUDE_JVMCI
   Label after_fetch_unroll_info_call;
-  int implicit_exception_uncommon_trap_offset = __ pc() - start;
+  int implicit_exception_uncommon_trap_offset = 0;
+  int uncommon_trap_offset = 0;
 
-  __ ld(ra, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
-  __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+  if (EnableJVMCI) {
+    implicit_exception_uncommon_trap_offset = __ pc() - start;
 
-  int uncommon_trap_offset = __ pc() - start;
+    __ ld(ra, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+    __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
 
-  // Save everything in sight.
-  reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
-  // fetch_unroll_info needs to call last_java_frame()
-  Label retaddr;
-  __ set_last_Java_frame(sp, noreg, retaddr, t0);
+    uncommon_trap_offset = __ pc() - start;
 
-  __ lw(c_rarg1, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
-  __ mv(t0, -1);
-  __ sw(t0, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+    // Save everything in sight.
+    reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
+    // fetch_unroll_info needs to call last_java_frame()
+    Label retaddr;
+    __ set_last_Java_frame(sp, noreg, retaddr, t0);
 
-  __ mv(xcpool, Deoptimization::Unpack_reexecute);
-  __ mv(c_rarg0, xthread);
-  __ orrw(c_rarg2, zr, xcpool); // exec mode
-  __ rt_call(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
-  __ bind(retaddr);
-  oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
+    __ lw(c_rarg1, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+    __ mv(t0, -1);
+    __ sw(t0, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
 
-  __ reset_last_Java_frame(false);
+    __ mv(xcpool, Deoptimization::Unpack_reexecute);
+    __ mv(c_rarg0, xthread);
+    __ orrw(c_rarg2, zr, xcpool); // exec mode
+    __ rt_call(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
+    __ bind(retaddr);
+    oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
 
-  __ j(after_fetch_unroll_info_call);
+    __ reset_last_Java_frame(false);
+
+    __ j(after_fetch_unroll_info_call);
+  } // EnableJVMCI
 #endif // INCLUDE_JVMCI
 
   int exception_offset = __ pc() - start;
@@ -2275,7 +2284,9 @@ void SharedRuntime::generate_deopt_blob() {
   __ reset_last_Java_frame(false);
 
 #if INCLUDE_JVMCI
-  __ bind(after_fetch_unroll_info_call);
+  if (EnableJVMCI) {
+    __ bind(after_fetch_unroll_info_call);
+  }
 #endif
 
   // Load UnrollBlock* into x15
@@ -2432,8 +2443,10 @@ void SharedRuntime::generate_deopt_blob() {
   assert(_deopt_blob != nullptr, "create deoptimization blob fail!");
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
 #if INCLUDE_JVMCI
-  _deopt_blob->set_uncommon_trap_offset(uncommon_trap_offset);
-  _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
+  if (EnableJVMCI) {
+    _deopt_blob->set_uncommon_trap_offset(uncommon_trap_offset);
+    _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
+  }
 #endif
 }
 

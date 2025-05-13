@@ -3595,15 +3595,17 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     Atomic::release_store(&vm_created, COMPLETE);
 
 #if INCLUDE_JVMCI
-    if (UseJVMCICompiler) {
-      // JVMCI is initialized on a CompilerThread
-      if (BootstrapJVMCI) {
-        JavaThread* THREAD = thread; // For exception macros.
-        JVMCICompiler* compiler = JVMCICompiler::instance(true, CATCH);
-        compiler->bootstrap(THREAD);
-        if (HAS_PENDING_EXCEPTION) {
-          HandleMark hm(THREAD);
-          vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
+    if (EnableJVMCI) {
+      if (UseJVMCICompiler) {
+        // JVMCI is initialized on a CompilerThread
+        if (BootstrapJVMCI) {
+          JavaThread* THREAD = thread; // For exception macros.
+          JVMCICompiler* compiler = JVMCICompiler::instance(true, CATCH);
+          compiler->bootstrap(THREAD);
+          if (HAS_PENDING_EXCEPTION) {
+            HandleMark hm(THREAD);
+            vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
+          }
         }
       }
     }

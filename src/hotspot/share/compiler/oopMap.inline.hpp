@@ -66,9 +66,12 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame 
       if (omv.type() != OopMapValue::derived_oop_value)
         continue;
 
-  #ifndef COMPILER2_OR_JVMCI
-      ShouldNotReachHere();
-  #endif // !COMPILER2_OR_JVMCI
+  #ifndef COMPILER2
+  #if INCLUDE_JVMCI
+      if (!EnableJVMCI)
+  #endif
+        ShouldNotReachHere();
+  #endif // !COMPILER2
 
       address loc = fr->oopmapreg_to_location(omv.reg(), reg_map);
 

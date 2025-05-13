@@ -30,11 +30,23 @@
  * @modules jdk.internal.vm.ci/jdk.vm.ci.runtime
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -Dcompiler.jvmci.JVM_GetJVMCIRuntimeTest.positive=true
+ *      -XX:+EnableJVMCI
+ *      compiler.jvmci.JVM_GetJVMCIRuntimeTest
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
+ *      -Dcompiler.jvmci.JVM_GetJVMCIRuntimeTest.positive=false
+ *      -XX:-EnableJVMCI -XX:-UseJVMCICompiler
  *      compiler.jvmci.JVM_GetJVMCIRuntimeTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -Dcompiler.jvmci.JVM_GetJVMCIRuntimeTest.positive=true
  *      -Dcompiler.jvmci.JVM_GetJVMCIRuntimeTest.threaded=true
+ *      -XX:+EnableJVMCI
  *      compiler.jvmci.JVM_GetJVMCIRuntimeTest
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
+ *      -Dcompiler.jvmci.JVM_GetJVMCIRuntimeTest.positive=false
+ *      -Dcompiler.jvmci.JVM_GetJVMCIRuntimeTest.threaded=true
+ *      -XX:-EnableJVMCI -XX:-UseJVMCICompiler
+ *      compiler.jvmci.JVM_GetJVMCIRuntimeTest
+
  */
 
 package compiler.jvmci;

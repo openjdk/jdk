@@ -39,7 +39,7 @@
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm
  *          java.base/sun.reflect.annotation
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestResolvedJavaField
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestResolvedJavaField
  */
 
 package jdk.vm.ci.runtime.test;

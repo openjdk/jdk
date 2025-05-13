@@ -433,7 +433,9 @@ void before_exit(JavaThread* thread, bool halt) {
   // Actual shutdown logic begins here.
 
 #if INCLUDE_JVMCI
-  JVMCI::shutdown(thread);
+  if (EnableJVMCI) {
+    JVMCI::shutdown(thread);
+  }
 #endif
 
 #if INCLUDE_CDS

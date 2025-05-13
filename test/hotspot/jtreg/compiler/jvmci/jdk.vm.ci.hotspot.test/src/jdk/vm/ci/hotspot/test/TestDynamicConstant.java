@@ -30,10 +30,10 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  * @run testng/othervm
- *      -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler
+ *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
  *      jdk.vm.ci.hotspot.test.TestDynamicConstant
  * @run testng/othervm
- *      -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3
+ *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3
  *      jdk.vm.ci.hotspot.test.TestDynamicConstant
  */
 
