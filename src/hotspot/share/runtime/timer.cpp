@@ -37,6 +37,10 @@ double TimeHelper::counter_to_millis(jlong counter) {
   return counter_to_seconds(counter) * 1000.0;
 }
 
+double TimeHelper::counter_to_micros(jlong counter) {
+  return counter_to_seconds(counter) * 1000000.0;
+}
+
 jlong TimeHelper::millis_to_counter(jlong millis) {
   jlong freq = os::elapsed_frequency() / MILLIUNITS;
   return millis * freq;
@@ -106,6 +110,12 @@ jlong TimeStamp::milliseconds() const {
   assert(is_updated(), "must not be clear");
   jlong new_count = os::elapsed_counter();
   return (jlong)TimeHelper::counter_to_millis(new_count - _counter);
+}
+
+jlong TimeStamp::microseconds() const {
+  assert(is_updated(), "must not be clear");
+  jlong new_count = os::elapsed_counter();
+  return (jlong)TimeHelper::counter_to_micros(new_count - _counter);
 }
 
 jlong TimeStamp::ticks_since_update() const {

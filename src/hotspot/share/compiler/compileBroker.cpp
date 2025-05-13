@@ -29,6 +29,7 @@
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
 #include "code/dependencyContext.hpp"
+#include "compiler/cHeapStringHolder.hpp"
 #include "compiler/compilationLog.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -779,6 +780,9 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
                                           (jlong)CompileBroker::no_compile,
                                           CHECK);
   }
+
+  // Print the legend, if needed
+  CompileTask::maybe_print_legend();
 
   _initialized = true;
 }
@@ -2151,14 +2155,9 @@ static void whitebox_lock_compilation() {
 // Compile a method.
 //
 void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
-  task->print_ul();
   elapsedTimer time;
 
   DirectiveSet* directive = task->directive();
-  if (directive->PrintCompilationOption) {
-    ResourceMark rm;
-    task->print_tty();
-  }
 
   CompilerThread* thread = CompilerThread::current();
   ResourceMark rm(thread);
@@ -2173,8 +2172,17 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   bool is_osr = (osr_bci != standard_entry_bci);
   bool should_log = (thread->log() != nullptr);
   bool should_break = false;
+  bool should_print_compilation = PrintCompilation || directive->PrintCompilationOption;
   const int task_level = task->comp_level();
   AbstractCompiler* comp = task->compiler();
+
+  // Print the task before compilation.
+  if (should_print_compilation) {
+    ttyLocker ttyl;  // keep the following output all in one block
+    task->print(tty, "started", false, true);
+  }
+  task->print_ul("started");
+
   {
     // create the handle inside it's own block so it can't
     // accidentally be referenced once the thread transitions to
@@ -2204,6 +2212,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   const char* failure_reason = nullptr;
   bool failure_reason_on_C_heap = false;
   const char* retry_message = nullptr;
+  CHeapStringHolder inline_messages;
 
 #if INCLUDE_JVMCI
   if (UseJVMCICompiler && comp != nullptr && comp->is_jvmci()) {
@@ -2342,19 +2351,37 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     if (event.should_commit()) {
       post_compilation_event(event, task);
     }
+
+    // Copy out inline messages to the outer block.
+    const char* msgs = ci_env.inline_messages();
+    if (msgs != nullptr) {
+      inline_messages.set(msgs);
+    }
   }
+
+  task->mark_finished(os::elapsed_counter());
 
   if (failure_reason != nullptr) {
     task->set_failure_reason(failure_reason, failure_reason_on_C_heap);
     if (CompilationLog::log() != nullptr) {
       CompilationLog::log()->log_failure(thread, task, failure_reason, retry_message);
     }
-    if (PrintCompilation || directive->PrintCompilationOption) {
+    if (should_print_compilation) {
+      ttyLocker ttyl;
       FormatBufferResource msg = retry_message != nullptr ?
         FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
         FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
       task->print(tty, msg);
     }
+  } else {
+    if (should_print_compilation) {
+      ttyLocker ttyl;
+      task->print_tty();
+      if (inline_messages.get() != nullptr) {
+        tty->print_raw_cr(inline_messages.get());
+      }
+    }
+    task->print_ul();
   }
 
   DirectivesStack::release(directive);

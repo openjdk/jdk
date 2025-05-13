@@ -59,6 +59,7 @@ private:
   DebugInformationRecorder* _debug_info;
   Dependencies*    _dependencies;
   CHeapStringHolder _failure_reason;
+  CHeapStringHolder _inline_messages;
   bool             _inc_decompile_count_on_failure;
   int              _compilable;
   bool             _break_at_compile;
@@ -464,6 +465,9 @@ public:
   void report_failure(const char* reason);      // Report failure immediately
   void record_method_not_compilable(const char* reason, bool all_tiers = false);
   void record_out_of_memory_failure();
+
+  void record_inline_messages(const char* msgs) { _inline_messages.set(msgs); }
+  const char* inline_messages() { return _inline_messages.get(); }
 
   // RedefineClasses support
   void metadata_do(MetadataClosure* f) { _factory->metadata_do(f); }
