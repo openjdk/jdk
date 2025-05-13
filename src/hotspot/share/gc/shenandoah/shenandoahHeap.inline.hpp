@@ -619,7 +619,7 @@ class ShenandoahObjectToOopClosure : public ObjectClosure {
 public:
   ShenandoahObjectToOopClosure(T* cl) : _cl(cl) {}
 
-  void do_object(oop obj) {
+  void do_object(oop obj) override {
     obj->oop_iterate(_cl);
   }
 };
@@ -632,8 +632,21 @@ public:
   ShenandoahObjectToOopBoundedClosure(T* cl, HeapWord* bottom, HeapWord* top) :
     _cl(cl), _bounds(bottom, top) {}
 
-  void do_object(oop obj) {
+  void do_object(oop obj) override {
     obj->oop_iterate(_cl, _bounds);
+  }
+};
+
+template <class T>
+class ShenandoahNonForwardedObjectToOopClosure : public ObjectClosure {
+  T* _cl;
+public:
+  ShenandoahNonForwardedObjectToOopClosure(T* cl) : _cl(cl) {}
+
+  void do_object(oop obj) override {
+    if (obj->is_self_forwarded() || !obj->is_forwarded()) {
+      obj->oop_iterate(_cl);
+    }
   }
 };
 
@@ -647,8 +660,13 @@ inline void ShenandoahHeap::marked_object_oop_iterate(ShenandoahHeapRegion* regi
       marked_object_iterate(region, &objs);
     }
   } else {
-    ShenandoahObjectToOopClosure<T> objs(cl);
-    marked_object_iterate(region, &objs, top);
+    if (region->has_evacuation_failures()) {
+      ShenandoahNonForwardedObjectToOopClosure<T> objs(cl);
+      marked_object_iterate(region, &objs, top);
+    } else {
+      ShenandoahObjectToOopClosure<T> objs(cl);
+      marked_object_iterate(region, &objs, top);
+    }
   }
 }
 
