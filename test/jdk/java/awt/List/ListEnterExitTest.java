@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ public class ListEnterExitTest {
                 }
             });
         }
+        System.out.println("mouseEnterExitListener.isPassed() : " + mouseEnterExitListener.isPassed());
         if (!mouseEnterExitListener.isPassed()) {
             throw new RuntimeException("Haven't receive mouse enter/exit events");
         }
@@ -108,10 +109,12 @@ class MouseEnterExitListener extends MouseAdapter {
 
     public void mouseEntered(MouseEvent e) {
         passed_1 = true;
+        System.out.println("passed_1 is: " + passed_1);
     }
 
     public void mouseExited(MouseEvent e) {
         passed_2 = true;
+        System.out.println("passed_2 is: " + passed_2);
     }
 
     public void mousePressed(MouseEvent e) {

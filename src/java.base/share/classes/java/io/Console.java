@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
-import jdk.internal.javac.PreviewFeature;
 import sun.nio.cs.UTF_8;
 
 /**
@@ -145,100 +144,6 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @return  The reader associated with this console
      */
     public Reader reader() {
-        throw newUnsupportedOperationException();
-    }
-
-    /**
-     * Writes a string representation of the specified object to this console's
-     * output stream, terminates the line using {@link System#lineSeparator()}
-     * and then flushes the console.
-     *
-     * <p> The string representation of the specified object is obtained as if
-     * by calling {@link String#valueOf(Object)}.
-     *
-     * @param  obj
-     *         An object whose string representation is to be written,
-     *         may be {@code null}.
-     *
-     * @return  This console
-     *
-     * @since 23
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public Console println(Object obj) {
-        throw newUnsupportedOperationException();
-    }
-
-    /**
-     * Terminates the current line in this console's output stream using
-     * {@link System#lineSeparator()} and then flushes the console.
-     *
-     * @return  This console
-     *
-     * @since 24
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public Console println() {
-        return println("");
-    }
-
-    /**
-     * Writes a string representation of the specified object to this console's
-     * output stream and then flushes the console.
-     *
-     * <p> The string representation of the specified object is obtained as if
-     * by calling {@link String#valueOf(Object)}.
-     *
-     * @param  obj
-     *         An object whose string representation is to be written,
-     *         may be {@code null}.
-     *
-     * @return  This console
-     *
-     * @since 23
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public Console print(Object obj) {
-        throw newUnsupportedOperationException();
-    }
-
-    /**
-     * Writes a prompt as if by calling {@code print}, then reads a single line
-     * of text from this console.
-     *
-     * @param  prompt
-     *         A prompt string, may be {@code null}.
-     *
-     * @throws IOError
-     *         If an I/O error occurs.
-     *
-     * @return  A string containing the line read from the console, not
-     *          including any line-termination characters, or {@code null}
-     *          if an end of stream has been reached without having read
-     *          any characters.
-     *
-     * @since 23
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public String readln(String prompt) {
-        throw newUnsupportedOperationException();
-    }
-
-    /**
-     * Reads a single line of text from this console.
-     *
-     * @throws IOError
-     *         If an I/O error occurs.
-     *
-     * @return  A string containing the line read from the console, not
-     *          including any line-termination characters, or {@code null}
-     *          if an end of stream has been reached without having read
-     *          any characters.
-     *
-     * @since 24
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public String readln() {
         throw newUnsupportedOperationException();
     }
 
@@ -607,7 +512,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * Returns the {@link java.nio.charset.Charset Charset} object used for
      * the {@code Console}.
      * <p>
-     * The returned charset corresponds to the input and output source
+     * The returned charset is used for interpreting the input and output source
      * (e.g., keyboard and/or display) specified by the host environment or user,
      * which defaults to the one based on {@link System##stdout.encoding stdout.encoding}.
      * It may not necessarily be the same as the default charset returned from
