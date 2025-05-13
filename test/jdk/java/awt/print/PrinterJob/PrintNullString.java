@@ -21,16 +21,12 @@
  * questions.
  */
 
-import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Panel;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
 import java.io.File;
-import java.lang.Override;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 
@@ -45,14 +41,14 @@ import javax.print.attribute.standard.Destination;
  * @key printer
  * @run main PrintNullString
  */
-public class PrintNullString extends Frame {
+public class PrintNullString {
 
     public static void main(String[] args) throws Exception {
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
         PrinterJob pj = PrinterJob.getPrinterJob();
-        pj.setPrintable(new TextCanvas(), new PageFormat());
+        pj.setPrintable(new PrintText(), new PageFormat());
         PrintRequestAttributeSet pSet = new HashPrintRequestAttributeSet();
         File file = new File("out.prn");
         file.deleteOnExit();
@@ -60,7 +56,7 @@ public class PrintNullString extends Frame {
         pj.print(pSet);
     }
 
-    private static class TextCanvas extends Panel implements Printable {
+    private static class PrintText implements Printable {
         private final String nullStr = null;
         private final String emptyStr = "";
         private final AttributedString emptyAttStr = new AttributedString(emptyStr);
@@ -75,12 +71,7 @@ public class PrintNullString extends Frame {
 
             Graphics2D g2d = (Graphics2D) g;
             g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
-            paint(g2d);
 
-            return PAGE_EXISTS;
-        }
-
-        private void paint(Graphics2D g2d) {
             // API 1: null & empty drawString(String, int, int);
             try {
                 g2d.drawString(nullStr, 20, 40);
@@ -132,11 +123,8 @@ public class PrintNullString extends Frame {
             } catch (IllegalArgumentException e) {
                 g2d.drawString("caught expected IAE for empty iterator, float", 20, 180);
             }
-        }
 
-        @Override
-        public Dimension getPreferredSize() {
-            return new Dimension(450, 250);
+            return PAGE_EXISTS;
         }
     }
 }
