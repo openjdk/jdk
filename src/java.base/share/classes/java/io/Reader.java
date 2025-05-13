@@ -427,7 +427,7 @@ public abstract class Reader implements Readable, Closeable {
      *
      * <p> The behavior for the case where the reader is
      * <i>asynchronously closed</i>, or the thread interrupted during the
-     * read, is highly input stream specific, and therefore not specified.
+     * read, is highly input reader specific, and therefore not specified.
      *
      * <p> If an I/O error occurs reading from the stream, then it
      * may do so after some, but not all, characters have been read.
@@ -471,7 +471,7 @@ public abstract class Reader implements Readable, Closeable {
      *
      * <p> The behavior for the case where the reader
      * is <i>asynchronously closed</i>, or the thread interrupted during the
-     * read, is highly input stream specific, and therefore not specified.
+     * read, is highly input reader specific, and therefore not specified.
      *
      * <p> If an I/O error occurs reading from the stream, then it
      * may do so after some, but not all, characters have been read.
