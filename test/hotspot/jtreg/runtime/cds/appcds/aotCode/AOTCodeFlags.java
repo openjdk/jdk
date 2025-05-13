@@ -27,6 +27,8 @@
  * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
+ * @requires vm.flavor != "zero"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
  * @requires vm.flagless
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
