@@ -76,7 +76,7 @@ static bool needs_explicit_null_check_for_read(Node *val) {
   return true;
 }
 
-void PhaseCFG::move_into(Node* n, Block* b) {
+void PhaseCFG::move_node_and_its_projections_to_block(Node* n, Block* b) {
   Block* old = get_block_for_node(n);
   old->find_remove(n);
   b->add_inst(n);
@@ -88,11 +88,11 @@ void PhaseCFG::move_into(Node* n, Block* b) {
       continue;
     }
     assert(!n->is_MachProj(), "nested projections are not allowed");
-    move_into(out, b);
+    move_node_and_its_projections_to_block(out, b);
   }
 }
 
-void PhaseCFG::maybe_hoist_into(Node* n, Block* b) {
+void PhaseCFG::ensure_node_is_at_block_or_before(Node* n, Block* b) {
   Block* current = get_block_for_node(n);
   if (current->dominates(b)) {
     return;
@@ -101,7 +101,7 @@ void PhaseCFG::maybe_hoist_into(Node* n, Block* b) {
   // We only expect nodes without further inputs, like MachTemp or load Base.
   assert(n->req() == 0 || (n->req() == 1 && n->in(0) == (Node*)C->root()),
          "need for recursive hoisting not expected");
-  move_into(n, b);
+  move_node_and_its_projections_to_block(n, b);
 }
 
 //------------------------------implicit_null_check----------------------------
@@ -426,9 +426,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       // Hoist it up to the end of the test block together with its inputs if they exist.
       for (uint i = 2; i < val->req(); i++) {
         // DecodeN has 2 regular inputs + optional MachTemp or load Base inputs.
-        maybe_hoist_into(val->in(i), block);
+        ensure_node_is_at_block_or_before(val->in(i), block);
       }
-      move_into(val, block);
+      move_node_and_its_projections_to_block(val, block);
     }
   }
 
@@ -438,11 +438,11 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     if (n == nullptr || !n->is_MachTemp()) {
       continue;
     }
-    maybe_hoist_into(n, block);
+    ensure_node_is_at_block_or_before(n, block);
   }
 
   // Hoist the memory candidate up to the end of the test block.
-  move_into(best, block);
+  move_node_and_its_projections_to_block(best, block);
 
   // Move the control dependence if it is pinned to not-null block.
   // Don't change it in other cases: null or dominating control.
