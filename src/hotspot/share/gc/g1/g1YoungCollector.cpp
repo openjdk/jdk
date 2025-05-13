@@ -663,7 +663,7 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _per_thread_states(per_thread_states),
     _task_queues(task_queues),
-    _terminator(num_workers, _task_queues, TERMINATION_EVENT_NAME("ObjCopy")),
+    _terminator(num_workers, _task_queues, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::Termination)),
     _pinned_regions_recorded(false) {}
 
   void work(uint worker_id) {
@@ -946,7 +946,7 @@ public:
     : RefProcProxyTask("G1STWRefProcProxyTask", max_workers),
       _g1h(g1h),
       _pss(pss),
-      _terminator(max_workers, &task_queues, TERMINATION_EVENT_NAME("ObjCopy")),
+      _terminator(max_workers, &task_queues, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::Termination)),
       _task_queues(task_queues) {}
 
   void work(uint worker_id) override {

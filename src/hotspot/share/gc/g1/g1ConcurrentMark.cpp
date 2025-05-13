@@ -487,7 +487,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   // _tasks set inside the constructor
 
   _task_queues(new G1CMTaskQueueSet(_max_num_tasks)),
-  _terminator(_max_num_tasks, _task_queues, TERMINATION_EVENT_NAME("G1 Concurrent Mark Task")),
+  _terminator(_max_num_tasks, _task_queues, TERMINATION_EVENT_NAME("Concurrent Marking")),
 
   _first_overflow_barrier_sync(),
   _second_overflow_barrier_sync(),
