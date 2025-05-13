@@ -104,9 +104,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 
 uint64_t DeoptimizationScope::_committed_deopt_gen = 0;
 uint64_t DeoptimizationScope::_active_deopt_gen    = 1;

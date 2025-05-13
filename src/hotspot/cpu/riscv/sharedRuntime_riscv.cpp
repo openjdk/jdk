@@ -2156,33 +2156,31 @@ void SharedRuntime::generate_deopt_blob() {
   Label after_fetch_unroll_info_call;
   int implicit_exception_uncommon_trap_offset = __ pc() - start;
 
-  {
-    __ ld(ra, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
-    __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+  __ ld(ra, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+  __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
 
-    int uncommon_trap_offset = __ pc() - start;
+  int uncommon_trap_offset = __ pc() - start;
 
-    // Save everything in sight.
-    reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
-    // fetch_unroll_info needs to call last_java_frame()
-    Label retaddr;
-    __ set_last_Java_frame(sp, noreg, retaddr, t0);
+  // Save everything in sight.
+  reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
+  // fetch_unroll_info needs to call last_java_frame()
+  Label retaddr;
+  __ set_last_Java_frame(sp, noreg, retaddr, t0);
 
-    __ lw(c_rarg1, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
-    __ mv(t0, -1);
-    __ sw(t0, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+  __ lw(c_rarg1, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+  __ mv(t0, -1);
+  __ sw(t0, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
 
-    __ mv(xcpool, Deoptimization::Unpack_reexecute);
-    __ mv(c_rarg0, xthread);
-    __ orrw(c_rarg2, zr, xcpool); // exec mode
-    __ rt_call(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
-    __ bind(retaddr);
-    oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
+  __ mv(xcpool, Deoptimization::Unpack_reexecute);
+  __ mv(c_rarg0, xthread);
+  __ orrw(c_rarg2, zr, xcpool); // exec mode
+  __ rt_call(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
+  __ bind(retaddr);
+  oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
 
-    __ reset_last_Java_frame(false);
+  __ reset_last_Java_frame(false);
 
-    __ j(after_fetch_unroll_info_call);
-  }
+  __ j(after_fetch_unroll_info_call);
 #endif // INCLUDE_JVMCI
 
   int exception_offset = __ pc() - start;

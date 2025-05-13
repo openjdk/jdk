@@ -32,7 +32,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -Xss512K
- *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+EagerJVMCI --add-modules=jdk.internal.vm.ci
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+EagerJVMCI
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.Test8009761::m2
  *      compiler.uncommontrap.Test8009761
  */
