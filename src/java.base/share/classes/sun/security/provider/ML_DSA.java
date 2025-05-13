@@ -1091,7 +1091,7 @@ public class ML_DSA {
     }
 
     private int[][][] generateA(byte[] seed) {
-  
+
         // Manually do multidimensional array initialization for performance
         int[][][] a = new int[mlDsa_k][][];
         for (int i = 0; i < mlDsa_k; i++) {
