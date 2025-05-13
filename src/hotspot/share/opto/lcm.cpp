@@ -92,7 +92,7 @@ void PhaseCFG::move_node_and_its_projections_to_block(Node* n, Block* b) {
   }
 }
 
-void PhaseCFG::ensure_node_is_at_block_or_before(Node* n, Block* b) {
+void PhaseCFG::ensure_node_is_at_block_or_above(Node* n, Block* b) {
   Block* current = get_block_for_node(n);
   if (current->dominates(b)) {
     return;
@@ -426,7 +426,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       // Hoist it up to the end of the test block together with its inputs if they exist.
       for (uint i = 2; i < val->req(); i++) {
         // DecodeN has 2 regular inputs + optional MachTemp or load Base inputs.
-        ensure_node_is_at_block_or_before(val->in(i), block);
+        ensure_node_is_at_block_or_above(val->in(i), block);
       }
       move_node_and_its_projections_to_block(val, block);
     }
@@ -438,7 +438,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     if (n == nullptr || !n->is_MachTemp()) {
       continue;
     }
-    ensure_node_is_at_block_or_before(n, block);
+    ensure_node_is_at_block_or_above(n, block);
   }
 
   // Hoist the memory candidate up to the end of the test block.

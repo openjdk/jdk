@@ -464,8 +464,9 @@ class PhaseCFG : public Phase {
   Node* catch_cleanup_find_cloned_def(Block* use_blk, Node* def, Block* def_blk, int n_clone_idx);
   void  catch_cleanup_inter_block(Node *use, Block *use_blk, Node *def, Block *def_blk, int n_clone_idx);
 
-  // If necessary, hoist orphan node n into the end of block b.
-  void ensure_node_is_at_block_or_before(Node* n, Block* b);
+  // Ensure that n happens at b or above, i.e. at a block that dominates b.
+  // We expect n to be an orphan node without further inputs.
+  void ensure_node_is_at_block_or_above(Node* n, Block* b);
 
   // Move node n from its current placement into the end of block b.
   // Move also outgoing Mach projections.
