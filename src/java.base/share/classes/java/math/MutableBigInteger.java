@@ -1978,7 +1978,7 @@ class MutableBigInteger {
                 if (shiftExcess != 0) {
                     int shiftLack = n - shiftExcess;
                     shift += shiftLack; // shift is long, no overflow
-                    rad /= Double.valueOf("0x1p" + shiftLack);
+                    rad /= Double.parseDouble("0x1p" + shiftLack);
                 }
             } else {
                 rad = this.toBigInteger().doubleValue();
