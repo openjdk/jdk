@@ -35,11 +35,13 @@ public class CheckDisplayModes {
 
     public static void main(String[] args) {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        for (GraphicsDevice gd : ge.getScreenDevices()) {
+        GraphicsDevice[] allDevices = ge.getScreenDevices();
+
+        for (GraphicsDevice gd : allDevices) {
             System.out.println("Available screen device: " + gd.getIDstring());
         }
 
-        for (GraphicsDevice graphicDevice : ge.getScreenDevices()) {
+        for (GraphicsDevice graphicDevice : allDevices) {
             System.out.println("On screen device " + graphicDevice.getIDstring());
             if (!graphicDevice.isDisplayChangeSupported()) {
                 System.err.println("Display mode change is not supported on this host. Test is considered passed.");
