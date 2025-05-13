@@ -3854,7 +3854,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             n = bitLength(mag, mag.length);
             if (signum < 0
                     // Check if magnitude is a power of two
-                    && Integer.bitCount(mag[0]) == 1
+                    && Integer.lowestOneBit(mag[0]) == mag[0]
                     && numberOfTrailingZeroInts() == mag.length - 1) {
                 n--;
             }
