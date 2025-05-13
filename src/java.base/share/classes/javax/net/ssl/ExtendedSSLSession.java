@@ -169,7 +169,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * Generate Exported Keying Material (EKM) calculated according to the
      * algorithms defined in RFCs 5705/8446.
      * <P>
-     * Note RFC 5705 (for (D)TLSv1.2 and earlier) calculates different EKM
+     * RFC 5705 (for (D)TLSv1.2 and earlier) calculates different EKM
      * values depending on whether {@code context} is null or non-null/empty.
      * RFC 8446 (TLSv1.3) treats a null context as non-null/empty.
      * <P>
@@ -184,7 +184,9 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *     RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3
      *
      * @implSpec The default implementation throws
-     *           {@code UnsupportedOperationException}
+     *           {@code UnsupportedOperationException}.
+     *           Classes derived from ExtendedSSLSession must implement
+     *           this method.
      *
      * @param label   the label bytes used in the EKM calculation.
      *                {@code label} will be converted to a {@code byte[]}
@@ -192,7 +194,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * @param context the context bytes used in the EKM calculation
      * @param length  the number of bytes of EKM material needed
      *
-     * @throws SSLKeyException if the key could not be generated
+     * @throws SSLKeyException if the key cannot be generated
      * @throws IllegalArgumentException if {@code length} is non-positive,
      *         or if the {@code label} or {@code context} length can
      *         not be accommodated
@@ -201,7 +203,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *         does not implement the operation
      *
      * @return a {@code SecretKey} that contains {@code length} bytes of the
-     *         EKM material.
+     *         EKM material
      *
      * @since 25
      */
@@ -214,7 +216,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * Generate Exported Keying Material (EKM) calculated according to the
      * algorithms defined in RFCs 5705/8446.
      * <P>
-     * Note RFC 5705 (for (D)TLSv1.2 and earlier) calculates different EKM
+     * RFC 5705 (for (D)TLSv1.2 and earlier) calculates different EKM
      * values depending on whether {@code context} is null or non-null/empty.
      * RFC 8446 (TLSv1.3) treats a null context as non-null/empty.
      * <P>
@@ -234,7 +236,9 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *     RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3
      *
      * @implSpec The default implementation throws
-     *           {@code UnsupportedOperationException}
+     *           {@code UnsupportedOperationException}.
+     *           Classes derived from ExtendedSSLSession must implement
+     *           this method.
      *
      * @param label   the label bytes used in the EKM calculation.
      *                {@code label} will be converted to a {@code byte[]}
@@ -242,7 +246,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * @param context the context bytes used in the EKM calculation
      * @param length  the number of bytes of EKM material needed
      *
-     * @throws SSLKeyException if the key could not be generated
+     * @throws SSLKeyException if the key cannot be generated
      * @throws IllegalArgumentException if {@code length} is non-positive,
      *         or if the {@code label} or {@code context} length can
      *         not be accommodated

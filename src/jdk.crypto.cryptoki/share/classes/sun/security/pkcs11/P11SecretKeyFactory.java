@@ -276,6 +276,8 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         putKeyInfo(new TLSKeyInfo("TlsClientAppTrafficSecret"));
         putKeyInfo(new TLSKeyInfo("TlsClientHandshakeTrafficSecret"));
         putKeyInfo(new TLSKeyInfo("TlsEarlySecret"));
+        putKeyInfo(new TLSKeyInfo("TlsExporterMasterSecret"));
+        putKeyInfo(new TLSKeyInfo("TlsExporterKeyingMaterial"));
         putKeyInfo(new TLSKeyInfo("TlsFinishedSecret"));
         putKeyInfo(new TLSKeyInfo("TlsHandshakeSecret"));
         putKeyInfo(new TLSKeyInfo("TlsKey"));

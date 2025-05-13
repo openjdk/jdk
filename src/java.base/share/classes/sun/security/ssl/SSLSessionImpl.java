@@ -1659,7 +1659,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 // ...then the "inner" HKDF-Expand-Label() to get the
                 // derivedSecret that is used as the Secret in the "outer"
                 // HKDF-Expand-Label().
-                SecretKey derivedSecret = hkdf.deriveKey("DerivedSecret",
+                SecretKey derivedSecret = hkdf.deriveKey("TlsKey",
                         HKDFParameterSpec.expandOnly(exporterMasterSecret,
                         hkdfInfo, hashAlg.hashLength));
                 try {
@@ -1679,7 +1679,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
                     // ...now the final expand.
                     return (deriveKey ?
-                            hkdf.deriveKey("ExportKeyingMaterial",
+                            hkdf.deriveKey("TlsExporterKeyingMaterial",
                                     HKDFParameterSpec.expandOnly(derivedSecret,
                                             hkdfInfo, length)) :
                             hkdf.deriveData(
