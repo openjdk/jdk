@@ -34,11 +34,7 @@ import jdk.internal.reflect.CallerSensitive;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * A linker provides access to foreign functions from Java code, and access to Java code
@@ -859,12 +855,11 @@ public sealed interface Linker permits AbstractLinker {
          * @see #captureStateLayout()
          */
         static Option captureCallState(String... capturedState) {
-            int set = Stream.of(Objects.requireNonNull(capturedState))
-                    .map(Objects::requireNonNull)
-                    .map(CapturableState::forName)
-                    .mapToInt(state -> 1 << state.ordinal())
-                    .sum();
-            return new LinkerOptions.CaptureCallState(set);
+            int mask = 0;
+            for (var state : capturedState) {
+                mask |= CapturableState.maskFromName(state);
+            }
+            return new LinkerOptions.CaptureCallState(mask);
         }
 
          /**

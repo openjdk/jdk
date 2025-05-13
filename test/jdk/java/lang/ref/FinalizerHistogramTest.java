@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  */
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
+import jdk.test.whitebox.WhiteBox;
+
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import java.lang.reflect.Method;
@@ -32,37 +33,49 @@ import java.lang.reflect.Field;
  * @test
  * @summary Unit test for FinalizerHistogram
  * @modules java.base/java.lang.ref:open
- * @run main FinalizerHistogramTest
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI
+ *      FinalizerHistogramTest
  */
 
 public class FinalizerHistogramTest {
     static ReentrantLock lock = new ReentrantLock();
-    static volatile int wasInitialized = 0;
-    static volatile int wasTrapped = 0;
-    static final int objectsCount = 1000;
+    static final AtomicInteger initializedCount = new AtomicInteger(0);
+    static final int OBJECTS_COUNT = 1000;
+
+    static WhiteBox wb;
 
     static class MyObject {
         public MyObject() {
             // Make sure object allocation/deallocation is not optimized out
-            wasInitialized += 1;
+            initializedCount.incrementAndGet();
         }
 
         protected void finalize() {
             // Trap the object in a finalization queue
-            wasTrapped += 1;
             lock.lock();
         }
     }
 
-    public static void main(String[] argvs) {
+    public static void main(String[] argvs) throws InterruptedException {
         try {
             lock.lock();
-            for(int i = 0; i < objectsCount; ++i) {
+            for(int i = 0; i < OBJECTS_COUNT; ++i) {
                 new MyObject();
             }
-            System.out.println("Objects intialized: " + objectsCount);
-            System.gc();
-            while(wasTrapped < 1);
+            System.out.println("Objects intialized: " + initializedCount.get());
+            wb = WhiteBox.getWhiteBox();
+            wb.fullGC();
+            boolean refProResult;
+            do {
+                refProResult = wb.waitForReferenceProcessing();
+                System.out.println("waitForReferenceProcessing returned: " + refProResult);
+            } while (refProResult);
 
             Class<?> klass = Class.forName("java.lang.ref.FinalizerHistogram");
 

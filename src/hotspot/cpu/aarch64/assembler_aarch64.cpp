@@ -456,7 +456,7 @@ void Assembler::bang_stack_with_offset(int offset) { Unimplemented(); }
 
 bool asm_util::operand_valid_for_immediate_bits(int64_t imm, unsigned nbits) {
   guarantee(nbits == 8 || nbits == 12, "invalid nbits value");
-  uint64_t uimm = (uint64_t)uabs((jlong)imm);
+  uint64_t uimm = (uint64_t)g_uabs((jlong)imm);
   if (uimm < (UCONST64(1) << nbits))
     return true;
   if (uimm < (UCONST64(1) << (2 * nbits))
