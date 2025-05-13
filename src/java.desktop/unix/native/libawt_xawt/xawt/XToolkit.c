@@ -692,7 +692,12 @@ void awt_output_flush() {
 static void wakeUp() {
     static char wakeUp_char = 'p';
     if (!isMainThread() && awt_pipe_inited) {
-        write ( AWT_WRITEPIPE, &wakeUp_char, 1 );
+        if (write(AWT_WRITEPIPE, &wakeUp_char, 1) < 0) {
+            // if block is left empty to avoid adding unused-result to
+            // AwtLibraries.gmk disabled warning section on linux (gcc & clang)
+            // Additionally, throwing error in this case may introduce
+            // unexpected behavior change
+        }
     }
 }
 
