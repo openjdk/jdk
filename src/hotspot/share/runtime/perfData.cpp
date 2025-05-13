@@ -516,9 +516,6 @@ void PerfDataManager::create_misc_perfdata() {
   create_constant(SUN_OS, "hrt.frequency", PerfData::U_Hertz,
     os::elapsed_frequency(), CHECK);
 
-  create_constant(SUN_OS, "hrt.now", PerfData::U_Hertz,
-    os::elapsed_frequency(), CHECK);
-
   // string constants
 
   // create string instrumentation for various Java properties.
