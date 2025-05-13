@@ -113,7 +113,10 @@ inline oop ShenandoahForwarding::try_forward_to_self(oop obj) {
     }
   }
 
-  markWord new_mark = markWord::from_pointer(obj).set_self_forwarded();
+  uint old_lock_bits = mask_bits(old_mark.value(), markWord::lock_mask_in_place);
+  markWord new_mark = old_mark.set_self_forwarded();
+  uint new_lock_bits = mask_bits(new_mark.value(), markWord::lock_mask_in_place);
+  assert(old_lock_bits == new_lock_bits, "Lock bits (%u) changed to (%u) by self forwarding", old_lock_bits, new_lock_bits);
   markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
   if (prev_mark == old_mark) {
     log_debug(gc)("Set forwarding bit on " PTR_FORMAT ", mark = " PTR_FORMAT, p2i(obj), new_mark.value());
