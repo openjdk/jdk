@@ -1190,6 +1190,10 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     return;
   }
 
+  if (ik->name()->equals("jck/java/util/ResourceBundle/LoadBundleTests/bundles/MyResources")) {
+    tty->print_cr("Hello0");
+  }
+
   oop loader = ik->class_loader();
   char* src = (char*)stream->source();
   if (src == nullptr) {
@@ -1198,6 +1202,14 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
       ik->set_shared_classpath_index(0);
       ik->set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
     }
+    return;
+  }
+
+  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
+    // A class loaded by a user-defined classloader.
+    assert(ik->shared_classpath_index() < 0, "not assigned yet");
+    ik->set_shared_classpath_index(UNREGISTERED_INDEX);
+    SystemDictionaryShared::set_shared_class_misc_info(ik, (ClassFileStream*)stream);
     return;
   }
 
@@ -1270,15 +1282,6 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     });
 
     if (found_invalid) {
-      return;
-    }
-
-    // No path entry found for this class: most likely a shared class loaded by the
-    // user defined classloader.
-    if (classpath_index < 0 && !SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
-      assert(ik->shared_classpath_index() < 0, "not assigned yet");
-      ik->set_shared_classpath_index(UNREGISTERED_INDEX);
-      SystemDictionaryShared::set_shared_class_misc_info(ik, (ClassFileStream*)stream);
       return;
     }
   }

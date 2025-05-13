@@ -70,6 +70,10 @@ int ClassLoaderExt::compare_module_names(const char** p1, const char** p2) {
 void ClassLoaderExt::record_result(s2 classpath_index, InstanceKlass* result, bool redefined) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
+  //if (result->name()->equals("jck/java/util/ResourceBundle/LoadBundleTests/bundles/MyResources")) {
+  //  tty->print_cr("Hello2");
+  //}
+
   // We need to remember where the class comes from during dumping.
   oop loader = result->class_loader();
   s2 classloader_type = ClassLoader::BOOT_LOADER;

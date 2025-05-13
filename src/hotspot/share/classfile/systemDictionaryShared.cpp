@@ -263,6 +263,9 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   if (!k->is_loaded()) {
     return warn_excluded(k, "Not in loaded state");
   }
+  if (k->is_shared_boot_class() && k->class_loader() != nullptr) {
+    return warn_excluded(k, "boot classes loaded from resources");
+  }
   if (has_been_redefined(k)) {
     return warn_excluded(k, "Has been redefined");
   }
