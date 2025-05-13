@@ -252,6 +252,13 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
     void checkServerTrusted(X509Certificate[] chain, String authType,
             QuicTLSEngineImpl quicTLSEngine) throws CertificateException {
         final SSLSession handshakeSession = quicTLSEngine.getHandshakeSession();
+        if (handshakeSession == null) {
+            throw new CertificateException("No handshake session");
+        }
+        final SSLParameters sslParameters = quicTLSEngine.getSSLParameters();
+        if (sslParameters == null) {
+            throw new CertificateException("No SSLParameters");
+        }
         final List<byte[]> responseList;
         final AlgorithmConstraints constraints;
         // determine the AlgorithmConstraints and the OCSP responses
@@ -267,18 +274,15 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             constraints = SSLAlgorithmConstraints.forQUIC(quicTLSEngine, false);
             responseList = Collections.emptyList();
         }
-        final SSLParameters sslParameters = quicTLSEngine.getSSLParameters();
         final Validator v = checkTrustedInit(chain, authType, false);
         // do the certificate chain validation
         final X509Certificate[] trustedChain = v.validate(chain, null,
                 responseList, constraints, authType);
-        if (sslParameters != null && handshakeSession != null) {
-            // check endpoint identity
-            String identityAlg =
-                    sslParameters.getEndpointIdentificationAlgorithm();
-            if (identityAlg != null && !identityAlg.isEmpty()) {
-                checkIdentity(handshakeSession, trustedChain, identityAlg, false);
-            }
+        // check endpoint identity
+        String identityAlg =
+                sslParameters.getEndpointIdentificationAlgorithm();
+        if (identityAlg != null && !identityAlg.isEmpty()) {
+            checkIdentity(handshakeSession, trustedChain, identityAlg, false);
         }
         if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
             SSLLogger.fine("Found trusted certificate",
