@@ -237,8 +237,8 @@ class PrintHierarchy : public HierarchyVisitor<PrintHierarchy> {
  public:
   bool visit() {
     InstanceKlass* cls = current_class();
-    streamIndentor si(_st, current_depth() * 2);
-    _st->indent().print_cr("%s", cls->name()->as_C_string());
+    StreamIndentor si(_st, current_depth() * 2);
+    _st->print_cr("%s", cls->name()->as_C_string());
     return true;
   }
 
@@ -436,8 +436,8 @@ class MethodFamily : public ResourceObj {
 
   void print_selected(outputStream* str, int indent) const {
     assert(has_target(), "Should be called otherwise");
-    streamIndentor si(str, indent * 2);
-    str->indent().print("Selected method: ");
+    StreamIndentor si(str, indent * 2);
+    str->print("Selected method: ");
     print_method(str, _selected_target);
     Klass* method_holder = _selected_target->method_holder();
     if (!method_holder->is_interface()) {
@@ -449,8 +449,8 @@ class MethodFamily : public ResourceObj {
   void print_exception(outputStream* str, int indent) {
     assert(throws_exception(), "Should be called otherwise");
     assert(_exception_name != nullptr, "exception_name should be set");
-    streamIndentor si(str, indent * 2);
-    str->indent().print_cr("%s: %s", _exception_name->as_C_string(), _exception_message->as_C_string());
+    StreamIndentor si(str, indent * 2);
+    str->print_cr("%s: %s", _exception_name->as_C_string(), _exception_message->as_C_string());
   }
 };
 
@@ -678,9 +678,8 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
     lt.print("Slots that need filling:");
     ResourceMark rm;
     LogStream ls(lt);
-    streamIndentor si(&ls);
+    StreamIndentor si(&ls, 2);
     for (int i = 0; i < slots->length(); ++i) {
-      ls.indent();
       slots->at(i)->print_on(&ls);
       ls.cr();
     }
@@ -851,8 +850,8 @@ void DefaultMethods::generate_default_methods(
       LogTarget(Debug, defaultmethods) lt;
       if (lt.is_enabled()) {
         LogStream ls(lt);
-        streamIndentor si(&ls, 2);
-        ls.indent().print("Looking for default methods for slot ");
+        StreamIndentor si(&ls, 2);
+        ls.print("Looking for default methods for slot ");
         slot->print_on(&ls);
         ls.cr();
       }

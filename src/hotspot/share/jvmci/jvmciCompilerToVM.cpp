@@ -173,7 +173,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   ThreadInVMfromNative __tiv(thread);                             \
   HandleMarkCleaner __hm(thread);                                 \
   JavaThread* THREAD = thread;                                    \
-  debug_only(VMNativeEntryWrapper __vew;)
+  DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
 // Native method block that transitions current thread to '_thread_in_vm'.
 // Note: CompilerThreadCanCallJava must precede JVMCIENV_FROM_JNI so that
@@ -2253,13 +2253,20 @@ static jobject read_field_value(Handle obj, long displacement, jchar type_char, 
   if (!aligned) {
     JVMCI_THROW_MSG_NULL(IllegalArgumentException, "read is unaligned");
   }
+  if (obj->is_array()) {
+    // Disallow reading after the last element of an array
+    size_t array_length = arrayOop(obj())->length();
+    int lh = obj->klass()->layout_helper();
+    size_t size_in_bytes = array_length << Klass::layout_helper_log2_element_size(lh);
+    size_in_bytes += Klass::layout_helper_header_size(lh);
+    if ((size_t) displacement + basic_type_elemsize > size_in_bytes) {
+      JVMCI_THROW_MSG_NULL(IllegalArgumentException, "reading after last array element");
+    }
+  }
   if (basic_type == T_OBJECT) {
     if (obj->is_objArray()) {
       if (displacement < arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
         JVMCI_THROW_MSG_NULL(IllegalArgumentException, "reading from array header");
-      }
-      if (displacement + heapOopSize > arrayOopDesc::base_offset_in_bytes(T_OBJECT) + arrayOop(obj())->length() * heapOopSize) {
-        JVMCI_THROW_MSG_NULL(IllegalArgumentException, "reading after last array element");
       }
       if (((displacement - arrayOopDesc::base_offset_in_bytes(T_OBJECT)) % heapOopSize) != 0) {
         JVMCI_THROW_MSG_NULL(IllegalArgumentException, "misaligned object read from array");

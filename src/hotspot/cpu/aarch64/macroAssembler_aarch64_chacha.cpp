@@ -28,60 +28,119 @@
 #include "runtime/stubRoutines.hpp"
 
 /**
- * Perform the quarter round calculations on values contained within
- * four SIMD registers.
+ * Perform the vectorized add for a group of 4 quarter round operations.
+ * In the ChaCha20 quarter round, there are two add ops: a += b and c += d.
+ * Each parameter is a set of 4 registers representing the 4 registers
+ * for the each addend in the add operation for each of the quarter rounds.
+ * (e.g. for "a" it would consist of v0/v1/v2/v3).  The result of the add
+ * is placed into the vectors in the "addFirst" array.
  *
- * @param aVec the SIMD register containing only the "a" values
- * @param bVec the SIMD register containing only the "b" values
- * @param cVec the SIMD register containing only the "c" values
- * @param dVec the SIMD register containing only the "d" values
- * @param scratch scratch SIMD register used for 12 and 7 bit left rotations
- * @param table the SIMD register used as a table for 8 bit left rotations
+ * @param addFirst array of SIMD registers representing the first addend.
+ * @param addSecond array of SIMD registers representing the second addend.
  */
-void MacroAssembler::cc20_quarter_round(FloatRegister aVec, FloatRegister bVec,
-    FloatRegister cVec, FloatRegister dVec, FloatRegister scratch,
-     FloatRegister table) {
+void MacroAssembler::cc20_qr_add4(FloatRegister (&addFirst)[4],
+    FloatRegister (&addSecond)[4]) {
+  for (int i = 0; i < 4; i++) {
+      addv(addFirst[i], T4S, addFirst[i], addSecond[i]);
+  }
+}
 
-  // a += b, d ^= a, d <<<= 16
-  addv(aVec, T4S, aVec, bVec);
-  eor(dVec, T16B, dVec, aVec);
-  rev32(dVec, T8H, dVec);
 
-  // c += d, b ^= c, b <<<= 12
-  addv(cVec, T4S, cVec, dVec);
-  eor(scratch, T16B, bVec, cVec);
-  ushr(bVec, T4S, scratch, 20);
-  sli(bVec, T4S, scratch, 12);
-
-  // a += b, d ^= a, d <<<= 8
-  addv(aVec, T4S, aVec, bVec);
-  eor(dVec, T16B, dVec, aVec);
-  tbl(dVec, T16B, dVec,  1, table);
-
-  // c += d, b ^= c, b <<<= 7
-  addv(cVec, T4S, cVec, dVec);
-  eor(scratch, T16B, bVec, cVec);
-  ushr(bVec, T4S, scratch, 25);
-  sli(bVec, T4S, scratch, 7);
+/**
+ * Perform the vectorized XOR for a group of 4 quarter round operations.
+ * In the ChaCha20 quarter round, there are two XOR ops: d ^= a and b ^= c
+ * Each parameter is a set of 4 registers representing the 4 registers
+ * for the each element in the xor operation for each of the quarter rounds.
+ * (e.g. for "a" it would consist of v0/v1/v2/v3)
+ * Note: because the b ^= c ops precede a non-byte-aligned left-rotation,
+ *       there is a third parameter which can take a set of scratch registers
+ *       for the result, which facilitates doing the subsequent operations for
+ *       the left rotation.
+ *
+ * @param firstElem array of SIMD registers representing the first element.
+ * @param secondElem array of SIMD registers representing the second element.
+ * @param result array of SIMD registers representing the destination.
+ *        May be the same as firstElem or secondElem, or a separate array.
+ */
+void MacroAssembler::cc20_qr_xor4(FloatRegister (&firstElem)[4],
+    FloatRegister (&secondElem)[4], FloatRegister (&result)[4]) {
+  for (int i = 0; i < 4; i++) {
+    eor(result[i], T16B, firstElem[i], secondElem[i]);
+  }
 }
 
 /**
- * Shift the b, c, and d vectors between columnar and diagonal representations.
- * Note that the "a" vector does not shift.
+ * Perform the vectorized left-rotation on 32-bit lanes for a group of
+ * 4 quarter round operations.
+ * Each parameter is a set of 4 registers representing the 4 registers
+ * for the each element in the source and destination for each of the quarter
+ * rounds (e.g. for "d" it would consist of v12/v13/v14/v15 on columns and
+ * v15/v12/v13/v14 on diagonal alignments).
  *
- * @param bVec the SIMD register containing only the "b" values
- * @param cVec the SIMD register containing only the "c" values
- * @param dVec the SIMD register containing only the "d" values
- * @param colToDiag true if moving columnar to diagonal, false if
- *                  moving diagonal back to columnar.
+ * @param sourceReg array of SIMD registers representing the source
+ * @param destReg array of SIMD registers representing the destination
+ * @param bits the distance of the rotation in bits, must be 16/12/8/7 per
+ *        the ChaCha20 specification.
  */
-void MacroAssembler::cc20_shift_lane_org(FloatRegister bVec, FloatRegister cVec,
-    FloatRegister dVec, bool colToDiag) {
-  int bShift = colToDiag ? 4 : 12;
-  int cShift = 8;
-  int dShift = colToDiag ? 12 : 4;
+void MacroAssembler::cc20_qr_lrot4(FloatRegister (&sourceReg)[4],
+    FloatRegister (&destReg)[4], int bits, FloatRegister table) {
+  switch (bits) {
+  case 16:      // reg <<<= 16, in-place swap of half-words
+    for (int i = 0; i < 4; i++) {
+      rev32(destReg[i], T8H, sourceReg[i]);
+    }
+    break;
 
-  ext(bVec, T16B, bVec, bVec, bShift);
-  ext(cVec, T16B, cVec, cVec, cShift);
-  ext(dVec, T16B, dVec, dVec, dShift);
+  case 7:       // reg <<<= (12 || 7)
+  case 12:      // r-shift src -> dest, l-shift src & ins to dest
+    for (int i = 0; i < 4; i++) {
+      ushr(destReg[i], T4S, sourceReg[i], 32 - bits);
+    }
+
+    for (int i = 0; i < 4; i++) {
+      sli(destReg[i], T4S, sourceReg[i], bits);
+    }
+    break;
+
+  case 8:       // reg <<<= 8, simulate left rotation with table reorg
+    for (int i = 0; i < 4; i++) {
+      tbl(destReg[i], T16B, sourceReg[i], 1, table);
+    }
+    break;
+
+  default:
+    // The caller shouldn't be sending bit rotation values outside
+    // of the 16/12/8/7 as defined in the specification.
+    ShouldNotReachHere();
+  }
+}
+
+/**
+ * Set the FloatRegisters for a 4-vector register set.  These will be used
+ * during various quarter round transformations (adds, xors and left-rotations).
+ * This method itself does not result in the output of any assembly
+ * instructions.  It just organizes the vectors so they can be in columnar or
+ * diagonal alignments.
+ *
+ * @param vectorSet a 4-vector array to be altered into a new alignment
+ * @param stateVectors the 16-vector array that represents the current
+ *        working state.  The indices of this array match up with the
+ *        organization of the ChaCha20 state per RFC 7539 (e.g. stateVectors[12]
+ *        would contain the vector that holds the 32-bit counter, etc.)
+ * @param idx1 the index of the stateVectors array to be assigned to the
+ *        first vectorSet element.
+ * @param idx2 the index of the stateVectors array to be assigned to the
+ *        second vectorSet element.
+ * @param idx3 the index of the stateVectors array to be assigned to the
+ *        third vectorSet element.
+ * @param idx4 the index of the stateVectors array to be assigned to the
+ *        fourth vectorSet element.
+ */
+void MacroAssembler::cc20_set_qr_registers(FloatRegister (&vectorSet)[4],
+    const FloatRegister (&stateVectors)[16], int idx1, int idx2,
+    int idx3, int idx4) {
+  vectorSet[0] = stateVectors[idx1];
+  vectorSet[1] = stateVectors[idx2];
+  vectorSet[2] = stateVectors[idx3];
+  vectorSet[3] = stateVectors[idx4];
 }

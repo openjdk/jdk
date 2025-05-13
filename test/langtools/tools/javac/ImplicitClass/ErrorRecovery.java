@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8338301
+ * @bug 8338301 8344706
  * @summary Verify error recovery and reporting related to implicitly declared classes
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -78,8 +78,7 @@ public class ErrorRecovery extends TestRunner {
         Files.createDirectories(classes);
 
         List<String> log = new JavacTask(tb)
-            .options("-XDrawDiagnostics",
-                     "--enable-preview", "--release", SOURCE_VERSION)
+            .options("-XDrawDiagnostics")
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run(Task.Expect.FAIL)
@@ -87,8 +86,6 @@ public class ErrorRecovery extends TestRunner {
             .getOutputLines(OutputKind.DIRECT);
         List<String> expected = List.of(
             "Test.java:1:1: compiler.err.invalid.meth.decl.ret.type.req",
-            "- compiler.note.preview.filename: Test.java, DEFAULT",
-            "- compiler.note.preview.recompile",
             "1 error"
         );
         if (!Objects.equals(expected, log)) {
@@ -111,8 +108,7 @@ public class ErrorRecovery extends TestRunner {
 
         List<String> log = new JavacTask(tb)
             .options("-XDrawDiagnostics",
-                     "-XDshould-stop.at=FLOW",
-                     "--enable-preview", "--release", SOURCE_VERSION)
+                     "-XDshould-stop.at=FLOW")
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run(Task.Expect.FAIL)
@@ -142,8 +138,7 @@ public class ErrorRecovery extends TestRunner {
         Files.createDirectories(classes);
 
         new JavacTask(tb)
-            .options("-XDrawDiagnostics",
-                     "--enable-preview", "--release", SOURCE_VERSION)
+            .options("-XDrawDiagnostics")
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run(Task.Expect.SUCCESS)
@@ -166,8 +161,7 @@ public class ErrorRecovery extends TestRunner {
         List<String> expected;
 
         log = new JavacTask(tb)
-                .options("-XDrawDiagnostics",
-                        "--enable-preview", "--release", SOURCE_VERSION)
+                .options("-XDrawDiagnostics")
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
                 .run(Task.Expect.FAIL)
@@ -191,7 +185,7 @@ public class ErrorRecovery extends TestRunner {
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
         expected = List.of(
-                "Test.java:1:1: compiler.err.expected4: class, interface, enum, record",
+                "Test.java:1:1: compiler.err.class.method.or.field.expected",
                 "1 error"
         );
 

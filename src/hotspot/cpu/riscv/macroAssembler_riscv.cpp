@@ -183,7 +183,6 @@ void MacroAssembler::set_membar_kind(address addr, uint32_t order_kind) {
   Assembler::sd_instr(membar, insn);
 }
 
-
 static void pass_arg0(MacroAssembler* masm, Register arg) {
   if (c_rarg0 != arg) {
     masm->mv(c_rarg0, arg);
@@ -257,7 +256,7 @@ void MacroAssembler::dec_held_monitor_count(Register tmp) {
 }
 
 int MacroAssembler::align(int modulus, int extra_offset) {
-  CompressibleRegion cr(this);
+  CompressibleScope scope(this);
   intptr_t before = offset();
   while ((offset() + extra_offset) % modulus != 0) { nop(); }
   return (int)(offset() - before);
@@ -418,7 +417,7 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
     set_last_Java_frame(last_java_sp, last_java_fp, target(L), tmp);
   } else {
     L.add_patch_at(code(), locator());
-    IncompressibleRegion ir(this);  // the label address will be patched back.
+    IncompressibleScope scope(this); // the label address will be patched back.
     set_last_Java_frame(last_java_sp, last_java_fp, pc() /* Patched later */, tmp);
   }
 }
@@ -499,19 +498,19 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // get oop result if there is one and reset the value in the thread
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result, java_thread);
+    get_vm_result_oop(oop_result, java_thread);
   }
 }
 
-void MacroAssembler::get_vm_result(Register oop_result, Register java_thread) {
-  ld(oop_result, Address(java_thread, JavaThread::vm_result_offset()));
-  sd(zr, Address(java_thread, JavaThread::vm_result_offset()));
+void MacroAssembler::get_vm_result_oop(Register oop_result, Register java_thread) {
+  ld(oop_result, Address(java_thread, JavaThread::vm_result_oop_offset()));
+  sd(zr, Address(java_thread, JavaThread::vm_result_oop_offset()));
   verify_oop_msg(oop_result, "broken oop in call_VM_base");
 }
 
-void MacroAssembler::get_vm_result_2(Register metadata_result, Register java_thread) {
-  ld(metadata_result, Address(java_thread, JavaThread::vm_result_2_offset()));
-  sd(zr, Address(java_thread, JavaThread::vm_result_2_offset()));
+void MacroAssembler::get_vm_result_metadata(Register metadata_result, Register java_thread) {
+  ld(metadata_result, Address(java_thread, JavaThread::vm_result_metadata_offset()));
+  sd(zr, Address(java_thread, JavaThread::vm_result_metadata_offset()));
 }
 
 void MacroAssembler::clinit_barrier(Register klass, Register tmp, Label* L_fast_path, Label* L_slow_path) {
@@ -565,7 +564,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     // The length of the instruction sequence emitted should not depend
     // on the address of the char buffer so that the size of mach nodes for
     // scratch emit and normal emit matches.
-    IncompressibleRegion ir(this);  // Fixed length
+    IncompressibleScope scope(this); // Fixed length
     movptr(t0, (address) b);
   }
 
@@ -605,7 +604,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     // The length of the instruction sequence emitted should not depend
     // on the address of the char buffer so that the size of mach nodes for
     // scratch emit and normal emit matches.
-    IncompressibleRegion ir(this);  // Fixed length
+    IncompressibleScope scope(this); // Fixed length
     movptr(t0, (address) b);
   }
 
@@ -776,7 +775,7 @@ void MacroAssembler::unimplemented(const char* what) {
 }
 
 void MacroAssembler::emit_static_call_stub() {
-  IncompressibleRegion ir(this);  // Fixed length: see CompiledDirectCall::to_interp_stub_size().
+  IncompressibleScope scope(this); // Fixed length: see CompiledDirectCall::to_interp_stub_size().
   // CompiledDirectCall::set_to_interpreted knows the
   // exact layout of this stub.
 
@@ -908,7 +907,7 @@ void MacroAssembler::la(Register Rd, const Address &adr) {
 }
 
 void MacroAssembler::la(Register Rd, Label &label) {
-  IncompressibleRegion ir(this);   // the label address may be patched back.
+  IncompressibleScope scope(this); // the label address may be patched back.
   wrap_label(Rd, label, &MacroAssembler::la);
 }
 
@@ -972,7 +971,7 @@ void MacroAssembler::j(const address dest, Register temp) {
   int64_t distance = dest - pc();
 
   // We can't patch C, i.e. if Label wasn't bound we need to patch this jump.
-  IncompressibleRegion ir(this);
+  IncompressibleScope scope(this);
   if (is_simm21(distance) && ((distance % 2) == 0)) {
     Assembler::jal(x0, distance);
   } else {
@@ -1264,6 +1263,130 @@ void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Regist
   }
   Label no_set;
   bleu(cmp1, cmp2, no_set);
+  mv(dst, src);
+  bind(no_set);
+}
+
+// ----------- cmove, compare float -----------
+
+// Move src to dst only if cmp1 == cmp2,
+// otherwise leave dst unchanged, including the case where one of them is NaN.
+// Clarification:
+//   java code      :  cmp1 != cmp2 ? dst : src
+//   transformed to :  CMove dst, (cmp1 eq cmp2), dst, src
+void MacroAssembler::cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      feq_s(t0, cmp1, cmp2);
+    } else {
+      feq_d(t0, cmp1, cmp2);
+    }
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 != cmp2, including the case of NaN
+    // not jump (i.e. move src to dst) if cmp1 == cmp2
+    float_bne(cmp1, cmp2, no_set);
+  } else {
+    double_bne(cmp1, cmp2, no_set);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
+// Keep dst unchanged only if cmp1 == cmp2,
+// otherwise move src to dst, including the case where one of them is NaN.
+// Clarification:
+//   java code      :  cmp1 == cmp2 ? dst : src
+//   transformed to :  CMove dst, (cmp1 ne cmp2), dst, src
+void MacroAssembler::cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      feq_s(t0, cmp1, cmp2);
+    } else {
+      feq_d(t0, cmp1, cmp2);
+    }
+    czero_eqz(dst, dst, t0);
+    czero_nez(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 == cmp2
+    // not jump (i.e. move src to dst) if cmp1 != cmp2, including the case of NaN
+    float_beq(cmp1, cmp2, no_set);
+  } else {
+    double_beq(cmp1, cmp2, no_set);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
+// When cmp1 <= cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
+// Clarification
+//   scenario 1:
+//     java code      :  cmp2 < cmp1 ? dst : src
+//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
+//   scenario 2:
+//     java code      :  cmp1 > cmp2 ? dst : src
+//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
+void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      flt_s(t0, cmp2, cmp1);
+    } else {
+      flt_d(t0, cmp2, cmp1);
+    }
+    czero_eqz(dst, dst, t0);
+    czero_nez(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 > cmp2
+    // not jump (i.e. move src to dst) if cmp1 <= cmp2 or either is NaN
+    float_bgt(cmp1, cmp2, no_set);
+  } else {
+    double_bgt(cmp1, cmp2, no_set);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
+// When cmp1 < cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
+// Clarification
+//   scenario 1:
+//     java code      :  cmp2 <= cmp1 ? dst : src
+//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
+//   scenario 2:
+//     java code      :  cmp1 >= cmp2 ? dst : src
+//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
+void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      fle_s(t0, cmp2, cmp1);
+    } else {
+      fle_d(t0, cmp2, cmp1);
+    }
+    czero_eqz(dst, dst, t0);
+    czero_nez(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 >= cmp2
+    // not jump (i.e. move src to dst) if cmp1 < cmp2 or either is NaN
+    float_bge(cmp1, cmp2, no_set);
+  } else {
+    double_bge(cmp1, cmp2, no_set);
+  }
   mv(dst, src);
   bind(no_set);
 }
@@ -1683,7 +1806,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
       for (int i = 0; i < N; i++) {
         vmv_x_s(tmp2, vcrc);
         // in vmv_x_s, the value is sign-extended to SEW bits, but we need zero-extended here.
-        zext_w(tmp2, tmp2);
+        zext(tmp2, tmp2, 32);
         vslidedown_vi(vcrc, vcrc, 1);
         xorr(crc, crc, tmp2);
         for (int j = 0; j < W; j++) {
@@ -3556,6 +3679,14 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
 }
 
 void MacroAssembler::membar(uint32_t order_constraint) {
+  if (UseZtso && ((order_constraint & StoreLoad) != StoreLoad)) {
+    // TSO allows for stores to be reordered after loads. When the compiler
+    // generates a fence to disallow that, we are required to generate the
+    // fence for correctness.
+    BLOCK_COMMENT("elided tso membar");
+    return;
+  }
+
   address prev = pc() - MacroAssembler::instruction_size;
   address last = code()->last_insn();
 
@@ -3564,15 +3695,14 @@ void MacroAssembler::membar(uint32_t order_constraint) {
     // can do this simply by ORing them together.
     set_membar_kind(prev, get_membar_kind(prev) | order_constraint);
     BLOCK_COMMENT("merged membar");
-  } else {
-    code()->set_last_insn(pc());
-
-    uint32_t predecessor = 0;
-    uint32_t successor = 0;
-
-    membar_mask_to_pred_succ(order_constraint, predecessor, successor);
-    fence(predecessor, successor);
+    return;
   }
+
+  code()->set_last_insn(pc());
+  uint32_t predecessor = 0;
+  uint32_t successor = 0;
+  membar_mask_to_pred_succ(order_constraint, predecessor, successor);
+  fence(predecessor, successor);
 }
 
 void MacroAssembler::cmodx_fence() {
@@ -4847,7 +4977,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
 
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
-  IncompressibleRegion ir(this);  // relocations
+  IncompressibleScope scope(this); // relocations
   movptr(t0, (address)Universe::non_oop_word(), t1);
   assert_cond(entry != nullptr);
   return reloc_call(Address(entry, rh));
@@ -4860,7 +4990,7 @@ int MacroAssembler::ic_check_size() {
 }
 
 int MacroAssembler::ic_check(int end_alignment) {
-  IncompressibleRegion ir(this);
+  IncompressibleScope scope(this);
   Register receiver = j_rarg0;
   Register data = t0;
 
@@ -5773,17 +5903,19 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
 
   andi(t0, cnt, unroll - 1);
   sub(cnt, cnt, t0);
-  // align 8, so first sd n % 8 = mod, next loop sd 8 * n.
   shadd(base, t0, base, t1, 3);
   la(t1, entry);
-  slli(t0, t0, 2); // sd_inst_nums * 4; t0 is cnt % 8, so t1 = t1 - sd_inst_nums * 4, 4 is sizeof(inst)
+  slli(t0, t0, 2);
   sub(t1, t1, t0);
   jr(t1);
 
   bind(loop);
   addi(base, base, unroll * wordSize);
-  for (int i = -unroll; i < 0; i++) {
-    sd(value, Address(base, i * 8));
+  {
+    IncompressibleScope scope(this); // Fixed length
+    for (int i = -unroll; i < 0; i++) {
+      sd(value, Address(base, i * 8));
+    }
   }
   bind(entry);
   subi(cnt, cnt, unroll);
@@ -5990,10 +6122,14 @@ void MacroAssembler::zero_memory(Register addr, Register len, Register tmp) {
   slli(t0, t0, 2);
   sub(t1, t1, t0);
   jr(t1);
+
   bind(loop);
   sub(len, len, unroll);
-  for (int i = -unroll; i < 0; i++) {
-    sd(zr, Address(tmp, i * wordSize));
+  {
+    IncompressibleScope scope(this); // Fixed length
+    for (int i = -unroll; i < 0; i++) {
+      sd(zr, Address(tmp, i * wordSize));
+    }
   }
   bind(entry);
   add(tmp, tmp, unroll * wordSize);
@@ -6356,8 +6492,15 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
   ld(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     sd(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
+  }
+
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(tmp1, obj);
+    lbu(tmp1, Address(tmp1, Klass::misc_flags_offset()));
+    test_bit(tmp1, tmp1, exact_log2(KlassFlags::_misc_is_value_based_class));
+    bnez(tmp1, slow, /* is_far */ true);
   }
 
   // Check if the lock-stack is full.

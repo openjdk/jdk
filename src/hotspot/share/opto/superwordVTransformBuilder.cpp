@@ -34,9 +34,9 @@ void SuperWordVTransformBuilder::build() {
 
   // Connect all vtnodes with their inputs. Possibly create vtnodes for input
   // nodes that are outside the loop.
-  VectorSet vtn_dependencies; // Shared, but cleared for every vtnode.
-  build_inputs_for_vector_vtnodes(vtn_dependencies);
-  build_inputs_for_scalar_vtnodes(vtn_dependencies);
+  VectorSet vtn_memory_dependencies; // Shared, but cleared for every vtnode.
+  build_inputs_for_vector_vtnodes(vtn_memory_dependencies);
+  build_inputs_for_scalar_vtnodes(vtn_memory_dependencies);
 }
 
 void SuperWordVTransformBuilder::build_vector_vtnodes_for_packed_nodes() {
@@ -58,75 +58,77 @@ void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
   }
 }
 
-void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_dependencies) {
+void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_memory_dependencies) {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* pack = _packset.at(i);
     Node* p0 = pack->at(0);
 
     VTransformVectorNode* vtn = get_vtnode(p0)->isa_Vector();
     assert(vtn != nullptr, "all packs must have vector vtnodes");
-    vtn_dependencies.clear(); // Add every dependency only once per vtn.
+    vtn_memory_dependencies.clear(); // Add every memory dependency only once per vtn.
 
     if (p0->is_Load()) {
-      set_req_with_scalar(p0,   vtn, vtn_dependencies, MemNode::Address);
+      set_req_with_scalar(p0,   vtn, MemNode::Address);
+      for (uint k = 0; k < pack->size(); k++) {
+        add_memory_dependencies_of_node_to_vtnode(pack->at(k), vtn, vtn_memory_dependencies);
+      }
     } else if (p0->is_Store()) {
-      set_req_with_scalar(p0,   vtn, vtn_dependencies, MemNode::Address);
-      set_req_with_vector(pack, vtn, vtn_dependencies, MemNode::ValueIn);
+      set_req_with_scalar(p0,   vtn, MemNode::Address);
+      set_req_with_vector(pack, vtn, MemNode::ValueIn);
+      for (uint k = 0; k < pack->size(); k++) {
+        add_memory_dependencies_of_node_to_vtnode(pack->at(k), vtn, vtn_memory_dependencies);
+      }
     } else if (vtn->isa_ReductionVector() != nullptr) {
-      set_req_with_scalar(p0,   vtn, vtn_dependencies, 1); // scalar init
-      set_req_with_vector(pack, vtn, vtn_dependencies, 2); // vector
+      set_req_with_scalar(p0,   vtn, 1); // scalar init
+      set_req_with_vector(pack, vtn, 2); // vector
     } else {
       assert(vtn->isa_ElementWiseVector() != nullptr, "all other vtnodes are handled above");
       if (VectorNode::is_scalar_rotate(p0) &&
           p0->in(2)->is_Con() &&
           Matcher::supports_vector_constant_rotates(p0->in(2)->get_int())) {
-        set_req_with_vector(pack, vtn, vtn_dependencies, 1);
-        set_req_with_scalar(p0,   vtn, vtn_dependencies, 2); // constant rotation
+        set_req_with_vector(pack, vtn, 1);
+        set_req_with_scalar(p0,   vtn, 2); // constant rotation
       } else if (VectorNode::is_roundopD(p0)) {
-        set_req_with_vector(pack, vtn, vtn_dependencies, 1);
-        set_req_with_scalar(p0,   vtn, vtn_dependencies, 2); // constant rounding mode
+        set_req_with_vector(pack, vtn, 1);
+        set_req_with_scalar(p0,   vtn, 2); // constant rounding mode
       } else if (p0->is_CMove()) {
         // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
-        set_all_req_with_vectors(pack, vtn, vtn_dependencies);
+        set_all_req_with_vectors(pack, vtn);
         VTransformBoolVectorNode* vtn_mask_cmp = vtn->in(1)->isa_BoolVector();
         if (vtn_mask_cmp->test()._is_negated) {
           vtn->swap_req(2, 3); // swap if test was negated.
         }
       } else {
-        set_all_req_with_vectors(pack, vtn, vtn_dependencies);
+        set_all_req_with_vectors(pack, vtn);
       }
-    }
-
-    for (uint k = 0; k < pack->size(); k++) {
-      add_dependencies_of_node_to_vtnode(pack->at(k), vtn, vtn_dependencies);
     }
   }
 }
 
-void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_dependencies) {
+void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_memory_dependencies) {
   for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
     Node* n = _vloop_analyzer.body().body().at(i);
     VTransformScalarNode* vtn = get_vtnode(n)->isa_Scalar();
     if (vtn == nullptr) { continue; }
-    vtn_dependencies.clear(); // Add every dependency only once per vtn.
+    vtn_memory_dependencies.clear(); // Add every dependency only once per vtn.
 
     if (n->is_Load()) {
-      set_req_with_scalar(n, vtn, vtn_dependencies, MemNode::Address);
+      set_req_with_scalar(n, vtn, MemNode::Address);
+      add_memory_dependencies_of_node_to_vtnode(n, vtn, vtn_memory_dependencies);
     } else if (n->is_Store()) {
-      set_req_with_scalar(n, vtn, vtn_dependencies, MemNode::Address);
-      set_req_with_scalar(n, vtn, vtn_dependencies, MemNode::ValueIn);
+      set_req_with_scalar(n, vtn, MemNode::Address);
+      set_req_with_scalar(n, vtn, MemNode::ValueIn);
+      add_memory_dependencies_of_node_to_vtnode(n, vtn, vtn_memory_dependencies);
     } else if (n->is_CountedLoop()) {
       continue; // Is "root", has no dependency.
     } else if (n->is_Phi()) {
       // CountedLoop Phi's: ignore backedge (and entry value).
       assert(n->in(0) == _vloop.cl(), "only Phi's from the CountedLoop allowed");
-      set_req_with_scalar(n, vtn, vtn_dependencies, 0);
+      set_req_with_scalar(n, vtn, 0);
       continue;
     } else {
-      set_all_req_with_scalars(n, vtn, vtn_dependencies);
+      set_all_req_with_scalars(n, vtn);
     }
-
-    add_dependencies_of_node_to_vtnode(n, vtn, vtn_dependencies);
   }
 }
 
@@ -161,9 +163,11 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
            p0->is_CMove() ||
            VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc) ||
            VectorNode::is_convert_opcode(opc) ||
+           VectorNode::is_reinterpret_opcode(opc) ||
            VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc) ||
-           opc == Op_FmaD ||
-           opc == Op_FmaF ||
+           opc == Op_FmaD  ||
+           opc == Op_FmaF  ||
+           opc == Op_FmaHF ||
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "pack type must be in this list");
@@ -173,10 +177,9 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   return vtn;
 }
 
-void SuperWordVTransformBuilder::set_req_with_scalar(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies, const int index) {
+void SuperWordVTransformBuilder::set_req_with_scalar(Node* n, VTransformNode* vtn, const int index) {
   VTransformNode* req = get_vtnode_or_wrap_as_input_scalar(n->in(index));
   vtn->set_req(index, req);
-  vtn_dependencies.set(req->_idx);
 }
 
 // Either get the existing vtnode vector input (when input is a pack), or else make a
@@ -271,46 +274,42 @@ VTransformNode* SuperWordVTransformBuilder::get_vtnode_or_wrap_as_input_scalar(N
   return vtn;
 }
 
-void SuperWordVTransformBuilder::set_req_with_vector(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies, int j) {
+void SuperWordVTransformBuilder::set_req_with_vector(const Node_List* pack, VTransformNode* vtn, int j) {
   VTransformNode* req = get_or_make_vtnode_vector_input_at_index(pack, j);
   vtn->set_req(j, req);
-  vtn_dependencies.set(req->_idx);
 }
 
-void SuperWordVTransformBuilder::set_all_req_with_scalars(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies) {
+void SuperWordVTransformBuilder::set_all_req_with_scalars(Node* n, VTransformNode* vtn) {
   assert(vtn->req() == n->req(), "scalars must have same number of reqs");
   for (uint j = 0; j < n->req(); j++) {
     Node* def = n->in(j);
     if (def == nullptr) { continue; }
-    set_req_with_scalar(n, vtn, vtn_dependencies, j);
+    set_req_with_scalar(n, vtn, j);
   }
 }
 
-void SuperWordVTransformBuilder::set_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies) {
+void SuperWordVTransformBuilder::set_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn) {
   Node* p0 = pack->at(0);
   assert(vtn->req() <= p0->req(), "must have at at most as many reqs");
   // Vectors have no ctrl, so ignore it.
   for (uint j = 1; j < vtn->req(); j++) {
     Node* def = p0->in(j);
     if (def == nullptr) { continue; }
-    set_req_with_vector(pack, vtn, vtn_dependencies, j);
+    set_req_with_vector(pack, vtn, j);
   }
 }
 
-void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node*n, VTransformNode* vtn, VectorSet& vtn_dependencies) {
+void SuperWordVTransformBuilder::add_memory_dependencies_of_node_to_vtnode(Node*n, VTransformNode* vtn, VectorSet& vtn_memory_dependencies) {
   for (VLoopDependencyGraph::PredsIterator preds(_vloop_analyzer.dependency_graph(), n); !preds.done(); preds.next()) {
     Node* pred = preds.current();
     if (!_vloop.in_bb(pred)) { continue; }
+    if (!preds.is_current_memory_edge()) { continue; }
 
-    // Only add memory dependencies to memory nodes. All others are taken care of with the req.
-    if (n->is_Mem() && !pred->is_Mem()) { continue; }
-
+    // Only track every memory edge once.
     VTransformNode* dependency = get_vtnode(pred);
+    if (vtn_memory_dependencies.test_set(dependency->_idx)) { continue; }
 
-    // Reduction self-cycle?
-    if (vtn == dependency && _vloop_analyzer.reductions().is_marked_reduction(n)) { continue; }
-
-    if (vtn_dependencies.test_set(dependency->_idx)) { continue; }
-    vtn->add_dependency(dependency); // Add every dependency only once per vtn.
+    assert(n->is_Mem() && pred->is_Mem(), "only memory edges");
+    vtn->add_memory_dependency(dependency); // Add every dependency only once per vtn.
   }
 }

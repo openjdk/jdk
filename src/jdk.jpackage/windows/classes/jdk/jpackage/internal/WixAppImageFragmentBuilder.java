@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,8 @@ import static jdk.jpackage.internal.WinMsiBundler.MSI_SYSTEM_WIDE;
 import static jdk.jpackage.internal.WinMsiBundler.SERVICE_INSTALLER;
 import static jdk.jpackage.internal.WinMsiBundler.WIN_APP_IMAGE;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.util.PathGroup;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.NodeList;

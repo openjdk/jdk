@@ -25,7 +25,8 @@
 package jdk.jpackage.internal;
 
 import jdk.internal.util.OperatingSystem;
-
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
@@ -551,16 +552,13 @@ public class Arguments {
             generateBundle(bp.getBundleParamsAsMap());
             return true;
         } catch (Exception e) {
-            if (Log.isVerbose()) {
-                Log.verbose(e);
-            } else {
-                String msg1 = e.getMessage();
-                Log.fatalError(msg1);
-                if (e.getCause() != null && e.getCause() != e) {
-                    String msg2 = e.getCause().getMessage();
-                    if (msg2 != null && !msg1.contains(msg2)) {
-                        Log.fatalError(msg2);
-                    }
+            Log.verbose(e);
+            String msg1 = e.getMessage();
+            Log.fatalError(msg1);
+            if (e.getCause() != null && e.getCause() != e) {
+                String msg2 = e.getCause().getMessage();
+                if (msg2 != null && !msg1.contains(msg2)) {
+                    Log.fatalError(msg2);
                 }
             }
             return false;
