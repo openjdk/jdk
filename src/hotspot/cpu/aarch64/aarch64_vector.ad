@@ -290,6 +290,19 @@ source %{
       case Op_StoreVectorScatter:
         opcode = Op_StoreVectorScatterMasked;
         break;
+      // Currently, the masked versions of the following 8 Float16 operations are disabled.
+      // When the support for Float16 vector classes is added in VectorAPI and the masked
+      // Float16 IR can be generated, these masked operations will be enabled and relevant
+      // backend support added.
+      case Op_AddVHF:
+      case Op_SubVHF:
+      case Op_MulVHF:
+      case Op_DivVHF:
+      case Op_MaxVHF:
+      case Op_MinVHF:
+      case Op_SqrtVHF:
+      case Op_FmaVHF:
+        return false;
       default:
         break;
     }
@@ -693,16 +706,6 @@ instruct vaddL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vaddHF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src1 (AddVHF (Binary dst_src1 src2) pg));
-  format %{ "vaddHF_masked $dst_src1, $pg, $dst_src1, $src2" %}
-  ins_encode %{
-    __ sve_fadd($dst_src1$$FloatRegister, __ H, $pg$$PRegister, $src2$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct vaddF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst_src1 (AddVF (Binary dst_src1 src2) pg));
@@ -943,16 +946,6 @@ instruct vsubL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vsubHF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src1 (SubVHF (Binary dst_src1 src2) pg));
-  format %{ "vsubHF_masked $dst_src1, $pg, $dst_src1, $src2" %}
-  ins_encode %{
-    __ sve_fsub($dst_src1$$FloatRegister, __ H, $pg$$PRegister, $src2$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct vsubF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst_src1 (SubVF (Binary dst_src1 src2) pg));
@@ -1166,16 +1159,6 @@ instruct vmulL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmulHF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src1 (MulVHF (Binary dst_src1 src2) pg));
-  format %{ "vmulHF_masked $dst_src1, $pg, $dst_src1, $src2" %}
-  ins_encode %{
-    __ sve_fmul($dst_src1$$FloatRegister, __ H, $pg$$PRegister, $src2$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct vmulF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst_src1 (MulVF (Binary dst_src1 src2) pg));
@@ -1267,16 +1250,6 @@ instruct vdivD_sve(vReg dst_src1, vReg src2) %{
 %}
 
 // vector float div - predicated
-
-instruct vdivHF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src1 (DivVHF (Binary dst_src1 src2) pg));
-  format %{ "vdivHF_masked $dst_src1, $pg, $dst_src1, $src2" %}
-  ins_encode %{
-    __ sve_fdiv($dst_src1$$FloatRegister, __ H, $pg$$PRegister, $src2$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
 
 instruct vdivF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   predicate(UseSVE > 0);
@@ -2168,16 +2141,6 @@ instruct vsqrtD(vReg dst, vReg src) %{
 
 // vector sqrt - predicated
 
-instruct vsqrtHF_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src (SqrtVHF dst_src pg));
-  format %{ "vsqrtHF_masked $dst_src, $pg, $dst_src" %}
-  ins_encode %{
-    __ sve_fsqrt($dst_src$$FloatRegister, __ H, $pg$$PRegister, $dst_src$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct vsqrtF_masked(vReg dst_src, pRegGov pg) %{
   predicate(UseSVE > 0);
   match(Set dst_src (SqrtVF dst_src pg));
@@ -2304,17 +2267,6 @@ instruct vmin_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
       __ sve_smin($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
                   $pg$$PRegister, $src2$$FloatRegister);
     }
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vmin_HF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src1 (MinVHF (Binary dst_src1 src2) pg));
-  format %{ "vmin_HF_masked $dst_src1, $pg, $dst_src1, $src2" %}
-  ins_encode %{
-    __ sve_fmin($dst_src1$$FloatRegister, __ H,
-                $pg$$PRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2499,17 +2451,6 @@ instruct vmax_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmax_HF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src1 (MaxVHF (Binary dst_src1 src2) pg));
-  format %{ "vmax_HF_masked $dst_src1, $pg, $dst_src1, $src2" %}
-  ins_encode %{
-    __ sve_fmax($dst_src1$$FloatRegister, __ H,
-                $pg$$PRegister, $src2$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 // vector unsigned max - LONG
 
 instruct vumaxL_neon(vReg dst, vReg src1, vReg src2) %{
@@ -2661,7 +2602,6 @@ instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
 
 instruct vfmad_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src1 (FmaVHF (Binary dst_src1 src2) (Binary src3 pg)));
   match(Set dst_src1 (FmaVF  (Binary dst_src1 src2) (Binary src3 pg)));
   match(Set dst_src1 (FmaVD  (Binary dst_src1 src2) (Binary src3 pg)));
   format %{ "vfmad_masked $dst_src1, $pg, $src2, $src3" %}

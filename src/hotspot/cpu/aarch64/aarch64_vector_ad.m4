@@ -280,6 +280,19 @@ source %{
       case Op_StoreVectorScatter:
         opcode = Op_StoreVectorScatterMasked;
         break;
+      // Currently, the masked versions of the following 8 Float16 operations are disabled.
+      // When the support for Float16 vector classes is added in VectorAPI and the masked
+      // Float16 IR can be generated, these masked operations will be enabled and relevant
+      // backend support added.
+      case Op_AddVHF:
+      case Op_SubVHF:
+      case Op_MulVHF:
+      case Op_DivVHF:
+      case Op_MaxVHF:
+      case Op_MinVHF:
+      case Op_SqrtVHF:
+      case Op_FmaVHF:
+        return false;
       default:
         break;
     }
@@ -541,7 +554,6 @@ BINARY_OP_PREDICATE(vaddB,  AddVB,  sve_add,  B)
 BINARY_OP_PREDICATE(vaddS,  AddVS,  sve_add,  H)
 BINARY_OP_PREDICATE(vaddI,  AddVI,  sve_add,  S)
 BINARY_OP_PREDICATE(vaddL,  AddVL,  sve_add,  D)
-BINARY_OP_PREDICATE(vaddHF, AddVHF, sve_fadd, H)
 BINARY_OP_PREDICATE(vaddF,  AddVF,  sve_fadd, S)
 BINARY_OP_PREDICATE(vaddD,  AddVD,  sve_fadd, D)
 
@@ -567,7 +579,6 @@ BINARY_OP_PREDICATE(vsubB,  SubVB,  sve_sub,  B)
 BINARY_OP_PREDICATE(vsubS,  SubVS,  sve_sub,  H)
 BINARY_OP_PREDICATE(vsubI,  SubVI,  sve_sub,  S)
 BINARY_OP_PREDICATE(vsubL,  SubVL,  sve_sub,  D)
-BINARY_OP_PREDICATE(vsubHF, SubVHF, sve_fsub, H)
 BINARY_OP_PREDICATE(vsubF,  SubVF,  sve_fsub, S)
 BINARY_OP_PREDICATE(vsubD,  SubVD,  sve_fsub, D)
 
@@ -645,7 +656,6 @@ BINARY_OP_PREDICATE(vmulB,  MulVB,  sve_mul,  B)
 BINARY_OP_PREDICATE(vmulS,  MulVS,  sve_mul,  H)
 BINARY_OP_PREDICATE(vmulI,  MulVI,  sve_mul,  S)
 BINARY_OP_PREDICATE(vmulL,  MulVL,  sve_mul,  D)
-BINARY_OP_PREDICATE(vmulHF, MulVHF, sve_fmul, H)
 BINARY_OP_PREDICATE(vmulF,  MulVF,  sve_fmul, S)
 BINARY_OP_PREDICATE(vmulD,  MulVD,  sve_fmul, D)
 
@@ -657,7 +667,6 @@ BINARY_OP_NEON_SVE_PAIRWISE(vdivF,  DivVF,  fdiv, sve_fdiv, S)
 BINARY_OP_NEON_SVE_PAIRWISE(vdivD,  DivVD,  fdiv, sve_fdiv, D)
 
 // vector float div - predicated
-BINARY_OP_PREDICATE(vdivHF, DivVHF, sve_fdiv, H)
 BINARY_OP_PREDICATE(vdivF,  DivVF,  sve_fdiv, S)
 BINARY_OP_PREDICATE(vdivD,  DivVD,  sve_fdiv, D)
 dnl
@@ -1049,7 +1058,6 @@ UNARY_OP(vsqrtF,  SqrtVF,  fsqrt, sve_fsqrt, S)
 UNARY_OP(vsqrtD,  SqrtVD,  fsqrt, sve_fsqrt, D)
 
 // vector sqrt - predicated
-UNARY_OP_PREDICATE_WITH_SIZE(vsqrtHF, SqrtVHF, sve_fsqrt, H)
 UNARY_OP_PREDICATE_WITH_SIZE(vsqrtF,  SqrtVF,  sve_fsqrt, S)
 UNARY_OP_PREDICATE_WITH_SIZE(vsqrtD,  SqrtVD,  sve_fsqrt, D)
 
@@ -1228,20 +1236,6 @@ instruct v$1_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-dnl VMINMAX_HF_PREDICATE($1,   $2,      $3     )
-dnl VMINMAX_HF_PREDICATE(type, op_name, insn_fp)
-define(`VMINMAX_HF_PREDICATE', `
-instruct v$1_HF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
-  match(Set dst_src1 ($2 (Binary dst_src1 src2) pg));
-  format %{ "v$1_HF_masked $dst_src1, $pg, $dst_src1, $src2" %}
-  ins_encode %{
-    __ $3($dst_src1$$FloatRegister, __ H,
-                $pg$$PRegister, $src2$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}')dnl
-dnl
 // ------------------------------ Vector min -----------------------------------
 
 // vector min - LONG
@@ -1256,7 +1250,6 @@ VMINMAX_HF_SVE(min, MinVHF, sve_fmin)
 
 // vector min - predicated
 VMINMAX_PREDICATE(min, MinV, sve_fmin, sve_smin)
-VMINMAX_HF_PREDICATE(min, MinVHF, sve_fmin)
 
 // vector unsigned min - LONG
 VMINMAX_L_NEON(min, UMinV, u)
@@ -1283,7 +1276,6 @@ VMINMAX_HF_SVE(max, MaxVHF, sve_fmax)
 
 // vector max - predicated
 VMINMAX_PREDICATE(max, MaxV, sve_fmax, sve_smax)
-VMINMAX_HF_PREDICATE(max, MaxVHF, sve_fmax)
 
 // vector unsigned max - LONG
 VMINMAX_L_NEON(max, UMaxV, u)
@@ -1377,7 +1369,6 @@ instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
 
 instruct vfmad_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src1 (FmaVHF (Binary dst_src1 src2) (Binary src3 pg)));
   match(Set dst_src1 (FmaVF  (Binary dst_src1 src2) (Binary src3 pg)));
   match(Set dst_src1 (FmaVD  (Binary dst_src1 src2) (Binary src3 pg)));
   format %{ "vfmad_masked $dst_src1, $pg, $src2, $src3" %}
