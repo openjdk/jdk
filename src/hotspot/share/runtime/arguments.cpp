@@ -85,6 +85,9 @@ int    Arguments::_num_jvm_flags                = 0;
 char** Arguments::_jvm_args_array               = nullptr;
 int    Arguments::_num_jvm_args                 = 0;
 unsigned int Arguments::_addmods_count          = 0;
+#if INCLUDE_JVMCI
+bool   Arguments::_jvmci_module_added           = false;
+#endif
 char*  Arguments::_java_command                 = nullptr;
 SystemProperty* Arguments::_system_properties   = nullptr;
 size_t Arguments::_conservative_max_heap_alignment = 0;
@@ -1798,13 +1801,13 @@ bool Arguments::check_vm_args_consistency() {
   status = CompilerConfig::check_args_consistency(status);
 #if INCLUDE_JVMCI
   if (status && EnableJVMCI) {
+    if (ClassLoader::is_module_observable("jdk.internal.vm.ci") && !UseJVMCINativeLibrary && !_jvmci_module_added) {
+      jio_fprintf(defaultStream::error_stream(),
+        "'+EnableJVMCI' requires '--add-modules=jdk.internal.vm.ci' when UseJVMCINativeLibrary is false\n");
+      return false;
+    }
     PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
         AddProperty, UnwriteableProperty, InternalProperty);
-    if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
-      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
-        return false;
-      }
-    }
   }
 #endif
 
@@ -2247,6 +2250,19 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       if (!create_numbered_module_property("jdk.module.addmods", tail, _addmods_count++)) {
         return JNI_ENOMEM;
       }
+#if INCLUDE_JVMCI
+      if (!_jvmci_module_added) {
+        const char *jvmci_module = strstr(tail, "jdk.internal.vm.ci");
+        if (jvmci_module != nullptr) {
+          char before = *(jvmci_module - 1);
+          char after  = *(jvmci_module + strlen("jdk.internal.vm.ci"));
+          if ((before == '=' || before == ',') && (after == '\0' || after == ',')) {
+            FLAG_SET_DEFAULT(EnableJVMCI, true);
+            _jvmci_module_added = true;
+          }
+        }
+      }
+#endif
     } else if (match_option(option, "--enable-native-access=", &tail)) {
       if (!create_numbered_module_property("jdk.module.enable.native.access", tail, enable_native_access_count++)) {
         return JNI_ENOMEM;

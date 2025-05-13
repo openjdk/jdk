@@ -44,6 +44,7 @@ public class TestJVMCIPrintProperties {
     static void test(String enableFlag) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
+            "--add-modules=jdk.internal.vm.ci",
             enableFlag, "-Djvmci.Compiler=null",
             "-XX:+JVMCIPrintProperties");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
