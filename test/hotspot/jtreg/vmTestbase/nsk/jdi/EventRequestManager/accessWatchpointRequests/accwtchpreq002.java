@@ -248,9 +248,9 @@ public class accwtchpreq002 extends JDIBase {
         String bPointMethod = "methodForCommunication";
         String lineForComm  = "lineForComm";
 
-        ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
+        //ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
 
-        BreakpointRequest bpRequest = settingBreakpoint(mainThread,
+        BreakpointRequest bpRequest = settingBreakpoint(null,
                                              debuggeeClass,
                                             bPointMethod, lineForComm, "zero");
         bpRequest.enable();

@@ -65,7 +65,6 @@
  *        nsk.jdi.ThreadReference.suspendCount.suspendcount001a
  * @run driver
  *      nsk.jdi.ThreadReference.suspendCount.suspendcount001
- *      -includevirtualthreads
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

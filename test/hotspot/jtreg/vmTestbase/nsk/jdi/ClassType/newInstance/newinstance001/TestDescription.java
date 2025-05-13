@@ -138,7 +138,6 @@
  *        nsk.jdi.ClassType.newInstance.newinstance001a
  * @run driver
  *      nsk.jdi.ClassType.newInstance.newinstance001
- *      -includevirtualthreads
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

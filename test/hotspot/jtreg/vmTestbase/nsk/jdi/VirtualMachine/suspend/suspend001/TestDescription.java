@@ -66,7 +66,6 @@
  *        nsk.jdi.VirtualMachine.suspend.suspend001a
  * @run driver
  *      nsk.jdi.VirtualMachine.suspend.suspend001
- *      -includevirtualthreads
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

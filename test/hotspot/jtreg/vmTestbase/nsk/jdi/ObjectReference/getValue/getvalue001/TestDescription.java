@@ -76,7 +76,6 @@
  *        nsk.jdi.ObjectReference.getValue.getvalue001a
  * @run driver
  *      nsk.jdi.ObjectReference.getValue.getvalue001
- *      -includevirtualthreads
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

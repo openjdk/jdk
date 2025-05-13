@@ -78,7 +78,6 @@
  *
  * @run driver
  *      nsk.jdi.StackFrame.getValues.getvalues001
- *      -includevirtualthreads
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
