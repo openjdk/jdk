@@ -63,6 +63,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 using metaspace::ChunkManager;
 using metaspace::CommitLimiter;
@@ -214,10 +215,11 @@ void MetaspaceUtils::print_report(outputStream* out, size_t scale) {
 
 void MetaspaceUtils::print_on(outputStream* out) {
 
-  // Used from all GCs. It first prints out totals, then, separately, the class space portion.
+  // First prints out totals, then, separately, the class space portion.
   MetaspaceCombinedStats stats = get_combined_statistics();
-  out->print_cr(" Metaspace       "
-                "used %zuK, "
+  out->print("Metaspace ");
+  out->fill_to(17);
+  out->print_cr("used %zuK, "
                 "committed %zuK, "
                 "reserved %zuK",
                 stats.used()/K,
@@ -225,8 +227,10 @@ void MetaspaceUtils::print_on(outputStream* out) {
                 stats.reserved()/K);
 
   if (Metaspace::using_class_space()) {
-    out->print_cr("  class space    "
-                  "used %zuK, "
+    StreamIndentor si(out, 1);
+    out->print("class space ");
+    out->fill_to(17);
+    out->print_cr("used %zuK, "
                   "committed %zuK, "
                   "reserved %zuK",
                   stats.class_space_stats().used()/K,
@@ -594,7 +598,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   if (result == nullptr) {
     // Fallback: reserve anywhere
     log_debug(metaspace, map)("Trying anywhere...");
-    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
+    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), mtClass);
   }
 
   // Wrap resulting range in ReservedSpace
@@ -767,7 +771,8 @@ void Metaspace::global_initialize() {
       rs = MemoryReserver::reserve((char*)base,
                                    size,
                                    Metaspace::reserve_alignment(),
-                                   os::vm_page_size());
+                                   os::vm_page_size(),
+                                   mtClass);
 
       if (rs.is_reserved()) {
         log_info(metaspace)("Successfully forced class space address to " PTR_FORMAT, p2i(base));

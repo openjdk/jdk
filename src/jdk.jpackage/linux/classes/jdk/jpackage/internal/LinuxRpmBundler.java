@@ -296,6 +296,15 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
     private Path buildRPM(Map<String, ? super Object> params,
             Path outdir) throws IOException {
 
+        PlatformPackage thePackage = createMetaPackage(params);
+
+        new ScriptRunner()
+                .setDirectory(thePackage.sourceRoot())
+                .setResourceCategoryId("resource.post-app-image-script")
+                .setScriptNameSuffix("post-image")
+                .setEnvironmentVariable("JpAppImageDir", thePackage.sourceRoot().toAbsolutePath().toString())
+                .run(params);
+
         Path rpmFile = outdir.toAbsolutePath().resolve(String.format(
                 "%s-%s-%s.%s.rpm", PACKAGE_NAME.fetchFrom(params),
                 VERSION.fetchFrom(params), RELEASE.fetchFrom(params), rpmArch()));
@@ -303,8 +312,6 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.outputting-bundle-location"),
                 rpmFile.getParent()));
-
-        PlatformPackage thePackage = createMetaPackage(params);
 
         //run rpmbuild
         Executor.of(
