@@ -228,9 +228,11 @@ void ShenandoahArguments::initialize_alignments() {
   SpaceAlignment = align;
   HeapAlignment = align;
 
+#ifdef KELVIN_HIDEME
   if (FLAG_IS_DEFAULT(TLABSize)) {
     TLABSize = ShenandoahHeapRegion::region_size_bytes() / 128;
   }
+#endif
 #undef KELVIN_ARGUMENTS
 #ifdef KELVIN_ARGUMENTS
   log_info(gc)("TLABAllocationWeight: %u", (unsigned int) TLABAllocationWeight);
