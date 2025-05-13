@@ -189,7 +189,6 @@ class CastIINode: public ConstraintCastNode {
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Identity(PhaseGVN* phase);
-
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   bool has_range_check() const {
 #ifdef _LP64
