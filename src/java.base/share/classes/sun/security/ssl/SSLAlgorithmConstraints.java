@@ -182,14 +182,14 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
      * {@code AlgorithmConstraints} will only permit those allowed algorithms.
      *
      * @param engine QuicTLSEngine used to determine the constraints
-     * @param allowedAlgorithms the algorithms that are allowed. can be null.
+     * @param supportedAlgorithms the algorithms that are supported. can be null.
      * @param applyCertPathAlgConstraints whether or not to apply the certpath
      *                                   algorithm constraints too
      * @return a AlgorithmConstraints instance
      * @throws NullPointerException if {@code engine} is null
      */
     static AlgorithmConstraints forQUIC(QuicTLSEngine engine,
-                                        String[] allowedAlgorithms,
+                                        String[] supportedAlgorithms,
                                         boolean applyCertPathAlgConstraints) {
         Objects.requireNonNull(engine, "QuicTLSEngine");
         final AlgorithmConstraints userSpecifiedConstraints;
@@ -201,7 +201,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         }
         return new SSLAlgorithmConstraints(
                 nullIfDefault(userSpecifiedConstraints),
-                new SupportedSignatureAlgorithmConstraints(allowedAlgorithms),
+                new SupportedSignatureAlgorithmConstraints(supportedAlgorithms),
                 applyCertPathAlgConstraints);
     }
 
