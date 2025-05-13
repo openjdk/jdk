@@ -147,6 +147,7 @@ public class SwitchBootstrapsTest {
         testPrimitiveType(true, boolean.class,0, 1, false);
         testPrimitiveType((byte) 1, byte.class,0, 1, boolean.class, byte.class);
         testPrimitiveType((byte) 1, byte.class,0, 1, Boolean.class, byte.class);
+        testPrimitiveType(true, boolean.class,0, 1, String.class, boolean.class);
     }
 
     public void testEnums() throws Throwable {
