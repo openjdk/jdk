@@ -463,7 +463,7 @@ protected:
   static const int _lh_header_size_mask        = right_n_bits(BitsPerByte);  // shifted mask
   static const int _lh_array_tag_bits          = 2;
   static const int _lh_array_tag_shift         = BitsPerInt - _lh_array_tag_bits;
-  static const int _lh_array_tag_obj_value     = ~0x01;   // 0x80000000 >> 30
+  static const uint32_t _lh_array_tag_obj_value     = ~0x01;   // 0x80000000 >> 30
 
   static const unsigned int _lh_array_tag_type_value = 0Xffffffff; // ~0x00,  // 0xC0000000 >> 30
 
@@ -523,8 +523,8 @@ protected:
            "sanity. l2esz: 0x%x for lh: 0x%x", (uint)l2esz, (uint)lh);
     return l2esz;
   }
-  static jint array_layout_helper(jint tag, int hsize, BasicType etype, int log2_esize) {
-    return ((juint)tag << _lh_array_tag_shift)
+  static jint array_layout_helper(uint32_t tag, int hsize, BasicType etype, int log2_esize) {
+    return (tag        << _lh_array_tag_shift)
       |    (hsize      << _lh_header_size_shift)
       |    ((int)etype << _lh_element_type_shift)
       |    (log2_esize << _lh_log2_element_size_shift);
