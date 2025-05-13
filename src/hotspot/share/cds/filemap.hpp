@@ -148,9 +148,12 @@ private:
 
   // The following are parameters that affect MethodData layout.
   uint    _type_profile_level;
+  int     _type_profile_args_limit;
+  int     _type_profile_parms_limit;
   intx    _type_profile_width;
   intx    _bci_profile_width;
   bool    _profile_traps;
+  bool    _type_profile_casts;
   int     _spec_trap_limit_extra_entries;
 
   template <typename T> T from_mapped_offset(size_t offset) const {
