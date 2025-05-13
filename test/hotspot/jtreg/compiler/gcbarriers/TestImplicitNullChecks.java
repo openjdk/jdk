@@ -33,21 +33,11 @@ import java.lang.ref.WeakReference;
 import jdk.test.lib.Asserts;
 
 /**
- * @test id=G1
- * @summary Test that implicit null checks are generated as expected for G1
- *          memory accesses with barriers.
+ * @test
+ * @summary Test that implicit null checks are generated as expected for
+            different GC memory accesses.
  * @library /test/lib /
- * @requires vm.gc.G1
- * @run driver compiler.gcbarriers.TestImplicitNullChecks G1
- */
-
-/**
- * @test id=Z
- * @summary Test that implicit null checks are generated as expected for ZGC
-            memory accesses with barriers.
- * @library /test/lib /
- * @requires vm.gc.Z
- * @run driver compiler.gcbarriers.TestImplicitNullChecks Z
+ * @run driver compiler.gcbarriers.TestImplicitNullChecks
  */
 
 
@@ -72,19 +62,13 @@ public class TestImplicitNullChecks {
     }
 
     public static void main(String[] args) {
-        if (args.length != 1) {
-            throw new IllegalArgumentException();
-        }
-        if (!args[0].equals("G1") && !args[0].equals("Z")) {
-            throw new IllegalArgumentException();
-        }
         TestFramework.runWithFlags("-XX:CompileCommand=inline,java.lang.ref.*::*",
-                                   "-XX:-TieredCompilation",
-                                   "-XX:+Use" + args[0] + "GC");
+                                   "-XX:-TieredCompilation");
     }
 
     @Test
-    @IR(counts = {IRNode.NULL_CHECK, "1"},
+    @IR(applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
+        counts = {IRNode.NULL_CHECK, "1"},
         phase = CompilePhase.FINAL_CODE)
     static Object testLoad(Outer o) {
         return o.f;
@@ -94,6 +78,7 @@ public class TestImplicitNullChecks {
     // On aarch64, volatile loads always use indirect memory operands, which
     // leads to a pattern that cannot be exploited by the current C2 analysis.
     @IR(applyIfPlatform = {"aarch64", "false"},
+        applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
         counts = {IRNode.NULL_CHECK, "1"},
         phase = CompilePhase.FINAL_CODE)
     static Object testLoadVolatile(OuterWithVolatileField o) {
@@ -138,7 +123,8 @@ public class TestImplicitNullChecks {
     // G1 and ZGC stores cannot be currently used to implement implicit null
     // checks, because they expand into multiple memory access instructions that
     // are not necessarily located at the initial instruction start address.
-    @IR(failOn = IRNode.NULL_CHECK,
+    @IR(applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
+        failOn = IRNode.NULL_CHECK,
         phase = CompilePhase.FINAL_CODE)
     static void testStore(Outer o, Object o1) {
         o.f = o1;
@@ -159,21 +145,24 @@ public class TestImplicitNullChecks {
     // access instructions that are not necessarily located at the initial
     // instruction start address. The same holds for testCompareAndSwap and
     // testGetAndSet below.
-    @IR(failOn = IRNode.NULL_CHECK,
+    @IR(applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
+        failOn = IRNode.NULL_CHECK,
         phase = CompilePhase.FINAL_CODE)
     static Object testCompareAndExchange(Outer o, Object oldVal, Object newVal) {
         return fVarHandle.compareAndExchange(o, oldVal, newVal);
     }
 
     @Test
-    @IR(failOn = IRNode.NULL_CHECK,
+    @IR(applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
+        failOn = IRNode.NULL_CHECK,
         phase = CompilePhase.FINAL_CODE)
     static boolean testCompareAndSwap(Outer o, Object oldVal, Object newVal) {
         return fVarHandle.compareAndSet(o, oldVal, newVal);
     }
 
     @Test
-    @IR(failOn = IRNode.NULL_CHECK,
+    @IR(applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
+        failOn = IRNode.NULL_CHECK,
         phase = CompilePhase.FINAL_CODE)
     static Object testGetAndSet(Outer o, Object newVal) {
         return fVarHandle.getAndSet(o, newVal);
@@ -207,7 +196,7 @@ public class TestImplicitNullChecks {
     // G1 reference loads use indirect memory operands, which leads to a pattern
     // that cannot be exploited by the current C2 analysis. The same holds for
     // testLoadWeakReference.
-    @IR(applyIf = {"UseG1GC", "false"},
+    @IR(applyIf = {"UseZGC", "true"},
         counts = {IRNode.NULL_CHECK, "1"},
         phase = CompilePhase.FINAL_CODE)
     static Object testLoadSoftReference(SoftReference<Object> ref) {
@@ -215,7 +204,7 @@ public class TestImplicitNullChecks {
     }
 
     @Test
-    @IR(applyIf = {"UseG1GC", "false"},
+    @IR(applyIf = {"UseZGC", "true"},
         counts = {IRNode.NULL_CHECK, "1"},
         phase = CompilePhase.FINAL_CODE)
     static Object testLoadWeakReference(WeakReference<Object> ref) {
