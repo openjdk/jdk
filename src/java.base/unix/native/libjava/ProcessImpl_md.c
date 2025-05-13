@@ -345,7 +345,7 @@ throwIOExceptionImpl(JNIEnv *env, int errnum, const char *defaultDetail, const c
             detail = tmpbuf;
     }
     /* ASCII Decimal representation uses 2.4 times as many bits as binary. */
-    fmtsize = sizeof(IOE_FORMAT) + strlen(internalErrorDetail) + strlen(detail) + 3 * sizeof(errnum);
+    fmtsize = sizeof(IOE_FORMAT) + 3 * sizeof(errnum) + strlen(detail) +  strlen(internalErrorDetail) + 1;
     errmsg = NEW(char, fmtsize);
     if (errmsg == NULL)
         return;
