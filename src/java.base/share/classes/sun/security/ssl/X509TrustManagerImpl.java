@@ -33,7 +33,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.net.ssl.*;
 
-import jdk.internal.net.quic.QuicTLSEngine;
 import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
 import sun.security.validator.*;
