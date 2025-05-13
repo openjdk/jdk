@@ -21,8 +21,10 @@
  * questions.
  */
 
-import javax.swing.JFrame;
+import javax.swing.Icon;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.UIManager;
 import javax.swing.filechooser.FileSystemView;
 import java.io.File;
 import java.util.List;
@@ -30,7 +32,6 @@ import java.util.List;
 /*
  * @test
  * @bug 8139228
- * @requires (os.family == "linux") | (os.family == "mac")
  * @summary JFileChooser should not render Directory names in HTML format
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
@@ -39,22 +40,21 @@ import java.util.List;
 
 public class HTMLFileName {
     static File directory;
+
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
                     1. New Directory is created in current directory with name
                        "<html><h1 color=#ff00ff><font face="Comic Sans MS">Testing Name".
                     2. On "HTML disabled" frame :
-                          a. Navigate to the folder.
-                          b. Verify that the folder name must be plain text.
-                          c. If the folder name in file pane window and also in directory
+                          a. Verify that the folder name must be plain text.
+                          b. If the folder name in file pane window and also in directory
                              ComboBox remains in plain text, then test PASS.
                              If it appears to be in HTML format with Pink color, then test FAILS
                              (Verify for all Look and Feel).
                     3. On "HTML enabled" frame :
-                          a. Navigate to the folder.
-                          b. Verify that the folder name remains in HTML
+                          a. Verify that the folder name remains in HTML
                              format with name "Testing Name" pink in color.
-                          c. If the folder name in file pane window and also in directory
+                          b. If the folder name in file pane window and also in directory
                              ComboBox remains in HTML format string, then test PASS.
                              If it appears to be in plain text, then test FAILS.
                              (Verify for all Look and Feel).
@@ -77,17 +77,24 @@ public class HTMLFileName {
     }
 
     public static List<JFrame> initialize() {
+        boolean isWindows = System.getProperty("os.name").startsWith("Windows");
         File homeDir = FileSystemView.getFileSystemView().getHomeDirectory();
         String fileName = homeDir + File.separator +
                 "<html><h1 color=#ff00ff><font face=\"Comic Sans MS\">Testing Name";
         directory = new File(fileName);
-
         directory.mkdir();
-        JFileChooser jfc = new JFileChooser(homeDir);
-        JFrame frame = new JFrame("HTML disabled");
-        JFileChooser jfc_HTML_Enabled = new JFileChooser(homeDir);
-        jfc_HTML_Enabled.putClientProperty("html.disable", false);
+        JFileChooser jfc;
+        JFileChooser jfc_HTML_Enabled;
         JFrame frame_HTML_Enabled = new JFrame("HTML enabled");
+        JFrame frame = new JFrame("HTML disabled");
+        if (isWindows) {
+            jfc = new JFileChooser(new VirtualFileSystemView());
+            jfc_HTML_Enabled = new JFileChooser(new VirtualFileSystemView());
+        } else {
+            jfc = new JFileChooser(homeDir);
+            jfc_HTML_Enabled = new JFileChooser(homeDir);
+        }
+        jfc_HTML_Enabled.putClientProperty("html.disable", false);
         frame.setLocation(600, 50);
         frame.add(jfc);
         frame.pack();
@@ -95,5 +102,46 @@ public class HTMLFileName {
         frame_HTML_Enabled.add(jfc_HTML_Enabled);
         frame_HTML_Enabled.pack();
         return List.of(frame, frame_HTML_Enabled);
+    }
+
+    static class VirtualFileSystemView extends FileSystemView {
+        @Override
+        public File createNewFolder(File containingDir) {
+            return null;
+        }
+
+        @Override
+        public File[] getRoots() {
+            return new File[]{
+                    new File("/", "<html><h1 color=#ff00ff><font face=\"Comic Sans MS\">SWING ROCKS!!!111"),
+                    new File("/", "virtualFile2.txt"),
+                    new File("/", "virtualFolder")
+            };
+        }
+
+        @Override
+        public File getHomeDirectory() {
+            return new File("/");
+        }
+
+        @Override
+        public File getDefaultDirectory() {
+            return new File("/");
+        }
+
+        @Override
+        public File[] getFiles(File dir, boolean useFileHiding) {
+            // Simulate a virtual folder structure
+            return new File[]{
+                    new File("/", "<html><h1 color=#ff00ff><font face=\"Comic Sans MS\">SWING ROCKS!!!111"),
+                    new File(dir, "virtualFile2.txt"),
+                    new File(dir, "virtualFolder")
+            };
+        }
+
+        @Override
+        public Icon getSystemIcon(File f) {
+            return null;
+        }
     }
 }

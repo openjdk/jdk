@@ -1050,6 +1050,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
             ii.icon = icon;
             ii.depth = directoryComboBoxModel.getDepth(index);
             setIcon(ii);
+            this.putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
 
             return this;
         }
