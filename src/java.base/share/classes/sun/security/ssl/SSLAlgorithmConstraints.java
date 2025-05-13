@@ -163,13 +163,8 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     static AlgorithmConstraints forQUIC(QuicTLSEngine engine,
                                         boolean applyCertPathAlgConstraints) {
         Objects.requireNonNull(engine, "QuicTLSEngine");
-        final AlgorithmConstraints userSpecifiedConstraints;
-        if (engine instanceof QuicTLSEngineImpl quicEngineImpl) {
-            userSpecifiedConstraints = quicEngineImpl.getAlgorithmConstraints();
-        } else {
-            userSpecifiedConstraints = engine.getSSLParameters()
-                    .getAlgorithmConstraints();
-        }
+        final AlgorithmConstraints userSpecifiedConstraints =
+                getUserSpecifiedConstraints(engine);
         return wrap(userSpecifiedConstraints, applyCertPathAlgConstraints);
     }
 
@@ -192,13 +187,8 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                                         String[] supportedAlgorithms,
                                         boolean applyCertPathAlgConstraints) {
         Objects.requireNonNull(engine, "QuicTLSEngine");
-        final AlgorithmConstraints userSpecifiedConstraints;
-        if (engine instanceof QuicTLSEngineImpl quicEngineImpl) {
-            userSpecifiedConstraints = quicEngineImpl.getAlgorithmConstraints();
-        } else {
-            userSpecifiedConstraints = engine.getSSLParameters()
-                    .getAlgorithmConstraints();
-        }
+        final AlgorithmConstraints userSpecifiedConstraints =
+                getUserSpecifiedConstraints(engine);
         return new SSLAlgorithmConstraints(
                 nullIfDefault(userSpecifiedConstraints),
                 new SupportedSignatureAlgorithmConstraints(supportedAlgorithms),
@@ -247,6 +237,17 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             return socket.getSSLParameters().getAlgorithmConstraints();
         }
 
+        return null;
+    }
+
+    private static AlgorithmConstraints getUserSpecifiedConstraints(
+            QuicTLSEngine quicEngine) {
+        if (quicEngine != null) {
+            if (quicEngine instanceof QuicTLSEngineImpl engineImpl) {
+                return engineImpl.getAlgorithmConstraints();
+            }
+            return quicEngine.getSSLParameters().getAlgorithmConstraints();
+        }
         return null;
     }
 
