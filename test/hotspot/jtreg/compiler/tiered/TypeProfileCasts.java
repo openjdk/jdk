@@ -64,6 +64,8 @@ public class TypeProfileCasts {
     private static void test_checkcast(Object o) {
       // checkcast
       Foo f = (Foo) o;
+
+      sideEffect++;
     }
 
     private static void test_array_store(Object o) {
