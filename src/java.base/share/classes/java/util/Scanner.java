@@ -78,22 +78,25 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     }
  * }
  *
- * <p>This code uses a {@code Scanner} to read lines from {@link System#in}. The
- * {@code Scanner} uses the system property value of
- * {@link System##stdin.encoding stdin.encoding} as the {@code Charset}:
- * {@snippet :
- *      Scanner sc = new Scanner(System.in, System.getProperty("stdin.encoding"));
- *      while (sc.hasNextLine()) {
- *          String aLine = sc.nextLine();
- *      }
- * }
- *
  * <p>This code allows {@code long} types to be
  * assigned from entries in a file {@code myNumbers}:
  * {@snippet :
  *      Scanner sc = new Scanner(new File("myNumbers"));
  *      while (sc.hasNextLong()) {
  *          long aLong = sc.nextLong();
+ *      }
+ * }
+ *
+ * <p>This code uses a {@code Scanner} to read lines from {@link System#in}. The
+ * {@code Scanner} uses the system property value of
+ * {@link System##stdin.encoding stdin.encoding} as the {@code Charset}. Specifying
+ * the charset explicitly is important when reading from {@code System.in}, as it
+ * may differ from the {@link Charset#defaultCharset()} default charset} depending
+ * on the host environment or user configuration:
+ * {@snippet :
+ *      Scanner sc = new Scanner(System.in, System.getProperty("stdin.encoding"));
+ *      while (sc.hasNextLine()) {
+ *          String aLine = sc.nextLine();
  *      }
  * }
  *

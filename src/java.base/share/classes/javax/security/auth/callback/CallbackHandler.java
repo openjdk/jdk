@@ -113,7 +113,9 @@ public interface CallbackHandler {
      *          System.err.print(nc.getPrompt());
      *          System.err.flush();
      *          nc.setName((new BufferedReader
-     *                  (new InputStreamReader(System.in, "stdin.encoding"))).readLine());
+     *                  (new InputStreamReader(
+     *                          System.in,
+     *                          System.getProperty("stdin.encoding")))).readLine());
      *
      *      } else if (callbacks[i] instanceof PasswordCallback) {
      *
