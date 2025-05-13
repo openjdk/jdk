@@ -232,7 +232,7 @@ public:
   }
 
   // Return available_in assuming caller does not hold the heap lock.  In production builds, available is 
-  // returned without acquiring the lock.  In debug builds, the global heap lock is acquired in order to 
+  // returned without acquiring the lock.  In debug builds, the global heap lock is acquired in order to
   // enforce a consistency assert.
   inline size_t available_in_not_locked(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
