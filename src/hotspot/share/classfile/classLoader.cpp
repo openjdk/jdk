@@ -1255,8 +1255,6 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
               if (loader != nullptr) {
                 // Probably loaded by jdk/internal/loader/ClassLoaders$BootClassLoader. Don't archive
                 // such classes.
-                ik->set_shared_classpath_index(-1);
-                ik->set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
                 found_invalid = true;
               } else {
                 classpath_index = i;
@@ -1279,13 +1277,15 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     });
   }
 
-  if (!found_invalid) {
-    const char* const class_name = ik->name()->as_C_string();
-    const char* const file_name = file_name_for_class_name(class_name,
-                                                           ik->name()->utf8_length());
-    assert(file_name != nullptr, "invariant");
-    ClassLoaderExt::record_result(checked_cast<s2>(classpath_index), ik, redefined);
+  if (found_invalid) {
+    assert(classpath_index == -1, "sanity");
   }
+
+  const char* const class_name = ik->name()->as_C_string();
+  const char* const file_name = file_name_for_class_name(class_name,
+                                                           ik->name()->utf8_length());
+  assert(file_name != nullptr, "invariant");
+  ClassLoaderExt::record_result_for_builtin_loader(checked_cast<s2>(classpath_index), ik, redefined);
 }
 
 void ClassLoader::record_hidden_class(InstanceKlass* ik) {
