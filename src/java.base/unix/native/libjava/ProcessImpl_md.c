@@ -317,7 +317,7 @@ releaseBytes(JNIEnv *env, jbyteArray arr, const char* parr)
         (*env)->ReleaseByteArrayElements(env, arr, (jbyte*) parr, JNI_ABORT);
 }
 
-#define IOE_FORMAT "error=%d, %s%s"
+#define IOE_FORMAT "%s, error: %d (%s) %s"
 
 #define SPAWN_HELPER_INTERNAL_ERROR_MSG "\n" \
   "Possible reasons:\n" \
@@ -331,9 +331,9 @@ releaseBytes(JNIEnv *env, jbyteArray arr, const char* parr)
   "  - Switch to legacy launch mechanism with -Djdk.lang.Process.launchMechanism=VFORK\n"
 
 static void
-throwIOExceptionImpl(JNIEnv *env, int errnum, const char *defaultDetail, const char *internalErrorDetail)
+throwIOExceptionImpl(JNIEnv *env, int errnum, const char *externalDetail, const char *internalDetail)
 {
-    const char *detail = defaultDetail;
+    const char *errorDetail;
     char *errmsg;
     size_t fmtsize;
     char tmpbuf[1024];
@@ -341,16 +341,22 @@ throwIOExceptionImpl(JNIEnv *env, int errnum, const char *defaultDetail, const c
 
     if (errnum != 0) {
         int ret = getErrorString(errnum, tmpbuf, sizeof(tmpbuf));
-        if (ret != EINVAL)
-            detail = tmpbuf;
+        if (ret != EINVAL) {
+            errorDetail = tmpbuf;
+        } else {
+            errorDetail = "unknown";
+        }
+    } else {
+        errorDetail = "none";
     }
+
     /* ASCII Decimal representation uses 2.4 times as many bits as binary. */
-    fmtsize = sizeof(IOE_FORMAT) + 3 * sizeof(errnum) + strlen(detail) +  strlen(internalErrorDetail) + 1;
+    fmtsize = sizeof(IOE_FORMAT) + strlen(externalDetail) + 3 * sizeof(errnum) + strlen(errorDetail) +  strlen(internalDetail) + 1;
     errmsg = NEW(char, fmtsize);
     if (errmsg == NULL)
         return;
 
-    snprintf(errmsg, fmtsize, IOE_FORMAT, errnum, detail, internalErrorDetail);
+    snprintf(errmsg, fmtsize, IOE_FORMAT, externalDetail, errnum, errorDetail, internalDetail);
     s = JNU_NewStringPlatform(env, errmsg);
     if (s != NULL) {
         jobject x = JNU_NewObjectByName(env, "java/io/IOException",
@@ -365,14 +371,14 @@ throwIOExceptionImpl(JNIEnv *env, int errnum, const char *defaultDetail, const c
  * Throws IOException that signifies an internal error, e.g. spawn helper failure.
  */
 static void
-throwInternalIOException(JNIEnv *env, int errnum, const char *defaultDetail, int mode)
+throwInternalIOException(JNIEnv *env, int errnum, const char *externalDetail, int mode)
 {
   switch (mode) {
     case MODE_POSIX_SPAWN:
-      throwIOExceptionImpl(env, errnum, defaultDetail, SPAWN_HELPER_INTERNAL_ERROR_MSG);
+      throwIOExceptionImpl(env, errnum, externalDetail, SPAWN_HELPER_INTERNAL_ERROR_MSG);
       break;
     default:
-      throwIOExceptionImpl(env, errnum, defaultDetail, "");
+      throwIOExceptionImpl(env, errnum, externalDetail, "");
   }
 }
 
@@ -380,9 +386,9 @@ throwInternalIOException(JNIEnv *env, int errnum, const char *defaultDetail, int
  * Throws IOException that signifies a normal error.
  */
 static void
-throwIOException(JNIEnv *env, int errnum, const char *defaultDetail)
+throwIOException(JNIEnv *env, int errnum, const char *externalDetail)
 {
-  throwIOExceptionImpl(env, errnum, defaultDetail, "");
+  throwIOExceptionImpl(env, errnum, externalDetail, "");
 }
 
 /**
@@ -392,7 +398,7 @@ static void throwExitCause(JNIEnv *env, int pid, int status, int mode) {
     char ebuf[128];
     if (WIFEXITED(status)) {
         snprintf(ebuf, sizeof ebuf,
-            "Failed to exec spawn helper: pid: %d, exit value: %d",
+            "Failed to exec spawn helper: pid: %d, exit code: %d",
             pid, WEXITSTATUS(status));
     } else if (WIFSIGNALED(status)) {
         snprintf(ebuf, sizeof ebuf,
