@@ -163,7 +163,7 @@ public class Pem {
                     if (os.size() == 0) {
                         throw new EOFException("No data available");
                     }
-                    return new PEMRecord(null, null, os.toByteArray());
+                    throw new IllegalArgumentException("No PEM data found");
                 }
                 default -> hyphen = 0;
             }
@@ -180,8 +180,7 @@ public class Pem {
             switch (c = is.read()) {
                 case '-' -> hyphen++;
                 case -1 -> throw new EOFException("Input ended prematurely");
-                case '\n', '\r' -> throw new IllegalArgumentException(
-                    "Incomplete header");
+                case '\n', '\r' -> throw new IOException("Incomplete header");
                 default -> sb.append((char) c);
             }
         } while (hyphen == 0);
@@ -191,7 +190,7 @@ public class Pem {
             switch (is.read()) {
                 case '-' -> hyphen++;
                 default ->
-                    throw new IllegalArgumentException("Incomplete header");
+                    throw new IOException("Incomplete header");
             }
         } while (hyphen < 5);
 
@@ -199,7 +198,7 @@ public class Pem {
         String header = sb.toString();
         if (header.length() < 16 || !header.startsWith("-----BEGIN ") ||
             !header.endsWith("-----")) {
-            throw new IllegalArgumentException("Illegal header: " + header);
+            throw new IOException("Illegal header: " + header);
         }
 
         hyphen = 0;
@@ -219,7 +218,7 @@ public class Pem {
             }
             case '\n' -> eol = '\n';
             default ->
-                throw new IllegalArgumentException("No EOL character found");
+                throw new IOException("No EOL character found");
         }
 
         // Read data until we find the first footer hyphen.
@@ -240,8 +239,7 @@ public class Pem {
             switch (is.read()) {
                 case '-' -> hyphen++;
                 case -1 -> throw new EOFException("Input ended prematurely");
-                default -> throw new IllegalArgumentException(
-                    "Incomplete footer");
+                default -> throw new IOException("Incomplete footer");
             }
         } while (hyphen < 5);
 
@@ -263,13 +261,12 @@ public class Pem {
             switch (is.read()) {
                 case '-' -> hyphen++;
                 case -1 -> throw new EOFException("Input ended prematurely");
-                default -> throw new IllegalArgumentException(
-                    "Incomplete footer");
+                default -> throw new IOException("Incomplete footer");
             }
         } while (hyphen < 5);
 
         while ((c = is.read()) != eol && c != -1 && c != '\r' && c != WS) {
-            throw new IllegalArgumentException("Invalid PEM format:  " +
+            throw new IOException("Invalid PEM format:  " +
                 "No EOL char found in footer:  0x" +
                 HexFormat.of().toHexDigits((byte) c));
         }
@@ -278,6 +275,7 @@ public class Pem {
         String footer = sb.toString();
         if (footer.length() < 14 || !footer.startsWith("-----END ") ||
             !footer.endsWith("-----")) {
+            // Not an IOE because the read pointer is correctly at the end.
             throw new IllegalArgumentException("Illegal footer: " + footer);
         }
 

@@ -51,8 +51,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * Base64-formatted binary encoding enclosed by a type-identifying header
  * and footer.
  *
- * <p> Encoding may be performed on cryptographic objects that implement
- * {@link DEREncodable}.
+ * <p> Encoding may be performed on Java API cryptographic objects that
+ * implement {@link DEREncodable}.
  *
  * <p> Private keys can be encrypted and encoded by configuring a
  * {@code PEMEncoder} with the {@linkplain #withEncryption(char[])} method,
@@ -93,8 +93,6 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @spec https://www.rfc-editor.org/info/rfc1421
  *       RFC 1421: Privacy Enhancement for Internet Electronic Mail
- * @spec https://www.rfc-editor.org/info/rfc5958
- *       RFC 5958: Asymmetric Key Packages
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
  *
@@ -128,7 +126,7 @@ public final class PEMEncoder {
     /**
      * Returns a new instance of {@code PEMEncoder}.
      *
-     * @return new {@code PEMEncoder} instance
+     * @return a new {@code PEMEncoder} instance
      */
     public static PEMEncoder of() {
         return PEM_ENCODER;
@@ -207,7 +205,7 @@ public final class PEMEncoder {
      * in a byte array.
      *
      * @param de the {@code DEREncodable} to be encoded.
-     * @return PEM encoded byte array
+     * @return a PEM encoded byte array
      * @throws IllegalArgumentException if the DEREncodable cannot be encoded
      * @throws NullPointerException if {@code de} is {@code null}.
      * @see #withEncryption(char[])
@@ -234,7 +232,7 @@ public final class PEMEncoder {
      *
      * @param password sets the encryption password.  The array is cloned and
      *                stored in the new instance. {@code null} is a valid value.
-     * @return new configured {@code PEMEncoder} instance
+     * @return a new configured {@code PEMEncoder} instance
      */
     public PEMEncoder withEncryption(char[] password) {
         // PBEKeySpec clones the password

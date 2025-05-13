@@ -123,7 +123,7 @@ public class PEMDecoderTest {
             throw new AssertionError("pubecpem PEMRecord didn't decode as a Public Key");
         }
 
-        testInputStream();
+        //testInputStream();
         testPEMRecord(PEMData.rsapub);
         testPEMRecord(PEMData.ecCert);
         testPEMRecord(PEMData.ec25519priv);

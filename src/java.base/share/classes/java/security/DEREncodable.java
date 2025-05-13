@@ -34,10 +34,11 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 /**
- * This is a top-level interface for security classes that contain cryptographic
- * data which may not be related or have a common class hierarchy.  These
- * security objects provide standard binary encoding, like ASN.1, and possible
- * type formats, like X.509 and PKCS#8.
+ * This interface is implemented by security API classes that contain
+ * binary-encodable key or certificate material.
+ * These APIs or their subclasses typically provide methods to convert
+ * their instances to and from byte arrays in the Distinguished
+ * Encoding Rules (DER) format (ITU X.690).
  *
  * @see AsymmetricKey
  * @see KeyPair
