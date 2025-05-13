@@ -127,13 +127,11 @@ AbstractCompiler* CompileTask::compiler() const {
 }
 
 CompileTask* CompileTask::select_for_compilation() {
-  if (!is_safe()) {
-    return nullptr;
+  if (_method_handle.is_safe()) {
+    _method_handle.make_always_safe();
+    return this;
   }
-
-  _method_handle.make_always_safe();
-
-  return this;
+  return nullptr;
 }
 
 bool CompileTask::is_safe() {
