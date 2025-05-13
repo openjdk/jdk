@@ -44,42 +44,44 @@ import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * {@code PEMEncoder} is used for encoding Privacy-Enhanced Mail (PEM) data.
- * PEM is a textual encoding used to store and transfer security
+ * {@code PEMEncoder} implements an encoder for Privacy-Enhanced Mail (PEM)
+ * data.  PEM is a textual encoding used to store and transfer security
  * objects, such as asymmetric keys, certificates, and certificate revocation
  * lists (CRL).  It is defined in RFC 1421 and RFC 7468.  PEM consists of a
  * Base64-formatted binary encoding enclosed by a type-identifying header
  * and footer.
  *
- * <p> Encoding may be performed on Java Cryptographic Extension (JCE) objects
- * that implement {@link DEREncodable}.
+ * <p> Encoding may be performed on cryptographic objects that implement
+ * {@link DEREncodable}.
  *
- * <p> Encrypted private key PEM data can be built by encoding with a
- * {@code PEMEncoder} instance returned by {@linkplain #withEncryption(char[])}
- * or by encoding an {@link EncryptedPrivateKeyInfo} .
+ * <p> Private keys can be encrypted and encoded by configuring a
+ * {@code PEMEncoder} with the {@linkplain #withEncryption(char[])} method,
+ * which takes a password and returns a new {@code PEMEncoder} instance
+ * configured to encrypt the key with that password. Alternatively, a
+ * private key encrypted as an {@code EncryptedKeyInfo} object can be encoded
+ * directly to PEM by passing it to the encode method
  *
- * <p> PKCS #8 2.0 allows OneAsymmetricKey encoding, which may contain both
- * private and public keys in the same PEM. This is supported by using the
- * {@link KeyPair} class with the encode methods.
+ * <p> PKCS #8 2.0 defines the ASN.1 OneAsymmetricKey structure, which may
+ * contain both private and public keys.
+ * {@link KeyPair} objects passed to the {@code encode} methods are encoded as a
+ * OneAsymmetricKey structure using the "PRIVATE KEY" type.
  *
  * <p> When encoding a {@link PEMRecord}, the API surrounds the
  * {@linkplain PEMRecord#pem()} with a generated the PEM header and footer
- * from {@linkplain PEMRecord#type()}.  It will not check the validity of
- * the data.
+ * from {@linkplain PEMRecord#type()}. {@linkplain PEMRecord#leadingData()} is
+ * not included in the encoding.  {@code PEMRecord} will not preform
+ * validity checks on the data.
  *
- * <p>{@code String} values encoded use character set
- * {@link java.nio.charset.StandardCharsets#ISO_8859_1 ISO-8859-1}.
+ * <p> This class is immutable and thread-safe.
  *
- * <p>This class is immutable and thread-safe.
- *
- * <p>Here is an example of encoding a {@code PrivateKey} object:
+ * <p> Here is an example of encoding a {@code PrivateKey} object:
  * {@snippet lang = java:
  *     PEMEncoder pe = PEMEncoder.of();
  *     byte[] pemData = pe.encode(privKey);
  * }
  *
- * <p>To make the {@code PEMEncoder} encrypt the above private key, only the
- * encryption method is needed.
+ * <p> Here is an example that encrypts and encodes a private key using the
+ * specified password.
  * {@snippet lang = java:
  *     PEMEncoder pe = PEMEncoder.of().withEncryption(password);
  *     byte[] pemData = pe.encode(privKey);
@@ -113,7 +115,7 @@ public final class PEMEncoder {
     private final ReentrantLock lock;
 
     /**
-     * Instantiate a new {@code PEMEncoder} for Encrypted Private Keys.
+     * Instantiate a {@code PEMEncoder} for Encrypted Private Keys.
      *
      * @param pbe contains the password spec used for encryption.
      */
@@ -133,13 +135,12 @@ public final class PEMEncoder {
     }
 
     /**
-     * Encode the specified {@code DEREncodable} and return the PEM encoding in a
+     * Encodes the specified {@code DEREncodable} and returns a PEM encoded
      * string.
      *
      * @param de the {@code DEREncodable} to be encoded.
-     * @return PEM encoding in a string
-     * @throws IllegalArgumentException when encoding the {@code DEREncodable}
-     * fails.
+     * @return a byte array containing the PEM encoded data
+     * @throws IllegalArgumentException If the DEREncodable cannot be encoded
      * @throws NullPointerException if {@code de} is {@code null}.
      * @see #withEncryption(char[])
      */
@@ -202,12 +203,12 @@ public final class PEMEncoder {
     }
 
     /**
-     * Encodes the specified {@code DEREncodable} into PEM.
+     * Encodes the specified {@code DEREncodable} and returns the PEM encoding
+     * in a byte array.
      *
      * @param de the {@code DEREncodable} to be encoded.
      * @return PEM encoded byte array
-     * @throws IllegalArgumentException when encoding the {@code DEREncodable}
-     * fails.
+     * @throws IllegalArgumentException if the DEREncodable cannot be encoded
      * @throws NullPointerException if {@code de} is {@code null}.
      * @see #withEncryption(char[])
      */
@@ -221,12 +222,13 @@ public final class PEMEncoder {
      *
      * <p> Only {@link PrivateKey} objects can be encrypted with this newly
      * configured instance.  Encoding other {@link DEREncodable} objects will
-     * throw an{@code IllegalArgumentException}.
+     * throw an {@code IllegalArgumentException}.
      *
      * @implNote The default algorithm is defined by Security Property {@code
      * jdk.epkcs8.defaultAlgorithm} using default password-based encryption
-     * parameters by the supporting provider.  To configure all the encryption
-     * options see {@link EncryptedPrivateKeyInfo#encryptKey(PrivateKey, Key,
+     * parameters by the supporting provider.  If you need more control over
+     * the encryption algorithm and parameters, use
+     * {@link EncryptedPrivateKeyInfo#encryptKey(PrivateKey, Key,
      * String, AlgorithmParameterSpec, Provider, SecureRandom)} and use the
      * returned object with {@link #encode(DEREncodable)}.
      *

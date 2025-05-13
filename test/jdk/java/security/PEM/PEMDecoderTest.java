@@ -97,11 +97,6 @@ public class PEMDecoderTest {
         PEMData.privList.forEach(PEMDecoderTest::testSignature);
         PEMData.oasList.forEach(PEMDecoderTest::testSignature);
 
-
-        // PEMRecord tests
-        System.out.println("Checking if ecCSR:");
-        test(PEMData.ecCSR);
-
         System.out.println("Checking if ecCSR with preData:");
         DEREncodable result = PEMDecoder.of().decode(PEMData.ecCSRWithData.pem(), PEMRecord.class);
         if (result instanceof PEMRecord rec) {
@@ -137,8 +132,8 @@ public class PEMDecoderTest {
         testPEMRecordDecode(PEMData.rsapub);
         testPEMRecordDecode(PEMData.ecCert);
         testPEMRecordDecode(PEMData.ec25519priv);
-        testPEMRecordDecode(PEMData.ecCSR);
-        testPEMRecordDecode(PEMData.ecCSRWithData);
+        //testPEMRecordDecode(PEMData.ecCSR);
+        //estPEMRecordDecode(PEMData.ecCSRWithData);
     }
 
     static void testInputStream() throws IOException {
@@ -334,10 +329,6 @@ public class PEMDecoderTest {
     static DEREncodable test(String pem, Class clazz, PEMDecoder decoder)
         throws IOException {
         DEREncodable pk = decoder.decode(pem);
-
-//        if (pk instanceof KeyPair kp) {
-//            pk = kp.getPrivate();
-//        }
 
         // Check that clazz matches what pk returned.
         if (pk.getClass().equals(clazz)) {

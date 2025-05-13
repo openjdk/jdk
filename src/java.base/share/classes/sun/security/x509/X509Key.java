@@ -147,12 +147,11 @@ public class X509Key implements PublicKey, DerEncoder {
     public static X509Key parse(byte[] encoded) throws IOException
     {
         DerValue in = new DerValue(encoded);
-        AlgorithmId algorithm;
 
         if (in.tag != DerValue.tag_Sequence)
             throw new IOException("corrupt subject key");
 
-        algorithm = AlgorithmId.parse(in.data.getDerValue());
+        AlgorithmId algorithm = AlgorithmId.parse(in.data.getDerValue());
         BitArray keyBits = in.data.getUnalignedBitString();
 
         if (in.data.available() != 0)

@@ -179,8 +179,7 @@ public class Pem {
         do {
             switch (c = is.read()) {
                 case '-' -> hyphen++;
-                case -1 -> throw new IllegalArgumentException(
-                    "Input ended prematurely");
+                case -1 -> throw new EOFException("Input ended prematurely");
                 case '\n', '\r' -> throw new IllegalArgumentException(
                     "Incomplete header");
                 default -> sb.append((char) c);
@@ -227,7 +226,7 @@ public class Pem {
         do {
             switch (c = is.read()) {
                 case -1 ->
-                    throw new IllegalArgumentException("Incomplete header");
+                    throw new EOFException("Incomplete header");
                 case '-' -> hyphen++;
                 case WS, '\t', '\n', '\r' -> {} // skip whitespace, tab, etc
                 default -> sb.append((char) c);
@@ -240,8 +239,7 @@ public class Pem {
         do {
             switch (is.read()) {
                 case '-' -> hyphen++;
-                case -1 -> throw new IllegalArgumentException(
-                    "Input ended prematurely");
+                case -1 -> throw new EOFException("Input ended prematurely");
                 default -> throw new IllegalArgumentException(
                     "Incomplete footer");
             }
@@ -255,8 +253,7 @@ public class Pem {
         do {
             switch (c = is.read()) {
                 case '-' -> hyphen++;
-                case -1 -> throw new IllegalArgumentException(
-                    "Input ended prematurely");
+                case -1 -> throw new EOFException("Input ended prematurely");
                 default -> sb.append((char) c);
             }
         } while (hyphen == 0);
@@ -265,8 +262,7 @@ public class Pem {
         do {
             switch (is.read()) {
                 case '-' -> hyphen++;
-                case -1 -> throw new IllegalArgumentException(
-                    "Input ended prematurely");
+                case -1 -> throw new EOFException("Input ended prematurely");
                 default -> throw new IllegalArgumentException(
                     "Incomplete footer");
             }

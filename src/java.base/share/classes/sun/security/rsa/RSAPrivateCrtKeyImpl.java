@@ -69,7 +69,7 @@ public final class RSAPrivateCrtKeyImpl
     private BigInteger qe;      // prime exponent q
     private BigInteger coeff;   // CRT coefficient
 
-    // RSA or RSS-PSS KeyType
+    // RSA or RSA-PSS KeyType
     private final transient KeyType type;
 
     // Optional parameters associated with this RSA key

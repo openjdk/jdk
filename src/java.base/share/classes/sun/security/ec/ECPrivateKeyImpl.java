@@ -225,7 +225,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         ECParameterSpec ecParams = getParams();
         ECOperations ops = ECOperations.forParameters(ecParams)
                 .orElseThrow(ProviderException::new);
-        MutablePoint pub = ops.multiply(ecParams.getGenerator(), getArrayS());
+        MutablePoint pub = ops.multiply(ecParams.getGenerator(), arrayS);
         AffinePoint affPub = pub.asAffine();
         ECPoint w = new ECPoint(affPub.getX().asBigInteger(),
                 affPub.getY().asBigInteger());

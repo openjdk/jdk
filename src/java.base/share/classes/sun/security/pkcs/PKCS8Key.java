@@ -73,7 +73,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     protected byte[] pubKeyEncoded = null;
 
     /* ASN.1 Attributes */
-    protected byte[] attributes;
+    private byte[] attributes;
 
     /* PKCS8 version of the PEM */
     private int version;
@@ -318,7 +318,14 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
             }
 
             if (pubKeyEncoded != null) {
-                X509Key x = X509Key.parse(pubKeyEncoded);
+                X509Key x = new X509Key();
+                try {
+                    x.decode(pubKeyEncoded);
+                } catch (InvalidKeyException e) {
+                    throw new IOException(e);
+                }
+
+                // X509Key x = X509Key.parse(pubKeyEncoded);
                 DerOutputStream pubOut = new DerOutputStream();
                 pubOut.putUnalignedBitString(x.getKey());
                 out.writeImplicit(

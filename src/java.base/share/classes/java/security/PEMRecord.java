@@ -39,23 +39,15 @@ import java.util.Base64;
  * Java API cryptographic object is not desired or there is no other
  * {@code DEREncodable} for the type.
  *
- * <p>Types with Java API representation, such as a {@link PrivateKey},
- * can return a {@code PEMRecord} when used with
- * {@linkplain PEMDecoder#decode(String, Class)}. Using {@code PEMRecord} can
- * be helpful when generating a representation is not desired or when used
- * with {@code leadingData}.  {@code leadingData} can depend on which
- * decode() methods is used.
- *
  * <p>{@code PEMRecord} may have a null {@code type} and {@code pem} when
- * {@code PEMDecoder.decode()} methods encounter only non-PEM data and has
- * reached the end of the stream. If there is PEM data, {@code type} and
+ * there is no PEM data.  If there is PEM data, {@code type} and
  * {@code pem} will both be non-null. {@code leadingData} may be null if the
- * input data only contains PEM data. All values can never be null.
+ * decoded data only contains PEM data. All values can never be null.
  *
  * <p> During the instantiation of this record, there is no validation for the
  * {@code type} or {@code pem}.
  *
- * <p>This class is immutable and thread-safe.  {@code leadingData} is not
+ * <p>This class is thread-safe.  {@code leadingData} is not
  * defensively copied.
  *
  * @param type The type identifier in the PEM header.  For a public key,
@@ -109,11 +101,12 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
     }
 
     /**
-     * Creates a {@code PEMRecord} instance with a given {@code type} and {@code pem}
-     * data in String form.  {@code leadingData} is set to null.
+     * Creates a {@code PEMRecord} instance with a given {@code type} and
+     * {@code pem} data in String form.  {@code leadingData} is set to null.
      *
-     * @param type the type identifier in the PEM header and footer, or {@code null} if there is no PEM data.
-     * @param pem The data between the PEM header and footer.
+     * @param type the type identifier in the PEM header and footer, or
+     * {@code null} if there is no PEM data.
+     * @param pem the Base64-encoded data between the PEM header and footer.
      *
      * @see #PEMRecord(String, String, byte[])
      */
@@ -126,7 +119,7 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      * byte array {@code pem}.  {@code leadingData} is set to null.
      *
      * @param type the type identifier in the PEM header and footer, or {@code null} if there is no PEM data.
-     * @param pem the data between the PEM header and footer.
+     * @param pem the Base64-encoded data between the PEM header and footer.
      *
      * @see #PEMRecord(String, String, byte[])
      */
@@ -139,7 +132,7 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      * {@code pem}.
      *
      * @throws IllegalArgumentException if {@code pem} cannot be decoded.
-     * @return Returns a new array of the binary encoding each time this
+     * @return a new array of the binary encoding each time this
      * method is called, or null if {@code pem} is null.
      */
     public byte[] getEncoded() {
