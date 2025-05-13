@@ -48,7 +48,7 @@ import jtreg.SkippedException;
 public class TestDockerMemoryMetricsSubgroup {
     private static final String imageName =
             DockerfileConfig.getBaseImageName() + ":" +
-                    DockerfileConfig.getBaseImageVersion();
+            DockerfileConfig.getBaseImageVersion();
 
     static String getEngineInfo(String format) throws Exception {
         return DockerTestUtils.execute(Container.ENGINE_COMMAND, "info", "-f", format)
