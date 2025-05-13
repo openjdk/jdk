@@ -401,6 +401,103 @@ public class HotSpotVMConfigAccess {
         throw new JVMCIError("cannot convert " + name + " of type " + value.getClass().getSimpleName() + (cppType == null ? "" : " [" + cppType + "]") + " to " + toType.getSimpleName());
     }
 
+//    final int c1Deoptimize = getConstant("nmethod::NMethodChangeReason::C1_deoptimize", Integer.class);
+//    final int c1CodePatch = getConstant("nmethod::NMethodChangeReason::C1_codepatch", Integer.class);
+//    final int c1PredicateFailedTrap = getConstant("nmethod::NMethodChangeReason::C1_predicate_failed_trap", Integer.class);
+//    final int c1DeoptimizeForPatching = getConstant("nmethod::NMethodChangeReason::C1_deoptimize_for_patching", Integer.class);
+//    final int ciReplay = getConstant("nmethod::NMethodChangeReason::ci_replay", Integer.class);
+//    final int markedForDeoptimization = getConstant("nmethod::NMethodChangeReason::marked_for_deoptimization", Integer.class);
+//    final int notUsed = getConstant("nmethod::NMethodChangeReason::not_used", Integer.class);
+//    final int osrInvalidationForCompilingWithC1 = getConstant("nmethod::NMethodChangeReason::osr_invalidation_for_compiling_with_C1", Integer.class);
+//    final int osrInvalidationBackBranch = getConstant("nmethod::NMethodChangeReason::OSR_invalidation_back_branch", Integer.class);
+//    final int jvmciReprofile = getConstant("nmethod::NMethodChangeReason::JVMCI_reprofile", Integer.class);
+//    final int jvmciMaterializeVirtualObject = getConstant("nmethod::NMethodChangeReason::JVMCI_materialize_virtual_object", Integer.class);
+//    final int jvmciInvalidateNmethodMirror = getConstant("nmethod::NMethodChangeReason::JVMCI_invalidate_nmethod_mirror", Integer.class);
+//    final int jvmciRegisterMethod = getConstant("nmethod::NMethodChangeReason::JVMCI_register_method", Integer.class);
+//    final int osrInvalidationOfLowerLevel = getConstant("nmethod::NMethodChangeReason::OSR_invalidation_of_lower_level", Integer.class);
+//    final int setNativeFunction = getConstant("nmethod::NMethodChangeReason::set_native_function", Integer.class);
+//    final int whiteboxDeoptimization = getConstant("nmethod::NMethodChangeReason::whitebox_deoptimization", Integer.class);
+//    final int missingExceptionHandler = getConstant("nmethod::NMethodChangeReason::missing_exception_handler", Integer.class);
+//    final int uncommonTrap = getConstant("nmethod::NMethodChangeReason::uncommon_trap", Integer.class);
+//    final int zombie = getConstant("nmethod::NMethodChangeReason::zombie", Integer.class);
+//    final int gcUnlinking = getConstant("nmethod::NMethodChangeReason::gc_unlinking", Integer.class);
+//    final int gcUnlinkingCold = getConstant("nmethod::NMethodChangeReason::gc_unlinking_cold", Integer.class);
+//    final int jvmciNewInstallation = getConstant("nmethod::NMethodChangeReason::JVMCI_new_installation", Integer.class);
+//    final int jvmciReplacingWithNewCode = getConstant("nmethod::NMethodChangeReason::JVMCI_replacing_with_new_code", Integer.class);
+//
+//    public String getCodeStatusDescription(int codeStatus) {
+//        if (codeStatus == c1Deoptimize) {
+//            return "C1 Deoptimized";
+//        }
+//        if (codeStatus == c1CodePatch) {
+//            return "C1 Code Patch";
+//        }
+//        if (codeStatus == c1PredicateFailedTrap) {
+//            return "C1 Predicate Failed Trap";
+//        }
+//        if (codeStatus == c1DeoptimizeForPatching) {
+//            return "C1 Deoptimize For Patching";
+//        }
+//        if (codeStatus == ciReplay) {
+//            return "CI Replay";
+//        }
+//        if (codeStatus == markedForDeoptimization) {
+//            return "Marked for Deoptimization";
+//        }
+//        if (codeStatus == notUsed) {
+//            return "Not Used";
+//        }
+//        if (codeStatus == osrInvalidationForCompilingWithC1) {
+//            return "OSR Invalidation For Compiling With C1";
+//        }
+//        if (codeStatus == osrInvalidationBackBranch) {
+//            return "OSR Invalidation Back Branch";
+//        }
+//        if (codeStatus == jvmciReprofile) {
+//            return "JVMCI Reprofile";
+//        }
+//        if (codeStatus == jvmciMaterializeVirtualObject) {
+//            return "JVMCI Materialize Virtual Object";
+//        }
+//        if (codeStatus == jvmciInvalidateNmethodMirror) {
+//            return "JVMCI Invalidate NMethod Mirror";
+//        }
+//        if (codeStatus == jvmciRegisterMethod) {
+//            return "JVMCI Register Method";
+//        }
+//        if (codeStatus == osrInvalidationOfLowerLevel) {
+//            return "OSR Invalidation of Lower Level";
+//        }
+//        if (codeStatus == setNativeFunction) {
+//            return "Set Native Function";
+//        }
+//        if (codeStatus == whiteboxDeoptimization) {
+//            return "WhiteBox Deoptimization";
+//        }
+//        if (codeStatus == missingExceptionHandler) {
+//            return "Missing Exception Handler";
+//        }
+//        if (codeStatus == uncommonTrap) {
+//            return "Uncommon Trap";
+//        }
+//        if (codeStatus == zombie) {
+//            return "Zombie";
+//        }
+//        if (codeStatus == gcUnlinking) {
+//            return "GC Unlinking";
+//        }
+//        if (codeStatus == gcUnlinkingCold) {
+//            return "GC Unlinking Cold NMethod";
+//        }
+//        if (codeStatus == jvmciNewInstallation) {
+//            return "JVMCI New Installation";
+//        }
+//        if (codeStatus == jvmciReplacingWithNewCode) {
+//            return "JVMCI Replacing With New Code";
+//        }
+//        return null;
+//    }
+//
     private final HotSpotVMConfigStore store;
 
     public HotSpotVMConfigAccess(HotSpotVMConfigStore store) {

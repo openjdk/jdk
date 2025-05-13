@@ -111,6 +111,10 @@ public class InstalledCode {
         return statusReason;
     }
 
+    public String getStatusReasonDescription() {
+        return null;
+    }
+
     /**
      * Returns a copy of this installed code if it is {@linkplain #isValid() valid}, null otherwise.
      */

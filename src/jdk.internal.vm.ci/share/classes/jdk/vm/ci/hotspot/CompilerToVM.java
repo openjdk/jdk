@@ -644,6 +644,8 @@ final class CompilerToVM {
                     long failedSpeculationsAddress,
                     byte[] speculations);
 
+    native String getCodeStatusDescription(int statusReasonCode);
+
     /**
      * Gets flags specifying optional parts of code info. Only if a flag is set, will the
      * corresponding code info being included in the {@linkplain HotSpotCompiledCodeStream

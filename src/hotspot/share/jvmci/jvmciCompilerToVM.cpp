@@ -28,6 +28,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/scopeDesc.hpp"
+#include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -1202,6 +1203,60 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
     }
   }
   return result;
+C2V_END
+
+C2V_VMENTRY_0(jobject,  getCodeStatusDescription, (JNIEnv *env, jobject, jint status_reason_code))
+  HandleMark hm(THREAD);
+  JNIHandleMark jni_hm(thread);
+  JVMCIObject desc = JVMCIENV->create_string("unknown", JVMCI_CHECK_NULL);
+  if (status_reason_code == nmethod::NMethodChangeReason::C1_deoptimize) {
+    desc = JVMCIENV->create_string("c1 deoptimized", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::C1_codepatch) {
+    desc = JVMCIENV->create_string("c1 code patch", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::C1_predicate_failed_trap) {
+    desc = JVMCIENV->create_string("c1 predicate failed trap", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::C1_deoptimize_for_patching) {
+    desc = JVMCIENV->create_string("c1 deoptimize for patching", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::CI_replay) {
+    desc = JVMCIENV->create_string("ci replay", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::marked_for_deoptimization) {
+    desc = JVMCIENV->create_string("marked for deoptimization", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::not_used) {
+    desc = JVMCIENV->create_string("not used", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::OSR_invalidation_for_compiling_with_C1) {
+    desc = JVMCIENV->create_string("osr invalidation for compiling with c1", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::OSR_invalidation_back_branch) {
+    desc = JVMCIENV->create_string("osr invalidation back branch", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_reprofile) {
+    desc = JVMCIENV->create_string("jvmci reprofile", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_materialize_virtual_object) {
+    desc = JVMCIENV->create_string("jvmci materialize virtual object", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_invalidate_nmethod_mirror) {
+    desc = JVMCIENV->create_string("jvmci invalidate nmethod mirror", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_register_method) {
+    desc = JVMCIENV->create_string("jvmci register method", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::OSR_invalidation_of_lower_level) {
+    desc = JVMCIENV->create_string("osr invalidation of lower level", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::set_native_function) {
+    desc = JVMCIENV->create_string("set native function", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::whitebox_deoptimization) {
+    desc = JVMCIENV->create_string("whitebox deoptimization", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::missing_exception_handler) {
+    desc = JVMCIENV->create_string("missing exception handler", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::uncommon_trap) {
+    desc = JVMCIENV->create_string("uncommon trap", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::zombie) {
+    desc = JVMCIENV->create_string("zombie", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::gc_unlinking) {
+    desc = JVMCIENV->create_string("gc unlinking", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::gc_unlinking_cold) {
+    desc = JVMCIENV->create_string("gc unlinking cold nmethod", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_new_installation) {
+    desc = JVMCIENV->create_string("jvmci new installation", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_replacing_with_new_code) {
+    desc = JVMCIENV->create_string("jvmci replacing with new code", JVMCI_CHECK_NULL);
+  }
+  return JVMCIENV->get_jobject(desc);
 C2V_END
 
 C2V_VMENTRY(void, resetCompilationStatistics, (JNIEnv* env, jobject))
@@ -3306,6 +3361,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getResolvedJavaType0",                         CC "(Ljava/lang/Object;JZ)" HS_KLASS,                                                 FN_PTR(getResolvedJavaType0)},
   {CC "readConfiguration",                            CC "()[" OBJECT,                                                                      FN_PTR(readConfiguration)},
   {CC "installCode0",                                 CC "(JJZ" HS_COMPILED_CODE "[" OBJECT INSTALLED_CODE "J[B)I",                         FN_PTR(installCode0)},
+  {CC "getCodeStatusDescription",                     CC "(I)" STRING,                                                                      FN_PTR(getCodeStatusDescription)},
   {CC "getInstallCodeFlags",                          CC "()I",                                                                             FN_PTR(getInstallCodeFlags)},
   {CC "resetCompilationStatistics",                   CC "()V",                                                                             FN_PTR(resetCompilationStatistics)},
   {CC "disassembleCodeBlob",                          CC "(" INSTALLED_CODE ")" STRING,                                                     FN_PTR(disassembleCodeBlob)},
