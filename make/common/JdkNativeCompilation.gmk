@@ -23,17 +23,12 @@
 # questions.
 #
 
-ifndef _JDK_NATIVE_COMPILATION_GMK
-_JDK_NATIVE_COMPILATION_GMK := 1
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
-ifeq ($(_MAKEBASE_GMK), )
-  $(error You must include MakeBase.gmk prior to including JdkNativeCompilation.gmk)
-endif
+################################################################################
 
 include NativeCompilation.gmk
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, common/JdkNativeCompilation.gmk))
 
 FindSrcDirsForComponent += \
   $(call uniq, $(wildcard \
@@ -232,6 +227,8 @@ endef
 
 GLOBAL_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/common/version.rc
 
+# \xA9 is the copyright symbol in ANSI encoding (Windows-1252), which rc.exe
+# assumes the resource file is in.
 JDK_RCFLAGS=$(RCFLAGS) \
     -D"JDK_VERSION_STRING=$(VERSION_STRING)" \
     -D"JDK_COMPANY=$(JDK_RC_COMPANY_NAME)" \
@@ -499,4 +496,7 @@ define SetupJdkExecutableBody
   $$(eval $$(call SetupJdkNativeCompilation, $1))
 endef
 
-endif # _JDK_NATIVE_COMPILATION_GMK
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

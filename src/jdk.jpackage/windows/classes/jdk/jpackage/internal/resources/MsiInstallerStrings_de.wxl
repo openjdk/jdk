@@ -15,4 +15,6 @@
   <String Id="InstallDirNotEmptyDlgInstallDirExistMessage">Der Ordner [INSTALLDIR] ist bereits vorhanden. Möchten Sie diesen Ordner trotzdem installieren?</String>
 
   <String Id="ContextMenuCommandLabel">Mit [ProductName] öffnen</String>
+
+  <String Id="OsConditionMessage">[ProductName][ProductVersion] is not supported on this version of Windows</String>
 </WixLocalization>

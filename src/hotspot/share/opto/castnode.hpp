@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,17 @@ public:
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+class CastHHNode: public ConstraintCastNode {
+public:
+  CastHHNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
+          : ConstraintCastNode(ctrl, n, t, dependency, types) {
+    assert(ctrl != nullptr, "control must be set");
+    init_class_id(Class_CastHH);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return in(1)->ideal_reg(); }
 };
 
 class CastFFNode: public ConstraintCastNode {

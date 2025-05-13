@@ -39,15 +39,15 @@
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "jvm.h"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
@@ -398,7 +398,6 @@ CompileTask* CompileQueue::get(CompilerThread* thread) {
   // save methods from RedefineClasses across safepoint
   // across MethodCompileQueue_lock below.
   methodHandle save_method;
-  methodHandle save_hot_method;
 
   MonitorLocker locker(MethodCompileQueue_lock);
   // If _first is null we have no more compile jobs. There are two reasons for
@@ -453,7 +452,6 @@ CompileTask* CompileQueue::get(CompilerThread* thread) {
     // the compilation queue, which is walked during RedefineClasses.
     Thread* thread = Thread::current();
     save_method = methodHandle(thread, task->method());
-    save_hot_method = methodHandle(thread, task->hot_method());
 
     remove(task);
   }
@@ -1154,7 +1152,6 @@ void CompileBroker::mark_on_stack() {
 void CompileBroker::compile_method_base(const methodHandle& method,
                                         int osr_bci,
                                         int comp_level,
-                                        const methodHandle& hot_method,
                                         int hot_count,
                                         CompileTask::CompileReason compile_reason,
                                         bool blocking,
@@ -1173,13 +1170,8 @@ void CompileBroker::compile_method_base(const methodHandle& method,
       tty->print(" osr_bci: %d", osr_bci);
     }
     tty->print(" level: %d comment: %s count: %d", comp_level, CompileTask::reason_name(compile_reason), hot_count);
-    if (!hot_method.is_null()) {
-      tty->print(" hot: ");
-      if (hot_method() != method()) {
-          hot_method->print_short_name(tty);
-      } else {
-        tty->print("yes");
-      }
+    if (hot_count > 0) {
+      tty->print(" hot: yes");
     }
     tty->cr();
   }
@@ -1326,7 +1318,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     task = create_compile_task(queue,
                                compile_id, method,
                                osr_bci, comp_level,
-                               hot_method, hot_count, compile_reason,
+                               hot_count, compile_reason,
                                blocking);
   }
 
@@ -1337,7 +1329,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
 
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        int comp_level,
-                                       const methodHandle& hot_method, int hot_count,
+                                       int hot_count,
                                        CompileTask::CompileReason compile_reason,
                                        TRAPS) {
   // Do nothing if compilebroker is not initialized or compiles are submitted on level none
@@ -1357,14 +1349,14 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
   // CompileBroker::compile_method can trap and can have pending async exception.
-  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
+  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_count, compile_reason, directive, THREAD);
   DirectivesStack::release(directive);
   return nm;
 }
 
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                          int comp_level,
-                                         const methodHandle& hot_method, int hot_count,
+                                         int hot_count,
                                          CompileTask::CompileReason compile_reason,
                                          DirectiveSet* directive,
                                          TRAPS) {
@@ -1444,30 +1436,6 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // do the compilation
   if (method->is_native()) {
     if (!PreferInterpreterNativeStubs || method->is_method_handle_intrinsic()) {
-#if defined(IA32) && !defined(ZERO)
-      // The following native methods:
-      //
-      // java.lang.Float.intBitsToFloat
-      // java.lang.Float.floatToRawIntBits
-      // java.lang.Double.longBitsToDouble
-      // java.lang.Double.doubleToRawLongBits
-      //
-      // are called through the interpreter even if interpreter native stubs
-      // are not preferred (i.e., calling through adapter handlers is preferred).
-      // The reason is that on x86_32 signaling NaNs (sNaNs) are not preserved
-      // if the version of the methods from the native libraries is called.
-      // As the interpreter and the C2-intrinsified version of the methods preserves
-      // sNaNs, that would result in an inconsistent way of handling of sNaNs.
-      if ((UseSSE >= 1 &&
-          (method->intrinsic_id() == vmIntrinsics::_intBitsToFloat ||
-           method->intrinsic_id() == vmIntrinsics::_floatToRawIntBits)) ||
-          (UseSSE >= 2 &&
-           (method->intrinsic_id() == vmIntrinsics::_longBitsToDouble ||
-            method->intrinsic_id() == vmIntrinsics::_doubleToRawLongBits))) {
-        return nullptr;
-      }
-#endif // IA32 && !ZERO
-
       // To properly handle the appendix argument for out-of-line calls we are using a small trampoline that
       // pops off the appendix argument and jumps to the target (see gen_special_dispatch in SharedRuntime).
       //
@@ -1484,7 +1452,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
       return nullptr;
     }
     bool is_blocking = !directive->BackgroundCompilationOption || ReplayCompiles;
-    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, is_blocking, THREAD);
+    compile_method_base(method, osr_bci, comp_level, hot_count, compile_reason, is_blocking, THREAD);
   }
 
   // return requested nmethod
@@ -1631,13 +1599,12 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
                                                 const methodHandle& method,
                                                 int                 osr_bci,
                                                 int                 comp_level,
-                                                const methodHandle& hot_method,
                                                 int                 hot_count,
                                                 CompileTask::CompileReason compile_reason,
                                                 bool                blocking) {
   CompileTask* new_task = CompileTask::allocate();
   new_task->initialize(compile_id, method, osr_bci, comp_level,
-                       hot_method, hot_count, compile_reason,
+                       hot_count, compile_reason,
                        blocking);
   queue->add(new_task);
   return new_task;
@@ -2074,7 +2041,21 @@ void CompileBroker::maybe_block() {
     if (PrintCompilation && (Verbose || WizardMode))
       tty->print_cr("compiler thread " INTPTR_FORMAT " poll detects block request", p2i(Thread::current()));
 #endif
+    // If we are executing a task during the request to block, report the task
+    // before disappearing.
+    CompilerThread* thread = CompilerThread::current();
+    if (thread != nullptr) {
+      CompileTask* task = thread->task();
+      if (task != nullptr) {
+        if (PrintCompilation) {
+          task->print(tty, "blocked");
+        }
+        task->print_ul("blocked");
+      }
+    }
+    // Go to VM state and block for final VM shutdown safepoint.
     ThreadInVMfromNative tivfn(JavaThread::current());
+    assert(false, "Should never unblock from TIVNM entry");
   }
 }
 
@@ -2326,7 +2307,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       }
     }
 
-    DirectivesStack::release(directive);
 
     if (!ci_env.failing() && !task->is_success()) {
       assert(ci_env.failure_reason() != nullptr, "expect failure reason");
@@ -2360,13 +2340,15 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     if (CompilationLog::log() != nullptr) {
       CompilationLog::log()->log_failure(thread, task, failure_reason, retry_message);
     }
-    if (PrintCompilation) {
+    if (PrintCompilation || directive->PrintCompilationOption) {
       FormatBufferResource msg = retry_message != nullptr ?
         FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
         FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
       task->print(tty, msg);
     }
   }
+
+  DirectivesStack::release(directive);
 
   methodHandle method(thread, task->method());
 

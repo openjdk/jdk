@@ -26,8 +26,8 @@
  * @bug 8279508
  * @summary Auto-vectorize Math.round API
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*avx.*"
- * @requires os.simpleArch == "x64"
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx.*") |
+ *           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @library /test/lib /
  * @run driver compiler.vectorization.TestRoundVectFloat
  */
@@ -49,7 +49,13 @@ public class TestRoundVectFloat {
   }
 
   @Test
-  @IR(applyIf = {"UseAVX", " > 1"}, counts = {IRNode.ROUND_VF , " > 0 "})
+  @IR(applyIfPlatform = {"x64", "true"},
+      applyIf = {"UseAVX", " > 1"},
+      counts = {IRNode.ROUND_VF , " > 0 "})
+  @IR(applyIfPlatform = {"riscv64", "true"},
+      applyIfCPUFeature = {"rvv", "true"},
+      applyIf = {"MaxVectorSize", ">= 32"},
+      counts = {IRNode.ROUND_VF , " > 0 "})
   public void test_round_float(int[] iout, float[] finp) {
       for (int i = 0; i < finp.length; i+=1) {
           iout[i] = Math.round(finp[i]);

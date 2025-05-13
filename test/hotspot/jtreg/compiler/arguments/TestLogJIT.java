@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Test running with log:jit*=debug enabled.
- * @run main/othervm -Xlog:jit*=debug compiler.arguments.TestTraceTypeProfile
+ * @run main/othervm -Xlog:jit*=debug compiler.arguments.TestLogJIT
  */
 
 package compiler.arguments;

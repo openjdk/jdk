@@ -35,9 +35,9 @@
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
-#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -246,7 +246,7 @@ void G1FullCollector::complete_collection() {
 
   _heap->resize_all_tlabs();
 
-  _heap->young_regions_cardset()->clear();
+  _heap->young_regions_cset_group()->clear();
 
   _heap->policy()->record_full_collection_end();
   _heap->gc_epilogue(true);

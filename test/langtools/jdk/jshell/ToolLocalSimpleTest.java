@@ -73,7 +73,7 @@ public class ToolLocalSimpleTest extends ToolSimpleTest {
     public void testCompoundStart() {
         test(new String[]{"--startup", "DEFAULT", "--startup", "PRINTING", "--startup", "TOOLING"},
                 (a) -> assertCommandOutputContains(a, "/list -start",
-                        "System.out.println", "import java.util.concurrent", "tools()")
+                        "System.out.println", "import module java.base;", "tools()")
         );
     }
 

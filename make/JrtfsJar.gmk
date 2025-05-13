@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,13 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include CopyFiles.gmk
-include JavaCompilation.gmk
 include JarArchive.gmk
+include JavaCompilation.gmk
 include TextFileProcessing.gmk
 
 # This rule will be depended on due to the MANIFEST line
@@ -78,3 +77,7 @@ $(eval $(call SetupJarArchive, BUILD_JRTFS_JAR, \
 ))
 
 all: $(BUILD_JRTFS_JAR)
+
+################################################################################
+
+include MakeFileEnd.gmk

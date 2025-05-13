@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -140,8 +140,27 @@
   static bool is_caller_save_register (LIR_Opr opr) { return true; }
   static bool is_caller_save_register (Register r) { return true; }
 
-  static int nof_caller_save_cpu_regs() { return pd_nof_caller_save_cpu_regs_frame_map; }
-  static int last_cpu_reg()             { return pd_last_cpu_reg;  }
-  static int last_byte_reg()            { return pd_last_byte_reg; }
+  static int adjust_reg_range(int range, bool exclude_fp = true) {
+    // r27 is not allocatable when compressed oops is on and heapbase is not
+    // zero, compressed klass pointers doesn't use r27 after JDK-8234794
+    if (UseCompressedOops && (CompressedOops::base() != nullptr)) {
+      range -= 1;
+    }
+
+    // r29 is not allocatable when PreserveFramePointer is on,
+    // but fp saving is handled in MacroAssembler::build_frame()/remove_frame()
+    if (exclude_fp) {
+      range -= 1;
+    }
+
+    // rscratch registers r8, r9
+    // r28=rthread, r30=lr, r31=sp
+    // r18 on masOS/Windows
+    return range - 5 R18_RESERVED_ONLY(-1);
+  }
+
+  static int nof_caller_save_cpu_regs() { return adjust_reg_range(pd_nof_caller_save_cpu_regs_frame_map);  }
+  static int last_cpu_reg()             { return adjust_reg_range(pd_last_cpu_reg, PreserveFramePointer);  }
+  static int last_byte_reg()            { return adjust_reg_range(pd_last_byte_reg, PreserveFramePointer); }
 
 #endif // CPU_AARCH64_C1_FRAMEMAP_AARCH64_HPP

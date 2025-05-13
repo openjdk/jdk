@@ -82,7 +82,7 @@ public class Annotations {
     @Repeatable(ParameterSupplierGroup.class)
     public @interface ParameterSupplier {
 
-        String value();
+        String value() default "";
 
         OperatingSystem[] ifOS() default {
             OperatingSystem.LINUX,

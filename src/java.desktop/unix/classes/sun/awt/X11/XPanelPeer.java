@@ -52,6 +52,7 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
         super(target);
     }
 
+    @Override
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
         if (embedder != null) {
@@ -59,9 +60,11 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
         }
     }
 
+    @Override
     public Insets getInsets() {
         return new Insets(0, 0, 0, 0);
     }
+    @Override
     public void paint(Graphics g) {
         super.paint(g);
         SunGraphicsCallback.PaintHeavyweightComponentsCallback.getInstance().
@@ -69,6 +72,7 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
                           SunGraphicsCallback.LIGHTWEIGHTS |
                           SunGraphicsCallback.HEAVYWEIGHTS);
     }
+    @Override
     public void print(Graphics g) {
         super.print(g);
         SunGraphicsCallback.PrintHeavyweightComponentsCallback.getInstance().
@@ -78,6 +82,7 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
 
     }
 
+    @Override
     public void setBackground(Color c) {
         Component comp;
         int i;
@@ -100,6 +105,7 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
         super.setBackground(c);
     }
 
+    @Override
     public void setForeground(Color c) {
         setForegroundForHierarchy((Container) target, c);
     }
@@ -126,6 +132,7 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
         }
     }
 
+    @Override
     public void dispose() {
         if (embedder != null) {
             embedder.deinstall();
@@ -133,6 +140,7 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
         super.dispose();
     }
 
+    @Override
     protected boolean shouldFocusOnClick() {
         // Return false if this container has children so in that case it won't
         // be focused. Return true otherwise.

@@ -64,8 +64,6 @@ void AOTClassLinker::initialize() {
   }
 
   assert(is_initialized(), "sanity");
-
-  AOTConstantPoolResolver::initialize();
 }
 
 void AOTClassLinker::dispose() {
@@ -79,8 +77,6 @@ void AOTClassLinker::dispose() {
   _sorted_candidates = nullptr;
 
   assert(!is_initialized(), "sanity");
-
-  AOTConstantPoolResolver::dispose();
 }
 
 bool AOTClassLinker::is_vm_class(InstanceKlass* ik) {
@@ -142,7 +138,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
 
   if (ik->is_hidden()) {
     assert(ik->shared_class_loader_type() != ClassLoader::OTHER, "must have been set");
-    if (!CDSConfig::is_dumping_invokedynamic()) {
+    if (!CDSConfig::is_dumping_method_handles()) {
       return false;
     }
     if (HeapShared::is_lambda_proxy_klass(ik)) {

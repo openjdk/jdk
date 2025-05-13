@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,10 @@
           "\"archivedObjects\" of the specified class is stored in the "    \
           "CDS archive heap")                                               \
                                                                             \
+  develop(ccstr, AOTInitTestClass, nullptr,                                 \
+          "For JVM internal testing only. The specified class is stored "   \
+          "in the initialized state in the AOT cache ")                     \
+                                                                            \
   product(ccstr, DumpLoadedClassList, nullptr,                              \
           "Dump the names all loaded classes, that could be stored into "   \
           "the CDS archive, in the specified file")                         \
@@ -105,10 +109,14 @@
           constraint(AOTModeConstraintFunc, AtParse)                        \
                                                                             \
   product(ccstr, AOTConfiguration, nullptr,                                 \
-          "Configuration information used by CreateAOTCache")               \
+          "The configuration file written by -XX:AOTMode=record, and "      \
+          "loaded by -XX:AOTMode=create. This file contains profiling data "\
+          "for deciding what contents should be added to AOTCache. ")       \
+          constraint(AOTConfigurationConstraintFunc, AtParse)               \
                                                                             \
   product(ccstr, AOTCache, nullptr,                                         \
           "Cache for improving start up and warm up")                       \
+          constraint(AOTCacheConstraintFunc, AtParse)                       \
                                                                             \
   product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
           "AOT-link JVM_CONSTANT_InvokeDynamic entries in cached "          \
@@ -121,6 +129,22 @@
   product(bool, AOTCacheParallelRelocation, true, DIAGNOSTIC,               \
           "Use parallel relocation code to speed up startup.")              \
                                                                             \
+  /* AOT Code flags */                                                      \
+                                                                            \
+  product(bool, AOTAdapterCaching, false, DIAGNOSTIC,                       \
+          "Enable saving and restoring i2c2i adapters in AOT cache")        \
+                                                                            \
+  product(uint, AOTCodeMaxSize, 10*M, DIAGNOSTIC,                           \
+          "Buffer size in bytes for AOT code caching")                      \
+          range(1*M, max_jint)                                              \
+                                                                            \
+  product(bool, AbortVMOnAOTCodeFailure, false, DIAGNOSTIC,                 \
+          "Abort VM on the first occurrence of AOT code load or store "     \
+          "failure. By default VM will continue execute without AOT code.") \
+                                                                            \
+  develop(bool, TestAOTAdapterLinkFailure, false,                           \
+          "Test failure of adapter linking when loading from AOT cache.")   \
+
 // end of CDS_FLAGS
 
 DECLARE_FLAGS(CDS_FLAGS)

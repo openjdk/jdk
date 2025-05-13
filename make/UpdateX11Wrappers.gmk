@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,7 @@
 # questions.
 #
 
-################################################################################
-
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
-include Execute.gmk
-include JdkNativeCompilation.gmk
-include ToolsJdk.gmk
+include MakeFileStart.gmk
 
 ################################################################################
 # This file is responsible for extracting the x11 native struct offsets to
@@ -42,6 +34,10 @@ include ToolsJdk.gmk
 # committed into the source code repository. These are the ones used in
 # GensrcX11Wrappers.gmk to generate the Java code during the build.
 ################################################################################
+
+include Execute.gmk
+include JdkNativeCompilation.gmk
+include $(TOPDIR)/make/ToolsJdk.gmk
 
 ifeq ($(COMPILE_TYPE), cross)
   $(error It is not possible to update the x11wrappers when cross-compiling)
@@ -108,6 +104,4 @@ TARGETS += $(run_wrappergen) wrapper-information
 
 ################################################################################
 
-all: $(TARGETS)
-
-.PHONY: all default
+include MakeFileEnd.gmk

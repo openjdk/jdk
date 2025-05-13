@@ -23,10 +23,9 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include Modules.gmk
 
@@ -54,4 +53,8 @@ idea:
 
 all: idea
 
-.PHONY: default all idea
+.PHONY: idea
+
+################################################################################
+
+include MakeFileEnd.gmk
