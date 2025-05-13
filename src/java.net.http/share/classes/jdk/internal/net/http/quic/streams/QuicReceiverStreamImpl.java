@@ -623,13 +623,12 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                 return null;
             }
 
-            increaseProcessedDataBy(buffer.capacity());
-
             if (requestedStopSending) {
                 // check reset again
                 checkReset(true);
                 return null;
             }
+            increaseProcessedDataBy(buffer.capacity());
             if (buffer == EOF) {
                 eof = true;
                 assert processed == received : processed + "!=" + received;
