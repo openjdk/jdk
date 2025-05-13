@@ -468,6 +468,7 @@ class PhaseCFG : public Phase {
   void maybe_hoist_into(Node* n, Block* b);
 
   // Move node n from its current placement into the end of block b.
+  // Move also outgoing Mach projections.
   void move_into(Node* n, Block* b);
 
   // Detect implicit-null-check opportunities.  Basically, find null checks
