@@ -147,7 +147,7 @@ class TestApp {
         static Class c = ShouldBeExcluded.class;
 
         static Map mapProxy = (Map) Proxy.newProxyInstance(
-            Foo.class.getClassLoader(), 
+            Foo.class.getClassLoader(),
             new Class[] { Map.class },
             new MyInvocationHandler());
 
