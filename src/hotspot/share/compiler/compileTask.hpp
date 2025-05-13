@@ -211,7 +211,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         set_prev(CompileTask* prev)       { _prev = prev; }
   bool         is_free() const                   { return _is_free; }
   void         set_is_free(bool val)             { _is_free = val; }
-  bool         is_safe();
+  bool         is_unloaded();
 
   // RedefineClasses support
   void         metadata_do(MetadataClosure* f);

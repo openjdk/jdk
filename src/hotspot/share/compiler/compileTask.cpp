@@ -134,8 +134,8 @@ CompileTask* CompileTask::select_for_compilation() {
   return nullptr;
 }
 
-bool CompileTask::is_safe() {
-  return _method_handle.is_safe();
+bool CompileTask::is_unloaded() {
+  return !_method_handle.is_safe();
 }
 
 // ------------------------------------------------------------------
@@ -254,7 +254,7 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
 // CompileTask::print_compilation
 void CompileTask::print(outputStream* st, const char* msg, bool short_form, bool cr) {
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_impl(st, is_safe() ? method() : nullptr, compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr, _time_queued, _time_started);
+  print_impl(st, is_unloaded() ? nullptr : method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr, _time_queued, _time_started);
 }
 
 // ------------------------------------------------------------------
