@@ -54,7 +54,7 @@ public class PrintNullString implements Printable {
         pj.setPrintable(this, new PageFormat());
         PrintRequestAttributeSet pSet = new HashPrintRequestAttributeSet();
         File file = new File("out.prn");
-//        file.deleteOnExit();
+        file.deleteOnExit();
         pSet.add(new Destination(file.toURI()));
         pj.print(pSet);
     }
