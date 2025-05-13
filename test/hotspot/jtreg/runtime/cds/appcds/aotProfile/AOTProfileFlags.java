@@ -62,7 +62,7 @@ public class AOTProfileFlags {
             }
         }
     }
-    static void trainAndRun(String testName, String trainingFlags, String productionFlags) throws Exception {
+    static void trainAndRun(String testName, String trainingFlags, String productionFlags, String errorPattern) throws Exception {
         printTestCase("Flags mismatch " + testName);
 
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
@@ -102,7 +102,7 @@ public class AOTProfileFlags {
             "-cp", appJar, helloClass);
 
         out = CDSTestUtils.executeAndLog(pb, "production_success");
-        out.shouldNotContain("does not equal");
+        out.shouldNotMatch(errorPattern);
         out.shouldHaveExitValue(0);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
@@ -112,20 +112,22 @@ public class AOTProfileFlags {
             "-cp", appJar, helloClass);
 
         out = CDSTestUtils.executeAndLog(pb, "production_failure");
-        out.shouldContain("does not equal");
+        out.shouldMatch(errorPattern);
         out.shouldHaveExitValue(0);
     }
 
     public static void testFlagsMismatch() throws Exception {
-        trainAndRun("TypeProfileLevel", "-XX:TypeProfileLevel=222", "-XX:TypeProfileLevel=111");
-        trainAndRun("TypeProfileArgsLimit", "-XX:TypeProfileArgsLimit=2", "-XX:TypeProfileArgsLimit=3");
-        trainAndRun("TypeProfileParamsLimit", "-XX:TypeProfileParmsLimit=2", "-XX:TypeProfileParmsLimit=3");
-        trainAndRun("TypeProfileWidth", "-XX:TypeProfileWidth=2", "-XX:TypeProfileWidth=3");
-        trainAndRun("SpecTrapLimitExtraEntries", "-XX:SpecTrapLimitExtraEntries=2", "-XX:SpecTrapLimitExtraEntries=3");
+        String errorPattern = ".*Profile.* setting .* does not equal the current .*Profile.* setting.*";
+        trainAndRun("TypeProfileLevel", "-XX:TypeProfileLevel=222", "-XX:TypeProfileLevel=111", errorPattern);
+        trainAndRun("TypeProfileArgsLimit", "-XX:TypeProfileArgsLimit=2", "-XX:TypeProfileArgsLimit=3", errorPattern);
+        trainAndRun("TypeProfileParamsLimit", "-XX:TypeProfileParmsLimit=2", "-XX:TypeProfileParmsLimit=3", errorPattern);
+        trainAndRun("TypeProfileWidth", "-XX:TypeProfileWidth=2", "-XX:TypeProfileWidth=3", errorPattern);
         if (System.getProperty("jdk.debug") != null) {
-          trainAndRun("ProfileTraps", "-XX:+ProfileTraps", "-XX:-ProfileTraps");
-          trainAndRun("TypeProfileCasts", "-XX:+TypeProfileCasts", "-XX:-TypeProfileCasts");
+          trainAndRun("ProfileTraps", "-XX:+ProfileTraps", "-XX:-ProfileTraps", errorPattern);
+          trainAndRun("TypeProfileCasts", "-XX:+TypeProfileCasts", "-XX:-TypeProfileCasts", errorPattern);
         }
+        errorPattern = "SpecTrapLimitExtraEntries setting .* does not equal the current SpecTrapLimitExtraEntries setting";
+        trainAndRun("SpecTrapLimitExtraEntries", "-XX:SpecTrapLimitExtraEntries=2", "-XX:SpecTrapLimitExtraEntries=3", errorPattern);
     }
 
     static int testNum = 0;
