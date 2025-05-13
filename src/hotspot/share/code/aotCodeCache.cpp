@@ -88,19 +88,19 @@ static void report_store_failure() {
   AOTStubCaching = false;
 }
 
-bool AOTCodeCache::is_dumping_adapters() {
+bool AOTCodeCache::is_dumping_adapter() {
   return AOTAdapterCaching && is_on_for_dump();
 }
 
-bool AOTCodeCache::is_using_adapters()   {
+bool AOTCodeCache::is_using_adapter()   {
   return AOTAdapterCaching && is_on_for_use();
 }
 
-bool AOTCodeCache::is_dumping_stubs() {
+bool AOTCodeCache::is_dumping_stub() {
   return AOTStubCaching && is_on_for_dump();
 }
 
-bool AOTCodeCache::is_using_stubs()   {
+bool AOTCodeCache::is_using_stub()   {
   return AOTStubCaching && is_on_for_use();
 }
 
@@ -767,10 +767,10 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   }
   assert(AOTCodeEntry::is_valid_entry_kind(entry_kind), "invalid entry_kind %d", entry_kind);
 
-  if (AOTCodeEntry::is_adapter(entry_kind) && !is_dumping_adapters()) {
+  if (AOTCodeEntry::is_adapter(entry_kind) && !is_dumping_adapter()) {
     return false;
   }
-  if (AOTCodeEntry::is_blob(entry_kind) && !is_dumping_stubs()) {
+  if (AOTCodeEntry::is_blob(entry_kind) && !is_dumping_stub()) {
     return false;
   }
   log_debug(aot, codecache, stubs)("Writing blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
@@ -864,10 +864,10 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
   }
   assert(AOTCodeEntry::is_valid_entry_kind(entry_kind), "invalid entry_kind %d", entry_kind);
 
-  if (AOTCodeEntry::is_adapter(entry_kind) && !is_using_adapters()) {
+  if (AOTCodeEntry::is_adapter(entry_kind) && !is_using_adapter()) {
     return nullptr;
   }
-  if (AOTCodeEntry::is_blob(entry_kind) && !is_using_stubs()) {
+  if (AOTCodeEntry::is_blob(entry_kind) && !is_using_stub()) {
     return nullptr;
   }
   log_debug(aot, codecache, stubs)("Reading blob '%s' (id=%u, kind=%s) from AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);

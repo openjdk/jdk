@@ -165,8 +165,8 @@ class AOTCodeCache : public CHeapObj<mtCode> {
 // Classes used to describe AOT code cache.
 protected:
   class Config {
-    uint _compressedOopShift;
     address _compressedOopBase;
+    uint _compressedOopShift;
     uint _compressedKlassShift;
     uint _contendedPaddingWidth;
     uint _objectAlignment;
@@ -367,11 +367,11 @@ public:
   static bool is_on_for_use()  { return is_on() && _cache->for_use(); }
   static bool is_on_for_dump() { return is_on() && _cache->for_dump(); }
 
-  static bool is_dumping_adapters() NOT_CDS_RETURN_(false);
-  static bool is_using_adapters() NOT_CDS_RETURN_(false);
+  static bool is_dumping_adapter() NOT_CDS_RETURN_(false);
+  static bool is_using_adapter() NOT_CDS_RETURN_(false);
 
-  static bool is_dumping_stubs() NOT_CDS_RETURN_(false);
-  static bool is_using_stubs() NOT_CDS_RETURN_(false);
+  static bool is_dumping_stub() NOT_CDS_RETURN_(false);
+  static bool is_using_stub() NOT_CDS_RETURN_(false);
 
   static const char* add_C_string(const char* str) NOT_CDS_RETURN_(str);
 

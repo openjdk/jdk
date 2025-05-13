@@ -612,7 +612,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
 
-  if (AOTCodeCache::is_dumping_adapters()) {
+  if (AOTCodeCache::is_dumping_adapter()) {
     AdapterHandlerLibrary::dump_aot_adapter_table();
   }
 
