@@ -28,10 +28,10 @@ package java.net;
 import java.util.Objects;
 
 /**
- * This class represents a Network Interface address. In short it's an
- * IP address, a subnet mask and a broadcast address when the address is
- * an IPv4 one. An IP address and a network prefix length in the case
- * of IPv6 address.
+ * This class represents a Network Interface address. In the case of
+ * IPv4, this comprises the IP address, a subnet mask, and a broadcast
+ * address if the interface supports broadcast. In the case of IPv6,
+ * it comprises the IP address and a network prefix length.
  *
  * @see java.net.NetworkInterface
  * @since 1.6
