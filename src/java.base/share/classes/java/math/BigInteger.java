@@ -2770,19 +2770,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since 25
      */
     public BigInteger nthRoot(int n) {
-        if (n == 1)
-            return this;
-
-        if (n == 2)
-            return sqrt();
-
-        if (n <= 0)
-            throw new ArithmeticException("Non-positive root degree");
-
-        if ((n & 1) == 0 && this.signum < 0)
-            throw new ArithmeticException("Negative radicand with even root degree");
-
-        return new MutableBigInteger(this.mag).nthRoot(n).toBigInteger(signum);
+        return n == 1 ? this : (n == 2 ? sqrt() : nthRootAndRemainder(n, false)[0]);
     }
 
     /**
@@ -2806,15 +2794,25 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since 25
      */
     public BigInteger[] nthRootAndRemainder(int n) {
-        if (n == 1)
-            return new BigInteger[] { this, ZERO };
+        return n == 1 ? new BigInteger[] { this, ZERO }
+                      : (n == 2 ? sqrtAndRemainder() : nthRootAndRemainder(n, true));
+    }
 
-        if (n == 2)
-            return sqrtAndRemainder();
+    /**
+     * Assume {@code n != 1 && n != 2}
+     */
+    private BigInteger[] nthRootAndRemainder(int n, boolean needRemainder) {
+        if (n <= 0)
+            throw new ArithmeticException("Non-positive root degree");
 
-        BigInteger root = nthRoot(n), rem = this.subtract(root.pow(n));
-        assert rem.signum == 0 || rem.signum == this.signum;
-        return new BigInteger[] { root, rem };
+        if ((n & 1) == 0 && this.signum < 0)
+            throw new ArithmeticException("Negative radicand with even root degree");
+
+        MutableBigInteger[] rootRem = new MutableBigInteger(this.mag).nthRootRem(n);
+        return new BigInteger[] {
+                rootRem[0].toBigInteger(signum),
+                needRemainder ? rootRem[1].toBigInteger(signum) : null
+        };
     }
 
     /**
