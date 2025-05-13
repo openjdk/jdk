@@ -137,8 +137,8 @@ public final class FormattedFPDecimal {
     }
 
     /**
-     * Value <code>scale</code>, such that
-     * <code> value = (f &times; 10<sup>-scale</sup>)</code>
+     * Value {@code scale}, such that
+     * {@code value = f * 10^(-scale)}
      * <p/>
      * This is the same as the definition used by {@link java.math.BigDecimal}
      */
