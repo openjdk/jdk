@@ -482,6 +482,9 @@ abstract class UnixFileSystem
         } catch (UnixException x) {
             if (x.errno() == EEXIST && flags.replaceExisting)
                 throw new FileSystemException(target.toString());
+            if (x.errno() == ENOTDIR) {
+                x.setError(ENOENT);
+            }
             x.rethrowAsIOException(target);
         }
 
@@ -630,6 +633,9 @@ abstract class UnixFileSystem
             } catch (UnixException x) {
                 if (x.errno() == EEXIST && flags.replaceExisting)
                     throw new FileSystemException(target.toString());
+                if (x.errno() == ENOTDIR) {
+                    x.setError(ENOENT);
+                }
                 x.rethrowAsIOException(target);
             }
 
@@ -819,6 +825,8 @@ abstract class UnixFileSystem
                         source.getPathForExceptionMessage(),
                         target.getPathForExceptionMessage(),
                         x.errorString());
+                } else if (x.errno() == ENOTDIR) {
+                    x.setError(ENOENT);
                 }
                 x.rethrowAsIOException(source, target);
             }
@@ -839,6 +847,9 @@ abstract class UnixFileSystem
                     new UnixException(errno).rethrowAsIOException(source);
             }
         } catch (UnixException x) {
+            if (x.errno() == ENOTDIR) {
+                x.setError(ENOENT);
+            }
             x.rethrowAsIOException(source);
         }
 
@@ -888,6 +899,9 @@ abstract class UnixFileSystem
             return;
         } catch (UnixException x) {
             if (x.errno() != EXDEV && x.errno() != EISDIR) {
+                if (x.errno() == ENOTDIR) {
+                    x.setError(ENOENT);
+                }
                 x.rethrowAsIOException(source, target);
             }
         }

@@ -24,75 +24,127 @@
 /* @test
  * @bug 8356678
  * @requires (os.family != "windows")
- * @summary Test behavior of Files methods for regular file "foo/bar"
+ * @summary Test files operations when a path component is not a regular file
  * @run junit NotADirectory
  */
 
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NotADirectory {
-    private static final String DIR = ".";
-    private static final String PARENT = "foo";
-    private static final String LEAF = "bar";
+    private static final Path ROOT      = Path.of(".");
+    private static final Path NOT_EXIST = ROOT.resolve("notExist");
+    private static final Path DIR       = ROOT.resolve("dir");
+    private static final Path FILE      = ROOT.resolve("file");
+    private static final Path BASE      = ROOT.resolve("foo");
+    private static final Path BOGUS     = BASE.resolve("bar");
 
-    private static Path parent;
-    private static Path leaf;
+    private static final Path[] SRCDST = new Path[] {
+        NOT_EXIST, DIR, FILE
+    };
+
+    private static final CopyOption[][] COPY_OPTIONS = new CopyOption[][] {
+        new CopyOption[] {},
+        new CopyOption[] {REPLACE_EXISTING},
+    };
+
+    private static final CopyOption[][] MOVE_OPTIONS = new CopyOption[][] {
+        new CopyOption[] {},
+        new CopyOption[] {ATOMIC_MOVE},
+        new CopyOption[] {REPLACE_EXISTING},
+        new CopyOption[] {ATOMIC_MOVE, REPLACE_EXISTING},
+    };
 
     @BeforeAll
     public static void init() throws IOException {
-        parent = Path.of(DIR).resolve(PARENT);
-        Files.createFile(parent);
-        leaf = parent.resolve(LEAF);
+        Files.createDirectory(DIR);
+        Files.createFile(FILE);
+        Files.createFile(BASE);
     }
 
     @AfterAll
     public static void clean() throws IOException {
-        Files.delete(parent);
+        Files.delete(DIR);
+        Files.delete(FILE);
+        Files.delete(BASE);
     }
 
-    @Test
-    public void copy() throws IOException {
-        try {
-            Files.copy(leaf, Path.of("junk"));
-        } catch (NoSuchFileException expected) {
+    private static Stream<Arguments> copyMoveParams(CopyOption[][] options) {
+        List<Arguments> list = new ArrayList<Arguments>();
+        for (CopyOption[] opts : options) {
+            for (Path p : SRCDST) {
+                list.add(Arguments.of(p, BOGUS, opts));
+                list.add(Arguments.of(BOGUS, p, opts));
+            }
         }
+        return list.stream();
+    }
+
+    private static Stream<Arguments> copyParams() {
+        return copyMoveParams(COPY_OPTIONS);
+    }
+
+    private static Stream<Arguments> moveParams() {
+        return copyMoveParams(MOVE_OPTIONS);
+    }
+
+    @ParameterizedTest
+    @MethodSource("copyParams")
+    public void copy(Path src, Path dst, CopyOption[] opts)
+        throws IOException {
+        assertThrows(NoSuchFileException.class,
+                     () -> Files.copy(src, dst, opts));
+    }
+
+    @ParameterizedTest
+    @MethodSource("moveParams")
+    public void move(Path src, Path dst, CopyOption[] opts)
+        throws IOException {
+        assertThrows(NoSuchFileException.class,
+                     () -> Files.move(src, dst, opts));
     }
 
     @Test
     public void readBasic() throws IOException {
-        try {
-            Files.readAttributes(leaf, BasicFileAttributes.class);
-        } catch (NoSuchFileException expected) {
-        }
+        assertThrows(NoSuchFileException.class,
+                     () -> Files.readAttributes(BOGUS, BasicFileAttributes.class));
     }
 
     @Test
     public void readPosix() throws IOException {
-        try {
-            Files.readAttributes(leaf, PosixFileAttributes.class);
-        } catch (NoSuchFileException expected) {
-        }
+        assertThrows(NoSuchFileException.class,
+                     () -> Files.readAttributes(BOGUS, PosixFileAttributes.class));
     }
 
     @Test
     public void exists() throws IOException {
-        assertFalse(Files.exists(leaf));
+        assertFalse(Files.exists(BOGUS));
     }
 
     @Test
     public void notExists() throws IOException {
-        assertTrue(Files.notExists(leaf));
+        assertTrue(Files.notExists(BOGUS));
     }
 }
