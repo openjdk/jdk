@@ -388,7 +388,6 @@ public class Annotate {
             if (!c.type.isErroneous()
                     && toAnnotate.kind == VAR
                     && types.isSameType(c.type, syms.requiresIdentityType)) {
-                System.err.println("toAnnotate: " + toAnnotate);
                 toAnnotate.flags_field |= Flags.REQUIRES_IDENTITY;
             }
         }
