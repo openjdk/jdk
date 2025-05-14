@@ -59,6 +59,8 @@ public class FailedDequeueTest {
         try {
             // Should throw IOException and don't crash
             vm.setFlag(flagName, flagValue);
+
+            throw new RuntimeException("expected IOException is not thrown");
         } catch (IOException ex) {
             System.out.println("OK: setFlag thrown expected exception:");
             ex.printStackTrace(System.out);
