@@ -304,8 +304,10 @@ void ZMappedCache::cache_replace(const TreeCursor& cursor, const ZVirtualMemory&
   ZMappedCacheEntry* const old_entry = ZMappedCacheEntry::cast_to_entry(old_node);
   assert(old_entry->end() != vmem.end(), "should not replace, use update");
 
-  // Replace in size-class lists
+  // Replace in tree
   _tree.replace(old_node, new_node, cursor);
+
+  // Replace in size-class lists
 
   // Remove old
   const size_t old_size = old_entry->vmem().size();
