@@ -107,7 +107,7 @@ class ThreadHeapSampler {
     _tlab_top_at_sample_start = tlab_top;
   }
 
-  void reset_after_sampling(HeapWord* tlab_top) {
+  void reset_after_sample(HeapWord* tlab_top) {
     _tlab_top_at_sample_start = tlab_top;
     _accumulated_tlab_bytes_since_sample = 0;
     _accumulated_outside_tlab_bytes_since_sample = 0;

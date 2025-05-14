@@ -437,7 +437,7 @@ void ThreadHeapSampler::sample(oop obj, HeapWord* tlab_top) {
 
   pick_next_sample();
 
-  reset_after_sampling(tlab_top);
+  reset_after_sample(tlab_top);
 }
 
 int ThreadHeapSampler::get_sampling_interval() {
