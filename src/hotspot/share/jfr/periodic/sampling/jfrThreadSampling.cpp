@@ -102,8 +102,13 @@ static bool compute_sender_frame(JfrSampleRequest& request, frame& sender_frame,
     const intptr_t* const real_fp = frame->real_fp();
     assert(real_fp != nullptr, "invariant");
     if (real_fp == sampled_fp && frame->is_interpreted_frame()) {
-      request._sample_pc = frame->interpreter_frame_method();
-      // Got the Method*.
+      Method* const method = frame->interpreter_frame_method();
+      assert(method != nullptr, "invariant");
+      request._sample_pc = method;
+      // Got the Method*. Validate bcp.
+      if (!method->is_native() && !method->contains(static_cast<address>(request._sample_bcp))) {
+        request._sample_bcp = frame->interpreter_frame_bcp();
+      }
       break;
     }
     if (real_fp >= sampled_fp) {
@@ -125,9 +130,8 @@ static bool compute_sender_frame(JfrSampleRequest& request, frame& sender_frame,
   assert(request._sample_pc != nullptr, "invariant");
   assert(request._sample_bcp != nullptr, "invariant");
   assert(Method::is_valid_method(static_cast<const Method*>(request._sample_pc)), "invariant");
-  assert(p2i(request._sample_bcp) == 1 ||
-    static_cast<const Method*>(request._sample_pc)->validate_bci_from_bcp(static_cast<address>(request._sample_bcp)) >= 0, "invariant");
-  assert(p2i(request._sample_bcp) > 1 || static_cast<const Method*>(request._sample_pc)->is_native(), "invariant");
+  assert(static_cast<const Method*>(request._sample_pc)->is_native() ||
+         static_cast<const Method*>(request._sample_pc)->contains(static_cast<address>(request._sample_bcp)), "invariant");
   return true;
 }
 

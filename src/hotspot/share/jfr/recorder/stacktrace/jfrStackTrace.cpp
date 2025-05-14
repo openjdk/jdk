@@ -136,7 +136,7 @@ void JfrStackTrace::record_interpreter_top_frame(const JfrSampleRequest& request
   const Method* method = reinterpret_cast<Method*>(request._sample_pc);
   assert(method != nullptr, "invariant");
   const traceid mid = JfrTraceId::load(method);
-  const int bci = method->is_native() ? 0 : method->validate_bci_from_bcp(reinterpret_cast<address>(request._sample_bcp));
+  const int bci = method->is_native() ? 0 : method->bci_from(reinterpret_cast<address>(request._sample_bcp));
   const u1 type = method->is_native() ? JfrStackFrame::FRAME_NATIVE : JfrStackFrame::FRAME_INTERPRETER;
   _hash = (_hash * 31) + mid;
   _hash = (_hash * 31) + bci;
