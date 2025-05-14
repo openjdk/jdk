@@ -2644,17 +2644,16 @@ class StubGenerator: public StubCodeGenerator {
     __ tst(count, 7);
     __ br(__ EQ, finished);
 
-    __ bfi(value, value, 8, 8);
-    __ bfi(value, value, 16, 16);
     {
       Label dont;
       __ tbz(count, exact_log2(4), dont);
-      __ strw(value, __ post(dest, 4));
+      __ strs(v0, __ post(dest, 4));
       __ bind(dont);
     }
     {
       Label dont;
       __ tbz(count, exact_log2(2), dont);
+      __ bfi(value, value, 8, 8);
       __ strh(value, __ post(dest, 2));
       __ bind(dont);
     }
