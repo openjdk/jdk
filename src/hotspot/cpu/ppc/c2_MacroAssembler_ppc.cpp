@@ -633,6 +633,13 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
 
   auto fn_vec_op = [this](int opcode, const VectorRegister &dst, const VectorRegister &a, const VectorRegister &b) {
     switch(opcode) {
+      case Op_AddReductionVI:
+        vsumsws(dst, a, b);
+        break;
+      case Op_MulReductionVI:
+        assert(false, "not implemented");
+        // TODO: vmulesw , vmulosw
+        break;
       case Op_MinReductionV:
         vminsw(dst, a, b);
         break;
@@ -645,6 +652,13 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
 
   auto fn_scalar_op = [this](int opcode, const Register &dst, const Register &src) {
     switch (opcode) {
+      case Op_AddReductionVI:
+        add(dst, src, dst);
+        break;
+      case Op_MulReductionVI:
+        assert(false, "not implemented");
+        // TODO:
+        break;
       case Op_MinReductionV:
         cmpw(CR0, src, dst);
         isel(dst, CR0, Assembler::less, /*invert*/false, src, dst);
@@ -660,7 +674,7 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
   // vSrc = [i0,i1,i2,i3]
   vsldoi(vTmp1, vSrc, vSrc, 8);           // vTmp1 <- [i2,i3,i0,i1]
   fn_vec_op(opcode, vTmp2, vSrc, vTmp1);  // vTmp2 <- [op(i0,i2), op(i1,i3), op(i2,i0), op(i3,i1)]
-  vsldoi(vTmp1, vTmp2, vTmp2, 4);         // vTmp1 <- [min(i1,i3), min(i2,i0), min(i3,i1), min(i0,i2)]
+  vsldoi(vTmp1, vTmp2, vTmp2, 4);         // vTmp1 <- [op(i1,i3), op(i2,i0), op(i3,i1), op(i0,i2)]
   fn_vec_op(opcode, vTmp1, vTmp1, vTmp2); // vTmp1 <- [op(i0,i1,i2,i3), op(i0,i1,i2,i3), op(i0,i1,i2,i3), op(i0,i1,i2,i3)]
   mfvsrwz(dst, vTmp1.to_vsr());           //
   fn_scalar_op(opcode, dst, iSrc);        // dst <- op(iSrc, dst)
