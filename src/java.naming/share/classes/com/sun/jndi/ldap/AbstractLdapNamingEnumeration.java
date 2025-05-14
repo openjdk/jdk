@@ -54,7 +54,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
     private LdapReferralException refEx = null;
     private NamingException errEx = null;
 
-    /* This class maintains the pieces of state that need to be cleaned up (or
+    /* Context class containing the pieces of state that need to be cleaned up (or
      * are needed for cleanup). It gets registered with Cleaner to perform cleanup.
      *
      * reachabilityFences are used to ensure that an AbstractLdapNamingEnumeration
