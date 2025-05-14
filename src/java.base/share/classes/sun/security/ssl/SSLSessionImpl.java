@@ -55,6 +55,7 @@ import sun.security.ssl.CipherSuite.HashAlg;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 import static sun.security.ssl.CipherSuite.HashAlg.H_NONE;
 import static sun.security.ssl.ProtocolVersion.*;
+import sun.security.util.KeyUtil;
 
 
 /**
@@ -1686,17 +1687,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                                     HKDFParameterSpec.expandOnly(derivedSecret,
                                             hkdfInfo, length)));
                 } finally {
-                    // Best effort to clear the intermediate SecretKey.
-                    if (derivedSecret instanceof SecretKeySpec s) {
-                        SharedSecrets.getJavaxCryptoSpecAccess()
-                                .clearSecretKeySpec(s);
-                    } else  {
-                        try {
-                            derivedSecret.destroy();
-                        } catch (DestroyFailedException e) {
-                            // swallow
-                        }
-                    }
+                    KeyUtil.destroySecretKeys(derivedSecret);
                 }
             } catch (Exception e) {
                 // For whatever reason, we couldn't generate.  Wrap and return.

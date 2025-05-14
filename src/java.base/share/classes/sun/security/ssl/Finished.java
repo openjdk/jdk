@@ -748,7 +748,7 @@ final class Finished {
             // Calculate/save the exporter_master_secret.  It uses
             // the same handshakeHash as the client/server app traffic.
             SecretKey exporterSecret = kd.deriveKey(
-                    "TlsExporterMasterSecret", null);
+                    "TlsExporterMasterSecret");
             chc.handshakeSession.setExporterMasterSecret(exporterSecret);
 
             // The resumption master secret is stored in the session so
@@ -1108,7 +1108,7 @@ final class Finished {
                 // Calculate/save the exporter_master_secret.  It uses
                 // the same handshakeHash as the client/server app traffic.
                 SecretKey exporterSecret = kd.deriveKey(
-                        "TlsExporterMasterSecret", null);
+                        "TlsExporterMasterSecret");
                 shc.handshakeSession.setExporterMasterSecret(exporterSecret);
 
                 // The resumption master secret is stored in the session so
