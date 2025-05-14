@@ -43,7 +43,7 @@ import java.util.List;
  * a list of possible templates, to fuzz individual Java features and compiler optimizations.
  *
  * <p>
- * The Template Framework provides a facility to generate code with Templates. Templates are essencially a list
+ * The Template Framework provides a facility to generate code with Templates. A Template is essentially a list
  * of tokens that are concatenated (i.e. rendered) to a String. The Templates can have "holes", which are
  * filled (replaced) by different values at each Template instantiation. For example, these "holes" can
  * be filled with different types, operators or constants. Templates can also be nested, allowing a modular
@@ -387,8 +387,7 @@ public interface Template {
      * @param value The value that the hashtag is replaced with.
      * @param <T> The type of the value.
      * @param function The function that is applied with the provided {@code 'value'}.
-     * @return A token that does nothing, so that the {@link #let} can easily be put in a list of tokens
-     *         inside a {@link Template#body}.
+     * @return A {@link TemplateBody}.
      * @throws RendererException if there is a duplicate hashtag {@code key}.
      */
     static <T> TemplateBody let(String key, T value, Function<T, TemplateBody> function) {
