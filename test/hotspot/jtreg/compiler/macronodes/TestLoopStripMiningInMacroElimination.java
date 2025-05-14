@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,27 @@
 
 /*
  * @test
- * @bug 8145255
- * @run main/othervm java.base/sun.security.ssl.TestHkdf
- * @summary HKDF for Sun JSSE
+ * @bug 8347515
+ * @summary Regression test for an assert triggered during elimination of OuterStripMinedLoop node. This happens
+ * due to a MaxL node being added to the macro list during refining of the OuterStripMinedLoop node prior to its
+ * elimination.
+ * @run main/othervm -XX:-TieredCompilation compiler.macronodes.TestLoopStripMiningInMacroElimination
  */
+package compiler.macronodes;
 
+public class TestLoopStripMiningInMacroElimination {
+    static long l1 = 3434;
+    static long l2;
+    public static void main(String[] strArr) {
+        for (int i = 0; i < 1000; i++) {
+            test();
+        }
+    }
+
+    static void test() {
+        for (int i = 0; i < 100; i++) {
+            l2 = Math.max(i, 56 % l1);
+        }
+    }
+
+}
