@@ -44,17 +44,16 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1)
 public abstract class VectorAutoAlignment {
-    @Param({"2000"})
+    @Param({"1024", "1152", "1280", "1408", "1536", "1664", "1792", "1920", "1984", "2048", "2114",
+            "2176", "2304", "2432", "2560", "2688", "2816", "2944", "3072", "3200", "3328", "3456",
+            "3584", "3712", "3840", "3968", "4096", "4224", "4352", "4480"})
     public int SIZE;
-
-    @Param({"2000"})
-    public int DISTANCE;
 
     private MemorySegment ms;
 
     @Setup
     public void init() throws Throwable {
-        long totalSize = 4L * SIZE + 4L * DISTANCE;
+        long totalSize = 4L * SIZE + 4L * SIZE;
         long alignment = 4 * 1024; // 4k = page size
         ms = Arena.ofAuto().allocate(totalSize, alignment);
     }
@@ -62,7 +61,7 @@ public abstract class VectorAutoAlignment {
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void kernel1L1S(int offset_load, int offset_store) {
         for (int i = 0; i < SIZE - /* slack for offset */ 32; i++) {
-            int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, 4L * i + 4L * offset_load + 4L * DISTANCE);
+            int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, 4L * i + 4L * offset_load + 4L * SIZE);
             ms.set(ValueLayout.JAVA_INT_UNALIGNED, 4L * i + 4L * offset_store, v);
         }
     }
