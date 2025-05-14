@@ -79,8 +79,8 @@
  *                     -Djdk.httpclient.quic.idleTimeout=120
  *                     -Djdk.httpclient.keepalive.timeout.h3=120
  *                     -Djdk.test.server.quic.idleTimeout=90
- *                     -Djdk.httpclient.quic.minPtoBackoffTime=45
- *                     -Djdk.httpclient.quic.maxPtoBackoffTime=60
+ *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
+ *                     -Djdk.httpclient.quic.maxPtoBackoffTime=120
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
  *                     -Djdk.internal.httpclient.quic.useNioSelector=true
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
