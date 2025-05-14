@@ -58,6 +58,8 @@ import jdk.internal.net.quic.QuicVersion;
 import jdk.internal.vm.annotation.Stable;
 import sun.security.ssl.QuicCipher.QuicReadCipher;
 import sun.security.ssl.QuicCipher.QuicWriteCipher;
+import sun.security.util.KeyUtil;
+
 import static jdk.internal.net.quic.QuicTLSEngine.KeySpace.HANDSHAKE;
 import static jdk.internal.net.quic.QuicTLSEngine.KeySpace.INITIAL;
 import static jdk.internal.net.quic.QuicTLSEngine.KeySpace.ONE_RTT;
@@ -264,18 +266,19 @@ sealed abstract class QuicKeyManager
             } catch (NoSuchAlgorithmException e) {
                 throw new AssertionError("Should not happen", e);
             }
-            SecretKeySpec connSecret = new SecretKeySpec(connectionId,
-                    "QuicConnectionId");
             final QuicTLSData tlsData = QuicKeyManager.getQuicData(quicVersion);
+            SecretKey initial_secret = null;
+            SecretKey server_initial_secret = null;
+            SecretKey client_initial_secret = null;
             try {
-                SecretKey initial_secret = hkdf.deriveKey("TlsInitialSecret",
+                initial_secret = hkdf.deriveKey("TlsInitialSecret",
                         HKDFParameterSpec.ofExtract()
                                 .addSalt(tlsData.getInitialSalt())
-                                .addIKM(connSecret).extractOnly());
+                                .addIKM(connectionId).extractOnly());
 
                 byte[] clientInfo = createHkdfInfo("client in",
                         hashAlg.hashLength);
-                SecretKey client_initial_secret =
+                client_initial_secret =
                         hkdf.deriveKey("TlsClientInitialTrafficSecret",
                                 HKDFParameterSpec.expandOnly(
                                         initial_secret,
@@ -286,7 +289,7 @@ sealed abstract class QuicKeyManager
 
                 byte[] serverInfo = createHkdfInfo("server in",
                         hashAlg.hashLength);
-                SecretKey server_initial_secret =
+                server_initial_secret =
                         hkdf.deriveKey("TlsServerInitialTrafficSecret",
                                 HKDFParameterSpec.expandOnly(
                                         initial_secret,
@@ -328,6 +331,9 @@ sealed abstract class QuicKeyManager
                 }
             } catch (IOException | GeneralSecurityException e) {
                 throw new AssertionError("Should not happen", e);
+            } finally {
+                KeyUtil.destroySecretKeys(initial_secret, client_initial_secret,
+                        server_initial_secret);
             }
         }
 
@@ -401,15 +407,17 @@ sealed abstract class QuicKeyManager
                         "Keys already derived for " + this.keySpace +
                                 " key space");
             }
+            SecretKey client_handshake_traffic_secret = null;
+            SecretKey server_handshake_traffic_secret = null;
             try {
                 final SSLKeyDerivation kd =
                         handshakeContext.handshakeKeyDerivation;
-                final SecretKey client_handshake_traffic_secret = kd.deriveKey(
+                client_handshake_traffic_secret = kd.deriveKey(
                         "TlsClientHandshakeTrafficSecret");
                 final QuicKeys clientKeys = deriveQuicKeys(quicVersion,
                         handshakeContext.negotiatedCipherSuite,
                         client_handshake_traffic_secret);
-                final SecretKey server_handshake_traffic_secret = kd.deriveKey(
+                server_handshake_traffic_secret = kd.deriveKey(
                         "TlsServerHandshakeTrafficSecret");
                 final QuicKeys serverKeys = deriveQuicKeys(quicVersion,
                         handshakeContext.negotiatedCipherSuite,
@@ -454,6 +462,9 @@ sealed abstract class QuicKeyManager
                 }
             } catch (IOException | GeneralSecurityException e) {
                 throw new AssertionError("Should not happen", e);
+            } finally {
+                KeyUtil.destroySecretKeys(client_handshake_traffic_secret,
+                        server_handshake_traffic_secret);
             }
         }
     }
