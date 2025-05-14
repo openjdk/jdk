@@ -106,7 +106,7 @@ public final class FormattedFPDecimal {
 
         if (prec < targetPrec) {
             // Add zeros needed to reach target precision
-            int addZeros = targetPrec - prec;
+            final int addZeros = targetPrec - prec;
             s *= MathUtils.pow10(addZeros); // addZeros will be at most 8
             prec = targetPrec;
         } else {
