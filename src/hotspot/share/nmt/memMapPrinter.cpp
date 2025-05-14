@@ -237,7 +237,7 @@ MappingPrintSession::MappingPrintSession(outputStream* st, const CachedNMTInform
 {}
 
 void MappingPrintSession::print_nmt_flag_legend() const {
-#define DO(flag, shortname, text) _out->indent(); _out->print_cr("%10s: %s", shortname, text);
+#define DO(flag, shortname, text) _out->print_cr("%10s: %s", shortname, text);
   NMT_FLAGS_DO(DO)
 #undef DO
 }
