@@ -94,7 +94,7 @@ public final class FormattedFPDecimal {
                 (-3 <= expR && expR < 0) ? 1
 
                 // Keep digits to left of decimal, plus leave a trailing zero
-                : (0 <= expR && expR <= 6) ? expR + 2 :
+                : (0 <= expR && expR < 7) ? expR + 2 :
 
                 // Otherwise, require at least 2 digits, to include trailing
                 // digit when there is a single digit
