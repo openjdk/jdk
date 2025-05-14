@@ -71,11 +71,11 @@ inline void JavaThread::clear_obj_deopt_flag() {
 }
 
 #if INCLUDE_JVMTI
-inline void JavaThread::set_carrier_thread_suspended() {
-  _carrier_thread_suspended = true;
+inline bool JavaThread::set_carrier_thread_suspended() {
+  return Atomic::cmpxchg(&_carrier_thread_suspended, false, true) == false;
 }
-inline void JavaThread::clear_carrier_thread_suspended() {
-  _carrier_thread_suspended = false;
+inline bool JavaThread::clear_carrier_thread_suspended() {
+  return Atomic::cmpxchg(&_carrier_thread_suspended, true, false) == true;
 }
 #endif
 

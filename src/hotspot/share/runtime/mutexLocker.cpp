@@ -50,6 +50,7 @@ Monitor* JNICritical_lock             = nullptr;
 Mutex*   JvmtiThreadState_lock        = nullptr;
 Monitor* EscapeBarrier_lock           = nullptr;
 Monitor* JvmtiVTMSTransition_lock     = nullptr;
+Mutex*   JvmtiVThreadSuspend_lock     = nullptr;
 Monitor* Heap_lock                    = nullptr;
 #if INCLUDE_PARALLELGC
 Mutex*   PSOldGenExpand_lock      = nullptr;
@@ -122,6 +123,8 @@ Monitor* JfrThreadSampler_lock        = nullptr;
 Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
 
 Mutex*   ExternalsRecorder_lock       = nullptr;
+
+Mutex*   AOTCodeCStrings_lock         = nullptr;
 
 Monitor* ContinuationRelativize_lock  = nullptr;
 
@@ -258,6 +261,7 @@ void mutex_init() {
   MUTEX_DEFN(DirectivesStack_lock            , PaddedMutex  , nosafepoint);
 
   MUTEX_DEFN(JvmtiVTMSTransition_lock        , PaddedMonitor, safepoint);   // used for Virtual Thread Mount State transition management
+  MUTEX_DEFN(JvmtiVThreadSuspend_lock        , PaddedMutex,   nosafepoint-1);
   MUTEX_DEFN(EscapeBarrier_lock              , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI
   MUTEX_DEFN(Management_lock                 , PaddedMutex  , safepoint);   // used for JVM management
 
@@ -318,6 +322,8 @@ void mutex_init() {
 
   // tty_lock is held when printing nmethod and its relocations which use this lock.
   MUTEX_DEFL(ExternalsRecorder_lock         , PaddedMutex  , tty_lock);
+
+  MUTEX_DEFL(AOTCodeCStrings_lock           , PaddedMutex  , tty_lock);
 
   MUTEX_DEFL(Threads_lock                   , PaddedMonitor, CompileThread_lock, true);
   MUTEX_DEFL(Compile_lock                   , PaddedMutex  , MethodCompileQueue_lock);

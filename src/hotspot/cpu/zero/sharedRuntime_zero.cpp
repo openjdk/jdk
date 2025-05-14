@@ -50,18 +50,17 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
   return 0;
 }
 
-AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(
-                        MacroAssembler *masm,
-                        int total_args_passed,
-                        int comp_args_on_stack,
-                        const BasicType *sig_bt,
-                        const VMRegPair *regs,
-                        AdapterFingerPrint *fingerprint) {
-  return AdapterHandlerLibrary::new_entry(
-    fingerprint,
-    CAST_FROM_FN_PTR(address,zero_null_code_stub),
-    CAST_FROM_FN_PTR(address,zero_null_code_stub),
-    CAST_FROM_FN_PTR(address,zero_null_code_stub));
+void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
+                                            int total_args_passed,
+                                            int comp_args_on_stack,
+                                            const BasicType *sig_bt,
+                                            const VMRegPair *regs,
+                                            AdapterHandlerEntry* handler) {
+  handler->set_entry_points(CAST_FROM_FN_PTR(address,zero_null_code_stub),
+                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
+                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
+                            nullptr);
+  return;
 }
 
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
