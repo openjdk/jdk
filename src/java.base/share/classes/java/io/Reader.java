@@ -203,9 +203,7 @@ public abstract class Reader implements Readable, Closeable {
             public String readAllAsString() throws IOException {
                 ensureOpen();
                 int len = cs.length();
-                char[] cbuf = new char[len - next];
-                cs.getChars(next, len, cbuf, 0);
-                String result = new String(cbuf);
+                String result = cs.subSequence(next, len).toString();
                 next += result.length();
                 return result;
             }
