@@ -242,7 +242,9 @@ public class TestTutorial {
         return templateClass.render();
     }
 
-    // In this example, we look at the use of Hooks.
+    // In this example, we look at the use of Hooks. They allow us to reach back, to outer
+    // scopes. For example, we can reach out from inside a method body to a hook set at
+    // the top of the class, and insert a field.
     public static String generateWithCustomHooks() {
         // We can define a custom hook.
         // Note: generally we prefer using the pre-defined CLASS_HOOK and METHOD_HOOK from the library,
