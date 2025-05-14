@@ -163,7 +163,7 @@ public class Pem {
                     if (os.size() == 0) {
                         throw new EOFException("No data available");
                     }
-                    throw new IllegalArgumentException("No PEM data found");
+                    throw new EOFException("No PEM data found");
                 }
                 default -> hyphen = 0;
             }

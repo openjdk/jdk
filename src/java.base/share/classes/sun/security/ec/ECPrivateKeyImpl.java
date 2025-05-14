@@ -155,11 +155,12 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         return s;
     }
 
+    // Return the internal arrayS byte[], if arrayS is null generate it.
     public byte[] getArrayS() {
         if (arrayS == null) {
             arrayS = ECUtil.sArray(getS(), params);
         }
-        return arrayS.clone();
+        return arrayS;
     }
 
     // see JCA doc
@@ -225,7 +226,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         ECParameterSpec ecParams = getParams();
         ECOperations ops = ECOperations.forParameters(ecParams)
                 .orElseThrow(ProviderException::new);
-        MutablePoint pub = ops.multiply(ecParams.getGenerator(), arrayS);
+        MutablePoint pub = ops.multiply(ecParams.getGenerator(), getArrayS());
         AffinePoint affPub = pub.asAffine();
         ECPoint w = new ECPoint(affPub.getX().asBigInteger(),
                 affPub.getY().asBigInteger());

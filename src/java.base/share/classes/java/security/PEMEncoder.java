@@ -59,17 +59,19 @@ import java.util.concurrent.locks.ReentrantLock;
  * which takes a password and returns a new {@code PEMEncoder} instance
  * configured to encrypt the key with that password. Alternatively, a
  * private key encrypted as an {@code EncryptedKeyInfo} object can be encoded
- * directly to PEM by passing it to the encode method
+ * directly to PEM by passing it to the {@code encode} or
+ * {@code encodeToString} methods.
  *
  * <p> PKCS #8 2.0 defines the ASN.1 OneAsymmetricKey structure, which may
  * contain both private and public keys.
- * {@link KeyPair} objects passed to the {@code encode} methods are encoded as a
+ * {@link KeyPair} objects passed to the {@code encode} or
+ * {@code encodeToString} methods are encoded as a
  * OneAsymmetricKey structure using the "PRIVATE KEY" type.
  *
  * <p> When encoding a {@link PEMRecord}, the API surrounds the
- * {@linkplain PEMRecord#pem()} with a generated the PEM header and footer
+ * {@linkplain PEMRecord#pem()} with the PEM header and footer
  * from {@linkplain PEMRecord#type()}. {@linkplain PEMRecord#leadingData()} is
- * not included in the encoding.  {@code PEMRecord} will not preform
+ * not included in the encoding.  {@code PEMRecord} will not perform
  * validity checks on the data.
  *
  * <p> This class is immutable and thread-safe.
@@ -81,7 +83,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * }
  *
  * <p> Here is an example that encrypts and encodes a private key using the
- * specified password.
+ * specified password:
  * {@snippet lang = java:
  *     PEMEncoder pe = PEMEncoder.of().withEncryption(password);
  *     byte[] pemData = pe.encode(privKey);
@@ -124,9 +126,9 @@ public final class PEMEncoder {
     }
 
     /**
-     * Returns a new instance of {@code PEMEncoder}.
+     * Returns a instance of {@code PEMEncoder}.
      *
-     * @return a new {@code PEMEncoder} instance
+     * @return a {@code PEMEncoder}
      */
     public static PEMEncoder of() {
         return PEM_ENCODER;
@@ -136,10 +138,11 @@ public final class PEMEncoder {
      * Encodes the specified {@code DEREncodable} and returns a PEM encoded
      * string.
      *
-     * @param de the {@code DEREncodable} to be encoded.
-     * @return a byte array containing the PEM encoded data
-     * @throws IllegalArgumentException If the DEREncodable cannot be encoded
-     * @throws NullPointerException if {@code de} is {@code null}.
+     * @param de the {@code DEREncodable} to be encoded
+     * @return a {@code String} containing the PEM encoded data
+     * @throws IllegalArgumentException if the {@code DEREncodable} cannot be
+     * encoded
+     * @throws NullPointerException if {@code de} is {@code null}
      * @see #withEncryption(char[])
      */
     public String encodeToString(DEREncodable de) {
@@ -204,10 +207,11 @@ public final class PEMEncoder {
      * Encodes the specified {@code DEREncodable} and returns the PEM encoding
      * in a byte array.
      *
-     * @param de the {@code DEREncodable} to be encoded.
+     * @param de the {@code DEREncodable} to be encoded
      * @return a PEM encoded byte array
-     * @throws IllegalArgumentException if the DEREncodable cannot be encoded
-     * @throws NullPointerException if {@code de} is {@code null}.
+     * @throws IllegalArgumentException if the {@code DEREncodable} cannot be
+     * encoded
+     * @throws NullPointerException if {@code de} is {@code null}
      * @see #withEncryption(char[])
      */
     public byte[] encode(DEREncodable de) {
@@ -215,27 +219,30 @@ public final class PEMEncoder {
     }
 
     /**
-     * Returns a new {@code PEMEncoder} instance configured with the default
-     * encryption algorithm and a given password.
+     * Returns a new {@code PEMEncoder} instance configured for encryption
+     * with the default algorithm and a given password.
      *
      * <p> Only {@link PrivateKey} objects can be encrypted with this newly
      * configured instance.  Encoding other {@link DEREncodable} objects will
      * throw an {@code IllegalArgumentException}.
      *
-     * @implNote The default algorithm is defined by Security Property {@code
-     * jdk.epkcs8.defaultAlgorithm} using default password-based encryption
-     * parameters by the supporting provider.  If you need more control over
-     * the encryption algorithm and parameters, use
+     * @implNote
+     * The default password-based encryption algorithm is defined
+     * by the {@code jdk.epkcs8.defaultAlgorithm} security property and
+     * uses the default encryption parameters of the provider that is selected.
+     * For greater flexibility with encryption options and parameters, use
      * {@link EncryptedPrivateKeyInfo#encryptKey(PrivateKey, Key,
      * String, AlgorithmParameterSpec, Provider, SecureRandom)} and use the
      * returned object with {@link #encode(DEREncodable)}.
      *
-     * @param password sets the encryption password.  The array is cloned and
-     *                stored in the new instance. {@code null} is a valid value.
+     * @param password the encryption password.  The array is cloned and
+     *                stored in the new instance.
      * @return a new configured {@code PEMEncoder} instance
+     * @throws NullPointerException when password is {@code null}
      */
     public PEMEncoder withEncryption(char[] password) {
         // PBEKeySpec clones the password
+        Objects.requireNonNull(password, "password cannot be null.");
         return new PEMEncoder(new PBEKeySpec(password));
     }
 

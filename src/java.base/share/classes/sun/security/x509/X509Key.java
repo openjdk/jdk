@@ -140,26 +140,6 @@ public class X509Key implements PublicKey, DerEncoder {
         return subjectKey;
     }
 
-    /*
-     * Parses X.509 subject public key DER and return it as a
-     * X509Key.  Useful for PKCS8v2.
-     */
-    public static X509Key parse(byte[] encoded) throws IOException
-    {
-        DerValue in = new DerValue(encoded);
-
-        if (in.tag != DerValue.tag_Sequence)
-            throw new IOException("corrupt subject key");
-
-        AlgorithmId algorithm = AlgorithmId.parse(in.data.getDerValue());
-        BitArray keyBits = in.data.getUnalignedBitString();
-
-        if (in.data.available() != 0)
-            throw new IOException("excess subject key");
-
-        return new X509Key(algorithm, keyBits);
-    }
-
     /**
      * Parse the key bits.  This may be redefined by subclasses to take
      * advantage of structure within the key.  For example, RSA public

@@ -42,17 +42,18 @@ import java.util.Objects;
  *
  * <p> {@code type} and {@code pem} may not be {@code null}.
  * {@code leadingData} may be null if no non-PEM data preceded PEM header
- * during decoding.  {@code leadingData} maybe be useful for reading metadata
+ * during decoding.  {@code leadingData} may be be useful for reading metadata
  * that accompanies PEM data.
  *
  * <p> During the instantiation of this record, there is no validation
  * for the {@code type} or {@code pem}. {@code leadingData} is not
- * defensively copied.
+ * defensively copied and does not return a clone when
+ * {@linkplain #leadingData()} is called.
  *
- * @param type The type identifier in the PEM header without PEM syntax labels.
+ * @param type the type identifier in the PEM header without PEM syntax labels.
  *           For a public key, {@code type} would be "PUBLIC KEY".
- * @param pem Any data between the PEM header and footer.
- * @param leadingData Any non-PEM data preceding the PEM header when decoding.
+ * @param pem any data between the PEM header and footer.
+ * @param leadingData any non-PEM data preceding the PEM header when decoding.
  *
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
@@ -70,7 +71,7 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      * @param type the type identifier
      * @param pem the Base64-encoded data encapsulated by the PEM header and
      *           footer.
-     * @param leadingData Any non-PEM data read during the decoding process
+     * @param leadingData any non-PEM data read during the decoding process
      *                    before the PEM header.  This value maybe {@code null}.
      * @throws IllegalArgumentException if the {@code type} is incorrectly
      * formatted.
@@ -78,8 +79,8 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      * {@code null}.
      */
     public PEMRecord(String type, String pem, byte[] leadingData) {
-        Objects.requireNonNull(type, "\"type\" may not be null.");
-        Objects.requireNonNull(type, "\"pem\" may not be null.");
+        Objects.requireNonNull(type, "\"type\" cannot be null.");
+        Objects.requireNonNull(type, "\"pem\" cannot be null.");
 
         // With no validity checking on `type`, the constructor accept anything
         // including lowercase.  The onus is on the caller.

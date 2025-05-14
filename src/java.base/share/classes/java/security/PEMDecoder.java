@@ -58,16 +58,17 @@ import java.util.Objects;
  *     X509 CERTIFICATE, X509 CRL, and ENCRYPTED PRIVATE KEY.
  * </pre>
  *
- * <p> If the PEM does not have a JCE object representation, it returns a
+ * <p>>If the PEM does not have a cryptographic object representation,
+ * {@code decode(String)} and {@code decode(InputStream)} will return a
  * {@link PEMRecord}.
  *
  * <p> The {@linkplain #decode(String, Class)} and
  * {@linkplain #decode(InputStream, Class)} methods take a Class parameter
  * which determines the type of {@code DEREncodable} that is returned. These
  * methods are useful when extracting or changing the return class.
- * The Class parameter can specify the returned
- * key object from a PEM containing a public and private key.  If only
- * the private key is required, {@code PrivateKey.class} can be used.
+ * For example, if the PEM contains both public and private keys, the
+ * Class parameter can specify which to return. Use
+ * {@code PrivateKey.class} to return only the private key.
  * If the Class parameter is set to {@code X509EncodedKeySpec.class}, the
  * public key will be returned in that format.  Any type of PEM data can be
  * decoded into a {@code PEMRecord} by specifying {@code PEMRecord.class}.
@@ -85,8 +86,7 @@ import java.util.Objects;
  * unencrypted PEM. Any encrypted PEM that does not use the configured password
  * will throw a {@link RuntimeException}. When encrypted PEM is used with a
  * decoder not configured for decryption, an {@link EncryptedPrivateKeyInfo}
- * object is returned.  {@code EncryptedPrivateKeyInfo} methods must be used to
- * retrieve the {@link PrivateKey}.
+ * object is returned.
  *
  * <p>This class is immutable and thread-safe.
  *
@@ -94,6 +94,14 @@ import java.util.Objects;
  * {@snippet lang = java:
  *     PEMDecoder pd = PEMDecoder.of();
  *     PrivateKey priKey = pd.decode(priKeyPEM, PrivateKey.class);
+ * }
+ *
+ * <p> Here is an example that decryption with a factory provider:
+ * specified password:
+ * {@snippet lang = java:
+ *     PEMEncoder pe = PEMEncoder.of().withDecryption(password).
+ *         withFactory(provider);
+ *     byte[] pemData = pe.encode(privKey);
  * }
  *
  * @see PEMEncoder
@@ -130,7 +138,7 @@ public final class PEMDecoder {
     /**
      * Returns an instance of {@code PEMDecoder}.
      *
-     * @return a new {@code PEMDecoder} instance
+     * @return a {@code PEMDecoder} instance
      */
     public static PEMDecoder of() {
         return PEM_DECODER;
@@ -231,9 +239,6 @@ public final class PEMDecoder {
      * Any non-PEM data preceding the PEM header will be stored in
      * {@code leadingData}.
      *
-     * <p>If no PEM data is found, an {@code IllegalArgumentException} is
-     * thrown.
-     *
      * <p> Input consumed by this method is read in as
      * {@link java.nio.charset.StandardCharsets#UTF_8 UTF-8}.
      *
@@ -278,11 +283,10 @@ public final class PEMDecoder {
      *
      * @param is InputStream containing PEM data
      * @return a {@code DEREncodable}
-     * @throws IOException on IO error with the {@code InputStream}
-     * @throws EOFException the end of {@code InputStream} has been
-     * unexpectedly reached.
-     * @throws IllegalArgumentException on error in decoding or no PEM data
-     * found
+     * @throws IOException on IO or PEM syntax error where the
+     * {@code InputStream} did not complete decoding.
+     * @throws EOFException at the end of the {@code InputStream}.
+     * @throws IllegalArgumentException on error in decoding
      * @throws NullPointerException when {@code is} is null.
      */
     public DEREncodable decode(InputStream is) throws IOException {
@@ -309,9 +313,6 @@ public final class PEMDecoder {
      * <p> Input consumed by this method is read in as
      * {@link java.nio.charset.StandardCharsets#UTF_8 UTF-8}.
      *
-     * <p> For all other class parameters, {@code IllegalArgumentException} is
-     * thrown when not PEM data is found.  All non-PEM data is ignored.
-     *
      * @param <S> Class type parameter that extends {@code DEREncodable}.
      * @param str the String containing PEM data
      * @param tClass the returned object class that implements
@@ -321,8 +322,6 @@ public final class PEMDecoder {
      * found
      * @throws ClassCastException if {@code tClass} is invalid for the PEM type.
      * @throws NullPointerException when any input values are null.
-     *
-     * @see PEMDecoder for how {@code tClass} can be used.
      */
     public <S extends DEREncodable> S decode(String str, Class<S> tClass) {
         Objects.requireNonNull(str);
@@ -360,11 +359,10 @@ public final class PEMDecoder {
      * @param tClass the returned object class that implements
      *   {@code DEREncodable}.
      * @return a {@code DEREncodable} typecast to {@code tClass}
-     * @throws IOException on IO error with the {@code InputStream}
-     * @throws EOFException when reading pass the end of the
-     * {@code InputStream}.
-     * @throws IllegalArgumentException on error in decoding or no PEM data
-     * found
+     * @throws IOException on IO or PEM syntax error where the
+     * {@code InputStream} did not complete decoding.
+     * @throws EOFException at the end of the {@code InputStream}.
+     * @throws IllegalArgumentException on error in decoding
      * @throws ClassCastException if {@code tClass} is invalid for the PEM type.
      * @throws NullPointerException when any input values are null.
      *
@@ -455,25 +453,27 @@ public final class PEMDecoder {
     }
 
     /**
-     * Configures and returns a new {@code PEMDecoder} instance from the
-     * current instance that will use {@link KeyFactory} and
-     * {@link CertificateFactory} classes from the specified {@link Provider}.
-     * Any errors using the {@code provider} will occur during decoding.
+     * Returns a copy of this {@code PEMDecoder} instance that uses
+     * {@link KeyFactory} and {@link CertificateFactory} implementations
+     * from the specified {@link Provider} to produce cryptographic objects.
+     * Any errors using the {@code Provider} will occur during decoding.
      *
      * <p>If {@code provider} is {@code null}, a new instance is returned with
      * the default provider configuration.
      *
      * @param provider the factory provider
      * @return a new configured {@code PEMDecoder} instance
+     * @throws NullPointerException if {@code provider} is null.
      */
     public PEMDecoder withFactory(Provider provider) {
+        Objects.requireNonNull("provider cannot be null");
         return new PEMDecoder(provider, password);
     }
 
     /**
-     * Returns a copy of this PEMDecoder that will decrypt encrypted PEM data
-     * such as encrypted private keys with the specified password.
-     * Non-encrypted PEM may still be decoded from this instance.
+     * Returns a copy of this {@code PEMDecoder} that decodes and decrypts
+     * encrypted private keys using the specified password.
+     * Non-encrypted PEM can still be decoded from this instance.
      *
      * @param password the password to decrypt encrypted PEM data.  This array
      *                 is cloned and stored in the new instance.
