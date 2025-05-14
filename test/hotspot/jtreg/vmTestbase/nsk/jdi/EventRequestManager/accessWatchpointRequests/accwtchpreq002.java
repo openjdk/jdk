@@ -250,7 +250,7 @@ public class accwtchpreq002 extends JDIBase {
 
         ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
 
-        BreakpointRequest bpRequest = settingBreakpoint(null,
+        BreakpointRequest bpRequest = settingBreakpoint(mainThread,
                                              debuggeeClass,
                                             bPointMethod, lineForComm, "zero");
         bpRequest.enable();
