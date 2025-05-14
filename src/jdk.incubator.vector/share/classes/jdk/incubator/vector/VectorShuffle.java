@@ -549,7 +549,7 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
                                                                    long offset, ByteOrder order) {
         long memsize = vsp.length() * 4;
         MemorySegment arraySlice = segment.asSlice(offset, memsize);
-        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT.withOrder(order));
+        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT.withOrder(order).withByteAlignment(1));
         return vsp.shuffleFromArray(indices,0);
     }
 

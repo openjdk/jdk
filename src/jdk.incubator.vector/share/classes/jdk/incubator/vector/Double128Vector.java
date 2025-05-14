@@ -874,7 +874,7 @@ final class Double128Vector extends DoubleVector {
         @ForceInline
         public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
                       switch (length()) {
-                          case 1 -> ms.set(ValueLayout.OfInt.JAVA_INT, offset, laneSource(0));
+                          case 1 -> ms.set(ValueLayout.OfInt.JAVA_INT.withByteAlignment(1), offset, laneSource(0));
                           case 2 -> toBitsVector()
                                   .convertShape(VectorOperators.L2I, IntVector.SPECIES_64, 0)
                                   .reinterpretAsInts()
