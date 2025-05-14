@@ -408,17 +408,8 @@ void CDSConfig::check_aot_flags() {
 
   if (FLAG_IS_DEFAULT(AOTCache) && FLAG_IS_DEFAULT(AOTConfiguration) && FLAG_IS_DEFAULT(AOTMode)) {
     // AOTCache/AOTConfiguration/AOTMode not used -> using the "classic CDS" workflow.
-
-    // The old "cds" log tags are deprecated, but we keep some of them for now as [cds]
-    // for the classic workflow to be backwards compatible with older script. This will be
-    // removed as part of JDK-8356317.
-    //
-    //  See aotLogging.hpp for details.
-    FLAG_SET_ERGO_IF_DEFAULT(PrintAOTLogsAsCDSLogs, true);
     return;
   } else {
-    // When using the new flags, never print any [aot] logs as [cds]
-    FLAG_SET_ERGO(PrintAOTLogsAsCDSLogs, false);
     _new_aot_flags_used = true;
   }
 

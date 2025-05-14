@@ -26,6 +26,7 @@
 #define SHARE_CDS_AOTLOGGING_HPP
 
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "logging/log.hpp"
 
 // UL Logging for AOT
@@ -42,50 +43,66 @@
 // NOTE: MOST of the AOT logs will be using the usual macros such as log_info(aot)(...).
 // The information below does NOT apply to such logs.
 //
+// CDS Compatibility Logs & Compatibility Macros
+// =============================================
 //
-// PrintAOTLogsAsCDSLogs
-// =====================
+// A subset of the original CDS logs (the "CDS Compatibility Logs") have been
+// selected in JDK 25. These logs are guarded using the aot_log_xxx compatibility
+// macros. Before JDK 25, such code looked like this:
 //
-// Original CDS logging code would look like this before JDK 25
-//
-//      log_info(aot)("trying to map %s%s", info, _full_path);
+//      log_info(cds)("trying to map %s%s", info, _full_path);
 //      log_warning(cds)("Unable to read the file header.");
 //
-// New code since JDK 25
+// New code since JDK 25:
 //
 //      aot_log_info(aot)("trying to map %s%s", info, _full_path);
 //      aot_log_warning(aot)("Unable to read the file header.");
 //
 // The messages printed with the log_aot_xxx() macros work as if they are
-// using the [cds] tag when running with a "classic" CDS archives:
+// using the [cds] tag when running with the "classic" CDS flags such as
+// -XX:SharedArchiveFile:
 //
 //      $ java -Xlog:cds -XX:SharedArchiveFile=bad.jsa ...
 //      [0.020s][info][cds] trying to map bad.jsa
 //      [0.020s][warning][cds] Unable to read the file header
 //
-// However, when running with an AOT cache, these messages are under the [aot] tag
+// However, when running new AOT flags such as-XX:AOTCache, these messages are
+// under the [aot] tag:
 //
-//     $ java -Xlog:aot -XX:AOTCache=bad.aot ...
-//     [0.020s][info][cds] trying to map bad.jsa
-//     [0.020s][warning][cds] Unable to read the file header
+//      $ java -Xlog:aot -XX:AOTCache=bad.aot ...
+//      [0.020s][info][aot] trying to map bad.aot
+//      [0.020s][warning][aot] Unable to read the file header
 //
 // Rules on selection and printing
 //
 // [1] When using AOT cache
 //     - These logs can be selected ONLY with -Xlog:aot. They are always printed with [aot] decoration
 //
-// [2] When using CDS archives, and PrintAOTLogsAsCDSLogs=true
+// [2] When using CDS archives
 //     - These logs can be selected ONLY with -Xlog:cds. They are always printed with [cds] decoration
 //
-// [3] When using CDS archives, and PrintAOTLogsAsCDSLogs=false
-//     - These logs can be selected ONLY with -Xlog:aot. They are always printed with [aot] decoration
+// Deprecation Process
+// ===================
 //
-// PrintAOTLogsAsCDSLogs is ergonomically set to true when using CDS
-// archives. The user can override this to false to get the behavior in [3]
+// This is model after the deprecate/obsolete/removal process of VM options in arguments.cpp
 //
-// Eventually (a couple releases after JDK 25), we will retire the aot_log_xxx() macros
-// and will replace them with the regular log_xxx() macros.
-
+// JDK 25 - When using OLD CDS flags (see the list of flags in CDSConfig::check_new_flag()), the
+//          the CDS Compatibility Logs must be selected with -Xlog:cds
+//
+// JDK 26 - Same as above, except that when -Xlog:cds is specified in the command-line, an warning
+//          message is printed to indicate that -Xlog:cds is deprecated.
+//
+// JDK 27 - When using OLD CDS flags (see the list of flags in CDSConfig::check_new_flag()), the
+//          the CDS Compatibility Logs must be selected with -Xlog:aot.
+//
+//          When -Xlog:cds is specified in the command-line, an warning message is printed to
+//          indicate that -Xlog:cds is obsolete.
+//
+// JDK 28 - When -Xlog:cds is specified in the command-line, the VM will exit with an error message:
+//
+//          [0.002s][error][logging] Invalid tag 'cds' in log selection.
+//          Invalid -Xlog option '-Xlog:cds', see error log for details.
+//
 
 // The following macros are inspired by the same macros (without the aot_ prefix) in logging/log.hpp
 
@@ -112,10 +129,10 @@ class AOTLogImpl {
   }
 
   static bool is_level(LogLevelType level) {
-    if (PrintAOTLogsAsCDSLogs) {
-      return LogTagSetMapping<LogTag::_cds, T1, T2, T3, T4>::tagset().is_level(level);
-    } else {
+    if (CDSConfig::new_aot_flags_used()) {
       return LogTagSetMapping<LogTag::_aot, T1, T2, T3, T4>::tagset().is_level(level);
+    } else {
+      return LogTagSetMapping<LogTag::_cds, T1, T2, T3, T4>::tagset().is_level(level);
     }
   }
 
@@ -138,10 +155,10 @@ class AOTLogImpl {
 
   ATTRIBUTE_PRINTF(2, 0)
   static void vwrite(LogLevelType level, const char* fmt, va_list args) {
-    if (PrintAOTLogsAsCDSLogs) {
-      LogTagSetMapping<LogTag::_cds, T1, T2, T3, T4>::tagset().vwrite(level, fmt, args);
-    } else {
+    if (CDSConfig::new_aot_flags_used()) {
       LogTagSetMapping<LogTag::_aot, T1, T2, T3, T4>::tagset().vwrite(level, fmt, args);
+    } else {
+      LogTagSetMapping<LogTag::_cds, T1, T2, T3, T4>::tagset().vwrite(level, fmt, args);
     }
   }
 };
