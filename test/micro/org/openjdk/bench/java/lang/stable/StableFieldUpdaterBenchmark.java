@@ -40,6 +40,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.net.URI;
+import java.sql.Ref;
 import java.util.concurrent.TimeUnit;
 import java.util.function.ToIntFunction;
 
@@ -59,12 +60,10 @@ public class StableFieldUpdaterBenchmark {
 
     private static final Base BASE = new Base(STRING);
     private static final Updater UPDATER = new Updater(STRING);
-    private static final MhUpdater MH_UPDATER = new MhUpdater(STRING);
     private static final URI U_R_I = URI.create(STRING);
 
     private final Base base = new Base(STRING);
     private final Updater updater = new Updater(STRING);
-    private final MhUpdater mhUpdater = new MhUpdater(STRING);
     private static final URI uri = URI.create(STRING);
 
     @Benchmark
@@ -75,16 +74,6 @@ public class StableFieldUpdaterBenchmark {
     @Benchmark
     public int base() {
         return base.hashCode();
-    }
-
-    @Benchmark
-    public int mhUpdaterStatic() {
-        return MH_UPDATER.hashCode();
-    }
-
-    @Benchmark
-    public int mhUpdater() {
-        return mhUpdater.hashCode();
     }
 
     @Benchmark
@@ -122,35 +111,28 @@ public class StableFieldUpdaterBenchmark {
 
     static final class Updater extends Abstract {
 
-        private static final ToIntFunction<Updater> HASH_CODE_UPDATER =
-                StableFieldUpdater.ofInt(Updater.class, "hashCode", new ToIntFunction<>() {
-                    @Override
-                    public int applyAsInt(Updater updater) {
-                        return updater.string.hashCode();
-                    }
-                });
+        private static final MethodHandle HASH_UPDATER;
+
+        static {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            try {
+                var varHandle = lookup.findVarHandle(Updater.class, "hashCode", int.class);
+                var accessor = lookup.findVirtual(Updater.class, "hashCode0", MethodType.methodType(int.class));
+                HASH_UPDATER = StableFieldUpdater.atMostOnce(varHandle, accessor);
+            } catch (ReflectiveOperationException e) {
+                throw new InternalError(e);
+            }
+        }
 
         Updater(String string) { super(string); }
 
         @Override
         public int hashCode() {
-            return HASH_CODE_UPDATER.applyAsInt(this);
-        }
-    }
-
-    static final class MhUpdater extends Abstract {
-
-        private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-        private static final ToIntFunction<MhUpdater> HASH_CODE_UPDATER =
-                StableFieldUpdater.ofInt(
-                        MhUtil.findVarHandle(LOOKUP, "hashCode", int.class),
-                        MhUtil.findVirtual(LOOKUP, "hashCode0", MethodType.methodType(int.class)));
-
-        MhUpdater(String string) { super(string); }
-
-        @Override
-        public int hashCode() {
-            return HASH_CODE_UPDATER.applyAsInt(this);
+            try {
+                return (int) HASH_UPDATER.invokeExact(this);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
         }
 
         private int hashCode0() {
@@ -166,47 +148,6 @@ public class StableFieldUpdaterBenchmark {
 
         Abstract(String string) {
             this.string = string;
-        }
-    }
-
-
-    // From j.i.i.MhUtil
-
-    private static final class MhUtil {
-
-        public static VarHandle findVarHandle(MethodHandles.Lookup lookup,
-                                              String name,
-                                              Class<?> type) {
-            return findVarHandle(lookup, lookup.lookupClass(), name, type);
-        }
-
-        public static VarHandle findVarHandle(MethodHandles.Lookup lookup,
-                                              Class<?> recv,
-                                              String name,
-                                              Class<?> type) {
-            try {
-                return lookup.findVarHandle(recv, name, type);
-            } catch (ReflectiveOperationException e) {
-                throw new InternalError(e);
-            }
-        }
-
-
-        public static MethodHandle findVirtual(MethodHandles.Lookup lookup,
-                                               String name,
-                                               MethodType type) {
-            return findVirtual(lookup, lookup.lookupClass(), name, type);
-        }
-
-        public static MethodHandle findVirtual(MethodHandles.Lookup lookup,
-                                               Class<?> refc,
-                                               String name,
-                                               MethodType type) {
-            try {
-                return lookup.findVirtual(refc, name, type);
-            } catch (ReflectiveOperationException e) {
-                throw new InternalError(e);
-            }
         }
     }
 

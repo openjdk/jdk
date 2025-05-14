@@ -30,51 +30,139 @@
 
 import jdk.internal.invoke.MhUtil;
 import jdk.internal.lang.stable.StableFieldUpdater;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
+import java.lang.invoke.WrongMethodTypeException;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class StableFieldUpdaterTest {
 
     private static final String STRING = "Abc";
+    private static final int SIZE = 8;
+
+
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
+    private static final VarHandle ACCESSOR;
+    private static final MethodHandle UNDERLYING;
+    private static final MethodHandle DOUBLE_UNDERLYING;
+
+    static {
+        try {
+            ACCESSOR = LOOKUP.findVarHandle(Foo.class, "hash", int.class);
+            UNDERLYING = LOOKUP.findStatic(Foo.class, "hashCodeFor", MethodType.methodType(int.class, Foo.class));
+            DOUBLE_UNDERLYING = LOOKUP.findStatic(StableFieldUpdaterTest.class, "doubleFrom", MethodType.methodType(double.class, Foo.class));
+        } catch (ReflectiveOperationException e) {
+            throw new InternalError(e);
+        }
+    }
 
     @Test
     void invariants() {
-        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(null, "a", _ -> 0));
-        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(String.class, null, _ -> 0));
-        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofInt(Foo.class, "hash", null));
-        var xi = assertThrows(IllegalArgumentException.class, () -> StableFieldUpdater.ofInt(Foo.class, "dummy", _ -> 0));
-        assertEquals("Only fields of type 'int' are supported. The provided field is 'long StableFieldUpdaterTest$Foo.dummy'", xi.getMessage());
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.atMostOnce(null, UNDERLYING));
+        assertThrows(NullPointerException.class, () -> StableFieldUpdater.atMostOnce(ACCESSOR, null));
+        var xi = assertThrows(IllegalArgumentException.class, () -> StableFieldUpdater.atMostOnce(ACCESSOR, DOUBLE_UNDERLYING));
+        assertEquals("Return type mismatch: accessor: VarHandle[varType=int, coord=[class StableFieldUpdaterTest$Foo]], underlying: MethodHandle(Foo)double", xi.getMessage());
 
-        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofLong(null, "a", _ -> 0));
-        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofLong(String.class, null, _ -> 0));
-        assertThrows(NullPointerException.class, () -> StableFieldUpdater.ofLong(Foo.class, "hash", null));
-        var xl = assertThrows(IllegalArgumentException.class, () -> StableFieldUpdater.ofLong(Foo.class, "hash", _ -> 0));
-        assertEquals("Only fields of type 'long' are supported. The provided field is 'int StableFieldUpdaterTest$Foo.hash'", xl.getMessage());
-
-        assertThrows(NullPointerException.class, () -> StableFieldUpdater.replaceIntZero((ToIntFunction<?>)null, 1));
         assertThrows(NullPointerException.class, () -> StableFieldUpdater.replaceIntZero((MethodHandle) null, 1));
-        assertThrows(NullPointerException.class, () -> StableFieldUpdater.replaceLongZero((ToLongFunction<?>)null, 1L));
         assertThrows(NullPointerException.class, () -> StableFieldUpdater.replaceLongZero((MethodHandle) null, 1L));
+    }
+
+    @Test
+    void multiCoordinateIntArray() throws Throwable {
+        var accessor = MethodHandles.arrayElementVarHandle(int[].class);
+        var underlying = LOOKUP.findStatic(StableFieldUpdaterTest.class, "multiCoordinateMethod",
+                MethodType.methodType(int.class, int[].class, int.class));
+        var atMostOnce = StableFieldUpdater.atMostOnce(accessor, underlying);
+        int index = 1;
+        int[] array = new int[SIZE];
+        int val = (int) atMostOnce.invokeExact(array, index);
+        assertEquals(index, val);
+    }
+
+    @Test
+    void multiCoordinateLongArray() throws Throwable {
+        var accessor = MethodHandles.arrayElementVarHandle(long[].class);
+        var underlying = LOOKUP.findStatic(StableFieldUpdaterTest.class, "multiCoordinateMethod",
+                MethodType.methodType(long.class, long[].class, int.class));
+        var atMostOnce = StableFieldUpdater.atMostOnce(accessor, underlying);
+        int index = 1;
+        long[] array = new long[SIZE];
+        long val = (long) atMostOnce.invokeExact(array, index);
+        assertEquals(index, val);
+    }
+
+    @Test
+    void multiCoordinateSegment() throws Throwable {
+        var layout = MemoryLayout.sequenceLayout(SIZE, JAVA_INT);
+        var accessor = layout.varHandle(MemoryLayout.PathElement.sequenceElement());
+        accessor = MethodHandles.insertCoordinates(accessor, 1, 0L); // zero offset
+        var underlying = LOOKUP.findStatic(StableFieldUpdaterTest.class, "multiCoordinateMethod",
+                MethodType.methodType(int.class, MemorySegment.class, long.class));
+        var atMostOnce = StableFieldUpdater.atMostOnce(accessor, underlying);
+        long index = 1L;
+        try (var arena = Arena.ofConfined()) {
+            var segment = arena.allocate(layout);
+            int val = (int) atMostOnce.invokeExact(segment, index);
+            assertEquals(index, val);
+        }
+    }
+
+    // Used reflectively: int[], int
+    static int multiCoordinateMethod(int[] array, int index) {
+        return index;
+    }
+
+    // Used reflectively:
+    static long multiCoordinateMethod(long[] array, int index) {
+        return index;
+    }
+
+    // Used reflectively
+    static int multiCoordinateMethod(MemorySegment segment, long index) {
+        return (int) index;
+    }
+
+    @Test
+    void returnedHandleTypes() {
+        MethodHandle handle = StableFieldUpdater.atMostOnce(ACCESSOR, UNDERLYING);
+        assertEquals(int.class, handle.type().returnType());
+        assertEquals(Foo.class, handle.type().parameterType(0));
+        assertEquals(1, handle.type().parameterCount());
+    }
+
+    @Test
+    void foo() throws Throwable {
+        MethodHandle handle = StableFieldUpdater.atMostOnce(ACCESSOR, UNDERLYING);
+        Foo foo = new Foo(STRING);
+        int hash = (int) handle.invokeExact(foo);
+        assertEquals(STRING.hashCode(), hash);
     }
 
     @ParameterizedTest
     @MethodSource("fooConstructors")
-    void basic(Function<String, HasHashField> namedConstructor) {
-        final HasHashField foo = namedConstructor.apply(STRING);
+    void basic(Function<String, HasHashField> ctor) {
+        final HasHashField foo = ctor.apply(STRING);
         assertEquals(0L, foo.hash());
         int actual = foo.hashCode();
         assertEquals(STRING.hashCode(), actual);
@@ -82,61 +170,48 @@ final class StableFieldUpdaterTest {
     }
 
     @Test
-    void recordFoo() {
-        var recordFoo = new RecordFoo(STRING, 0);
+    void recordFoo() throws ReflectiveOperationException {
+        record RecordFoo(String string, int hash) {
+
+            private int hashCodeFor() {
+                return string.hashCode();
+            }
+
+        }
+        var accessor = LOOKUP.findVarHandle(RecordFoo.class, "hash", int.class);
+        var underlying = LOOKUP.findVirtual(RecordFoo.class, "hashCodeFor", MethodType.methodType(int.class));
+
+        accessor.isAccessModeSupported(VarHandle.AccessMode.SET);
+
         // The field is `final`
-        var x = assertThrows(IllegalArgumentException.class,
-                () -> StableFieldUpdater.ofInt(RecordFoo.class, "hash", _ -> 0));
-        assertEquals("Only non final fields are supported. The provided field is 'private final int StableFieldUpdaterTest$RecordFoo.hash'", x.getMessage());
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    @Test
-    void uncheckedCall() {
-        // Use a raw type
-        ToIntFunction updater = StableFieldUpdater.ofInt(Foo.class, "hash", f -> f.string.hashCode());
-        var object = new Object();
-        var x = assertThrows(IllegalArgumentException.class, () -> updater.applyAsInt(object));
-        assertEquals("The provided t is not an instance of class StableFieldUpdaterTest$Foo", x.getMessage());
+        var x = assertThrows(IllegalArgumentException.class, () -> StableFieldUpdater.atMostOnce(accessor, underlying));
+        assertEquals("The accessor is read only: VarHandle[varType=int, coord=[class StableFieldUpdaterTest$1RecordFoo]]", x.getMessage());
     }
 
     @Test
-    void lazyOfInt() throws Throwable {
+    void wrongReceiver() {
+        var handle = StableFieldUpdater.atMostOnce(ACCESSOR, UNDERLYING);
+        var wrongType = new InheritingFoo(STRING);
+
+        assertThrows(WrongMethodTypeException.class, () -> {
+           int hash =  (int) handle.invokeExact(wrongType);
+        });
+
+        assertThrows(ClassCastException.class, () -> {
+           int hash =  (int) handle.invoke(wrongType);
+        });
+    }
+
+    @Test
+    void lazyAtMostOnce() throws Throwable {
         var lookup = MethodHandles.lookup();
-        CallSite callSite = StableFieldUpdater.lazyOfInt(lookup, "",
-                MhUtil.findVarHandle(lookup, SimpleMhFoo.class, "hash", int.class),
-                MhUtil.findStatic(lookup,SimpleMhFoo.class, "computeHash", MethodType.methodType(int.class, SimpleMhFoo.class)));
+        CallSite callSite = StableFieldUpdater.lazyAtMostOnce(lookup, "", ACCESSOR, UNDERLYING);
 
-        @SuppressWarnings("unchecked")
-        ToIntFunction<SimpleMhFoo> hasher = (ToIntFunction<SimpleMhFoo>) callSite.getTarget().invoke();
+        MethodHandle hasher = (MethodHandle) callSite.getTarget().invoke();
 
-        var foo = new SimpleMhFoo(STRING);
-        int hash = hasher.applyAsInt(foo);
+        var foo = new Foo(STRING);
+        int hash = (int) hasher.invoke(foo);
         assertEquals(STRING.hashCode(), hash);
-    }
-
-    @Test
-    void lazyOfLong() throws Throwable {
-        var lookup = MethodHandles.lookup();
-        CallSite callSite = StableFieldUpdater.lazyOfLong(lookup, "",
-                MhUtil.findVarHandle(lookup, LongMhFoo.class, "hash", long.class),
-                MhUtil.findVirtual(lookup, LongMhFoo.class, "hash0", MethodType.methodType(long.class)));
-
-        @SuppressWarnings("unchecked")
-        ToLongFunction<LongMhFoo> hasher = (ToLongFunction<LongMhFoo>) callSite.getTarget().invoke();
-
-        var foo = new LongMhFoo(STRING);
-        long hash = hasher.applyAsLong(foo);
-        assertEquals(STRING.hashCode(), hash);
-    }
-
-    @Test
-    void replaceIntZeroFunction() {
-        int zeroReplacement = -1;
-        ToIntFunction<Integer> underlying = i -> i;
-        var mod = StableFieldUpdater.replaceIntZero(underlying, zeroReplacement);
-        assertEquals(1, mod.applyAsInt(1));
-        assertEquals(zeroReplacement, mod.applyAsInt(0));
     }
 
     @Test
@@ -146,15 +221,6 @@ final class StableFieldUpdaterTest {
         var mod = StableFieldUpdater.replaceIntZero(underlying, zeroReplacement);
         assertEquals(1, (int) mod.invoke(1));
         assertEquals(zeroReplacement, (int) mod.invoke(0));
-    }
-
-    @Test
-    void replaceLongZeroFunction() {
-        long zeroReplacement = -1;
-        ToLongFunction<Long> underlying = i -> i;
-        var mod = StableFieldUpdater.replaceLongZero(underlying, zeroReplacement);
-        assertEquals(1L, mod.applyAsLong(1L));
-        assertEquals(zeroReplacement, mod.applyAsLong(0L));
     }
 
     @Test
@@ -168,8 +234,19 @@ final class StableFieldUpdaterTest {
 
     static final class Foo implements HasHashField {
 
-        private static final ToIntFunction<Foo> UPDATER =
-                StableFieldUpdater.ofInt(Foo.class, "hash", f -> f.string.hashCode());
+        private static final MethodHandle HASH_UPDATER;
+
+        static {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            try {
+                VarHandle accessor = lookup.findVarHandle(Foo.class, "hash", int.class);
+                MethodHandle underlying = lookup.findStatic(Foo.class, "hashCodeFor", MethodType.methodType(int.class, Foo.class));
+                HASH_UPDATER = StableFieldUpdater.atMostOnce(accessor, underlying);
+            } catch (ReflectiveOperationException e) {
+                throw new InternalError(e);
+            }
+        }
+
         private final String string;
 
         int hash;
@@ -181,19 +258,38 @@ final class StableFieldUpdaterTest {
 
         @Override
         public int hashCode() {
-            return UPDATER.applyAsInt(this);
+            try {
+                return (int) HASH_UPDATER.invokeExact(this);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override
         public long hash() {
             return hash;
         }
+
+        private static int hashCodeFor(Foo foo) {
+            return foo.string.hashCode();
+        }
     }
 
     static final class LongFoo implements HasHashField {
 
-        private static final ToLongFunction<LongFoo> UPDATER =
-                StableFieldUpdater.ofLong(LongFoo.class, "hash", f -> f.string.hashCode());
+        private static final MethodHandle HASH_UPDATER;
+
+        static {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            try {
+                VarHandle accessor = lookup.findVarHandle(LongFoo.class, "hash", long.class);
+                MethodHandle underlying = lookup.findStatic(LongFoo.class, "hashCodeFor", MethodType.methodType(long.class, LongFoo.class));
+                HASH_UPDATER = StableFieldUpdater.atMostOnce(accessor, underlying);
+            } catch (ReflectiveOperationException e) {
+                throw new InternalError(e);
+            }
+        }
+
         private final String string;
 
         long hash;
@@ -205,7 +301,11 @@ final class StableFieldUpdaterTest {
 
         @Override
         public int hashCode() {
-            return (int) UPDATER.applyAsLong(this);
+            try {
+                return (int) (long) HASH_UPDATER.invokeExact(this);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override
@@ -213,13 +313,28 @@ final class StableFieldUpdaterTest {
             return hash;
         }
 
+        private static long hashCodeFor(LongFoo foo) {
+            return foo.string.hashCode();
+        }
+
     }
 
-    record RecordFoo(String string, int hash) {}
+
 
     static final class InheritingFoo extends AbstractFoo implements HasHashField {
-        private static final ToIntFunction<InheritingFoo> UPDATER =
-                StableFieldUpdater.ofInt(InheritingFoo.class, "hash", f -> f.string.hashCode());
+
+        private static final MethodHandle HASH_UPDATER;
+
+        static {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            try {
+                VarHandle accessor = lookup.findVarHandle(InheritingFoo.class, "hash", int.class);
+                MethodHandle underlying = lookup.findStatic(InheritingFoo.class, "hashCodeFor", MethodType.methodType(int.class, InheritingFoo.class));
+                HASH_UPDATER = StableFieldUpdater.atMostOnce(accessor, underlying);
+            } catch (ReflectiveOperationException e) {
+                throw new InternalError(e);
+            }
+        }
 
         public InheritingFoo(String string) {
             super(string);
@@ -227,7 +342,15 @@ final class StableFieldUpdaterTest {
 
         @Override
         public int hashCode() {
-            return UPDATER.applyAsInt(this);
+            try {
+                return (int) HASH_UPDATER.invokeExact(this);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private static int hashCodeFor(InheritingFoo foo) {
+            return foo.string.hashCode();
         }
     }
 
@@ -245,101 +368,13 @@ final class StableFieldUpdaterTest {
         }
     }
 
-    static final class MhFoo implements HasHashField {
-
-        private static final MethodHandle HASH_MH = MhUtil.findVirtual(MethodHandles.lookup(), "hash0", MethodType.methodType(int.class));
-
-        private static final ToIntFunction<MhFoo> UPDATER =
-                StableFieldUpdater.ofInt(MhUtil.findVarHandle(MethodHandles.lookup(), "hash", int.class), HASH_MH);
-        private final String string;
-
-        int hash;
-        long dummy;
-
-        public MhFoo(String string) {
-            this.string = string;
-        }
-
-        @Override
-        public int hashCode() {
-            return UPDATER.applyAsInt(this);
-        }
-
-        public int hash0() {
-            return string.hashCode();
-        }
-
-        @Override
-        public long hash() {
-            return hash;
-        }
-
-    }
-
-    static final class SimpleMhFoo implements HasHashField {
-
-        private static final ToIntFunction<SimpleMhFoo> UPDATER =
-                StableFieldUpdater.ofInt(MethodHandles.lookup(), "hash", "computeHash");
-
-        private final String string;
-
-        int hash;
-        long dummy;
-
-        public SimpleMhFoo(String string) {
-            this.string = string;
-        }
-
-        @Override
-        public int hashCode() {
-            return UPDATER.applyAsInt(this);
-        }
-
-        @Override
-        public long hash() {
-            return hash;
-        }
-
-        // Used reflectively
-        private static int computeHash(SimpleMhFoo target) {
-            return target.string.hashCode();
-        }
-
-    }
-
-    static final class LongMhFoo implements HasHashField {
-
-        private static final MethodHandle HASH_MH = MhUtil.findVirtual(MethodHandles.lookup(), "hash0", MethodType.methodType(long.class));
-
-        private static final ToLongFunction<LongMhFoo> UPDATER =
-                StableFieldUpdater.ofLong(MhUtil.findVarHandle(MethodHandles.lookup(), "hash", long.class), HASH_MH);
-        private final String string;
-
-        long hash;
-        long dummy;
-
-        public LongMhFoo(String string) {
-            this.string = string;
-        }
-
-        @Override
-        public int hashCode() {
-            return (int) UPDATER.applyAsLong(this);
-        }
-
-        public long hash0() {
-            return string.hashCode();
-        }
-
-        @Override
-        public long hash() {
-            return hash;
-        }
-
-    }
-
     interface HasHashField {
         long hash();
+    }
+
+    // Illegal underlying function for int and long
+    private static double doubleFrom(Foo foo) {
+        return 1;
     }
 
     // Apparently, `hashCode()` is invoked if we create a stream of just `HasHashField`
@@ -348,10 +383,7 @@ final class StableFieldUpdaterTest {
         return Stream.of(
                 Foo::new,
                 LongFoo::new,
-                MhFoo::new,
-                LongMhFoo::new,
-                InheritingFoo::new,
-                SimpleMhFoo::new
+                InheritingFoo::new
         );
     }
 

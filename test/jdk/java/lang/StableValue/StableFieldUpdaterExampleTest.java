@@ -33,8 +33,10 @@ import jdk.internal.lang.stable.StableFieldUpdater;
 import org.junit.jupiter.api.Test;
 
 import java.lang.Override;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
 import java.util.Objects;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
@@ -120,9 +122,18 @@ final class StableFieldUpdaterExampleTest {
         private final Bar bar;
         private final Baz baz;
 
-        private static final ToIntFunction<LazyFoo> HASH_UPDATER =
-                StableFieldUpdater.ofInt(LazyFoo.class, "hash",
-                        l -> Objects.hash(l.bar, l.baz));
+        private static final MethodHandle HASH_UPDATER;
+
+        static {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            try {
+                VarHandle accessor = lookup.findVarHandle(LazyFoo.class, "hash", int.class);
+                MethodHandle underlying = lookup.findStatic(LazyFoo.class, "hashCodeFor", MethodType.methodType(int.class, LazyFoo.class));
+                HASH_UPDATER = StableFieldUpdater.atMostOnce(accessor, underlying);
+            } catch (ReflectiveOperationException e) {
+                throw new InternalError(e);
+            }
+        }
 
         @Stable
         private int hash;
@@ -141,83 +152,14 @@ final class StableFieldUpdaterExampleTest {
 
         @Override
         public int hashCode() {
-            return HASH_UPDATER.applyAsInt(this);
-        }
-    }
-
-    static
-
-    public final class LazySpecifiedFoo {
-
-        private final Bar bar;
-        private final Baz baz;
-
-        private static final ToLongFunction<LazySpecifiedFoo> HASH_UPDATER =
-                StableFieldUpdater.ofLong(LazySpecifiedFoo.class, "hash",
-                        StableFieldUpdater.replaceLongZero(LazySpecifiedFoo::hashCodeFor, 1L << 32));
-
-        @Stable
-        private long hash;
-
-        public LazySpecifiedFoo(Bar bar, Baz baz) {
-            this.bar = bar;
-            this.baz = baz;
+            try {
+                return (int) HASH_UPDATER.invokeExact(this);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
         }
 
-        @Override
-        public boolean equals(Object o) {
-            return (o instanceof Foo that)
-                    && Objects.equals(this.bar, that.bar)
-                    && Objects.equals(this.baz, that.baz);
-        }
-
-        @Override
-        public int hashCode() {
-            return (int) HASH_UPDATER.applyAsLong(this);
-        }
-
-        static long hashCodeFor(LazySpecifiedFoo foo) {
-            return (foo.bar == null && foo.baz == null) ? 0 : Objects.hash(foo.bar, foo.baz);
-        }
-
-    }
-
-    static
-
-    public final class MhFoo {
-
-        private final Bar bar;
-        private final Baz baz;
-
-        private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-
-        private static final ToIntFunction<MhFoo> HASH_UPDATER =
-                StableFieldUpdater.ofInt(
-                        MhUtil.findVarHandle(LOOKUP, "hash", int.class),
-                        MhUtil.findStatic(LOOKUP, "hashCodeFor", MethodType.methodType(int.class, MhFoo.class)));
-
-        @Stable
-        private int hash;
-
-        public MhFoo(Bar bar, Baz baz) {
-            this.bar = bar;
-            this.baz = baz;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return o instanceof Foo that
-                    && Objects.equals(this.bar, that.bar)
-                    && Objects.equals(this.baz, that.baz);
-        }
-
-        @Override
-        public int hashCode() {
-            return HASH_UPDATER.applyAsInt(this);
-        }
-
-        // Used reflectively
-        static int hashCodeFor(MhFoo foo) {
+        private static int hashCodeFor(LazyFoo foo) {
             return Objects.hash(foo.bar, foo.baz);
         }
     }
@@ -230,14 +172,6 @@ final class StableFieldUpdaterExampleTest {
         var foo = new LazyFoo(bar, baz);
 
         assertEquals(Objects.hash(1, 2), foo.hashCode());
-    }
-
-    @Test
-    void lazySpec() {
-        var foo = new LazySpecifiedFoo(null, null);
-        assertEquals(0, foo.hashCode());
-        assertEquals(0, foo.hashCode());
-        assertEquals(1L << 32, foo.hash);
     }
 
 }
