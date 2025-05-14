@@ -180,6 +180,38 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         return new UUID(md5Bytes);
     }
 
+    /**
+     * Static factory to retrieve a type 7 (time based) {@code UUID} based on
+     * the specified byte array.
+     *
+     * @return  A {@code UUID} generated from the specified array
+     */
+    public static UUID timestampUUID() {
+        // Generate timestamp in milliseconds (48-bit max for UUIDv7)
+        long timestamp = System.currentTimeMillis();
+        SecureRandom ng = Holder.numberGenerator;
+        byte[] randomBytes = new byte[16];
+        ng.nextBytes(randomBytes);
+
+        // Fill first 6 bytes with timestamp (big endian)
+        randomBytes[0] = (byte) (timestamp >>> 40);
+        randomBytes[1] = (byte) (timestamp >>> 32);
+        randomBytes[2] = (byte) (timestamp >>> 24);
+        randomBytes[3] = (byte) (timestamp >>> 16);
+        randomBytes[4] = (byte) (timestamp >>> 8);
+        randomBytes[5] = (byte) (timestamp);
+
+        // Set version to 7 (UUIDv7: version bits are in byte 6)
+        randomBytes[6] &= 0x0f;  // Clear version (upper 4 bits)
+        randomBytes[6] |= 0x70;  // Set version to 0111 (v7)
+
+        // Set variant to IETF (10xxxxxx)
+        randomBytes[8] &= 0x3f;        // Clear variant bits
+        randomBytes[8] |= (byte) 0x80; // Set to variant 1 (10xxxxxx)
+
+        return new UUID(randomBytes);
+    }
+
     private static final byte[] NIBBLES;
     static {
         byte[] ns = new byte[256];
@@ -322,6 +354,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * <li>2    DCE security UUID
      * <li>3    Name-based UUID
      * <li>4    Randomly generated UUID
+     * <li>7    Timestamp-based UUID
      * </ul>
      *
      * @return  The version number of this {@code UUID}
