@@ -32,7 +32,6 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.spec.AlgorithmParameterSpec;
 import java.util.HexFormat;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,9 +42,11 @@ import java.util.function.Function;
 
 import javax.crypto.AEADBadTagException;
 import javax.crypto.Cipher;
+import javax.crypto.KDF;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLHandshakeException;
 
@@ -149,9 +150,9 @@ sealed abstract class QuicKeyManager
         final SSLKeyDerivation kd = new QuicTLSKeyDerivation(cs,
                 traffic_secret);
         final QuicTLSData tlsData = getQuicData(quicVersion);
-        final SecretKey quic_key = kd.deriveKey(tlsData.getTlsKeyLabel(), null);
-        final SecretKey quic_iv = kd.deriveKey(tlsData.getTlsIvLabel(), null);
-        final SecretKey quic_hp = kd.deriveKey(tlsData.getTlsHpLabel(), null);
+        final SecretKey quic_key = kd.deriveKey(tlsData.getTlsKeyLabel());
+        final SecretKey quic_iv = kd.deriveKey(tlsData.getTlsIvLabel());
+        final SecretKey quic_hp = kd.deriveKey(tlsData.getTlsHpLabel());
         return new QuicKeys(quic_key, quic_iv, quic_hp);
     }
 
@@ -162,8 +163,8 @@ sealed abstract class QuicKeyManager
         final SSLKeyDerivation kd = new QuicTLSKeyDerivation(cs,
                 traffic_secret);
         final QuicTLSData tlsData = getQuicData(quicVersion);
-        final SecretKey quic_key = kd.deriveKey(tlsData.getTlsKeyLabel(), null);
-        final SecretKey quic_iv = kd.deriveKey(tlsData.getTlsIvLabel(), null);
+        final SecretKey quic_key = kd.deriveKey(tlsData.getTlsKeyLabel());
+        final SecretKey quic_iv = kd.deriveKey(tlsData.getTlsIvLabel());
         return new QuicKeys(quic_key, quic_iv, quic_hp);
     }
 
@@ -257,9 +258,9 @@ sealed abstract class QuicKeyManager
             final CipherSuite cs = CipherSuite.TLS_AES_128_GCM_SHA256;
             final CipherSuite.HashAlg hashAlg = cs.hashAlg;
 
-            HKDF hkdf;
+            KDF hkdf;
             try {
-                hkdf = new HKDF(hashAlg.name);
+                hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             } catch (NoSuchAlgorithmException e) {
                 throw new AssertionError("Should not happen", e);
             }
@@ -267,19 +268,30 @@ sealed abstract class QuicKeyManager
                     "QuicConnectionId");
             final QuicTLSData tlsData = QuicKeyManager.getQuicData(quicVersion);
             try {
-                SecretKey initial_secret =
-                        hkdf.extract(tlsData.getInitialSalt(), connSecret,
-                                "initial secret");
+                SecretKey initial_secret = hkdf.deriveKey("TlsInitialSecret",
+                        HKDFParameterSpec.ofExtract()
+                                .addSalt(tlsData.getInitialSalt())
+                                .addIKM(connSecret).extractOnly());
 
-                SecretKey client_initial_secret = hkdf.expand(initial_secret,
-                        createHkdfInfo("client in", hashAlg.hashLength),
-                        hashAlg.hashLength, "client initial");
+                byte[] clientInfo = createHkdfInfo("client in",
+                        hashAlg.hashLength);
+                SecretKey client_initial_secret =
+                        hkdf.deriveKey("TlsClientInitialTrafficSecret",
+                                HKDFParameterSpec.expandOnly(
+                                        initial_secret,
+                                        clientInfo,
+                                        hashAlg.hashLength));
                 QuicKeys clientKeys = deriveQuicKeys(quicVersion, cs,
                         client_initial_secret);
 
-                SecretKey server_initial_secret = hkdf.expand(initial_secret,
-                        createHkdfInfo("server in", hashAlg.hashLength),
-                        hashAlg.hashLength, "server initial");
+                byte[] serverInfo = createHkdfInfo("server in",
+                        hashAlg.hashLength);
+                SecretKey server_initial_secret =
+                        hkdf.deriveKey("TlsServerInitialTrafficSecret",
+                                HKDFParameterSpec.expandOnly(
+                                        initial_secret,
+                                        serverInfo,
+                                        hashAlg.hashLength));
                 QuicKeys serverKeys = deriveQuicKeys(quicVersion, cs,
                         server_initial_secret);
 
@@ -393,12 +405,12 @@ sealed abstract class QuicKeyManager
                 final SSLKeyDerivation kd =
                         handshakeContext.handshakeKeyDerivation;
                 final SecretKey client_handshake_traffic_secret = kd.deriveKey(
-                        "TlsClientHandshakeTrafficSecret", null);
+                        "TlsClientHandshakeTrafficSecret");
                 final QuicKeys clientKeys = deriveQuicKeys(quicVersion,
                         handshakeContext.negotiatedCipherSuite,
                         client_handshake_traffic_secret);
                 final SecretKey server_handshake_traffic_secret = kd.deriveKey(
-                        "TlsServerHandshakeTrafficSecret", null);
+                        "TlsServerHandshakeTrafficSecret");
                 final QuicKeys serverKeys = deriveQuicKeys(quicVersion,
                         handshakeContext.negotiatedCipherSuite,
                         server_handshake_traffic_secret);
@@ -831,9 +843,9 @@ sealed abstract class QuicKeyManager
             try {
                 SSLKeyDerivation kd = handshakeContext.handshakeKeyDerivation;
                 SecretKey client_application_traffic_secret_0 = kd.deriveKey(
-                        "TlsClientAppTrafficSecret", null);
+                        "TlsClientAppTrafficSecret");
                 SecretKey server_application_traffic_secret_0 = kd.deriveKey(
-                        "TlsServerAppTrafficSecret", null);
+                        "TlsServerAppTrafficSecret");
 
                 deriveOneRttKeys(this.negotiatedVersion,
                         client_application_traffic_secret_0,
@@ -911,7 +923,7 @@ sealed abstract class QuicKeyManager
             final QuicTLSData tlsData = QuicKeyManager.getQuicData(quicVersion);
             try {
                 final SecretKey nplus1Secret =
-                        kd.deriveKey(tlsData.getTlsKeyUpdateLabel(), null);
+                        kd.deriveKey(tlsData.getTlsKeyUpdateLabel());
                 final QuicKeys quicKeys =
                         QuicKeyManager.deriveQuicKeys(quicVersion,
                                 current.getCipherSuite(),
@@ -936,7 +948,7 @@ sealed abstract class QuicKeyManager
             final QuicTLSData tlsData = QuicKeyManager.getQuicData(quicVersion);
             try {
                 final SecretKey nPlus1Secret =
-                        kd.deriveKey(tlsData.getTlsKeyUpdateLabel(), null);
+                        kd.deriveKey(tlsData.getTlsKeyUpdateLabel());
                 final QuicKeys quicKeys =
                         QuicKeyManager.deriveQuicKeys(quicVersion,
                                 current.getCipherSuite(),
@@ -1078,8 +1090,7 @@ sealed abstract class QuicKeyManager
         }
 
         @Override
-        public SecretKey deriveKey(final String algorithm,
-                final AlgorithmParameterSpec params) throws IOException {
+        public SecretKey deriveKey(final String algorithm) throws IOException {
             final HkdfLabel hkdfLabel;
             try {
                 hkdfLabel = HkdfLabel.fromLabel(algorithm);
@@ -1088,12 +1099,14 @@ sealed abstract class QuicKeyManager
                         + " for key generation");
             }
             try {
-                final HKDF hkdf = new HKDF(this.cs.hashAlg.name);
+                final KDF hkdf = KDF.getInstance(this.cs.hashAlg.hkdfAlgorithm);
                 final int keyLength = getKeyLength(hkdfLabel);
                 final byte[] hkdfInfo =
                         createHkdfInfo(hkdfLabel.tls13LabelBytes, keyLength);
                 final String keyAlgo = getKeyAlgorithm(hkdfLabel);
-                return hkdf.expand(secret, hkdfInfo, keyLength, keyAlgo);
+                return hkdf.deriveKey(keyAlgo,
+                        HKDFParameterSpec.expandOnly(
+                                secret, hkdfInfo, keyLength));
             } catch (GeneralSecurityException gse) {
                 throw new SSLHandshakeException("Could not derive key", gse);
             }
@@ -1114,6 +1127,7 @@ sealed abstract class QuicKeyManager
 
         private String getKeyAlgorithm(final HkdfLabel hkdfLabel) {
             return switch (hkdfLabel) {
+                case quicku, quicv2ku -> "TlsUpdateNplus1";
                 case quiciv, quicv2iv -> hkdfLabel.label;
                 default -> this.cs.bulkCipher.algorithm;
             };
