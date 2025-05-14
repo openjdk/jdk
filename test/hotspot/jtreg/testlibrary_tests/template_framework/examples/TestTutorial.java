@@ -74,7 +74,7 @@ public class TestTutorial {
         //       with -DCompileFrameworkVerbose=true
         comp.compile();
 
-        // Object ret = p.xyz.InnterTest1.main();
+        // Object ret = p.xyz.InnerTest1.main();
         comp.invoke("p.xyz.InnerTest1", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest2", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest3", "main", new Object[] {});
@@ -137,7 +137,7 @@ public class TestTutorial {
             // by appending to the comma-separated list of Tokens, or by hashtag
             // replacements. Appending as a Token works whenever one has a reference
             // to the Object in Java code. But often, this is rather cumbersome and
-            // looks awkward, given al the additional quotes and commans required.
+            // looks awkward, given all the additional quotes and commands required.
             // Optimal would have been Java String Templates, but since those do not
             // currently exist, we use hashtag replacements. These can be either
             // defined by capturing arguments as string names, or by a "let" definition,

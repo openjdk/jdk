@@ -147,9 +147,9 @@ import java.util.List;
  * Template argument types, i.e. the Template arguments can be type checked.
  *
  * <p>
- * Given a {@link UnfilledTemplate}, one must apply the required number of arguments, i.e. fill
+ * Given an {@link UnfilledTemplate}, one must apply the required number of arguments, i.e. fill
  * the Template, to arrive at a {@link FilledTemplate}. Note: {@link Template#make(Supplier)},
- * i.e. the making a Template with zero arguments directly returns a {@link FilledTemplate},
+ * i.e. making a Template with zero arguments directly returns a {@link FilledTemplate},
  * because there are no arguments to be filled.
  *
  * <p>
@@ -165,7 +165,7 @@ import java.util.List;
  *
  * <p>
  * When using nested Templates, there can be collisions with identifiers (e.g. variable names and method names).
- * For this, Templates provide <strong>dollar replacements</strong>, which automaticall rename any
+ * For this, Templates provide <strong>dollar replacements</strong>, which automatically rename any
  * {@code "$name"} in the String with a {@code "name_ID"}, where the {@code "ID"} is unique for every use of
  * a Template. The dollar replacement can also be captured with {@link #$}, and passed to nested
  * Templates, which allows sharing of these identifier names between Templates.
@@ -225,11 +225,11 @@ public interface Template {
     }
 
     /**
-     * Creates a {@link UnfilledTemplate} with one argument.
+     * Creates an {@link UnfilledTemplate} with one argument.
      * See {@link #body} for more details about how to construct a Template with {@link Token}s.
      *
      * <p>
-     * Here an example with template argument {@code 'a'}, captured once as string name
+     * Here is an example with template argument {@code 'a'}, captured once as string name
      * for use in hashtag replacements, and captured once as lambda argument with the corresponding type
      * of the generic argument.
      * {@snippet lang=java :
@@ -245,14 +245,14 @@ public interface Template {
      * @param body The {@link TemplateBody} created by {@link Template#body}.
      * @param <A> Type of the (first) argument.
      * @param arg0Name The name of the (first) argument for hashtag replacement.
-     * @return A {@link UnfilledTemplate} with one argument.
+     * @return An {@link UnfilledTemplate} with one argument.
      */
     static <A> UnfilledTemplate.OneArgs<A> make(String arg0Name, Function<A, TemplateBody> body) {
         return new UnfilledTemplate.OneArgs<>(arg0Name, body);
     }
 
     /**
-     * Creates a {@link UnfilledTemplate} with two arguments.
+     * Creates an {@link UnfilledTemplate} with two arguments.
      * See {@link #body} for more details about how to construct a Template with {@link Token}s.
      *
      * <p>
@@ -274,14 +274,14 @@ public interface Template {
      * @param arg0Name The name of the first argument for hashtag replacement.
      * @param <B> Type of the second argument.
      * @param arg1Name The name of the second argument for hashtag replacement.
-     * @return A {@link UnfilledTemplate} with two arguments.
+     * @return An {@link UnfilledTemplate} with two arguments.
      */
     static <A, B> UnfilledTemplate.TwoArgs<A, B> make(String arg0Name, String arg1Name, BiFunction<A, B, TemplateBody> body) {
         return new UnfilledTemplate.TwoArgs<>(arg0Name, arg1Name, body);
     }
 
     /**
-     * Creates a {@link UnfilledTemplate} with three arguments.
+     * Creates an {@link UnfilledTemplate} with three arguments.
      * See {@link #body} for more details about how to construct a Template with {@link Token}s.
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
@@ -291,7 +291,7 @@ public interface Template {
      * @param arg1Name The name of the second argument for hashtag replacement.
      * @param <C> Type of the third argument.
      * @param arg2Name The name of the third argument for hashtag replacement.
-     * @return A {@link UnfilledTemplate} with three arguments.
+     * @return An {@link UnfilledTemplate} with three arguments.
      */
     static <A, B, C> UnfilledTemplate.ThreeArgs<A, B, C> make(String arg0Name, String arg1Name, String arg2Name, UnfilledTemplate.TriFunction<A, B, C, TemplateBody> body) {
         return new UnfilledTemplate.ThreeArgs<>(arg0Name, arg1Name, arg2Name, body);
@@ -325,7 +325,7 @@ public interface Template {
 
     /**
      * Retrieves the dollar replacement of the {@code 'name'} for the
-     * current Template that is being instanciated. It returns the same
+     * current Template that is being instantiated. It returns the same
      * dollar replacement as the string use {@code "$name"}.
      *
      * Here an example where a Template creates a local variable {@code 'var'},
@@ -354,14 +354,14 @@ public interface Template {
      * var template = Template.make("a", (Integer a) -> body(
      *     let("b", a * 5),
      *     """
-     *     System.out.prinln("Use a and b with hashtag replacement: #a and #b");
+     *     System.out.println("Use a and b with hashtag replacement: #a and #b");
      *     """
      * ));
      * }
      *
      * @param key Name for the hashtag replacement.
      * @param value The value that the hashtag is replaced with.
-     * @return A token that does nothing, so that the {@link #let} cal can easily be put in a list of tokens
+     * @return A token that does nothing, so that the {@link #let} can easily be put in a list of tokens
      *         inside a {@link Template#body}.
      * @throws RendererException if there is a duplicate hashtag {@code key}.
      */
@@ -387,7 +387,7 @@ public interface Template {
      * @param value The value that the hashtag is replaced with.
      * @param <T> The type of the value.
      * @param function The function that is applied with the provided {@code 'value'}.
-     * @return A token that does nothing, so that the {@link #let} cal can easily be put in a list of tokens
+     * @return A token that does nothing, so that the {@link #let} can easily be put in a list of tokens
      *         inside a {@link Template#body}.
      * @throws RendererException if there is a duplicate hashtag {@code key}.
      */
@@ -402,13 +402,13 @@ public interface Template {
     public final static float DEFAULT_FUEL = 100.0f;
 
     /**
-     * The default amount of fuel spent per Template. It is suptracted from the current {@link #fuel} at every
+     * The default amount of fuel spent per Template. It is subtracted from the current {@link #fuel} at every
      * nesting level, and once the {@link #fuel} reaches zero, the nesting is supposed to terminate.
      */
     public final static float DEFAULT_FUEL_COST = 10.0f;
 
     /**
-     * The current remaining fuel for nested Templates. Every level of Template nestig
+     * The current remaining fuel for nested Templates. Every level of Template nesting
      * subtracts a certain amount of fuel, and when it reaches zero, Templates are supposed to
      * stop nesting, if possible. This is not a hard rule, but a guide, and a mechanism to ensure
      * termination in recursive Template instantiations.
@@ -416,7 +416,7 @@ public interface Template {
      * <p>
      * Example of a recursive Template, which checks the remaining {@link #fuel} at every level,
      * and terminates if it reaches zero. It also demonstrates the use of {@link TemplateBinding} for
-     * the recursive use of Templates. We {@link FilledTemplate#render} with {@code 30} total fuel, and spending {@code 5} fuel at each recursion level.
+     * the recursive use of Templates. We {@link FilledTemplate#render} with {@code 30} total fuel, and spend {@code 5} fuel at each recursion level.
      * {@snippet lang=java :
      * var binding = new TemplateBinding<UnfilledTemplate.OneArgs<Integer>>();
      * var template = Template.make("depth", (Integer depth) -> body(

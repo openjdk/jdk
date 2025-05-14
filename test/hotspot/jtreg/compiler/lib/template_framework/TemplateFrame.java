@@ -33,7 +33,7 @@ import java.util.Map;
  * key-value pairs from the template argument and the {@link Template#let} definitions.
  * The {@link parent} relationship provides a trace for the use chain of templates.
  * The {@link fuel} is reduced over this chain, to give a heuristic on how much time
- * is spend on the code from the template corrsponding to the frame, and to give a
+ * is spent on the code from the template corresponding to the frame, and to give a
  * termination criterion to avoid nesting templates too deeply.
  *
  * <p>

@@ -25,7 +25,7 @@ package compiler.lib.template_framework;
 
 /**
  * To facilitate recursive uses of Templates, e.g. where a template uses
- * itself, where a template needs to be referenced before it is fully defined,
+ * itself and needs to be referenced before it is fully defined,
  * one can use the indirection of a {@link TemplateBinding}. The {@link TemplateBinding}
  * is allocated first without any Template bound to it yet. At this stage,
  * it can be used with {@link #get} inside a Template. Later, we can {@link #bind}

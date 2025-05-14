@@ -48,7 +48,7 @@ public class TestSimple {
         // Compile the source file.
         comp.compile();
 
-        // Object ret = p.xyz.InnterTest.test();
+        // Object ret = p.xyz.InnerTest.test();
         Object ret = comp.invoke("p.xyz.InnerTest", "test", new Object[] {});
         System.out.println("res: " + ret);
 

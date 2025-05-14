@@ -77,7 +77,7 @@ public class TestAdvanced {
         // Compile the source file.
         comp.compile();
 
-        // Object ret = p.xyz.InnterTest.main();
+        // Object ret = p.xyz.InnerTest.main();
         comp.invoke("p.xyz.InnerTest", "main", new Object[] {});
     }
 
@@ -93,7 +93,7 @@ public class TestAdvanced {
         // The test template:
         // - For a chosen type, operator, and generator.
         // - The variable name "GOLD" and the test name "test" would get conflicts
-        //   if we instanciate the template multiple times. Thus, we use the $ prefix
+        //   if we instantiate the template multiple times. Thus, we use the $ prefix
         //   so that the Template Framework can replace the names and make them unique
         //   for each Template instantiation.
         // - The GOLD value is computed at the beginning, hopefully by the interpreter.
