@@ -208,8 +208,7 @@ final class RSAClientKeyExchange {
                         "Not supported key exchange type");
             } else {
                 SSLKeyDerivation masterKD = ke.createKeyDerivation(chc);
-                SecretKey masterSecret =
-                        masterKD.deriveKey("MasterSecret", null);
+                SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
 
                 // update the states
                 chc.handshakeSession.setMasterSecret(masterSecret);
@@ -299,8 +298,7 @@ final class RSAClientKeyExchange {
                         "Not supported key exchange type");
             } else {
                 SSLKeyDerivation masterKD = ke.createKeyDerivation(shc);
-                SecretKey masterSecret =
-                        masterKD.deriveKey("MasterSecret", null);
+                SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
 
                 // update the states
                 shc.handshakeSession.setMasterSecret(masterSecret);

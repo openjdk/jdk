@@ -206,8 +206,7 @@ final class DHClientKeyExchange {
                         "Not supported key exchange type");
             } else {
                 SSLKeyDerivation masterKD = ke.createKeyDerivation(chc);
-                SecretKey masterSecret =
-                        masterKD.deriveKey("MasterSecret", null);
+                SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
                 chc.handshakeSession.setMasterSecret(masterSecret);
                 chc.handshakeSession.setRandoms(
                         chc.clientHelloRandom, chc.serverHelloRandom);
@@ -304,8 +303,7 @@ final class DHClientKeyExchange {
 
             // update the states
             SSLKeyDerivation masterKD = ke.createKeyDerivation(shc);
-            SecretKey masterSecret =
-                    masterKD.deriveKey("MasterSecret", null);
+            SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
             shc.handshakeSession.setMasterSecret(masterSecret);
             shc.handshakeSession.setRandoms(
                     shc.clientHelloRandom, shc.serverHelloRandom);
