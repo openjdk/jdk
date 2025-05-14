@@ -313,6 +313,12 @@ final class StableFieldUpdaterGenerator {
         }
     }
 
+    static Class<?> componentTypeDeep(Class<?> type) {
+        return type.isArray()
+                ? componentTypeDeep(type.componentType())
+                : type;
+    }
+
     // Caching of Shapes
 
     private static final Map<Shape, Maker> MAKERS = new ConcurrentHashMap<>();

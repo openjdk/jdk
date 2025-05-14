@@ -164,6 +164,61 @@ final class StableFieldUpdaterExampleTest {
         }
     }
 
+    static
+
+    public final class LazySpecifiedFoo {
+
+        private final Bar bar;
+        private final Baz baz;
+
+        private static final MethodHandle HASH_UPDATER;
+
+        static {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            try {
+                VarHandle accessor = lookup.findVarHandle(LazySpecifiedFoo.class, "hash", long.class);
+                MethodHandle underlying = lookup.findStatic(LazySpecifiedFoo.class, "hashCodeFor", MethodType.methodType(long.class, LazySpecifiedFoo.class));
+
+                // Replaces zero with 2^32. Bits 32-63 will then be masked away by the
+                // `hashCode()` method using an (int) cast.
+                underlying = StableFieldUpdater.replaceLongZero(underlying, 1L << 32);
+
+                HASH_UPDATER = StableFieldUpdater.atMostOnce(accessor, underlying);
+            } catch (ReflectiveOperationException e) {
+                throw new InternalError(e);
+            }
+        }
+
+        @Stable
+        private long hash;
+
+        public LazySpecifiedFoo(Bar bar, Baz baz) {
+            this.bar = bar;
+            this.baz = baz;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Foo that
+                    && Objects.equals(this.bar, that.bar)
+                    && Objects.equals(this.baz, that.baz);
+        }
+
+        @Override
+        public int hashCode() {
+            try {
+                return (int) (long) HASH_UPDATER.invokeExact(this);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private static long hashCodeFor(LazySpecifiedFoo foo) {
+            return Objects.hash(foo.bar, foo.baz);
+        }
+    }
+
+
     @Test
     void lazy() {
         var bar = new Bar(1);

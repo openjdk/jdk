@@ -79,9 +79,18 @@ import static jdk.internal.lang.stable.StableFieldUpdaterGenerator.*;
  *         private final Bar bar;
  *         private final Baz baz;
  *
- *         private static final ToIntFunction<LazyFoo> HASH_UPDATER =
- *                 StableFieldUpdater.ofInt(LazyFoo.class, "hash",
- *                         l -> Objects.hash(l.bar, l.baz));
+ *         private static final MethodHandle HASH_UPDATER;
+ *
+ *         static {
+ *             MethodHandles.Lookup lookup = MethodHandles.lookup();
+ *             try {
+ *                 VarHandle accessor = lookup.findVarHandle(LazyFoo.class, "hash", int.class);
+ *                 MethodHandle underlying = lookup.findStatic(LazyFoo.class, "hashCodeFor", MethodType.methodType(int.class, LazyFoo.class));
+ *                 HASH_UPDATER = StableFieldUpdater.atMostOnce(accessor, underlying);
+ *             } catch (ReflectiveOperationException e) {
+ *                 throw new InternalError(e);
+ *             }
+ *         }
  *
  *         @Stable
  *         private int hash;
@@ -100,15 +109,21 @@ import static jdk.internal.lang.stable.StableFieldUpdaterGenerator.*;
  *
  *         @Override
  *         public int hashCode() {
- *             return HASH_UPDATER.applyAsInt(this);
+ *             try {
+ *                 return (int) HASH_UPDATER.invokeExact(this);
+ *             } catch (Throwable e) {
+ *                 throw new RuntimeException(e);
+ *             }
+ *         }
+ *
+ *         private static int hashCodeFor(LazyFoo foo) {
+ *             return Objects.hash(foo.bar, foo.baz);
  *         }
  *     }
  *}
  * <p>
- * If the underlying hash lamba returns zero, it is replaced with {@code -1}. It is legal
- * to provide {@code 0} as a replacement in which case there will be no replacement and
- * the hash code will be {@code 0}. In such cases, {@link @Stable} fields cannot be
- * constant-folded.
+ * If the underlying hash lamba returns zero, the hash code will be {@code 0}. In such
+ * cases, {@link @Stable} fields cannot be constant-folded.
  * <p>
  * In cases where the entire range of hash codes are strictly specified (as it is for
  * {@code String}), a {@code long} field can be used instead, and a value of
@@ -116,14 +131,28 @@ import static jdk.internal.lang.stable.StableFieldUpdaterGenerator.*;
  * then just cast to an {@code int} as shown in this example:
  *
  * {@snippet lang = java:
- *     public final class LazySpecifiedFoo {
+ *    public final class LazySpecifiedFoo {
  *
  *         private final Bar bar;
  *         private final Baz baz;
  *
- *         private static final ToLongFunction<LazySpecifiedFoo> HASH_UPDATER =
- *                 StableFieldUpdater.ofLong(LazySpecifiedFoo.class, "hash",
- *                 StableFieldUpdater.replaceLongZero(LazySpecifiedFoo::hashCodeFor, 1L << 32));
+ *         private static final MethodHandle HASH_UPDATER;
+ *
+ *         static {
+ *             MethodHandles.Lookup lookup = MethodHandles.lookup();
+ *             try {
+ *                 VarHandle accessor = lookup.findVarHandle(LazySpecifiedFoo.class, "hash", long.class);
+ *                 MethodHandle underlying = lookup.findStatic(LazySpecifiedFoo.class, "hashCodeFor", MethodType.methodType(long.class, LazySpecifiedFoo.class));
+ *
+ *                 // Replaces zero with 2^32. Bits 32-63 will then be masked away by the
+ *                 // `hashCode()` method using an (int) cast.
+ *                 underlying = StableFieldUpdater.replaceLongZero(underlying, 1L << 32);
+ *
+ *                 HASH_UPDATER = StableFieldUpdater.atMostOnce(accessor, underlying);
+ *             } catch (ReflectiveOperationException e) {
+ *                 throw new InternalError(e);
+ *             }
+ *         }
  *
  *         @Stable
  *         private long hash;
@@ -135,17 +164,21 @@ import static jdk.internal.lang.stable.StableFieldUpdaterGenerator.*;
  *
  *         @Override
  *         public boolean equals(Object o) {
- *             return (o instanceof Foo that)
+ *             return o instanceof Foo that
  *                     && Objects.equals(this.bar, that.bar)
  *                     && Objects.equals(this.baz, that.baz);
  *         }
  *
  *         @Override
  *         public int hashCode() {
- *             return (int) HASH_UPDATER.applyAsLong(this);
+ *             try {
+ *                 return (int) (long) HASH_UPDATER.invokeExact(this);
+ *             } catch (Throwable e) {
+ *                 throw new RuntimeException(e);
+ *             }
  *         }
  *
- *         static long hashCodeFor(LazySpecifiedFoo foo) {
+ *         private static long hashCodeFor(LazySpecifiedFoo foo) {
  *             return Objects.hash(foo.bar, foo.baz);
  *         }
  *     }
@@ -153,60 +186,9 @@ import static jdk.internal.lang.stable.StableFieldUpdaterGenerator.*;
  * The example above also features a static method {@code hashCodeFor()} that acts as
  * the underlying hash function. This method can reside in another class.
  * <p>
- * Here is another example where a more low-level approach with VarHandle and MethodHandle
- * parameters is used:
  *
- * {@snippet lang=java:
-    public final class MhFoo {
-
-        private final Bar bar;
-        private final Baz baz;
-
-        private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-
-        private static final ToIntFunction<MhFoo> HASH_UPDATER =
-                StableFieldUpdater.ofInt(
-                        MhUtil.findVarHandle(LOOKUP, "hash", int.class),
-                        MhUtil.findStatic(LOOKUP, "hashCodeFor", MethodType.methodType(int.class, MhFoo.class)));
-
-        @Stable
-        private int hash;
-
-        public MhFoo(Bar bar, Baz baz) {
-            this.bar = bar;
-            this.baz = baz;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return o instanceof Foo that
-                    && Objects.equals(this.bar, that.bar)
-                    && Objects.equals(this.baz, that.baz);
-        }
-
-        @Override
-        public int hashCode() {
-            return HASH_UPDATER.applyAsInt(this);
-        }
-
-        // Used reflectively
-        static int hashCodeFor(MhFoo foo) {
-            return Objects.hash(foo.bar, foo.baz);
-        }
-    }
- * }
- * There is a convenience method for the idiomatic case above that looks like this:
- * {@snippet lang=java:
-
-        private static final ToIntFunction<MhFoo> HASH_UPDATER =
-                StableFieldUpdater.ofInt(MethodHandles.lookup(), "hash", "hashCodeFor"));
- * }
- * This will use the provided {@link MethodHandles#lookup()} to look up the field
- * {@code hash} and also use the same lookup to look up a static method that takes
- * a {@code MhFoo} and returns an {@code int}.
- *
- * The provided {@code underlying} function must not recurse or the result of the
- * operation is unspecified.
+ * The provided {@code underlying} function must not recurse or an IllegalStateException
+ * will be thrown.
  * <p>
  * If a reference value of {@code null} is used as a parameter in any of the methods
  * in this class, a {@link NullPointerException} is thrown.
@@ -283,12 +265,6 @@ public final class StableFieldUpdater {
             // state initialization can be reordered with other store ops.
             return VarHandle.AccessMode.GET_ACQUIRE;
         }
-    }
-
-    static Class<?> leafClass(Class<?> type) {
-        return type.isArray()
-                ? leafClass(type.componentType())
-                : type;
     }
 
     /**
