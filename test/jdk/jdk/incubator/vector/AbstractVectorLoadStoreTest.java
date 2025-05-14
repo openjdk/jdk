@@ -48,20 +48,6 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
     static final Collection<ByteOrder> BYTE_ORDER_VALUES = Set.of(
             ByteOrder.BIG_ENDIAN, ByteOrder.LITTLE_ENDIAN);
 
-    static final List<IntFunction<ByteBuffer>> BYTE_BUFFER_GENERATORS = List.of(
-            withToString("HB:RW:NE", (int s) ->
-                    ByteBuffer.allocate(s)
-                        .order(ByteOrder.nativeOrder())),
-            withToString("DB:RW:NE", (int s) ->
-                    ByteBuffer.allocateDirect(s)
-                        .order(ByteOrder.nativeOrder())),
-            withToString("MS:RW:NE", (int s) ->
-                    Arena.ofAuto().allocate(s)
-                        .asByteBuffer()
-                        .order(ByteOrder.nativeOrder())
-            )
-    );
-
     static final int SHUFFLE_BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 256);
 
     static final List<IntFunction<int[]>> SHUFFLE_INT_GENERATORS = List.of(
@@ -73,15 +59,6 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
                 return fill(s * SHUFFLE_BUFFER_REPS,
                         i -> (((int)(i + 1) == 0) ? 1 : (int)(i + 1)));
             })
-    );
-
-    static final List<IntFunction<int[]>> SHUFFLE_INDEX_GENERATOR = List.of(
-            withToString("CONSECUTIVE", (int s) ->
-                    IntStream.range(0,s).toArray()
-            ),
-            withToString("LARGE", (int s) ->
-                    IntStream.iterate(-1, i -> Integer.MAX_VALUE).limit(s).toArray()
-            )
     );
 
     static final List<IntFunction<Integer>> SHUFFLE_INDEX_GENERATORS = List.of(
@@ -113,34 +90,6 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
             withToString("l + 1", (int l) -> {
                 return l + 1;
             })
-    );
-
-    static final List<IntFunction<MemorySegment>> SHUFFLE_MEMORY_GENERATOR = List.of(
-            withToString("SetSized", (int s) -> MemorySegment.ofArray(new int[s]))
-    );
-
-    static final List<IntFunction<int[]>> SHUFFLE_ARRAY_GENERATOR = List.of(
-            withToString("Sized", (int s) -> new int[s])
-    );
-
-    static final List<IntFunction<MemorySegment>> SHUFFLE_MEMORY_IOOBE_GENERATOR = List.of(
-            withToString("Sized - 1", (int s) -> MemorySegment.ofArray(new int[s - 1]))
-    );
-
-    static final List<IntFunction<int[]>> SHUFFLE_ARRAY_IOOBE_GENERATOR = List.of(
-            withToString("Sized - 1", (int s) -> new int[s - 1])
-    );
-
-    static final List<Supplier<ByteOrder>> SHUFFLE_BYTE_ORDER = List.of(
-            withToStringP("BigEndian", () ->
-                    ByteOrder.BIG_ENDIAN
-            ),
-            withToStringP("LittleEndian", () ->
-                    ByteOrder.LITTLE_ENDIAN
-            ),
-            withToStringP("NativeOrder", () ->
-                    ByteOrder.nativeOrder()
-            )
     );
 
     @DataProvider
@@ -175,48 +124,7 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
         var f = SHUFFLE_INT_GENERATORS.get(0);
         return SHUFFLE_BYTE_INDEX_GENERATORS.stream().map(fi -> {
                     return new Object[] {f, fi};
-                })
-                .toArray(Object[][]::new);
-    }
-
-
-    @DataProvider
-    public Object[][] shuffleIndexArrayProvider() {
-        return SHUFFLE_INDEX_GENERATOR.stream()
-                .map(i -> new Object[]{i})
-                .toArray(Object[][]::new);
-
-    }
-
-    @DataProvider
-    public Object[][] shuffleIndexStoreIOOBEArrayProvider() {
-        return SHUFFLE_INDEX_GENERATOR.stream()
-                .flatMap(idx -> SHUFFLE_ARRAY_IOOBE_GENERATOR.stream()
-                        .map(oob -> new Object[]{idx, oob})).toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] shuffleIndexLoadIOOBEArrayProvider() {
-        return SHUFFLE_ARRAY_IOOBE_GENERATOR.stream()
-                .map(i -> new Object[]{i})
-                .toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] shuffleIndexMemoryProvider() {
-        return SHUFFLE_INDEX_GENERATOR.stream()
-                .flatMap(idx -> SHUFFLE_MEMORY_GENERATOR.stream()
-                        .flatMap(mem -> SHUFFLE_BYTE_ORDER.stream()
-                                .map((bo) -> new Object[]{idx, mem, bo})))
-                        .toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] shuffleIndexIOOBEProvider() {
-        return SHUFFLE_INDEX_GENERATOR.stream()
-                .flatMap(idx -> SHUFFLE_MEMORY_IOOBE_GENERATOR.stream()
-                        .map(mem -> new Object[]{idx, mem}))
-                        .toArray(Object[][]::new);
+                }).toArray(Object[][]::new);
     }
 
     static MemorySegment toShuffleSegment(VectorSpecies<?> vsp, int[] a, IntFunction<MemorySegment> fb) {
