@@ -136,7 +136,7 @@ class AppWithCustomLoaders {
             throw new RuntimeException("Unexpected module: " + c1.getModule());
         }
         if (c1.getModule() == c0.getModule()) {
-            throw new RuntimeException("Unexpected class loader: " + c1.getClassLoader());
+            throw new RuntimeException("Unexpected module: " + c1.getModule());
         }
         if (c1.getClassLoader() == c0.getClassLoader()) {
             throw new RuntimeException("Unexpected class loader: " + c1.getClassLoader());

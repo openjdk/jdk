@@ -1283,7 +1283,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
 
   const char* const class_name = ik->name()->as_C_string();
   const char* const file_name = file_name_for_class_name(class_name,
-                                                           ik->name()->utf8_length());
+                                                         ik->name()->utf8_length());
   assert(file_name != nullptr, "invariant");
   ClassLoaderExt::record_result_for_builtin_loader(checked_cast<s2>(classpath_index), ik, redefined);
 }
