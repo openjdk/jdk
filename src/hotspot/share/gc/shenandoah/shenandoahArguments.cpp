@@ -195,9 +195,10 @@ void ShenandoahArguments::initialize() {
   // Current default is good for generational collectors that run frequent young GCs.
   // With Shenandoah, GC cycles are much less frequent, so we need we need sizing policy
   // to converge faster over smaller number of resizing decisions.
-  if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
+  if (strcmp(ShenandoahGCMode, "generational") && FLAG_IS_DEFAULT(TLABAllocationWeight)) {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
   }
+  // In generational mode, let TLABAllocationWeight keeps its default value of 35.
 
   if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
     vm_exit_during_initialization(
@@ -228,6 +229,15 @@ void ShenandoahArguments::initialize_alignments() {
   }
   SpaceAlignment = align;
   HeapAlignment = align;
+
+  if (FLAG_IS_DEFAULT(TLABSize)) {
+    TLABSize = ShenandoahHeapRegion::region_size_bytes() / 128;
+  }
+#undef KELVIN_ARGUMENTS
+#ifdef KELVIN_ARGUMENTS
+  log_info(gc)("TLABAllocationWeight: %u", (unsigned int) TLABAllocationWeight);
+  log_info(gc)("            TLABSize: %zu", (size_t) TLABSize);
+#endif
 }
 
 CollectedHeap* ShenandoahArguments::create_heap() {
