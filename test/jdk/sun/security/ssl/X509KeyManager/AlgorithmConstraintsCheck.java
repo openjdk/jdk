@@ -96,13 +96,11 @@ public class AlgorithmConstraintsCheck {
         } else {
             assertNull(serverAlias);
             assertNull(clientAlias);
-
         }
     }
 
     private static X509KeyManager getKeyManager(String kmAlg,
-            String certSignatureAlg)
-            throws Exception {
+            String certSignatureAlg) throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_TYPE);
         KeyPair caKeys = kpg.generateKeyPair();
         KeyPair endpointKeys = kpg.generateKeyPair();

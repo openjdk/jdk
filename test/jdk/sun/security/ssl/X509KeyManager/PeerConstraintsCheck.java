@@ -43,6 +43,7 @@ import java.util.Date;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.X509ExtendedTrustManager;
 import jdk.test.lib.security.CertificateBuilder;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
@@ -69,9 +70,12 @@ import sun.security.x509.X500Name;
 
 public class PeerConstraintsCheck extends SSLSocketTemplate {
 
-    private static final String CLIENT_CERT_SIG_ALG = "SHA384withRSA";
-    private static final String SERVER_CERT_SIG_ALG = "SHA256withRSA";
-    private static final String TRUSTED_CERT_SIG_ALG = "SHA512withRSA";
+    private static final String KEY_ALGORITHM = "EC";
+    private static final String CLIENT_CERT_SIG_SCHEME =
+            "ecdsa_secp384r1_sha384";
+    private static final String CLIENT_CERT_SIG_ALG = "SHA384withECDSA";
+    private static final String SERVER_CERT_SIG_ALG = "SHA256withECDSA";
+    private static final String TRUSTED_CERT_SIG_ALG = "SHA512withECDSA";
 
     private final String kmAlg;
     private X509Certificate trustedCert;
@@ -90,9 +94,9 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
         // Make sure both client and server support client's signature scheme,
         // so the exception happens later during KeyManager's algorithm check.
         System.setProperty(
-                "jdk.tls.client.SignatureSchemes", "rsa_pkcs1_sha384");
+                "jdk.tls.client.SignatureSchemes", CLIENT_CERT_SIG_SCHEME);
         System.setProperty(
-                "jdk.tls.server.SignatureSchemes", "rsa_pkcs1_sha384");
+                "jdk.tls.server.SignatureSchemes", CLIENT_CERT_SIG_SCHEME);
 
         String disabled = args[0];
         String kmAlg = args[1];
@@ -106,10 +110,9 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
             runAndCheckException(
                     () -> new PeerConstraintsCheck(kmAlg).run(),
                     ex -> {
-                        assertTrue(
-                                ex instanceof javax.net.ssl.SSLHandshakeException);
+                        assertTrue(ex instanceof SSLHandshakeException);
                         assertEquals(ex.getMessage(), "(handshake_failure) "
-                                + "no cipher suites in common");
+                                + "No available authentication scheme");
                     }
             );
         }
@@ -127,9 +130,8 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
                 trustedCert, clientCert, clientKeys.getPrivate(), kmAlg);
     }
 
-    private static SSLContext getSSLContext(
-            X509Certificate trustedCertificate, X509Certificate keyCertificate,
-            PrivateKey privateKey, String kmAlg)
+    private static SSLContext getSSLContext(X509Certificate trustedCertificate,
+            X509Certificate keyCertificate, PrivateKey privateKey, String kmAlg)
             throws Exception {
 
         // create a key store
@@ -148,9 +150,7 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
         final char[] passphrase = "passphrase".toCharArray();
         ks.setKeyEntry("Whatever", privateKey, passphrase, chain);
 
-        // Use TLSv1.2 which supports SHA*withRSA algorithms for both handshake
-        // and certificate signatures.
-        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+        SSLContext ctx = SSLContext.getInstance("TLS");
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(kmAlg);
         kmf.init(ks, passphrase);
@@ -205,7 +205,7 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
     // Certificate-building helper methods.
 
     private void setupCertificates() throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_ALGORITHM);
         KeyPair caKeys = kpg.generateKeyPair();
         this.serverKeys = kpg.generateKeyPair();
         this.clientKeys = kpg.generateKeyPair();
@@ -219,7 +219,8 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
                 .build(trustedCert, caKeys.getPrivate(), SERVER_CERT_SIG_ALG);
 
         this.clientCert = customCertificateBuilder(
-                "CN=localhost, OU=SSL-Client, O=Some-Org, L=Some-City, ST=Some-State, C=US",
+                "CN=localhost, OU=SSL-Client, O=Some-Org, L=Some-City,"
+                        + " ST=Some-State, C=US",
                 clientKeys.getPublic(), caKeys.getPublic())
                 .addBasicConstraintsExt(false, false, -1)
                 .build(trustedCert, caKeys.getPrivate(), CLIENT_CERT_SIG_ALG);
@@ -228,7 +229,6 @@ public class PeerConstraintsCheck extends SSLSocketTemplate {
     private static X509Certificate createTrustedCert(KeyPair caKeys)
             throws Exception {
         SecureRandom random = new SecureRandom();
-
         KeyIdentifier kid = new KeyIdentifier(caKeys.getPublic());
         GeneralNames gns = new GeneralNames();
         GeneralName name = new GeneralName(new X500Name(
