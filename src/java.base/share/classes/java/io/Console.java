@@ -59,6 +59,12 @@ import sun.nio.cs.UTF_8;
  * on the objects returned by {@link #reader()} and {@link #writer()} may
  * block in multithreaded scenarios.
  * <p>
+ * Read and write operations use the {@code Charset} returned by the
+ * {@link #charset()} method, unless {@link System##stdin.encoding
+ * stdin.encoding} differs from {@link System##stdout.encoding
+ * stdout.encoding}, in which case read operations use the {@code Charset}
+ * designated by {@code stdin.encoding}.
+ * <p>
  * Operations that format strings are locale sensitive, using either the
  * specified {@code Locale}, or the
  * {@link Locale##default_locale default format Locale} to produce localized
@@ -549,7 +555,9 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     private static final boolean istty = istty();
-    static final Charset CHARSET =
+    static final Charset STDIN_CHARSET =
+        Charset.forName(System.getProperty("stdin.encoding"), UTF_8.INSTANCE);
+    static final Charset STDOUT_CHARSET =
         Charset.forName(System.getProperty("stdout.encoding"), UTF_8.INSTANCE);
     private static final Console cons = instantiateConsole();
     static {
@@ -579,7 +587,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
             for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
                 if (consModName.equals(jcp.getClass().getModule().getName())) {
-                    var jc = jcp.console(istty, CHARSET);
+                    var jc = jcp.console(istty, STDIN_CHARSET, STDOUT_CHARSET);
                     if (jc != null) {
                         c = new ProxyingConsole(jc);
                     }
@@ -591,7 +599,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
         // If not found, default to built-in Console
         if (istty && c == null) {
-            c = new ProxyingConsole(new JdkConsoleImpl(CHARSET));
+            c = new ProxyingConsole(new JdkConsoleImpl(STDIN_CHARSET, STDOUT_CHARSET));
         }
 
         return c;

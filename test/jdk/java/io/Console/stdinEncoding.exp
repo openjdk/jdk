@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
 # questions.
 #
 
-set java [lrange $argv 0 0]
-set locale [lrange $argv 1 1]
-set expected [lrange $argv 2 2]
-set args [lrange $argv 3 end]
-regexp {([a-zA-Z_]*).([a-zA-Z0-9\-]*)} $locale dummy lang_region encoding
+set java [lrange $argv 0 end]
 
-eval spawn $java -Dstdout.encoding=$encoding -classpath $args CharsetTest
-expect $expected
-expect eof
+eval spawn $java
+send "abc\r"
+
+# expect 4 'Z's converted with ZCharset with the input 'abc\r'
+expect "ZZZZ" {
+    expect eof
+    exit 0
+}
+exit 1
