@@ -129,6 +129,7 @@ public class ToolsOpts extends TestHelper {
         for (String pat : opts) {
             jopts = jopts.concat(pat + " ");
             if (tr.contains(" -J-")) {
+                System.err.println(tr);
                 throw new RuntimeException(
                         "failed: output should not contain option " + pat);
             }
