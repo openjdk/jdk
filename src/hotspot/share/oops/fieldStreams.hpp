@@ -166,7 +166,9 @@ class JavaFieldStream : public FieldStreamBase {
     return field()->initializer_index();
   }
 
-  void skip_fields_until(const Symbol *name, ConstantPool *cp);
+  // Performs either a linear search or binary search through the stream
+  // looking for a matchin name/signature combo
+  bool lookup(const Symbol *name, const Symbol *signature);
 };
 
 

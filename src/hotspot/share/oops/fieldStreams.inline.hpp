@@ -62,17 +62,23 @@ FieldStreamBase::FieldStreamBase(InstanceKlass* klass) :
   initialize();
 }
 
-inline void JavaFieldStream::skip_fields_until(const Symbol *name, ConstantPool *cp) {
-  if (done()) {
-    return;
+inline bool JavaFieldStream::lookup(const Symbol *name, const Symbol *signature) {
+  if (_limit > SORTED_FIELD_TABLE_THRESHOLD) {
+    int index = _reader.sorted_table_lookup(name, signature, _constants(), _limit);
+    if (index >= 0) {
+      assert(index < _limit, "must be");
+      _index = index;
+      _reader.read_field_info(_fi_buf);
+      return true;
+    }
+  } else {
+    for (; !done(); next()) {
+      if (this->name() == name && this->signature() == signature) {
+        return true;
+      }
+    }
   }
-  int index = _reader.skip_fields_until(name, cp, _limit);
-  if (index < 0) {
-    return;
-  }
-  assert(index > 0 && index < _limit && index % JUMP_TABLE_STRIDE == 0, "must be");
-  _index = index;
-  _reader.read_field_info(_fi_buf);
+  return false;
 }
 
 #endif // SHARE_OOPS_FIELDSTREAMS_INLINE_HPP

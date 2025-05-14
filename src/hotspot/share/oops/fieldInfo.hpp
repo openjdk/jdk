@@ -220,7 +220,8 @@ public:
   void map_field_info(const FieldInfo& fi);
 };
 
-#define JUMP_TABLE_STRIDE 16
+// Don't generate the table for small classes at all.
+#define SORTED_FIELD_TABLE_THRESHOLD 16
 
 // Gadget for decoding and reading the stream of field records.
 class FieldInfoReader {
@@ -237,9 +238,9 @@ public:
   void read_field_counts(int *java_fields, int *injected_fields) {
     *java_fields = _r.next_uint();
     *injected_fields = _r.next_uint();
-    if (*java_fields > JUMP_TABLE_STRIDE) {
-      uint32_t jumptable_offset = *reinterpret_cast<const uint32_t *>(_r.array() + _r.position());
-      _r.set_limit(jumptable_offset);
+    if (*java_fields > SORTED_FIELD_TABLE_THRESHOLD) {
+      uint32_t sorted_table_offset = *reinterpret_cast<const uint32_t *>(_r.array() + _r.position());
+      _r.set_limit(sorted_table_offset);
       _r.set_position(_r.position() + sizeof(uint32_t));
     }
   }
@@ -248,9 +249,7 @@ public:
   int next_index() const { return _next_index; }
   void read_field_info(FieldInfo& fi);
 
-  // Skips java fields based on condensed info in the jump table;
-  // stops at a point before first field with matching name.
-  int skip_fields_until(const Symbol *name, ConstantPool *cp, int java_fields);
+  int sorted_table_lookup(const Symbol *name, const Symbol *signature, ConstantPool *cp, int java_fields);
 
   // skip a whole field record, both required and optional bits
   FieldInfoReader&  skip_field_info();
@@ -266,8 +265,8 @@ public:
 // The format of the stream, after decompression, is a series of
 // integers organized like this:
 //
-//   FieldInfoStream := j=num_java_fields k=num_injected_fields JumpTable_offset(0/4 bytes) Field[j+k] JumpTable[(j - 1)/16 > 0] End
-//   JumpTable := stream_index[(j - 1)/16]
+//   FieldInfoStream := j=num_java_fields k=num_injected_fields SortedFieldTable_offset(0/4 bytes) Field[j+k] SortedFieldRecord[j] End
+//   SortedFieldRecord := stream_position(2-3 bytes) field_index(1-2 bytes)
 //   Field := name sig offset access flags Optionals(flags)
 //   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
 //                   gsig?[i&is_generic]     // signature attr
