@@ -93,36 +93,37 @@ public class IgnoredWhitespaceTest {
         g2d.setColor(Color.BLACK);
         g2d.drawString(text, x, y);
         Rectangle actual = findTextBoundingBox(image);
-        assertEqual(expected, actual, text);
+        assertEqual(expected, actual, text, font);
 
         g2d.setColor(Color.WHITE);
         g2d.fillRect(0, 0, w, h);
         g2d.setColor(Color.BLACK);
         g2d.drawString(new AttributedString(text, Map.of(TextAttribute.FONT, font)).getIterator(), x, y);
         actual = findTextBoundingBox(image);
-        assertEqual(expected, actual, text);
+        assertEqual(expected, actual, text, font);
 
         g2d.setColor(Color.WHITE);
         g2d.fillRect(0, 0, w, h);
         g2d.setColor(Color.BLACK);
         g2d.drawChars(text.toCharArray(), 0, text.length(), x, y);
         actual = findTextBoundingBox(image);
-        assertEqual(expected, actual, text);
+        assertEqual(expected, actual, text, font);
 
         g2d.setColor(Color.WHITE);
         g2d.fillRect(0, 0, w, h);
         g2d.setColor(Color.BLACK);
         g2d.drawGlyphVector(font.createGlyphVector(frc, text), x, y);
         actual = findTextBoundingBox(image);
-        assertEqual(expected, actual, text);
+        assertEqual(expected, actual, text, font);
     }
 
-    private static void assertEqual(Rectangle r1, Rectangle r2, String text) {
+    private static void assertEqual(Rectangle r1, Rectangle r2, String text, Font font) {
         if (!r1.equals(r2)) {
             String escaped = text.replace("\r", "\\r")
                                  .replace("\n", "\\n")
                                  .replace("\t", "\\t");
-            String msg = String.format("for text '%s': %s != %s", escaped, r1.toString(), r2.toString());
+            String msg = String.format("for text '%s' with font '%s': %s != %s",
+                escaped, font.getName(), r1.toString(), r2.toString());
             throw new RuntimeException(msg);
         }
     }
