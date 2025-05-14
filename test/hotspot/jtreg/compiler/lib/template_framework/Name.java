@@ -37,7 +37,7 @@ import java.util.List;
  * @param name The {@link String} name used in code.
  * @param type The type with which we restrict {@link Template#weighNames} and {@link Template#sampleName}.
  * @param mutable Defines if the name is considered mutable or immutable.
- * @param weight The weight measured by {@link Template#weighNames} and according to which we sample with {@link Template#sampleName}.
+ * @param weight The weight measured by {@link Template#weightNames} and according to which we sample with {@link Template#sampleName}.
  */
 public record Name(String name, Name.Type type, boolean mutable, int weight) {
 

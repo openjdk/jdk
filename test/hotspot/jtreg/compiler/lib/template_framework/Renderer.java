@@ -212,7 +212,7 @@ class Renderer {
                 CodeFrame outerCodeFrame = currentCodeFrame;
 
                 // We need a CodeFrame to which the hook can insert code. That way, name
-                // definitions at the hook cannot excape the hookCodeFrame.
+                // definitions at the hook cannot escape the hookCodeFrame.
                 CodeFrame hookCodeFrame = CodeFrame.make(outerCodeFrame);
                 hookCodeFrame.addHook(hook);
 
