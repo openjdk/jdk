@@ -28,8 +28,6 @@ import org.testng.annotations.Test;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Map;
 
 
 /*
@@ -52,7 +50,7 @@ public class VerifyRawIndexesTest {
         Field[] fields = Raw.class.getDeclaredFields();
         int expectedModifiers = Modifier.PRIVATE | Modifier.STATIC | Modifier.FINAL;
 
-        Map<Integer, String> map = new HashMap<>();
+        int next = 0;       // indexes start at zero
         int fixedLength = -1;
         for (Field f : fields) {
             try {
@@ -63,10 +61,11 @@ public class VerifyRawIndexesTest {
                     f.setAccessible(true);
                     int ndx = f.getInt(null);
                     System.out.printf("%s: %s%n", name, ndx);
-                    Assert.assertNull(map.put(ndx, name), "index should be unique");
+                    Assert.assertEquals(ndx, next, "index value wrong");
                     if (name.equals("FIXED_LENGTH")) {
-                        fixedLength = ndx;     // remember for final check
+                        fixedLength = next;     // remember for final check
                     }
+                    next++;
                 } else {
                     System.out.printf("Ignoring field: " + f);
                 }
@@ -74,11 +73,7 @@ public class VerifyRawIndexesTest {
                 Assert.fail("unexpected exception", iae);
             }
         }
-        int min = map.keySet().stream().mapToInt(i -> i).min().orElseThrow();
-        int max = map.keySet().stream().mapToInt(i -> i).max().orElseThrow();
-        Assert.assertEquals(min, 0, "Should start with 0");
-        Assert.assertEquals(map.size(), max + 1, "Should have unique items");
-        Assert.assertEquals(max, fixedLength,
+        Assert.assertEquals(next - 1, fixedLength,
                 "FIXED_LENGTH should be 1 greater than max of _NDX indexes");
     }
 }
