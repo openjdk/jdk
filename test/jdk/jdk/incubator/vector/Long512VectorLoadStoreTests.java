@@ -796,7 +796,7 @@ public class Long512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
    @Test(dataProvider = "shuffleIntByteProviderForIOOBE")
    static void shuffleLoadMemorySegmentIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
        MemorySegment a = toShuffleSegment(SPECIES, fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Integer.SIZE));
-       MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Integer.SIZE);
+       MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Long.SIZE);
 
        int l = (int) a.byteSize();
        int s = SPECIES.length() * 4;
@@ -825,7 +825,7 @@ public class Long512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
    @Test(dataProvider = "shuffleIntByteProviderForIOOBE")
    static void shuffleStoreMemorySegmentIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
        MemorySegment a = toShuffleSegment(SPECIES, fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Integer.SIZE));
-       MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Integer.SIZE);
+       MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Long.SIZE);
 
        int l = (int) a.byteSize();
        int s = SPECIES.length() * 4;

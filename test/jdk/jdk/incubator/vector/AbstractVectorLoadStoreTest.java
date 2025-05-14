@@ -112,7 +112,7 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
     @DataProvider
     public Object[][] shuffleIntMemorySegmentProvider() {
         return SHUFFLE_INT_GENERATORS.stream().
-                flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
+                flatMap(fa -> SHUFFLE_MEMORY_SEGMENT_GENERATORS.stream().
                         flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, bo};
                         }))).
@@ -128,17 +128,14 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
     }
 
     static MemorySegment toShuffleSegment(VectorSpecies<?> vsp, int[] a, IntFunction<MemorySegment> fb) {
-        MemorySegment ms;
-        int elementBytes = vsp.elementSize() / 8;
-        int shuffleLaneWidth = (elementBytes < 4) ? 4 : elementBytes; //widen lanes to integer-width if necessary
-        ms = fb.apply(a.length * shuffleLaneWidth);
+        MemorySegment ms = fb.apply(a.length * 4);
         for (int i = 0; i < a.length; i++) {
-            ms.set(ValueLayout.JAVA_INT.withByteAlignment(1), i * 4 , a[i]);
+            ms.set(ValueLayout.JAVA_INT_UNALIGNED, i * 4 , a[i]);
         }
         return ms;
     }
 
-    static final List<IntFunction<MemorySegment>> MEMORY_SEGMENT_GENERATORS = List.of(
+    private static final List<IntFunction<MemorySegment>> SHARED_MEMORY_SEGMENT_GENERATORS = List.of(
             withToString("DMS", (int s) ->
                     Arena.ofAuto().allocate(s)
             ),
@@ -156,14 +153,6 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
             }),
             withToString("HMS:float[]", (int s) -> {
                 float[] b = new float[s / Float.BYTES];
-                return MemorySegment.ofArray(b);
-            }),
-            withToString("HMS:long[]", (int s) -> {
-                long[] b = new long[s / Long.BYTES];
-                return MemorySegment.ofArray(b);
-            }),
-            withToString("HMS:double[]", (int s) -> {
-                double[] b = new double[s / Double.BYTES];
                 return MemorySegment.ofArray(b);
             }),
             withToString("HMS:ByteBuffer.wrap", (int s) -> {
@@ -185,13 +174,51 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
             withToString("HMS:IntBuffer.allocate", (int s) -> {
                 IntBuffer buff = IntBuffer.allocate(s / Integer.BYTES);
                 return MemorySegment.ofBuffer(buff);
-            }),
-            // Slice
-            withToString("HMS:long[].asSlice", (int s) -> {
-                long[] b = new long[s / Long.BYTES + 1];
-                return MemorySegment.ofArray(b).asSlice(Long.BYTES);
             })
     );
+
+
+    //These tests are adjusted to ensure we allocate enough memory for ints because we're passing
+    //a memory segment size of an int array in bytes, but it's subject to integer division of a longer
+    //array element.
+    static final List<IntFunction<MemorySegment>> SHUFFLE_MEMORY_SEGMENT_GENERATORS = Stream.concat(
+            SHARED_MEMORY_SEGMENT_GENERATORS.stream(),
+            Stream.of(
+                withToString("HMS:long[]:shuffle", (int s) -> {
+                    long[] b = new long[(s + Long.BYTES- 1) / Long.BYTES];
+                    return MemorySegment.ofArray(b);
+                }),
+
+                withToString("HMS:double[]:shuffle", (int s) -> {
+                    double[] b = new double[(s  + Double.BYTES - 1)/ Double.BYTES];
+                    return MemorySegment.ofArray(b);
+                }),
+                // Slice
+                withToString("HMS:long[].asSlice:shuffle", (int s) -> {
+                    long[] b = new long[(s + Long.BYTES - 1) / Long.BYTES + 1];
+                    return MemorySegment.ofArray(b).asSlice(Long.BYTES);
+                })
+            )
+    ).toList();
+
+    static final List<IntFunction<MemorySegment>> MEMORY_SEGMENT_GENERATORS = Stream.concat(
+            SHARED_MEMORY_SEGMENT_GENERATORS.stream(),
+            Stream.of(
+                    withToString("HMS:long[]", (int s) -> {
+                        long[] b = new long[s / Long.BYTES];
+                        return MemorySegment.ofArray(b);
+                    }),
+                    withToString("HMS:double[]", (int s) -> {
+                        double[] b = new double[s / Double.BYTES];
+                        return MemorySegment.ofArray(b);
+                    }),
+                    // Slice
+                    withToString("HMS:long[].asSlice", (int s) -> {
+                        long[] b = new long[s / Long.BYTES + 1];
+                        return MemorySegment.ofArray(b).asSlice(Long.BYTES);
+                    })
+            )
+    ).toList();
 
     private static final int[] fill(int s, IntUnaryOperator f) {
         return IntStream.range(0, s).map(f).toArray();
