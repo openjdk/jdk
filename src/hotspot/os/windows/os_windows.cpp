@@ -4615,7 +4615,12 @@ static bool is_symbolic_link(const wchar_t* wide_path)
 {
   WIN32_FIND_DATAW fd;
   HANDLE f = ::FindFirstFileW(wide_path, &fd);
-  return fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT && fd.dwReserved0 == IO_REPARSE_TAG_SYMLINK;
+  const bool result = fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT && fd.dwReserved0 == IO_REPARSE_TAG_SYMLINK;
+  if (0 == ::FindClose(f)) {
+    errno = ::GetLastError();
+    return false;
+  }
+  return result;
 }
 
 // This method dereferences a symbolic link
@@ -4640,6 +4645,12 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path)
   ::GetFinalPathNameByHandleW(hFile, path_to_target, static_cast<DWORD>(target_path_size + 1),
     FILE_NAME_NORMALIZED);
 
+  if (0 == ::CloseHandle(hFile)) {
+    errno = ::GetLastError();
+    return nullptr;
+  }
+
+  path_to_target[target_path_size] = '\0';
   return path_to_target;
 }
 
