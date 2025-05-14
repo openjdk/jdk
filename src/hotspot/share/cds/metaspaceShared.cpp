@@ -1079,10 +1079,10 @@ static int exec_jvm_with_java_tool_options(const char* java_launcher_path, TRAPS
     }
   }
 
-  // Note: because we are running in AOTMode=record, JAVA_AOT_OPTIONS have not been
-  // parsed, so they are not in Arguments::jvm_args_array. If JAVA_AOT_OPTIONS is in
-  // the environment, it will be inherited by the child JVM process, which will
-  // parse these options in Arguments::parse_java_tool_options_environment_variable()
+  // Note: because we are running in AOTMode=record, JDK_AOT_VM_OPTIONS have not been
+  // parsed, so they are not in Arguments::jvm_args_array. If JDK_AOT_VM_OPTIONS is in
+  // the environment, it will be inherited and parsed by the child JVM process
+  // in Arguments::parse_java_tool_options_environment_variable().
   precond(strcmp(AOTMode, "record") == 0);
 
   // We don't pass Arguments::jvm_flags_array(), as those will be added by

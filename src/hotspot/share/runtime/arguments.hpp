@@ -309,8 +309,8 @@ class Arguments : AllStatic {
   static jint parse_options_environment_variable(const char* name, ScopedVMInitArgs* vm_args);
   static jint parse_java_tool_options_environment_variable(ScopedVMInitArgs* vm_args);
   static jint parse_java_options_environment_variable(ScopedVMInitArgs* vm_args);
-  static jint parse_java_aot_options_environment_variable(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args,
-                                                          ScopedVMInitArgs* java_aot_options_args);
+  static jint parse_jdk_aot_vm_options_environment_variable(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args,
+                                                            ScopedVMInitArgs* jdk_aot_vm_options_args);
   static jint parse_vm_options_file(const char* file_name, ScopedVMInitArgs* vm_args);
   static jint parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args);
   static jint parse_xss(const JavaVMOption* option, const char* tail, intx* out_ThreadStackSize);

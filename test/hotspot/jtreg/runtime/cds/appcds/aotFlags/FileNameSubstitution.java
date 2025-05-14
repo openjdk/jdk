@@ -24,13 +24,13 @@
 
 /*
  * @test
- * @summary substitution of %p in AOTCache/AOTCacheOutput/AOTConfiguration
+ * @summary substitution of %p/%t in AOTCache/AOTCacheOutput/AOTConfiguration
  * @requires vm.cds
  * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
- * @run driver PIDSubstitution
+ * @run driver FileNameSubstitution
  */
 
 import java.io.File;
@@ -43,7 +43,7 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class PIDSubstitution {
+public class FileNameSubstitution {
     static String appJar = ClassFileInstaller.getJarPath("hello.jar");
     static String helloClass = "Hello";
 
@@ -69,7 +69,7 @@ public class PIDSubstitution {
 
         out = CDSTestUtils.executeAndLog(pb, "train");
         out.shouldContain("Hello World");
-        aotConfigFile = check(out, "test-", ".aotconfig");
+        aotConfigFile = find_pid_substituted_file(out, "test-", ".aotconfig");
         out.shouldContain("AOTConfiguration recorded: " + aotConfigFile);
         out.shouldHaveExitValue(0);
 
@@ -82,7 +82,7 @@ public class PIDSubstitution {
             "-cp", appJar);
 
         out = CDSTestUtils.executeAndLog(pb, "asm");
-        aotCacheFile = check(out, "test-", ".aot");
+        aotCacheFile = find_pid_substituted_file(out, "test-", ".aot");
         out.shouldContain("AOTCache creation is complete: " + aotCacheFile);
         out.shouldHaveExitValue(0);
 
@@ -95,7 +95,7 @@ public class PIDSubstitution {
             "-cp", appJar);
 
         out = CDSTestUtils.executeAndLog(pb, "asm");
-        aotCacheFile = check(out, "test-", ".aot");
+        aotCacheFile = find_pid_substituted_file(out, "test-", ".aot");
         out.shouldContain("AOTCache creation is complete: " + aotCacheFile);
         out.shouldHaveExitValue(0);
 
@@ -111,10 +111,26 @@ public class PIDSubstitution {
 
         out = CDSTestUtils.executeAndLog(pb, "train");
         out.shouldContain("Hello World");
-        aotConfigFile = check(out, "test-", ".aotconfig");
+        aotConfigFile = find_pid_substituted_file(out, "test-", ".aotconfig");
         out.shouldContain("AOTConfiguration recorded: " + aotConfigFile);
-        aotCacheFile = check(out, "test-", ".aot");
+        aotCacheFile = find_pid_substituted_file(out, "test-", ".aot");
         out.shouldContain("AOTCache creation is complete: " + aotCacheFile);
+        out.shouldHaveExitValue(0);
+
+
+        // The implementation of %t is exactly the same as %p, so just test one case
+        //----------------------------------------------------------------------
+        printTestCase("AOTConfiguration (two-command training) -- %t");
+        removeOutputFiles();
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTMode=record",
+            "-XX:AOTConfiguration=test-%t.aotconfig",
+            "-Xlog:os",
+            "-cp", appJar, helloClass);
+
+        out = CDSTestUtils.executeAndLog(pb, "train");
+        out.shouldContain("Hello World");
+        out.shouldContain("AOTConfiguration recorded: test-20"); // This should work for the nest 70 years or so ...
         out.shouldHaveExitValue(0);
     }
 
@@ -133,6 +149,18 @@ public class PIDSubstitution {
         out = CDSTestUtils.executeAndLog(pb, "train");
         out.shouldContain("AOTConfiguration cannot contain more than one %p");
         out.shouldHaveExitValue(1);
+
+        //----------------------------------------------------------------------
+        printTestCase("Cannot use %t twice");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTMode=record",
+            "-XX:AOTConfiguration=test-%t%t.aotconfig",
+            "-Xlog:os",
+            "-cp", appJar, helloClass);
+
+        out = CDSTestUtils.executeAndLog(pb, "train");
+        out.shouldContain("AOTConfiguration cannot contain more than one %t");
+        out.shouldHaveExitValue(1);
     }
 
     static void removeOutputFiles() {
@@ -149,7 +177,7 @@ public class PIDSubstitution {
         }
     }
 
-    static String check(OutputAnalyzer out, String prefix, String suffix) {
+    static String find_pid_substituted_file(OutputAnalyzer out, String prefix, String suffix) {
         String stdout = out.getStdout();
         Pattern pattern = Pattern.compile("Initialized VM with process ID ([0-9]+)");
         Matcher matcher = pattern.matcher(stdout);

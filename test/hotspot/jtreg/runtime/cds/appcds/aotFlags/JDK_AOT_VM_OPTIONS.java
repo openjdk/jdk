@@ -24,13 +24,13 @@
 
 /*
  * @test
- * @summary JAVA_AOT_OPTIONS environment variable
+ * @summary JDK_AOT_VM_OPTIONS environment variable
  * @requires vm.cds
  * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
- * @run driver JavaAOTOptionsEnvVar
+ * @run driver JDK_AOT_VM_OPTIONS
  */
 
 import java.io.File;
@@ -41,7 +41,7 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class JavaAOTOptionsEnvVar {
+public class JDK_AOT_VM_OPTIONS {
     static String appJar = ClassFileInstaller.getJarPath("hello.jar");
     static String aotConfigFile = "hello.aotconfig";
     static String aotCacheFile = "hello.aot";
@@ -52,7 +52,7 @@ public class JavaAOTOptionsEnvVar {
         OutputAnalyzer out;
 
         //----------------------------------------------------------------------
-        printTestCase("JAVA_AOT_OPTIONS (single-command training)");
+        printTestCase("JDK_AOT_VM_OPTIONS (single-command training)");
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTMode=record",
@@ -61,15 +61,15 @@ public class JavaAOTOptionsEnvVar {
             "-cp", appJar, helloClass);
         // The "-Xshare:off" below should be treated as part of a property value and not
         // a VM option by itself
-        pb.environment().put("JAVA_AOT_OPTIONS", "-Dsome.option='foo -Xshare:off ' -Xmx512m -XX:-AOTClassLinking");
+        pb.environment().put("JDK_AOT_VM_OPTIONS", "-Dsome.option='foo -Xshare:off ' -Xmx512m -XX:-AOTClassLinking");
         out = CDSTestUtils.executeAndLog(pb, "ontstep-train");
         out.shouldContain("Hello World");
         out.shouldContain("AOTCache creation is complete: hello.aot");
-        out.shouldContain("Picked up JAVA_AOT_OPTIONS: -Dsome.option='foo -Xshare:off '");
+        out.shouldContain("Picked up JDK_AOT_VM_OPTIONS: -Dsome.option='foo -Xshare:off '");
         checkAOTClassLinkingDisabled(out);
 
         //----------------------------------------------------------------------
-        printTestCase("JAVA_AOT_OPTIONS (two-command training)");
+        printTestCase("JDK_AOT_VM_OPTIONS (two-command training)");
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
@@ -88,13 +88,13 @@ public class JavaAOTOptionsEnvVar {
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:cds",
             "-cp", appJar);
-        pb.environment().put("JAVA_AOT_OPTIONS", "-XX:-AOTClassLinking");
+        pb.environment().put("JDK_AOT_VM_OPTIONS", "-XX:-AOTClassLinking");
         out = CDSTestUtils.executeAndLog(pb, "asm");
-        out.shouldContain("Picked up JAVA_AOT_OPTIONS:");
+        out.shouldContain("Picked up JDK_AOT_VM_OPTIONS:");
         checkAOTClassLinkingDisabled(out);
 
         //----------------------------------------------------------------------
-        printTestCase("JAVA_AOT_OPTIONS (with AOTMode specified in -XX:VMOptionsFile)");
+        printTestCase("JDK_AOT_VM_OPTIONS (with AOTMode specified in -XX:VMOptionsFile)");
         String optionsFile = "opts.txt";
         Files.writeString(Path.of(optionsFile), "-XX:AOTMode=create");
 
@@ -104,13 +104,13 @@ public class JavaAOTOptionsEnvVar {
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:cds",
             "-cp", appJar);
-        pb.environment().put("JAVA_AOT_OPTIONS", "-XX:-AOTClassLinking");
+        pb.environment().put("JDK_AOT_VM_OPTIONS", "-XX:-AOTClassLinking");
         out = CDSTestUtils.executeAndLog(pb, "asm");
-        out.shouldContain("Picked up JAVA_AOT_OPTIONS:");
+        out.shouldContain("Picked up JDK_AOT_VM_OPTIONS:");
         checkAOTClassLinkingDisabled(out);
 
         //----------------------------------------------------------------------
-        printTestCase("Using -XX:VMOptionsFile inside JAVA_AOT_OPTIONS)");
+        printTestCase("Using -XX:VMOptionsFile inside JDK_AOT_VM_OPTIONS)");
         Files.writeString(Path.of(optionsFile), "-XX:-AOTClassLinking");
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
@@ -119,9 +119,9 @@ public class JavaAOTOptionsEnvVar {
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:cds",
             "-cp", appJar);
-        pb.environment().put("JAVA_AOT_OPTIONS", "-XX:VMOptionsFile="  + optionsFile);
+        pb.environment().put("JDK_AOT_VM_OPTIONS", "-XX:VMOptionsFile="  + optionsFile);
         out = CDSTestUtils.executeAndLog(pb, "asm");
-        out.shouldContain("Picked up JAVA_AOT_OPTIONS:");
+        out.shouldContain("Picked up JDK_AOT_VM_OPTIONS:");
         checkAOTClassLinkingDisabled(out);
     }
 

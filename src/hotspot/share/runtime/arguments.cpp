@@ -3068,10 +3068,10 @@ static JavaVMOption* get_last_aotmode_arg(const JavaVMInitArgs* args) {
   return nullptr;
 }
 
-jint Arguments::parse_java_aot_options_environment_variable(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args,
-                                                            ScopedVMInitArgs* java_aot_options_args) {
+jint Arguments::parse_jdk_aot_vm_options_environment_variable(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args,
+                                                            ScopedVMInitArgs* jdk_aot_vm_options_args) {
   // Don't bother scanning all the args if this env variable is not set
-  if (::getenv("JAVA_AOT_OPTIONS") == nullptr) {
+  if (::getenv("JDK_AOT_VM_OPTIONS") == nullptr) {
     return JNI_OK;
   }
 
@@ -3088,17 +3088,17 @@ jint Arguments::parse_java_aot_options_environment_variable(GrowableArrayCHeap<V
     // We have found the last -XX:AOTMode=xxx. At this point <option> has NOT been parsed yet,
     // so its value is not reflected inside the global variable AOTMode.
     if (strcmp(option->optionString, "-XX:AOTMode=create") != 0) {
-      return JNI_OK; // Do not parse JAVA_AOT_OPTIONS
+      return JNI_OK; // Do not parse JDK_AOT_VM_OPTIONS
     }
   } else {
     // -XX:AOTMode is not specified in any of 4 options_args, let's check AOTMode,
     // which would have been set inside process_settings_file();
     if (AOTMode == nullptr || strcmp(AOTMode, "create") != 0) {
-      return JNI_OK; // Do not parse JAVA_AOT_OPTIONS
+      return JNI_OK; // Do not parse JDK_AOT_VM_OPTIONS
     }
   }
 
-  return parse_options_environment_variable("JAVA_AOT_OPTIONS", java_aot_options_args);
+  return parse_options_environment_variable("JDK_AOT_VM_OPTIONS", jdk_aot_vm_options_args);
 }
 
 jint Arguments::parse_options_environment_variable(const char* name,
@@ -3479,21 +3479,21 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   ScopedVMInitArgs initial_vm_options_args("");
   ScopedVMInitArgs initial_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
   ScopedVMInitArgs initial_java_options_args("env_var='_JAVA_OPTIONS'");
-  ScopedVMInitArgs initial_java_aot_options_args("env_var='JAVA_AOT_OPTIONS'");
+  ScopedVMInitArgs initial_jdk_aot_vm_options_args("env_var='JDK_AOT_VM_OPTIONS'");
 
   // Pointers to current working set of containers
   JavaVMInitArgs* cur_cmd_args;
   JavaVMInitArgs* cur_vm_options_args;
   JavaVMInitArgs* cur_java_options_args;
   JavaVMInitArgs* cur_java_tool_options_args;
-  JavaVMInitArgs* cur_java_aot_options_args;
+  JavaVMInitArgs* cur_jdk_aot_vm_options_args;
 
   // Containers for modified/expanded options
   ScopedVMInitArgs mod_cmd_args("cmd_line_args");
   ScopedVMInitArgs mod_vm_options_args("vm_options_args");
   ScopedVMInitArgs mod_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
   ScopedVMInitArgs mod_java_options_args("env_var='_JAVA_OPTIONS'");
-  ScopedVMInitArgs mod_java_aot_options_args("env_var='_JAVA_AOT_OPTIONS'");
+  ScopedVMInitArgs mod_jdk_aot_vm_options_args("env_var='_JDK_AOT_VM_OPTIONS'");
 
   GrowableArrayCHeap<VMInitArgsGroup, mtArguments> all_args;
 
@@ -3580,31 +3580,31 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   all_args.append({cur_cmd_args, JVMFlagOrigin::COMMAND_LINE});
   all_args.append({cur_java_options_args, JVMFlagOrigin::ENVIRON_VAR});
 
-  // JAVA_AOT_OPTIONS are parsed only if -XX:AOTMode=create has been detected from all
+  // JDK_AOT_VM_OPTIONS are parsed only if -XX:AOTMode=create has been detected from all
   // the options that have been gathered above.
-  code = parse_java_aot_options_environment_variable(&all_args, &initial_java_aot_options_args);
+  code = parse_jdk_aot_vm_options_environment_variable(&all_args, &initial_jdk_aot_vm_options_args);
   if (code != JNI_OK) {
     return code;
   }
-  code = expand_vm_options_as_needed(initial_java_aot_options_args.get(),
-                                     &mod_java_aot_options_args,
-                                     &cur_java_aot_options_args);
+  code = expand_vm_options_as_needed(initial_jdk_aot_vm_options_args.get(),
+                                     &mod_jdk_aot_vm_options_args,
+                                     &cur_jdk_aot_vm_options_args);
   if (code != JNI_OK) {
     return code;
   }
 
-  for (int index = 0; index < cur_java_aot_options_args->nOptions; index++) {
-    JavaVMOption* option = cur_java_aot_options_args->options + index;
+  for (int index = 0; index < cur_jdk_aot_vm_options_args->nOptions; index++) {
+    JavaVMOption* option = cur_jdk_aot_vm_options_args->options + index;
     const char* optionString = option->optionString;
     if (strstr(optionString, "-XX:AOTMode=") == optionString &&
         strcmp(optionString, "-XX:AOTMode=create") != 0) {
       jio_fprintf(defaultStream::error_stream(),
-                  "Option %s cannot be specified in JAVA_AOT_OPTIONS\n", optionString);
+                  "Option %s cannot be specified in JDK_AOT_VM_OPTIONS\n", optionString);
       return JNI_ERR;
     }
   }
 
-  all_args.append({cur_java_aot_options_args, JVMFlagOrigin::ENVIRON_VAR});
+  all_args.append({cur_jdk_aot_vm_options_args, JVMFlagOrigin::ENVIRON_VAR});
 
   if (IgnoreUnrecognizedVMOptions) {
     // Note: unrecognized options in cur_vm_options_arg cannot be ignored. They are part of
@@ -3612,7 +3612,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     cur_cmd_args->ignoreUnrecognized = true;
     cur_java_tool_options_args->ignoreUnrecognized = true;
     cur_java_options_args->ignoreUnrecognized = true;
-    cur_java_aot_options_args->ignoreUnrecognized = true;
+    cur_jdk_aot_vm_options_args->ignoreUnrecognized = true;
   }
 
   if (PrintVMOptions) {
@@ -3620,7 +3620,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     print_options(cur_java_tool_options_args);
     print_options(cur_cmd_args);
     print_options(cur_java_options_args);
-    print_options(cur_java_aot_options_args);
+    print_options(cur_jdk_aot_vm_options_args);
   }
 
   // Apply the settings in these args to the JVM global flags.

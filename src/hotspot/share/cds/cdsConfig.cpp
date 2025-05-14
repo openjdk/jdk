@@ -474,13 +474,17 @@ static void substitute_aot_filename(JVMFlagsEnum flag_enum) {
   const char* filename = flag->read<const char*>();
   assert(filename != nullptr, "must not have default value");
 
-  // For simplicity, we don't allow %p to be specified twice, because make_log_name()
+  // For simplicity, we don't allow %p/%t to be specified twice, because make_log_name()
   // substitutes only the first occurrence. Otherwise, if we run with
   //     java -XX:AOTCacheOutput=%p%p.aot
  // it will end up with both the pid of the training process and the assembly process.
   const char* first_p = strstr(filename, "%p");
   if (first_p != nullptr && strstr(first_p + 2, "%p") != nullptr) {
     vm_exit_during_initialization(err_msg("%s cannot contain more than one %%p", flag->name()));
+  }
+  const char* first_t = strstr(filename, "%t");
+  if (first_t != nullptr && strstr(first_t + 2, "%t") != nullptr) {
+    vm_exit_during_initialization(err_msg("%s cannot contain more than one %%t", flag->name()));
   }
 
   // Note: with single-command training, %p will be the pid of the training process, not the
