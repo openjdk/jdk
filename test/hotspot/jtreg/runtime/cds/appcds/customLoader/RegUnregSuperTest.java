@@ -73,7 +73,7 @@ public class RegUnregSuperTest {
         out.shouldContain("unreg CustomLoadee3\n"); // Accepts "unreg CustomLoadee3" but not "unreg CustomLoadee3Child"
         if ("reg".equals(variant)) {
             out.shouldNotContain("unreg CustomLoadee3Child");
-            out.shouldContain("CustomLoadee3Child (id 3) has super-type CustomLoadee3 (id 1) overshadowed by another class with the same name");
+            out.shouldContain("CustomLoadee3Child (id 3) has super-type CustomLoadee3 (id 1) obstructed by another class with the same name");
         } else {
             out.shouldContain("unreg CustomLoadee3Child");
             out.shouldNotContain("[warning]");

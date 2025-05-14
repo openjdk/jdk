@@ -138,7 +138,7 @@ private:
   void constant_pool_resolution_warning(const char* msg, ...) ATTRIBUTE_PRINTF(2, 0);
   void error(const char* msg, ...) ATTRIBUTE_PRINTF(2, 0);
   GrowableArray<InstanceKlass*> get_specified_interfaces();
-  void check_supertype_overshadowing(int supertype_id, const InstanceKlass* supertype, TRAPS);
+  void check_supertype_obstruction(int specified_supertype_id, const InstanceKlass* specified_supertype, TRAPS);
 
 public:
   static void parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS);

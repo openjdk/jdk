@@ -509,16 +509,19 @@ void ClassListParser::constant_pool_resolution_warning(const char* msg, ...) {
 // named SN but an unregistered class S2 also named SN has already been loaded
 // S2 will be incorrectly used as the supertype of U instead of S1 due to
 // limitations in the loading mechanism of unregistered classes.
-void ClassListParser::check_supertype_overshadowing(int supertype_id, const InstanceKlass* supertype, TRAPS) {
-  const InstanceKlass* overshadower = SystemDictionaryShared::get_unregistered_class(supertype->name());
-  if (overshadower == nullptr || overshadower == supertype) {
-    return;
+void ClassListParser::check_supertype_obstruction(int specified_supertype_id, const InstanceKlass* specified_supertype, TRAPS) {
+  if (specified_supertype->is_shared_unregistered_class()) {
+    return; // Only registered supertypes can be obstructed
   }
-  assert(!supertype->is_shared_unregistered_class(), "unregistered supertype cannot be overshadowed");
+  const InstanceKlass* obstructor = SystemDictionaryShared::get_unregistered_class(specified_supertype->name());
+  if (obstructor == nullptr) {
+    return; // No unregistered types with the same name have been loaded, i.e. no obstruction
+  }
+  // 'specified_supertype' is S1, 'obstructor' is S2 from the explanation above
   ResourceMark rm;
   THROW_MSG(vmSymbols::java_lang_UnsupportedOperationException(),
-            err_msg("%s (id %d) has super-type %s (id %d) overshadowed by another class with the same name",
-                    _class_name, _id, supertype->external_name(), supertype_id));
+            err_msg("%s (id %d) has super-type %s (id %d) obstructed by another class with the same name",
+                    _class_name, _id, specified_supertype->external_name(), specified_supertype_id));
 }
 
 // This function is used for loading classes for customized class loaders
@@ -547,11 +550,11 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   ResourceMark rm;
   InstanceKlass* specified_super = lookup_class_by_id(_super);
   GrowableArray<InstanceKlass*> specified_interfaces = get_specified_interfaces();
-  // Overshadowing must be checked before the class loading attempt because it
-  // may cause class loading errors (JVMS 5.3.5.3-5.3.5.4)
-  check_supertype_overshadowing(_super, specified_super, CHECK_NULL);
+  // Obstruction must be checked before the class loading attempt because it may
+  // cause class loading errors (JVMS 5.3.5.3-5.3.5.4)
+  check_supertype_obstruction(_super, specified_super, CHECK_NULL);
   for (int i = 0; i < _interfaces->length(); i++) {
-    check_supertype_overshadowing(_interfaces->at(i), specified_interfaces.at(i), CHECK_NULL);
+    check_supertype_obstruction(_interfaces->at(i), specified_interfaces.at(i), CHECK_NULL);
   }
 
   const char* source_path = ClassLoader::uri_to_path(_source);
