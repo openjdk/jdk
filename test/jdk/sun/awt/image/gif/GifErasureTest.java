@@ -33,7 +33,7 @@ import java.net.URL;
 
 public class GifErasureTest {
     public static void main(String[] args) throws Throwable {
-        URL srcURL = GifEmptyBackgroundTest.class.getResource("leo.gif");
+        URL srcURL = GifErasureTest.class.getResource("leo.gif");
         GifComparison.run(srcURL);
     }
 }
