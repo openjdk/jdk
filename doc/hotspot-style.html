@@ -32,11 +32,12 @@
 <ul>
 <li><a href="#introduction" id="toc-introduction">Introduction</a>
 <ul>
+<li><a href="#changing-this-document"
+id="toc-changing-this-document">Changing this Document</a></li>
 <li><a href="#why-care-about-style" id="toc-why-care-about-style">Why
 Care About Style?</a></li>
-<li><a href="#counterexamples-and-updates"
-id="toc-counterexamples-and-updates">Counterexamples and
-Updates</a></li>
+<li><a href="#counterexamples"
+id="toc-counterexamples">Counterexamples</a></li>
 </ul></li>
 <li><a href="#structure-and-formatting"
 id="toc-structure-and-formatting">Structure and Formatting</a>
@@ -99,6 +100,21 @@ writing HotSpot code. Following these will help new code fit in with
 existing HotSpot code, making it easier to read and maintain. Failure to
 follow these guidelines may lead to discussion during code reviews, if
 not outright rejection of a change.</p>
+<h3 id="changing-this-document">Changing this Document</h3>
+<p>Proposed changes should be discussed on the <a
+href="mailto:hotspot-dev@openjdk.org">HotSpot Developers</a> mailing
+list. Changes are likely to be cautious and incremental, since HotSpot
+coders have been using these guidelines for years.</p>
+<p>Substantive changes are approved by <a
+href="https://www.rfc-editor.org/rfc/rfc7282.html">rough consensus</a>
+of the <a href="https://openjdk.org/census#hotspot">HotSpot Group</a>
+Members. The Group Lead determines whether consensus has been
+reached.</p>
+<p>Editorial changes (changes that only affect the description of
+HotSpot style, not its substance) do not require the full consensus
+gathering process. The normal HotSpot pull request process may be used
+for editorial changes, with the additional requirement that the
+requisite reviewers are also HotSpot Group Members.</p>
 <h3 id="why-care-about-style">Why Care About Style?</h3>
 <p>Some programmers seem to have lexers and even C preprocessors
 installed directly behind their eyeballs. The rest of us require code
@@ -124,7 +140,7 @@ conforms locally to its own peculiar conventions, it is not worth
 reformatting the whole thing. Also consider separating changes that make
 extensive stylistic updates from those which make functional
 changes.</p>
-<h3 id="counterexamples-and-updates">Counterexamples and Updates</h3>
+<h3 id="counterexamples">Counterexamples</h3>
 <p>Many of the guidelines mentioned here have (sometimes widespread)
 counterexamples in the HotSpot code base. Finding a counterexample is
 not sufficient justification for new code to follow the counterexample
@@ -137,20 +153,6 @@ bring it up for discussion and possible change. The architectural rule,
 of course, is "When in Rome do as the Romans". Sometimes in the suburbs
 of Rome the rules are a little different; these differences can be
 pointed out here.</p>
-<p>Proposed changes should be discussed on the <a
-href="mailto:hotspot-dev@openjdk.org">HotSpot Developers</a> mailing
-list. Changes are likely to be cautious and incremental, since HotSpot
-coders have been using these guidelines for years.</p>
-<p>Substantive changes are approved by <a
-href="https://www.rfc-editor.org/rfc/rfc7282.html">rough consensus</a>
-of the <a href="https://openjdk.org/census#hotspot">HotSpot Group</a>
-Members. The Group Lead determines whether consensus has been
-reached.</p>
-<p>Editorial changes (changes that only affect the description of
-HotSpot style, not its substance) do not require the full consensus
-gathering process. The normal HotSpot pull request process may be used
-for editorial changes, with the additional requirement that the
-requisite reviewers are also HotSpot Group Members.</p>
 <h2 id="structure-and-formatting">Structure and Formatting</h2>
 <h3 id="factoring-and-class-design">Factoring and Class Design</h3>
 <ul>

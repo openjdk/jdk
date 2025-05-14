@@ -34,6 +34,7 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardWatchEventKinds;
@@ -1128,6 +1129,47 @@ public final class TKit {
 
         return ThrowingSupplier.toSupplier(() -> new PrintStream(
                 new FileOutputStream(LOG_FILE.toFile(), true))).get();
+    }
+
+    public record PathSnapshot(List<String> contentHashes) {
+        public PathSnapshot {
+            contentHashes.forEach(Objects::requireNonNull);
+        }
+
+        public PathSnapshot(Path path) {
+            this(hashRecursive(path));
+        }
+
+        public static void assertEquals(PathSnapshot a, PathSnapshot b, String msg) {
+            assertStringListEquals(a.contentHashes(), b.contentHashes(), msg);
+        }
+
+        private static List<String> hashRecursive(Path path) {
+            try {
+                try (final var walk = Files.walk(path)) {
+                    return walk.sorted().map(p -> {
+                        final String hash;
+                        if (Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS)) {
+                            hash = "";
+                        } else {
+                            hash = hashFile(p);
+                        }
+                        return String.format("%s#%s", path.relativize(p), hash);
+                    }).toList();
+                }
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        private static String hashFile(Path path) {
+            try {
+                final var time = Files.getLastModifiedTime(path, LinkOption.NOFOLLOW_LINKS);
+                return time.toString();
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
     }
 
     private static TestInstance currentTest;
