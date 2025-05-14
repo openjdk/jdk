@@ -681,7 +681,15 @@ class Stream<T> extends ExchangeImpl<T> {
             completeResponse(response);
         } else {
             if (Log.headers()) {
-                StringBuilder sb = new StringBuilder("TRAILING HEADERS:\n");
+                StringBuilder sb = new StringBuilder("TRAILING HEADERS (streamid=")
+                        .append(streamid)
+                        .append("):\n  ")
+                        .append(request.method())
+                        .append(' ')
+                        .append(request.uri())
+                        .append(' ')
+                        .append(responseCode)
+                        .append('\n');
                 Log.dumpHeaders(sb, "    ", responseHeaders);
                 Log.logHeaders(sb.toString());
             }
@@ -1778,8 +1786,15 @@ class Stream<T> extends ExchangeImpl<T> {
                 responseHeaders.firstValueAsLong("content-length");
 
                 if (Log.headers()) {
-                    StringBuilder sb = new StringBuilder("RESPONSE HEADERS");
-                    sb.append(" (streamid=").append(streamid).append("):\n");
+                    StringBuilder sb = new StringBuilder("RESPONSE HEADERS (streamid=")
+                        .append(streamid)
+                        .append("):\n  ")
+                        .append(request.method())
+                        .append(' ')
+                        .append(request.uri())
+                        .append(' ')
+                        .append(responseCode)
+                        .append('\n');
                     Log.dumpHeaders(sb, "    ", responseHeaders);
                     Log.logHeaders(sb.toString());
                 }
@@ -1790,8 +1805,15 @@ class Stream<T> extends ExchangeImpl<T> {
                 completeResponse(response);
             } else {
                 if (Log.headers()) {
-                    StringBuilder sb = new StringBuilder("TRAILING HEADERS");
-                    sb.append(" (streamid=").append(streamid).append("):\n");
+                    StringBuilder sb = new StringBuilder("TRAILING HEADERS (streamid=")
+                        .append(streamid)
+                        .append("):\n  ")
+                        .append(request.method())
+                        .append(' ')
+                        .append(request.uri())
+                        .append(' ')
+                        .append(responseCode)
+                        .append('\n');
                     Log.dumpHeaders(sb, "    ", responseHeaders);
                     Log.logHeaders(sb.toString());
                 }
