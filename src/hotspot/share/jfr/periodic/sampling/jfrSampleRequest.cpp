@@ -48,10 +48,6 @@ static inline bool is_interpreter(const JfrSampleRequest& request) {
   return is_interpreter(static_cast<address>(request._sample_pc));
 }
 
-static inline Method* interpreter_frame_method(const JfrSampleRequest& request) {
-  return frame::interpreter_method(static_cast<intptr_t*>(request._sample_bcp));
-}
-
 static inline address interpreter_frame_bcp(const JfrSampleRequest& request) {
   assert(is_interpreter(request), "invariant");
   return frame::interpreter_bcp(static_cast<intptr_t*>(request._sample_bcp));
@@ -135,19 +131,11 @@ static inline void update_fp(JfrSampleRequest& request) {
   request._sample_bcp = is_interpreter(request) ? frame::fp(static_cast<intptr_t*>(request._sample_sp)) : nullptr;
 }
 
-static inline bool is_interpreter_frame_setup(const JfrSampleRequest& request) {
-  return frame::is_interpreter_frame_setup_at(static_cast<intptr_t*>(request._sample_bcp), request._sample_sp);
-}
-
 // Less extensive sanity checks for an interpreter frame.
 static bool is_valid_interpreter_frame(const JfrSampleRequest& request, JavaThread* jt) {
   assert(sp_in_stack(request, jt), "invariant");
   assert(fp_in_stack(request, jt), "invariant");
-  // word alignment.
-  if ((reinterpret_cast<intptr_t>(request._sample_bcp) & (wordSize - 1)) != 0) {
-    return false;
-  }
-  return is_interpreter_frame_setup(request) && Method::is_valid_method(interpreter_frame_method(request));
+  return frame::is_interpreter_frame_setup_at(static_cast<intptr_t*>(request._sample_bcp), request._sample_sp);
 }
 
 static inline bool is_continuation_frame(address pc) {
@@ -197,8 +185,6 @@ static bool build_for_interpreter(JfrSampleRequest& request, JavaThread* jt) {
     request._sample_sp = request._sample_bcp;
     // Get real bcp.
     void* const bcp = interpreter_frame_bcp(request);
-    // Set Method* as the sample_pc for interpreter frames.
-    request._sample_pc = interpreter_frame_method(request);
     // Setting bcp = 1 marks the sample request to represent a native method.
     request._sample_bcp = bcp != nullptr ? bcp : reinterpret_cast<address>(1);
     return true;
@@ -321,7 +307,6 @@ static inline JfrSampleResult set_biased_java_sample(JfrSampleRequest& request, 
 static inline JfrSampleResult set_unbiased_java_sample(JfrSampleRequest& request, JfrThreadLocal* tl, JavaThread* jt) {
   assert(request._sample_sp != nullptr, "invariant");
   assert(sp_in_stack(request, jt), "invariant");
-  assert(request._sample_pc != nullptr, "invariant");
   assert(request._sample_bcp != nullptr || !is_interpreter(request), "invariant");
   return set_request_and_arm_local_poll(request, tl, jt);
 }

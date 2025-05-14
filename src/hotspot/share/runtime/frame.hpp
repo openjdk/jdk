@@ -508,7 +508,6 @@ class frame {
 
 #if INCLUDE_JFR
   // Static helper routines
-  static Method* interpreter_method(const intptr_t* fp);
   static address interpreter_bcp(const intptr_t* fp);
   static address interpreter_return_address(const intptr_t* fp);
   static intptr_t* interpreter_sender_sp(const intptr_t* fp);

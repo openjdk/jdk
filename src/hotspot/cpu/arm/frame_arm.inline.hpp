@@ -34,10 +34,6 @@
 #if INCLUDE_JFR
 
 // Static helper routines
-inline Method* frame::interpreter_method(const intptr_t* fp) {
-  assert(fp != nullptr, "invariant");
-  return reinterpret_cast<Method*>(fp[frame::interpreter_frame_method_offset]);
-}
 
 inline address frame::interpreter_bcp(const intptr_t* fp) {
   assert(fp != nullptr, "invariant");

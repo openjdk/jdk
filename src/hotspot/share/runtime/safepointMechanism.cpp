@@ -132,16 +132,13 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
   }
 }
 
-static inline bool has_handshake_operation(JavaThread* jt, bool allow_suspend, bool check_async) {
-  return jt->handshake_state()->has_operation() && jt->handshake_state()->process_by_self(allow_suspend, check_async);
-}
-
 void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool check_async_exception) {
   DEBUG_ONLY(intptr_t* sp_before = thread->last_Java_sp();)
   // Read global poll and has_handshake after local poll
   OrderAccess::loadload();
 
   // local poll already checked, if used.
+  bool need_rechecking;
   do {
     JavaThreadState state = thread->thread_state();
     guarantee(state == _thread_in_vm, "Illegal threadstate encountered: %d", state);
@@ -160,7 +157,9 @@ void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool ch
     // 2) After a thread races with the disarming of the global poll and transitions from native/blocked
     // 3) Before the handshake code is run
     StackWatermarkSet::on_safepoint(thread);
-  } while (has_handshake_operation(thread, allow_suspend, check_async_exception));
+
+    need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self(allow_suspend, check_async_exception);
+  } while (need_rechecking);
 
   update_poll_values(thread);
   assert(sp_before == thread->last_Java_sp(), "Anchor has changed");

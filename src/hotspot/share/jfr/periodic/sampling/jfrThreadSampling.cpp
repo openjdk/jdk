@@ -27,12 +27,13 @@
 #include "code/debugInfoRec.hpp"
 #include "code/nmethod.hpp"
 #include "interpreter/interpreter.hpp"
-#include "memory/resourceArea.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampling.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/method.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
@@ -70,11 +71,20 @@ static inline bool is_interpreter(const JfrSampleRequest& request) {
   return request._sample_bcp != nullptr;
 }
 
-// A sampled interpreter frame is handled differently compared to a sampled compiler frame.
-// The JfrSampleRequest description already holds the top java frame saved by the sampler thread.
-// The 'top_frame' that is filled by this routine is instead the sender frame of the interpreter
-// top frame already described in the sample request.
-static bool compute_sender_frame(const JfrSampleRequest& request, frame& sender_frame, JavaThread* jt) {
+// A sampled interpreter frame is handled differently from a sampled compiler frame.
+//
+// The JfrSampleRequest description partially describes a _potential_ interpreter Java frame.
+// It's partial because the sampler thread only sets the fp and bcp fields.
+//
+// We want to ensure that what we discovered inside interpreter code _really_ is what we assume, a valid interpreter frame.
+//
+// Therefore, instead of letting the sampler thread read what it believes to be a Method*, we delay until we are at a safepoint to ensure the Method* is valid.
+//
+// If the JfrSampleRequest represents a valid interpreter frame, the Method* is retrieved and the sender frame is returned per the sender_frame.
+//
+// If it is not a valid interpreter frame, then the JfrSampleRequest is invalidated, and the current frame is returned per the sender frame.
+//
+static bool compute_sender_frame(JfrSampleRequest& request, frame& sender_frame, JavaThread* jt) {
   assert(is_interpreter(request), "invariant");
   assert(jt != nullptr, "invariant");
   assert(jt->has_last_Java_frame(), "invariant");
@@ -83,21 +93,41 @@ static bool compute_sender_frame(const JfrSampleRequest& request, frame& sender_
   const void* const sampled_fp = request._sample_sp;
 
   StackFrameStream stream(jt, false, false);
-  if (stream.current()->is_safepoint_blob_frame()) {
+
+  // Search for the sampled interpreter frame and get its Method*.
+
+  while (!stream.is_done()) {
+    const frame* const frame = stream.current();
+    assert(frame != nullptr, "invariant");
+    const intptr_t* const real_fp = frame->real_fp();
+    assert(real_fp != nullptr, "invariant");
+    if (real_fp == sampled_fp && frame->is_interpreted_frame()) {
+      request._sample_pc = frame->interpreter_frame_method();
+      // Got the Method*.
+      break;
+    }
+    if (real_fp >= sampled_fp) {
+      // What we sampled is not an official interpreter frame.
+      // Invalidate the sample request and use current.
+      request._sample_bcp = nullptr;
+      sender_frame = *stream.current();
+      return true;
+    }
     stream.next();
   }
-  assert(!stream.current()->is_safepoint_blob_frame(), "invariant");
 
-  // Search the first frame that is above the sampled fp. This is the sender frame to return.
-  for (; !stream.is_done(); stream.next()) {
-    frame* const current = stream.current();
-    if (current->real_fp() <= sampled_fp) {
-      continue;
-    }
-    sender_frame = *current;
-    return true;
-  }
-  // There is only a single interpreter frame on stack- leave sender_frame empty.
+  assert(!stream.is_done(), "invariant");
+
+  // Step to sender.
+  stream.next();
+  sender_frame = *stream.current();
+
+  assert(request._sample_pc != nullptr, "invariant");
+  assert(request._sample_bcp != nullptr, "invariant");
+  assert(Method::is_valid_method(static_cast<const Method*>(request._sample_pc)), "invariant");
+  assert(p2i(request._sample_bcp) == 1 ||
+    static_cast<const Method*>(request._sample_pc)->validate_bci_from_bcp(static_cast<address>(request._sample_bcp)) >= 0, "invariant");
+  assert(p2i(request._sample_bcp) > 1 || static_cast<const Method*>(request._sample_pc)->is_native(), "invariant");
   return true;
 }
 
@@ -119,7 +149,7 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
   }
 
   if (is_interpreter(request)) {
-    return compute_sender_frame(request, top_frame, jt);
+    return compute_sender_frame(const_cast<JfrSampleRequest&>(request), top_frame, jt);
   }
 
   void* const sampled_pc = request._sample_pc;
