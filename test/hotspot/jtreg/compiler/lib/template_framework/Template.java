@@ -50,6 +50,9 @@ import java.util.List;
  * use of Templates.
  *
  * <p>
+ * Once we rendered the source code to a String, we can compile it with the {@code CompileFramework}.
+ *
+ * <p>
  * <strong>Example:</strong>
  * The following snippets are from the example test {@code TestAdvanced.java}.
  * First, we define a template that generates a {@code @Test} method for a given type, operator and
@@ -133,9 +136,6 @@ import java.util.List;
  * // Use the template with one argument, and render it to a String.
  * return classTemplate.fillWith(types).render();
  * }
- *
- * <p>
- * Once we rendered the source code to a String, we can compile it with the {@code CompileFramework}.
  *
  * <p>
  * <strong>Details:</strong>
@@ -450,12 +450,13 @@ public interface Template {
     }
 
     /**
-     * Add a {@link Name} in the current code frame.
+     * Add a {@link Name} in the current scope, i.e. the innermost of either
+     * {@link Template#body} or {@link Hook#set}.
      * Note that there can be duplicate definitions, and they simply increase
      * the {@link #weighNames} weight, and increase the probability of sampling
      * the name with {@link #sampleName}.
      *
-     * @param name The {@link Name} to be added to the current code frame.
+     * @param name The {@link Name} to be added to the current scope.
      * @return The token that performs the defining action.
      */
     static Token addName(Name name) {

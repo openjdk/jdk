@@ -1059,8 +1059,6 @@ public class TestTemplate {
             "[#type: ", weighNames(type, true), " and ", weighNames(type, false), "]\n"
         ));
 
-        // Example that shows that addName runs before any code gets generated.
-        // To avoid this behaviour, you have to wrap the addName in their own template.
         var template2 = Template.make(() -> body(
             "class $Y {\n",
             template1.fillWith(myInt),
