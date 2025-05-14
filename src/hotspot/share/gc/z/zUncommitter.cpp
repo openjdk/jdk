@@ -291,10 +291,10 @@ void ZUncommitter::register_uncommit(size_t size) {
   }
 
   const double uncommit_rate = double(_uncommitted) / time_since_start;
-  const double time_to_compleat = double(_to_uncommit) / uncommit_rate;
+  const double time_to_complete = double(_to_uncommit) / uncommit_rate;
   const double time_left = double(ZUncommitDelay) - time_since_start;
 
-  if (time_left < time_to_compleat) {
+  if (time_left < time_to_complete) {
     // To slow, work as fast as we can.
     _next_uncommit_timeout = 0;
     return;
@@ -310,7 +310,7 @@ void ZUncommitter::register_uncommit(size_t size) {
   }
 
   // Randomly distribute the extra time, one millisecond at a time.
-  const double extra_time = time_left - time_to_compleat;
+  const double extra_time = time_left - time_to_complete;
   const double random = double(uint32_t(os::random())) / double(std::numeric_limits<uint32_t>::max());
 
   _next_uncommit_timeout = random < (extra_time / time_left) ? 1 : 0;
