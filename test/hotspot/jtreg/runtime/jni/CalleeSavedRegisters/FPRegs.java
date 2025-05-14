@@ -26,6 +26,7 @@
  * @test
  * @bug 8067744
  * @requires vm.flagless
+ * @requires !jdk.static
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main/native FPRegs
