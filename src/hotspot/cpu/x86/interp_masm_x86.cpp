@@ -1255,7 +1255,6 @@ void InterpreterMacroAssembler::set_mdp_data_at(Register mdp_in,
 
 void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
                                                       int constant) {
-  // Counter address
   assert(ProfileInterpreter, "must be profiling interpreter");
   Address data(mdp_in, constant);
   addptr(data, DataLayout::counter_increment);
