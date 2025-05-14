@@ -295,7 +295,7 @@ void ZUncommitter::register_uncommit(size_t size) {
   const double time_left = double(ZUncommitDelay) - time_since_start;
 
   if (time_left < time_to_complete) {
-    // To slow, work as fast as we can.
+    // Too slow, work as fast as we can.
     _next_uncommit_timeout = 0;
     return;
   }
