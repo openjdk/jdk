@@ -180,37 +180,37 @@ public class XMLErrorResources_ca extends ListResourceBundle
     {"ER0000" , "{0}" },
 
     { ER_FUNCTION_NOT_SUPPORTED,
-      "Aquesta funci\u00f3 no t\u00e9 suport. "},
+      "Aquesta funció no té suport. "},
 
     { ER_CANNOT_OVERWRITE_CAUSE,
       "No es pot sobreescriure una causa "},
 
     { ER_NO_DEFAULT_IMPL,
-      "No s'ha trobat cap implementaci\u00f3 per defecte "},
+      "No s'ha trobat cap implementació per defecte "},
 
     { ER_CHUNKEDINTARRAY_NOT_SUPPORTED,
-      "En l''actualitat ChunkedIntArray({0}) no t\u00e9 suport "},
+      "En l''actualitat ChunkedIntArray({0}) no té suport "},
 
     { ER_OFFSET_BIGGER_THAN_SLOT,
-      "El despla\u00e7ament \u00e9s m\u00e9s gran que la ranura "},
+      "El desplaçament és més gran que la ranura "},
 
     { ER_COROUTINE_NOT_AVAIL,
-      "Coroutine no est\u00e0 disponible, id={0} "},
+      "Coroutine no està disponible, id={0} "},
 
     { ER_COROUTINE_CO_EXIT,
-      "CoroutineManager ha rebut una petici\u00f3 co_exit() "},
+      "CoroutineManager ha rebut una petició co_exit() "},
 
     { ER_COJOINROUTINESET_FAILED,
-      "S'ha produ\u00eft un error a co_joinCoroutineSet() "},
+      "S'ha produït un error a co_joinCoroutineSet() "},
 
     { ER_COROUTINE_PARAM,
-      "Error de par\u00e0metre coroutine ({0}) "},
+      "Error de paràmetre coroutine ({0}) "},
 
     { ER_PARSER_DOTERMINATE_ANSWERS,
       "\nUNEXPECTED: doTerminate de l''analitzador respon {0}"},
 
     { ER_NO_PARSE_CALL_WHILE_PARSING,
-      "L'an\u00e0lisi no es pot cridar mentre s'est\u00e0 duent a terme "},
+      "L'anàlisi no es pot cridar mentre s'està duent a terme "},
 
     { ER_TYPED_ITERATOR_AXIS_NOT_IMPLEMENTED,
       "Error: l''iterador de tipus de l''eix {0} no s''ha implementat "},
@@ -219,19 +219,19 @@ public class XMLErrorResources_ca extends ListResourceBundle
       "Error: l''iterador de l''eix {0} no s''ha implementat "},
 
     { ER_ITERATOR_CLONE_NOT_SUPPORTED,
-      "El clonatge de l'iterador no t\u00e9 suport "},
+      "El clonatge de l'iterador no té suport "},
 
     { ER_UNKNOWN_AXIS_TYPE,
-      "Tipus de commutaci\u00f3 de l''eix desconeguda: {0} "},
+      "Tipus de commutació de l''eix desconeguda: {0} "},
 
     { ER_AXIS_NOT_SUPPORTED,
-      "La commutaci\u00f3 de l''eix no t\u00e9 suport: {0} "},
+      "La commutació de l''eix no té suport: {0} "},
 
     { ER_NO_DTMIDS_AVAIL,
-      "No hi ha m\u00e9s ID de DTM disponibles "},
+      "No hi ha més ID de DTM disponibles "},
 
     { ER_NOT_SUPPORTED,
-      "No t\u00e9 suport: {0} "},
+      "No té suport: {0} "},
 
     { ER_NODE_NON_NULL,
       "El node no ha de ser nul per a getDTMHandleFromNode "},
@@ -240,7 +240,7 @@ public class XMLErrorResources_ca extends ListResourceBundle
       "No s'ha pogut resoldre el node en un manejador "},
 
     { ER_STARTPARSE_WHILE_PARSING,
-       "startParse no es pot cridar mentre s'est\u00e0 duent a terme l'an\u00e0lisi "},
+       "startParse no es pot cridar mentre s'està duent a terme l'anàlisi "},
 
     { ER_STARTPARSE_NEEDS_SAXPARSER,
        "startParse necessita un SAXParser que no sigui nul "},
@@ -249,10 +249,10 @@ public class XMLErrorResources_ca extends ListResourceBundle
        "No s'ha pogut inicialitzar l'analitzador amb "},
 
     { ER_EXCEPTION_CREATING_POOL,
-       "S'ha produ\u00eft una excepci\u00f3 en crear una nova inst\u00e0ncia de l'agrupaci\u00f3 "},
+       "S'ha produït una excepció en crear una nova instància de l'agrupació "},
 
     { ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
-       "La via d'acc\u00e9s cont\u00e9 una seq\u00fc\u00e8ncia d'escapament no v\u00e0lida "},
+       "La via d'accés conté una seqüència d'escapament no vàlida "},
 
     { ER_SCHEME_REQUIRED,
        "Es necessita l'esquema "},
@@ -264,67 +264,67 @@ public class XMLErrorResources_ca extends ListResourceBundle
        "No s'ha trobat cap esquema a l'URI "},
 
     { ER_PATH_INVALID_CHAR,
-       "La via d'acc\u00e9s cont\u00e9 un car\u00e0cter no v\u00e0lid {0} "},
+       "La via d'accés conté un caràcter no vàlid {0} "},
 
     { ER_SCHEME_FROM_NULL_STRING,
-       "No es pot establir un esquema des d'una cadena nul\u00b7la "},
+       "No es pot establir un esquema des d'una cadena nul·la "},
 
     { ER_SCHEME_NOT_CONFORMANT,
-       "L'esquema no t\u00e9 conformitat. "},
+       "L'esquema no té conformitat. "},
 
     { ER_HOST_ADDRESS_NOT_WELLFORMED,
-       "El sistema principal no t\u00e9 una adre\u00e7a ben formada "},
+       "El sistema principal no té una adreça ben formada "},
 
     { ER_PORT_WHEN_HOST_NULL,
-       "El port no es pot establir quan el sistema principal \u00e9s nul "},
+       "El port no es pot establir quan el sistema principal és nul "},
 
     { ER_INVALID_PORT,
-       "N\u00famero de port no v\u00e0lid "},
+       "Número de port no vàlid "},
 
     { ER_FRAG_FOR_GENERIC_URI,
-       "El fragment nom\u00e9s es pot establir per a un URI gen\u00e8ric "},
+       "El fragment només es pot establir per a un URI genèric "},
 
     { ER_FRAG_WHEN_PATH_NULL,
-       "El fragment no es pot establir si la via d'acc\u00e9s \u00e9s nul\u00b7la "},
+       "El fragment no es pot establir si la via d'accés és nul·la "},
 
     { ER_FRAG_INVALID_CHAR,
-       "El fragment cont\u00e9 un car\u00e0cter no v\u00e0lid "},
+       "El fragment conté un caràcter no vàlid "},
 
     { ER_PARSER_IN_USE,
-      "L'analitzador ja s'est\u00e0 utilitzant "},
+      "L'analitzador ja s'està utilitzant "},
 
     { ER_CANNOT_CHANGE_WHILE_PARSING,
-      "No es pot modificar {0} {1} mentre es du a terme l''an\u00e0lisi "},
+      "No es pot modificar {0} {1} mentre es du a terme l''anàlisi "},
 
     { ER_SELF_CAUSATION_NOT_PERMITTED,
-      "La causalitat pr\u00f2pia no est\u00e0 permesa. "},
+      "La causalitat pròpia no està permesa. "},
 
     { ER_NO_USERINFO_IF_NO_HOST,
-      "No es pot especificar informaci\u00f3 de l'usuari si no s'especifica el sistema principal "},
+      "No es pot especificar informació de l'usuari si no s'especifica el sistema principal "},
 
     { ER_NO_PORT_IF_NO_HOST,
       "No es pot especificar el port si no s'especifica el sistema principal "},
 
     { ER_NO_QUERY_STRING_IN_PATH,
-      "No es pot especificar una cadena de consulta en la via d'acc\u00e9s i la cadena de consulta "},
+      "No es pot especificar una cadena de consulta en la via d'accés i la cadena de consulta "},
 
     { ER_NO_FRAGMENT_STRING_IN_PATH,
-      "No es pot especificar un fragment tant en la via d'acc\u00e9s com en el fragment "},
+      "No es pot especificar un fragment tant en la via d'accés com en el fragment "},
 
     { ER_CANNOT_INIT_URI_EMPTY_PARMS,
-      "No es pot inicialitzar l'URI amb par\u00e0metres buits "},
+      "No es pot inicialitzar l'URI amb paràmetres buits "},
 
     { ER_METHOD_NOT_SUPPORTED,
-      "Aquest m\u00e8tode encara no t\u00e9 suport "},
+      "Aquest mètode encara no té suport "},
 
     { ER_INCRSAXSRCFILTER_NOT_RESTARTABLE,
       "Ara mateix no es pot reiniciar IncrementalSAXSource_Filter "},
 
     { ER_XMLRDR_NOT_BEFORE_STARTPARSE,
-      "XMLReader no es pot produir abans de la petici\u00f3 d'startParse "},
+      "XMLReader no es pot produir abans de la petició d'startParse "},
 
     { ER_AXIS_TRAVERSER_NOT_SUPPORTED,
-      "La commutaci\u00f3 de l''eix no t\u00e9 suport: {0} "},
+      "La commutació de l''eix no té suport: {0} "},
 
     { ER_ERRORHANDLER_CREATED_WITH_NULL_PRINTWRITER,
       "S''ha creat ListingErrorHandler amb PrintWriter nul "},
@@ -333,45 +333,45 @@ public class XMLErrorResources_ca extends ListResourceBundle
       "ID del sistema (SystemId) desconegut "},
 
     { ER_LOCATION_UNKNOWN,
-      "Ubicaci\u00f3 de l'error desconeguda"},
+      "Ubicació de l'error desconeguda"},
 
     { ER_PREFIX_MUST_RESOLVE,
       "El prefix s''ha de resoldre en un espai de noms: {0} "},
 
     { ER_CREATEDOCUMENT_NOT_SUPPORTED,
-      "createDocument() no t\u00e9 suport a XPathContext "},
+      "createDocument() no té suport a XPathContext "},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT,
-      "El subordinat de l'atribut no t\u00e9 un document de propietari. "},
+      "El subordinat de l'atribut no té un document de propietari. "},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT_ELEMENT,
-      "El subordinat de l'atribut no t\u00e9 un element de document de propietari. "},
+      "El subordinat de l'atribut no té un element de document de propietari. "},
 
     { ER_CANT_OUTPUT_TEXT_BEFORE_DOC,
-      "Av\u00eds: no es pot produir text abans de l'element de document. Es passa per alt. "},
+      "Avís: no es pot produir text abans de l'element de document. Es passa per alt. "},
 
     { ER_CANT_HAVE_MORE_THAN_ONE_ROOT,
-      "No hi pot haver m\u00e9s d'una arrel en un DOM. "},
+      "No hi pot haver més d'una arrel en un DOM. "},
 
     { ER_ARG_LOCALNAME_NULL,
-       "L'argument 'localName' \u00e9s nul. "},
+       "L'argument 'localName' és nul. "},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The localname is the portion after the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_LOCALNAME_INVALID,
-       "El nom local de QNAME ha de ser un NCName v\u00e0lid. "},
+       "El nom local de QNAME ha de ser un NCName vàlid. "},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The prefix is the portion before the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_PREFIX_INVALID,
-       "El prefix de QNAME ha de ser un NCName v\u00e0lid. "},
+       "El prefix de QNAME ha de ser un NCName vàlid. "},
 
-    { "BAD_CODE", "El par\u00e0metre de createMessage estava fora dels l\u00edmits. "},
-    { "FORMAT_FAILED", "S'ha generat una excepci\u00f3 durant la crida messageFormat. "},
-    { "line", "L\u00ednia n\u00fam. "},
-    { "column","Columna n\u00fam. "},
+    { "BAD_CODE", "El paràmetre de createMessage estava fora dels límits. "},
+    { "FORMAT_FAILED", "S'ha generat una excepció durant la crida messageFormat. "},
+    { "line", "Línia núm. "},
+    { "column","Columna núm. "},
 
     {ER_SERIALIZER_NOT_CONTENTHANDLER,
       "La classe de serialitzador ''{0}'' no implementa org.xml.sax.ContentHandler."},
@@ -383,16 +383,16 @@ public class XMLErrorResources_ca extends ListResourceBundle
       "El recurs [ {0} ] no s''ha pogut carregar: {1} \n {2} \t {3}" },
 
     {ER_BUFFER_SIZE_LESSTHAN_ZERO,
-      "Grand\u00e0ria del buffer <=0 " },
+      "Grandària del buffer <=0 " },
 
     {ER_INVALID_UTF16_SURROGATE,
-      "S''ha detectat un suplent UTF-16 no v\u00e0lid: {0} ? " },
+      "S''ha detectat un suplent UTF-16 no vàlid: {0} ? " },
 
     {ER_OIERROR,
       "Error d'E/S " },
 
     {ER_ILLEGAL_ATTRIBUTE_POSITION,
-      "No es pot afegir l''atribut {0} despr\u00e9s dels nodes subordinats o abans que es produeixi un element. Es passar\u00e0 per alt l''atribut. "},
+      "No es pot afegir l''atribut {0} després dels nodes subordinats o abans que es produeixi un element. Es passarà per alt l''atribut. "},
 
       /*
        * Note to translators:  The stylesheet contained a reference to a
@@ -418,13 +418,13 @@ public class XMLErrorResources_ca extends ListResourceBundle
        * namespace declaration.
        */
     {ER_STRAY_NAMESPACE,
-      "La declaraci\u00f3 d''espai de noms ''{0}''=''{1}'' es troba fora de l''element." },
+      "La declaració d''espai de noms ''{0}''=''{1}'' es troba fora de l''element." },
 
     {ER_COULD_NOT_LOAD_RESOURCE,
       "No s''ha pogut carregar ''{0}'' (comproveu la CLASSPATH); ara s''estan fent servir els valors per defecte."},
 
     {ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-      "No s''ha pogut carregar el fitxer de propietats ''{0}'' del m\u00e8tode de sortida ''{1}'' (comproveu la CLASSPATH)" }
+      "No s''ha pogut carregar el fitxer de propietats ''{0}'' del mètode de sortida ''{1}'' (comproveu la CLASSPATH)" }
 
 
   };

@@ -95,7 +95,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
     {
       return new Object[][] {
         {ErrorMsg.MULTIPLE_STYLESHEET_ERR,
-        "\u76F8\u540C\u6A94\u6848\u4E2D\u5B9A\u7FA9\u4E86\u8D85\u904E\u4E00\u500B\u6A23\u5F0F\u8868\u3002"},
+        "相同檔案中定義了超過一個樣式表。"},
 
         /*
          * Note to translators:  The substitution text is the name of a
@@ -103,7 +103,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * same stylesheet.
          */
         {ErrorMsg.TEMPLATE_REDEF_ERR,
-        "\u6A23\u677F ''{0}'' \u5DF2\u7D93\u5B9A\u7FA9\u5728\u6B64\u6A23\u5F0F\u8868\u4E2D\u3002"},
+        "樣板 ''{0}'' 已經定義在此樣式表中。"},
 
 
         /*
@@ -112,14 +112,14 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * template is undefined.
          */
         {ErrorMsg.TEMPLATE_UNDEF_ERR,
-        "\u6A23\u677F ''{0}'' \u672A\u5B9A\u7FA9\u5728\u6B64\u6A23\u5F0F\u8868\u4E2D\u3002"},
+        "樣板 ''{0}'' 未定義在此樣式表中。"},
 
         /*
          * Note to translators:  The substitution text is the name of a variable
          * that was defined more than once.
          */
         {ErrorMsg.VARIABLE_REDEF_ERR,
-        "\u8B8A\u6578 ''{0}'' \u5728\u76F8\u540C\u7BC4\u570D\u4E2D\u5B9A\u7FA9\u591A\u6B21\u3002"},
+        "變數 ''{0}'' 在相同範圍中定義多次。"},
 
         /*
          * Note to translators:  The substitution text is the name of a variable
@@ -127,7 +127,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * but it was never defined.
          */
         {ErrorMsg.VARIABLE_UNDEF_ERR,
-        "\u8B8A\u6578\u6216\u53C3\u6578 ''{0}'' \u672A\u5B9A\u7FA9\u3002"},
+        "變數或參數 ''{0}'' 未定義。"},
 
         /*
          * Note to translators:  The word "class" here refers to a Java class.
@@ -135,7 +135,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * not be found.  The substitution text is the name of the class.
          */
         {ErrorMsg.CLASS_NOT_FOUND_ERR,
-        "\u627E\u4E0D\u5230\u985E\u5225 ''{0}''\u3002"},
+        "找不到類別 ''{0}''。"},
 
         /*
          * Note to translators:  The word "method" here refers to a Java method.
@@ -144,7 +144,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * Java keyword.
          */
         {ErrorMsg.METHOD_NOT_FOUND_ERR,
-        "\u627E\u4E0D\u5230\u5916\u90E8\u65B9\u6CD5 ''{0}'' (\u5FC5\u9808\u70BA\u516C\u7528)\u3002"},
+        "找不到外部方法 ''{0}'' (必須為公用)。"},
 
         /*
          * Note to translators:  The word "method" here refers to a Java method.
@@ -153,42 +153,42 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * arguments or return type could be found.
          */
         {ErrorMsg.ARGUMENT_CONVERSION_ERR,
-        "\u7121\u6CD5\u8F49\u63DB\u547C\u53EB\u65B9\u6CD5 ''{0}'' \u4E2D\u7684\u5F15\u6578/\u50B3\u56DE\u985E\u578B"},
+        "無法轉換呼叫方法 ''{0}'' 中的引數/傳回類型"},
 
         /*
          * Note to translators:  The file or URI named in the substitution text
          * is missing.
          */
         {ErrorMsg.FILE_NOT_FOUND_ERR,
-        "\u627E\u4E0D\u5230\u6A94\u6848\u6216 URI ''{0}''\u3002"},
+        "找不到檔案或 URI ''{0}''。"},
 
         /*
          * Note to translators:  This message is displayed when the URI
          * mentioned in the substitution text is not well-formed syntactically.
          */
         {ErrorMsg.INVALID_URI_ERR,
-        "\u7121\u6548\u7684 URI ''{0}''\u3002"},
+        "無效的 URI ''{0}''。"},
 
         /*
          * Note to translators:  This message is displayed when the URI
          * mentioned in the substitution text is not well-formed syntactically.
          */
         {ErrorMsg.CATALOG_EXCEPTION,
-        "JAXP08090001: CatalogResolver \u5DF2\u555F\u7528\u76EE\u9304 \"{0}\"\uFF0C\u4F46\u50B3\u56DE CatalogException\u3002"},
+        "JAXP08090001: CatalogResolver 已啟用目錄 \"{0}\"，但傳回 CatalogException。"},
 
         /*
          * Note to translators:  The file or URI named in the substitution text
          * exists but could not be opened.
          */
         {ErrorMsg.FILE_ACCESS_ERR,
-        "\u7121\u6CD5\u958B\u555F\u6A94\u6848\u6216 URI ''{0}''\u3002"},
+        "無法開啟檔案或 URI ''{0}''。"},
 
         /*
          * Note to translators: <xsl:stylesheet> and <xsl:transform> are
          * keywords that should not be translated.
          */
         {ErrorMsg.MISSING_ROOT_ERR,
-        "\u9810\u671F <xsl:stylesheet> \u6216 <xsl:transform> \u5143\u7D20\u3002"},
+        "預期 <xsl:stylesheet> 或 <xsl:transform> 元素。"},
 
         /*
          * Note to translators:  The stylesheet contained a reference to a
@@ -196,21 +196,21 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * text is the name of the prefix.
          */
         {ErrorMsg.NAMESPACE_UNDEF_ERR,
-        "\u672A\u5BA3\u544A\u547D\u540D\u7A7A\u9593\u524D\u7F6E\u78BC ''{0}''\u3002"},
+        "未宣告命名空間前置碼 ''{0}''。"},
 
         /*
          * Note to translators:  The Java function named in the stylesheet could
          * not be found.
          */
         {ErrorMsg.FUNCTION_RESOLVE_ERR,
-        "\u7121\u6CD5\u89E3\u6790\u51FD\u6578 ''{0}'' \u7684\u547C\u53EB\u3002"},
+        "無法解析函數 ''{0}'' 的呼叫。"},
 
         /*
          * Note to translators:  The substitution text is the name of a
          * function.  A literal string here means a constant string value.
          */
         {ErrorMsg.NEED_LITERAL_ERR,
-        "''{0}'' \u7684\u5F15\u6578\u5FC5\u9808\u662F\u6587\u5B57\u5B57\u4E32\u3002"},
+        "''{0}'' 的引數必須是文字字串。"},
 
         /*
          * Note to translators:  This message indicates there was a syntactic
@@ -218,7 +218,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * the expression.
          */
         {ErrorMsg.XPATH_PARSER_ERR,
-        "\u5256\u6790 XPath \u8868\u793A\u5F0F ''{0}'' \u6642\u767C\u751F\u932F\u8AA4\u3002"},
+        "剖析 XPath 表示式 ''{0}'' 時發生錯誤。"},
 
         /*
          * Note to translators:  An element in the stylesheet requires a
@@ -226,7 +226,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * attribute was not specified in the stylesheet.
          */
         {ErrorMsg.REQUIRED_ATTR_ERR,
-        "\u907A\u6F0F\u5FC5\u8981\u7684\u5C6C\u6027 ''{0}''\u3002"},
+        "遺漏必要的屬性 ''{0}''。"},
 
         /*
          * Note to translators:  This message indicates that a character not
@@ -234,7 +234,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * text is the offending character.
          */
         {ErrorMsg.ILLEGAL_CHAR_ERR,
-        "XPath \u8868\u793A\u5F0F\u4E2D\u7121\u6548\u7684\u5B57\u5143 ''{0}''\u3002"},
+        "XPath 表示式中無效的字元 ''{0}''。"},
 
         /*
          * Note to translators:  A processing instruction is a mark-up item in
@@ -243,7 +243,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * text is the name.
          */
         {ErrorMsg.ILLEGAL_PI_ERR,
-        "\u8655\u7406\u6307\u793A\u7684\u7121\u6548\u540D\u7A31 ''{0}''\u3002"},
+        "處理指示的無效名稱 ''{0}''。"},
 
         /*
          * Note to translators:  This message is reported if the stylesheet
@@ -252,7 +252,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * specifies the name of the attribute.
          */
         {ErrorMsg.STRAY_ATTRIBUTE_ERR,
-        "\u5C6C\u6027 ''{0}'' \u5728\u5143\u7D20\u4E4B\u5916\u3002"},
+        "屬性 ''{0}'' 在元素之外。"},
 
         /*
          * Note to translators:  An attribute that wasn't recognized was
@@ -261,7 +261,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * text.
          */
         {ErrorMsg.ILLEGAL_ATTRIBUTE_ERR,
-        "\u7121\u6548\u7684\u5C6C\u6027 ''{0}''\u3002"},
+        "無效的屬性 ''{0}''。"},
 
         /*
          * Note to translators:  "import" and "include" are keywords that should
@@ -270,14 +270,14 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * directly or indirectly.
          */
         {ErrorMsg.CIRCULAR_INCLUDE_ERR,
-        "\u5FAA\u74B0\u532F\u5165/\u5305\u542B\u3002\u5DF2\u7D93\u8F09\u5165\u6A23\u5F0F\u8868 ''{0}''\u3002"},
+        "循環匯入/包含。已經載入樣式表 ''{0}''。"},
 
         /*
          * Note to translators:  "xsl:import" and "xsl:include" are keywords that
          * should not be translated.
          */
         {ErrorMsg.IMPORT_PRECEDE_OTHERS_ERR,
-        "xsl:import \u5143\u7D20\u5B50\u9805\u5FC5\u9808\u5728 xsl:stylesheet \u5143\u7D20\u7684\u6240\u6709\u5176\u4ED6\u5143\u7D20\u5B50\u9805\u4E4B\u524D\uFF0C\u5305\u62EC\u4EFB\u4F55 xsl:include \u5143\u7D20\u5B50\u9805\u3002"},
+        "xsl:import 元素子項必須在 xsl:stylesheet 元素的所有其他元素子項之前，包括任何 xsl:include 元素子項。"},
 
         /*
          * Note to translators:  A result-tree fragment is a portion of a
@@ -285,7 +285,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * keyword and should not be translated.
          */
         {ErrorMsg.RESULT_TREE_SORT_ERR,
-        "\u7121\u6CD5\u6392\u5E8F Result-tree \u7247\u6BB5 (\u5FFD\u7565 <xsl:sort> \u5143\u7D20)\u3002\u5EFA\u7ACB\u7D50\u679C\u6A39\u72C0\u7D50\u69CB\u6642\uFF0C\u5FC5\u9808\u6392\u5E8F\u7BC0\u9EDE\u3002"},
+        "無法排序 Result-tree 片段 (忽略 <xsl:sort> 元素)。建立結果樹狀結構時，必須排序節點。"},
 
         /*
          * Note to translators:  A name can be given to a particular style to be
@@ -293,35 +293,35 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * of such a style for which more than one declaration was encountered.
          */
         {ErrorMsg.SYMBOLS_REDEF_ERR,
-        "\u5DF2\u7D93\u5B9A\u7FA9\u5341\u9032\u4F4D\u683C\u5F0F ''{0}''\u3002"},
+        "已經定義十進位格式 ''{0}''。"},
 
         /*
          * Note to translators:  The stylesheet version named in the
          * substitution text is not supported.
          */
         {ErrorMsg.XSL_VERSION_ERR,
-        "XSLTC \u4E0D\u652F\u63F4 XSL \u7248\u672C ''{0}''\u3002"},
+        "XSLTC 不支援 XSL 版本 ''{0}''。"},
 
         /*
          * Note to translators:  The definitions of one or more variables or
          * parameters depend on one another.
          */
         {ErrorMsg.CIRCULAR_VARIABLE_ERR,
-        "\u5728 ''{0}'' \u4E2D\u6709\u5FAA\u74B0\u8B8A\u6578/\u53C3\u6578\u53C3\u7167\u3002"},
+        "在 ''{0}'' 中有循環變數/參數參照。"},
 
         /*
          * Note to translators:  The operator in an expresion with two operands was
          * not recognized.
          */
         {ErrorMsg.ILLEGAL_BINARY_OP_ERR,
-        "\u4E8C\u9032\u4F4D\u8868\u793A\u5F0F\u4E0D\u660E\u7684\u904B\u7B97\u5B50\u3002"},
+        "二進位表示式不明的運算子。"},
 
         /*
          * Note to translators:  This message is produced if a reference to a
          * function has too many or too few arguments.
          */
         {ErrorMsg.ILLEGAL_ARG_ERR,
-        "\u51FD\u6578\u547C\u53EB\u7121\u6548\u7684\u5F15\u6578\u3002"},
+        "函數呼叫無效的引數。"},
 
         /*
          * Note to translators:  "document()" is the name of function and must
@@ -329,7 +329,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * representation of an XML document.
          */
         {ErrorMsg.DOCUMENT_ARG_ERR,
-        "document() \u51FD\u6578\u7684\u7B2C\u4E8C\u500B\u5F15\u6578\u5FC5\u9808\u662F node-set\u3002"},
+        "document() 函數的第二個引數必須是 node-set。"},
 
         /*
          * Note to translators:  "<xsl:when>" and "<xsl:choose>" are keywords
@@ -337,7 +337,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * in the stylesheet.
          */
         {ErrorMsg.MISSING_WHEN_ERR,
-        "\u5728 <xsl:choose> \u4E2D\u81F3\u5C11\u9700\u8981\u4E00\u500B <xsl:when> \u5143\u7D20\u3002"},
+        "在 <xsl:choose> 中至少需要一個 <xsl:when> 元素。"},
 
         /*
          * Note to translators:  "<xsl:otherwise>" and "<xsl:choose>" are
@@ -345,7 +345,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * syntax error in the stylesheet.
          */
         {ErrorMsg.MULTIPLE_OTHERWISE_ERR,
-        "\u5728 <xsl:choose> \u4E2D\u53EA\u5141\u8A31\u4E00\u500B <xsl:otherwise> \u5143\u7D20\u3002"},
+        "在 <xsl:choose> 中只允許一個 <xsl:otherwise> 元素。"},
 
         /*
          * Note to translators:  "<xsl:otherwise>" and "<xsl:choose>" are
@@ -353,7 +353,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * syntax error in the stylesheet.
          */
         {ErrorMsg.STRAY_OTHERWISE_ERR,
-        "<xsl:otherwise> \u53EA\u80FD\u5728 <xsl:choose> \u5167\u4F7F\u7528\u3002"},
+        "<xsl:otherwise> 只能在 <xsl:choose> 內使用。"},
 
         /*
          * Note to translators:  "<xsl:when>" and "<xsl:choose>" are keywords
@@ -361,7 +361,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * in the stylesheet.
          */
         {ErrorMsg.STRAY_WHEN_ERR,
-        "<xsl:when> \u53EA\u80FD\u5728 <xsl:choose> \u5167\u4F7F\u7528\u3002"},
+        "<xsl:when> 只能在 <xsl:choose> 內使用。"},
 
         /*
          * Note to translators:  "<xsl:when>", "<xsl:otherwise>" and
@@ -369,21 +369,21 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * message describes a syntax error in the stylesheet.
          */
         {ErrorMsg.WHEN_ELEMENT_ERR,
-        "\u5728 <xsl:choose> \u4E2D\u53EA\u5141\u8A31 <xsl:when> \u8207 <xsl:otherwise> \u5143\u7D20\u3002"},
+        "在 <xsl:choose> 中只允許 <xsl:when> 與 <xsl:otherwise> 元素。"},
 
         /*
          * Note to translators:  "<xsl:attribute-set>" and "name" are keywords
          * that should not be translated.
          */
         {ErrorMsg.UNNAMED_ATTRIBSET_ERR,
-        "<xsl:attribute-set> \u907A\u6F0F 'name' \u5C6C\u6027\u3002"},
+        "<xsl:attribute-set> 遺漏 'name' 屬性。"},
 
         /*
          * Note to translators:  An element in the stylesheet contained an
          * element of a type that it was not permitted to contain.
          */
         {ErrorMsg.ILLEGAL_CHILD_ERR,
-        "\u7121\u6548\u7684\u5B50\u9805\u5143\u7D20\u3002"},
+        "無效的子項元素。"},
 
         /*
          * Note to translators:  The stylesheet tried to create an element with
@@ -391,7 +391,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * the name.
          */
         {ErrorMsg.ILLEGAL_ELEM_NAME_ERR,
-        "\u60A8\u7121\u6CD5\u547C\u53EB\u5143\u7D20 ''{0}''"},
+        "您無法呼叫元素 ''{0}''"},
 
         /*
          * Note to translators:  The stylesheet tried to create an attribute
@@ -399,7 +399,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * contains the name.
          */
         {ErrorMsg.ILLEGAL_ATTR_NAME_ERR,
-        "\u60A8\u7121\u6CD5\u547C\u53EB\u5C6C\u6027 ''{0}''"},
+        "您無法呼叫屬性 ''{0}''"},
 
         /*
          * Note to translators:  The children of the outermost element of a
@@ -409,7 +409,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * "<xsl:stylesheet>" is a keyword that should not be translated.
          */
         {ErrorMsg.ILLEGAL_TEXT_NODE_ERR,
-        "\u6700\u4E0A\u5C64 <xsl:stylesheet> \u5143\u7D20\u4E4B\u5916\u7684\u6587\u5B57\u8CC7\u6599\u3002"},
+        "最上層 <xsl:stylesheet> 元素之外的文字資料。"},
 
         /*
          * Note to translators:  JAXP is an acronym for the Java API for XML
@@ -417,14 +417,14 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * XSLTC to process the XML input document had a configuration problem.
          */
         {ErrorMsg.SAX_PARSER_CONFIG_ERR,
-        "\u672A\u6B63\u78BA\u8A2D\u5B9A JAXP \u5256\u6790\u5668"},
+        "未正確設定 JAXP 剖析器"},
 
         /*
          * Note to translators:  The substitution text names the internal error
          * encountered.
          */
         {ErrorMsg.INTERNAL_ERR,
-        "\u7121\u6CD5\u5FA9\u539F\u7684 XSLTC-internal \u932F\u8AA4: ''{0}''"},
+        "無法復原的 XSLTC-internal 錯誤: ''{0}''"},
 
         /*
          * Note to translators:  The stylesheet contained an element that was
@@ -432,7 +432,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * gives the element name.
          */
         {ErrorMsg.UNSUPPORTED_XSL_ERR,
-        "\u4E0D\u652F\u63F4\u7684 XSL \u5143\u7D20 ''{0}''\u3002"},
+        "不支援的 XSL 元素 ''{0}''。"},
 
         /*
          * Note to translators:  The stylesheet referred to an extension to the
@@ -441,7 +441,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * gives the extension name.
          */
         {ErrorMsg.UNSUPPORTED_EXT_ERR,
-        "\u7121\u6CD5\u8FA8\u8B58\u7684 XSLTC \u64F4\u5145\u5957\u4EF6 ''{0}''\u3002"},
+        "無法辨識的 XSLTC 擴充套件 ''{0}''。"},
 
         /*
          * Note to translators:  The XML document given to XSLTC as a stylesheet
@@ -451,20 +451,20 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * for that namespace was seen.
          */
         {ErrorMsg.MISSING_XSLT_URI_ERR,
-        "\u8F38\u5165\u6587\u4EF6\u4E0D\u662F\u6A23\u5F0F\u8868 (\u6839\u5143\u7D20\u4E2D\u672A\u5BA3\u544A XSL \u547D\u540D\u7A7A\u9593)\u3002"},
+        "輸入文件不是樣式表 (根元素中未宣告 XSL 命名空間)。"},
 
         /*
          * Note to translators:  XSLTC could not find the stylesheet document
          * with the name specified by the substitution text.
          */
         {ErrorMsg.MISSING_XSLT_TARGET_ERR,
-        "\u627E\u4E0D\u5230\u6A23\u5F0F\u8868\u76EE\u6A19 ''{0}''\u3002"},
+        "找不到樣式表目標 ''{0}''。"},
 
         /*
          * Note to translators:  access to the stylesheet target is denied
          */
         {ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
-        "\u7121\u6CD5\u8B80\u53D6\u6A23\u5F0F\u8868\u76EE\u6A19 ''{0}''\uFF0C\u56E0\u70BA accessExternalStylesheet \u5C6C\u6027\u8A2D\u5B9A\u7684\u9650\u5236\uFF0C\u6240\u4EE5\u4E0D\u5141\u8A31 ''{1}'' \u5B58\u53D6\u3002"},
+        "無法讀取樣式表目標 ''{0}''，因為 accessExternalStylesheet 屬性設定的限制，所以不允許 ''{1}'' 存取。"},
 
         /*
          * Note to translators:  This message represents an internal error in
@@ -472,21 +472,21 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * that is missing some functionality.
          */
         {ErrorMsg.NOT_IMPLEMENTED_ERR,
-        "\u672A\u5BE6\u884C: ''{0}''\u3002"},
+        "未實行: ''{0}''。"},
 
         /*
          * Note to translators:  The XML document given to XSLTC as a stylesheet
          * was not, in fact, a stylesheet.
          */
         {ErrorMsg.NOT_STYLESHEET_ERR,
-        "\u8F38\u5165\u6587\u4EF6\u672A\u5305\u542B XSL \u6A23\u5F0F\u8868\u3002"},
+        "輸入文件未包含 XSL 樣式表。"},
 
         /*
          * Note to translators:  The element named in the substitution text was
          * encountered in the stylesheet but is not recognized.
          */
         {ErrorMsg.ELEMENT_PARSE_ERR,
-        "\u7121\u6CD5\u5256\u6790\u5143\u7D20 ''{0}''"},
+        "無法剖析元素 ''{0}''"},
 
         /*
          * Note to translators:  "use", "<key>", "node", "node-set", "string"
@@ -495,7 +495,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * attribute was not one of the permitted values.
          */
         {ErrorMsg.KEY_USE_ATTR_ERR,
-        "<key> \u7684\u4F7F\u7528\u5C6C\u6027\u5FC5\u9808\u662F\u7BC0\u9EDE\u3001node-set\u3001\u5B57\u4E32\u6216\u6578\u5B57\u3002"},
+        "<key> 的使用屬性必須是節點、node-set、字串或數字。"},
 
         /*
          * Note to translators:  An XML document can specify the version of the
@@ -503,14 +503,14 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * the version specified for the output document was not valid.
          */
         {ErrorMsg.OUTPUT_VERSION_ERR,
-        "\u8F38\u51FA XML \u6587\u4EF6\u7248\u672C\u61C9\u70BA 1.0"},
+        "輸出 XML 文件版本應為 1.0"},
 
         /*
          * Note to translators:  The operator in a comparison operation was
          * not recognized.
          */
         {ErrorMsg.ILLEGAL_RELAT_OP_ERR,
-        "\u95DC\u806F\u8868\u793A\u5F0F\u7684\u904B\u7B97\u5B50\u4E0D\u660E"},
+        "關聯表示式的運算子不明"},
 
         /*
          * Note to translators:  An attribute set defines as a set of XML
@@ -520,7 +520,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * that is in error.
          */
         {ErrorMsg.ATTRIBSET_UNDEF_ERR,
-        "\u5617\u8A66\u4F7F\u7528\u4E0D\u5B58\u5728\u7684\u5C6C\u6027\u96C6 ''{0}''\u3002"},
+        "嘗試使用不存在的屬性集 ''{0}''。"},
 
         /*
          * Note to translators:  The term "attribute value template" is a term
@@ -530,13 +530,13 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * contains the expression that was in error.
          */
         {ErrorMsg.ATTR_VAL_TEMPLATE_ERR,
-        "\u7121\u6CD5\u5256\u6790\u5C6C\u6027\u503C\u6A23\u677F ''{0}''\u3002"},
+        "無法剖析屬性值樣板 ''{0}''。"},
 
         /*
          * Note to translators:  ???
          */
         {ErrorMsg.UNKNOWN_SIG_TYPE_ERR,
-        "\u985E\u5225 ''{0}'' \u7C3D\u7AE0\u6709\u4E0D\u660E\u7684 data-type\u3002"},
+        "類別 ''{0}'' 簽章有不明的 data-type。"},
 
         /*
          * Note to translators:  The substitution text refers to data types.
@@ -545,30 +545,30 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * type {0}.
          */
         {ErrorMsg.DATA_CONVERSION_ERR,
-        "\u7121\u6CD5\u8F49\u63DB data-type ''{0}'' \u70BA ''{1}''\u3002"},
+        "無法轉換 data-type ''{0}'' 為 ''{1}''。"},
 
         /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.
          */
         {ErrorMsg.NO_TRANSLET_CLASS_ERR,
-        "\u6B64\u6A23\u677F\u672A\u5305\u542B\u6709\u6548\u7684 translet \u985E\u5225\u5B9A\u7FA9\u3002"},
+        "此樣板未包含有效的 translet 類別定義。"},
 
         /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.
          */
         {ErrorMsg.NO_MAIN_TRANSLET_ERR,
-        "\u6B64\u6A23\u677F\u672A\u5305\u542B\u540D\u7A31\u70BA ''{0}'' \u7684\u985E\u5225\u3002"},
+        "此樣板未包含名稱為 ''{0}'' 的類別。"},
 
         /*
          * Note to translators:  The substitution text is the name of a class.
          */
         {ErrorMsg.TRANSLET_CLASS_ERR,
-        "\u7121\u6CD5\u8F09\u5165 translet \u985E\u5225 ''{0}''\u3002"},
+        "無法載入 translet 類別 ''{0}''。"},
 
         {ErrorMsg.TRANSLET_OBJECT_ERR,
-        "\u5DF2\u8F09\u5165 translet \u985E\u5225\uFF0C\u4F46\u7121\u6CD5\u5EFA\u7ACB translet \u57F7\u884C\u8655\u7406\u3002"},
+        "已載入 translet 類別，但無法建立 translet 執行處理。"},
 
         /*
          * Note to translators:  "ErrorListener" is a Java interface name that
@@ -577,28 +577,28 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * substitution text with "null" Java value.
          */
         {ErrorMsg.ERROR_LISTENER_NULL_ERR,
-        "\u5617\u8A66\u5C07 ''{0}'' \u7684 ErrorListener \u8A2D\u5B9A\u70BA\u7A7A\u503C"},
+        "嘗試將 ''{0}'' 的 ErrorListener 設定為空值"},
 
         /*
          * Note to translators:  StreamSource, SAXSource and DOMSource are Java
          * interface names that should not be translated.
          */
         {ErrorMsg.JAXP_UNKNOWN_SOURCE_ERR,
-        "XSLTC \u50C5\u652F\u63F4 StreamSource\u3001SAXSource \u8207 DOMSource"},
+        "XSLTC 僅支援 StreamSource、SAXSource 與 DOMSource"},
 
         /*
          * Note to translators:  "Source" is a Java class name that should not
          * be translated.  The substitution text is the name of Java method.
          */
         {ErrorMsg.JAXP_NO_SOURCE_ERR,
-        "\u50B3\u9001\u81F3 ''{0}'' \u7684\u4F86\u6E90\u7269\u4EF6\u6C92\u6709\u5167\u5BB9\u3002"},
+        "傳送至 ''{0}'' 的來源物件沒有內容。"},
 
         /*
          * Note to translators:  The message indicates that XSLTC failed to
          * compile the stylesheet into a translet (class file).
          */
         {ErrorMsg.JAXP_COMPILE_ERR,
-        "\u7121\u6CD5\u7DE8\u8B6F\u6A23\u5F0F\u8868"},
+        "無法編譯樣式表"},
 
         /*
          * Note to translators:  "TransformerFactory" is a class name.  In this
@@ -609,17 +609,17 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * translate the term "attribute".
          */
         {ErrorMsg.JAXP_INVALID_ATTR_ERR,
-        "TransformerFactory \u7121\u6CD5\u8FA8\u8B58\u5C6C\u6027 ''{0}''\u3002"},
+        "TransformerFactory 無法辨識屬性 ''{0}''。"},
 
         {ErrorMsg.JAXP_INVALID_ATTR_VALUE_ERR,
-        "\u70BA ''{0}'' \u5C6C\u6027\u6307\u5B9A\u7684\u503C\u4E0D\u6B63\u78BA\u3002"},
+        "為 ''{0}'' 屬性指定的值不正確。"},
 
         /*
          * Note to translators:  "setResult()" and "startDocument()" are Java
          * method names that should not be translated.
          */
         {ErrorMsg.JAXP_SET_RESULT_ERR,
-        "\u547C\u53EB startDocument() \u4E4B\u524D\uFF0C\u5FC5\u9808\u5148\u547C\u53EB setResult()\u3002"},
+        "呼叫 startDocument() 之前，必須先呼叫 setResult()。"},
 
         /*
          * Note to translators:  "Transformer" is a Java interface name that
@@ -629,7 +629,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * met.
          */
         {ErrorMsg.JAXP_NO_TRANSLET_ERR,
-        "\u8F49\u63DB\u5668\u6C92\u6709\u5C01\u88DD\u7684 translet \u7269\u4EF6\u3002"},
+        "轉換器沒有封裝的 translet 物件。"},
 
         /*
          * Note to translators:  The XML document that results from a
@@ -637,14 +637,14 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * message is produced if that requirement is not met.
          */
         {ErrorMsg.JAXP_NO_HANDLER_ERR,
-        "\u8F49\u63DB\u7D50\u679C\u6C92\u6709\u5B9A\u7FA9\u7684\u8F38\u51FA\u8655\u7406\u7A0B\u5F0F\u3002"},
+        "轉換結果沒有定義的輸出處理程式。"},
 
         /*
          * Note to translators:  "Result" is a Java interface name in this
          * context.  The substitution text is a method name.
          */
         {ErrorMsg.JAXP_NO_RESULT_ERR,
-        "\u50B3\u9001\u81F3 ''{0}'' \u7684\u7D50\u679C\u7269\u4EF6\u7121\u6548\u3002"},
+        "傳送至 ''{0}'' 的結果物件無效。"},
 
         /*
          * Note to translators:  "Transformer" is a Java interface name.  The
@@ -654,7 +654,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * would be best to translate the term "property".
          */
         {ErrorMsg.JAXP_UNKNOWN_PROP_ERR,
-        "\u5617\u8A66\u5B58\u53D6\u7121\u6548\u7684\u8F49\u63DB\u5668\u5C6C\u6027 ''{0}''\u3002"},
+        "嘗試存取無效的轉換器屬性 ''{0}''。"},
 
         /*
          * Note to translators:  SAX2DOM is the name of a Java class that should
@@ -662,28 +662,28 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * DOM object and converts it to something that uses the SAX API.
          */
         {ErrorMsg.SAX2DOM_ADAPTER_ERR,
-        "\u7121\u6CD5\u5EFA\u7ACB SAX2DOM \u8F49\u63A5\u5668: ''{0}''\u3002"},
+        "無法建立 SAX2DOM 轉接器: ''{0}''。"},
 
         /*
          * Note to translators:  "XSLTCSource.build()" is a Java method name.
          * "systemId" is an XML term that is short for "system identification".
          */
         {ErrorMsg.XSLTC_SOURCE_ERR,
-        "\u672A\u8A2D\u5B9A systemId \u800C\u547C\u53EB XSLTCSource.build()\u3002"},
+        "未設定 systemId 而呼叫 XSLTCSource.build()。"},
 
         { ErrorMsg.ER_RESULT_NULL,
-            "\u7D50\u679C\u4E0D\u61C9\u70BA\u7A7A\u503C"},
+            "結果不應為空值"},
 
         /*
          * Note to translators:  This message indicates that the value argument
          * of setParameter must be a valid Java Object.
          */
         {ErrorMsg.JAXP_INVALID_SET_PARAM_VALUE,
-        "\u53C3\u6578 {0} \u7684\u503C\u5FC5\u9808\u662F\u6709\u6548\u7684 Java \u7269\u4EF6"},
+        "參數 {0} 的值必須是有效的 Java 物件"},
 
 
         {ErrorMsg.COMPILE_STDIN_ERR,
-        "-i \u9078\u9805\u5FC5\u9808\u8207 -o \u9078\u9805\u4E00\u8D77\u4F7F\u7528\u3002"},
+        "-i 選項必須與 -o 選項一起使用。"},
 
 
         /*
@@ -696,7 +696,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * documentation.
          */
         {ErrorMsg.COMPILE_USAGE_STR,
-        "\u6982\u8981\n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Compile [-o <output>]\n      [-d <directory>] [-j <jarfile>] [-p <package>]\n      [-n] [-x] [-u] [-v] [-h] { <stylesheet> | -i }\n\n\u9078\u9805\n   -o <output>    \u6307\u6D3E\u540D\u7A31 <output> \u81F3\u7522\u751F\u7684\n                  translet\u3002\u6839\u64DA\u9810\u8A2D\uFF0Ctranslet \u540D\u7A31\n                  \u884D\u751F\u81EA <stylesheet> \u540D\u7A31\u3002\u82E5\u7DE8\u8B6F\n                  \u591A\u500B\u6A23\u5F0F\u8868\uFF0C\u5C07\u5FFD\u7565\u6B64\u9078\u9805\u3002\n   -d <directory> \u6307\u5B9A translet \u7684\u76EE\u7684\u5730\u76EE\u9304\n   -j <jarfile>   \u5C01\u88DD translet \u985E\u5225\u6210\u70BA jar \u6A94\u6848\uFF0C\n                  \u540D\u7A31\u6307\u5B9A\u70BA <jarfile>\n   -p <package>   \u6307\u5B9A\u6240\u6709\u7522\u751F\u7684 translet \u985E\u5225\u7684\u5957\u88DD\u7A0B\u5F0F\n                  \u540D\u7A31\u524D\u7F6E\u78BC\u3002\n   -n             \u555F\u7528\u6A23\u677F\u5167\u5D4C (\u9810\u8A2D\u884C\u70BA\u4E00\u822C\u800C\u8A00\n                  \u8F03\u4F73)\u3002\n   -x             \u958B\u555F\u984D\u5916\u7684\u9664\u932F\u8A0A\u606F\u8F38\u51FA\n   -u             \u89E3\u8B6F <stylesheet> \u5F15\u6578\u70BA URL\n   -i             \u5F37\u5236\u7DE8\u8B6F\u5668\u5F9E stdin \u8B80\u53D6\u6A23\u5F0F\u8868\n   -v             \u5217\u5370\u7DE8\u8B6F\u5668\u7248\u672C\n   -h             \u5217\u5370\u6B64\u7528\u6CD5\u6558\u8FF0\n"},
+        "概要\n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Compile [-o <output>]\n      [-d <directory>] [-j <jarfile>] [-p <package>]\n      [-n] [-x] [-u] [-v] [-h] { <stylesheet> | -i }\n\n選項\n   -o <output>    指派名稱 <output> 至產生的\n                  translet。根據預設，translet 名稱\n                  衍生自 <stylesheet> 名稱。若編譯\n                  多個樣式表，將忽略此選項。\n   -d <directory> 指定 translet 的目的地目錄\n   -j <jarfile>   封裝 translet 類別成為 jar 檔案，\n                  名稱指定為 <jarfile>\n   -p <package>   指定所有產生的 translet 類別的套裝程式\n                  名稱前置碼。\n   -n             啟用樣板內嵌 (預設行為一般而言\n                  較佳)。\n   -x             開啟額外的除錯訊息輸出\n   -u             解譯 <stylesheet> 引數為 URL\n   -i             強制編譯器從 stdin 讀取樣式表\n   -v             列印編譯器版本\n   -h             列印此用法敘述\n"},
 
         /*
          * Note to translators:  This message contains usage information for a
@@ -708,7 +708,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * documentation.
          */
         {ErrorMsg.TRANSFORM_USAGE_STR,
-        "\u6982\u8981 \n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Transform [-j <jarfile>]\n      [-x] [-n <iterations>] {-u <document_url> | <document>}\n      <class> [<param1>=<value1> ...]\n\n   \u4F7F\u7528 translet <class> \u8F49\u63DB\u6307\u5B9A\u70BA <document> \n   \u7684 XML \u6587\u4EF6\u3002translet <class> \u4F4D\u65BC\n   \u4F7F\u7528\u8005\u7684\u985E\u5225\u8DEF\u5F91\uFF0C\u6216\u662F\u5728\u9078\u64C7\u6027\u6307\u5B9A\u7684 <jarfile> \u4E2D\u3002\n\u9078\u9805\n   -j <jarfile>    \u6307\u5B9A\u8F09\u5165 translet \u7684\u4F86\u6E90 jarfile\n   -x              \u958B\u555F\u984D\u5916\u7684\u9664\u932F\u8A0A\u606F\u8F38\u51FA\n   -n <iterations> \u57F7\u884C\u8F49\u63DB <iterations> \u6B21\u6578\u8207\n                   \u986F\u793A\u5206\u6790\u8CC7\u8A0A\n   -u <document_url> \u6307\u5B9A XML \u8F38\u5165\u6587\u4EF6\u70BA URL\n"},
+        "概要 \n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Transform [-j <jarfile>]\n      [-x] [-n <iterations>] {-u <document_url> | <document>}\n      <class> [<param1>=<value1> ...]\n\n   使用 translet <class> 轉換指定為 <document> \n   的 XML 文件。translet <class> 位於\n   使用者的類別路徑，或是在選擇性指定的 <jarfile> 中。\n選項\n   -j <jarfile>    指定載入 translet 的來源 jarfile\n   -x              開啟額外的除錯訊息輸出\n   -n <iterations> 執行轉換 <iterations> 次數與\n                   顯示分析資訊\n   -u <document_url> 指定 XML 輸入文件為 URL\n"},
 
 
 
@@ -719,7 +719,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * one of the other kinds of elements mentioned.
          */
         {ErrorMsg.STRAY_SORT_ERR,
-        "<xsl:sort> \u53EA\u80FD\u5728 <xsl:for-each> \u6216 <xsl:apply-templates> \u4E2D\u4F7F\u7528\u3002"},
+        "<xsl:sort> 只能在 <xsl:for-each> 或 <xsl:apply-templates> 中使用。"},
 
         /*
          * Note to translators:  The message indicates that the encoding
@@ -728,14 +728,14 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * the program.
          */
         {ErrorMsg.UNSUPPORTED_ENCODING,
-        "\u6B64 JVM \u4E0D\u652F\u63F4\u8F38\u51FA\u7DE8\u78BC ''{0}''\u3002"},
+        "此 JVM 不支援輸出編碼 ''{0}''。"},
 
         /*
          * Note to translators:  The message indicates that the XPath expression
          * named in the substitution text was not well formed syntactically.
          */
         {ErrorMsg.SYNTAX_ERR,
-        "''{0}'' \u4E2D\u7684\u8A9E\u6CD5\u932F\u8AA4\u3002"},
+        "''{0}'' 中的語法錯誤。"},
 
         /*
          * Note to translators:  The substitution text is the name of a Java
@@ -744,7 +744,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * class.
          */
         {ErrorMsg.CONSTRUCTOR_NOT_FOUND,
-        "\u627E\u4E0D\u5230\u5916\u90E8\u5EFA\u69CB\u5B50 ''{0}''\u3002"},
+        "找不到外部建構子 ''{0}''。"},
 
         /*
          * Note to translators:  "static" is the Java keyword.  The substitution
@@ -752,7 +752,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * is not of the required type.
          */
         {ErrorMsg.NO_JAVA_FUNCT_THIS_REF,
-        "\u975E\u975C\u614B Java \u51FD\u6578 ''{0}'' \u7684\u7B2C\u4E00\u500B\u5F15\u6578\u4E0D\u662F\u6709\u6548\u7684\u7269\u4EF6\u53C3\u7167\u3002"},
+        "非靜態 Java 函數 ''{0}'' 的第一個引數不是有效的物件參照。"},
 
         /*
          * Note to translators:  An XPath expression was not of the type
@@ -760,7 +760,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * expression that was in error.
          */
         {ErrorMsg.TYPE_CHECK_ERR,
-        "\u6AA2\u67E5\u8868\u793A\u5F0F ''{0}'' \u7684\u985E\u578B\u6642\u767C\u751F\u932F\u8AA4\u3002"},
+        "檢查表示式 ''{0}'' 的類型時發生錯誤。"},
 
         /*
          * Note to translators:  An XPath expression was not of the type
@@ -768,21 +768,21 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * problematic expression is unknown.
          */
         {ErrorMsg.TYPE_CHECK_UNK_LOC_ERR,
-        "\u6AA2\u67E5\u4F4D\u65BC\u4E0D\u660E\u4F4D\u7F6E\u8868\u793A\u5F0F\u7684\u985E\u578B\u6642\u767C\u751F\u932F\u8AA4\u3002"},
+        "檢查位於不明位置表示式的類型時發生錯誤。"},
 
         /*
          * Note to translators:  The substitution text is the name of a command-
          * line option that was not recognized.
          */
         {ErrorMsg.ILLEGAL_CMDLINE_OPTION_ERR,
-        "\u547D\u4EE4\u884C\u9078\u9805 ''{0}'' \u7121\u6548\u3002"},
+        "命令行選項 ''{0}'' 無效。"},
 
         /*
          * Note to translators:  The substitution text is the name of a command-
          * line option.
          */
         {ErrorMsg.CMDLINE_OPT_MISSING_ARG_ERR,
-        "\u547D\u4EE4\u884C\u9078\u9805 ''{0}'' \u907A\u6F0F\u5FC5\u8981\u7684\u5F15\u6578\u3002"},
+        "命令行選項 ''{0}'' 遺漏必要的引數。"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -836,14 +836,14 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * Note to translators:  The substitution text is the name of a class.
          */
         {ErrorMsg.TRANSFORM_WITH_TRANSLET_STR,
-        "\u4F7F\u7528 translet ''{0}'' \u8F49\u63DB"},
+        "使用 translet ''{0}'' 轉換"},
 
         /*
          * Note to translators:  The first substitution is the name of a class,
          * while the second substitution is the name of a jar file.
          */
         {ErrorMsg.TRANSFORM_WITH_JAR_STR,
-        "\u4F7F\u7528\u4F86\u81EA jar \u6A94\u6848 ''{1}'' \u7684 translet ''{0}'' \u8F49\u63DB"},
+        "使用來自 jar 檔案 ''{1}'' 的 translet ''{0}'' 轉換"},
 
         /*
          * Note to translators:  "TransformerFactory" is the name of a Java
@@ -851,7 +851,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * the name of the class that could not be instantiated.
          */
         {ErrorMsg.COULD_NOT_CREATE_TRANS_FACT,
-        "\u7121\u6CD5\u5EFA\u7ACB TransformerFactory \u985E\u5225 ''{0}'' \u7684\u57F7\u884C\u8655\u7406\u3002"},
+        "無法建立 TransformerFactory 類別 ''{0}'' 的執行處理。"},
 
         /*
          * Note to translators:  This message is produced when the user
@@ -861,7 +861,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * specifies the name the processor used instead.
          */
         {ErrorMsg.TRANSLET_NAME_JAVA_CONFLICT,
-         "\u540D\u7A31 ''{0}'' \u7121\u6CD5\u4F5C\u70BA translet \u985E\u5225\u7684\u540D\u7A31\uFF0C\u56E0\u70BA\u5B83\u5305\u542B Java \u985E\u5225\u540D\u7A31\u4E0D\u5141\u8A31\u7684\u5B57\u5143\u3002\u8ACB\u6539\u7528\u540D\u7A31 ''{1}''\u3002"},
+         "名稱 ''{0}'' 無法作為 translet 類別的名稱，因為它包含 Java 類別名稱不允許的字元。請改用名稱 ''{1}''。"},
 
         /*
          * Note to translators:  The following message is used as a header.
@@ -869,7 +869,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * this message.
          */
         {ErrorMsg.COMPILER_ERROR_KEY,
-        "\u7DE8\u8B6F\u5668\u932F\u8AA4:"},
+        "編譯器錯誤:"},
 
         /*
          * Note to translators:  The following message is used as a header.
@@ -877,7 +877,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * beneath this message.
          */
         {ErrorMsg.COMPILER_WARNING_KEY,
-        "\u7DE8\u8B6F\u5668\u8B66\u544A:"},
+        "編譯器警告:"},
 
         /*
          * Note to translators:  The following message is used as a header.
@@ -887,7 +887,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * stylesheet (see above).
          */
         {ErrorMsg.RUNTIME_ERROR_KEY,
-        "Translet \u932F\u8AA4:"},
+        "Translet 錯誤:"},
 
         /*
          * Note to translators:  An attribute whose value is constrained to
@@ -896,7 +896,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {ErrorMsg.INVALID_QNAME_ERR,
-        "\u503C\u5FC5\u9808\u70BA QName \u6216\u4F7F\u7528\u7A7A\u683C\u52A0\u4EE5\u5340\u9694\u7684 QNames \u6E05\u55AE\u7684\u5C6C\u6027\uFF0C\u5177\u6709\u503C ''{0}''"},
+        "值必須為 QName 或使用空格加以區隔的 QNames 清單的屬性，具有值 ''{0}''"},
 
         /*
          * Note to translators:  An attribute whose value is required to
@@ -905,7 +905,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {ErrorMsg.INVALID_NCNAME_ERR,
-        "\u503C\u5FC5\u9808\u70BA NCName \u7684\u5C6C\u6027\uFF0C\u5177\u6709\u503C ''{0}''"},
+        "值必須為 NCName 的屬性，具有值 ''{0}''"},
 
         /*
          * Note to translators:  An attribute with an incorrect value was
@@ -918,19 +918,19 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * attribute.
          */
         {ErrorMsg.INVALID_METHOD_IN_OUTPUT,
-        "<xsl:output> \u5143\u7D20\u7684\u65B9\u6CD5\u5C6C\u6027\u5177\u6709\u503C ''{0}''\u3002\u6B64\u503C\u5FC5\u9808\u662F ''xml''\u3001''html''\u3001''text'' \u6216 qname-but-not-ncname \u5176\u4E2D\u4E4B\u4E00"},
+        "<xsl:output> 元素的方法屬性具有值 ''{0}''。此值必須是 ''xml''、''html''、''text'' 或 qname-but-not-ncname 其中之一"},
 
         {ErrorMsg.JAXP_GET_FEATURE_NULL_NAME,
-        "TransformerFactory.getFeature(\u5B57\u4E32\u540D\u7A31) \u4E2D\u7684\u529F\u80FD\u540D\u7A31\u4E0D\u53EF\u70BA\u7A7A\u503C\u3002"},
+        "TransformerFactory.getFeature(字串名稱) 中的功能名稱不可為空值。"},
 
         {ErrorMsg.JAXP_SET_FEATURE_NULL_NAME,
-        "TransformerFactory.setFeature(\u5B57\u4E32\u540D\u7A31, \u5E03\u6797\u503C) \u4E2D\u7684\u529F\u80FD\u540D\u7A31\u4E0D\u53EF\u70BA\u7A7A\u503C\u3002"},
+        "TransformerFactory.setFeature(字串名稱, 布林值) 中的功能名稱不可為空值。"},
 
         {ErrorMsg.JAXP_UNSUPPORTED_FEATURE,
-        "\u7121\u6CD5\u5728\u6B64 TransformerFactory \u4E0A\u8A2D\u5B9A\u529F\u80FD ''{0}''\u3002"},
+        "無法在此 TransformerFactory 上設定功能 ''{0}''。"},
 
         {ErrorMsg.JAXP_SECUREPROCESSING_FEATURE,
-        "FEATURE_SECURE_PROCESSING: \u5B89\u5168\u7BA1\u7406\u7A0B\u5F0F\u5B58\u5728\u6642\uFF0C\u7121\u6CD5\u5C07\u529F\u80FD\u8A2D\u70BA\u507D\u3002"},
+        "FEATURE_SECURE_PROCESSING: 安全管理程式存在時，無法將功能設為偽。"},
 
         /*
          * Note to translators:  This message describes an internal error in the
@@ -940,7 +940,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * technical term internal to XSLTC and should not be translated.
          */
         {ErrorMsg.OUTLINE_ERR_TRY_CATCH,
-         "\u5167\u90E8 XSLTC \u932F\u8AA4:  \u7522\u751F\u7684\u4F4D\u5143\u7D44\u78BC\u5305\u542B try-catch-finally \u5340\u584A\uFF0C\u7121\u6CD5\u52A0\u4EE5 outlined."},
+         "內部 XSLTC 錯誤:  產生的位元組碼包含 try-catch-finally 區塊，無法加以 outlined."},
 
         /*
          * Note to translators:  This message describes an internal error in the
@@ -953,7 +953,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * pair must also be between that same enclosing pair.
          */
         {ErrorMsg.OUTLINE_ERR_UNBALANCED_MARKERS,
-         "\u5167\u90E8 XSLTC \u932F\u8AA4:  OutlineableChunkStart \u548C OutlineableChunkEnd \u6A19\u8A18\u5FC5\u9808\u6210\u5C0D\u51FA\u73FE\uFF0C\u4E26\u4F7F\u7528\u6B63\u78BA\u7684\u5DE2\u72C0\u7D50\u69CB\u3002"},
+         "內部 XSLTC 錯誤:  OutlineableChunkStart 和 OutlineableChunkEnd 標記必須成對出現，並使用正確的巢狀結構。"},
 
         /*
          * Note to translators:  This message describes an internal error in the
@@ -966,7 +966,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          * should not be translated.
          */
         {ErrorMsg.OUTLINE_ERR_DELETED_TARGET,
-         "\u5167\u90E8 XSLTC \u932F\u8AA4:  \u539F\u59CB\u65B9\u6CD5\u4E2D\u4ECD\u7136\u53C3\u7167\u5C6C\u65BC outlined \u4F4D\u5143\u7D44\u78BC\u5340\u584A\u4E00\u90E8\u5206\u7684\u6307\u793A\u3002"
+         "內部 XSLTC 錯誤:  原始方法中仍然參照屬於 outlined 位元組碼區塊一部分的指示。"
         },
 
 
@@ -977,7 +977,7 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
          *
          */
         {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
-         "\u5167\u90E8 XSLTC \u932F\u8AA4:  translet \u4E2D\u7684\u65B9\u6CD5\u8D85\u904E Java \u865B\u64EC\u6A5F\u5668\u5C0D\u65BC\u65B9\u6CD5\u9577\u5EA6 64 KB \u7684\u9650\u5236\u3002\u9019\u901A\u5E38\u662F\u56E0\u70BA\u6A23\u5F0F\u8868\u4E2D\u6709\u975E\u5E38\u5927\u7684\u6A23\u677F\u3002\u8ACB\u5617\u8A66\u91CD\u65B0\u7D44\u7E54\u60A8\u7684\u6A23\u5F0F\u8868\u4EE5\u4F7F\u7528\u8F03\u5C0F\u7684\u6A23\u677F\u3002"
+         "內部 XSLTC 錯誤:  translet 中的方法超過 Java 虛擬機器對於方法長度 64 KB 的限制。這通常是因為樣式表中有非常大的樣板。請嘗試重新組織您的樣式表以使用較小的樣板。"
         },
 
     };

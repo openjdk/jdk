@@ -184,222 +184,222 @@ public class XMLErrorResources_ko extends ListResourceBundle
     {"ER0000" , "{0}" },
 
     { ER_FUNCTION_NOT_SUPPORTED,
-      "\uD568\uC218\uAC00 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4!"},
+      "함수가 지원되지 않습니다!"},
 
     { ER_CANNOT_OVERWRITE_CAUSE,
-      "\uC6D0\uC778\uC744 \uACB9\uCCD0 \uC4F8 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "원인을 겹쳐 쓸 수 없습니다."},
 
     { ER_NO_DEFAULT_IMPL,
-      "\uAE30\uBCF8 \uAD6C\uD604\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. "},
+      "기본 구현을 찾을 수 없습니다. "},
 
     { ER_CHUNKEDINTARRAY_NOT_SUPPORTED,
-      "ChunkedIntArray({0})\uB294 \uD604\uC7AC \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+      "ChunkedIntArray({0})는 현재 지원되지 않습니다."},
 
     { ER_OFFSET_BIGGER_THAN_SLOT,
-      "\uC624\uD504\uC14B\uC774 \uC2AC\uB86F\uBCF4\uB2E4 \uD07D\uB2C8\uB2E4."},
+      "오프셋이 슬롯보다 큽니다."},
 
     { ER_COROUTINE_NOT_AVAIL,
-      "Coroutine\uC744 \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. ID={0}"},
+      "Coroutine을 사용할 수 없습니다. ID={0}"},
 
     { ER_COROUTINE_CO_EXIT,
-      "CoroutineManager\uAC00 co_exit() \uC694\uCCAD\uC744 \uC218\uC2E0\uD588\uC2B5\uB2C8\uB2E4."},
+      "CoroutineManager가 co_exit() 요청을 수신했습니다."},
 
     { ER_COJOINROUTINESET_FAILED,
-      "co_joinCoroutineSet()\uB97C \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."},
+      "co_joinCoroutineSet()를 실패했습니다."},
 
     { ER_COROUTINE_PARAM,
-      "Coroutine \uB9E4\uAC1C\uBCC0\uC218 \uC624\uB958({0})"},
+      "Coroutine 매개변수 오류({0})"},
 
     { ER_PARSER_DOTERMINATE_ANSWERS,
-      "\n\uC608\uC0C1\uCE58 \uC54A\uC740 \uC624\uB958: \uAD6C\uBB38 \uBD84\uC11D\uAE30 doTerminate\uAC00 {0}\uC5D0 \uC751\uB2F5\uD569\uB2C8\uB2E4."},
+      "\n예상치 않은 오류: 구문 분석기 doTerminate가 {0}에 응답합니다."},
 
     { ER_NO_PARSE_CALL_WHILE_PARSING,
-      "\uAD6C\uBB38 \uBD84\uC11D \uC911 parse\uB97C \uD638\uCD9C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "구문 분석 중 parse를 호출할 수 없습니다."},
 
     { ER_TYPED_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "\uC624\uB958: {0} \uCD95\uC5D0 \uB300\uD574 \uC785\uB825\uB41C \uC774\uD130\uB808\uC774\uD130\uAC00 \uAD6C\uD604\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+      "오류: {0} 축에 대해 입력된 이터레이터가 구현되지 않았습니다."},
 
     { ER_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "\uC624\uB958: {0} \uCD95\uC5D0 \uB300\uD55C \uC774\uD130\uB808\uC774\uD130\uAC00 \uAD6C\uD604\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. "},
+      "오류: {0} 축에 대한 이터레이터가 구현되지 않았습니다. "},
 
     { ER_ITERATOR_CLONE_NOT_SUPPORTED,
-      "\uC774\uD130\uB808\uC774\uD130 \uBCF5\uC81C\uB294 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+      "이터레이터 복제는 지원되지 않습니다."},
 
     { ER_UNKNOWN_AXIS_TYPE,
-      "\uC54C \uC218 \uC5C6\uB294 \uCD95 \uC21C\uD68C \uC720\uD615: {0}"},
+      "알 수 없는 축 순회 유형: {0}"},
 
     { ER_AXIS_NOT_SUPPORTED,
-      "\uCD95 \uC21C\uD658\uAE30\uAC00 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC74C: {0}"},
+      "축 순환기가 지원되지 않음: {0}"},
 
     { ER_NO_DTMIDS_AVAIL,
-      "\uB354 \uC774\uC0C1 \uC0AC\uC6A9 \uAC00\uB2A5\uD55C DTM ID\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "더 이상 사용 가능한 DTM ID가 없습니다."},
 
     { ER_NOT_SUPPORTED,
-      "\uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC74C: {0}"},
+      "지원되지 않음: {0}"},
 
     { ER_NODE_NON_NULL,
-      "\uB178\uB4DC\uB294 getDTMHandleFromNode\uC5D0 \uB300\uD574 \uB110\uC774 \uC544\uB2C8\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+      "노드는 getDTMHandleFromNode에 대해 널이 아니어야 합니다."},
 
     { ER_COULD_NOT_RESOLVE_NODE,
-      "\uB178\uB4DC\uB97C \uD578\uB4E4\uB85C \uBD84\uC11D\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "노드를 핸들로 분석할 수 없습니다."},
 
     { ER_STARTPARSE_WHILE_PARSING,
-       "\uAD6C\uBB38 \uBD84\uC11D \uC911 startParse\uB97C \uD638\uCD9C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+       "구문 분석 중 startParse를 호출할 수 없습니다."},
 
     { ER_STARTPARSE_NEEDS_SAXPARSER,
-       "startParse\uC5D0\uB294 \uB110\uC774 \uC544\uB2CC SAXParser\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."},
+       "startParse에는 널이 아닌 SAXParser가 필요합니다."},
 
     { ER_COULD_NOT_INIT_PARSER,
-       "\uAD6C\uBB38 \uBD84\uC11D\uAE30\uB97C \uCD08\uAE30\uD654\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+       "구문 분석기를 초기화할 수 없습니다."},
 
     { ER_EXCEPTION_CREATING_POOL,
-       "\uD480\uC5D0 \uB300\uD55C \uC0C8 \uC778\uC2A4\uD134\uC2A4\uB97C \uC0DD\uC131\uD558\uB294 \uC911 \uC608\uC678\uC0AC\uD56D\uC774 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
+       "풀에 대한 새 인스턴스를 생성하는 중 예외사항이 발생했습니다."},
 
     { ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
-       "\uACBD\uB85C\uC5D0 \uBD80\uC801\uD569\uD55C \uC774\uC2A4\uCF00\uC774\uD504 \uC2DC\uD000\uC2A4\uAC00 \uD3EC\uD568\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4."},
+       "경로에 부적합한 이스케이프 시퀀스가 포함되어 있습니다."},
 
     { ER_SCHEME_REQUIRED,
-       "\uCCB4\uACC4\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4!"},
+       "체계가 필요합니다!"},
 
     { ER_NO_SCHEME_IN_URI,
-       "URI\uC5D0\uC11C \uCCB4\uACC4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C: {0}"},
+       "URI에서 체계를 찾을 수 없음: {0}"},
 
     { ER_NO_SCHEME_INURI,
-       "URI\uC5D0\uC11C \uCCB4\uACC4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+       "URI에서 체계를 찾을 수 없습니다."},
 
     { ER_PATH_INVALID_CHAR,
-       "\uACBD\uB85C\uC5D0 \uBD80\uC801\uD569\uD55C \uBB38\uC790\uAC00 \uD3EC\uD568\uB428: {0}"},
+       "경로에 부적합한 문자가 포함됨: {0}"},
 
     { ER_SCHEME_FROM_NULL_STRING,
-       "\uB110 \uBB38\uC790\uC5F4\uC5D0\uC11C \uCCB4\uACC4\uB97C \uC124\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+       "널 문자열에서 체계를 설정할 수 없습니다."},
 
     { ER_SCHEME_NOT_CONFORMANT,
-       "\uCCB4\uACC4\uAC00 \uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+       "체계가 일치하지 않습니다."},
 
     { ER_HOST_ADDRESS_NOT_WELLFORMED,
-       "\uD638\uC2A4\uD2B8\uAC00 \uC644\uC804\uD55C \uC8FC\uC18C\uAC00 \uC544\uB2D9\uB2C8\uB2E4."},
+       "호스트가 완전한 주소가 아닙니다."},
 
     { ER_PORT_WHEN_HOST_NULL,
-       "\uD638\uC2A4\uD2B8\uAC00 \uB110\uC77C \uACBD\uC6B0 \uD3EC\uD2B8\uB97C \uC124\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+       "호스트가 널일 경우 포트를 설정할 수 없습니다."},
 
     { ER_INVALID_PORT,
-       "\uD3EC\uD2B8 \uBC88\uD638\uAC00 \uBD80\uC801\uD569\uD569\uB2C8\uB2E4."},
+       "포트 번호가 부적합합니다."},
 
     { ER_FRAG_FOR_GENERIC_URI,
-       "\uC77C\uBC18 URI\uC5D0 \uB300\uD574\uC11C\uB9CC \uBD80\uBD84\uC744 \uC124\uC815\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."},
+       "일반 URI에 대해서만 부분을 설정할 수 있습니다."},
 
     { ER_FRAG_WHEN_PATH_NULL,
-       "\uACBD\uB85C\uAC00 \uB110\uC77C \uACBD\uC6B0 \uBD80\uBD84\uC744 \uC124\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+       "경로가 널일 경우 부분을 설정할 수 없습니다."},
 
     { ER_FRAG_INVALID_CHAR,
-       "\uBD80\uBD84\uC5D0 \uBD80\uC801\uD569\uD55C \uBB38\uC790\uAC00 \uD3EC\uD568\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4."},
+       "부분에 부적합한 문자가 포함되어 있습니다."},
 
     { ER_PARSER_IN_USE,
-      "\uAD6C\uBB38 \uBD84\uC11D\uAE30\uAC00 \uC774\uBBF8 \uC0AC\uC6A9\uB418\uACE0 \uC788\uC2B5\uB2C8\uB2E4."},
+      "구문 분석기가 이미 사용되고 있습니다."},
 
     { ER_CANNOT_CHANGE_WHILE_PARSING,
-      "\uAD6C\uBB38 \uBD84\uC11D \uC911 {0} {1}\uC744(\uB97C) \uBCC0\uACBD\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "구문 분석 중 {0} {1}을(를) 변경할 수 없습니다."},
 
     { ER_SELF_CAUSATION_NOT_PERMITTED,
-      "\uC790\uCCB4 \uC778\uACFC \uAD00\uACC4\uB294 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+      "자체 인과 관계는 허용되지 않습니다."},
 
     { ER_NO_USERINFO_IF_NO_HOST,
-      "\uD638\uC2A4\uD2B8\uB97C \uC9C0\uC815\uD558\uC9C0 \uC54A\uC740 \uACBD\uC6B0\uC5D0\uB294 Userinfo\uB97C \uC9C0\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "호스트를 지정하지 않은 경우에는 Userinfo를 지정할 수 없습니다."},
 
     { ER_NO_PORT_IF_NO_HOST,
-      "\uD638\uC2A4\uD2B8\uB97C \uC9C0\uC815\uD558\uC9C0 \uC54A\uC740 \uACBD\uC6B0\uC5D0\uB294 \uD3EC\uD2B8\uB97C \uC9C0\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "호스트를 지정하지 않은 경우에는 포트를 지정할 수 없습니다."},
 
     { ER_NO_QUERY_STRING_IN_PATH,
-      "\uACBD\uB85C \uBC0F \uC9C8\uC758 \uBB38\uC790\uC5F4\uC5D0 \uC9C8\uC758 \uBB38\uC790\uC5F4\uC744 \uC9C0\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "경로 및 질의 문자열에 질의 문자열을 지정할 수 없습니다."},
 
     { ER_NO_FRAGMENT_STRING_IN_PATH,
-      "\uACBD\uB85C\uC640 \uBD80\uBD84\uC5D0 \uBAA8\uB450 \uBD80\uBD84\uC744 \uC9C0\uC815\uD560 \uC218\uB294 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "경로와 부분에 모두 부분을 지정할 수는 없습니다."},
 
     { ER_CANNOT_INIT_URI_EMPTY_PARMS,
-      "\uBE48 \uB9E4\uAC1C\uBCC0\uC218\uB85C URI\uB97C \uCD08\uAE30\uD654\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "빈 매개변수로 URI를 초기화할 수 없습니다."},
 
     { ER_METHOD_NOT_SUPPORTED,
-      "\uBA54\uC18C\uB4DC\uAC00 \uC544\uC9C1 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. "},
+      "메소드가 아직 지원되지 않습니다. "},
 
     { ER_INCRSAXSRCFILTER_NOT_RESTARTABLE,
-      "\uD604\uC7AC IncrementalSAXSource_Filter\uB97C \uC7AC\uC2DC\uC791\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "현재 IncrementalSAXSource_Filter를 재시작할 수 없습니다."},
 
     { ER_XMLRDR_NOT_BEFORE_STARTPARSE,
-      "startParse \uC694\uCCAD \uC804\uC5D0 XMLReader\uAC00 \uC2E4\uD589\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+      "startParse 요청 전에 XMLReader가 실행되지 않았습니다."},
 
     { ER_AXIS_TRAVERSER_NOT_SUPPORTED,
-      "\uCD95 \uC21C\uD658\uAE30\uAC00 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC74C: {0}"},
+      "축 순환기가 지원되지 않음: {0}"},
 
     { ER_ERRORHANDLER_CREATED_WITH_NULL_PRINTWRITER,
-      "\uB110 PrintWriter\uB85C ListingErrorHandler\uAC00 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4!"},
+      "널 PrintWriter로 ListingErrorHandler가 생성되었습니다!"},
 
     { ER_SYSTEMID_UNKNOWN,
-      "SystemId\uB97C \uC54C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "SystemId를 알 수 없습니다."},
 
     { ER_LOCATION_UNKNOWN,
-      "\uC624\uB958 \uC704\uCE58\uB97C \uC54C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "오류 위치를 알 수 없습니다."},
 
     { ER_PREFIX_MUST_RESOLVE,
-      "\uC811\uB450\uC5B4\uB294 \uB124\uC784\uC2A4\uD398\uC774\uC2A4\uB85C \uBD84\uC11D\uB418\uC5B4\uC57C \uD568: {0}"},
+      "접두어는 네임스페이스로 분석되어야 함: {0}"},
 
     { ER_CREATEDOCUMENT_NOT_SUPPORTED,
-      "XPathContext\uC5D0\uC11C\uB294 createDocument()\uAC00 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4!"},
+      "XPathContext에서는 createDocument()가 지원되지 않습니다!"},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT,
-      "\uC18D\uC131 \uD558\uC704\uC5D0 \uC18C\uC720\uC790 \uBB38\uC11C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "속성 하위에 소유자 문서가 없습니다!"},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT_ELEMENT,
-      "\uC18D\uC131 \uD558\uC704\uC5D0 \uC18C\uC720\uC790 \uBB38\uC11C \uC694\uC18C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "속성 하위에 소유자 문서 요소가 없습니다!"},
 
     { ER_CANT_OUTPUT_TEXT_BEFORE_DOC,
-      "\uACBD\uACE0: \uBB38\uC11C \uC694\uC18C \uC55E\uC5D0 \uD14D\uC2A4\uD2B8\uB97C \uCD9C\uB825\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4! \uBB34\uC2DC\uD558\uB294 \uC911..."},
+      "경고: 문서 요소 앞에 텍스트를 출력할 수 없습니다! 무시하는 중..."},
 
     { ER_CANT_HAVE_MORE_THAN_ONE_ROOT,
-      "DOM\uC5D0\uC11C \uB8E8\uD2B8\uB97C \uB450 \uAC1C \uC774\uC0C1 \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "DOM에서 루트를 두 개 이상 사용할 수 없습니다!"},
 
     { ER_ARG_LOCALNAME_NULL,
-       "'localName' \uC778\uC218\uAC00 \uB110\uC785\uB2C8\uB2E4."},
+       "'localName' 인수가 널입니다."},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The localname is the portion after the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_LOCALNAME_INVALID,
-       "QNAME\uC758 Localname\uC740 \uC801\uD569\uD55C NCName\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+       "QNAME의 Localname은 적합한 NCName이어야 합니다."},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The prefix is the portion before the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_PREFIX_INVALID,
-       "QNAME\uC758 \uC811\uB450\uC5B4\uB294 \uC801\uD569\uD55C NCName\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+       "QNAME의 접두어는 적합한 NCName이어야 합니다."},
 
     { ER_NAME_CANT_START_WITH_COLON,
-      "\uC774\uB984\uC740 \uCF5C\uB860\uC73C\uB85C \uC2DC\uC791\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "이름은 콜론으로 시작할 수 없습니다."},
 
-    { "BAD_CODE", "createMessage\uC5D0 \uB300\uD55C \uB9E4\uAC1C\uBCC0\uC218\uAC00 \uBC94\uC704\uB97C \uBC97\uC5B4\uB0AC\uC2B5\uB2C8\uB2E4."},
-    { "FORMAT_FAILED", "messageFormat \uD638\uCD9C \uC911 \uC608\uC678\uC0AC\uD56D\uC774 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
-    { "line", "\uD589 \uBC88\uD638"},
-    { "column","\uC5F4 \uBC88\uD638"},
+    { "BAD_CODE", "createMessage에 대한 매개변수가 범위를 벗어났습니다."},
+    { "FORMAT_FAILED", "messageFormat 호출 중 예외사항이 발생했습니다."},
+    { "line", "행 번호"},
+    { "column","열 번호"},
 
     {ER_SERIALIZER_NOT_CONTENTHANDLER,
-      "Serializer \uD074\uB798\uC2A4 ''{0}''\uC774(\uAC00) org.xml.sax.ContentHandler\uB97C \uAD6C\uD604\uD558\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+      "Serializer 클래스 ''{0}''이(가) org.xml.sax.ContentHandler를 구현하지 않았습니다."},
 
     {ER_RESOURCE_COULD_NOT_FIND,
-      "[{0}] \uB9AC\uC18C\uC2A4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.\n {1}" },
+      "[{0}] 리소스를 찾을 수 없습니다.\n {1}" },
 
     {ER_RESOURCE_COULD_NOT_LOAD,
-      "[{0}] \uB9AC\uC18C\uC2A4\uAC00 \uB2E4\uC74C\uC744 \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC74C: {1} \n {2} \t {3}" },
+      "[{0}] 리소스가 다음을 로드할 수 없음: {1} \n {2} \t {3}" },
 
     {ER_BUFFER_SIZE_LESSTHAN_ZERO,
-      "\uBC84\uD37C \uD06C\uAE30 <=0" },
+      "버퍼 크기 <=0" },
 
     {ER_INVALID_UTF16_SURROGATE,
-      "\uBD80\uC801\uD569\uD55C UTF-16 \uB300\uB9AC \uC694\uC18C\uAC00 \uAC10\uC9C0\uB428: {0}" },
+      "부적합한 UTF-16 대리 요소가 감지됨: {0}" },
 
     {ER_OIERROR,
-      "IO \uC624\uB958" },
+      "IO 오류" },
 
     {ER_ILLEGAL_ATTRIBUTE_POSITION,
-      "\uD558\uC704 \uB178\uB4DC\uAC00 \uC0DD\uC131\uB41C \uD6C4 \uB610\uB294 \uC694\uC18C\uAC00 \uC0DD\uC131\uB418\uAE30 \uC804\uC5D0 {0} \uC18D\uC131\uC744 \uCD94\uAC00\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uC18D\uC131\uC774 \uBB34\uC2DC\uB429\uB2C8\uB2E4."},
+      "하위 노드가 생성된 후 또는 요소가 생성되기 전에 {0} 속성을 추가할 수 없습니다. 속성이 무시됩니다."},
 
       /*
        * Note to translators:  The stylesheet contained a reference to a
@@ -407,7 +407,7 @@ public class XMLErrorResources_ko extends ListResourceBundle
        * text is the name of the prefix.
        */
     {ER_NAMESPACE_PREFIX,
-      "''{0}'' \uC811\uB450\uC5B4\uC5D0 \uB300\uD55C \uB124\uC784\uC2A4\uD398\uC774\uC2A4\uAC00 \uC120\uC5B8\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4." },
+      "''{0}'' 접두어에 대한 네임스페이스가 선언되지 않았습니다." },
       /*
        * Note to translators:  This message is reported if the stylesheet
        * being processed attempted to construct an XML document with an
@@ -415,7 +415,7 @@ public class XMLErrorResources_ko extends ListResourceBundle
        * specifies the name of the attribute.
        */
     {ER_STRAY_ATTRIBUTE,
-      "''{0}'' \uC18D\uC131\uC774 \uC694\uC18C\uC5D0 \uD3EC\uD568\uB418\uC5B4 \uC788\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4." },
+      "''{0}'' 속성이 요소에 포함되어 있지 않습니다." },
 
       /*
        * Note to translators:  As with the preceding message, a namespace
@@ -425,16 +425,16 @@ public class XMLErrorResources_ko extends ListResourceBundle
        * namespace declaration.
        */
     {ER_STRAY_NAMESPACE,
-      "\uB124\uC784\uC2A4\uD398\uC774\uC2A4 \uC120\uC5B8 ''{0}''=''{1}''\uC774(\uAC00) \uC694\uC18C\uC5D0 \uD3EC\uD568\uB418\uC5B4 \uC788\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4." },
+      "네임스페이스 선언 ''{0}''=''{1}''이(가) 요소에 포함되어 있지 않습니다." },
 
     {ER_COULD_NOT_LOAD_RESOURCE,
-      "{0}\uC744(\uB97C) \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. CLASSPATH\uB97C \uD655\uC778\uD558\uC2ED\uC2DC\uC624. \uD604\uC7AC \uAE30\uBCF8\uAC12\uB9CC \uC0AC\uC6A9\uD558\uB294 \uC911\uC785\uB2C8\uB2E4."},
+      "{0}을(를) 로드할 수 없습니다. CLASSPATH를 확인하십시오. 현재 기본값만 사용하는 중입니다."},
 
     { ER_ILLEGAL_CHARACTER,
-       "{1}\uC758 \uC9C0\uC815\uB41C \uCD9C\uB825 \uC778\uCF54\uB529\uC5D0\uC11C \uD45C\uC2DC\uB418\uC9C0 \uC54A\uB294 \uC815\uC218 \uAC12 {0}\uC758 \uBB38\uC790\uB97C \uCD9C\uB825\uD558\uB824\uACE0 \uC2DC\uB3C4\uD588\uC2B5\uB2C8\uB2E4."},
+       "{1}의 지정된 출력 인코딩에서 표시되지 않는 정수 값 {0}의 문자를 출력하려고 시도했습니다."},
 
     {ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-      "\uCD9C\uB825 \uBA54\uC18C\uB4DC ''{1}''\uC5D0 \uB300\uD55C \uC18D\uC131 \uD30C\uC77C ''{0}''\uC744(\uB97C) \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. CLASSPATH\uB97C \uD655\uC778\uD558\uC2ED\uC2DC\uC624." }
+      "출력 메소드 ''{1}''에 대한 속성 파일 ''{0}''을(를) 로드할 수 없습니다. CLASSPATH를 확인하십시오." }
 
 
   };

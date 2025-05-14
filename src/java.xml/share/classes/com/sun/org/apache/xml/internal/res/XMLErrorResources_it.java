@@ -196,7 +196,7 @@ public class XMLErrorResources_it extends ListResourceBundle
       "ChunkedIntArray({0}) non supportato al momento"},
 
     { ER_OFFSET_BIGGER_THAN_SLOT,
-      "Offset pi\u00F9 grande dello slot"},
+      "Offset più grande dello slot"},
 
     { ER_COROUTINE_NOT_AVAIL,
       "Co-routine non disponibile, ID={0}"},
@@ -214,13 +214,13 @@ public class XMLErrorResources_it extends ListResourceBundle
       "\nIMPREVISTO: risposte doTerminate del parser {0}"},
 
     { ER_NO_PARSE_CALL_WHILE_PARSING,
-      "impossibile richiamare parse mentre \u00E8 in corso un'analisi"},
+      "impossibile richiamare parse mentre è in corso un'analisi"},
 
     { ER_TYPED_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "Errore: l''iteratore con tipo per l''asse {0} non \u00E8 implementato"},
+      "Errore: l''iteratore con tipo per l''asse {0} non è implementato"},
 
     { ER_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "Errore: l''iteratore per l''asse {0} non \u00E8 implementato "},
+      "Errore: l''iteratore per l''asse {0} non è implementato "},
 
     { ER_ITERATOR_CLONE_NOT_SUPPORTED,
       "Duplicazione dell'iteratore non supportata"},
@@ -244,7 +244,7 @@ public class XMLErrorResources_it extends ListResourceBundle
       "Impossibile risolvere il nodo in un handle"},
 
     { ER_STARTPARSE_WHILE_PARSING,
-       "impossibile richiamare startParse mentre \u00E8 in corso un'analisi"},
+       "impossibile richiamare startParse mentre è in corso un'analisi"},
 
     { ER_STARTPARSE_NEEDS_SAXPARSER,
        "startParse richiede un valore non nullo per SAXParser"},
@@ -259,7 +259,7 @@ public class XMLErrorResources_it extends ListResourceBundle
        "Il percorso contiene sequenza di escape non valida"},
 
     { ER_SCHEME_REQUIRED,
-       "Lo schema \u00E8 obbligatorio."},
+       "Lo schema è obbligatorio."},
 
     { ER_NO_SCHEME_IN_URI,
        "Nessuno schema trovato nell''URI: {0}"},
@@ -274,28 +274,28 @@ public class XMLErrorResources_it extends ListResourceBundle
        "Impossibile impostare lo schema da una stringa nulla"},
 
     { ER_SCHEME_NOT_CONFORMANT,
-       "Lo schema non \u00E8 conforme."},
+       "Lo schema non è conforme."},
 
     { ER_HOST_ADDRESS_NOT_WELLFORMED,
-       "Host non \u00E8 un indirizzo corretto"},
+       "Host non è un indirizzo corretto"},
 
     { ER_PORT_WHEN_HOST_NULL,
-       "La porta non pu\u00F2 essere impostata se l'host \u00E8 nullo"},
+       "La porta non può essere impostata se l'host è nullo"},
 
     { ER_INVALID_PORT,
        "Numero di porta non valido"},
 
     { ER_FRAG_FOR_GENERIC_URI,
-       "Il frammento pu\u00F2 essere impostato solo per un URI generico"},
+       "Il frammento può essere impostato solo per un URI generico"},
 
     { ER_FRAG_WHEN_PATH_NULL,
-       "Il frammento non pu\u00F2 essere impostato se il percorso \u00E8 nullo"},
+       "Il frammento non può essere impostato se il percorso è nullo"},
 
     { ER_FRAG_INVALID_CHAR,
        "Il frammento contiene un carattere non valido"},
 
     { ER_PARSER_IN_USE,
-      "Parser gi\u00E0 in uso"},
+      "Parser già in uso"},
 
     { ER_CANNOT_CHANGE_WHILE_PARSING,
       "Impossibile modificare {0} {1} durante l''analisi"},
@@ -304,16 +304,16 @@ public class XMLErrorResources_it extends ListResourceBundle
       "Creazione automatica della causa non consentita"},
 
     { ER_NO_USERINFO_IF_NO_HOST,
-      "Userinfo non pu\u00F2 essere specificato se l'host non \u00E8 specificato"},
+      "Userinfo non può essere specificato se l'host non è specificato"},
 
     { ER_NO_PORT_IF_NO_HOST,
-      "La porta non pu\u00F2 essere specificata se l'host non \u00E8 specificato"},
+      "La porta non può essere specificata se l'host non è specificato"},
 
     { ER_NO_QUERY_STRING_IN_PATH,
-      "La stringa di query non pu\u00F2 essere specificata nella stringa di percorso e query."},
+      "La stringa di query non può essere specificata nella stringa di percorso e query."},
 
     { ER_NO_FRAGMENT_STRING_IN_PATH,
-      "Il frammento non pu\u00F2 essere specificato sia nel percorso che nel frammento"},
+      "Il frammento non può essere specificato sia nel percorso che nel frammento"},
 
     { ER_CANNOT_INIT_URI_EMPTY_PARMS,
       "Impossibile inizializzare l'URI con i parametri vuoti"},
@@ -355,10 +355,10 @@ public class XMLErrorResources_it extends ListResourceBundle
       "Avvertenza: impossibile creare l'output del testo prima dell'elemento del documento. Operazione ignorata..."},
 
     { ER_CANT_HAVE_MORE_THAN_ONE_ROOT,
-      "Non possono esistere pi\u00F9 radici in un DOM."},
+      "Non possono esistere più radici in un DOM."},
 
     { ER_ARG_LOCALNAME_NULL,
-       "L'argomento 'localName' \u00E8 nullo"},
+       "L'argomento 'localName' è nullo"},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The localname is the portion after the optional colon; the message indicates
@@ -373,7 +373,7 @@ public class XMLErrorResources_it extends ListResourceBundle
        "Il prefisso in QNAME deve essere un NCName valido"},
 
     { ER_NAME_CANT_START_WITH_COLON,
-      "Il nome non pu\u00F2 iniziare con i due punti"},
+      "Il nome non può iniziare con i due punti"},
 
     { "BAD_CODE", "Parametro per createMessage fuori limite"},
     { "FORMAT_FAILED", "Eccezione durante la chiamata messageFormat"},
@@ -399,7 +399,7 @@ public class XMLErrorResources_it extends ListResourceBundle
       "Errore IO" },
 
     {ER_ILLEGAL_ATTRIBUTE_POSITION,
-      "Impossibile aggiungere l''attributo {0} dopo i nodi figlio o prima che sia prodotto un elemento. L''attributo verr\u00E0 ignorato."},
+      "Impossibile aggiungere l''attributo {0} dopo i nodi figlio o prima che sia prodotto un elemento. L''attributo verrà ignorato."},
 
       /*
        * Note to translators:  The stylesheet contained a reference to a
@@ -407,7 +407,7 @@ public class XMLErrorResources_it extends ListResourceBundle
        * text is the name of the prefix.
        */
     {ER_NAMESPACE_PREFIX,
-      "Lo spazio di nomi per il prefisso ''{0}'' non \u00E8 stato dichiarato." },
+      "Lo spazio di nomi per il prefisso ''{0}'' non è stato dichiarato." },
       /*
        * Note to translators:  This message is reported if the stylesheet
        * being processed attempted to construct an XML document with an
@@ -434,7 +434,7 @@ public class XMLErrorResources_it extends ListResourceBundle
        "Tentativo di eseguire l''output di un carattere di valore integrale {0} non rappresentato nella codifica di output {1} specificata."},
 
     {ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-      "Impossibile caricare il file delle propriet\u00E0 ''{0}'' per il metodo di emissione ''{1}'' (verificare CLASSPATH)" }
+      "Impossibile caricare il file delle proprietà ''{0}'' per il metodo di emissione ''{1}'' (verificare CLASSPATH)" }
 
 
   };

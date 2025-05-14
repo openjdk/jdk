@@ -371,7 +371,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { "ERROR0000" , "{0}" },
 
-  { ER_CURRENT_NOT_ALLOWED_IN_MATCH, "current()-Funktion ist nicht zul\u00E4ssig in einem Vergleichsmuster." },
+  { ER_CURRENT_NOT_ALLOWED_IN_MATCH, "current()-Funktion ist nicht zulässig in einem Vergleichsmuster." },
 
   { ER_CURRENT_TAKES_NO_ARGS, "current()-Funktion akzeptiert keine Argumente." },
 
@@ -379,10 +379,10 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "document()-Funktionsimplementierung wurde durch com.sun.org.apache.xalan.internal.xslt.FuncDocument ersetzt."},
 
   { ER_CONTEXT_CAN_NOT_BE_NULL,
-      "Der Kontext darf nicht Null sein, wenn der Vorgang kontextabh\u00E4ngig ist."},
+      "Der Kontext darf nicht Null sein, wenn der Vorgang kontextabhängig ist."},
 
   { ER_CONTEXT_HAS_NO_OWNERDOC,
-      "Kontext hat kein Eigent\u00FCmerdokument."},
+      "Kontext hat kein Eigentümerdokument."},
 
   { ER_LOCALNAME_HAS_TOO_MANY_ARGS,
       "local-name() hat zu viele Argumente."},
@@ -421,7 +421,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
      "Unbekannter Vergleichsvorgang."},
 
   { ER_INCORRECT_ARG_LENGTH,
-      "Argumentl\u00E4nge von processing-instruction()-Knotentest ist falsch."},
+      "Argumentlänge von processing-instruction()-Knotentest ist falsch."},
 
   { ER_CANT_CONVERT_TO_NUMBER,
       "{0} kann nicht in eine Zahl konvertiert werden"},
@@ -445,13 +445,13 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
      "ERROR. Unbekannter Vorgangscode: {0}"},
 
   { ER_EXTRA_ILLEGAL_TOKENS,
-     "Zus\u00E4tzliche unzul\u00E4ssige Tokens: {0}"},
+     "Zusätzliche unzulässige Tokens: {0}"},
 
   { ER_EXPECTED_DOUBLE_QUOTE,
-      "Literal in falschen Anf\u00FChrungszeichen... Doppelte Anf\u00FChrungszeichen erwartet."},
+      "Literal in falschen Anführungszeichen... Doppelte Anführungszeichen erwartet."},
 
   { ER_EXPECTED_SINGLE_QUOTE,
-      "Literal in falschen Anf\u00FChrungszeichen... Einzelne Anf\u00FChrungszeichen erwartet."},
+      "Literal in falschen Anführungszeichen... Einzelne Anführungszeichen erwartet."},
 
   { ER_EMPTY_EXPRESSION,
      "Leerer Ausdruck."},
@@ -460,7 +460,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
      "{0} erwartet, aber {1} gefunden"},
 
   { ER_UNION_MUST_BE_NODESET,
-     "Operanden f\u00FCr eine Vereinigungsmenge m\u00FCssen Knotensets sein."},
+     "Operanden für eine Vereinigungsmenge müssen Knotensets sein."},
 
   { ER_INCORRECT_PROGRAMMER_ASSERTION,
       "Programmierer-Assertion ist falsch. - {0}"},
@@ -475,22 +475,22 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "\",\" gefunden, aber kein folgendes Argument vorhanden."},
 
   { ER_PREDICATE_ILLEGAL_SYNTAX,
-      "\"..[predicate]\" oder \".[predicate]\" ist unzul\u00E4ssige Syntax. Verwenden Sie stattdessen \"self::node()[predicate]\"."},
+      "\"..[predicate]\" oder \".[predicate]\" ist unzulässige Syntax. Verwenden Sie stattdessen \"self::node()[predicate]\"."},
 
   { ER_PREDICATE_TOO_MANY_OPEN,
-      "Stack\u00FCberlauf beim Parsen von {0} bei {1}. Es sind zu viele offene Pr\u00E4dikate vorhanden ({2})."},
+      "Stacküberlauf beim Parsen von {0} bei {1}. Es sind zu viele offene Prädikate vorhanden ({2})."},
 
   { ER_COMPILATION_TOO_MANY_OPERATION,
-      "Stack\u00FCberlauf beim Kompilieren des Ausdrucks. Es sind zu viele Vorg\u00E4nge vorhanden ({0})."},
+      "Stacküberlauf beim Kompilieren des Ausdrucks. Es sind zu viele Vorgänge vorhanden ({0})."},
 
   { ER_ILLEGAL_AXIS_NAME,
-     "Unzul\u00E4ssiger Achsenname: {0}"},
+     "Unzulässiger Achsenname: {0}"},
 
   { ER_UNKNOWN_NODETYPE,
      "Unbekannter Knotentyp: {0}"},
 
   { ER_PATTERN_LITERAL_NEEDS_BE_QUOTED,
-      "Musterliteral ({0}) muss in Anf\u00FChrungszeichen gesetzt werden."},
+      "Musterliteral ({0}) muss in Anführungszeichen gesetzt werden."},
 
   { ER_COULDNOT_BE_FORMATTED_TO_NUMBER,
       "{0} konnte nicht als Zahl formatiert werden."},
@@ -508,10 +508,10 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
      "Fehler aufgetreten."},
 
   { ER_ILLEGAL_VARIABLE_REFERENCE,
-      "VariableReference au\u00DFerhalb des Kontexts oder ohne Definition f\u00FCr Variable angegeben. Name = {0}"},
+      "VariableReference außerhalb des Kontexts oder ohne Definition für Variable angegeben. Name = {0}"},
 
   { ER_AXES_NOT_ALLOWED,
-      "Nur \"child::\"- und \"attribute::\"-Achsen sind in Vergleichsmustern zul\u00E4ssig. Betreffende Achsen = {0}"},
+      "Nur \"child::\"- und \"attribute::\"-Achsen sind in Vergleichsmustern zulässig. Betreffende Achsen = {0}"},
 
   { ER_KEY_HAS_TOO_MANY_ARGS,
       "key() hat eine falsche Anzahl Argumente."},
@@ -523,7 +523,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
      "Funktion konnte nicht gefunden werden: {0}"},
 
   { ER_UNSUPPORTED_ENCODING,
-     "Nicht unterst\u00FCtzte Codierung: {0}"},
+     "Nicht unterstützte Codierung: {0}"},
 
   { ER_PROBLEM_IN_DTM_NEXTSIBLING,
       "Problem in DTM in getNextSibling aufgetreten... Es wird versucht, das Problem zu beheben"},
@@ -532,13 +532,13 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "Programmiererfehler: Es kann nicht in EmptyNodeList geschrieben werden."},
 
   { ER_SETDOMFACTORY_NOT_SUPPORTED,
-      "setDOMFactory wird nicht von XPathContext unterst\u00FCtzt."},
+      "setDOMFactory wird nicht von XPathContext unterstützt."},
 
   { ER_PREFIX_MUST_RESOLVE,
-      "Pr\u00E4fix muss als Namespace aufgel\u00F6st werden: {0}"},
+      "Präfix muss als Namespace aufgelöst werden: {0}"},
 
   { ER_PARSE_NOT_SUPPORTED,
-      "parse (InputSource-Quelle) nicht unterst\u00FCtzt in XPathContext. {0} kann nicht ge\u00F6ffnet werden"},
+      "parse (InputSource-Quelle) nicht unterstützt in XPathContext. {0} kann nicht geöffnet werden"},
 
   { ER_SAX_API_NOT_HANDLED,
       "SAX-API-Zeichen(char ch[]... nicht verarbeitet von DTM."},
@@ -559,13 +559,13 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
      "DOM2Helper.parse-Fehler"},
 
   { ER_INVALID_UTF16_SURROGATE,
-      "Ung\u00FCltige UTF-16-Ersetzung festgestellt: {0}?"},
+      "Ungültige UTF-16-Ersetzung festgestellt: {0}?"},
 
   { ER_OIERROR,
      "I/O-Fehler"},
 
   { ER_CANNOT_CREATE_URL,
-     "URL f\u00FCr {0} kann nicht erstellt werden"},
+     "URL für {0} kann nicht erstellt werden"},
 
   { ER_XPATH_READOBJECT,
      "In XPath.readObject: {0}"},
@@ -577,7 +577,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
        "XPath-Typ {0} kann nicht bearbeitet werden"},
 
   { ER_VAR_NOT_RESOLVABLE,
-        "Variable kann nicht aufgel\u00F6st werden: {0}"},
+        "Variable kann nicht aufgelöst werden: {0}"},
 
   { ER_NULL_ERROR_HANDLER,
         "Null-Error Handler"},
@@ -589,29 +589,29 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
        "0 oder 1"},
 
   { ER_RTF_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
-       "rtf() nicht unterst\u00FCtzt von XRTreeFragSelectWrapper"},
+       "rtf() nicht unterstützt von XRTreeFragSelectWrapper"},
 
   { ER_ASNODEITERATOR_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
-       "asNodeIterator() nicht unterst\u00FCtzt von XRTreeFragSelectWrapper"},
+       "asNodeIterator() nicht unterstützt von XRTreeFragSelectWrapper"},
 
         /**  detach() not supported by XRTreeFragSelectWrapper   */
    { ER_DETACH_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
-                "detach() nicht unterst\u00FCtzt von XRTreeFragSelectWrapper"},
+                "detach() nicht unterstützt von XRTreeFragSelectWrapper"},
 
         /**  num() not supported by XRTreeFragSelectWrapper   */
    { ER_NUM_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
-                "num() nicht unterst\u00FCtzt von XRTreeFragSelectWrapper"},
+                "num() nicht unterstützt von XRTreeFragSelectWrapper"},
 
         /**  xstr() not supported by XRTreeFragSelectWrapper   */
    { ER_XSTR_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
-                "xstr() nicht unterst\u00FCtzt von XRTreeFragSelectWrapper"},
+                "xstr() nicht unterstützt von XRTreeFragSelectWrapper"},
 
         /**  str() not supported by XRTreeFragSelectWrapper   */
    { ER_STR_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
-                "str() nicht unterst\u00FCtzt von XRTreeFragSelectWrapper"},
+                "str() nicht unterstützt von XRTreeFragSelectWrapper"},
 
   { ER_FSB_NOT_SUPPORTED_XSTRINGFORCHARS,
-       "fsb() nicht unterst\u00FCtzt f\u00FCr XStringForChars"},
+       "fsb() nicht unterstützt für XStringForChars"},
 
   { ER_COULD_NOT_FIND_VAR,
       "Variable mit Namen {0} konnte nicht gefunden werden"},
@@ -641,16 +641,16 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
        "NodeSet kann nicht zu einem vorherigen Knoten iterieren."},
 
   { ER_NODESETDTM_CANNOT_INDEX,
-       "NodeSetDTM kann keine Indexierungs- oder Z\u00E4hlfunktionen ausf\u00FChren."},
+       "NodeSetDTM kann keine Indexierungs- oder Zählfunktionen ausführen."},
 
   { ER_NODESET_CANNOT_INDEX,
-       "NodeSet kann keine Indexierungs- oder Z\u00E4hlfunktionen ausf\u00FChren."},
+       "NodeSet kann keine Indexierungs- oder Zählfunktionen ausführen."},
 
   { ER_CANNOT_CALL_SETSHOULDCACHENODE,
        "setShouldCacheNodes kann nicht aufgerufen werden, nachdem nextNode aufgerufen wurde."},
 
   { ER_ONLY_ALLOWS,
-       "{0} l\u00E4sst nur {1} Argumente zu"},
+       "{0} lässt nur {1} Argumente zu"},
 
   { ER_UNKNOWN_STEP,
        "Programmierer-Assertion in getNextStepPos: Unbekannter stepType: {0}"},
@@ -707,33 +707,33 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   // Note to translators: Do not translate ANY_UNORDERED_NODE_TYPE and
   // FIRST_ORDERED_NODE_TYPE.
   { ER_CANT_CONVERT_TO_SINGLENODE,
-       "XPathResult von XPath-Ausdruck \"{0}\" hat XPathResultType {1}, der nicht in einen einzelnen Knoten konvertiert werden kann. Die Methode \"getSingleNodeValue\" gilt nur f\u00FCr die Typen ANY_UNORDERED_NODE_TYPE und FIRST_ORDERED_NODE_TYPE."},
+       "XPathResult von XPath-Ausdruck \"{0}\" hat XPathResultType {1}, der nicht in einen einzelnen Knoten konvertiert werden kann. Die Methode \"getSingleNodeValue\" gilt nur für die Typen ANY_UNORDERED_NODE_TYPE und FIRST_ORDERED_NODE_TYPE."},
 
   // Note to translators: Do not translate UNORDERED_NODE_SNAPSHOT_TYPE and
   // ORDERED_NODE_SNAPSHOT_TYPE.
   { ER_CANT_GET_SNAPSHOT_LENGTH,
-       "Die Methode \"getSnapshotLength\" kann nicht f\u00FCr XPathResult von XPath-Ausdruck \"{0}\" aufgerufen werden, da der zugeh\u00F6rige XPathResultType {1} ist. Diese Methode gilt nur f\u00FCr die Typen UNORDERED_NODE_SNAPSHOT_TYPE und ORDERED_NODE_SNAPSHOT_TYPE."},
+       "Die Methode \"getSnapshotLength\" kann nicht für XPathResult von XPath-Ausdruck \"{0}\" aufgerufen werden, da der zugehörige XPathResultType {1} ist. Diese Methode gilt nur für die Typen UNORDERED_NODE_SNAPSHOT_TYPE und ORDERED_NODE_SNAPSHOT_TYPE."},
 
   { ER_NON_ITERATOR_TYPE,
-       "Die Methode \"iterateNext\" kann nicht f\u00FCr XPathResult von XPath-Ausdruck \"{0}\" aufgerufen werden, da der zugeh\u00F6rige XPathResultType {1} ist. Diese Methode gilt nur f\u00FCr die Typen UNORDERED_NODE_ITERATOR_TYPE und ORDERED_NODE_ITERATOR_TYPE."},
+       "Die Methode \"iterateNext\" kann nicht für XPathResult von XPath-Ausdruck \"{0}\" aufgerufen werden, da der zugehörige XPathResultType {1} ist. Diese Methode gilt nur für die Typen UNORDERED_NODE_ITERATOR_TYPE und ORDERED_NODE_ITERATOR_TYPE."},
 
   // Note to translators: This message indicates that the document being operated
   // upon changed, so the iterator object that was being used to traverse the
   // document has now become invalid.
   { ER_DOC_MUTATED,
-       "Dokument ge\u00E4ndert, seit Ergebnis zur\u00FCckgegeben wurde. Iterator ist ung\u00FCltig."},
+       "Dokument geändert, seit Ergebnis zurückgegeben wurde. Iterator ist ungültig."},
 
   { ER_INVALID_XPATH_TYPE,
-       "Ung\u00FCltiges XPath-Typargument: {0}"},
+       "Ungültiges XPath-Typargument: {0}"},
 
   { ER_EMPTY_XPATH_RESULT,
        "Leeres XPath-Ergebnisobjekt"},
 
   { ER_INCOMPATIBLE_TYPES,
-       "XPathResult von XPath-Ausdruck \"{0}\" hat XPathResultType {1}, der nicht in den angegebenen XPathResultType {2} ge\u00E4ndert werden kann."},
+       "XPathResult von XPath-Ausdruck \"{0}\" hat XPathResultType {1}, der nicht in den angegebenen XPathResultType {2} geändert werden kann."},
 
   { ER_NULL_RESOLVER,
-       "Pr\u00E4fix kann nicht mit Null-Pr\u00E4fix-Resolver aufgel\u00F6st werden."},
+       "Präfix kann nicht mit Null-Präfix-Resolver aufgelöst werden."},
 
   // Note to translators:  The substitution text is the name of a data type.  The
   // message indicates that a value of a particular type could not be converted
@@ -744,19 +744,19 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   // Note to translators: Do not translate snapshotItem,
   // UNORDERED_NODE_SNAPSHOT_TYPE and ORDERED_NODE_SNAPSHOT_TYPE.
   { ER_NON_SNAPSHOT_TYPE,
-       "Die Methode \"snapshotItem\" kann nicht f\u00FCr XPathResult von XPath-Ausdruck \"{0}\" aufgerufen werden, da der zugeh\u00F6rige XPathResultType {1} ist. Diese Methode gilt nur f\u00FCr die Typen UNORDERED_NODE_SNAPSHOT_TYPE und ORDERED_NODE_SNAPSHOT_TYPE."},
+       "Die Methode \"snapshotItem\" kann nicht für XPathResult von XPath-Ausdruck \"{0}\" aufgerufen werden, da der zugehörige XPathResultType {1} ist. Diese Methode gilt nur für die Typen UNORDERED_NODE_SNAPSHOT_TYPE und ORDERED_NODE_SNAPSHOT_TYPE."},
 
   // Note to translators:  XPathEvaluator is a Java interface name.  An
   // XPathEvaluator is created with respect to a particular XML document, and in
   // this case the expression represented by this object was being evaluated with
   // respect to a context node from a different document.
   { ER_WRONG_DOCUMENT,
-       "Kontextknoten geh\u00F6rt nicht zum Dokument, das an diesen XPathEvaluator gebunden ist."},
+       "Kontextknoten gehört nicht zum Dokument, das an diesen XPathEvaluator gebunden ist."},
 
   // Note to translators:  The XPath expression cannot be evaluated with respect
   // to this type of node.
   { ER_WRONG_NODETYPE,
-       "Kontextknotentyp wird nicht unterst\u00FCtzt."},
+       "Kontextknotentyp wird nicht unterstützt."},
 
   { ER_XPATH_ERROR,
        "Unbekannter Fehler in XPath."},
@@ -774,10 +774,10 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   /** Field ER_RESOLVE_VARIABLE_RETURNS_NULL                       */
 
   { ER_RESOLVE_VARIABLE_RETURNS_NULL,
-       "resolveVariable f\u00FCr Variable {0} gibt null zur\u00FCck"},
+       "resolveVariable für Variable {0} gibt null zurück"},
 
   { ER_NO_XPATH_VARIABLE_RESOLVER,
-       "Es wird versucht, die Variable {0} aufzul\u00F6sen, aber es wurde kein Variablen-Resolver festgelegt."},
+       "Es wird versucht, die Variable {0} aufzulösen, aber es wurde kein Variablen-Resolver festgelegt."},
 
   { ER_NO_XPATH_FUNCTION_PROVIDER,
        "Es wird versucht, eine Erweiterungsfunktion {0} aufzurufen, aber es wurde kein Erweiterungsprovider festgelegt."},
@@ -785,12 +785,12 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   /** Field ER_UNSUPPORTED_RETURN_TYPE                       */
 
   { ER_UNSUPPORTED_RETURN_TYPE,
-       "Nicht unterst\u00FCtzter R\u00FCckgabetyp: {0}"},
+       "Nicht unterstützter Rückgabetyp: {0}"},
 
   /** Field ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL                       */
 
   { ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL,
-       "Quelle und/oder R\u00FCckgabetyp d\u00FCrfen nicht null sein"},
+       "Quelle und/oder Rückgabetyp dürfen nicht null sein"},
 
   /** Field ER_ARG_CANNOT_BE_NULL                       */
 
@@ -861,10 +861,10 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
        "Es wird versucht, die unbekannte Eigenschaft \"{0}\" abzurufen: {1}#getProperty({0})"},
 
   { ER_XPATH_GROUP_LIMIT,
-      "JAXP0801001: Im Compiler ist ein XPath-Ausdruck mit {0} Gruppen aufgetreten, der den von \"{2}\" festgelegten Grenzwert \"{1}\" \u00FCberschreitet."},
+      "JAXP0801001: Im Compiler ist ein XPath-Ausdruck mit {0} Gruppen aufgetreten, der den von \"{2}\" festgelegten Grenzwert \"{1}\" überschreitet."},
 
   { ER_XPATH_OPERATOR_LIMIT,
-      "JAXP0801002: Im Compiler ist ein XPath-Ausdruck mit {0} Operatoren aufgetreten, der den von \"{2}\" festgelegten Grenzwert \"{1}\" \u00FCberschreitet."},
+      "JAXP0801002: Im Compiler ist ein XPath-Ausdruck mit {0} Operatoren aufgetreten, der den von \"{2}\" festgelegten Grenzwert \"{1}\" überschreitet."},
 
   //END:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
 
@@ -874,16 +874,16 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "Gebietsschemaname in der format-number-Funktion wird noch nicht verarbeitet."},
 
   { WG_PROPERTY_NOT_SUPPORTED,
-      "XSL-Eigenschaft nicht unterst\u00FCtzt: {0}"},
+      "XSL-Eigenschaft nicht unterstützt: {0}"},
 
   { WG_DONT_DO_ANYTHING_WITH_NS,
-      "Derzeit keine Aktion mit Namespace {0} in Eigenschaft {1} ausf\u00FChren"},
+      "Derzeit keine Aktion mit Namespace {0} in Eigenschaft {1} ausführen"},
 
   { WG_QUO_NO_LONGER_DEFINED,
       "Alte Syntax: quo(...) nicht mehr definiert in XPath."},
 
   { WG_NEED_DERIVED_OBJECT_TO_IMPLEMENT_NODETEST,
-      "XPath ben\u00F6tigt ein abgeleitetes Objekt, um nodeTest zu implementieren."},
+      "XPath benötigt ein abgeleitetes Objekt, um nodeTest zu implementieren."},
 
   { WG_FUNCTION_TOKEN_NOT_FOUND,
       "Funktionstoken nicht gefunden."},
@@ -895,13 +895,13 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "URL kann nicht erstellt werden aus: {0}"},
 
   { WG_EXPAND_ENTITIES_NOT_SUPPORTED,
-      "Option \"-E\" nicht unterst\u00FCtzt f\u00FCr DTM-Parser"},
+      "Option \"-E\" nicht unterstützt für DTM-Parser"},
 
   { WG_ILLEGAL_VARIABLE_REFERENCE,
-      "VariableReference au\u00DFerhalb des Kontexts oder ohne Definition f\u00FCr Variable angegeben. Name = {0}"},
+      "VariableReference außerhalb des Kontexts oder ohne Definition für Variable angegeben. Name = {0}"},
 
   { WG_UNSUPPORTED_ENCODING,
-     "Nicht unterst\u00FCtzte Codierung: {0}"},
+     "Nicht unterstützte Codierung: {0}"},
 
 
 
@@ -909,8 +909,8 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { "ui_language", "de"},
   { "help_language", "de"},
   { "language", "de"},
-  { "BAD_CODE", "Parameter f\u00FCr createMessage war au\u00DFerhalb des g\u00FCltigen Bereichs"},
-  { "FORMAT_FAILED", "Ausnahme bei messageFormat-Aufruf ausgel\u00F6st"},
+  { "BAD_CODE", "Parameter für createMessage war außerhalb des gültigen Bereichs"},
+  { "FORMAT_FAILED", "Ausnahme bei messageFormat-Aufruf ausgelöst"},
   { "version", ">>>>>>> Xalan-Version "},
   { "version2", "<<<<<<<"},
   { "yes", "Ja"},
@@ -920,12 +920,12 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { "xpath_option", "xpath-Optionen: "},
   { "optionIN", "   [-in inputXMLURL]"},
   { "optionSelect", "   [-select xpath expression]"},
-  { "optionMatch", "   [-match match pattern (f\u00FCr Vergleichsdiagnose)]"},
-  { "optionAnyExpr", "Oder nur ein XPath-Ausdruck f\u00FChrt einen Diagnosedump aus"},
+  { "optionMatch", "   [-match match pattern (für Vergleichsdiagnose)]"},
+  { "optionAnyExpr", "Oder nur ein XPath-Ausdruck führt einen Diagnosedump aus"},
   { "noParsermsg1", "XSL-Prozess war nicht erfolgreich."},
   { "noParsermsg2", "** Parser konnte nicht gefunden werden **"},
-  { "noParsermsg3", "Pr\u00FCfen Sie den Classpath."},
-  { "noParsermsg4", "Wenn Sie nicht \u00FCber den XML-Parser f\u00FCr Java von IBM verf\u00FCgen, k\u00F6nnen Sie ihn hier herunterladen:"},
+  { "noParsermsg3", "Prüfen Sie den Classpath."},
+  { "noParsermsg4", "Wenn Sie nicht über den XML-Parser für Java von IBM verfügen, können Sie ihn hier herunterladen:"},
   { "noParsermsg5", "IBMs AlphaWorks: http://www.alphaworks.ibm.com/formula/xml"},
   { "gtone", ">1" },
   { "zero", "0" },

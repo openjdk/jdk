@@ -184,22 +184,22 @@ public class XMLErrorResources_de extends ListResourceBundle
     {"ER0000" , "{0}" },
 
     { ER_FUNCTION_NOT_SUPPORTED,
-      "Funktion nicht unterst\u00FCtzt."},
+      "Funktion nicht unterstützt."},
 
     { ER_CANNOT_OVERWRITE_CAUSE,
-      "Ursache kann nicht \u00FCberschrieben werden"},
+      "Ursache kann nicht überschrieben werden"},
 
     { ER_NO_DEFAULT_IMPL,
       "Keine Standardimplementierung gefunden "},
 
     { ER_CHUNKEDINTARRAY_NOT_SUPPORTED,
-      "ChunkedIntArray({0}) derzeit nicht unterst\u00FCtzt"},
+      "ChunkedIntArray({0}) derzeit nicht unterstützt"},
 
     { ER_OFFSET_BIGGER_THAN_SLOT,
-      "Offset gr\u00F6\u00DFer als Slot"},
+      "Offset größer als Slot"},
 
     { ER_COROUTINE_NOT_AVAIL,
-      "Coroutine nicht verf\u00FCgbar; ID={0}"},
+      "Coroutine nicht verfügbar; ID={0}"},
 
     { ER_COROUTINE_CO_EXIT,
       "CoroutineManager hat co_exit()-Anforderung erhalten"},
@@ -214,37 +214,37 @@ public class XMLErrorResources_de extends ListResourceBundle
       "\nUNEXPECTED: Parser doTerminate antwortet {0}"},
 
     { ER_NO_PARSE_CALL_WHILE_PARSING,
-      "\"parse\" darf w\u00E4hrend des Parsing nicht aufgerufen werden"},
+      "\"parse\" darf während des Parsing nicht aufgerufen werden"},
 
     { ER_TYPED_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "Fehler: Typisierter Iterator f\u00FCr Achse {0} nicht implementiert"},
+      "Fehler: Typisierter Iterator für Achse {0} nicht implementiert"},
 
     { ER_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "Fehler: Iterator f\u00FCr Achse {0} nicht implementiert "},
+      "Fehler: Iterator für Achse {0} nicht implementiert "},
 
     { ER_ITERATOR_CLONE_NOT_SUPPORTED,
-      "Iteratorclone nicht unterst\u00FCtzt"},
+      "Iteratorclone nicht unterstützt"},
 
     { ER_UNKNOWN_AXIS_TYPE,
       "Unbekannter Achsendurchlauftyp: {0}"},
 
     { ER_AXIS_NOT_SUPPORTED,
-      "Achsen-Traverser nicht unterst\u00FCtzt: {0}"},
+      "Achsen-Traverser nicht unterstützt: {0}"},
 
     { ER_NO_DTMIDS_AVAIL,
-      "Keine weiteren DTM-IDs verf\u00FCgbar"},
+      "Keine weiteren DTM-IDs verfügbar"},
 
     { ER_NOT_SUPPORTED,
-      "Nicht unterst\u00FCtzt: {0}"},
+      "Nicht unterstützt: {0}"},
 
     { ER_NODE_NON_NULL,
-      "Knoten darf nicht null sein f\u00FCr getDTMHandleFromNode"},
+      "Knoten darf nicht null sein für getDTMHandleFromNode"},
 
     { ER_COULD_NOT_RESOLVE_NODE,
-      "Knoten konnte nicht in Handle aufgel\u00F6st werden"},
+      "Knoten konnte nicht in Handle aufgelöst werden"},
 
     { ER_STARTPARSE_WHILE_PARSING,
-       "\"startParse\" darf w\u00E4hrend des Parsing nicht aufgerufen werden"},
+       "\"startParse\" darf während des Parsing nicht aufgerufen werden"},
 
     { ER_STARTPARSE_NEEDS_SAXPARSER,
        "startParse erfordert einen SAXParser ungleich null"},
@@ -253,10 +253,10 @@ public class XMLErrorResources_de extends ListResourceBundle
        "Parser konnte nicht initialisiert werden mit"},
 
     { ER_EXCEPTION_CREATING_POOL,
-       "Ausnahme beim Erstellen einer neuen Instanz f\u00FCr Pool"},
+       "Ausnahme beim Erstellen einer neuen Instanz für Pool"},
 
     { ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
-       "Pfad enth\u00E4lt eine ung\u00FCltige Escapesequenz"},
+       "Pfad enthält eine ungültige Escapesequenz"},
 
     { ER_SCHEME_REQUIRED,
        "Schema ist erforderlich."},
@@ -268,7 +268,7 @@ public class XMLErrorResources_de extends ListResourceBundle
        "Kein Schema gefunden in URI"},
 
     { ER_PATH_INVALID_CHAR,
-       "Pfad enth\u00E4lt ung\u00FCltiges Zeichen: {0}"},
+       "Pfad enthält ungültiges Zeichen: {0}"},
 
     { ER_SCHEME_FROM_NULL_STRING,
        "Schema kann nicht von Nullzeichenfolge festgelegt werden"},
@@ -283,28 +283,28 @@ public class XMLErrorResources_de extends ListResourceBundle
        "Port kann nicht festgelegt werden, wenn der Host null ist"},
 
     { ER_INVALID_PORT,
-       "Ung\u00FCltige Portnummer"},
+       "Ungültige Portnummer"},
 
     { ER_FRAG_FOR_GENERIC_URI,
-       "Fragment kann nur f\u00FCr eine generische URI festgelegt werden"},
+       "Fragment kann nur für eine generische URI festgelegt werden"},
 
     { ER_FRAG_WHEN_PATH_NULL,
        "Fragment kann nicht festgelegt werden, wenn der Pfad null ist"},
 
     { ER_FRAG_INVALID_CHAR,
-       "Fragment enth\u00E4lt ein ung\u00FCltiges Zeichen"},
+       "Fragment enthält ein ungültiges Zeichen"},
 
     { ER_PARSER_IN_USE,
       "Parser wird bereits verwendet"},
 
     { ER_CANNOT_CHANGE_WHILE_PARSING,
-      "{0} {1} kann w\u00E4hrend Parsing nicht ge\u00E4ndert werden"},
+      "{0} {1} kann während Parsing nicht geändert werden"},
 
     { ER_SELF_CAUSATION_NOT_PERMITTED,
-      "Selbstkausalit\u00E4t nicht zul\u00E4ssig"},
+      "Selbstkausalität nicht zulässig"},
 
     { ER_NO_USERINFO_IF_NO_HOST,
-      "Benutzerinformationen k\u00F6nnen nicht angegeben werden, wenn der Host nicht angegeben wurde"},
+      "Benutzerinformationen können nicht angegeben werden, wenn der Host nicht angegeben wurde"},
 
     { ER_NO_PORT_IF_NO_HOST,
       "Port kann nicht angegeben werden, wenn der Host nicht angegeben wurde"},
@@ -319,7 +319,7 @@ public class XMLErrorResources_de extends ListResourceBundle
       "URI kann nicht mit leeren Parametern initialisiert werden"},
 
     { ER_METHOD_NOT_SUPPORTED,
-      "Methode noch nicht unterst\u00FCtzt "},
+      "Methode noch nicht unterstützt "},
 
     { ER_INCRSAXSRCFILTER_NOT_RESTARTABLE,
       "IncrementalSAXSource_Filter kann derzeit nicht neu gestartet werden"},
@@ -328,7 +328,7 @@ public class XMLErrorResources_de extends ListResourceBundle
       "XMLReader nicht vor startParse-Anforderung"},
 
     { ER_AXIS_TRAVERSER_NOT_SUPPORTED,
-      "Achsen-Traverser nicht unterst\u00FCtzt: {0}"},
+      "Achsen-Traverser nicht unterstützt: {0}"},
 
     { ER_ERRORHANDLER_CREATED_WITH_NULL_PRINTWRITER,
       "ListingErrorHandler mit Null-PrintWriter erstellt."},
@@ -340,22 +340,22 @@ public class XMLErrorResources_de extends ListResourceBundle
       "Fehlerposition unbekannt"},
 
     { ER_PREFIX_MUST_RESOLVE,
-      "Pr\u00E4fix muss in Namespace aufgel\u00F6st werden: {0}"},
+      "Präfix muss in Namespace aufgelöst werden: {0}"},
 
     { ER_CREATEDOCUMENT_NOT_SUPPORTED,
-      "createDocument() nicht in XPathContext unterst\u00FCtzt."},
+      "createDocument() nicht in XPathContext unterstützt."},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT,
-      "Untergeordnetes Attribut hat kein Eigent\u00FCmerdokument."},
+      "Untergeordnetes Attribut hat kein Eigentümerdokument."},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT_ELEMENT,
-      "Untergeordnetes Attribut hat kein Eigent\u00FCmerdokumentelement."},
+      "Untergeordnetes Attribut hat kein Eigentümerdokumentelement."},
 
     { ER_CANT_OUTPUT_TEXT_BEFORE_DOC,
       "Warnung: Text kann nicht vor Dokumentelement ausgegeben werden. Wird ignoriert..."},
 
     { ER_CANT_HAVE_MORE_THAN_ONE_ROOT,
-      "Mehrere Roots f\u00FCr ein DOM nicht zul\u00E4ssig."},
+      "Mehrere Roots für ein DOM nicht zulässig."},
 
     { ER_ARG_LOCALNAME_NULL,
        "Argument \"localName\" ist null"},
@@ -364,19 +364,19 @@ public class XMLErrorResources_de extends ListResourceBundle
     // The localname is the portion after the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_LOCALNAME_INVALID,
-       "Localname in QNAME muss ein g\u00FCltiger NCName sein"},
+       "Localname in QNAME muss ein gültiger NCName sein"},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The prefix is the portion before the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_PREFIX_INVALID,
-       "Pr\u00E4fix in QNAME muss ein g\u00FCltiger NCName sein"},
+       "Präfix in QNAME muss ein gültiger NCName sein"},
 
     { ER_NAME_CANT_START_WITH_COLON,
       "Name darf nicht mit einem Doppelpunkt beginnen"},
 
-    { "BAD_CODE", "Parameter f\u00FCr createMessage war au\u00DFerhalb des g\u00FCltigen Bereichs"},
-    { "FORMAT_FAILED", "Ausnahme bei messageFormat-Aufruf ausgel\u00F6st"},
+    { "BAD_CODE", "Parameter für createMessage war außerhalb des gültigen Bereichs"},
+    { "FORMAT_FAILED", "Ausnahme bei messageFormat-Aufruf ausgelöst"},
     { "line", "Zeilennummer"},
     { "column","Spaltennummer"},
 
@@ -390,16 +390,16 @@ public class XMLErrorResources_de extends ListResourceBundle
       "Ressource [ {0} ] konnte nicht geladen werden: {1} \n {2} \t {3}" },
 
     {ER_BUFFER_SIZE_LESSTHAN_ZERO,
-      "Puffergr\u00F6\u00DFe <=0" },
+      "Puffergröße <=0" },
 
     {ER_INVALID_UTF16_SURROGATE,
-      "Ung\u00FCltige UTF-16-Ersetzung festgestellt: {0}?" },
+      "Ungültige UTF-16-Ersetzung festgestellt: {0}?" },
 
     {ER_OIERROR,
       "I/O-Fehler" },
 
     {ER_ILLEGAL_ATTRIBUTE_POSITION,
-      "Attribut {0} kann nicht nach untergeordneten Knoten oder vor dem Erstellen eines Elements hinzugef\u00FCgt werden. Attribut wird ignoriert."},
+      "Attribut {0} kann nicht nach untergeordneten Knoten oder vor dem Erstellen eines Elements hinzugefügt werden. Attribut wird ignoriert."},
 
       /*
        * Note to translators:  The stylesheet contained a reference to a
@@ -407,7 +407,7 @@ public class XMLErrorResources_de extends ListResourceBundle
        * text is the name of the prefix.
        */
     {ER_NAMESPACE_PREFIX,
-      "Namespace f\u00FCr Pr\u00E4fix \"{0}\" wurde nicht deklariert." },
+      "Namespace für Präfix \"{0}\" wurde nicht deklariert." },
       /*
        * Note to translators:  This message is reported if the stylesheet
        * being processed attempted to construct an XML document with an
@@ -415,7 +415,7 @@ public class XMLErrorResources_de extends ListResourceBundle
        * specifies the name of the attribute.
        */
     {ER_STRAY_ATTRIBUTE,
-      "Attribut \"{0}\" au\u00DFerhalb des Elements." },
+      "Attribut \"{0}\" außerhalb des Elements." },
 
       /*
        * Note to translators:  As with the preceding message, a namespace
@@ -425,16 +425,16 @@ public class XMLErrorResources_de extends ListResourceBundle
        * namespace declaration.
        */
     {ER_STRAY_NAMESPACE,
-      "Namespace-Deklaration {0}={1} au\u00DFerhalb des Elements." },
+      "Namespace-Deklaration {0}={1} außerhalb des Elements." },
 
     {ER_COULD_NOT_LOAD_RESOURCE,
-      "\"{0}\" konnte nicht geladen werden (CLASSPATH pr\u00FCfen). Die Standardwerte werden verwendet"},
+      "\"{0}\" konnte nicht geladen werden (CLASSPATH prüfen). Die Standardwerte werden verwendet"},
 
     { ER_ILLEGAL_CHARACTER,
        "Versuch, Zeichen mit Integralwert {0} auszugeben, das nicht in der speziellen Ausgabecodierung von {1} dargestellt wird."},
 
     {ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-      "Property-Datei \"{0}\" konnte f\u00FCr Ausgabemethode \"{1}\" nicht geladen werden (CLASSPATH pr\u00FCfen)" }
+      "Property-Datei \"{0}\" konnte für Ausgabemethode \"{1}\" nicht geladen werden (CLASSPATH prüfen)" }
 
 
   };

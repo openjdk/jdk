@@ -479,564 +479,564 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
   {"ER0000" , "{0}" },
 
     { ER_NO_CURLYBRACE,
-      "\u9519\u8BEF: \u8868\u8FBE\u5F0F\u4E2D\u4E0D\u80FD\u5305\u542B '{'"},
+      "错误: 表达式中不能包含 '{'"},
 
     { ER_ILLEGAL_ATTRIBUTE ,
-     "{0}\u5177\u6709\u975E\u6CD5\u5C5E\u6027: {1}"},
+     "{0}具有非法属性: {1}"},
 
   {ER_NULL_SOURCENODE_APPLYIMPORTS ,
-      "sourceNode \u5728 xsl:apply-imports \u4E2D\u4E3A\u7A7A\u503C!"},
+      "sourceNode 在 xsl:apply-imports 中为空值!"},
 
   {ER_CANNOT_ADD,
-      "\u65E0\u6CD5\u5411{1}\u6DFB\u52A0{0}"},
+      "无法向{1}添加{0}"},
 
     { ER_NULL_SOURCENODE_HANDLEAPPLYTEMPLATES,
-      "sourceNode \u5728 handleApplyTemplatesInstruction \u4E2D\u4E3A\u7A7A\u503C!"},
+      "sourceNode 在 handleApplyTemplatesInstruction 中为空值!"},
 
     { ER_NO_NAME_ATTRIB,
-     "{0}\u5FC5\u987B\u5177\u6709 name \u5C5E\u6027\u3002"},
+     "{0}必须具有 name 属性。"},
 
     {ER_TEMPLATE_NOT_FOUND,
-     "\u627E\u4E0D\u5230\u540D\u4E3A{0}\u7684\u6A21\u677F"},
+     "找不到名为{0}的模板"},
 
     {ER_CANT_RESOLVE_NAME_AVT,
-      "\u65E0\u6CD5\u89E3\u6790 xsl:call-template \u4E2D\u7684\u540D\u79F0 AVT\u3002"},
+      "无法解析 xsl:call-template 中的名称 AVT。"},
 
     {ER_REQUIRES_ATTRIB,
-     "{0}\u9700\u8981\u5C5E\u6027: {1}"},
+     "{0}需要属性: {1}"},
 
     { ER_MUST_HAVE_TEST_ATTRIB,
-      "{0}\u5FC5\u987B\u5177\u6709 ''test'' \u5C5E\u6027\u3002"},
+      "{0}必须具有 ''test'' 属性。"},
 
     {ER_BAD_VAL_ON_LEVEL_ATTRIB,
-      "level \u5C5E\u6027\u7684\u503C\u9519\u8BEF: {0}"},
+      "level 属性的值错误: {0}"},
 
     {ER_PROCESSINGINSTRUCTION_NAME_CANT_BE_XML,
-      "processing-instruction \u540D\u79F0\u4E0D\u80FD\u4E3A 'xml'"},
+      "processing-instruction 名称不能为 'xml'"},
 
     { ER_PROCESSINGINSTRUCTION_NOTVALID_NCNAME,
-      "processing-instruction \u540D\u79F0\u5FC5\u987B\u662F\u6709\u6548\u7684 NCName: {0}"},
+      "processing-instruction 名称必须是有效的 NCName: {0}"},
 
     { ER_NEED_MATCH_ATTRIB,
-      "\u5982\u679C{0}\u5177\u6709\u67D0\u79CD\u6A21\u5F0F, \u5219\u5FC5\u987B\u5177\u6709 match \u5C5E\u6027\u3002"},
+      "如果{0}具有某种模式, 则必须具有 match 属性。"},
 
     { ER_NEED_NAME_OR_MATCH_ATTRIB,
-      "{0}\u9700\u8981 name \u6216 match \u5C5E\u6027\u3002"},
+      "{0}需要 name 或 match 属性。"},
 
     {ER_CANT_RESOLVE_NSPREFIX,
-      "\u65E0\u6CD5\u89E3\u6790\u540D\u79F0\u7A7A\u95F4\u524D\u7F00: {0}"},
+      "无法解析名称空间前缀: {0}"},
 
     { ER_ILLEGAL_VALUE,
-     "xml:space \u5177\u6709\u975E\u6CD5\u503C: {0}"},
+     "xml:space 具有非法值: {0}"},
 
     { ER_NO_OWNERDOC,
-      "\u5B50\u8282\u70B9\u6CA1\u6709\u6240\u6709\u8005\u6587\u6863!"},
+      "子节点没有所有者文档!"},
 
     { ER_ELEMTEMPLATEELEM_ERR,
-     "ElemTemplateElement \u9519\u8BEF: {0}"},
+     "ElemTemplateElement 错误: {0}"},
 
     { ER_NULL_CHILD,
-     "\u6B63\u5728\u5C1D\u8BD5\u6DFB\u52A0\u7A7A\u5B50\u7EA7!"},
+     "正在尝试添加空子级!"},
 
     { ER_NEED_SELECT_ATTRIB,
-     "{0}\u9700\u8981 select \u5C5E\u6027\u3002"},
+     "{0}需要 select 属性。"},
 
     { ER_NEED_TEST_ATTRIB ,
-      "xsl:when \u5FC5\u987B\u5177\u6709 'test' \u5C5E\u6027\u3002"},
+      "xsl:when 必须具有 'test' 属性。"},
 
     { ER_NEED_NAME_ATTRIB,
-      "xsl:with-param \u5FC5\u987B\u5177\u6709 'name' \u5C5E\u6027\u3002"},
+      "xsl:with-param 必须具有 'name' 属性。"},
 
     { ER_NO_CONTEXT_OWNERDOC,
-      "\u4E0A\u4E0B\u6587\u6CA1\u6709\u6240\u6709\u8005\u6587\u6863!"},
+      "上下文没有所有者文档!"},
 
     {ER_COULD_NOT_CREATE_XML_PROC_LIAISON,
-      "\u65E0\u6CD5\u521B\u5EFA XML TransformerFactory Liaison: {0}"},
+      "无法创建 XML TransformerFactory Liaison: {0}"},
 
     {ER_PROCESS_NOT_SUCCESSFUL,
-      "Xalan: \u8FDB\u7A0B\u672A\u6210\u529F\u3002"},
+      "Xalan: 进程未成功。"},
 
     { ER_NOT_SUCCESSFUL,
-     "Xalan: \u672A\u6210\u529F\u3002"},
+     "Xalan: 未成功。"},
 
     { ER_ENCODING_NOT_SUPPORTED,
-     "\u4E0D\u652F\u6301\u7F16\u7801: {0}"},
+     "不支持编码: {0}"},
 
     {ER_COULD_NOT_CREATE_TRACELISTENER,
-      "\u65E0\u6CD5\u521B\u5EFA TraceListener: {0}"},
+      "无法创建 TraceListener: {0}"},
 
     {ER_KEY_REQUIRES_NAME_ATTRIB,
-      "xsl:key \u9700\u8981 'name' \u5C5E\u6027!"},
+      "xsl:key 需要 'name' 属性!"},
 
     { ER_KEY_REQUIRES_MATCH_ATTRIB,
-      "xsl:key \u9700\u8981 'match' \u5C5E\u6027!"},
+      "xsl:key 需要 'match' 属性!"},
 
     { ER_KEY_REQUIRES_USE_ATTRIB,
-      "xsl:key \u9700\u8981 'use' \u5C5E\u6027!"},
+      "xsl:key 需要 'use' 属性!"},
 
     { ER_REQUIRES_ELEMENTS_ATTRIB,
-      "(StylesheetHandler) {0}\u9700\u8981 ''elements'' \u5C5E\u6027!"},
+      "(StylesheetHandler) {0}需要 ''elements'' 属性!"},
 
     { ER_MISSING_PREFIX_ATTRIB,
-      "(StylesheetHandler) \u7F3A\u5C11{0}\u5C5E\u6027 ''prefix''"},
+      "(StylesheetHandler) 缺少{0}属性 ''prefix''"},
 
     { ER_BAD_STYLESHEET_URL,
-     "\u6837\u5F0F\u8868 URL \u9519\u8BEF: {0}"},
+     "样式表 URL 错误: {0}"},
 
     { ER_FILE_NOT_FOUND,
-     "\u627E\u4E0D\u5230\u6837\u5F0F\u8868\u6587\u4EF6: {0}"},
+     "找不到样式表文件: {0}"},
 
     { ER_IOEXCEPTION,
-      "\u6837\u5F0F\u8868\u6587\u4EF6\u51FA\u73B0 IO \u5F02\u5E38\u9519\u8BEF: {0}"},
+      "样式表文件出现 IO 异常错误: {0}"},
 
     { ER_NO_HREF_ATTRIB,
-      "(StylesheetHandler) \u627E\u4E0D\u5230{0}\u7684 href \u5C5E\u6027"},
+      "(StylesheetHandler) 找不到{0}的 href 属性"},
 
     { ER_STYLESHEET_INCLUDES_ITSELF,
-      "(StylesheetHandler) {0}\u76F4\u63A5\u6216\u95F4\u63A5\u5305\u542B\u5176\u81EA\u8EAB!"},
+      "(StylesheetHandler) {0}直接或间接包含其自身!"},
 
     { ER_PROCESSINCLUDE_ERROR,
-      "StylesheetHandler.processInclude \u9519\u8BEF, {0}"},
+      "StylesheetHandler.processInclude 错误, {0}"},
 
     { ER_MISSING_LANG_ATTRIB,
-      "(StylesheetHandler) \u7F3A\u5C11{0}\u5C5E\u6027 ''lang''"},
+      "(StylesheetHandler) 缺少{0}属性 ''lang''"},
 
     { ER_MISSING_CONTAINER_ELEMENT_COMPONENT,
-      "(StylesheetHandler) {0}\u5143\u7D20\u7684\u653E\u7F6E\u4F4D\u7F6E\u662F\u5426\u9519\u8BEF?? \u7F3A\u5C11\u5BB9\u5668\u5143\u7D20 ''component''"},
+      "(StylesheetHandler) {0}元素的放置位置是否错误?? 缺少容器元素 ''component''"},
 
     { ER_CAN_ONLY_OUTPUT_TO_ELEMENT,
-      "\u53EA\u80FD\u8F93\u51FA\u5230 Element, DocumentFragment, Document \u6216 PrintWriter\u3002"},
+      "只能输出到 Element, DocumentFragment, Document 或 PrintWriter。"},
 
     { ER_PROCESS_ERROR,
-     "StylesheetRoot.process \u9519\u8BEF"},
+     "StylesheetRoot.process 错误"},
 
     { ER_UNIMPLNODE_ERROR,
-     "UnImplNode \u9519\u8BEF: {0}"},
+     "UnImplNode 错误: {0}"},
 
     { ER_NO_SELECT_EXPRESSION,
-      "\u9519\u8BEF! \u627E\u4E0D\u5230 xpath \u9009\u62E9\u8868\u8FBE\u5F0F (-select)\u3002"},
+      "错误! 找不到 xpath 选择表达式 (-select)。"},
 
     { ER_CANNOT_SERIALIZE_XSLPROCESSOR,
-      "\u65E0\u6CD5\u5E8F\u5217\u5316 XSLProcessor!"},
+      "无法序列化 XSLProcessor!"},
 
     { ER_NO_INPUT_STYLESHEET,
-      "\u672A\u6307\u5B9A\u6837\u5F0F\u8868\u8F93\u5165!"},
+      "未指定样式表输入!"},
 
     { ER_FAILED_PROCESS_STYLESHEET,
-      "\u65E0\u6CD5\u5904\u7406\u6837\u5F0F\u8868!"},
+      "无法处理样式表!"},
 
     { ER_COULDNT_PARSE_DOC,
-     "\u65E0\u6CD5\u89E3\u6790{0}\u6587\u6863!"},
+     "无法解析{0}文档!"},
 
     { ER_COULDNT_FIND_FRAGMENT,
-     "\u627E\u4E0D\u5230\u7247\u6BB5: {0}"},
+     "找不到片段: {0}"},
 
     { ER_NODE_NOT_ELEMENT,
-      "\u7247\u6BB5\u6807\u8BC6\u7B26\u6307\u5411\u7684\u8282\u70B9\u4E0D\u662F\u5143\u7D20: {0}"},
+      "片段标识符指向的节点不是元素: {0}"},
 
     { ER_FOREACH_NEED_MATCH_OR_NAME_ATTRIB,
-      "for-each \u5FC5\u987B\u5177\u6709 match \u6216 name \u5C5E\u6027"},
+      "for-each 必须具有 match 或 name 属性"},
 
     { ER_TEMPLATES_NEED_MATCH_OR_NAME_ATTRIB,
-      "templates \u5FC5\u987B\u5177\u6709 match \u6216 name \u5C5E\u6027"},
+      "templates 必须具有 match 或 name 属性"},
 
     { ER_NO_CLONE_OF_DOCUMENT_FRAG,
-      "\u4E0D\u80FD\u514B\u9686\u6587\u6863\u7247\u6BB5!"},
+      "不能克隆文档片段!"},
 
     { ER_CANT_CREATE_ITEM,
-      "\u65E0\u6CD5\u5728\u7ED3\u679C\u6811\u4E2D\u521B\u5EFA\u9879: {0}"},
+      "无法在结果树中创建项: {0}"},
 
     { ER_XMLSPACE_ILLEGAL_VALUE,
-      "\u6E90 XML \u4E2D\u7684 xml:space \u5177\u6709\u975E\u6CD5\u503C: {0}"},
+      "源 XML 中的 xml:space 具有非法值: {0}"},
 
     { ER_NO_XSLKEY_DECLARATION,
-      "{0}\u6CA1\u6709 xsl:key \u58F0\u660E!"},
+      "{0}没有 xsl:key 声明!"},
 
     { ER_CANT_CREATE_URL,
-     "\u9519\u8BEF! \u65E0\u6CD5\u4E3A{0}\u521B\u5EFA url"},
+     "错误! 无法为{0}创建 url"},
 
     { ER_XSLFUNCTIONS_UNSUPPORTED,
-     "\u4E0D\u652F\u6301 xsl:functions"},
+     "不支持 xsl:functions"},
 
     { ER_PROCESSOR_ERROR,
-     "XSLT TransformerFactory \u9519\u8BEF"},
+     "XSLT TransformerFactory 错误"},
 
     { ER_NOT_ALLOWED_INSIDE_STYLESHEET,
-      "(StylesheetHandler) \u6837\u5F0F\u8868\u4E2D\u4E0D\u5141\u8BB8\u4F7F\u7528{0}!"},
+      "(StylesheetHandler) 样式表中不允许使用{0}!"},
 
     { ER_RESULTNS_NOT_SUPPORTED,
-      "\u4E0D\u518D\u652F\u6301 result-ns! \u8BF7\u6539\u7528 xsl:output\u3002"},
+      "不再支持 result-ns! 请改用 xsl:output。"},
 
     { ER_DEFAULTSPACE_NOT_SUPPORTED,
-      "\u4E0D\u518D\u652F\u6301 default-space! \u8BF7\u6539\u7528 xsl:strip-space \u6216 xsl:preserve-space\u3002"},
+      "不再支持 default-space! 请改用 xsl:strip-space 或 xsl:preserve-space。"},
 
     { ER_INDENTRESULT_NOT_SUPPORTED,
-      "\u4E0D\u518D\u652F\u6301 indent-result! \u8BF7\u6539\u7528 xsl:output\u3002"},
+      "不再支持 indent-result! 请改用 xsl:output。"},
 
     { ER_ILLEGAL_ATTRIB,
-      "(StylesheetHandler) {0}\u5177\u6709\u975E\u6CD5\u5C5E\u6027: {1}"},
+      "(StylesheetHandler) {0}具有非法属性: {1}"},
 
     { ER_UNKNOWN_XSL_ELEM,
-     "\u672A\u77E5 XSL \u5143\u7D20: {0}"},
+     "未知 XSL 元素: {0}"},
 
     { ER_BAD_XSLSORT_USE,
-      "(StylesheetHandler) xsl:sort \u53EA\u80FD\u4E0E xsl:apply-templates \u6216 xsl:for-each \u4E00\u8D77\u4F7F\u7528\u3002"},
+      "(StylesheetHandler) xsl:sort 只能与 xsl:apply-templates 或 xsl:for-each 一起使用。"},
 
     { ER_MISPLACED_XSLWHEN,
-      "(StylesheetHandler) xsl:when \u7684\u653E\u7F6E\u4F4D\u7F6E\u9519\u8BEF!"},
+      "(StylesheetHandler) xsl:when 的放置位置错误!"},
 
     { ER_XSLWHEN_NOT_PARENTED_BY_XSLCHOOSE,
-      "(StylesheetHandler) xsl:when \u7684\u7236\u7EA7\u4E0D\u662F xsl:choose!"},
+      "(StylesheetHandler) xsl:when 的父级不是 xsl:choose!"},
 
     { ER_MISPLACED_XSLOTHERWISE,
-      "(StylesheetHandler) xsl:otherwise \u7684\u653E\u7F6E\u4F4D\u7F6E\u9519\u8BEF!"},
+      "(StylesheetHandler) xsl:otherwise 的放置位置错误!"},
 
     { ER_XSLOTHERWISE_NOT_PARENTED_BY_XSLCHOOSE,
-      "(StylesheetHandler) xsl:otherwise \u7684\u7236\u7EA7\u4E0D\u662F xsl:choose!"},
+      "(StylesheetHandler) xsl:otherwise 的父级不是 xsl:choose!"},
 
     { ER_NOT_ALLOWED_INSIDE_TEMPLATE,
-      "(StylesheetHandler) \u6A21\u677F\u4E2D\u4E0D\u5141\u8BB8\u4F7F\u7528{0}!"},
+      "(StylesheetHandler) 模板中不允许使用{0}!"},
 
     { ER_UNKNOWN_EXT_NS_PREFIX,
-      "(StylesheetHandler) {0}\u6269\u5C55\u540D\u79F0\u7A7A\u95F4\u524D\u7F00 {1} \u672A\u77E5"},
+      "(StylesheetHandler) {0}扩展名称空间前缀 {1} 未知"},
 
     { ER_IMPORTS_AS_FIRST_ELEM,
-      "(StylesheetHandler) \u53EA\u80FD\u4F5C\u4E3A\u6837\u5F0F\u8868\u4E2D\u7684\u7B2C\u4E00\u4E2A\u5143\u7D20\u5BFC\u5165!"},
+      "(StylesheetHandler) 只能作为样式表中的第一个元素导入!"},
 
     { ER_IMPORTING_ITSELF,
-      "(StylesheetHandler) {0}\u76F4\u63A5\u6216\u95F4\u63A5\u5BFC\u5165\u5176\u81EA\u8EAB!"},
+      "(StylesheetHandler) {0}直接或间接导入其自身!"},
 
     { ER_XMLSPACE_ILLEGAL_VAL,
-      "(StylesheetHandler) xml:space \u5177\u6709\u975E\u6CD5\u503C: {0}"},
+      "(StylesheetHandler) xml:space 具有非法值: {0}"},
 
     { ER_PROCESSSTYLESHEET_NOT_SUCCESSFUL,
-      "processStylesheet \u5931\u8D25!"},
+      "processStylesheet 失败!"},
 
     { ER_SAX_EXCEPTION,
-     "SAX \u5F02\u5E38\u9519\u8BEF"},
+     "SAX 异常错误"},
 
 //  add this message to fix bug 21478
     { ER_FUNCTION_NOT_SUPPORTED,
-     "\u4E0D\u652F\u6301\u8BE5\u51FD\u6570!"},
+     "不支持该函数!"},
 
     { ER_XSLT_ERROR,
-     "XSLT \u9519\u8BEF"},
+     "XSLT 错误"},
 
     { ER_CURRENCY_SIGN_ILLEGAL,
-      "\u683C\u5F0F\u6A21\u5F0F\u5B57\u7B26\u4E32\u4E2D\u4E0D\u5141\u8BB8\u4F7F\u7528\u8D27\u5E01\u7B26\u53F7"},
+      "格式模式字符串中不允许使用货币符号"},
 
     { ER_DOCUMENT_FUNCTION_INVALID_IN_STYLESHEET_DOM,
-      "\u6837\u5F0F\u8868 DOM \u4E2D\u4E0D\u652F\u6301 Document \u51FD\u6570!"},
+      "样式表 DOM 中不支持 Document 函数!"},
 
     { ER_CANT_RESOLVE_PREFIX_OF_NON_PREFIX_RESOLVER,
-      "\u65E0\u6CD5\u89E3\u6790\u975E\u524D\u7F00\u89E3\u6790\u5668\u7684\u524D\u7F00!"},
+      "无法解析非前缀解析器的前缀!"},
 
     { ER_REDIRECT_COULDNT_GET_FILENAME,
-      "\u91CD\u5B9A\u5411\u6269\u5C55: \u65E0\u6CD5\u83B7\u53D6\u6587\u4EF6\u540D - file \u6216 select \u5C5E\u6027\u5FC5\u987B\u8FD4\u56DE\u6709\u6548\u5B57\u7B26\u4E32\u3002"},
+      "重定向扩展: 无法获取文件名 - file 或 select 属性必须返回有效字符串。"},
 
     { ER_CANNOT_BUILD_FORMATTERLISTENER_IN_REDIRECT,
-      "\u65E0\u6CD5\u5728\u91CD\u5B9A\u5411\u6269\u5C55\u4E2D\u6784\u5EFA FormatterListener!"},
+      "无法在重定向扩展中构建 FormatterListener!"},
 
     { ER_INVALID_PREFIX_IN_EXCLUDERESULTPREFIX,
-      "exclude-result-prefixes \u4E2D\u7684\u524D\u7F00\u65E0\u6548: {0}"},
+      "exclude-result-prefixes 中的前缀无效: {0}"},
 
     { ER_MISSING_NS_URI,
-      "\u6307\u5B9A\u524D\u7F00\u7F3A\u5C11\u540D\u79F0\u7A7A\u95F4 URI"},
+      "指定前缀缺少名称空间 URI"},
 
     { ER_MISSING_ARG_FOR_OPTION,
-      "\u9009\u9879\u7F3A\u5C11\u53C2\u6570: {0}"},
+      "选项缺少参数: {0}"},
 
     { ER_INVALID_OPTION,
-     "\u9009\u9879\u65E0\u6548: {0}"},
+     "选项无效: {0}"},
 
     { ER_MALFORMED_FORMAT_STRING,
-     "\u683C\u5F0F\u5B57\u7B26\u4E32\u7684\u683C\u5F0F\u9519\u8BEF: {0}"},
+     "格式字符串的格式错误: {0}"},
 
     { ER_STYLESHEET_REQUIRES_VERSION_ATTRIB,
-      "xsl:stylesheet \u9700\u8981 'version' \u5C5E\u6027!"},
+      "xsl:stylesheet 需要 'version' 属性!"},
 
     { ER_ILLEGAL_ATTRIBUTE_VALUE,
-      "\u5C5E\u6027{0}\u5177\u6709\u975E\u6CD5\u503C: {1}"},
+      "属性{0}具有非法值: {1}"},
 
     { ER_CHOOSE_REQUIRES_WHEN,
-     "xsl:choose \u9700\u8981 xsl:when"},
+     "xsl:choose 需要 xsl:when"},
 
     { ER_NO_APPLY_IMPORT_IN_FOR_EACH,
-      "xsl:for-each \u4E2D\u4E0D\u5141\u8BB8\u4F7F\u7528 xsl:apply-imports"},
+      "xsl:for-each 中不允许使用 xsl:apply-imports"},
 
     { ER_CANT_USE_DTM_FOR_OUTPUT,
-      "\u65E0\u6CD5\u5C06 DTMLiaison \u7528\u4E8E\u8F93\u51FA DOM \u8282\u70B9... \u8BF7\u6539\u4E3A\u4F20\u9012 com.sun.org.apache.xpath.internal.DOM2Helper!"},
+      "无法将 DTMLiaison 用于输出 DOM 节点... 请改为传递 com.sun.org.apache.xpath.internal.DOM2Helper!"},
 
     { ER_CANT_USE_DTM_FOR_INPUT,
-      "\u65E0\u6CD5\u5C06 DTMLiaison \u7528\u4E8E\u8F93\u5165 DOM \u8282\u70B9... \u8BF7\u6539\u4E3A\u4F20\u9012 com.sun.org.apache.xpath.internal.DOM2Helper!"},
+      "无法将 DTMLiaison 用于输入 DOM 节点... 请改为传递 com.sun.org.apache.xpath.internal.DOM2Helper!"},
 
     { ER_CALL_TO_EXT_FAILED,
-      "\u672A\u80FD\u8C03\u7528\u6269\u5C55\u5143\u7D20: {0}"},
+      "未能调用扩展元素: {0}"},
 
     { ER_PREFIX_MUST_RESOLVE,
-      "\u524D\u7F00\u5FC5\u987B\u89E3\u6790\u4E3A\u540D\u79F0\u7A7A\u95F4: {0}"},
+      "前缀必须解析为名称空间: {0}"},
 
     { ER_INVALID_UTF16_SURROGATE,
-      "\u68C0\u6D4B\u5230\u65E0\u6548\u7684 UTF-16 \u4EE3\u7406: {0}?"},
+      "检测到无效的 UTF-16 代理: {0}?"},
 
     { ER_XSLATTRSET_USED_ITSELF,
-      "xsl:attribute-set {0} \u4F7F\u7528\u5176\u81EA\u8EAB, \u8FD9\u5C06\u5BFC\u81F4\u65E0\u9650\u5FAA\u73AF\u3002"},
+      "xsl:attribute-set {0} 使用其自身, 这将导致无限循环。"},
 
     { ER_CANNOT_MIX_XERCESDOM,
-      "\u65E0\u6CD5\u6DF7\u5408\u975E Xerces-DOM \u8F93\u5165\u548C Xerces-DOM \u8F93\u51FA!"},
+      "无法混合非 Xerces-DOM 输入和 Xerces-DOM 输出!"},
 
     { ER_TOO_MANY_LISTENERS,
       "addTraceListenersToStylesheet - TooManyListenersException"},
 
     { ER_IN_ELEMTEMPLATEELEM_READOBJECT,
-      "\u5728 ElemTemplateElement.readObject \u4E2D: {0}"},
+      "在 ElemTemplateElement.readObject 中: {0}"},
 
     { ER_DUPLICATE_NAMED_TEMPLATE,
-      "\u627E\u5230\u591A\u4E2A\u540D\u4E3A{0}\u7684\u6A21\u677F"},
+      "找到多个名为{0}的模板"},
 
     { ER_INVALID_KEY_CALL,
-      "\u51FD\u6570\u8C03\u7528\u65E0\u6548: \u4E0D\u5141\u8BB8\u9012\u5F52 key() \u8C03\u7528"},
+      "函数调用无效: 不允许递归 key() 调用"},
 
     { ER_REFERENCING_ITSELF,
-      "\u53D8\u91CF {0} \u76F4\u63A5\u6216\u95F4\u63A5\u5F15\u7528\u5176\u81EA\u8EAB!"},
+      "变量 {0} 直接或间接引用其自身!"},
 
     { ER_ILLEGAL_DOMSOURCE_INPUT,
-      "\u5BF9\u4E8E newTemplates \u7684 DOMSource, \u8F93\u5165\u8282\u70B9\u4E0D\u80FD\u4E3A\u7A7A\u503C!"},
+      "对于 newTemplates 的 DOMSource, 输入节点不能为空值!"},
 
     { ER_CLASS_NOT_FOUND_FOR_OPTION,
-        "\u627E\u4E0D\u5230\u9009\u9879{0}\u7684\u7C7B\u6587\u4EF6"},
+        "找不到选项{0}的类文件"},
 
     { ER_REQUIRED_ELEM_NOT_FOUND,
-        "\u627E\u4E0D\u5230\u6240\u9700\u5143\u7D20: {0}"},
+        "找不到所需元素: {0}"},
 
     { ER_INPUT_CANNOT_BE_NULL,
-        "InputStream \u4E0D\u80FD\u4E3A\u7A7A\u503C"},
+        "InputStream 不能为空值"},
 
     { ER_URI_CANNOT_BE_NULL,
-        "URI \u4E0D\u80FD\u4E3A\u7A7A\u503C"},
+        "URI 不能为空值"},
 
     { ER_FILE_CANNOT_BE_NULL,
-        "File \u4E0D\u80FD\u4E3A\u7A7A\u503C"},
+        "File 不能为空值"},
 
     { ER_SOURCE_CANNOT_BE_NULL,
-                "InputSource \u4E0D\u80FD\u4E3A\u7A7A\u503C"},
+                "InputSource 不能为空值"},
 
     { ER_CANNOT_INIT_BSFMGR,
-                "\u65E0\u6CD5\u521D\u59CB\u5316 BSF \u7BA1\u7406\u5668"},
+                "无法初始化 BSF 管理器"},
 
     { ER_CANNOT_CMPL_EXTENSN,
-                "\u65E0\u6CD5\u7F16\u8BD1\u6269\u5C55"},
+                "无法编译扩展"},
 
     { ER_CANNOT_CREATE_EXTENSN,
-      "\u65E0\u6CD5\u521B\u5EFA\u6269\u5C55: {0}, \u539F\u56E0: {1}"},
+      "无法创建扩展: {0}, 原因: {1}"},
 
     { ER_INSTANCE_MTHD_CALL_REQUIRES,
-      "\u5BF9\u65B9\u6CD5{0}\u7684\u5B9E\u4F8B\u65B9\u6CD5\u8C03\u7528\u9700\u8981\u5C06 Object \u5B9E\u4F8B\u4F5C\u4E3A\u7B2C\u4E00\u4E2A\u53C2\u6570"},
+      "对方法{0}的实例方法调用需要将 Object 实例作为第一个参数"},
 
     { ER_INVALID_ELEMENT_NAME,
-      "\u6307\u5B9A\u7684\u5143\u7D20\u540D\u79F0{0}\u65E0\u6548"},
+      "指定的元素名称{0}无效"},
 
     { ER_ELEMENT_NAME_METHOD_STATIC,
-      "\u5143\u7D20\u540D\u79F0\u65B9\u6CD5\u5FC5\u987B\u662F static {0}"},
+      "元素名称方法必须是 static {0}"},
 
     { ER_EXTENSION_FUNC_UNKNOWN,
-             "\u6269\u5C55\u51FD\u6570 {0}: {1} \u672A\u77E5"},
+             "扩展函数 {0}: {1} 未知"},
 
     { ER_MORE_MATCH_CONSTRUCTOR,
-             "{0}\u7684\u6784\u9020\u5668\u5177\u6709\u591A\u4E2A\u6700\u4F73\u5339\u914D"},
+             "{0}的构造器具有多个最佳匹配"},
 
     { ER_MORE_MATCH_METHOD,
-             "\u65B9\u6CD5{0}\u5177\u6709\u591A\u4E2A\u6700\u4F73\u5339\u914D"},
+             "方法{0}具有多个最佳匹配"},
 
     { ER_MORE_MATCH_ELEMENT,
-             "\u5143\u7D20\u65B9\u6CD5{0}\u5177\u6709\u591A\u4E2A\u6700\u4F73\u5339\u914D"},
+             "元素方法{0}具有多个最佳匹配"},
 
     { ER_INVALID_CONTEXT_PASSED,
-             "\u4F20\u9012\u7684\u7528\u4E8E\u5BF9{0}\u6C42\u503C\u7684\u4E0A\u4E0B\u6587\u65E0\u6548"},
+             "传递的用于对{0}求值的上下文无效"},
 
     { ER_POOL_EXISTS,
-             "\u6C60\u5DF2\u5B58\u5728"},
+             "池已存在"},
 
     { ER_NO_DRIVER_NAME,
-             "\u672A\u6307\u5B9A\u9A71\u52A8\u7A0B\u5E8F\u540D\u79F0"},
+             "未指定驱动程序名称"},
 
     { ER_NO_URL,
-             "\u672A\u6307\u5B9A URL"},
+             "未指定 URL"},
 
     { ER_POOL_SIZE_LESSTHAN_ONE,
-             "\u6C60\u5927\u5C0F\u5C0F\u4E8E 1!"},
+             "池大小小于 1!"},
 
     { ER_INVALID_DRIVER,
-             "\u6307\u5B9A\u7684\u9A71\u52A8\u7A0B\u5E8F\u540D\u79F0\u65E0\u6548!"},
+             "指定的驱动程序名称无效!"},
 
     { ER_NO_STYLESHEETROOT,
-             "\u627E\u4E0D\u5230\u6837\u5F0F\u8868\u6839!"},
+             "找不到样式表根!"},
 
     { ER_ILLEGAL_XMLSPACE_VALUE,
-         "xml:space \u7684\u503C\u975E\u6CD5"},
+         "xml:space 的值非法"},
 
     { ER_PROCESSFROMNODE_FAILED,
-         "processFromNode \u5931\u8D25"},
+         "processFromNode 失败"},
 
     { ER_RESOURCE_COULD_NOT_LOAD,
-        "\u8D44\u6E90 [ {0} ] \u65E0\u6CD5\u52A0\u8F7D: {1} \n {2} \t {3}"},
+        "资源 [ {0} ] 无法加载: {1} \n {2} \t {3}"},
 
     { ER_BUFFER_SIZE_LESSTHAN_ZERO,
-        "\u7F13\u51B2\u533A\u5927\u5C0F <=0"},
+        "缓冲区大小 <=0"},
 
     { ER_UNKNOWN_ERROR_CALLING_EXTENSION,
-        "\u8C03\u7528\u6269\u5C55\u65F6\u51FA\u73B0\u672A\u77E5\u9519\u8BEF"},
+        "调用扩展时出现未知错误"},
 
     { ER_NO_NAMESPACE_DECL,
-        "\u524D\u7F00 {0} \u6CA1\u6709\u5BF9\u5E94\u7684\u540D\u79F0\u7A7A\u95F4\u58F0\u660E"},
+        "前缀 {0} 没有对应的名称空间声明"},
 
     { ER_ELEM_CONTENT_NOT_ALLOWED,
-        "lang=javaclass {0}\u4E0D\u5141\u8BB8\u4F7F\u7528\u5143\u7D20\u5185\u5BB9"},
+        "lang=javaclass {0}不允许使用元素内容"},
 
     { ER_STYLESHEET_DIRECTED_TERMINATION,
-        "\u6837\u5F0F\u8868\u6307\u5411\u7EC8\u6B62"},
+        "样式表指向终止"},
 
     { ER_ONE_OR_TWO,
-        "1 \u6216 2"},
+        "1 或 2"},
 
     { ER_TWO_OR_THREE,
-        "2 \u6216 3"},
+        "2 或 3"},
 
     { ER_COULD_NOT_LOAD_RESOURCE,
-        "\u65E0\u6CD5\u52A0\u8F7D{0} (\u68C0\u67E5 CLASSPATH), \u73B0\u5728\u53EA\u4F7F\u7528\u9ED8\u8BA4\u503C"},
+        "无法加载{0} (检查 CLASSPATH), 现在只使用默认值"},
 
     { ER_CANNOT_INIT_DEFAULT_TEMPLATES,
-        "\u65E0\u6CD5\u521D\u59CB\u5316\u9ED8\u8BA4\u6A21\u677F"},
+        "无法初始化默认模板"},
 
     { ER_RESULT_NULL,
-        "Result \u4E0D\u80FD\u4E3A\u7A7A\u503C"},
+        "Result 不能为空值"},
 
     { ER_RESULT_COULD_NOT_BE_SET,
-        "\u65E0\u6CD5\u8BBE\u7F6E Result"},
+        "无法设置 Result"},
 
     { ER_NO_OUTPUT_SPECIFIED,
-        "\u672A\u6307\u5B9A\u8F93\u51FA"},
+        "未指定输出"},
 
     { ER_CANNOT_TRANSFORM_TO_RESULT_TYPE,
-        "\u65E0\u6CD5\u8F6C\u6362\u4E3A\u7C7B\u578B\u4E3A{0}\u7684 Result"},
+        "无法转换为类型为{0}的 Result"},
 
     { ER_CANNOT_TRANSFORM_SOURCE_TYPE,
-        "\u65E0\u6CD5\u8F6C\u6362\u7C7B\u578B\u4E3A{0}\u7684\u6E90"},
+        "无法转换类型为{0}的源"},
 
     { ER_NULL_CONTENT_HANDLER,
-        "\u7A7A\u5185\u5BB9\u5904\u7406\u7A0B\u5E8F"},
+        "空内容处理程序"},
 
     { ER_NULL_ERROR_HANDLER,
-        "\u7A7A\u9519\u8BEF\u5904\u7406\u7A0B\u5E8F"},
+        "空错误处理程序"},
 
     { ER_CANNOT_CALL_PARSE,
-        "\u5982\u679C\u5C1A\u672A\u8BBE\u7F6E ContentHandler, \u5219\u65E0\u6CD5\u8C03\u7528 parse"},
+        "如果尚未设置 ContentHandler, 则无法调用 parse"},
 
     { ER_NO_PARENT_FOR_FILTER,
-        "\u7B5B\u9009\u5668\u6CA1\u6709\u7236\u7EA7"},
+        "筛选器没有父级"},
 
     { ER_NO_STYLESHEET_IN_MEDIA,
-         "\u5728{0}\u4E2D\u627E\u4E0D\u5230\u6837\u5F0F\u8868, \u4ECB\u8D28= {1}"},
+         "在{0}中找不到样式表, 介质= {1}"},
 
     { ER_NO_STYLESHEET_PI,
-         "\u5728{0}\u4E2D\u627E\u4E0D\u5230 xml-stylesheet PI"},
+         "在{0}中找不到 xml-stylesheet PI"},
 
     { ER_NOT_SUPPORTED,
-       "\u4E0D\u652F\u6301: {0}"},
+       "不支持: {0}"},
 
     { ER_PROPERTY_VALUE_BOOLEAN,
-       "\u5C5E\u6027{0}\u7684\u503C\u5E94\u4E3A Boolean \u5B9E\u4F8B"},
+       "属性{0}的值应为 Boolean 实例"},
 
     { ER_COULD_NOT_FIND_EXTERN_SCRIPT,
-         "\u65E0\u6CD5\u5728{0}\u4E2D\u83B7\u53D6\u5916\u90E8\u811A\u672C"},
+         "无法在{0}中获取外部脚本"},
 
     { ER_RESOURCE_COULD_NOT_FIND,
-        "\u627E\u4E0D\u5230\u8D44\u6E90 [ {0} ]\u3002\n {1}"},
+        "找不到资源 [ {0} ]。\n {1}"},
 
     { ER_OUTPUT_PROPERTY_NOT_RECOGNIZED,
-        "\u65E0\u6CD5\u8BC6\u522B\u8F93\u51FA\u5C5E\u6027: {0}"},
+        "无法识别输出属性: {0}"},
 
     { ER_FAILED_CREATING_ELEMLITRSLT,
-        "\u672A\u80FD\u521B\u5EFA ElemLiteralResult \u5B9E\u4F8B"},
+        "未能创建 ElemLiteralResult 实例"},
 
   //Earlier (JDK 1.4 XALAN 2.2-D11) at key code '204' the key name was ER_PRIORITY_NOT_PARSABLE
   // In latest Xalan code base key name is  ER_VALUE_SHOULD_BE_NUMBER. This should also be taken care
   //in locale specific files like XSLTErrorResources_de.java, XSLTErrorResources_fr.java etc.
   //NOTE: Not only the key name but message has also been changed.
     { ER_VALUE_SHOULD_BE_NUMBER,
-        "{0}\u7684\u503C\u5E94\u5305\u542B\u53EF\u89E3\u6790\u7684\u6570\u5B57"},
+        "{0}的值应包含可解析的数字"},
 
     { ER_VALUE_SHOULD_EQUAL,
-        "{0}\u7684\u503C\u5E94\u7B49\u4E8E\u201C\u662F\u201D\u6216\u201C\u5426\u201D"},
+        "{0}的值应等于“是”或“否”"},
 
     { ER_FAILED_CALLING_METHOD,
-        "\u672A\u80FD\u8C03\u7528{0}\u65B9\u6CD5"},
+        "未能调用{0}方法"},
 
     { ER_FAILED_CREATING_ELEMTMPL,
-        "\u672A\u80FD\u521B\u5EFA ElemTemplateElement \u5B9E\u4F8B"},
+        "未能创建 ElemTemplateElement 实例"},
 
     { ER_CHARS_NOT_ALLOWED,
-        "\u4E0D\u5141\u8BB8\u5728\u6587\u6863\u4E2D\u7684\u6B64\u4F4D\u7F6E\u5904\u4F7F\u7528\u5B57\u7B26"},
+        "不允许在文档中的此位置处使用字符"},
 
     { ER_ATTR_NOT_ALLOWED,
-        "{1}\u5143\u7D20\u4E2D\u4E0D\u5141\u8BB8\u4F7F\u7528 \"{0}\" \u5C5E\u6027!"},
+        "{1}元素中不允许使用 \"{0}\" 属性!"},
 
     { ER_BAD_VALUE,
-     "{0}\u9519\u8BEF\u503C{1} "},
+     "{0}错误值{1} "},
 
     { ER_ATTRIB_VALUE_NOT_FOUND,
-     "\u627E\u4E0D\u5230{0}\u5C5E\u6027\u503C "},
+     "找不到{0}属性值 "},
 
     { ER_ATTRIB_VALUE_NOT_RECOGNIZED,
-     "\u65E0\u6CD5\u8BC6\u522B{0}\u5C5E\u6027\u503C "},
+     "无法识别{0}属性值 "},
 
     { ER_NULL_URI_NAMESPACE,
-     "\u5C1D\u8BD5\u4F7F\u7528\u7A7A URI \u751F\u6210\u540D\u79F0\u7A7A\u95F4\u524D\u7F00"},
+     "尝试使用空 URI 生成名称空间前缀"},
 
     { ER_NUMBER_TOO_BIG,
-     "\u5C1D\u8BD5\u8BBE\u7F6E\u8D85\u8FC7\u6700\u5927\u957F\u6574\u578B\u7684\u6570\u5B57\u7684\u683C\u5F0F"},
+     "尝试设置超过最大长整型的数字的格式"},
 
     { ER_CANNOT_FIND_SAX1_DRIVER,
-     "\u627E\u4E0D\u5230 SAX1 \u9A71\u52A8\u7A0B\u5E8F\u7C7B{0}"},
+     "找不到 SAX1 驱动程序类{0}"},
 
     { ER_SAX1_DRIVER_NOT_LOADED,
-     "\u5DF2\u627E\u5230 SAX1 \u9A71\u52A8\u7A0B\u5E8F\u7C7B{0}, \u4F46\u65E0\u6CD5\u8FDB\u884C\u52A0\u8F7D"},
+     "已找到 SAX1 驱动程序类{0}, 但无法进行加载"},
 
     { ER_SAX1_DRIVER_NOT_INSTANTIATED,
-     "\u5DF2\u52A0\u8F7D SAX1 \u9A71\u52A8\u7A0B\u5E8F\u7C7B{0}, \u4F46\u65E0\u6CD5\u8FDB\u884C\u5B9E\u4F8B\u5316"},
+     "已加载 SAX1 驱动程序类{0}, 但无法进行实例化"},
 
     { ER_SAX1_DRIVER_NOT_IMPLEMENT_PARSER,
-     "SAX1 \u9A71\u52A8\u7A0B\u5E8F\u7C7B {0} \u672A\u5B9E\u73B0 org.xml.sax.Parser"},
+     "SAX1 驱动程序类 {0} 未实现 org.xml.sax.Parser"},
 
     { ER_PARSER_PROPERTY_NOT_SPECIFIED,
-     "\u672A\u6307\u5B9A\u7CFB\u7EDF\u5C5E\u6027 org.xml.sax.parser"},
+     "未指定系统属性 org.xml.sax.parser"},
 
     { ER_PARSER_ARG_CANNOT_BE_NULL,
-     "\u89E3\u6790\u5668\u53C2\u6570\u4E0D\u80FD\u4E3A\u7A7A\u503C"},
+     "解析器参数不能为空值"},
 
     { ER_FEATURE,
-     "\u529F\u80FD: {0}"},
+     "功能: {0}"},
 
     { ER_PROPERTY,
-     "\u5C5E\u6027: {0}"},
+     "属性: {0}"},
 
     { ER_NULL_ENTITY_RESOLVER,
-     "\u7A7A\u5B9E\u4F53\u89E3\u6790\u5668"},
+     "空实体解析器"},
 
     { ER_NULL_DTD_HANDLER,
-     "\u7A7A DTD \u5904\u7406\u7A0B\u5E8F"},
+     "空 DTD 处理程序"},
 
     { ER_NO_DRIVER_NAME_SPECIFIED,
-     "\u672A\u6307\u5B9A\u9A71\u52A8\u7A0B\u5E8F\u540D\u79F0!"},
+     "未指定驱动程序名称!"},
 
     { ER_NO_URL_SPECIFIED,
-     "\u672A\u6307\u5B9A URL!"},
+     "未指定 URL!"},
 
     { ER_POOLSIZE_LESS_THAN_ONE,
-     "\u6C60\u5927\u5C0F\u5C0F\u4E8E 1!"},
+     "池大小小于 1!"},
 
     { ER_INVALID_DRIVER_NAME,
-     "\u6307\u5B9A\u7684\u9A71\u52A8\u7A0B\u5E8F\u540D\u79F0\u65E0\u6548!"},
+     "指定的驱动程序名称无效!"},
 
     { ER_ERRORLISTENER,
      "ErrorListener"},
@@ -1049,7 +1049,7 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
 //   'ElemTemplateElement' is the name of a class, and should not be
 //   translated.
     { ER_ASSERT_NO_TEMPLATE_PARENT,
-     "\u7A0B\u5E8F\u5458\u9519\u8BEF! \u8868\u8FBE\u5F0F\u6CA1\u6709 ElemTemplateElement \u7236\u7EA7!"},
+     "程序员错误! 表达式没有 ElemTemplateElement 父级!"},
 
 
 // Note to translators:  The following message should not normally be displayed
@@ -1060,18 +1060,18 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
 //   'RedundentExprEliminator' is the name of a class, and should not be
 //   translated.
     { ER_ASSERT_REDUNDENT_EXPR_ELIMINATOR,
-     "RedundentExprEliminator \u4E2D\u7684\u7A0B\u5E8F\u5458\u65AD\u8A00: {0}"},
+     "RedundentExprEliminator 中的程序员断言: {0}"},
 
     { ER_NOT_ALLOWED_IN_POSITION,
-     "\u4E0D\u5141\u8BB8\u5728\u6837\u5F0F\u8868\u4E2D\u7684\u6B64\u4F4D\u7F6E\u4F7F\u7528{0}!"},
+     "不允许在样式表中的此位置使用{0}!"},
 
     { ER_NONWHITESPACE_NOT_ALLOWED_IN_POSITION,
-     "\u4E0D\u5141\u8BB8\u5728\u6837\u5F0F\u8868\u4E2D\u7684\u6B64\u4F4D\u7F6E\u4F7F\u7528\u975E\u7A7A\u767D\u6587\u672C!"},
+     "不允许在样式表中的此位置使用非空白文本!"},
 
   // This code is shared with warning codes.
   // SystemId Unknown
     { INVALID_TCHAR,
-     "CHAR \u5C5E\u6027{0}\u4F7F\u7528\u4E86\u975E\u6CD5\u503C{1}\u3002CHAR \u7C7B\u578B\u7684\u5C5E\u6027\u53EA\u80FD\u4E3A 1 \u4E2A\u5B57\u7B26!"},
+     "CHAR 属性{0}使用了非法值{1}。CHAR 类型的属性只能为 1 个字符!"},
 
     // Note to translators:  The following message is used if the value of
     // an attribute in a stylesheet is invalid.  "QNAME" is the XML data-type of
@@ -1079,7 +1079,7 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
     // the attribute value and {0} is the attribute name.
   //The following codes are shared with the warning codes...
     { INVALID_QNAME,
-     "QNAME \u5C5E\u6027{0}\u4F7F\u7528\u4E86\u975E\u6CD5\u503C{1}"},
+     "QNAME 属性{0}使用了非法值{1}"},
 
     // Note to translators:  The following message is used if the value of
     // an attribute in a stylesheet is invalid.  "ENUM" is the XML data-type of
@@ -1087,35 +1087,35 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
     // the attribute value, {0} is the attribute name, and {2} is a list of valid
     // values.
     { INVALID_ENUM,
-     "ENUM \u5C5E\u6027{0}\u4F7F\u7528\u4E86\u975E\u6CD5\u503C{1}\u3002\u6709\u6548\u503C\u4E3A: {2}\u3002"},
+     "ENUM 属性{0}使用了非法值{1}。有效值为: {2}。"},
 
 // Note to translators:  The following message is used if the value of
 // an attribute in a stylesheet is invalid.  "NMTOKEN" is the XML data-type
 // of the attribute, and should not be translated.  The substitution text {1} is
 // the attribute value and {0} is the attribute name.
     { INVALID_NMTOKEN,
-     "NMTOKEN \u5C5E\u6027{0}\u4F7F\u7528\u4E86\u975E\u6CD5\u503C{1} "},
+     "NMTOKEN 属性{0}使用了非法值{1} "},
 
 // Note to translators:  The following message is used if the value of
 // an attribute in a stylesheet is invalid.  "NCNAME" is the XML data-type
 // of the attribute, and should not be translated.  The substitution text {1} is
 // the attribute value and {0} is the attribute name.
     { INVALID_NCNAME,
-     "NCNAME \u5C5E\u6027{0}\u4F7F\u7528\u4E86\u975E\u6CD5\u503C{1} "},
+     "NCNAME 属性{0}使用了非法值{1} "},
 
 // Note to translators:  The following message is used if the value of
 // an attribute in a stylesheet is invalid.  "boolean" is the XSLT data-type
 // of the attribute, and should not be translated.  The substitution text {1} is
 // the attribute value and {0} is the attribute name.
     { INVALID_BOOLEAN,
-     "Boolean \u5C5E\u6027{0}\u4F7F\u7528\u4E86\u975E\u6CD5\u503C{1} "},
+     "Boolean 属性{0}使用了非法值{1} "},
 
 // Note to translators:  The following message is used if the value of
 // an attribute in a stylesheet is invalid.  "number" is the XSLT data-type
 // of the attribute, and should not be translated.  The substitution text {1} is
 // the attribute value and {0} is the attribute name.
      { INVALID_NUMBER,
-     "Number \u5C5E\u6027{0}\u4F7F\u7528\u4E86\u975E\u6CD5\u503C{1} "},
+     "Number 属性{0}使用了非法值{1} "},
 
 
   // End of shared codes...
@@ -1126,27 +1126,27 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
 // a match pattern, its argument must be a string literal (or constant.)
 // ER_ARG_LITERAL - new error message for bugzilla //5202
     { ER_ARG_LITERAL,
-     "\u5339\u914D\u6A21\u5F0F\u4E2D\u7684{0}\u7684\u53C2\u6570\u5FC5\u987B\u4E3A\u6587\u5B57\u3002"},
+     "匹配模式中的{0}的参数必须为文字。"},
 
 // Note to translators:  The following message indicates that two definitions of
 // a variable.  A "global variable" is a variable that is accessible everywher
 // in the stylesheet.
 // ER_DUPLICATE_GLOBAL_VAR - new error message for bugzilla #790
     { ER_DUPLICATE_GLOBAL_VAR,
-     "\u5168\u5C40\u53D8\u91CF\u58F0\u660E\u91CD\u590D\u3002"},
+     "全局变量声明重复。"},
 
 
 // Note to translators:  The following message indicates that two definitions of
 // a variable were encountered.
 // ER_DUPLICATE_VAR - new error message for bugzilla #790
     { ER_DUPLICATE_VAR,
-     "\u53D8\u91CF\u58F0\u660E\u91CD\u590D\u3002"},
+     "变量声明重复。"},
 
     // Note to translators:  "xsl:template, "name" and "match" are XSLT keywords
     // which must not be translated.
     // ER_TEMPLATE_NAME_MATCH - new error message for bugzilla #789
     { ER_TEMPLATE_NAME_MATCH,
-     "xsl:template \u5FC5\u987B\u5177\u6709 name \u548C/\u6216 match \u5C5E\u6027"},
+     "xsl:template 必须具有 name 和/或 match 属性"},
 
     // Note to translators:  "exclude-result-prefixes" is an XSLT keyword which
     // should not be translated.  The message indicates that a namespace prefix
@@ -1154,7 +1154,7 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
     // was in error.
     // ER_INVALID_PREFIX - new error message for bugzilla #788
     { ER_INVALID_PREFIX,
-     "exclude-result-prefixes \u4E2D\u7684\u524D\u7F00\u65E0\u6548: {0}"},
+     "exclude-result-prefixes 中的前缀无效: {0}"},
 
     // Note to translators:  An "attribute set" is a set of attributes that can
     // be added to an element in the output document as a group.  The message
@@ -1162,156 +1162,156 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
     // was never defined.
     // ER_NO_ATTRIB_SET - new error message for bugzilla #782
     { ER_NO_ATTRIB_SET,
-     "\u540D\u4E3A{0}\u7684\u5C5E\u6027\u96C6\u4E0D\u5B58\u5728"},
+     "名为{0}的属性集不存在"},
 
     // Note to translators:  This message indicates that there was a reference
     // to a function named {0} for which no function definition could be found.
     { ER_FUNCTION_NOT_FOUND,
-     "\u540D\u4E3A{0}\u7684\u51FD\u6570\u4E0D\u5B58\u5728"},
+     "名为{0}的函数不存在"},
 
     // Note to translators:  This message indicates that the XSLT instruction
     // that is named by the substitution text {0} must not contain other XSLT
     // instructions (content) or a "select" attribute.  The word "select" is
     // an XSLT keyword in this case and must not be translated.
     { ER_CANT_HAVE_CONTENT_AND_SELECT,
-     "{0}\u5143\u7D20\u4E0D\u80FD\u540C\u65F6\u5177\u6709\u5185\u5BB9\u548C select \u5C5E\u6027\u3002"},
+     "{0}元素不能同时具有内容和 select 属性。"},
 
     // Note to translators:  This message indicates that the value argument
     // of setParameter must be a valid Java Object.
     { ER_INVALID_SET_PARAM_VALUE,
-     "\u53C2\u6570 {0} \u7684\u503C\u5FC5\u987B\u662F\u6709\u6548 Java \u5BF9\u8C61"},
+     "参数 {0} 的值必须是有效 Java 对象"},
 
     { ER_INVALID_NAMESPACE_URI_VALUE_FOR_RESULT_PREFIX_FOR_DEFAULT,
-      "xsl:namespace-alias \u5143\u7D20\u7684 result-prefix \u5C5E\u6027\u5177\u6709\u503C '#default', \u4F46\u8BE5\u5143\u7D20\u7684\u4F5C\u7528\u57DF\u4E2D\u6CA1\u6709\u9ED8\u8BA4\u540D\u79F0\u7A7A\u95F4\u7684\u58F0\u660E"},
+      "xsl:namespace-alias 元素的 result-prefix 属性具有值 '#default', 但该元素的作用域中没有默认名称空间的声明"},
 
     { ER_INVALID_NAMESPACE_URI_VALUE_FOR_RESULT_PREFIX,
-      "xsl:namespace-alias \u5143\u7D20\u7684 result-prefix \u5C5E\u6027\u5177\u6709\u503C ''{0}'', \u4F46\u8BE5\u5143\u7D20\u7684\u4F5C\u7528\u57DF\u4E2D\u6CA1\u6709\u524D\u7F00 ''{0}'' \u7684\u540D\u79F0\u7A7A\u95F4\u58F0\u660E\u3002"},
+      "xsl:namespace-alias 元素的 result-prefix 属性具有值 ''{0}'', 但该元素的作用域中没有前缀 ''{0}'' 的名称空间声明。"},
 
     { ER_SET_FEATURE_NULL_NAME,
-      "TransformerFactory.setFeature(String name, boolean value) \u4E2D\u7684\u529F\u80FD\u540D\u79F0\u4E0D\u80FD\u4E3A\u7A7A\u503C\u3002"},
+      "TransformerFactory.setFeature(String name, boolean value) 中的功能名称不能为空值。"},
 
     { ER_GET_FEATURE_NULL_NAME,
-      "TransformerFactory.getFeature(String name) \u4E2D\u7684\u529F\u80FD\u540D\u79F0\u4E0D\u80FD\u4E3A\u7A7A\u503C\u3002"},
+      "TransformerFactory.getFeature(String name) 中的功能名称不能为空值。"},
 
     { ER_UNSUPPORTED_FEATURE,
-      "\u65E0\u6CD5\u5BF9\u6B64 TransformerFactory \u8BBE\u7F6E\u529F\u80FD ''{0}''\u3002"},
+      "无法对此 TransformerFactory 设置功能 ''{0}''。"},
 
     { ER_EXTENSION_ELEMENT_NOT_ALLOWED_IN_SECURE_PROCESSING,
-        "\u5F53\u6269\u5C55\u51FD\u6570\u88AB\u5B89\u5168\u5904\u7406\u529F\u80FD\u6216\u5C5E\u6027 ''jdk.xml.enableExtensionFunctions'' \u7981\u7528\u65F6\uFF0C\u4E0D\u5141\u8BB8\u4F7F\u7528\u6269\u5C55\u51FD\u6570 ''{0}''\u3002\u8981\u542F\u7528\u6269\u5C55\u51FD\u6570\uFF0C\u8BF7\u5C06 ''jdk.xml.enableExtensionFunctions'' \u8BBE\u7F6E\u4E3A ''true''\u3002"},
+        "当扩展函数被安全处理功能或属性 ''jdk.xml.enableExtensionFunctions'' 禁用时，不允许使用扩展函数 ''{0}''。要启用扩展函数，请将 ''jdk.xml.enableExtensionFunctions'' 设置为 ''true''。"},
 
     { ER_NAMESPACE_CONTEXT_NULL_NAMESPACE,
-      "\u65E0\u6CD5\u83B7\u53D6\u7A7A\u540D\u79F0\u7A7A\u95F4 uri \u7684\u524D\u7F00\u3002"},
+      "无法获取空名称空间 uri 的前缀。"},
 
     { ER_NAMESPACE_CONTEXT_NULL_PREFIX,
-      "\u65E0\u6CD5\u83B7\u53D6\u7A7A\u524D\u7F00\u7684\u540D\u79F0\u7A7A\u95F4 uri\u3002"},
+      "无法获取空前缀的名称空间 uri。"},
 
     { ER_XPATH_RESOLVER_NULL_QNAME,
-      "\u51FD\u6570\u540D\u79F0\u4E0D\u80FD\u4E3A\u7A7A\u503C\u3002"},
+      "函数名称不能为空值。"},
 
     { ER_XPATH_RESOLVER_NEGATIVE_ARITY,
-      "\u5143\u6570\u4E0D\u80FD\u4E3A\u8D1F\u6570\u3002"},
+      "元数不能为负数。"},
   // Warnings...
 
     { WG_FOUND_CURLYBRACE,
-      "\u5DF2\u627E\u5230 '}', \u4F46\u672A\u6253\u5F00\u5C5E\u6027\u6A21\u677F!"},
+      "已找到 '}', 但未打开属性模板!"},
 
     { WG_COUNT_ATTRIB_MATCHES_NO_ANCESTOR,
-      "\u8B66\u544A: count \u5C5E\u6027\u4E0E xsl:number \u4E2D\u7684 ancestor \u4E0D\u5339\u914D! \u76EE\u6807 = {0}"},
+      "警告: count 属性与 xsl:number 中的 ancestor 不匹配! 目标 = {0}"},
 
     { WG_EXPR_ATTRIB_CHANGED_TO_SELECT,
-      "\u65E7\u8BED\u6CD5: 'expr' \u5C5E\u6027\u7684\u540D\u79F0\u5DF2\u66F4\u6539\u4E3A 'select'\u3002"},
+      "旧语法: 'expr' 属性的名称已更改为 'select'。"},
 
     { WG_NO_LOCALE_IN_FORMATNUMBER,
-      "Xalan \u5C1A\u672A\u5904\u7406 format-number \u51FD\u6570\u4E2D\u7684\u533A\u57DF\u8BBE\u7F6E\u540D\u79F0\u3002"},
+      "Xalan 尚未处理 format-number 函数中的区域设置名称。"},
 
     { WG_LOCALE_NOT_FOUND,
-      "\u8B66\u544A: \u627E\u4E0D\u5230 xml:lang={0} \u7684\u533A\u57DF\u8BBE\u7F6E"},
+      "警告: 找不到 xml:lang={0} 的区域设置"},
 
     { WG_CANNOT_MAKE_URL_FROM,
-      "\u65E0\u6CD5\u6839\u636E{0}\u751F\u6210 URL"},
+      "无法根据{0}生成 URL"},
 
     { WG_CANNOT_LOAD_REQUESTED_DOC,
-      "\u65E0\u6CD5\u52A0\u8F7D\u8BF7\u6C42\u7684\u6587\u6863: {0}"},
+      "无法加载请求的文档: {0}"},
 
     { WG_CANNOT_FIND_COLLATOR,
-      "\u627E\u4E0D\u5230 <sort xml:lang={0} \u7684 Collator"},
+      "找不到 <sort xml:lang={0} 的 Collator"},
 
     { WG_FUNCTIONS_SHOULD_USE_URL,
-      "\u65E7\u8BED\u6CD5: \u51FD\u6570\u6307\u4EE4\u5E94\u4F7F\u7528{0}\u7684 url"},
+      "旧语法: 函数指令应使用{0}的 url"},
 
     { WG_ENCODING_NOT_SUPPORTED_USING_UTF8,
-      "\u4E0D\u652F\u6301\u7F16\u7801: {0}, \u4F7F\u7528 UTF-8"},
+      "不支持编码: {0}, 使用 UTF-8"},
 
     { WG_ENCODING_NOT_SUPPORTED_USING_JAVA,
-      "\u4E0D\u652F\u6301\u7F16\u7801: {0}, \u4F7F\u7528 Java {1}"},
+      "不支持编码: {0}, 使用 Java {1}"},
 
     { WG_SPECIFICITY_CONFLICTS,
-      "\u53D1\u73B0\u7279\u5F81\u51B2\u7A81: \u5C06\u4F7F\u7528\u4E0A\u6B21\u5728\u6837\u5F0F\u8868\u4E2D\u627E\u5230\u7684{0}\u3002"},
+      "发现特征冲突: 将使用上次在样式表中找到的{0}。"},
 
     { WG_PARSING_AND_PREPARING,
-      "========= \u89E3\u6790\u548C\u51C6\u5907{0} =========="},
+      "========= 解析和准备{0} =========="},
 
     { WG_ATTR_TEMPLATE,
-     "\u5C5E\u6027\u6A21\u677F{0}"},
+     "属性模板{0}"},
 
     { WG_CONFLICT_BETWEEN_XSLSTRIPSPACE_AND_XSLPRESERVESPACE,
-      "xsl:strip-space \u548C xsl:preserve-space \u4E4B\u95F4\u5B58\u5728\u5339\u914D\u51B2\u7A81"},
+      "xsl:strip-space 和 xsl:preserve-space 之间存在匹配冲突"},
 
     { WG_ATTRIB_NOT_HANDLED,
-      "Xalan \u5C1A\u672A\u5904\u7406{0}\u5C5E\u6027!"},
+      "Xalan 尚未处理{0}属性!"},
 
     { WG_NO_DECIMALFORMAT_DECLARATION,
-      "\u627E\u4E0D\u5230\u5341\u8FDB\u5236\u683C\u5F0F\u7684\u58F0\u660E: {0}"},
+      "找不到十进制格式的声明: {0}"},
 
     { WG_OLD_XSLT_NS,
-     "\u7F3A\u5C11 XSLT \u540D\u79F0\u7A7A\u95F4\u6216 XSLT \u540D\u79F0\u7A7A\u95F4\u9519\u8BEF\u3002"},
+     "缺少 XSLT 名称空间或 XSLT 名称空间错误。"},
 
     { WG_ONE_DEFAULT_XSLDECIMALFORMAT_ALLOWED,
-      "\u4EC5\u5141\u8BB8\u4F7F\u7528\u4E00\u4E2A\u9ED8\u8BA4\u7684 xsl:decimal-format \u58F0\u660E\u3002"},
+      "仅允许使用一个默认的 xsl:decimal-format 声明。"},
 
     { WG_XSLDECIMALFORMAT_NAMES_MUST_BE_UNIQUE,
-      "xsl:decimal-format \u540D\u79F0\u5FC5\u987B\u552F\u4E00\u3002\u540D\u79F0 \"{0}\" \u91CD\u590D\u3002"},
+      "xsl:decimal-format 名称必须唯一。名称 \"{0}\" 重复。"},
 
     { WG_ILLEGAL_ATTRIBUTE,
-      "{0}\u5177\u6709\u975E\u6CD5\u5C5E\u6027: {1}"},
+      "{0}具有非法属性: {1}"},
 
     { WG_COULD_NOT_RESOLVE_PREFIX,
-      "\u65E0\u6CD5\u89E3\u6790\u540D\u79F0\u7A7A\u95F4\u524D\u7F00: {0}\u3002\u5C06\u5FFD\u7565\u8282\u70B9\u3002"},
+      "无法解析名称空间前缀: {0}。将忽略节点。"},
 
     { WG_STYLESHEET_REQUIRES_VERSION_ATTRIB,
-      "xsl:stylesheet \u9700\u8981 'version' \u5C5E\u6027!"},
+      "xsl:stylesheet 需要 'version' 属性!"},
 
     { WG_ILLEGAL_ATTRIBUTE_NAME,
-      "\u975E\u6CD5\u5C5E\u6027\u540D\u79F0: {0}"},
+      "非法属性名称: {0}"},
 
     { WG_ILLEGAL_ATTRIBUTE_VALUE,
-      "\u5C5E\u6027{0}\u4F7F\u7528\u4E86\u975E\u6CD5\u503C{1}"},
+      "属性{0}使用了非法值{1}"},
 
     { WG_EMPTY_SECOND_ARG,
-      "\u6839\u636E document \u51FD\u6570\u7684\u7B2C\u4E8C\u4E2A\u53C2\u6570\u5F97\u5230\u7684\u8282\u70B9\u96C6\u4E3A\u7A7A\u3002\u8FD4\u56DE\u7A7A node-set\u3002"},
+      "根据 document 函数的第二个参数得到的节点集为空。返回空 node-set。"},
 
   //Following are the new WARNING keys added in XALAN code base after Jdk 1.4 (Xalan 2.2-D11)
 
     // Note to translators:  "name" and "xsl:processing-instruction" are keywords
     // and must not be translated.
     { WG_PROCESSINGINSTRUCTION_NAME_CANT_BE_XML,
-      "xsl:processing-instruction \u540D\u79F0\u7684 'name' \u5C5E\u6027\u7684\u503C\u4E0D\u80FD\u4E3A 'xml'"},
+      "xsl:processing-instruction 名称的 'name' 属性的值不能为 'xml'"},
 
     // Note to translators:  "name" and "xsl:processing-instruction" are keywords
     // and must not be translated.  "NCName" is an XML data-type and must not be
     // translated.
     { WG_PROCESSINGINSTRUCTION_NOTVALID_NCNAME,
-      "xsl:processing-instruction \u7684 ''name'' \u5C5E\u6027\u7684\u503C\u5FC5\u987B\u662F\u6709\u6548\u7684 NCName: {0}"},
+      "xsl:processing-instruction 的 ''name'' 属性的值必须是有效的 NCName: {0}"},
 
     // Note to translators:  This message is reported if the stylesheet that is
     // being processed attempted to construct an XML document with an attribute in a
     // place other than on an element.  The substitution text specifies the name of
     // the attribute.
     { WG_ILLEGAL_ATTRIBUTE_POSITION,
-      "\u5728\u751F\u6210\u5B50\u8282\u70B9\u4E4B\u540E\u6216\u5728\u751F\u6210\u5143\u7D20\u4E4B\u524D\u65E0\u6CD5\u6DFB\u52A0\u5C5E\u6027 {0}\u3002\u5C06\u5FFD\u7565\u5C5E\u6027\u3002"},
+      "在生成子节点之后或在生成元素之前无法添加属性 {0}。将忽略属性。"},
 
     { NO_MODIFICATION_ALLOWED_ERR,
-      "\u5C1D\u8BD5\u4FEE\u6539\u4E0D\u5141\u8BB8\u4FEE\u6539\u7684\u5BF9\u8C61\u3002"
+      "尝试修改不允许修改的对象。"
     },
 
     //Check: WHY THERE IS A GAP B/W NUMBERS in the XSLTErrorResources properties file?
@@ -1320,96 +1320,96 @@ public class XSLTErrorResources_zh_CN extends ListResourceBundle
   { "ui_language", "en"},
   {  "help_language",  "en" },
   {  "language",  "en" },
-  { "BAD_CODE", "createMessage \u7684\u53C2\u6570\u8D85\u51FA\u8303\u56F4"},
-  {  "FORMAT_FAILED", "\u8C03\u7528 messageFormat \u65F6\u629B\u51FA\u5F02\u5E38\u9519\u8BEF"},
-  {  "version", ">>>>>>> Xalan \u7248\u672C "},
+  { "BAD_CODE", "createMessage 的参数超出范围"},
+  {  "FORMAT_FAILED", "调用 messageFormat 时抛出异常错误"},
+  {  "version", ">>>>>>> Xalan 版本 "},
   {  "version2",  "<<<<<<<"},
-  {  "yes", "\u662F"},
-  { "line", "\u884C\u53F7"},
-  { "column","\u5217\u53F7"},
-  { "xsldone", "XSLProcessor: \u5B8C\u6210"},
+  {  "yes", "是"},
+  { "line", "行号"},
+  { "column","列号"},
+  { "xsldone", "XSLProcessor: 完成"},
 
 
   // Note to translators:  The following messages provide usage information
   // for the Xalan Process command line.  "Process" is the name of a Java class,
   // and should not be translated.
-  { "xslProc_option", "Xalan-J \u547D\u4EE4\u884C Process \u7C7B\u9009\u9879:"},
-  { "xslProc_invalid_xsltc_option", "XSLTC \u6A21\u5F0F\u4E0B\u4E0D\u652F\u6301\u9009\u9879{0}\u3002"},
-  { "xslProc_invalid_xalan_option", "\u9009\u9879{0}\u53EA\u80FD\u4E0E -XSLTC \u4E00\u8D77\u4F7F\u7528\u3002"},
-  { "xslProc_no_input", "\u9519\u8BEF: \u672A\u6307\u5B9A\u6837\u5F0F\u8868\u6216\u8F93\u5165 xml\u3002\u8FD0\u884C\u6B64\u547D\u4EE4\u65F6, \u7528\u6CD5\u6307\u4EE4\u4E0D\u5E26\u4EFB\u4F55\u9009\u9879\u3002"},
-  { "xslProc_common_options", "-\u516C\u7528\u9009\u9879-"},
-  { "xslProc_xalan_options", "-Xalan \u7684\u9009\u9879-"},
-  { "xslProc_xsltc_options", "-XSLTC \u7684\u9009\u9879-"},
-  { "xslProc_return_to_continue", "(\u6309 <return> \u4EE5\u7EE7\u7EED)"},
+  { "xslProc_option", "Xalan-J 命令行 Process 类选项:"},
+  { "xslProc_invalid_xsltc_option", "XSLTC 模式下不支持选项{0}。"},
+  { "xslProc_invalid_xalan_option", "选项{0}只能与 -XSLTC 一起使用。"},
+  { "xslProc_no_input", "错误: 未指定样式表或输入 xml。运行此命令时, 用法指令不带任何选项。"},
+  { "xslProc_common_options", "-公用选项-"},
+  { "xslProc_xalan_options", "-Xalan 的选项-"},
+  { "xslProc_xsltc_options", "-XSLTC 的选项-"},
+  { "xslProc_return_to_continue", "(按 <return> 以继续)"},
 
    // Note to translators: The option name and the parameter name do not need to
    // be translated. Only translate the messages in parentheses.  Note also that
    // leading whitespace in the messages is used to indent the usage information
    // for each option in the English messages.
    // Do not translate the keywords: XSLTC, SAX, DOM and DTM.
-  { "optionXSLTC", "   [-XSLTC (\u4F7F\u7528 XSLTC \u8FDB\u884C\u8F6C\u6362)]"},
+  { "optionXSLTC", "   [-XSLTC (使用 XSLTC 进行转换)]"},
   { "optionIN", "   [-IN inputXMLURL]"},
   { "optionXSL", "   [-XSL XSLTransformationURL]"},
   { "optionOUT",  "   [-OUT outputFileName]"},
   { "optionLXCIN", "   [-LXCIN compiledStylesheetFileNameIn]"},
   { "optionLXCOUT", "   [-LXCOUT compiledStylesheetFileNameOutOut]"},
   { "optionPARSER", "   [-PARSER fully qualified class name of parser liaison]"},
-  {  "optionE", "   [-E (\u4E0D\u5C55\u5F00\u5B9E\u4F53\u5F15\u7528)]"},
-  {  "optionV",  "   [-E (\u4E0D\u5C55\u5F00\u5B9E\u4F53\u5F15\u7528)]"},
-  {  "optionQC", "   [-QC (\u65E0\u63D0\u793A\u6A21\u5F0F\u51B2\u7A81\u8B66\u544A)]"},
-  {  "optionQ", "   [-Q (\u65E0\u63D0\u793A\u6A21\u5F0F)]"},
-  {  "optionLF", "   [-LF (\u4EC5\u5728\u8F93\u51FA\u65F6\u4F7F\u7528\u6362\u884C\u7B26 {\u9ED8\u8BA4\u503C\u4E3A CR/LF})]"},
-  {  "optionCR", "   [-CR (\u4EC5\u5728\u8F93\u51FA\u65F6\u4F7F\u7528\u56DE\u8F66 {\u9ED8\u8BA4\u503C\u4E3A CR/LF})]"},
-  { "optionESCAPE", "   [-ESCAPE (\u8981\u9003\u9038 \u7684\u5B57\u7B26 {\u9ED8\u8BA4\u503C\u4E3A <>&\"'\\r\\n}]"},
-  { "optionINDENT", "   [-INDENT (\u63A7\u5236\u8981\u7F29\u8FDB\u7684\u7A7A\u683C\u6570 {\u9ED8\u8BA4\u503C\u4E3A 0})]"},
-  { "optionTT", "   [-TT (\u5728\u8C03\u7528\u6A21\u677F\u65F6\u8DDF\u8E2A\u6A21\u677F\u3002)]"},
-  { "optionTG", "   [-TG (\u8DDF\u8E2A\u6BCF\u4E2A\u751F\u6210\u4E8B\u4EF6\u3002)]"},
-  { "optionTS", "   [-TS (\u8DDF\u8E2A\u6BCF\u4E2A\u9009\u62E9\u4E8B\u4EF6\u3002)]"},
-  {  "optionTTC", "   [-TTC (\u5728\u5904\u7406\u6A21\u677F\u5B50\u7EA7\u65F6\u8DDF\u8E2A\u6A21\u677F\u5B50\u7EA7\u3002)]"},
-  { "optionTCLASS", "   [-TCLASS (\u7528\u4E8E\u8DDF\u8E2A\u6269\u5C55\u7684 TraceListener \u7C7B\u3002)]"},
-  { "optionVALIDATE", "   [-VALIDATE (\u8BBE\u7F6E\u662F\u5426\u8FDB\u884C\u9A8C\u8BC1\u3002\u9ED8\u8BA4\u60C5\u51B5\u4E0B, \u5C06\u7981\u6B62\u9A8C\u8BC1\u3002)]"},
-  { "optionEDUMP", "   [-EDUMP {optional filename} (\u5728\u51FA\u9519\u65F6\u6267\u884C\u5806\u6808\u8F6C\u50A8\u3002)]"},
-  {  "optionXML", "   [-XML (\u4F7F\u7528 XML \u683C\u5F0F\u8BBE\u7F6E\u5DE5\u5177\u5E76\u6DFB\u52A0 XML \u6807\u5934\u3002)]"},
-  {  "optionTEXT", "   [-TEXT (\u4F7F\u7528\u7B80\u5355\u6587\u672C\u683C\u5F0F\u8BBE\u7F6E\u5DE5\u5177\u3002)]"},
-  {  "optionHTML", "   [-HTML (\u4F7F\u7528 HTML \u683C\u5F0F\u8BBE\u7F6E\u5DE5\u5177\u3002)]"},
-  {  "optionPARAM", "   [-PARAM \u540D\u79F0\u8868\u8FBE\u5F0F (\u8BBE\u7F6E\u6837\u5F0F\u8868\u53C2\u6570)]"},
-  {  "noParsermsg1", "XSL \u8FDB\u7A0B\u672A\u6210\u529F\u3002"},
-  {  "noParsermsg2", "** \u627E\u4E0D\u5230\u89E3\u6790\u5668 **"},
-  { "noParsermsg3",  "\u8BF7\u68C0\u67E5\u60A8\u7684\u7C7B\u8DEF\u5F84\u3002"},
-  { "noParsermsg4", "\u5982\u679C\u6CA1\u6709 IBM \u63D0\u4F9B\u7684 XML Parser for Java, \u5219\u53EF\u4EE5\u4ECE"},
-  { "noParsermsg5", "IBM AlphaWorks \u8FDB\u884C\u4E0B\u8F7D, \u7F51\u5740\u4E3A: http://www.alphaworks.ibm.com/formula/xml"},
-  { "optionURIRESOLVER", "   [-URIRESOLVER \u5B8C\u6574\u7C7B\u540D (\u4F7F\u7528 URIResolver \u89E3\u6790 URI)]"},
-  { "optionENTITYRESOLVER",  "   [-ENTITYRESOLVER \u5B8C\u6574\u7C7B\u540D (\u4F7F\u7528 EntityResolver \u89E3\u6790\u5B9E\u4F53)]"},
-  { "optionCONTENTHANDLER",  "   [-CONTENTHANDLER \u5B8C\u6574\u7C7B\u540D (\u4F7F\u7528 ContentHandler \u5E8F\u5217\u5316\u8F93\u51FA)]"},
-  {  "optionLINENUMBERS",  "   [-L \u4F7F\u7528\u6E90\u6587\u6863\u7684\u884C\u53F7]"},
-  { "optionSECUREPROCESSING", "   [-SECURE (\u5C06\u5B89\u5168\u5904\u7406\u529F\u80FD\u8BBE\u7F6E\u4E3A\u201C\u771F\u201D\u3002)]"},
+  {  "optionE", "   [-E (不展开实体引用)]"},
+  {  "optionV",  "   [-E (不展开实体引用)]"},
+  {  "optionQC", "   [-QC (无提示模式冲突警告)]"},
+  {  "optionQ", "   [-Q (无提示模式)]"},
+  {  "optionLF", "   [-LF (仅在输出时使用换行符 {默认值为 CR/LF})]"},
+  {  "optionCR", "   [-CR (仅在输出时使用回车 {默认值为 CR/LF})]"},
+  { "optionESCAPE", "   [-ESCAPE (要逃逸 的字符 {默认值为 <>&\"'\\r\\n}]"},
+  { "optionINDENT", "   [-INDENT (控制要缩进的空格数 {默认值为 0})]"},
+  { "optionTT", "   [-TT (在调用模板时跟踪模板。)]"},
+  { "optionTG", "   [-TG (跟踪每个生成事件。)]"},
+  { "optionTS", "   [-TS (跟踪每个选择事件。)]"},
+  {  "optionTTC", "   [-TTC (在处理模板子级时跟踪模板子级。)]"},
+  { "optionTCLASS", "   [-TCLASS (用于跟踪扩展的 TraceListener 类。)]"},
+  { "optionVALIDATE", "   [-VALIDATE (设置是否进行验证。默认情况下, 将禁止验证。)]"},
+  { "optionEDUMP", "   [-EDUMP {optional filename} (在出错时执行堆栈转储。)]"},
+  {  "optionXML", "   [-XML (使用 XML 格式设置工具并添加 XML 标头。)]"},
+  {  "optionTEXT", "   [-TEXT (使用简单文本格式设置工具。)]"},
+  {  "optionHTML", "   [-HTML (使用 HTML 格式设置工具。)]"},
+  {  "optionPARAM", "   [-PARAM 名称表达式 (设置样式表参数)]"},
+  {  "noParsermsg1", "XSL 进程未成功。"},
+  {  "noParsermsg2", "** 找不到解析器 **"},
+  { "noParsermsg3",  "请检查您的类路径。"},
+  { "noParsermsg4", "如果没有 IBM 提供的 XML Parser for Java, 则可以从"},
+  { "noParsermsg5", "IBM AlphaWorks 进行下载, 网址为: http://www.alphaworks.ibm.com/formula/xml"},
+  { "optionURIRESOLVER", "   [-URIRESOLVER 完整类名 (使用 URIResolver 解析 URI)]"},
+  { "optionENTITYRESOLVER",  "   [-ENTITYRESOLVER 完整类名 (使用 EntityResolver 解析实体)]"},
+  { "optionCONTENTHANDLER",  "   [-CONTENTHANDLER 完整类名 (使用 ContentHandler 序列化输出)]"},
+  {  "optionLINENUMBERS",  "   [-L 使用源文档的行号]"},
+  { "optionSECUREPROCESSING", "   [-SECURE (将安全处理功能设置为“真”。)]"},
 
     // Following are the new options added in XSLTErrorResources.properties files after Jdk 1.4 (Xalan 2.2-D11)
 
 
-  {  "optionMEDIA",  "   [-MEDIA mediaType (\u4F7F\u7528 media \u5C5E\u6027\u67E5\u627E\u4E0E\u6587\u6863\u5173\u8054\u7684\u6837\u5F0F\u8868\u3002)]"},
-  {  "optionFLAVOR",  "   [-FLAVOR flavorName (\u660E\u786E\u4F7F\u7528 s2s=SAX \u6216 d2d=DOM \u6267\u884C\u8F6C\u6362\u3002)] "}, // Added by sboag/scurcuru; experimental
-  { "optionDIAG", "   [-DIAG (\u8F93\u51FA\u5168\u90E8\u8F6C\u6362\u65F6\u95F4 (\u6BEB\u79D2)\u3002)]"},
-  { "optionINCREMENTAL",  "   [-INCREMENTAL (\u901A\u8FC7\u5C06 http://xml.apache.org/xalan/features/incremental \u8BBE\u7F6E\u4E3A\u201C\u771F\u201D\u6765\u8BF7\u6C42\u589E\u91CF DTM \u6784\u5EFA\u3002)]"},
-  {  "optionNOOPTIMIMIZE",  "   [-NOOPTIMIMIZE (\u901A\u8FC7\u5C06 http://xml.apache.org/xalan/features/optimize \u8BBE\u7F6E\u4E3A\u201C\u5047\u201D\u6765\u8BF7\u6C42\u4E0D\u6267\u884C\u6837\u5F0F\u8868\u4F18\u5316\u5904\u7406\u3002)]"},
-  { "optionRL",  "   [-RL recursionlimit (\u58F0\u660E\u6837\u5F0F\u8868\u9012\u5F52\u6DF1\u5EA6\u7684\u6570\u5B57\u9650\u5236\u3002)]"},
-  {   "optionXO",  "   [-XO [transletName] (\u4E3A\u751F\u6210\u7684 translet \u5206\u914D\u540D\u79F0)]"},
-  {  "optionXD", "   [-XD destinationDirectory (\u6307\u5B9A translet \u7684\u76EE\u6807\u76EE\u5F55)]"},
-  {  "optionXJ",  "   [-XJ jarfile (\u5C06 translet \u7C7B\u6253\u5305\u5230\u540D\u4E3A <jarfile> \u7684 jar \u6587\u4EF6\u4E2D)]"},
-  {   "optionXP",  "   [-XP package (\u4E3A\u751F\u6210\u7684\u6240\u6709 translet \u7C7B\u6307\u5B9A\u7A0B\u5E8F\u5305\u540D\u79F0\u524D\u7F00)]"},
+  {  "optionMEDIA",  "   [-MEDIA mediaType (使用 media 属性查找与文档关联的样式表。)]"},
+  {  "optionFLAVOR",  "   [-FLAVOR flavorName (明确使用 s2s=SAX 或 d2d=DOM 执行转换。)] "}, // Added by sboag/scurcuru; experimental
+  { "optionDIAG", "   [-DIAG (输出全部转换时间 (毫秒)。)]"},
+  { "optionINCREMENTAL",  "   [-INCREMENTAL (通过将 http://xml.apache.org/xalan/features/incremental 设置为“真”来请求增量 DTM 构建。)]"},
+  {  "optionNOOPTIMIMIZE",  "   [-NOOPTIMIMIZE (通过将 http://xml.apache.org/xalan/features/optimize 设置为“假”来请求不执行样式表优化处理。)]"},
+  { "optionRL",  "   [-RL recursionlimit (声明样式表递归深度的数字限制。)]"},
+  {   "optionXO",  "   [-XO [transletName] (为生成的 translet 分配名称)]"},
+  {  "optionXD", "   [-XD destinationDirectory (指定 translet 的目标目录)]"},
+  {  "optionXJ",  "   [-XJ jarfile (将 translet 类打包到名为 <jarfile> 的 jar 文件中)]"},
+  {   "optionXP",  "   [-XP package (为生成的所有 translet 类指定程序包名称前缀)]"},
 
   //AddITIONAL  STRINGS that need L10n
   // Note to translators:  The following message describes usage of a particular
   // command-line option that is used to enable the "template inlining"
   // optimization.  The optimization involves making a copy of the code
   // generated for a template in another template that refers to it.
-  { "optionXN",  "   [-XN (\u542F\u7528\u6A21\u677F\u5185\u5D4C)]" },
-  { "optionXX",  "   [-XX (\u542F\u7528\u9644\u52A0\u8C03\u8BD5\u6D88\u606F\u8F93\u51FA)]"},
-  { "optionXT" , "   [-XT (\u5982\u679C\u53EF\u80FD, \u4F7F\u7528 translet \u8FDB\u884C\u8F6C\u6362)]"},
-  { "diagTiming"," --------- \u901A\u8FC7{1}\u8F6C\u6362{0}\u82B1\u8D39\u4E86 {2} \u6BEB\u79D2\u7684\u65F6\u95F4" },
-  { "recursionTooDeep","\u6A21\u677F\u5D4C\u5957\u592A\u6DF1\u3002\u5D4C\u5957 = {0}, \u6A21\u677F{1} {2}" },
-  { "nameIs", "\u540D\u79F0\u4E3A" },
-  { "matchPatternIs", "\u5339\u914D\u6A21\u5F0F\u4E3A" }
+  { "optionXN",  "   [-XN (启用模板内嵌)]" },
+  { "optionXX",  "   [-XX (启用附加调试消息输出)]"},
+  { "optionXT" , "   [-XT (如果可能, 使用 translet 进行转换)]"},
+  { "diagTiming"," --------- 通过{1}转换{0}花费了 {2} 毫秒的时间" },
+  { "recursionTooDeep","模板嵌套太深。嵌套 = {0}, 模板{1} {2}" },
+  { "nameIs", "名称为" },
+  { "matchPatternIs", "匹配模式为" }
 
   };
 

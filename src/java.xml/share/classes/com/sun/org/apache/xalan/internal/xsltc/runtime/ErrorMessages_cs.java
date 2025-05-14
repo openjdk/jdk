@@ -90,14 +90,14 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * is a class name.  Used for internal errors in the processor.
          */
         {BasisLibrary.RUN_TIME_INTERNAL_ERR,
-        "Vnit\u0159n\u00ed b\u011bhov\u00e1 chyba v ''{0}''"},
+        "Vnitřní běhová chyba v ''{0}''"},
 
         /*
          * Note to translators:  <xsl:copy> is a keyword that should not be
          * translated.
          */
         {BasisLibrary.RUN_TIME_COPY_ERR,
-        "Vnit\u0159n\u00ed b\u011bhov\u00e1 chyba p\u0159i prov\u00e1d\u011bn\u00ed funkce <xsl:copy>."},
+        "Vnitřní běhová chyba při provádění funkce <xsl:copy>."},
 
         /*
          * Note to translators:  The substitution text refers to data types.
@@ -106,7 +106,7 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * {0}.
          */
         {BasisLibrary.DATA_CONVERSION_ERR,
-        "Neplatn\u00e1 konverze z ''{0}'' do ''{1}''."},
+        "Neplatná konverze z ''{0}'' do ''{1}''."},
 
         /*
          * Note to translators:  This message is displayed if the function named
@@ -114,7 +114,7 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * is the acronym naming the product.
          */
         {BasisLibrary.EXTERNAL_FUNC_ERR,
-        "Extern\u00ed funkce ''{0}'' nen\u00ed podporov\u00e1na produktem SLTC."},
+        "Externí funkce ''{0}'' není podporována produktem SLTC."},
 
         /*
          * Note to translators:  This message is displayed if two values are
@@ -122,7 +122,7 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * unknown.
          */
         {BasisLibrary.EQUALITY_EXPR_ERR,
-        "Nezn\u00e1m\u00fd typ argumentu ve v\u00fdrazu rovnosti."},
+        "Neznámý typ argumentu ve výrazu rovnosti."},
 
         /*
          * Note to translators:  The substitution text for {0} will be a data
@@ -131,7 +131,7 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * permitted for a call to this function.
          */
         {BasisLibrary.INVALID_ARGUMENT_ERR,
-        "Neplatn\u00fd typ argumentu ''{0}'' p\u0159i vol\u00e1n\u00ed ''{1}''"},
+        "Neplatný typ argumentu ''{0}'' při volání ''{1}''"},
 
         /*
          * Note to translators:  There is way of specifying a format for a
@@ -139,7 +139,7 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * particular value using the specified pattern.
          */
         {BasisLibrary.FORMAT_NUMBER_ERR,
-        "Pokus form\u00e1tovat \u010d\u00edslo ''{0}'' pou\u017eit\u00edm vzorku ''{1}''."},
+        "Pokus formátovat číslo ''{0}'' použitím vzorku ''{1}''."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -147,7 +147,7 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * iterator.  (See definition of iterator above.)
          */
         {BasisLibrary.ITERATOR_CLONE_ERR,
-        "Nelze klonovat iter\u00e1tor ''{0}''."},
+        "Nelze klonovat iterátor ''{0}''."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -156,7 +156,7 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * support.
          */
         {BasisLibrary.AXIS_SUPPORT_ERR,
-        "Iter\u00e1tor pro osu ''{0}'' nen\u00ed podporov\u00e1n."},
+        "Iterátor pro osu ''{0}'' není podporován."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -165,7 +165,7 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * support.
          */
         {BasisLibrary.TYPED_AXIS_SUPPORT_ERR,
-        "Iter\u00e1tor pro typizovanou osu ''{0}'' nen\u00ed podporov\u00e1n."},
+        "Iterátor pro typizovanou osu ''{0}'' není podporován."},
 
         /*
          * Note to translators:  This message is reported if the stylesheet
@@ -174,7 +174,7 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * specifies the name of the attribute.
          */
         {BasisLibrary.STRAY_ATTRIBUTE_ERR,
-        "Atribut ''{0}'' je vn\u011b prvku."},
+        "Atribut ''{0}'' je vně prvku."},
 
         /*
          * Note to translators:  As with the preceding message, a namespace
@@ -184,7 +184,7 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * namespace declaration.
          */
         {BasisLibrary.STRAY_NAMESPACE_ERR,
-        "Deklarace oboru n\u00e1zv\u016f ''{0}''=''{1}'' je vn\u011b prvku."},
+        "Deklarace oboru názvů ''{0}''=''{1}'' je vně prvku."},
 
         /*
          * Note to translators:  The stylesheet contained a reference to a
@@ -192,14 +192,14 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * text is the name of the prefix.
          */
         {BasisLibrary.NAMESPACE_PREFIX_ERR,
-        "Obor n\u00e1zv\u016f pro p\u0159edponu ''{0}'' nebyl deklarov\u00e1n."},
+        "Obor názvů pro předponu ''{0}'' nebyl deklarován."},
 
         /*
          * Note to translators:  The following represents an internal error.
          * DOMAdapter is a Java class in XSLTC.
          */
         {BasisLibrary.DOM_ADAPTER_INIT_ERR,
-        "DOMAdapter byl vytvo\u0159en s pou\u017eit\u00edm chybn\u00e9ho typu zdroje DOM."},
+        "DOMAdapter byl vytvořen s použitím chybného typu zdroje DOM."},
 
         /*
          * Note to translators:  The following message indicates that the XML
@@ -208,7 +208,7 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * DTD.
          */
         {BasisLibrary.PARSER_DTD_SUPPORT_ERR,
-        "Pou\u017eit\u00fd analyz\u00e1tor SAX nem\u016f\u017ee manipulovat s deklara\u010dn\u00edmi ud\u00e1lostmi DTD."},
+        "Použitý analyzátor SAX nemůže manipulovat s deklaračními událostmi DTD."},
 
         /*
          * Note to translators:  The following message indicates that the XML
@@ -217,14 +217,14 @@ public class ErrorMessages_cs extends ListResourceBundle {
          * declarations.
          */
         {BasisLibrary.NAMESPACES_SUPPORT_ERR,
-        "Pou\u017eit\u00fd analyz\u00e1tor SAX nem\u016f\u017ee podporovat obory n\u00e1zv\u016f pro XML."},
+        "Použitý analyzátor SAX nemůže podporovat obory názvů pro XML."},
 
         /*
          * Note to translators:  The substitution text is the URI that was in
          * error.
          */
         {BasisLibrary.CANT_RESOLVE_RELATIVE_URI_ERR,
-        "Nelze p\u0159elo\u017eit odkazy URI ''{0}''."}
+        "Nelze přeložit odkazy URI ''{0}''."}
     };
 
     }

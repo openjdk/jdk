@@ -95,7 +95,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
     {
       return new Object[][] {
         {ErrorMsg.MULTIPLE_STYLESHEET_ERR,
-        "Fler \u00E4n en formatmall har definierats i samma fil."},
+        "Fler än en formatmall har definierats i samma fil."},
 
         /*
          * Note to translators:  The substitution text is the name of a
@@ -119,7 +119,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * that was defined more than once.
          */
         {ErrorMsg.VARIABLE_REDEF_ERR,
-        "Variabeln ''{0}'' har definierats flera g\u00E5nger i samma omfattning."},
+        "Variabeln ''{0}'' har definierats flera gånger i samma omfattning."},
 
         /*
          * Note to translators:  The substitution text is the name of a variable
@@ -144,7 +144,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * Java keyword.
          */
         {ErrorMsg.METHOD_NOT_FOUND_ERR,
-        "Hittar inte den externa metoden ''{0}'' (m\u00E5ste vara allm\u00E4n)."},
+        "Hittar inte den externa metoden ''{0}'' (måste vara allmän)."},
 
         /*
          * Note to translators:  The word "method" here refers to a Java method.
@@ -174,21 +174,21 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * mentioned in the substitution text is not well-formed syntactically.
          */
         {ErrorMsg.CATALOG_EXCEPTION,
-        "JAXP08090001: CatalogResolver \u00E4r aktiverat med katalogen \"{0}\", men ett CatalogException returneras."},
+        "JAXP08090001: CatalogResolver är aktiverat med katalogen \"{0}\", men ett CatalogException returneras."},
 
         /*
          * Note to translators:  The file or URI named in the substitution text
          * exists but could not be opened.
          */
         {ErrorMsg.FILE_ACCESS_ERR,
-        "Kan inte \u00F6ppna filen eller URI ''{0}''."},
+        "Kan inte öppna filen eller URI ''{0}''."},
 
         /*
          * Note to translators: <xsl:stylesheet> and <xsl:transform> are
          * keywords that should not be translated.
          */
         {ErrorMsg.MISSING_ROOT_ERR,
-        "F\u00F6rv\u00E4ntade <xsl:stylesheet>- eller <xsl:transform>-element."},
+        "Förväntade <xsl:stylesheet>- eller <xsl:transform>-element."},
 
         /*
          * Note to translators:  The stylesheet contained a reference to a
@@ -210,7 +210,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * function.  A literal string here means a constant string value.
          */
         {ErrorMsg.NEED_LITERAL_ERR,
-        "Argument till ''{0}'' m\u00E5ste vara en litteral str\u00E4ng."},
+        "Argument till ''{0}'' måste vara en litteral sträng."},
 
         /*
          * Note to translators:  This message indicates there was a syntactic
@@ -234,7 +234,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * text is the offending character.
          */
         {ErrorMsg.ILLEGAL_CHAR_ERR,
-        "Otill\u00E5tet tecken ''{0}'' i XPath-uttrycket."},
+        "Otillåtet tecken ''{0}'' i XPath-uttrycket."},
 
         /*
          * Note to translators:  A processing instruction is a mark-up item in
@@ -243,7 +243,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * text is the name.
          */
         {ErrorMsg.ILLEGAL_PI_ERR,
-        "''{0}'' \u00E4r ett otill\u00E5tet namn i bearbetningsinstruktion."},
+        "''{0}'' är ett otillåtet namn i bearbetningsinstruktion."},
 
         /*
          * Note to translators:  This message is reported if the stylesheet
@@ -252,7 +252,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * specifies the name of the attribute.
          */
         {ErrorMsg.STRAY_ATTRIBUTE_ERR,
-        "Attributet ''{0}'' finns utanf\u00F6r elementet."},
+        "Attributet ''{0}'' finns utanför elementet."},
 
         /*
          * Note to translators:  An attribute that wasn't recognized was
@@ -261,7 +261,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * text.
          */
         {ErrorMsg.ILLEGAL_ATTRIBUTE_ERR,
-        "''{0}'' \u00E4r ett otill\u00E5tet attribut."},
+        "''{0}'' är ett otillåtet attribut."},
 
         /*
          * Note to translators:  "import" and "include" are keywords that should
@@ -270,14 +270,14 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * directly or indirectly.
          */
         {ErrorMsg.CIRCULAR_INCLUDE_ERR,
-        "Cirkul\u00E4r import/include. Formatmallen ''{0}'' har redan laddats."},
+        "Cirkulär import/include. Formatmallen ''{0}'' har redan laddats."},
 
         /*
          * Note to translators:  "xsl:import" and "xsl:include" are keywords that
          * should not be translated.
          */
         {ErrorMsg.IMPORT_PRECEDE_OTHERS_ERR,
-        "Underordnade till xsl:import-elementet m\u00E5ste komma f\u00F6re alla andra underordnade till element f\u00F6r ett xsl:stylesheet-element, inklusive alla underordnade till xsl:include-elementet."},
+        "Underordnade till xsl:import-elementet måste komma före alla andra underordnade till element för ett xsl:stylesheet-element, inklusive alla underordnade till xsl:include-elementet."},
 
         /*
          * Note to translators:  A result-tree fragment is a portion of a
@@ -285,7 +285,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * keyword and should not be translated.
          */
         {ErrorMsg.RESULT_TREE_SORT_ERR,
-        "Resultattr\u00E4dfragment kan inte sorteras (<xsl:sort>-element ignoreras). Du m\u00E5ste sortera noderna n\u00E4r resultattr\u00E4det skapas."},
+        "Resultatträdfragment kan inte sorteras (<xsl:sort>-element ignoreras). Du måste sortera noderna när resultatträdet skapas."},
 
         /*
          * Note to translators:  A name can be given to a particular style to be
@@ -300,28 +300,28 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * substitution text is not supported.
          */
         {ErrorMsg.XSL_VERSION_ERR,
-        "XSL-versionen ''{0}'' underst\u00F6ds inte i XSLTC."},
+        "XSL-versionen ''{0}'' understöds inte i XSLTC."},
 
         /*
          * Note to translators:  The definitions of one or more variables or
          * parameters depend on one another.
          */
         {ErrorMsg.CIRCULAR_VARIABLE_ERR,
-        "Cirkul\u00E4r variabel-/parameterreferens i ''{0}''."},
+        "Cirkulär variabel-/parameterreferens i ''{0}''."},
 
         /*
          * Note to translators:  The operator in an expresion with two operands was
          * not recognized.
          */
         {ErrorMsg.ILLEGAL_BINARY_OP_ERR,
-        "Ok\u00E4nd operator f\u00F6r bin\u00E4rt uttryck."},
+        "Okänd operator för binärt uttryck."},
 
         /*
          * Note to translators:  This message is produced if a reference to a
          * function has too many or too few arguments.
          */
         {ErrorMsg.ILLEGAL_ARG_ERR,
-        "Otill\u00E5tna argument f\u00F6r funktionsanrop."},
+        "Otillåtna argument för funktionsanrop."},
 
         /*
          * Note to translators:  "document()" is the name of function and must
@@ -329,7 +329,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * representation of an XML document.
          */
         {ErrorMsg.DOCUMENT_ARG_ERR,
-        "Andra argumentet f\u00F6r document()-funktion m\u00E5ste vara en nodupps\u00E4ttning."},
+        "Andra argumentet för document()-funktion måste vara en noduppsättning."},
 
         /*
          * Note to translators:  "<xsl:when>" and "<xsl:choose>" are keywords
@@ -337,7 +337,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * in the stylesheet.
          */
         {ErrorMsg.MISSING_WHEN_ERR,
-        "Minst ett <xsl:when>-element kr\u00E4vs i <xsl:choose>."},
+        "Minst ett <xsl:when>-element krävs i <xsl:choose>."},
 
         /*
          * Note to translators:  "<xsl:otherwise>" and "<xsl:choose>" are
@@ -345,7 +345,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * syntax error in the stylesheet.
          */
         {ErrorMsg.MULTIPLE_OTHERWISE_ERR,
-        "Endast ett <xsl:otherwise>-element \u00E4r till\u00E5tet i <xsl:choose>."},
+        "Endast ett <xsl:otherwise>-element är tillåtet i <xsl:choose>."},
 
         /*
          * Note to translators:  "<xsl:otherwise>" and "<xsl:choose>" are
@@ -353,7 +353,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * syntax error in the stylesheet.
          */
         {ErrorMsg.STRAY_OTHERWISE_ERR,
-        "<xsl:otherwise> anv\u00E4nds endast inom <xsl:choose>."},
+        "<xsl:otherwise> används endast inom <xsl:choose>."},
 
         /*
          * Note to translators:  "<xsl:when>" and "<xsl:choose>" are keywords
@@ -361,7 +361,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * in the stylesheet.
          */
         {ErrorMsg.STRAY_WHEN_ERR,
-        "<xsl:when> anv\u00E4nds endast inom <xsl:choose>."},
+        "<xsl:when> används endast inom <xsl:choose>."},
 
         /*
          * Note to translators:  "<xsl:when>", "<xsl:otherwise>" and
@@ -369,7 +369,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * message describes a syntax error in the stylesheet.
          */
         {ErrorMsg.WHEN_ELEMENT_ERR,
-        "Endast <xsl:when>- och <xsl:otherwise>-element \u00E4r till\u00E5tna i <xsl:choose>."},
+        "Endast <xsl:when>- och <xsl:otherwise>-element är tillåtna i <xsl:choose>."},
 
         /*
          * Note to translators:  "<xsl:attribute-set>" and "name" are keywords
@@ -383,7 +383,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * element of a type that it was not permitted to contain.
          */
         {ErrorMsg.ILLEGAL_CHILD_ERR,
-        "Otill\u00E5tet underordnat element."},
+        "Otillåtet underordnat element."},
 
         /*
          * Note to translators:  The stylesheet tried to create an element with
@@ -409,7 +409,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * "<xsl:stylesheet>" is a keyword that should not be translated.
          */
         {ErrorMsg.ILLEGAL_TEXT_NODE_ERR,
-        "Textdata utanf\u00F6r toppniv\u00E5elementet <xsl:stylesheet>."},
+        "Textdata utanför toppnivåelementet <xsl:stylesheet>."},
 
         /*
          * Note to translators:  JAXP is an acronym for the Java API for XML
@@ -424,7 +424,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * encountered.
          */
         {ErrorMsg.INTERNAL_ERR,
-        "O\u00E5terkalleligt internt XSLTC-fel: ''{0}''"},
+        "Oåterkalleligt internt XSLTC-fel: ''{0}''"},
 
         /*
          * Note to translators:  The stylesheet contained an element that was
@@ -432,7 +432,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * gives the element name.
          */
         {ErrorMsg.UNSUPPORTED_XSL_ERR,
-        "XSL-elementet ''{0}'' st\u00F6ds inte."},
+        "XSL-elementet ''{0}'' stöds inte."},
 
         /*
          * Note to translators:  The stylesheet referred to an extension to the
@@ -441,7 +441,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * gives the extension name.
          */
         {ErrorMsg.UNSUPPORTED_EXT_ERR,
-        "XSLTC-till\u00E4gget ''{0}'' \u00E4r ok\u00E4nt."},
+        "XSLTC-tillägget ''{0}'' är okänt."},
 
         /*
          * Note to translators:  The XML document given to XSLTC as a stylesheet
@@ -451,7 +451,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * for that namespace was seen.
          */
         {ErrorMsg.MISSING_XSLT_URI_ERR,
-        "Indatadokumentet \u00E4r ingen formatmall (XSL-namnrymden har inte deklarerats i rotelementet)."},
+        "Indatadokumentet är ingen formatmall (XSL-namnrymden har inte deklarerats i rotelementet)."},
 
         /*
          * Note to translators:  XSLTC could not find the stylesheet document
@@ -464,7 +464,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * Note to translators:  access to the stylesheet target is denied
          */
         {ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
-        "Kunde inte l\u00E4sa formatmallen ''{0}'', eftersom ''{1}''-\u00E5tkomst inte till\u00E5ts p\u00E5 grund av begr\u00E4nsning som anges av egenskapen accessExternalStylesheet."},
+        "Kunde inte läsa formatmallen ''{0}'', eftersom ''{1}''-åtkomst inte tillåts på grund av begränsning som anges av egenskapen accessExternalStylesheet."},
 
         /*
          * Note to translators:  This message represents an internal error in
@@ -479,7 +479,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * was not, in fact, a stylesheet.
          */
         {ErrorMsg.NOT_STYLESHEET_ERR,
-        "Indatadokumentet inneh\u00E5ller ingen XSL-formatmall."},
+        "Indatadokumentet innehåller ingen XSL-formatmall."},
 
         /*
          * Note to translators:  The element named in the substitution text was
@@ -495,7 +495,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * attribute was not one of the permitted values.
          */
         {ErrorMsg.KEY_USE_ATTR_ERR,
-        "use-attribut f\u00F6r <key> m\u00E5ste vara node, node-set, string eller number."},
+        "use-attribut för <key> måste vara node, node-set, string eller number."},
 
         /*
          * Note to translators:  An XML document can specify the version of the
@@ -503,14 +503,14 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * the version specified for the output document was not valid.
          */
         {ErrorMsg.OUTPUT_VERSION_ERR,
-        "XML-dokumentets utdataversion m\u00E5ste vara 1.0"},
+        "XML-dokumentets utdataversion måste vara 1.0"},
 
         /*
          * Note to translators:  The operator in a comparison operation was
          * not recognized.
          */
         {ErrorMsg.ILLEGAL_RELAT_OP_ERR,
-        "Ok\u00E4nd operator f\u00F6r relationsuttryck"},
+        "Okänd operator för relationsuttryck"},
 
         /*
          * Note to translators:  An attribute set defines as a set of XML
@@ -520,7 +520,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * that is in error.
          */
         {ErrorMsg.ATTRIBSET_UNDEF_ERR,
-        "F\u00F6rs\u00F6ker anv\u00E4nda en icke-befintlig attributupps\u00E4ttning ''{0}''."},
+        "Försöker använda en icke-befintlig attributuppsättning ''{0}''."},
 
         /*
          * Note to translators:  The term "attribute value template" is a term
@@ -530,13 +530,13 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * contains the expression that was in error.
          */
         {ErrorMsg.ATTR_VAL_TEMPLATE_ERR,
-        "Kan inte tolka attributv\u00E4rdemallen ''{0}''."},
+        "Kan inte tolka attributvärdemallen ''{0}''."},
 
         /*
          * Note to translators:  ???
          */
         {ErrorMsg.UNKNOWN_SIG_TYPE_ERR,
-        "Ok\u00E4nd datatyp i signaturen f\u00F6r klassen ''{0}''."},
+        "Okänd datatyp i signaturen för klassen ''{0}''."},
 
         /*
          * Note to translators:  The substitution text refers to data types.
@@ -552,14 +552,14 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * not be translated.
          */
         {ErrorMsg.NO_TRANSLET_CLASS_ERR,
-        "Templates inneh\u00E5ller inte n\u00E5gon giltig klassdefinition f\u00F6r translet."},
+        "Templates innehåller inte någon giltig klassdefinition för translet."},
 
         /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.
          */
         {ErrorMsg.NO_MAIN_TRANSLET_ERR,
-        "Templates inneh\u00E5ller inte n\u00E5gon klass med namnet ''{0}''."},
+        "Templates innehåller inte någon klass med namnet ''{0}''."},
 
         /*
          * Note to translators:  The substitution text is the name of a class.
@@ -577,21 +577,21 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * substitution text with "null" Java value.
          */
         {ErrorMsg.ERROR_LISTENER_NULL_ERR,
-        "F\u00F6rs\u00F6ker st\u00E4lla in ErrorListener f\u00F6r ''{0}'' p\u00E5 null"},
+        "Försöker ställa in ErrorListener för ''{0}'' på null"},
 
         /*
          * Note to translators:  StreamSource, SAXSource and DOMSource are Java
          * interface names that should not be translated.
          */
         {ErrorMsg.JAXP_UNKNOWN_SOURCE_ERR,
-        "Endast StreamSource, SAXSource och DOMSource st\u00F6ds av XSLTC"},
+        "Endast StreamSource, SAXSource och DOMSource stöds av XSLTC"},
 
         /*
          * Note to translators:  "Source" is a Java class name that should not
          * be translated.  The substitution text is the name of Java method.
          */
         {ErrorMsg.JAXP_NO_SOURCE_ERR,
-        "Source-objektet som \u00F6verf\u00F6rdes till ''{0}'' saknar inneh\u00E5ll."},
+        "Source-objektet som överfördes till ''{0}'' saknar innehåll."},
 
         /*
          * Note to translators:  The message indicates that XSLTC failed to
@@ -609,17 +609,17 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * translate the term "attribute".
          */
         {ErrorMsg.JAXP_INVALID_ATTR_ERR,
-        "TransformerFactory k\u00E4nner inte igen attributet ''{0}''."},
+        "TransformerFactory känner inte igen attributet ''{0}''."},
 
         {ErrorMsg.JAXP_INVALID_ATTR_VALUE_ERR,
-        "Fel v\u00E4rde har angetts f\u00F6r attributet ''{0}''."},
+        "Fel värde har angetts för attributet ''{0}''."},
 
         /*
          * Note to translators:  "setResult()" and "startDocument()" are Java
          * method names that should not be translated.
          */
         {ErrorMsg.JAXP_SET_RESULT_ERR,
-        "setResult() m\u00E5ste anropas f\u00F6re startDocument()."},
+        "setResult() måste anropas före startDocument()."},
 
         /*
          * Note to translators:  "Transformer" is a Java interface name that
@@ -629,7 +629,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * met.
          */
         {ErrorMsg.JAXP_NO_TRANSLET_ERR,
-        "Transformer saknar inkapslat objekt f\u00F6r translet."},
+        "Transformer saknar inkapslat objekt för translet."},
 
         /*
          * Note to translators:  The XML document that results from a
@@ -637,14 +637,14 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * message is produced if that requirement is not met.
          */
         {ErrorMsg.JAXP_NO_HANDLER_ERR,
-        "Det finns ingen definierad utdatahanterare f\u00F6r transformeringsresultat."},
+        "Det finns ingen definierad utdatahanterare för transformeringsresultat."},
 
         /*
          * Note to translators:  "Result" is a Java interface name in this
          * context.  The substitution text is a method name.
          */
         {ErrorMsg.JAXP_NO_RESULT_ERR,
-        "Result-objekt som \u00F6verf\u00F6rdes till ''{0}'' \u00E4r ogiltigt."},
+        "Result-objekt som överfördes till ''{0}'' är ogiltigt."},
 
         /*
          * Note to translators:  "Transformer" is a Java interface name.  The
@@ -654,7 +654,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * would be best to translate the term "property".
          */
         {ErrorMsg.JAXP_UNKNOWN_PROP_ERR,
-        "F\u00F6rs\u00F6ker f\u00E5 \u00E5tkomst till ogiltig Transformer-egenskap, ''{0}''."},
+        "Försöker få åtkomst till ogiltig Transformer-egenskap, ''{0}''."},
 
         /*
          * Note to translators:  SAX2DOM is the name of a Java class that should
@@ -679,11 +679,11 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * of setParameter must be a valid Java Object.
          */
         {ErrorMsg.JAXP_INVALID_SET_PARAM_VALUE,
-        "Parameterv\u00E4rdet f\u00F6r {0} m\u00E5ste vara giltigt Java-objekt"},
+        "Parametervärdet för {0} måste vara giltigt Java-objekt"},
 
 
         {ErrorMsg.COMPILE_STDIN_ERR,
-        "Alternativet -i m\u00E5ste anv\u00E4ndas med alternativet -o."},
+        "Alternativet -i måste användas med alternativet -o."},
 
 
         /*
@@ -696,7 +696,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * documentation.
          */
         {ErrorMsg.COMPILE_USAGE_STR,
-        "SYNOPSIS\n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Compile [-o <utdata>]\n      [-d <katalog>] [-j <jarfile>] [-p <paket>]\n      [-n] [-x] [-u] [-v] [-h] { <formatmall> | -i }\n\nALTERNATIV\n   -o <utdata>    tilldelar namnet <utdata> till genererad\n                  translet. Som standard tas namnet p\u00E5 translet\n                  fr\u00E5n namnet p\u00E5 <formatmallen>. Alternativet\n                  ignoreras vid kompilering av flera formatmallar.\n   -d <katalog> anger en destinationskatalog f\u00F6r translet\n   -j <jarfile>   paketerar transletklasserna i en jar-fil med\n                  namnet <jarfile>\n   -p <paket>   anger ett paketnamnprefix f\u00F6r alla genererade\n                  transletklasser.\n   -n             aktiverar mallinfogning (ger ett b\u00E4ttre genomsnittligt\n                  standardbeteende).\n   -x             ger ytterligare fels\u00F6kningsmeddelanden\n   -u             tolkar argument i <formatmall> som URL:er\n   -i             tvingar kompilatorn att l\u00E4sa formatmallen fr\u00E5n stdin\n   -v             skriver ut kompilatorns versionsnummer\n   -h             skriver ut denna syntaxsats\n"},
+        "SYNOPSIS\n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Compile [-o <utdata>]\n      [-d <katalog>] [-j <jarfile>] [-p <paket>]\n      [-n] [-x] [-u] [-v] [-h] { <formatmall> | -i }\n\nALTERNATIV\n   -o <utdata>    tilldelar namnet <utdata> till genererad\n                  translet. Som standard tas namnet på translet\n                  från namnet på <formatmallen>. Alternativet\n                  ignoreras vid kompilering av flera formatmallar.\n   -d <katalog> anger en destinationskatalog för translet\n   -j <jarfile>   paketerar transletklasserna i en jar-fil med\n                  namnet <jarfile>\n   -p <paket>   anger ett paketnamnprefix för alla genererade\n                  transletklasser.\n   -n             aktiverar mallinfogning (ger ett bättre genomsnittligt\n                  standardbeteende).\n   -x             ger ytterligare felsökningsmeddelanden\n   -u             tolkar argument i <formatmall> som URL:er\n   -i             tvingar kompilatorn att läsa formatmallen från stdin\n   -v             skriver ut kompilatorns versionsnummer\n   -h             skriver ut denna syntaxsats\n"},
 
         /*
          * Note to translators:  This message contains usage information for a
@@ -708,7 +708,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * documentation.
          */
         {ErrorMsg.TRANSFORM_USAGE_STR,
-        "SYNOPSIS \n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Transform [-j <jarfile>]\n      [-x] [-n <iterationer>] {-u <dokument_url> | <dokument>}\n      <klass> [<param1>=<v\u00E4rde1> ...]\n\n   anv\u00E4nder translet <klass> vid transformering av XML-dokument \n   angivna som <dokument>. Translet-<klass> finns antingen i\n   anv\u00E4ndarens CLASSPATH eller i valfritt angiven <jarfile>.\nALTERNATIV\n   -j <jarfile>    anger en jar-fil varifr\u00E5n translet laddas\n   -x              ger ytterligare fels\u00F6kningsmeddelanden\n   -n <iterationer> k\u00F6r <iterations>-tider vid transformering och\n                   visar profileringsinformation\n   -u <dokument_url> anger XML-indatadokument som URL\n"},
+        "SYNOPSIS \n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Transform [-j <jarfile>]\n      [-x] [-n <iterationer>] {-u <dokument_url> | <dokument>}\n      <klass> [<param1>=<värde1> ...]\n\n   använder translet <klass> vid transformering av XML-dokument \n   angivna som <dokument>. Translet-<klass> finns antingen i\n   användarens CLASSPATH eller i valfritt angiven <jarfile>.\nALTERNATIV\n   -j <jarfile>    anger en jar-fil varifrån translet laddas\n   -x              ger ytterligare felsökningsmeddelanden\n   -n <iterationer> kör <iterations>-tider vid transformering och\n                   visar profileringsinformation\n   -u <dokument_url> anger XML-indatadokument som URL\n"},
 
 
 
@@ -719,7 +719,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * one of the other kinds of elements mentioned.
          */
         {ErrorMsg.STRAY_SORT_ERR,
-        "<xsl:sort> kan anv\u00E4ndas endast i <xsl:for-each> eller <xsl:apply-templates>."},
+        "<xsl:sort> kan användas endast i <xsl:for-each> eller <xsl:apply-templates>."},
 
         /*
          * Note to translators:  The message indicates that the encoding
@@ -728,7 +728,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * the program.
          */
         {ErrorMsg.UNSUPPORTED_ENCODING,
-        "Utdatakodning ''{0}'' underst\u00F6ds inte i JVM."},
+        "Utdatakodning ''{0}'' understöds inte i JVM."},
 
         /*
          * Note to translators:  The message indicates that the XPath expression
@@ -752,7 +752,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * is not of the required type.
          */
         {ErrorMsg.NO_JAVA_FUNCT_THIS_REF,
-        "Det f\u00F6rsta argumentet f\u00F6r den icke-statiska Java-funktionen ''{0}'' \u00E4r inte n\u00E5gon giltig objektreferens."},
+        "Det första argumentet för den icke-statiska Java-funktionen ''{0}'' är inte någon giltig objektreferens."},
 
         /*
          * Note to translators:  An XPath expression was not of the type
@@ -768,7 +768,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * problematic expression is unknown.
          */
         {ErrorMsg.TYPE_CHECK_UNK_LOC_ERR,
-        "Fel vid kontroll av typ av ett uttryck p\u00E5 ok\u00E4nd plats."},
+        "Fel vid kontroll av typ av ett uttryck på okänd plats."},
 
         /*
          * Note to translators:  The substitution text is the name of a command-
@@ -843,7 +843,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * while the second substitution is the name of a jar file.
          */
         {ErrorMsg.TRANSFORM_WITH_JAR_STR,
-        "Transformering via translet ''{0}'' fr\u00E5n jar-filen ''{1}''"},
+        "Transformering via translet ''{0}'' från jar-filen ''{1}''"},
 
         /*
          * Note to translators:  "TransformerFactory" is the name of a Java
@@ -861,7 +861,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * specifies the name the processor used instead.
          */
         {ErrorMsg.TRANSLET_NAME_JAVA_CONFLICT,
-         "''{0}'' kunde inte anv\u00E4ndas som namn p\u00E5 transletklassen eftersom det inneh\u00E5ller otill\u00E5tna tecken f\u00F6r Java-klassnamn. Namnet ''{1}'' anv\u00E4ndes ist\u00E4llet."},
+         "''{0}'' kunde inte användas som namn på transletklassen eftersom det innehåller otillåtna tecken för Java-klassnamn. Namnet ''{1}'' användes istället."},
 
         /*
          * Note to translators:  The following message is used as a header.
@@ -896,7 +896,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {ErrorMsg.INVALID_QNAME_ERR,
-        "Ett attribut vars v\u00E4rde m\u00E5ste vara ett QName eller en blankteckenavgr\u00E4nsad lista med QNames hade v\u00E4rdet ''{0}''"},
+        "Ett attribut vars värde måste vara ett QName eller en blankteckenavgränsad lista med QNames hade värdet ''{0}''"},
 
         /*
          * Note to translators:  An attribute whose value is required to
@@ -905,7 +905,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {ErrorMsg.INVALID_NCNAME_ERR,
-        "Ett attribut vars v\u00E4rde m\u00E5ste vara ett NCName hade v\u00E4rdet ''{0}''"},
+        "Ett attribut vars värde måste vara ett NCName hade värdet ''{0}''"},
 
         /*
          * Note to translators:  An attribute with an incorrect value was
@@ -918,19 +918,19 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * attribute.
          */
         {ErrorMsg.INVALID_METHOD_IN_OUTPUT,
-        "Metodattributet f\u00F6r ett <xsl:output>-element hade v\u00E4rdet ''{0}''. Endast n\u00E5got av f\u00F6ljande v\u00E4rden kan anv\u00E4ndas: ''xml'', ''html'', ''text'' eller qname-but-not-ncname i XML"},
+        "Metodattributet för ett <xsl:output>-element hade värdet ''{0}''. Endast något av följande värden kan användas: ''xml'', ''html'', ''text'' eller qname-but-not-ncname i XML"},
 
         {ErrorMsg.JAXP_GET_FEATURE_NULL_NAME,
-        "Funktionsnamnet kan inte vara null i TransformerFactory.getFeature(namn p\u00E5 str\u00E4ng)."},
+        "Funktionsnamnet kan inte vara null i TransformerFactory.getFeature(namn på sträng)."},
 
         {ErrorMsg.JAXP_SET_FEATURE_NULL_NAME,
-        "Funktionsnamnet kan inte vara null i TransformerFactory.setFeature(namn p\u00E5 str\u00E4ng, booleskt v\u00E4rde)."},
+        "Funktionsnamnet kan inte vara null i TransformerFactory.setFeature(namn på sträng, booleskt värde)."},
 
         {ErrorMsg.JAXP_UNSUPPORTED_FEATURE,
-        "Kan inte st\u00E4lla in funktionen ''{0}'' i denna TransformerFactory."},
+        "Kan inte ställa in funktionen ''{0}'' i denna TransformerFactory."},
 
         {ErrorMsg.JAXP_SECUREPROCESSING_FEATURE,
-        "FEATURE_SECURE_PROCESSING: Funktionen kan inte anges till false om s\u00E4kerhetshanteraren anv\u00E4nds."},
+        "FEATURE_SECURE_PROCESSING: Funktionen kan inte anges till false om säkerhetshanteraren används."},
 
         /*
          * Note to translators:  This message describes an internal error in the
@@ -940,7 +940,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * technical term internal to XSLTC and should not be translated.
          */
         {ErrorMsg.OUTLINE_ERR_TRY_CATCH,
-         "Internt XSLTC-fel: den genererade bytekoden inneh\u00E5ller ett try-catch-finally-block och kan inte g\u00F6ras till en disposition."},
+         "Internt XSLTC-fel: den genererade bytekoden innehåller ett try-catch-finally-block och kan inte göras till en disposition."},
 
         /*
          * Note to translators:  This message describes an internal error in the
@@ -953,7 +953,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * pair must also be between that same enclosing pair.
          */
         {ErrorMsg.OUTLINE_ERR_UNBALANCED_MARKERS,
-         "Internt XSLTC-fel: mark\u00F6rerna OutlineableChunkStart och OutlineableChunkEnd m\u00E5ste vara balanserade och korrekt kapslade."},
+         "Internt XSLTC-fel: markörerna OutlineableChunkStart och OutlineableChunkEnd måste vara balanserade och korrekt kapslade."},
 
         /*
          * Note to translators:  This message describes an internal error in the
@@ -977,7 +977,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          *
          */
         {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
-         "Internt XSLTC-fel: en metod i transleten \u00F6verstiger Java Virtual Machines l\u00E4ngdbegr\u00E4nsning f\u00F6r en metod p\u00E5 64 kilobytes.  Det h\u00E4r orsakas vanligen av mycket stora mallar i en formatmall. F\u00F6rs\u00F6k att omstrukturera formatmallen att anv\u00E4nda mindre mallar."
+         "Internt XSLTC-fel: en metod i transleten överstiger Java Virtual Machines längdbegränsning för en metod på 64 kilobytes.  Det här orsakas vanligen av mycket stora mallar i en formatmall. Försök att omstrukturera formatmallen att använda mindre mallar."
         },
 
     };

@@ -184,82 +184,82 @@ public class XMLErrorResources_sv extends ListResourceBundle
     {"ER0000" , "{0}" },
 
     { ER_FUNCTION_NOT_SUPPORTED,
-      "Funktionen st\u00F6ds inte!"},
+      "Funktionen stöds inte!"},
 
     { ER_CANNOT_OVERWRITE_CAUSE,
-      "Orsak kan inte skrivas \u00F6ver"},
+      "Orsak kan inte skrivas över"},
 
     { ER_NO_DEFAULT_IMPL,
       "Hittade ingen standardimplementering "},
 
     { ER_CHUNKEDINTARRAY_NOT_SUPPORTED,
-      "ChunkedIntArray({0}) underst\u00F6ds f\u00F6r n\u00E4rvarande inte"},
+      "ChunkedIntArray({0}) understöds för närvarande inte"},
 
     { ER_OFFSET_BIGGER_THAN_SLOT,
-      "Offset st\u00F6rre \u00E4n plats"},
+      "Offset större än plats"},
 
     { ER_COROUTINE_NOT_AVAIL,
-      "Sidorutin \u00E4r inte tillg\u00E4nglig, id={0}"},
+      "Sidorutin är inte tillgänglig, id={0}"},
 
     { ER_COROUTINE_CO_EXIT,
-      "CoroutineManager har tagit emot co_exit()-beg\u00E4ran"},
+      "CoroutineManager har tagit emot co_exit()-begäran"},
 
     { ER_COJOINROUTINESET_FAILED,
-      "co_joinCoroutineSet() utf\u00F6rdes inte"},
+      "co_joinCoroutineSet() utfördes inte"},
 
     { ER_COROUTINE_PARAM,
-      "Parameterfel f\u00F6r sidorutin ({0})"},
+      "Parameterfel för sidorutin ({0})"},
 
     { ER_PARSER_DOTERMINATE_ANSWERS,
-      "\nUNEXPECTED: Parsersvar {0} f\u00F6r doTerminate"},
+      "\nUNEXPECTED: Parsersvar {0} för doTerminate"},
 
     { ER_NO_PARSE_CALL_WHILE_PARSING,
-      "parse f\u00E5r inte anropas medan tolkning sker"},
+      "parse får inte anropas medan tolkning sker"},
 
     { ER_TYPED_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "Fel: typad iterator f\u00F6r axeln {0} har inte implementerats"},
+      "Fel: typad iterator för axeln {0} har inte implementerats"},
 
     { ER_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "Fel: iterator f\u00F6r axeln {0} har inte implementerats "},
+      "Fel: iterator för axeln {0} har inte implementerats "},
 
     { ER_ITERATOR_CLONE_NOT_SUPPORTED,
-      "Iteratorklon underst\u00F6ds inte"},
+      "Iteratorklon understöds inte"},
 
     { ER_UNKNOWN_AXIS_TYPE,
-      "Ok\u00E4nd axeltraverstyp: {0}"},
+      "Okänd axeltraverstyp: {0}"},
 
     { ER_AXIS_NOT_SUPPORTED,
-      "Axeltravers underst\u00F6ds inte: {0}"},
+      "Axeltravers understöds inte: {0}"},
 
     { ER_NO_DTMIDS_AVAIL,
-      "Inga fler DTM-id:n \u00E4r tillg\u00E4ngliga"},
+      "Inga fler DTM-id:n är tillgängliga"},
 
     { ER_NOT_SUPPORTED,
-      "Underst\u00F6ds inte: {0}"},
+      "Understöds inte: {0}"},
 
     { ER_NODE_NON_NULL,
-      "Nod m\u00E5ste vara icke-null f\u00F6r getDTMHandleFromNode"},
+      "Nod måste vara icke-null för getDTMHandleFromNode"},
 
     { ER_COULD_NOT_RESOLVE_NODE,
       "Kunde inte matcha noden med en referens"},
 
     { ER_STARTPARSE_WHILE_PARSING,
-       "startParse f\u00E5r inte anropas medan tolkning sker"},
+       "startParse får inte anropas medan tolkning sker"},
 
     { ER_STARTPARSE_NEEDS_SAXPARSER,
-       "startParse beh\u00F6ver en SAXParser som \u00E4r icke-null"},
+       "startParse behöver en SAXParser som är icke-null"},
 
     { ER_COULD_NOT_INIT_PARSER,
        "kunde inte initiera parser med"},
 
     { ER_EXCEPTION_CREATING_POOL,
-       "undantag skapar ny instans f\u00F6r pool"},
+       "undantag skapar ny instans för pool"},
 
     { ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
-       "S\u00F6kv\u00E4gen inneh\u00E5ller en ogiltig escape-sekvens"},
+       "Sökvägen innehåller en ogiltig escape-sekvens"},
 
     { ER_SCHEME_REQUIRED,
-       "Schema kr\u00E4vs!"},
+       "Schema krävs!"},
 
     { ER_NO_SCHEME_IN_URI,
        "Schema saknas i URI: {0}"},
@@ -268,115 +268,115 @@ public class XMLErrorResources_sv extends ListResourceBundle
        "Schema saknas i URI"},
 
     { ER_PATH_INVALID_CHAR,
-       "S\u00F6kv\u00E4gen inneh\u00E5ller ett ogiltigt tecken: {0}"},
+       "Sökvägen innehåller ett ogiltigt tecken: {0}"},
 
     { ER_SCHEME_FROM_NULL_STRING,
-       "Kan inte st\u00E4lla in schema fr\u00E5n null-str\u00E4ng"},
+       "Kan inte ställa in schema från null-sträng"},
 
     { ER_SCHEME_NOT_CONFORMANT,
-       "Schemat \u00E4r inte likformigt."},
+       "Schemat är inte likformigt."},
 
     { ER_HOST_ADDRESS_NOT_WELLFORMED,
-       "V\u00E4rd \u00E4r inte en v\u00E4lformulerad adress"},
+       "Värd är inte en välformulerad adress"},
 
     { ER_PORT_WHEN_HOST_NULL,
-       "Port kan inte st\u00E4llas in n\u00E4r v\u00E4rd \u00E4r null"},
+       "Port kan inte ställas in när värd är null"},
 
     { ER_INVALID_PORT,
        "Ogiltigt portnummer"},
 
     { ER_FRAG_FOR_GENERIC_URI,
-       "Fragment kan bara st\u00E4llas in f\u00F6r en allm\u00E4n URI"},
+       "Fragment kan bara ställas in för en allmän URI"},
 
     { ER_FRAG_WHEN_PATH_NULL,
-       "Fragment kan inte st\u00E4llas in n\u00E4r s\u00F6kv\u00E4g \u00E4r null"},
+       "Fragment kan inte ställas in när sökväg är null"},
 
     { ER_FRAG_INVALID_CHAR,
-       "Fragment inneh\u00E5ller ett ogiltigt tecken"},
+       "Fragment innehåller ett ogiltigt tecken"},
 
     { ER_PARSER_IN_USE,
-      "Parser anv\u00E4nds redan"},
+      "Parser används redan"},
 
     { ER_CANNOT_CHANGE_WHILE_PARSING,
-      "Kan inte \u00E4ndra {0} {1} medan tolkning sker"},
+      "Kan inte ändra {0} {1} medan tolkning sker"},
 
     { ER_SELF_CAUSATION_NOT_PERMITTED,
-      "Sj\u00E4lvorsakande inte till\u00E5ten"},
+      "Självorsakande inte tillåten"},
 
     { ER_NO_USERINFO_IF_NO_HOST,
-      "Anv\u00E4ndarinfo f\u00E5r inte anges om v\u00E4rden inte \u00E4r angiven"},
+      "Användarinfo får inte anges om värden inte är angiven"},
 
     { ER_NO_PORT_IF_NO_HOST,
-      "Port f\u00E5r inte anges om v\u00E4rden inte \u00E4r angiven"},
+      "Port får inte anges om värden inte är angiven"},
 
     { ER_NO_QUERY_STRING_IN_PATH,
-      "Fr\u00E5gestr\u00E4ng kan inte anges i b\u00E5de s\u00F6kv\u00E4gen och fr\u00E5gestr\u00E4ngen"},
+      "Frågesträng kan inte anges i både sökvägen och frågesträngen"},
 
     { ER_NO_FRAGMENT_STRING_IN_PATH,
-      "Fragment kan inte anges i b\u00E5de s\u00F6kv\u00E4gen och fragmentet"},
+      "Fragment kan inte anges i både sökvägen och fragmentet"},
 
     { ER_CANNOT_INIT_URI_EMPTY_PARMS,
       "Kan inte initiera URI med tomma parametrar"},
 
     { ER_METHOD_NOT_SUPPORTED,
-      "Metoden st\u00F6ds \u00E4nnu inte "},
+      "Metoden stöds ännu inte "},
 
     { ER_INCRSAXSRCFILTER_NOT_RESTARTABLE,
-      "IncrementalSAXSource_Filter kan f\u00F6r n\u00E4rvarande inte startas om"},
+      "IncrementalSAXSource_Filter kan för närvarande inte startas om"},
 
     { ER_XMLRDR_NOT_BEFORE_STARTPARSE,
-      "XMLReader inte f\u00F6re startParse-beg\u00E4ran"},
+      "XMLReader inte före startParse-begäran"},
 
     { ER_AXIS_TRAVERSER_NOT_SUPPORTED,
-      "Axeltravers underst\u00F6ds inte: {0}"},
+      "Axeltravers understöds inte: {0}"},
 
     { ER_ERRORHANDLER_CREATED_WITH_NULL_PRINTWRITER,
       "ListingErrorHandler skapad med null PrintWriter!"},
 
     { ER_SYSTEMID_UNKNOWN,
-      "SystemId ok\u00E4nt"},
+      "SystemId okänt"},
 
     { ER_LOCATION_UNKNOWN,
-      "Platsen f\u00F6r felet \u00E4r ok\u00E4nd"},
+      "Platsen för felet är okänd"},
 
     { ER_PREFIX_MUST_RESOLVE,
-      "Prefix m\u00E5ste matchas till en namnrymd: {0}"},
+      "Prefix måste matchas till en namnrymd: {0}"},
 
     { ER_CREATEDOCUMENT_NOT_SUPPORTED,
-      "createDocument() st\u00F6ds inte i XPathContext!"},
+      "createDocument() stöds inte i XPathContext!"},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT,
-      "Underordnat attribut har inget \u00E4gardokument!"},
+      "Underordnat attribut har inget ägardokument!"},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT_ELEMENT,
-      "Underordnat attribut har inget \u00E4gardokumentelement!"},
+      "Underordnat attribut har inget ägardokumentelement!"},
 
     { ER_CANT_OUTPUT_TEXT_BEFORE_DOC,
-      "Varning: utdatatext kan inte skrivas ut f\u00F6re dokumentelement! Ignoreras..."},
+      "Varning: utdatatext kan inte skrivas ut före dokumentelement! Ignoreras..."},
 
     { ER_CANT_HAVE_MORE_THAN_ONE_ROOT,
-      "En DOM kan inte ha fler \u00E4n en rot!"},
+      "En DOM kan inte ha fler än en rot!"},
 
     { ER_ARG_LOCALNAME_NULL,
-       "Argumentet 'localName' \u00E4r null"},
+       "Argumentet 'localName' är null"},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The localname is the portion after the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_LOCALNAME_INVALID,
-       "Localname i QNAME b\u00F6r vara giltigt NCName"},
+       "Localname i QNAME bör vara giltigt NCName"},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The prefix is the portion before the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_PREFIX_INVALID,
-       "Prefix i QNAME b\u00F6r vara giltigt NCName"},
+       "Prefix i QNAME bör vara giltigt NCName"},
 
     { ER_NAME_CANT_START_WITH_COLON,
-      "Namnet kan inte b\u00F6rja med kolon"},
+      "Namnet kan inte börja med kolon"},
 
-    { "BAD_CODE", "Parameter f\u00F6r createMessage ligger utanf\u00F6r gr\u00E4nsv\u00E4rdet"},
-    { "FORMAT_FAILED", "Undantag utl\u00F6st vid messageFormat-anrop"},
+    { "BAD_CODE", "Parameter för createMessage ligger utanför gränsvärdet"},
+    { "FORMAT_FAILED", "Undantag utlöst vid messageFormat-anrop"},
     { "line", "Rad nr"},
     { "column","Kolumn nr"},
 
@@ -384,7 +384,7 @@ public class XMLErrorResources_sv extends ListResourceBundle
       "Serializerklassen ''{0}'' implementerar inte org.xml.sax.ContentHandler."},
 
     {ER_RESOURCE_COULD_NOT_FIND,
-      "Resursen [ {0} ] kunde inte h\u00E4mtas.\n {1}" },
+      "Resursen [ {0} ] kunde inte hämtas.\n {1}" },
 
     {ER_RESOURCE_COULD_NOT_LOAD,
       "Resursen [ {0} ] kunde inte laddas: {1} \n {2} \t {3}" },
@@ -393,13 +393,13 @@ public class XMLErrorResources_sv extends ListResourceBundle
       "Buffertstorlek <=0" },
 
     {ER_INVALID_UTF16_SURROGATE,
-      "Ogiltigt UTF-16-surrogat uppt\u00E4ckt: {0} ?" },
+      "Ogiltigt UTF-16-surrogat upptäckt: {0} ?" },
 
     {ER_OIERROR,
       "IO-fel" },
 
     {ER_ILLEGAL_ATTRIBUTE_POSITION,
-      "Kan inte l\u00E4gga till attributet {0} efter underordnade noder eller innan ett element har skapats. Attributet ignoreras."},
+      "Kan inte lägga till attributet {0} efter underordnade noder eller innan ett element har skapats. Attributet ignoreras."},
 
       /*
        * Note to translators:  The stylesheet contained a reference to a
@@ -407,7 +407,7 @@ public class XMLErrorResources_sv extends ListResourceBundle
        * text is the name of the prefix.
        */
     {ER_NAMESPACE_PREFIX,
-      "Namnrymd f\u00F6r prefix ''{0}'' har inte deklarerats." },
+      "Namnrymd för prefix ''{0}'' har inte deklarerats." },
       /*
        * Note to translators:  This message is reported if the stylesheet
        * being processed attempted to construct an XML document with an
@@ -415,7 +415,7 @@ public class XMLErrorResources_sv extends ListResourceBundle
        * specifies the name of the attribute.
        */
     {ER_STRAY_ATTRIBUTE,
-      "Attributet ''{0}'' finns utanf\u00F6r elementet." },
+      "Attributet ''{0}'' finns utanför elementet." },
 
       /*
        * Note to translators:  As with the preceding message, a namespace
@@ -425,16 +425,16 @@ public class XMLErrorResources_sv extends ListResourceBundle
        * namespace declaration.
        */
     {ER_STRAY_NAMESPACE,
-      "Namnrymdsdeklarationen ''{0}''=''{1}'' finns utanf\u00F6r element." },
+      "Namnrymdsdeklarationen ''{0}''=''{1}'' finns utanför element." },
 
     {ER_COULD_NOT_LOAD_RESOURCE,
-      "Kunde inte ladda ''{0}'' (kontrollera CLASSPATH), anv\u00E4nder nu enbart standardv\u00E4rden"},
+      "Kunde inte ladda ''{0}'' (kontrollera CLASSPATH), använder nu enbart standardvärden"},
 
     { ER_ILLEGAL_CHARACTER,
-       "F\u00F6rs\u00F6k att skriva utdatatecken med integralv\u00E4rdet {0} som inte \u00E4r representerat i angiven utdatakodning av {1}."},
+       "Försök att skriva utdatatecken med integralvärdet {0} som inte är representerat i angiven utdatakodning av {1}."},
 
     {ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-      "Kunde inte ladda egenskapsfilen ''{0}'' f\u00F6r utdatametoden ''{1}'' (kontrollera CLASSPATH)" }
+      "Kunde inte ladda egenskapsfilen ''{0}'' för utdatametoden ''{1}'' (kontrollera CLASSPATH)" }
 
 
   };

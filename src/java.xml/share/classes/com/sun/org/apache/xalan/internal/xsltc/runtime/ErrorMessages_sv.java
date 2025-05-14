@@ -108,7 +108,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * {0}.
          */
         {BasisLibrary.DATA_CONVERSION_ERR,
-        "Ogiltig konvertering fr\u00E5n ''{0}'' till ''{1}''."},
+        "Ogiltig konvertering från ''{0}'' till ''{1}''."},
 
         /*
          * Note to translators:  This message is displayed if the function named
@@ -116,7 +116,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * is the acronym naming the product.
          */
         {BasisLibrary.EXTERNAL_FUNC_ERR,
-        "Den externa funktionen ''{0}'' underst\u00F6ds inte i XSLTC."},
+        "Den externa funktionen ''{0}'' understöds inte i XSLTC."},
 
         /*
          * Note to translators:  This message is displayed if two values are
@@ -124,7 +124,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * unknown.
          */
         {BasisLibrary.EQUALITY_EXPR_ERR,
-        "Ok\u00E4nd argumenttyp i likhetsuttryck."},
+        "Okänd argumenttyp i likhetsuttryck."},
 
         /*
          * Note to translators:  The substitution text for {0} will be a data
@@ -133,7 +133,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * permitted for a call to this function.
          */
         {BasisLibrary.INVALID_ARGUMENT_ERR,
-        "Argumenttyp ''{0}'' i anrop till ''{1}'' \u00E4r inte giltig"},
+        "Argumenttyp ''{0}'' i anrop till ''{1}'' är inte giltig"},
 
         /*
          * Note to translators:  There is way of specifying a format for a
@@ -141,7 +141,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * particular value using the specified pattern.
          */
         {BasisLibrary.FORMAT_NUMBER_ERR,
-        "F\u00F6rs\u00F6ker formatera talet ''{0}'' med m\u00F6nstret ''{1}''."},
+        "Försöker formatera talet ''{0}'' med mönstret ''{1}''."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -158,7 +158,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * support.
          */
         {BasisLibrary.AXIS_SUPPORT_ERR,
-        "Iteratorn f\u00F6r axeln ''{0}'' underst\u00F6ds inte."},
+        "Iteratorn för axeln ''{0}'' understöds inte."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -167,7 +167,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * support.
          */
         {BasisLibrary.TYPED_AXIS_SUPPORT_ERR,
-        "Iteratorn f\u00F6r den typade axeln ''{0}'' underst\u00F6ds inte."},
+        "Iteratorn för den typade axeln ''{0}'' understöds inte."},
 
         /*
          * Note to translators:  This message is reported if the stylesheet
@@ -176,7 +176,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * specifies the name of the attribute.
          */
         {BasisLibrary.STRAY_ATTRIBUTE_ERR,
-        "Attributet ''{0}'' finns utanf\u00F6r elementet."},
+        "Attributet ''{0}'' finns utanför elementet."},
 
         /*
          * Note to translators:  As with the preceding message, a namespace
@@ -186,7 +186,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * namespace declaration.
          */
         {BasisLibrary.STRAY_NAMESPACE_ERR,
-        "Namnrymdsdeklarationen ''{0}''=''{1}'' finns utanf\u00F6r element."},
+        "Namnrymdsdeklarationen ''{0}''=''{1}'' finns utanför element."},
 
         /*
          * Note to translators:  The stylesheet contained a reference to a
@@ -194,14 +194,14 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * text is the name of the prefix.
          */
         {BasisLibrary.NAMESPACE_PREFIX_ERR,
-        "Namnrymd f\u00F6r prefix ''{0}'' har inte deklarerats."},
+        "Namnrymd för prefix ''{0}'' har inte deklarerats."},
 
         /*
          * Note to translators:  The following represents an internal error.
          * DOMAdapter is a Java class in XSLTC.
          */
         {BasisLibrary.DOM_ADAPTER_INIT_ERR,
-        "DOMAdapter har skapats med fel typ av DOM-k\u00E4lla."},
+        "DOMAdapter har skapats med fel typ av DOM-källa."},
 
         /*
          * Note to translators:  The following message indicates that the XML
@@ -210,7 +210,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * DTD.
          */
         {BasisLibrary.PARSER_DTD_SUPPORT_ERR,
-        "Den SAX-parser som du anv\u00E4nder hanterar inga DTD-deklarationsh\u00E4ndelser."},
+        "Den SAX-parser som du använder hanterar inga DTD-deklarationshändelser."},
 
         /*
          * Note to translators:  The following message indicates that the XML
@@ -219,7 +219,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * declarations.
          */
         {BasisLibrary.NAMESPACES_SUPPORT_ERR,
-        "Den SAX-parser som du anv\u00E4nder saknar st\u00F6d f\u00F6r XML-namnrymder."},
+        "Den SAX-parser som du använder saknar stöd för XML-namnrymder."},
 
         /*
          * Note to translators:  The substitution text is the URI that was in
@@ -234,7 +234,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * gives the element name.
          */
         {BasisLibrary.UNSUPPORTED_XSL_ERR,
-        "XSL-elementet ''{0}'' st\u00F6ds inte"},
+        "XSL-elementet ''{0}'' stöds inte"},
 
         /*
          * Note to translators:  The stylesheet referred to an extension to the
@@ -243,7 +243,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * gives the extension name.
          */
         {BasisLibrary.UNSUPPORTED_EXT_ERR,
-        "XSLTC-till\u00E4gget ''{0}'' \u00E4r ok\u00E4nt"},
+        "XSLTC-tillägget ''{0}'' är okänt"},
 
 
         /*
@@ -253,7 +253,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * the name of the translet class.
          */
         {BasisLibrary.UNKNOWN_TRANSLET_VERSION_ERR,
-        "Angiven translet, ''{0}'', har skapats med en XSLTC-version som \u00E4r senare \u00E4n den XSLTC-k\u00F6rning i bruk. F\u00F6r att kunna k\u00F6ra denna translet m\u00E5ste du omkompilera formatmallen eller anv\u00E4nda en senare version av XSLTC."},
+        "Angiven translet, ''{0}'', har skapats med en XSLTC-version som är senare än den XSLTC-körning i bruk. För att kunna köra denna translet måste du omkompilera formatmallen eller använda en senare version av XSLTC."},
 
         /*
          * Note to translators:  An attribute whose effective value is required
@@ -262,7 +262,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {BasisLibrary.INVALID_QNAME_ERR,
-        "Ett attribut vars v\u00E4rde m\u00E5ste vara ett QName hade v\u00E4rdet ''{0}''"},
+        "Ett attribut vars värde måste vara ett QName hade värdet ''{0}''"},
 
 
         /*
@@ -272,13 +272,13 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {BasisLibrary.INVALID_NCNAME_ERR,
-        "Ett attribut vars v\u00E4rde m\u00E5ste vara ett NCName hade v\u00E4rdet ''{0}''"},
+        "Ett attribut vars värde måste vara ett NCName hade värdet ''{0}''"},
 
         {BasisLibrary.UNALLOWED_EXTENSION_FUNCTION_ERR,
-        "Anv\u00E4ndning av till\u00E4ggsfunktionen ''{0}'' \u00E4r inte till\u00E5tet n\u00E4r s\u00E4ker bearbetning till\u00E4mpas."},
+        "Användning av tilläggsfunktionen ''{0}'' är inte tillåtet när säker bearbetning tillämpas."},
 
         {BasisLibrary.UNALLOWED_EXTENSION_ELEMENT_ERR,
-        "Anv\u00E4ndning av till\u00E4ggselementet ''{0}'' \u00E4r inte till\u00E5tet n\u00E4r s\u00E4ker bearbetning till\u00E4mpas."},
+        "Användning av tilläggselementet ''{0}'' är inte tillåtet när säker bearbetning tillämpas."},
     };
     }
 

@@ -360,15 +360,15 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { "ERROR0000" , "{0}" },
 
-  { ER_CURRENT_NOT_ALLOWED_IN_MATCH, "La funci\u00F3n current() no est\u00E1 permitida en un patr\u00F3n de coincidencia." },
+  { ER_CURRENT_NOT_ALLOWED_IN_MATCH, "La función current() no está permitida en un patrón de coincidencia." },
 
-  { ER_CURRENT_TAKES_NO_ARGS, "La funci\u00F3n current() no acepta argumentos." },
+  { ER_CURRENT_TAKES_NO_ARGS, "La función current() no acepta argumentos." },
 
   { ER_DOCUMENT_REPLACED,
-      "La implantaci\u00F3n de la funci\u00F3n document() se ha sustituido por com.sun.org.apache.xalan.internal.xslt.FuncDocument!"},
+      "La implantación de la función document() se ha sustituido por com.sun.org.apache.xalan.internal.xslt.FuncDocument!"},
 
   { ER_CONTEXT_CAN_NOT_BE_NULL,
-      "El contexto no puede ser nulo si la operaci\u00F3n depende del contexto."},
+      "El contexto no puede ser nulo si la operación depende del contexto."},
 
   { ER_CONTEXT_HAS_NO_OWNERDOC,
       "El contexto no tiene un documento de propietario."},
@@ -395,25 +395,25 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "string-length() tiene demasiados argumentos."},
 
   { ER_TRANSLATE_TAKES_3_ARGS,
-      "La funci\u00F3n translate() necesita tres argumentos."},
+      "La función translate() necesita tres argumentos."},
 
   { ER_UNPARSEDENTITYURI_TAKES_1_ARG,
-      "La funci\u00F3n unparsed-entity-uri necesita un argumento."},
+      "La función unparsed-entity-uri necesita un argumento."},
 
   { ER_NAMESPACEAXIS_NOT_IMPLEMENTED,
-      "El eje de espacio de nombres no se ha implantado a\u00FAn."},
+      "El eje de espacio de nombres no se ha implantado aún."},
 
   { ER_UNKNOWN_AXIS,
      "eje desconocido: {0}"},
 
   { ER_UNKNOWN_MATCH_OPERATION,
-     "Operaci\u00F3n de coincidencia desconocida."},
+     "Operación de coincidencia desconocida."},
 
   { ER_INCORRECT_ARG_LENGTH,
       "La longitud del argumento de la prueba del nodo processing-instruction() es incorrecta."},
 
   { ER_CANT_CONVERT_TO_NUMBER,
-      "No se puede convertir {0} en un n\u00FAmero"},
+      "No se puede convertir {0} en un número"},
 
   { ER_CANT_CONVERT_TO_NODELIST,
       "No se puede convertir {0} en una lista de nodos."},
@@ -422,16 +422,16 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "No se puede convertir {0} en un DTM de juego de nodos."},
 
   { ER_CANT_CONVERT_TO_TYPE,
-      "No se puede convertir {0} en el n\u00FAmero de tipo {1}"},
+      "No se puede convertir {0} en el número de tipo {1}"},
 
   { ER_EXPECTED_MATCH_PATTERN,
-      "Patr\u00F3n de coincidencia esperado en getMatchScore."},
+      "Patrón de coincidencia esperado en getMatchScore."},
 
   { ER_COULDNOT_GET_VAR_NAMED,
       "No se ha encontrado la variable llamada {0}"},
 
   { ER_UNKNOWN_OPCODE,
-     "ERROR. C\u00F3digo de operaci\u00F3n desconocido: {0}"},
+     "ERROR. Código de operación desconocido: {0}"},
 
   { ER_EXTRA_ILLEGAL_TOKENS,
      "Tokens no permitidos adicionales: {0}"},
@@ -443,25 +443,25 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "literal con comillas incorrectas... se esperaban comillas simples"},
 
   { ER_EMPTY_EXPRESSION,
-     "Expresi\u00F3n vac\u00EDa"},
+     "Expresión vacía"},
 
   { ER_EXPECTED_BUT_FOUND,
      "Se esperaba {0} pero se ha encontrado: {1}"},
 
   { ER_INCORRECT_PROGRAMMER_ASSERTION,
-      "La afirmaci\u00F3n del programador es incorrecta - {0}"},
+      "La afirmación del programador es incorrecta - {0}"},
 
   { ER_BOOLEAN_ARG_NO_LONGER_OPTIONAL,
       "El argumento boolean(...) ya no es opcional con el borrador de XPath 19990709."},
 
   { ER_FOUND_COMMA_BUT_NO_PRECEDING_ARG,
-      "Se han encontrado ',' pero no va seguido de ning\u00FAn argumento"},
+      "Se han encontrado ',' pero no va seguido de ningún argumento"},
 
   { ER_FOUND_COMMA_BUT_NO_FOLLOWING_ARG,
-      "Se han encontrado ',' pero no le sigue ning\u00FAn argumento"},
+      "Se han encontrado ',' pero no le sigue ningún argumento"},
 
   { ER_PREDICATE_ILLEGAL_SYNTAX,
-      "'..[predicate]' o '.[predicate]' es una sintaxis no v\u00E1lida. Utilice 'self::node()[predicate]' en su lugar."},
+      "'..[predicate]' o '.[predicate]' es una sintaxis no válida. Utilice 'self::node()[predicate]' en su lugar."},
 
   { ER_ILLEGAL_AXIS_NAME,
      "nombre de eje no permitido: {0}"},
@@ -470,55 +470,55 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
      "Tipo de nodo desconocido: {0}"},
 
   { ER_PATTERN_LITERAL_NEEDS_BE_QUOTED,
-      "El patr\u00F3n literal ({0}) debe incluirse entre comillas"},
+      "El patrón literal ({0}) debe incluirse entre comillas"},
 
   { ER_COULDNOT_BE_FORMATTED_TO_NUMBER,
-      "{0} no se ha podido formatear en un n\u00FAmero."},
+      "{0} no se ha podido formatear en un número."},
 
   { ER_COULDNOT_CREATE_XMLPROCESSORLIAISON,
       "No se ha podido crear el enlace TransformerFactory XML: {0}"},
 
   { ER_DIDNOT_FIND_XPATH_SELECT_EXP,
-      "Error. No se ha encontrado la expresi\u00F3n de selecci\u00F3n xpath (-select)."},
+      "Error. No se ha encontrado la expresión de selección xpath (-select)."},
 
   { ER_COULDNOT_FIND_ENDOP_AFTER_OPLOCATIONPATH,
-      "ERROR. No se ha encontrado ENDOP despu\u00E9s de OP_LOCATIONPATH"},
+      "ERROR. No se ha encontrado ENDOP después de OP_LOCATIONPATH"},
 
   { ER_ERROR_OCCURED,
      "Se ha producido un error."},
 
   { ER_ILLEGAL_VARIABLE_REFERENCE,
-      "La referencia de variable proporcionada para la variable est\u00E1 fuera de contexto o no tiene definici\u00F3n. Nombre = {0}"},
+      "La referencia de variable proporcionada para la variable está fuera de contexto o no tiene definición. Nombre = {0}"},
 
   { ER_AXES_NOT_ALLOWED,
-      "S\u00F3lo los ejes child:: y attribute:: est\u00E1n permitidos en los patrones de coincidencia. Ejes incorrectos = {0}"},
+      "Sólo los ejes child:: y attribute:: están permitidos en los patrones de coincidencia. Ejes incorrectos = {0}"},
 
   { ER_KEY_HAS_TOO_MANY_ARGS,
-      "key() tiene un n\u00FAmero incorrecto de argumentos."},
+      "key() tiene un número incorrecto de argumentos."},
 
   { ER_COUNT_TAKES_1_ARG,
-      "La funci\u00F3n count necesita un argumento."},
+      "La función count necesita un argumento."},
 
   { ER_COULDNOT_FIND_FUNCTION,
-     "No se ha encontrado la funci\u00F3n: {0}"},
+     "No se ha encontrado la función: {0}"},
 
   { ER_UNSUPPORTED_ENCODING,
-     "Codificaci\u00F3n no soportada: {0}"},
+     "Codificación no soportada: {0}"},
 
   { ER_PROBLEM_IN_DTM_NEXTSIBLING,
-      "Se ha producido un problema en DTM en getNextSibling... intentando la recuperaci\u00F3n"},
+      "Se ha producido un problema en DTM en getNextSibling... intentando la recuperación"},
 
   { ER_CANNOT_WRITE_TO_EMPTYNODELISTIMPL,
       "Error de programador: no se puede escribir en EmptyNodeList."},
 
   { ER_SETDOMFACTORY_NOT_SUPPORTED,
-      "setDOMFactory no est\u00E1 soportado por XPathContext."},
+      "setDOMFactory no está soportado por XPathContext."},
 
   { ER_PREFIX_MUST_RESOLVE,
       "El prefijo se debe resolver en un espacio de nombres: {0}"},
 
   { ER_PARSE_NOT_SUPPORTED,
-      "El an\u00E1lisis (origen de InputSource) no est\u00E1 soportado en XPathContext. No se puede abrir {0}"},
+      "El análisis (origen de InputSource) no está soportado en XPathContext. No se puede abrir {0}"},
 
   { ER_SAX_API_NOT_HANDLED,
       "Los caracteres de API SAX (char ch[]... no los gestiona el DTM."},
@@ -533,13 +533,13 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "DOM2Helper no puede gestionar los nodos de tipo {0}"},
 
   { ER_XERCES_PARSE_ERROR_DETAILS,
-      "Error de DOM2Helper.parse: identificador de sistema - {0} l\u00EDnea - {1}"},
+      "Error de DOM2Helper.parse: identificador de sistema - {0} línea - {1}"},
 
   { ER_XERCES_PARSE_ERROR,
      "Error de DOM2Helper.parse"},
 
   { ER_INVALID_UTF16_SURROGATE,
-      "\u00BFSe ha detectado un sustituto UTF-16 no v\u00E1lido: {0}?"},
+      "¿Se ha detectado un sustituto UTF-16 no válido: {0}?"},
 
   { ER_OIERROR,
      "Error de ES"},
@@ -551,7 +551,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
      "En XPath.readObject: {0}"},
 
   { ER_FUNCTION_TOKEN_NOT_FOUND,
-      "No se ha encontrado el token de funci\u00F3n."},
+      "No se ha encontrado el token de función."},
 
   { ER_CANNOT_DEAL_XPATH_TYPE,
        "No se puede negociar con el tipo de XPath: {0}"},
@@ -569,7 +569,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
         "Manejador de errores nulo"},
 
   { ER_PROG_ASSERT_UNKNOWN_OPCODE,
-       "Afirmaci\u00F3n del programador: c\u00F3digo de operaci\u00F3n desconocido: {0}"},
+       "Afirmación del programador: código de operación desconocido: {0}"},
 
   { ER_ZERO_OR_ONE,
        "0 o 1"},
@@ -618,7 +618,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
        "XStringForFSB no puede utilizar una cadena para un argumento."},
 
   { ER_SETTING_WALKER_ROOT_TO_NULL,
-       "\n Error. Definici\u00F3n de una ra\u00EDz de un walker como nula."},
+       "\n Error. Definición de una raíz de un walker como nula."},
 
   { ER_NODESETDTM_CANNOT_ITERATE,
        "Este DTM de juego de nodos no puede iterarse en un nodo anterior."},
@@ -627,43 +627,43 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
        "Este juego de nodos no se puede iterar en un nodo anterior."},
 
   { ER_NODESETDTM_CANNOT_INDEX,
-       "Este DTM de juego de nodos no puede realizar funciones de indexaci\u00F3n o recuento."},
+       "Este DTM de juego de nodos no puede realizar funciones de indexación o recuento."},
 
   { ER_NODESET_CANNOT_INDEX,
-       "Este juego de nodos no puede realizar funciones de indexaci\u00F3n o recuento."},
+       "Este juego de nodos no puede realizar funciones de indexación o recuento."},
 
   { ER_CANNOT_CALL_SETSHOULDCACHENODE,
-       "No se puede llamar a setShouldCacheNodes despu\u00E9s de haber llamado a nextNode."},
+       "No se puede llamar a setShouldCacheNodes después de haber llamado a nextNode."},
 
   { ER_ONLY_ALLOWS,
-       "{0} s\u00F3lo permite {1} argumentos"},
+       "{0} sólo permite {1} argumentos"},
 
   { ER_UNKNOWN_STEP,
-       "Afirmaci\u00F3n del programador en getNextStepPos: tipo de paso desconocido: {0}"},
+       "Afirmación del programador en getNextStepPos: tipo de paso desconocido: {0}"},
 
   //Note to translators:  A relative location path is a form of XPath expression.
   // The message indicates that such an expression was expected following the
   // characters '/' or '//', but was not found.
   { ER_EXPECTED_REL_LOC_PATH,
-      "Se esperaba una ruta de acceso de ubicaci\u00F3n relativa despu\u00E9s del token '/' o '//'."},
+      "Se esperaba una ruta de acceso de ubicación relativa después del token '/' o '//'."},
 
   // Note to translators:  A location path is a form of XPath expression.
   // The message indicates that syntactically such an expression was expected,but
   // the characters specified by the substitution text were encountered instead.
   { ER_EXPECTED_LOC_PATH,
-       "Se esperaba una ruta de acceso de ubicaci\u00F3n, pero se ha encontrado el siguiente token: {0}"},
+       "Se esperaba una ruta de acceso de ubicación, pero se ha encontrado el siguiente token: {0}"},
 
   // Note to translators:  A location path is a form of XPath expression.
   // The message indicates that syntactically such a subexpression was expected,
   // but no more characters were found in the expression.
   { ER_EXPECTED_LOC_PATH_AT_END_EXPR,
-       "Se esperaba una ruta de acceso de ubicaci\u00F3n, pero se ha encontrado el final de la expresi\u00F3n XPath en su lugar."},
+       "Se esperaba una ruta de acceso de ubicación, pero se ha encontrado el final de la expresión XPath en su lugar."},
 
   // Note to translators:  A location step is part of an XPath expression.
   // The message indicates that syntactically such an expression was expected
   // following the specified characters.
   { ER_EXPECTED_LOC_STEP,
-       "Se esperaba un paso de ubicaci\u00F3n despu\u00E9s del token '/' o '//'."},
+       "Se esperaba un paso de ubicación después del token '/' o '//'."},
 
   // Note to translators:  A node test is part of an XPath expression that is
   // used to test for particular kinds of nodes.  In this case, a node test that
@@ -676,86 +676,86 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   // The message indicates that syntactically such an expression was expected,
   // but the specified character was found in the expression instead.
   { ER_EXPECTED_STEP_PATTERN,
-       "Se esperaba un patr\u00F3n de paso, pero se ha encontrado '/'."},
+       "Se esperaba un patrón de paso, pero se ha encontrado '/'."},
 
   // Note to translators: A relative path pattern is part of an XPath expression.
   // The message indicates that syntactically such an expression was expected,
   // but was not found.
   { ER_EXPECTED_REL_PATH_PATTERN,
-       "Se esperaba un patr\u00F3n de ruta de acceso relativa."},
+       "Se esperaba un patrón de ruta de acceso relativa."},
 
   // Note to translators:  The substitution text is the name of a data type.  The
   // message indicates that a value of a particular type could not be converted
   // to a value of type boolean.
   { ER_CANT_CONVERT_TO_BOOLEAN,
-       "El valor de XPathResult de la expresi\u00F3n XPath ''{0}'' tiene un valor de XPathResultType de {1} que no se puede convertir en un valor booleano."},
+       "El valor de XPathResult de la expresión XPath ''{0}'' tiene un valor de XPathResultType de {1} que no se puede convertir en un valor booleano."},
 
   // Note to translators: Do not translate ANY_UNORDERED_NODE_TYPE and
   // FIRST_ORDERED_NODE_TYPE.
   { ER_CANT_CONVERT_TO_SINGLENODE,
-       "El valor de XPathResult de la expresi\u00F3n XPath ''{0}'' tiene un valor de XPathResultType de {1} que no se puede convertir a un nodo \u00FAnico. El m\u00E9todo getSingleNodeValue se aplica s\u00F3lo a los tipos ANY_UNORDERED_NODE_TYPE y FIRST_ORDERED_NODE_TYPE."},
+       "El valor de XPathResult de la expresión XPath ''{0}'' tiene un valor de XPathResultType de {1} que no se puede convertir a un nodo único. El método getSingleNodeValue se aplica sólo a los tipos ANY_UNORDERED_NODE_TYPE y FIRST_ORDERED_NODE_TYPE."},
 
   // Note to translators: Do not translate UNORDERED_NODE_SNAPSHOT_TYPE and
   // ORDERED_NODE_SNAPSHOT_TYPE.
   { ER_CANT_GET_SNAPSHOT_LENGTH,
-       "No se puede llamar al m\u00E9todo getSnapshotLength en la expresi\u00F3n XPathResult de XPath ''{0}'' porque el valor de su XPathResultType es {1}. Este m\u00E9todo se aplica s\u00F3lo a los tipos UNORDERED_NODE_SNAPSHOT_TYPE y ORDERED_NODE_SNAPSHOT_TYPE."},
+       "No se puede llamar al método getSnapshotLength en la expresión XPathResult de XPath ''{0}'' porque el valor de su XPathResultType es {1}. Este método se aplica sólo a los tipos UNORDERED_NODE_SNAPSHOT_TYPE y ORDERED_NODE_SNAPSHOT_TYPE."},
 
   { ER_NON_ITERATOR_TYPE,
-       "No se puede llamar al m\u00E9todo iterateNext en el XPathResult de la expresi\u00F3n XPath ''{0}'' porque el valor de su XPathResultType es {1}. Este m\u00E9todo se aplica s\u00F3lo a los tipos UNORDERED_NODE_ITERATOR_TYPE y ORDERED_NODE_ITERATOR_TYPE."},
+       "No se puede llamar al método iterateNext en el XPathResult de la expresión XPath ''{0}'' porque el valor de su XPathResultType es {1}. Este método se aplica sólo a los tipos UNORDERED_NODE_ITERATOR_TYPE y ORDERED_NODE_ITERATOR_TYPE."},
 
   // Note to translators: This message indicates that the document being operated
   // upon changed, so the iterator object that was being used to traverse the
   // document has now become invalid.
   { ER_DOC_MUTATED,
-       "Documento mutado debido a que se ha devuelto el resultado. El iterador no es v\u00E1lido."},
+       "Documento mutado debido a que se ha devuelto el resultado. El iterador no es válido."},
 
   { ER_INVALID_XPATH_TYPE,
-       "Argumento de tipo XPath no v\u00E1lido: {0}"},
+       "Argumento de tipo XPath no válido: {0}"},
 
   { ER_EMPTY_XPATH_RESULT,
-       "Objeto de resultado XPath vac\u00EDo"},
+       "Objeto de resultado XPath vacío"},
 
   { ER_INCOMPATIBLE_TYPES,
-       "El valor de XPathResult de la expresi\u00F3n XPath ''{0}'' tiene un valor de XPathResultType de {1} que no se puede forzar en el XPathResultType especificado de {2}."},
+       "El valor de XPathResult de la expresión XPath ''{0}'' tiene un valor de XPathResultType de {1} que no se puede forzar en el XPathResultType especificado de {2}."},
 
   { ER_NULL_RESOLVER,
-       "No se ha podido resolver el prefijo con el sistema de resoluci\u00F3n de prefijos nulo."},
+       "No se ha podido resolver el prefijo con el sistema de resolución de prefijos nulo."},
 
   // Note to translators:  The substitution text is the name of a data type.  The
   // message indicates that a value of a particular type could not be converted
   // to a value of type string.
   { ER_CANT_CONVERT_TO_STRING,
-       "El valor de XPathResult de la expresi\u00F3n XPath ''{0}'' tiene un valor de XPathResultType de {1} que no se puede convertir en una cadena."},
+       "El valor de XPathResult de la expresión XPath ''{0}'' tiene un valor de XPathResultType de {1} que no se puede convertir en una cadena."},
 
   // Note to translators: Do not translate snapshotItem,
   // UNORDERED_NODE_SNAPSHOT_TYPE and ORDERED_NODE_SNAPSHOT_TYPE.
   { ER_NON_SNAPSHOT_TYPE,
-       "No se puede llamar al m\u00E9todo snapshotItem en la expresi\u00F3n XPathResult de XPath ''{0}'' porque el valor de su XPathResultType es {1}. Este m\u00E9todo se aplica s\u00F3lo a los tipos UNORDERED_NODE_SNAPSHOT_TYPE y ORDERED_NODE_SNAPSHOT_TYPE."},
+       "No se puede llamar al método snapshotItem en la expresión XPathResult de XPath ''{0}'' porque el valor de su XPathResultType es {1}. Este método se aplica sólo a los tipos UNORDERED_NODE_SNAPSHOT_TYPE y ORDERED_NODE_SNAPSHOT_TYPE."},
 
   // Note to translators:  XPathEvaluator is a Java interface name.  An
   // XPathEvaluator is created with respect to a particular XML document, and in
   // this case the expression represented by this object was being evaluated with
   // respect to a context node from a different document.
   { ER_WRONG_DOCUMENT,
-       "El nodo de contexto no pertenece al documento que est\u00E1 enlazado a este XPathEvaluator."},
+       "El nodo de contexto no pertenece al documento que está enlazado a este XPathEvaluator."},
 
   // Note to translators:  The XPath expression cannot be evaluated with respect
   // to this type of node.
   { ER_WRONG_NODETYPE,
-       "El tipo de nodo de contexto no est\u00E1 soportado."},
+       "El tipo de nodo de contexto no está soportado."},
 
   { ER_XPATH_ERROR,
        "Error desconocido en XPath."},
 
   { ER_CANT_CONVERT_XPATHRESULTTYPE_TO_NUMBER,
-        "El valor de XPathResult de la expresi\u00F3n XPath ''{0}'' tiene un valor de XPathResultType de {1} que no se puede convertir en un n\u00FAmero"},
+        "El valor de XPathResult de la expresión XPath ''{0}'' tiene un valor de XPathResultType de {1} que no se puede convertir en un número"},
 
   //BEGIN:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
 
   /** Field ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED                       */
 
   { ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED,
-       "Funci\u00F3n de extensi\u00F3n: no se puede llamar a ''{0}'' cuando la funci\u00F3n XMLConstants.FEATURE_SECURE_PROCESSING est\u00E1 definida en true."},
+       "Función de extensión: no se puede llamar a ''{0}'' cuando la función XMLConstants.FEATURE_SECURE_PROCESSING está definida en true."},
 
   /** Field ER_RESOLVE_VARIABLE_RETURNS_NULL                       */
 
@@ -795,48 +795,48 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   /** Field ER_OBJECT_MODEL_EMPTY                       */
 
   { ER_FEATURE_NAME_NULL,
-       "Intentando definir una funci\u00F3n con un nombre nulo: {0}#setFeature( null, {1})"},
+       "Intentando definir una función con un nombre nulo: {0}#setFeature( null, {1})"},
 
   /** Field ER_FEATURE_UNKNOWN                       */
 
   { ER_FEATURE_UNKNOWN,
-       "Intentando definir la funci\u00F3n desconocida \"{0}\":{1}#setFeature({0},{2})"},
+       "Intentando definir la función desconocida \"{0}\":{1}#setFeature({0},{2})"},
 
   /** Field ER_GETTING_NULL_FEATURE                       */
 
   { ER_GETTING_NULL_FEATURE,
-       "Intentando obtener una funci\u00F3n con un nombre nulo: {0}#getFeature(null)"},
+       "Intentando obtener una función con un nombre nulo: {0}#getFeature(null)"},
 
   /** Field ER_GETTING_NULL_FEATURE                       */
 
   { ER_GETTING_UNKNOWN_FEATURE,
-       "Intentando obtener la funci\u00F3n desconocida \"{0}\":{1}#getFeature({0})"},
+       "Intentando obtener la función desconocida \"{0}\":{1}#getFeature({0})"},
 
   {ER_SECUREPROCESSING_FEATURE,
-        "FEATURE_SECURE_PROCESSING: no se puede definir la funci\u00F3n en false cuando est\u00E1 presente el gestor de seguridad: {1}#setFeature({0},{2})"},
+        "FEATURE_SECURE_PROCESSING: no se puede definir la función en false cuando está presente el gestor de seguridad: {1}#setFeature({0},{2})"},
 
   /** Field ER_NULL_XPATH_FUNCTION_RESOLVER                       */
 
   { ER_NULL_XPATH_FUNCTION_RESOLVER,
-       "Se est\u00E1 intentando definir un valor de XPathFunctionResolver nulo:{0}#setXPathFunctionResolver(null)"},
+       "Se está intentando definir un valor de XPathFunctionResolver nulo:{0}#setXPathFunctionResolver(null)"},
 
   /** Field ER_NULL_XPATH_VARIABLE_RESOLVER                       */
 
   { ER_NULL_XPATH_VARIABLE_RESOLVER,
-       "Se est\u00E1 intentando definir un valor XPathVariableResolver nulo:{0}#setXPathVariableResolver(null)"},
+       "Se está intentando definir un valor XPathVariableResolver nulo:{0}#setXPathVariableResolver(null)"},
 
   //END:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
 
   // Warnings...
 
   { WG_LOCALE_NAME_NOT_HANDLED,
-      "El nombre de la configuraci\u00F3n regional en la funci\u00F3n format-number no se ha manejado a\u00FAn."},
+      "El nombre de la configuración regional en la función format-number no se ha manejado aún."},
 
   { WG_PROPERTY_NOT_SUPPORTED,
       "Propiedad XSL no soportada: {0}"},
 
   { WG_DONT_DO_ANYTHING_WITH_NS,
-      "No realice ninguna acci\u00F3n con el espacio de nombres {0} en la propiedad: {1}"},
+      "No realice ninguna acción con el espacio de nombres {0} en la propiedad: {1}"},
 
   { WG_QUO_NO_LONGER_DEFINED,
       "Sintaxis anterior: quo(...) ya no se define en XPath."},
@@ -845,22 +845,22 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "XPath necesita un objeto derivado para implantar una prueba de nodo."},
 
   { WG_FUNCTION_TOKEN_NOT_FOUND,
-      "No se ha encontrado el token de funci\u00F3n."},
+      "No se ha encontrado el token de función."},
 
   { WG_COULDNOT_FIND_FUNCTION,
-      "No se ha encontrado la funci\u00F3n: {0}"},
+      "No se ha encontrado la función: {0}"},
 
   { WG_CANNOT_MAKE_URL_FROM,
       "No se puede crear la URL desde: {0}"},
 
   { WG_EXPAND_ENTITIES_NOT_SUPPORTED,
-      "Opci\u00F3n -E no soportada para el analizador DTM"},
+      "Opción -E no soportada para el analizador DTM"},
 
   { WG_ILLEGAL_VARIABLE_REFERENCE,
-      "La referencia de variable proporcionada para la variable est\u00E1 fuera de contexto o no tiene definici\u00F3n. Nombre = {0}"},
+      "La referencia de variable proporcionada para la variable está fuera de contexto o no tiene definición. Nombre = {0}"},
 
   { WG_UNSUPPORTED_ENCODING,
-     "Codificaci\u00F3n no soportada: {0}"},
+     "Codificación no soportada: {0}"},
 
 
 
@@ -868,19 +868,19 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { "ui_language", "es"},
   { "help_language", "es"},
   { "language", "es"},
-  { "BAD_CODE", "El par\u00E1metro para crear un mensaje est\u00E1 fuera de los l\u00EDmites"},
-  { "FORMAT_FAILED", "Se ha emitido una excepci\u00F3n durante la llamada a messageFormat"},
-  { "version", ">>>>>>> Versi\u00F3n Xalan "},
+  { "BAD_CODE", "El parámetro para crear un mensaje está fuera de los límites"},
+  { "FORMAT_FAILED", "Se ha emitido una excepción durante la llamada a messageFormat"},
+  { "version", ">>>>>>> Versión Xalan "},
   { "version2", "<<<<<<<"},
-  { "yes", "s\u00ED"},
-  { "line", "N\u00BA de L\u00EDnea"},
-  { "column", "N\u00BA de Columna"},
+  { "yes", "sí"},
+  { "line", "Nº de Línea"},
+  { "column", "Nº de Columna"},
   { "xsldone", "XSLProcessor: listo"},
   { "xpath_option", "Opciones de xpath: "},
   { "optionIN", "   [-in inputXMLURL]"},
-  { "optionSelect", "   [-select expresi\u00F3n xpath]"},
-  { "optionMatch", "   [-match patr\u00F3n de coincidencia (para diagn\u00F3sticos de coincidencia)]"},
-  { "optionAnyExpr", "O s\u00F3lo una expresi\u00F3n xpath realizar\u00E1 un volcado de diagn\u00F3stico"},
+  { "optionSelect", "   [-select expresión xpath]"},
+  { "optionMatch", "   [-match patrón de coincidencia (para diagnósticos de coincidencia)]"},
+  { "optionAnyExpr", "O sólo una expresión xpath realizará un volcado de diagnóstico"},
   { "noParsermsg1", "El proceso XSL no se ha realizado correctamente."},
   { "noParsermsg2", "** No se ha encontrado el analizador **"},
   { "noParsermsg3", "Compruebe la classpath."},

@@ -194,7 +194,7 @@ public class ErrorMessages_it extends ListResourceBundle {
          * text is the name of the prefix.
          */
         {BasisLibrary.NAMESPACE_PREFIX_ERR,
-        "Lo spazio di nomi per il prefisso ''{0}'' non \u00E8 stato dichiarato."},
+        "Lo spazio di nomi per il prefisso ''{0}'' non è stato dichiarato."},
 
         /*
          * Note to translators:  The following represents an internal error.
@@ -253,7 +253,7 @@ public class ErrorMessages_it extends ListResourceBundle {
          * the name of the translet class.
          */
         {BasisLibrary.UNKNOWN_TRANSLET_VERSION_ERR,
-        "Il translet specificato ''{0}'' \u00E8 stato creato utilizzando una versione di XSLTC pi\u00F9 recente di quella della fase di esecuzione XSLTC in uso. Ricompilare il foglio di stile o utilizzare una versione pi\u00F9 recente di XSLTC per eseguire questo translet."},
+        "Il translet specificato ''{0}'' è stato creato utilizzando una versione di XSLTC più recente di quella della fase di esecuzione XSLTC in uso. Ricompilare il foglio di stile o utilizzare una versione più recente di XSLTC per eseguire questo translet."},
 
         /*
          * Note to translators:  An attribute whose effective value is required
@@ -275,10 +275,10 @@ public class ErrorMessages_it extends ListResourceBundle {
         "Un attributo il cui valore deve essere un NCName contiene il valore ''{0}''"},
 
         {BasisLibrary.UNALLOWED_EXTENSION_FUNCTION_ERR,
-        "Non \u00E8 consentito utilizzare la funzione di estensione ''{0}'' se la funzione di elaborazione sicura \u00E8 impostata su true."},
+        "Non è consentito utilizzare la funzione di estensione ''{0}'' se la funzione di elaborazione sicura è impostata su true."},
 
         {BasisLibrary.UNALLOWED_EXTENSION_ELEMENT_ERR,
-        "Non \u00E8 consentito utilizzare l''elemento di estensione ''{0}'' se la funzione di elaborazione sicura \u00E8 impostata su true."},
+        "Non è consentito utilizzare l''elemento di estensione ''{0}'' se la funzione di elaborazione sicura è impostata su true."},
     };
     }
 

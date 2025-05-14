@@ -87,7 +87,7 @@ public class FormatData_ja extends ParallelListResourceBundle {
         return new Object[][] {
             { "japanese.FirstYear",
                 new String[] {  // first year name
-                    "\u5143",   // "Gan"-nen
+                    "元",   // "Gan"-nen
                 }
             },
         };

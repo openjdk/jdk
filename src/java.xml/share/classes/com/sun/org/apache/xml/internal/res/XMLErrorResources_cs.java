@@ -180,219 +180,219 @@ public class XMLErrorResources_cs extends ListResourceBundle
     {"ER0000" , "{0}" },
 
     { ER_FUNCTION_NOT_SUPPORTED,
-      "Nepodporovan\u00e1 funkce!"},
+      "Nepodporovaná funkce!"},
 
     { ER_CANNOT_OVERWRITE_CAUSE,
-      "P\u0159\u00ed\u010dinu nelze p\u0159epsat"},
+      "Příčinu nelze přepsat"},
 
     { ER_NO_DEFAULT_IMPL,
-      "Nebyla nalezena v\u00fdchoz\u00ed implementace. "},
+      "Nebyla nalezena výchozí implementace. "},
 
     { ER_CHUNKEDINTARRAY_NOT_SUPPORTED,
-      "Funkce ChunkedIntArray({0}) nen\u00ed aktu\u00e1ln\u011b podporov\u00e1na."},
+      "Funkce ChunkedIntArray({0}) není aktuálně podporována."},
 
     { ER_OFFSET_BIGGER_THAN_SLOT,
-      "Offset je v\u011bt\u0161\u00ed ne\u017e slot."},
+      "Offset je větší než slot."},
 
     { ER_COROUTINE_NOT_AVAIL,
-      "Spole\u010dn\u00e1 rutina nen\u00ed k dispozici, id={0}"},
+      "Společná rutina není k dispozici, id={0}"},
 
     { ER_COROUTINE_CO_EXIT,
-      "Funkce CoroutineManager obdr\u017eela po\u017eadavek co_exit()"},
+      "Funkce CoroutineManager obdržela požadavek co_exit()"},
 
     { ER_COJOINROUTINESET_FAILED,
       "Selhala funkce co_joinCoroutineSet()"},
 
     { ER_COROUTINE_PARAM,
-      "Chyba parametru spole\u010dn\u00e9 rutiny ({0})"},
+      "Chyba parametru společné rutiny ({0})"},
 
     { ER_PARSER_DOTERMINATE_ANSWERS,
-      "\nNeo\u010dek\u00e1van\u00e9: odpov\u011bdi funkce analyz\u00e1toru doTerminate {0}"},
+      "\nNeočekávané: odpovědi funkce analyzátoru doTerminate {0}"},
 
     { ER_NO_PARSE_CALL_WHILE_PARSING,
-      "b\u011bhem anal\u00fdzy nelze volat analyz\u00e1tor"},
+      "během analýzy nelze volat analyzátor"},
 
     { ER_TYPED_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "Chyba: zadan\u00fd iter\u00e1tor osy {0} nen\u00ed implementov\u00e1n"},
+      "Chyba: zadaný iterátor osy {0} není implementován"},
 
     { ER_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "Chyba: zadan\u00fd iter\u00e1tor osy {0} nen\u00ed implementov\u00e1n "},
+      "Chyba: zadaný iterátor osy {0} není implementován "},
 
     { ER_ITERATOR_CLONE_NOT_SUPPORTED,
-      "Nepodporovan\u00fd klon iter\u00e1toru."},
+      "Nepodporovaný klon iterátoru."},
 
     { ER_UNKNOWN_AXIS_TYPE,
-      "Nezn\u00e1m\u00fd typ osy pr\u016fchodu: {0}"},
+      "Neznámý typ osy průchodu: {0}"},
 
     { ER_AXIS_NOT_SUPPORTED,
-      "Nepodporovan\u00e1 osa pr\u016fchodu: {0}"},
+      "Nepodporovaná osa průchodu: {0}"},
 
     { ER_NO_DTMIDS_AVAIL,
-      "\u017d\u00e1dn\u00e1 dal\u0161\u00ed ID DTM nejsou k dispozici"},
+      "Žádná další ID DTM nejsou k dispozici"},
 
     { ER_NOT_SUPPORTED,
-      "Nepodporov\u00e1no: {0}"},
+      "Nepodporováno: {0}"},
 
     { ER_NODE_NON_NULL,
-      "Uzel pou\u017eit\u00fd ve funkci getDTMHandleFromNode mus\u00ed m\u00edt hodnotu not-null"},
+      "Uzel použitý ve funkci getDTMHandleFromNode musí mít hodnotu not-null"},
 
     { ER_COULD_NOT_RESOLVE_NODE,
-      "Uzel nelze p\u0159elo\u017eit do manipul\u00e1toru"},
+      "Uzel nelze přeložit do manipulátoru"},
 
     { ER_STARTPARSE_WHILE_PARSING,
-       "B\u011bhem anal\u00fdzy nelze volat funkci startParse."},
+       "Během analýzy nelze volat funkci startParse."},
 
     { ER_STARTPARSE_NEEDS_SAXPARSER,
-       "Funkce startParse vy\u017eaduje SAXParser s hodnotou not-null."},
+       "Funkce startParse vyžaduje SAXParser s hodnotou not-null."},
 
     { ER_COULD_NOT_INIT_PARSER,
-       "nelze inicializovat analyz\u00e1tor s: "},
+       "nelze inicializovat analyzátor s: "},
 
     { ER_EXCEPTION_CREATING_POOL,
-       "v\u00fdjimka p\u0159i vytv\u00e1\u0159en\u00ed nov\u00e9 instance spole\u010dn\u00e9 oblasti"},
+       "výjimka při vytváření nové instance společné oblasti"},
 
     { ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
        "Cesta obsahuje neplatnou escape sekvenci"},
 
     { ER_SCHEME_REQUIRED,
-       "Je vy\u017eadov\u00e1no sch\u00e9ma!"},
+       "Je vyžadováno schéma!"},
 
     { ER_NO_SCHEME_IN_URI,
-       "V URI nebylo nalezeno \u017e\u00e1dn\u00e9 sch\u00e9ma: {0}"},
+       "V URI nebylo nalezeno žádné schéma: {0}"},
 
     { ER_NO_SCHEME_INURI,
-       "V URI nebylo nalezeno \u017e\u00e1dn\u00e9 sch\u00e9ma"},
+       "V URI nebylo nalezeno žádné schéma"},
 
     { ER_PATH_INVALID_CHAR,
-       "Cesta obsahuje neplatn\u00fd znak: {0}"},
+       "Cesta obsahuje neplatný znak: {0}"},
 
     { ER_SCHEME_FROM_NULL_STRING,
-       "Nelze nastavit sch\u00e9ma \u0159et\u011bzce s hodnotou null."},
+       "Nelze nastavit schéma řetězce s hodnotou null."},
 
     { ER_SCHEME_NOT_CONFORMANT,
-       "Sch\u00e9ma nevyhovuje."},
+       "Schéma nevyhovuje."},
 
     { ER_HOST_ADDRESS_NOT_WELLFORMED,
-       "Adresa hostitele m\u00e1 nespr\u00e1vn\u00fd form\u00e1t."},
+       "Adresa hostitele má nesprávný formát."},
 
     { ER_PORT_WHEN_HOST_NULL,
-       "M\u00e1-li hostitel hodnotu null, nelze nastavit port."},
+       "Má-li hostitel hodnotu null, nelze nastavit port."},
 
     { ER_INVALID_PORT,
-       "Neplatn\u00e9 \u010d\u00edslo portu."},
+       "Neplatné číslo portu."},
 
     { ER_FRAG_FOR_GENERIC_URI,
-       "Fragment lze nastavit jen u generick\u00e9ho URI."},
+       "Fragment lze nastavit jen u generického URI."},
 
     { ER_FRAG_WHEN_PATH_NULL,
-       "M\u00e1-li cesta hodnotu null, nelze nastavit fragment."},
+       "Má-li cesta hodnotu null, nelze nastavit fragment."},
 
     { ER_FRAG_INVALID_CHAR,
-       "Fragment obsahuje neplatn\u00fd znak."},
+       "Fragment obsahuje neplatný znak."},
 
     { ER_PARSER_IN_USE,
-      "Analyz\u00e1tor se ji\u017e pou\u017e\u00edv\u00e1."},
+      "Analyzátor se již používá."},
 
     { ER_CANNOT_CHANGE_WHILE_PARSING,
-      "B\u011bhem anal\u00fdzy nelze m\u011bnit {0} {1}."},
+      "Během analýzy nelze měnit {0} {1}."},
 
     { ER_SELF_CAUSATION_NOT_PERMITTED,
-      "Zp\u016fsoben\u00ed sama sebe (self-causation) nen\u00ed povoleno"},
+      "Způsobení sama sebe (self-causation) není povoleno"},
 
     { ER_NO_USERINFO_IF_NO_HOST,
-      "Nen\u00ed-li ur\u010den hostitel, nelze zadat \u00fadaje o u\u017eivateli."},
+      "Není-li určen hostitel, nelze zadat údaje o uživateli."},
 
     { ER_NO_PORT_IF_NO_HOST,
-      "Nen\u00ed-li ur\u010den hostitel, nelze zadat port."},
+      "Není-li určen hostitel, nelze zadat port."},
 
     { ER_NO_QUERY_STRING_IN_PATH,
-      "V \u0159et\u011bzci cesty a dotazu nelze zadat \u0159et\u011bzec dotazu."},
+      "V řetězci cesty a dotazu nelze zadat řetězec dotazu."},
 
     { ER_NO_FRAGMENT_STRING_IN_PATH,
-      "Fragment nelze ur\u010dit z\u00e1rove\u0148 v cest\u011b i ve fragmentu."},
+      "Fragment nelze určit zároveň v cestě i ve fragmentu."},
 
     { ER_CANNOT_INIT_URI_EMPTY_PARMS,
-      "URI nelze inicializovat s pr\u00e1zdn\u00fdmi parametry."},
+      "URI nelze inicializovat s prázdnými parametry."},
 
     { ER_METHOD_NOT_SUPPORTED,
-      "Prozat\u00edm nepodporovan\u00e1 metoda. "},
+      "Prozatím nepodporovaná metoda. "},
 
     { ER_INCRSAXSRCFILTER_NOT_RESTARTABLE,
-      "Filtr IncrementalSAXSource_Filter nelze aktu\u00e1ln\u011b znovu spustit."},
+      "Filtr IncrementalSAXSource_Filter nelze aktuálně znovu spustit."},
 
     { ER_XMLRDR_NOT_BEFORE_STARTPARSE,
-      "P\u0159ed po\u017eadavkem startParse nen\u00ed XMLReader."},
+      "Před požadavkem startParse není XMLReader."},
 
     { ER_AXIS_TRAVERSER_NOT_SUPPORTED,
-      "Nepodporovan\u00e1 osa pr\u016fchodu: {0}"},
+      "Nepodporovaná osa průchodu: {0}"},
 
     { ER_ERRORHANDLER_CREATED_WITH_NULL_PRINTWRITER,
-      "Prvek ListingErrorHandler byl vytvo\u0159en s funkc\u00ed PrintWriter s hodnotou null!"},
+      "Prvek ListingErrorHandler byl vytvořen s funkcí PrintWriter s hodnotou null!"},
 
     { ER_SYSTEMID_UNKNOWN,
-      "Nezn\u00e1m\u00fd identifik\u00e1tor SystemId"},
+      "Neznámý identifikátor SystemId"},
 
     { ER_LOCATION_UNKNOWN,
-      "Chyba se vyskytla na nezn\u00e1m\u00e9m m\u00edst\u011b"},
+      "Chyba se vyskytla na neznámém místě"},
 
     { ER_PREFIX_MUST_RESOLVE,
-      "P\u0159edponu mus\u00ed b\u00fdt mo\u017eno p\u0159elo\u017eit do oboru n\u00e1zv\u016f: {0}"},
+      "Předponu musí být možno přeložit do oboru názvů: {0}"},
 
     { ER_CREATEDOCUMENT_NOT_SUPPORTED,
       "Funkce XPathContext nepodporuje funkci createDocument()!"},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT,
-      "Potomek atributu nem\u00e1 dokument vlastn\u00edka!"},
+      "Potomek atributu nemá dokument vlastníka!"},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT_ELEMENT,
-      "Potomek atributu nem\u00e1 prvek dokumentu vlastn\u00edka!"},
+      "Potomek atributu nemá prvek dokumentu vlastníka!"},
 
     { ER_CANT_OUTPUT_TEXT_BEFORE_DOC,
-      "Varov\u00e1n\u00ed: v\u00fdstup textu nem\u016f\u017ee p\u0159edch\u00e1zet prvku dokumentu! Ignorov\u00e1no..."},
+      "Varování: výstup textu nemůže předcházet prvku dokumentu! Ignorováno..."},
 
     { ER_CANT_HAVE_MORE_THAN_ONE_ROOT,
-      "DOM nem\u016f\u017ee m\u00edt n\u011bkolik ko\u0159en\u016f!"},
+      "DOM nemůže mít několik kořenů!"},
 
     { ER_ARG_LOCALNAME_NULL,
-       "Argument 'localName' m\u00e1 hodnotu null"},
+       "Argument 'localName' má hodnotu null"},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The localname is the portion after the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_LOCALNAME_INVALID,
-       "Hodnota Localname ve funkci QNAME by m\u011bla b\u00fdt platn\u00fdm prvkem NCName"},
+       "Hodnota Localname ve funkci QNAME by měla být platným prvkem NCName"},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The prefix is the portion before the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_PREFIX_INVALID,
-       "P\u0159edpona ve funkci QNAME by m\u011bla b\u00fdt platn\u00fdm prvkem NCName"},
+       "Předpona ve funkci QNAME by měla být platným prvkem NCName"},
 
     { "BAD_CODE", "Parametr funkce createMessage je mimo limit"},
-    { "FORMAT_FAILED", "P\u0159i vol\u00e1n\u00ed funkce messageFormat do\u0161lo k v\u00fdjimce"},
-    { "line", "\u0158\u00e1dek #"},
+    { "FORMAT_FAILED", "Při volání funkce messageFormat došlo k výjimce"},
+    { "line", "Řádek #"},
     { "column","Sloupec #"},
 
     {ER_SERIALIZER_NOT_CONTENTHANDLER,
-      "T\u0159\u00edda serializace ''{0}'' neimplementuje org.xml.sax.ContentHandler."},
+      "Třída serializace ''{0}'' neimplementuje org.xml.sax.ContentHandler."},
 
     {ER_RESOURCE_COULD_NOT_FIND,
-      "Nelze naj\u00edt zdroj [ {0} ].\n {1}" },
+      "Nelze najít zdroj [ {0} ].\n {1}" },
 
     {ER_RESOURCE_COULD_NOT_LOAD,
-      "Nelze zav\u00e9st zdroj [ {0} ]: {1} \n {2} \t {3}" },
+      "Nelze zavést zdroj [ {0} ]: {1} \n {2} \t {3}" },
 
     {ER_BUFFER_SIZE_LESSTHAN_ZERO,
-      "Velikost vyrovn\u00e1vac\u00ed pam\u011bti <=0" },
+      "Velikost vyrovnávací paměti <=0" },
 
     {ER_INVALID_UTF16_SURROGATE,
-      "Byla zji\u0161t\u011bna neplatn\u00e1 n\u00e1hrada UTF-16: {0} ?" },
+      "Byla zjištěna neplatná náhrada UTF-16: {0} ?" },
 
     {ER_OIERROR,
-      "Chyba vstupu/v\u00fdstupu" },
+      "Chyba vstupu/výstupu" },
 
     {ER_ILLEGAL_ATTRIBUTE_POSITION,
-      "Nelze p\u0159idat atribut {0} po uzlech potomk\u016f ani p\u0159ed t\u00edm, ne\u017e je vytvo\u0159en prvek. Atribut bude ignorov\u00e1n."},
+      "Nelze přidat atribut {0} po uzlech potomků ani před tím, než je vytvořen prvek. Atribut bude ignorován."},
 
       /*
        * Note to translators:  The stylesheet contained a reference to a
@@ -400,7 +400,7 @@ public class XMLErrorResources_cs extends ListResourceBundle
        * text is the name of the prefix.
        */
     {ER_NAMESPACE_PREFIX,
-      "Obor n\u00e1zv\u016f pro p\u0159edponu ''{0}'' nebyl deklarov\u00e1n." },
+      "Obor názvů pro předponu ''{0}'' nebyl deklarován." },
       /*
        * Note to translators:  This message is reported if the stylesheet
        * being processed attempted to construct an XML document with an
@@ -408,7 +408,7 @@ public class XMLErrorResources_cs extends ListResourceBundle
        * specifies the name of the attribute.
        */
     {ER_STRAY_ATTRIBUTE,
-      "Atribut ''{0}'' je vn\u011b prvku." },
+      "Atribut ''{0}'' je vně prvku." },
 
       /*
        * Note to translators:  As with the preceding message, a namespace
@@ -418,13 +418,13 @@ public class XMLErrorResources_cs extends ListResourceBundle
        * namespace declaration.
        */
     {ER_STRAY_NAMESPACE,
-      "Deklarace oboru n\u00e1zv\u016f ''{0}''=''{1}'' je vn\u011b prvku." },
+      "Deklarace oboru názvů ''{0}''=''{1}'' je vně prvku." },
 
     {ER_COULD_NOT_LOAD_RESOURCE,
-      "Nelze zav\u00e9st ''{0}'' (zkontrolujte prom\u011bnnou CLASSPATH), proto se pou\u017e\u00edvaj\u00ed pouze v\u00fdchoz\u00ed hodnoty"},
+      "Nelze zavést ''{0}'' (zkontrolujte proměnnou CLASSPATH), proto se používají pouze výchozí hodnoty"},
 
     {ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-      "Nelze na\u010d\u00edst soubor vlastnost\u00ed ''{0}'' pro v\u00fdstupn\u00ed metodu ''{1}'' (zkontrolujte prom\u011bnnou CLASSPATH)." }
+      "Nelze načíst soubor vlastností ''{0}'' pro výstupní metodu ''{1}'' (zkontrolujte proměnnou CLASSPATH)." }
 
 
   };

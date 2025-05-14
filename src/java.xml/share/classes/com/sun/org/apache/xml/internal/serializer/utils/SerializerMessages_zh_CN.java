@@ -72,31 +72,31 @@ public class SerializerMessages_zh_CN extends ListResourceBundle {
     public Object[][] getContents() {
         Object[][] contents = new Object[][] {
             {   MsgKey.BAD_MSGKEY,
-                "\u6D88\u606F\u5173\u952E\u5B57 ''{0}'' \u4E0D\u5728\u6D88\u606F\u7C7B ''{1}'' \u4E2D" },
+                "消息关键字 ''{0}'' 不在消息类 ''{1}'' 中" },
 
             {   MsgKey.BAD_MSGFORMAT,
-                "\u6D88\u606F\u7C7B ''{1}'' \u4E2D\u6D88\u606F ''{0}'' \u7684\u683C\u5F0F\u5316\u5931\u8D25\u3002" },
+                "消息类 ''{1}'' 中消息 ''{0}'' 的格式化失败。" },
 
             {   MsgKey.ER_SERIALIZER_NOT_CONTENTHANDLER,
-                "\u4E32\u884C\u5668\u7C7B ''{0}'' \u4E0D\u5B9E\u73B0 org.xml.sax.ContentHandler\u3002" },
+                "串行器类 ''{0}'' 不实现 org.xml.sax.ContentHandler。" },
 
             {   MsgKey.ER_RESOURCE_COULD_NOT_FIND,
-                    "\u627E\u4E0D\u5230\u8D44\u6E90 [ {0} ]\u3002\n {1}" },
+                    "找不到资源 [ {0} ]。\n {1}" },
 
             {   MsgKey.ER_RESOURCE_COULD_NOT_LOAD,
-                    "\u8D44\u6E90 [ {0} ] \u65E0\u6CD5\u52A0\u8F7D: {1} \n {2} \t {3}" },
+                    "资源 [ {0} ] 无法加载: {1} \n {2} \t {3}" },
 
             {   MsgKey.ER_BUFFER_SIZE_LESSTHAN_ZERO,
-                    "\u7F13\u51B2\u533A\u5927\u5C0F <=0" },
+                    "缓冲区大小 <=0" },
 
             {   MsgKey.ER_INVALID_UTF16_SURROGATE,
-                    "\u68C0\u6D4B\u5230\u65E0\u6548\u7684 UTF-16 \u4EE3\u7406: {0}?" },
+                    "检测到无效的 UTF-16 代理: {0}?" },
 
             {   MsgKey.ER_OIERROR,
-                "IO \u9519\u8BEF" },
+                "IO 错误" },
 
             {   MsgKey.ER_ILLEGAL_ATTRIBUTE_POSITION,
-                "\u5728\u751F\u6210\u5B50\u8282\u70B9\u4E4B\u540E\u6216\u5728\u751F\u6210\u5143\u7D20\u4E4B\u524D\u65E0\u6CD5\u6DFB\u52A0\u5C5E\u6027 {0}\u3002\u5C06\u5FFD\u7565\u5C5E\u6027\u3002" },
+                "在生成子节点之后或在生成元素之前无法添加属性 {0}。将忽略属性。" },
 
             /*
              * Note to translators:  The stylesheet contained a reference to a
@@ -104,7 +104,7 @@ public class SerializerMessages_zh_CN extends ListResourceBundle {
              * text is the name of the prefix.
              */
             {   MsgKey.ER_NAMESPACE_PREFIX,
-                "\u6CA1\u6709\u8BF4\u660E\u540D\u79F0\u7A7A\u95F4\u524D\u7F00 ''{0}''\u3002" },
+                "没有说明名称空间前缀 ''{0}''。" },
 
             /*
              * Note to translators:  This message is reported if the stylesheet
@@ -113,7 +113,7 @@ public class SerializerMessages_zh_CN extends ListResourceBundle {
              * specifies the name of the attribute.
              */
             {   MsgKey.ER_STRAY_ATTRIBUTE,
-                "\u5C5E\u6027 ''{0}'' \u5728\u5143\u7D20\u5916\u90E8\u3002" },
+                "属性 ''{0}'' 在元素外部。" },
 
             /*
              * Note to translators:  As with the preceding message, a namespace
@@ -123,70 +123,70 @@ public class SerializerMessages_zh_CN extends ListResourceBundle {
              * namespace declaration.
              */
             {   MsgKey.ER_STRAY_NAMESPACE,
-                "\u540D\u79F0\u7A7A\u95F4\u58F0\u660E ''{0}''=''{1}'' \u5728\u5143\u7D20\u5916\u90E8\u3002" },
+                "名称空间声明 ''{0}''=''{1}'' 在元素外部。" },
 
             {   MsgKey.ER_COULD_NOT_LOAD_RESOURCE,
-                "\u65E0\u6CD5\u52A0\u8F7D ''{0}'' (\u68C0\u67E5 CLASSPATH), \u73B0\u5728\u53EA\u4F7F\u7528\u9ED8\u8BA4\u503C" },
+                "无法加载 ''{0}'' (检查 CLASSPATH), 现在只使用默认值" },
 
             {   MsgKey.ER_ILLEGAL_CHARACTER,
-                "\u5C1D\u8BD5\u8F93\u51FA\u672A\u4EE5{1}\u7684\u6307\u5B9A\u8F93\u51FA\u7F16\u7801\u8868\u793A\u7684\u6574\u6570\u503C {0} \u7684\u5B57\u7B26\u3002" },
+                "尝试输出未以{1}的指定输出编码表示的整数值 {0} 的字符。" },
 
             {   MsgKey.ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-                "\u65E0\u6CD5\u4E3A\u8F93\u51FA\u65B9\u6CD5 ''{1}'' \u52A0\u8F7D\u5C5E\u6027\u6587\u4EF6 ''{0}'' (\u68C0\u67E5 CLASSPATH)" },
+                "无法为输出方法 ''{1}'' 加载属性文件 ''{0}'' (检查 CLASSPATH)" },
 
             {   MsgKey.ER_INVALID_PORT,
-                "\u65E0\u6548\u7684\u7AEF\u53E3\u53F7" },
+                "无效的端口号" },
 
             {   MsgKey.ER_PORT_WHEN_HOST_NULL,
-                "\u4E3B\u673A\u4E3A\u7A7A\u65F6, \u65E0\u6CD5\u8BBE\u7F6E\u7AEF\u53E3" },
+                "主机为空时, 无法设置端口" },
 
             {   MsgKey.ER_HOST_ADDRESS_NOT_WELLFORMED,
-                "\u4E3B\u673A\u4E0D\u662F\u683C\u5F0F\u826F\u597D\u7684\u5730\u5740" },
+                "主机不是格式良好的地址" },
 
             {   MsgKey.ER_SCHEME_NOT_CONFORMANT,
-                "\u65B9\u6848\u4E0D\u4E00\u81F4\u3002" },
+                "方案不一致。" },
 
             {   MsgKey.ER_SCHEME_FROM_NULL_STRING,
-                "\u65E0\u6CD5\u4ECE\u7A7A\u5B57\u7B26\u4E32\u8BBE\u7F6E\u65B9\u6848" },
+                "无法从空字符串设置方案" },
 
             {   MsgKey.ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
-                "\u8DEF\u5F84\u5305\u542B\u65E0\u6548\u7684\u9003\u9038 \u5E8F\u5217" },
+                "路径包含无效的逃逸 序列" },
 
             {   MsgKey.ER_PATH_INVALID_CHAR,
-                "\u8DEF\u5F84\u5305\u542B\u65E0\u6548\u7684\u5B57\u7B26: {0}" },
+                "路径包含无效的字符: {0}" },
 
             {   MsgKey.ER_FRAG_INVALID_CHAR,
-                "\u7247\u6BB5\u5305\u542B\u65E0\u6548\u7684\u5B57\u7B26" },
+                "片段包含无效的字符" },
 
             {   MsgKey.ER_FRAG_WHEN_PATH_NULL,
-                "\u8DEF\u5F84\u4E3A\u7A7A\u65F6, \u65E0\u6CD5\u8BBE\u7F6E\u7247\u6BB5" },
+                "路径为空时, 无法设置片段" },
 
             {   MsgKey.ER_FRAG_FOR_GENERIC_URI,
-                "\u53EA\u80FD\u4E3A\u4E00\u822C URI \u8BBE\u7F6E\u7247\u6BB5" },
+                "只能为一般 URI 设置片段" },
 
             {   MsgKey.ER_NO_SCHEME_IN_URI,
-                "\u5728 URI \u4E2D\u627E\u4E0D\u5230\u65B9\u6848" },
+                "在 URI 中找不到方案" },
 
             {   MsgKey.ER_CANNOT_INIT_URI_EMPTY_PARMS,
-                "\u65E0\u6CD5\u4EE5\u7A7A\u53C2\u6570\u521D\u59CB\u5316 URI" },
+                "无法以空参数初始化 URI" },
 
             {   MsgKey.ER_NO_FRAGMENT_STRING_IN_PATH,
-                "\u8DEF\u5F84\u548C\u7247\u6BB5\u4E2D\u90FD\u65E0\u6CD5\u6307\u5B9A\u7247\u6BB5" },
+                "路径和片段中都无法指定片段" },
 
             {   MsgKey.ER_NO_QUERY_STRING_IN_PATH,
-                "\u8DEF\u5F84\u548C\u67E5\u8BE2\u5B57\u7B26\u4E32\u4E2D\u4E0D\u80FD\u6307\u5B9A\u67E5\u8BE2\u5B57\u7B26\u4E32" },
+                "路径和查询字符串中不能指定查询字符串" },
 
             {   MsgKey.ER_NO_PORT_IF_NO_HOST,
-                "\u5982\u679C\u6CA1\u6709\u6307\u5B9A\u4E3B\u673A, \u5219\u4E0D\u53EF\u4EE5\u6307\u5B9A\u7AEF\u53E3" },
+                "如果没有指定主机, 则不可以指定端口" },
 
             {   MsgKey.ER_NO_USERINFO_IF_NO_HOST,
-                "\u5982\u679C\u6CA1\u6709\u6307\u5B9A\u4E3B\u673A, \u5219\u4E0D\u53EF\u4EE5\u6307\u5B9A Userinfo" },
+                "如果没有指定主机, 则不可以指定 Userinfo" },
 
             {   MsgKey.ER_XML_VERSION_NOT_SUPPORTED,
-                "\u8B66\u544A: \u8F93\u51FA\u6587\u6863\u7684\u7248\u672C\u5E94\u4E3A ''{0}''\u3002\u4E0D\u652F\u6301\u6B64\u7248\u672C\u7684 XML\u3002\u8F93\u51FA\u6587\u6863\u7684\u7248\u672C\u5C06\u4E3A ''1.0''\u3002" },
+                "警告: 输出文档的版本应为 ''{0}''。不支持此版本的 XML。输出文档的版本将为 ''1.0''。" },
 
             {   MsgKey.ER_SCHEME_REQUIRED,
-                "\u65B9\u6848\u662F\u5FC5\u9700\u7684!" },
+                "方案是必需的!" },
 
             /*
              * Note to translators:  The words 'Properties' and
@@ -194,101 +194,101 @@ public class SerializerMessages_zh_CN extends ListResourceBundle {
              * and should not be translated.
              */
             {   MsgKey.ER_FACTORY_PROPERTY_MISSING,
-                "\u4F20\u9012\u5230 SerializerFactory \u7684 Properties \u5BF9\u8C61\u6CA1\u6709 ''{0}'' \u5C5E\u6027\u3002" },
+                "传递到 SerializerFactory 的 Properties 对象没有 ''{0}'' 属性。" },
 
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
-                "\u8B66\u544A: Java \u8FD0\u884C\u65F6\u4E0D\u652F\u6301\u7F16\u7801 ''{0}''\u3002" },
+                "警告: Java 运行时不支持编码 ''{0}''。" },
 
              {MsgKey.ER_FEATURE_NOT_FOUND,
-             "\u672A\u8BC6\u522B\u53C2\u6570 ''{0}''\u3002"},
+             "未识别参数 ''{0}''。"},
 
              {MsgKey.ER_FEATURE_NOT_SUPPORTED,
-             "\u5DF2\u8BC6\u522B\u53C2\u6570 ''{0}'', \u4F46\u65E0\u6CD5\u8BBE\u7F6E\u8BF7\u6C42\u7684\u503C\u3002"},
+             "已识别参数 ''{0}'', 但无法设置请求的值。"},
 
              {MsgKey.ER_STRING_TOO_LONG,
-             "\u751F\u6210\u7684\u5B57\u7B26\u4E32\u592A\u957F, \u4E0D\u9002\u5408 DOMString: ''{0}''\u3002"},
+             "生成的字符串太长, 不适合 DOMString: ''{0}''。"},
 
              {MsgKey.ER_TYPE_MISMATCH_ERR,
-             "\u6B64\u53C2\u6570\u540D\u79F0\u7684\u503C\u7C7B\u578B\u4E0E\u9884\u671F\u7684\u503C\u7C7B\u578B\u4E0D\u517C\u5BB9\u3002"},
+             "此参数名称的值类型与预期的值类型不兼容。"},
 
              {MsgKey.ER_NO_OUTPUT_SPECIFIED,
-             "\u8981\u5C06\u6570\u636E\u5199\u5165\u7684\u8F93\u51FA\u76EE\u6807\u4E3A\u7A7A\u503C\u3002"},
+             "要将数据写入的输出目标为空值。"},
 
              {MsgKey.ER_UNSUPPORTED_ENCODING,
-             "\u9047\u5230\u4E0D\u652F\u6301\u7684\u7F16\u7801\u3002"},
+             "遇到不支持的编码。"},
 
              {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
-             "\u65E0\u6CD5\u5E8F\u5217\u5316\u8282\u70B9\u3002"},
+             "无法序列化节点。"},
 
              {MsgKey.ER_CDATA_SECTIONS_SPLIT,
-             "CDATA \u8282\u5305\u542B\u4E00\u4E2A\u6216\u591A\u4E2A\u7EC8\u6B62\u6807\u8BB0 ']]>'\u3002"},
+             "CDATA 节包含一个或多个终止标记 ']]>'。"},
 
              {MsgKey.ER_WARNING_WF_NOT_CHECKED,
-                 "\u65E0\u6CD5\u521B\u5EFA\u683C\u5F0F\u5408\u89C4\u6027\u68C0\u67E5\u5668\u7684\u5B9E\u4F8B\u3002\u683C\u5F0F\u5408\u89C4\u6027\u53C2\u6570\u5DF2\u8BBE\u7F6E\u4E3A\u201C\u771F\u201D, \u4F46\u65E0\u6CD5\u6267\u884C\u683C\u5F0F\u5408\u89C4\u6027\u68C0\u67E5\u3002"
+                 "无法创建格式合规性检查器的实例。格式合规性参数已设置为“真”, 但无法执行格式合规性检查。"
              },
 
              {MsgKey.ER_WF_INVALID_CHARACTER,
-                 "\u8282\u70B9 ''{0}'' \u5305\u542B\u65E0\u6548\u7684 XML \u5B57\u7B26\u3002"
+                 "节点 ''{0}'' 包含无效的 XML 字符。"
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
-                 "\u5728\u6CE8\u91CA\u4E2D\u627E\u5230\u65E0\u6548\u7684 XML \u5B57\u7B26 (Unicode: 0x{0})\u3002"
+                 "在注释中找到无效的 XML 字符 (Unicode: 0x{0})。"
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
-                 "\u5728\u5904\u7406\u6307\u4EE4\u6570\u636E\u4E2D\u627E\u5230\u65E0\u6548\u7684 XML \u5B57\u7B26 (Unicode: 0x{0})\u3002"
+                 "在处理指令数据中找到无效的 XML 字符 (Unicode: 0x{0})。"
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
-                 "\u5728 CDATA \u8282\u7684\u5185\u5BB9\u4E2D\u627E\u5230\u65E0\u6548\u7684 XML \u5B57\u7B26 (Unicode: 0x{0})\u3002"
+                 "在 CDATA 节的内容中找到无效的 XML 字符 (Unicode: 0x{0})。"
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
-                 "\u5728\u8282\u70B9\u7684\u5B57\u7B26\u6570\u636E\u5185\u5BB9\u4E2D\u627E\u5230\u65E0\u6548\u7684 XML \u5B57\u7B26 (Unicode: 0x{0})\u3002"
+                 "在节点的字符数据内容中找到无效的 XML 字符 (Unicode: 0x{0})。"
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
-                 "\u5728\u540D\u4E3A ''{1}'' \u7684{0}\u8282\u70B9\u4E2D\u627E\u5230\u65E0\u6548\u7684 XML \u5B57\u7B26\u3002"
+                 "在名为 ''{1}'' 的{0}节点中找到无效的 XML 字符。"
              },
 
              { MsgKey.ER_WF_DASH_IN_COMMENT,
-                 "\u6CE8\u91CA\u4E2D\u4E0D\u5141\u8BB8\u51FA\u73B0\u5B57\u7B26\u4E32 \"--\"\u3002"
+                 "注释中不允许出现字符串 \"--\"。"
              },
 
              {MsgKey.ER_WF_LT_IN_ATTVAL,
-                 "\u4E0E\u5143\u7D20\u7C7B\u578B \"{0}\" \u76F8\u5173\u8054\u7684 \"{1}\" \u5C5E\u6027\u503C\u4E0D\u80FD\u5305\u542B ''<'' \u5B57\u7B26\u3002"
+                 "与元素类型 \"{0}\" 相关联的 \"{1}\" 属性值不能包含 ''<'' 字符。"
              },
 
              {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
-                 "\u4E0D\u5141\u8BB8\u4F7F\u7528\u672A\u89E3\u6790\u7684\u5B9E\u4F53\u5F15\u7528 \"&{0};\"\u3002"
+                 "不允许使用未解析的实体引用 \"&{0};\"。"
              },
 
              {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
-                 "\u5C5E\u6027\u503C\u4E2D\u4E0D\u5141\u8BB8\u91C7\u7528\u5916\u90E8\u5B9E\u4F53\u5F15\u7528 \"&{0};\"\u3002"
+                 "属性值中不允许采用外部实体引用 \"&{0};\"。"
              },
 
              {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
-                 "\u524D\u7F00 \"{0}\" \u65E0\u6CD5\u7ED1\u5B9A\u5230\u540D\u79F0\u7A7A\u95F4 \"{1}\"\u3002"
+                 "前缀 \"{0}\" 无法绑定到名称空间 \"{1}\"。"
              },
 
              {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
-                 "\u5143\u7D20 \"{0}\" \u7684\u672C\u5730\u540D\u79F0\u4E3A\u7A7A\u503C\u3002"
+                 "元素 \"{0}\" 的本地名称为空值。"
              },
 
              {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
-                 "\u5C5E\u6027 \"{0}\" \u7684\u672C\u5730\u540D\u79F0\u4E3A\u7A7A\u503C\u3002"
+                 "属性 \"{0}\" 的本地名称为空值。"
              },
 
              { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
-                 "\u5B9E\u4F53\u8282\u70B9 \"{0}\" \u7684\u66FF\u6362\u6587\u672C\u5305\u542B\u5E26\u6709\u672A\u7ED1\u5B9A\u524D\u7F00 \"{2}\" \u7684\u5143\u7D20\u8282\u70B9 \"{1}\"\u3002"
+                 "实体节点 \"{0}\" 的替换文本包含带有未绑定前缀 \"{2}\" 的元素节点 \"{1}\"。"
              },
 
              { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
-                 "\u5B9E\u4F53\u8282\u70B9 \"{0}\" \u7684\u66FF\u6362\u6587\u672C\u5305\u542B\u5E26\u6709\u672A\u7ED1\u5B9A\u524D\u7F00 \"{2}\" \u7684\u5C5E\u6027\u8282\u70B9 \"{1}\"\u3002"
+                 "实体节点 \"{0}\" 的替换文本包含带有未绑定前缀 \"{2}\" 的属性节点 \"{1}\"。"
              },
 
              { MsgKey.ER_WRITING_INTERNAL_SUBSET,
-                 "\u5199\u5165\u5185\u90E8\u5B50\u96C6\u65F6\u51FA\u73B0\u9519\u8BEF\u3002"
+                 "写入内部子集时出现错误。"
              },
 
         };

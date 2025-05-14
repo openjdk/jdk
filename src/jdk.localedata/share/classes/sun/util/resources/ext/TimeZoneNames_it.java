@@ -135,9 +135,9 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
         String EST_NSW[] = new String[] {"Ora standard dell'Australia orientale (Nuovo Galles del Sud)", "AEST",
                                          "Ora estiva dell'Australia orientale (Nuovo Galles del Sud)", "AEDT",
                                          "Ora fuso orientale (Nuovo Galles del Sud)", "AET"};
-        String FET[] = new String[] {"Ora dei paesi europei pi\u00F9 orientali", "FET",
-                                     "Ora estiva dei paesi europei pi\u00F9 orientali", "FEST",
-                                     "Ora dei paesi europei pi\u00F9 orientali", "FET"};
+        String FET[] = new String[] {"Ora dei paesi europei più orientali", "FET",
+                                     "Ora estiva dei paesi europei più orientali", "FEST",
+                                     "Ora dei paesi europei più orientali", "FET"};
         String GHMT[] = new String[] {"Ora media del Ghana", "GMT",
                                       "Ora legale del Ghana", "GHST",
                                       "Ora media del Ghana", "GMT"};
@@ -482,9 +482,9 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
             {"America/La_Paz", new String[] {"Ora della Bolivia", "BOT",
                                              "Ora estiva della Bolivia", "BOST",
                                              "Ora della Bolivia", "BOT"}},
-            {"America/Lima", new String[] {"Ora del Per\u00f9", "PET",
-                                           "Ora estiva del Per\u00f9", "PEST",
-                                           "Ora del Per\u00F9", "PET"}},
+            {"America/Lima", new String[] {"Ora del Perù", "PET",
+                                           "Ora estiva del Perù", "PEST",
+                                           "Ora del Perù", "PET"}},
             {"America/Louisville", EST},
             {"America/Lower_Princes", AST},
             {"America/Maceio", BRT},
