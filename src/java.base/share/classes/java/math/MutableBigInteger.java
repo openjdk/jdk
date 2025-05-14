@@ -1930,7 +1930,7 @@ class MutableBigInteger {
         if (this.isZero() || this.isOne())
             return new MutableBigInteger[] { this, new MutableBigInteger() };
 
-        final long bitLength = this.bitLength();
+        final int bitLength = (int) this.bitLength();
         // if this < 2^n, result is unity
         if (bitLength <= n) {
             MutableBigInteger rem = new MutableBigInteger(this);
@@ -1968,7 +1968,6 @@ class MutableBigInteger {
             // Determine a right shift that is a multiple of n into finite double range.
             double rad;
             if (bitLength > Double.MAX_EXPONENT) {
-                // bitLength <= Integer.MAX_VALUE * Integer.SIZE
                 shift = bitLength - Double.MAX_EXPONENT;
                 int shiftExcess = (int) (shift % n);
 
