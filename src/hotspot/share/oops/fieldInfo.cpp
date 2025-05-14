@@ -38,8 +38,10 @@ void FieldInfo::print(outputStream* os, ConstantPool* cp) {
                 field_flags().as_uint(),
                 initializer_index(),
                 generic_signature_index(),
-                _field_flags.is_injected() ? lookup_symbol(generic_signature_index())->as_utf8() : cp->symbol_at(generic_signature_index())->as_utf8(),
-                contended_group());
+                _field_flags.is_generic() ? (_field_flags.is_injected() ?
+                  lookup_symbol(generic_signature_index())->as_utf8() : cp->symbol_at(generic_signature_index())->as_utf8()
+                  ) : "",
+                is_contended() ? contended_group() : 0);
 }
 
 void FieldInfo::print_from_growable_array(outputStream* os, GrowableArray<FieldInfo>* array, ConstantPool* cp) {
