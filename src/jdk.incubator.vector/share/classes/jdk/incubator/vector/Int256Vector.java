@@ -871,7 +871,7 @@ final class Int256Vector extends IntVector {
         @Override
         @ForceInline
         public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-                      toBitsVector().intoMemorySegment(ms, offset, bo);
+            toBitsVector().intoMemorySegment(ms, offset, bo);
          }
 
         @Override

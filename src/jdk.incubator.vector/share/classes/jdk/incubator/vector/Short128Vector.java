@@ -878,14 +878,14 @@ final class Short128Vector extends ShortVector {
         @Override
         @ForceInline
         public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
-                      VectorSpecies<Integer> species = IntVector.SPECIES_128;
-                      Vector<Short> v = toBitsVector();
-                      v.convertShape(VectorOperators.S2I, species, 0)
-                              .reinterpretAsInts()
-                              .intoMemorySegment(ms, offset, bo);
-                      v.convertShape(VectorOperators.S2I, species, 1)
-                              .reinterpretAsInts()
-                              .intoMemorySegment(ms, offset + species.vectorByteSize(), bo);
+            VectorSpecies<Integer> species = IntVector.SPECIES_128;
+            Vector<Short> v = toBitsVector();
+            v.convertShape(VectorOperators.S2I, species, 0)
+                    .reinterpretAsInts()
+                    .intoMemorySegment(ms, offset, bo);
+            v.convertShape(VectorOperators.S2I, species, 1)
+                    .reinterpretAsInts()
+                    .intoMemorySegment(ms, offset + species.vectorByteSize(), bo);
          }
 
         @Override
