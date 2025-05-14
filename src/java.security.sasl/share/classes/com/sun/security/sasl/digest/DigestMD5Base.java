@@ -29,17 +29,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.security.*;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.Random;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.InvalidKeyException;
 import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
-import java.security.InvalidAlgorithmParameterException;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -59,6 +55,7 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.*;
 
 import com.sun.security.sasl.util.AbstractSaslImpl;
+import sun.security.jca.JCAUtil;
 
 /**
  * Utility class for DIGEST-MD5 mechanism. Provides utility methods
@@ -131,6 +128,9 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
         ":00000000000000000000000000000000";
 
     protected static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
+    /* Secure Random instance to generate nonce */
+    private static final SecureRandom SECURE_RANDOM = JCAUtil.getDefSecureRandom();
 
     /* ------------------- Variable Fields ----------------------- */
 
@@ -293,10 +293,8 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
 
     protected static final byte[] generateNonce() {
 
-        // SecureRandom random = new SecureRandom();
-        Random random = new Random();
         byte[] randomData = new byte[RAW_NONCE_SIZE];
-        random.nextBytes(randomData);
+        SECURE_RANDOM.nextBytes(randomData);
 
         byte[] nonce = new byte[ENCODED_NONCE_SIZE];
 
