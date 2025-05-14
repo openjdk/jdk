@@ -570,6 +570,10 @@ void PhaseOutput::shorten_branches(uint* blk_starts) {
         blk_size += max_loop_pad;
         block_worst_case_pad[i + 1] = max_loop_pad;
       }
+    } else {
+      if (last_call_adr == blk_starts[i]+blk_size) {
+        blk_size += nop_size;
+      }
     }
 
     // Save block size; update total method size
@@ -1795,17 +1799,25 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 
     } // End for all instructions in block
 
+    auto emit_nops = [&](int nops_count) {
+      MachNode *nop = new MachNopNode(nops_count);
+      block->insert_node(nop, block->number_of_nodes());
+      C->cfg()->map_node_to_block(nop, block);
+      nop->emit(masm, C->regalloc());
+      current_offset = masm->offset();
+    };
+
     // If the next block is the top of a loop, pad this block out to align
     // the loop top a little. Helps prevent pipe stalls at loop back branches.
     if (i < nblocks-1) {
       Block *nb = C->cfg()->get_block(i + 1);
       int padding = nb->alignment_padding(current_offset);
       if( padding > 0 ) {
-        MachNode *nop = new MachNopNode(padding / nop_size);
-        block->insert_node(nop, block->number_of_nodes());
-        C->cfg()->map_node_to_block(nop, block);
-        nop->emit(masm, C->regalloc());
-        current_offset = masm->offset();
+        emit_nops(padding / nop_size);
+      }
+    } else {
+      if (last_call_offset == current_offset) {
+        emit_nops(1);
       }
     }
     // Verify that the distance for generated before forward
