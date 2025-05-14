@@ -58,7 +58,7 @@ public class AOTLinkedVarHandles {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-XX:+AOTClassLinking",
-                       "-Xlog:cds+resolve=trace",
+                       "-Xlog:aot+resolve=trace",
                        "-Xlog:cds+class=debug",
                        "-cp", appJar);
 

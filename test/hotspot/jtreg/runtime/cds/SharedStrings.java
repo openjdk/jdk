@@ -47,7 +47,7 @@ public class SharedStrings {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./SharedStrings.jsa",
-            "-Xlog:cds,cds+hashtables",
+            "-Xlog:cds,aot+hashtables",
             // Needed for bootclasspath match, for CDS to work with WhiteBox API
             "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
             "-Xshare:dump");

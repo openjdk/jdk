@@ -810,7 +810,8 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     } else {
       aot_log_error(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
-      MetaspaceShared::writing_error("Unexpected exception, use -Xlog:cds,exceptions=trace for detail");
+      MetaspaceShared::writing_error(err_msg("Unexpected exception, use -Xlog:aot%s,exceptions=trace for detail",
+                                             CDSConfig::new_aot_flags_used() ? "" : ",cds"));
     }
   }
 

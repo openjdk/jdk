@@ -90,14 +90,15 @@ public class LambdasInTwoArchives extends DynamicArchiveTestBase {
         String[] launchArgs = {
                 "-Xshare:off",
                 "-XX:DumpLoadedClassList=" + classListFileName,
+                "-Xlog:aot",
+                "-Xlog:aot+lambda",
                 "-Xlog:cds",
-                "-Xlog:cds+lambda",
                 "-cp", appJar, mainClass};
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(launchArgs);
         OutputAnalyzer oa = TestCommon.executeAndLog(pb, "lambda-classes");
         oa.shouldHaveExitValue(0);
 
-        String logOptions = "-Xlog:cds=debug,class+load,cds+class=debug";
+        String logOptions = "-Xlog:aot=debug,cds=debug,class+load,cds+class=debug";
         String baseArchiveName = CDSTestUtils.getOutputFileName("lambda-base.jsa");
         // Static dump based on the class list.
         dumpBaseArchive(baseArchiveName,

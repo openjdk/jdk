@@ -36,7 +36,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cds.CDSTestUtils;
 
 public class ExtraSymbols {
-    static final String CDS_LOGGING = "-Xlog:cds,cds+hashtables";
+    static final String CDS_LOGGING = "-Xlog:cds,aot+hashtables";
     public static void main(String[] args) throws Exception {
         String appJar = JarBuilder.getOrCreateHelloJar();
 
@@ -75,8 +75,8 @@ public class ExtraSymbols {
 
     static int numOfEntries(OutputAnalyzer output) {
         // Look for this pattern:
-        // [4.661s][info][cds,hashtables] Shared symbol table stats -------- base: 0x0000000800000000
-        // [4.661s][info][cds,hashtables] Number of entries       :     50078
+        // [4.661s][info][aot,hashtables] Shared symbol table stats -------- base: 0x0000000800000000
+        // [4.661s][info][aot,hashtables] Number of entries       :     50078
         String s = output.firstMatch("Shared symbol table stats[^\n]*\n[^\n]*Number of entries       : .*");
         String subs[] = s.split("[:]");
         int numEntries = Integer.parseInt(subs[2].trim());

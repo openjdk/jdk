@@ -51,7 +51,7 @@ public class FlagCombo {
         SharedStringsUtils.buildJar("HelloString");
 
         SharedStringsUtils.dump(TestCommon.list("HelloString"),
-            "SharedStringsBasic.txt", "-Xlog:cds,cds+hashtables");
+            "SharedStringsBasic.txt", "-Xlog:cds,aot+hashtables");
 
         SharedStringsUtils.runWithArchive("HelloString", "-XX:+UseG1GC");
 

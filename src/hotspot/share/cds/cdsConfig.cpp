@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotLogging.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
@@ -233,7 +234,7 @@ void CDSConfig::ergo_init_classic_archive_paths() {
               warning("-XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
               AutoCreateSharedArchive = false;
             }
-            log_error(cds)("Not a valid archive (%s)", SharedArchiveFile);
+            aot_log_error(aot)("Not a valid %s (%s)", type_of_archive_being_loaded(), SharedArchiveFile);
             Arguments::no_shared_spaces("invalid archive");
           }
         } else if (base_archive_path == nullptr) {

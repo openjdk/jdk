@@ -705,7 +705,7 @@ void ConstantPoolCache::dump_cache() {
 #endif // INCLUDE_JVMTI
 
 void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(ConstantPoolCache): %p", this);
+  log_trace(aot)("Iter(ConstantPoolCache): %p", this);
   it->push(&_constant_pool);
   it->push(&_reference_map);
   if (_resolved_indy_entries != nullptr) {

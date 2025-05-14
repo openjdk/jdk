@@ -63,7 +63,7 @@ public class CheckUnsupportedDumpingOptions {
         String appClasses[] = {"Hello"};
         for (int i = 0; i < jigsawOptions.length; i++) {
             OutputAnalyzer output;
-            output = TestCommon.dump(appJar, appClasses, "-Xlog:cds,cds+hashtables",
+            output = TestCommon.dump(appJar, appClasses, "-Xlog:cds,aot+hashtables",
                                      jigsawOptions[i], optionValues[i]);
             output.shouldContain("Cannot use the following option " +
                 "when dumping the shared archive: " + jigsawOptions[i])

@@ -52,7 +52,7 @@ public class SysDictCrash {
                        "-XX:+UseG1GC", "-XX:MaxRAMPercentage=12.5",
                        "-cp", ".",
                        "-XX:SharedBaseAddress=0",
-                       "-showversion", "-Xlog:cds,cds+hashtables")
+                       "-showversion", "-Xlog:cds,aot+hashtables")
             .setArchiveName("./SysDictCrash.jsa");
         OutputAnalyzer output = CDSTestUtils.createArchive(opts);
         try {

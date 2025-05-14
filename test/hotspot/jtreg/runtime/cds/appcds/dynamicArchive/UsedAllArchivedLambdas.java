@@ -63,6 +63,7 @@ public class UsedAllArchivedLambdas extends DynamicArchiveTestBase {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+WhiteBoxAPI",
             use_whitebox_jar,
+            "-Xlog:aot=debug",
             "-Xlog:cds=debug",
             "-cp", appJar, mainClass, "run")
             .assertNormalExit(output -> {

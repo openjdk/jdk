@@ -54,7 +54,7 @@ public class SharedStringsBasic {
             .addPrefix(vmOptionsPrefix,
             "-cp", appJar,
             "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile,
-            "-Xlog:cds,cds+hashtables")
+            "-Xlog:cds,aot+hashtables")
             .setArchiveName("./SharedStringsBasic.jsa");
         CDSTestUtils.createArchiveAndCheck(opts)
             .shouldContain("Shared string table stats");

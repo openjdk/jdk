@@ -255,7 +255,7 @@ public class CDSTestUtils {
         for (String p : opts.prefix) cmd.add(p);
 
         cmd.add("-Xshare:dump");
-        cmd.add("-Xlog:cds,cds+hashtables");
+        cmd.add("-Xlog:cds,aot+hashtables");
         if (opts.archiveName == null)
             opts.archiveName = getDefaultArchiveName();
         cmd.add("-XX:SharedArchiveFile=" + opts.archiveName);

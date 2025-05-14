@@ -42,7 +42,7 @@ public class SharedStringsBasicPlus {
         SharedStringsUtils.buildJarAndWhiteBox("HelloStringPlus");
 
         SharedStringsUtils.dumpWithWhiteBox( TestCommon.list("HelloStringPlus"),
-            "SharedStringsBasic.txt", "-Xlog:cds,cds+hashtables");
+            "SharedStringsBasic.txt", "-Xlog:cds,aot+hashtables");
 
         SharedStringsUtils.runWithArchiveAndWhiteBox("HelloStringPlus");
     }

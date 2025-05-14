@@ -738,7 +738,7 @@ void FileMapInfo::open_as_output() {
       log_info(aot)("Writing binary AOTConfiguration file: %s",  _full_path);
     }
   } else {
-    log_info(cds)("Dumping shared data to file: %s", _full_path);
+    aot_log_info(aot)("Dumping shared data to file: %s", _full_path);
   }
 
 #ifdef _WINDOWS  // On Windows, need WRITE permission to remove the file.
@@ -1542,11 +1542,20 @@ bool FileMapInfo::can_use_heap_region() {
     default:
       ShouldNotReachHere();
     };
-    LogTarget(Info, cds) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      ls.print_raw(ss.base());
-      header()->print(&ls);
+    if (CDSConfig::new_aot_flags_used()) {
+      LogTarget(Info, aot) lt;
+      if (lt.is_enabled()) {
+        LogStream ls(lt);
+        ls.print_raw(ss.base());
+        header()->print(&ls);
+      }
+    } else {
+      LogTarget(Info, cds) lt;
+      if (lt.is_enabled()) {
+        LogStream ls(lt);
+        ls.print_raw(ss.base());
+        header()->print(&ls);
+      }
     }
     assert(false, "%s", ss.base());
   }

@@ -274,7 +274,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
         k->set_shared_classpath_index(0);
       } else {
         ResourceMark rm;
-        log_info(cds)("Skipping %s because it is dynamically generated", k->name()->as_C_string());
+        aot_log_info(aot)("Skipping %s because it is dynamically generated", k->name()->as_C_string());
         return true; // exclude without warning
       }
     } else {
@@ -344,7 +344,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
 
   if (k == UnregisteredClasses::UnregisteredClassLoader_klass()) {
     ResourceMark rm;
-    log_info(cds)("Skipping %s: used only when dumping CDS archive", k->name()->as_C_string());
+    aot_log_info(aot)("Skipping %s: used only when dumping CDS archive", k->name()->as_C_string());
     return true;
   }
 
@@ -811,9 +811,9 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
       Symbol* name      = vc->name();
       Symbol* from_name = vc->from_name();
 
-      if (log_is_enabled(Trace, cds, verification)) {
+      if (log_is_enabled(Trace, aot, verification)) {
         ResourceMark rm(THREAD);
-        log_trace(cds, verification)("check_verification_constraint: %s: %s must be subclass of %s [0x%x]",
+        log_trace(aot, verification)("check_verification_constraint: %s: %s must be subclass of %s [0x%x]",
                                      klass->external_name(), from_name->as_klass_external_name(),
                                      name->as_klass_external_name(), record->verifier_constraint_flag(i));
       }

@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotLogging.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/lambdaFormInvokers.hpp"
@@ -68,7 +69,7 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
     _file_input(do_open(file), /* need_close=*/true),
     _input_stream(&_file_input),
     _parse_mode(parse_mode) {
-  log_info(cds)("Parsing %s%s", file,
+  aot_log_info(aot)("Parsing %s%s", file,
                 parse_lambda_forms_invokers_only() ? " (lambda form invokers only)" : "");
   if (!_file_input.is_open()) {
     char reason[JVM_MAXPATHLEN];
@@ -163,18 +164,18 @@ void ClassListParser::parse_class_name_and_attributes(TRAPS) {
     if (message != nullptr) {
       ex_msg = java_lang_String::as_utf8_string(message);
     }
-    log_warning(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
+    aot_log_warning(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
     // We might have an invalid class name or an bad class. Warn about it
     // and keep going to the next line.
     CLEAR_PENDING_EXCEPTION;
-    log_warning(cds)("Preload Warning: Cannot find %s", _class_name);
+    aot_log_warning(aot)("Preload Warning: Cannot find %s", _class_name);
     return;
   }
 
   assert(klass != nullptr, "sanity");
-  if (log_is_enabled(Trace, cds)) {
+  if (aot_log_is_enabled(Trace, aot)) {
     ResourceMark rm(THREAD);
-    log_trace(cds)("Shared spaces preloaded: %s", klass->external_name());
+    log_trace(aot)("Shared spaces preloaded: %s", klass->external_name());
   }
 
   if (klass->is_instance_klass()) {
@@ -527,7 +528,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
     error("If source location is specified, id must be also specified");
   }
   if (strncmp(_class_name, "java/", 5) == 0) {
-    log_info(cds)("Prohibited package for non-bootstrap classes: %s.class from %s",
+    aot_log_info(aot)("Prohibited package for non-bootstrap classes: %s.class from %s",
           _class_name, _source);
     THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
@@ -619,7 +620,7 @@ void ClassListParser::resolve_indy(JavaThread* current, Symbol* class_name_symbo
     if (message != nullptr) {
       ex_msg = java_lang_String::as_utf8_string(message);
     }
-    log_warning(cds)("resolve_indy for class %s has encountered exception: %s %s",
+    aot_log_warning(aot)("resolve_indy for class %s has encountered exception: %s %s",
                      class_name_symbol->as_C_string(),
                      PENDING_EXCEPTION->klass()->external_name(),
                      ex_msg);
@@ -659,7 +660,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
       BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
       Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);
       if (!LambdaProxyClassDictionary::is_supported_invokedynamic(&bootstrap_specifier)) {
-        log_debug(cds, lambda)("is_supported_invokedynamic check failed for cp_index %d", pool_index);
+        log_debug(aot, lambda)("is_supported_invokedynamic check failed for cp_index %d", pool_index);
         continue;
       }
       bool matched = is_matching_cp_entry(pool, pool_index, CHECK);
@@ -682,7 +683,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
     }
     if (!found) {
       ResourceMark rm(THREAD);
-      log_warning(cds)("No invoke dynamic constant pool entry can be found for class %s. The classlist is probably out-of-date.",
+      aot_log_warning(aot)("No invoke dynamic constant pool entry can be found for class %s. The classlist is probably out-of-date.",
                      class_name_symbol->as_C_string());
     }
   }

@@ -32,7 +32,7 @@
  * @run driver LargePages
  */
 public class LargePages {
-    static final String CDS_LOGGING = "-Xlog:cds,cds+hashtables";
+    static final String CDS_LOGGING = "-Xlog:cds,aot+hashtables";
 
     public static void main(String[] args) throws Exception {
         SharedStringsUtils.run(args, LargePages::test);
