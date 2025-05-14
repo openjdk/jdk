@@ -1226,7 +1226,7 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
   }
   // Mod by zero?  Throw exception at runtime!
   if (i2->is_con() && i2->get_con() == 0) {
-    return TypeInt::POS;
+    return TypeInt::ZERO;
   }
   if (i1->is_con() && i2->is_con()) {
     // We must be modulo'ing 2 int constants.
@@ -1520,7 +1520,7 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
 
   // Mod by zero?  Throw exception at runtime!
   if (i2->is_con() && i2->get_con() == 0) {
-    return TypeLong::POS;
+    return TypeLong::ZERO;
   }
   if (i1->is_con() && i2->is_con()) {
     // We must be modulo'ing 2 long constants.
