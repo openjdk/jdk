@@ -398,10 +398,10 @@ public abstract class Reader implements Readable, Closeable {
 
     private String readAllCharsAsString() throws IOException {
         StringBuilder result = new StringBuilder();
-        char[] str = new char[TRANSFER_BUFFER_SIZE];
-        int n;
-        while ((n = read(str)) != -1) {
-            result.append(str, 0, n);
+        char[] cbuf = new char[TRANSFER_BUFFER_SIZE];
+        int nread;
+        while ((nread = read(cbuf, 0, cbuf.length)) != -1) {
+            result.append(cbuf, 0, nread);
         }
         return result.toString();
     }
