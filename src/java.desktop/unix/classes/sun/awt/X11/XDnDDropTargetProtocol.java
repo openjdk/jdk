@@ -50,7 +50,7 @@ import sun.awt.X11GraphicsConfig;
  *
  * @since 1.5
  */
-class XDnDDropTargetProtocol extends XDropTargetProtocol {
+final class XDnDDropTargetProtocol extends XDropTargetProtocol {
     private static final PlatformLogger logger =
         PlatformLogger.getLogger("sun.awt.X11.xembed.xdnd.XDnDDropTargetProtocol");
 
@@ -84,10 +84,12 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         return new XDnDDropTargetProtocol(listener);
     }
 
+    @Override
     public String getProtocolName() {
         return XDragAndDropProtocols.XDnD;
     }
 
+    @Override
     public void registerDropTarget(long window) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
@@ -110,12 +112,14 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         }
     }
 
+    @Override
     public void unregisterDropTarget(long window) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
         XDnDConstants.XA_XdndAware.DeleteProperty(window);
     }
 
+    @Override
     public void registerEmbedderDropSite(long embedder) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
@@ -267,6 +271,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         putEmbedderRegistryEntry(embedder, overridden, version, proxy);
     }
 
+    @Override
     public void unregisterEmbedderDropSite(long embedder) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
@@ -317,6 +322,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
      * Gets and stores in the registry the embedder's XDnD drop site info
      * from the embedded.
      */
+    @Override
     public void registerEmbeddedDropSite(long embedded) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
@@ -405,6 +411,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         putEmbedderRegistryEntry(embedded, overridden, version, proxy);
     }
 
+    @Override
     public boolean isProtocolSupported(long window) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
@@ -715,6 +722,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         return true;
     }
 
+    @Override
     public int getMessageType(XClientMessageEvent xclient) {
         long messageType = xclient.get_message_type();
 
@@ -731,6 +739,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         }
     }
 
+    @Override
     protected boolean processClientMessageImpl(XClientMessageEvent xclient) {
         long messageType = xclient.get_message_type();
 
@@ -747,6 +756,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         }
     }
 
+    @Override
     protected void sendEnterMessageToToplevel(long toplevel,
                                               XClientMessageEvent xclient) {
         /* flags */
@@ -785,6 +795,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         }
     }
 
+    @Override
     protected void sendLeaveMessageToToplevel(long toplevel,
                                               XClientMessageEvent xclient) {
         sendLeaveMessageToToplevelImpl(toplevel, xclient.get_data(0));
@@ -809,6 +820,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         }
     }
 
+    @Override
     public boolean sendResponse(long ctxt, int eventID, int action) {
         XClientMessageEvent xclient = new XClientMessageEvent(ctxt);
 
@@ -858,6 +870,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         return true;
     }
 
+    @Override
     public Object getData(long ctxt, long format)
       throws IllegalArgumentException, IOException {
         XClientMessageEvent xclient = new XClientMessageEvent(ctxt);
@@ -879,6 +892,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         return XDnDConstants.XDnDSelection.getData(format, time_stamp);
     }
 
+    @Override
     public boolean sendDropDone(long ctxt, boolean success, int dropAction) {
         XClientMessageEvent xclient = new XClientMessageEvent(ctxt);
 
@@ -963,6 +977,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         return true;
     }
 
+    @Override
     public final long getSourceWindow() {
         return sourceWindow;
     }
@@ -970,6 +985,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
     /**
      * Reset the state of the object.
      */
+    @Override
     public void cleanup() {
         // Clear the reference to this protocol.
         XDropTargetEventProcessor.reset();
@@ -1004,10 +1020,12 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         targetXWindow = null;
     }
 
+    @Override
     public boolean isDragOverComponent() {
         return targetXWindow != null;
     }
 
+    @Override
     public void adjustEventForForwarding(XClientMessageEvent xclient,
                                          EmbedderRegistryEntry entry) {
         /* Adjust the event to match the XDnD protocol version. */
@@ -1077,6 +1095,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
      * dispatch thread.
      */
 
+    @Override
     public boolean forwardEventToEmbedded(long embedded, long ctxt,
                                           int eventID) {
         if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
@@ -1225,6 +1244,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         return true;
     }
 
+    @Override
     public boolean isXEmbedSupported() {
         return true;
     }

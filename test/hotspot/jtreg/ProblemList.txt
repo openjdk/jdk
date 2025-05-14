@@ -76,6 +76,8 @@ compiler/interpreter/Test6833129.java 8335266 generic-i586
 compiler/ciReplay/TestInliningProtectionDomain.java 8349191 generic-all
 compiler/ciReplay/TestIncrementalInlining.java 8349191 generic-all
 
+compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
+
 #############################################################################
 
 # :hotspot_gc
@@ -103,7 +105,6 @@ gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
 # :hotspot_runtime
 
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
-runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
 runtime/Monitor/SyncOnValueBasedClassTest.java 8340995 linux-s390x
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64

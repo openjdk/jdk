@@ -29,7 +29,7 @@ class TypeVariableWithBound2<T extends java.lang.@TA CharSequence> {
   TypeVariableWithBound2();
 }
 
-class TypeVariableWithBound3<T extends java.lang.@TA Object> {
+class TypeVariableWithBound3<T extends java.lang.@TA Object & java.lang.CharSequence> {
 
   TypeVariableWithBound3();
 }
@@ -37,6 +37,61 @@ class TypeVariableWithBound3<T extends java.lang.@TA Object> {
 class TypeVariableWithBound4<T extends java.lang.@TA CharSequence> {
 
   TypeVariableWithBound4();
+}
+
+class TypeVariableWithBound5<T extends java.lang.CharSequence> {
+
+  TypeVariableWithBound5();
+}
+
+class TypeVariableWithBound6<T extends java.lang.CharSequence> {
+
+  TypeVariableWithBound6();
+}
+
+class TypeVariableWithBoundRecursive<T extends TypeVariableWithBoundRecursive<T>> {
+
+  TypeVariableWithBoundRecursive();
+}
+
+class TypeVariableBoundsOnMethods {
+
+  TypeVariableBoundsOnMethods();
+
+  public <@TA T> void test1();
+
+  public <@TA T> void test2();
+
+  public <T extends java.lang.@TA Object> void test3();
+
+  public <T extends java.lang.@TA CharSequence> void test4();
+
+  public <T extends java.lang.@TA Object & java.lang.CharSequence> void test5();
+
+  public <T extends java.lang.@TA CharSequence> void test6();
+
+  public <T extends java.lang.CharSequence> void test7();
+
+  public <T extends java.lang.CharSequence> void test8();
+}
+
+class TypeVariableBoundsOnConstructors {
+
+  public <@TA T> TypeVariableBoundsOnConstructors(boolean b);
+
+  public <@TA T> TypeVariableBoundsOnConstructors(byte b);
+
+  public <T extends java.lang.@TA Object> TypeVariableBoundsOnConstructors(char c);
+
+  public <T extends java.lang.@TA CharSequence> TypeVariableBoundsOnConstructors(short s);
+
+  public <T extends java.lang.@TA Object & java.lang.CharSequence> TypeVariableBoundsOnConstructors(int i);
+
+  public <T extends java.lang.@TA CharSequence> TypeVariableBoundsOnConstructors(long l);
+
+  public <T extends java.lang.CharSequence> TypeVariableBoundsOnConstructors(float f);
+
+  public <T extends java.lang.CharSequence> TypeVariableBoundsOnConstructors(double d);
 }
 
 @java.lang.annotation.Target({TYPE_USE})

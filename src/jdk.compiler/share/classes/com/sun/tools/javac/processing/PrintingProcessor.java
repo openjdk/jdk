@@ -259,7 +259,7 @@ public class PrintingProcessor extends AbstractProcessor {
                 if (kind == CLASS) {
                     TypeMirror supertype = e.getSuperclass();
                     if (supertype.getKind() != TypeKind.NONE) {
-                        if (!isUnimportantObjectType(supertype))
+                        if (isImportantType(supertype))
                             writer.print(" extends " + supertype);
                     }
                 }
@@ -533,7 +533,7 @@ public class PrintingProcessor extends AbstractProcessor {
             List<? extends TypeMirror> printableBounds =
                     tpe.getBounds()
                        .stream()
-                       .filter(type -> !isUnimportantObjectType(type))
+                       .filter(type -> isImportantType(type))
                        .toList();
 
             if (printableBounds.isEmpty()) {
@@ -784,13 +784,22 @@ public class PrintingProcessor extends AbstractProcessor {
             writer.print(spaces[indentation]);
         }
 
-        private boolean isUnimportantObjectType(TypeMirror type) {
+        /**{@return true if this type is either not {@code java.lang.Object},
+         * or is annotated, and hence needs to be included in the output,
+         * even for cases where there's implicit {@code java.lang.Object} type.}
+         *
+         * @param type the type to check.
+         */
+        private boolean isImportantType(TypeMirror type) {
             if (!type.getAnnotationMirrors().isEmpty()) {
-                return false;
+                return true;
             }
             TypeElement e2 = (TypeElement)
                 ((DeclaredType) type).asElement();
-            return e2.getSuperclass().getKind() == TypeKind.NONE;
+            if (!e2.getKind().isClass()) {
+                return true;
+            }
+            return e2.getSuperclass().getKind() != TypeKind.NONE;
         }
     }
 }
