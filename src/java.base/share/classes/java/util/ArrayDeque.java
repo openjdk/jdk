@@ -151,8 +151,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
             System.arraycopy(es, head,
                              es, head + newSpace,
                              oldCapacity - head);
-            for (int i = head, to = (head += newSpace); i < to; i++)
-                es[i] = null;
+            Arrays.fill(es, head, head += newSpace, null);
         }
     }
 
@@ -1046,7 +1045,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
         // assert 0 <= end && end < es.length;
         for (int to = (i <= end) ? end : es.length;
              ; i = 0, to = end) {
-            for (; i < to; i++) es[i] = null;
+            Arrays.fill(es, i, to, null);
             if (to == end) break;
         }
     }
