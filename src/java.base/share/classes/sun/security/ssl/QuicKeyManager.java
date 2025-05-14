@@ -1102,13 +1102,7 @@ sealed abstract class QuicKeyManager
 
         @Override
         public SecretKey deriveKey(final String algorithm) throws IOException {
-            final HkdfLabel hkdfLabel;
-            try {
-                hkdfLabel = HkdfLabel.fromLabel(algorithm);
-            } catch (IllegalArgumentException iae) {
-                throw new SSLHandshakeException("Invalid label: " + algorithm
-                        + " for key generation");
-            }
+            final HkdfLabel hkdfLabel = HkdfLabel.fromLabel(algorithm);
             try {
                 final KDF hkdf = KDF.getInstance(this.cs.hashAlg.hkdfAlgorithm);
                 final int keyLength = getKeyLength(hkdfLabel);
@@ -1125,13 +1119,7 @@ sealed abstract class QuicKeyManager
 
         @Override
         public byte[] deriveData(final String algorithm) throws IOException {
-            final HkdfLabel hkdfLabel;
-            try {
-                hkdfLabel = HkdfLabel.fromLabel(algorithm);
-            } catch (IllegalArgumentException iae) {
-                throw new SSLHandshakeException("Invalid label: " + algorithm
-                        + " for key generation");
-            }
+            final HkdfLabel hkdfLabel = HkdfLabel.fromLabel(algorithm);
             try {
                 final KDF hkdf = KDF.getInstance(this.cs.hashAlg.hkdfAlgorithm);
                 final int keyLength = getKeyLength(hkdfLabel);
