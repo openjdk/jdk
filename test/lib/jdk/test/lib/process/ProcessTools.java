@@ -458,8 +458,6 @@ public final class ProcessTools {
             args.add(System.getProperty("java.class.path"));
         }
 
-        args.add("-Dcompile.jdk=" + System.getProperty("compile.jdk"));
-
         String testThreadFactoryName = System.getProperty("test.thread.factory");
         if (testThreadFactoryName != null) {
             args.addAll(addTestThreadFactoryArgs(testThreadFactoryName, Arrays.asList(command)));
