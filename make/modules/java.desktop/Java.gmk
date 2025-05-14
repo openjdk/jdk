@@ -31,15 +31,6 @@ DOCLINT += -Xdoclint:all/protected \
 COPY += .gif .png .wav .txt .xml .css .pf
 CLEAN += iio-plugin.properties cursors.properties
 
-EXCLUDES += \
-    java/awt/doc-files \
-    javax/swing/doc-files \
-    javax/swing/text/doc-files \
-    javax/swing/plaf/synth/doc-files \
-    javax/swing/undo/doc-files \
-    sun/awt/X11/doc-files \
-    #
-
 EXCLUDE_FILES += \
     javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
     javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
