@@ -59,8 +59,8 @@
 //      aot_log_warning(aot)("Unable to read the file header.");
 //
 // The messages printed with the log_aot_xxx() macros work as if they are
-// using the [cds] tag when running with the "classic" CDS flags such as
-// -XX:SharedArchiveFile:
+// using the [cds] tag when running with the "classic" CDS workflow (i.e.,
+// new -XX:AOTxxx flags are not used).
 //
 //      $ java -Xlog:cds -XX:SharedArchiveFile=bad.jsa ...
 //      [0.020s][info][cds] trying to map bad.jsa
@@ -86,14 +86,13 @@
 //
 // This is modeled after the deprecate/obsolete/expire process of VM options in arguments.cpp
 //
-// JDK 25 - When using OLD CDS flags (see the list of flags in CDSConfig::check_new_flag()), the
-//          the CDS Compatibility Logs must be selected with -Xlog:cds
+// JDK 25 - When no -XX:AOTxxx flags are used, the CDS Compatibility Logs must be selected
+//          with -Xlog:cds
 //
 // JDK 26 - Same as above, except that when -Xlog:cds is specified in the command-line, a warning
 //          message is printed to indicate that -Xlog:cds is deprecated.
 //
-// JDK 27 - When using OLD CDS flags (see the list of flags in CDSConfig::check_new_flag()), the
-//          the CDS Compatibility Logs must be selected with -Xlog:aot.
+// JDK 27 - The CDS Compatibility Logs must be selected with -Xlog:aot.
 //
 //          When -Xlog:cds is specified in the command-line, a warning message is printed to
 //          indicate that -Xlog:cds is obsolete.
