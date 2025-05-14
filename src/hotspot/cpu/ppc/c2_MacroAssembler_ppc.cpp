@@ -637,8 +637,7 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
         vsumsws(dst, a, b);
         break;
       case Op_MulReductionVI:
-        assert(false, "not implemented");
-        // TODO: vmulesw , vmulosw
+        vmuluwm(dst, a , b);
         break;
       case Op_MinReductionV:
         vminsw(dst, a, b);
@@ -656,8 +655,7 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
         add(dst, src, dst);
         break;
       case Op_MulReductionVI:
-        assert(false, "not implemented");
-        // TODO:
+        mullw(dst, src, dst);
         break;
       case Op_MinReductionV:
         cmpw(CR0, src, dst);
