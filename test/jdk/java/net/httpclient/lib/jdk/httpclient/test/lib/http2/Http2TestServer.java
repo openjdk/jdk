@@ -395,7 +395,13 @@ public final class Http2TestServer implements AutoCloseable {
     }
 
     Http2Handler getHandlerFor(String path) {
-        final RequestPathMatcherUtil.Resolved<Http2Handler> match = RequestPathMatcherUtil.findHandler(path, handlers);
+        final RequestPathMatcherUtil.Resolved<Http2Handler> match;
+        try {
+             match = RequestPathMatcherUtil.findHandler(path, handlers);
+        } catch (IllegalArgumentException iae) {
+            // handler could not be located
+            return null;
+        }
         System.err.println(name + ": Using handler for: " + match.bestMatchedPath());
         return match.handler();
     }

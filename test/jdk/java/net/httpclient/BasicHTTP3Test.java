@@ -304,9 +304,9 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         if (error != null) throw error;
     }
 
+    // verify that the client handles HTTP/3 reset stream correctly
     @Test
     public void testH3Reset() throws Exception {
-        // check that the client handles reset stream correctly
         HttpClient client = makeNewClient();
         URI uri = URI.create(h3URI);
         Builder builder = HttpRequest.newBuilder(uri)
@@ -319,16 +319,24 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         assertEquals(response.statusCode(), 200, "first response status");
         assertEquals(response.version(), HTTP_2, "first response version");
 
-        builder = HttpRequest.newBuilder(URI.create(h3URI.replace("h3","h2")))
+        // instruct the server side handler to throw an exception
+        // that then causes the test server to reset the stream
+        final String resetCausingURI = h3URI + "?handlerShouldThrow=true";
+        builder = HttpRequest.newBuilder(URI.create(resetCausingURI))
                 .GET();
         request = builder.version(Version.HTTP_3)
                 .setOption(H3_DISCOVERY, ALT_SVC)
                 .build();
         try {
             response = client.send(request, BodyHandlers.ofString());
-            throw new RuntimeException("Did not get expected exception");
+            throw new RuntimeException("Unexpectedly received a response instead of an exception," +
+                    " response: " + response);
         } catch (IOException e) {
-            assertTrue(e.getMessage().contains("reset by peer"), "Expected: reset by peer, got: "+e.getMessage());
+            final String msg = e.getMessage();
+            if (msg == null || !msg.contains("reset by peer")) {
+                // unexpected message in the exception, propagate the exception
+                throw e;
+            }
         }
         var tracker = TRACKER.getTracker(client);
         client = null;
@@ -451,6 +459,11 @@ public class BasicHTTP3Test implements HttpServerAdapters {
             try {
                 URI uri = t.getRequestURI();
                 System.err.printf("Handler received request for %s\n", uri);
+                final String query = uri.getQuery();
+                if (query != null && query.contains("handlerShouldThrow=true")) {
+                    System.err.printf("intentionally throwing an exception for request %s\n", uri);
+                    throw new RuntimeException("intentionally thrown by handler for request " + uri);
+                }
                 try (InputStream is = t.getRequestBody()) {
                     is.readAllBytes();
                 }

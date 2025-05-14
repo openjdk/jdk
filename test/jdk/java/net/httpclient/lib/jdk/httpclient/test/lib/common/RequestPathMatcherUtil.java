@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,15 @@ public class RequestPathMatcherUtil {
 
     /**
      * Matches the {@code path} against the registered {@code pathHandlers} and returns the best
-     * matched handler
+     * matched handler. If no handler is found for the {@code path}, then this method throws
+     * an {@link IllegalArgumentException}
      *
      * @param path         The request path
      * @param pathHandlers The handlers for each of the registered paths
      * @param <T>
      * @return The resolved result
+     * @throws IllegalArgumentException if no handler could be located for the {@code path}
+     * @throws NullPointerException if {@code pathHandlers} is null
      */
     public static <T> Resolved<T> findHandler(final String path, final Map<String, T> pathHandlers) {
         Objects.requireNonNull(pathHandlers, "pathHandlers is null");
@@ -57,8 +60,7 @@ public class RequestPathMatcherUtil {
         final T handler = href.get();
         if (handler == null) {
             System.err.println("No handler found for path: " + path);
-            // TODO: throw a checked exception instead?
-            throw new RuntimeException("No handler found for path " + path);
+            throw new IllegalArgumentException("No handler found for path " + path);
         }
         return new Resolved<T>(bestMatch.get(), handler);
     }

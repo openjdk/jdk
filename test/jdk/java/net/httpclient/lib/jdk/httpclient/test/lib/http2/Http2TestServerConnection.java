@@ -86,6 +86,7 @@ import jdk.internal.net.http.frame.AltSvcFrame;
 import java.util.function.Predicate;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static jdk.internal.net.http.frame.ErrorFrame.REFUSED_STREAM;
 import static jdk.internal.net.http.frame.SettingsFrame.DEFAULT_MAX_FRAME_SIZE;
@@ -781,14 +782,19 @@ public class Http2TestServerConnection {
                     headers, rspheadersBuilder, uri, bis, getSSLSession(),
                     bos, this, pushAllowed);
 
-            // give to user
-            Http2Handler handler = server.getHandlerFor(uri.getPath());
-
-            // Need to pass the BodyInputStream reference to the BodyOutputStream, so it can determine if the stream
-            // must be reset due to the BodyInputStream not being consumed by the handler when invoked.
-            if (bis instanceof BodyInputStream bodyInputStream) bos.bis = bodyInputStream;
-
+            final String reqPath = uri.getPath();
+            // locate a handler for the request
+            final Http2Handler handler = server.getHandlerFor(reqPath);
             try {
+                if (handler == null) {
+                    // no handler available for the request. respond with a 404 response
+                    respondForMissingHandler(reqPath, exchange);
+                    return;
+                }
+                // Need to pass the BodyInputStream reference to the BodyOutputStream, so it can determine if the stream
+                // must be reset due to the BodyInputStream not being consumed by the handler when invoked.
+                if (bis instanceof BodyInputStream bodyInputStream) bos.bis = bodyInputStream;
+
                 handler.handle(exchange);
             } catch (IOException closed) {
                 if (bos.closed) {
@@ -807,6 +813,15 @@ public class Http2TestServerConnection {
             System.err.println(server.name + ": handleRequest exception: " + e);
             e.printStackTrace();
             close(-1);
+        }
+    }
+    private void respondForMissingHandler(final String reqPath, final Http2TestExchange exchange)
+            throws IOException {
+        final byte[] responseBody = ("No handler available to handle request " + reqPath)
+                .getBytes(US_ASCII);
+        try (final OutputStream os = exchange.getResponseBody()) {
+            exchange.sendResponseHeaders(404, responseBody.length);
+            os.write(responseBody);
         }
     }
 

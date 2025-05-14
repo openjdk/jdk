@@ -23,6 +23,7 @@
 package jdk.httpclient.test.lib.http3;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.net.InetAddress;
@@ -54,6 +55,7 @@ import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.http3.frames.SettingsFrame;
 import jdk.internal.net.quic.QuicTLSContext;
 import jdk.internal.net.quic.QuicVersion;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoCloseable {
     private static final AtomicLong IDS = new AtomicLong();
@@ -217,13 +219,14 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
         final ThrowingConsumer<Http2TestExchange, IOException> handler;
         if (this.handlerProvider != null) {
             handler = this.handlerProvider.apply(reqPath);
-            if (handler == null) {
-                System.err.println("No handler available for handling request: " + reqPath);
-                throw new RuntimeException("No handler available to handle " + reqPath);
-            }
         } else {
-            final var match = RequestPathMatcherUtil.findHandler(reqPath, this.handlers);
-            handler = match.handler();
+            RequestPathMatcherUtil.Resolved<ThrowingConsumer<Http2TestExchange, IOException>> match = null;
+            try {
+                match = RequestPathMatcherUtil.findHandler(reqPath, this.handlers);
+            } catch (IllegalArgumentException iae) {
+                // no handler available for the request path
+            }
+            handler = match == null ? null : match.handler();
         }
         // The server Http3ServerExchange uses a BlockingQueue<ByteBuffer> to
         // read data so handling the exchange in the current thread would
@@ -232,6 +235,11 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
         Thread currentThread = Thread.currentThread();
         this.quicServer.executorService().execute(() -> {
             try {
+                // if no handler was located, we respond with a 404
+                if (handler == null) {
+                    respondForMissingHandler(reqPath, exchange);
+                    return;
+                }
                 // This assertion is too strong: there are cases
                 //     where the calling task might terminate before
                 //     the submitted task is executed. In which case
@@ -252,6 +260,16 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
                 }
             }
         });
+    }
+
+    private void respondForMissingHandler(final String reqPath, final Http2TestExchange exchange)
+            throws IOException {
+        final byte[] responseBody = ("No handler available to handle request " + reqPath)
+                .getBytes(US_ASCII);
+        try (final OutputStream os = exchange.getResponseBody()) {
+            exchange.sendResponseHeaders(404, responseBody.length);
+            os.write(responseBody);
+        }
     }
 
     /**
