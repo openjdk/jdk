@@ -133,6 +133,10 @@ public:
   void set_profile_trip_cnt(float ptc) { _profile_trip_cnt = ptc; }
   float profile_trip_cnt()             { return _profile_trip_cnt; }
 
+#ifdef ASSERT
+  uint _peeling_opportunities_count = 0;
+#endif
+
   LoopNode(Node *entry, Node *backedge)
     : RegionNode(3), _loop_flags(0), _unswitch_count(0),
       _profile_trip_cnt(COUNT_UNKNOWN) {

@@ -47,7 +47,6 @@
 #include "utilities/ticks.hpp"
 #include "utilities/vmEnums.hpp"
 #include "opto/printinlining.hpp"
-#include "utilities/pair.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -385,7 +384,6 @@ class Compile : public Phase {
   IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
   static IdealGraphPrinter* _debug_network_printer;
-  GrowableArray<Pair<node_idx_t, uint>> _peeling_rounds_of_node;
 #endif
 
 
@@ -684,7 +682,6 @@ public:
   void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, const frame* fr);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
-  uint& peeling_rounds_at_node(const Node* head);
 #endif
 
   const GrowableArray<ParsePredicateNode*>& parse_predicates() const {

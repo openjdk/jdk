@@ -663,7 +663,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _coarsened_locks(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
-      NOT_PRODUCT(_peeling_rounds_of_node(comp_arena(), 8, 0, Pair<node_idx_t, uint>(0, 0)) COMMA)
           _unique(0),
       _dead_node_count(0),
       _dead_node_list(comp_arena()),
@@ -5289,17 +5288,6 @@ void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const N
   }
   tty->print_cr("Method printed over network stream to IGV");
   _debug_network_printer->print(name, C->root(), visible_nodes, fr);
-}
-
-uint& Compile::peeling_rounds_at_node(const Node* const head) {
-  for(int i = 0; i < _peeling_rounds_of_node.length(); ++i) {
-    auto& head_and_round_count = _peeling_rounds_of_node.at(i);
-    if(head_and_round_count.first == head->_idx) {
-      return head_and_round_count.second;
-    }
-  }
-  _peeling_rounds_of_node.push(Pair<node_idx_t, uint>(head->_idx, 0));
-  return _peeling_rounds_of_node.at(_peeling_rounds_of_node.length() - 1).second;
 }
 #endif
 

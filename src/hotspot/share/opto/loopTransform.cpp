@@ -503,21 +503,21 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
   }
 
   // Check for vectorized loops, any peeling done was already applied.
-  // Peeling is not legal here, we don't even stress peel!
   if (_head->is_CountedLoop()) {
     CountedLoopNode* cl = _head->as_CountedLoop();
     if (cl->is_unroll_only() || cl->trip_count() == 1) {
+      // Peeling is not legal here (cf. assert in do_peeling), we don't even stress peel!
       return 0;
     }
   }
 
-#ifndef PRODUCT
+#ifdef ASSERT
   // It is now safe to peel or not.
   if (StressLoopPeeling) {
+    LoopNode* loop_head = _head->as_Loop();
     static constexpr uint max_peeling_opportunities = 5;
-    uint& rounds = phase->C->peeling_rounds_at_node(_head);
-    if (rounds < max_peeling_opportunities) {
-      rounds++;
+    if (loop_head->_peeling_opportunities_count < max_peeling_opportunities) {
+      loop_head->_peeling_opportunities_count++;
       // In case of stress, let's just pick randomly...
       return phase->C->random() % 2 == 0 ? estimate : 0;
     }
