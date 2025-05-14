@@ -151,7 +151,7 @@ abstract class QuicCipher {
 
     static QuicReadCipher createReadCipher(final CipherSuite cipherSuite,
             final SecretKey secret, final SecretKey key,
-            final SecretKey iv, final SecretKey hp,
+            final byte[] iv, final SecretKey hp,
             final int keyPhase) throws GeneralSecurityException {
         return switch (cipherSuite) {
             case TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384 ->
@@ -167,7 +167,7 @@ abstract class QuicCipher {
 
     static QuicWriteCipher createWriteCipher(final CipherSuite cipherSuite,
             final SecretKey secret, final SecretKey key,
-            final SecretKey iv, final SecretKey hp,
+            final byte[] iv, final SecretKey hp,
             final int keyPhase) throws GeneralSecurityException {
         return switch (cipherSuite) {
             case TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384 ->
@@ -375,12 +375,12 @@ abstract class QuicCipher {
         private final byte[] iv;
 
         T13GCMReadCipher(final CipherSuite cipherSuite, final SecretKey secret,
-                final SecretKey key, final SecretKey iv, final SecretKey hp,
+                final SecretKey key, final byte[] iv, final SecretKey hp,
                 final int keyPhase)
                 throws GeneralSecurityException {
             super(cipherSuite, secret, new T13AESHPCipher(hp), keyPhase);
             this.key = key;
-            this.iv = iv.getEncoded();
+            this.iv = iv;
             this.cipher = Cipher.getInstance("AES/GCM/NoPadding");
         }
 
@@ -452,11 +452,11 @@ abstract class QuicCipher {
         private final byte[] iv;
 
         T13GCMWriteCipher(final CipherSuite cipherSuite, final SecretKey secret,
-                final SecretKey key, final SecretKey iv, final SecretKey hp,
+                final SecretKey key, final byte[] iv, final SecretKey hp,
                 final int keyPhase) throws GeneralSecurityException {
             super(cipherSuite, secret, new T13AESHPCipher(hp), keyPhase);
             this.key = key;
-            this.iv = iv.getEncoded();
+            this.iv = iv;
             this.cipher = Cipher.getInstance(CIPHER_ALGORITHM_NAME);
         }
 
@@ -543,11 +543,11 @@ abstract class QuicCipher {
 
         T13CC20P1305ReadCipher(final CipherSuite cipherSuite,
                 final SecretKey secret, final SecretKey key,
-                final SecretKey iv, final SecretKey hp, final int keyPhase)
+                final byte[] iv, final SecretKey hp, final int keyPhase)
                 throws GeneralSecurityException {
             super(cipherSuite, secret, new T13CC20HPCipher(hp), keyPhase);
             this.key = key;
-            this.iv = iv.getEncoded();
+            this.iv = iv;
             this.cipher = Cipher.getInstance("ChaCha20-Poly1305");
         }
 
@@ -619,12 +619,12 @@ abstract class QuicCipher {
 
         T13CC20P1305WriteCipher(final CipherSuite cipherSuite,
                                 final SecretKey secret, final SecretKey key,
-                                final SecretKey iv, final SecretKey hp,
+                                final byte[] iv, final SecretKey hp,
                                 final int keyPhase)
                 throws GeneralSecurityException {
             super(cipherSuite, secret, new T13CC20HPCipher(hp), keyPhase);
             this.key = key;
-            this.iv = iv.getEncoded();
+            this.iv = iv;
             this.cipher = Cipher.getInstance(CIPHER_ALGORITHM_NAME);
         }
 

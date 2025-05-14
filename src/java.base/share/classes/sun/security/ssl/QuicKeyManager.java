@@ -70,7 +70,7 @@ sealed abstract class QuicKeyManager
         permits QuicKeyManager.HandshakeKeyManager,
         QuicKeyManager.InitialKeyManager, QuicKeyManager.OneRttKeyManager {
 
-    private record QuicKeys(SecretKey key, SecretKey iv, SecretKey hp) {
+    private record QuicKeys(SecretKey key, byte[] iv, SecretKey hp) {
     }
 
     private record CipherPair(QuicReadCipher readCipher,
@@ -153,7 +153,7 @@ sealed abstract class QuicKeyManager
                 traffic_secret);
         final QuicTLSData tlsData = getQuicData(quicVersion);
         final SecretKey quic_key = kd.deriveKey(tlsData.getTlsKeyLabel());
-        final SecretKey quic_iv = kd.deriveKey(tlsData.getTlsIvLabel());
+        final byte[] quic_iv = kd.deriveData(tlsData.getTlsIvLabel());
         final SecretKey quic_hp = kd.deriveKey(tlsData.getTlsHpLabel());
         return new QuicKeys(quic_key, quic_iv, quic_hp);
     }
@@ -166,7 +166,7 @@ sealed abstract class QuicKeyManager
                 traffic_secret);
         final QuicTLSData tlsData = getQuicData(quicVersion);
         final SecretKey quic_key = kd.deriveKey(tlsData.getTlsKeyLabel());
-        final SecretKey quic_iv = kd.deriveKey(tlsData.getTlsIvLabel());
+        final byte[] quic_iv = kd.deriveData(tlsData.getTlsIvLabel());
         return new QuicKeys(quic_key, quic_iv, quic_hp);
     }
 
@@ -1123,6 +1123,27 @@ sealed abstract class QuicKeyManager
             }
         }
 
+        @Override
+        public byte[] deriveData(final String algorithm) throws IOException {
+            final HkdfLabel hkdfLabel;
+            try {
+                hkdfLabel = HkdfLabel.fromLabel(algorithm);
+            } catch (IllegalArgumentException iae) {
+                throw new SSLHandshakeException("Invalid label: " + algorithm
+                        + " for key generation");
+            }
+            try {
+                final KDF hkdf = KDF.getInstance(this.cs.hashAlg.hkdfAlgorithm);
+                final int keyLength = getKeyLength(hkdfLabel);
+                final byte[] hkdfInfo =
+                        createHkdfInfo(hkdfLabel.tls13LabelBytes, keyLength);
+                return hkdf.deriveData(HKDFParameterSpec.expandOnly(
+                        secret, hkdfInfo, keyLength));
+            } catch (GeneralSecurityException gse) {
+                throw new SSLHandshakeException("Could not derive key", gse);
+            }
+        }
+
         private int getKeyLength(final HkdfLabel hkdfLabel) {
             return switch (hkdfLabel) {
                 case quicku, quicv2ku -> {
@@ -1139,7 +1160,8 @@ sealed abstract class QuicKeyManager
         private String getKeyAlgorithm(final HkdfLabel hkdfLabel) {
             return switch (hkdfLabel) {
                 case quicku, quicv2ku -> "TlsUpdateNplus1";
-                case quiciv, quicv2iv -> hkdfLabel.label;
+                case quiciv, quicv2iv ->
+                        throw new IllegalArgumentException("IV not expected");
                 default -> this.cs.bulkCipher.algorithm;
             };
         }
