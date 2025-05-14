@@ -128,7 +128,7 @@ public class UriImportExport {
             testUri("file:///foo/bar/doesnotexist");
             testUri("file:/foo/bar/doesnotexist");
 
-            // file:///foo/bar/\u0440\u0443\u0441\u0441\u043A\u0438\u0439 (Russian)
+            // file:///foo/bar/русский (Russian)
             testUri("file:///foo/bar/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9");
 
             // invalid

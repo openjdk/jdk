@@ -46,7 +46,7 @@ import java.io.Serial;
  * using the {@code java.awt.event.KeyEvent.getExtendedKeyCodeForChar} call.
  * For example, a menu shortcut for "Ctrl+cyrillic ef" is created by
  * <p>
- * <code>MenuShortcut ms = new MenuShortcut(KeyEvent.getExtendedKeyCodeForChar('\u0444'), false);</code>
+ * <code>MenuShortcut ms = new MenuShortcut(KeyEvent.getExtendedKeyCodeForChar('ф'), false);</code>
  * <p>
  * Note that shortcuts created with a keycode or an extended keycode defined as a constant in {@code KeyEvent}
  * work regardless of the current keyboard layout. However, a shortcut made of

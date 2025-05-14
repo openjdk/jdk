@@ -134,7 +134,7 @@ public final class FileAssociations {
 
             // To test unicode arguments on Windows manually:
             // 1. add the following argument ("Hello" in Bulgarian) to the
-            //    additionalArgs list: "\u0417\u0434\u0440\u0430\u0432\u0435\u0439\u0442\u0435"
+            //    additionalArgs list: "Здравейте"
             // 2. in Control Panel -> Region -> Administrative -> Language for non-Unicode programs
             //    change the system locale to "Bulgarian (Bulgaria)"
             // 3. reboot Windows and re-run the test

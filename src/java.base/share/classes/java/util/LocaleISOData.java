@@ -239,7 +239,7 @@ class LocaleISOData {
         + "AT" + "AUT"  // Austria, Republic of
         + "AU" + "AUS"  // Australia, Commonwealth of
         + "AW" + "ABW"  // Aruba
-        + "AX" + "ALA"  // \u00c5land Islands
+        + "AX" + "ALA"  // Åland Islands
         + "AZ" + "AZE"  // Azerbaijan, Republic of
         + "BA" + "BIH"  // Bosnia and Herzegovina
         + "BB" + "BRB"  // Barbados

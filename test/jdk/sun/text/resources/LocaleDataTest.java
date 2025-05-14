@@ -102,8 +102,8 @@
  *        LocaleNames//US=United States
  *        LocaleNames//FR=France
  *        FormatData/fr_FR/MonthNames/0=janvier
- *        FormatData/fr_FR/MonthNames/1=f\u00e9vrier
- *        LocaleNames/fr_FR/US=\u00c9tats-Unis
+ *        FormatData/fr_FR/MonthNames/1=février
+ *        LocaleNames/fr_FR/US=États-Unis
  *        LocaleNames/fr_FR/FR=France</pre>
  *
  *    Second field which designates locale is in the form of:
@@ -147,7 +147,7 @@
  *    date/time format of SimpleDateFormat by making sure that the full date and time
  *    patterns include sufficient data.  The test of this is not whether changes were
  *    made to the locale data; it's whether using this data gives round-trip integrity.
- *    Likewise, changing the currency patterns to use \u00a4 instead of local currency
+ *    Likewise, changing the currency patterns to use ¤ instead of local currency
  *    symbols isn't something that can be tested by this test; instead, you want to
  *    actually format currency values and make sure the proper currency symbol was used.
  *

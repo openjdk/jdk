@@ -61,7 +61,7 @@ import sun.security.ssl.SSLLogger;
  *      co.uk
  *      k12.ak.us
  *      com.tw
- *      \u7db2\u8def.tw
+ *      網路.tw
  *
  * Public suffixes effectively denote registration authorities.
  *
