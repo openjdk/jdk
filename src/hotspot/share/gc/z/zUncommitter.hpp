@@ -53,6 +53,14 @@ private:
   void update_next_cycle_timeout_on_finish();
 
   void deactivate_uncommit_cycle();
+  void activate_uncommit_cycle(ZMappedCache* cache, size_t uncommit_limit);
+  void register_uncommit(size_t size);
+
+  bool uncommit_cycle_is_finished() const;
+  bool uncommit_cycle_is_active() const;
+  bool uncommit_cycle_is_canceled() const;
+
+  size_t uncommit();
 
 protected:
   virtual void run_thread();
@@ -61,14 +69,7 @@ protected:
 public:
   ZUncommitter(uint32_t id, ZPartition* partition);
 
-  void activate_uncommit_cycle(ZMappedCache* cache, size_t uncommit_limit);
-  size_t to_uncommit() const;
   void cancel_uncommit_cycle(ZMappedCache* cache);
-  void register_uncommit(size_t size);
-
-  bool uncommit_cycle_is_finished() const;
-  bool uncommit_cycle_is_active() const;
-  bool uncommit_cycle_is_canceled() const;
 };
 
 #endif // SHARE_GC_Z_ZUNCOMMITTER_HPP

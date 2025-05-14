@@ -57,6 +57,7 @@ class ZWorkers;
 class ZPartition {
   friend class VMStructs;
   friend class ZPageAllocator;
+  friend class ZUncommitter;
 
 private:
   ZPageAllocator* const _page_allocator;
@@ -98,10 +99,6 @@ public:
 
   void claim_from_cache_or_increase_capacity(ZMemoryAllocation* allocation);
   bool claim_capacity(ZMemoryAllocation* allocation);
-
-  template <typename Fn>
-  void evaluate_under_lock(Fn function) const;
-  size_t uncommit();
 
   void sort_segments_physical(const ZVirtualMemory& vmem);
 
