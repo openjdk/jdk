@@ -128,13 +128,8 @@ void ShenandoahGenerationalFullGC::balance_generations_after_gc(ShenandoahHeap* 
                PROPERFMTARGS(old_gen->used()));
 }
 
-void ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set() {
-  auto result = ShenandoahGenerationalHeap::heap()->balance_generations();
-  LogTarget(Info, gc, ergo) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    result.print_on("Full GC", &ls);
-  }
+ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set() {
+  return ShenandoahGenerationalHeap::heap()->balance_generations();
 }
 
 void ShenandoahGenerationalFullGC::log_live_in_old(ShenandoahHeap* heap) {

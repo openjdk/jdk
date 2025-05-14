@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,12 @@ class exception001a {
     private static boolean javaExceptionThrown = false;
     private static boolean javaErrorThrown     = false;
 
+    static Thread mainThread = null;
+
     // run debuggee from command line
     public static void main(String args[]) throws Throwable {
         exception001a _exception001a = new exception001a();
+        mainThread = Thread.currentThread();
         System.exit(JCK_STATUS_BASE + _exception001a.runIt(args, System.err));
     }
 
