@@ -84,18 +84,18 @@
 // Deprecation Process
 // ===================
 //
-// This is model after the deprecate/obsolete/removal process of VM options in arguments.cpp
+// This is modeled after the deprecate/obsolete/expire process of VM options in arguments.cpp
 //
 // JDK 25 - When using OLD CDS flags (see the list of flags in CDSConfig::check_new_flag()), the
 //          the CDS Compatibility Logs must be selected with -Xlog:cds
 //
-// JDK 26 - Same as above, except that when -Xlog:cds is specified in the command-line, an warning
+// JDK 26 - Same as above, except that when -Xlog:cds is specified in the command-line, a warning
 //          message is printed to indicate that -Xlog:cds is deprecated.
 //
 // JDK 27 - When using OLD CDS flags (see the list of flags in CDSConfig::check_new_flag()), the
 //          the CDS Compatibility Logs must be selected with -Xlog:aot.
 //
-//          When -Xlog:cds is specified in the command-line, an warning message is printed to
+//          When -Xlog:cds is specified in the command-line, a warning message is printed to
 //          indicate that -Xlog:cds is obsolete.
 //
 // JDK 28 - When -Xlog:cds is specified in the command-line, the VM will exit with an error message:
