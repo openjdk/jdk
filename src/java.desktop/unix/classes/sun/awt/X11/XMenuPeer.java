@@ -31,7 +31,7 @@ import java.util.Vector;
 import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
 
-public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
+public final class XMenuPeer extends XMenuItemPeer implements MenuPeer {
 
     /************************************************
      *
