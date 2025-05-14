@@ -70,7 +70,6 @@
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threads.hpp"
@@ -469,10 +468,6 @@ void before_exit(JavaThread* thread, bool halt) {
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
   WatcherThread::stop();
-
-  // shut down the StatSampler task
-  StatSampler::disengage();
-  StatSampler::destroy();
 
   NativeHeapTrimmer::cleanup();
 
