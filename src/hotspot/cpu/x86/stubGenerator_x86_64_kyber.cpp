@@ -690,7 +690,6 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
 // result (short[256]) = c_rarg0
 // a (short[256]) = c_rarg1
 // b (short[256]) = c_rarg2
-// kyberConsts (short[40]) = c_rarg3
 address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
                                        MacroAssembler *_masm) {
 
@@ -739,7 +738,6 @@ address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
 // a (short[256]) = c_rarg1
 // b (short[256]) = c_rarg2
 // c (short[256]) = c_rarg3
-// kyberConsts (short[40]) = c_rarg4
 address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
                                        MacroAssembler *_masm) {
 
