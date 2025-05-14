@@ -894,7 +894,7 @@ final class Double128Vector extends DoubleVector {
                 default -> {
                     VectorIntrinsics.checkFromIndexSize(offset, length(), ms.byteSize() / 4);
                     for (int i = 0; i < length(); i++) {
-                        ms.setAtIndex(ValueLayout.JAVA_INT_UNALIGNED, i + offset, laneSource(i));
+                        ms.setAtIndex(ValueLayout.JAVA_INT_UNALIGNED, offset + (i << 2), laneSource(i));
                     }
                 }
             }
