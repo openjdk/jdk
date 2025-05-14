@@ -44,6 +44,7 @@ import java.util.function.Predicate;
 import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.common.RequestPathMatcherUtil;
+import jdk.httpclient.test.lib.common.RequestPathMatcherUtil.Resolved;
 import jdk.httpclient.test.lib.common.ThrowingConsumer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.quic.QuicServer;
@@ -220,13 +221,9 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
         if (this.handlerProvider != null) {
             handler = this.handlerProvider.apply(reqPath);
         } else {
-            RequestPathMatcherUtil.Resolved<ThrowingConsumer<Http2TestExchange, IOException>> match = null;
-            try {
-                match = RequestPathMatcherUtil.findHandler(reqPath, this.handlers);
-            } catch (IllegalArgumentException iae) {
-                // no handler available for the request path
-            }
-            handler = match == null ? null : match.handler();
+            Optional<Resolved<ThrowingConsumer<Http2TestExchange, IOException>>> match =
+                    RequestPathMatcherUtil.findHandler(reqPath, this.handlers);
+            handler = match.isPresent() ? match.get().handler() : null;
         }
         // The server Http3ServerExchange uses a BlockingQueue<ByteBuffer> to
         // read data so handling the exchange in the current thread would
@@ -237,7 +234,7 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
             try {
                 // if no handler was located, we respond with a 404
                 if (handler == null) {
-                    respondForMissingHandler(reqPath, exchange);
+                    respondForMissingHandler(exchange);
                     return;
                 }
                 // This assertion is too strong: there are cases
@@ -262,10 +259,10 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
         });
     }
 
-    private void respondForMissingHandler(final String reqPath, final Http2TestExchange exchange)
+    private void respondForMissingHandler(final Http2TestExchange exchange)
             throws IOException {
-        final byte[] responseBody = ("No handler available to handle request " + reqPath)
-                .getBytes(US_ASCII);
+        final byte[] responseBody = ("No handler available to handle request "
+                + exchange.getRequestURI()).getBytes(US_ASCII);
         try (final OutputStream os = exchange.getResponseBody()) {
             exchange.sendResponseHeaders(404, responseBody.length);
             os.write(responseBody);

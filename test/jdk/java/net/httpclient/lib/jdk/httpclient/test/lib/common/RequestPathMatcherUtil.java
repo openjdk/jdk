@@ -24,6 +24,7 @@ package jdk.httpclient.test.lib.common;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -36,32 +37,32 @@ public class RequestPathMatcherUtil {
 
     /**
      * Matches the {@code path} against the registered {@code pathHandlers} and returns the best
-     * matched handler. If no handler is found for the {@code path}, then this method throws
-     * an {@link IllegalArgumentException}
+     * matched handler.
      *
      * @param path         The request path
      * @param pathHandlers The handlers for each of the registered paths
      * @param <T>
-     * @return The resolved result
-     * @throws IllegalArgumentException if no handler could be located for the {@code path}
+     * @return The resolved result or an {@linkplain Optional#empty() empty Optional} if no
+     *         handler could be found for the {@code path}
      * @throws NullPointerException if {@code pathHandlers} is null
      */
-    public static <T> Resolved<T> findHandler(final String path, final Map<String, T> pathHandlers) {
+    public static <T> Optional<Resolved<T>> findHandler(final String path,
+                                                        final Map<String, T> pathHandlers) {
         Objects.requireNonNull(pathHandlers, "pathHandlers is null");
         final String fpath = (path == null || path.isEmpty()) ? "/" : path;
         final AtomicReference<String> bestMatch = new AtomicReference<>("");
-        final AtomicReference<T> href = new AtomicReference<>();
+        final AtomicReference<T> result = new AtomicReference<>();
         pathHandlers.forEach((key, value) -> {
             if (fpath.startsWith(key) && key.length() > bestMatch.get().length()) {
                 bestMatch.set(key);
-                href.set(value);
+                result.set(value);
             }
         });
-        final T handler = href.get();
+        final T handler = result.get();
         if (handler == null) {
             System.err.println("No handler found for path: " + path);
-            throw new IllegalArgumentException("No handler found for path " + path);
+            return Optional.empty();
         }
-        return new Resolved<T>(bestMatch.get(), handler);
+        return Optional.of(new Resolved<T>(bestMatch.get(), handler));
     }
 }

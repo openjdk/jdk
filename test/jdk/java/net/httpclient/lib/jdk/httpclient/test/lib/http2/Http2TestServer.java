@@ -50,6 +50,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 
 import jdk.httpclient.test.lib.common.RequestPathMatcherUtil;
+import jdk.httpclient.test.lib.common.RequestPathMatcherUtil.Resolved;
 import jdk.httpclient.test.lib.common.ServerNameMatcher;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.internal.net.http.frame.ErrorFrame;
@@ -395,15 +396,14 @@ public final class Http2TestServer implements AutoCloseable {
     }
 
     Http2Handler getHandlerFor(String path) {
-        final RequestPathMatcherUtil.Resolved<Http2Handler> match;
-        try {
-             match = RequestPathMatcherUtil.findHandler(path, handlers);
-        } catch (IllegalArgumentException iae) {
-            // handler could not be located
+        final Optional<Resolved<Http2Handler>> match = RequestPathMatcherUtil.findHandler(path, handlers);
+        if (match.isEmpty()) {
+            // no handler available for the path
             return null;
         }
-        System.err.println(name + ": Using handler for: " + match.bestMatchedPath());
-        return match.handler();
+        final Resolved<Http2Handler> resolved = match.get();
+        System.err.println(name + ": Using handler for: " + resolved.bestMatchedPath());
+        return resolved.handler();
     }
 
     final ServerSocket initPlaintext(int port, int backlog) throws Exception {

@@ -786,9 +786,9 @@ public class Http2TestServerConnection {
             // locate a handler for the request
             final Http2Handler handler = server.getHandlerFor(reqPath);
             try {
+                // no handler available for the request path, respond with 404
                 if (handler == null) {
-                    // no handler available for the request. respond with a 404 response
-                    respondForMissingHandler(reqPath, exchange);
+                    respondForMissingHandler(exchange);
                     return;
                 }
                 // Need to pass the BodyInputStream reference to the BodyOutputStream, so it can determine if the stream
@@ -815,10 +815,10 @@ public class Http2TestServerConnection {
             close(-1);
         }
     }
-    private void respondForMissingHandler(final String reqPath, final Http2TestExchange exchange)
+    private void respondForMissingHandler(final Http2TestExchange exchange)
             throws IOException {
-        final byte[] responseBody = ("No handler available to handle request " + reqPath)
-                .getBytes(US_ASCII);
+        final byte[] responseBody = ("No handler available to handle request "
+                + exchange.getRequestURI()).getBytes(US_ASCII);
         try (final OutputStream os = exchange.getResponseBody()) {
             exchange.sendResponseHeaders(404, responseBody.length);
             os.write(responseBody);
