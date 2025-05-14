@@ -739,6 +739,11 @@ bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
   return (p == nullptr) ? false : p->failed_verification();
 }
 
+void SystemDictionaryShared::set_from_class_file_load_hook(InstanceKlass* ik) {
+  warn_excluded(ik, "From ClassFileLoadHook");
+  set_excluded(ik);
+}
+
 void SystemDictionaryShared::dumptime_classes_do(MetaspaceClosure* it) {
   assert_lock_strong(DumpTimeTable_lock);
 
