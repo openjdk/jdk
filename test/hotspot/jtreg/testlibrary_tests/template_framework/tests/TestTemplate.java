@@ -75,7 +75,7 @@ public class TestTemplate {
         testSingleLine();
         testMultiLine();
         testBodyTokens();
-        testWithOneArguments();
+        testWithOneArgument();
         testWithTwoArguments();
         testWithThreeArguments();
         testNested();
@@ -158,7 +158,7 @@ public class TestTemplate {
         checkEQ(code, "start 112L2L3.43.45.6f5.6f 1 and 2 end");
     }
 
-    public static void testWithOneArguments() {
+    public static void testWithOneArgument() {
         // Capture String argument via String name.
         var template1 = Template.make("a", (String a) -> body("start #a end"));
         checkEQ(template1.fillWith("x").render(), "start x end");

@@ -246,7 +246,7 @@ public class TestTutorial {
     public static String generateWithCustomHooks() {
         // We can define a custom hook.
         // Note: generally we prefer using the pre-defined CLASS_HOOK and METHOD_HOOK from the library,
-        //       when ever possible. See also the example after this one.
+        //       whenever possible. See also the example after this one.
         var myHook = new Hook("MyHook");
 
         var template1 = Template.make("name", "value", (String name, Integer value) -> body(
@@ -296,7 +296,7 @@ public class TestTutorial {
     }
 
     // We saw the use of custom hooks above, but now we look at the use of CLASS_HOOK and METHOD_HOOK
-    // from the Temlate Library.
+    // from the Template Library.
     public static String generateWithLibraryHooks() {
         var templateStaticField = Template.make("name", "value", (String name, Integer value) -> body(
             """
@@ -478,7 +478,7 @@ public class TestTutorial {
             Hooks.CLASS_HOOK.insert(templateStaticField.fillWith(myInt)),
             Hooks.CLASS_HOOK.insert(templateStaticField.fillWith(myLong)),
             templateStatus,
-            // We should see a mix if fields and variables sampled.
+            // We should see a mix of fields and variables sampled.
             Collections.nCopies(5, templateSample.fillWith(myInt)),
             Collections.nCopies(5, templateSample.fillWith(myLong)),
             templateStatus,
