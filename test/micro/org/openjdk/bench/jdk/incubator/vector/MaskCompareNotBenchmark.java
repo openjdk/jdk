@@ -37,7 +37,8 @@ import java.util.Random;
 @Measurement(iterations = 5, time = 1)
 @Fork(jvmArgs = { "--add-modules=jdk.incubator.vector" })
 public class MaskCompareNotBenchmark {
-    private static final int ARRAYLEN = 4096;
+    @Param({"4096"})
+    private int ARRAYLEN;
     private static Random r = new Random();
 
     private static final VectorSpecies<Byte> B_SPECIES = ByteVector.SPECIES_MAX;

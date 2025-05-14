@@ -2217,7 +2217,8 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
   }
 
   // XorV/XorVMask is commutative, swap VectorMaskCmp/Op_VectorMaskCast to in1.
-  if (in1->Opcode() != Op_VectorMaskCmp && in1->Opcode() != Op_VectorMaskCast) {
+  if (in2->Opcode() == Op_VectorMaskCmp ||
+      (in2->Opcode() == Op_VectorMaskCast && in2->in(1)->Opcode() == Op_VectorMaskCmp)) {
     swap(in1, in2);
   }
 
@@ -2226,6 +2227,9 @@ Node* XorVNode::Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape) {
       in1->in(1)->Opcode() == Op_VectorMaskCmp) {
     vmcast_vt = in1->as_Vector()->vect_type();
     in1 = in1->in(1);
+  }
+  if (in2->Opcode() == Op_VectorMaskCast) {
+    in2 = in2->in(1);
   }
   if (in1->Opcode() != Op_VectorMaskCmp || in1->outcnt() > 1 ||
       !((VectorMaskCmpNode*) in1)->predicate_can_be_inverted() ||

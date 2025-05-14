@@ -156,12 +156,16 @@ public class VectorMaskCompareNotTest {
         }
     }
 
+    interface VectorMaskOperator {
+        public VectorMask apply(VectorMask m1);
+    }
+
     @ForceInline
-    public static void testCompareMaskNotByte(VectorOperators.Comparison op) {
+    public static void testCompareMaskNotByte(VectorOperators.Comparison op, VectorMaskOperator func) {
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
         ByteVector bv = ByteVector.fromArray(B_SPECIES, bb, 0);
         VectorMask<Byte> m1 = av.compare(op, bv);
-        m1.not().intoArray(mr, 0);
+        func.apply(m1).intoArray(mr, 0);
 
         for (int i = 0; i < B_SPECIES.length(); i++) {
             verifyResults(ba[i], bb[i], mr[i], op);
@@ -169,11 +173,11 @@ public class VectorMaskCompareNotTest {
     }
 
     @ForceInline
-    public static void testCompareMaskNotShort(VectorOperators.Comparison op) {
+    public static void testCompareMaskNotShort(VectorOperators.Comparison op, VectorMaskOperator func) {
         ShortVector av = ShortVector.fromArray(S_SPECIES, sa, 0);
         ShortVector bv = ShortVector.fromArray(S_SPECIES, sb, 0);
         VectorMask<Short> m1 = av.compare(op, bv);
-        m1.not().intoArray(mr, 0);
+        func.apply(m1).intoArray(mr, 0);
 
         for (int i = 0; i < S_SPECIES.length(); i++) {
             verifyResults(sa[i], sb[i], mr[i], op);
@@ -181,11 +185,11 @@ public class VectorMaskCompareNotTest {
     }
 
     @ForceInline
-    public static void testCompareMaskNotInt(VectorOperators.Comparison op) {
+    public static void testCompareMaskNotInt(VectorOperators.Comparison op, VectorMaskOperator func) {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
         VectorMask<Integer> m1 = av.compare(op, bv);
-        m1.not().intoArray(mr, 0);
+        func.apply(m1).intoArray(mr, 0);
 
         for (int i = 0; i < I_SPECIES.length(); i++) {
             verifyResults(ia[i], ib[i], mr[i], op);
@@ -193,11 +197,11 @@ public class VectorMaskCompareNotTest {
     }
 
     @ForceInline
-    public static void testCompareMaskNotLong(VectorOperators.Comparison op) {
+    public static void testCompareMaskNotLong(VectorOperators.Comparison op, VectorMaskOperator func) {
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
         LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
         VectorMask<Long> m1 = av.compare(op, bv);
-        m1.not().intoArray(mr, 0);
+        func.apply(m1).intoArray(mr, 0);
 
         for (int i = 0; i < L_SPECIES.length(); i++) {
             verifyResults(la[i], lb[i], mr[i], op);
@@ -205,11 +209,11 @@ public class VectorMaskCompareNotTest {
     }
 
     @ForceInline
-    public static void testCompareMaskNotFloat(VectorOperators.Comparison op, float[] a, float[] b) {
+    public static void testCompareMaskNotFloat(VectorOperators.Comparison op, float[] a, float[] b, VectorMaskOperator func) {
         FloatVector av = FloatVector.fromArray(F_SPECIES, a, 0);
         FloatVector bv = FloatVector.fromArray(F_SPECIES, b, 0);
         VectorMask<Float> m1 = av.compare(op, bv);
-        m1.not().intoArray(mr, 0);
+        func.apply(m1).intoArray(mr, 0);
 
         for (int i = 0; i < F_SPECIES.length(); i++) {
             verifyResults(a[i], b[i], mr[i], op);
@@ -217,11 +221,11 @@ public class VectorMaskCompareNotTest {
     }
 
     @ForceInline
-    public static void testCompareMaskNotDouble(VectorOperators.Comparison op, double[] a, double[] b) {
+    public static void testCompareMaskNotDouble(VectorOperators.Comparison op, double[] a, double[] b, VectorMaskOperator func) {
         DoubleVector av = DoubleVector.fromArray(D_SPECIES, a, 0);
         DoubleVector bv = DoubleVector.fromArray(D_SPECIES, b, 0);
         VectorMask<Double> m1 = av.compare(op, bv);
-        m1.not().intoArray(mr, 0);
+        func.apply(m1).intoArray(mr, 0);
 
         for (int i = 0; i < D_SPECIES.length(); i++) {
             verifyResults(a[i], b[i], mr[i], op);
@@ -233,70 +237,80 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VB, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareEQMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.EQ);
+        testCompareMaskNotByte(VectorOperators.EQ, m -> m.not());
+        testCompareMaskNotByte(VectorOperators.EQ, m -> m.xor(B_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VB, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareNEMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.NE);
+        testCompareMaskNotByte(VectorOperators.NE, m -> m.not());
+        testCompareMaskNotByte(VectorOperators.NE, m -> m.xor(B_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VB, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareLTMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.LT);
+        testCompareMaskNotByte(VectorOperators.LT, m -> m.not());
+        testCompareMaskNotByte(VectorOperators.LT, m -> m.xor(B_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VB, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareGTMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.GT);
+        testCompareMaskNotByte(VectorOperators.GT, m -> m.not());
+        testCompareMaskNotByte(VectorOperators.GT, m -> m.xor(B_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VB, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareLEMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.LE);
+        testCompareMaskNotByte(VectorOperators.LE, m -> m.not());
+        testCompareMaskNotByte(VectorOperators.LE, m -> m.xor(B_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VB, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareGEMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.GE);
+        testCompareMaskNotByte(VectorOperators.GE, m -> m.not());
+        testCompareMaskNotByte(VectorOperators.GE, m -> m.xor(B_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VB, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareULTMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.ULT);
+        testCompareMaskNotByte(VectorOperators.ULT, m -> m.not());
+        testCompareMaskNotByte(VectorOperators.ULT, m -> m.xor(B_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VB, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareUGTMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.UGT);
+        testCompareMaskNotByte(VectorOperators.UGT, m -> m.not());
+        testCompareMaskNotByte(VectorOperators.UGT, m -> m.xor(B_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VB, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareULEMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.ULE);
+        testCompareMaskNotByte(VectorOperators.ULE, m -> m.not());
+        testCompareMaskNotByte(VectorOperators.ULE, m -> m.xor(B_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VB, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareUGEMaskNotByte() {
-        testCompareMaskNotByte(VectorOperators.UGE);
+        testCompareMaskNotByte(VectorOperators.UGE, m -> m.not());
+        testCompareMaskNotByte(VectorOperators.UGE, m -> m.xor(B_SPECIES.maskAll(true)));
     }
 
     // Short tests
@@ -304,70 +318,80 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VS, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareEQMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.EQ);
+        testCompareMaskNotShort(VectorOperators.EQ, m -> m.not());
+        testCompareMaskNotShort(VectorOperators.EQ, m -> m.xor(S_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VS, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareNEMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.NE);
+        testCompareMaskNotShort(VectorOperators.NE, m -> m.not());
+        testCompareMaskNotShort(VectorOperators.NE, m -> m.xor(S_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VS, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareLTMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.LT);
+        testCompareMaskNotShort(VectorOperators.LT, m -> m.not());
+        testCompareMaskNotShort(VectorOperators.LT, m -> m.xor(S_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VS, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareGTMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.GT);
+        testCompareMaskNotShort(VectorOperators.GT, m -> m.not());
+        testCompareMaskNotShort(VectorOperators.GT, m -> m.xor(S_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VS, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareLEMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.LE);
+        testCompareMaskNotShort(VectorOperators.LE, m -> m.not());
+        testCompareMaskNotShort(VectorOperators.LE, m -> m.xor(S_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VS, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareGEMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.GE);
+        testCompareMaskNotShort(VectorOperators.GE, m -> m.not());
+        testCompareMaskNotShort(VectorOperators.GE, m -> m.xor(S_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VS, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareULTMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.ULT);
+        testCompareMaskNotShort(VectorOperators.ULT, m -> m.not());
+        testCompareMaskNotShort(VectorOperators.ULT, m -> m.xor(S_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VS, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareUGTMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.UGT);
+        testCompareMaskNotShort(VectorOperators.UGT, m -> m.not());
+        testCompareMaskNotShort(VectorOperators.UGT, m -> m.xor(S_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VS, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareULEMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.ULE);
+        testCompareMaskNotShort(VectorOperators.ULE, m -> m.not());
+        testCompareMaskNotShort(VectorOperators.ULE, m -> m.xor(S_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VS, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareUGEMaskNotShort() {
-        testCompareMaskNotShort(VectorOperators.UGE);
+        testCompareMaskNotShort(VectorOperators.UGE, m -> m.not());
+        testCompareMaskNotShort(VectorOperators.UGE, m -> m.xor(S_SPECIES.maskAll(true)));
     }
 
     // Int tests
@@ -375,70 +399,80 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VI, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareEQMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.EQ);
+        testCompareMaskNotInt(VectorOperators.EQ, m -> m.not());
+        testCompareMaskNotInt(VectorOperators.EQ, m -> m.xor(I_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VI, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareNEMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.NE);
+        testCompareMaskNotInt(VectorOperators.NE, m -> m.not());
+        testCompareMaskNotInt(VectorOperators.NE, m -> m.xor(I_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VI, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareLTMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.LT);
+        testCompareMaskNotInt(VectorOperators.LT, m -> m.not());
+        testCompareMaskNotInt(VectorOperators.LT, m -> m.xor(I_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VI, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareGTMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.GT);
+        testCompareMaskNotInt(VectorOperators.GT, m -> m.not());
+        testCompareMaskNotInt(VectorOperators.GT, m -> m.xor(I_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VI, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareLEMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.LE);
+        testCompareMaskNotInt(VectorOperators.LE, m -> m.not());
+        testCompareMaskNotInt(VectorOperators.LE, m -> m.xor(I_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VI, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareGEMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.GE);
+        testCompareMaskNotInt(VectorOperators.GE, m -> m.not());
+        testCompareMaskNotInt(VectorOperators.GE, m -> m.xor(I_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VI, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareULTMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.ULT);
+        testCompareMaskNotInt(VectorOperators.ULT, m -> m.not());
+        testCompareMaskNotInt(VectorOperators.ULT, m -> m.xor(I_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VI, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareUGTMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.UGT);
+        testCompareMaskNotInt(VectorOperators.UGT, m -> m.not());
+        testCompareMaskNotInt(VectorOperators.UGT, m -> m.xor(I_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VI, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareULEMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.ULE);
+        testCompareMaskNotInt(VectorOperators.ULE, m -> m.not());
+        testCompareMaskNotInt(VectorOperators.ULE, m -> m.xor(I_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VI, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareUGEMaskNotInt() {
-        testCompareMaskNotInt(VectorOperators.UGE);
+        testCompareMaskNotInt(VectorOperators.UGE, m -> m.not());
+        testCompareMaskNotInt(VectorOperators.UGE, m -> m.xor(I_SPECIES.maskAll(true)));
     }
 
     // Long tests
@@ -446,182 +480,208 @@ public class VectorMaskCompareNotTest {
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareEQMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.EQ);
+        testCompareMaskNotLong(VectorOperators.EQ, m -> m.not());
+        testCompareMaskNotLong(VectorOperators.EQ, m -> m.xor(L_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareNEMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.NE);
+        testCompareMaskNotLong(VectorOperators.NE, m -> m.not());
+        testCompareMaskNotLong(VectorOperators.NE, m -> m.xor(L_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareLTMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.LT);
+        testCompareMaskNotLong(VectorOperators.LT, m -> m.not());
+        testCompareMaskNotLong(VectorOperators.LT, m -> m.xor(L_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareGTMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.GT);
+        testCompareMaskNotLong(VectorOperators.GT, m -> m.not());
+        testCompareMaskNotLong(VectorOperators.GT, m -> m.xor(L_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareLEMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.LE);
+        testCompareMaskNotLong(VectorOperators.LE, m -> m.not());
+        testCompareMaskNotLong(VectorOperators.LE, m -> m.xor(L_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareGEMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.GE);
+        testCompareMaskNotLong(VectorOperators.GE, m -> m.not());
+        testCompareMaskNotLong(VectorOperators.GE, m -> m.xor(L_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareULTMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.ULT);
+        testCompareMaskNotLong(VectorOperators.ULT, m -> m.not());
+        testCompareMaskNotLong(VectorOperators.ULT, m -> m.xor(L_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareUGTMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.UGT);
+        testCompareMaskNotLong(VectorOperators.UGT, m -> m.not());
+        testCompareMaskNotLong(VectorOperators.UGT, m -> m.xor(L_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareULEMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.ULE);
+        testCompareMaskNotLong(VectorOperators.ULE, m -> m.not());
+        testCompareMaskNotLong(VectorOperators.ULE, m -> m.xor(L_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareUGEMaskNotLong() {
-        testCompareMaskNotLong(VectorOperators.UGE);
+        testCompareMaskNotLong(VectorOperators.UGE, m -> m.not());
+        testCompareMaskNotLong(VectorOperators.UGE, m -> m.xor(L_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VI, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareEQMaskNotFloat() {
-        testCompareMaskNotFloat(VectorOperators.EQ, fa, fb);
+        testCompareMaskNotFloat(VectorOperators.EQ, fa, fb, m -> m.not());
+        testCompareMaskNotFloat(VectorOperators.EQ, fa, fb, m -> m.xor(F_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VI, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareNEMaskNotFloat() {
-        testCompareMaskNotFloat(VectorOperators.NE, fa, fb);
+        testCompareMaskNotFloat(VectorOperators.NE, fa, fb, m -> m.not());
+        testCompareMaskNotFloat(VectorOperators.NE, fa, fb, m -> m.xor(F_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareEQMaskNotFloatNaN() {
-        testCompareMaskNotFloat(VectorOperators.EQ, fa, fnan);
+        testCompareMaskNotFloat(VectorOperators.EQ, fa, fnan, m -> m.not());
+        testCompareMaskNotFloat(VectorOperators.EQ, fa, fnan, m -> m.xor(F_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareNEMaskNotFloatNaN() {
-        testCompareMaskNotFloat(VectorOperators.NE, fa, fnan);
+        testCompareMaskNotFloat(VectorOperators.NE, fa, fnan, m -> m.not());
+        testCompareMaskNotFloat(VectorOperators.NE, fa, fnan, m -> m.xor(F_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareEQMaskNotFloatPositiveInfinity() {
-        testCompareMaskNotFloat(VectorOperators.EQ, fa, fpinf);
+        testCompareMaskNotFloat(VectorOperators.EQ, fa, fpinf, m -> m.not());
+        testCompareMaskNotFloat(VectorOperators.EQ, fa, fpinf, m -> m.xor(F_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareNEMaskNotFloatPositiveInfinity() {
-        testCompareMaskNotFloat(VectorOperators.NE, fa, fpinf);
+        testCompareMaskNotFloat(VectorOperators.NE, fa, fpinf, m -> m.not());
+        testCompareMaskNotFloat(VectorOperators.NE, fa, fpinf, m -> m.xor(F_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareEQMaskNotFloatNegativeInfinity() {
-        testCompareMaskNotFloat(VectorOperators.EQ, fa, fninf);
+        testCompareMaskNotFloat(VectorOperators.EQ, fa, fninf, m -> m.not());
+        testCompareMaskNotFloat(VectorOperators.EQ, fa, fninf, m -> m.xor(F_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareNEMaskNotFloatNegativeInfinity() {
-        testCompareMaskNotFloat(VectorOperators.NE, fa, fninf);
+        testCompareMaskNotFloat(VectorOperators.NE, fa, fninf, m -> m.not());
+        testCompareMaskNotFloat(VectorOperators.NE, fa, fninf, m -> m.xor(F_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareEQMaskNotDouble() {
-        testCompareMaskNotDouble(VectorOperators.EQ, da, db);
+        testCompareMaskNotDouble(VectorOperators.EQ, da, db, m -> m.not());
+        testCompareMaskNotDouble(VectorOperators.EQ, da, db, m -> m.xor(D_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareNEMaskNotDouble() {
-        testCompareMaskNotDouble(VectorOperators.NE, da, db);
+        testCompareMaskNotDouble(VectorOperators.NE, da, db, m -> m.not());
+        testCompareMaskNotDouble(VectorOperators.NE, da, db, m -> m.xor(D_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareEQMaskNotDoubleNaN() {
-        testCompareMaskNotDouble(VectorOperators.EQ, da, dnan);
+        testCompareMaskNotDouble(VectorOperators.EQ, da, dnan, m -> m.not());
+        testCompareMaskNotDouble(VectorOperators.EQ, da, dnan, m -> m.xor(D_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareNEMaskNotDoubleNaN() {
-        testCompareMaskNotDouble(VectorOperators.NE, da, dnan);
+        testCompareMaskNotDouble(VectorOperators.NE, da, dnan, m -> m.not());
+        testCompareMaskNotDouble(VectorOperators.NE, da, dnan, m -> m.xor(D_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareEQMaskNotDoublePositiveInfinity() {
-        testCompareMaskNotDouble(VectorOperators.EQ, da, dpinf);
+        testCompareMaskNotDouble(VectorOperators.EQ, da, dpinf, m -> m.not());
+        testCompareMaskNotDouble(VectorOperators.EQ, da, dpinf, m -> m.xor(D_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareNEMaskNotDoublePositiveInfinity() {
-        testCompareMaskNotDouble(VectorOperators.NE, da, dpinf);
+        testCompareMaskNotDouble(VectorOperators.NE, da, dpinf, m -> m.not());
+        testCompareMaskNotDouble(VectorOperators.NE, da, dpinf, m -> m.xor(D_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareEQMaskNotDoubleNegativeInfinity() {
-        testCompareMaskNotDouble(VectorOperators.EQ, da, dninf);
+        testCompareMaskNotDouble(VectorOperators.EQ, da, dninf, m -> m.not());
+        testCompareMaskNotDouble(VectorOperators.EQ, da, dninf, m -> m.xor(D_SPECIES.maskAll(true)));
     }
 
     @Test
     @IR(counts = { IRNode.XOR_V_MASK, "= 0", IRNode.XOR_VL, "= 0" },
         applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
     public static void testCompareNEMaskNotDoubleNegativeInfinity() {
-        testCompareMaskNotDouble(VectorOperators.NE, da, dninf);
+        testCompareMaskNotDouble(VectorOperators.NE, da, dninf, m -> m.not());
+        testCompareMaskNotDouble(VectorOperators.NE, da, dninf, m -> m.xor(D_SPECIES.maskAll(true)));
     }
 
     public static void main(String[] args) {
