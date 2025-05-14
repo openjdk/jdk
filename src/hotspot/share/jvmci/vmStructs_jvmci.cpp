@@ -812,6 +812,8 @@
                                                                           \
   declare_constant(vmSymbols::FIRST_SID)                                  \
   declare_constant(vmSymbols::SID_LIMIT)                                  \
+                                                                          \
+  declare_constant(FieldInfoStream::SORTED_FIELD_TABLE_THRESHOLD)         \
 
 #define VM_LONG_CONSTANTS(declare_constant, declare_preprocessor_constant) \
   declare_constant(InvocationCounter::count_increment)                    \

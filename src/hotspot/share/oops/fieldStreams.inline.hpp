@@ -63,7 +63,7 @@ FieldStreamBase::FieldStreamBase(InstanceKlass* klass) :
 }
 
 inline bool JavaFieldStream::lookup(const Symbol *name, const Symbol *signature) {
-  if (_limit > SORTED_FIELD_TABLE_THRESHOLD) {
+  if (_limit > FieldInfoStream::SORTED_FIELD_TABLE_THRESHOLD) {
     int index = _reader.sorted_table_lookup(name, signature, _constants(), _limit);
     if (index >= 0) {
       assert(index < _limit, "must be");

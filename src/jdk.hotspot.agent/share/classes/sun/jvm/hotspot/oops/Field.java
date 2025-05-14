@@ -32,7 +32,8 @@ import sun.jvm.hotspot.utilities.*;
 
 // Super class for all fields in an object
 public class Field {
-  private static final int SORTED_FIELD_TABLE_THRESHOLD = 16;
+  private static final int SORTED_FIELD_TABLE_THRESHOLD =
+    VM.getVM().getTypeDataBase().lookupIntConstant("FieldInfoStream::SORTED_FIELD_TABLE_THRESHOLD");
 
   Field(FieldIdentifier id, long offset, boolean isVMField) {
     this.offset    = offset;

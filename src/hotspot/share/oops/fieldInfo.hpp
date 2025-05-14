@@ -220,9 +220,6 @@ public:
   void map_field_info(const FieldInfo& fi);
 };
 
-// Don't generate the table for small classes at all.
-#define SORTED_FIELD_TABLE_THRESHOLD 16
-
 // Gadget for decoding and reading the stream of field records.
 class FieldInfoReader {
   UNSIGNED5::Reader<const u1*, int> _r;
@@ -235,15 +232,7 @@ private:
   void skip(int n) { int s = _r.try_skip(n); assert(s == n,""); }
 
 public:
-  void read_field_counts(int *java_fields, int *injected_fields) {
-    *java_fields = _r.next_uint();
-    *injected_fields = _r.next_uint();
-    if (*java_fields > SORTED_FIELD_TABLE_THRESHOLD) {
-      uint32_t sorted_table_offset = *reinterpret_cast<const uint32_t *>(_r.array() + _r.position());
-      _r.set_limit(sorted_table_offset);
-      _r.set_position(_r.position() + sizeof(uint32_t));
-    }
-  }
+  void read_field_counts(int *java_fields, int *injected_fields);
   int has_next() const { return _r.position() < _r.limit(); }
   int position() const { return _r.position(); }
   int next_index() const { return _next_index; }
@@ -280,6 +269,9 @@ class FieldInfoStream : AllStatic {
   friend class ClassFileParser;
 
  public:
+  // Don't generate the table for small classes at all.
+  static const int SORTED_FIELD_TABLE_THRESHOLD = 16;
+
   static int num_java_fields(const Array<u1>* fis);
   static int num_injected_java_fields(const Array<u1>* fis);
   static int num_total_fields(const Array<u1>* fis);
