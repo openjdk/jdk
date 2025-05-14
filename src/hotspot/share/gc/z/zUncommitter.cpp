@@ -194,11 +194,12 @@ void ZUncommitter::deactivate_uncommit_cycle() {
   postcond(!uncommit_cycle_is_active());
 }
 
-void ZUncommitter::activate_uncommit_cycle(ZMappedCache* cache, size_t uncommit_limit) {
+void ZUncommitter::activate_uncommit_cycle() {
   precond(uncommit_cycle_is_finished());
   precond(!uncommit_cycle_is_active());
   precond(!uncommit_cycle_is_canceled());
-  precond(is_aligned(uncommit_limit, ZGranuleSize));
+
+  ZMappedCache* const cache = &_partition->_cache;
 
   // Claim and reset the cache cycle tracking and register the cycle start time.
   _cycle_start = os::elapsedTime();
@@ -208,6 +209,9 @@ void ZUncommitter::activate_uncommit_cycle(ZMappedCache* cache, size_t uncommit_
 
   // Keep 10% as a headroom
   const size_t to_uncommit = align_up(size_t(double(uncommit_watermark) * 0.9), ZGranuleSize);
+
+  // Never uncommit below min capacity
+  const size_t uncommit_limit = _partition->_capacity - _partition->_min_capacity;
 
   _to_uncommit = MIN2(uncommit_limit, to_uncommit);
   _uncommitted = 0;
@@ -252,9 +256,9 @@ void ZUncommitter::update_next_cycle_timeout_on_finish() {
                       _id, _next_cycle_timeout);
 }
 
-void ZUncommitter::cancel_uncommit_cycle(ZMappedCache* cache) {
+void ZUncommitter::cancel_uncommit_cycle() {
   // Reset the cache cycle tracking and register the cancel time.
-  cache->reset_uncommit_cycle();
+  _partition->_cache.reset_uncommit_cycle();
   _cancel_time = os::elapsedTime();
 }
 
@@ -346,41 +350,28 @@ size_t ZUncommitter::uncommit() {
     const size_t limit_upper_bound = MAX2(ZGranuleSize, align_down(256 * M / ZNUMA::count(), ZGranuleSize));
     const size_t limit = MIN2(align_up(current_max_capacity >> 7, ZGranuleSize), limit_upper_bound);
 
-    ZMappedCache* const cache = &_partition->_cache;
-
     if (limit == 0) {
       // This may occur if the current max capacity for this partition is 0
 
-      cancel_uncommit_cycle(cache);
+      cancel_uncommit_cycle();
       return 0;
     }
-
-    const size_t capacity = _partition->_capacity;
-    const size_t min_capacity = _partition->_min_capacity;
-    const size_t used = _partition->_used;
 
     if (!uncommit_cycle_is_active()) {
       // We are activating a new cycle
-      const size_t uncommit_limit = capacity - min_capacity;
-      activate_uncommit_cycle(cache, uncommit_limit);
+      activate_uncommit_cycle();
     }
 
     // Never uncommit below min capacity.
-    const size_t retain = MAX2(used, min_capacity);
-    const size_t release = capacity - retain;
+    const size_t retain = MAX2(_partition->_used, _partition->_min_capacity);
+    const size_t release = _partition->_capacity - retain;
     const size_t flush = MIN3(release, limit, _to_uncommit);
 
-    if (flush == 0) {
-      // Nothing to flush
-      cancel_uncommit_cycle(cache);
-      return 0;
-    }
-
     // Flush memory from the mapped cache for uncommit
-    flushed = cache->remove_for_uncommit(flush, &flushed_vmems);
+    flushed = _partition->_cache.remove_for_uncommit(flush, &flushed_vmems);
     if (flushed == 0) {
       // Nothing flushed
-      cancel_uncommit_cycle(cache);
+      cancel_uncommit_cycle();
       return 0;
     }
 

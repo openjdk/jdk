@@ -626,7 +626,7 @@ size_t ZPartition::increase_capacity(size_t size) {
     // Update atomically since we have concurrent readers
     Atomic::add(&_capacity, increased);
 
-    _uncommitter.cancel_uncommit_cycle(&_cache);
+    _uncommitter.cancel_uncommit_cycle();
   }
 
   return increased;
