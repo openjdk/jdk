@@ -129,7 +129,7 @@ class NMTUtil : AllStatic {
   // Returns textual representation of a tracking level.
   static const char* tracking_level_to_string(NMT_TrackingLevel level);
 
- private:
+private:
   struct S {
     const char* enum_s; // e.g. "mtNMT"
     const char* human_readable; // e.g. "Native Memory Tracking"
