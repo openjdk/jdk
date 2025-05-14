@@ -124,7 +124,7 @@ public class GifComparison {
                     if (alpha1 == 0 && alpha2 == 0) {
                         continue;
                     } else if (alpha1 == 0 || alpha2 == 0) {
-                        throw new Error("pixels are (" + x + ", " + y +
+                        throw new Error("pixels at (" + x + ", " + y +
                                 ") have different opacities: " +
                                 Integer.toUnsignedString(argb1, 16) + " vs " +
                                 Integer.toUnsignedString(argb2, 16));
@@ -132,7 +132,7 @@ public class GifComparison {
                     int rgb1 = argb1 & 0xffffff;
                     int rgb2 = argb2 & 0xffffff;
                     if (rgb1 != rgb2) {
-                        throw new Error("pixels are (" + x + ", " + y +
+                        throw new Error("pixels at (" + x + ", " + y +
                                 ") have different opaque RGB values: " +
                                 Integer.toUnsignedString(rgb1, 16) + " vs " +
                                 Integer.toUnsignedString(rgb2, 16));
