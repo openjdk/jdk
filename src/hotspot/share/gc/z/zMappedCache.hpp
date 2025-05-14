@@ -29,8 +29,8 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zList.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/rbTree.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/rbTree.hpp"
 
 class ZMappedCacheEntry;
 class ZVirtualMemory;
