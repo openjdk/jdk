@@ -860,6 +860,12 @@ void InstanceKlass::initialize_with_aot_initialized_mirror(TRAPS) {
     return;
   }
 
+  if (is_runtime_setup_required()) {
+    // Need to take the slow path, which will call the runtimeSetup() function instead
+    // of <clinit>
+    initialize(CHECK);
+    return;
+  }
   if (log_is_enabled(Info, aot, init)) {
     ResourceMark rm;
     log_info(aot, init)("%s (aot-inited)", external_name());
@@ -878,7 +884,6 @@ void InstanceKlass::initialize_with_aot_initialized_mirror(TRAPS) {
 #endif
 
   set_init_thread(THREAD);
-  AOTClassInitializer::call_runtime_setup(THREAD, this);
   set_initialization_state_and_notify(fully_initialized, CHECK);
 }
 #endif

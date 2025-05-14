@@ -88,7 +88,8 @@ class fileStream;
           "-XX:-TieredCompilation makes JVMCI compile more of itself.")     \
                                                                             \
   product(bool, EagerJVMCI, false, EXPERIMENTAL,                            \
-          "Force eager JVMCI initialization")                               \
+          "Force eager JVMCI initialization. Defaults to true if "          \
+          "UseJVMCICompiler is true.")                                      \
                                                                             \
   product(bool, PrintBootstrap, true, EXPERIMENTAL,                         \
           "Print JVMCI bootstrap progress and summary")                     \
