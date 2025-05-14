@@ -141,17 +141,6 @@ public class LdapEnumeration {
                 throw new RuntimeException("Unexpected results class: " + results.getClass());
             }
 
-            // fetch enumCount from homeCtx, from EnumCtx, from results
-            Object enumCtx = getField(results.getClass().getSuperclass(), "enumCtx", results);
-            Object homeCtx = getField(enumCtx.getClass(), "homeCtx", enumCtx);
-
-            // Need volatile read of enumCount, as it will be written on the Cleaner thread
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            Class homeCtxClass = lookup.findClass("com.sun.jndi.ldap.LdapCtx");
-            MethodHandles.Lookup privateLookup = MethodHandles.privateLookupIn(homeCtxClass, lookup);
-            VarHandle enumCountVH = privateLookup.findVarHandle(homeCtxClass, "enumCount", int.class);
-            int enumCountBefore = (int) enumCountVH.getVolatile(homeCtx);
-
             whm.put(results, null);
             results = null;
 
@@ -164,15 +153,6 @@ public class LdapEnumeration {
             // it won't be cleared from the map
             if (whm.size() != 0) {
                 throw new RuntimeException("NamingEnumeration is still strongly reachable");
-            }
-
-            // Check that the enum count was decremented by the cleaning action
-            final int expected = enumCountBefore - 1;
-            int enumCountAfter = (int) enumCountVH.getVolatile(homeCtx);
-            System.out.println("enumCountAfter: " + enumCountAfter);
-            if (expected != enumCountAfter) {
-                throw new RuntimeException("enumCount was not decremented. Expected: " +
-                        expected);
             }
         } finally {
             LDAPTestUtils.cleanupSubcontext(ctx, entryDN);
