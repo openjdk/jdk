@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,15 +146,11 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
         addContentSelectors(content);
         if (showContentsList()) {
             content.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING, contents.contentsHeading));
-            content.add(getContentsList());
+            var ul= HtmlTree.UL(HtmlStyles.contentsList);
+            addContentsLinks(ul);
+            content.add(ul);
         }
-        addExtraSection(content);
-        for (SummaryElementKind kind : SummaryElementKind.values()) {
-            if (builder.hasDocumentation(kind)) {
-                addSummaryAPI(builder.getSet(kind), HtmlIds.forSummaryKind(kind),
-                            getHeadingKey(kind), getHeaderKey(kind), content);
-            }
-        }
+        addSummaries(content);
         bodyContents.addMainContent(content);
         // The script below enables checkboxes in the page and invokes their click handler
         // to restore any previous state when the page is loaded via back/forward button.
@@ -177,13 +173,26 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
-     * Add the index link.
+     * Add the section links to the table of contents.
+     *
+     * @param list the table of contents list
+     */
+    protected void addContentsLinks(Content list) {
+        for (SummaryElementKind kind : SummaryElementKind.values()) {
+            if (builder.hasDocumentation(kind)) {
+                addContentsLink(HtmlIds.forSummaryKind(kind), getHeadingKey(kind), list);
+            }
+        }
+    }
+
+    /**
+     * Add the link for a page section to the table of contents.
      *
      * @param id the id for the link
      * @param headingKey the key for the heading content
      * @param content the content to which the index link will be added
      */
-    protected void addIndexLink(HtmlId id, String headingKey, Content content) {
+    protected void addContentsLink(HtmlId id, String headingKey, Content content) {
         // The "contents-" + id value is used in JavaScript code to toggle visibility of the link.
         var li = HtmlTree.LI(links.createLink(id,
                 contents.getContent(headingKey))).setId(HtmlId.of("contents-" + id.name()));
@@ -198,19 +207,17 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
-     * Get the contents list.
+     * Add the API summary tables that represent the main content of the page.
      *
-     * @return the contents list
+     * @param content the content to add the tables to
      */
-    public Content getContentsList() {
-        var ul= HtmlTree.UL(HtmlStyles.contentsList);
-        addExtraIndexLink(ul);
+    protected void addSummaries(Content content) {
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             if (builder.hasDocumentation(kind)) {
-                addIndexLink(HtmlIds.forSummaryKind(kind), getHeadingKey(kind), ul);
+                addSummaryAPI(builder.getSet(kind), HtmlIds.forSummaryKind(kind),
+                        getHeadingKey(kind), getHeaderKey(kind), content);
             }
         }
-        return ul;
     }
 
     /**
@@ -237,7 +244,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     protected void addSummaryAPI(SortedSet<Element> apiList, HtmlId id,
                                  String headingKey, String headerKey,
                                  Content content) {
-        if (apiList.size() > 0) {
+        if (!apiList.isEmpty()) {
             TableHeader tableHeader = getTableHeader(headerKey);
 
             var table = new Table<Element>(HtmlStyles.summaryTable)
@@ -320,14 +327,6 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
-     * Add an extra optional section to the content.
-     *
-     * @param target the content to which the section should be added
-     */
-    protected void addExtraSection(Content target) {
-    }
-
-    /**
      * Add an extra optional index link.
      *
      * @param target the content to which the link should be added
@@ -345,7 +344,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
 
     /**
      * Allow subclasses to add an extra table column for an element.
-     * This methods does not add any content by returning {@code null}.
+     * Return {@code null} for no extra content.
      *
      * @param element the element
      * @return content for extra content or null
