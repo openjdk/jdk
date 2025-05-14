@@ -260,6 +260,7 @@ public:
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);
   static void set_excluded_locked(InstanceKlass* k);
+  static void set_from_class_file_load_hook(InstanceKlass* k) NOT_CDS_RETURN;
   static bool warn_excluded(InstanceKlass* k, const char* reason);
   static void dumptime_classes_do(class MetaspaceClosure* it);
   static void write_to_archive(bool is_static_archive = true);
