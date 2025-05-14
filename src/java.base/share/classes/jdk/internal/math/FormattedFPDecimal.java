@@ -91,7 +91,7 @@ public final class FormattedFPDecimal {
 
         final int targetPrec =
                 // No extra trailing digit needed
-                (-3 <= expR && expR <= -1) ? 1
+                (-3 <= expR && expR < 0) ? 1
 
                 // Keep digits to left of decimal, plus leave a trailing zero
                 : (0 <= expR && expR <= 6) ? expR + 2 :
