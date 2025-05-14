@@ -70,6 +70,7 @@ private:
     void remove(TreeNode* node);
     void replace(TreeNode* old_node, TreeNode* new_node, const TreeCursor& cursor);
 
+    size_t size_atomic() const;
     using TreeImpl::size;
 
     using TreeImpl::cursor;

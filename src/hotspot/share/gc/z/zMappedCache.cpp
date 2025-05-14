@@ -218,6 +218,10 @@ void ZMappedCache::Tree::replace(TreeNode* old_node, TreeNode* new_node, const T
   verify();
 }
 
+size_t ZMappedCache::Tree::size_atomic() const {
+  return Atomic::load(&_num_nodes);
+}
+
 const ZMappedCache::TreeNode* ZMappedCache::Tree::left_most() const {
   verify_left_most();
   return _left_most;
@@ -668,10 +672,10 @@ size_t ZMappedCache::remove_from_min(size_t max_size, ZArray<ZVirtualMemory>* ou
 
 void ZMappedCache::print_on(outputStream* st) const {
   // This may be called from error printing where we may not hold the lock, so
-  // values may be inconsistent. As such we read the _tree.size() only once. And
-  // use is_empty_error_reporter_safe and size_error_reporter_safe on the size
-  // class lists.
-  const size_t entry_count = _tree.size();
+  // values may be inconsistent. As such we read size using _tree.size_atomic()
+  // only once. And use is_empty_error_reporter_safe and
+  // size_error_reporter_safe on the size class lists.
+  const size_t entry_count = _tree.size_atomic();
 
   st->print("Cache ");
   st->fill_to(17);
