@@ -34,7 +34,7 @@ import java.util.function.Supplier;
  */
 public interface UnfilledTemplate {
     /**
-     * A {@link UnfilledTemplate} with no arguments.
+     * An {@link UnfilledTemplate} with no arguments.
      *
      * @param function The {@link Supplier} that creates the {@link TemplateBody}.
      */
@@ -45,7 +45,7 @@ public interface UnfilledTemplate {
 
         /**
          * Creates a {@link FilledTemplate} which can be used as a {@link Token} inside
-         * a {@link UnfilledTemplate} for nested code generation, and it can also be used with
+         * an {@link UnfilledTemplate} for nested code generation, and it can also be used with
          * {@link FilledTemplate#render} to render the template to a {@link String}
          * directly.
          *
@@ -57,7 +57,7 @@ public interface UnfilledTemplate {
     }
 
     /**
-     * A {@link UnfilledTemplate} with one argument.
+     * An {@link UnfilledTemplate} with one argument.
      *
      * @param arg0Name The name of the (first) argument, used for hashtag replacements in the {@link UnfilledTemplate}.
      * @param <A> The type of the (first) argument.
@@ -71,7 +71,7 @@ public interface UnfilledTemplate {
 
         /**
          * Creates a {@link FilledTemplate} which can be used as a {@link Token} inside
-         * a {@link UnfilledTemplate} for nested code generation, and it can also be used with
+         * an {@link UnfilledTemplate} for nested code generation, and it can also be used with
          * {@link FilledTemplate#render} to render the template to a {@link String}
          * directly.
          *
@@ -84,7 +84,7 @@ public interface UnfilledTemplate {
     }
 
     /**
-     * A {@link UnfilledTemplate} with two arguments.
+     * An {@link UnfilledTemplate} with two arguments.
      *
      * @param arg0Name The name of the first argument, used for hashtag replacements in the {@link UnfilledTemplate}.
      * @param arg1Name The name of the second argument, used for hashtag replacements in the {@link UnfilledTemplate}.
@@ -100,7 +100,7 @@ public interface UnfilledTemplate {
 
         /**
          * Creates a {@link FilledTemplate} which can be used as a {@link Token} inside
-         * a {@link UnfilledTemplate} for nested code generation, and it can also be used with
+         * an {@link UnfilledTemplate} for nested code generation, and it can also be used with
          * {@link FilledTemplate#render} to render the template to a {@link String}
          * directly.
          *
@@ -136,7 +136,7 @@ public interface UnfilledTemplate {
     }
 
     /**
-     * A {@link UnfilledTemplate} with three arguments.
+     * An {@link UnfilledTemplate} with three arguments.
      *
      * @param arg0Name The name of the first argument, used for hashtag replacements in the {@link UnfilledTemplate}.
      * @param arg1Name The name of the second argument, used for hashtag replacements in the {@link UnfilledTemplate}.
@@ -154,7 +154,7 @@ public interface UnfilledTemplate {
 
         /**
          * Creates a {@link FilledTemplate} which can be used as a {@link Token} inside
-         * a {@link UnfilledTemplate} for nested code generation, and it can also be used with
+         * an {@link UnfilledTemplate} for nested code generation, and it can also be used with
          * {@link FilledTemplate#render} to render the template to a {@link String}
          * directly.
          *
