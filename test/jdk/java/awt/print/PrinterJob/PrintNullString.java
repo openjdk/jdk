@@ -49,6 +49,13 @@ public class PrintNullString implements Printable {
     private final AttributedCharacterIterator nullIterator = null;
     private final AttributedCharacterIterator emptyIterator = emptyAttStr.getIterator();
 
+    public static void main(String[] args) throws Exception {
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new RuntimeException("Printer not configured or available.");
+        }
+        new PrintNullString();
+    }
+
     public PrintNullString() throws PrinterException {
         PrinterJob pj = PrinterJob.getPrinterJob();
         pj.setPrintable(this, new PageFormat());
@@ -121,12 +128,5 @@ public class PrintNullString implements Printable {
         }
 
         return PAGE_EXISTS;
-    }
-
-    public static void main(String[] args) throws Exception {
-        if (PrinterJob.lookupPrintServices().length == 0) {
-            throw new RuntimeException("Printer not configured or available.");
-        }
-        new PrintNullString();
     }
 }
