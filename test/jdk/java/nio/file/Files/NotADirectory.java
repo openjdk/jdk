@@ -24,7 +24,7 @@
 /* @test
  * @bug 8356678
  * @requires (os.family != "windows")
- * @summary Test files operations when a path component is not a regular file
+ * @summary Test Files operations when a path component is not a directory
  * @run junit NotADirectory
  */
 
