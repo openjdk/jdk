@@ -87,7 +87,7 @@ public class EscapeKeyTyped {
             public void keyPressed(KeyEvent e) {
                 printKey(e);
                 int keychar = e.getKeyChar();
-                if (keychar == 27) { // Escape character is 27 or \u0021
+                if (keychar == 27) { // Escape character is 27 or \u001b
                     escapeKeyTypedReceived = true;
                 }
             }
