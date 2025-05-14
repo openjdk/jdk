@@ -208,8 +208,6 @@ final class DHClientKeyExchange {
                 SSLKeyDerivation masterKD = ke.createKeyDerivation(chc);
                 SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
                 chc.handshakeSession.setMasterSecret(masterSecret);
-                chc.handshakeSession.setRandoms(
-                        chc.clientHelloRandom, chc.serverHelloRandom);
 
                 SSLTrafficKeyDerivation kd =
                         SSLTrafficKeyDerivation.valueOf(chc.negotiatedProtocol);
@@ -305,8 +303,6 @@ final class DHClientKeyExchange {
             SSLKeyDerivation masterKD = ke.createKeyDerivation(shc);
             SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
             shc.handshakeSession.setMasterSecret(masterSecret);
-            shc.handshakeSession.setRandoms(
-                    shc.clientHelloRandom, shc.serverHelloRandom);
 
             SSLTrafficKeyDerivation kd =
                     SSLTrafficKeyDerivation.valueOf(shc.negotiatedProtocol);

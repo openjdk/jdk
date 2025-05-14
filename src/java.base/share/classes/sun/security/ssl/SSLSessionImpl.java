@@ -106,8 +106,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private boolean             useDefaultPeerSignAlgs = false;
     private List<byte[]>        statusResponses;
     private SecretKey           exporterMasterSecret;  // TLSv1.3+ exporter info
-    private RandomCookie        clientRandom,          // TLSv1.2- exporter info
-                                serverRandom;
+    private RandomCookie        clientRandom;          // TLSv1.2- exporter info
+    private RandomCookie        serverRandom;
     private SecretKey           resumptionMasterSecret;
     private SecretKey           preSharedKey;
     private byte[]              pskIdentity;
@@ -246,16 +246,13 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.requestedServerNames = baseSession.getRequestedServerNames();
         this.masterSecret = baseSession.getMasterSecret();
         this.useExtendedMasterSecret = baseSession.useExtendedMasterSecret;
-        this.exporterMasterSecret = baseSession.exporterMasterSecret;
-        this.resumptionMasterSecret = baseSession.resumptionMasterSecret;
-        this.clientRandom = baseSession.clientRandom;
-        this.serverRandom = baseSession.serverRandom;
         this.creationTime = baseSession.getCreationTime();
         this.lastUsedTime = System.currentTimeMillis();
         this.identificationProtocol = baseSession.getIdentificationProtocol();
         this.localCerts = baseSession.localCerts;
         this.peerCerts = baseSession.peerCerts;
         this.statusResponses = baseSession.statusResponses;
+        this.exporterMasterSecret = baseSession.exporterMasterSecret;
         this.context = baseSession.context;
         this.negotiatedMaxFragLen = baseSession.negotiatedMaxFragLen;
         this.maximumPacketSize = baseSession.maximumPacketSize;
@@ -316,14 +313,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *       < length in bytes> PSK identity
      *   Anonymous
      *     < 1 byte >
-     * < 1 byte > exporterMasterSecret algorithm length (if == 0, no Key)
-     *   < length in bytes > exporterMasterSecret algorithm
-     *   < 2 bytes > exporterMasterSecretKey length
-     *   < length in bytes> exporterMasterSecretKey
-     * < 1 byte > Length of clientRandom
-     *   < length in bytes > clientRandom
-     * < 1 byte > Length of serverRandom
-     *   < length in bytes > serverRandom
+
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
@@ -499,35 +489,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 break;
             default:
                 throw new SSLException("Failed local certs of session.");
-        }
-
-        // Exporter master secret length of secret key algorithm (one byte)
-        b = Record.getBytes8(buf);
-        if (b.length > 0) {
-            String algName = new String(b);
-            b = Record.getBytes16(buf);
-            this.exporterMasterSecret = new SecretKeySpec(b, algName);
-        } else {
-            // TLSv1.2-
-            this.exporterMasterSecret = null;
-        }
-
-        // Get clientRandom
-        b = Record.getBytes8(buf);
-        if (b.length > 0) {
-            this.clientRandom = new RandomCookie(ByteBuffer.wrap(b));
-        } else {
-            // TLSv1.3+
-            this.clientRandom = null;
-        }
-
-        // Get serverRandom
-        b = Record.getBytes8(buf);
-        if (b.length > 0) {
-            this.serverRandom = new RandomCookie(ByteBuffer.wrap(b));
-        } else {
-            // TLSv1.3+
-            this.serverRandom = null;
         }
 
         context = (SSLSessionContextImpl)
@@ -709,36 +670,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         } else {
             // anonymous
             hos.putInt8(0);
-        }
-
-        // Exporter Master Secret from TLSv1.3+
-        if (getExporterMasterSecret() == null ||
-                getExporterMasterSecret().getAlgorithm() == null) {
-            hos.putInt8(0);
-        } else {
-            String alg = getExporterMasterSecret().getAlgorithm();
-            hos.putInt8(alg.length());
-            if (alg.length() != 0) {
-                hos.write(alg.getBytes());
-            }
-            b = getExporterMasterSecret().getEncoded();
-            hos.putInt16(b.length);
-            hos.write(b, 0, b.length);
-        }
-
-        // Randoms from TLSv1.2-
-        if ( clientRandom == null || clientRandom.randomBytes.length == 0) {
-            hos.putInt8(0);
-        } else {
-            hos.putInt8(clientRandom.randomBytes.length);
-            hos.writeBytes(clientRandom.randomBytes);
-        }
-
-        if ( serverRandom == null || serverRandom.randomBytes.length == 0) {
-            hos.putInt8(0);
-        } else {
-            hos.putInt8(serverRandom.randomBytes.length);
-            hos.writeBytes(serverRandom.randomBytes);
         }
 
         return hos.toByteArray();

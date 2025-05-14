@@ -212,9 +212,6 @@ final class RSAClientKeyExchange {
 
                 // update the states
                 chc.handshakeSession.setMasterSecret(masterSecret);
-                chc.handshakeSession.setRandoms(
-                        chc.clientHelloRandom, chc.serverHelloRandom);
-
                 SSLTrafficKeyDerivation kd =
                         SSLTrafficKeyDerivation.valueOf(chc.negotiatedProtocol);
                 if (kd == null) {   // unlikely
@@ -302,9 +299,6 @@ final class RSAClientKeyExchange {
 
                 // update the states
                 shc.handshakeSession.setMasterSecret(masterSecret);
-                shc.handshakeSession.setRandoms(
-                        shc.clientHelloRandom, shc.serverHelloRandom);
-
                 SSLTrafficKeyDerivation kd =
                         SSLTrafficKeyDerivation.valueOf(shc.negotiatedProtocol);
                 if (kd == null) {       // unlikely
