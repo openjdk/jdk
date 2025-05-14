@@ -3995,8 +3995,8 @@ partially or completely disabled, leading to lower performance.
   can be used, but the "archived module graph" feature will be disabled. This can lead to increased
   start-up time.
 
-To diagnose problems with the above options, you can add `-Xlog:cds` to the application's VM
-arguments. For example, if `--add-modules jdk.jconcole` was specified during archive creation
+To diagnose problems with the AOT options, you can add `-Xlog:aot` to the application's VM
+arguments. For example, if `--add-modules jdk.jconsole` was specified during archive creation
 and `--add-modules jdk.incubator.vector` is specified during runtime, the following messages will
 be logged:
 
@@ -4045,59 +4045,66 @@ The deployment of the AOT cache is divided into three phases:
 
 The AOT cache can be used with the following command-line options:
 
-`-XX:AOTCache:=`*cachefile*
+`-XX:AOTCache=`*cachefile*
 :   Specifies the location of the AOT cache. The standard extension for *cachefile* is `.aot`.
-    If `-XX:AOTCache` is specified but `-XX:AOTMode` is not specified,
-    then `AOTMode` will be given the value of `auto`.
-
     This option cannot be used together with `-XX:AOTCacheOutput`.
 
-`-XX:AOTCacheOutput:=`*cachefile*
+    This option is compatible with `AOTMode` settings of `on`, `create`, or `auto` (the default).
+    The *cachefile* is read in AOT modes `on` and `auto`, and is ignored by mode `off`.
+    The *cachefile* is written by AOT mode `create`.  In that case, this option is
+    equivalent to `-XX:AOTCacheOutput=`*cachefile*.
+
+`-XX:AOTCacheOutput=`*cachefile*
 :   Specifies the location of the AOT cache to write. The standard extension for *cachefile* is `.aot`.
     This option cannot be used together with `-XX:AOTCache`.
 
-    When `-XX:AOTCacheOutput` is specified:
+    This option is compatible with `AOTMode` settings of `record`, `create`, or `auto` (the default).
 
-    - If `-XX:AOTMode` is not specified, then `AOTMode` will be given the value of `record`.
-    - If `-XX:AOTMode=auto` is specified, the JVM behaves if `-XX:AOTMode=record` were specified.
-    - If `-XX:AOTMode=on` is specified, the JVM will exit with an error.
-
-`-XX:AOTConfiguration:=`*configfile*
+`-XX:AOTConfiguration=`*configfile*
 :   Specifies the AOT Configuration file for the JVM to write to or read from.
     The standard extension for *configfile* is `.aotconfig`.
 
-    When `-XX:AOTConfiguration` can be used only if:
+    This option is compatible with `AOTMode` settings of `record`, `create`, or `auto` (the default).
+    The *configfile* is read by AOT mode `create`, and written by the other applicable modes.
+    If the AOT mode is `auto`, then `AOTCacheOutput` must also be present.
 
-    - `-XX:AOTMode=record` is specified, or
-    - `-XX:AOTCacheOutput` is specified, and `-XX:AOTMode=auto` is specified, or
-    - `-XX:AOTCacheOutput` is specified, and `-XX:AOTMode` is not specidied.
+`-XX:AOTMode=`*mode*
+:   Specifies the AOT Mode for this run.
+    *mode* must be one of the following: `auto`, `off`, `record`, `create`, or `on`.
 
-    In all other cases, the JVM will exit with an error.
+-   `auto`: This AOT mode is the default, and takes effect if no `-XX:AOTMode` option
+    is present.  It automatically sets the AOT mode to `record`, `on`, or `off`, as follows:
+     - If `-XX:AOTCacheOutput=`*cachefile* is specified, the AOT mode is changed to `record`
+       (a training run, with a subsequent `create` operation).
+     - Otherwise, if an AOT cache can be loaded, the AOT mode is changed to `on` (a production run).
+     - Otherwise, the AOT mode is changed to `off` (a production run with no AOT cache).
 
-`-XX:+AOTMode:=`*mode*
-:   *mode* must be one of the following: `off`, `record`, `create`, `auto`, or `on`.
+-   `off`: No AOT cache is used.
+    Other AOT command line options are ignored.
 
--   `off`: no AOT cache is used.
-
--   `record`: Execute the application in the Training phase.
+-   `record`: Execute the application in the training phase.
      At least one of `-XX:AOTConfiguration=`*configfile* and/or
-     `-XX:AOTCache=`*cachefile* must be specified.
+     `-XX:AOTCacheOutput=`*cachefile* must be specified.
      If `-XX:AOTConfiguration=`*configfile* is specified, the JVM gathers
      statistical data and stores them into *configfile*.
-     If `-XX:AOTCache=`*cachefile* is specified, a second JVM process is launched
+     If `-XX:AOTConfiguration=`*configfile* is not specified, the JVM uses
+     a temporary file name, which may be the string `AOTCacheOutput+".config"`,
+     or else a fresh implementation-dependent temporary file name.
+     If `-XX:AOTCacheOutput=`*cachefile* is specified, a second JVM process is launched
      to perform the Assembly phase to write the optimization artifacts into *cachefile*.
 
      Extra JVM options can be passed to the second JVM process using the environment
-     variable `JAVA_AOT_OPTIONS`, with the same format as the environment variable
-     `JDK_JAVA_OPTIONS` described above.
+     variable `JDK_AOT_VM_OPTIONS`, with the same format as the environment variable
+     `JAVA_TOOL_OPTIONS`, which is
+     [defined by JVMTI](https://docs.oracle.com/en/java/javase/24/docs/specs/jvmti.html#tooloptions).
 
 -   `create`: Perform the Assembly phase. `-XX:AOTConfiguration=`*configfile* must be
-     specified. Exactly one of `-XX:AOTCache=`*cachefile* or -XX:AOTCacheOutput=`*cachefile*
-     must be specifed. The JVM reads the statistical
-     data from *configfile* and writes the optimization artifacts into *cachefile*.
+     specified.
+     The JVM reads history and statistics
+     from *configfile* and writes the optimization artifacts into *cachefile*.
      Note that the application itself is not executed in this phase.
 
--   `auto` or `on`: These modes should be used in the Production phase.
+-   `on`: Execute the application in the Production phase.
      If `-XX:AOTCache=`*cachefile* is specified, the JVM tries to
      load *cachefile* as the AOT cache. Otherwise, the JVM tries to load
      a *default CDS archive* from the JDK installation directory as the AOT cache.
@@ -4121,7 +4128,7 @@ The AOT cache can be used with the following command-line options:
 
      When the AOT cache fails to load:
 
-     - If `AOTMode` is `auto`, the JVM will continue execution without using the
+     - If `AOTMode` was originally `auto`, the JVM will continue execution without using the
        AOT cache. This is the recommended mode for production environments, especially
        when you may not have complete control of the command-line (e.g., your
        application's launch script may allow users to inject options to the command-line).
@@ -4131,7 +4138,7 @@ The AOT cache can be used with the following command-line options:
      - If `AOTMode` is `on`, the JVM will print an error message and exit immediately. This
        mode should be used only as a "fail-fast" debugging aid to check if your command-line
        options are compatible with the AOT cache. An alternative is to run your application with
-       `-XX:AOTMode=auto -Xlog:cds` to see if the AOT cache can be used or not.
+       `-XX:AOTMode=auto -Xlog:cds,aot` to see if the AOT cache can be used or not.
 
 `-XX:+AOTClassLinking`
 :   If this option is enabled, the JVM will perform more advanced optimizations (such
@@ -4149,7 +4156,10 @@ The AOT cache can be used with the following command-line options:
     default to provide full compatibility with traditional CDS options such as `-Xshare:dump.
 
 The first occurrence of the special sequence `%p` in `*configfile* and `*cachefile* is replaced
-with the process ID of the JVM process launched in the command-line. For example:
+with the process ID of the JVM process launched in the command-line, and likewise the
+first occurrence of `%t` is replace by the JVM's startup timestamp.
+(After replacement there must be no further occurrences of `%p` or `%t`, to prevent
+problems with sub-processes.)  For example:
 
 >   `java -XX:AOTConfiguration=foo%p.aotconfig -XX:AOTCacheOutput=foo%p.aot -cp foo.jar Foo`
 
