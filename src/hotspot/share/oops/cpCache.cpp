@@ -437,7 +437,7 @@ void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
       rfi->remove_unshareable_info();
     }
     if (resolved) {
-      LogStreamHandle(Trace, cds, resolve) log;
+      LogStreamHandle(Trace, aot, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
         int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
@@ -477,7 +477,7 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
       rme->remove_unshareable_info();
     }
     if (resolved) {
-      LogStreamHandle(Trace, cds, resolve) log;
+      LogStreamHandle(Trace, aot, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
         int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
@@ -517,7 +517,7 @@ void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
       rei->remove_unshareable_info();
     }
     if (resolved) {
-      LogStreamHandle(Trace, cds, resolve) log;
+      LogStreamHandle(Trace, aot, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
         int bsm = cp->bootstrap_method_ref_index_at(cp_index);

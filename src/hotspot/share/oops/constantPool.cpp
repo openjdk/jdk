@@ -535,7 +535,7 @@ static const char* get_type(Klass* k) {
 
 void ConstantPool::remove_unshareable_entries() {
   ResourceMark rm;
-  log_info(cds, resolve)("Archiving CP entries for %s", pool_holder()->name()->as_C_string());
+  log_info(aot, resolve)("Archiving CP entries for %s", pool_holder()->name()->as_C_string());
   for (int cp_index = 1; cp_index < length(); cp_index++) { // cp_index 0 is unused
     int cp_tag = tag_at(cp_index).value();
     switch (cp_tag) {
@@ -594,7 +594,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
     resolved_klasses()->at_put(resolved_klass_index, nullptr);
   }
 
-  LogStreamHandle(Trace, cds, resolve) log;
+  LogStreamHandle(Trace, aot, resolve) log;
   if (log.is_enabled()) {
     ResourceMark rm;
     log.print("%s klass  CP entry [%3d]: %s %s",

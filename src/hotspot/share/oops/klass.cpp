@@ -761,9 +761,9 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
 }
 
 void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
-  if (log_is_enabled(Trace, cds)) {
+  if (log_is_enabled(Trace, aot)) {
     ResourceMark rm;
-    log_trace(cds)("Iter(Klass): %p (%s)", this, external_name());
+    log_trace(aot)("Iter(Klass): %p (%s)", this, external_name());
   }
 
   it->push(&_name);

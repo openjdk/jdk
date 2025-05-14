@@ -502,7 +502,7 @@ void ClassListParser::check_class_name(const char* class_name) {
 void ClassListParser::constant_pool_resolution_warning(const char* msg, ...) {
   va_list ap;
   va_start(ap, msg);
-  LogTarget(Warning, cds, resolve) lt;
+  LogTarget(Warning, aot, resolve) lt;
   LogStream ls(lt);
   print_diagnostic_info(&ls, msg, ap);
   ls.print("Your classlist may be out of sync with the JDK or the application.");
@@ -744,7 +744,7 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
       error("Duplicated ID %d for class %s", id, _class_name);
     }
     if (id2klass_table()->maybe_grow()) {
-      log_info(cds, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->table_size());
+      log_info(aot, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->table_size());
     }
   }
 
@@ -848,9 +848,9 @@ void ClassListParser::parse_constant_pool_tag() {
   }
 
   if (SystemDictionaryShared::should_be_excluded(ik)) {
-    if (log_is_enabled(Warning, cds, resolve)) {
+    if (log_is_enabled(Warning, aot, resolve)) {
       ResourceMark rm;
-      log_warning(cds, resolve)("Cannot aot-resolve constants for %s because it is excluded", ik->external_name());
+      log_warning(aot, resolve)("Cannot aot-resolve constants for %s because it is excluded", ik->external_name());
     }
     return;
   }

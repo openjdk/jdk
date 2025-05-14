@@ -293,7 +293,7 @@ int ArchiveHeapWriter::compare_objs_by_oop_fields(HeapObjOrder* a, HeapObjOrder*
 }
 
 void ArchiveHeapWriter::sort_source_objs() {
-  log_info(cds)("sorting heap objects");
+  log_info(aot)("sorting heap objects");
   int len = _source_objs->length();
   _source_objs_order = new GrowableArrayCHeap<HeapObjOrder, mtClassShared>(len);
 
@@ -303,9 +303,9 @@ void ArchiveHeapWriter::sort_source_objs() {
     HeapObjOrder os = {i, rank};
     _source_objs_order->append(os);
   }
-  log_info(cds)("computed ranks");
+  log_info(aot)("computed ranks");
   _source_objs_order->sort(compare_objs_by_oop_fields);
-  log_info(cds)("sorting heap objects done");
+  log_info(aot)("sorting heap objects done");
 }
 
 void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
@@ -330,7 +330,7 @@ void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtCla
     }
   }
 
-  log_info(cds)("Size of heap region = %zu bytes, %d objects, %d roots, %d native ptrs",
+  log_info(aot)("Size of heap region = %zu bytes, %d objects, %d roots, %d native ptrs",
                 _buffer_used, _source_objs->length() + 1, roots->length(), _num_native_ptrs);
 }
 
@@ -636,7 +636,7 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
   // The whole heap is covered by total_bits, but there are only non-zero bits within [start ... end).
   size_t start = bitmap->find_first_set_bit(0);
   size_t end = bitmap->size();
-  log_info(cds)("%s = %7zu ... %7zu (%3zu%% ... %3zu%% = %3zu%%)", which,
+  log_info(aot)("%s = %7zu ... %7zu (%3zu%% ... %3zu%% = %3zu%%)", which,
                 start, end,
                 start * 100 / total_bits,
                 end * 100 / total_bits,

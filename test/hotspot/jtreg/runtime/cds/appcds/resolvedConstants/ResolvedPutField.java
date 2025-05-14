@@ -52,9 +52,9 @@ public class ResolvedPutField {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-cp", appJar,
-                       "-Xlog:cds+resolve=trace");
+                       "-Xlog:aot+resolve=trace");
         CDSTestUtils.createArchiveAndCheck(opts)
-            .shouldMatch("cds,resolve.*Failed to resolve putfield .*ResolvedPutFieldHelper -> ResolvedPutFieldHelper.x:I");
+            .shouldMatch(",resolve.*Failed to resolve putfield .*ResolvedPutFieldHelper -> ResolvedPutFieldHelper.x:I");
     }
 }
 

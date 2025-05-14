@@ -49,7 +49,7 @@ public class SpaceUtilizationCheck {
     // [2] There must be no gap between two consecutive regions.
 
     public static void main(String[] args) throws Exception {
-        test("-Xlog:cds=debug");
+        test("-Xlog:aot=debug,cds=debug");
     }
 
     static void test(String... extra_options) throws Exception {

@@ -62,7 +62,8 @@ public class AOTLinkedLambdas {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-XX:+AOTClassLinking",
-                       "-Xlog:cds+resolve=trace",
+                       "-Xlog:aot+resolve=trace",
+                       "-Xlog:aot+class=debug",
                        "-Xlog:cds+class=debug",
                        "-cp", appJar);
 
