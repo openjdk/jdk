@@ -28,11 +28,17 @@
  * the disposal method changes from 2 to 1
  */
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.net.URL;
 
 public class GifEmptyBackgroundTest {
     public static void main(String[] args) throws Throwable {
         URL srcURL = GifEmptyBackgroundTest.class.getResource("clyde.gif");
-        GifComparison.run(srcURL);
+        BufferedImage bi = GifComparison.run(srcURL);
+
+        if (new Color(bi.getRGB(20, 20), true).getAlpha() != 0) {
+            throw new Error("The pixel at (20, 20) should be transparent.");
+        }
     }
 }
