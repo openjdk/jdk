@@ -307,7 +307,7 @@ public class CreateSymbols {
     private static final String VALUE_BASED_ANNOTATION_INTERNAL =
             "Ljdk/internal/ValueBased+Annotation;";
     private static final String REQUIRES_IDENTITY_ANNOTATION =
-            "Ljdk/internal/RequieresIdentity;";
+            "Ljdk/internal/RequiresIdentity;";
     private static final String REQUIRES_IDENTITY_ANNOTATION_INTERNAL =
             "Ljdk/internal/RequiresIdentity+Annotation;";
     public static final Set<String> HARDCODED_ANNOTATIONS = new HashSet<>(
@@ -3389,6 +3389,8 @@ public class CreateSymbols {
             hash = 59 * hash + Objects.hashCode(this.descriptor);
             hash = 59 * hash + Objects.hashCode(this.thrownTypes);
             hash = 59 * hash + Objects.hashCode(this.annotationDefaultValue);
+            hash = 59 * hash + Objects.hashCode(this.classParameterAnnotations);
+            hash = 59 * hash + Objects.hashCode(this.runtimeParameterAnnotations);
             return hash;
         }
 
@@ -3411,6 +3413,12 @@ public class CreateSymbols {
                 return false;
             }
             if (!Objects.equals(this.annotationDefaultValue, other.annotationDefaultValue)) {
+                return false;
+            }
+            if (!Objects.equals(this.classParameterAnnotations, other.classParameterAnnotations)) {
+                return false;
+            }
+            if (!Objects.equals(this.runtimeParameterAnnotations, other.runtimeParameterAnnotations)) {
                 return false;
             }
             return true;

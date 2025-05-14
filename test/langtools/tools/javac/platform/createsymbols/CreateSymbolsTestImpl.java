@@ -21,6 +21,19 @@
  * questions.
  */
 
+/**
+ * @test
+ * @bug 8072480 8277106 8331027
+ * @summary Unit test for CreateSymbols
+ * @modules java.compiler
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.jvm
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @clean *
+ * @run main/othervm CreateSymbolsTest
+ */
+
 import java.io.File;
 import java.io.InputStream;
 import java.io.Writer;
@@ -955,6 +968,58 @@ public class CreateSymbolsTestImpl {
                              public <@t.AnnInvisible @t.AnnVisible M extends java.util.@t.AnnInvisible @t.AnnVisible ArrayList<java.util.@t.AnnInvisible @t.AnnVisible ArrayList>> java.util.@t.AnnInvisible @t.AnnVisible List<@t.AnnInvisible @t.AnnVisible M> convert(@t.AnnInvisible @t.AnnVisible M arg0,
                                java.util.@t.AnnInvisible @t.AnnVisible List<@t.AnnInvisible @t.AnnVisible E> arg1) throws java.lang.@t.AnnInvisible @t.AnnVisible IllegalStateException,\s
                                java.lang.@t.AnnInvisible @t.AnnVisible IllegalArgumentException;
+                           }
+                           """);
+    }
+
+    @Test
+    void testParameterAnnotations() throws Exception {
+        doPrintElementTest("""
+                           package t;
+                           public class T {
+                               public void test(int p1, int p2) {
+                               }
+                           }
+                           """,
+                           """
+                           package t;
+                           import java.lang.annotation.*;
+                           import java.util.*;
+                           public class T {
+                               public void test(@AnnVisible int p1, @AnnInvisible int p2) {
+                               }
+                           }
+                           @Retention(RetentionPolicy.RUNTIME)
+                           @Target(ElementType.PARAMETER)
+                           @interface AnnVisible {
+                           }
+                           @Retention(RetentionPolicy.CLASS)
+                           @Target(ElementType.PARAMETER)
+                           @interface AnnInvisible {
+                           }
+                           """,
+                           "t.T",
+                           """
+                           package t;
+
+                           public class T {
+
+                             public T();
+
+                             public void test(int arg0,
+                               int arg1);
+                           }
+                           """,
+                           "t.T",
+                           """
+                           package t;
+
+                           public class T {
+
+                             public T();
+
+                             public void test(@t.AnnVisible int arg0,
+                               @t.AnnInvisible int arg1);
                            }
                            """);
     }
