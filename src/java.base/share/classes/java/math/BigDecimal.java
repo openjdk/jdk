@@ -1405,7 +1405,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             s = -s;
         }
 
-        return valueOf(s, fmt.getScale(), fmt.getPrecision());
+        return valueOf(s, -fmt.getExp(), fmt.getPrecision());
     }
 
     // Arithmetic Operations

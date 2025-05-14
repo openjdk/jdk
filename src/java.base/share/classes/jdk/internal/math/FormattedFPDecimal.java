@@ -81,7 +81,7 @@ public final class FormattedFPDecimal {
      * @see java.math.BigDecimal#valueOf(double)
      */
     public static FormattedFPDecimal valueForDoubleToString(double v) {
-        FormattedFPDecimal fd = split(v);
+        final FormattedFPDecimal fd = split(v);
         final int expR = fd.getExponentRounded();
 
         // Adjust precision, following rules for Double.toString. There is
@@ -89,21 +89,17 @@ public final class FormattedFPDecimal {
         // force a digit after the decimal. No additional rounding is performed;
         // no significant trailing digits are removed.
 
-        final int targetPrec = switch (expR) {
-            case -3, -2, -1 ->
+        final int targetPrec =
                 // No extra trailing digit needed
-                    1;
+                (-3 <= expR && expR <= -1) ? 1
 
-            case 0, 1, 2, 3, 4, 5, 6 ->
-                // Keep digits to left of decimal, plus leave a
-                // trailing zero
-                    (expR + 1) + 1;
+                // Keep digits to left of decimal, plus leave a trailing zero
+                : (0 <= expR && expR <= 6) ? expR + 2 :
 
-            default ->
-                // Require at least 2 digits, to include trailing digit when
-                // there is a single digit
-                    2;
-        };
+                // Otherwise, require at least 2 digits, to include trailing
+                // digit when there is a single digit
+                2;
+
 
         long s = fd.f;
         int prec = fd.n;
@@ -122,7 +118,7 @@ public final class FormattedFPDecimal {
         }
 
         // Calculate new e based on updated precision
-        int eNew = expR - prec + 1;  // expR is defined as prec + e - 1
+        final int eNew = expR - prec + 1;  // expR is defined as prec + e - 1
         fd.set(s, eNew, prec);
 
         return fd;
@@ -136,14 +132,8 @@ public final class FormattedFPDecimal {
         return n;
     }
 
-    /**
-     * Value {@code scale}, such that
-     * {@code value = f * 10^(-scale)}
-     * <p/>
-     * This is the same as the definition used by {@link java.math.BigDecimal}
-     */
-    public int getScale() {
-        return -e;
+    public int getExp() {
+        return e;
     }
 
     public void set(long f, int e, int n) {

@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class ValueOfDouble {
-    private static final String DIGITS = "1234567899123456789"; // Enough digits to fill a long
+    private static final String DIGITS = "1234567000003456789"; // Enough digits to fill a long
 
     @Test
     public void testValueOfDouble() {
