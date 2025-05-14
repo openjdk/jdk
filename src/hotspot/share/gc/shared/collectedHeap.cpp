@@ -45,7 +45,6 @@
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/reservedSpace.hpp"
-#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -59,6 +58,7 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#include "utilities/ostream.hpp"
 
 class ClassLoaderData;
 
@@ -111,7 +111,12 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
                  heap->total_collections(),
                  heap->total_full_collections());
 
-  heap->print_on(&st);
+  {
+    StreamIndentor si(&st, 1);
+    heap->print_heap_on(&st);
+    MetaspaceUtils::print_on(&st);
+  }
+
   st.print_cr("}");
 }
 
@@ -163,8 +168,10 @@ void CollectedHeap::print_heap_before_gc() {
   if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("Heap before GC invocations=%u (full %u):", total_collections(), total_full_collections());
-    ResourceMark rm;
-    print_on(&ls);
+
+    StreamIndentor si(&ls, 1);
+    print_heap_on(&ls);
+    MetaspaceUtils::print_on(&ls);
   }
 
   if (_gc_heap_log != nullptr) {
@@ -177,8 +184,10 @@ void CollectedHeap::print_heap_after_gc() {
   if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("Heap after GC invocations=%u (full %u):", total_collections(), total_full_collections());
-    ResourceMark rm;
-    print_on(&ls);
+
+    StreamIndentor si(&ls, 1);
+    print_heap_on(&ls);
+    MetaspaceUtils::print_on(&ls);
   }
 
   if (_gc_heap_log != nullptr) {
@@ -186,7 +195,10 @@ void CollectedHeap::print_heap_after_gc() {
   }
 }
 
-void CollectedHeap::print() const { print_on(tty); }
+void CollectedHeap::print() const {
+  print_heap_on(tty);
+  print_gc_on(tty);
+}
 
 void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const GCHeapSummary& heap_summary = create_heap_summary();

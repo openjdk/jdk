@@ -69,7 +69,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
@@ -1219,6 +1218,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     // must be valid since the class has been successfully parsed.
     const char* path = ClassLoader::uri_to_path(src);
     assert(path != nullptr, "sanity");
+    bool found_invalid = false;
     AOTClassLocationConfig::dumptime_iterate([&] (AOTClassLocation* cl) {
       int i = cl->index();
       // for index 0 and the stream->source() is the modules image or has the jrt: protocol.
@@ -1242,10 +1242,15 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
             classpath_index = i;
           } else {
             if (cl->from_boot_classpath()) {
-              // The class must be from boot loader append path which consists of
-              // -Xbootclasspath/a and jvmti appended entries.
-              assert(loader == nullptr, "sanity");
-              classpath_index = i;
+              if (loader != nullptr) {
+                // Probably loaded by jdk/internal/loader/ClassLoaders$BootClassLoader. Don't archive
+                // such classes.
+                ik->set_shared_classpath_index(-1);
+                ik->set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
+                found_invalid = true;
+              } else {
+                classpath_index = i;
+              }
             }
           }
         } else {
@@ -1256,12 +1261,16 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
           }
         }
       }
-      if (classpath_index >= 0) {
+      if (classpath_index >= 0 || found_invalid) {
         return false; // quit iterating
       } else {
         return true; // Keep iterating
       }
     });
+
+    if (found_invalid) {
+      return;
+    }
 
     // No path entry found for this class: most likely a shared class loaded by the
     // user defined classloader.

@@ -30,6 +30,7 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class ZMappedCacheEntry {
@@ -575,7 +576,7 @@ void ZMappedCache::print_on(outputStream* st) const {
   // class lists.
   const size_t entry_count = Atomic::load(&_entry_count);
 
-  st->print("Cache");
+  st->print("Cache ");
   st->fill_to(17);
   st->print_cr("%zuM (%zu)", _size / M, entry_count);
 
@@ -591,9 +592,9 @@ void ZMappedCache::print_on(outputStream* st) const {
   }
 
   // Print information on size classes
-  streamIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
 
-  st->print("size classes");
+  st->print("size classes ");
   st->fill_to(17);
 
   // Print the number of entries smaller than the min size class's size
