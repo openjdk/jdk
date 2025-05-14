@@ -60,6 +60,9 @@ public final class CPrinterJob extends RasterPrinterJob {
     // future compatibility and the state keeping that it handles.
 
     private static String sShouldNotReachHere = "Should not reach here.";
+    private static final double OS_DEVICE_DPI = 72.0;
+    private static final int DEFAULT_HRES = 300;
+    private static final int DEFAULT_VRES = 300;
 
     private volatile SecondaryLoop printingLoop;
     private AtomicReference<Throwable> printErrorRef = new AtomicReference<>();
@@ -83,6 +86,9 @@ public final class CPrinterJob extends RasterPrinterJob {
     //  basis.
     private long fNSPrintInfo = -1;
     private Object fNSPrintInfoLock = new Object();
+
+    private double hRes = DEFAULT_HRES;
+    private double vRes = DEFAULT_VRES;
 
     static {
         // AWT has to be initialized for the native code to function correctly.
@@ -435,8 +441,7 @@ public final class CPrinterJob extends RasterPrinterJob {
      */
     @Override
     protected double getXRes() {
-        // NOTE: This is not used in the CPrinterJob code path.
-        return 0;
+        return hRes;
     }
 
     /**
@@ -445,8 +450,13 @@ public final class CPrinterJob extends RasterPrinterJob {
      */
     @Override
     protected double getYRes() {
-        // NOTE: This is not used in the CPrinterJob code path.
-        return 0;
+        return vRes;
+    }
+
+    @Override
+    protected void setXYRes(double x, double y) {
+        hRes = x;
+        vRes = y;
     }
 
     /**
@@ -724,11 +734,24 @@ public final class CPrinterJob extends RasterPrinterJob {
     }
 
     private Rectangle2D getPageFormatArea(PageFormat page) {
-        Rectangle2D.Double pageFormatArea =
-            new Rectangle2D.Double(page.getImageableX(),
-                    page.getImageableY(),
-                    page.getImageableWidth(),
-                    page.getImageableHeight());
+        return getPageFormatArea(page, 1, 1);
+    }
+
+    private Rectangle2D getPageFormatArea(PageFormat page, double scaleX, double scaleY) {
+        Rectangle2D.Double pageFormatArea;
+        if (scaleX != 1 && scaleY != 1) {
+            pageFormatArea =
+                    new Rectangle2D.Double(page.getImageableX() * scaleX,
+                            page.getImageableY() * scaleY,
+                            page.getImageableWidth() * scaleX,
+                            page.getImageableHeight() * scaleY);
+        } else {
+            pageFormatArea =
+                    new Rectangle2D.Double(page.getImageableX(),
+                            page.getImageableY(),
+                            page.getImageableWidth(),
+                            page.getImageableHeight());
+        }
         return pageFormatArea;
     }
 
@@ -787,15 +810,23 @@ public final class CPrinterJob extends RasterPrinterJob {
         // This is called from the native side.
         Runnable r = new Runnable() { public void run() {
             try {
+                double scaleX = getXRes()/OS_DEVICE_DPI;
+                double scaleY = getYRes()/OS_DEVICE_DPI;
                 SurfaceData sd = CPrinterSurfaceData.createData(page, context); // Just stores page into an ivar
                 if (defaultFont == null) {
                     defaultFont = new Font("Dialog", Font.PLAIN, 12);
                 }
                 Graphics2D delegate = new SunGraphics2D(sd, Color.black, Color.white, defaultFont);
-
+                if (scaleX != 1 && scaleY != 1) {
+                    ((SunGraphics2D) delegate).setDevClip(0, 0,
+                            (int)(page.getWidth() * scaleX), (int)(page.getHeight() * scaleY));
+                }
                 Graphics2D pathGraphics = new CPrinterGraphics(delegate, printerJob); // Just stores delegate into an ivar
-                Rectangle2D pageFormatArea = getPageFormatArea(page);
+                Rectangle2D pageFormatArea = getPageFormatArea(page, scaleX, scaleY);
                 initPrinterGraphics(pathGraphics, pageFormatArea);
+                if (scaleX != 1 && scaleY != 1) {
+                    delegate.scale(scaleX, scaleY);
+                }
                 if (monochrome) {
                     pathGraphics = new GrayscaleProxyGraphics2D(pathGraphics, printerJob);
                 }
@@ -827,20 +858,23 @@ public final class CPrinterJob extends RasterPrinterJob {
             try {
                 Pageable pageable = getPageable();
                 PageFormat pageFormat = getPageFormat(pageIndex);
+                double scaleX = getXRes()/OS_DEVICE_DPI;
+                double scaleY = getYRes()/OS_DEVICE_DPI;
                 if (pageFormat != null) {
                     Printable printable = pageable.getPrintable(pageIndex);
                     if (printable != null) {
                         BufferedImage bimg =
                               new BufferedImage(
-                                  (int)Math.round(pageFormat.getWidth()),
-                                  (int)Math.round(pageFormat.getHeight()),
+                                  (int)Math.round(pageFormat.getWidth() * scaleX),
+                                  (int)Math.round(pageFormat.getHeight() * scaleY),
                                   BufferedImage.TYPE_INT_ARGB_PRE);
-                        PeekGraphics peekGraphics =
-                         createPeekGraphics(bimg.createGraphics(), printerJob);
-                        Rectangle2D pageFormatArea =
-                             getPageFormatArea(pageFormat);
+                        Graphics2D graphics2D = bimg.createGraphics();
+                        PeekGraphics peekGraphics = createPeekGraphics(graphics2D, printerJob);
+                        Rectangle2D pageFormatArea = getPageFormatArea(pageFormat, scaleX, scaleY);
                         initPrinterGraphics(peekGraphics, pageFormatArea);
-
+                        if (scaleX != 1 && scaleY != 1) {
+                            graphics2D.scale(scaleX, scaleY);
+                        }
                         // Do the assignment here!
                         ret[0] = pageFormat;
                         ret[1] = printable;
