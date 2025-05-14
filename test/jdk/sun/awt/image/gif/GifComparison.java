@@ -30,17 +30,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * This compares the ImageIO rendering of a gif with the ToolkitImage rendering.
+ * This compares the ImageIO rendering of a gif with the ToolkitImage
+ * rendering.
  * <p>
  * This is intended to serve as a helper class for more specific test cases.
  * However this does have its own main method that inspects a folder of gifs.
  */
 public class GifComparison {
 
+    /**
+     * This inspects a folder and calls {@link #run(URL)} for each gif file.
+     */
     public static void main(String[] args) throws Exception {
         AtomicInteger successCtr = new AtomicInteger();
         AtomicInteger failureCtr = new AtomicInteger();
-        AtomicInteger framesCtr = new AtomicInteger();
         File dir = new File(args[0]);
         Files.walkFileTree(dir.toPath(), new FileVisitor<>() {
             @Override
@@ -53,8 +56,7 @@ public class GifComparison {
                 String s = file.toString();
                 if (s.endsWith(".gif")) {
                     try {
-                        int frameCount = run(file.toFile().toURI().toURL());
-                        framesCtr.set(framesCtr.get() + frameCount);
+                        run(file.toFile().toURI().toURL());
                         successCtr.incrementAndGet();
                     } catch (Throwable t) {
                         failureCtr.incrementAndGet();
@@ -75,7 +77,7 @@ public class GifComparison {
             }
         });
 
-        System.out.println("Done. Successes = " + successCtr.get() + " Failures = "+ failureCtr.get() + " Frames = "+ framesCtr.get());
+        System.out.println("Done. Successes = " + successCtr.get() + " Failures = "+ failureCtr.get());
     }
 
     /**
@@ -83,17 +85,28 @@ public class GifComparison {
      * if ImageIO and ToolkitImage produce different BufferedImage renderings.
      *
      * @param srcURL the URL of the image to study
-     * @return the number of frames
+     *
+     * @return the last frame encoded as a TYPE_INT_ARGB image.
+     *         <p>
+     *         Unit tests may further inspect this image to make sure certain
+     *         conditions are met.
      */
-    public static int run(URL srcURL) throws Throwable {
+    public static BufferedImage run(URL srcURL) throws Throwable {
         System.out.println("Comparing ImageIO vs ToolkitImage rendering of " +
                 srcURL);
         ImageIOModel ioModel = new ImageIOModel(srcURL);
         AWTModel awtModel = new AWTModel(srcURL);
 
+        BufferedImage lastImage = null;
         for (int a = 0; a < ioModel.frames.size(); a++) {
             BufferedImage ioImg = ioModel.getFrame(a);
             BufferedImage awtImage = awtModel.getFrame(a);
+
+            // We could make this method much faster if we only iterated
+            // through the gif file once (for each model). But this
+            // slow implementation is probably more readable for devs.
+
+            lastImage = awtImage;
 
             if (!(ioImg.getWidth() == awtImage.getWidth() &&
                     ioImg.getHeight() == awtImage.getHeight()))
@@ -128,7 +141,7 @@ public class GifComparison {
             }
         }
         System.out.println("Passed (" + ioModel.frames.size() + " frames)");
-        return ioModel.frames.size();
+        return lastImage;
     }
 }
 
@@ -242,7 +255,9 @@ class ImageIOModel {
                 Frame f = frames.get(a);
                 if (Objects.equals(f.disposalMethod, "restoreToPrevious")) {
                     if (previousImage == null) {
-                        previousImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                        previousImage = new BufferedImage(image.getWidth(),
+                                image.getHeight(),
+                                BufferedImage.TYPE_INT_ARGB);
                     }
                 }
 
@@ -309,6 +324,10 @@ class AWTModel {
     }
 
     public BufferedImage getFrame(int frameIndex) {
+        // Unfortunately the AWT gif decoder calls Thread.sleep if the frame
+        // delay is non-zero. So this method may take a long time to render a
+        // frame simply because the decoder is calling Thread.sleep constantly.
+
         Image image = Toolkit.getDefaultToolkit().createImage(url);
 
         AtomicReference<BufferedImage> returnValue = new AtomicReference<>();
