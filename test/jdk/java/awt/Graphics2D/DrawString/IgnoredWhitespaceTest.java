@@ -122,8 +122,8 @@ public class IgnoredWhitespaceTest {
             String escaped = text.replace("\r", "\\r")
                                  .replace("\n", "\\n")
                                  .replace("\t", "\\t");
-            String msg = String.format("for text '%s' with font '%s': %s != %s",
-                escaped, font.getName(), r1.toString(), r2.toString());
+            String msg = String.format("for text '%s' with font %s: %s != %s",
+                escaped, font.toString(), r1.toString(), r2.toString());
             throw new RuntimeException(msg);
         }
     }
