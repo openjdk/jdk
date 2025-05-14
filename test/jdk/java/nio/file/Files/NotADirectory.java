@@ -31,6 +31,7 @@
 import java.io.IOException;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
+import java.nio.file.FileSystemException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -114,7 +115,9 @@ public class NotADirectory {
     @MethodSource("copyParams")
     public void copy(Path src, Path dst, CopyOption[] opts)
         throws IOException {
-        assertThrows(NoSuchFileException.class,
+        Class exceptionClass = dst.equals(BOGUS) ?
+            FileSystemException.class : NoSuchFileException.class;
+        assertThrows(exceptionClass,
                      () -> Files.copy(src, dst, opts));
     }
 
@@ -122,7 +125,9 @@ public class NotADirectory {
     @MethodSource("moveParams")
     public void move(Path src, Path dst, CopyOption[] opts)
         throws IOException {
-        assertThrows(NoSuchFileException.class,
+        Class exceptionClass = src.equals(BOGUS) || dst.equals(BOGUS) ?
+            FileSystemException.class : NoSuchFileException.class;
+        assertThrows(exceptionClass,
                      () -> Files.move(src, dst, opts));
     }
 
