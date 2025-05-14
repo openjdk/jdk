@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,10 @@ import jdk.internal.util.ArraysSupport;
 import sun.nio.cs.UTF_8;
 
 /**
- * Utility class for ZIP file entry name and comment decoding and encoding
+ * Utility class for ZIP file entry name and comment decoding and encoding.
+ * <p>
+ * The {@code ZipCoder} for UTF-8 charset is thread safe, {@code ZipCoder}
+ * for other charsets require external synchronization.
  */
 class ZipCoder {
 
@@ -172,6 +175,13 @@ class ZipCoder {
               .onUnmappableCharacter(CodingErrorAction.REPORT);
         }
         return dec;
+    }
+
+    /**
+     * {@return the {@link Charset} used by this {@code ZipCoder}}
+     */
+    final Charset charset() {
+        return this.cs;
     }
 
     private CharsetEncoder encoder() {

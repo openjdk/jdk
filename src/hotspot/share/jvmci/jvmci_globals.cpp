@@ -86,6 +86,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
       return false;
     }
     FLAG_SET_DEFAULT(EnableJVMCI, true);
+    FLAG_SET_ERGO_IF_DEFAULT(EagerJVMCI, true);
   }
 
   if (EnableJVMCI) {

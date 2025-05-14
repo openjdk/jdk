@@ -124,10 +124,19 @@ public final class System {
      *
      * @apiNote
      * The typical approach to read character data is to wrap {@code System.in}
-     * within an {@link java.io.InputStreamReader InputStreamReader} or other object
-     * that handles character encoding. After this is done, subsequent reading should
-     * use only the wrapper object; operating directly on {@code System.in} results
-     * in unspecified behavior.
+     * within the object that handles character encoding. After this is done,
+     * subsequent reading should use only the wrapper object; continuing to
+     * operate directly on {@code System.in} results in unspecified behavior.
+     * <p>
+     * Here are two common examples. Using an {@link java.io.InputStreamReader
+     * InputStreamReader}:
+     * {@snippet lang=java :
+     *     new InputStreamReader(System.in, System.getProperty("stdin.encoding"));
+     * }
+     * Or using a {@link java.util.Scanner Scanner}:
+     * {@snippet lang=java :
+     *     new Scanner(System.in, System.getProperty("stdin.encoding"));
+     * }
      * <p>
      * For handling interactive input, consider using {@link Console}.
      *
