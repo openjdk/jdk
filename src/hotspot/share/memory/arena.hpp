@@ -209,7 +209,7 @@ protected:
   MemTag get_mem_tag() const { return _mem_tag; }
   Tag get_tag() const { return _tag; }
 
-  const char* strdup(const char* s) {
+  char* strdup(const char* s) {
     const size_t sz = strlen(s) + 1;
     char* ptr = (char*)Amalloc(sz);
     memcpy(ptr, s, sz);

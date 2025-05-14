@@ -59,6 +59,14 @@ void ResourceArea::verify_has_resource_mark() {
 
 #endif // ASSERT
 
+extern char* resource_strdup(const char* src) {
+  return Thread::current()->resource_area()->strdup(src);
+}
+
+extern char* resource_strdup(Thread* thread, const char* src) {
+  return thread->resource_area()->strdup(src);
+}
+
 //------------------------------ResourceMark-----------------------------------
 // The following routines are declared in allocation.hpp and used everywhere:
 

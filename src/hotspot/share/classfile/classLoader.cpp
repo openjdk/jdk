@@ -1510,8 +1510,7 @@ char* ClassLoader::get_canonical_path(const char* orig, Thread* thread) {
   char* canonical_path = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, JVM_MAXPATHLEN);
   ResourceMark rm(thread);
   // os::native_path writes into orig_copy
-  char* orig_copy = NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, strlen(orig)+1);
-  strcpy(orig_copy, orig);
+  char* orig_copy = RESOURCE_STRDUP_IN_THREAD(thread, orig);
   if ((CanonicalizeEntry)(os::native_path(orig_copy), canonical_path, JVM_MAXPATHLEN) < 0) {
     return nullptr;
   }

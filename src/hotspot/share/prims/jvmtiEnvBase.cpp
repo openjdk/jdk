@@ -468,8 +468,7 @@ JvmtiEnvBase::get_all_native_method_prefixes(int* count_ptr) {
       // retrieve a prefix and so that it is safe against asynchronous changes
       // copy it into the resource area
       char* prefix = prefixes[j];
-      char* prefix_copy = NEW_RESOURCE_ARRAY(char, strlen(prefix)+1);
-      strcpy(prefix_copy, prefix);
+      char* prefix_copy = RESOURCE_STRDUP(prefix);
       prefix_array->at_put_grow(total_count++, prefix_copy);
     }
   }
