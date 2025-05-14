@@ -210,7 +210,7 @@ public class ZFSTests {
             env.put("encoding", "Shift_JIS");
             try (FileSystem fs = FileSystems.newFileSystem(uri, env)) {
                 FileSystemProvider fsp = fs.provider();
-                Path p = fs.getPath("/\u8868\u7533.txt");  // 0x95 0x5c 0x90 0x5c
+                Path p = fs.getPath("/表申.txt");  // 0x95 0x5c 0x90 0x5c
                 try (OutputStream os = fsp.newOutputStream(p)) {
                     os.write("Hello!".getBytes("ASCII"));
                 }

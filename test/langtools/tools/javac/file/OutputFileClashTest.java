@@ -100,9 +100,9 @@ public class OutputFileClashTest extends TestRunner {
         testClash(base,
                 """
                 public class Test {
-                    interface Cafe\u0301 {      // macos normalizes "e" + U0301 -> U00e9
+                    interface Café {      // macos normalizes "e" + U0301 -> U00e9
                     }
-                    interface Caf\u00e9 {
+                    interface Café {
                     }
                 }
                 """,

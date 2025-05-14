@@ -66,12 +66,12 @@ public class G7Test {
     private static final String testCases[] = {
         "black-birds",              // 0
         "Pat",                      // 1
-        "p\u00E9ch\u00E9",          // 2
-        "p\u00EAche",               // 3
-        "p\u00E9cher",              // 4
-        "p\u00EAcher",              // 5
+        "péché",                    // 2
+        "pêche",                    // 3
+        "pécher",                   // 4
+        "pêcher",                   // 5
         "Tod",                      // 6
-        "T\u00F6ne",                // 7
+        "Töne",                     // 7
         "Tofu",                     // 8
         "blackbirds",               // 9
         "Ton",                      // 10

@@ -99,10 +99,10 @@ public class TestJustification {
 
         private static final String[] texts = {
                 "This is an english Highlighting demo.", "Highlighting",
-                "This is an arabic \u0627\u0628\u062a\u062c \u062e\u0644\u0627\u062e demo.", "arabic \u0627\u0628\u062a\u062c",
-                "This is a hebrew \u05d0\u05d1\u05d2 \u05d3\u05d4\u05d5 demo.", "hebrew \u05d0\u05d1\u05d2",
-                "This is a cjk \u4e00\u4e01\u4e02\uac00\uac01\uc4fa\uf900\uf901\uf902 demo.", "cjk",
-                "NoSpaceCJK:\u4e00\u4e01\u4e02and\uac00\uac01\uc4faand\uf900\uf901\uf902", "No",
+                "This is an arabic ابتج خلاخ demo.", "arabic ابتج",
+                "This is a hebrew אבג דהו demo.", "hebrew אבג",
+                "This is a cjk 一丁丂가각쓺豈更車 demo.", "cjk",
+                "NoSpaceCJK:一丁丂and가각쓺and豈更車", "No",
                 "NoSpaceRoman", "Space"
         };
 
@@ -188,10 +188,10 @@ public class TestJustification {
                 String text = "This is a long line of text that should be broken across multiple "
                               + "lines and then justified to fit the break width.  This test should pass if "
                               + "these lines are justified to the same width, and fail otherwise.  It should "
-                              + "also format the hebrew (\u05d0\u05d1\u05d2 \u05d3\u05d4\u05d5) and arabic "
-                              + "(\u0627\u0628\u062a\u062c \u062e\u0644\u0627\u062e) and CJK "
-                              + "(\u4e00\u4e01\u4e02\uac00\uac01\uc4fa\u67b1\u67b2\u67b3\u67b4\u67b5\u67b6\u67b7"
-                              + "\u67b8\u67b9) text correctly.";
+                              + "also format the hebrew (אבג דהו) and arabic "
+                              + "(ابتج خلاخ) and CJK "
+                              + "(一丁丂가각쓺枱枲枳枴枵架枷"
+                              + "枸枹) text correctly.";
 
                 Float regular = 16.0F;
                 Float big = 24.0F;

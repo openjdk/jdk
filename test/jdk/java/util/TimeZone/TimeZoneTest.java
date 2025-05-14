@@ -376,8 +376,8 @@ public class TimeZoneTest
                 fail("Fail: Expected Pacific Standard Time");
         }
         else if (!name.equals("Pacific Standard Time") &&
-                 !name.equals("\u592a\u5e73\u6d0b\u6807\u51c6\u65f6\u95f4") &&
-                 !name.equals("\u5317\u7f8e\u592a\u5e73\u6d0b\u6807\u51c6\u65f6\u95f4") &&
+                 !name.equals("太平洋标准时间") &&
+                 !name.equals("北美太平洋标准时间") &&
                  !name.equals("GMT-08:00") &&
                  !name.equals("GMT-8:00") &&
                  !name.equals("GMT-0800") &&

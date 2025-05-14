@@ -44,8 +44,8 @@ public class StringUtilsTest {
         Locale.setDefault(Locale.of("tr", "TR"));
 
         //verify the properties of the default locale:
-        assertEquals("\u0131", "I".toLowerCase());
-        assertEquals("\u0130", "i".toUpperCase());
+        assertEquals("ı", "I".toLowerCase());
+        assertEquals("İ", "i".toUpperCase());
 
         //verify the StringUtils.toLowerCase/toUpperCase do what they should:
         assertEquals("i", StringUtils.toLowerCase("I"));
@@ -62,8 +62,8 @@ public class StringUtilsTest {
         // note that the restricted Damerau-Levenshtein distance would be 3, not 2:
         assertEquals(2, DamerauLevenshteinDistance.of("ca", "abc"));
         //verify strings comprising only non-LATIN1 characters
-        assertEquals(1, DamerauLevenshteinDistance.of("\u0438\u044e\u043d\u044c",
-                "\u0438\u044e\u043b\u044c"));
+        assertEquals(1, DamerauLevenshteinDistance.of("июнь",
+                "июль"));
         //verify strings comprising mixed characters: non-LATIN1 and ASCII
         // it's important to start with ASCII characters, so that we
         // test switching a storage (see current implementation)

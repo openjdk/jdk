@@ -54,12 +54,12 @@ public class FinnishTest {
      * Data for TestPrimary()
      */
     private static final String[] primarySourceData = {
-        "L\u00E5vi",
+        "Låvi",
         "wat"
     };
 
     private static final String[] primaryTargetData = {
-        "L\u00E4we",
+        "Läwe",
         "vat"
     };
 
@@ -73,7 +73,7 @@ public class FinnishTest {
     private static final String tertiarySourceData[] = {
         "wat",
         "vat",
-        "a\u00FCbeck"
+        "aübeck"
     };
 
     private static final String tertiaryTargetData[] = {

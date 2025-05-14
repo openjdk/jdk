@@ -75,10 +75,10 @@ public class AliasesShouldBeRecognizedInCLDR {
     // Expected month format data for locales after language aliases replacement.
     private static Stream<Arguments> shortJanuaryNames() {
         return Stream.of(
-                Arguments.of("pa-PK", "\u0a1c\u0a28"),
+                Arguments.of("pa-PK", "ਜਨ"),
                 Arguments.of("uz-AF", "yan"),
-                Arguments.of("sr-ME", "\u0458\u0430\u043d"),
-                Arguments.of("scc", "\u0458\u0430\u043d"),
+                Arguments.of("sr-ME", "јан"),
+                Arguments.of("scc", "јан"),
                 Arguments.of("sh", "jan"),
                 Arguments.of("ha-Latn-NE", "Jan"),
                 Arguments.of("i-lux", "Jan.")

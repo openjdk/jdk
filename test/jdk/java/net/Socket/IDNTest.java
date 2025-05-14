@@ -34,7 +34,7 @@ import java.net.UnknownHostException;
 public class IDNTest {
     public static void main(String[] args) {
         try {
-            Socket s = new Socket("\u67f4\u7530\u82b3\u6a39", 8000);
+            Socket s = new Socket("柴田芳樹", 8000);
         } catch (UnknownHostException e) {
             // Expected
         } catch (Exception e) {

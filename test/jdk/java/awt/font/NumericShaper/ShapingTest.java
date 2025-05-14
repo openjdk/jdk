@@ -56,18 +56,18 @@ public class ShapingTest {
 
         String[][] data = {
            // Arabic "October 10"
-          {"\u0623\u0643\u062a\u0648\u0628\u0631 10",
-           "\u0623\u0643\u062a\u0648\u0628\u0631 \u0661\u0660"},
+          {"أكتوبر 10",
+           "أكتوبر ١٠"},
 
            // Tamil "Year 2009"
-          {"\u0b86\u0ba3\u0bcd\u0b9f\u0bc1 2009",
-           "\u0b86\u0ba3\u0bcd\u0b9f\u0bc1 \u0be8\u0be6\u0be6\u0bef"},
-           // "\u0be800\u0bef is returned by pre-JDK7 because Tamil zero was not
+          {"ஆண்டு 2009",
+           "ஆண்டு ௨௦௦௯"},
+           // "௨00௯ is returned by pre-JDK7 because Tamil zero was not
            //  included in Unicode 4.0.0.
 
            // Ethiopic "Syllable<HA> 2009"
-          {"\u1200 2009",
-           "\u1200 \u136a00\u1371"},
+          {"ሀ 2009",
+           "ሀ ፪00፱"},
            // Ethiopic zero doesn't exist even in Unicode 5.1.0.
         };
 
@@ -84,13 +84,13 @@ public class ShapingTest {
         // Needed to reproduce this bug.
         NumericShaper ns_dummy = getContextualShaper(ARABIC | TAMIL | ETHIOPIC,
                                    EUROPEAN);
-        char[] c = "\u1200 1".toCharArray();
+        char[] c = "ሀ 1".toCharArray();
         ns_dummy.shape(c, 0, c.length);
 
 
-        String given = "\u0627\u0628 456";
-        String expected_ARABIC = "\u0627\u0628 \u0664\u0665\u0666";
-        String expected_EASTERN_ARABIC = "\u0627\u0628 \u06f4\u06f5\u06f6";
+        String given = "اب 456";
+        String expected_ARABIC = "اب ٤٥٦";
+        String expected_EASTERN_ARABIC = "اب ۴۵۶";
 
         NumericShaper ns = getContextualShaper(ARABIC);
         checkResult("ARABIC", ns, given, expected_ARABIC);
@@ -113,41 +113,41 @@ public class ShapingTest {
 
     private static void test6903266() {
         NumericShaper ns = getContextualShaper(EnumSet.of(Range.TAI_THAM_HORA));
-        String given = "\u1a20 012";
-        String expected = "\u1a20 \u1a80\u1a81\u1a82";
+        String given = "ᨠ 012";
+        String expected = "ᨠ ᪀᪁᪂";
         checkResult("Range.TAI_THAM_HORA", ns, given, expected);
 
         ns = getContextualShaper(EnumSet.of(Range.TAI_THAM_HORA,
                                             Range.TAI_THAM_THAM));
-        given = "\u1a20 012";
-        expected = "\u1a20 \u1a90\u1a91\u1a92"; // Tham digits are prioritized.
+        given = "ᨠ 012";
+        expected = "ᨠ ᪐᪑᪒"; // Tham digits are prioritized.
         checkResult("Range.TAI_THAM_HORA, Range.TAI_THAM_THAM", ns, given, expected);
 
         ns = getContextualShaper(EnumSet.of(Range.JAVANESE));
-        given = "\ua984 012";
-        expected = "\ua984 \ua9d0\ua9d1\ua9d2";
+        given = "ꦄ 012";
+        expected = "ꦄ ꧐꧑꧒";
         checkResult("Range.JAVANESE", ns, given, expected);
 
         ns = getContextualShaper(EnumSet.of(Range.TAI_THAM_THAM));
-        given = "\u1a20 012";
-        expected = "\u1a20 \u1a90\u1a91\u1a92";
+        given = "ᨠ 012";
+        expected = "ᨠ ᪐᪑᪒";
         checkResult("Range.TAI_THAM_THAM", ns, given, expected);
 
         ns = getContextualShaper(EnumSet.of(Range.MEETEI_MAYEK));
-        given = "\uabc0 012";
-        expected = "\uabc0 \uabf0\uabf1\uabf2";
+        given = "ꯀ 012";
+        expected = "ꯀ ꯰꯱꯲";
         checkResult("Range.MEETEI_MAYEK", ns, given, expected);
     }
 
     private static void test8032446() {
         NumericShaper ns = getContextualShaper(EnumSet.of(Range.SINHALA));
-        String given = "\u0d85 012";
-        String expected = "\u0d85 \u0de6\u0de7\u0de8";
+        String given = "අ 012";
+        String expected = "අ ෦෧෨";
         checkResult("Range.SINHALA", ns, given, expected);
 
         ns = getContextualShaper(EnumSet.of(Range.MYANMAR_TAI_LAING));
-        given = "\ua9e2 012";
-        expected = "\ua9e2 \ua9f0\ua9f1\ua9f2";
+        given = "ꧢ 012";
+        expected = "ꧢ ꧰꧱꧲";
         checkResult("Range.MYANMAR_TAI_LAING", ns, given, expected);
     }
 

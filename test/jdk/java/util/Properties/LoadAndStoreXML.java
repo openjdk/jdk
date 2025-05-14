@@ -96,11 +96,11 @@ public class LoadAndStoreXML {
         System.out.println("testLoadAndStore, encoding=" + encoding);
 
         Properties props = new Properties();
-        props.put("k0", "\u6C34");
+        props.put("k0", "水");
         props.put("k1", "foo");
         props.put("k2", "bar");
-        props.put("k3", "\u0020\u0391\u0392\u0393\u0394\u0395\u0396\u0397");
-        props.put("k4", "\u7532\u9aa8\u6587");
+        props.put("k3", " ΑΒΓΔΕΖΗ");
+        props.put("k4", "甲骨文");
         props.put("k5", "<java.home>/conf/jaxp.properties");
         props.put("k6", "\uD834\uDD1E");
 

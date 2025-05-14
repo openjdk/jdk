@@ -51,7 +51,7 @@ public class TestNimbusTabbedPaneIconPosition {
     static volatile Point pt;
     static volatile Rectangle bounds;
     private static void addTab(JTabbedPane aTabbedPane, int anIndex) {
-        aTabbedPane.addTab("\u2588", new Icon() {
+        aTabbedPane.addTab("█", new Icon() {
             @Override
             public void paintIcon(Component aComponent, Graphics aGraphics, int anX, int aY) {
                 aGraphics.setColor(Color.RED);

@@ -33,7 +33,7 @@ import com.sun.jndi.ldap.LdapURL;
 public class LdapUnicodeURL {
     public static void main(String[] args) throws Exception {
         // First 3 characters of the CJK Unified Ideographs
-        String uid = "uid=\u4e00\u4e01\u4e02";
+        String uid = "uid=一丁丂";
         LdapURL ldURL = new LdapURL("ldap://www.example.com/" + uid);
         if (!ldURL.getDN().equals(uid)) {
             throw new Exception("uid changed to " + ldURL.getDN());

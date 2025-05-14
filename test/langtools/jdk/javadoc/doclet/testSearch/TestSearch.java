@@ -296,10 +296,10 @@ public class TestSearch extends JavadocTester {
                     "pkg", "pkg1", "pkg2", "pkg3");
             checkExit(Exit.OK);
             checkOutput(Output.OUT, true,
-                    "\u30d1\u30c3\u30b1\u30fc\u30b8pkg\u306e\u30bd\u30fc\u30b9\u30fb\u30d5\u30a1" +
-                            "\u30a4\u30eb\u3092\u8aad\u307f\u8fbc\u3093\u3067\u3044\u307e\u3059...\n",
-                    "\u30d1\u30c3\u30b1\u30fc\u30b8pkg1\u306e\u30bd\u30fc\u30b9\u30fb\u30d5\u30a1" +
-                            "\u30a4\u30eb\u3092\u8aad\u307f\u8fbc\u3093\u3067\u3044\u307e\u3059...\n");
+                    "パッケージpkgのソース・ファ" +
+                            "イルを読み込んでいます...\n",
+                    "パッケージpkg1のソース・ファ" +
+                            "イルを読み込んでいます...\n");
             checkSearchJS();
             checkSearchIndex();
         } finally {
@@ -324,7 +324,7 @@ public class TestSearch extends JavadocTester {
                     Loading source files for package pkg1...
                     """);
         checkOutput("index.html", true,
-                "<span>\u30d1\u30c3\u30b1\u30fc\u30b8</span>");
+                "<span>パッケージ</span>");
         checkSearchJS();
         checkSearchIndex();
     }
@@ -341,10 +341,10 @@ public class TestSearch extends JavadocTester {
                     "pkg", "pkg1", "pkg2", "pkg3");
             checkExit(Exit.OK);
             checkOutput(Output.OUT, true,
-                    "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg\u7684\u6e90\u6587\u4ef6...\n",
-                    "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg1\u7684\u6e90\u6587\u4ef6...\n",
-                    "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg2\u7684\u6e90\u6587\u4ef6...\n",
-                    "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg3\u7684\u6e90\u6587\u4ef6...\n");
+                    "正在加载程序包pkg的源文件...\n",
+                    "正在加载程序包pkg1的源文件...\n",
+                    "正在加载程序包pkg2的源文件...\n",
+                    "正在加载程序包pkg3的源文件...\n");
             checkSearchJS();
             checkSearchIndex();
         } finally {
@@ -375,7 +375,7 @@ public class TestSearch extends JavadocTester {
                     Loading source files for package pkg3...
                     """);
         checkOutput("index.html", true,
-                "<span>\u7a0b\u5e8f\u5305</span>");
+                "<span>程序包</span>");
         checkSearchJS();
         checkSearchIndex();
     }

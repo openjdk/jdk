@@ -46,7 +46,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Position;
 
 public class MyanmarTextTest {
-    private static final String TEXT = "\u1000\u103C";
+    private static final String TEXT = "ကြ";
 
     private static final String FONT_WINDOWS = "Myanmar Text";
     private static final String FONT_LINUX = "Padauk";

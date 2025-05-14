@@ -38,12 +38,12 @@ public class TestCOMP {
     public static void main(String[] argv) throws CharacterCodingException {
         try {
             String src =
-                "JIS0208\u4eb0" +
+                "JIS0208亰" +
                 "ASCII" +
-                "JIS0212\u4e74\u4e79" +
-                "GB2312\u7279\u5b9a" +
-                "JIS0201\uff67\uff68" +
-                "Johab\uac00\uac01";
+                "JIS0212乴乹" +
+                "GB2312特定" +
+                "JIS0201ｧｨ" +
+                "Johab가각";
 
             byte[] ba = src.getBytes("COMPOUND_TEXT");
             /*

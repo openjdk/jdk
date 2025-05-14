@@ -39,12 +39,12 @@ public class NonGregorianFormatTest {
 
     @SuppressWarnings("deprecation")
     static final Object[][] JAPANESE_EN = {
-        { "GGGG yyyy MMMM d", "Sh\u014dwa 1 December 31", new Date(1926-1900, DECEMBER, 31) },
-        { "GGGG yyyy MMMM d", "Sh\u014dwa 64 January 6", new Date(1989-1900, JANUARY, 6) },
+        { "GGGG yyyy MMMM d", "Shōwa 1 December 31", new Date(1926-1900, DECEMBER, 31) },
+        { "GGGG yyyy MMMM d", "Shōwa 64 January 6", new Date(1989-1900, JANUARY, 6) },
         { "GGGG yyyy MMMM d", "Heisei 1 August 9", new Date(1989-1900, AUGUST, 9) },
         { "GGGG yyyy MMMM d", "Heisei 17 June 10", new Date(2005-1900, JUNE, 10) },
-        { "Gy.MM.dd", "Sh\u014dwa1.12.31", new Date(1926-1900, DECEMBER, 31) },
-        { "Gy.MM.dd", "Sh\u014dwa64.01.06", new Date(1989-1900, JANUARY, 6) },
+        { "Gy.MM.dd", "Shōwa1.12.31", new Date(1926-1900, DECEMBER, 31) },
+        { "Gy.MM.dd", "Shōwa64.01.06", new Date(1989-1900, JANUARY, 6) },
         { "Gyy.MM.dd", "Heisei01.08.09", new Date(1989-1900, AUGUST, 9) },
         { "Gy.M.d", "Heisei1.8.9", new Date(1989-1900, AUGUST, 9) },
         { "Gy.MM.dd", "Heisei17.06.10", new Date(2005-1900, JUNE, 10) },
@@ -52,11 +52,11 @@ public class NonGregorianFormatTest {
 
     // Invalid dates for parse exception tests
     static final Object[][] EXCEPTION_JAPANESE_EN = {
-        { "GGGG yyyy MMMM d", "Sh\u014dwa 1 December 10" },
-        { "GGGG yyyy MMMM d", "Sh\u014dwa 64 January 16" },
+        { "GGGG yyyy MMMM d", "Shōwa 1 December 10" },
+        { "GGGG yyyy MMMM d", "Shōwa 64 January 16" },
         { "GGGG yyyy MMMM d", "Heisei 1 January 1" },
-        { "Gy.MM.dd", "Sh\u014dwa1.12.10" },
-        { "Gy.MM.dd", "Sh\u014dwa64.01.16" },
+        { "Gy.MM.dd", "Shōwa1.12.10" },
+        { "Gy.MM.dd", "Shōwa64.01.16" },
         { "Gyy.MM.dd", "Heisei01.01.01" },
     };
 
@@ -72,37 +72,37 @@ public class NonGregorianFormatTest {
         { "Gyyyy/MM/dd", "BE2548/06/10", new Date(2005-1900, JUNE, 10) },
     };
 
-    static final String FULL_DATE_FORMAT_JA = "GGGGyyyy'\u5e74'M'\u6708'd'\u65e5'";
+    static final String FULL_DATE_FORMAT_JA = "GGGGyyyy'年'M'月'd'日'";
 
     @SuppressWarnings("deprecation")
     static final Object[][] JAPANESE_JA = {
-        { FULL_DATE_FORMAT_JA, "\u662d\u548c\u5143\u5e7412\u670831\u65e5", new Date(1926-1900, DECEMBER, 31) },
-        { FULL_DATE_FORMAT_JA, "\u662d\u548c64\u5e741\u67086\u65e5", new Date(1989-1900, JANUARY, 6) },
-        { FULL_DATE_FORMAT_JA, "\u5e73\u6210\u5143\u5e748\u67089\u65e5", new Date(1989-1900, AUGUST, 9) },
-        { FULL_DATE_FORMAT_JA, "\u5e73\u621017\u5e746\u670810\u65e5", new Date(2005-1900, JUNE, 10) },
-        { "Gyy.MM.dd", "\u662d\u548c01.12.31", new Date(1926-1900, DECEMBER, 31) },
-        { "Gyy.MM.dd", "\u662d\u548c64.01.06", new Date(1989-1900, JANUARY, 6) },
-        { "Gyy.MM.dd", "\u5e73\u621001.08.09", new Date(1989-1900, AUGUST, 9) },
-        { "Gy.M.d", "\u5e73\u62101.8.9", new Date(1989-1900, AUGUST, 9) },
-        { "Gyy.MM.dd", "\u5e73\u621017.06.10", new Date(2005-1900, JUNE, 10) },
+        { FULL_DATE_FORMAT_JA, "昭和元年12月31日", new Date(1926-1900, DECEMBER, 31) },
+        { FULL_DATE_FORMAT_JA, "昭和64年1月6日", new Date(1989-1900, JANUARY, 6) },
+        { FULL_DATE_FORMAT_JA, "平成元年8月9日", new Date(1989-1900, AUGUST, 9) },
+        { FULL_DATE_FORMAT_JA, "平成17年6月10日", new Date(2005-1900, JUNE, 10) },
+        { "Gyy.MM.dd", "昭和01.12.31", new Date(1926-1900, DECEMBER, 31) },
+        { "Gyy.MM.dd", "昭和64.01.06", new Date(1989-1900, JANUARY, 6) },
+        { "Gyy.MM.dd", "平成01.08.09", new Date(1989-1900, AUGUST, 9) },
+        { "Gy.M.d", "平成1.8.9", new Date(1989-1900, AUGUST, 9) },
+        { "Gyy.MM.dd", "平成17.06.10", new Date(2005-1900, JUNE, 10) },
     };
 
     // Invalid dates for parse exception tests
     static final Object[][] EXCEPTION_JAPANESE_JA = {
-        { FULL_DATE_FORMAT_JA, "\u662d\u548c\u5143\u5e7412\u670810\u65e5" },
-        { FULL_DATE_FORMAT_JA, "\u662d\u548c64\u5e741\u670816\u65e5" },
-        { FULL_DATE_FORMAT_JA, "\u5e73\u6210\u5143\u5e741\u67081\u65e5" },
-        { "Gyy.MM.dd", "\u662d\u548c01.12.10" },
-        { "Gyy.MM.dd", "\u662d\u548c64.01.16" },
-        { "Gyy.MM.dd", "\u5e73\u621001.01.01" },
+        { FULL_DATE_FORMAT_JA, "昭和元年12月10日" },
+        { FULL_DATE_FORMAT_JA, "昭和64年1月16日" },
+        { FULL_DATE_FORMAT_JA, "平成元年1月1日" },
+        { "Gyy.MM.dd", "昭和01.12.10" },
+        { "Gyy.MM.dd", "昭和64.01.16" },
+        { "Gyy.MM.dd", "平成01.01.01" },
     };
 
     @SuppressWarnings("deprecation")
     static final Object[][] BUDDHIST_JA = {
-        { FULL_DATE_FORMAT_JA, "\u4ecf\u66a62469\u5e7412\u670831\u65e5", new Date(1926-1900, DECEMBER, 31) },
-        { FULL_DATE_FORMAT_JA, "\u4ecf\u66a62532\u5e741\u67086\u65e5", new Date(1989-1900, JANUARY, 6) },
-        { FULL_DATE_FORMAT_JA, "\u4ecf\u66a62532\u5e748\u67089\u65e5", new Date(1989-1900, AUGUST, 9) },
-        { FULL_DATE_FORMAT_JA, "\u4ecf\u66a62548\u5e746\u670810\u65e5", new Date(2005-1900, JUNE, 10) },
+        { FULL_DATE_FORMAT_JA, "仏暦2469年12月31日", new Date(1926-1900, DECEMBER, 31) },
+        { FULL_DATE_FORMAT_JA, "仏暦2532年1月6日", new Date(1989-1900, JANUARY, 6) },
+        { FULL_DATE_FORMAT_JA, "仏暦2532年8月9日", new Date(1989-1900, AUGUST, 9) },
+        { FULL_DATE_FORMAT_JA, "仏暦2548年6月10日", new Date(2005-1900, JUNE, 10) },
         { "Gyyyy/MM/dd", "BE2469/12/31", new Date(1926-1900, DECEMBER, 31) },
         { "Gyyyy/MM/dd", "BE2532/01/06", new Date(1989-1900, JANUARY, 6) },
         { "Gyyyy/MM/dd", "BE2532/08/09", new Date(1989-1900, AUGUST, 9) },

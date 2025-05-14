@@ -219,15 +219,15 @@ public class Bug6329116 {
 //        if (locale.getLanguage().equals("de")) {
 //            String name = tz.getDisplayName(inDST, TimeZone.LONG, locale);
 //            if (inDST) {
-//                if (("Mitteleurop\u00e4ische Sommerzeit".equals(name) && "MESZ".equals(got)) ||
-//                    ("Osteurop\u00e4ische Sommerzeit".equals(name) && "OESZ".equals(got)) ||
-//                    ("Westeurop\u00e4ische Sommerzeit".equals(name) && "WESZ".equals(got))) {
+//                if (("Mitteleuropäische Sommerzeit".equals(name) && "MESZ".equals(got)) ||
+//                    ("Osteuropäische Sommerzeit".equals(name) && "OESZ".equals(got)) ||
+//                    ("Westeuropäische Sommerzeit".equals(name) && "WESZ".equals(got))) {
 //                    return true;
 //                }
 //            } else {
-//                if (("Mitteleurop\u00e4ische Zeit".equals(name) && "MEZ".equals(got)) ||
-//                    ("Osteurop\u00e4ische Zeit".equals(name) && "OEZ".equals(got)) ||
-//                    ("Westeurop\u00e4ische Zeit".equals(name) && "WEZ".equals(got))) {
+//                if (("Mitteleuropäische Zeit".equals(name) && "MEZ".equals(got)) ||
+//                    ("Osteuropäische Zeit".equals(name) && "OEZ".equals(got)) ||
+//                    ("Westeuropäische Zeit".equals(name) && "WEZ".equals(got))) {
 //                    return true;
 //                }
 //            }
@@ -235,11 +235,11 @@ public class Bug6329116 {
 //            (locale.getCountry().equals("TW") || locale.getCountry().equals("HK"))) {
 //            String name = tz.getDisplayName(inDST, TimeZone.LONG, locale);
 //            if (inDST) {
-//                if (("\u53f0\u7063\u590f\u4ee4\u6642\u9593".equals(name) && "TDT".equals(got))) {
+//                if (("台灣夏令時間".equals(name) && "TDT".equals(got))) {
 //                    return true;
 //                }
 //            } else {
-//                if (("\u53f0\u7063\u6a19\u6e96\u6642\u9593".equals(name) && "TST".equals(got))) {
+//                if (("台灣標準時間".equals(name) && "TST".equals(got))) {
 //                    return true;
 //                }
 //            }

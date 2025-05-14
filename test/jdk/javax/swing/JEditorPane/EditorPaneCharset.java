@@ -40,7 +40,7 @@ import javax.swing.text.Element;
 
 public final class EditorPaneCharset {
     private static final String CYRILLIC_TEXT =
-            "\u041F\u0440\u0438\u0432\u0435\u0442, \u043C\u0438\u0440!";
+            "Привет, мир!";
     private static final String HTML_CYRILLIC =
             "<html lang=\"ru\">\n" +
             "<head>\n" +

@@ -59,7 +59,7 @@ public class SJIS {
                 "native.encoding(%s) is not MS932".formatted(enc));
         }
 
-        File f = new File("\u30BD");
+        File f = new File("ソ");
         if (f.exists()) rm(f);
 
         System.err.println(f.getCanonicalPath());
@@ -71,7 +71,7 @@ public class SJIS {
         if (!f.mkdir()) {
             throw new Exception("Can't create directory " + f);
         }
-        File f2 = new File(f, "\u30BD");
+        File f2 = new File(f, "ソ");
         System.err.println(f2.getCanonicalPath());
         touch(f2);
         String cfn = f2.getCanonicalPath();

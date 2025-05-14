@@ -119,21 +119,21 @@ public class CheckboxIndicatorSizeTest implements ActionListener {
         Checkbox cbEnglishOnly
             = new Checkbox("Toggle", true);
         Checkbox cbDingbatsOnly
-            = new Checkbox("\u274a\u274b\u274c\u274d", true);
+            = new Checkbox("❊❋❌❍", true);
         Checkbox cbEnglishDingbats
-            = new Checkbox("Toggle \u274a\u274d", true);
+            = new Checkbox("Toggle ❊❍", true);
         Checkbox cbDingbatsEnglish
-            = new Checkbox("\u274a\u274d toggle", true);
+            = new Checkbox("❊❍ toggle", true);
 
         CheckboxGroup radioGroup = new CheckboxGroup();
         Checkbox rbEnglishOnly
             = new Checkbox("Radio", true, radioGroup);
         Checkbox rbDingbatsOnly
-            = new Checkbox("\u274a\u274b\u274c\u274d", false, radioGroup);
+            = new Checkbox("❊❋❌❍", false, radioGroup);
         Checkbox rbEnglishDingbats
-            = new Checkbox("Radio \u274a\u274d", false, radioGroup);
+            = new Checkbox("Radio ❊❍", false, radioGroup);
         Checkbox rbDingbatsEnglish
-            = new Checkbox("\u274a\u274d radio", false, radioGroup);
+            = new Checkbox("❊❍ radio", false, radioGroup);
 
         Label cbLabel = new Label("Checkboxes");
         cbLabel.setBackground(Color.YELLOW);

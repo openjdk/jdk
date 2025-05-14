@@ -36,7 +36,7 @@ public class Bug4621320 {
     public static void main(String args[]) {
         DateFormatSymbols dfs = new DateFormatSymbols(Locale.of("uk","UA"));
         if
-(!dfs.getMonths()[2].equals("\u0431\u0435\u0440\u0435\u0437\u043d\u044f")) {
+(!dfs.getMonths()[2].equals("березня")) {
             throw new RuntimeException();
         }
     }

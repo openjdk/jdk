@@ -85,11 +85,11 @@ public class MultipleNumberScriptTest {
     static boolean checkResult(String formatted, String numSystem) {
         switch (numSystem) {
             case "arab":
-                return formatted.charAt(0) == '\u0661';
+                return formatted.charAt(0) == '١';
             case "latn":
                 return formatted.charAt(0) == '1';
             case "thai":
-                return formatted.charAt(0) == '\u0e51';
+                return formatted.charAt(0) == '๑';
             default:
                 return false;
         }

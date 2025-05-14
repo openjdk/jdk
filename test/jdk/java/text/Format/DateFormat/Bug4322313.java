@@ -118,13 +118,13 @@ public class Bug4322313 {
             {"+-1342",      1},
             {"1342",        0},
           /* Arabic-Indic digits */
-            {"GMT+\u0660\u0661:\u0662\u0663", 4},
+            {"GMT+٠١:٢٣", 4},
           /* Extended Arabic-Indic digits */
-            {"GMT+\u06f0\u06f1:\u06f2\u06f3", 4},
+            {"GMT+۰۱:۲۳", 4},
           /* Devanagari digits */
-            {"GMT+\u0966\u0967:\u0968\u0969", 4},
+            {"GMT+०१:२३", 4},
           /* Fullwidth digits */
-            {"GMT+\uFF10\uFF11:\uFF12\uFF13", 4},
+            {"GMT+０１:２３", 4},
 
             {"GMT-8",       5},
             {"GMT-18",      6},
@@ -152,13 +152,13 @@ public class Bug4322313 {
             {"--1342",      1},
             {"-802",        2},
           /* Arabic-Indic digits */
-            {"GMT-\u0660\u0661:\u0662\u0663", 4},
+            {"GMT-٠١:٢٣", 4},
           /* Extended Arabic-Indic digits */
-            {"GMT-\u06f0\u06f1:\u06f2\u06f3", 4},
+            {"GMT-۰۱:۲۳", 4},
           /* Devanagari digits */
-            {"GMT-\u0966\u0967:\u0968\u0969", 4},
+            {"GMT-०१:२३", 4},
           /* Fullwidth digits */
-            {"GMT-\uFF10\uFF11:\uFF12\uFF13", 4},
+            {"GMT-０１:２３", 4},
         };
 
         try {

@@ -61,7 +61,7 @@ public class bug4480602 {
             SwingUtilities.invokeAndWait(() -> {
                 fr = new JFrame("Test");
 
-                String s = "0\u05D01\u05D02\u05D03\u05D04\u05D05";
+                String s = "0א1א2א3א4א5";
                 DefaultMutableTreeNode root = new DefaultMutableTreeNode(s);
                 root.add(new DefaultMutableTreeNode(s));
                 root.add(new DefaultMutableTreeNode(s));

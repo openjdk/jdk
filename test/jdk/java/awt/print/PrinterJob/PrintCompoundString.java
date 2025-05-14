@@ -44,7 +44,7 @@ import javax.swing.JOptionPane;
  * @run main/manual PrintCompoundString
  */
 public class PrintCompoundString implements Printable {
-    private static final String STR = "Test string compound printing \u2203\u2200\u2211";
+    private static final String STR = "Test string compound printing ∃∀∑";
 
     private static final String INSTRUCTIONS =
             "This test should print following text\n\n" +

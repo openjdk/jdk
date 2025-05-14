@@ -93,8 +93,8 @@ public class EncodingTest {
 
     void format(Formatter formatter)
             throws IOException {
-        formatter.format("abcde \u00FA\u00FB\u00FC\u00FD");
-        formatter.format("Java \uff08\u8ba1\u7b97\u673a\u7f16\u7a0b\u8bed\u8a00\uff09");
+        formatter.format("abcde úûüý");
+        formatter.format("Java （计算机编程语言）");
         formatter.flush();
         formatter.close();
     }

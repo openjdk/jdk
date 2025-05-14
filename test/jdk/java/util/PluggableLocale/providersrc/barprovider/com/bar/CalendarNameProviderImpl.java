@@ -96,7 +96,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider {
         if (style == SHORT || style == SHORT_STANDALONE) {
             return sb.toString(); // full-width digit(s)
         }
-        sb.append("\u304c\u3064"); // + "gatsu" in Hiragana
+        sb.append("がつ"); // + "gatsu" in Hiragana
         return sb.toString();
     }
 }

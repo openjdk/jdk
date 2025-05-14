@@ -50,8 +50,8 @@ public class Bug4740757 {
     }
 
     private static void test4740757() {
-        String source = "\uc548\ub155\ud558\uc138\uc694? \uc88b\uc740 \uc544\uce68, \uc5ec\ubcf4\uc138\uc694! \uc548\ub155. End.";
-        String expected = "\uc548/\ub155/\ud558/\uc138/\uc694? /\uc88b/\uc740 /\uc544/\uce68, /\uc5ec/\ubcf4/\uc138/\uc694! /\uc548/\ub155. /End./";
+        String source = "안녕하세요? 좋은 아침, 여보세요! 안녕. End.";
+        String expected = "안/녕/하/세/요? /좋/은 /아/침, /여/보/세/요! /안/녕. /End./";
 
         BreakIterator bi = BreakIterator.getLineInstance(Locale.KOREAN);
         bi.setText(source);

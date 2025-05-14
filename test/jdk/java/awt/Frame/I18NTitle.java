@@ -54,7 +54,7 @@ public class I18NTitle {
     }
 
     private static Window createAndShowGUI() {
-        String s = "\u4e2d\u6587\u6d4b\u8bd5 \u0420\u0443\u0441\u0441\u043a\u0438\u0439 Zur\u00FCck";
+        String s = "中文测试 Русский Zurück";
         Frame frame = new Frame(s);
         frame.setLayout(new BorderLayout());
         Label l = new Label(s);

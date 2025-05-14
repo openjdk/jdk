@@ -68,7 +68,7 @@ public class SunioAlias {
 
         /* known failed names... TBD
         // JIS-defined Shift JIS
-        aliasTable.put("\u30b7\u30d5\u30c8\u7b26\u53f7\u5316\u8868\u73fe",
+        aliasTable.put("シフト符号化表現",
                        "SJIS");
         // Specialized auto-detection for Japanese charsets
         aliasTable.put("jis auto detect",       "JISAutoDetect");

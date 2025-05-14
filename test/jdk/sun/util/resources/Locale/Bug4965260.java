@@ -42,11 +42,11 @@ public class Bug4965260  {
     };
 
     static String[] expectedNames = new String[] {
-        "Niederl\u00e4ndisch",
-        "neerland\u00e9s",
-        "n\u00e9erlandais",
+        "Niederländisch",
+        "neerlandés",
+        "néerlandais",
         "olandese",
-        "nederl\u00e4ndska"
+        "nederländska"
     };
 
     public static void main(String[] args) throws Exception {

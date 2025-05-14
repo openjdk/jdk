@@ -67,11 +67,11 @@ public class NarrowNamesTest {
              HOUR_OF_DAY, 23);
         test(JAJPJP, DAY_OF_WEEK,
              LocalDateTime.now().isBefore(LocalDateTime.of(2019, 5, 1, 0, 0)) ?
-                "\u65e5" : "\u706b", // "Sun" for HEISEI, "Tue" for REIWA
+                "日" : "火", // "Sun" for HEISEI, "Tue" for REIWA
              YEAR, 24, MONTH, DECEMBER, DAY_OF_MONTH, 23);
-        test(THTH, MONTH, NARROW_STANDALONE, "\u0e18.\u0e04.",
+        test(THTH, MONTH, NARROW_STANDALONE, "ธ.ค.",
              YEAR, 2555, MONTH, DECEMBER, DAY_OF_MONTH, 5);
-        test(THTH, DAY_OF_WEEK, "\u0e1e",
+        test(THTH, DAY_OF_WEEK, "พ",
              YEAR, 2555, MONTH, DECEMBER, DAY_OF_MONTH, 5);
 
         testMap(US, DAY_OF_WEEK, ALL_STYLES, // shouldn't include any narrow names
@@ -100,50 +100,50 @@ public class NarrowNamesTest {
                 "a", "p");
         testMap(JAJPJP, DAY_OF_WEEK, NARROW_STANDALONE,
                 "", // 1-based indexing for DAY_OF_WEEK
-                "\u65e5",
-                "\u6708",
-                "\u706b",
-                "\u6c34",
-                "\u6728",
-                "\u91d1",
-                "\u571f");
+                "日",
+                "月",
+                "火",
+                "水",
+                "木",
+                "金",
+                "土");
         testMap(JAJPJP, DAY_OF_WEEK, NARROW_FORMAT,
                 "", // 1-based indexing for DAY_OF_WEEK
-                "\u65e5",
-                "\u6708",
-                "\u706b",
-                "\u6c34",
-                "\u6728",
-                "\u91d1",
-                "\u571f");
+                "日",
+                "月",
+                "火",
+                "水",
+                "木",
+                "金",
+                "土");
         testMap(THTH, MONTH, NARROW_FORMAT,
-                "\u0e21.\u0e04.",
-                "\u0e01.\u0e1e.",
-                "\u0e21\u0e35.\u0e04.",
-                "\u0e40\u0e21.\u0e22.",
-                "\u0e1e.\u0e04.",
+                "ม.ค.",
+                "ก.พ.",
+                "มี.ค.",
+                "เม.ย.",
+                "พ.ค.",
                 (providers.startsWith("CLDR") ?
-                    "\u0e21\u0e34.\u0e22." :
-                    "\u0e21\u0e34.\u0e22"),  // no last dot in JRE
-                "\u0e01.\u0e04.",
-                "\u0e2a.\u0e04.",
-                "\u0e01.\u0e22.",
-                "\u0e15.\u0e04.",
-                "\u0e1e.\u0e22.",
-                "\u0e18.\u0e04.");
+                    "มิ.ย." :
+                    "มิ.ย"),  // no last dot in JRE
+                "ก.ค.",
+                "ส.ค.",
+                "ก.ย.",
+                "ต.ค.",
+                "พ.ย.",
+                "ธ.ค.");
         testMap(THTH, MONTH, NARROW_STANDALONE,
-                "\u0e21.\u0e04.",
-                "\u0e01.\u0e1e.",
-                "\u0e21\u0e35.\u0e04.",
-                "\u0e40\u0e21.\u0e22.",
-                "\u0e1e.\u0e04.",
-                "\u0e21\u0e34.\u0e22.",
-                "\u0e01.\u0e04.",
-                "\u0e2a.\u0e04.",
-                "\u0e01.\u0e22.",
-                "\u0e15.\u0e04.",
-                "\u0e1e.\u0e22.",
-                "\u0e18.\u0e04.");
+                "ม.ค.",
+                "ก.พ.",
+                "มี.ค.",
+                "เม.ย.",
+                "พ.ค.",
+                "มิ.ย.",
+                "ก.ค.",
+                "ส.ค.",
+                "ก.ย.",
+                "ต.ค.",
+                "พ.ย.",
+                "ธ.ค.");
 
         if (errors != 0) {
             throw new RuntimeException("test failed");

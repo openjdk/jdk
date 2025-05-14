@@ -43,19 +43,19 @@ public class PrintX500PrincipalInDebugModeWithAvaOption {
                 "String does not contain expected value");
 
         //Test the name in RFC2253 format. This should skip the hex conversion to return
-        //"\u00d1" for special character "Ñ"
-        Asserts.assertTrue(name.getName().contains("\u00d1"),
+        //"Ñ" for special character "Ñ"
+        Asserts.assertTrue(name.getName().contains("Ñ"),
                 "String does not contain expected value");
 
         //Test the name in canonical name in RFC2253 format. This should skip the hex conversion to return
-        //"n\u0303" for special character "Ñ"
-        Asserts.assertTrue(name.getName(X500Principal.CANONICAL).contains("n\u0303"),
+        //"ñ" for special character "Ñ"
+        Asserts.assertTrue(name.getName(X500Principal.CANONICAL).contains("ñ"),
                 "String does not contain expected value");
 
 
         //Test to print name in RFC1779 format. This should skip the hex conversion to print
-        //"\u00d1" for special character "Ñ"
-        Asserts.assertTrue(name.getName(X500Principal.RFC1779).contains("\u00d1"),
+        //"Ñ" for special character "Ñ"
+        Asserts.assertTrue(name.getName(X500Principal.RFC1779).contains("Ñ"),
                 "String does not contain expected value");
     }
 }

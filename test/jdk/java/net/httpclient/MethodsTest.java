@@ -104,7 +104,7 @@ public class MethodsTest {
         bad("Bar\r\n");
         good("Hello#world");
         good("Qwer#ert");
-        bad("m\u00e9thode");
+        bad("méthode");
         for (char c =0; c < 256 ; c++) {
             if (c < 32 || FORBIDDEN.indexOf(c) > -1 || c >= 127) {
                 bad("me" + c + "thod");

@@ -108,8 +108,8 @@ public class bug4314194 {
             UIManager.getDefaults().put("RadioButton.disabledText", radioButtonColor);
         }
 
-        checkBox = new JCheckBox("\u2588".repeat(5));
-        radioButton = new JRadioButton("\u2588".repeat(5));
+        checkBox = new JCheckBox("█".repeat(5));
+        radioButton = new JRadioButton("█".repeat(5));
         checkBox.setFont(checkBox.getFont().deriveFont(50.0f));
         radioButton.setFont(radioButton.getFont().deriveFont(50.0f));
         checkBox.setEnabled(false);

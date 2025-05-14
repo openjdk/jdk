@@ -72,7 +72,7 @@ public class HiddenOptionsShouldUseGivenEncodingTest {
 
     static List<String> source = Arrays.asList(
         "class T6302184 {",
-        "    int \u00c0\u00c1\u00c2\u00c3\u00c4\u00c5 = 1;",
+        "    int ÀÁÂÃÄÅ = 1;",
         "}"
     );
 
@@ -83,7 +83,7 @@ public class HiddenOptionsShouldUseGivenEncodingTest {
         "    T6302184() {",
         "        super();",
         "    }",
-        "    int \u00c0\u00c1\u00c2\u00c3\u00c4\u00c5 = 1;",
+        "    int ÀÁÂÃÄÅ = 1;",
         "}"
     );
 

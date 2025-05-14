@@ -53,20 +53,20 @@ public class FrenchTest {
     private static final String[] tertiarySourceData = {
         "abc",
         "COTE",
-        "p\u00EAche",
-        "p\u00EAcher",
-        "p\u00E9cher",
-        "p\u00E9cher",
+        "pêche",
+        "pêcher",
+        "pécher",
+        "pécher",
         "Hello"
     };
 
     private static final String[] tertiaryTargetData = {
         "ABC",
-        "c\u00f4te",
-        "p\u00E9ch\u00E9",
-        "p\u00E9ch\u00E9",
-        "p\u00EAche",
-        "p\u00EAcher",
+        "côte",
+        "péché",
+        "péché",
+        "pêche",
+        "pêcher",
         "hellO"
     };
 
@@ -79,10 +79,10 @@ public class FrenchTest {
         "A",
         "e",
         "E",
-        "\u00e9",
-        "\u00e8",
-        "\u00ea",
-        "\u00eb",
+        "é",
+        "è",
+        "ê",
+        "ë",
         "ea",
         "x"
     };

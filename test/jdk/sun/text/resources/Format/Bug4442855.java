@@ -49,7 +49,7 @@ private boolean TestAD(){
         Locale zhTWloc = Locale.of("zh", "TW");
         SimpleDateFormat sdf = new SimpleDateFormat("G", zhTWloc);
 
-        return Test(sdf.format(new Date()), "\u897f\u5143", "AD");
+        return Test(sdf.format(new Date()), "西元", "AD");
 }
 
 private boolean TestBC(){
@@ -58,7 +58,7 @@ private boolean TestBC(){
 
         Calendar cdar = sdf.getCalendar();
         cdar.set(-2000, 1, 1);
-        return Test(sdf.format(cdar.getTime()), "\u897f\u5143\u524d", "BC");
+        return Test(sdf.format(cdar.getTime()), "西元前", "BC");
 }
 
 private boolean Test(String parent, String child, String info){

@@ -76,7 +76,7 @@ public class RFC396xTest {
         assertStringEquals(hex(Des.string_to_key_bytes("passwordATHENA.MIT.EDUraeburn".toCharArray())), "cbc22fae235298e3");
         assertStringEquals(hex(Des.string_to_key_bytes("potatoeWHITEHOUSE.GOVdanny".toCharArray())), "df3d32a74fd92a01");
         assertStringEquals(hex(Des.string_to_key_bytes((gclef+"EXAMPLE.COMpianist").toCharArray())), "4ffb26bab0cd9413");
-        assertStringEquals(hex(Des.string_to_key_bytes("\u00dfATHENA.MIT.EDUJuri\u0161i\u0107".toCharArray())), "62c81a5232b5e69d");
+        assertStringEquals(hex(Des.string_to_key_bytes("ßATHENA.MIT.EDUJurišić".toCharArray())), "62c81a5232b5e69d");
         // Next 2 won't pass, since there's no real weak key here
         //assertStringEquals(hex(Des.string_to_key_bytes("11119999AAAAAAAA".toCharArray())), "984054d0f1a73e31");
         //assertStringEquals(hex(Des.string_to_key_bytes("NNNN6666FFFFAAAA".toCharArray())), "c4bf6b25adf7a4f8");
@@ -128,7 +128,7 @@ public class RFC396xTest {
         assertStringEquals(hex(new Des3DkCrypto().stringToKey("passwordATHENA.MIT.EDUraeburn".toCharArray())), "850bb51358548cd05e86768c313e3bfef7511937dcf72c3e");
         assertStringEquals(hex(new Des3DkCrypto().stringToKey("potatoeWHITEHOUSE.GOVdanny".toCharArray())), "dfcd233dd0a43204ea6dc437fb15e061b02979c1f74f377a");
         assertStringEquals(hex(new Des3DkCrypto().stringToKey("pennyEXAMPLE.COMbuckaroo".toCharArray())), "6d2fcdf2d6fbbc3ddcadb5da5710a23489b0d3b69d5d9d4a");
-        assertStringEquals(hex(new Des3DkCrypto().stringToKey("\u00DFATHENA.MIT.EDUJuri\u0161i\u0107".toCharArray())), "16d5a40e1ce3bacb61b9dce00470324c831973a7b952feb0");
+        assertStringEquals(hex(new Des3DkCrypto().stringToKey("ßATHENA.MIT.EDUJurišić".toCharArray())), "16d5a40e1ce3bacb61b9dce00470324c831973a7b952feb0");
         assertStringEquals(hex(new Des3DkCrypto().stringToKey((gclef+"EXAMPLE.COMpianist").toCharArray())), "85763726585dbc1cce6ec43e1f751f07f1c4cbb098f40b19");
 
         // A.5

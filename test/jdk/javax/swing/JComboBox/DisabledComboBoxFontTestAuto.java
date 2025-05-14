@@ -54,11 +54,11 @@ public class DisabledComboBoxFontTestAuto {
 
     private static void createCombo() {
         combo = new JComboBox();
-        combo.addItem("\u2588".repeat(5));
+        combo.addItem("█".repeat(5));
         combo.setFont(combo.getFont().deriveFont(50.0f));
         combo.setRenderer(new DefaultListCellRenderer());
         combo2 = new JComboBox();
-        combo2.addItem("\u2588".repeat(5));
+        combo2.addItem("█".repeat(5));
         combo2.setFont(combo2.getFont().deriveFont(50.0f));
         COMBO_WIDTH = (int) combo.getPreferredSize().getWidth();
         COMBO_HEIGHT = (int) combo.getPreferredSize().getHeight();

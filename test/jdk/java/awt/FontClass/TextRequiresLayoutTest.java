@@ -34,7 +34,7 @@ public class TextRequiresLayoutTest {
     public static void main(String args[]) {
 
         String simpleStr = "Hello World";
-        String complexStr = "\u0641\u0642\u0643";
+        String complexStr = "فقك";
         char[] simpleChars = simpleStr.toCharArray();
         char[] complexChars = complexStr.toCharArray();
 

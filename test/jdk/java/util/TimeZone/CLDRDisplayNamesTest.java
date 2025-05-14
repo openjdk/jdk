@@ -47,29 +47,29 @@ public class CLDRDisplayNamesTest {
     static final String[][] CLDR_DATA = {
         {
             "ja-JP",
-            "\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u6a19\u6e96\u6642",
+            "アメリカ太平洋標準時",
             "PST",
-            "\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593",
+            "アメリカ太平洋夏時間",
             "PDT",
-            //"\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u6642\u9593",
+            //"アメリカ太平洋時間",
         //"PT"
         },
         {
             "zh-CN",
-            "\u5317\u7f8e\u592a\u5e73\u6d0b\u6807\u51c6\u65f6\u95f4",
+            "北美太平洋标准时间",
             "PST",
-            "\u5317\u7f8e\u592a\u5e73\u6d0b\u590f\u4ee4\u65f6\u95f4",
+            "北美太平洋夏令时间",
             "PDT",
-            //"\u5317\u7f8e\u592a\u5e73\u6d0b\u65f6\u95f4",
+            //"北美太平洋时间",
         //"PT",
         },
         {
             "de-DE",
-            "Nordamerikanische Westk\u00fcsten-Normalzeit",
+            "Nordamerikanische Westküsten-Normalzeit",
             "PST",
-            "Nordamerikanische Westk\u00fcsten-Sommerzeit",
+            "Nordamerikanische Westküsten-Sommerzeit",
             "PDT",
-            //"Nordamerikanische Westk\u00fcstenzeit",
+            //"Nordamerikanische Westküstenzeit",
         //"PT",
         },
     };

@@ -73,11 +73,11 @@ public class Bug8204603 {
         Locale.forLanguageTag("zh-MO"),
         Locale.forLanguageTag("zh-TW"));
     private static final Map<Locale, String> CALENDAR_DATA_MAP = Map.of(
-        Locale.forLanguageTag("zh-CN"), "\u5468\u65E5",
-        Locale.forLanguageTag("zh-TW"), "\u9031\u65E5");
+        Locale.forLanguageTag("zh-CN"), "周日",
+        Locale.forLanguageTag("zh-TW"), "週日");
     private static final Map<Locale, String> NAN_DATA_MAP = Map.of(
         Locale.forLanguageTag("zh-CN"), "NaN",
-        Locale.forLanguageTag("zh-TW"), "\u975E\u6578\u503C");
+        Locale.forLanguageTag("zh-TW"), "非數值");
 
     public static void main(String[] args) {
         testCldrSupportedLocales();

@@ -60,7 +60,7 @@ public class BytesAndLines {
 
     // data for text files
     private static final String EN_STRING = "The quick brown fox jumps over the lazy dog";
-    private static final String JA_STRING = "\u65e5\u672c\u8a9e\u6587\u5b57\u5217";
+    private static final String JA_STRING = "日本語文字列";
 
     // used for random byte content
     private static Random RAND = new Random();

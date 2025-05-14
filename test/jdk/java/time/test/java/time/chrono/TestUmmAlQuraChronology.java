@@ -422,16 +422,16 @@ public class TestUmmAlQuraChronology {
         return new Object[][] {
             {1434, 1, 1, "01 AH Thu Muharram 1434"},
             {1434, 2, 1, "01 AH Fri Safar 1434"},
-            {1434, 3, 1, "01 AH Sun Rabi\u02bb I 1434"},//the actual month name is Rabi Al-Awwal, but the locale data contains short form.
-            {1434, 4, 1, "01 AH Mon Rabi\u02bb II 1434"},//the actual month name is Rabi Al-Akhar, but the locale data contains short form.
+            {1434, 3, 1, "01 AH Sun Rabiʻ I 1434"},//the actual month name is Rabi Al-Awwal, but the locale data contains short form.
+            {1434, 4, 1, "01 AH Mon Rabiʻ II 1434"},//the actual month name is Rabi Al-Akhar, but the locale data contains short form.
             {1434, 5, 1, "01 AH Wed Jumada I 1434"},//the actual month name is Jumada Al-Awwal, but the locale data contains short form.
             {1434, 6, 1, "01 AH Thu Jumada II 1434"},//the actual month name is Jumada Al-Akhar, but the locale data contains short form.
             {1434, 7, 1, "01 AH Sat Rajab 1434"},
-            {1434, 8, 1, "01 AH Mon Sha\u02bbban 1434"},
+            {1434, 8, 1, "01 AH Mon Shaʻban 1434"},
             {1434, 9, 1, "01 AH Tue Ramadan 1434"},
             {1434, 10, 1, "01 AH Thu Shawwal 1434"},
-            {1434, 11, 1, "01 AH Sat Dhu\u02bbl-Qi\u02bbdah 1434"},
-            {1434, 12, 1, "01 AH Sun Dhu\u02bbl-Hijjah 1434"},
+            {1434, 11, 1, "01 AH Sat Dhuʻl-Qiʻdah 1434"},
+            {1434, 12, 1, "01 AH Sun Dhuʻl-Hijjah 1434"},
         };
     }
 

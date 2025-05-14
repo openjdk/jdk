@@ -78,13 +78,13 @@ public class FormatLocale {
 
     static final List<String> expectedWithDefaultLocale = List.of(
             "TURKISH",
-            "TURK\u0130SH",
-            "N\u0130SAN",
+            "TURKİSH",
+            "NİSAN",
             "1,00000E+08",
-            "\u0130");
+            "İ");
 
     static final List<String> expectedWithFormatLocale = List.of(
-            "TURK\u0130SH",
+            "TURKİSH",
             "TURKISH",
             "AVRIL",
             "1.00000E+08",

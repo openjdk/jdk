@@ -165,9 +165,9 @@ public class bug8023392 {
             c.add(p2, BorderLayout.SOUTH);
 
             String[] data = {
-                    "1a) \u30aa\u30f3\u30e9\u30a4\u30f3\u6d88\u8fbc" +
+                    "1a) オンライン消込" +
                     "                                              ",
-                    "1b) \u30aa\u30f3\u30e9\u30a4\u30f3\u6d88\u8fbc"
+                    "1b) オンライン消込"
             };
             JList l0 = new JList(data);
             l0.setVisibleRowCount(l0.getModel().getSize());

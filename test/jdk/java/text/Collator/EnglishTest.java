@@ -53,19 +53,19 @@ public class EnglishTest {
      * Data for TestPrimary()
      */
     private static final String[] primarySourceData = {
-        "p\u00EAche",
+        "pêche",
         "abc",
         "abc",
         "abc",
-        "a\u00E6c"
+        "aæc"
     };
 
     private static final String[] primaryTargetData = {
-        "p\u00E9ch\u00E9",
+        "péché",
         "aBC",
         "abd",
-        "\u00E4bc",
-        "a\u00C6c"
+        "äbc",
+        "aÆc"
     };
 
     private static final int[] primaryResults = {
@@ -78,19 +78,19 @@ public class EnglishTest {
     private static final String[] secondarySourceData = {
         "abc",
         "abc",
-        "a\u00E6c",
+        "aæc",
         "abc",
         "abc",
-        "p\u00e9ch\u00e9"
+        "péché"
     };
 
     private static final String[] secondaryTargetData = {
         "aBd",
-        "\u00E4bc",
-        "a\u00C6c",
+        "äbc",
+        "aÆc",
         "aBd",
-        "\u00E4bc",
-        "p\u00eache"
+        "äbc",
+        "pêche"
     };
 
     private static final int[] secondaryResults = {
@@ -111,11 +111,11 @@ public class EnglishTest {
         "blackbird",
         "black-bird",
         "black-bird",
-        "p\u00EAche",
-        "p\u00E9ch\u00E9",
-        "\u00C4B\u0308C\u0308",
-        "a\u0308bc",
-        "p\u00E9cher",
+        "pêche",
+        "péché",
+        "ÄB̈C̈",
+        "äbc",
+        "pécher",
         "roles",
         "abc",
         "A",
@@ -129,16 +129,16 @@ public class EnglishTest {
         "Abcda",
         "abcda",
         "abcda",
-        "\u00E6bcda",
-        "\u00E4bcda",
+        "æbcda",
+        "äbcda",
         "abc",
         "abc",
         "abc",
         "abc",
         "abc",
         "acHc",
-        "a\u0308bc",
-        "thi\u0302s"
+        "äbc",
+        "thîs"
     };
 
     private static final String[] tertiaryTargetData = {
@@ -152,14 +152,14 @@ public class EnglishTest {
         "blackbirds",
         "blackbirds",
         "blackbird",
-        "p\u00E9ch\u00E9",
-        "p\u00E9cher",
-        "\u00C4B\u0308C\u0308",
-        "A\u0308bc",
-        "p\u00E9che",
-        "ro\u0302le",
-        "A\u00E1cd",
-        "A\u00E1cd",
+        "péché",
+        "pécher",
+        "ÄB̈C̈",
+        "Äbc",
+        "péche",
+        "rôle",
+        "Aácd",
+        "Aácd",
         "abc",
         "abc",
         "TComparePlain",
@@ -168,18 +168,18 @@ public class EnglishTest {
         "a&b",
         "a#c",
         "abcda",
-        "\u00C4bcda",
-        "\u00E4bcda",
-        "\u00C4bcda",
-        "\u00C4bcda",
+        "Äbcda",
+        "äbcda",
+        "Äbcda",
+        "Äbcda",
         "ab#c",
         "abc",
         "ab=c",
         "abd",
-        "\u00E4bc",
+        "äbc",
         "aCHc",
-        "\u00E4bc",
-        "th\u00EEs"
+        "äbc",
+        "thîs"
     };
 
     private static final int[] tertiaryResults = {
@@ -194,10 +194,10 @@ public class EnglishTest {
         "A",
         "e",
         "E",
-        "\u00e9",
-        "\u00e8",
-        "\u00ea",
-        "\u00eb",
+        "é",
+        "è",
+        "ê",
+        "ë",
         "ea",
         "x"
     };

@@ -63,7 +63,7 @@ public class EncodingTest extends TestRunner {
     void init() throws IOException {
         Files.createDirectories(src);
         Files.write(src.resolve("C.java"),
-                "/** \u03b1\u03b2\u03b3 */ public class C { }".getBytes(StandardCharsets.UTF_8));
+                "/** αβγ */ public class C { }".getBytes(StandardCharsets.UTF_8));
     }
 
     @Test

@@ -43,9 +43,9 @@ public class DateFormatSymbolsProviderImpl extends DateFormatSymbolsProvider {
     static List<Locale> availList = Arrays.asList(avail);
 
     static String[] dialect = {
-        "\u3084\u3002",
-        "\u3069\u3059\u3002",
-        "\u3067\u3059\u3002",
+        "や。",
+        "どす。",
+        "です。",
         "-yy-ZZ"
     };
 

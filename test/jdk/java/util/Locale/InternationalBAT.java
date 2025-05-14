@@ -93,9 +93,9 @@ public class InternationalBAT {
 
     // Date strings for May 10, 2001, for the required locales
     private static String[] requiredLocaleDates = {
-        "\u0627\u0644\u062e\u0645\u064a\u0633\u060c \u0661\u0660 \u0645\u0627\u064a\u0648 \u0662\u0660\u0660\u0661",
-        "2001\u5e745\u670810\u65e5\u661f\u671f\u56db",
-        "2001\u5E745\u670810\u65E5 \u661F\u671F\u56DB",
+        "الخميس، ١٠ مايو ٢٠٠١",
+        "2001年5月10日星期四",
+        "2001年5月10日 星期四",
         "donderdag 10 mei 2001",
         "Thursday, 10 May 2001",
         "Thursday, May 10, 2001",
@@ -104,15 +104,15 @@ public class InternationalBAT {
         "jeudi 10 mai 2001",
         "jeudi 10 mai 2001",
         "Donnerstag, 10. Mai 2001",
-        "\u05d9\u05d5\u05dd \u05d7\u05de\u05d9\u05e9\u05d9, 10 \u05d1\u05de\u05d0\u05d9 2001",
-        "\u0917\u0941\u0930\u0941\u0935\u093e\u0930, 10 \u092e\u0908 2001",
-        "gioved\u00EC 10 maggio 2001",
-        "2001\u5e745\u670810\u65e5\u6728\u66dc\u65e5", // ja_JP
-        "2001\uB144 5\uC6D4 10\uC77C \uBAA9\uC694\uC77C",
+        "יום חמישי, 10 במאי 2001",
+        "गुरुवार, 10 मई 2001",
+        "giovedì 10 maggio 2001",
+        "2001年5月10日木曜日", // ja_JP
+        "2001년 5월 10일 목요일",
         "quinta-feira, 10 de maio de 2001",
         "jueves, 10 de mayo de 2001",
         "torsdag 10 maj 2001",
-        "\u0e27\u0e31\u0e19\u0e1e\u0e24\u0e2b\u0e31\u0e2a\u0e1a\u0e14\u0e35\u0e17\u0e35\u0e48 10 \u0e1e\u0e24\u0e29\u0e20\u0e32\u0e04\u0e21 \u0e1e\u0e38\u0e17\u0e18\u0e28\u0e31\u0e01\u0e23\u0e32\u0e0a 2544",
+        "วันพฤหัสบดีที่ 10 พฤษภาคม พุทธศักราช 2544",
     };
 
     private static boolean testRequiredLocales() {

@@ -110,26 +110,26 @@ public class TestCompactNumber {
     Object[][] compactFormatData() {
         return new Object[][]{
             // compact number format instance, number to format, formatted output
-            {FORMAT_DZ_LONG, 1000.09, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55"
-                + "\u0FB2\u0F42 \u0F21"},
-            {FORMAT_DZ_LONG, -999.99, "-\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55"
-                + "\u0FB2\u0F42 \u0F21"},
-            {FORMAT_DZ_LONG, -0.0, "-\u0F20"},
-            {FORMAT_DZ_LONG, 3000L, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55"
-                + "\u0FB2\u0F42 \u0F23"},
-            {FORMAT_DZ_LONG, new BigInteger("12345678901234567890"), "\u0F51"
-                + "\u0F74\u0F44\u0F0B\u0F55\u0FB1\u0F74\u0F62\u0F0B\u0F66"
-                + "\u0F0B\u0F61\u0F0B \u0F21\u0F22\u0F23\u0F24\u0F25\u0F27"},
+            {FORMAT_DZ_LONG, 1000.09, "སྟོང་ཕ"
+                + "ྲག ༡"},
+            {FORMAT_DZ_LONG, -999.99, "-སྟོང་ཕ"
+                + "ྲག ༡"},
+            {FORMAT_DZ_LONG, -0.0, "-༠"},
+            {FORMAT_DZ_LONG, 3000L, "སྟོང་ཕ"
+                + "ྲག ༣"},
+            {FORMAT_DZ_LONG, new BigInteger("12345678901234567890"), "ད"
+                + "ུང་ཕྱུར་ས"
+                + "་ཡ་ ༡༢༣༤༥༧"},
             // negative
-            {FORMAT_DZ_LONG, new BigInteger("-12345678901234567890"), "-\u0F51"
-                + "\u0F74\u0F44\u0F0B\u0F55\u0FB1\u0F74\u0F62\u0F0B\u0F66"
-                + "\u0F0B\u0F61\u0F0B \u0F21\u0F22\u0F23\u0F24\u0F25\u0F27"},
-            {FORMAT_DZ_LONG, new BigDecimal("12345678901234567890.89"), "\u0F51"
-                + "\u0F74\u0F44\u0F0B\u0F55\u0FB1\u0F74\u0F62\u0F0B\u0F66"
-                + "\u0F0B\u0F61\u0F0B \u0F21\u0F22\u0F23\u0F24\u0F25\u0F27"},
-            {FORMAT_DZ_LONG, new BigDecimal("-12345678901234567890.89"), "-\u0F51"
-                + "\u0F74\u0F44\u0F0B\u0F55\u0FB1\u0F74\u0F62\u0F0B\u0F66"
-                + "\u0F0B\u0F61\u0F0B \u0F21\u0F22\u0F23\u0F24\u0F25\u0F27"},
+            {FORMAT_DZ_LONG, new BigInteger("-12345678901234567890"), "-ད"
+                + "ུང་ཕྱུར་ས"
+                + "་ཡ་ ༡༢༣༤༥༧"},
+            {FORMAT_DZ_LONG, new BigDecimal("12345678901234567890.89"), "ད"
+                + "ུང་ཕྱུར་ས"
+                + "་ཡ་ ༡༢༣༤༥༧"},
+            {FORMAT_DZ_LONG, new BigDecimal("-12345678901234567890.89"), "-ད"
+                + "ུང་ཕྱུར་ས"
+                + "་ཡ་ ༡༢༣༤༥༧"},
             // Zeros
             {FORMAT_EN_US_SHORT, 0, "0"},
             {FORMAT_EN_US_SHORT, 0.0, "0"},
@@ -230,37 +230,37 @@ public class TestCompactNumber {
             // Less than 1000 no suffix
             {FORMAT_HI_IN_LONG, -999, "-999"},
             // Round the value with 0 fraction digits and format it
-            {FORMAT_HI_IN_LONG, -999.99, "-1 \u0939\u091C\u093C\u093E\u0930"},
+            {FORMAT_HI_IN_LONG, -999.99, "-1 हज़ार"},
             // 10 thousand
-            {FORMAT_HI_IN_LONG, 99000, "99 \u0939\u091C\u093C\u093E\u0930"},
+            {FORMAT_HI_IN_LONG, 99000, "99 हज़ार"},
             // Long path
-            {FORMAT_HI_IN_LONG, 330000, "3 \u0932\u093E\u0916"},
+            {FORMAT_HI_IN_LONG, 330000, "3 लाख"},
             // Double path
-            {FORMAT_HI_IN_LONG, 3000.90, "3 \u0939\u091C\u093C\u093E\u0930"},
+            {FORMAT_HI_IN_LONG, 3000.90, "3 हज़ार"},
             // BigInteger path
             {FORMAT_HI_IN_LONG, new BigInteger("12345678901234567890"),
-                "123456789 \u0916\u0930\u092C"},
+                "123456789 खरब"},
             // BigDecimal path
             {FORMAT_HI_IN_LONG, new BigDecimal("12345678901234567890.89"),
-                "123456789 \u0916\u0930\u092C"},
+                "123456789 खरब"},
             // 1000 does not have any suffix in "ja" locale
             {FORMAT_JA_JP_SHORT, -999.99, "-1,000"},
             // 0-9999 does not have any suffix
             {FORMAT_JA_JP_SHORT, 9999, "9,999"},
-            // 99000/10000 => 9.9\u4E07 rounded to 10\u4E07
-            {FORMAT_JA_JP_SHORT, 99000, "10\u4E07"},
+            // 99000/10000 => 9.9万 rounded to 10万
+            {FORMAT_JA_JP_SHORT, 99000, "10万"},
             // Negative
-            {FORMAT_JA_JP_SHORT, -99000, "-10\u4E07"},
+            {FORMAT_JA_JP_SHORT, -99000, "-10万"},
             // Long path
-            {FORMAT_JA_JP_SHORT, 330000, "33\u4E07"},
+            {FORMAT_JA_JP_SHORT, 330000, "33万"},
             // Double path
             {FORMAT_JA_JP_SHORT, 3000.90, "3,001"},
             // BigInteger path
             {FORMAT_JA_JP_SHORT, new BigInteger("12345678901234567890"),
-                "1235\u4EAC"},
+                "1235京"},
             // BigDecimal path
             {FORMAT_JA_JP_SHORT, new BigDecimal("12345678901234567890.89"),
-                "1235\u4EAC"},
+                "1235京"},
             // less than 1000 no suffix
             {FORMAT_IT_SHORT, 499, "499"},
             // Boundary number
@@ -280,38 +280,38 @@ public class TestCompactNumber {
             {FORMAT_CA_LONG, 99000, "99 milers"},
             {FORMAT_CA_LONG, 330000, "330 milers"},
             {FORMAT_CA_LONG, 3000.90, "3 milers"},
-            {FORMAT_CA_LONG, 1000000, "1 mili\u00f3"},
+            {FORMAT_CA_LONG, 1000000, "1 milió"},
             {FORMAT_CA_LONG, new BigInteger("12345678901234567890"),
                 "12345679 bilions"},
             {FORMAT_CA_LONG, new BigDecimal("12345678901234567890.89"),
                 "12345679 bilions"},
-            {FORMAT_AS_LONG, 5000.0, "\u09eb \u09b9\u09be\u099c\u09be\u09f0"},
-            {FORMAT_AS_LONG, 50000.0, "\u09eb\u09e6 \u09b9\u09be\u099c\u09be\u09f0"},
-            {FORMAT_AS_LONG, 500000.0, "\u09eb \u09b2\u09be\u0996"},
-            {FORMAT_AS_LONG, 5000000.0, "\u09eb \u09a8\u09bf\u09af\u09c1\u09a4"},
-            {FORMAT_AS_LONG, 50000000.0, "\u09eb\u09e6 \u09a8\u09bf\u09af\u09c1\u09a4"},
-            {FORMAT_AS_LONG, 500000000.0, "\u09eb\u09e6\u09e6 \u09a8\u09bf\u09af\u09c1\u09a4"},
-            {FORMAT_AS_LONG, 5000000000.0, "\u09eb \u09b6\u09a4 \u0995\u09cb\u099f\u09bf"},
-            {FORMAT_AS_LONG, 50000000000.0, "\u09eb\u09e6 \u09b6\u09a4 \u0995\u09cb\u099f\u09bf"},
-            {FORMAT_AS_LONG, 500000000000.0, "\u09eb\u09e6\u09e6 \u09b6\u09a4 \u0995\u09cb\u099f\u09bf"},
-            {FORMAT_AS_LONG, 5000000000000.0, "\u09eb \u09b6\u09a4 \u09aa\u09f0\u09be\u09f0\u09cd\u09a6\u09cd\u09a7"},
-            {FORMAT_AS_LONG, 50000000000000.0, "\u09eb\u09e6 \u09b6\u09a4 \u09aa\u09f0\u09be\u09f0\u09cd\u09a6\u09cd\u09a7"},
-            {FORMAT_AS_LONG, 500000000000000.0, "\u09eb\u09e6\u09e6 \u09b6\u09a4 \u09aa\u09f0\u09be\u09f0\u09cd\u09a6\u09cd\u09a7"},
-            {FORMAT_AS_LONG, 5000000000000000.0, "\u09eb\u09e6\u09e6\u09e6 \u09b6\u09a4 \u09aa\u09f0\u09be\u09f0\u09cd\u09a6\u09cd\u09a7"},
+            {FORMAT_AS_LONG, 5000.0, "৫ হাজাৰ"},
+            {FORMAT_AS_LONG, 50000.0, "৫০ হাজাৰ"},
+            {FORMAT_AS_LONG, 500000.0, "৫ লাখ"},
+            {FORMAT_AS_LONG, 5000000.0, "৫ নিযুত"},
+            {FORMAT_AS_LONG, 50000000.0, "৫০ নিযুত"},
+            {FORMAT_AS_LONG, 500000000.0, "৫০০ নিযুত"},
+            {FORMAT_AS_LONG, 5000000000.0, "৫ শত কোটি"},
+            {FORMAT_AS_LONG, 50000000000.0, "৫০ শত কোটি"},
+            {FORMAT_AS_LONG, 500000000000.0, "৫০০ শত কোটি"},
+            {FORMAT_AS_LONG, 5000000000000.0, "৫ শত পৰাৰ্দ্ধ"},
+            {FORMAT_AS_LONG, 50000000000000.0, "৫০ শত পৰাৰ্দ্ধ"},
+            {FORMAT_AS_LONG, 500000000000000.0, "৫০০ শত পৰাৰ্দ্ধ"},
+            {FORMAT_AS_LONG, 5000000000000000.0, "৫০০০ শত পৰাৰ্দ্ধ"},
             {FORMAT_AS_LONG, new BigInteger("12345678901234567890"),
-                "\u09e7\u09e8\u09e9\u09ea\u09eb\u09ec\u09ed\u09ef \u09b6\u09a4 \u09aa\u09f0\u09be\u09f0\u09cd\u09a6\u09cd\u09a7"},
+                "১২৩৪৫৬৭৯ শত পৰাৰ্দ্ধ"},
             {FORMAT_AS_LONG, new BigDecimal("12345678901234567890123466767.89"),
-                "\u09e7\u09e8\u09e9\u09ea\u09eb\u09ec\u09ed\u09ee\u09ef\u09e6\u09e7\u09e8\u09e9\u09ea\u09eb\u09ec\u09ee \u09b6\u09a4 \u09aa\u09f0\u09be\u09f0\u09cd\u09a6\u09cd\u09a7"},
+                "১২৩৪৫৬৭৮৯০১২৩৪৫৬৮ শত পৰাৰ্দ্ধ"},
             {FORMAT_BRX_SHORT, 999, "999"},
-            {FORMAT_BRX_SHORT, 999.99, "1\u0915\u0947"},
-            {FORMAT_BRX_SHORT, 99000, "99\u0915\u0947"},
-            {FORMAT_BRX_SHORT, 330000, "330\u0915\u0947"},
-            {FORMAT_BRX_SHORT, 3000.90, "3\u0915\u0947"},
-            {FORMAT_BRX_SHORT, 1000000, "1\u090f\u092e"},
+            {FORMAT_BRX_SHORT, 999.99, "1के"},
+            {FORMAT_BRX_SHORT, 99000, "99के"},
+            {FORMAT_BRX_SHORT, 330000, "330के"},
+            {FORMAT_BRX_SHORT, 3000.90, "3के"},
+            {FORMAT_BRX_SHORT, 1000000, "1एम"},
             {FORMAT_BRX_SHORT, new BigInteger("12345678901234567890"),
-                    "12345679\u0924\u093f"},
+                    "12345679ति"},
             {FORMAT_BRX_SHORT, new BigDecimal("12345678901234567890.89"),
-                    "12345679\u0924\u093f"},
+                    "12345679ति"},
             // Less than 1000 no suffix
             {FORMAT_SW_LONG, 499, "499"},
             // Boundary number
@@ -368,11 +368,11 @@ public class TestCompactNumber {
             {FORMAT_ES_LONG_FD1, 1_234_500, "1,2 millones"},
             {FORMAT_DE_LONG_FD2, 1_234_500, "1,23 Millionen"},
             {FORMAT_IT_LONG_FD3, 1_234_500, "1,234 milioni"},
-            {FORMAT_PT_LONG_FD4, 1_234_500, "1,2345 milh\u00f5es"},
+            {FORMAT_PT_LONG_FD4, 1_234_500, "1,2345 milhões"},
 
             // 8338690
-            {FORMAT_PL_LONG, 5_000, "5 tysi\u0119cy"},
-            {FORMAT_PL_LONG, 4_949, "5 tysi\u0119cy"},
+            {FORMAT_PL_LONG, 5_000, "5 tysięcy"},
+            {FORMAT_PL_LONG, 4_949, "5 tysięcy"},
             {FORMAT_FR_LONG, 1_949, "2 mille"},
             {FORMAT_IT_LONG, 1_949, "2 mila"},
         };
@@ -382,16 +382,16 @@ public class TestCompactNumber {
     Object[][] compactParseData() {
         return new Object[][]{
                 // compact number format instance, string to parse, parsed number, return type
-                {FORMAT_DZ_LONG, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2"
-                        + "\u0F42 \u0F21", 1000L, Long.class},
-                {FORMAT_DZ_LONG, "-\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2"
-                        + "\u0F42 \u0F23", -3000L, Long.class},
-                {FORMAT_DZ_LONG, "\u0F51\u0F74\u0F44\u0F0B\u0F55\u0FB1\u0F74\u0F62"
-                        + "\u0F0B\u0F66\u0F0B\u0F61\u0F0B \u0F21"
-                        + "\u0F22\u0F23\u0F24\u0F25\u0F27", 1.23457E19, Double.class},
-                {FORMAT_DZ_LONG, "-\u0F51\u0F74\u0F44\u0F0B\u0F55\u0FB1\u0F74\u0F62"
-                        + "\u0F0B\u0F66\u0F0B\u0F61\u0F0B \u0F21"
-                        + "\u0F22\u0F23\u0F24\u0F25\u0F27", -1.23457E19, Double.class},
+                {FORMAT_DZ_LONG, "སྟོང་ཕྲ"
+                        + "ག ༡", 1000L, Long.class},
+                {FORMAT_DZ_LONG, "-སྟོང་ཕྲ"
+                        + "ག ༣", -3000L, Long.class},
+                {FORMAT_DZ_LONG, "དུང་ཕྱུར"
+                        + "་ས་ཡ་ ༡"
+                        + "༢༣༤༥༧", 1.23457E19, Double.class},
+                {FORMAT_DZ_LONG, "-དུང་ཕྱུར"
+                        + "་ས་ཡ་ ༡"
+                        + "༢༣༤༥༧", -1.23457E19, Double.class},
                 {FORMAT_EN_US_SHORT, "-0.0", -0.0, Double.class},
                 {FORMAT_EN_US_SHORT, "-0", -0.0, Double.class},
                 {FORMAT_EN_US_SHORT, "0", 0L, Long.class},
@@ -422,17 +422,17 @@ public class TestCompactNumber {
                 {FORMAT_EN_LONG, "12345679 trillion", 1.2345679E19, Double.class},
                 {FORMAT_HI_IN_LONG, "999", 999L, Long.class},
                 {FORMAT_HI_IN_LONG, "-999", -999L, Long.class},
-                {FORMAT_HI_IN_LONG, "1 \u0939\u091C\u093C\u093E\u0930", 1000L, Long.class},
-                {FORMAT_HI_IN_LONG, "-1 \u0939\u091C\u093C\u093E\u0930", -1000L, Long.class},
-                {FORMAT_HI_IN_LONG, "3 \u0939\u091C\u093C\u093E\u0930", 3000L, Long.class},
-                {FORMAT_HI_IN_LONG, "12345679 \u0916\u0930\u092C", 1234567900000000000L, Long.class},
-                {FORMAT_HI_IN_LONG, "-12345679 \u0916\u0930\u092C", -1234567900000000000L, Long.class},
+                {FORMAT_HI_IN_LONG, "1 हज़ार", 1000L, Long.class},
+                {FORMAT_HI_IN_LONG, "-1 हज़ार", -1000L, Long.class},
+                {FORMAT_HI_IN_LONG, "3 हज़ार", 3000L, Long.class},
+                {FORMAT_HI_IN_LONG, "12345679 खरब", 1234567900000000000L, Long.class},
+                {FORMAT_HI_IN_LONG, "-12345679 खरब", -1234567900000000000L, Long.class},
                 {FORMAT_JA_JP_SHORT, "-99", -99L, Long.class},
-                {FORMAT_JA_JP_SHORT, "1\u4E07", 10000L, Long.class},
-                {FORMAT_JA_JP_SHORT, "30\u4E07", 300000L, Long.class},
-                {FORMAT_JA_JP_SHORT, "-30\u4E07", -300000L, Long.class},
-                {FORMAT_JA_JP_SHORT, "12345679\u5146", 1.2345679E19, Double.class},
-                {FORMAT_JA_JP_SHORT, "-12345679\u5146", -1.2345679E19, Double.class},
+                {FORMAT_JA_JP_SHORT, "1万", 10000L, Long.class},
+                {FORMAT_JA_JP_SHORT, "30万", 300000L, Long.class},
+                {FORMAT_JA_JP_SHORT, "-30万", -300000L, Long.class},
+                {FORMAT_JA_JP_SHORT, "12345679兆", 1.2345679E19, Double.class},
+                {FORMAT_JA_JP_SHORT, "-12345679兆", -1.2345679E19, Double.class},
                 {FORMAT_IT_SHORT, "-99", -99L, Long.class},
                 {FORMAT_IT_SHORT, "1\u00a0Mln", 1000000L, Long.class},
                 {FORMAT_IT_SHORT, "30\u00a0Mln", 30000000L, Long.class},
@@ -481,9 +481,9 @@ public class TestCompactNumber {
                 {FORMAT_ES_LONG_FD1, "1,2 millones", 1_200_000L, Long.class},
                 {FORMAT_DE_LONG_FD2, "1,23 Millionen", 1_230_000L, Long.class},
                 {FORMAT_IT_LONG_FD3, "1,234 milioni", 1_234_000L, Long.class},
-                {FORMAT_PT_LONG_FD4, "1,2345 milh\u00f5es", 1_234_500L, Long.class},
+                {FORMAT_PT_LONG_FD4, "1,2345 milhões", 1_234_500L, Long.class},
                 // 8338690
-                {FORMAT_PL_LONG, "5 tysi\u0119cy", 5_000L, Long.class},
+                {FORMAT_PL_LONG, "5 tysięcy", 5_000L, Long.class},
                 {FORMAT_FR_LONG, "2 mille", 2_000L, Long.class},
                 {FORMAT_IT_LONG, "2 mila", 2_000L, Long.class},
         };
@@ -494,15 +494,15 @@ public class TestCompactNumber {
         return new Object[][]{
             // compact number instance, string to parse, null (no o/p; must throw exception)
             // no number
-            {FORMAT_DZ_LONG, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2"
-                + "\u0F42", null},
+            {FORMAT_DZ_LONG, "སྟོང་ཕྲ"
+                + "ག", null},
             // Invalid prefix
-            {FORMAT_DZ_LONG, "-\u0F66\u0F9F\u0F7C\u0F44,\u0F0B\u0F55\u0FB2"
-                + "\u0F42 \u0F23", null},
+            {FORMAT_DZ_LONG, "-སྟོང,་ཕྲ"
+                + "ག ༣", null},
             // Invalid prefix for en_US
             {FORMAT_EN_US_SHORT, "K12,347", null},
             // Invalid prefix for ja_JP
-            {FORMAT_JA_JP_SHORT, "\u4E071", null},
+            {FORMAT_JA_JP_SHORT, "万1", null},
             // Localized minus sign should be used
             {FORMAT_SE_SHORT, "-8\u00a0mn", null},};
     }
@@ -512,8 +512,8 @@ public class TestCompactNumber {
         return new Object[][]{
             // compact number instance, string to parse, parsed number
             // Prefix and suffix do not match
-            {FORMAT_DZ_LONG, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2"
-                + "\u0F42 \u0F21 KM", 1000L},
+            {FORMAT_DZ_LONG, "སྟོང་ཕྲ"
+                + "ག ༡ KM", 1000L},
             // Exponents are unparseable
             {FORMAT_EN_US_SHORT, "-1.05E4K", -1.05},
             // Default instance does not allow grouping
@@ -545,14 +545,14 @@ public class TestCompactNumber {
     Object[][] formatFieldPositionData() {
         return new Object[][]{
             //compact number instance, number to format, field, start position, end position, formatted string
-            {FORMAT_DZ_LONG, -3500, NumberFormat.Field.SIGN, 0, 1, "-\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2\u0F42 \u0F24"},
-            {FORMAT_DZ_LONG, 3500, NumberFormat.Field.INTEGER, 9, 10, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2\u0F42 \u0F24"},
-            {FORMAT_DZ_LONG, -3500, NumberFormat.Field.INTEGER, 10, 11, "-\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2\u0F42 \u0F24"},
-            {FORMAT_DZ_LONG, 999, NumberFormat.Field.INTEGER, 0, 3, "\u0F29\u0F29\u0F29"},
-            {FORMAT_DZ_LONG, -999, NumberFormat.Field.INTEGER, 1, 4, "-\u0F29\u0F29\u0F29"},
-            {FORMAT_DZ_LONG, 3500, NumberFormat.Field.PREFIX, 0, 9, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2\u0F42 \u0F24"},
-            {FORMAT_DZ_LONG, -3500, NumberFormat.Field.PREFIX, 0, 10, "-\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2\u0F42 \u0F24"},
-            {FORMAT_DZ_LONG, 999, NumberFormat.Field.PREFIX, 0, 0, "\u0F29\u0F29\u0F29"},
+            {FORMAT_DZ_LONG, -3500, NumberFormat.Field.SIGN, 0, 1, "-སྟོང་ཕྲག ༤"},
+            {FORMAT_DZ_LONG, 3500, NumberFormat.Field.INTEGER, 9, 10, "སྟོང་ཕྲག ༤"},
+            {FORMAT_DZ_LONG, -3500, NumberFormat.Field.INTEGER, 10, 11, "-སྟོང་ཕྲག ༤"},
+            {FORMAT_DZ_LONG, 999, NumberFormat.Field.INTEGER, 0, 3, "༩༩༩"},
+            {FORMAT_DZ_LONG, -999, NumberFormat.Field.INTEGER, 1, 4, "-༩༩༩"},
+            {FORMAT_DZ_LONG, 3500, NumberFormat.Field.PREFIX, 0, 9, "སྟོང་ཕྲག ༤"},
+            {FORMAT_DZ_LONG, -3500, NumberFormat.Field.PREFIX, 0, 10, "-སྟོང་ཕྲག ༤"},
+            {FORMAT_DZ_LONG, 999, NumberFormat.Field.PREFIX, 0, 0, "༩༩༩"},
             {FORMAT_EN_US_SHORT, -3500, NumberFormat.Field.SIGN, 0, 1, "-4K"},
             {FORMAT_EN_US_SHORT, 3500, NumberFormat.Field.INTEGER, 0, 1, "4K"},
             {FORMAT_EN_US_SHORT, 14900000067L, NumberFormat.Field.INTEGER, 0, 2, "15B"},
@@ -563,21 +563,21 @@ public class TestCompactNumber {
             {FORMAT_EN_LONG, 14900000067L, NumberFormat.Field.INTEGER, 0, 2, "15 billion"},
             {FORMAT_EN_LONG, 3500, NumberFormat.Field.SUFFIX, 1, 10, "4 thousand"},
             {FORMAT_EN_LONG, 14900000067L, NumberFormat.Field.SUFFIX, 2, 10, "15 billion"},
-            {FORMAT_JA_JP_SHORT, 14900000067L, NumberFormat.Field.INTEGER, 0, 3, "149\u5104"},
+            {FORMAT_JA_JP_SHORT, 14900000067L, NumberFormat.Field.INTEGER, 0, 3, "149億"},
             {FORMAT_JA_JP_SHORT, -999.99, NumberFormat.Field.INTEGER, 1, 6, "-1,000"},
-            {FORMAT_JA_JP_SHORT, 14900000067L, NumberFormat.Field.SUFFIX, 3, 4, "149\u5104"},
+            {FORMAT_JA_JP_SHORT, 14900000067L, NumberFormat.Field.SUFFIX, 3, 4, "149億"},
             {FORMAT_JA_JP_SHORT, -999.99, NumberFormat.Field.SUFFIX, 0, 0, "-1,000"},
             {FORMAT_JA_JP_SHORT, -999.99, NumberFormat.Field.SIGN, 0, 1, "-1,000"},
             {FORMAT_HI_IN_LONG, -14900000067L, NumberFormat.Field.SIGN, 0, 1,
-                "-15 \u0905\u0930\u092C"},
+                "-15 अरब"},
             {FORMAT_HI_IN_LONG, 3500, NumberFormat.Field.INTEGER, 0, 1,
-                "4 \u0939\u091C\u093C\u093E\u0930"},
+                "4 हज़ार"},
             {FORMAT_HI_IN_LONG, 14900000067L, NumberFormat.Field.INTEGER, 0, 2,
-                "15 \u0905\u0930\u092C"},
+                "15 अरब"},
             {FORMAT_HI_IN_LONG, 3500, NumberFormat.Field.SUFFIX, 1, 7,
-                "4 \u0939\u091C\u093C\u093E\u0930"},
+                "4 हज़ार"},
             {FORMAT_HI_IN_LONG, 14900000067L, NumberFormat.Field.SUFFIX, 2, 6,
-                "15 \u0905\u0930\u092C"},
+                "15 अरब"},
             {FORMAT_SE_SHORT, 8000000L, NumberFormat.Field.SUFFIX, 1, 4, "8\u00a0mn"},
             {FORMAT_SE_SHORT, 8000.98, NumberFormat.Field.SUFFIX, 1, 4, "8\u00a0dt"},
             {FORMAT_SE_SHORT, new BigInteger("12345678901234567890"), NumberFormat.Field.SUFFIX, 8, 11, "12345679\u00a0bn"},
@@ -592,21 +592,21 @@ public class TestCompactNumber {
         return new Object[][]{
                 // compact number instance, parse string, parsed number,
                 // start position, end position, error index
-                {FORMAT_DZ_LONG, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2"
-                        + "\u0F42 \u0F21 KM", 1000L, 0, 10, -1},
+                {FORMAT_DZ_LONG, "སྟོང་ཕྲ"
+                        + "ག ༡ KM", 1000L, 0, 10, -1},
                 // Invalid prefix returns null
-                {FORMAT_DZ_LONG, "Number is: -\u0F66\u0F9F\u0F7C\u0F44,\u0F0B\u0F55\u0FB2"
-                        + "\u0F42 \u0F23", null, 11, 11, 11},
+                {FORMAT_DZ_LONG, "Number is: -སྟོང,་ཕྲ"
+                        + "ག ༣", null, 11, 11, 11},
                 // Returns null
-                {FORMAT_DZ_LONG, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2"
-                        + "\u0F42", null, 0, 0, 0},
+                {FORMAT_DZ_LONG, "སྟོང་ཕྲ"
+                        + "ག", null, 0, 0, 0},
                 {FORMAT_EN_US_SHORT, "Exponent: -1.05E4K", -1.05, 10, 15, -1},
                 // Default instance does not allow grouping
                 {FORMAT_EN_US_SHORT, "12,347", 12L, 0, 2, -1},
                 // Invalid suffix "KM" for en_US_SHORT patterns
                 {FORMAT_EN_US_SHORT, "12KM", 12000L, 0, 3, -1},
                 // Invalid suffix
-                {FORMAT_HI_IN_LONG, "-1 \u00a0\u0915.", -1L, 0, 2, -1},
+                {FORMAT_HI_IN_LONG, "-1 \u00a0क.", -1L, 0, 2, -1},
                 {FORMAT_EN_LONG, "Number is: 12345679 trillion",
                         1.2345679E19, 11, 28, -1},
                 {FORMAT_EN_LONG, "Number is: -12345679 trillion",

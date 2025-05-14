@@ -41,8 +41,8 @@ public class AltPlusNumberKeyCombinationsTest {
     private TextArea ta;
 
     private static int delay = 500;
-    private static String euroChar = "\u20AC";
-    private static String accChar = "\u00E3";
+    private static String euroChar = "€";
+    private static String accChar = "ã";
 
     private boolean passed = true;
     private ExtendedRobot robot;

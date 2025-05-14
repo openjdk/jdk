@@ -99,7 +99,7 @@ public class RotateTest3 extends Panel {
             g2d.rotate(-Math.PI / 3);
 
             String testString =
-             "\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341";
+             "一二三四五六七八九十";
             g2d.drawString(testString, 0, 0);
         }
 

@@ -51,10 +51,10 @@ class LineBreakPanel extends JPanel implements ActionListener {
   private static String text = "This is a long line of text that should be broken across multiple lines. "
           + "Please set the different tracking values to test via menu! This test should pass if "
           + "these lines are broken to fit the width, and fail otherwise.  It should "
-          + "also format the hebrew (\u05d0\u05d1\u05d2 \u05d3\u05d4\u05d5) and arabic "
-          + "(\u0627\u0628\u062a\u062c \u062e\u0644\u0627\u062e) and CJK "
-          + "(\u4e00\u4e01\u4e02\uac00\uac01\uc4fa\u67b1\u67b2\u67b3\u67b4\u67b5\u67b6\u67b7"
-          + "\u67b8\u67b9) text correctly.";
+          + "also format the hebrew (אבג דהו) and arabic "
+          + "(ابتج خلاخ) and CJK "
+          + "(一丁丂가각쓺枱枲枳枴枵架枷"
+          + "枸枹) text correctly.";
 
   private LineBreakMeasurer lineMeasurer;
 

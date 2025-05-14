@@ -43,7 +43,7 @@ public class TestWrite {
             osw = new OutputStreamWriter(bos, "EUCJIS");
             osw.write('a');
             for(int count = 0; count < 10000; ++count)
-                osw.write('\u3042');   // Hiragana
+                osw.write('あ');   // Hiragana
             osw.close();
             array = bos.toByteArray();
         } catch (UnsupportedEncodingException e){

@@ -42,7 +42,7 @@ public class CreateFiles {
         File f;
         FileOutputStream fos;
 
-        String name = "\u20ac";
+        String name = "€";
 
         f = new File(name + ".java");
         fos = new FileOutputStream(f);

@@ -37,9 +37,9 @@ public class MTTest {
     static volatile boolean runrun = true;
     static volatile boolean err = false;
 
-    final static String text = "-123 (English) 456.00 (Arabic) \u0641\u0642\u0643 -456 (Thai) \u0e01\u0e33 01.23";
-    final static char[] expected1 = "-123 (English) 456.00 (Arabic) \u0641\u0642\u0643 -\u06f4\u06f5\u06f6 (Thai) \u0e01\u0e33 \u0e50\u0e51.\u0e52\u0e53".toCharArray(); // for EASTERN_ARABIC
-    final static char[] expected2 = "-123 (English) 456.00 (Arabic) \u0641\u0642\u0643 -\u0664\u0665\u0666 (Thai) \u0e01\u0e33 \u0e50\u0e51.\u0e52\u0e53".toCharArray(); // for ARABIC
+    final static String text = "-123 (English) 456.00 (Arabic) فقك -456 (Thai) กำ 01.23";
+    final static char[] expected1 = "-123 (English) 456.00 (Arabic) فقك -۴۵۶ (Thai) กำ ๐๑.๒๓".toCharArray(); // for EASTERN_ARABIC
+    final static char[] expected2 = "-123 (English) 456.00 (Arabic) فقك -٤٥٦ (Thai) กำ ๐๑.๒๓".toCharArray(); // for ARABIC
 
     static NumericShaper ns1, ns2, ns3, ns4;
 

@@ -37,8 +37,8 @@ public class RegionMatches {
   private final String s1_LATIN1 = "abc";
   private final String s2_LATIN1 = "def";
 
-  private final String s1_UTF16 = "\u041e\u0434\u043d\u0430\u0436\u0434\u044b";
-  private final String s2_UTF16 = "\u0432\u0441\u0442\u0443\u0434\u0435\u043d";
+  private final String s1_UTF16 = "Однажды";
+  private final String s2_UTF16 = "встуден";
 
   @Test
   public void TestLATIN1() {

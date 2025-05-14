@@ -52,8 +52,8 @@ public class bug4337267 {
     static boolean testFailed = false;
 
     String shaped =
-            "000 (E) 111 (A) \u0641\u0642\u0643 \u0662\u0662\u0662 (E) 333";
-    String text = "000 (E) 111 (A) \u0641\u0642\u0643 222 (E) 333";
+            "000 (E) 111 (A) فقك ٢٢٢ (E) 333";
+    String text = "000 (E) 111 (A) فقك 222 (E) 333";
 
     void run() {
         initUI();

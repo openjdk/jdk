@@ -48,26 +48,26 @@ public class CurrencyCollate {
 
     public static void main(String[] args) {
         String[] DATA = {
-            "\u20AC", ">", "$",     // euro > dollar
-            "\u20AC", "<", "\u00A3", // euro < pound
+            "€", ">", "$", // euro > dollar
+            "€", "<", "£", // euro < pound
 
             // additional tests for general currency sort order (bug #4150807)
-            "\u00a4", "<", "\u0e3f", // generic currency < baht
-            "\u0e3f", "<", "\u00a2", // baht < cent
-            "\u00a2", "<", "\u20a1", // cent < colon
-            "\u20a1", "<", "\u20a2", // colon < cruzeiro
-            "\u20a2", "<", "\u0024", // cruzeiro < dollar
-            "\u0024", "<", "\u20ab", // dollar < dong
-            "\u20ab", "<", "\u20a3", // dong < franc
-            "\u20a3", "<", "\u20a4", // franc < lira
-            "\u20a4", "<", "\u20a5", // lira < mill
-            "\u20a5", "<", "\u20a6", // mill < naira
-            "\u20a6", "<", "\u20a7", // naira < peseta
-            "\u20a7", "<", "\u00a3", // peseta < pound
-            "\u00a3", "<", "\u20a8", // pound < rupee
-            "\u20a8", "<", "\u20aa", // rupee < shekel
-            "\u20aa", "<", "\u20a9", // shekel < won
-            "\u20a9", "<", "\u00a5"  // won < yen
+            "¤", "<", "฿", // generic currency < baht
+            "฿", "<", "¢", // baht < cent
+            "¢", "<", "₡", // cent < colon
+            "₡", "<", "₢", // colon < cruzeiro
+            "₢", "<", "$", // cruzeiro < dollar
+            "$", "<", "₫", // dollar < dong
+            "₫", "<", "₣", // dong < franc
+            "₣", "<", "₤", // franc < lira
+            "₤", "<", "₥", // lira < mill
+            "₥", "<", "₦", // mill < naira
+            "₦", "<", "₧", // naira < peseta
+            "₧", "<", "£", // peseta < pound
+            "£", "<", "₨", // pound < rupee
+            "₨", "<", "₪", // rupee < shekel
+            "₪", "<", "₩", // shekel < won
+            "₩", "<", "¥"  // won < yen
         };
         for (int i=0; i<DATA.length; i+=3) {
             int expected = DATA[i+1].equals(">") ? 1 : (DATA[i+1].equals("<") ? -1 : 0);

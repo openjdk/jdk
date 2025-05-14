@@ -45,23 +45,23 @@ public class MacPath {
              "file_macosx");                                     // file
 
         // Japanese composite character
-        test("TestDir_\u30c8\u30a4\u30e4\u30cb\u30ca\u30eb/",
-             "dir_\u30a4\u30c1\u30b4\u306e\u30b1\u30fc\u30ad",
-             "file_\u30a4\u30c1\u30b4\u306e\u30b1\u30fc\u30ad");
+        test("TestDir_トイヤニナル/",
+             "dir_イチゴのケーキ",
+             "file_イチゴのケーキ");
 
         // latin-1 supplementory
-        test("TestDir_K\u00f6rperlich\u00e4\u00df/",
-             "dir_Entt\u00e4uschung",
-             "file_Entt\u00e4uschung");
+        test("TestDir_Körperlichäß/",
+             "dir_Enttäuschung",
+             "file_Enttäuschung");
 
-        test("TestDir_K\u00f6rperlich\u00e4\u00df/",
-             "dir_Entt\u00c4uschung",
-             "file_Entt\u00c4uschung");
+        test("TestDir_Körperlichäß/",
+             "dir_EnttÄuschung",
+             "file_EnttÄuschung");
 
         // Korean syblla
-        test("TestDir_\uac00\uac01\uac02",
-             "dir_\uac20\uac21\uac22",
-             "file_\uacc0\uacc1\uacc2");
+        test("TestDir_가각갂",
+             "dir_갠갡갢",
+             "file_곀곁곂");
     }
 
     private static boolean equal(Object x, Object y) {

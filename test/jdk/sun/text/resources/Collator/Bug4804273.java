@@ -51,27 +51,27 @@ public class Bug4804273 {
                          "Ae",
                          "B",
                          "Y",
-                         "U\u0308", // U-umlaut
+                         "Ü", // U-umlaut
                          "Z",
-                         "A\u030a", // A-ring
-                         "A\u0308", // A-umlaut
-                         "\u00c6", // AE ligature
-                         "O\u0308", // O-umlaut
-                         "a\u030b", // a-double-acute
-                         "\u00d8", // O-stroke
+                         "Å", // A-ring
+                         "Ä", // A-umlaut
+                         "Æ", // AE ligature
+                         "Ö", // O-umlaut
+                         "a̋", // a-double-acute
+                         "Ø", // O-stroke
                          "a",
                          "aa",
                          "ae",
                          "b",
                          "y",
-                         "u\u0308", // u-umlaut
+                         "ü", // u-umlaut
                          "z",
-                         "A\u030b", // A-double-acute
-                         "a\u030a", // a-ring
-                         "a\u0308", // a-umlaut
-                         "\u00e6", // ae ligature
-                         "o\u0308", // o-umlaut
-                         "\u00f8", // o-stroke
+                         "A̋", // A-double-acute
+                         "å", // a-ring
+                         "ä", // a-umlaut
+                         "æ", // ae ligature
+                         "ö", // o-umlaut
+                         "ø", // o-stroke
         };
 
 
@@ -85,22 +85,22 @@ public class Bug4804273 {
                                "B",
                                "y",
                                "Y",
-                               "u\u0308", // o-umlaut
-                               "U\u0308", // o-umlaut
+                               "ü", // o-umlaut
+                               "Ü", // o-umlaut
                                "z",
                                "Z",
-                               "a\u030a", // a-ring
-                               "A\u030a", // A-ring
-                               "a\u0308", // a-umlaut
-                               "A\u0308", // A-umlaut
-                               "a\u030b", // a-double-acute
-                               "A\u030b", // A-double-acute
-                               "\u00e6", // ae ligature
-                               "\u00c6", // AE ligature
-                               "o\u0308", // o-umlaut
-                               "O\u0308", // O-umlaut
-                               "\u00f8", // o-stroke
-                               "\u00d8", // O-stroke
+                               "å", // a-ring
+                               "Å", // A-ring
+                               "ä", // a-umlaut
+                               "Ä", // A-umlaut
+                               "a̋", // a-double-acute
+                               "A̋", // A-double-acute
+                               "æ", // ae ligature
+                               "Æ", // AE ligature
+                               "ö", // o-umlaut
+                               "Ö", // O-umlaut
+                               "ø", // o-stroke
+                               "Ø", // O-stroke
         };
 
         Arrays.sort (data, col);

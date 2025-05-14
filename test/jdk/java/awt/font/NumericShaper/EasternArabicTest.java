@@ -37,18 +37,18 @@ public class EasternArabicTest {
 
     static String[][] testData = {
         // Arabic "October 10"
-        {"\u0623\u0643\u062a\u0648\u0628\u0631 10",
-         "\u0623\u0643\u062a\u0648\u0628\u0631 \u06f1\u06f0"}, // EASTERN_ARABIC digits
+        {"أكتوبر 10",
+         "أكتوبر ۱۰"}, // EASTERN_ARABIC digits
 
         // Tamil "Year 2009"
-        {"\u0b86\u0ba3\u0bcd\u0b9f\u0bc1 2009",
-         "\u0b86\u0ba3\u0bcd\u0b9f\u0bc1 \u0be8\u0be6\u0be6\u0bef"},
-        // "\u0be800\u0bef is returned by pre-JDK7 because Tamil zero was not
+        {"ஆண்டு 2009",
+         "ஆண்டு ௨௦௦௯"},
+        // "௨00௯ is returned by pre-JDK7 because Tamil zero was not
         //  included in Unicode 4.0.0.
 
         // Ethiopic "Syllable<HA> 2009"
-        {"\u1200 2009",
-         "\u1200 \u136a00\u1371"},
+        {"ሀ 2009",
+         "ሀ ፪00፱"},
         // Ethiopic zero doesn't exist even in Unicode 5.1.0.
     };
 

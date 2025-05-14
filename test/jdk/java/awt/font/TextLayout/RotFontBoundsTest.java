@@ -222,7 +222,7 @@ public final class RotFontBoundsTest {
 
         private SelectRotationAction(int rotation,
                                      RotatedTextBounds rotatedText) {
-            super(rotation * (360 / ROTATIONS) + "\u00B0");
+            super(rotation * (360 / ROTATIONS) + "°");
             this.rotation = rotation;
             this.rotatedText = rotatedText;
 

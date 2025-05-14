@@ -37,7 +37,7 @@ public class Bug4810032
 {
         public static void main(String[] arg)
         {
-                String s = "2003\u5e749\u670826\u65e5\u91d1\u66dc\u65e5"; // "2003y9m26dEEEE"
+                String s = "2003年9月26日金曜日"; // "2003y9m26dEEEE"
                 DateFormat df =
                    DateFormat.getDateInstance(DateFormat.FULL,Locale.JAPANESE);
 

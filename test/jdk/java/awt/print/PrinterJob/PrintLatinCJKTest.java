@@ -47,7 +47,7 @@ import javax.swing.JOptionPane;
 
 public class PrintLatinCJKTest implements Printable {
 
-    private static final String TEXT = "\u4e00\u4e01\u4e02\u4e03\u4e04English";
+    private static final String TEXT = "一丁丂七丄English";
 
     private static final String INFO = """
             Press Print, send the output to the printer and examine it.

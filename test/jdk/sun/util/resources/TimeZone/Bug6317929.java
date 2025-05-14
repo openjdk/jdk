@@ -59,25 +59,25 @@ public class Bug6317929 {
                                        "\"Eastern Standard Time\"");
         tzLocale = locales2Test[1];
         if (!Coral_Harbour.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("Nordamerikanische Ostk\u00fcsten-Normalzeit"))
+           ("Nordamerikanische Ostküsten-Normalzeit"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "America/Coral_Harbour should be " +
-                                       "\"Nordamerikanische Ostk\u00fcsten-Normalzeit\"");
+                                       "\"Nordamerikanische Ostküsten-Normalzeit\"");
         tzLocale = locales2Test[2];
         if (!Coral_Harbour.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("hora est\u00e1ndar oriental"))
+           ("hora estándar oriental"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "America/Coral_Harbour should be " +
-                                       "\"hora est\u00e1ndar oriental\"");
+                                       "\"hora estándar oriental\"");
         tzLocale = locales2Test[3];
         if (!Coral_Harbour.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("heure normale de l\u2019Est nord-am\u00e9ricain"))
+           ("heure normale de l’Est nord-américain"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "America/Coral_Harbour should be " +
-                                       "\"heure normale de l\u2019Est nord-am\u00e9ricain\"");
+                                       "\"heure normale de l’Est nord-américain\"");
         tzLocale = locales2Test[4];
         if (!Coral_Harbour.getDisplayName(false, TimeZone.LONG, tzLocale).equals
            ("Ora standard orientale USA"))
@@ -87,39 +87,39 @@ public class Bug6317929 {
                                        "\"Ora standard orientale USA\"");
         tzLocale = locales2Test[5];
         if (!Coral_Harbour.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("\u30a2\u30e1\u30ea\u30ab\u6771\u90e8\u6a19\u6e96\u6642"))
+           ("アメリカ東部標準時"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "America/Coral_Harbour should be " +
-                                       "\"\u30a2\u30e1\u30ea\u30ab\u6771\u90e8\u6a19\u6e96\u6642\"");
+                                       "\"アメリカ東部標準時\"");
         tzLocale = locales2Test[6];
         if (!Coral_Harbour.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("\ubbf8 \ub3d9\ubd80 \ud45c\uc900\uc2dc"))
+           ("미 동부 표준시"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "America/Coral_Harbour should be " +
-                                       "\"\ubbf8 \ub3d9\ubd80 \ud45c\uc900\uc2dc\"");
+                                       "\"미 동부 표준시\"");
         tzLocale = locales2Test[7];
         if (!Coral_Harbour.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("\u00f6stnordamerikansk normaltid"))
+           ("östnordamerikansk normaltid"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "America/Coral_Harbour should be " +
-                                       "\"\u00f6stnordamerikansk normaltid\"");
+                                       "\"östnordamerikansk normaltid\"");
         tzLocale = locales2Test[8];
         if (!Coral_Harbour.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("\u5317\u7f8e\u4e1c\u90e8\u6807\u51c6\u65f6\u95f4"))
+           ("北美东部标准时间"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "America/Coral_Harbour should be " +
-                                       "\"\u5317\u7f8e\u4e1c\u90e8\u6807\u51c6\u65f6\u95f4\"");
+                                       "\"北美东部标准时间\"");
         tzLocale = locales2Test[9];
         if (!Coral_Harbour.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("\u6771\u90e8\u6a19\u6e96\u6642\u9593"))
+           ("東部標準時間"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "America/Coral_Harbour should be " +
-                                       "\"\u6771\u90e8\u6a19\u6e96\u6642\u9593\"");
+                                       "\"東部標準時間\"");
 
         TimeZone Currie = TimeZone.getTimeZone("Australia/Currie");
         tzLocale = locales2Test[0];
@@ -138,59 +138,59 @@ public class Bug6317929 {
                                        "\"Ostaustralische Normalzeit\"");
         tzLocale = locales2Test[2];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("hora est\u00e1ndar de Australia oriental"))
+           ("hora estándar de Australia oriental"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "Australia/Currie should be " +
-                                       "\"hora est\u00e1ndar de Australia oriental\"");
+                                       "\"hora estándar de Australia oriental\"");
         tzLocale = locales2Test[3];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("heure normale de l\u2019Est de l\u2019Australie"))
+           ("heure normale de l’Est de l’Australie"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "Australia/Currie should be " +
-                                       "\"heure normale de l\u2019Est de l\u2019Australie\"");
+                                       "\"heure normale de l’Est de l’Australie\"");
         tzLocale = locales2Test[4];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("Ora standard dell\u2019Australia orientale"))
+           ("Ora standard dell’Australia orientale"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "Australia/Currie should be " +
-                                       "\"Ora standard dell\u2019Australia orientale\"");
+                                       "\"Ora standard dell’Australia orientale\"");
         tzLocale = locales2Test[5];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("\u30aa\u30fc\u30b9\u30c8\u30e9\u30ea\u30a2\u6771\u90e8\u6a19\u6e96\u6642"))
+           ("オーストラリア東部標準時"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "Australia/Currie should be " +
-                                       "\"\u30aa\u30fc\u30b9\u30c8\u30e9\u30ea\u30a2\u6771\u90e8\u6a19\u6e96\u6642\"");
+                                       "\"オーストラリア東部標準時\"");
         tzLocale = locales2Test[6];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("\uc624\uc2a4\ud2b8\ub808\uc77c\ub9ac\uc544 \ub3d9\ubd80 \ud45c\uc900\uc2dc"))
+           ("오스트레일리아 동부 표준시"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "Australia/Currie should be " +
-                                       "\"\uc624\uc2a4\ud2b8\ub808\uc77c\ub9ac\uc544 \ub3d9\ubd80 \ud45c\uc900\uc2dc\"");
+                                       "\"오스트레일리아 동부 표준시\"");
         tzLocale = locales2Test[7];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("\u00f6staustralisk normaltid"))
+           ("östaustralisk normaltid"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "Australia/Currie should be " +
-                                       "\"\u00f6staustralisk normaltid\"");
+                                       "\"östaustralisk normaltid\"");
         tzLocale = locales2Test[8];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("\u6fb3\u5927\u5229\u4e9a\u4e1c\u90e8\u6807\u51c6\u65f6\u95f4"))
+           ("澳大利亚东部标准时间"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "Australia/Currie should be " +
-                                       "\"\u6fb3\u5927\u5229\u4e9a\u4e1c\u90e8\u6807\u51c6\u65f6\u95f4\"");
+                                       "\"澳大利亚东部标准时间\"");
         tzLocale = locales2Test[9];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("\u6fb3\u6d32\u6771\u90e8\u6a19\u6e96\u6642\u9593"))
+           ("澳洲東部標準時間"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "Australia/Currie should be " +
-                                       "\"\u6fb3\u6d32\u6771\u90e8\u6a19\u6e96\u6642\u9593\"");
+                                       "\"澳洲東部標準時間\"");
    }
 }

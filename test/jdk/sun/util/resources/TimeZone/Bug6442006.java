@@ -38,8 +38,8 @@ public class Bug6442006 {
 
         TimeZone tz = TimeZone.getTimeZone("Asia/Taipei");
         Locale tzLocale = Locale.JAPANESE;
-        String jaStdName = "\u53f0\u5317\u6a19\u6e96\u6642";
-        String jaDstName = "\u53f0\u5317\u590f\u6642\u9593";
+        String jaStdName = "台北標準時";
+        String jaDstName = "台北夏時間";
 
         if (!tz.getDisplayName(false, TimeZone.LONG, tzLocale).equals
            (jaStdName))

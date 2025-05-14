@@ -42,7 +42,7 @@ import javax.swing.JPanel;
 public final class ArabicBox {
 
     private static final String TEXT =
-            "\u0627\u0644\u0639\u0631\u0628\u064A\u0629\n";
+            "العربية\n";
 
     private static final String FONT_NAME = Font.DIALOG;
 
@@ -51,7 +51,7 @@ public final class ArabicBox {
 
             """
             + TEXT + """
-            (It's \u2018Arabic\u2019 in Arabic.)
+            (It's ‘Arabic’ in Arabic.)
 
             If there are no 'box glyphs' for missing glyphs,
             press Pass; otherwise, press Fail.""";

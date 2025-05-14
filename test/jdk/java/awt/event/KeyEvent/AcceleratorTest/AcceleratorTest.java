@@ -55,23 +55,23 @@ public class AcceleratorTest {
     static JFrame jfr;
     static Hashtable<String, Integer> cmdHash = new Hashtable<String, Integer>();
     static String[] CMD = {
-            "\u042E, keep me in focus",
+            "Ю, keep me in focus",
             "Item Ctrl Be",
             "Item Ctrl English Period",
             "Item Ctrl English N",
-            "\u0436"
+            "ж"
     };
 
     public static void main(String[] args) throws Exception {
         String instructions =
                 "Ensure you have Russian keyboard layout as a currently active.\n" +
-                        "(1) Press Ctrl + \u0411 (a key with \",<\" on it) \n" +
+                        "(1) Press Ctrl + Б (a key with \",<\" on it) \n" +
                         "(2) Find a . (period) in this layout (perhaps \"/?\" or \"7&\" key). " +
                         "Press Ctrl + .\n" +
                         "(3) Press Ctrl + regular English . (period) key (on \".>\" )\n" +
                         "(4) Press Ctrl + key with English N.\n" +
-                        "(5) Press Alt + \u042E (key with \".>\")\n" +
-                        "(6) Press Alt + \u0436 (key with \";:\")\n" +
+                        "(5) Press Alt + Ю (key with \".>\")\n" +
+                        "(6) Press Alt + ж (key with \";:\")\n" +
                         "If all expected commands will be fired, look for message\n" +
                         "\"All tests passed\"";
 
@@ -96,7 +96,7 @@ public class AcceleratorTest {
             jfr.setLayout(new BorderLayout());
             JButton jbu;
             jfr.add((jbu = new JButton(CMD[0])));
-            jbu.setMnemonic(java.awt.event.KeyEvent.getExtendedKeyCodeForChar('\u042E'));
+            jbu.setMnemonic(java.awt.event.KeyEvent.getExtendedKeyCodeForChar('Ю'));
             jbu.addActionListener(new ALi(CMD[0]));
 
             JMenuBar menuBar = new JMenuBar();
@@ -106,7 +106,7 @@ public class AcceleratorTest {
 
             JMenuItem menuItem = new JMenuItem(CMD[1]);
             menuItem.setAccelerator(KeyStroke.getKeyStroke(java.awt.event.KeyEvent
-                            .getExtendedKeyCodeForChar('\u0431'), InputEvent.CTRL_DOWN_MASK));
+                            .getExtendedKeyCodeForChar('б'), InputEvent.CTRL_DOWN_MASK));
 
             JMenuItem menuItemEnglish = new JMenuItem(CMD[2]);
             menuItemEnglish.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_PERIOD,
@@ -126,7 +126,7 @@ public class AcceleratorTest {
 
             KeyStroke ks;
             InputMap im = new InputMap();
-            ks = KeyStroke.getKeyStroke(KeyEvent.getExtendedKeyCodeForChar('\u0436'),
+            ks = KeyStroke.getKeyStroke(KeyEvent.getExtendedKeyCodeForChar('ж'),
                     java.awt.event.InputEvent.ALT_DOWN_MASK);
             im.put(ks, "pushAction");
             im.setParent(jbu.getInputMap(JComponent.WHEN_FOCUSED));

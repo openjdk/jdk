@@ -107,11 +107,11 @@ public class Bug6377794 {
                                            "\"hora de Pitcairn\"");
             tzLocale = locales2Test[3];
             if (!SystemVPST8.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-               ("heure des \u00eeles Pitcairn"))
+               ("heure des îles Pitcairn"))
                 throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                            "non-daylight saving name for " +
                                            "SystemV/PST8 should be " +
-                                           "\"heure des \u00eeles Pitcairn\"");
+                                           "\"heure des îles Pitcairn\"");
             tzLocale = locales2Test[4];
             if (!SystemVPST8.getDisplayName(false, TimeZone.LONG, tzLocale).equals
                ("Ora delle Pitcairn"))
@@ -121,18 +121,18 @@ public class Bug6377794 {
                                            "\"Ora delle Pitcairn\"");
             tzLocale = locales2Test[5];
             if (!SystemVPST8.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-               ("\u30d4\u30c8\u30b1\u30a2\u30f3\u6642\u9593"))
+               ("ピトケアン時間"))
                 throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                            "non-daylight saving name for " +
                                            "SystemV/PST8 should be " +
-                                           "\"\u30d4\u30c8\u30b1\u30a2\u30f3\u6642\u9593\"");
+                                           "\"ピトケアン時間\"");
             tzLocale = locales2Test[6];
             if (!SystemVPST8.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-               ("\ud54f\ucf00\uc5b8 \uc2dc\uac04"))
+               ("핏케언 시간"))
                 throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                            "non-daylight saving name for " +
                                            "SystemV/PST8 should be " +
-                                           "\"\ud54f\ucf00\uc5b8 \uc2dc\uac04\"");
+                                           "\"핏케언 시간\"");
             tzLocale = locales2Test[7];
             if (!SystemVPST8.getDisplayName(false, TimeZone.LONG, tzLocale).equals
                ("Pitcairntid"))
@@ -142,17 +142,17 @@ public class Bug6377794 {
                                            "\"Pitcairntid\"");
             tzLocale = locales2Test[8];
             if (!SystemVPST8.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-               ("\u76ae\u7279\u51ef\u6069\u65f6\u95f4"))
+               ("皮特凯恩时间"))
                 throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                            "non-daylight saving name for " +
                                            "SystemV/PST8 should be " +
-                                           "\"\u76ae\u7279\u51ef\u6069\u65f6\u95f4\"");
+                                           "\"皮特凯恩时间\"");
             tzLocale = locales2Test[9];
             if (!SystemVPST8.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-               ("\u76ae\u7279\u80af\u6642\u9593"))
+               ("皮特肯時間"))
                 throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                            "non-daylight saving name for " +
                                            "SystemV/PST8 should be " +
-                                           "\"\u76ae\u7279\u80af\u6642\u9593\"");
+                                           "\"皮特肯時間\"");
    }
 }

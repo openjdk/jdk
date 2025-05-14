@@ -61,7 +61,7 @@ public class TestLineBreakWithFontSub {
     private static final String WORD = "word";
     private static final String SPACING = " ";
     // The Hebrew character in this string can trigger font substitution
-    private static final String MIXED = "A\u05D0";
+    private static final String MIXED = "Aא";
 
     private static final int NUM_WORDS = 12;
 

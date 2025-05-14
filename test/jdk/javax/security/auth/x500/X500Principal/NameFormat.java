@@ -130,11 +130,11 @@ public class NameFormat {
         testName("CN=Lu\\C4\\8Di\\C4\\87", "toString",
                 "CN=Lu\\C4\\8Di\\C4\\87", 26);
         testName("CN=Lu\\C4\\8Di\\C4\\87", "RFC1779",
-                "CN=Lu\u010di\u0107", 27);
+                "CN=Lučić", 27);
         testName("CN=Lu\\C4\\8Di\\C4\\87", "RFC2253",
-                "CN=Lu\u010di\u0107", 28);
+                "CN=Lučić", 28);
         testName("CN=Lu\\C4\\8Di\\C4\\87", "CANONICAL",
-                "cn=luc\u030cic\u0301", 29);
+                "cn=lučić", 29);
 
         try {
             p = new X500Principal("cn=\\gg");

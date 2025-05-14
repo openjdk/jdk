@@ -59,23 +59,23 @@ public class ZWJLigatureTest {
 
    static final String malayalamName = "Malayalam";
    static final String malayalamFont = "Kartika";
-   static final String malayalamText = "\u0D2C\u0D3E\u0D32\u0D28\u0D4D\u200D";
+   static final String malayalamText = "ബാലന്‍";
 
    static final String bengaliName = "Bengali";
    static final String bengaliFont = "Vrinda";
    static final String bengaliText =
-       "\u09CE \u09A4\u09CD\u200D " +
-       "\u09A4\u09BE\u09CE \u09A4\u09BE\u09A4\u09CD\u200D";
+       "ৎ ত্‍ " +
+       "তাৎ তাত্‍";
 
    static final String sinhalaName = "Sinhala";
    static final String sinhalaFont = "Iskoola Pota";
    static final String sinhalaText =
-       "\u0DC1\u0DCA\u200D\u0DBB\u0DD3" +
-       "\u0D9A\u0DCA\u200D\u0DBB\u0DD2" +
-       "\u0D9A\u0DCA\u200D\u0DBB\u0DD3" +
-       "\u0DA7\u0DCA\u200D\u0DBB\u0DDA" +
-       "\u0DB6\u0DCA\u200D\u0DBB\u0DD0" +
-       "\u0D9B\u0DCA\u200D\u0DBA\u0DCF";
+       "ශ්‍රී" +
+       "ක්‍රි" +
+       "ක්‍රී" +
+       "ට්‍රේ" +
+       "බ්‍රැ" +
+       "ඛ්‍යා";
 
 
    static String[] scripts = { malayalamName, bengaliName, sinhalaName };

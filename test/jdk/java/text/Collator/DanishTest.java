@@ -56,20 +56,20 @@ public class DanishTest {
      */
     private static final String[] primarySourceData = {
         "Lvi",
-        "L\u00E4vi",
-        "L\u00FCbeck",
-        "ANDR\u00C9",
+        "Lävi",
+        "Lübeck",
+        "ANDRÉ",
         "ANDRE",
         "ANNONCERER"
     };
 
     private static final String[] primaryTargetData = {
             "Lwi",
-            "L\u00F6wi",
+            "Löwi",
             "Lybeck",
-            "ANDR\u00E9",
-            "ANDR\u00C9",
-            "ANN\u00D3NCERER"
+            "ANDRé",
+            "ANDRÉ",
+            "ANNÓNCERER"
     };
 
     private static final int[] primaryResults = {
@@ -82,16 +82,16 @@ public class DanishTest {
     private static final String[] tertiarySourceData = {
             "Luc",
             "luck",
-            "L\u00FCbeck",
-            "L\u00E4vi",
-            "L\u00F6ww"
+            "Lübeck",
+            "Lävi",
+            "Löww"
     };
 
     private static final String[] tertiaryTargetData = {
             "luck",
-            "L\u00FCbeck",
+            "Lübeck",
             "lybeck",
-            "L\u00F6we",
+            "Löwe",
             "mast"
     };
 
@@ -105,96 +105,96 @@ public class DanishTest {
     private static final String[] testData = {
             "A/S",
             "ANDRE",
-            "ANDR\u00C9", // E-acute
-            "ANDR\u00C8", // E-grave
-            "ANDR\u00E9", // e-acute
-            "ANDR\u00EA", // e-circ
+            "ANDRÉ", // E-acute
+            "ANDRÈ", // E-grave
+            "ANDRé", // e-acute
+            "ANDRê", // e-circ
             "Andre",
-            "Andr\u00E9", // e-acute
-            "\u00C1NDRE", // A-acute
-            "\u00C0NDRE", // A-grave
+            "André", // e-acute
+            "ÁNDRE", // A-acute
+            "ÀNDRE", // A-grave
             "andre",
-            "\u00E1ndre", // a-acute
-            "\u00E0ndre", // a-grave
+            "ándre", // a-acute
+            "àndre", // a-grave
             "ANDREAS",
             "ANNONCERER",
-            "ANN\u00D3NCERER", // O-acute
+            "ANNÓNCERER", // O-acute
             "annoncerer",
-            "ann\u00F3ncerer", // o-acute
+            "annóncerer", // o-acute
             "AS",
-            "A\u00e6RO", // ae-ligature
+            "AæRO", // ae-ligature
             "CA",
-            "\u00C7A", // C-cedilla
+            "ÇA", // C-cedilla
             "CB",
-            "\u00C7C", // C-cedilla
+            "ÇC", // C-cedilla
             "D.S.B.",
             "DA",
             "DB",
-            "\u00D0ORA", // capital eth
+            "ÐORA", // capital eth
             "DSB",
-            "\u00D0SB", // capital eth
+            "ÐSB", // capital eth
             "DSC",
             "EKSTRA_ARBEJDE",
             "EKSTRABUD",
-            "H\u00D8ST",  // could the 0x00D8 be 0x2205?
+            "HØST",  // could the 0x00D8 be 0x2205?
             "HAAG",
-            "H\u00C5NDBOG", // A-ring
-            "HAANDV\u00C6RKSBANKEN", // AE-ligature
+            "HÅNDBOG", // A-ring
+            "HAANDVÆRKSBANKEN", // AE-ligature
             "INTERNETFORBINDELSE",
             "Internetforbindelse",
-            "\u00CDNTERNETFORBINDELSE", // I-acute
+            "ÍNTERNETFORBINDELSE", // I-acute
             "internetforbindelse",
-            "\u00EDnternetforbindelse", // i-acute
+            "ínternetforbindelse", // i-acute
             "Karl",
             "karl",
             "NIELSEN",
-            "NIELS J\u00D8RGEN", // O-slash
-            "NIELS-J\u00D8RGEN", // O-slash
+            "NIELS JØRGEN", // O-slash
+            "NIELS-JØRGEN", // O-slash
             "OERVAL",
-            "\u0152RVAL", // OE-ligature
-            "\u0153RVAL", // oe-ligature
-            "R\u00C9E, A", // E-acute
+            "ŒRVAL", // OE-ligature
+            "œRVAL", // oe-ligature
+            "RÉE, A", // E-acute
             "REE, B",
-            "R\u00C9E, L", // E-acute
+            "RÉE, L", // E-acute
             "REE, V",
             "SCHYTT, B",
             "SCHYTT, H",
-            "SCH\u00DCTT, H", // U-diaeresis
+            "SCHÜTT, H", // U-diaeresis
             "SCHYTT, L",
-            "SCH\u00DCTT, M", // U-diaeresis
+            "SCHÜTT, M", // U-diaeresis
             "SS",
             "ss",
-            "\u00DF", // sharp S
+            "ß", // sharp S
             "SSA",
-            "\u00DFA", // sharp S
-            "STOREK\u00C6R", // AE-ligature
+            "ßA", // sharp S
+            "STOREKÆR", // AE-ligature
             "STORE VILDMOSE",
             "STORMLY",
             "STORM PETERSEN",
             "THORVALD",
             "THORVARDUR",
-            "\u00DEORVAR\u0110UR", //  capital thorn, capital d-stroke(like eth) (sami)
+            "ÞORVARĐUR", //  capital thorn, capital d-stroke(like eth) (sami)
             "THYGESEN",
-            "VESTERG\u00C5RD, A",
+            "VESTERGÅRD, A",
             "VESTERGAARD, A",
-            "VESTERG\u00C5RD, B",                // 50
+            "VESTERGÅRD, B",                // 50
             "Westmalle",
             "YALLE",
             "Yderligere",
-            "\u00DDderligere", // Y-acute
-            "\u00DCderligere", // U-diaeresis
-            "\u00FDderligere", // y-acute
-            "\u00FCderligere", // u-diaeresis
-            "U\u0308ruk-hai",
+            "Ýderligere", // Y-acute
+            "Üderligere", // U-diaeresis
+            "ýderligere", // y-acute
+            "üderligere", // u-diaeresis
+            "Üruk-hai",
             "ZORO",
-            "\u00C6BLE",  // AE-ligature
-            "\u00E6BLE",  // ae-ligature
-            "\u00C4BLE",  // A-diaeresis
-            "\u00E4BLE",  // a-diaeresis
-            "\u00D8BERG", // O-stroke
-            "\u00F8BERG", // o-stroke
-            "\u00D6BERG", // O-diaeresis
-            "\u00F6BERG"  // o-diaeresis
+            "ÆBLE",  // AE-ligature
+            "æBLE",  // ae-ligature
+            "ÄBLE",  // A-diaeresis
+            "äBLE",  // a-diaeresis
+            "ØBERG", // O-stroke
+            "øBERG", // o-stroke
+            "ÖBERG", // O-diaeresis
+            "öBERG"  // o-diaeresis
     };
 
     @Test

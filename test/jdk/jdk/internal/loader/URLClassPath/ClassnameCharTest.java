@@ -89,7 +89,7 @@ public class ClassnameCharTest {
             System.out.println("class1 = " + class1);
             pass();
             // can't test the following class unless platform in unicode locale
-            // Class class2 = acl.findClass("\u624b\u518c");
+            // Class class2 = acl.findClass("手册");
             // System.out.println("class2 = "+class2);
         } finally {
             server.stop(0);

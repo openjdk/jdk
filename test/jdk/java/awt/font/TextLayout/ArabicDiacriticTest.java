@@ -40,10 +40,10 @@ import javax.swing.WindowConstants;
 public class ArabicDiacriticTest {
 
     static final String SAMPLE =
-     "\u0627\u0644\u0639\u064e\u0631\u064e\u0628\u0650\u064a\u064e\u0651\u0629";
+     "العَرَبِيَّة";
 
-    static final String STR1 = "\u0644\u0639\u064e\u0629";
-    static final String STR2 = "\u0644\u0639\u0629";
+    static final String STR1 = "لعَة";
+    static final String STR2 = "لعة";
 
     static final String FONT = "DejaVu Sans";
 

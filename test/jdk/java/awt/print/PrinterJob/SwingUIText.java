@@ -63,11 +63,11 @@ public class SwingUIText implements Printable {
         String text = "marvelous suspicious solving";
         displayText(panel, text);
 
-        String itext = "\u0641\u0642\u0643 \u0644\u0627\u064b";
+        String itext = "فقك لاً";
         itext = itext+itext+itext+itext+itext+itext+itext;
         displayText(panel, itext);
 
-        String itext2 = "\u0641"+text;
+        String itext2 = "ف"+text;
         displayText(panel, itext2);
 
         JEditorPane editor = new JEditorPane();

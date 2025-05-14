@@ -265,8 +265,8 @@ public class DateFormatTest
             "", "1997", "August", "", "", "13", "", "Wednesday", "",
             "PM", "", "2", "", "", "34", "12", "", "Pacific Daylight Time",
 
-            "", "1997", "ao\u00FBt", "", "", "13", "", "mercredi", "", "",
-            "", "", "14", "", "34", "12", "", "heure d\u2019\u00e9t\u00e9 du Pacifique nord-am\u00e9ricain" /*"GMT-07:00"*/,
+            "", "1997", "août", "", "", "13", "", "mercredi", "", "",
+            "", "", "14", "", "34", "12", "", "heure d’été du Pacifique nord-américain" /*"GMT-07:00"*/,
 
             "AD", "1997", "8", "33", "3", "13", "225", "Wed", "2", "PM",
             "2", "2", "14", "14", "34", "12", "513", "PDT",
@@ -1017,7 +1017,7 @@ test commented out pending API-change approval
 // CLDR full date do not include era
 //   @Test
 //   public void TestBuddhistEraBugId4469904() {
-//       String era = "\u0e1e.\u0e28.";
+//       String era = "พ.ศ.";
 //       Locale loc = Locale.of("th", "TH");
 //       Calendar cal = Calendar.getInstance(Locale.US);
 //       cal.set(2001, 7, 23);
@@ -1184,17 +1184,17 @@ test commented out pending API-change approval
                 "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" +
                 "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" +  // 500
                 "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'" +
-                "\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:" +
-                "\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:" +
-                "\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:" +
-                "\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593':'" +
-                "\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:" +
+                "時間:時間:時間:時間:時間:" +
+                "時間:時間:時間:時間:時間:" +
+                "時間:時間:時間:時間:時間:" +
+                "時間:時間:時間:時間:時間':'" +
+                "時間:時間:時間:時間:時間:" +
                 "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy" +  // 100
                 "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy" +
                 "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy" +  // 200
                 "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy" +
                 "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy" +  // 300
-                "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\u5e74";
+                "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy年";
 
             // Note that >4 y's produces just "2001" until 1.3.1. This
             // was fixed in 1.4.
@@ -1209,17 +1209,17 @@ test commented out pending API-change approval
                 "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" +
                 "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" +
                 "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" +
-                "\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:" +
-                "\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:" +
-                "\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:" +
-                "\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:" +
-                "\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:\u6642\u9593:" +
+                "時間:時間:時間:時間:時間:" +
+                "時間:時間:時間:時間:時間:" +
+                "時間:時間:時間:時間:時間:" +
+                "時間:時間:時間:時間:時間:" +
+                "時間:時間:時間:時間:時間:" +
                 "00000000000000000000000000000000000000000000000000" +
                 "00000000000000000000000000000000000000000000000000" +
                 "00000000000000000000000000000000000000000000000000" +
                 "00000000000000000000000000000000000000000000000000" +
                 "00000000000000000000000000000000000000000000000000" +
-                "00000000000000000000000000000000000000000000002001\u5e74";
+                "00000000000000000000000000000000000000000000002001年";
             SimpleDateFormat sdf = new SimpleDateFormat(pat);
             String s = sdf.format(new Date(2001-1900, Calendar.JANUARY, 1));
             if (!expected.equals(s)) {
@@ -1242,8 +1242,8 @@ test commented out pending API-change approval
     @Test
     public void Test8216969() throws Exception {
         Locale locale = Locale.of("ru");
-        String format = "\u0438\u044e\u043d.";
-        String standalone = "\u0438\u044e\u043d\u044c";
+        String format = "июн.";
+        String standalone = "июнь";
 
         // Check that format form is used so that the dot is parsed correctly.
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd MMMyyyy", locale);

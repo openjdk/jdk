@@ -70,11 +70,11 @@ public class SymbolsInFormatSegment {
                 // Other examples
                 Arguments.of("1#<", "<", 1),
                 Arguments.of("1#foo<", "foo<", 1),
-                Arguments.of("1<foo\u2264", "foo\u2264", 1),
-                Arguments.of("1\u2264foo#", "foo#", 1),
-                Arguments.of("1#foo<#\u2264|2\u2264baz<#\u2264", "baz<#\u2264", 100),
-                Arguments.of("1#foo<#\u2264|2#baz<#\u2264|3<bar##\u2264", "bar##\u2264", 100),
-                Arguments.of("1#foo<#\u2264|2#baz<#\u2264|3\u2264bar##\u2264", "bar##\u2264", 100)
+                Arguments.of("1<foo≤", "foo≤", 1),
+                Arguments.of("1≤foo#", "foo#", 1),
+                Arguments.of("1#foo<#≤|2≤baz<#≤", "baz<#≤", 100),
+                Arguments.of("1#foo<#≤|2#baz<#≤|3<bar##≤", "bar##≤", 100),
+                Arguments.of("1#foo<#≤|2#baz<#≤|3≤bar##≤", "bar##≤", 100)
         );
     }
 }

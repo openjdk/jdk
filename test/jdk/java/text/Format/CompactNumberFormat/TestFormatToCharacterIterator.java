@@ -58,19 +58,19 @@ public class TestFormatToCharacterIterator {
     Object[][] compactFieldPositionData() {
         return new Object[][]{
             // compact format instance, number, resulted string, attributes/fields, attribute positions
-            {FORMAT_DZ, 1000.09, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2\u0F42 \u0F21",
+            {FORMAT_DZ, 1000.09, "སྟོང་ཕྲག ༡",
                 new Format.Field[]{NumberFormat.Field.PREFIX, NumberFormat.Field.INTEGER}, new int[]{0, 9, 9, 10}},
-            {FORMAT_DZ, -999.99, "-\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2\u0F42 \u0F21",
+            {FORMAT_DZ, -999.99, "-སྟོང་ཕྲག ༡",
                 new Format.Field[]{NumberFormat.Field.SIGN, NumberFormat.Field.PREFIX, NumberFormat.Field.INTEGER},
                 new int[]{0, 1, 1, 10, 10, 11}},
-            {FORMAT_DZ, -0.0, "-\u0F20", new Format.Field[]{NumberFormat.Field.SIGN, NumberFormat.Field.INTEGER}, new int[]{0, 1, 1, 2}},
-            {FORMAT_DZ, 3000L, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2\u0F42 \u0F23",
+            {FORMAT_DZ, -0.0, "-༠", new Format.Field[]{NumberFormat.Field.SIGN, NumberFormat.Field.INTEGER}, new int[]{0, 1, 1, 2}},
+            {FORMAT_DZ, 3000L, "སྟོང་ཕྲག ༣",
                 new Format.Field[]{NumberFormat.Field.PREFIX, NumberFormat.Field.INTEGER}, new int[]{0, 9, 9, 10}},
             {FORMAT_DZ, new BigInteger("12345678901234567890"),
-                "\u0F51\u0F74\u0F44\u0F0B\u0F55\u0FB1\u0F74\u0F62\u0F0B\u0F66\u0F0B\u0F61\u0F0B \u0F21\u0F22\u0F23\u0F24\u0F25\u0F27",
+                "དུང་ཕྱུར་ས་ཡ་ ༡༢༣༤༥༧",
                 new Format.Field[]{NumberFormat.Field.PREFIX, NumberFormat.Field.INTEGER}, new int[]{0, 14, 14, 20}},
             {FORMAT_DZ, new BigDecimal("12345678901234567890.89"),
-                "\u0F51\u0F74\u0F44\u0F0B\u0F55\u0FB1\u0F74\u0F62\u0F0B\u0F66\u0F0B\u0F61\u0F0B \u0F21\u0F22\u0F23\u0F24\u0F25\u0F27",
+                "དུང་ཕྱུར་ས་ཡ་ ༡༢༣༤༥༧",
                 new Format.Field[]{NumberFormat.Field.PREFIX, NumberFormat.Field.INTEGER}, new int[]{0, 14, 14, 20}},
             // Zeros
             {FORMAT_EN_US, 0, "0", new Format.Field[]{NumberFormat.Field.INTEGER}, new int[]{0, 1}},

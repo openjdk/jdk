@@ -50,18 +50,18 @@ public class KoreanTest {
         /*
          * Data to verify '<' relationship in LocaleElements_ja.java
          */
-        {"\uACE0\uC591\uC774", "\u732B",
+        {"고양이", "猫",
          "Hangul \"Cat\"(0xACE0 0xC591 0xC774) <---> Chinese Kanji \"Cat\"(0x732B)"},
-        {"\u30FB", "\u2025",
+        {"・", "‥",
          "Katakana middle dot(0x30FB) <---> Two dot leader(0x2025)"},
 
-        {"\u00B1", "\u2260",
+        {"±", "≠",
          "Plus-Minus Sign(0x00B1) <---> Not Equal To(0x2260)"},
-        {"\u3011", "\u2260",
+        {"】", "≠",
          "Right Black Lenticular Bracket(0x3011) <---> Not Equal To(0x2260)"},
-        {"\u2260", "\u2103",
+        {"≠", "℃",
          "Not Equal To(0x2260) <---> Degree Celsius(0x2103)"},
-        {"\u2260", "\u2606",
+        {"≠", "☆",
          "Not Equal To(0x2260) <---> White Star(0x2606)"},
 
         // Unlike other locales' Collator, compare() returns -1 because of
@@ -69,7 +69,7 @@ public class KoreanTest {
         /* above "assumption" is no longer true, now we do normalize ("decomposition")
            for the pattern in ko locale, but exclude those hangul syllables, so the
            test case below need to be excluded from tiger/1.5
-        {"\u003D\u0338", "\u2260",
+        {"≠", "≠",
          "Equal(0x003D)Combining Long Solidus Overlay(0x0338) <---> Not Equal To(0x2260)"},
          */
     };
@@ -79,7 +79,7 @@ public class KoreanTest {
      */
     static final String[][] compData2 = {
         // Verify a character which has been added since Unicode 2.1.X.
-        {"\u798F", "\uFA1B",
+        {"福", "福",
          "CJK Unified Ideograph \"FUKU\"(0x798F) <---> CJK Compatibility Ideograph \"FUKU\"(0xFA1B)"},
 
     };

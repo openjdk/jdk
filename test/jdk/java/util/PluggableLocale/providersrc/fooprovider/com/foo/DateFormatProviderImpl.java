@@ -41,24 +41,24 @@ public class DateFormatProviderImpl extends DateFormatProvider {
         Locale.of("yy")};
 
     static String[] datePattern = {
-        "yyyy'\u5e74'M'\u6708'd'\u65e5'", // full date pattern
+        "yyyy'年'M'月'd'日'", // full date pattern
         "yyyy/MMM/dd", // long date pattern
         "yyyy/MM/dd", // medium date pattern
         "yy/MM/dd" // short date pattern
     };
 
     static String[] timePattern = {
-        "H'\u6642'mm'\u5206'ss'\u79d2' z", // full time pattern
+        "H'時'mm'分'ss'秒' z", // full time pattern
         "H:mm:ss z", // long time pattern
         "H:mm:ss", // medium time pattern
         "H:mm" // short time pattern
     };
 
     static String[] dialect = {
-        "\u3067\u3059\u3002",
-        "\u3084\u3002",
-        "\u3069\u3059\u3002",
-        "\u308f\u3044\u308f\u3044"
+        "です。",
+        "や。",
+        "どす。",
+        "わいわい"
     };
 
     public Locale[] getAvailableLocales() {

@@ -41,7 +41,7 @@ import jdk.test.lib.Asserts;
 public class NonAsciiAlias {
     public static void main(String[] args) throws Exception {
         KeyStore ks = KeyStore.getInstance("Windows-MY");
-        String alias = "\u58c6\u94a56522064";
+        String alias = "壆钥6522064";
         try {
             ks.load(null, null);
             CertAndKeyGen cag = new CertAndKeyGen("RSA", "SHA256withRSA");

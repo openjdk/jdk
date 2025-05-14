@@ -67,14 +67,14 @@ public class MouseModifiersUnitTest_Extra extends Frame {
     static int [] modifiersExStandardALT;
 
     private final static String SHIFT_MODIFIER = Platform.isOSX() ?
-                                                "\u21e7" : "Shift";
+                                                "⇧" : "Shift";
 
     private final static String ALT_MODIFIER = Platform.isOSX() ?
-                                                "\u2325" : "Alt";
+                                                "⌥" : "Alt";
 
 
     private final static String CTRL_MODIFIER = Platform.isOSX() ?
-                                                "\u2303" : "Ctrl";
+                                                "⌃" : "Ctrl";
 
 
     // BUTTON1, 2, 3 press-release.

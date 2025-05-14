@@ -63,10 +63,10 @@ public class HexFormatTest {
                         HexFormat.ofDelimiter(".").withPrefix("").withSuffix("")},
                 {", ", "0x", "", true,
                         HexFormat.ofDelimiter(", ").withUpperCase().withPrefix("0x")},
-                {"\u0202", "\u0203", "\u0204", false,
-                        HexFormat.ofDelimiter("\u0202").withPrefix("\u0203").withSuffix("\u0204")},
-                {"\u0202", "", "", false,
-                        HexFormat.ofDelimiter("\u0202")},
+                {"Ȃ", "ȃ", "Ȅ", false,
+                        HexFormat.ofDelimiter("Ȃ").withPrefix("ȃ").withSuffix("Ȅ")},
+                {"Ȃ", "", "", false,
+                        HexFormat.ofDelimiter("Ȃ")},
 
         };
     }

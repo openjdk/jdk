@@ -38,15 +38,15 @@ public class Bug6683975 {
     private static Locale th = Locale.of("th");
     private static Locale th_TH = Locale.of("th", "TH");
     private static String expected_th[] = {
-        "\u0e27\u0e31\u0e19\u0e2d\u0e31\u0e07\u0e04\u0e32\u0e23\u0e17\u0e35\u0e48 30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 \u0e04.\u0e28. 2008 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 00 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 \u0e40\u0e27\u0e25\u0e32\u0e2d\u0e2d\u0e21\u0e41\u0e2a\u0e07\u0e41\u0e1b\u0e0b\u0e34\u0e1f\u0e34\u0e01\u0e43\u0e19\u0e2d\u0e40\u0e21\u0e23\u0e34\u0e01\u0e32\u0e40\u0e2b\u0e19\u0e37\u0e2d",  // 0: FULL
-        "30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 \u0e04.\u0e28. 2008 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 00 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 PDT",  // 1: LONG
-        "30 \u0e01.\u0e22. 2008 08:00:00",  // 2: MEDIUM
+        "วันอังคารที่ 30 กันยายน ค.ศ. 2008 8 นาฬิกา 00 นาที 00 วินาที เวลาออมแสงแปซิฟิกในอเมริกาเหนือ",  // 0: FULL
+        "30 กันยายน ค.ศ. 2008 8 นาฬิกา 00 นาที 00 วินาที PDT",  // 1: LONG
+        "30 ก.ย. 2008 08:00:00",  // 2: MEDIUM
         "30/9/08 08:00",  // 3: SHORT
     };
     private static String expected_th_TH[] = {
-        "\u0e27\u0e31\u0e19\u0e2d\u0e31\u0e07\u0e04\u0e32\u0e23\u0e17\u0e35\u0e48 30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 \u0e1e\u0e38\u0e17\u0e18\u0e28\u0e31\u0e01\u0e23\u0e32\u0e0a 2551 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 00 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 \u0e40\u0e27\u0e25\u0e32\u0e2d\u0e2d\u0e21\u0e41\u0e2a\u0e07\u0e41\u0e1b\u0e0b\u0e34\u0e1f\u0e34\u0e01\u0e43\u0e19\u0e2d\u0e40\u0e21\u0e23\u0e34\u0e01\u0e32\u0e40\u0e2b\u0e19\u0e37\u0e2d",  // 0: FULL
-        "30 \u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19 2551 8 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 00 \u0e19\u0e32\u0e17\u0e35 00 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 PDT",  // 1: LONG
-        "30 \u0e01.\u0e22. 2551 08:00:00",  // 2: MEDIUM
+        "วันอังคารที่ 30 กันยายน พุทธศักราช 2551 8 นาฬิกา 00 นาที 00 วินาที เวลาออมแสงแปซิฟิกในอเมริกาเหนือ",  // 0: FULL
+        "30 กันยายน 2551 8 นาฬิกา 00 นาที 00 วินาที PDT",  // 1: LONG
+        "30 ก.ย. 2551 08:00:00",  // 2: MEDIUM
         "30/9/51 08:00"  // 3: SHORT
     };
     private static String stylePattern[] =  {

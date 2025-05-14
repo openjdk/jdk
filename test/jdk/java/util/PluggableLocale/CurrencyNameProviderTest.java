@@ -136,9 +136,9 @@ public class CurrencyNameProviderTest extends ProviderTest {
     }
 
 
-    final String pattern = "###,###\u00A4";
-    final String YEN_IN_OSAKA = "100,000\u5186\u3084\u3002";
-    final String YEN_IN_KYOTO = "100,000\u5186\u3069\u3059\u3002";
+    final String pattern = "###,###¤";
+    final String YEN_IN_OSAKA = "100,000円や。";
+    final String YEN_IN_KYOTO = "100,000円どす。";
     final String YEN_IN_TOKYO= "100,000JPY-tokyo";
     final Locale OSAKA = Locale.of("ja", "JP", "osaka");
     final Locale KYOTO = Locale.of("ja", "JP", "kyoto");
