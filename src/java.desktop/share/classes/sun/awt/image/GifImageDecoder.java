@@ -395,7 +395,16 @@ public class GifImageDecoder extends ImageDecoder {
         int off = y * global_width + x2;
         boolean save = (curframe.disposal_method == GifFrame.DISPOSAL_SAVE);
         if (trans_pixel >= 0 && !curframe.initialframe) {
-            if (saved_image != null && model.equals(saved_model)) {
+            boolean isSimple = saved_image != null && model.equals(saved_model);
+            if (isSimple) {
+                for (int a = 0; a < saved_image.length; a++) {
+                    if ((saved_image[a] & 0xff) == trans_pixel) {
+                        isSimple = false;
+                        break;
+                    }
+                }
+            }
+            if (isSimple) {
                 for (int i = rasbeg; i < rasend; i++, off++) {
                     byte pixel = rasline[i];
                     if ((pixel & 0xff) == trans_pixel) {
