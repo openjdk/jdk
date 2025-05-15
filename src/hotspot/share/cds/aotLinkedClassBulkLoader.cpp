@@ -32,10 +32,12 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 
@@ -46,6 +48,17 @@ bool AOTLinkedClassBulkLoader::_all_completed = false;
 
 void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc, bool is_static_archive) {
   AOTLinkedClassTable::get(is_static_archive)->serialize(soc);
+}
+
+bool AOTLinkedClassBulkLoader::class_preloading_finished() {
+  if (!CDSConfig::is_using_aot_linked_classes()) {
+    return true;
+  } else {
+    // The ConstantPools of preloaded classes have references to other preloaded classes. We don't
+    // want any Java code (including JVMCI compiler) to use these classes until all of them
+    // are loaded.
+    return Atomic::load_acquire(&_all_completed);
+  }
 }
 
 void AOTLinkedClassBulkLoader::load_javabase_classes(JavaThread* current) {
@@ -70,8 +83,14 @@ void AOTLinkedClassBulkLoader::load_non_javabase_classes(JavaThread* current) {
   _platform_completed = true;
 
   load_classes_in_loader(current, AOTLinkedClassCategory::APP, SystemDictionary::java_system_loader());
+
+  if (AOTPrintTrainingInfo) {
+    tty->print_cr("==================== archived_training_data ** after all classes preloaded ====================");
+    TrainingData::print_archived_training_data_on(tty);
+  }
+
   _app_completed = true;
-  _all_completed = true;
+  Atomic::release_store(&_all_completed, true);
 }
 
 void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop) {
@@ -392,5 +411,27 @@ bool AOTLinkedClassBulkLoader::is_pending_aot_linked_class(Klass* k) {
     return !_app_completed;
   } else {
     return false;
+  }
+}
+
+void AOTLinkedClassBulkLoader::replay_training_at_init(Array<InstanceKlass*>* classes, TRAPS) {
+  if (classes != nullptr) {
+    for (int i = 0; i < classes->length(); i++) {
+      InstanceKlass* ik = classes->at(i);
+      if (ik->has_aot_initialized_mirror() && ik->is_initialized() && !ik->has_init_deps_processed()) {
+        CompilationPolicy::replay_training_at_init(ik, CHECK);
+      }
+    }
+  }
+}
+
+void AOTLinkedClassBulkLoader::replay_training_at_init_for_preloaded_classes(TRAPS) {
+  if (CDSConfig::is_using_aot_linked_classes() && TrainingData::have_data()) {
+    // Only static archive can have training data.
+    AOTLinkedClassTable* table = AOTLinkedClassTable::for_static_archive();
+    replay_training_at_init(table->boot(),     CHECK);
+    replay_training_at_init(table->boot2(),    CHECK);
+    replay_training_at_init(table->platform(), CHECK);
+    replay_training_at_init(table->app(),      CHECK);
   }
 }

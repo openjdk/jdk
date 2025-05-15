@@ -31,6 +31,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/xmlstream.hpp"
 
+class CompileTrainingData;
 class DirectiveSet;
 
 JVMCI_ONLY(class JVMCICompileState;)
@@ -111,6 +112,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   const char*          _failure_reason;
   // Specifies if _failure_reason is on the C heap.
   bool                 _failure_reason_on_C_heap;
+  CompileTrainingData* _training_data;
   size_t               _arena_bytes;  // peak size of temporary memory during compilation (e.g. node arenas)
 
  public:
@@ -211,6 +213,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         is_free() const                   { return _is_free; }
   void         set_is_free(bool val)             { _is_free = val; }
   bool         is_unloaded() const;
+
+  CompileTrainingData* training_data() const      { return _training_data; }
+  void set_training_data(CompileTrainingData* td) { _training_data = td;   }
 
   // RedefineClasses support
   void         metadata_do(MetadataClosure* f);
