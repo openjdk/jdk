@@ -40,15 +40,14 @@
 #include "runtime/vframe.inline.hpp"
 #include "utilities/growableArray.hpp"
 
-static void copy_frames(JfrStackFrames* lhs_frames, const JfrStackFrames* rhs_frames) {
+static inline void copy_frames(JfrStackFrames* lhs_frames, const JfrStackFrames* rhs_frames) {
   assert(lhs_frames != nullptr, "invariant");
   assert(rhs_frames != nullptr, "invariant");
   assert(rhs_frames->length() > 0, "invariant");
   assert(lhs_frames->capacity() == rhs_frames->length(), "invariant");
-  assert(lhs_frames->length() == 0, "invariant");
-  lhs_frames->set_length(rhs_frames->length());
   assert(lhs_frames->length() == rhs_frames->length(), "invariant");
-  memcpy(&lhs_frames->first(), &rhs_frames->first(), rhs_frames->length() * sizeof(JfrStackFrame));
+  assert(lhs_frames->capacity() == lhs_frames->length(), "invariant");
+  memcpy(lhs_frames->adr_at(0), rhs_frames->adr_at(0), rhs_frames->length() * sizeof(JfrStackFrame));
 }
 
 JfrStackTrace::JfrStackTrace() :
@@ -65,7 +64,7 @@ JfrStackTrace::JfrStackTrace() :
 
 JfrStackTrace::JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrStackTrace* next) :
   _next(next),
-  _frames(new (mtInternal) JfrStackFrames(trace.number_of_frames(), mtInternal)), // CHeap
+  _frames(new (mtTracing) JfrStackFrames(trace.number_of_frames(), trace.number_of_frames(), mtTracing)), // CHeap
   _id(id),
   _hash(trace._hash),
   _count(trace._count),

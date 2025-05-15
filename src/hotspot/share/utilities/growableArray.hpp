@@ -88,8 +88,6 @@ protected:
 
 public:
   int   length() const          { return _len; }
-  void  set_length(int len)     { _len = len; }
-
   int   capacity() const        { return _capacity; }
 
   bool  is_empty() const        { return _len == 0; }
@@ -406,6 +404,9 @@ protected:
       ::new ((void*)&data[i]) E();
     }
   }
+
+  GrowableArrayWithAllocator(E* data, int capacity, int initial_len) :
+    GrowableArrayView<E>(data, capacity, initial_len) {}
 
   ~GrowableArrayWithAllocator() {}
 
@@ -779,6 +780,15 @@ public:
           allocate(initial_capacity),
           initial_capacity, initial_len, filler),
       _metadata() {
+    init_checks();
+  }
+
+  // This constructor performs no default initialization, so be careful.
+  GrowableArray(int initial_capacity, int initial_len, MemTag mem_tag) :
+    GrowableArrayWithAllocator<E, GrowableArray>(
+      allocate(initial_capacity, mem_tag),
+      initial_capacity, initial_len),
+    _metadata(mem_tag) {
     init_checks();
   }
 
