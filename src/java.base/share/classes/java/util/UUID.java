@@ -61,10 +61,10 @@ import jdk.internal.util.ByteArrayLittleEndian;
  * {@code UUID}.  The bit layout described above is valid only for a {@code
  * UUID} with a variant value of 2, which indicates the Leach-Salz variant.
  *
- * <p> The version field holds a value that describes the type of this {@code
- * UUID}.  There are four different basic types of UUIDs: time-based, DCE
- * security, name-based, and randomly generated UUIDs.  These types have a
- * version value of 1, 2, 3 and 4, respectively.
+ * <p> There are eight defined types of UUIDs, each identified by a version number:
+ * time-based (version 1), DCE security (version 2), name-based with MD5 (version 3),
+ * randomly generated (version 4), name-based with SHA-1 (version 5), reordered time-based (version 6),
+ * Unix epoch time-based (version 7), and custom-defined layout (version 8).
  *
  * <p> For more information including algorithms used to create {@code UUID}s,
  * see <a href="http://www.ietf.org/rfc/rfc4122.txt"> <i>RFC&nbsp;4122: A
@@ -93,6 +93,9 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     private final long leastSigBits;
 
     private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+
+    private static long lastTimestamp = -1L;
+    private static int sequence = 0;
 
     /*
      * The random number generator used by this class to create random
@@ -184,16 +187,20 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * Static factory to retrieve a type 7 (time based) {@code UUID} based on
      * the specified byte array.
      *
+     * The {@code UUID} embeds the current Unix timestamp in milliseconds into
+     * the first 6 bytes, sets the version and variant bits as per RFC 9562
+     * and fills the remaining bytes with random data from a
+     * cryptographically strong pseudo-random number generator.
+     *
      * @return  A {@code UUID} generated from the specified array
      */
     public static UUID timestampUUID() {
-        // Generate timestamp in milliseconds (48-bit max for UUIDv7)
         long timestamp = System.currentTimeMillis();
         SecureRandom ng = Holder.numberGenerator;
         byte[] randomBytes = new byte[16];
         ng.nextBytes(randomBytes);
 
-        // Fill first 6 bytes with timestamp (big endian)
+        // Set the first 6 bytes to the timestamp
         randomBytes[0] = (byte) (timestamp >>> 40);
         randomBytes[1] = (byte) (timestamp >>> 32);
         randomBytes[2] = (byte) (timestamp >>> 24);
@@ -201,16 +208,136 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         randomBytes[4] = (byte) (timestamp >>> 8);
         randomBytes[5] = (byte) (timestamp);
 
-        // Set version to 7 (UUIDv7: version bits are in byte 6)
-        randomBytes[6] &= 0x0f;  // Clear version (upper 4 bits)
-        randomBytes[6] |= 0x70;  // Set version to 0111 (v7)
+        // Set the version to 7
+        randomBytes[6] &= 0x0f;
+        randomBytes[6] |= 0x70;
 
-        // Set variant to IETF (10xxxxxx)
-        randomBytes[8] &= 0x3f;        // Clear variant bits
-        randomBytes[8] |= (byte) 0x80; // Set to variant 1 (10xxxxxx)
+        // set the variant to IETF
+        randomBytes[8] &= 0x3f;
+        randomBytes[8] |= (byte) 0x80;
 
         return new UUID(randomBytes);
     }
+
+    /**
+     * Static factory to retrieve a type 7 (time based) {@code UUID} based on
+     * the current timestamp, enhanced with sub-millisecond precision.
+     *
+     * The {@code UUID} embeds the current Unix timestamp in milliseconds into
+     * the first 6 bytes, sets the version and variant bits as per RFC 9562,
+     * replaces the first 12 random bits with a value derived from the current
+     * system clock's sub-millisecond precision (if available), and fills the
+     * remaining bytes with cryptographically strong random data.
+     *
+     * @return A {@code UUID} that is more likely to be monotonic under high load
+     */
+    public static UUID timestampUUIDhpclock() {
+        long unixMillis = System.currentTimeMillis();
+        long nanoTime = System.nanoTime(); // higher-resolution source
+        SecureRandom ng = Holder.numberGenerator;
+        byte[] randomBytes = new byte[16];
+        ng.nextBytes(randomBytes);
+
+        // Timestamp: put first 6 bytes (48 bits) in big-endian order
+        randomBytes[0] = (byte) (unixMillis >>> 40);
+        randomBytes[1] = (byte) (unixMillis >>> 32);
+        randomBytes[2] = (byte) (unixMillis >>> 24);
+        randomBytes[3] = (byte) (unixMillis >>> 16);
+        randomBytes[4] = (byte) (unixMillis >>> 8);
+        randomBytes[5] = (byte) (unixMillis);
+
+        // Set version to 7 (bits 48–51, upper nibble of byte 6)
+        randomBytes[6] &= 0x0F;
+        randomBytes[6] |= 0x70;
+
+        // ===== Sub-millisecond precision bits in rand_a (bits 52–63) =====
+        // Extract sub-ms fraction (nanoseconds % 1_000_000)
+        int nanosWithinMs = (int) (nanoTime % 1_000_000);
+        double fractionOfMs = (nanosWithinMs % 1_000_000) / 1_000_000.0;
+
+        // Scale fraction to 12-bit range (0–4095)
+        int extraPrecisionBits = (int) (fractionOfMs * 4096); // e.g. 1870
+
+        // Insert into last 12 bits of rand_a (bytes 6 and 7)
+        // Clear lower bits first
+        randomBytes[6] &= (byte) 0xF0; // already handled above
+        randomBytes[7] = (byte) 0x00;
+
+        // Set 12 bits
+        randomBytes[6] |= (byte) ((extraPrecisionBits >>> 8) & 0x0F); // lower 4 bits go in byte 6
+        randomBytes[7] |= (byte) (extraPrecisionBits & 0xFF);         // full 8 bits in byte 7
+
+        // Variant: Set bits 64–65 to 10 (variant 1, IETF)
+        randomBytes[8] &= 0x3F;
+        randomBytes[8] |= (byte) 0x80;
+
+        return new UUID(randomBytes);
+    }
+
+    /**
+     * Static factory to retrieve a type 7 (time based) {@code UUID} based on
+     * the current timestamp, enhanced with sub-millisecond precision.
+     *
+     * The {@code UUID} embeds the current Unix timestamp in milliseconds into
+     * the first 6 bytes, sets the version and variant bits as per RFC 9562,
+     * replaces the first 12 random bits with a value derived from the current
+     * system clock's sub-millisecond precision (if available), and fills the
+     * remaining bytes with cryptographically strong random data.
+     *
+     * @return A {@code UUID} that is more likely to be monotonic under high load
+     */
+    public static UUID timebasedUUIDCounter() {
+        long unixMillis = System.currentTimeMillis();
+        int localSequence;
+
+        synchronized (UUID.class) {
+            if (unixMillis == lastTimestamp) {
+                sequence++;
+                if (sequence > 0xFFF) { // 12 bits max
+                    // Wait for next millisecond
+                    while ((unixMillis = System.currentTimeMillis()) == lastTimestamp) {
+                        Thread.yield();
+                    }
+                    sequence = 0;
+                }
+            } else {
+                sequence = 0;
+                lastTimestamp = unixMillis;
+            }
+            localSequence = sequence;
+        }
+
+        SecureRandom ng = Holder.numberGenerator;
+        byte[] randomBytes = new byte[16];
+        ng.nextBytes(randomBytes);
+
+        // ===== Embed 48-bit timestamp (bytes 0–5) =====
+        randomBytes[0] = (byte) (unixMillis >>> 40);
+        randomBytes[1] = (byte) (unixMillis >>> 32);
+        randomBytes[2] = (byte) (unixMillis >>> 24);
+        randomBytes[3] = (byte) (unixMillis >>> 16);
+        randomBytes[4] = (byte) (unixMillis >>> 8);
+        randomBytes[5] = (byte) unixMillis;
+
+        // ===== Set version to 7 (bits 48–51) =====
+        randomBytes[6] &= (byte) 0xF0; // keep version bits, clear lower 4
+        randomBytes[6] |= 0x70;
+
+        // ===== Embed 12-bit sequence counter (bits 52–63) =====
+        randomBytes[6] &= (byte) 0xF0; // keep version bits, clear lower 4
+        randomBytes[6] |= (byte) ((localSequence >>> 8) & 0x0F); // upper 4 bits of sequence
+        randomBytes[7] = (byte) (localSequence & 0xFF);          // lower 8 bits
+
+        // ===== Set variant bits (bits 64–65) to 10x (IETF) =====
+        randomBytes[8] &= 0x3F;
+        randomBytes[8] |= (byte) 0x80;
+
+        return new UUID(randomBytes);
+    }
+
+
+
+
 
     private static final byte[] NIBBLES;
     static {
@@ -354,7 +481,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * <li>2    DCE security UUID
      * <li>3    Name-based UUID
      * <li>4    Randomly generated UUID
-     * <li>7    Timestamp-based UUID
+     * <li>7    Unix timestamp-based UUID
      * </ul>
      *
      * @return  The version number of this {@code UUID}
