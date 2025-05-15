@@ -618,9 +618,23 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+//            1         2         3         4         5         6         7         8         9         10         11
+//  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+//  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA..........
+//  Legend:
+//  A - Test (reserved)
+//  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
     all_diff = tree.reserve_mapping(50, 25, rd2);
+//              1         2         3         4         5         6         7         8         9         10         11
+//    01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+//    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCC..........
+//    Legend:
+//     A - Test (reserved)
+//     B - Native Memory Tracking (reserved)
+//     C - Test (reserved)
+//     . - free
     diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     VMATree::SingleDiff diff2 = all_diff.tag[NMTUtil::tag_to_index(mtNMT)];
     EXPECT_EQ(-25, diff.reserve);
@@ -630,9 +644,19 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+//            1         2         3         4         5         6         7         8         9         10         11
+//  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+//  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA..........
+//  Legend:
+//  A - Test (reserved)
+//  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
     all_diff = tree.release_mapping(0, 100);
+//            1         2         3         4         5         6         7         8         9         10        11
+//  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+//  ..............................................................................................................
+//  Legend:
     diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(-100, diff.reserve);
   }
@@ -640,9 +664,21 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+//            1         2         3         4         5         6         7         8         9         10         11
+//  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+//  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA..........
+//  Legend:
+//  A - Test (reserved)
+//  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
     all_diff = tree.commit_mapping(0, 100, rd);
+//            1         2         3         4         5         6         7         8         9         10         11
+//  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+//  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..........
+//  Legend:
+//  a - Test (committed)
+//  . - free
     diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(0, diff.reserve);
     EXPECT_EQ(100, diff.commit);
@@ -650,36 +686,79 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
   { // Adjacent reserved mappings with same type
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 10, rd);
+//            1         2
+//  01234567890123456789
+//  AAAAAAAAAA..........
+//  Legend:
+//  A - Test (reserved)
+//  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    EXPECT_EQ(diff.reserve, 100);
-    all_diff = tree.reserve_mapping(100, 100, rd);
+    EXPECT_EQ(diff.reserve, 10);
+    all_diff = tree.reserve_mapping(10, 10, rd);
+//            1         2         3
+//  012345678901234567890123456789
+//  AAAAAAAAAAAAAAAAAAAA..........
+//  Legend:
+//  A - Test (reserved)
+//  . - free
     diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    EXPECT_EQ(100, diff.reserve);
+    EXPECT_EQ(10, diff.reserve);
   }
   { // Adjacent reserved mappings with different tags
   Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 10, rd);
+//            1         2
+//  01234567890123456789
+//  AAAAAAAAAA..........
+//  Legend:
+//  A - Test (reserved)
+//  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    EXPECT_EQ(diff.reserve, 100);
-    all_diff = tree.reserve_mapping(100, 100, rd2);
+    EXPECT_EQ(diff.reserve, 10);
+    all_diff = tree.reserve_mapping(10, 10, rd2);
+//            1         2         3
+//  012345678901234567890123456789
+//  AAAAAAAAAABBBBBBBBBB..........
+//  Legend:
+//  A - Test (reserved)
+//  B - Native Memory Tracking (reserved)
+//  . - free
     diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(0, diff.reserve);
     diff = all_diff.tag[NMTUtil::tag_to_index(mtNMT)];
-    EXPECT_EQ(100, diff.reserve);
+    EXPECT_EQ(10, diff.reserve);
   }
 
   { // A commit with two previous commits inside of it should only register
     // the new memory in the commit diff.
     Tree tree;
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
-    tree.commit_mapping(128, 128, rd);
-    tree.commit_mapping(512, 128, rd);
-    VMATree::SummaryDiff diff = tree.commit_mapping(0, 1024, rd);
-    EXPECT_EQ(768, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
-    EXPECT_EQ(768, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    tree.commit_mapping(16, 16, rd);
+//            1         2         3         4
+//  0123456789012345678901234567890123456789
+//  ................aaaaaaaaaaaaaaaa..........
+//  Legend:
+//  a - Test (committed)
+//  . - free
+    tree.commit_mapping(32, 32, rd);
+//            1         2         3         4         5         6         7
+//  0123456789012345678901234567890123456789012345678901234567890123456789
+//  ................aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..........
+//  Legend:
+//  a - Test (committed)
+//  . - free
+    VMATree::SummaryDiff diff = tree.commit_mapping(0, 64, rd);
+//            1         2         3         4         5         6         7
+//  0123456789012345678901234567890123456789012345678901234567890123456789
+//  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..........
+//  Legend:
+//  a - Test (committed)
+//  . - free
+    EXPECT_EQ(16, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(16, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   }
 }
 
