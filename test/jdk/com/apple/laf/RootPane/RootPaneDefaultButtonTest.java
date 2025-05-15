@@ -139,38 +139,46 @@ public class RootPaneDefaultButtonTest extends JDialog {
         Color defaultColor = null;
         Color nonDefaultColor = null;
 
-        for (ButtonRenderingExpectation expectation : expectations) {
-            int x = expectation.button.getLocationOnScreen().x + 20;
-            int y = expectation.button.getLocationOnScreen().y + 10;
+        for (int a = 0; a < expectations.length; a++) {
+            try {
+                ButtonRenderingExpectation expectation = expectations[a];
+                int x = expectation.button.getLocationOnScreen().x + 20;
+                int y = expectation.button.getLocationOnScreen().y + 10;
 
-            // this mouseMove is optional, but it helps debug this test to see
-            // where we're sampling the pixel color from:
-            robot.mouseMove(x, y);
+                // this mouseMove is optional, but it helps debug this test to see
+                // where we're sampling the pixel color from:
+                robot.mouseMove(x, y);
 
-            Color c = robot.getPixelColor(x, y);
-            if (expectation.appearAsDefault) {
-                if (defaultColor == null) {
-                    defaultColor = c;
+                Color c = robot.getPixelColor(x, y);
+                if (expectation.appearAsDefault) {
+                    if (defaultColor == null) {
+                        defaultColor = c;
+                    } else {
+                        throw new IllegalStateException(
+                                "there should only be at most 1 default button");
+                    }
                 } else {
-                    throw new IllegalStateException(
-                            "there should only be at most 1 default button");
+                    if (nonDefaultColor == null) {
+                        nonDefaultColor = c;
+                    } else if (!isSimilar(nonDefaultColor, c)) {
+                        throw new IllegalStateException(
+                                "these two colors should match: " + c + ", " +
+                                        nonDefaultColor);
+                    }
                 }
-            } else {
-                if (nonDefaultColor == null) {
-                    nonDefaultColor = c;
-                } else if (!isSimilar(nonDefaultColor, c)) {
+
+                if (defaultColor != null && nonDefaultColor != null &&
+                        isSimilar(defaultColor, nonDefaultColor)) {
                     throw new IllegalStateException(
-                            "these two colors should match: " + c + ", " +
+                            "The default button and non-default buttons should " +
+                                    "look different: " + defaultColor + " matches " +
                                     nonDefaultColor);
                 }
+            } catch(Exception e) {
+                System.err.println("a = " + a + " defaultColor = " +
+                        defaultColor + " nonDefaultColor = " + nonDefaultColor);
+                throw e;
             }
-        }
-
-        if (defaultColor != null && isSimilar(defaultColor, nonDefaultColor)) {
-            throw new IllegalStateException(
-                    "The default button and non-default buttons should " +
-                            "look different: " + defaultColor + " matches " +
-                            nonDefaultColor);
         }
     }
 
