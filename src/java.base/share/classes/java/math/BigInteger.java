@@ -3630,7 +3630,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
     }
 
-    int[] javaIncrement(int[] val) {
+    static int[] javaIncrement(int[] val) {
         int lastSum = 0;
         for (int i=val.length-1;  i >= 0 && lastSum == 0; i--)
             lastSum = (val[i] += 1);
