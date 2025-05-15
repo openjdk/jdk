@@ -1262,7 +1262,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     // report that the loop predication has been actually performed
     // for this loop
     if (TraceLoopLimitCheck) {
-      tty->print_cr("Short Loop Check generated:");
+      tty->print_cr("Short Long Loop Check Predicate generated:");
       DEBUG_ONLY(bol->dump(2);)
     }
 #endif
