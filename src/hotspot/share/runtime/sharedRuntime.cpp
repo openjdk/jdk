@@ -2177,7 +2177,6 @@ static int _lookups; // number of calls to lookup
 static int _equals;  // number of buckets checked with matching hash
 static int _archived_hits; // number of successful lookups in archived table
 static int _runtime_hits;  // number of successful lookups in runtime table
-static int _compact; // number of equals calls with compact signature
 #endif
 
 // A simple wrapper class around the calling convention information
@@ -2188,18 +2187,22 @@ class AdapterFingerPrint : public MetaspaceObj {
     _basic_type_bits = 4,
     _basic_type_mask = right_n_bits(_basic_type_bits),
     _basic_types_per_int = BitsPerInt / _basic_type_bits,
-    _compact_int_count = 3
   };
   // TO DO:  Consider integrating this with a more global scheme for compressing signatures.
   // For now, 4 bits per components (plus T_VOID gaps after double/long) is not excessive.
 
   int _length;
-  int _value[_compact_int_count];
+
+  static int data_offset() { return sizeof(AdapterFingerPrint); }
+  int* data_pointer() {
+    return (int*)((address)this + data_offset());
+  }
 
   // Private construtor. Use allocate() to get an instance.
   AdapterFingerPrint(int total_args_passed, BasicType* sig_bt) {
+    int* data = data_pointer();
     // Pack the BasicTypes with 8 per int
-    _length = (total_args_passed + (_basic_types_per_int-1)) / _basic_types_per_int;
+    _length = length(total_args_passed);
     int sig_index = 0;
     for (int index = 0; index < _length; index++) {
       int value = 0;
@@ -2208,13 +2211,22 @@ class AdapterFingerPrint : public MetaspaceObj {
         assert((bt & _basic_type_mask) == bt, "must fit in 4 bits");
         value = (value << _basic_type_bits) | bt;
       }
-      _value[index] = value;
+      data[index] = value;
     }
   }
 
   // Call deallocate instead
   ~AdapterFingerPrint() {
     FreeHeap(this);
+  }
+
+  static int length(int total_args) {
+    return (total_args + (_basic_types_per_int-1)) / _basic_types_per_int;
+  }
+
+  static int compute_size(int total_args_passed, BasicType* sig_bt) {
+    int len = length(total_args_passed);
+    return sizeof(AdapterFingerPrint) + (len * sizeof(int));
   }
 
   // Remap BasicTypes that are handled equivalently by the adapters.
@@ -2276,13 +2288,8 @@ class AdapterFingerPrint : public MetaspaceObj {
   }
 
  public:
-  static int allocation_size(int total_args_passed, BasicType* sig_bt) {
-    int len = (total_args_passed + (_basic_types_per_int-1)) / _basic_types_per_int;
-    return sizeof(AdapterFingerPrint) + (len > _compact_int_count ? (len - _compact_int_count) * sizeof(int) : 0);
-  }
-
   static AdapterFingerPrint* allocate(int total_args_passed, BasicType* sig_bt) {
-    int size_in_bytes = allocation_size(total_args_passed, sig_bt);
+    int size_in_bytes = compute_size(total_args_passed, sig_bt);
     return new (size_in_bytes) AdapterFingerPrint(total_args_passed, sig_bt);
   }
 
@@ -2291,16 +2298,12 @@ class AdapterFingerPrint : public MetaspaceObj {
   }
 
   int value(int index) {
-    return _value[index];
+    int* data = data_pointer();
+    return data[index];
   }
 
   int length() {
-    if (_length < 0) return -_length;
     return _length;
-  }
-
-  bool is_compact() {
-    return _length <= _compact_int_count;
   }
 
   unsigned int compute_hash() {
@@ -2405,7 +2408,7 @@ class AdapterFingerPrint : public MetaspaceObj {
       return false;
     } else {
       for (int i = 0; i < _length; i++) {
-        if (_value[i] != other->_value[i]) {
+        if (value(i) != other->value(i)) {
           return false;
         }
       }
@@ -2415,7 +2418,7 @@ class AdapterFingerPrint : public MetaspaceObj {
 
   // methods required by virtue of being a MetaspaceObj
   void metaspace_pointers_do(MetaspaceClosure* it) { return; /* nothing to do here */ }
-  int size() const { return (int)heap_word_size(sizeof(AdapterFingerPrint) + (_length > _compact_int_count ? (_length - _compact_int_count) * sizeof(int) : 0)); }
+  int size() const { return (int)heap_word_size(sizeof(AdapterFingerPrint) + (_length * sizeof(int))); }
   MetaspaceObj::Type type() const { return AdapterFingerPrintType; }
 
   static bool equals(AdapterFingerPrint* const& fp1, AdapterFingerPrint* const& fp2) {
@@ -2459,14 +2462,11 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(int total_args_passed, BasicT
   if (!AOTCodeCache::is_dumping_adapter()) {
     // Search archived table first. It is read-only table so can be searched without lock
     entry = _aot_adapter_handler_table.lookup(fp, fp->compute_hash(), 0 /* unused */);
-    if (entry != nullptr) {
 #ifndef PRODUCT
-      if (fp->is_compact()) {
-        _compact++;
-      }
+    if (entry != nullptr) {
       _archived_hits++;
-#endif
     }
+#endif
   }
 #endif // INCLUDE_CDS
   if (entry == nullptr) {
@@ -2478,7 +2478,6 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(int total_args_passed, BasicT
              entry->fingerprint()->as_basic_args_string(), entry->fingerprint()->as_string(), entry->fingerprint()->compute_hash(),
              fp->as_basic_args_string(), fp->as_string(), fp->compute_hash());
   #ifndef PRODUCT
-      if (fp->is_compact()) _compact++;
       _runtime_hits++;
   #endif
     }
@@ -2497,8 +2496,8 @@ static void print_table_statistics() {
   tty->print_cr("AdapterHandlerTable (table_size=%d, entries=%d)",
                 _adapter_handler_table->table_size(), _adapter_handler_table->number_of_entries());
   int total_hits = _archived_hits + _runtime_hits;
-  tty->print_cr("AdapterHandlerTable: lookups %d equals %d hits %d (archived=%d+runtime=%d) compact %d",
-                _lookups, _equals, total_hits, _archived_hits, _runtime_hits, _compact);
+  tty->print_cr("AdapterHandlerTable: lookups %d equals %d hits %d (archived=%d+runtime=%d)",
+                _lookups, _equals, total_hits, _archived_hits, _runtime_hits);
 }
 #endif
 
