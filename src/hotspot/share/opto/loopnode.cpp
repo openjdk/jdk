@@ -1268,7 +1268,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
   } else if (bt == T_LONG) {
     // We're turning a long counted loop into a regular loop that will be converted into an int count loop. That loop
     // won't need loop limit checks (iters_limit guarantees that). Add a cast to make sure that, whatever transformation
-    // happens by the time the counted loop is created, c2 knows enough about the loop's limit that it doesn't try to
+    // happens by the time the counted loop is created, C2 knows enough about the loop's limit that it doesn't try to
     // add loop limit checks.
     const Predicates predicates(entry_control);
     const TypeLong* new_limit_t = new_limit->Value(&_igvn)->is_long();
