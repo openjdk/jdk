@@ -26,7 +26,6 @@ import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.containers.docker.ContainerRuntimeVersionTestUtils;
 import jdk.test.lib.containers.docker.DockerRunOptions;
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.internal.platform.Metrics;
 
 import java.util.ArrayList;
