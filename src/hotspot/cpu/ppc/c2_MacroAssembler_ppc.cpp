@@ -639,6 +639,15 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
       case Op_MulReductionVI:
         vmuluwm(dst, a , b);
         break;
+      case Op_AndReductionV:
+        vand(dst, a, b);
+        break;
+      case Op_OrReductionV:
+        vor(dst, a, b);
+        break;
+      case Op_XorReductionV:
+        vxor(dst, a, b);
+        break;
       case Op_MinReductionV:
         vminsw(dst, a, b);
         break;
@@ -656,6 +665,15 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
         break;
       case Op_MulReductionVI:
         mullw(dst, src, dst);
+        break;
+      case Op_AndReductionV:
+        andr(dst, src, dst);
+        break;
+      case Op_OrReductionV:
+        orr(dst, src, dst);
+        break;
+      case Op_XorReductionV:
+        xorr(dst, src, dst);
         break;
       case Op_MinReductionV:
         cmpw(CR0, src, dst);

@@ -14280,11 +14280,13 @@ instruct vmin_reg(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-// TODO: match other ops in correct function
-instruct reductionI_add_mul(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX tmp1, vecX tmp2) %{
+instruct reductionI_arith_logic(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX tmp1, vecX tmp2) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (AddReductionVI srcInt srcVec));
   match(Set dst (MulReductionVI srcInt srcVec));
+  match(Set dst (AndReductionV  srcInt srcVec));
+  match(Set dst ( OrReductionV  srcInt srcVec));
+  match(Set dst (XorReductionV  srcInt srcVec));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
   ins_cost(DEFAULT_COST * 6);
   format %{ "REDUCEI_ADDMUL // $dst,$srcInt,$srcVec,$tmp1,$tmp2\t// reduce vector int" %}
