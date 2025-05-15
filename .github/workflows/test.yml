@@ -174,23 +174,14 @@ jobs:
             echo "static-lib-test-problemlist-path=`pwd`/test/lib-test/ProblemList-StaticJdk.txt" >> $GITHUB_OUTPUT
           fi
 
-      - name: 'Run tests on static JDK'
-        id: run-tests-static
-        if: ${{ inputs.static-suffix == '-static' }}
-        run: >
-          make test-prebuilt
-          TEST='${{ matrix.test-suite }}'
-          BOOT_JDK=${{ steps.bootjdk.outputs.path }}
-          JDK_UNDER_TEST=${{ steps.bundles.outputs.static-jdk-path }}
-          JDK_FOR_COMPILE=${{ steps.bundles.outputs.jdk-path }}
-          JT_HOME=${{ steps.jtreg.outputs.path }}
-          JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
-          SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
-          TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
-          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;EXTRA_PROBLEM_LISTS=${{ steps.path.outputs.static-hotspot-problemlist-path }}%20${{ steps.path.outputs.static-jdk-problemlist-path }}%20${{ steps.path.outputs.static-langtools-problemlist-path }}%20${{ steps.path.outputs.static-lib-test-problemlist-path }}'
-          && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
-        env:
-          PATH: ${{ steps.path.outputs.value }}
+      - name: 'Set Extra Options'
+        id: extra-options
+        run: |
+          if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
+            echo "test-jdk=JDK_UNDER_TEST=${{ steps.bundles.outputs.static-jdk-path }}" >> $GITHUB_OUTPUT
+            echo "compile-jdk=JDK_FOR_COMPILE=${{ steps.bundles.outputs.jdk-path }}" >> $GITHUB_OUTPUT
+            echo "extra-problem-lists=EXTRA_PROBLEM_LISTS=${{ steps.path.outputs.static-hotspot-problemlist-path }}%20${{ steps.path.outputs.static-jdk-problemlist-path }}%20${{ steps.path.outputs.static-langtools-problemlist-path }}%20${{ steps.path.outputs.static-lib-test-problemlist-path }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: 'Run tests'
         id: run-tests
@@ -203,7 +194,9 @@ jobs:
           JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
           SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
           TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
-          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful'
+          ${{ steps.extra-options.test-jdk }}
+          ${{ steps.extra-options.compile-jdk }}
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;${{ steps.extra-options.extra-problem-lists }}'
           && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}
@@ -253,9 +246,3 @@ jobs:
         with:
           script: core.setFailed('${{ steps.run-tests.outputs.error-message }}')
         if: steps.run-tests.outputs.failure == 'true'
-
-      - name: 'Notify about test failures on static JDK'
-        uses: actions/github-script@v7
-        with:
-          script: core.setFailed('${{ steps.run-tests-static.outputs.error-message }}')
-        if: steps.run-tests-static.outputs.failure == 'true'
