@@ -70,18 +70,18 @@ class Renderer {
         return renderer;
     }
 
-    static String render(FilledTemplate filledTemplate) {
-        return render(filledTemplate, Template.DEFAULT_FUEL);
+    static String render(TemplateToken templateToken) {
+        return render(templateToken, Template.DEFAULT_FUEL);
     }
 
-    static String render(FilledTemplate filledTemplate, float fuel) {
+    static String render(TemplateToken templateToken, float fuel) {
         // Check nobody else is using the Renderer.
         if (renderer != null) {
             throw new RendererException("Nested render not allowed. Please only use 'fillWith' inside Templates, and call 'render' only once at the end.");
         }
         try {
             renderer = new Renderer(fuel);
-            renderer.renderFilledTemplate(filledTemplate);
+            renderer.renderTemplateToken(templateToken);
             renderer.checkFrameConsistencyAfterRendering();
             return renderer.collectCode();
         } finally {
@@ -186,12 +186,12 @@ class Renderer {
         }
     }
 
-    private void renderFilledTemplate(FilledTemplate filledTemplate) {
+    private void renderTemplateToken(TemplateToken templateToken) {
         TemplateFrame templateFrame = TemplateFrame.make(currentTemplateFrame, nextTemplateFrameId++);
         currentTemplateFrame = templateFrame;
 
-        filledTemplate.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
-        TemplateBody body = filledTemplate.instantiate();
+        templateToken.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
+        TemplateBody body = templateToken.instantiate();
         renderTokenList(body.tokens());
 
         if (currentTemplateFrame != templateFrame) {
@@ -230,32 +230,32 @@ class Renderer {
                 currentCodeFrame.addCode(hookCodeFrame.getCode());
                 currentCodeFrame.addCode(innerCodeFrame.getCode());
             }
-            case HookInsertToken(Hook hook, FilledTemplate t) -> {
+            case HookInsertToken(Hook hook, TemplateToken t) -> {
                 // Switch to hook CodeFrame.
                 CodeFrame callerCodeFrame = currentCodeFrame;
                 CodeFrame hookCodeFrame = codeFrameForHook(hook);
 
                 // Use a transparent nested CodeFrame. We need a CodeFrame so that the code generated
-                // by the FilledTemplate can be collected, and hook insertions from it can still
-                // be made to the hookCodeFrame before the code from the FilledTemplate is added to
+                // by the TemplateToken can be collected, and hook insertions from it can still
+                // be made to the hookCodeFrame before the code from the TemplateToken is added to
                 // the hookCodeFrame.
                 // But the CodeFrame must be transparent, so that its name definitions go out to
-                // the hookCodeFrame, and are not limited to the CodeFrame for the FilledTemplate.
+                // the hookCodeFrame, and are not limited to the CodeFrame for the TemplateToken.
                 currentCodeFrame = CodeFrame.makeTransparentForNames(hookCodeFrame);
 
-                renderFilledTemplate(t);
+                renderTemplateToken(t);
 
                 hookCodeFrame.addCode(currentCodeFrame.getCode());
 
                 // Switch back from hook CodeFrame to caller CodeFrame.
                 currentCodeFrame = callerCodeFrame;
             }
-            case FilledTemplate t -> {
+            case TemplateToken t -> {
                 // Use a nested CodeFrame.
                 CodeFrame callerCodeFrame = currentCodeFrame;
                 currentCodeFrame = CodeFrame.make(currentCodeFrame);
 
-                renderFilledTemplate(t);
+                renderTemplateToken(t);
 
                 callerCodeFrame.addCode(currentCodeFrame.getCode());
                 currentCodeFrame = callerCodeFrame;

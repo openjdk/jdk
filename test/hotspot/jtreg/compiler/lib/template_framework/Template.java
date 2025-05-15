@@ -108,10 +108,10 @@ import java.util.List;
  *
  *     """,
  *     // Call the testTemplate for each type and operator, generating a
- *     // list of lists of FilledTemplate:
+ *     // list of lists of (Template) Tokens:
  *     types.stream().map((Type type) ->
  *         type.operators().stream().map((String operator) ->
- *             testTemplate.fillWith(type.name(), operator, type.generator())).toList()
+ *             testTemplate.asToken(type.name(), operator, type.generator())).toList()
  *     ).toList(),
  *     """
  *     }
@@ -134,27 +134,21 @@ import java.util.List;
  * );
  *
  * // Use the template with one argument, and render it to a String.
- * return classTemplate.fillWith(types).render();
+ * return classTemplate.render(types);
  * }
  *
  * <p>
  * <strong>Details:</strong>
  * <p>
  * A Template can have zero or more arguments. A template can be created with {@code make} methods like
- * {@link Template#make(String, Function)}. At first, the Template is an {@link UnfilledTemplate}, i.e.
- * a Template where the arguments are not yet filled. For each number of arguments there is an implementation
- * (e.g. {@code UnfilledTemplate.TwoArgs} for two arguments). This allows the use of Generics for the
+ * {@link Template#make(String, Function)}. For each number of arguments there is an implementation
+ * (e.g. {@code Template.TwoArgs} for two arguments). This allows the use of Generics for the
  * Template argument types, i.e. the Template arguments can be type checked.
  *
  * <p>
- * Given an {@link UnfilledTemplate}, one must apply the required number of arguments, i.e. fill
- * the Template, to arrive at a {@link FilledTemplate}. Note: {@link Template#make(Supplier)},
- * i.e. making a Template with zero arguments directly returns a {@link FilledTemplate},
- * because there are no arguments to be filled.
- *
- * <p>
- * The {@link FilledTemplate} can then be used to render to String, or for nesting inside other
- * Templates.
+ * A {@link Template} can be rendered to a String (e.g. {@link Template.ZeroArgs#render()}).
+ * Alternatively, we can generate a {@link Token} (e.g. {@link Template.ZeroArgs#asToken()}),
+ * and use the {@link Token} inside another {@link Template#body}.
  *
  * <p>
  * Ideally, we would have used String Templates to inject these Template arguments into the strings.
@@ -171,15 +165,10 @@ import java.util.List;
  * Templates, which allows sharing of these identifier names between Templates.
  *
  * <p>
- * To render a Template to a {@link String}, one first has to apply the arguments (e.g. with
- * {@link UnfilledTemplate.TwoArgs#fillWith}) and then the resulting {@link FilledTemplate} can either be used as a
- * {@link Token} inside another {@link Template#body}, or rendered to a {@link String} with {@link FilledTemplate#render}.
- *
- * <p>
- * A {@link FilledTemplate} can be used directly as a {@link Token} inside the {@link Template#body} to
- * nest the Templates. Alternatively, code can be {@link Hook#insert}ed to where a {@link Hook}
- * was {@link Hook#set} earlier (in some outer scope of the code). For example, while generating code in
- * a method, one can reach out to the scope of the class, and insert a new field, or define a utility method.
+ * A {@link TemplateToken} can not just be used in {@link Template#body}, but but it can also be
+ * {@link Hook#insert}ed to where a {@link Hook} was {@link Hook#set} earlier (in some outer scope of the code).
+ * For example, while generating code in a method, one can reach out to the scope of the class, and insert a
+ * new field, or define a utility method.
  *
  * <p>
  * A {@link TemplateBinding} allows the recursive use of Templates. With the indirection of such a binding,
@@ -201,10 +190,226 @@ import java.util.List;
  * More examples for these functionalities can be found in {@link TestTutorial}, {@link TestSimple}, and
  * {@link TestAdvanced}.
  */
-public interface Template {
+public sealed interface Template permits Template.ZeroArgs,
+                                         Template.OneArgs,
+                                         Template.TwoArgs,
+                                         Template.ThreeArgs {
 
     /**
-     * Creates a {@link FilledTemplate} with no arguments.
+     * A {@link Template} with no arguments.
+     *
+     * @param function The {@link Supplier} that creates the {@link TemplateBody}.
+     */
+    public record ZeroArgs(Supplier<TemplateBody> function) implements Template {
+        TemplateBody instantiate() {
+            return function.get();
+        }
+
+        /**
+         * Creates a {@link TemplateToken} which can be used as a {@link Token} inside
+         * a {@link Template} for nested code generation.
+         *
+         * @return The template all (zero) arguments applied.
+         */
+        public TemplateToken asToken() {
+            return new TemplateToken.ZeroArgs(this);
+        }
+
+        /**
+         * Renders the {@link Template} to String.
+         *
+         * @return The String, resulting from rendering the {@link Template}.
+         */
+        public String render() {
+            return new TemplateToken.ZeroArgs(this).render();
+        }
+
+        /**
+         * Renders the {@link Template} to String.
+         *
+         * @param fuel The amount of fuel provided for recursive Template instantiations.
+         * @return The String, resulting from rendering the {@link Template}.
+         */
+        public String render(float fuel) {
+            return new TemplateToken.ZeroArgs(this).render(fuel);
+        }
+    }
+
+    /**
+     * A {@link Template} with one argument.
+     *
+     * @param arg0Name The name of the (first) argument, used for hashtag replacements in the {@link Template}.
+     * @param <A> The type of the (first) argument.
+     * @param function The {@link Function} that creates the {@link TemplateBody} given the template argument.
+     */
+    public record OneArgs<A>(String arg0Name, Function<A, TemplateBody> function) implements Template {
+        TemplateBody instantiate(A a) {
+            return function.apply(a);
+        }
+
+        /**
+         * Creates a {@link TemplateToken} which can be used as a {@link Token} inside
+         * a {@link Template} for nested code generation.
+         *
+         * @param a The value for the (first) argument.
+         * @return The template its argument applied.
+         */
+        public TemplateToken asToken(A a) {
+            return new TemplateToken.OneArgs<>(this, a);
+        }
+
+        /**
+         * Renders the {@link Template} to String.
+         *
+         * @param a The value for the first argument.
+         * @return The String, resulting from rendering the {@link Template}.
+         */
+        public String render(A a) {
+            return new TemplateToken.OneArgs(this, a).render();
+        }
+
+        /**
+         * Renders the {@link Template} to String.
+         *
+         * @param a The value for the first argument.
+         * @param fuel The amount of fuel provided for recursive Template instantiations.
+         * @return The String, resulting from rendering the {@link Template}.
+         */
+        public String render(float fuel, A a) {
+            return new TemplateToken.OneArgs(this, a).render(fuel);
+        }
+    }
+
+    /**
+     * A {@link Template} with two arguments.
+     *
+     * @param arg0Name The name of the first argument, used for hashtag replacements in the {@link Template}.
+     * @param arg1Name The name of the second argument, used for hashtag replacements in the {@link Template}.
+     * @param <A> The type of the first argument.
+     * @param <B> The type of the second argument.
+     * @param function The {@link BiFunction} that creates the {@link TemplateBody} given the template arguments.
+     */
+    public record TwoArgs<A, B>(String arg0Name, String arg1Name, BiFunction<A, B, TemplateBody> function) implements Template {
+        TemplateBody instantiate(A a, B b) {
+            return function.apply(a, b);
+        }
+
+        /**
+         * Creates a {@link TemplateToken} which can be used as a {@link Token} inside
+         * a {@link Template} for nested code generation.
+         *
+         * @param a The value for the first argument.
+         * @param b The value for the second argument.
+         * @return The template all (two) arguments applied.
+         */
+        public TemplateToken asToken(A a, B b) {
+            return new TemplateToken.TwoArgs<>(this, a, b);
+        }
+
+        /**
+         * Renders the {@link Template} to String.
+         *
+         * @param a The value for the first argument.
+         * @param b The value for the second argument.
+         * @return The String, resulting from rendering the {@link Template}.
+         */
+        public String render(A a, B b) {
+            return new TemplateToken.TwoArgs(this, a, b).render();
+        }
+
+        /**
+         * Renders the {@link Template} to String.
+         *
+         * @param a The value for the first argument.
+         * @param b The value for the second argument.
+         * @param fuel The amount of fuel provided for recursive Template instantiations.
+         * @return The String, resulting from rendering the {@link Template}.
+         */
+        public String render(float fuel, A a, B b) {
+            return new TemplateToken.TwoArgs(this, a, b).render(fuel);
+        }
+    }
+
+    /**
+     * Interface for function with three arguments.
+     *
+     * @param <T> Type of the first argument.
+     * @param <U> Type of the second argument.
+     * @param <V> Type of the third argument.
+     * @param <R> Type of the return value.
+     */
+    @FunctionalInterface
+    public interface TriFunction<T, U, V, R> {
+
+        /**
+         * Function definition for the three argument functions.
+         *
+         * @param t The first argument.
+         * @param u The second argument.
+         * @param v The third argument.
+         * @return Return value of the three argument function.
+         */
+        R apply(T t, U u, V v);
+    }
+
+    /**
+     * A {@link Template} with three arguments.
+     *
+     * @param arg0Name The name of the first argument, used for hashtag replacements in the {@link Template}.
+     * @param arg1Name The name of the second argument, used for hashtag replacements in the {@link Template}.
+     * @param arg2Name The name of the third argument, used for hashtag replacements in the {@link Template}.
+     * @param <A> The type of the first argument.
+     * @param <B> The type of the second argument.
+     * @param <C> The type of the third argument.
+     * @param function The function with three arguments that creates the {@link TemplateBody} given the template arguments.
+     */
+    public record ThreeArgs<A, B, C>(String arg0Name, String arg1Name, String arg2Name, TriFunction<A, B, C, TemplateBody> function) implements Template {
+        TemplateBody instantiate(A a, B b, C c) {
+            return function.apply(a, b, c);
+        }
+
+        /**
+         * Creates a {@link TemplateToken} which can be used as a {@link Token} inside
+         * a {@link Template} for nested code generation.
+         *
+         * @param a The value for the first argument.
+         * @param b The value for the second argument.
+         * @param c The value for the third argument.
+         * @return The template all (three) arguments applied.
+         */
+        public TemplateToken asToken(A a, B b, C c) {
+            return new TemplateToken.ThreeArgs<>(this, a, b, c);
+        }
+
+        /**
+         * Renders the {@link Template} to String.
+         *
+         * @param a The value for the first argument.
+         * @param b The value for the second argument.
+         * @param c The value for the third argument.
+         * @return The String, resulting from rendering the {@link Template}.
+         */
+        public String render(A a, B b, C c) {
+            return new TemplateToken.ThreeArgs(this, a, b, c).render();
+        }
+
+        /**
+         * Renders the {@link Template} to String.
+         *
+         * @param a The value for the first argument.
+         * @param b The value for the second argument.
+         * @param c The value for the third argument.
+         * @param fuel The amount of fuel provided for recursive Template instantiations.
+         * @return The String, resulting from rendering the {@link Template}.
+         */
+        public String render(float fuel, A a, B b, C c) {
+            return new TemplateToken.ThreeArgs(this, a, b, c).render(fuel);
+        }
+    }
+
+
+    /**
+     * Creates a {@link Template} with no arguments.
      * See {@link #body} for more details about how to construct a Template with {@link Token}s.
      *
      * <p>
@@ -218,14 +423,14 @@ public interface Template {
      * }
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
-     * @return A {@link FilledTemplate} with zero arguments.
+     * @return A {@link Template} with zero arguments.
      */
-    static FilledTemplate.ZeroArgs make(Supplier<TemplateBody> body) {
-        return new UnfilledTemplate.ZeroArgs(body).fillWithNothing();
+    static Template.ZeroArgs make(Supplier<TemplateBody> body) {
+        return new Template.ZeroArgs(body);
     }
 
     /**
-     * Creates an {@link UnfilledTemplate} with one argument.
+     * Creates a {@link Template} with one argument.
      * See {@link #body} for more details about how to construct a Template with {@link Token}s.
      *
      * <p>
@@ -245,14 +450,14 @@ public interface Template {
      * @param body The {@link TemplateBody} created by {@link Template#body}.
      * @param <A> Type of the (first) argument.
      * @param arg0Name The name of the (first) argument for hashtag replacement.
-     * @return An {@link UnfilledTemplate} with one argument.
+     * @return An {@link Template} with one argument.
      */
-    static <A> UnfilledTemplate.OneArgs<A> make(String arg0Name, Function<A, TemplateBody> body) {
-        return new UnfilledTemplate.OneArgs<>(arg0Name, body);
+    static <A> Template.OneArgs<A> make(String arg0Name, Function<A, TemplateBody> body) {
+        return new Template.OneArgs<>(arg0Name, body);
     }
 
     /**
-     * Creates an {@link UnfilledTemplate} with two arguments.
+     * Creates a {@link Template} with two arguments.
      * See {@link #body} for more details about how to construct a Template with {@link Token}s.
      *
      * <p>
@@ -274,14 +479,14 @@ public interface Template {
      * @param arg0Name The name of the first argument for hashtag replacement.
      * @param <B> Type of the second argument.
      * @param arg1Name The name of the second argument for hashtag replacement.
-     * @return An {@link UnfilledTemplate} with two arguments.
+     * @return A {@link Template} with two arguments.
      */
-    static <A, B> UnfilledTemplate.TwoArgs<A, B> make(String arg0Name, String arg1Name, BiFunction<A, B, TemplateBody> body) {
-        return new UnfilledTemplate.TwoArgs<>(arg0Name, arg1Name, body);
+    static <A, B> Template.TwoArgs<A, B> make(String arg0Name, String arg1Name, BiFunction<A, B, TemplateBody> body) {
+        return new Template.TwoArgs<>(arg0Name, arg1Name, body);
     }
 
     /**
-     * Creates an {@link UnfilledTemplate} with three arguments.
+     * Creates a {@link Template} with three arguments.
      * See {@link #body} for more details about how to construct a Template with {@link Token}s.
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
@@ -291,10 +496,10 @@ public interface Template {
      * @param arg1Name The name of the second argument for hashtag replacement.
      * @param <C> Type of the third argument.
      * @param arg2Name The name of the third argument for hashtag replacement.
-     * @return An {@link UnfilledTemplate} with three arguments.
+     * @return A {@link Template} with three arguments.
      */
-    static <A, B, C> UnfilledTemplate.ThreeArgs<A, B, C> make(String arg0Name, String arg1Name, String arg2Name, UnfilledTemplate.TriFunction<A, B, C, TemplateBody> body) {
-        return new UnfilledTemplate.ThreeArgs<>(arg0Name, arg1Name, arg2Name, body);
+    static <A, B, C> Template.ThreeArgs<A, B, C> make(String arg0Name, String arg1Name, String arg2Name, Template.TriFunction<A, B, C, TemplateBody> body) {
+        return new Template.ThreeArgs<>(arg0Name, arg1Name, arg2Name, body);
     }
 
     /**
@@ -309,7 +514,7 @@ public interface Template {
      *     """,
      *     "normal string ", Integer.valueOf(3), 3, Float.valueOf(1.5f), 1.5f,
      *     List.of("abc", "def"),
-     *     nestedTemplate.fillWith(42)
+     *     nestedTemplate.asToken(42)
      * ));
      * }
      *
@@ -336,7 +541,7 @@ public interface Template {
      *     """
      *     int $var = 42;
      *     """,
-     *     otherTemplate.fillWith($("var"))
+     *     otherTemplate.asToken($("var"))
      * ));
      * }
      *
@@ -396,7 +601,7 @@ public interface Template {
     }
 
     /**
-     * Default amount of fuel for {@link FilledTemplate#render}. It guides the nesting depth of Templates.
+     * Default amount of fuel for Template rendering. It guides the nesting depth of Templates.
      */
     public final static float DEFAULT_FUEL = 100.0f;
 
@@ -415,20 +620,20 @@ public interface Template {
      * <p>
      * Example of a recursive Template, which checks the remaining {@link #fuel} at every level,
      * and terminates if it reaches zero. It also demonstrates the use of {@link TemplateBinding} for
-     * the recursive use of Templates. We {@link FilledTemplate#render} with {@code 30} total fuel, and spend {@code 5} fuel at each recursion level.
+     * the recursive use of Templates. We {@link Template.OneArgs#render} with {@code 30} total fuel, and spend {@code 5} fuel at each recursion level.
      * {@snippet lang=java :
-     * var binding = new TemplateBinding<UnfilledTemplate.OneArgs<Integer>>();
+     * var binding = new TemplateBinding<Template.OneArgs<Integer>>();
      * var template = Template.make("depth", (Integer depth) -> body(
      *     setFuelCost(5.0f),
      *     let("fuel", fuel()),
      *     """
      *     System.out.println("Currently at depth #depth with fuel #fuel");
      *     """,
-     *     (fuel() > 0) ? binding.get().fillWith(depth + 1)
+     *     (fuel() > 0) ? binding.get().asToken(depth + 1)
      *                    "// terminate\n"
      * ));
      * binding.bind(template);
-     * String code = template.fillWith(0).render(30.0f);
+     * String code = template.render(30.0f, 0);
      * }
      *
      * @return The amount of fuel left for nested Template use.

@@ -34,11 +34,11 @@ import java.util.List;
  * {@link List}s.
  */
 sealed interface Token permits StringToken,
-                               FilledTemplate,
-                               FilledTemplate.ZeroArgs,
-                               FilledTemplate.OneArgs,
-                               FilledTemplate.TwoArgs,
-                               FilledTemplate.ThreeArgs,
+                               TemplateToken,
+                               TemplateToken.ZeroArgs,
+                               TemplateToken.OneArgs,
+                               TemplateToken.TwoArgs,
+                               TemplateToken.ThreeArgs,
                                HookSetToken,
                                HookInsertToken,
                                AddNameToken,

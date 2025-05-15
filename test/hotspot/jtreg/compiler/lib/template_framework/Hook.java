@@ -80,14 +80,14 @@ public record Hook(String name) {
     }
 
     /**
-     * Inserts a {@link FilledTemplate} to the innermost location where this {@link Hook} was {@link #set}.
+     * Inserts a {@link TemplateToken} to the innermost location where this {@link Hook} was {@link #set}.
      * This could be in the same Template, or one nested further out.
      *
-     * @param filledTemplate The Template with applied arguments to be inserted at the {@link Hook}.
+     * @param templateToken The Template with applied arguments to be inserted at the {@link Hook}.
      * @return The {@link Token} which when used inside a {@link Template#body} performs the code insertion into the {@link Hook}.
      */
-    public Token insert(FilledTemplate filledTemplate) {
-        return new HookInsertToken(this, filledTemplate);
+    public Token insert(TemplateToken templateToken) {
+        return new HookInsertToken(this, templateToken);
     }
 
     /**

@@ -39,8 +39,6 @@ import java.util.List;
 import java.util.HashSet;
 
 import compiler.lib.template_framework.Template;
-import compiler.lib.template_framework.FilledTemplate;
-import compiler.lib.template_framework.UnfilledTemplate;
 import compiler.lib.template_framework.Name;
 import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
@@ -161,85 +159,85 @@ public class TestTemplate {
     public static void testWithOneArgument() {
         // Capture String argument via String name.
         var template1 = Template.make("a", (String a) -> body("start #a end"));
-        checkEQ(template1.fillWith("x").render(), "start x end");
-        checkEQ(template1.fillWith("a").render(), "start a end");
-        checkEQ(template1.fillWith("" ).render(), "start  end");
+        checkEQ(template1.render("x"), "start x end");
+        checkEQ(template1.render("a"), "start a end");
+        checkEQ(template1.render("" ), "start  end");
 
         // Capture String argument via typed lambda argument.
         var template2 = Template.make("a", (String a) -> body("start ", a, " end"));
-        checkEQ(template2.fillWith("x").render(), "start x end");
-        checkEQ(template2.fillWith("a").render(), "start a end");
-        checkEQ(template2.fillWith("" ).render(), "start  end");
+        checkEQ(template2.render("x"), "start x end");
+        checkEQ(template2.render("a"), "start a end");
+        checkEQ(template2.render("" ), "start  end");
 
         // Capture Integer argument via String name.
         var template3 = Template.make("a", (Integer a) -> body("start #a end"));
-        checkEQ(template3.fillWith(0  ).render(), "start 0 end");
-        checkEQ(template3.fillWith(22 ).render(), "start 22 end");
-        checkEQ(template3.fillWith(444).render(), "start 444 end");
+        checkEQ(template3.render(0  ), "start 0 end");
+        checkEQ(template3.render(22 ), "start 22 end");
+        checkEQ(template3.render(444), "start 444 end");
 
         // Capture Integer argument via templated lambda argument.
         var template4 = Template.make("a", (Integer a) -> body("start ", a, " end"));
-        checkEQ(template4.fillWith(0  ).render(), "start 0 end");
-        checkEQ(template4.fillWith(22 ).render(), "start 22 end");
-        checkEQ(template4.fillWith(444).render(), "start 444 end");
+        checkEQ(template4.render(0  ), "start 0 end");
+        checkEQ(template4.render(22 ), "start 22 end");
+        checkEQ(template4.render(444), "start 444 end");
 
         // Test Strings with backslashes:
         var template5 = Template.make("a", (String a) -> body("start #a " + a + " end"));
-        checkEQ(template5.fillWith("/").render(), "start / / end");
-        checkEQ(template5.fillWith("\\").render(), "start \\ \\ end");
-        checkEQ(template5.fillWith("\\\\").render(), "start \\\\ \\\\ end");
+        checkEQ(template5.render("/"), "start / / end");
+        checkEQ(template5.render("\\"), "start \\ \\ end");
+        checkEQ(template5.render("\\\\"), "start \\\\ \\\\ end");
     }
 
     public static void testWithTwoArguments() {
         // Capture 2 String arguments via String names.
         var template1 = Template.make("a1", "a2", (String a1, String a2) -> body("start #a1 #a2 end"));
-        checkEQ(template1.fillWith("x", "y").render(), "start x y end");
-        checkEQ(template1.fillWith("a", "b").render(), "start a b end");
-        checkEQ(template1.fillWith("",  "" ).render(), "start   end");
+        checkEQ(template1.render("x", "y"), "start x y end");
+        checkEQ(template1.render("a", "b"), "start a b end");
+        checkEQ(template1.render("",  "" ), "start   end");
 
         // Capture 2 String arguments via typed lambda arguments.
         var template2 = Template.make("a1", "a2", (String a1, String a2) -> body("start ", a1, " ", a2, " end"));
-        checkEQ(template2.fillWith("x", "y").render(), "start x y end");
-        checkEQ(template2.fillWith("a", "b").render(), "start a b end");
-        checkEQ(template2.fillWith("",  "" ).render(), "start   end");
+        checkEQ(template2.render("x", "y"), "start x y end");
+        checkEQ(template2.render("a", "b"), "start a b end");
+        checkEQ(template2.render("",  "" ), "start   end");
 
         // Capture 2 Integer arguments via String names.
         var template3 = Template.make("a1", "a2", (Integer a1, Integer a2) -> body("start #a1 #a2 end"));
-        checkEQ(template3.fillWith(0,   1  ).render(), "start 0 1 end");
-        checkEQ(template3.fillWith(22,  33 ).render(), "start 22 33 end");
-        checkEQ(template3.fillWith(444, 555).render(), "start 444 555 end");
+        checkEQ(template3.render(0,   1  ), "start 0 1 end");
+        checkEQ(template3.render(22,  33 ), "start 22 33 end");
+        checkEQ(template3.render(444, 555), "start 444 555 end");
 
         // Capture 2 Integer arguments via templated lambda arguments.
         var template4 = Template.make("a1", "a2", (Integer a1, Integer a2) -> body("start ", a1, " ", a2, " end"));
-        checkEQ(template4.fillWith(0,   1  ).render(), "start 0 1 end");
-        checkEQ(template4.fillWith(22,  33 ).render(), "start 22 33 end");
-        checkEQ(template4.fillWith(444, 555).render(), "start 444 555 end");
+        checkEQ(template4.render(0,   1  ), "start 0 1 end");
+        checkEQ(template4.render(22,  33 ), "start 22 33 end");
+        checkEQ(template4.render(444, 555), "start 444 555 end");
     }
 
     public static void testWithThreeArguments() {
         // Capture 3 String arguments via String names.
         var template1 = Template.make("a1", "a2", "a3", (String a1, String a2, String a3) -> body("start #a1 #a2 #a3 end"));
-        checkEQ(template1.fillWith("x", "y", "z").render(), "start x y z end");
-        checkEQ(template1.fillWith("a", "b", "c").render(), "start a b c end");
-        checkEQ(template1.fillWith("",  "", "" ).render(),  "start    end");
+        checkEQ(template1.render("x", "y", "z"), "start x y z end");
+        checkEQ(template1.render("a", "b", "c"), "start a b c end");
+        checkEQ(template1.render("",  "", "" ),  "start    end");
 
         // Capture 3 String arguments via typed lambda arguments.
         var template2 = Template.make("a1", "a2", "a3", (String a1, String a2, String a3) -> body("start ", a1, " ", a2, " ", a3, " end"));
-        checkEQ(template1.fillWith("x", "y", "z").render(), "start x y z end");
-        checkEQ(template1.fillWith("a", "b", "c").render(), "start a b c end");
-        checkEQ(template1.fillWith("",  "", "" ).render(),  "start    end");
+        checkEQ(template1.render("x", "y", "z"), "start x y z end");
+        checkEQ(template1.render("a", "b", "c"), "start a b c end");
+        checkEQ(template1.render("",  "", "" ),  "start    end");
 
         // Capture 3 Integer arguments via String names.
         var template3 = Template.make("a1", "a2", "a3", (Integer a1, Integer a2, Integer a3) -> body("start #a1 #a2 #a3 end"));
-        checkEQ(template3.fillWith(0,   1  , 2  ).render(), "start 0 1 2 end");
-        checkEQ(template3.fillWith(22,  33 , 44 ).render(), "start 22 33 44 end");
-        checkEQ(template3.fillWith(444, 555, 666).render(), "start 444 555 666 end");
+        checkEQ(template3.render(0,   1  , 2  ), "start 0 1 2 end");
+        checkEQ(template3.render(22,  33 , 44 ), "start 22 33 44 end");
+        checkEQ(template3.render(444, 555, 666), "start 444 555 666 end");
 
         // Capture 2 Integer arguments via templated lambda arguments.
         var template4 = Template.make("a1", "a2", "a3", (Integer a1, Integer a2, Integer a3) -> body("start ", a1, " ", a2, " ", a3, " end"));
-        checkEQ(template3.fillWith(0,   1  , 2  ).render(), "start 0 1 2 end");
-        checkEQ(template3.fillWith(22,  33 , 44 ).render(), "start 22 33 44 end");
-        checkEQ(template3.fillWith(444, 555, 666).render(), "start 444 555 666 end");
+        checkEQ(template3.render(0,   1  , 2  ), "start 0 1 2 end");
+        checkEQ(template3.render(22,  33 , 44 ), "start 22 33 44 end");
+        checkEQ(template3.render(444, 555, 666), "start 444 555 666 end");
     }
 
     public static void testNested() {
@@ -251,16 +249,16 @@ public class TestTemplate {
         ));
 
         var template3 = Template.make("a1", "a2", (String a1, String a2) -> body(
-            "Universe ", template1, " {\n",
-                template2.fillWith("up", "down"),
-                template2.fillWith(a1, a2),
+            "Universe ", template1.asToken(), " {\n",
+                template2.asToken("up", "down"),
+                template2.asToken(a1, a2),
             "}\n"
         ));
 
         var template4 = Template.make(() -> body(
-            template3.fillWith("low", "high"),
+            template3.asToken("low", "high"),
             "{\n",
-                template3.fillWith("42", "24"),
+                template3.asToken("42", "24"),
             "}"
         ));
 
@@ -293,7 +291,7 @@ public class TestTemplate {
             "{\n",
             hook1.set(
                 "World\n",
-                hook1.insert(template1)
+                hook1.insert(template1.asToken())
             ),
             "}"
         ));
@@ -313,17 +311,17 @@ public class TestTemplate {
 
         var template0 = Template.make(() -> body("isSet: ", hook1.isSet(), "\n"));
 
-        var template1 = Template.make(() -> body("Hello\n", template0));
+        var template1 = Template.make(() -> body("Hello\n", template0.asToken()));
 
         var template2 = Template.make(() -> body(
             "{\n",
-            template0,
+            template0.asToken(),
             hook1.set(
                 "World\n",
-                template0,
-                hook1.insert(template1)
+                template0.asToken(),
+                hook1.insert(template1.asToken())
             ),
-            template0,
+            template0.asToken(),
             "}"
         ));
 
@@ -352,27 +350,27 @@ public class TestTemplate {
             hook1.set(), // empty
             "zero\n",
             hook1.set(
-                template1.fillWith("one"),
-                template1.fillWith("two"),
-                hook1.insert(template1.fillWith("intoHook1a")),
-                hook1.insert(template1.fillWith("intoHook1b")),
-                template1.fillWith("three"),
+                template1.asToken("one"),
+                template1.asToken("two"),
+                hook1.insert(template1.asToken("intoHook1a")),
+                hook1.insert(template1.asToken("intoHook1b")),
+                template1.asToken("three"),
                 hook1.set(
-                    template1.fillWith("four"),
-                    hook1.insert(template1.fillWith("intoHook1c")),
-                    template1.fillWith("five")
+                    template1.asToken("four"),
+                    hook1.insert(template1.asToken("intoHook1c")),
+                    template1.asToken("five")
                 ),
-                template1.fillWith("six"),
+                template1.asToken("six"),
                 hook1.set(), // empty
-                template1.fillWith("seven"),
-                hook1.insert(template1.fillWith("intoHook1d")),
-                template1.fillWith("eight"),
+                template1.asToken("seven"),
+                hook1.insert(template1.asToken("intoHook1d")),
+                template1.asToken("eight"),
                 hook1.set(
-                    template1.fillWith("nine"),
-                    hook1.insert(template1.fillWith("intoHook1e")),
-                    template1.fillWith("ten")
+                    template1.asToken("nine"),
+                    hook1.insert(template1.asToken("intoHook1e")),
+                    template1.asToken("ten")
                 ),
-                template1.fillWith("eleven")
+                template1.asToken("eleven")
             ),
             "}"
         ));
@@ -410,30 +408,30 @@ public class TestTemplate {
 
         var template2 = Template.make("b", (String b) -> body(
             "{\n",
-            template1.fillWith(b + "A"),
-            hook1.insert(template1.fillWith(b + "B")),
-            hook2.insert(template1.fillWith(b + "C")),
-            template1.fillWith(b + "D"),
+            template1.asToken(b + "A"),
+            hook1.insert(template1.asToken(b + "B")),
+            hook2.insert(template1.asToken(b + "C")),
+            template1.asToken(b + "D"),
             hook1.set(
-                template1.fillWith(b + "E"),
-                hook1.insert(template1.fillWith(b + "F")),
-                hook2.insert(template1.fillWith(b + "G")),
-                template1.fillWith(b + "H"),
+                template1.asToken(b + "E"),
+                hook1.insert(template1.asToken(b + "F")),
+                hook2.insert(template1.asToken(b + "G")),
+                template1.asToken(b + "H"),
                 hook2.set(
-                    template1.fillWith(b + "I"),
-                    hook1.insert(template1.fillWith(b + "J")),
-                    hook2.insert(template1.fillWith(b + "K")),
-                    template1.fillWith(b + "L")
+                    template1.asToken(b + "I"),
+                    hook1.insert(template1.asToken(b + "J")),
+                    hook2.insert(template1.asToken(b + "K")),
+                    template1.asToken(b + "L")
                 ),
-                template1.fillWith(b + "M"),
-                hook1.insert(template1.fillWith(b + "N")),
-                hook2.insert(template1.fillWith(b + "O")),
-                template1.fillWith(b + "O")
+                template1.asToken(b + "M"),
+                hook1.insert(template1.asToken(b + "N")),
+                hook2.insert(template1.asToken(b + "O")),
+                template1.asToken(b + "O")
             ),
-            template1.fillWith(b + "P"),
-            hook1.insert(template1.fillWith(b + "Q")),
-            hook2.insert(template1.fillWith(b + "R")),
-            template1.fillWith(b + "S"),
+            template1.asToken(b + "P"),
+            hook1.insert(template1.asToken(b + "Q")),
+            hook2.insert(template1.asToken(b + "R")),
+            template1.asToken(b + "S"),
             "}\n"
         ));
 
@@ -445,7 +443,7 @@ public class TestTemplate {
                 "base-B\n",
                 hook2.set(
                     "base-C\n",
-                    template2.fillWith("sub-"),
+                    template2.asToken("sub-"),
                     "base-D\n"
                 ),
                 "base-E\n"
@@ -498,15 +496,15 @@ public class TestTemplate {
 
         var template2 = Template.make("b", (String b) -> body(
             "<\n",
-            template1.fillWith(b + "A"),
-            hook1.insert(template1.fillWith(b + "B")), // sub-B is rendered before template2.
-            template1.fillWith(b + "C"),
+            template1.asToken(b + "A"),
+            hook1.insert(template1.asToken(b + "B")), // sub-B is rendered before template2.
+            template1.asToken(b + "C"),
             "inner-hook-start\n",
             hook1.set(
                 "inner-hook-end\n",
-                template1.fillWith(b + "E"),
-                hook1.insert(template1.fillWith(b + "E")),
-                template1.fillWith(b + "F")
+                template1.asToken(b + "E"),
+                hook1.insert(template1.asToken(b + "E")),
+                template1.asToken(b + "F")
             ),
             ">\n"
         ));
@@ -517,7 +515,7 @@ public class TestTemplate {
             "hook-start\n",
             hook1.set(
                 "hook-end\n",
-                hook1.insert(template2.fillWith("sub-")),
+                hook1.insert(template2.asToken("sub-")),
                 "base-C\n"
             ),
             "base-D\n",
@@ -555,7 +553,7 @@ public class TestTemplate {
         var template2 = Template.make("a", (String a) -> body(
             "{\n",
             "y $name #a y\n",
-            template1.fillWith($("name")),
+            template1.asToken($("name")),
             "}\n"
         ));
 
@@ -565,20 +563,20 @@ public class TestTemplate {
             "$name", "\n",
             "z $name z\n",
             "z$name z\n",
-            template1.fillWith("name"),     // does not capture -> literal "$name"
-            template1.fillWith("$name"),    // does not capture -> literal "$name"
-            template1.fillWith($("name")),  // capture replacement name "name_1"
+            template1.asToken("name"),     // does not capture -> literal "$name"
+            template1.asToken("$name"),    // does not capture -> literal "$name"
+            template1.asToken($("name")),  // capture replacement name "name_1"
             hook1.set(
                 "$name\n"
             ),
             "break\n",
             hook1.set(
                 "one\n",
-                hook1.insert(template1.fillWith($("name"))),
+                hook1.insert(template1.asToken($("name"))),
                 "two\n",
-                template1.fillWith($("name")),
+                template1.asToken($("name")),
                 "three\n",
-                hook1.insert(template2.fillWith($("name"))),
+                hook1.insert(template2.asToken($("name"))),
                 "four\n"
             ),
             "}\n"
@@ -633,19 +631,19 @@ public class TestTemplate {
         var template3 = Template.make(() -> body(
             "{\n",
             let("x", "abc"),
-            template1.fillWith("alpha"),
+            template1.asToken("alpha"),
             "break\n",
             "x1 = #x\n",
             hook1.set(
                 "x2 = #x\n", // leaks inside
-                template1.fillWith("beta"),
+                template1.asToken("beta"),
                 let("y", "one"),
                 "y1 = #y\n"
             ),
             "break\n",
             "y2 = #y\n", // leaks outside
             "break\n",
-            template2.fillWith(5),
+            template2.asToken(5),
             "}\n"
         ));
 
@@ -691,20 +689,20 @@ public class TestTemplate {
             "[\n",
             "z #a z\n",
             // Select which template should be used:
-            a > 0 ? template1.fillWith("A_" + a)
-                  : template2.fillWith("B_" + a),
+            a > 0 ? template1.asToken("A_" + a)
+                  : template2.asToken("B_" + a),
             "]\n"
         ));
 
         var template4 = Template.make(() -> body(
             "{\n",
-            template3.fillWith(-1),
+            template3.asToken(-1),
             "break\n",
-            template3.fillWith(0),
+            template3.asToken(0),
             "break\n",
-            template3.fillWith(1),
+            template3.asToken(1),
             "break\n",
-            template3.fillWith(2),
+            template3.asToken(2),
             "}\n"
         ));
 
@@ -746,13 +744,13 @@ public class TestTemplate {
 
     public static void testRecursion() {
         // Binding allows use of template1 inside template1, via the Binding indirection.
-        var binding1 = new TemplateBinding<UnfilledTemplate.OneArgs<Integer>>();
+        var binding1 = new TemplateBinding<Template.OneArgs<Integer>>();
 
         var template1 = Template.make("i", (Integer i) -> body(
             "[ #i\n",
             // We cannot yet use the template1 directly, as it is being defined.
             // So we use binding1 instead.
-            i < 0 ? "done\n" : binding1.get().fillWith(i - 1),
+            i < 0 ? "done\n" : binding1.get().asToken(i - 1),
             "] #i\n"
         ));
         binding1.bind(template1);
@@ -760,7 +758,7 @@ public class TestTemplate {
         var template2 = Template.make(() -> body(
             "{\n",
             // Now, we can use template1 normally, as it is already defined.
-            template1.fillWith(3),
+            template1.asToken(3),
             "}\n"
         ));
 
@@ -792,20 +790,20 @@ public class TestTemplate {
         ));
 
         // Binding allows use of template2 inside template2, via the Binding indirection.
-        var binding2 = new TemplateBinding<UnfilledTemplate.OneArgs<Integer>>();
+        var binding2 = new TemplateBinding<Template.OneArgs<Integer>>();
         var template2 = Template.make("i", (Integer i) -> body(
             let("f", fuel()),
 
             "[ #i #f\n",
-            template1,
-            fuel() <= 60.f ? "done" : binding2.get().fillWith(i - 1),
+            template1.asToken(),
+            fuel() <= 60.f ? "done" : binding2.get().asToken(i - 1),
             "] #i #f\n"
         ));
         binding2.bind(template2);
 
         var template3 = Template.make(() -> body(
             "{\n",
-            template2.fillWith(3),
+            template2.asToken(3),
             "}\n"
         ));
 
@@ -839,14 +837,14 @@ public class TestTemplate {
         ));
 
         // Binding allows use of template2 inside template2, via the Binding indirection.
-        var binding2 = new TemplateBinding<UnfilledTemplate.OneArgs<Integer>>();
+        var binding2 = new TemplateBinding<Template.OneArgs<Integer>>();
         var template2 = Template.make("i", (Integer i) -> body(
             setFuelCost(3.0f),
             let("f", fuel()),
 
             "[ #i #f\n",
-            template1,
-            fuel() <= 5.f ? "done\n" : binding2.get().fillWith(i - 1),
+            template1.asToken(),
+            fuel() <= 5.f ? "done\n" : binding2.get().asToken(i - 1),
             "] #i #f\n"
         ));
         binding2.bind(template2);
@@ -856,7 +854,7 @@ public class TestTemplate {
             let("f", fuel()),
 
             "{ #f\n",
-            template2.fillWith(3),
+            template2.asToken(3),
             "} #f\n"
         ));
 
@@ -895,31 +893,31 @@ public class TestTemplate {
         var template2 = Template.make("name", "type", (String name, Name.Type type) -> body(
             addName(new Name(name, type, true, 1)),
             "define #type #name\n",
-            template1
+            template1.asToken()
         ));
 
         var template3 = Template.make(() -> body(
             "<\n",
-            hook1.insert(template2.fillWith($("name"), myInt)),
+            hook1.insert(template2.asToken($("name"), myInt)),
             "$name = 5\n",
             ">\n"
         ));
 
         var template4 = Template.make(() -> body(
             "{\n",
-            template1,
+            template1.asToken(),
             hook1.set(
-                template1,
+                template1.asToken(),
                 "something\n",
-                template3,
+                template3.asToken(),
                 "more\n",
-                template1,
+                template1.asToken(),
                 "more\n",
-                template2.fillWith($("name"), myInt),
+                template2.asToken($("name"), myInt),
                 "more\n",
-                template1
+                template1.asToken()
             ),
-            template1,
+            template1.asToken(),
             "}\n"
         ));
 
@@ -959,25 +957,25 @@ public class TestTemplate {
         var template2 = Template.make("name", "type", (String name, Name.Type type) -> body(
             addName(new Name(name, type, true, 1)),
             "define mutable #type #name\n",
-            template1.fillWith(type)
+            template1.asToken(type)
         ));
 
         var template3 = Template.make("name", "type", (String name, Name.Type type) -> body(
             addName(new Name(name, type, false, 1)),
             "define immutable #type #name\n",
-            template1.fillWith(type)
+            template1.asToken(type)
         ));
 
         var template4 = Template.make("type", (Name.Type type) -> body(
             "{ $store\n",
-            hook1.insert(template2.fillWith($("name"), type)),
+            hook1.insert(template2.asToken($("name"), type)),
             "$name = 5\n",
             "} $store\n"
         ));
 
         var template5 = Template.make("type", (Name.Type type) -> body(
             "{ $load\n",
-            hook1.insert(template3.fillWith($("name"), type)),
+            hook1.insert(template3.asToken($("name"), type)),
             "blackhole($name)\n",
             "} $load\n"
         ));
@@ -998,22 +996,22 @@ public class TestTemplate {
 
         var template8 = Template.make(() -> body(
             "class $X {\n",
-            template1.fillWith(myInt),
+            template1.asToken(myInt),
             hook1.set(
                 "begin $body\n",
-                template1.fillWith(myInt),
+                template1.asToken(myInt),
                 "start with immutable\n",
-                template5.fillWith(myInt),
+                template5.asToken(myInt),
                 "then load from it\n",
-                template7.fillWith(myInt),
-                template1.fillWith(myInt),
+                template7.asToken(myInt),
+                template1.asToken(myInt),
                 "now make something mutable\n",
-                template4.fillWith(myInt),
+                template4.asToken(myInt),
                 "then store to it\n",
-                template6.fillWith(myInt),
-                template1.fillWith(myInt)
+                template6.asToken(myInt),
+                template1.asToken(myInt)
             ),
-            template1.fillWith(myInt),
+            template1.asToken(myInt),
             "}\n"
         ));
 
@@ -1061,18 +1059,18 @@ public class TestTemplate {
 
         var template2 = Template.make(() -> body(
             "class $Y {\n",
-            template1.fillWith(myInt),
+            template1.asToken(myInt),
             hook1.set(
                 "begin $body\n",
-                template1.fillWith(myInt),
+                template1.asToken(myInt),
                 "define mutable\n",
                 addName(new Name($("v1"), myInt, true, 1)),
-                template1.fillWith(myInt),
+                template1.asToken(myInt),
                 "define immutable\n",
                 addName(new Name($("v1"), myInt, false, 1)),
-                template1.fillWith(myInt)
+                template1.asToken(myInt)
             ),
-            template1.fillWith(myInt),
+            template1.asToken(myInt),
             "}\n"
         ));
 
@@ -1105,7 +1103,7 @@ public class TestTemplate {
         var template2 = Template.make("list", (List<MyItem> list) -> body(
             "class $Z {\n",
             // Use template1 for every item in the list.
-            list.stream().map(item -> template1.fillWith(item)).toList(),
+            list.stream().map(item -> template1.asToken(item)).toList(),
             "}\n"
         ));
 
@@ -1118,7 +1116,7 @@ public class TestTemplate {
                                     new MyItem(myLong, "*"),
                                     new MyItem(myLong, "/"));
 
-        String code = template2.fillWith(list).render();
+        String code = template2.render(list);
         String expected =
             """
             class Z_1 {
@@ -1160,7 +1158,7 @@ public class TestTemplate {
         var template2 = Template.make(() -> body(
             "beta\n",
             // Use hook without hook1.set
-            hook1.insert(template1),
+            hook1.insert(template1.asToken()),
             "gamma\n"
         ));
 
@@ -1181,7 +1179,7 @@ public class TestTemplate {
             "nothing\n"
         ));
 
-        String code = template1.fillWith("x", "y").render();
+        String code = template1.render("x", "y");
     }
 
     public static void testFailingHashtag2() {
@@ -1190,7 +1188,7 @@ public class TestTemplate {
             "nothing\n"
         ));
 
-        String code = template1.fillWith("y").render();
+        String code = template1.render("y");
     }
 
     public static void testFailingHashtag3() {
@@ -1212,7 +1210,7 @@ public class TestTemplate {
     }
 
     public static void testFailingBinding1() {
-        var binding = new TemplateBinding<FilledTemplate.ZeroArgs>();
+        var binding = new TemplateBinding<Template.ZeroArgs>();
         var template1 = Template.make(() -> body(
             "nothing\n"
         ));
@@ -1221,7 +1219,7 @@ public class TestTemplate {
     }
 
     public static void testFailingBinding2() {
-        var binding = new TemplateBinding<FilledTemplate.ZeroArgs>();
+        var binding = new TemplateBinding<Template.ZeroArgs>();
         var template1 = Template.make(() -> body(
             "nothing\n",
             binding.get()

@@ -100,7 +100,7 @@ public class TestFormat {
             package p.xyz;
             public class InnerTest {
             """,
-            list.stream().map(info -> template1.fillWith(info)).toList(),
+            list.stream().map(info -> template1.asToken(info)).toList(),
             """
             }
             """

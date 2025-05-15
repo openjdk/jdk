@@ -25,25 +25,25 @@ package compiler.lib.template_framework;
 
 /**
  * Represents a Template with filled arguments, ready for instantiation, either
- * as a {@link Token} inside another {@link UnfilledTemplate} or with {@link #render}.
+ * as a {@link Token} inside another {@link Template} or with {@link #render}.
  */
-public sealed abstract class FilledTemplate implements Token
-                                            permits FilledTemplate.ZeroArgs,
-                                                    FilledTemplate.OneArgs,
-                                                    FilledTemplate.TwoArgs,
-                                                    FilledTemplate.ThreeArgs
+public sealed abstract class TemplateToken implements Token
+                                           permits TemplateToken.ZeroArgs,
+                                                   TemplateToken.OneArgs,
+                                                   TemplateToken.TwoArgs,
+                                                   TemplateToken.ThreeArgs
 {
-    private FilledTemplate() {}
+    private TemplateToken() {}
 
     /**
-     * Represents a zero-argument {@link FilledTemplate}, already filled with arguments, ready for
-     * instantiation either as a {@link Token} inside another {@link UnfilledTemplate} or
+     * Represents a zero-argument {@link TemplateToken}, already filled with arguments, ready for
+     * instantiation either as a {@link Token} inside another {@link Template} or
      * with {@link #render}.
      */
-    public static final class ZeroArgs extends FilledTemplate implements Token, TemplateBinding.Bindable {
-        private final UnfilledTemplate.ZeroArgs zeroArgs;
+    static final class ZeroArgs extends TemplateToken implements Token {
+        private final Template.ZeroArgs zeroArgs;
 
-        ZeroArgs(UnfilledTemplate.ZeroArgs zeroArgs) {
+        ZeroArgs(Template.ZeroArgs zeroArgs) {
             this.zeroArgs = zeroArgs;
         }
 
@@ -57,16 +57,16 @@ public sealed abstract class FilledTemplate implements Token
     }
 
     /**
-     * Represents a one-argument {@link FilledTemplate}, already filled with arguments, ready for instantiation
-     * either as a {@link Token} inside another {@link UnfilledTemplate} or with {@link #render}.
+     * Represents a one-argument {@link TemplateToken}, already filled with arguments, ready for instantiation
+     * either as a {@link Token} inside another {@link Template} or with {@link #render}.
      *
      * @param <A> The type of the (first) argument.
      */
-    public static final class OneArgs<A> extends FilledTemplate implements Token {
-        private final UnfilledTemplate.OneArgs<A> oneArgs;
+    static final class OneArgs<A> extends TemplateToken implements Token {
+        private final Template.OneArgs<A> oneArgs;
         private final A a;
 
-        OneArgs(UnfilledTemplate.OneArgs<A> oneArgs, A a) {
+        OneArgs(Template.OneArgs<A> oneArgs, A a) {
             this.oneArgs = oneArgs;
             this.a = a;
         }
@@ -83,18 +83,18 @@ public sealed abstract class FilledTemplate implements Token
     }
 
     /**
-     * Represents a two-argument {@link FilledTemplate}, already filled with arguments, ready for instantiation
-     * either as a {@link Token} inside another {@link UnfilledTemplate} or with {@link #render}.
+     * Represents a two-argument {@link TemplateToken}, already filled with arguments, ready for instantiation
+     * either as a {@link Token} inside another {@link Template} or with {@link #render}.
      *
      * @param <A> The type of the first argument.
      * @param <B> The type of the second argument.
      */
-    public static final class TwoArgs<A, B> extends FilledTemplate implements Token {
-        private final UnfilledTemplate.TwoArgs<A, B> twoArgs;
+    static final class TwoArgs<A, B> extends TemplateToken implements Token {
+        private final Template.TwoArgs<A, B> twoArgs;
         private final A a;
         private final B b;
 
-        TwoArgs(UnfilledTemplate.TwoArgs<A, B> twoArgs, A a, B b) {
+        TwoArgs(Template.TwoArgs<A, B> twoArgs, A a, B b) {
             this.twoArgs = twoArgs;
             this.a = a;
             this.b = b;
@@ -113,20 +113,20 @@ public sealed abstract class FilledTemplate implements Token
     }
 
     /**
-     * Represents a three-argument {@link FilledTemplate}, already filled with arguments, ready for instantiation
-     * either as a {@link Token} inside another {@link UnfilledTemplate} or with {@link #render}.
+     * Represents a three-argument {@link TemplateToken}, already filled with arguments, ready for instantiation
+     * either as a {@link Token} inside another {@link Template} or with {@link #render}.
      *
      * @param <A> The type of the first argument.
      * @param <B> The type of the second argument.
      * @param <C> The type of the second argument.
      */
-    public static final class ThreeArgs<A, B, C> extends FilledTemplate implements Token {
-        private final UnfilledTemplate.ThreeArgs<A, B, C> threeArgs;
+    static final class ThreeArgs<A, B, C> extends TemplateToken implements Token {
+        private final Template.ThreeArgs<A, B, C> threeArgs;
         private final A a;
         private final B b;
         private final C c;
 
-        ThreeArgs(UnfilledTemplate.ThreeArgs<A, B, C> threeArgs, A a, B b, C c) {
+        ThreeArgs(Template.ThreeArgs<A, B, C> threeArgs, A a, B b, C c) {
             this.threeArgs = threeArgs;
             this.a = a;
             this.b = b;
@@ -155,22 +155,11 @@ public sealed abstract class FilledTemplate implements Token
 
     abstract void visitArguments(ArgumentVisitor visitor);
 
-    /**
-     * Renders the {@link FilledTemplate} to a {@link String}.
-     *
-     * @return The {@link FilledTemplate} rendered to a {@link String}.
-     */
-    public final String render() {
+    final String render() {
         return Renderer.render(this);
     }
 
-    /**
-     * Renders the {@link FilledTemplate} to a {@link String}.
-     *
-     * @param fuel The amount of fuel provided for recursive Template instantiations.
-     * @return The {@link FilledTemplate} rendered to a {@link String}.
-     */
-    public final String render(float fuel) {
+    final String render(float fuel) {
         return Renderer.render(this, fuel);
     }
 }

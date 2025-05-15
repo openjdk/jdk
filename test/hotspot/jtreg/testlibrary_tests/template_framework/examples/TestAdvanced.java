@@ -138,10 +138,10 @@ public class TestAdvanced {
 
             """,
             // Call the testTemplate for each type and operator, generating a
-            // list of lists of FilledTemplate:
+            // list of lists of TemplateToken:
             types.stream().map((Type type) ->
                 type.operators().stream().map((String operator) ->
-                    testTemplate.fillWith(type.name(), operator, type.generator())).toList()
+                    testTemplate.asToken(type.name(), operator, type.generator())).toList()
             ).toList(),
             """
             }
@@ -160,6 +160,6 @@ public class TestAdvanced {
         );
 
         // Use the template with one argument and render it to a String.
-        return classTemplate.fillWith(types).render();
+        return classTemplate.render(types);
     }
 }
