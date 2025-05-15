@@ -1352,10 +1352,11 @@ Node* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList* merge_list,
   if (merged_load == nullptr) {
     return nullptr;
   }
-  NOT_PRODUCT( if (is_trace_success()) { tty->print("[TraceMergeLoads] merged load:"); merged_load->dump(); tty->cr(); })
+  NOT_PRODUCT(if (is_trace_success()) { tty->print("[TraceMergeLoads] merged load:"); merged_load->dump(); tty->cr(); })
 
   merged_load->set_unaligned_access();
   merged_load->set_mismatched_access();
+  _phase->set_type(merged_load, at);
 
   Node* replace = merged_load;
   if (_require_reverse_bytes) {
