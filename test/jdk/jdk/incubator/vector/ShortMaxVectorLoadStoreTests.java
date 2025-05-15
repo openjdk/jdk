@@ -716,7 +716,7 @@ public class ShortMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
        for (int ic = 0; ic < INVOC_COUNT; ic++) {
            for (int i = 0; i < a.length; i += SPECIES.length()) {
-               VectorShuffle<Short> shuffle = shuffleFromArray(a, i);
+               VectorShuffle<Short> shuffle = VectorShuffle.fromArray(SPECIES, a, i);
                shuffle.intoArray(r, i);
            }
        }
@@ -802,8 +802,8 @@ public class ShortMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
    @Test(dataProvider = "shuffleIntByteProviderForIOOBE")
    static void shuffleLoadMemorySegmentIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
-       MemorySegment a = toShuffleSegment(SPECIES, fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Integer.SIZE));
-       MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Short.SIZE);
+       MemorySegment a = toShuffleSegment(SPECIES, fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i));
+       MemorySegment r = Arena.ofAuto().allocate(a.byteSize());
 
        int l = (int) a.byteSize();
        int s = SPECIES.length() * 4;
@@ -831,8 +831,8 @@ public class ShortMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
    @Test(dataProvider = "shuffleIntByteProviderForIOOBE")
    static void shuffleStoreMemorySegmentIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
-       MemorySegment a = toShuffleSegment(SPECIES, fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Integer.SIZE));
-       MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Short.SIZE);
+       MemorySegment a = toShuffleSegment(SPECIES, fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i));
+       MemorySegment r = Arena.ofAuto().allocate(a.byteSize());
 
        int l = (int) a.byteSize();
        int s = SPECIES.length() * 4;

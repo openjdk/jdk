@@ -129,10 +129,7 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
 
     static MemorySegment toShuffleSegment(VectorSpecies<?> vsp, int[] a, IntFunction<MemorySegment> fb) {
         MemorySegment ms = fb.apply(a.length * 4);
-        for (int i = 0; i < a.length; i++) {
-            ms.set(ValueLayout.JAVA_INT_UNALIGNED, i * 4 , a[i]);
-        }
-        return ms;
+        return ms.copyFrom(MemorySegment.ofArray(a));
     }
 
     private static final List<IntFunction<MemorySegment>> SHARED_MEMORY_SEGMENT_GENERATORS = List.of(
