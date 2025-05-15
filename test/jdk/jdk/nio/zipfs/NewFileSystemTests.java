@@ -37,7 +37,12 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 /**
  * @test
@@ -173,36 +178,23 @@ public class NewFileSystemTests {
     }
 
     /**
-     * Validate that without {@code "create" = true}, a ZIP file system cannot
-     * be opened if the underlying file is missing.
+     * Validate that without {@code "create" = true}, a ZIP file system cannot be
+     * opened if the underlying file is missing, but even with this set, a ZIP
+     * file system cannot be opened for conflicting or invalid access modes.
      */
-    @Test
-    public void testNoSuchFileFailure() {
-        Path noSuchZip = Path.of("no_such.zip");
-        assertThrows(NoSuchFileException.class,
-                () -> FileSystems.newFileSystem(noSuchZip, Map.of()));
-        assertThrows(NoSuchFileException.class,
-                () -> FileSystems.newFileSystem(noSuchZip, Map.of("accessMode", "readOnly")));
-        assertThrows(NoSuchFileException.class,
-                () -> FileSystems.newFileSystem(noSuchZip, Map.of("accessMode", "readWrite")));
+    @DataProvider(name = "badEnvMap")
+    protected Object[][] badEnvMap() {
+        return new Object[][]{
+                {Map.of(), NoSuchFileException.class},
+                {Map.of("accessMode", "readOnly"), NoSuchFileException.class},
+                {Map.of("accessMode", "readWrite"), NoSuchFileException.class},
+                {Map.of("create", true, "accessMode", "readOnly"), IllegalArgumentException.class},
+                {Map.of("create", true, "accessMode", "badValue"), IllegalArgumentException.class},
+        };
     }
-
-    /**
-     * Validate that even with {@code "create" = true}, a ZIP file system cannot
-     * be opened for badly specified arguments. These errors occur before any
-     * missing file checks.
-     */
-    @Test
-    public void badArgumentsFailure() throws IOException {
-        Path noSuchZip = Path.of("no_such.zip");
-        assertThrows(IllegalArgumentException.class,
-                () -> FileSystems.newFileSystem(
-                        noSuchZip,
-                        Map.of("create", true, "accessMode", "readOnly")));
-        assertThrows(IllegalArgumentException.class,
-                () -> FileSystems.newFileSystem(
-                        noSuchZip,
-                        Map.of("create", true, "accessMode", "badValue")));
+    @Test(dataProvider = "badEnvMap")
+    public void badArgumentsFailure(Map<String, String> env, Class<? extends Throwable> exception) throws IOException {
+        assertThrows(exception, () -> FileSystems.newFileSystem(Path.of("no_such.zip"), env));
     }
 
     /**
@@ -216,7 +208,7 @@ public class NewFileSystemTests {
         try (FileSystem fs = FileSystems.newFileSystem(multiReleaseJar, Map.of("accessMode", "readWrite"))) {
             assertFalse(fs.isReadOnly());
             if (!"Default version".equals(Files.readString(fs.getPath("file.txt"), UTF_8))) {
-                throw new RuntimeException("unexpected file content");
+                fail("unexpected file content");
             }
         }
     }
@@ -244,7 +236,7 @@ public class NewFileSystemTests {
         try (FileSystem fs = FileSystems.newFileSystem(multiReleaseJar, Map.of("releaseVersion", "1"))) {
             assertTrue(fs.isReadOnly());
             if (!"First version".equals(Files.readString(fs.getPath("file.txt"), UTF_8))) {
-                throw new RuntimeException("unexpected file content");
+                fail("unexpected file content");
             }
         }
     }

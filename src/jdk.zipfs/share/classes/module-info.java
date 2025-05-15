@@ -154,10 +154,7 @@ import java.util.Set;
  *   <td>false</td>
  *   <td>
  *       If the value is {@code true}, the ZIP file system provider creates a
- *       new ZIP or JAR file if it does not exist. The resulting file system
- *       will always be opened <em>read-write</em> (see {@code "accessMode"}
- *       below), regardless of whether the underlying ZIP already existed or
- *       not.
+ *       new ZIP or JAR file if it does not exist.
  *   </td>
  * </tr>
  * <tr>
@@ -273,12 +270,9 @@ import java.util.Set;
  *   <td>{@link java.lang.String}</td>
  *   <td>null/unset</td>
  *   <td>
- *       A value defining the desired read/write access mode of the file system
- *       (either <em>read-write</em> or <em>read-only</em>).
- *       <p>
- *       Even if a zip file system is writable ({@code fs.isReadOnly() == false}),
- *       this says nothing about whether individual files can be created or
- *       modified, simply that it might be possible.
+ *       A value defining the desired access mode of the file system.
+ *       ZIP file systems can be created to allow for <em>read-write</em> or
+ *       <em>read-only</em> access.
  *       <ul>
  *           <li>
  *               If no value is set, the file system is created <em>read-write</em>

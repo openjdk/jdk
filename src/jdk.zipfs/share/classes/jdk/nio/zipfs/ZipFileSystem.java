@@ -110,7 +110,7 @@ class ZipFileSystem extends FileSystem {
     private final Path zfpath;
     final ZipCoder zc;
     private final ZipPath rootdir;
-    // Start readOnly (safe mode) and maybe reset at end of initialization.
+    // Starts in readOnly (safe mode), but might be reset at the end of initialization.
     private boolean readOnly = true;
 
     // default time stamp for pseudo entries
@@ -141,9 +141,6 @@ class ZipFileSystem extends FileSystem {
 
     private final Set<String> supportedFileAttributeViews;
 
-    // If it's decided to try and make access mode common to other file systems,
-    // this could exist somewhere common, but if it's definitely never going to
-    // be shared, it could be made public here.
     private enum AccessMode {
         // Creates a file system for read-write access.
         READ_WRITE("readWrite"),
@@ -156,22 +153,15 @@ class ZipFileSystem extends FileSystem {
             this.label = label;
         }
 
-        // Parses the file system permission from an environmental parameter. While
-        // the FileSystemAccessMode is private, we don't need to check if it was
-        // given as an enum value. Returns null to indicate default behaviour.
+        // Parses the access mode from an environmental parameter.
+        // Returns null for missing value to indicate default behavior.
         static AccessMode from(Object value) {
-            switch (value) {
-                case null -> {
-                    return null;
-                }
-                case String label when READ_WRITE.label.equals(label) -> {
-                    return READ_WRITE;
-                }
-                case String label when READ_ONLY.label.equals(label) -> {
-                    return READ_ONLY;
-                }
-                default -> {
-                }
+            if (value == null) {
+                return null;
+            } else if (READ_WRITE.label.equals(value)) {
+                return AccessMode.READ_WRITE;
+            } else if (READ_ONLY.label.equals(value)) {
+                return AccessMode.READ_ONLY;
             }
             throw new IllegalArgumentException("Unknown file system access mode: " + value);
         }
