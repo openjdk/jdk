@@ -63,7 +63,6 @@
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/suspendedThreadTask.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -3017,7 +3016,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                 PAGE_READWRITE);
   // If reservation failed, return null
   if (p_buf == nullptr) return nullptr;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC);
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC, mtNone);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -3078,7 +3077,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
         // need to create a dummy 'reserve' record to match
         // the release.
         MemTracker::record_virtual_memory_reserve((address)p_buf,
-                                                  bytes_to_release, CALLER_PC);
+                                                  bytes_to_release, CALLER_PC, mtNone);
         os::release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
@@ -3096,9 +3095,9 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   // Although the memory is allocated individually, it is returned as one.
   // NMT records it as one block.
   if ((flags & MEM_COMMIT) != 0) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC, mtNone);
   } else {
-    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC, mtNone);
   }
 
   // made it this far, success
@@ -3238,7 +3237,7 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag = mtNone) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity (page size)");
   assert(is_aligned(size, os::vm_allocation_granularity()),
@@ -3252,7 +3251,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
     char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, mem_tag) :
-                                         os::reserve_memory(extra_size, false, mem_tag);
+                                         os::reserve_memory(extra_size, mem_tag);
     if (extra_base == nullptr) {
       return nullptr;
     }
@@ -3269,7 +3268,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
     // Which may fail, hence the loop.
     aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, mem_tag) :
-                                     os::attempt_reserve_memory_at(aligned_base, size, false, mem_tag);
+                                     os::attempt_reserve_memory_at(aligned_base, size, mem_tag);
   }
 
   assert(aligned_base != nullptr,
@@ -3278,9 +3277,9 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   return aligned_base;
 }
 
-char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool exec) {
   // exec can be ignored
-  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
+  return map_or_reserve_memory_aligned(size, alignment, -1/* file_desc */, mem_tag);
 }
 
 char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag) {
@@ -5185,7 +5184,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     }
 
     // Record virtual memory allocation
-    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC, mtNone);
 
     DWORD bytes_read;
     OVERLAPPED overlapped;

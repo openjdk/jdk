@@ -176,7 +176,7 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
   const ClassFileStream cfs1 = *stream;
   const ClassFileStream* const cfs = &cfs1;
 
-  debug_only(const u1* const old_current = stream->current();)
+  DEBUG_ONLY(const u1* const old_current = stream->current();)
 
   // Used for batching symbol allocations.
   const char* names[SymbolTable::symbol_alloc_batch_size];
@@ -5243,7 +5243,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   // it's official
   set_klass(ik);
 
-  debug_only(ik->verify();)
+  DEBUG_ONLY(ik->verify();)
 }
 
 void ClassFileParser::update_class_name(Symbol* new_class_name) {
