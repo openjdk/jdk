@@ -899,9 +899,6 @@ class MacroAssembler: public Assembler {
                           Register t0,  Register t1,  Register t2,  Register t3,
                           Register tc0, Register tc1, Register tc2, Register tc3,
                           bool invertCRC);
-  void kernel_crc32_vpmsum(Register crc, Register buf, Register len, Register constants,
-                           Register t0, Register t1, Register t2, Register t3, Register t4,
-                           Register t5, Register t6, bool invertCRC);
   void kernel_crc32_vpmsum_aligned(Register crc, Register buf, Register len, Register constants,
                                    Register t0, Register t1, Register t2, Register t3, Register t4,
                                    Register t5, Register t6);

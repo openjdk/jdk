@@ -254,7 +254,7 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
     "1:                                                   \n"
     "   lbarx   %[old_value], 0, %[dest]                  \n"
     /* extract byte and compare */
-    "   cmpw    %[compare_value], %[old_value] \n"
+    "   cmpw    %[compare_value], %[old_value]            \n"
     "   bne-    2f                                        \n"
     /* replace byte and try to store */
     "   stbcx.  %[exchange_value], 0, %[dest]             \n"
@@ -263,7 +263,7 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
     "2:                                                   \n"
     /* out */
     : [old_value]           "=&r"   (old_value),
-      [loaded_value]             "=&r"   (loaded_value),
+      [loaded_value]        "=&r"   (loaded_value),
                             "=m"    (*dest)
     /* in */
     : [dest]            "b"     (dest),

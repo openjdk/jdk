@@ -158,7 +158,7 @@
   }
 
   // true means we have fast l2f conversion
-  static bool convL2FSupported(void) {
+  static constexpr bool convL2FSupported(void) {
     // fcfids can do the conversion (>= Power7).
     // fcfid + frsp showed rounding problem when result should be 0x3f800001.
     return true;

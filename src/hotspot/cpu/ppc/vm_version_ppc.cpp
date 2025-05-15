@@ -65,7 +65,7 @@ void VM_Version::initialize() {
     } else if (VM_Version::has_darn()) {
       FLAG_SET_ERGO(PowerArchitecturePPC64, 9);
     } else {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 0);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 8);
     }
   }
 
@@ -73,7 +73,7 @@ void VM_Version::initialize() {
   switch (PowerArchitecturePPC64) {
     case 10: if (!VM_Version::has_brw()    ) break;
     case  9: if (!VM_Version::has_darn()   ) break;
-    case  0: PowerArchitecturePPC64_ok = true; break;
+    case  8: PowerArchitecturePPC64_ok = true; break;
     default: break;
   }
   guarantee(PowerArchitecturePPC64_ok, "PowerArchitecturePPC64 cannot be set to "
@@ -111,8 +111,13 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseCharacterCompareIntrinsics)) {
       FLAG_SET_ERGO(UseCharacterCompareIntrinsics, true);
     }
-    if (FLAG_IS_DEFAULT(UseVectorByteReverseInstructionsPPC64)) {
-      FLAG_SET_ERGO(UseVectorByteReverseInstructionsPPC64, true);
+    if (SuperwordUseVSX) {
+      if (FLAG_IS_DEFAULT(UseVectorByteReverseInstructionsPPC64)) {
+        FLAG_SET_ERGO(UseVectorByteReverseInstructionsPPC64, true);
+      }
+    } else if (UseVectorByteReverseInstructionsPPC64) {
+      warning("UseVectorByteReverseInstructionsPPC64 specified, but needs SuperwordUseVSX.");
+      FLAG_SET_DEFAULT(UseVectorByteReverseInstructionsPPC64, false);
     }
     if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
       FLAG_SET_ERGO(UseBASE64Intrinsics, true);
@@ -250,7 +255,6 @@ void VM_Version::initialize() {
     UseGHASHIntrinsics = true;
   }
 
-
   if (FLAG_IS_DEFAULT(UseFMA)) {
     FLAG_SET_DEFAULT(UseFMA, true);
   }
@@ -269,13 +273,20 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
-
   if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
+    if (UseSHA) {
+      FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
+    } else {
+      FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
+    }
   }
 
   if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
+    if (UseSHA) {
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
+    } else {
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+    }
   }
 
   if (UseSHA3Intrinsics) {
