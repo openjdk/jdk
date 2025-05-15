@@ -90,7 +90,7 @@ public class JRSUIState {
 
     @Override
     public int hashCode() {
-        return (int)(encodedState ^ (encodedState >>> 32)) ^ getClass().hashCode();
+        return Long.hashCode(encodedState) ^ getClass().hashCode();
     }
 
     public static class AnimationFrameState extends JRSUIState {
@@ -183,8 +183,7 @@ public class JRSUIState {
 
         @Override
         public int hashCode() {
-            final long bits = Double.doubleToRawLongBits(value);
-            return super.hashCode() ^ (int)bits ^ (int)(bits >>> 32);
+            return super.hashCode() ^ Double.hashCode(value);
         }
     }
 
@@ -258,7 +257,7 @@ public class JRSUIState {
         @Override
         public int hashCode() {
             final long bits = Double.doubleToRawLongBits(thumbProportion) ^ Double.doubleToRawLongBits(thumbStart);
-            return super.hashCode() ^ (int)bits ^ (int)(bits >>> 32);
+            return super.hashCode() ^ Long.hashCode(bits);
         }
     }
 }
