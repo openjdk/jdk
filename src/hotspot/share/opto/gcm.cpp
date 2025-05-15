@@ -663,21 +663,21 @@ public:
   }
 };
 
-//------------------------raise_above_anti_dependences---------------------------
-// Enforce a scheduling of the argument load that ensures anti-dependent stores
+// Enforce a scheduling of the given 'load' that ensures anti-dependent stores
 // do not overwrite the load's input memory state before the load executes.
 //
-// The argument load has a current scheduling range in the dominator tree that
+// The given 'load' has a current scheduling range in the dominator tree that
 // starts at the load's early block (computed in schedule_early) and ends at
-// the argument LCA block. However, there may still exist anti-dependent stores
-// in between the early block and the LCA that overwrite memory that the load
-// must witness. For such stores, we must
+// the given 'LCA' block for the load. However, there may still exist
+// anti-dependent stores between the early block and the LCA that overwrite
+// memory that the load must witness. For such stores, we must
 //
 //   1. raise the load's LCA to force the load to (eventually) be scheduled at
 //      latest in the store's block, and
 //   2. if the load may get scheduled in the store's block, additionally insert
-//      an anti-dependence edge from the load to the store to ensure LCM
-//      schedules the load before the store within the block.
+//      an anti-dependence edge (i.e., precedence edge) from the load to the
+//      store to ensure LCM schedules the load before the store within the
+//      block.
 //
 // For a given store, we say that the store is on a _distinct_ control-flow
 // path relative to the load if there are no paths from early to LCA that go
@@ -718,11 +718,12 @@ public:
 // no action.
 //
 // The raise_above_anti_dependences method returns the updated LCA and ensures
-// there are no anti-dependent stores between the load's early block and the
-// updated LCA. Any stores in the updated LCA will have new anti-dependence
-// edges back to the load. The caller may schedule the load in the LCA, or it
-// may hoist the load above the LCA, if it is not the early block.
-Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verify) {
+// there are no anti-dependent stores in any block between the load's early
+// block and the updated LCA. Any stores in the updated LCA will have new
+// anti-dependence edges back to the load. The caller may schedule the load in
+// the updated LCA, or it may hoist the load above the updated LCA, if the
+// updated LCA is not the early block.
+Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, const bool verify) {
   ResourceMark rm;
   assert(load->needs_anti_dependence_check(), "must be a load of some sort");
   assert(LCA != nullptr, "");
@@ -755,16 +756,16 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
 
   node_idx_t load_index = load->_idx;
 
-  // Note the earliest legal placement of 'load', as determined by
-  // the unique point in the dominator tree where all memory effects
-  // and other inputs are first available.  (Computed by schedule_early.)
-  // For normal loads, 'early' is the shallowest place (dom graph wise)
-  // to look for anti-deps between this load and any store.
+  // Record the earliest legal placement of 'load', as determined by the unique
+  // point in the dominator tree where all memory effects and other inputs are
+  // first available (computed by schedule_early). For normal loads, 'early' is
+  // the shallowest place (dominator-tree wise) to look for anti-dependences
+  // between this load and any store.
   Block* early = get_block_for_node(load);
 
   // If we are subsuming loads, compute an "early" block that only considers
-  // memory or address inputs. This block may be different than the
-  // schedule_early block in that it could be at an even shallower depth in the
+  // memory or address inputs. This block may be different from the
+  // schedule_early block when it is at an even shallower depth in the
   // dominator tree, and allow for a broader discovery of anti-dependences.
   if (C->subsume_loads()) {
     early = memory_early_block(load, early, this);
@@ -777,7 +778,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
 
   ResourceArea* area = Thread::current()->resource_area();
 
-  // Bookkeeping of possibly anti-dependent stores that we find outside of the
+  // Bookkeeping of possibly anti-dependent stores that we find outside the
   // early block and that may need anti-dependence edges. Note that stores in
   // non_early_stores are not necessarily dominated by early. The search starts
   // from initial_mem, which can reside in a block that dominates early, and
@@ -851,10 +852,10 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
     // - just past initial_mem with the edge (initial_mem, use_mem_state), or
     // - just past a MergeMem with the edge (MergeMem, use_mem_state).
     assert(def_mem_state == nullptr || def_mem_state == initial_mem ||
-               def_mem_state->is_MergeMem(),
+           def_mem_state->is_MergeMem(),
            "unexpected memory state");
 
-    uint op = use_mem_state->Opcode();
+    const uint op = use_mem_state->Opcode();
 
 #ifdef ASSERT
     // CacheWB nodes are peculiar in a sense that they both are anti-dependent and produce memory.
@@ -891,7 +892,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
     }
 
     assert(!use_mem_state->is_MergeMem(),
-        "use_mem_state should be either a store or a memory Phi");
+           "use_mem_state should be either a store or a memory Phi");
 
     if (op == Op_MachProj || op == Op_Catch)   continue;
 
@@ -968,9 +969,9 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
       //
       //    def_mem_state
       //          |
-      //          |??
-      //          |||
-      //          Phi
+      //          | ? ?
+      //          \ | /
+      //           Phi
       //
       // We reached the Phi from def_mem_state and know that, on this
       // particular input, the memory that the load must witness is not
@@ -1022,8 +1023,8 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
       }
       assert(found_match, "no worklist bug");
     } else if (use_mem_state_block != early) {
-      // We found an anti-dependent store outside the load's 'early' block.
-      // The store may be between the current LCA and earliest possible block
+      // We found an anti-dependent store outside the load's 'early' block. The
+      // store may be between the current LCA and the earliest possible block
       // (but it could very well also be on a distinct control-flow path).
       // Lazily set the LCA mark and push to non_early_stores.
       if (LCA == early) {
@@ -1055,7 +1056,7 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
 
   // Finished if 'load' must be scheduled in its 'early' block.
   // If we found any stores there, they have already been given
-  // precedence edges.
+  // anti-dependence edges.
   if (LCA == early) {
     return LCA;
   }
@@ -1080,11 +1081,11 @@ Block* PhaseCFG::raise_above_anti_dependences(Block* LCA, Node* load, bool verif
   // we still need to add anti-dependence edges, but no LCA predecessor block
   // contains any such stores (otherwise, we would have raised the LCA even
   // higher).
-
+  //
   // The raised LCA will be a lower bound for placing the load, preventing the
   // load from sinking past any block containing a store that may overwrite
   // memory that the load must witness.
-
+  //
   // Now we need to insert the necessary anti-dependence edges from 'load' to
   // each store in the non-early LCA block. We have recorded all such potential
   // stores in non_early_stores.
