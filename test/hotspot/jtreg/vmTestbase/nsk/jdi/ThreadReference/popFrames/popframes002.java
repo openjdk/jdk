@@ -270,10 +270,10 @@ public class popframes002 extends JDIBase {
             breakpointForCommunication();
 
             String thread2Name         = "thread2";
-            ThreadReference thread2Ref = debuggee.threadByNameOrThrow(thread2Name);
+            ThreadReference thread2Ref = debuggee.threadByFieldNameOrThrow(debuggeeClass, thread2Name);
 
             String thread3Name         = "thread3";
-            ThreadReference thread3Ref = debuggee.threadByNameOrThrow(thread3Name);
+            ThreadReference thread3Ref = debuggee.threadByFieldNameOrThrow(debuggeeClass, thread3Name);
 
             String poppedMethod    = "poppedMethod";
             String breakpointLine  = "breakpointLine";

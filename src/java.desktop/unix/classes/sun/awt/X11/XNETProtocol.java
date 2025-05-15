@@ -43,10 +43,12 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
     /**
      * XStateProtocol
      */
+    @Override
     public boolean supportsState(int state) {
         return doStateProtocol() ; // TODO - check for Frame constants
     }
 
+    @Override
     public void setState(XWindowPeer window, int state) {
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("Setting state of " + window + " to " + state);
@@ -132,6 +134,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
         }
     }
 
+    @Override
     public int getState(XWindowPeer window) {
         return getStateImpl(window);
     }
@@ -154,6 +157,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
         return java_state;
     }
 
+    @Override
     public boolean isStateChange(XPropertyEvent e) {
         boolean res = doStateProtocol() && (e.get_atom() == XA_NET_WM_STATE.getAtom()) ;
 
@@ -168,6 +172,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
     /*
      * Work around for 4775545.
      */
+    @Override
     public void unshadeKludge(XWindowPeer window) {
         XAtomList net_wm_state = window.getNETWMState();
         net_wm_state.remove(XA_NET_WM_STATE_SHADED);
@@ -177,6 +182,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
     /**
      * XLayerProtocol
      */
+    @Override
     public boolean supportsLayer(int layer) {
         return ((layer == LAYER_ALWAYS_ON_TOP) || (layer == LAYER_NORMAL)) && doLayerProtocol();
     }
@@ -244,6 +250,7 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
         XToolkit.XSync();
     }
 
+    @Override
     public void setLayer(XWindowPeer window, int layer) {
         setStateHelper(window, XA_NET_WM_STATE_ABOVE, layer == LAYER_ALWAYS_ON_TOP);
     }

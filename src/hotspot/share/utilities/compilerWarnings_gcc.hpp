@@ -51,8 +51,6 @@
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-nonliteral")     \
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-security")
 
-#define PRAGMA_FORMAT_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wformat")
-
 // Disable -Wstringop-truncation which is introduced in GCC 8.
 // https://gcc.gnu.org/gcc-8/changes.html
 #if !defined(__clang_major__) && (__GNUC__ >= 8)

@@ -487,7 +487,7 @@ uint G1HeapRegionManager::find_contiguous_in_free_list(uint num_regions) {
 
 uint G1HeapRegionManager::find_contiguous_allow_expand(uint num_regions) {
   // Check if we can actually satisfy the allocation.
-  if (num_regions > available()) {
+  if (num_regions > (num_free_regions() + available())) {
     return G1_NO_HRM_INDEX;
   }
   // Find any candidate.
