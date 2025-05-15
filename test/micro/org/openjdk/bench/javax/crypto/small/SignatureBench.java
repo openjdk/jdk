@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,5 +51,18 @@ public abstract class SignatureBench extends org.openjdk.bench.javax.crypto.full
         private int keyLength;
 
     }
+
+    public static class MLDSA extends SignatureBench {
+
+        @Param({"ML-DSA-65" })
+        private String algorithm;
+
+        @Param({"1024"})
+        int dataSize;
+
+        @Param({"0"}) // ML-DSA key length is not supported
+        private int keyLength;
+    }
+
 
 }

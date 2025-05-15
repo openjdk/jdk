@@ -29,7 +29,7 @@
 
 # Get the next to last word (by prepending a padding element)
 THIS_INCLUDE_PATH := $(word $(words ${MAKEFILE_LIST}),padding ${MAKEFILE_LIST})
-THIS_INCLUDE := $(patsubst $(TOPDIR)/make/%,%,$(THIS_INCLUDE_PATH))
+THIS_INCLUDE := $(patsubst $(TOPDIR_ALT)/make/%,%,$(patsubst $(TOPDIR)/make/%,%,$(THIS_INCLUDE_PATH)))
 
 # Print an indented message, also counting the top-level makefile as a level
 ifneq ($(INCLUDE_GUARD_$(THIS_INCLUDE)), true)

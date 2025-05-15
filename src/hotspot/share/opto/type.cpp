@@ -756,7 +756,7 @@ void Type::Initialize(Compile* current) {
 // delete the current Type and return the existing Type.  Otherwise stick the
 // current Type in the Type table.
 const Type *Type::hashcons(void) {
-  debug_only(base());           // Check the assertion in Type::base().
+  DEBUG_ONLY(base());           // Check the assertion in Type::base().
   // Look up the Type in the Type dictionary
   Dict *tdic = type_dict();
   Type* old = (Type*)(tdic->Insert(this, this, false));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @bug 6255196
  * @summary  Verifies the function of methods edit(java.io.File file) and
  *           print(java.io.File file)
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual EditAndPrintTest
  */
 
@@ -40,6 +40,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import javax.swing.JPanel;
 
+import jtreg.SkippedException;
+
 public class EditAndPrintTest extends JPanel {
 
     static final String INSTRUCTIONS = """
@@ -49,20 +51,9 @@ public class EditAndPrintTest extends JPanel {
             If you see any EXCEPTION messages in the output press FAIL.
             """;
 
+    static Desktop desktop;
+
     public EditAndPrintTest() {
-        if (!Desktop.isDesktopSupported()) {
-            PassFailJFrame.log("Class java.awt.Desktop is not supported on " +
-                    "current platform. Further testing will not be performed");
-            PassFailJFrame.forcePass();
-        }
-
-        Desktop desktop = Desktop.getDesktop();
-
-        if (!desktop.isSupported(Action.PRINT) && !desktop.isSupported(Action.EDIT)) {
-            PassFailJFrame.log("Neither EDIT nor PRINT actions are supported. Nothing to test.");
-            PassFailJFrame.forcePass();
-        }
-
         /*
          * Part 1: print or edit a directory, which should throw an IOException.
          */
@@ -111,7 +102,7 @@ public class EditAndPrintTest extends JPanel {
             writer.write("This is a temp file used to test print() method of Desktop.");
             writer.flush();
             writer.close();
-        } catch (java.io.IOException ioe){
+        } catch (IOException ioe){
             PassFailJFrame.log("EXCEPTION: " + ioe.getMessage());
             PassFailJFrame.forceFail("Failed to create temp file for testing.");
         }
@@ -139,6 +130,16 @@ public class EditAndPrintTest extends JPanel {
 
     public static void main(String args[]) throws InterruptedException,
             InvocationTargetException {
+        if (!Desktop.isDesktopSupported()) {
+            throw new SkippedException("Class java.awt.Desktop is not supported " +
+                    "on current platform. Further testing will not be performed");
+        }
+
+        desktop = Desktop.getDesktop();
+        if (!desktop.isSupported(Action.PRINT) && !desktop.isSupported(Action.EDIT)) {
+            throw new SkippedException("Neither EDIT nor PRINT actions are supported. Nothing to test.");
+        }
+
         PassFailJFrame.builder()
                 .title("Edit and Print test")
                 .splitUI(EditAndPrintTest::new)
