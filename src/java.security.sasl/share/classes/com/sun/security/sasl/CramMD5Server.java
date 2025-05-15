@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,11 @@
 
 package com.sun.security.sasl;
 
+import sun.security.jca.JCAUtil;
+
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.logging.Level;
 import java.util.Map;
 import java.util.Random;
@@ -52,6 +55,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author Rosanna Lee
  */
 final class CramMD5Server extends CramMD5Base implements SaslServer {
+
+    /* Secure Random instance to generate nonce */
+    private static final SecureRandom SECURE_RANDOM = JCAUtil.getDefSecureRandom();
+
     private String fqdn;
     private byte[] challengeData = null;
     private String authzid;
@@ -113,8 +120,7 @@ final class CramMD5Server extends CramMD5Base implements SaslServer {
                 }
 
                 // Generate challenge {random, timestamp, fqdn}
-                Random random = new Random();
-                long rand = random.nextLong();
+                long rand = SECURE_RANDOM.nextLong();
                 long timestamp = System.currentTimeMillis();
 
                 StringBuilder sb = new StringBuilder();
