@@ -64,6 +64,11 @@
 class PipeChannel : public AttachOperation::RequestReader, public AttachOperation::ReplyWriter {
 private:
   HANDLE _hPipe;
+  void close_impl() {
+    FlushFileBuffers(_hPipe);
+    CloseHandle(_hPipe);
+    _hPipe = INVALID_HANDLE_VALUE;
+  }
 public:
   PipeChannel() : _hPipe(INVALID_HANDLE_VALUE) {}
   ~PipeChannel() {
@@ -92,10 +97,14 @@ public:
 
   void close() {
     if (opened()) {
-      ThreadBlockInVM tbivm(JavaThread::current());
-      FlushFileBuffers(_hPipe);
-      CloseHandle(_hPipe);
-      _hPipe = INVALID_HANDLE_VALUE;
+      JavaThread* current = JavaThread::current();
+      // if we fail to read/parse request from Win32AttachListener::dequeue, current thread is already blocked
+      if (current->thread_state() == _thread_blocked) {
+        close_impl();
+      } else {
+        ThreadBlockInVM tbivm(current);
+        close_impl();
+      }
     }
   }
 
