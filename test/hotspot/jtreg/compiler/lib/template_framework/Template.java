@@ -44,13 +44,13 @@ import java.util.List;
  *
  * <p>
  * The Template Framework provides a facility to generate code with Templates. A Template is essentially a list
- * of tokens that are concatenated (i.e. rendered) to a String. The Templates can have "holes", which are
+ * of tokens that are concatenated (i.e. rendered) to a {@link String}. The Templates can have "holes", which are
  * filled (replaced) by different values at each Template instantiation. For example, these "holes" can
  * be filled with different types, operators or constants. Templates can also be nested, allowing a modular
  * use of Templates.
  *
  * <p>
- * Once we rendered the source code to a String, we can compile it with the {@code CompileFramework}.
+ * Once we rendered the source code to a {@link String}, we can compile it with the {@code CompileFramework}.
  *
  * <p>
  * <strong>Example:</strong>
@@ -146,21 +146,21 @@ import java.util.List;
  * Template argument types, i.e. the Template arguments can be type checked.
  *
  * <p>
- * A {@link Template} can be rendered to a String (e.g. {@link Template.ZeroArgs#render()}).
+ * A {@link Template} can be rendered to a {@link String} (e.g. {@link Template.ZeroArgs#render()}).
  * Alternatively, we can generate a {@link Token} (e.g. {@link Template.ZeroArgs#asToken()}),
  * and use the {@link Token} inside another {@link Template#body}.
  *
  * <p>
- * Ideally, we would have used String Templates to inject these Template arguments into the strings.
- * But since String Templates are not (yet) available, the Templates provide <strong>hashtag replacements</strong>
- * in the Strings: the Template argument names are captured, and the argument values automatically replace any
- * {@code "#name"} in the Strings. See the different overloads of {@link #make} for examples. Additional hashtag
+ * Ideally, we would have used {@link String} Templates to inject these Template arguments into the strings.
+ * But since {@link String} Templates are not (yet) available, the Templates provide <strong>hashtag replacements</strong>
+ * in the {@link String}s: the Template argument names are captured, and the argument values automatically replace any
+ * {@code "#name"} in the {@link String}s. See the different overloads of {@link #make} for examples. Additional hashtag
  * replacements can be defined with {@link #let}.
  *
  * <p>
  * When using nested Templates, there can be collisions with identifiers (e.g. variable names and method names).
  * For this, Templates provide <strong>dollar replacements</strong>, which automatically rename any
- * {@code "$name"} in the String with a {@code "name_ID"}, where the {@code "ID"} is unique for every use of
+ * {@code "$name"} in the {@link String} with a {@code "name_ID"}, where the {@code "ID"} is unique for every use of
  * a Template. The dollar replacement can also be captured with {@link #$}, and passed to nested
  * Templates, which allows sharing of these identifier names between Templates.
  *
@@ -216,19 +216,19 @@ public sealed interface Template permits Template.ZeroArgs,
         }
 
         /**
-         * Renders the {@link Template} to String.
+         * Renders the {@link Template} to {@link String}.
          *
-         * @return The String, resulting from rendering the {@link Template}.
+         * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render() {
             return new TemplateToken.ZeroArgs(this).render();
         }
 
         /**
-         * Renders the {@link Template} to String.
+         * Renders the {@link Template} to {@link String}.
          *
          * @param fuel The amount of fuel provided for recursive Template instantiations.
-         * @return The String, resulting from rendering the {@link Template}.
+         * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(float fuel) {
             return new TemplateToken.ZeroArgs(this).render(fuel);
@@ -259,21 +259,21 @@ public sealed interface Template permits Template.ZeroArgs,
         }
 
         /**
-         * Renders the {@link Template} to String.
+         * Renders the {@link Template} to {@link String}.
          *
          * @param a The value for the first argument.
-         * @return The String, resulting from rendering the {@link Template}.
+         * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(A a) {
             return new TemplateToken.OneArgs(this, a).render();
         }
 
         /**
-         * Renders the {@link Template} to String.
+         * Renders the {@link Template} to {@link String}.
          *
          * @param a The value for the first argument.
          * @param fuel The amount of fuel provided for recursive Template instantiations.
-         * @return The String, resulting from rendering the {@link Template}.
+         * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(float fuel, A a) {
             return new TemplateToken.OneArgs(this, a).render(fuel);
@@ -307,23 +307,23 @@ public sealed interface Template permits Template.ZeroArgs,
         }
 
         /**
-         * Renders the {@link Template} to String.
+         * Renders the {@link Template} to {@link String}.
          *
          * @param a The value for the first argument.
          * @param b The value for the second argument.
-         * @return The String, resulting from rendering the {@link Template}.
+         * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(A a, B b) {
             return new TemplateToken.TwoArgs(this, a, b).render();
         }
 
         /**
-         * Renders the {@link Template} to String.
+         * Renders the {@link Template} to {@link String}.
          *
          * @param a The value for the first argument.
          * @param b The value for the second argument.
          * @param fuel The amount of fuel provided for recursive Template instantiations.
-         * @return The String, resulting from rendering the {@link Template}.
+         * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(float fuel, A a, B b) {
             return new TemplateToken.TwoArgs(this, a, b).render(fuel);
@@ -382,25 +382,25 @@ public sealed interface Template permits Template.ZeroArgs,
         }
 
         /**
-         * Renders the {@link Template} to String.
+         * Renders the {@link Template} to {@link String}.
          *
          * @param a The value for the first argument.
          * @param b The value for the second argument.
          * @param c The value for the third argument.
-         * @return The String, resulting from rendering the {@link Template}.
+         * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(A a, B b, C c) {
             return new TemplateToken.ThreeArgs(this, a, b, c).render();
         }
 
         /**
-         * Renders the {@link Template} to String.
+         * Renders the {@link Template} to {@link String}.
          *
          * @param a The value for the first argument.
          * @param b The value for the second argument.
          * @param c The value for the third argument.
          * @param fuel The amount of fuel provided for recursive Template instantiations.
-         * @return The String, resulting from rendering the {@link Template}.
+         * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(float fuel, A a, B b, C c) {
             return new TemplateToken.ThreeArgs(this, a, b, c).render(fuel);
