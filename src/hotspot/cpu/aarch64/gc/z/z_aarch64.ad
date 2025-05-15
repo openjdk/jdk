@@ -112,9 +112,6 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
   // is guaranteed for immLoffset8 memory operands, because these do not lead to
   // out-of-range offsets (see definition of immLoffset8). Fortunately,
   // immLoffset8 memory operands are the most common ones in practice.
-  // The barrier's slow path includes a reload that is identical to the main
-  // load. The reload does not need to be registered in the exception table,
-  // because it is dominated by the main one.
   ins_is_late_expanded_null_check_candidate(opnd_array(1)->opcode() == INDOFFL8);
 
   ins_cost(4 * INSN_COST);
