@@ -77,7 +77,7 @@ class Renderer {
     static String render(TemplateToken templateToken, float fuel) {
         // Check nobody else is using the Renderer.
         if (renderer != null) {
-            throw new RendererException("Nested render not allowed. Please only use 'fillWith' inside Templates, and call 'render' only once at the end.");
+            throw new RendererException("Nested render not allowed. Please only use 'asToken' inside Templates, and call 'render' only once at the end.");
         }
         try {
             renderer = new Renderer(fuel);

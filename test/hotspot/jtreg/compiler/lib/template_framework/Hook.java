@@ -53,7 +53,7 @@ import java.util.List;
  *         System.out.println("$field: " + $field)
  *         """,
  *         // Reach out to where the hook was set, and insert the code of template1.
- *         myHook.insert(template1.fillWith($("field"))),
+ *         myHook.insert(template1.asToken($("field"))),
  *         """
  *         }
  *         """
