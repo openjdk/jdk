@@ -662,7 +662,7 @@ class Stream<T> extends ExchangeImpl<T> {
             responseHeaders.firstValueAsLong("content-length");
 
             if (Log.headers()) {
-                StringBuilder sb = new StringBuilder("RESPONSE HEADERS (streamid=%d):\n".formatted(streamid));
+                StringBuilder sb = new StringBuilder("RESPONSE HEADERS (streamid=%s):\n".formatted(streamid));
                 sb.append("  %s %s %s\n".formatted(request.method(), request.uri(), responseCode));
                 Log.dumpHeaders(sb, "    ", responseHeaders);
                 Log.logHeaders(sb.toString());
