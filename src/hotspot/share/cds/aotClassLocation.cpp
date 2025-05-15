@@ -1034,3 +1034,38 @@ bool AOTClassLocationConfig::validate(bool has_aot_linked_classes, bool* has_ext
   }
   return success;
 }
+
+void AOTClassLocationConfig::print() {
+  if (CDSConfig::is_dumping_archive()) {
+    tty->print_cr("AOTClassLocationConfig::_dumptime_instance = %p", _dumptime_instance);
+    if (_dumptime_instance != nullptr) {
+      _dumptime_instance->print_on(tty);
+    }
+  }
+  if (CDSConfig::is_using_archive()) {
+    tty->print_cr("AOTClassLocationConfig::_runtime_instance = %p", _runtime_instance);
+    if (_runtime_instance != nullptr) {
+      _runtime_instance->print_on(tty);
+    }
+  }
+}
+
+void AOTClassLocationConfig::print_on(outputStream* st) const {
+  int n = class_locations()->length();
+  for (int i = 0; i < n; i++) {
+    const AOTClassLocation* cs = class_location_at(i);
+    const char* path;
+    if (i == 0) {
+      path = ClassLoader::get_jrt_entry()->name();
+    } else {
+      path = cs->path();
+    }
+    st->print_cr("[%d] = %s", i, path);
+    if (i == boot_cp_end_index() && i < n) {
+      st->print_cr("--- end of boot");
+    }
+    if (i == app_cp_end_index() && i < n) {
+      st->print_cr("--- end of app");
+    }
+  }
+}
