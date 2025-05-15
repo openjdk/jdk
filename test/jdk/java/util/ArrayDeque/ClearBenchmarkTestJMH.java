@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -55,15 +56,15 @@ public class ClearBenchmarkTestJMH {
         array = new Object[LIST_SIZE];
         for (int i = 0; i < LIST_SIZE; i++)
             array[i] = new Object();
-        //deques = new ArrayList<>();
     }
 
     @Benchmark
     @Measurement(iterations = 10)
     @Warmup(iterations = 3)
-    public void fillAndClear() {
+    public void fillAndClear(Blackhole bh) {
         ArrayDeque<Object> a = new ArrayDeque<>(LIST_SIZE);
         Collections.addAll(a, array);
         a.clear();
+        bh.consume(a);
     }
 }
