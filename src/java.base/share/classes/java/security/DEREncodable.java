@@ -38,7 +38,7 @@ import java.security.spec.X509EncodedKeySpec;
  * binary-encodable key or certificate material.
  * These APIs or their subclasses typically provide methods to convert
  * their instances to and from byte arrays in the Distinguished
- * Encoding Rules (DER) format (ITU X.690).
+ * Encoding Rules (DER) format.
  *
  * @see AsymmetricKey
  * @see KeyPair

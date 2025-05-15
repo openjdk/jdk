@@ -29,7 +29,6 @@ import jdk.internal.javac.PreviewFeature;
 
 import sun.security.util.Pem;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -42,11 +41,12 @@ import java.util.Objects;
  *
  * <p> {@code type} and {@code pem} may not be {@code null}.
  * {@code leadingData} may be null if no non-PEM data preceded PEM header
- * during decoding.  {@code leadingData} may be be useful for reading metadata
+ * during decoding.  {@code leadingData} may be useful for reading metadata
  * that accompanies PEM data.
  *
- * <p> During the instantiation of this record, there is no validation
- * for the {@code type} or {@code pem}. {@code leadingData} is not
+ * <p> No validation is performed during instantiation to ensure that
+ * {@code type} conforms to {@code RFC 7468}, that {@code pem} is valid Base64,
+ * or that {@code pem} matches the {@code type}.  {@code leadingData} is not
  * defensively copied and does not return a clone when
  * {@linkplain #leadingData()} is called.
  *
@@ -80,7 +80,7 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      */
     public PEMRecord(String type, String pem, byte[] leadingData) {
         Objects.requireNonNull(type, "\"type\" cannot be null.");
-        Objects.requireNonNull(type, "\"pem\" cannot be null.");
+        Objects.requireNonNull(pem, "\"pem\" cannot be null.");
 
         // With no validity checking on `type`, the constructor accept anything
         // including lowercase.  The onus is on the caller.
@@ -109,22 +109,6 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      */
     public PEMRecord(String type, String pem) {
         this(type, pem, null);
-    }
-
-    /**
-     * Creates a {@code PEMRecord} instance with a given String {@code type} and
-     * byte array {@code pem}.  {@code leadingData} is set to null.
-
-     * @param type the PEM type identifier
-     * @param pem the Base64-encoded data encapsulated by the PEM header and
-     *           footer.
-     * @throws IllegalArgumentException if the {@code type} is incorrectly
-     * formatted.
-     * @throws NullPointerException if {@code type} and/or {@code pem} are
-     * {@code null}.
-     */
-    public PEMRecord(String type, byte[] pem) {
-        this(type, new String(pem, StandardCharsets.ISO_8859_1), null);
     }
 
     /**

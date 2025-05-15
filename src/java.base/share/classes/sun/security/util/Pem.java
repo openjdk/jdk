@@ -58,6 +58,9 @@ public class Pem {
 
     static {
         DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
+        if (DEFAULT_ALGO == null || DEFAULT_ALGO.length() == 0) {
+            DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
+        }
         pbePattern = Pattern.compile("^PBEWith.*And.*");
     }
 
@@ -138,13 +141,17 @@ public class Pem {
      *
      * The method will leave the stream after reading the end of line of the
      * footer or end of file
-     * @param is The pem data
+     * @param is an InputStream
      * @param shortHeader if true, the hyphen length is 4 because the first
      *                    hyphen is assumed to have been read.  This is needed
      *                    for the CertificateFactory X509 implementation.
-     * @return A new Pem object containing the three components
-     * @throws IOException on read errors
-     * @throws EOFException when there is nothing to read
+     * @return a new PEMRecord
+     * @throws IOException on IO errors or PEM syntax errors that leave
+     * the read position not at the end of a PEM block
+     * @throws EOFException when at the unexpected end of the stream
+     * @throws IllegalArgumentException when a PEM syntax error occurs,
+     * but the read position in the stream is at the end of the block, so
+     * future reads can be successful.
      */
     public static PEMRecord readPEM(InputStream is, boolean shortHeader)
         throws IOException {

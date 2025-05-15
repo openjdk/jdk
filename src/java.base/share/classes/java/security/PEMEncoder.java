@@ -52,7 +52,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * and footer.
  *
  * <p> Encoding may be performed on Java API cryptographic objects that
- * implement {@link DEREncodable}.
+ * implement {@link DEREncodable}. The {@link #encode(DEREncodable)}
+ * and {@link #encodeToString(DEREncodable)} methods encode a DEREncodable
+ * into PEM and return the data in a byte array or String.
  *
  * <p> Private keys can be encrypted and encoded by configuring a
  * {@code PEMEncoder} with the {@linkplain #withEncryption(char[])} method,
@@ -74,6 +76,22 @@ import java.util.concurrent.locks.ReentrantLock;
  * not included in the encoding.  {@code PEMRecord} will not perform
  * validity checks on the data.
  *
+ * <p>The following lists the supported {@code DEREncodable} classes and
+ * the PEM types that each are encoded as:
+ *
+ * <ul>
+ *  <li>{@code X509Certificate} : CERTIFICATE</li>
+ *  <li>{@code X509CRL} : X509 CRL</li>
+ *  <li>{@code PublicKey}: PUBLIC KEY</li>
+ *  <li>{@code X509EncodedKeySpec} : PUBLIC KEY</li>
+ *  <li>{@code PrivateKey} : PRIVATE KEY</li>
+ *  <li>{@code PKCS8EncodedKeySpec} : PRIVATE KEY</li>
+ *  <li>{@code KeyPair} : PRIVATE KEY</li>
+ *  <li>{@code EncryptedPrivateKeyInfo} : ENCRYPTED PRIVATE KEY</li>
+ *  <li>{@code PrivateKey} (if configured with encryption): ENCRYPTED PRIVATE KEY</li>
+ *  <li>{@code PEMRecord} : {@code PEMRecord.type()}</li>
+ *  </ul>
+ *
  * <p> This class is immutable and thread-safe.
  *
  * <p> Here is an example of encoding a {@code PrivateKey} object:
@@ -88,6 +106,10 @@ import java.util.concurrent.locks.ReentrantLock;
  *     PEMEncoder pe = PEMEncoder.of().withEncryption(password);
  *     byte[] pemData = pe.encode(privKey);
  * }
+ *
+ * @implNote An implementation may support other PEM types and DEREncodables.
+ * This implementation support PEM types:  {@code CERTIFICATE}, {@code X509 CRL},
+ * {@code PRIVATE KEY}, {@code PUBLIC KEY}, and {@code ENCRYPTED PRIVATE KEY}.
  *
  * @see PEMDecoder
  * @see PEMRecord
@@ -126,7 +148,7 @@ public final class PEMEncoder {
     }
 
     /**
-     * Returns a instance of {@code PEMEncoder}.
+     * Returns an instance of {@code PEMEncoder}.
      *
      * @return a {@code PEMEncoder}
      */
@@ -196,7 +218,13 @@ public final class PEMEncoder {
                     throw new IllegalArgumentException(e);
                 }
             }
-            case PEMRecord rec -> Pem.pemEncoded(rec);
+            case PEMRecord rec -> {
+                if (isEncrypted()) {
+                    throw new IllegalArgumentException("PEMRecord cannot be " +
+                        "encrypted");
+                }
+                yield Pem.pemEncoded(rec);
+            }
 
             default -> throw new IllegalArgumentException("PEM does not " +
                 "support " + de.getClass().getCanonicalName());
@@ -237,7 +265,7 @@ public final class PEMEncoder {
      *
      * @param password the encryption password.  The array is cloned and
      *                stored in the new instance.
-     * @return a new configured {@code PEMEncoder} instance
+     * @return a new {@code PEMEncoder} instance configured for encryption
      * @throws NullPointerException when password is {@code null}
      */
     public PEMEncoder withEncryption(char[] password) {

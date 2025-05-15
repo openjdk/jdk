@@ -189,7 +189,6 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
         if (algParams == null) {
             throw new NullPointerException("algParams must be non-null");
         }
-
         AlgorithmId tmp;
         try {
             tmp = AlgorithmId.get(algParams);
@@ -332,30 +331,28 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * Specification.
      *
      * @param key the {@code PrivateKey} to be encrypted
-     * @param password the password used during encryption.
-     * @param algorithm the PBE encryption algorithm.  The default algorithm is
+     * @param password the password used in the PBE encryption.  This array
+     *                 will be cloned before being used.
+     * @param algorithm the PBE encryption algorithm.  The default algorithm
      *                  will be used if {@code null}.  However, {@code null} is
      *                  not allowed when {@code params} is non-null.
      * @param params the {@code AlgorithmParameterSpec} to be used with
      *               encryption.  The provider default will be used if
      *               {@code null}.
-     * @param provider the {@code Provider} is used for PBE
+     * @param provider the {@code Provider} will be used for PBE
      *                 {@link SecretKeyFactory} generation and {@link Cipher}
      *                 encryption operations. The default provider list will be
      *                 used if {@code null}.
-     * @return a {@code EncryptedPrivateKeyInfo}
+     * @return an {@code EncryptedPrivateKeyInfo}
      * @throws IllegalArgumentException on initialization errors based on the
-     * arguments passed to the method. The cause may include
-     * InvalidAlgorithmParameterException, NoSuchAlgorithmException,
-     * or NoSuchPaddingException.
-     * @throws RuntimeException on an encryption errors.  The cause may include
-     * IllegalBlockSizeException, BadPaddingException, or InvalidKeyException.
+     * arguments passed to the method
+     * @throws RuntimeException on an encryption errors
      * @throws NullPointerException if the key or password are null. If
      * {@code params} is non-null when {@code algorithm} is {@code null}.
      *
-     * @implNote The encryption uses the algorithm set by
-     * `jdk.epkcs8.defaultAlgorithm` Security Property
-     *  and default the {@code AlgorithmParameterSpec} of that provider.
+     * @implNote The {@code jdk.epkcs8.defaultAlgorithm} Security Property
+     * defines the default encryption algorithm and the
+     * {@code AlgorithmParameterSpec} are the provider's algorithm defaults.
      *
      * @since 25
      */
@@ -395,32 +392,25 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * {@code PrivateKey} and password.  Default algorithm and parameters are
      * used.
      *
-     * @param key The {@code PrivateKey} to be encrypted
-     * @param password the password used in the PBE encryption.  This array is
-     *                 cloned before being used.
-     * @return a {@code EncryptedPrivateKeyInfo}
+     * @param key the {@code PrivateKey} to be encrypted
+     * @param password the password used in the PBE encryption.  This array
+     *                 will be cloned before being used.
+     * @return an {@code EncryptedPrivateKeyInfo}
      * @throws IllegalArgumentException on initialization errors based on the
-     * arguments passed to the method.  The cause may include
-     * InvalidAlgorithmParameterException, NoSuchAlgorithmException,
-     * or NoSuchPaddingException.
-     * @throws RuntimeException on an encryption errors. The cause may include
-     * IllegalBlockSizeException, BadPaddingException, or InvalidKeyException.
-     * @throws NullPointerException when the key or password is null.
+     * arguments passed to the method
+     * @throws RuntimeException on an encryption errors
+     * @throws NullPointerException when the {code key} or {@code password}
+     * is {@code null}
      *
-     * @implNote The `jdk.epkcs8.defaultAlgorithm` Security Property defines
-     * the default encryption algorithm and the {@code AlgorithmParameterSpec}
-     * are the provider's algorithm defaults.
+     * @implNote The {@code jdk.epkcs8.defaultAlgorithm} Security Property
+     * defines the default encryption algorithm and the
+     * {@code AlgorithmParameterSpec} are the provider's algorithm defaults.
      *
      * @since 25
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
         char[] password) {
-        if (Pem.DEFAULT_ALGO == null || Pem.DEFAULT_ALGO.length() == 0) {
-            throw new RuntimeException("Security property " +
-                "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
-                "valid algorithm.  Operation cannot be performed.");
-        }
         return encryptKey(key, password, Pem.DEFAULT_ALGO, null, null);
     }
 
@@ -442,20 +432,17 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @param provider the {@code Provider} is used for {@link Cipher}
      *                encryption operation.  The default provider list will be
      *                used if {@code null}.
-     * @return a {@code EncryptedPrivateKeyInfo}
+     * @return an {@code EncryptedPrivateKeyInfo}
      * @throws IllegalArgumentException on initialization errors based on the
-     * arguments passed to the method. The cause may include
-     * InvalidAlgorithmParameterException, NoSuchAlgorithmException,
-     * or NoSuchPaddingException.
-     * @throws RuntimeException on an encryption errors.  The cause may include
-     * IllegalBlockSizeException, BadPaddingException, or InvalidKeyException.
+     * arguments passed to the method
+     * @throws RuntimeException on an encryption errors
      * @throws NullPointerException if the {@code key} or {@code encKey} are
      * null. If {@code params} is non-null, {@code algorithm} cannot be
      * {@code null}.
      *
-     * @implNote The `jdk.epkcs8.defaultAlgorithm` Security Property defines
-     * the default encryption algorithm and the {@code AlgorithmParameterSpec}
-     * are the provider's algorithm defaults.
+     * @implNote The {@code jdk.epkcs8.defaultAlgorithm} Security Property
+     * defines the default encryption algorithm and the
+     * {@code AlgorithmParameterSpec} are the provider's algorithm defaults.
      *
      * @since 25
      */
@@ -470,12 +457,6 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
             if (params != null) {
                 throw new NullPointerException("algorithm must be specified " +
                     "if params is non-null.");
-            }
-
-            if (Pem.DEFAULT_ALGO == null || Pem.DEFAULT_ALGO.length() == 0) {
-                throw new RuntimeException("Security property " +
-                    "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
-                    "valid algorithm.  Operation cannot be performed.");
             }
             algorithm = Pem.DEFAULT_ALGO;
         }
@@ -518,13 +499,15 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
     }
 
     /**
-     * Returns a {@code PrivateKey} from the encrypted data in this instance.
+     * Extract the enclosed {@code PrivateKey} object from the encrypted data
+     * and return it.
      *
-     * @param password this array is cloned and used for PBE decryption.
+     * @param password the password used in the PBE encryption.  This array
+     *                 will be cloned before being used.
      * @return a {@code PrivateKey}
      * @throws GeneralSecurityException if an error occurs parsing or
      * decrypting the encrypted data, or producing the key object.
-     * @throws NullPointerException if password is null.
+     * @throws NullPointerException if {@code password} is null
      *
      * @since 25
      */
@@ -541,24 +524,24 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
     }
 
     /**
-     * Returns a {@code PrivateKey} from the encrypted data in this instance.
-     * using the given provider.
+     * Extract the enclosed {@code PrivateKey} object from the encrypted data
+     * and return it.
      *
-     * @param decryptKey this is the decryption key and cannot be {@code null}.
-     * @param provider the {@code Provider} is used for Cipher decryption and
+     * @param decryptKey the decryption key and cannot be {@code null}
+     * @param provider the {@code Provider} used for Cipher decryption and
      *                 {@code PrivateKey} generation. A {@code null} value will
      *                 use the default provider configuration.
      * @return a {@code PrivateKey}
      * @throws GeneralSecurityException if an error occurs parsing or
      * decrypting the encrypted data, or producing the key object.
-     * @throws NullPointerException if {@code decryptKey} is null.
+     * @throws NullPointerException if {@code decryptKey} is null
      *
      * @since 25
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public PrivateKey getKey(Key decryptKey, Provider provider)
         throws GeneralSecurityException {
-        Objects.requireNonNull("decryptKey cannot be null.");
+        Objects.requireNonNull(decryptKey,"decryptKey cannot be null.");
         PKCS8EncodedKeySpec p = getKeySpecImpl(decryptKey, provider);
         if (provider == null) {
             return KeyFactory.getInstance(p.getAlgorithm()).
