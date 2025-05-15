@@ -1064,7 +1064,7 @@ oop StringTable::init_shared_strings_array() {
   };
 
   _local_table->do_safepoint_scan(copy_into_array);
-  log_info(cds)("Archived %d interned strings", index);
+  log_info(aot)("Archived %d interned strings", index);
   return array;
 };
 
