@@ -1291,8 +1291,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
   }
 
   // Clone the iv data nodes as an integer iv
-  Node* int_stride = _igvn.intcon(stride_con);
-  set_ctrl(int_stride, C->root());
+  Node* int_stride = intcon(stride_con);
   Node* inner_phi = new PhiNode(head, new_phi_t);
   Node* inner_incr = new AddINode(inner_phi, int_stride);
   Node* inner_cmp = new CmpINode(inner_incr, new_limit);
