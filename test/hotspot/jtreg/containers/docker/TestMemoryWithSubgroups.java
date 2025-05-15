@@ -147,21 +147,4 @@ public class TestMemoryWithSubgroups {
         Common.run(opts)
             .shouldMatch("Lowest limit was:.*" + expectedValue);
     }
-    // pre: IS_DOCKER == true
-    private static String getDockerVersionStr() {
-        if (!IS_DOCKER) {
-            return null;
-        }
-        try {
-            ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "--version");
-            OutputAnalyzer out = new OutputAnalyzer(pb.start())
-                    .shouldHaveExitValue(0);
-            String result = out.asLines().get(0);
-            System.out.println(Container.ENGINE_COMMAND + " --version returning: " + result);
-            return result;
-        } catch (Exception e) {
-            System.out.println(Container.ENGINE_COMMAND + " --version command failed. Returning null");
-            return null;
-        }
-    }
 }
