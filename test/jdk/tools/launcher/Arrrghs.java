@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -599,6 +599,38 @@ public class Arrrghs extends TestHelper {
                 "public static void main(String... args){}");
         tr = doExec(javaCmd, "-jar", "some.jar");
         tr.checkPositive();
+        if (!tr.testStatus)
+            System.out.println(tr);
+
+        //private method with parameter, usable method without parameter:
+        createJar(new File("some.jar"), new File("Foo"),
+            "private static void main(String[] args){}",
+            "void main() {System.out.println(\"THE_CHOSEN_ONE\");}");
+        tr = doExec(javaCmd, "-jar", "some.jar");
+        tr.contains("THE_CHOSEN_ONE");
+        if (!tr.testStatus)
+            System.out.println(tr);
+
+        //method with a wrong return type with parameter, usable method without parameter:
+        createJar(new File("some.jar"), new File("Foo"),
+            "public static int main(String[] args){ return -1; }",
+            "void main() {System.out.println(\"THE_CHOSEN_ONE\");}");
+        tr = doExec(javaCmd, "-jar", "some.jar");
+        tr.contains("THE_CHOSEN_ONE");
+        if (!tr.testStatus)
+            System.out.println(tr);
+
+        // instance method abstract class:
+        createJarForSource(null, new File("some.jar"), new File("Foo"),
+                """
+                public abstract class Foo {
+                    void main() {
+                        System.out.println("Cannot be called.");
+                    }
+                }
+                """);
+        tr = doExec(javaCmd, "-jar", "some.jar");
+        tr.contains("Error: abstract class Foo can not instantiated");
         if (!tr.testStatus)
             System.out.println(tr);
     }
