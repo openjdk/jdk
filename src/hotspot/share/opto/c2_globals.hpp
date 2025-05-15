@@ -839,7 +839,7 @@
           "loop runs for small enough number of iterations")                \
                                                                             \
   develop(bool, StressShortRunningLongLoop, false,                          \
-          "Speculate all long counted loops are short running when bounds"  \
+          "Speculate all long counted loops are short running when bounds " \
           "are unknown even if profile data doesn't say so")                \
 
 // end of C2_FLAGS
