@@ -74,6 +74,7 @@ public class RootPaneDefaultButtonTest extends JDialog {
                 window2.setVisible(true);
             }
         });
+        robot.delay(1000);
 
         Robot robot = new Robot();
 
