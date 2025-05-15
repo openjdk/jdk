@@ -1606,8 +1606,8 @@ static void open_file_mapping(int vmid, char** addrp, size_t* sizep, TRAPS) {
   // using resource arrays for these names prevents the leaks
   // that would otherwise occur.
   //
-  char* rfilename = RESOURCE_STRDUP(filename);
-  char* robjectname = RESOURCE_STRDUP(objectname);
+  char* rfilename = ResourceArea::strdup(filename);
+  char* robjectname = ResourceArea::strdup(objectname);
 
   // free the c heap resources that are no longer needed
   FREE_C_HEAP_ARRAY(char, luser);

@@ -2709,7 +2709,7 @@ HeapDumper::~HeapDumper() {
 // returns the error string (resource allocated), or null
 char* HeapDumper::error_as_C_string() const {
   if (error() != nullptr) {
-    char* str = RESOURCE_STRDUP(error());
+    char* str = ResourceArea::strdup(error());
     return str;
   } else {
     return nullptr;
