@@ -156,7 +156,11 @@ REDIST_SUBDIR="VC/Redist/MSVC/$REDIST_VERSION"
 echo "Copying VC..."
 rm -rf $DEVKIT_ROOT/VC
 mkdir -p $DEVKIT_ROOT/VC/bin
-cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx64/arm64" $DEVKIT_ROOT/VC/bin/
+if [ -d "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostarm64/arm64" ]; then
+    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostarm64/arm64" $DEVKIT_ROOT/VC/bin/
+else
+    cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx64/arm64" $DEVKIT_ROOT/VC/bin/
+fi
 cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx64/x64" $DEVKIT_ROOT/VC/bin/
 cp -r "$VS_INSTALL_DIR/${VC_SUBDIR}/bin/Hostx86/x86" $DEVKIT_ROOT/VC/bin/
 mkdir -p $DEVKIT_ROOT/VC/lib
