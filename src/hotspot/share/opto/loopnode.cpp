@@ -1139,46 +1139,40 @@ public:
 
 class CloneShortLoopPredicatesVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_loop;
-
   PhaseIdealLoop* const _phase;
-  bool _has_hoisted_check_parse_predicates;
 
 public:
   CloneShortLoopPredicatesVisitor(LoopNode* loop_head,
                                   const NodeInShortLoopBody& node_in_loop_body,
                                   PhaseIdealLoop* phase)
     : _clone_predicate_to_loop(loop_head, node_in_loop_body, phase),
-      _phase(phase),
-      _has_hoisted_check_parse_predicates(false) {
+      _phase(phase) {
   }
   NONCOPYABLE(CloneShortLoopPredicatesVisitor);
 
   using PredicateVisitor::visit;
 
   void visit(const ParsePredicate& parse_predicate) override {
-    Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
-    if (deopt_reason == Deoptimization::Reason_predicate ||
-        deopt_reason == Deoptimization::Reason_profile_predicate) {
-      _has_hoisted_check_parse_predicates = true;
-    }
-
     _clone_predicate_to_loop.clone_parse_predicate(parse_predicate, true);
     parse_predicate.kill(_phase->igvn());
   }
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
-    if (!_has_hoisted_check_parse_predicates) {
-      // Only process if we are in the correct Predicate Block.
-      return;
-    }
-
     _clone_predicate_to_loop.clone_template_assertion_predicate(template_assertion_predicate);
     template_assertion_predicate.kill(_phase->igvn());
   }
 };
-
-// If bounds are known, or profile data indicates it runs for a small enough number of iterations, so the loop doesn't
-// need an outer loop, don't create the outer loop
-bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List &range_checks, uint iters_limit) {
+// If the loop is either statically known to run for a small enough number of iterations or if profile data indicates
+// that, we don't want an outer loop because the overhead of having an outer loop whose backedge is never taken, has a
+// measurable cost. Furthermore, creating the loop nest usually causes one iteration of the loop to be peeled so
+// predicates can be set up. If the loop is short running, then it's an extra iteration that's run with range checks
+// (compared to an int counted loop with int range checks).
+//
+// In the short running case, turn the loop into a regular loop again and transform the long range checks:
+// - LongCountedLoop: Create LoopNode but keep the loop limit type with a CastLL node to avoid that we later try to
+//                    create a Loop Limit Check when turning the LoopNode into a CountedLoopNode.
+// - CountedLoop: Can be reused.
+bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List &range_checks,
+                                        uint iters_limit) {
   if (!ShortRunningLongLoop) {
     return false;
   }
@@ -1195,7 +1189,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     if (StressShortRunningLongLoop) {
       profile_short_running_loop = true;
     } else {
-      profile_short_running_loop = !head->is_profile_trip_failed() && head->profile_trip_cnt() < iters_limit / ABS(stride_con);
+      profile_short_running_loop = !head->is_profile_trip_failed() && head->profile_trip_cnt() <= iters_limit / ABS(stride_con);
     }
   }
 
@@ -1215,7 +1209,6 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
   register_new_node(new_limit, entry_control);
 
   PhiNode* phi = head->phi()->as_Phi();
-  const Type* new_phi_t = TypeInt::INT;
   if (profile_short_running_loop) {
     // Add a Short Running Long Loop Predicate. It's the first predicate in the predicate chain before entering a loop
     // because a cast that's control dependent on the Short Running Long Loop Predicate is added to narrow the limit and
@@ -1223,6 +1216,17 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     // Predicate). The current limit could, itself, be dependent on an existing predicate. Clone parse and template
     // assertion predicates below existing predicates to get proper ordering of predicates when walking from the loop
     // up: future predicates, Short Running Long Loop Predicate, existing predicates.
+    //
+    //        Existing Hoisted
+    //        Check Predicates
+    //              |
+    //     New Short Running Long
+    //         Loop Predicate
+    //              |
+    //   Cloned Parse Predicates and
+    //  Template Assertion Predicates
+    //              |
+    //             Loop
     const Predicates predicates_before_cloning(entry_control);
     const PredicateBlock* short_running_long_loop_predicate_block = predicates_before_cloning.short_running_long_loop_predicate_block();
     if (!short_running_long_loop_predicate_block->has_parse_predicate()) { // already trapped
@@ -1292,7 +1296,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
 
   // Clone the iv data nodes as an integer iv
   Node* int_stride = intcon(stride_con);
-  Node* inner_phi = new PhiNode(head, new_phi_t);
+  Node* inner_phi = new PhiNode(head, TypeInt::INT);
   Node* inner_incr = new AddINode(inner_phi, int_stride);
   Node* inner_cmp = new CmpINode(inner_incr, new_limit);
   Node* inner_bol = new BoolNode(inner_cmp, exit_test->in(1)->as_Bool()->_test._test);

@@ -216,7 +216,7 @@ public:
   static BaseCountedLoopNode* make(Node* entry, Node* backedge, BasicType bt);
 
   virtual void set_trip_count(julong tc) = 0;
-  virtual julong trip_count() = 0;
+  virtual julong trip_count() const = 0;
 
   bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
   void set_exact_trip_count(julong tc) {
