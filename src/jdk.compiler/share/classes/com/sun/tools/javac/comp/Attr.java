@@ -2670,9 +2670,7 @@ public class Attr extends JCTree.Visitor {
             Type capturedRes = resultInfo.checkContext.inferenceContext().cachedCapture(tree, restype, true);
             result = check(tree, capturedRes, KindSelector.VAL, resultInfo);
         }
-        if (env.info.lint.isEnabled(LintCategory.IDENTITY)) {
-            chk.checkRequiresIdentity(tree, env.info.lint);
-        }
+        chk.checkRequiresIdentity(tree, env.info.lint);
         chk.validate(tree.typeargs, localEnv);
     }
     //where

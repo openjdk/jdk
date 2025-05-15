@@ -5670,7 +5670,7 @@ public class Check {
 
     void checkRequiresIdentity(JCTree tree, Lint lint) {
         switch (tree) {
-            case JCClassDecl classDecl : {
+            case JCClassDecl classDecl -> {
                 Type st = types.supertype(classDecl.sym.type);
                 if (st != null &&
                         // no need to recheck j.l.Object, shortcut,
@@ -5685,9 +5685,8 @@ public class Check {
                 for (JCTypeParameter tp : classDecl.typarams) {
                     checkIfIdentityIsExpected(tp.pos(), tp.type, lint);
                 }
-                break;
             }
-            case JCVariableDecl variableDecl : {
+            case JCVariableDecl variableDecl -> {
                 if (variableDecl.vartype != null &&
                         (variableDecl.sym.flags_field & RECORD) == 0 ||
                         (variableDecl.sym.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0) {
@@ -5697,34 +5696,27 @@ public class Check {
                      */
                     checkIfIdentityIsExpected(variableDecl.vartype.pos(), variableDecl.vartype.type, lint);
                 }
-                break;
             }
-            case JCTypeCast typeCast : {
-                checkIfIdentityIsExpected(typeCast.clazz.pos(), typeCast.clazz.type, lint);
-                break;
-            }
-            case JCBindingPattern bindingPattern : {
+            case JCTypeCast typeCast -> checkIfIdentityIsExpected(typeCast.clazz.pos(), typeCast.clazz.type, lint);
+            case JCBindingPattern bindingPattern -> {
                 if (bindingPattern.var.vartype != null) {
                     checkIfIdentityIsExpected(bindingPattern.var.vartype.pos(), bindingPattern.var.vartype.type, lint);
                 }
-                break;
             }
-            case JCMethodDecl methodDecl : {
+            case JCMethodDecl methodDecl -> {
                 for (JCTypeParameter tp : methodDecl.typarams) {
                     checkIfIdentityIsExpected(tp.pos(), tp.type, lint);
                 }
                 if (methodDecl.restype != null && !methodDecl.restype.type.hasTag(VOID)) {
                     checkIfIdentityIsExpected(methodDecl.restype.pos(), methodDecl.restype.type, lint);
                 }
-                break;
             }
-            case JCMemberReference mref : {
+            case JCMemberReference mref -> {
                 checkIfIdentityIsExpected(mref.expr.pos(), mref.target, lint);
                 checkIfTypeParamsRequiresIdentity(mref.sym.getMetadata(), mref.typeargs, lint);
-                break;
             }
             case JCPolyExpression poly
-                when (poly instanceof JCNewClass || poly instanceof JCMethodInvocation) : {
+                when (poly instanceof JCNewClass || poly instanceof JCMethodInvocation) -> {
                 if (poly instanceof JCNewClass newClass) {
                     checkIfIdentityIsExpected(newClass.clazz.pos(), newClass.clazz.type, lint);
                 }
@@ -5756,9 +5748,8 @@ public class Check {
                                 ((JCMethodInvocation)poly).typeargs,
                             lint);
                 }
-                break;
             }
-            default: throw new AssertionError("unexpected tree " + tree);
+            default -> throw new AssertionError("unexpected tree " + tree);
         }
     }
 
