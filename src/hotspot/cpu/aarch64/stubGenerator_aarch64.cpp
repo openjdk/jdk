@@ -1162,7 +1162,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void copy_memory_small(DecoratorSet decorators, BasicType type, Register s, Register d, Register count, int step) {
     bool is_backwards = step < 0;
-    size_t granularity = uabs(step);
+    size_t granularity = g_uabs(step);
     int direction = is_backwards ? -1 : 1;
 
     Label Lword, Lint, Lshort, Lbyte;
@@ -1221,7 +1221,7 @@ class StubGenerator: public StubCodeGenerator {
                    Register s, Register d, Register count, int step) {
     copy_direction direction = step < 0 ? copy_backwards : copy_forwards;
     bool is_backwards = step < 0;
-    unsigned int granularity = uabs(step);
+    unsigned int granularity = g_uabs(step);
     const Register t0 = r3, t1 = r4;
 
     // <= 80 (or 96 for SIMD) bytes do inline. Direction doesn't matter because we always
@@ -8109,7 +8109,8 @@ class StubGenerator: public StubCodeGenerator {
     __ andr(rscratch2, cnt, vf - 1);
     __ bind(TAIL_SHORTCUT);
     __ adr(rscratch1, BR_BASE);
-    __ sub(rscratch1, rscratch1, rscratch2, ext::uxtw, 3);
+    // For Cortex-A53 offset is 4 because 2 nops are generated.
+    __ sub(rscratch1, rscratch1, rscratch2, ext::uxtw, VM_Version::supports_a53mac() ? 4 : 3);
     __ movw(rscratch2, 0x1f);
     __ br(rscratch1);
 
@@ -8117,6 +8118,11 @@ class StubGenerator: public StubCodeGenerator {
       __ load(rscratch1, Address(__ post(ary, type2aelembytes(eltype))),
                                    eltype);
       __ maddw(result, result, rscratch2, rscratch1);
+      // maddw generates an extra nop for Cortex-A53 (see maddw definition in macroAssembler).
+      // Generate 2nd nop to have 4 instructions per iteration.
+      if (VM_Version::supports_a53mac()) {
+        __ nop();
+      }
     }
     __ bind(BR_BASE);
 

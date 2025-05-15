@@ -369,7 +369,7 @@ class AnnotationIterator : public StackObj {
 };
 
 static const char value_name[] = "value";
-static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_type, bool& value) {
+static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_type, bool default_value, bool& value) {
   assert(annotation_type != nullptr, "invariant");
   AnnotationArray* class_annotations = ik->class_annotations();
   if (class_annotations == nullptr) {
@@ -385,6 +385,12 @@ static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_typ
         SymbolTable::probe(value_name, sizeof value_name - 1);
       assert(value_symbol != nullptr, "invariant");
       const AnnotationElementIterator element_iterator = annotation_iterator.elements();
+      if (!element_iterator.has_next()) {
+        // Default values are not stored in the annotation element, so if the
+        // element-value pair is empty, return the default value.
+        value = default_value;
+        return true;
+      }
       while (element_iterator.has_next()) {
         element_iterator.move_to_next();
         if (value_symbol == element_iterator.name()) {
@@ -402,15 +408,15 @@ static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_typ
 // Evaluate to the value of the first found Symbol* annotation type.
 // Searching moves upwards in the klass hierarchy in order to support
 // inherited annotations in addition to the ability to override.
-static bool annotation_value(const InstanceKlass* ik, const Symbol* annotation_type, bool& value) {
+static bool annotation_value(const InstanceKlass* ik, const Symbol* annotation_type, bool default_value, bool& value) {
   assert(ik != nullptr, "invariant");
   assert(annotation_type != nullptr, "invariant");
   assert(JdkJfrEvent::is_a(ik), "invariant");
-  if (has_annotation(ik, annotation_type, value)) {
+  if (has_annotation(ik, annotation_type, default_value, value)) {
     return true;
   }
   InstanceKlass* const super = InstanceKlass::cast(ik->super());
-  return super != nullptr && JdkJfrEvent::is_a(super) ? annotation_value(super, annotation_type, value) : false;
+  return super != nullptr && JdkJfrEvent::is_a(super) ? annotation_value(super, annotation_type, default_value, value) : false;
 }
 
 static const char jdk_jfr_module_name[] = "jdk.jfr";
@@ -469,7 +475,7 @@ static bool should_register_klass(const InstanceKlass* ik, bool& untypedEventHan
   }
   assert(registered_symbol != nullptr, "invariant");
   bool value = false; // to be set by annotation_value
-  untypedEventHandler = !(annotation_value(ik, registered_symbol, value) || java_base_can_read_jdk_jfr());
+  untypedEventHandler = !(annotation_value(ik, registered_symbol, true, value) || java_base_can_read_jdk_jfr());
   return value;
 }
 
