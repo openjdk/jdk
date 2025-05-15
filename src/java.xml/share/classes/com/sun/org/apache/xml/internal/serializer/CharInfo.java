@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -255,6 +255,8 @@ final class CharInfo
                 // on the air until we're ready to officially decommit from
                 // VJ++.
 
+                assert is != System.in
+                        : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
                 BufferedReader reader;
                 try {
                     reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));

@@ -3237,6 +3237,8 @@ public class JShellTool implements MessageHandler {
 
         try (InputStream in = JShellTool.class.getResourceAsStream(spec);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+            assert in != System.in
+                    : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
             return reader.lines().collect(Collectors.joining("\n", "", "\n"));
         }
     }

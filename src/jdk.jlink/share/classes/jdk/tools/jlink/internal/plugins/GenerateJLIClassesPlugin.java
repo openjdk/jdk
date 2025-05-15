@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,8 @@ public final class GenerateJLIClassesPlugin extends AbstractPlugin {
             try (InputStream traceFile =
                     this.getClass().getResourceAsStream(DEFAULT_TRACE_FILE)) {
                 if (traceFile != null) {
+                    assert traceFile != System.in
+                            : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
                     traceFileStream = new BufferedReader(new InputStreamReader(traceFile)).lines();
                 }
             } catch (Exception e) {

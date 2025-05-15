@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,8 +112,10 @@ public class AliasFileParser {
             return;
         }
 
-        BufferedReader r = new BufferedReader(
-                new InputStreamReader(inputfile.openStream()));
+        InputStream is = inputfile.openStream();
+        assert is != System.in
+                : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
+        BufferedReader r = new BufferedReader(new InputStreamReader(is));
         st = new StreamTokenizer(r);
 
         // allow both forms of commenting styles

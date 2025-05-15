@@ -244,6 +244,8 @@ public class CDS {
     private static native void dumpDynamicArchive(String archiveFileName);
 
     private static String drainOutput(InputStream stream, long pid, String tail, List<String> cmds) {
+        assert stream != System.in
+                : "Unexpected `System.in'! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
         String fileName  = "java_pid" + pid + "_" + tail;
         new Thread( ()-> {
             try (InputStreamReader isr = new InputStreamReader(stream);

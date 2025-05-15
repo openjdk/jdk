@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@ package javax.sql.rowset.serial;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.sql.*;
 import java.util.Map;
 import java.util.Vector;
@@ -348,7 +350,7 @@ public class SQLOutputImpl implements SQLOutput {
      *        values of a UDT to the database.
      */
     public void writeAsciiStream(java.io.InputStream x) throws SQLException {
-        BufferedReader bufReader = new BufferedReader(new InputStreamReader(x));
+        BufferedReader bufReader = stdinAwareReader(x);
         try {
             int i;
             while ((i = bufReader.read()) != -1) {
@@ -372,7 +374,7 @@ public class SQLOutputImpl implements SQLOutput {
      *        values of a UDT to the database.
      */
     public void writeBinaryStream(java.io.InputStream x) throws SQLException {
-        BufferedReader bufReader = new BufferedReader(new InputStreamReader(x));
+        BufferedReader bufReader = stdinAwareReader(x);
         try {
             int i;
             while ((i = bufReader.read()) != -1) {
@@ -385,6 +387,13 @@ public class SQLOutputImpl implements SQLOutput {
         } catch (IOException ioe) {
             throw new SQLException(ioe.getMessage());
         }
+    }
+
+    private static BufferedReader stdinAwareReader(InputStream in) {
+        InputStreamReader reader = in == System.in
+                ? new InputStreamReader(in, Charset.forName(System.getProperty("stdin.encoding")))
+                : new InputStreamReader(in);
+        return new BufferedReader(reader);
     }
 
     //================================================================

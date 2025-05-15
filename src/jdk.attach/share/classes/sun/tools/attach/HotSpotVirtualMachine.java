@@ -464,6 +464,8 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
     String readMessage(InputStream in) throws IOException {
         String s;
         StringBuilder message = new StringBuilder();
+        assert in != System.in
+                : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
         while ((s = br.readLine()) != null) {
             if (message.length() > 0) {
