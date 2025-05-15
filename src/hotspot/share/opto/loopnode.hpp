@@ -307,7 +307,7 @@ public:
   int main_idx() const { return _main_idx; }
 
   void set_trip_count(julong tc) { _trip_count = checked_cast<uint>(tc); }
-  julong trip_count()            { return _trip_count; }
+  julong trip_count() const      { return _trip_count; }
 
   void set_pre_loop  (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Pre ; _main_idx = main->_idx; }
   void set_main_loop (                     ) { assert(is_normal_loop(),""); _loop_flags |= Main;                         }
