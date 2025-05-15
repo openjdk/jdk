@@ -24,24 +24,21 @@
 /* @test
  * @bug 8355954
  * @summary Verify correct behavior of File.delete
+ * @library .. /test/lib
+ * @build jdk.test.lib.Platform
  * @run junit DeleteReadOnly
  * @run junit/othervm -Djdk.io.File.allowDeleteReadOnlyFiles=true DeleteReadOnly
  */
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
+import jdk.test.lib.Platform;
+
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DeleteReadOnly {
     private static final String PROP = "jdk.io.File.allowDeleteReadOnlyFiles";
     private static final boolean DELETE_READ_ONLY = Boolean.getBoolean(PROP);
@@ -49,52 +46,33 @@ public class DeleteReadOnly {
     private static final File DIR = new File(".", "dir");
     private static final File FILE = new File(DIR, "file");
 
-    @BeforeAll
-    static void createFiles() throws IOException {
-        DIR.mkdir();
-        FILE.createNewFile();
+    void deleteReadOnlyFile(File f) {
+        f.setReadOnly();
+        assertTrue(f.delete());
     }
 
-    // This test must be run first
     @Test
-    @Order(1)
-    @EnabledOnOs({OS.AIX, OS.LINUX, OS.MAC})
-    void deleteReadOnlyFile() {
-        FILE.setReadOnly();
-        assertTrue(FILE.delete());
-    }
+    void deleteReadOnlyRegularFile() throws IOException {
+        assertTrue(DIR.mkdir());
+        assertTrue(FILE.createNewFile());
 
-    // This test must be run first
-    @Test
-    @Order(1)
-    @EnabledOnOs({OS.WINDOWS})
-    void deleteReadOnlyFileWin() {
         FILE.setReadOnly();
 
         boolean deleted = FILE.delete();
-        assertEquals(DELETE_READ_ONLY, deleted);
+        boolean shouldBeDeleted = !Platform.isWindows() || DELETE_READ_ONLY;
+        assertEquals(shouldBeDeleted, deleted);
 
         if (!deleted) {
             FILE.setWritable(true);
             assertTrue(FILE.delete());
         }
-    }
 
-    // This test must be run after DIR is empty
-    @Test
-    @Order(2)
-    @EnabledOnOs({OS.AIX, OS.LINUX, OS.MAC})
-    void deleteReadOnlyDir() {
-        DIR.setReadOnly();
         assertTrue(DIR.delete());
     }
 
-    // This test must be run after DIR is empty
     @Test
-    @Order(2)
-    @EnabledOnOs({OS.WINDOWS})
-    void deleteReadOnlyDirWin() {
-        DIR.setReadOnly();
-        assertTrue(DIR.delete());
+    void deleteReadOnlyDirectory() throws IOException {
+        assertTrue(DIR.mkdir());
+        deleteReadOnlyFile(DIR);
     }
 }
