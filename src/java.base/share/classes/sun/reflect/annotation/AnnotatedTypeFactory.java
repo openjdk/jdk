@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,11 +87,12 @@ public final class AnnotatedTypeFactory {
         if (isArray(type))
             return addTo;
         if (type instanceof Class<?> clz) {
-            if (clz.getEnclosingClass() == null)
+            // local and anonymous class are top-level in annotated types
+            if (clz.getDeclaringClass() == null)
                 return addTo;
             if (Modifier.isStatic(clz.getModifiers()))
                 return addTo;
-            return nestingForType(clz.getEnclosingClass(), addTo.pushInner());
+            return nestingForType(clz.getDeclaringClass(), addTo.pushInner());
         } else if (type instanceof ParameterizedType t) {
             if (t.getOwnerType() == null)
                 return addTo;
