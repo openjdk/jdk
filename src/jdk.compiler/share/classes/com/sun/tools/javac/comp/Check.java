@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToIntBiFunction;
@@ -5811,13 +5812,12 @@ public class Check {
             if (t != null && t.tsym != null) {
                 SymbolMetadata sm = t.tsym.getMetadata();
                 if (sm != null && !t.getTypeArguments().isEmpty()) {
-                    for (Attribute.TypeCompound ta: sm.getTypeAttributes().stream()
-                            .filter(ta -> ta.type.tsym == syms.requiresIdentityType.tsym).toList()) {
-                        Type type = t.getTypeArguments().get(ta.position.parameter_index);
-                        if (type != null && type.isValueBased()) {
-                            requiresWarning = true;
-                            return null;
-                        }
+                    if (sm.getTypeAttributes().stream()
+                            .filter(ta -> ta.type.tsym == syms.requiresIdentityType.tsym &&
+                                    t.getTypeArguments().get(ta.position.parameter_index) != null &&
+                                    t.getTypeArguments().get(ta.position.parameter_index).isValueBased()).findAny().isPresent()) {
+                        requiresWarning = true;
+                        return null;
                     }
                 }
             }
@@ -5837,15 +5837,12 @@ public class Check {
                 checkIfIdentityIsExpected(targ.pos(), targ.type, lint);
             }
             if (sm != null)
-                for (Attribute.TypeCompound ta : sm.getTypeAttributes().stream()
-                        .filter(ta -> ta.type.tsym == syms.requiresIdentityType.tsym).toList()) {
-                    Type paramType = typeParamTrees.get(ta.position.parameter_index).type;
-                    if (paramType != null && paramType.isValueBased())
-                        lint.logIfEnabled(
-                                typeParamTrees.get(ta.position.parameter_index).pos(),
-                                CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected
-                        );
-                }
+                sm.getTypeAttributes().stream()
+                        .filter(ta -> (ta.type.tsym == syms.requiresIdentityType.tsym) &&
+                                typeParamTrees.get(ta.position.parameter_index).type != null &&
+                                typeParamTrees.get(ta.position.parameter_index).type.isValueBased())
+                        .forEach(ta -> lint.logIfEnabled(typeParamTrees.get(ta.position.parameter_index).pos(),
+                                CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected));
         }
     }
-}
+ }
