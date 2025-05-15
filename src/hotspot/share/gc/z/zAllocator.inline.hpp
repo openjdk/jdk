@@ -27,6 +27,7 @@
 #include "gc/z/zAllocator.hpp"
 
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zHeap.hpp"
 
 inline ZAllocatorEden* ZAllocator::eden() {
@@ -34,7 +35,7 @@ inline ZAllocatorEden* ZAllocator::eden() {
 }
 
 inline ZAllocatorForRelocation* ZAllocator::relocation(ZPageAge page_age) {
-  return _relocation[static_cast<uint>(page_age) - 1];
+  return _relocation[untype(page_age) - 1];
 }
 
 inline ZAllocatorForRelocation* ZAllocator::old() {

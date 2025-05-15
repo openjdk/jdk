@@ -147,6 +147,12 @@ public:
     assert(value <= end, "out of range");
   }
 
+  template <T Value>
+  static constexpr void assert_in_range() {
+    static_assert(_start <= static_cast<Underlying>(Value), "out of range");
+    static_assert(static_cast<Underlying>(Value) <= _end, "out of range");
+  }
+
   // Convert an enumerator value to the corresponding underlying type.
   static constexpr Underlying underlying_value(T value) {
     return static_cast<Underlying>(value);
@@ -229,6 +235,14 @@ class EnumRange {
     assert(size() > 0, "empty range");
   }
 
+private:
+
+  struct ConstExprConstructTag {};
+
+  constexpr EnumRange(T start, T end, ConstExprConstructTag) :
+    _start(Traits::underlying_value(start)),
+    _end(Traits::underlying_value(end)) {}
+
 public:
   using EnumType = T;
   using Iterator = EnumIterator<T>;
@@ -250,6 +264,14 @@ public:
     Traits::assert_in_range(start);
     Traits::assert_in_range(end);
     assert(start <= end, "invalid range");
+  }
+
+  template <EnumType Start, EnumType End>
+  static constexpr EnumRange<T> create() {
+    Traits::template assert_in_range<Start>();
+    Traits::template assert_in_range<End>();
+    static_assert(Start <= End, "invalid range");
+    return EnumRange(Start, End, ConstExprConstructTag{});
   }
 
   // Return an iterator for the start of the range.

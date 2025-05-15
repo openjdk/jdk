@@ -62,9 +62,9 @@ class ZRelocationSetSelectorStats {
   friend class ZRelocationSetSelector;
 
 private:
-  ZRelocationSetSelectorGroupStats _small[ZPageAgeMax + 1];
-  ZRelocationSetSelectorGroupStats _medium[ZPageAgeMax + 1];
-  ZRelocationSetSelectorGroupStats _large[ZPageAgeMax + 1];
+  ZRelocationSetSelectorGroupStats _small[ZPageAgeCount];
+  ZRelocationSetSelectorGroupStats _medium[ZPageAgeCount];
+  ZRelocationSetSelectorGroupStats _large[ZPageAgeCount];
 
   size_t _has_relocatable_pages;
 
@@ -87,7 +87,7 @@ private:
   ZArray<ZPage*>                   _live_pages;
   ZArray<ZPage*>                   _not_selected_pages;
   size_t                           _forwarding_entries;
-  ZRelocationSetSelectorGroupStats _stats[ZPageAgeMax + 1];
+  ZRelocationSetSelectorGroupStats _stats[ZPageAgeCount];
 
   bool is_disabled();
   bool is_selectable();

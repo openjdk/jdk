@@ -35,7 +35,7 @@ class ZPage;
 
 class ZAllocator {
 public:
-  static constexpr uint _relocation_allocators = static_cast<uint>(ZPageAge::old);
+  static constexpr uint _relocation_allocators = ZPageAgeCount - 1;
 
 protected:
   ZObjectAllocator _object_allocator;
