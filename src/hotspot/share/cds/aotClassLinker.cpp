@@ -64,8 +64,6 @@ void AOTClassLinker::initialize() {
   }
 
   assert(is_initialized(), "sanity");
-
-  AOTConstantPoolResolver::initialize();
 }
 
 void AOTClassLinker::dispose() {
@@ -79,8 +77,6 @@ void AOTClassLinker::dispose() {
   _sorted_candidates = nullptr;
 
   assert(!is_initialized(), "sanity");
-
-  AOTConstantPoolResolver::dispose();
 }
 
 bool AOTClassLinker::is_vm_class(InstanceKlass* ik) {

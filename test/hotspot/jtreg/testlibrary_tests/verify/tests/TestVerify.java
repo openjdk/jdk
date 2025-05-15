@@ -50,9 +50,14 @@ public class TestVerify {
         testArrayFloat();
         testArrayDouble();
         testNativeMemorySegment();
+        testException();
+
+        testRawFloat();
 
         // Test recursive data: Object array of values, etc.
         testRecursive();
+
+        testArbitraryClasses();
     }
 
     public static void testArrayByte() {
@@ -290,6 +295,63 @@ public class TestVerify {
         checkNE(a, c);
     }
 
+    public static void testException() {
+        Exception e1 = new ArithmeticException("abc");
+        Exception e2 = new ArithmeticException("abc");
+        Exception e3 = new ArithmeticException();
+        Exception e4 = new ArithmeticException("xyz");
+        Exception e5 = new RuntimeException("abc");
+
+        Verify.checkEQ(e1, e1);
+        Verify.checkEQ(e1, e2);
+        Verify.checkEQ(e3, e3);
+        Verify.checkEQ(e1, e3); // one has no message
+
+        checkNE(e1, e4);
+        checkNE(e2, e4);
+        Verify.checkEQ(e3, e4);
+
+        Verify.checkEQ(e5, e5);
+        checkNE(e1, e5);
+        checkNE(e2, e5);
+        checkNE(e3, e5);
+        checkNE(e4, e5);
+    }
+
+    public static void testRawFloat() {
+        float nanF1 = Float.intBitsToFloat(0x7f800001);
+        float nanF2 = Float.intBitsToFloat(0x7fffffff);
+        double nanD1 = Double.longBitsToDouble(0x7ff0000000000001L);
+        double nanD2 = Double.longBitsToDouble(0x7fffffffffffffffL);
+
+        float[] arrF1 = new float[]{nanF1};
+        float[] arrF2 = new float[]{nanF2};
+        double[] arrD1 = new double[]{nanD1};
+        double[] arrD2 = new double[]{nanD2};
+
+        Verify.checkEQ(nanF1, Float.NaN);
+        Verify.checkEQ(nanF1, nanF1);
+        Verify.checkEQWithRawBits(nanF1, nanF1);
+        Verify.checkEQ(nanF1, nanF2);
+        Verify.checkEQ(nanD1, Double.NaN);
+        Verify.checkEQ(nanD1, nanD1);
+        Verify.checkEQWithRawBits(nanD1, nanD1);
+        Verify.checkEQ(nanD1, nanD2);
+
+        Verify.checkEQ(arrF1, arrF1);
+        Verify.checkEQWithRawBits(arrF1, arrF1);
+        Verify.checkEQ(arrF1, arrF2);
+        Verify.checkEQ(arrD1, arrD1);
+        Verify.checkEQWithRawBits(arrD1, arrD1);
+        Verify.checkEQ(arrD1, arrD2);
+
+        checkNEWithRawBits(nanF1, nanF2);
+        checkNEWithRawBits(nanD1, nanD2);
+
+        checkNEWithRawBits(arrF1, arrF2);
+        checkNEWithRawBits(arrD1, arrD2);
+    }
+
     public static void testRecursive() {
         Verify.checkEQ(null, null);
 
@@ -400,20 +462,233 @@ public class TestVerify {
             int v1 = (int)RANDOM.nextInt();
             int v2 = (int)(v1 ^ (1 << RANDOM.nextInt(32)));
             checkNE(v1, v2);
-            checkNE(Float.intBitsToFloat(v1), Float.intBitsToFloat(v2));
+            checkNEWithRawBits(Float.intBitsToFloat(v1), Float.intBitsToFloat(v2));
         }
         for (int i = 0; i < 10; i++) {
             long v1 = (long)RANDOM.nextLong();
             long v2 = (long)(v1 ^ (1L << RANDOM.nextInt(64)));
             checkNE(v1, v2);
-            checkNE(Double.longBitsToDouble(v1), Double.longBitsToDouble(v2));
+            checkNEWithRawBits(Double.longBitsToDouble(v1), Double.longBitsToDouble(v2));
         }
+    }
+
+    static class A {}
+
+    static class B {}
+
+    static class C extends B {}
+
+    static class D {
+        D(int x) {
+            this.x = x;
+        }
+
+        private int x;
+    }
+
+    static class E {
+        E(D d, E e1, E e2) {
+            this.d = d;
+            this.e1 = e1;
+            this.e2 = e2;
+        }
+
+        private D d;
+        public E e1;
+        public E e2;
+    }
+
+    static class F {
+        private int x;
+
+        public F(int x) {
+            this.x = x;
+        }
+    }
+
+    static class F2 extends F {
+        private int y;
+
+        F2(int x, int y) {
+            super(x);
+            this.y = y;
+        }
+    }
+
+    static class G {
+        private float x;
+        private float y;
+
+        public G(float x, float y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    public static class H1 {
+        public boolean bool = true;
+        public byte b = (byte)242;
+        public short s = (short)24242;
+        public char c = (char)24242;
+        public int i = 1335836768;
+        public long l = 4242424242L;
+        public float f = 42.0f;
+        public double d = 42.0;
+        public H1() {}
+    }
+
+    public static class H2 extends H1 {
+        public H1 h1 = new H1();
+        public H2() {}
+    }
+
+    static record R1() {}
+    static record R2() {}
+    static record R3(int x, int y) {}
+    static record R4(R4 x, R4 y) {}
+
+    public static void testArbitraryClasses() {
+        A a1 = new A();
+        A a2 = new A();
+        B b1 = new B();
+        B b2 = new B();
+        C c1 = new C();
+        C c2 = new C();
+
+        // Structurally equivalent.
+        Verify.checkEQ(a1, a1);
+        Verify.checkEQ(a1, a2);
+        Verify.checkEQ(b1, b1);
+        Verify.checkEQ(b1, b2);
+        Verify.checkEQ(c1, c1);
+        Verify.checkEQ(c1, c2);
+
+        // Must fail because of different classes.
+        checkNE(a1, b1);
+        checkNE(b1, a1);
+        checkNE(a1, c1);
+        checkNE(c1, a1);
+        checkNE(b1, c1);
+        checkNE(c1, b1);
+
+        // Objects with primitive values.
+        D d1 = new D(1);
+        D d2 = new D(1);
+        D d3 = new D(2);
+        Verify.checkEQ(d1, d1);
+        Verify.checkEQ(d1, d2);
+        Verify.checkEQ(d2, d1);
+        checkNE(d1, d3);
+        checkNE(d3, d1);
+
+        // Object fields, including cycles.
+        E e1 = new E(d1, null, null);
+        E e2 = new E(d1, null, null);
+        E e3 = new E(d3, null, null);
+        E e4 = new E(d1, e1, null);
+        E e5 = new E(d1, e2, null);
+        E e6 = new E(d1, null, null);
+        e6.e1 = e6;
+        E e7 = new E(d1, null, null);
+        e7.e1 = e7;
+        E e8 = new E(d1, e1, e1);
+        E e9 = new E(d1, e1, e2);
+
+        Verify.checkEQ(e1, e1);
+        Verify.checkEQ(e1, e2);
+        Verify.checkEQ(e2, e1);
+        checkNE(e1, e3);
+        checkNE(e3, e1);
+        Verify.checkEQ(e6, e6);
+        Verify.checkEQ(e6, e7);
+        Verify.checkEQ(e7, e6);
+        Verify.checkEQ(e8, e8);
+        checkNE(e8, e9);
+        checkNE(e9, e8);
+
+        // Fields from superclass.
+        F2 f1 = new F2(1, 1);
+        F2 f2 = new F2(1, 1);
+        F2 f3 = new F2(2, 1);
+        F2 f4 = new F2(1, 2);
+
+        Verify.checkEQ(f1, f1);
+        Verify.checkEQ(f1, f2);
+        Verify.checkEQ(f2, f1);
+        checkNE(f1, f3);
+        checkNE(f1, f4);
+        checkNE(f3, f1);
+        checkNE(f4, f1);
+        checkNE(f3, f4);
+        checkNE(f4, f3);
+
+        G g1 = new G(1.0f, 1.0f);
+        G g2 = new G(1.0f, 1.0f);
+        G g3 = new G(Float.NaN, Float.NaN);
+        G g4 = new G(Float.NaN, Float.NaN);
+
+        Verify.checkEQ(g1, g1);
+        Verify.checkEQ(g2, g1);
+        Verify.checkEQ(g1, g2);
+        Verify.checkEQ(g3, g3);
+        Verify.checkEQ(g3, g4);
+        Verify.checkEQ(g4, g3);
+        checkNE(g1, g3);
+        checkNE(g3, g1);
+
+        // Nested class with primitive types, where the boxed types may not be cached,
+        // and so they would create different boxed objects.
+        Verify.checkEQ(new H2(), new H2());
+
+        // Records.
+        R1 r11 = new R1();
+        R1 r12 = new R1();
+        R2 r21 = new R2();
+        R3 r31 = new R3(1, 1);
+        R3 r32 = new R3(1, 1);
+        R3 r33 = new R3(1, 2);
+        R3 r34 = new R3(2, 1);
+
+        Verify.checkEQ(r11, r11);
+        Verify.checkEQ(r11, r12);
+        Verify.checkEQ(r12, r11);
+        checkNE(r11, r21);
+        Verify.checkEQ(r31, r31);
+        Verify.checkEQ(r31, r32);
+        Verify.checkEQ(r32, r31);
+        checkNE(r31, r33);
+        checkNE(r33, r31);
+        checkNE(r31, r34);
+        checkNE(r34, r31);
+        checkNE(r33, r34);
+
+        R4 r41 = new R4(null, null);
+        R4 r42 = new R4(null, null);
+        R4 r43 = new R4(r41, null);
+        R4 r44 = new R4(r42, null);
+        R4 r45 = new R4(r43, r41);
+        R4 r46 = new R4(r44, r42);
+        R4 r47 = new R4(r44, r41);
+
+        Verify.checkEQ(r45, r46);
+        Verify.checkEQ(r46, r45);
+        checkNE(r45, r47);
+        checkNE(r47, r45);
+        checkNE(r46, r47);
+        checkNE(r47, r46);
     }
 
     public static void checkNE(Object a, Object b) {
          try {
             Verify.checkEQ(a, b);
-            throw new RuntimeException("Should have thrown");
+            throw new RuntimeException("Should have thrown: " + a + " vs " + b);
+        } catch (VerifyException e) {}
+    }
+
+    public static void checkNEWithRawBits(Object a, Object b) {
+         try {
+            Verify.checkEQWithRawBits(a, b);
+            throw new RuntimeException("Should have thrown: " + a + " vs " + b);
         } catch (VerifyException e) {}
     }
 }

@@ -180,6 +180,7 @@ bool CodeInstaller::pd_relocate(address pc, jint mark) {
     case POLL_RETURN_FAR:
       _instructions->relocate(pc, relocInfo::poll_return_type);
       return true;
+#if INCLUDE_ZGC
     case Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_TB_X:
       _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTbX);
       return true;
@@ -192,6 +193,7 @@ bool CodeInstaller::pd_relocate(address pc, jint mark) {
     case Z_BARRIER_RELOCATION_FORMAT_STORE_BAD_BEFORE_MOV:
       _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeMov);
       return true;
+#endif
 
   }
   return false;

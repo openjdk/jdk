@@ -59,7 +59,6 @@
 #include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -132,8 +131,6 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 
 #define MAX_PATH (2 * K)
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 // for multipage initialization error analysis (in 'g_multipage_error')
 #define ERROR_MP_OS_TOO_OLD                          100
 #define ERROR_MP_EXTSHM_ACTIVE                       101
@@ -906,7 +903,7 @@ jlong os::javaTimeNanos() {
 }
 
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->max_value = all_bits_jlong;
   // mread_real_time() is monotonic (see 'os::javaTimeNanos()')
   info_ptr->may_skip_backward = false;
   info_ptr->may_skip_forward = false;
@@ -2571,14 +2568,14 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time
   info_ptr->may_skip_forward = false;      // elapsed time not wall time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned
 }
 
 void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time
   info_ptr->may_skip_forward = false;      // elapsed time not wall time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned

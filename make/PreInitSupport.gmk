@@ -250,13 +250,14 @@ endef
 # Param 1: FORCE = force generation of main-targets.gmk or LAZY = do not force.
 # Param 2: The SPEC file to use.
 define DefineMainTargets
+  SPEC_FILE := $(strip $2)
 
   # We will start by making sure the main-targets.gmk file is removed, if
   # make has not been restarted. By the -include, we will trigger the
   # rule for generating the file (which is never there since we removed it),
   # thus generating it fresh, and make will restart, incrementing the restart
   # count.
-  main_targets_file := $$(dir $(strip $2))make-support/main-targets.gmk
+  main_targets_file := $$(dir $$(SPEC_FILE))make-support/main-targets.gmk
 
   ifeq ($$(MAKE_RESTARTS), )
     # Only do this if make has not been restarted, and if we do not force it.
@@ -268,10 +269,10 @@ define DefineMainTargets
   $$(main_targets_file):
 	@( cd $$(TOPDIR) && \
 	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(TOPDIR)/make/GenerateFindTests.gmk \
-	    -I $$(TOPDIR)/make/common SPEC=$(strip $2) )
+	    -I $$(TOPDIR)/make/common SPEC=$$(SPEC_FILE) TOPDIR_ALT=$$(TOPDIR))
 	@( cd $$(TOPDIR) && \
 	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(TOPDIR)/make/Main.gmk \
-	    -I $$(TOPDIR)/make/common SPEC=$(strip $2) NO_RECIPES=true \
+	    -I $$(TOPDIR)/make/common SPEC=$$(SPEC_FILE) TOPDIR_ALT=$$(TOPDIR) NO_RECIPES=true \
 	    $$(MAKE_LOG_VARS) \
 	    create-main-targets-include )
 

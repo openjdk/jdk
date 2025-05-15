@@ -165,8 +165,8 @@ uintx Universe::_the_array_interfaces_bitmap = 0;
 uintx Universe::_the_empty_klass_bitmap      = 0;
 
 // These variables are guarded by FullGCALot_lock.
-debug_only(OopHandle Universe::_fullgc_alot_dummy_array;)
-debug_only(int Universe::_fullgc_alot_dummy_next = 0;)
+DEBUG_ONLY(OopHandle Universe::_fullgc_alot_dummy_array;)
+DEBUG_ONLY(int Universe::_fullgc_alot_dummy_next = 0;)
 
 // Heap
 int             Universe::_verify_count = 0;
@@ -1160,7 +1160,7 @@ void Universe::print_on(outputStream* st) {
   GCMutexLocker hl(Heap_lock); // Heap_lock might be locked by caller thread.
   st->print_cr("Heap");
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
   heap()->print_heap_on(st);
   MetaspaceUtils::print_on(st);
 }

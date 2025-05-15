@@ -1295,7 +1295,7 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
 #endif
 
   void MachNopNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc*) const {
-    Assembler::CompressibleRegion cr(masm); // nops shall be 2-byte under RVC for alignment purposes.
+    Assembler::CompressibleScope scope(masm); // nops shall be 2-byte under RVC for alignment purposes.
     for (int i = 0; i < _count; i++) {
       __ nop();
     }
@@ -1371,7 +1371,7 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // insert a nop at the start of the prolog so we can patch in a
   // branch if we need to invalidate the method later
   {
-    Assembler::IncompressibleRegion ir(masm);  // keep the nop as 4 bytes for patching.
+    Assembler::IncompressibleScope scope(masm); // keep the nop as 4 bytes for patching.
     MacroAssembler::assert_alignment(__ pc());
     __ nop();  // 4 bytes
   }
@@ -1596,7 +1596,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ unspill(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
       } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
         // vpr to vpr
-        __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
+        __ vsetvli_helper(T_BYTE, MaxVectorSize);
+        __ vmv_v_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
       } else {
         ShouldNotReachHere();
       }
@@ -1614,7 +1615,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ unspill_vmask(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
       } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
         // vmask to vmask
-        __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
+        __ vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+        __ vmv_v_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
       } else {
         ShouldNotReachHere();
       }
@@ -1752,7 +1754,7 @@ void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 #endif
 
 void BoxLockNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
-  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see BoxLockNode::size()
+  Assembler::IncompressibleScope scope(masm); // Fixed length: see BoxLockNode::size()
 
   assert_cond(ra_ != nullptr);
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
@@ -1914,9 +1916,10 @@ bool Matcher::match_rule_supported(int opcode) {
 
     case Op_FmaF:
     case Op_FmaD:
+      return UseFMA;
     case Op_FmaVF:
     case Op_FmaVD:
-      return UseFMA;
+      return UseRVV && UseFMA;
 
     case Op_ConvHF2F:
     case Op_ConvF2HF:
@@ -1950,11 +1953,11 @@ const RegMask* Matcher::predicate_reg_mask(void) {
 
 // Vector calling convention not yet implemented.
 bool Matcher::supports_vector_calling_convention(void) {
-  return EnableVectorSupport && UseVectorStubs;
+  return EnableVectorSupport;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  assert(EnableVectorSupport, "sanity");
   assert(ideal_reg == Op_VecA, "sanity");
   // check more info at https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc
   int lo = V8_num;
@@ -2401,7 +2404,7 @@ encode %{
   %}
 
   enc_class riscv_enc_java_static_call(method meth) %{
-    Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
+    Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset
 
     address addr = (address)$meth$$method;
     address call = nullptr;
@@ -2448,7 +2451,7 @@ encode %{
   %}
 
   enc_class riscv_enc_java_dynamic_call(method meth) %{
-    Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
+    Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset
     int method_index = resolved_method_index(masm);
     address call = __ ic_call((address)$meth$$method, method_index);
     if (call == nullptr) {
@@ -2467,7 +2470,7 @@ encode %{
   %}
 
   enc_class riscv_enc_java_to_runtime(method meth) %{
-    Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
+    Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset
 
     // Some calls to generated routines (arraycopy code) are scheduled by C2
     // as runtime calls. if so we can call them using a far call (they will be

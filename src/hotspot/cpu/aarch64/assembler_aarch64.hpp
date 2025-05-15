@@ -932,7 +932,7 @@ public:
   static const uint64_t branch_range = NOT_DEBUG(128 * M) DEBUG_ONLY(2 * M);
 
   static bool reachable_from_branch_at(address branch, address target) {
-    return uabs(target - branch) < branch_range;
+    return g_uabs(target - branch) < branch_range;
   }
 
   // Unconditional branch (immediate)
@@ -2032,6 +2032,8 @@ void mvnw(Register Rd, Register Rm,
   INSN(fsqrtd, 0b01, 0b000011);
   INSN(fcvtd,  0b01, 0b000100);   // Double-precision to single-precision
 
+  INSN(fsqrth, 0b11, 0b000011);   // Half-precision sqrt
+
 private:
   void _fcvt_narrow_extend(FloatRegister Vd, SIMD_Arrangement Ta,
                            FloatRegister Vn, SIMD_Arrangement Tb, bool do_extend) {
@@ -2059,37 +2061,68 @@ public:
 #undef INSN
 
   // Floating-point data-processing (2 source)
-  void data_processing(unsigned op31, unsigned type, unsigned opcode,
+  void data_processing(unsigned op31, unsigned type, unsigned opcode, unsigned op21,
                        FloatRegister Vd, FloatRegister Vn, FloatRegister Vm) {
     starti;
     f(op31, 31, 29);
     f(0b11110, 28, 24);
-    f(type, 23, 22), f(1, 21), f(opcode, 15, 10);
+    f(type, 23, 22), f(op21, 21), f(opcode, 15, 10);
     rf(Vm, 16), rf(Vn, 5), rf(Vd, 0);
   }
 
-#define INSN(NAME, op31, type, opcode)                  \
+#define INSN(NAME, op31, type, opcode, op21)                            \
   void NAME(FloatRegister Vd, FloatRegister Vn, FloatRegister Vm) {     \
-    data_processing(op31, type, opcode, Vd, Vn, Vm);    \
+    data_processing(op31, type, opcode, op21, Vd, Vn, Vm);              \
   }
 
-  INSN(fabds,  0b011, 0b10, 0b110101);
-  INSN(fmuls,  0b000, 0b00, 0b000010);
-  INSN(fdivs,  0b000, 0b00, 0b000110);
-  INSN(fadds,  0b000, 0b00, 0b001010);
-  INSN(fsubs,  0b000, 0b00, 0b001110);
-  INSN(fmaxs,  0b000, 0b00, 0b010010);
-  INSN(fmins,  0b000, 0b00, 0b010110);
-  INSN(fnmuls, 0b000, 0b00, 0b100010);
+  INSN(fmuls,  0b000, 0b00, 0b000010, 0b1);
+  INSN(fdivs,  0b000, 0b00, 0b000110, 0b1);
+  INSN(fadds,  0b000, 0b00, 0b001010, 0b1);
+  INSN(fsubs,  0b000, 0b00, 0b001110, 0b1);
+  INSN(fmaxs,  0b000, 0b00, 0b010010, 0b1);
+  INSN(fmins,  0b000, 0b00, 0b010110, 0b1);
+  INSN(fnmuls, 0b000, 0b00, 0b100010, 0b1);
 
-  INSN(fabdd,  0b011, 0b11, 0b110101);
-  INSN(fmuld,  0b000, 0b01, 0b000010);
-  INSN(fdivd,  0b000, 0b01, 0b000110);
-  INSN(faddd,  0b000, 0b01, 0b001010);
-  INSN(fsubd,  0b000, 0b01, 0b001110);
-  INSN(fmaxd,  0b000, 0b01, 0b010010);
-  INSN(fmind,  0b000, 0b01, 0b010110);
-  INSN(fnmuld, 0b000, 0b01, 0b100010);
+  INSN(fmuld,  0b000, 0b01, 0b000010, 0b1);
+  INSN(fdivd,  0b000, 0b01, 0b000110, 0b1);
+  INSN(faddd,  0b000, 0b01, 0b001010, 0b1);
+  INSN(fsubd,  0b000, 0b01, 0b001110, 0b1);
+  INSN(fmaxd,  0b000, 0b01, 0b010010, 0b1);
+  INSN(fmind,  0b000, 0b01, 0b010110, 0b1);
+  INSN(fnmuld, 0b000, 0b01, 0b100010, 0b1);
+
+  // Half-precision floating-point instructions
+  INSN(fmulh,  0b000, 0b11, 0b000010, 0b1);
+  INSN(fdivh,  0b000, 0b11, 0b000110, 0b1);
+  INSN(faddh,  0b000, 0b11, 0b001010, 0b1);
+  INSN(fsubh,  0b000, 0b11, 0b001110, 0b1);
+  INSN(fmaxh,  0b000, 0b11, 0b010010, 0b1);
+  INSN(fminh,  0b000, 0b11, 0b010110, 0b1);
+  INSN(fnmulh, 0b000, 0b11, 0b100010, 0b1);
+#undef INSN
+
+// Advanced SIMD scalar three same
+#define INSN(NAME, U, size, opcode)                                                     \
+  void NAME(FloatRegister Vd, FloatRegister Vn, FloatRegister Vm) {                     \
+    starti;                                                                             \
+    f(0b01, 31, 30), f(U, 29), f(0b11110, 28, 24), f(size, 23, 22), f(1, 21);           \
+    rf(Vm, 16), f(opcode, 15, 11), f(1, 10), rf(Vn, 5), rf(Vd, 0);                      \
+  }
+
+  INSN(fabds, 0b1, 0b10, 0b11010); // Floating-point Absolute Difference (single-precision)
+  INSN(fabdd, 0b1, 0b11, 0b11010); // Floating-point Absolute Difference (double-precision)
+
+#undef INSN
+
+// Advanced SIMD scalar three same FP16
+#define INSN(NAME, U, a, opcode)                                                       \
+  void NAME(FloatRegister Vd, FloatRegister Vn, FloatRegister Vm) {                    \
+    starti;                                                                            \
+    f(0b01, 31, 30), f(U, 29), f(0b11110, 28, 24), f(a, 23), f(0b10, 22, 21);          \
+    rf(Vm, 16), f(0b00, 15, 14), f(opcode, 13, 11), f(1, 10), rf(Vn, 5), rf(Vd, 0);    \
+  }
+
+  INSN(fabdh, 0b1, 0b1, 0b010); // Floating-point Absolute Difference (half-precision float)
 
 #undef INSN
 
@@ -2120,6 +2153,7 @@ public:
   INSN(fnmaddd, 0b000, 0b01, 1, 0);
   INSN(fnmsub,  0b000, 0b01, 1, 1);
 
+  INSN(fmaddh,  0b000, 0b11, 0, 0);  // half-precision fused multiply-add (scalar)
 #undef INSN
 
    // Floating-point conditional select
