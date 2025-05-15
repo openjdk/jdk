@@ -98,6 +98,9 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
@@ -399,11 +402,10 @@ jint ShenandoahHeap::initialize() {
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
   _affiliations = NEW_C_HEAP_ARRAY(uint8_t, _num_regions, mtGC);
-  _free_set = new ShenandoahFreeSet(this, _num_regions);
 
   {
     ShenandoahHeapLocker locker(lock());
-
+    _free_set = new ShenandoahFreeSet(this, _num_regions);
     for (size_t i = 0; i < _num_regions; i++) {
       HeapWord* start = (HeapWord*)sh_rs.base() + ShenandoahHeapRegion::region_size_words() * i;
       bool is_committed = i < num_committed_regions;
@@ -2232,6 +2234,9 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
       ShenandoahGCPhase gc_phase(phase);
       ShenandoahGCWorkerPhase worker_phase(phase);
       bool unloading_occurred = SystemDictionary::do_unloading(gc_timer());
+
+      // Clean JVMCI metadata handles.
+      JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
 
       uint num_workers = _workers->active_workers();
       ShenandoahClassUnloadingTask unlink_task(phase, num_workers, unloading_occurred);

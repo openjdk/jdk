@@ -1280,9 +1280,9 @@ public final class MacSign {
     // However, jtreg will alter the value of the PATH env variable and
     // /usr/bin/openssl will preempt /usr/local/bin/openssl.
     // To workaround this jtreg behavior support specifying path to openssl command.
-    private static final Path OPENSSL = Path.of(Optional.ofNullable(TKit.getConfigProperty("openssl")).orElse("openssl"));
+    private static final Path OPENSSL = Path.of(Optional.ofNullable(TKit.getConfigProperty("openssl")).orElse("/usr/local/bin/openssl"));
 
     // faketime is not a standard macOS command.
     // One way to get it is with Homebrew.
-    private static final Path FAKETIME = Path.of(Optional.ofNullable(TKit.getConfigProperty("faketime")).orElse("faketime"));
+    private static final Path FAKETIME = Path.of(Optional.ofNullable(TKit.getConfigProperty("faketime")).orElse("/usr/local/bin/faketime"));
 }
