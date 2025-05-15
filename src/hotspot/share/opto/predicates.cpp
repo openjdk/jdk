@@ -942,7 +942,7 @@ void Predicates::dump() const {
     _profiled_loop_predicate_block.dump("  ");
     tty->print_cr("- Loop Predicate Block:");
     _loop_predicate_block.dump("  ");
-    tty->print_cr("- Short Running Loop Predicate Block:");
+    tty->print_cr("- Short Running Long Loop Predicate Block:");
     _short_running_long_loop_predicate_block.dump("  ");
     tty->cr();
   } else {
