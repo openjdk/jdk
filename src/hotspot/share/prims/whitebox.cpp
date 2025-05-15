@@ -728,11 +728,11 @@ WB_ENTRY(void, WB_NMTFree(JNIEnv* env, jobject o, jlong mem))
 WB_END
 
 WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
-  return (jlong)(uintptr_t)os::reserve_memory(size, false, mtTest);
+  return (jlong)(uintptr_t)os::reserve_memory(size, mtTest);
 WB_END
 
 WB_ENTRY(jlong, WB_NMTAttemptReserveMemoryAt(JNIEnv* env, jobject o, jlong addr, jlong size))
-  return (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size, false, mtTest);
+  return (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size, mtTest);
 WB_END
 
 WB_ENTRY(void, WB_NMTCommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
@@ -1124,7 +1124,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   DirectivesStack::release(directive);
 
   // Compile method and check result
-  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
+  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
   MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != nullptr) {
@@ -1524,7 +1524,7 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
   static char c;
   static volatile char* p;
 
-  p = os::reserve_memory(os::vm_allocation_granularity());
+  p = os::reserve_memory(os::vm_allocation_granularity(), mtTest);
   if (p == nullptr) {
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "Failed to reserve memory");
   }

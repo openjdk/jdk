@@ -250,6 +250,7 @@ public class suspendpolicy001 extends JDIBase {
 
         ClassPrepareEvent event = (ClassPrepareEvent) eventIterator.next();
         debuggeeClass = event.referenceType();
+        debuggee.setMainThread(event.thread());
 
         if (!debuggeeClass.name().equals(debuggeeName))
            throw new JDITestRuntimeException("** Unexpected ClassName for ClassPrepareEvent **");
@@ -257,7 +258,7 @@ public class suspendpolicy001 extends JDIBase {
 
         log2("......setting up ClassPrepareEvent for breakpointForCommunication");
 
-        ThreadReference mainThread = debuggee.threadByNameOrThrow("main");
+        ThreadReference mainThread = debuggee.mainThread();
         setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section

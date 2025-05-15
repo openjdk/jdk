@@ -290,7 +290,7 @@ public class filter_rt002 extends JDIBase {
                      testClassReference =
                           (ReferenceType) vm.classesByName(testedClassName).get(0);
 
-                     thread1 = debuggee.threadByNameOrThrow(threadName1);
+                     thread1 = debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName1);
 
                      eventRequest1 = setting21StepRequest(thread1, testClassReference,
                                               EventRequest.SUSPEND_NONE, property1);
