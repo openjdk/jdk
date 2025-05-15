@@ -233,9 +233,10 @@ public:
   // ensures that you cannot load a shared class if its super type(s) are changed. However,
   // we need an additional check to ensure that the verification_constraints did not change
   // between dump time and runtime.
-  static bool add_verification_constraint(InstanceKlass* k, Symbol* name,
+  static void add_verification_constraint(InstanceKlass* k, Symbol* name,
                   Symbol* from_name, bool from_field_is_protected,
-                  bool from_is_array, bool from_is_object) NOT_CDS_RETURN_(false);
+                  bool from_is_array, bool from_is_object,
+                  bool* skip_assignability_check);
   static void check_verification_constraints(InstanceKlass* klass,
                                              TRAPS) NOT_CDS_RETURN;
   static void add_enum_klass_static_field(InstanceKlass* ik, int root_index);
@@ -259,6 +260,7 @@ public:
   static bool is_excluded_class(InstanceKlass* k);
   static void set_excluded(InstanceKlass* k);
   static void set_excluded_locked(InstanceKlass* k);
+  static void set_from_class_file_load_hook(InstanceKlass* k) NOT_CDS_RETURN;
   static bool warn_excluded(InstanceKlass* k, const char* reason);
   static void dumptime_classes_do(class MetaspaceClosure* it);
   static void write_to_archive(bool is_static_archive = true);

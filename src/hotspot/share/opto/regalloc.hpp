@@ -60,12 +60,12 @@ public:
 
   // Get the register associated with the Node
   OptoReg::Name get_reg_first( const Node *n ) const {
-    debug_only( if( n->_idx >= _node_regs_max_index ) n->dump(); );
+    DEBUG_ONLY( if( n->_idx >= _node_regs_max_index ) n->dump(); );
     assert( n->_idx < _node_regs_max_index, "Exceeded _node_regs array");
     return _node_regs[n->_idx].first();
   }
   OptoReg::Name get_reg_second( const Node *n ) const {
-    debug_only( if( n->_idx >= _node_regs_max_index ) n->dump(); );
+    DEBUG_ONLY( if( n->_idx >= _node_regs_max_index ) n->dump(); );
     assert( n->_idx < _node_regs_max_index, "Exceeded _node_regs array");
     return _node_regs[n->_idx].second();
   }
