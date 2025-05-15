@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8350203
+ * @bug 8350203 8356966
  * @summary Confirm that a few special whitespace characters are ignored.
  */
 
