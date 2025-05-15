@@ -1013,28 +1013,43 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
 
   {// Check committing into a reserved region inherits the call stacks
     Tree tree;
-    tree.reserve_mapping(0, 100, call_stack_1); // reserve in an empty tree
+    tree.reserve_mapping(0, 50, call_stack_1); // reserve in an empty tree
     // Pre: empty tree.
-    // Post: .........0---------100.........
+    // Post:
+    //            1         2         3         4         5         6         7
+    //  0123456789012345678901234567890123456789012345678901234567890123456789
+    //  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa....................
+    //  Legend:
+    //  a - Test (reserved)
+    //  . - free
+    // Post: .........0---------50.........
     //        mtNone    mtTest       mtNone
     //        Rl        Rs           Rl
     //        -         si_1         -
     //        -         -            -
-    ExpectedTree<2> et1 = {{      0  , 100        },
+    ExpectedTree<2> et1 = {{     0,     50        },
                            {mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    },
                            {-1    , -1    , -1    }};
     check_tree(tree, et1, __LINE__);
 
-    tree.commit_mapping(25, 25, call_stack_2, true); // commit at the middle of the region
-    // Pre : .........0------------------------------100.........
-    // Post: .........0---------25*********50--------100.........
+    tree.commit_mapping(25, 10, call_stack_2, true); // commit at the middle of the region
+    // Pre : .........0------------------------------50.........
+    // Post:
+    //            1         2         3         4         5         6         7
+    //  0123456789012345678901234567890123456789012345678901234567890123456789
+    //  aaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAaaaaaaaaaaaaaaa....................
+    //  Legend:
+    //  a - Test (reserved)
+    //  A - Test (committed)
+    //  . - free
+    // Post: .........0---------25*********35--------50.........
     //        mtNone    mtTest       mtTest   mtTest     mtNone
     //        Rl        Rs           C        Rs         Rl
     //        -         si_1         si_1     si_1       -
     //        -         -            si_2     -          -
-    ExpectedTree<4> et2 = {{      0  , 25,      50,    100        },
+    ExpectedTree<4> et2 = {{      0  , 25,      35,    50        },
                            {mtNone, mtTest, mtTest, mtTest, mtNone},
                            {Rl    , Rs    , C     , Rs    , Rl    },
                            {-1    , si_1  , si_1  , si_1  , -1    },
@@ -1043,26 +1058,42 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
 
     tree.commit_mapping(0, 20, call_stack_2, true); // commit at the beginning of the region
     // Pre:  .........0-------------------25********50--------100.........
+    // Post:
+    //            1         2         3         4         5         6         7
+    //  0123456789012345678901234567890123456789012345678901234567890123456789
+    //  AAAAAAAAAAAAAAAAAAAAaaaaaAAAAAAAAAAaaaaaaaaaaaaaaa....................
+    //  Legend:
+    //  a - Test (reserved)
+    //  A - Test (committed)
+    //  . - free
     // Post: .........0********20---------25********50--------100.........
     //        mtNone    mtTest    mtTest      mtTest   mtTest     mtNone
     //        Rl        C         Rs          C        Rs         Rl
     //        -         si_1      si_1        si_1     si_1       -
     //        -         si_2      -           si_2     -          -
-    ExpectedTree<5> et3 = {{     0,     20,     25,     50,    100        },
+    ExpectedTree<5> et3 = {{     0,     20,     25,     35,    50        },
                            {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
                            {Rl    , C     , Rs    , C     , Rs    , Rl    },
                            {-1    , si_1  , si_1  , si_1  , si_1  , -1    },
                            {-1    , si_2  , -1    , si_2  , -1    , -1    }};
     check_tree(tree, et3, __LINE__);
 
-    tree.commit_mapping(80, 20, call_stack_2, true); // commit at the end of the region
-    // Pre:  .........0********20---------25********50------------------100.........
-    // Post: .........0********20---------25********50--------80********100.........
+    tree.commit_mapping(40, 10, call_stack_2, true); // commit at the end of the region
+    // Pre:  .........0********20---------25********35------------------50.........
+    // Post:
+    //            1         2         3         4         5         6         7
+    //  0123456789012345678901234567890123456789012345678901234567890123456789
+    //  AAAAAAAAAAAAAAAAAAAAaaaaaAAAAAAAAAAaaaaaAAAAAAAAAA....................
+    //  Legend:
+    //  a - Test (reserved)
+    //  A - Test (committed)
+    //  . - free
+    // Post: .........0********20---------25********35--------40********50.........
     //        mtNone    mtTest    mtTest      mtTest   mtTest     mtTest    mtNone
     //        Rl        C         Rs          C        Rs         C         Rl
     //        -         si_1      si_1        si_1     si_1       si_1      -
     //        -         si_2      -           si_2     -          si_2      -
-    ExpectedTree<6> et4 = {{     0,     20,     25,     50,     80,    100        },
+    ExpectedTree<6> et4 = {{     0,     20,     25,     35,     40,     50        },
                            {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                            {Rl    , C     , Rs    , C     , Rs    , C     , Rl    },
                            {-1    , si_1  , si_1  , si_1  , si_1  , si_1  , -1    },
