@@ -1240,7 +1240,7 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
   // The magnitude of the divisor is in range [1, 2^31].
   // We know it isn't 0 as we handled that above.
   // That means at least one value is nonzero, so its absolute value is bigger than zero.
-  juint divisor_magnitude = MAX2(uabs(i2->_lo), uabs(i2->_hi));
+  juint divisor_magnitude = MAX2(g_uabs(i2->_lo), g_uabs(i2->_hi));
   // JVMS irem bytecode: "the magnitude of the result is always less than the magnitude of the divisor"
   // "less than" means we can subtract 1 to get an inclusive upper bound in [0, 2^31-1]
   jint hi = static_cast<jint>(divisor_magnitude - 1);
@@ -1533,7 +1533,7 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
   // The magnitude of the divisor is in range [1, 2^63].
   // We know it isn't 0 as we handled that above.
   // That means at least one value is nonzero, so its absolute value is bigger than zero.
-  julong divisor_magnitude = MAX2(uabs(i2->_lo), uabs(i2->_hi));
+  julong divisor_magnitude = MAX2(g_uabs(i2->_lo), g_uabs(i2->_hi));
   // JVMS irem bytecode: "the magnitude of the result is always less than the magnitude of the divisor"
   // "less than" means we can subtract 1 to get an inclusive upper bound in [0, 2^31-1]
   jlong hi = static_cast<jlong>(divisor_magnitude - 1);
