@@ -133,7 +133,7 @@ public:
   void set_profile_trip_cnt(float ptc) { _profile_trip_cnt = ptc; }
   float profile_trip_cnt()             { return _profile_trip_cnt; }
 
-#ifdef ASSERT
+#ifndef PRODUCT
   uint _peeling_opportunities_count = 0;
 #endif
 

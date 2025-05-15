@@ -511,7 +511,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
     }
   }
 
-#ifdef ASSERT
+#ifndef PRODUCT
   // It is now safe to peel or not.
   if (StressLoopPeeling) {
     LoopNode* loop_head = _head->as_Loop();
