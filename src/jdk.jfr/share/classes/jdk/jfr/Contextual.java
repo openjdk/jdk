@@ -57,7 +57,7 @@ import java.lang.annotation.Target;
  * A contextual field may incur overhead on a parser reading a recording file,
  * since it must track active context, so it should be used sparingly and
  * only where appropriate.
- * 
+ *
  * @since 25
  */
 @MetadataDefinition
