@@ -34,10 +34,12 @@
 
 import java.io.ByteArrayOutputStream;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -80,8 +82,8 @@ class ValidatorTest {
     private static final String META_INF = "META-INF/";
 
     private void writeManifestAsFirstSecondAndFourthEntry(Path path, boolean useCen, boolean useLoc) throws IOException {
-        int locPosA, locPosB, cenPos;
-        System.out.printf("%n%n*****Creating Jar with the Manifest as the 1st, 2nd and 4th entry*****%n%n");
+        int locPosA, cenPos;
+        System.out.printf("%n%n*****Creating Jar with duplicate Manifest*****%n%n");
         var out = new ByteArrayOutputStream(1024);
         try (var zos = new ZipOutputStream(out)) {
             zos.putNextEntry(new ZipEntry(JarFile.MANIFEST_NAME));
@@ -93,7 +95,6 @@ class ValidatorTest {
             zos.putNextEntry(new ZipEntry("entry1.txt"));
             zos.write("entry1".getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
-            locPosB = out.size();
             zos.putNextEntry(new ZipEntry(META_INF + "BANIFEST.MF"));
             zos.write(MANIFEST3.getBytes(StandardCharsets.UTF_8));
             zos.putNextEntry(new ZipEntry("entry2.txt"));
@@ -102,7 +103,7 @@ class ValidatorTest {
             cenPos = out.size();
         }
         var template = out.toByteArray();
-        // ISO_8859_1 to keep the 8-bit value
+        // ISO_8859_1 to keep the 8-bit value to avoid mess index in the byte array
         var s = new String(template, StandardCharsets.ISO_8859_1);
         // change META-INF/AANIFEST.MF to META-INF/MANIFEST.MF
         if (useCen) {
@@ -141,7 +142,7 @@ class ValidatorTest {
             zos.flush();
         }
         var template = out.toByteArray();
-        // ISO_8859_1 to keep the 8-bit value
+        // ISO_8859_1 to keep the 8-bit value to avoid mess index in the byte array
         var s = new String(template, StandardCharsets.ISO_8859_1);
         // change META-INF/AANIFEST.MF to META-INF/BANIFEST.MF
         var loc = s.indexOf("AANIFEST.MF", locPosA);
@@ -229,9 +230,9 @@ class ValidatorTest {
         } catch (IOException e) {
             var err = e.getMessage();
             System.out.println(err);
-            Assertions.assertTrue(err.contains("Warning: 2 copies of META-INF/MANIFEST.MF is detected in local file header"));
-            Assertions.assertTrue(err.contains("Warning: 3 copies of META-INF/MANIFEST.MF is detected in central directory"));
-            Assertions.assertTrue(err.contains("Warning: Entry META-INF/BANIFEST.MF in local file header is not in central directory"));
+            assertTrue(err.contains("Warning: There were 2 local file headers found for META-INF/MANIFEST.MF"));
+            assertTrue(err.contains("Warning: There were 3 central directory entries found for META-INF/MANIFEST.MF"));
+            assertTrue(err.contains("Warning: Entry META-INF/BANIFEST.MF in local file header is not in central directory"));
         }
     }
 
@@ -244,8 +245,8 @@ class ValidatorTest {
         } catch (IOException e) {
             var err = e.getMessage();
             System.out.println(err);
-            Assertions.assertTrue(err.contains("Warning: 2 copies of META-INF/MANIFEST.MF is detected in local file header"));
-            Assertions.assertTrue(err.contains("Warning: Entry META-INF/AANIFEST.MF in central directory is not in local file header"));
+            assertTrue(err.contains("Warning: There were 2 local file headers found for META-INF/MANIFEST.MF"));
+            assertTrue(err.contains("Warning: Entry META-INF/AANIFEST.MF in central directory is not in local file header"));
         }
     }
 
@@ -258,9 +259,10 @@ class ValidatorTest {
         } catch (IOException e) {
             var err = e.getMessage();
             System.out.println(err);
-            Assertions.assertTrue(err.contains("Warning: 3 copies of META-INF/MANIFEST.MF is detected in central directory"));
-            Assertions.assertTrue(err.contains("Warning: Entry META-INF/AANIFEST.MF in local file header is not in central directory"));
-            Assertions.assertTrue(err.contains("Warning: Entry META-INF/BANIFEST.MF in local file header is not in central directory"));
+            assertTrue(err.contains("Warning: There were 3 central directory entries found for META-INF/MANIFEST.MF"));
+            assertTrue(err.contains("Warning: Entry META-INF/AANIFEST.MF in local file header is not in central directory"));
+            assertTrue(err.contains("Warning: Entry META-INF/BANIFEST.MF in local file header is not in central directory"));
+            assertFalse(err.contains("Warning: Central directory and local file header entries are not in the same order"));
         }
     }
 
@@ -271,9 +273,9 @@ class ValidatorTest {
         try {
             String err = jar("--validate --file " + f.toString());
             System.out.println(err);
-            Assertions.assertTrue(err.contains("Warning: Central directory and local file header entries are not in the same order"));
+            assertTrue(err.contains("Warning: Central directory and local file header entries are not in the same order"));
         } catch (IOException e) {
-            Assertions.fail("Ordering is not guaranteed by specification");
+            fail("Ordering is not guaranteed by specification");
         }
     }
 
@@ -287,7 +289,7 @@ class ValidatorTest {
             var err = e.getMessage();
             System.out.println(err);
             for (var entryName : invalidEntryNames) {
-                Assertions.assertTrue(err.contains("entry name malformed, " + entryName));
+                assertTrue(err.contains("Warning: entry name " + entryName + " is not valid"));
             }
         }
     }

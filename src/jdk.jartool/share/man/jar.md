@@ -106,6 +106,12 @@ argument is the first argument specified on the command line.
 `-d` or `--describe-module`
 :   Prints the module descriptor or automatic module name.
 
+`--validate`
+:   Validate the contents of the jar archive.
+    Check with the developer to ensure the jar archive integrity
+    when warnings observed after using this option.
+    See `Integrity of a jar Archive` section below for more details.
+
 ## Operation Modifiers Valid in Any Mode
 
 You can use the following options to customize the actions of any operation
@@ -212,6 +218,22 @@ operation modes:
 
 `--version`
 :   Prints the program version.
+
+## Integrity of a jar Archive
+As a jar archive is based on ZIP format, it is possible to manufacture a jar archive using tools
+other than the `jar` command. The `--validate` options checks a jar archive for some integrity
+straights:
+
+-   Entries in the centrail directory should be consistent with the local file headers.
+-   Same names entry should only have one copy. Duplicated entries in a jar file could lead to
+    override desired content.
+-   Entries names should be valid. An entry name should not:
+    - contain a drive or device letter,
+    - contain a leading slash
+    - contain backwards slashes '\'
+    - have any name element is "." or ".."
+-   The API exported by a multi-release jar archive is consistent across all different release
+    versions.
 
 ## Examples of jar Command Syntax
 
