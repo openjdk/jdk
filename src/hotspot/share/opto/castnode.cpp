@@ -413,7 +413,7 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     }
   }
-  // if it's a cast created by PhaseIdealLoop::create_loop_nest(), don't transform it until the counted loop is created
+  // If it's a cast created by PhaseIdealLoop::short_running_loop(), don't transform it until the counted loop is created
   // in next loop opts pass
   if (!can_reshape || !used_at_inner_loop_exit_test()) {
     return optimize_integer_cast(phase, T_LONG);
