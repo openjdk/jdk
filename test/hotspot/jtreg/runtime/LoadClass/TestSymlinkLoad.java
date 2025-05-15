@@ -32,16 +32,15 @@
  * @run driver TestSymlinkLoad
  */
 
-import jdk.test.lib.util.FileUtils;
-import jdk.test.lib.compiler.CompilerUtils;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.FileUtils;
 
 public class TestSymlinkLoad {
     public static void main(String args[]) throws Exception {
@@ -65,7 +64,7 @@ public class TestSymlinkLoad {
         // make sure it runs as expected
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Hello World")
-                .shouldHaveExitValue(0);
+            .shouldHaveExitValue(0);
 
         // create a symlink to the classfile in a subdir with a given name
         Path classFile = Path.of(destDir + File.separator + className + ".class");
@@ -78,15 +77,15 @@ public class TestSymlinkLoad {
                 bootCP + File.separator + subdir, className);
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Hello World")
-                .shouldHaveExitValue(0);
+            .shouldHaveExitValue(0);
 
         // remove the subdir
         FileUtils.deleteFileTreeWithRetry(Path.of(pathToFolderForSymlink));
     }
 
-    public static void createLinkInSeparateFolder( final String pathToFolderForSymlink, final Path target, final String className) throws IOException {
+    public static void createLinkInSeparateFolder(final String pathToFolderForSymlink, final Path target, final String className) throws IOException {
         File theDir = new File(pathToFolderForSymlink);
-        if (!theDir.exists()){
+        if (!theDir.exists()) {
             theDir.mkdirs();
         }
         Path link = Paths.get(pathToFolderForSymlink, className + ".class");

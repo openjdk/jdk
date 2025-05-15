@@ -4611,31 +4611,25 @@ static void set_path_prefix(char* buf, LPCWSTR* prefix, int* prefix_off, bool* n
 }
 
 // This method checks if a wide path is actually a symbolic link
-static bool is_symbolic_link(const wchar_t* wide_path)
-{
+static bool is_symbolic_link(const wchar_t* wide_path) {
   WIN32_FIND_DATAW fd;
   HANDLE f = ::FindFirstFileW(wide_path, &fd);
   const bool result = fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT && fd.dwReserved0 == IO_REPARSE_TAG_SYMLINK;
-  if (0 == ::FindClose(f)) {
+  if (::FindClose(f) == 0) {
     errno = ::GetLastError();
-    return false;
   }
   return result;
 }
 
 // This method dereferences a symbolic link
-static WCHAR* get_path_to_target(const wchar_t* wide_path)
-{
-  HANDLE hFile;
-
-  hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, nullptr,
+static WCHAR* get_path_to_target(const wchar_t* wide_path) {
+  HANDLE hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, nullptr,
     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
   const size_t target_path_size = ::GetFinalPathNameByHandleW(hFile, nullptr, 0,
     FILE_NAME_NORMALIZED);
 
-  if (target_path_size == 0)
-  {
+  if (target_path_size == 0) {
     errno = ::GetLastError();
     return nullptr;
   }
@@ -4645,7 +4639,7 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path)
   ::GetFinalPathNameByHandleW(hFile, path_to_target, static_cast<DWORD>(target_path_size + 1),
     FILE_NAME_NORMALIZED);
 
-  if (0 == ::CloseHandle(hFile)) {
+  if (::CloseHandle(hFile) == 0) {
     errno = ::GetLastError();
     return nullptr;
   }
@@ -4730,8 +4724,9 @@ int os::stat(const char *path, struct stat *sbuf) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr)
     {
-      // it is a symbolic link, but we failed to resolve it
-      errno = err;
+      // it is a symbolic link, but we failed to resolve it,
+      // errno has been set in the call to get_path_to_target(),
+      // no need to overwrite it
       return -1;
     }
   }
@@ -4939,8 +4934,9 @@ int os::open(const char *path, int oflag, int mode) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr)
     {
-      // it is a symbolic link, but we failed to resolve it
-      errno = err;
+      // it is a symbolic link, but we failed to resolve it,
+      // errno has been set in the call to get_path_to_target(),
+      // no need to overwrite it
       return -1;
     }
   }
