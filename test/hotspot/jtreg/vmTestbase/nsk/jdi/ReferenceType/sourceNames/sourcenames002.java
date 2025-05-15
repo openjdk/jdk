@@ -142,7 +142,7 @@ public class sourcenames002 {
             ThreadReference thrRef =
                 debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
             if (thrRef == null) {
-                throw new Failure("method Debugee.threadByName() returned null for debuggee thread "
+                throw new Failure("method Debugee.threadByFieldName() returned null for debuggee thread "
                     + DEBUGGEE_THRNAME);
             }
 

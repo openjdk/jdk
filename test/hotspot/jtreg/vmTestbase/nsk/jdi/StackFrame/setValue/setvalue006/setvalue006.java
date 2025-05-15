@@ -183,7 +183,7 @@ public class setvalue006 {
         ThreadReference thrRef =
             debuggee.threadByFieldName(rType, "mainThread", DEBUGGEE_THRDNAME);
         if (thrRef == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
+            log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
                 + DEBUGGEE_THRDNAME);
             tot_res = Consts.TEST_FAILED;
             return quitDebuggee();

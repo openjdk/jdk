@@ -128,7 +128,7 @@ public class invokemethod002 {
 
         thrRef = debuggee.threadByFieldName(rType[0], "testThread", DEBUGGEE_THRNAME);
         if (thrRef == null) {
-            log.complain("TEST FAILURE: Method Debugee.threadByName() returned null for debuggee thread "
+            log.complain("TEST FAILURE: Method Debugee.threadByFieldName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;
             return quitDebuggee();
