@@ -103,7 +103,6 @@ class JfrTraceId : public AllStatic {
   static traceid load_raw(const Klass* klass);
   static traceid load_raw(jclass jc);
   static traceid load_raw(const Method* method);
-  static traceid load_raw(const Klass* holder, const Method* method);
   static traceid load_raw(const ModuleEntry* module);
   static traceid load_raw(const PackageEntry* package);
   static traceid load_raw(const ClassLoaderData* cld);
@@ -138,18 +137,6 @@ class JfrTraceId : public AllStatic {
   static bool is_event_host(const jclass jc);
   static void tag_as_event_host(const Klass* k);
   static void tag_as_event_host(const jclass jc);
-
-  // Sticky bits and timing bits
-  static bool has_sticky_bit(const Klass* k);
-  static bool has_sticky_bit(const Method* method);
-  static void set_sticky_bit(const Klass* k);
-  static void set_sticky_bit(const Method* method);
-  static void clear_sticky_bit(const Klass* k);
-  static void clear_sticky_bit(const Method* method);
-  static bool has_timing_bit(const Klass* k);
-  static void set_timing_bit(const Klass* k);
-  static void clear_timing_bit(const Klass* k);
-
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP

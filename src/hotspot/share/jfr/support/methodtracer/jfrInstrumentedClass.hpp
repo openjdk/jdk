@@ -25,8 +25,6 @@
 #ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRINSTRUMENTEDCLASS_HPP
 #define SHARE_JFR_SUPPORT_METHODTRACER_JFRINSTRUMENTEDCLASS_HPP
 
-#include "jfr/utilities/jfrTypes.hpp"
-
 class InstanceKlass;
 
 //

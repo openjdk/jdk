@@ -26,49 +26,48 @@
 #define SHARE_JFR_SUPPORT_METHODTRACER_JFRMETHODTRACER_HPP
 
 #include "jni.h"
-#include "jfr/support/methodtracer/jfrInstrumentedClass.hpp"
-#include "jfr/support/methodtracer/jfrTracedMethod.hpp"
-#include "jfr/utilities/jfrTypes.hpp"
+
 #include "memory/allocation.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
 
 class ClassFileParser;
 class InstanceKlass;
 class JavaThread;
-class JfrFilterClassClosure;
-class Klass;
+class JfrFilter;
+class JfrInstrumentedClass;
+class JfrMethodProcessor;
+class JfrTracedMethod;
 class ModuleEntry;
 
 template <typename E> class GrowableArray;
 
 //
-// Class responsible for installing and evaluating filters, collecting methods to
+// Class responsible for holding filters, collecting methods to
 // be instrumented and calling Java to create the appropriate bytecode.
 ///
 class JfrMethodTracer: AllStatic {
  private:
-  static ModuleEntry*                         _jdk_jfr_module;          // Guarded by Module_lock
-  static GrowableArray<JfrInstrumentedClass>* _instrumented_classes;    // Guarded by ClassLoaderDataGraph_lock
-  static GrowableArray<jlong>*                _timing_entries;          // Guarded by ClassLoaderDataGraph_lock
+  static const JfrFilter*                     _filter;               // Guarded by JfrMethodTracer_lock
+  static const JfrFilter*                     _previous_filter;      // Guarded by JfrMethodTracer_lock
+  static ModuleEntry*                         _jdk_jfr_module;       // Guarded by Module_lock
+  static GrowableArray<JfrInstrumentedClass>* _instrumented_classes; // Guarded by ClassLoaderDataGraph_lock
+  static GrowableArray<jlong>*                _unloaded_class_ids;   // Guarded by ClassLoaderDataGraph_lock
 
+  static GrowableArray<jlong>* collect_new_timing_entries();
   static ModuleEntry* jdk_jfr_module();
-  static void add_timing_entry(const InstanceKlass* ik, traceid klass_id);
-  static void retransform(JNIEnv* env, const JfrFilterClassClosure& classes, TRAPS);
-  static void add_instrumented_class(InstanceKlass* ik, GrowableArray<JfrTracedMethod>* methods);
-
+  static void retransform(JNIEnv* env, GrowableArray<jclass>* class_array, TRAPS);
+  static void set_filters(const JfrFilter* previous_filter, const JfrFilter* filter);
+  static const JfrFilter* current_filter();
  public:
   static bool in_use();
-  static jlongArray drain_stale_class_ids(TRAPS);
-  static void add_to_unloaded_set(const Klass* k);
-  static void trim_instrumented_classes(bool trim);
-  static GrowableArray<JfrInstrumentedClass>* instrumented_classes();
-  static void on_klass_redefinition(const InstanceKlass* ik, Thread* thread);
+  static jlongArray set_filters(JNIEnv* env, jobjectArray classes, jobjectArray methods, jobjectArray annotations, jintArray modifications, TRAPS);
   static void on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS);
-  static jlongArray set_filters(JNIEnv* env,
-                                jobjectArray classes,
-                                jobjectArray methods,
-                                jobjectArray annotations,
-                                jintArray modifications,
-                                TRAPS);
+  static void on_klass_redefinition(const InstanceKlass* ik, Thread* thread);
+  static GrowableArray<JfrInstrumentedClass>* instrumented_classes();
+  static void add_instrumented_class(InstanceKlass* ik, GrowableArray<JfrTracedMethod>* methods);
+  static void clear_instrumented_classes();
+  static jlongArray drain_stale_class_ids(TRAPS);
+  static void trim_instrumented_classes();
 };
 
 #endif // SHARE_JFR_SUPPORT_METHODTRACER_JFRMETHODTRACER_HPP

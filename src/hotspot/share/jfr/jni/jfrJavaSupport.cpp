@@ -942,3 +942,4 @@ jlongArray JfrJavaSupport::create_long_array(GrowableArray<jlong>* array, TRAPS)
   array->clear();
   return static_cast<jlongArray>(JfrJavaSupport::local_jni_handle(obj, THREAD));
 }
+

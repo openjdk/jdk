@@ -23,99 +23,45 @@
  */
 
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdBits.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdMacros.hpp"
+#include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/methodtracer/jfrInstrumentedClass.hpp"
+#include "jfr/support/methodtracer/jfrTracedMethod.hpp"
 #include "jfr/support/methodtracer/jfrTraceTagging.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
-#include "utilities/growableArray.hpp"
-
-void JfrTraceTagging::tag_dynamic(const InstanceKlass* ik) {
-  JfrTraceIdLoadBarrier::load_barrier(ik);
-}
-
-void JfrTraceTagging::tag_dynamic(const Method* method) {
-  JfrTraceId::load_no_enqueue(method);
-}
-
-void JfrTraceTagging::tag_dynamic(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods) {
-  assert(ik != nullptr, "invariant");
-  assert(methods != nullptr, "invariant");
-
-  for (int i = 0; i < methods->length(); ++i) {
-    const Method* const method = methods->at(i).method();
-    assert(method != nullptr, "invariant");
-    if (!method->is_old()) {
-      tag_dynamic(method);
-      continue;
-    }
-    // A redefinition / retransformation interleaved.
-    // Find and tag the latest version of the method.
-    tag_dynamic(ik->method_with_orig_idnum(method->orig_method_idnum()));
-  }
-}
 
 void JfrTraceTagging::set_dynamic_tag(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods) {
   assert(ik != nullptr, "invariant");
   assert(!ik->is_scratch_class(), "invariant");
 
-  tag_dynamic(ik, methods);
+  tag_dynamic(methods);
   tag_dynamic(ik);
 }
 
 void JfrTraceTagging::set_dynamic_tag_for_sticky_bit(const InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
   assert(!ik->is_scratch_class(), "invariant");
-  assert(JfrTraceId::has_sticky_bit(ik), "invariant");
+  assert(HAS_STICKY_BIT(ik), "invariant");
 
   const int length = ik->methods()->length();
   for (int i = 0; i < length; ++i) {
     const Method* const m = ik->methods()->at(i);
-    if (JfrTraceId::has_sticky_bit(m)) {
+    if (METHOD_HAS_STICKY_BIT(m)) {
       tag_dynamic(m);
     }
   }
   tag_dynamic(ik);
 }
 
-void JfrTraceTagging::tag_sticky(const InstanceKlass* ik) {
-  JfrTraceId::set_sticky_bit(ik);
-}
-
-void JfrTraceTagging::tag_sticky(const Method* method) {
-  JfrTraceId::set_sticky_bit(method);
-}
-
-void JfrTraceTagging::tag_sticky(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods) {
-  assert(ik != nullptr, "invariant");
-  assert(methods != nullptr, "invariant");
-
-  for (int i = 0; i < methods->length(); ++i) {
-    const Method* const method = methods->at(i).method();
-    assert(method != nullptr, "invariant");
-    if (!method->is_old()) {
-      tag_sticky(method);
-      continue;
-    }
-    // A redefinition / retransformation interleaved.
-    // Find and tag the latest version of the method.
-    tag_sticky(ik->method_with_orig_idnum(method->orig_method_idnum()));
-  }
-}
-
-void JfrTraceTagging::tag_timing(const InstanceKlass* ik) {
-  JfrTraceId::set_timing_bit(ik);
-}
-
 void JfrTraceTagging::install_sticky_bit_for_retransform_klass(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods, bool timing) {
   assert(ik != nullptr, "invariant");
   assert(!ik->is_scratch_class(), "invariant");
-
   MutexLocker lock(ClassLoaderDataGraph_lock);
-  if (JfrTraceId::has_sticky_bit(ik)) {
-    clear_sticky_bit(ik);
-  }
-  tag_sticky(ik, methods);
+
+  tag_sticky(methods);
   tag_sticky(ik);
   if (timing) {
     tag_timing(ik);
@@ -127,14 +73,14 @@ void JfrTraceTagging::set_sticky_bit(const InstanceKlass* ik, const GrowableArra
   assert(!ik->is_scratch_class(), "invariant");
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
-  tag_sticky(ik, methods);
+  tag_sticky(methods);
   tag_sticky(ik);
 }
 
-void JfrTraceTagging::clear_sticky_bit(const InstanceKlass* ik, bool dynamic_tag /* false */) {
+void JfrTraceTagging::clear_sticky_bit(const InstanceKlass* ik, bool dynamic_tag) {
   assert(ik != nullptr, "invariant");
   assert(!ik->is_scratch_class(), "invariant");
-  assert(JfrTraceId::has_sticky_bit(ik), "invariant");
+  assert(HAS_STICKY_BIT(ik), "invariant");
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
   const Array<Method*>* const methods = ik->methods();
@@ -142,19 +88,87 @@ void JfrTraceTagging::clear_sticky_bit(const InstanceKlass* ik, bool dynamic_tag
   const int length = methods->length();
   for (int i = 0; i < length; ++i) {
     const Method* const m = methods->at(i);
-    if (JfrTraceId::has_sticky_bit(m)) {
+    if (METHOD_HAS_STICKY_BIT(m)) {
       if (dynamic_tag) {
         tag_dynamic(m);
       }
-      JfrTraceId::clear_sticky_bit(m);
+      CLEAR_STICKY_BIT_METHOD(m);
+      assert(METHOD_HAS_NOT_STICKY_BIT(m), "invariant");
     }
   }
   if (dynamic_tag) {
     tag_dynamic(ik);
   }
-  JfrTraceId::clear_sticky_bit(ik);
-  if (JfrTraceId::has_timing_bit(ik)) {
-    JfrTraceId::clear_timing_bit(ik);
+  CLEAR_STICKY_BIT(ik);
+  assert(HAS_NOT_STICKY_BIT(ik), "invariant");
+  if (HAS_TIMING_BIT(ik)) {
+    CLEAR_TIMING_BIT(ik);
   }
-  assert(!JfrTraceId::has_timing_bit(ik), "invariant");
+  assert(HAS_NOT_TIMING_BIT(ik), "invariant");
+}
+
+void JfrTraceTagging::clear(GrowableArray<JfrInstrumentedClass>* instrumented, bool dynamic_tag) {
+  assert(instrumented != nullptr, "invariant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+
+  if (instrumented->is_empty()) {
+    assert(!JfrTraceIdEpoch::has_method_tracer_changed_tag_state(), "invariant");
+    return;
+  }
+  JfrTraceIdEpoch::reset_method_tracer_tag_state();
+  JfrKlassUnloading::sort(true);
+  const int length = instrumented->length();
+  assert(length > 0, "invariant");
+  for (int i = 0; i < length; ++i) {
+    if (!JfrKlassUnloading::is_unloaded(instrumented->at(i).trace_id(), true)) {
+      const InstanceKlass* ik = instrumented->at(i).instance_klass();
+      assert(instrumented->at(i).trace_id() == JfrTraceId::load_raw(ik), "invariant");
+      clear_sticky_bit(ik, dynamic_tag);
+      if (log_is_enabled(Debug, jfr, methodtrace)) {
+        ResourceMark rm;
+        log_debug(jfr, methodtrace)("Removing class %s from instrumented list", ik->external_name());
+      }
+    }
+  }
+  instrumented->clear();
+}
+
+// PRIVATE METHODS
+
+void JfrTraceTagging::tag_dynamic(const InstanceKlass* ik) {
+  JfrTraceIdLoadBarrier::load_barrier(ik);
+}
+
+void JfrTraceTagging::tag_dynamic(const GrowableArray<JfrTracedMethod>* methods) {
+  for (int i = 0; i < methods->length(); ++i) {
+    tag_dynamic(methods->at(i).method());
+  }
+}
+
+void JfrTraceTagging::tag_dynamic(const Method* method) {
+  JfrTraceId::load_no_enqueue(method);
+}
+
+void JfrTraceTagging::tag_sticky(const InstanceKlass* ik) {
+  assert(HAS_NOT_STICKY_BIT(ik), "invariant");
+  SET_STICKY_BIT(ik);
+  assert(HAS_STICKY_BIT(ik), "invariant");
+}
+
+void JfrTraceTagging::tag_sticky(const GrowableArray<JfrTracedMethod>* methods) {
+  for (int i = 0; i < methods->length(); ++i) {
+    tag_sticky(methods->at(i).method());
+  }
+}
+
+void JfrTraceTagging::tag_sticky(const Method* method) {
+  assert(METHOD_HAS_NOT_STICKY_BIT(method), "invariant");
+  SET_METHOD_STICKY_BIT(method);
+  assert(METHOD_HAS_STICKY_BIT(method), "invariant");
+}
+
+void JfrTraceTagging::tag_timing(const InstanceKlass* ik) {
+  assert(HAS_NOT_TIMING_BIT(ik), "invariant");
+  SET_TIMING_BIT(ik);
+  assert(HAS_TIMING_BIT(ik), "invariant");
 }

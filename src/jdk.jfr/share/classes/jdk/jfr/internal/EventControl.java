@@ -355,7 +355,7 @@ public final class EventControl {
             } else {
                 String v = nc.control.getDefaultValue();
                 // Avoids slow retransformation during shutdown
-                if (v != null && !PlatformRecorder.isInShutDown()) {
+                if (v != null && PlatformRecorder.isInShutDown()) {
                     nc.control.setValue(v);
                 }
             }

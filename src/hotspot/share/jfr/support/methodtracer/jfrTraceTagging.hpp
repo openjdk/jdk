@@ -25,32 +25,33 @@
 #ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRTRACETAGGING_HPP
 #define SHARE_JFR_SUPPORT_METHODTRACER_JFRTRACETAGGING_HPP
 
-#include "jfr/support/methodtracer/jfrTracedMethod.hpp"
 #include "memory/allStatic.hpp"
 
-class InstanceKlass;;
+class InstanceKlass;
+class JfrInstrumentedClass;
+class JfrMethodProcessor;
 class Method;
-
 template <typename E> class GrowableArray;
 
 //
 // Class responsible for setting setting sticky, epoch, and timing bits.
-//
+///
 class JfrTraceTagging : AllStatic {
  private:
   static void tag_dynamic(const InstanceKlass* ik);
-  static void tag_dynamic(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods);
+  static void tag_dynamic(const GrowableArray<JfrTracedMethod>* methods);
   static void tag_dynamic(const Method* method);
   static void tag_sticky(const InstanceKlass* ik);
   static void tag_sticky(const Method* method);
-  static void tag_sticky(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods);
+  static void tag_sticky(const GrowableArray<JfrTracedMethod>* methods);
   static void tag_timing(const InstanceKlass* ik);
  public:
   static void set_dynamic_tag(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods);
   static void set_dynamic_tag_for_sticky_bit(const InstanceKlass* ik);
   static void install_sticky_bit_for_retransform_klass(const InstanceKlass* existing_klass, const GrowableArray<JfrTracedMethod>* methods, bool timing);
   static void set_sticky_bit(const InstanceKlass* ik, const GrowableArray<JfrTracedMethod>* methods);
-  static void clear_sticky_bit(const InstanceKlass* ik, bool dynamic_tag = false);
+  static void clear_sticky_bit(const InstanceKlass* ik, bool dynamic_tag = true);
+  static void clear(GrowableArray<JfrInstrumentedClass>* instrumented, bool dynamic_tag = true);
 };
 
 #endif /* SHARE_JFR_SUPPORT_METHODTRACER_JFRTRACETAGGING_HPP */

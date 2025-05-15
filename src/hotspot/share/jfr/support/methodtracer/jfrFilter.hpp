@@ -26,11 +26,10 @@
 #define SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTER_HPP
 
 #include "jni.h"
-#include "jfr/utilities/jfrAllocation.hpp"
+#include "memory/allocation.hpp"
 #include "oops/annotations.hpp"
 
 class InstanceKlass;
-class JavaThread;
 class Method;
 class ModuleEntry;
 class Symbol;
@@ -41,8 +40,7 @@ class Symbol;
 // For information on how they are configured,
 // see jdk.jfr.internal.JVM::setMethodTraceFilters(...).
 //
-class JfrFilter : public JfrCHeapObj {
-  friend class JfrFilterManager;
+class JfrFilter : public CHeapObj<mtTracing> {
  private:
   Symbol** _class_names;
   Symbol** _method_names;
@@ -56,6 +54,11 @@ class JfrFilter : public JfrCHeapObj {
             int* modifications,
             int count);
  public:
+  static JfrFilter* from(jobjectArray classses,
+                         jobjectArray methods,
+                         jobjectArray annotations,
+                         jintArray modifications, TRAPS);
+  static int combine_bits(int a, int b);
   ~JfrFilter();
   bool can_instrument_method(const Method* m) const;
   bool can_instrument_class(const InstanceKlass* m) const;
@@ -66,24 +69,6 @@ class JfrFilter : public JfrCHeapObj {
   bool match_annotations(const InstanceKlass* klass, AnnotationArray* annotation, const Symbol* symbol, bool log) const;
   // Requires ResourceMark
   void log(const char* caption) const;
-
-  static int combine_bits(int a, int b);
-};
-
-class JfrFilterManager : public AllStatic {
-  friend class JfrMethodTracer;
- private:
-  static const JfrFilter* _current;
-  static const JfrFilter* _empty;
-  static void install(const JfrFilter* filter);
-  static void clear_previous_filters();
- public:
-  static const JfrFilter* current();
-  static bool install(jobjectArray classses,
-                      jobjectArray methods,
-                      jobjectArray annotations,
-                      jintArray modifications,
-                      JavaThread* jt);
 };
 
 #endif // SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTER_HPP
