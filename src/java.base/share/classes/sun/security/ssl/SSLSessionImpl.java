@@ -1511,8 +1511,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
 
         // Calculations are primarily based on protocol version.
-        switch (protocolVersion) {
-        case TLS13:  // HKDF-based
+        if (protocolVersion.useTLS13PlusSpec()) {
+            // TLS 1.3+ using HKDF-based calcs.
+            //     TLS 1.3 (RFC 8446)
 
             // Check the label/context lengths:
             //       struct {
@@ -1527,7 +1528,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             //
             //     L    length of output keying material in octets
             //          (<= 255*HashLen)
-            if (length >= (255 * cipherSuite.hashAlg.hashLength )) {
+            if (length > (255 * cipherSuite.hashAlg.hashLength )) {
                 throw new IllegalArgumentException(
                         "length is too large");
             }
@@ -1624,12 +1625,12 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 // For whatever reason, we couldn't generate.  Wrap and return.
                 throw new SSLKeyException("Couldn't generate Exporter/HKDF", e);
             }
+        } else if (protocolVersion.useTLS10PlusSpec()) {
+            // RFC 7505 using PRF-based calcs.
+            //     TLS 1/1.1/1.2 (RFCs 2246/4346/5246) or
+            //     DTLS 1.0/1.2 (RFCs 4347/6347)
 
-        case TLS12:  // RFC 7505 using PRF-based (RFC 2246/4346/5246) calcs.
-        case TLS11:
-        case TLS10:
-
-            // RFC 7627:
+            // Note:  In RFC 7627:
             //
             //   If a client or server chooses to continue with a full handshake
             //   without the extended master secret extension ... they MUST NOT
@@ -1655,7 +1656,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
 
             // context length must fit in 2 unsigned bytes.
-            if ((context != null) && context.length >= 65536) {
+            if ((context != null) && context.length > 0xFFFF) {
                 throw new IllegalArgumentException(
                         "Only 16-bit context lengths supported");
             }
@@ -1708,7 +1709,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                      InvalidAlgorithmParameterException e) {
                 throw new SSLKeyException("Could not generate Exporter/PRF", e);
             }
-        default:
+        } else {
             // SSLv3 is vulnerable to a triple handshake attack and can't be
             // mitigated by RFC 7627.  Don't support this or any other
             // unknown protocol.
