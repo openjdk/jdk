@@ -29,38 +29,38 @@ protected:
   static void test_claim_tree_claim_level_size() {
     // max_index: 16, 16, 16, rest
     // claim level: 1, 16, 16 * 16, 16 * 16 * 16
-    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_size(0), 1);
-    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_size(1), 16);
-    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_size(2), 16 * 16);
-    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_size(3), 16 * 16 * 16);
+    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_size<0>(), 1);
+    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_size<1>(), 16);
+    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_size<2>(), 16 * 16);
+    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_size<3>(), 16 * 16 * 16);
   }
 
   static void test_claim_tree_claim_level_end_index() {
     // First level is padded
     const int first_level_end = int(ZCacheLineSize / sizeof(int));
-    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index(0), first_level_end);
-    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index(1), first_level_end + 16);
-    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index(2), first_level_end + 16 + 16 * 16);
-    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index(3), first_level_end + 16 + 16 * 16 + 16 * 16 * 16);
+    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index<0>(), first_level_end);
+    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index<1>(), first_level_end + 16);
+    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index<2>(), first_level_end + 16 + 16 * 16);
+    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index<3>(), first_level_end + 16 + 16 * 16 + 16 * 16 * 16);
   }
 
   static void test_claim_tree_claim_index() {
     // First level should always give index 0
     {
       int indices[4] = {0, 0, 0, 0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index(indices, 0), 0);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index<0>(indices), 0);
     }
     {
       int indices[4] = {1, 0, 0, 0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index(indices, 0), 0);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index<0>(indices), 0);
     }
     {
       int indices[4] = {15, 0, 0, 0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index(indices, 0), 0);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index<0>(indices), 0);
     }
     {
       int indices[4] = {16, 0, 0, 0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index(indices, 0), 0);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index<0>(indices), 0);
     }
 
     // Second level should depend on first claimed index
@@ -70,15 +70,15 @@ protected:
 
     {
       int indices[4] = {0, 0, 0, 0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index(indices, 1), second_level_start);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index<1>(indices), second_level_start);
     }
     {
       int indices[4] = {1, 0, 0, 0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index(indices, 1), second_level_start + 1);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index<1>(indices), second_level_start + 1);
     }
     {
       int indices[4] = {15, 0, 0, 0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index(indices, 1), second_level_start + 15);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index<1>(indices), second_level_start + 15);
     }
 
     // Third level
@@ -87,23 +87,23 @@ protected:
 
     {
       int indices[4] = {0, 0, 0, 0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index(indices, 2), third_level_start);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index<2>(indices), third_level_start);
     }
     {
       int indices[4] = {1, 0, 0, 0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index(indices, 2), third_level_start + 1 * 16);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index<2>(indices), third_level_start + 1 * 16);
     }
     {
       int indices[4] = {15, 0, 0, 0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index(indices, 2), third_level_start + 15 * 16);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index<2>(indices), third_level_start + 15 * 16);
     }
     {
       int indices[4] = {1, 2, 0, 0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index(indices, 2), third_level_start + 1 * 16 + 2);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index<2>(indices), third_level_start + 1 * 16 + 2);
     }
     {
       int indices[4] = {15, 14, 0, 0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index(indices, 2), third_level_start + 15 * 16 + 14);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_index<2>(indices), third_level_start + 15 * 16 + 14);
     }
 
   }
@@ -111,53 +111,53 @@ protected:
   static void test_claim_tree_claim_level_index() {
     {
       int indices[4] = {0,0,0,0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 1), 0);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index<1>(indices), 0);
     }
     {
       int indices[4] = {1,0,0,0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 1), 1);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index<1>(indices), 1);
     }
 
     {
       int indices[4] = {0,0,0,0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 2), 0);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index<2>(indices), 0);
     }
     {
       int indices[4] = {1,0,0,0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 2), 1 * 16);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index<2>(indices), 1 * 16);
     }
     {
       int indices[4] = {2,0,0,0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 2), 2 * 16);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index<2>(indices), 2 * 16);
     }
     {
       int indices[4] = {2,1,0,0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 2), 2 * 16 + 1);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index<2>(indices), 2 * 16 + 1);
     }
 
     {
       int indices[4] = {0,0,0,0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 3), 0);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index<3>(indices), 0);
     }
     {
       int indices[4] = {1,0,0,0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 3), 1 * 16 * 16);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index<3>(indices), 1 * 16 * 16);
     }
     {
       int indices[4] = {1,2,0,0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 3), 1 * 16 * 16 + 2 * 16);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index<3>(indices), 1 * 16 * 16 + 2 * 16);
     }
     {
       int indices[4] = {1,2,1,0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 3), 1 * 16 * 16 + 2 * 16 + 1);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index<3>(indices), 1 * 16 * 16 + 2 * 16 + 1);
     }
     {
       int indices[4] = {1,2,3,0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 3), 1 * 16 * 16 + 2 * 16 + 3);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index<3>(indices), 1 * 16 * 16 + 2 * 16 + 3);
     }
     {
       int indices[4] = {1,2,3,0};
-      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 2), 1 * 16 + 2);
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index<2>(indices), 1 * 16 + 2);
     }
   }
 };

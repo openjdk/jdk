@@ -42,6 +42,7 @@
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zPageAllocator.hpp"
+#include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zRemembered.hpp"

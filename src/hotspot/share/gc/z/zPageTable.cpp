@@ -76,6 +76,14 @@ void ZPageTable::replace(ZPage* old_page, ZPage* new_page) {
   }
 }
 
+ZPageTableParallelIterator::ZPageTableParallelIterator(const ZPageTable* table)
+  : _table(table),
+    _index_distributor(table->count()) {}
+
+ZPageTableParallelIterator::~ZPageTableParallelIterator() {
+  // Explicit destructor because dependency on the inline ZIndexDistributor destructor
+}
+
 ZGenerationPagesParallelIterator::ZGenerationPagesParallelIterator(const ZPageTable* page_table, ZGenerationId id, ZPageAllocator* page_allocator)
   : _iterator(page_table),
     _generation_id(id),

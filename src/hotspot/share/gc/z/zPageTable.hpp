@@ -74,6 +74,7 @@ class ZPageTableParallelIterator : public StackObj {
 
 public:
   ZPageTableParallelIterator(const ZPageTable* table);
+  ~ZPageTableParallelIterator();
 
   template <typename Function>
   void do_pages(Function function);
