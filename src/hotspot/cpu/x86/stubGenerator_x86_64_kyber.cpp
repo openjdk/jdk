@@ -43,40 +43,26 @@
 // Constants
 //
 ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512Consts[] = {
-    0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301,
-    0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301,
-    0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301,
-    0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301, 0xF301,
-
-    0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01,
-    0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01,
-    0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01,
-    0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01, 0x0D01,
-
-    0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF,
-    0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF,
-    0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF,
-    0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF,
-
-    0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200,
-    0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200,
-    0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200,
-    0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200,
-
-    0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549,
-    0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549,
-    0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549,
-    0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549, 0x0549,
-
-    0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00,
-    0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00,
-    0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00,
-    0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00
+    0xF301, 0xF301, 0xF301, 0xF301, // q^-1 mod montR
+    0x0D01, 0x0D01, 0x0D01, 0x0D01, // q
+    0x4EBF, 0x4EBF, 0x4EBF, 0x4EBF, // Barrett multiplier
+    0x0200, 0x0200, 0x0200, 0x0200, //(dim/2)^-1 mod q
+    0x0549, 0x0549, 0x0549, 0x0549, // montR^2 mod q
+    0x0F00, 0x0F00, 0x0F00, 0x0F00  // mask for kyber12to16
   };
 
-static address kyberAvx512ConstsAddr() {
-  return (address) kyberAvx512Consts;
+static int qInvModROffset = 0;
+static int qOffset = 8;
+static int barretMultiplierOffset = 16;
+static int dimHalfInverseOffset = 24;
+static int montRSquareModqOffset = 32;
+static int f00Offset = 40;
+
+static address kyberAvx512ConstsAddr(int offset) {
+  return ((address) kyberAvx512Consts) + offset;
 }
+
+const Register scratch = r10;
 
 ATTRIBUTE_ALIGNED(64) static const uint16_t kyberAvx512NttPerms[] = {
 // 0
@@ -378,17 +364,19 @@ address generate_kyberNtt_avx512(StubGenerator *stubgen,
   const Register coeffs = c_rarg0;
   const Register zetas = c_rarg1;
 
-  const Register kyberConsts = r10;
   const Register perms = r11;
 
   __ lea(perms, ExternalAddress(kyberAvx512NttPermsAddr()));
-  __ lea(kyberConsts, ExternalAddress(kyberAvx512ConstsAddr()));
 
   load4regs(xmm4_7, coeffs, 256, _masm);
   load4regs(xmm20_23, zetas, 0, _masm);
 
-  __ evmovdquw(xmm30, Address(kyberConsts, 64), Assembler::AVX_512bit);
-  __ evmovdquw(xmm31, Address(kyberConsts, 0), Assembler::AVX_512bit);
+  __ vpbroadcastq(xmm30,
+                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
+                  Assembler::AVX_512bit, scratch); // q
+  __ vpbroadcastq(xmm31,
+                  ExternalAddress(kyberAvx512ConstsAddr(qInvModROffset)),
+                  Assembler::AVX_512bit, scratch); // q^-1 mod montR
 
   load4regs(xmm0_3, coeffs, 0, _masm);
 
@@ -472,18 +460,21 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
   const Register coeffs = c_rarg0;
   const Register zetas = c_rarg1;
 
-  const Register kyberConsts = r10;
   const Register perms = r11;
 
   __ lea(perms, ExternalAddress(kyberAvx512InverseNttPermsAddr()));
-  __ lea(kyberConsts, ExternalAddress(kyberAvx512ConstsAddr()));
-
   __ evmovdquw(xmm12, Address(perms, 0), Assembler::AVX_512bit);
   __ evmovdquw(xmm16, Address(perms, 64), Assembler::AVX_512bit);
 
-  __ evmovdquw(xmm31, Address(kyberConsts, 0), Assembler::AVX_512bit);
-  __ evmovdquw(xmm30, Address(kyberConsts, 64), Assembler::AVX_512bit);
-  __ evmovdquw(xmm29, Address(kyberConsts, 192), Assembler::AVX_512bit);
+  __ vpbroadcastq(xmm31,
+                  ExternalAddress(kyberAvx512ConstsAddr(qInvModROffset)),
+                  Assembler::AVX_512bit, scratch); // q^-1 mod montR
+  __ vpbroadcastq(xmm30,
+                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
+                  Assembler::AVX_512bit, scratch); // q
+  __ vpbroadcastq(xmm29,
+                  ExternalAddress(kyberAvx512ConstsAddr(dimHalfInverseOffset)),
+                  Assembler::AVX_512bit, scratch); // (dim/2)^-1 mod q
 
   load4regs(xmm0_3, coeffs, 0, _masm);
   load4regs(xmm4_7, coeffs, 256, _masm);
@@ -518,8 +509,12 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
 
   montmul(xmm12_15, xmm16_19, xmm8_11, xmm12_15, xmm8_11, _masm);
 
-  __ evmovdquw(xmm16, Address(kyberConsts, 128), Assembler::AVX_512bit);
-  __ evmovdquw(xmm17, Address(kyberConsts, 64), Assembler::AVX_512bit);
+  __ vpbroadcastq(xmm16,
+                  ExternalAddress(kyberAvx512ConstsAddr(barretMultiplierOffset)),
+                  Assembler::AVX_512bit, scratch); // Barrett multiplier
+  __ vpbroadcastq(xmm17,
+                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
+                  Assembler::AVX_512bit, scratch); // q
 
   permute(xmm1357, xmm0246, xmm12_15, 20, _masm);
   barrettReduce(_masm);
@@ -537,8 +532,12 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
   // level 4
   load4regs(xmm8_11, zetas, 1024, _masm);
 
-  __ evmovdquw(xmm16, Address(kyberConsts, 128), Assembler::AVX_512bit);
-  __ evmovdquw(xmm17, Address(kyberConsts, 64), Assembler::AVX_512bit);
+  __ vpbroadcastq(xmm16,
+                  ExternalAddress(kyberAvx512ConstsAddr(barretMultiplierOffset)),
+                  Assembler::AVX_512bit, scratch); // Barrett multiplier
+  __ vpbroadcastq(xmm17,
+                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
+                  Assembler::AVX_512bit, scratch); // q
 
   sub_add(xmm12_15, xmm0246, xmm0246, xmm1357, _masm);
   montmul(xmm1357, xmm12_15, xmm8_11, xmm1357, xmm8_11, _masm);
@@ -587,7 +586,6 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
   const Register nttb = c_rarg2;
   const Register zetas = c_rarg3;
 
-  const Register kyberConsts = r10;
   const Register perms = r11;
   const Register loopCnt = r12;
 
@@ -597,14 +595,18 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
   Label Loop;
 
   __ lea(perms, ExternalAddress(kyberAvx512_nttMultPermsAddr()));
-  __ lea(kyberConsts, ExternalAddress(kyberAvx512ConstsAddr()));
 
 
   load4regs(xmm26_29, perms, 0, _masm);
-  __ evmovdquw(xmm31, Address(kyberConsts, 0), Assembler::AVX_512bit);
-  __ evmovdquw(xmm30, Address(kyberConsts, 64), Assembler::AVX_512bit);
-  __ evmovdquw(xmm23, Address(kyberConsts, 256), Assembler::AVX_512bit);
-
+  __ vpbroadcastq(xmm31,
+                  ExternalAddress(kyberAvx512ConstsAddr(qInvModROffset)),
+                  Assembler::AVX_512bit, scratch); // q^-1 mod montR
+  __ vpbroadcastq(xmm30,
+                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
+                  Assembler::AVX_512bit, scratch); // q
+  __ vpbroadcastq(xmm23,
+                  ExternalAddress(kyberAvx512ConstsAddr(montRSquareModqOffset)),
+                  Assembler::AVX_512bit, scratch); // montR^2 mod q
 
   __ BIND(Loop);
 
@@ -703,11 +705,9 @@ address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
   const Register a = c_rarg1;
   const Register b = c_rarg2;
 
-  const Register kyberConsts = r11;
-
-  __ lea(kyberConsts, ExternalAddress(kyberAvx512ConstsAddr()));
-
-  __ evmovdquw(xmm31, Address(kyberConsts, 64), Assembler::AVX_512bit);
+  __ vpbroadcastq(xmm31,
+                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
+                  Assembler::AVX_512bit, scratch); // q
 
   for (int i = 0; i < 8; i++) {
     __ evmovdquw(xmm(i), Address(a, 64 * i), Assembler::AVX_512bit);
@@ -752,10 +752,9 @@ address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
   const Register b = c_rarg2;
   const Register c = c_rarg3;
 
-  const Register kyberConsts = r11;
-
-  __ lea(kyberConsts, ExternalAddress(kyberAvx512ConstsAddr()));
-  __ evmovdquw(xmm31, Address(kyberConsts, 64), Assembler::AVX_512bit);
+  __ vpbroadcastq(xmm31,
+                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
+                  Assembler::AVX_512bit, scratch); // q
 
   for (int i = 0; i < 8; i++) {
     __ evmovdquw(xmm(i), Address(a, 64 * i), Assembler::AVX_512bit);
@@ -807,7 +806,6 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
   const Register parsed = c_rarg2;
   const Register parsedLength = c_rarg3;
 
-  const Register kyberConsts = r10;
   const Register perms = r11;
 
   Label Loop;
@@ -815,11 +813,12 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
   __ addptr(condensed, condensedOffs);
 
   __ lea(perms, ExternalAddress(kyberAvx512_12To16PermsAddr()));
-  __ lea(kyberConsts, ExternalAddress(kyberAvx512ConstsAddr()));
 
   load4regs(xmm24_27, perms, 0, _masm);
   load4regs(xmm28_31, perms, 256, _masm);
-  __ evmovdquw(xmm23, Address(kyberConsts, 320), Assembler::AVX_512bit);
+  __ vpbroadcastq(xmm23,
+                  ExternalAddress(kyberAvx512ConstsAddr(f00Offset)),
+                  Assembler::AVX_512bit, scratch); // 0xF00
 
   __ BIND(Loop);
     __ evmovdqub(xmm0, Address(condensed, 0),Assembler::AVX_256bit);
@@ -890,7 +889,6 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
 // Kyber barrett reduce function.
 //
 // coeffs (short[256]) = c_rarg0
-// kyberConsts (short[40]) = c_rarg1
 address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
                                            MacroAssembler *_masm) {
 
@@ -901,14 +899,16 @@ address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
   __ enter();
 
   const Register coeffs = c_rarg0;
-  const Register kyberConsts = c_rarg1;
 
-  __ lea(kyberConsts, ExternalAddress(kyberAvx512ConstsAddr()));
+  __ vpbroadcastq(xmm16,
+                  ExternalAddress(kyberAvx512ConstsAddr(barretMultiplierOffset)),
+                  Assembler::AVX_512bit, scratch); // Barrett multiplier
+  __ vpbroadcastq(xmm17,
+                  ExternalAddress(kyberAvx512ConstsAddr(qOffset)),
+                  Assembler::AVX_512bit, scratch); // q
 
   load4regs(xmm0_3, coeffs, 0, _masm);
   load4regs(xmm4_7, coeffs, 256, _masm);
-  __ evmovdquw(xmm16, Address(kyberConsts, 128), Assembler::AVX_512bit);
-  __ evmovdquw(xmm17, Address(kyberConsts, 64), Assembler::AVX_512bit);
 
   barrettReduce(_masm);
 
