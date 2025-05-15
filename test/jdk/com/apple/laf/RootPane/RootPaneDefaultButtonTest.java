@@ -128,7 +128,7 @@ public class RootPaneDefaultButtonTest extends JDialog {
         robot.delay(20);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-        robot.delay(100);
+        robot.delay(1000);
 
         // the colors may change depending on your system's appearance.
         // Depending on how you've configured "Appearance" in the
