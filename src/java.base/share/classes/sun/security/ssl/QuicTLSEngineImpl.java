@@ -796,7 +796,8 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
         // Update the initial ClientHello handshake message.
         chc.initialClientHelloMsg.extensions.reproduce(chc,
                 new SSLExtension[] {
-                        SSLExtension.CH_QUIC_TRANSPORT_PARAMETERS
+                        SSLExtension.CH_QUIC_TRANSPORT_PARAMETERS,
+                        SSLExtension.CH_PRE_SHARED_KEY
                 });
 
         // produce handshake message

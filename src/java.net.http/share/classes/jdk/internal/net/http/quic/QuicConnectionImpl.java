@@ -318,6 +318,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                  final QuicInstance quicInstance,
                                  final InetSocketAddress peerAddress,
                                  final String peerName,
+                                 final int peerPort,
                                  final SSLParameters sslParameters,
                                  final String logTagFormat,
                                  final long labelId) {
@@ -349,7 +350,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         this.encoder = QuicPacketEncoder.of(this.quicVersion);
         this.codingContext = new QuicCodingContext();
         final QuicTLSEngine engine = this.quicInstance.getQuicTLSContext()
-                .createEngine(peerName, this.peerAddress.getPort());
+                .createEngine(peerName, peerPort);
         engine.setClientMode(isClientConn);
         engine.setSSLParameters(sslParameters);
         this.quicTLSEngine = engine;

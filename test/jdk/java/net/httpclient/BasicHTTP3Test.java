@@ -359,7 +359,7 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         h3TestServer = HttpTestServer.create(HTTP_3, sslContext);
         final HttpTestHandler h3Handler = new Handler();
         h3TestServer.addHandler(h3Handler, "/h3/testH3/");
-        h3URI = "https://" + h3TestServer.serverAuthority() + "/h3/testH3/x";
+        h3URI = "https://" + h3TestServer.serverAuthority() + "/h3/testH3/h3";
         assertTrue(h3TestServer.canHandle(HTTP_2, Version.HTTP_3), "Server was expected" +
                 " to handle both HTTP2 and HTTP3, but doesn't");
 
@@ -368,7 +368,7 @@ public class BasicHTTP3Test implements HttpServerAdapters {
                 .enableH3AltServiceOnEphemeralPortWithVersion(QuicVersion.QUIC_V2, false);
         h3qv2TestServer = HttpTestServer.of(h2q2Server);
         h3qv2TestServer.addHandler(h3Handler, "/h3/testH3/");
-        h3URIQv2 = "https://" + h3qv2TestServer.serverAuthority() + "/h3/testH3/x";;
+        h3URIQv2 = "https://" + h3qv2TestServer.serverAuthority() + "/h3/testH3/h3qv2";;
         assertTrue(h3qv2TestServer.canHandle(HTTP_2, Version.HTTP_3), "Server was expected" +
                 " to handle both HTTP2 and HTTP3, but doesn't");
 
@@ -377,7 +377,7 @@ public class BasicHTTP3Test implements HttpServerAdapters {
                 .enableH3AltServiceOnEphemeralPortWithVersion(QuicVersion.QUIC_V2, true);
         h3qv2CTestServer = HttpTestServer.of(h2q2CServer);
         h3qv2CTestServer.addHandler(h3Handler, "/h3/testH3/");
-        h3URIQv2C = "https://" + h3qv2CTestServer.serverAuthority() + "/h3/testH3/x";;
+        h3URIQv2C = "https://" + h3qv2CTestServer.serverAuthority() + "/h3/testH3/h3qv2c";;
         assertTrue(h3qv2CTestServer.canHandle(HTTP_2, Version.HTTP_3), "Server was expected" +
                 " to handle both HTTP2 and HTTP3, but doesn't");
 
@@ -386,7 +386,7 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         h3mtlsTestServer = HttpTestServer.create(HTTP_3, sslContext);
         h3mtlsTestServer.addHandler(h3Handler, "/h3/testH3/");
         h3mtlsTestServer.getH3AltService().get().getQuicServer().setNeedClientAuth(true);
-        h3mtlsURI = "https://" + h3mtlsTestServer.serverAuthority() + "/h3/testH3/x";
+        h3mtlsURI = "https://" + h3mtlsTestServer.serverAuthority() + "/h3/testH3/h3mtls";
         assertTrue(h3mtlsTestServer.canHandle(HTTP_2, Version.HTTP_3), "Server was expected" +
                 " to handle both HTTP2 and HTTP3, but doesn't");
 

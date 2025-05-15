@@ -113,7 +113,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
                          SSLParameters sslParameters,
                          byte[] initialToken,
                          QuicServer.RetryData retryData) {
-        super(quicVersion, server, peerAddress, null, sslParameters,
+        super(quicVersion, server, peerAddress, null, -1, sslParameters,
                 "QuicServerConnection(%s)", CONNECTIONS.incrementAndGet());
         this.preferredQuicVersion = preferredQuicVersion;
         // this should have been first statement in this constructor but compiler doesn't allow it
