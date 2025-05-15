@@ -2514,7 +2514,7 @@ void Assembler::imull(Register dst, Register src) {
 }
 
 void Assembler::eimull(Register dst, Register src1, Register src2, bool no_flags) {
-  evex_opcode_prefix_and_encode_swap(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, EVEX_32bit, 0xAF, no_flags, true /* is_map1 */);
+  evex_opcode_prefix_and_encode_swap(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0xAF, no_flags, true /* is_map1 */);
 }
 
 void Assembler::imull(Register dst, Address src, int32_t value) {
