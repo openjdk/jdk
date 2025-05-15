@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.tools.script.shell;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.Charset;
 import java.text.*;
 import java.util.*;
 import javax.script.*;
@@ -255,8 +256,8 @@ public class Main {
     private static void processSource(ScriptEngine se, String filename,
             String encoding) {
         if (filename.equals("-")) {
-            BufferedReader in = new BufferedReader
-                    (new InputStreamReader(getIn()));
+            Charset charset = Charset.forName(System.getProperty("stdin.encoding"));
+            BufferedReader in = new BufferedReader(new InputStreamReader(System.in, charset));
             boolean hitEOF = false;
             String prompt = getPrompt(se);
             se.put(ScriptEngine.FILENAME, "<STDIN>");
@@ -371,6 +372,8 @@ public class Main {
                         System.exit(EXIT_NO_ENCODING_FOUND);
             }
         } else {
+            assert is != System.in
+                    : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
             reader = new BufferedReader(new InputStreamReader(is));
         }
         return evaluateReader(se, reader, name);
@@ -400,11 +403,6 @@ public class Main {
      */
     private static String getMessage(String key, Object[] params) {
         return MessageFormat.format(msgRes.getString(key), params);
-    }
-
-    // input stream from where we will read
-    private static InputStream getIn() {
-        return System.in;
     }
 
     // stream to print error messages

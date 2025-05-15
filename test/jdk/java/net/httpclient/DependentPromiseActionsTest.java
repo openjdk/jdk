@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -465,6 +465,8 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
 
     final List<String> extractInputStream(HttpResponse<InputStream> resp) {
         try (InputStream is = resp.body()) {
+            assert is != System.in
+                    : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
             return new BufferedReader(new InputStreamReader(is))
                     .lines().collect(Collectors.toList());
         } catch (IOException x) {

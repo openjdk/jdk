@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,10 @@ public class OptionLister {
 
         for (URL u : sources) {
             try {
-                Reader r = new BufferedReader(
-                        new InputStreamReader(u.openStream()));
+                InputStream is = u.openStream();
+                assert is != System.in
+                        : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
+                Reader r = new BufferedReader(new InputStreamReader(is));
                 Set<OptionFormat> s = new Parser(r).parseOptions();
                 options.addAll(s);
             } catch (IOException e) {

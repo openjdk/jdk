@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,8 +148,10 @@ public class DefaultEditorKit extends EditorKit {
      */
     public void read(InputStream in, Document doc, int pos)
         throws IOException, BadLocationException {
-
-        read(new InputStreamReader(in), doc, pos);
+        InputStreamReader reader = in == System.in
+                ? new InputStreamReader(in, System.getProperty("stdin.encoding"))
+                : new InputStreamReader(in);
+        read(reader, doc, pos);
     }
 
     /**

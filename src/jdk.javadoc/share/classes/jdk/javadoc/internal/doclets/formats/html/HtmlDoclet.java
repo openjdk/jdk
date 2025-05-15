@@ -484,6 +484,8 @@ public class HtmlDoclet extends AbstractDoclet {
 
             try (InputStream in = cssURL.openStream();
                  BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                assert in != System.in
+                        : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
                 String line;
                 while ((line = reader.readLine()) != null) {
                     Matcher m = pattern.matcher(line);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import build.tools.pandocfilter.json.JSONArray;
 import build.tools.pandocfilter.json.JSONObject;
 import build.tools.pandocfilter.json.JSONValue;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,7 +59,7 @@ public class PandocManPageHtmlFilter extends PandocFilter {
     /**
      * Main function
      */
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws IOException {
         JSONValue json = loadJson(args);
 
         PandocManPageHtmlFilter filter = new PandocManPageHtmlFilter();

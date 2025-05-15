@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -507,6 +507,8 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         Function<HttpResponse<InputStream>, List<String>> extractor = (r) -> {
             List<String> result;
             try (InputStream is = r.body()) {
+                assert is != System.in
+                        : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
                 result = new BufferedReader(new InputStreamReader(is))
                         .lines().collect(Collectors.toList());
             } catch (Throwable t) {

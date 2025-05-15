@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,6 +206,8 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
             throw new InternalError("Default flavor mapping not found");
         }
 
+        assert is != System.in
+                : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
         try (InputStreamReader isr = new InputStreamReader(is);
              BufferedReader reader = new BufferedReader(isr)) {
             String line;

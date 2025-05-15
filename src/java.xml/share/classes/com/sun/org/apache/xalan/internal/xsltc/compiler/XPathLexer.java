@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,7 +28,7 @@ import com.sun.java_cup.internal.runtime.Symbol;
 
 
 /**
- * @LastModified: Oct 2017
+ * @LastModified: May 2025
  */
 class XPathLexer implements com.sun.java_cup.internal.runtime.Scanner {
         private final int YY_BUFFER_SIZE = 512;
@@ -141,14 +141,6 @@ class XPathLexer implements com.sun.java_cup.internal.runtime.Scanner {
                         throw (new Error("Error: Bad input stream initializer."));
                 }
                 yy_reader = new java.io.BufferedReader(reader);
-        }
-
-        XPathLexer (java.io.InputStream instream) {
-                this ();
-                if (null == instream) {
-                        throw (new Error("Error: Bad input stream initializer."));
-                }
-                yy_reader = new java.io.BufferedReader(new java.io.InputStreamReader(instream));
         }
 
         private XPathLexer () {

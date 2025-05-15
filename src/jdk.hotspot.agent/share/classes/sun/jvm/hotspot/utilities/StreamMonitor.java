@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.utilities;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.*;
 
 /** Reads all of the data from the given InputStream, and allows the
@@ -91,7 +92,9 @@ public class StreamMonitor implements Runnable {
   }
 
   public StreamMonitor(InputStream istr, String prefixString, boolean printContents) {
-    input = new BufferedReader(new InputStreamReader(istr));
+    input = new BufferedReader(istr == System.in
+            ? new InputStreamReader(istr, Charset.forName(System.getProperty("stdin.encoding")))
+            : new InputStreamReader(istr));
     this.prefixString = prefixString;
     this.printContents = printContents;
     Thread thr = new Thread(this);
