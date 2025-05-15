@@ -25,7 +25,6 @@
 
 package jdk.internal.util;
 
-import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
 
@@ -36,8 +35,6 @@ import jdk.internal.vm.annotation.Stable;
  * @since 21
  */
 public final class HexDigits {
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
     /**
      * Each element of the array represents the ascii encoded
      * hex relative to its index, for example:<p>
@@ -127,71 +124,5 @@ public final class HexDigits {
         buffer[index + 1] = (byte) (v >> 8);
         buffer[index + 2] = (byte) (v >> 16);
         buffer[index + 3] = (byte) (v >> 24);
-    }
-
-    /**
-     * Insert digits for long value in buffer from high index to low index.
-     *
-     * @param value      value to convert
-     * @param index      insert point + 1
-     * @param buffer     byte buffer to copy into
-     *
-     * @return the last index used
-     */
-    public static int getCharsLatin1(long value, int index, byte[] buffer) {
-        while ((value & ~0xFF) != 0) {
-            short pair = DIGITS[((int) value) & 0xFF];
-            buffer[--index] = (byte)(pair >> 8);
-            buffer[--index] = (byte)(pair);
-            value >>>= 8;
-        }
-
-        int digits = DIGITS[(int) (value & 0xFF)];
-        buffer[--index] = (byte) (digits >> 8);
-
-        if (0xF < value) {
-            buffer[--index] = (byte) (digits & 0xFF);
-        }
-
-        return index;
-    }
-
-    /**
-     * Insert digits for long value in buffer from high index to low index.
-     *
-     * @param value      value to convert
-     * @param index      insert point + 1
-     * @param buffer     byte buffer to copy into
-     *
-     * @return the last index used
-     */
-    public static int getCharsUTF16(long value, int index, byte[] buffer) {
-        while ((value & ~0xFF) != 0) {
-            int pair = (int) DIGITS[((int) value) & 0xFF];
-            JLA.uncheckedPutCharUTF16(buffer, --index, pair >> 8);
-            JLA.uncheckedPutCharUTF16(buffer, --index, pair & 0xFF);
-            value >>>= 8;
-        }
-
-        int digits = DIGITS[(int) (value & 0xFF)];
-        JLA.uncheckedPutCharUTF16(buffer, --index, (byte) (digits >> 8));
-
-        if (0xF < value) {
-            JLA.uncheckedPutCharUTF16(buffer, --index, (byte) (digits & 0xFF));
-        }
-
-        return index;
-    }
-
-    /**
-     * Calculate the number of digits required to represent the long.
-     *
-     * @param value value to convert
-     *
-     * @return number of digits
-     */
-    public static int stringSize(long value) {
-        return value == 0 ? 1 :
-                67 - Long.numberOfLeadingZeros(value) >> 2;
     }
 }
