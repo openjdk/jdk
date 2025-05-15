@@ -2602,8 +2602,8 @@ instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
 
 instruct vfmad_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src1 (FmaVF  (Binary dst_src1 src2) (Binary src3 pg)));
-  match(Set dst_src1 (FmaVD  (Binary dst_src1 src2) (Binary src3 pg)));
+  match(Set dst_src1 (FmaVF (Binary dst_src1 src2) (Binary src3 pg)));
+  match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary src3 pg)));
   format %{ "vfmad_masked $dst_src1, $pg, $src2, $src3" %}
   ins_encode %{
     assert(UseFMA, "Needs FMA instructions support.");

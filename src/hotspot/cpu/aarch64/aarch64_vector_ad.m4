@@ -550,12 +550,12 @@ BINARY_OP(vaddF,  AddVF,  fadd, sve_fadd, S)
 BINARY_OP(vaddD,  AddVD,  fadd, sve_fadd, D)
 
 // vector add - predicated
-BINARY_OP_PREDICATE(vaddB,  AddVB,  sve_add,  B)
-BINARY_OP_PREDICATE(vaddS,  AddVS,  sve_add,  H)
-BINARY_OP_PREDICATE(vaddI,  AddVI,  sve_add,  S)
-BINARY_OP_PREDICATE(vaddL,  AddVL,  sve_add,  D)
-BINARY_OP_PREDICATE(vaddF,  AddVF,  sve_fadd, S)
-BINARY_OP_PREDICATE(vaddD,  AddVD,  sve_fadd, D)
+BINARY_OP_PREDICATE(vaddB, AddVB, sve_add,  B)
+BINARY_OP_PREDICATE(vaddS, AddVS, sve_add,  H)
+BINARY_OP_PREDICATE(vaddI, AddVI, sve_add,  S)
+BINARY_OP_PREDICATE(vaddL, AddVL, sve_add,  D)
+BINARY_OP_PREDICATE(vaddF, AddVF, sve_fadd, S)
+BINARY_OP_PREDICATE(vaddD, AddVD, sve_fadd, D)
 
 // vector add reg imm (unpredicated)
 VADD_IMM(B, immBAddSubV, B)
@@ -575,12 +575,12 @@ BINARY_OP(vsubF,  SubVF,  fsub, sve_fsub, S)
 BINARY_OP(vsubD,  SubVD,  fsub, sve_fsub, D)
 
 // vector sub - predicated
-BINARY_OP_PREDICATE(vsubB,  SubVB,  sve_sub,  B)
-BINARY_OP_PREDICATE(vsubS,  SubVS,  sve_sub,  H)
-BINARY_OP_PREDICATE(vsubI,  SubVI,  sve_sub,  S)
-BINARY_OP_PREDICATE(vsubL,  SubVL,  sve_sub,  D)
-BINARY_OP_PREDICATE(vsubF,  SubVF,  sve_fsub, S)
-BINARY_OP_PREDICATE(vsubD,  SubVD,  sve_fsub, D)
+BINARY_OP_PREDICATE(vsubB, SubVB, sve_sub,  B)
+BINARY_OP_PREDICATE(vsubS, SubVS, sve_sub,  H)
+BINARY_OP_PREDICATE(vsubI, SubVI, sve_sub,  S)
+BINARY_OP_PREDICATE(vsubL, SubVL, sve_sub,  D)
+BINARY_OP_PREDICATE(vsubF, SubVF, sve_fsub, S)
+BINARY_OP_PREDICATE(vsubD, SubVD, sve_fsub, D)
 
 dnl
 dnl BINARY_OP_NEON_SVE_PAIRWISE($1,        $2,      $3,        $4,       $5  )
@@ -652,12 +652,12 @@ BINARY_OP(vmulF,  MulVF,  fmul, sve_fmul, S)
 BINARY_OP(vmulD,  MulVD,  fmul, sve_fmul, D)
 
 // vector mul - predicated
-BINARY_OP_PREDICATE(vmulB,  MulVB,  sve_mul,  B)
-BINARY_OP_PREDICATE(vmulS,  MulVS,  sve_mul,  H)
-BINARY_OP_PREDICATE(vmulI,  MulVI,  sve_mul,  S)
-BINARY_OP_PREDICATE(vmulL,  MulVL,  sve_mul,  D)
-BINARY_OP_PREDICATE(vmulF,  MulVF,  sve_fmul, S)
-BINARY_OP_PREDICATE(vmulD,  MulVD,  sve_fmul, D)
+BINARY_OP_PREDICATE(vmulB, MulVB, sve_mul,  B)
+BINARY_OP_PREDICATE(vmulS, MulVS, sve_mul,  H)
+BINARY_OP_PREDICATE(vmulI, MulVI, sve_mul,  S)
+BINARY_OP_PREDICATE(vmulL, MulVL, sve_mul,  D)
+BINARY_OP_PREDICATE(vmulF, MulVF, sve_fmul, S)
+BINARY_OP_PREDICATE(vmulD, MulVD, sve_fmul, D)
 
 // ------------------------------ Vector float div -----------------------------
 
@@ -667,8 +667,8 @@ BINARY_OP_NEON_SVE_PAIRWISE(vdivF,  DivVF,  fdiv, sve_fdiv, S)
 BINARY_OP_NEON_SVE_PAIRWISE(vdivD,  DivVD,  fdiv, sve_fdiv, D)
 
 // vector float div - predicated
-BINARY_OP_PREDICATE(vdivF,  DivVF,  sve_fdiv, S)
-BINARY_OP_PREDICATE(vdivD,  DivVD,  sve_fdiv, D)
+BINARY_OP_PREDICATE(vdivF, DivVF, sve_fdiv, S)
+BINARY_OP_PREDICATE(vdivD, DivVD, sve_fdiv, D)
 dnl
 dnl BITWISE_OP_IMM($1,        $2,   $3,      $4,   $5,   $6        )
 dnl BITWISE_OP_IMM(rule_name, type, op_name, insn, size, basic_type)
@@ -1058,8 +1058,8 @@ UNARY_OP(vsqrtF,  SqrtVF,  fsqrt, sve_fsqrt, S)
 UNARY_OP(vsqrtD,  SqrtVD,  fsqrt, sve_fsqrt, D)
 
 // vector sqrt - predicated
-UNARY_OP_PREDICATE_WITH_SIZE(vsqrtF,  SqrtVF,  sve_fsqrt, S)
-UNARY_OP_PREDICATE_WITH_SIZE(vsqrtD,  SqrtVD,  sve_fsqrt, D)
+UNARY_OP_PREDICATE_WITH_SIZE(vsqrtF, SqrtVF, sve_fsqrt, S)
+UNARY_OP_PREDICATE_WITH_SIZE(vsqrtD, SqrtVD, sve_fsqrt, D)
 
 dnl
 dnl VMINMAX_L_NEON($1,   $2     , $3  )
@@ -1369,8 +1369,8 @@ instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
 
 instruct vfmad_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   predicate(UseSVE > 0);
-  match(Set dst_src1 (FmaVF  (Binary dst_src1 src2) (Binary src3 pg)));
-  match(Set dst_src1 (FmaVD  (Binary dst_src1 src2) (Binary src3 pg)));
+  match(Set dst_src1 (FmaVF (Binary dst_src1 src2) (Binary src3 pg)));
+  match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary src3 pg)));
   format %{ "vfmad_masked $dst_src1, $pg, $src2, $src3" %}
   ins_encode %{
     assert(UseFMA, "Needs FMA instructions support.");
