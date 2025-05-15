@@ -395,7 +395,7 @@ public:
   }
 
   void set_trip_count(julong tc) { _trip_count = tc; }
-  julong trip_count()            { return _trip_count; }
+  julong trip_count() const      { return _trip_count; }
 
   LongCountedLoopEndNode* loopexit_or_null() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit_or_null(); }
   LongCountedLoopEndNode* loopexit() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit(); }
