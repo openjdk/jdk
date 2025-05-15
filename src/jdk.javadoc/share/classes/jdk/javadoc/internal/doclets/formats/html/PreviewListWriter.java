@@ -32,6 +32,7 @@ import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 
+import com.sun.source.doctree.UnknownBlockTagTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -140,7 +141,20 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
     @Override
     protected Content getExtraContent(Element element) {
         PreviewAPIListBuilder.JEP jep = builder.getJEP(element);
-        return jep == null ? Text.EMPTY : Text.of(jep.title());
+        if (jep != null) {
+            return Text.of(jep.title());
+        }
+        if (builder.previewFeatureTag != null) {
+            var desc = utils.getBlockTags(element, t -> t.getTagName().equals(builder.previewFeatureTag),
+                    UnknownBlockTagTree.class)
+                    .stream()
+                    .map(t -> getTagletWriterInstance(false).commentTagsToOutput(element, t.getContent()))
+                    .findFirst();
+            if (desc.isPresent()) {
+                return desc.get();
+            }
+        }
+        return Text.EMPTY;
     }
 
     @Override

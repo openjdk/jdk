@@ -239,11 +239,18 @@ public abstract class BaseOptions {
 
     /**
      * Argument for command-line option {@code --preview-note-tag}.
-     * If set, the JavaDoc inline tag with the given name causes the
-     * tagged element to be included in the preview API page as
-     * permanent API affected by a preview feature.
+     * If set, the JavaDoc tag with the given name can be used to add
+     * preview-related notes to permanent APIs or override the default
+     * preview note for preview APIs.
      */
     private String previewNoteTag = null;
+
+    /**
+     * Argument for command-line option {@code --preview-feature-tag}.
+     * If set, the JavaDoc inline tag with the given name is used to
+     * add mark an API element as preview feature in non-JDK contexts.
+     */
+    private String previewFeatureTag = null;
 
     /**
      * Argument for command-line option {@code -quiet}.
@@ -562,6 +569,14 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String option, List<String> args) {
                         previewNoteTag = args.getFirst();
+                        return true;
+                    }
+                },
+
+                new Hidden(resources, "--preview-feature-tag", 1) {
+                    @Override
+                    public boolean process(String option, List<String> args) {
+                        previewFeatureTag = args.getFirst();
                         return true;
                     }
                 },
@@ -962,6 +977,12 @@ public abstract class BaseOptions {
      * Name of inline tag for preview notes on permanent APIs.
      */
     public String previewNoteTag() { return previewNoteTag; }
+
+    /**
+     * Argument for command-line option {@code --preview-feature-tag}.
+     * Name of inline tag for marking APIs as preview feature.
+     */
+    public String previewFeatureTag() { return previewFeatureTag; }
 
     /**
      * Argument for command-line option {@code -quiet}.

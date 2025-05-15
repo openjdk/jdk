@@ -79,6 +79,7 @@ import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.SimpleDocTreeVisitor;
 
@@ -2493,6 +2494,20 @@ public abstract class HtmlDocletWriter {
 
     public void addPreviewInfo(Element forWhat, Content target) {
         if (utils.isPreviewAPI(forWhat)) {
+            // Preview note tag may be used to provide an alternative preview note.
+            String previewNoteTag = configuration.getOptions().previewNoteTag();
+            if (previewNoteTag != null) {
+                List<? extends UnknownBlockTagTree> tags = utils.getBlockTags(forWhat,
+                        t -> t.getTagName().equals(previewNoteTag), UnknownBlockTagTree.class);
+                if (tags != null && !tags.isEmpty()) {
+                    var previewDiv = HtmlTree.DIV(HtmlStyles.previewBlock);
+                    previewDiv.setId(htmlIds.forPreviewSection(forWhat));
+                    previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment,
+                            commentTagsToContent(forWhat, tags.getFirst().getContent(), false)));
+                    target.add(previewDiv);
+                    return;
+                }
+            }
             //in Java platform:
             var previewDiv = HtmlTree.DIV(HtmlStyles.previewBlock);
             previewDiv.setId(htmlIds.forPreviewSection(forWhat));

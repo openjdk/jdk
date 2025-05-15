@@ -51,6 +51,7 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
     private final SortedSet<Element> elementNotes = createSummarySet();
     private final Map<String, JEP> jeps = new HashMap<>();
     private final String previewNoteTag;
+    public final String previewFeatureTag;
 
     /**
      * The JEP for a preview feature in this release.
@@ -70,9 +71,10 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
     public PreviewAPIListBuilder(BaseConfiguration configuration) {
         super(configuration);
         this.previewNoteTag = configuration.getOptions().previewNoteTag();
+        this.previewFeatureTag = configuration.getOptions().previewFeatureTag();
         // retrieve preview JEPs
         buildPreviewFeatureInfo();
-        if (!jeps.isEmpty()) {
+        if (!jeps.isEmpty() || previewFeatureTag != null) {
             // map elements to preview JEPs and preview tags
             buildSummaryAPIInfo();
             // remove unused preview JEPs
@@ -114,13 +116,18 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
     @Override
     protected boolean belongsToSummary(Element element) {
         if (utils.isPreviewAPI(element)) {
-            String feature = Objects.requireNonNull(utils.getPreviewFeature(element),
-                    "Preview feature not specified").toString();
-            // Preview features without JEP are not included in the list.
-            JEP jep = jeps.get(feature);
-            if (jep != null) {
-                elementJeps.put(element, jep);
+            if (previewFeatureTag != null
+                    && utils.hasBlockTag(element, DocTree.Kind.UNKNOWN_BLOCK_TAG, previewFeatureTag)) {
                 return true;
+            } else {
+                String feature = Objects.requireNonNull(utils.getPreviewFeature(element),
+                        "Preview feature not specified").toString();
+                // Preview features without JEP are not included in the list.
+                JEP jep = jeps.get(feature);
+                if (jep != null) {
+                    elementJeps.put(element, jep);
+                    return true;
+                }
             }
         } else if (previewNoteTag != null) {
             // If preview tag is defined map elements to preview tags
