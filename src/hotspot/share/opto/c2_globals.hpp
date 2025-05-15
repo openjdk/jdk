@@ -840,7 +840,7 @@
                                                                             \
   develop(bool, StressShortRunningLongLoop, false,                          \
           "Speculate all long counted loops are short running when bounds " \
-          "are unknown even if profile data doesn't say so")                \
+          "are unknown even if profile data doesn't say so.")               \
 
 // end of C2_FLAGS
 
