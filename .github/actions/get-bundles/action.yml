@@ -90,7 +90,7 @@ runs:
           tar -xf bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/jdk
         fi
 
-        if [[ '${{ inputs.static-suffix }}' != '' ]]; then
+        if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
           if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.zip ]]; then
             echo 'Unpacking static jdk bundle...'
             mkdir -p bundles/static-jdk
@@ -136,7 +136,7 @@ runs:
         echo "symbols=$symbols_dir" >> $GITHUB_OUTPUT
         echo "tests=$tests_dir" >> $GITHUB_OUTPUT
 
-        if [[ '${{ inputs.static-suffix }}' != '' ]]; then
+        if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
           static_jdk_dir="$GITHUB_WORKSPACE/$(dirname $(find bundles/static-jdk -name bin -type d))"
           if [[ '${{ runner.os }}' == 'Windows' ]]; then
             static_jdk_dir="$(cygpath $static_jdk_dir)"
