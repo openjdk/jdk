@@ -564,7 +564,7 @@
 
     <event name="jdk.Compilation">
       <setting name="enabled" control="compiler-enabled">true</setting>
-      <setting name="threshold" control="compiler-compilation-threshold">1000 ms</setting>
+      <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.CompilerPhase">
@@ -1028,18 +1028,6 @@
       </condition>
 
       <condition name="compiler-sweeper-threshold" true="0 ms" false="100 ms">
-        <test name="compiler" operator="equal" value="all"/>
-      </condition>
-
-      <condition name="compiler-compilation-threshold" true="1000 ms">
-        <test name="compiler" operator="equal" value="normal"/>
-      </condition>
-
-      <condition name="compiler-compilation-threshold" true="100 ms">
-        <test name="compiler" operator="equal" value="detailed"/>
-      </condition>
-
-      <condition name="compiler-compilation-threshold" true="0 ms">
         <test name="compiler" operator="equal" value="all"/>
       </condition>
 
