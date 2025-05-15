@@ -176,7 +176,7 @@ import sun.util.resources.LocaleData;
 public class LocaleDataTest
 {
     static final String TEXT_RESOURCES_PACKAGE = "sun.text.resources.cldr";
-    static final String UTIL_RESOURCES_PACKAGE ="sun.util.resources.cldr";
+    static final String UTIL_RESOURCES_PACKAGE = "sun.util.resources.cldr";
     static final String DEFAULT_DATAFILE ="LocaleData.cldr";
 
     public static void main(String[] args) throws Exception {
