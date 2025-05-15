@@ -77,6 +77,9 @@ import java.security.DEREncodable;
 
 public non-sealed class PKCS8EncodedKeySpec extends EncodedKeySpec implements
     DEREncodable {
+
+    private String algorithmName;
+
     /**
      * Creates a new {@code PKCS8EncodedKeySpec} with the given encoded key.
      * This constructor extracts the algorithm name from the encoded bytes,
@@ -90,13 +93,12 @@ public non-sealed class PKCS8EncodedKeySpec extends EncodedKeySpec implements
      * is null.
      */
     public PKCS8EncodedKeySpec(byte[] encodedKey) {
-        String algorithm = null;
+        super(encodedKey);
         try {
-            algorithm = KeyUtil.getAlgorithm(encodedKey).getName();
+            algorithmName = KeyUtil.getAlgorithm(encodedKey).getName();
         } catch (IOException e) {
             // On error leave algorithmName as null.
         }
-        super(encodedKey, algorithm);
     }
 
     /**
@@ -123,6 +125,15 @@ public non-sealed class PKCS8EncodedKeySpec extends EncodedKeySpec implements
      */
     public PKCS8EncodedKeySpec(byte[] encodedKey, String algorithm) {
         super(encodedKey, algorithm);
+    }
+
+    /**
+     * Returns the name of the algorithm of the encoded key.
+     *
+     * @return the name of the algorithm, or null if not specified
+     */
+    public String getAlgorithm() {
+        return (algorithmName == null ? super.getAlgorithm() : algorithmName);
     }
 
     /**

@@ -56,6 +56,9 @@ import java.security.DEREncodable;
 
 public non-sealed class X509EncodedKeySpec extends EncodedKeySpec implements
     DEREncodable {
+
+    private String algorithmName = null;
+
     /**
      * Creates a new {@code X509EncodedKeySpec} with the given encoded key.
      * This constructor extracts the algorithm name from the encoded bytes,
@@ -69,13 +72,12 @@ public non-sealed class X509EncodedKeySpec extends EncodedKeySpec implements
      * is null.
      */
     public X509EncodedKeySpec(byte[] encodedKey) {
-        String algorithm = null;
+        super(encodedKey);
         try {
-            algorithm = KeyUtil.getAlgorithm(encodedKey).getName();
+            algorithmName = KeyUtil.getAlgorithm(encodedKey).getName();
         } catch (IOException e) {
             // On error leave algorithmName as null.
         }
-        super(encodedKey, algorithm);
     }
 
     /**
@@ -104,6 +106,16 @@ public non-sealed class X509EncodedKeySpec extends EncodedKeySpec implements
         super(encodedKey, algorithm);
     }
 
+    /**
+     * Returns the name of the algorithm of the encoded key.
+     *
+     * @return the name of the algorithm, or null if not specified
+     */
+    public String getAlgorithm() {
+        return (algorithmName == null ? super.getAlgorithm() : algorithmName);
+    }
+
+    /**
     /**
      * Returns the key bytes, encoded according to the X.509 standard.
      *
