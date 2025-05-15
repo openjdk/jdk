@@ -26,6 +26,7 @@ package jdk.jfr.snippets;
 
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.BooleanFlag;
+import jdk.jfr.Contextual;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.EventFactory;
 import jdk.jfr.EventType;
@@ -250,6 +251,39 @@ public class Snippets {
         }
     }
     // @end
+
+    // @start region="ContextualTrace"
+    @Label("Trace")
+    @Name("com.example.Trace")
+    class TraceEvent extends Event {
+        @Label("ID")
+        @Contextual
+        String id;
+
+        @Label("Name")
+        @Contextual
+        String name;
+    }
+    // @end
+
+    void hello() {
+        // @start region="ContextualOrder"
+        @Label("Order")
+        @Name("com.example.Order")
+        class OrderEvent extends Event {
+            @Label("Order ID")
+            @Contextual
+            long id;
+
+            @Label("Order Date")
+            @Timestamp(Timestamp.MILLISECONDS_SINCE_EPOCH)
+            long date;
+
+            @Label("Payment Method")
+            String paymentMethod;
+        }
+        // @end
+    }
 
     // @start region="DataAmountOverview"
     @Name("com.example.ImageRender")
