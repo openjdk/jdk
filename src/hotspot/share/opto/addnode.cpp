@@ -827,13 +827,23 @@ public:
   MergeLoadInfo& operator=(const MergeLoadInfo& other) = default;
 
   bool is_invalid() { return _load == nullptr; }
+
+  static const MergeLoadInfo INVALID;
+  static MergeLoadInfo make_invalid () { return INVALID; }
+
 #ifdef ASSERT
   void dump() {
-    tty->print_cr("MergeLoadInfo: load: %s(%d), combine: %d, shift: %d",
-                  _load->Name(), _load->_idx, _combine->_idx, _shift);
+    if (is_invalid()) {
+      tty->print_cr("MergeLoadInfo: invalid");
+    } else {
+      tty->print_cr("MergeLoadInfo: load: %s(%d), combine: %d, shift: %d",
+                    _load->Name(), _load->_idx, _combine->_idx, _shift);
+    }
   }
 #endif
 };
+
+const MergeLoadInfo MergeLoadInfo::INVALID = MergeLoadInfo();
 
 typedef GrowableArray<MergeLoadInfo> MergeLoadInfoList;
 
@@ -865,7 +875,7 @@ public:
 
 private:
   // Detect if the embedding combine node is last one of combine operators
-  bool has_no_merge_load_combine_below( ) const;
+  bool has_no_merge_load_combine_below() const;
   // Check other_load and load are compatible
   bool is_compatible_load(const LoadNode* other_load, const LoadNode* load) const;
   // From the seed load to collect load items for merging
@@ -971,7 +981,7 @@ bool MergePrimitiveLoads::has_no_merge_load_combine_below() const {
 
 // Construct merge information item from input load
 MergeLoadInfo MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
-  const MergeLoadInfo invalid = MergeLoadInfo();
+  const MergeLoadInfo invalid = MergeLoadInfo::make_invalid();
   const Node* check = bypass_i2l(load);
   Node* combine_oper = nullptr;
   jint shift = -1;
@@ -987,7 +997,7 @@ MergeLoadInfo MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
           combine_oper = out;
           shift = 0;
         } else {
-          // Too much Or usages
+          // Too many Or usages
           return invalid;
         }
         break;
@@ -996,15 +1006,15 @@ MergeLoadInfo MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
       case Op_LShiftL: {
         // match pattern: (Or (LShift (Load ..) ConI) ..)
         Node* shift_oper = out->isa_LShift();
-        if (shift_oper->outcnt() != 1 ||                                               // Shift should has only one usage
-            !is_supported_combine_opcode(shift_oper->unique_out()->Opcode()) ||    // Not used by combine operator
+        if (shift_oper->outcnt() != 1 ||                                             // Shift should has only one usage
+            !is_supported_combine_opcode(shift_oper->unique_out()->Opcode()) ||      // Not used by combine operator
             !shift_oper->in(2)->is_ConI()) {                                         // Not shift by constant
           return invalid;
         }
         if (combine_oper == nullptr) {
           combine_oper = shift_oper->unique_out();
         } else {
-          // Too much combine operators
+          // Too many combine operators
           return invalid;
         }
         shift = shift_oper->in(2)->as_ConI()->get_int();
