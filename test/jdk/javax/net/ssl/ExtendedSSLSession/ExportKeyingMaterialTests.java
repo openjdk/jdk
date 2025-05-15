@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @bug 8341346
  * @summary Add support for exporting TLS Keying Material
  * @library /javax/net/ssl/templates /test/lib
- * @build SSLContextTemplate
+ * @build SSLEngineTemplate
  * @run main/othervm ExportKeyingMaterialTests
  */
 
@@ -59,70 +59,24 @@ import static jdk.test.lib.Asserts.*;
  * (wrap/unwrap) pass before any application data is consumed or
  * produced.
  */
-public class ExportKeyingMaterialTests extends SSLContextTemplate {
-    protected final SSLEngine clientEngine;     // client Engine
-    protected final ByteBuffer clientOut;       // write side of clientEngine
-    protected final ByteBuffer clientIn;        // read side of clientEngine
+public class ExportKeyingMaterialTests extends SSLEngineTemplate {
 
-    protected final SSLEngine serverEngine;     // server Engine
-    protected final ByteBuffer serverOut;       // write side of serverEngine
-    protected final ByteBuffer serverIn;        // read side of serverEngine
-
-    // For data transport, this example uses local ByteBuffers.  This
-    // isn't really useful, but the purpose of this example is to show
-    // SSLEngine concepts, not how to do network transport.
-    protected final ByteBuffer cTOs;      // "reliable" transport client->server
-    protected final ByteBuffer sTOc;      // "reliable" transport server->client
+    private String protocol;
+    private String ciphersuite;
 
     protected ExportKeyingMaterialTests(String protocol, String ciphersuite)
             throws Exception {
-        serverEngine = configureServerEngine(
-                createServerSSLContext().createSSLEngine());
-
-        clientEngine = configureClientEngine(
-                createClientSSLContext().createSSLEngine(),
-                protocol, ciphersuite);
-
-        // We'll assume the buffer sizes are the same
-        // between client and server.
-        SSLSession session = clientEngine.getSession();
-        int appBufferMax = session.getApplicationBufferSize();
-        int netBufferMax = session.getPacketBufferSize();
-
-        // We'll make the input buffers a bit bigger than the max needed
-        // size, so that unwrap()s following a successful data transfer
-        // won't generate BUFFER_OVERFLOWS.
-        //
-        // We'll use a mix of direct and indirect ByteBuffers for
-        // tutorial purposes only.  In reality, only use direct
-        // ByteBuffers when they give a clear performance enhancement.
-        clientIn = ByteBuffer.allocate(appBufferMax + 50);
-        serverIn = ByteBuffer.allocate(appBufferMax + 50);
-
-        cTOs = ByteBuffer.allocateDirect(netBufferMax);
-        sTOc = ByteBuffer.allocateDirect(netBufferMax);
-
-        clientOut = createClientOutputBuffer();
-        serverOut = createServerOutputBuffer();
-    }
-
-    protected ByteBuffer createServerOutputBuffer() {
-        return ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
-    }
-
-    //
-    // Protected methods could be used to customize the test case.
-    //
-
-    protected ByteBuffer createClientOutputBuffer() {
-        return ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
+        super();
+        this.protocol = protocol;
+        this.ciphersuite = ciphersuite;
     }
 
     /*
-     * Configure the client side engine.
+     * Configure the engines.
      */
-    protected SSLEngine configureClientEngine(SSLEngine clientEngine,
-            String protocol, String ciphersuite) {
+    private void configureEngines(SSLEngine clientEngine,
+            SSLEngine serverEngine) {
+
         clientEngine.setUseClientMode(true);
 
         // Get/set parameters if needed
@@ -131,13 +85,6 @@ public class ExportKeyingMaterialTests extends SSLContextTemplate {
         paramsClient.setCipherSuites(new String[] { ciphersuite });
         clientEngine.setSSLParameters(paramsClient);
 
-        return clientEngine;
-    }
-
-    /*
-     * Configure the server side engine.
-     */
-    protected SSLEngine configureServerEngine(SSLEngine serverEngine) {
         serverEngine.setUseClientMode(false);
         serverEngine.setNeedClientAuth(true);
 
@@ -148,8 +95,6 @@ public class ExportKeyingMaterialTests extends SSLContextTemplate {
                 "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1", "SSLv3"
         });
         serverEngine.setSSLParameters(paramsServer);
-
-        return serverEngine;
     }
 
     public static void main(String[] args) throws Exception {
@@ -213,6 +158,8 @@ public class ExportKeyingMaterialTests extends SSLContextTemplate {
     private void runTest() throws Exception {
         SSLEngineResult clientResult;
         SSLEngineResult serverResult;
+
+        configureEngines(clientEngine, serverEngine);
 
         boolean dataDone = false;
         while (isOpen(clientEngine) || isOpen(serverEngine)) {

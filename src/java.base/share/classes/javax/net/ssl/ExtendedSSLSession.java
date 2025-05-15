@@ -185,8 +185,6 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *
      * @implSpec The default implementation throws
      *           {@code UnsupportedOperationException}.
-     *           Classes derived from ExtendedSSLSession must implement
-     *           this method.
      *
      * @param label   the label bytes used in the EKM calculation.
      *                {@code label} will be converted to a {@code byte[]}
@@ -237,8 +235,6 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *
      * @implSpec The default implementation throws
      *           {@code UnsupportedOperationException}.
-     *           Classes derived from ExtendedSSLSession must implement
-     *           this method.
      *
      * @param label   the label bytes used in the EKM calculation.
      *                {@code label} will be converted to a {@code byte[]}
