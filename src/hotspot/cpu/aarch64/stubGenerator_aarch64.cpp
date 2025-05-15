@@ -2606,16 +2606,12 @@ class StubGenerator: public StubCodeGenerator {
       __ cmp(count, (u1)16);
       __ br(__ LO, tail);
 
-      Label aligned;
-
       __ mov(rscratch1, 16);
       __ andr(rscratch2, dest, 15);
       __ sub(rscratch1, rscratch1, rscratch2);  // Bytes needed to 16-align dest
       __ strq(v0, Address(dest));
       __ sub(count, count, rscratch1);
       __ add(dest, dest, rscratch1);
-
-      __ bind(aligned);
     }
 
     __ subs(count, count, (u1)64);
