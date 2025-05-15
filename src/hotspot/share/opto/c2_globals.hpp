@@ -836,7 +836,7 @@
                                                                             \
   product(bool, ShortRunningLongLoop, true, DIAGNOSTIC,                     \
           "long counted loop/long range checks: don't create loop nest if " \
-          "loop runs for small enough number of iterations")                \
+          "loop runs for small enough number of iterations.")               \
                                                                             \
   develop(bool, StressShortRunningLongLoop, false,                          \
           "Speculate all long counted loops are short running when bounds " \
