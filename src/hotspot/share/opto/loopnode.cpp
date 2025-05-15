@@ -1284,8 +1284,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     register_new_node(new_limit, entry_control);
   }
 
-  Node* int_zero = _igvn.intcon(0);
-  set_ctrl(int_zero, C->root());
+  Node* int_zero = intcon(0);
   if (stride_con < 0) {
     new_limit = new SubINode(int_zero, new_limit);
     register_new_node(new_limit, entry_control);
