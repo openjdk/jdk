@@ -460,7 +460,7 @@ void CDSConfig::check_aotmode_off() {
 
 void CDSConfig::check_aotmode_auto_or_on() {
   if (!FLAG_IS_DEFAULT(AOTConfiguration)) {
-    vm_exit_during_initialization(err_msg("AOTConfiguration can only be used with when AOTMode is record or create (selected AOTMode = %s)", 
+    vm_exit_during_initialization(err_msg("AOTConfiguration can only be used with when AOTMode is record or create (selected AOTMode = %s)",
                                           FLAG_IS_DEFAULT(AOTMode) ? "auto" : AOTMode));
   }
 
