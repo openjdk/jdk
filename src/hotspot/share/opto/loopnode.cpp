@@ -1259,8 +1259,6 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     register_new_node(new_limit, new_predicate_proj);
 
 #ifndef PRODUCT
-    // report that the loop predication has been actually performed
-    // for this loop
     if (TraceLoopLimitCheck) {
       tty->print_cr("Short Long Loop Check Predicate generated:");
       DEBUG_ONLY(bol->dump(2);)
