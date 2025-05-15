@@ -2673,7 +2673,7 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     // more loads than stores per cycle (often 2 loads and 1 store). Hence,
     // it is worse if a store is split, and less bad if a load is split.
     // By default, we have SuperWordAutomaticAlignment=1, i.e. we align with a
-    // load if possible, to avoid splitting that load.
+    // store if possible, to avoid splitting that store.
     bool prefer_store = mem_ref != nullptr && SuperWordAutomaticAlignment == 1 && mem_ref->is_Load() && p0->is_Store();
     bool prefer_load  = mem_ref != nullptr && SuperWordAutomaticAlignment == 2 && mem_ref->is_Store() && p0->is_Load();
     if (vw > max_aw || (vw == max_aw && (prefer_load || prefer_store))) {
