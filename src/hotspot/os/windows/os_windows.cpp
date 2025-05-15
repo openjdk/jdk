@@ -4615,9 +4615,7 @@ static bool is_symbolic_link(const wchar_t* wide_path) {
   WIN32_FIND_DATAW fd;
   HANDLE f = ::FindFirstFileW(wide_path, &fd);
   const bool result = fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT && fd.dwReserved0 == IO_REPARSE_TAG_SYMLINK;
-  if (::FindClose(f) == 0) {
-    errno = ::GetLastError();
-  }
+  ::FindClose(f);
   return result;
 }
 
