@@ -193,9 +193,9 @@ jobs:
           JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
           SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
           TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
-          ${{ steps.extra-options.test-jdk }}
-          ${{ steps.extra-options.compile-jdk }}
-          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;${{ steps.extra-options.extra-problem-lists }}'
+          ${{ steps.extra-options.outputs.test-jdk }}
+          ${{ steps.extra-options.outputs.compile-jdk }}
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;${{ steps.extra-options.outputs.extra-problem-lists }}'
           && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}
