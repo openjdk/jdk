@@ -230,9 +230,9 @@ class ValidatorTest {
         } catch (IOException e) {
             var err = e.getMessage();
             System.out.println(err);
-            assertTrue(err.contains("Warning: There were 2 local file headers found for META-INF/MANIFEST.MF"));
             assertTrue(err.contains("Warning: There were 3 central directory entries found for META-INF/MANIFEST.MF"));
-            assertTrue(err.contains("Warning: Entry META-INF/BANIFEST.MF in local file header is not in central directory"));
+            assertTrue(err.contains("Warning: There were 2 local file headers found for META-INF/MANIFEST.MF"));
+            assertTrue(err.contains("Warning: An equivalent entry for the local file header META-INF/BANIFEST.MF was not found in the central directory"));
         }
     }
 
@@ -246,7 +246,9 @@ class ValidatorTest {
             var err = e.getMessage();
             System.out.println(err);
             assertTrue(err.contains("Warning: There were 2 local file headers found for META-INF/MANIFEST.MF"));
-            assertTrue(err.contains("Warning: Entry META-INF/AANIFEST.MF in central directory is not in local file header"));
+            assertTrue(err.contains("Warning: An equivalent for the central directory entry META-INF/AANIFEST.MF was not found in the local file headers"));
+            // Order is base on the central directory, expecting AANIFEST.MF but see next entry
+            assertTrue(err.contains("Warning: Central directory and local file header entries are not in the same order"));
         }
     }
 
@@ -260,8 +262,8 @@ class ValidatorTest {
             var err = e.getMessage();
             System.out.println(err);
             assertTrue(err.contains("Warning: There were 3 central directory entries found for META-INF/MANIFEST.MF"));
-            assertTrue(err.contains("Warning: Entry META-INF/AANIFEST.MF in local file header is not in central directory"));
-            assertTrue(err.contains("Warning: Entry META-INF/BANIFEST.MF in local file header is not in central directory"));
+            assertTrue(err.contains("Warning: An equivalent entry for the local file header META-INF/AANIFEST.MF was not found in the central directory"));
+            assertTrue(err.contains("Warning: An equivalent entry for the local file header META-INF/BANIFEST.MF was not found in the central directory"));
             assertFalse(err.contains("Warning: Central directory and local file header entries are not in the same order"));
         }
     }
