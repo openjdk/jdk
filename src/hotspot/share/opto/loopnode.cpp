@@ -1124,8 +1124,8 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 }
 
 class NodeInShortLoopBody : public NodeInLoopBody {
-  PhaseIdealLoop* _phase;
-  IdealLoopTree* _ilt;
+  PhaseIdealLoop* const _phase;
+  IdealLoopTree* const _ilt;
 
 public:
   NodeInShortLoopBody(PhaseIdealLoop* phase, IdealLoopTree* ilt) : _phase(phase), _ilt(ilt) {
