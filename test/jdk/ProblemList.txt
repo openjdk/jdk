@@ -816,7 +816,7 @@ java/awt/font/GlyphVector/TestGlyphVectorLayout.java 8354987 generic-all
 java/awt/font/TextLayout/TestJustification.java 8250791 macosx-all
 java/awt/TrayIcon/DragEventSource/DragEventSource.java 8252242 macosx-all
 java/awt/FileDialog/DefaultFocusOwner/DefaultFocusOwner.java 7187728 macosx-all,linux-all
-java/awt/FileDialog/DoubleActionESC.java GTKFileDialog linux-all
+java/awt/FileDialog/DoubleActionESC.java 8356981 linux-all
 java/awt/print/PageFormat/Orient.java 8016055 macosx-all
 java/awt/TextArea/TextAreaCursorTest/HoveringAndDraggingTest.java 8024986 macosx-all,linux-all
 java/awt/TextComponent/CorrectTextComponentSelectionTest.java 8237220 macosx-all
