@@ -1072,6 +1072,8 @@ void PhaseIterGVN::optimize() {
 
 #ifdef ASSERT
 void PhaseIterGVN::verify_optimize() {
+  assert(_worklist.size() == 0, "igvn worklist must be empty before verify");
+
   if (is_verify_Value() ||
       is_verify_Ideal() ||
       is_verify_Identity()) {
@@ -1102,6 +1104,15 @@ void PhaseIterGVN::verify_optimize() {
     // in the verification code above if that is not possible for some reason (like Load nodes).
     assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
   }
+
+  // Verify that the igvn worklist is empty. If no optimization happened, then
+  // nothing needs to be on the worklist.
+  for (uint j = 0; j < _worklist.size(); j++) {
+    Node* n = _worklist.at(j);
+    tty->print("igvn.worklist[%d] ", j);
+    n->dump();
+  }
+  assert(_worklist.size() == 0, "igvn worklist must still be empty after verify");
 }
 
 // Check that type(n) == n->Value(), return true if we have a failure.
@@ -1466,6 +1477,32 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   test/hotspot/jtreg/compiler/loopopts/superword/ReductionPerf.java
     //   -XX:VerifyIterativeGVN=1110
     case Op_AddI:
+      return false;
+
+    // ArrayCopyNode::Ideal
+    //    calls ArrayCopyNode::prepare_array_copy
+    //    calls Compile::conv_I2X_index        -> is called with sizetype = intcon(0), I think that
+    //                                            is not expected, and we create a range int:0..-1
+    //    calls Compile::constrained_convI2L   -> creates ConvI2L(intcon(1), int:0..-1)
+    //                                            note: the type is already empty!
+    //    calls PhaseIterGVN::transform
+    //    calls PhaseIterGVN::transform_old
+    //    calls PhaseIterGVN::subsume_node     -> subsume ConvI2L with TOP
+    //    calls Unique_Node_List::push         -> pushes TOP to worklist
+    //
+    // Once we get back to ArrayCopyNode::prepare_array_copy, we get back TOP, and
+    // return false. This means we eventually return nullptr from ArrayCopyNode::Ideal.
+    //
+    // Question: is it ok to push anything to the worklist during ::Ideal, if we will
+    //           return nullptr, indicating nothing happened?
+    //           Is it smart to do transform in Compile::constrained_convI2L, and then
+    //           check for TOP in calls ArrayCopyNode::prepare_array_copy?
+    //           Should we just allow TOP to land on the worklist, as an exception?
+    //
+    // Found with:
+    //   compiler/arraycopy/TestArrayCopyAsLoadsStores.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_ArrayCopy:
       return false;
   }
 
