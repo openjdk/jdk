@@ -677,6 +677,7 @@ public:
   static uint32_t cpu_stepping()          { return _cpuid_info.cpu_stepping(); }
   static int  cpu_family()        { return _cpu;}
   static bool is_P6()             { return cpu_family() >= 6; }
+  static bool is_P6_or_later()    { return cpu_family() == 6 || cpu_family() == 18 || cpu_family() == 19; }
   static bool is_amd()            { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x68747541; } // 'htuA'
   static bool is_hygon()          { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x6F677948; } // 'ogyH'
   static bool is_amd_family()     { return is_amd() || is_hygon(); }
@@ -825,7 +826,7 @@ public:
   }
 
   // Intel Core and newer cpus have fast IDIV instruction (excluding Atom).
-  static bool has_fast_idiv()     { return is_intel() && cpu_family() == 6 &&
+  static bool has_fast_idiv()     { return is_intel() && is_P6_or_later() &&
                                            supports_sse3() && _model != 0x1C; }
 
   static bool supports_compare_and_exchange() { return true; }
