@@ -2133,7 +2133,7 @@ void G1CollectedHeap::print_heap_on(outputStream* st) const {
             p2i(_hrm.reserved().end()));
   st->cr();
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
   st->print("region size %zuK, ", G1HeapRegion::GrainBytes / K);
   uint young_regions = young_regions_count();
   st->print("%u young (%zuK), ", young_regions,

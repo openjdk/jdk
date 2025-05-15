@@ -90,8 +90,8 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
                        NMTUtil::scale_name(scale),
                        NMTUtil::tag_to_name(prev->val().out.mem_tag()));
       {
-        streamIndentor si(stream, 4);
-        _stack_storage.get(prev->val().out.reserved_stack()).print_on(stream);
+        StreamIndentor si(stream, 4);
+        _stack_storage.get(prev->val().out.stack()).print_on(stream);
       }
       stream->cr();
     }
