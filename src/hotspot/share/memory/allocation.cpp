@@ -30,7 +30,6 @@
 #include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/ostream.hpp"
 
 // allocate using malloc; will fail if no memory available

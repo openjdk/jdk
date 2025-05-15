@@ -58,7 +58,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  *
  * @author Jeff Dinkins
  */
-public class WindowsButtonUI extends BasicButtonUI
+public final class WindowsButtonUI extends BasicButtonUI
 {
     protected int dashedRectGapX;
     protected int dashedRectGapY;
@@ -89,6 +89,7 @@ public class WindowsButtonUI extends BasicButtonUI
     // ********************************
     //            Defaults
     // ********************************
+    @Override
     protected void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!defaults_initialized) {
@@ -108,6 +109,7 @@ public class WindowsButtonUI extends BasicButtonUI
         }
     }
 
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         defaults_initialized = false;
@@ -124,10 +126,12 @@ public class WindowsButtonUI extends BasicButtonUI
     /**
      * Overridden method to render the text without the mnemonic
      */
+    @Override
     protected void paintText(Graphics g, AbstractButton b, Rectangle textRect, String text) {
         WindowsGraphicsUtils.paintText(g, b, textRect, text, getTextShiftOffset());
     }
 
+    @Override
     protected void paintFocus(Graphics g, AbstractButton b, Rectangle viewRect, Rectangle textRect, Rectangle iconRect){
 
         // focus painted same color as text on Basic??
@@ -138,6 +142,7 @@ public class WindowsButtonUI extends BasicButtonUI
                                           width - dashedRectGapWidth, height - dashedRectGapHeight);
     }
 
+    @Override
     protected void paintButtonPressed(Graphics g, AbstractButton b){
         setTextShiftOffset();
     }
@@ -145,6 +150,7 @@ public class WindowsButtonUI extends BasicButtonUI
     // ********************************
     //          Layout Methods
     // ********************************
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         Dimension d = super.getPreferredSize(c);
 
@@ -167,6 +173,7 @@ public class WindowsButtonUI extends BasicButtonUI
      */
     private Rectangle viewRect = new Rectangle();
 
+    @Override
     public void paint(Graphics g, JComponent c) {
         if (XPStyle.getXP() != null) {
             WindowsButtonUI.paintXPButtonBackground(g, c);

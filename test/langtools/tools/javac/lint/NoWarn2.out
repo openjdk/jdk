@@ -1,0 +1,5 @@
+NoWarn.java:16:13: compiler.warn.sun.proprietary: sun.misc.Unsafe
+NoWarn.java:18:34: compiler.warn.prob.found.req: (compiler.misc.unchecked.cast.to.type), java.util.Set<compiler.misc.type.captureof: 1, ?>, java.util.Set<java.lang.String>
+NoWarn.java:19:15: compiler.warn.div.zero
+NoWarn.java:17:32: compiler.warn.diamond.redundant.args
+4 warnings

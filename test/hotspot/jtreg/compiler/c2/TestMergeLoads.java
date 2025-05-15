@@ -308,7 +308,7 @@ public class TestMergeLoads {
                         gold = result;
                         gold_name = name;
                     } else {
-                        checkEQ(gold, result, "group " + group_name + ", gold " + gold_name + ", test " + name);
+                        checkEQ(gold, result);
                     }
                 }
             }
