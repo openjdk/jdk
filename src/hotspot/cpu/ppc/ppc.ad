@@ -2406,6 +2406,13 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_RoundDoubleModeV:
     case Op_MinV:
     case Op_MaxV:
+    case Op_AddReductionVI:
+    case Op_MulReductionVI:
+    case Op_AndReductionV:
+    case Op_OrReductionV:
+    case Op_XorReductionV:
+    case Op_MinReductionV:
+    case Op_MaxReductionV:
       return SuperwordUseVSX;
     case Op_PopCountVI:
     case Op_PopCountVL:
