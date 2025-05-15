@@ -518,6 +518,7 @@ bool ConstraintCastNode::follow_uses_until_pinned_accesses(PhaseIterGVN* igvn) {
         if (!wq.member(u->in(MemNode::Address))) {
 #ifdef ASSERT
           if (u->is_Load()) {
+            u->dump();
             wq.dump();
             igvn->C->igv_print_method_to_file();
           }
