@@ -2406,6 +2406,9 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_RoundDoubleModeV:
     case Op_MinV:
     case Op_MaxV:
+    case Op_AndV:
+    case Op_OrV:
+    case Op_XorV:
     case Op_AddReductionVI:
     case Op_MulReductionVI:
     case Op_AndReductionV:
@@ -14287,6 +14290,33 @@ instruct vmin_reg(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vand(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AndV src1 src2));
+  format %{ "VAND   $dst,$src1,$src2\t// and vectors" %}
+  ins_encode %{
+    __ vand($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vor(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (OrV src1 src2));
+  format %{ "VOR   $dst,$src1,$src2\t// or vectors" %}
+  ins_encode %{
+    __ vor($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vxor(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (XorV src1 src2));
+  format %{ "VXOR   $dst,$src1,$src2\t// xor vectors" %}
+  ins_encode %{
+    __ vxor($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct reductionI_arith_logic(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX tmp1, vecX tmp2) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (AddReductionVI srcInt srcVec));
@@ -14296,7 +14326,7 @@ instruct reductionI_arith_logic(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX
   match(Set dst (XorReductionV  srcInt srcVec));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
   ins_cost(DEFAULT_COST * 6);
-  format %{ "REDUCEI_ADDMUL // $dst,$srcInt,$srcVec,$tmp1,$tmp2\t// reduce vector int" %}
+  format %{ "REDUCEI_LOGIC // $dst,$srcInt,$srcVec,$tmp1,$tmp2\t// reduce vector int" %}
   size(24);
   ins_encode %{
     int opcode = this->ideal_Opcode();
