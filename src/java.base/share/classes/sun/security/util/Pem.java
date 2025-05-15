@@ -57,22 +57,22 @@ public class Pem {
     private static Base64.Encoder b64Encoder;
 
     static {
-        DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
-        if (DEFAULT_ALGO == null || DEFAULT_ALGO.length() == 0) {
-            DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
-        }
+        String algo = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
+        DEFAULT_ALGO = (algo == null || algo.isBlank()) ?
+            "PBEWithHmacSHA256AndAES_128" : algo;
         pbePattern = Pattern.compile("^PBEWith.*And.*");
     }
 
     public static final String CERTIFICATE = "CERTIFICATE";
-    public static final String X509_CERTIFICATE = "X509 CERTIFICATE";
-    public static final String X_509_CERTIFICATE = "X.509 CERTIFICATE";
     public static final String X509_CRL = "X509 CRL";
-    public static final String CRL = "CRL";
-    public static final String PUBLIC_KEY = "PUBLIC KEY";
-    public static final String RSA_PRIVATE_KEY = "RSA PRIVATE KEY";
     public static final String ENCRYPTED_PRIVATE_KEY = "ENCRYPTED PRIVATE KEY";
     public static final String PRIVATE_KEY = "PRIVATE KEY";
+    public static final String RSA_PRIVATE_KEY = "RSA PRIVATE KEY";
+    public static final String PUBLIC_KEY = "PUBLIC KEY";
+    // old PEM types per RFC 7468
+    public static final String X509_CERTIFICATE = "X509 CERTIFICATE";
+    public static final String X_509_CERTIFICATE = "X.509 CERTIFICATE";
+    public static final String CRL = "CRL";
 
     /**
      * Decodes a PEM-encoded block.

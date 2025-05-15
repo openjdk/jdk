@@ -26,9 +26,6 @@
 package java.security.spec;
 
 import jdk.internal.access.SharedSecrets;
-import sun.security.util.KeyUtil;
-
-import java.io.IOException;
 import java.util.Arrays;
 
 /**
@@ -49,7 +46,7 @@ import java.util.Arrays;
 public abstract class EncodedKeySpec implements KeySpec {
 
     private final byte[] encodedKey;
-    private final String algorithmName;
+    private String algorithmName;
 
     static {
         SharedSecrets.setJavaSecuritySpecAccess(
@@ -66,13 +63,6 @@ public abstract class EncodedKeySpec implements KeySpec {
      */
     public EncodedKeySpec(byte[] encodedKey) {
         this.encodedKey = encodedKey.clone();
-        String algName = null;
-        try {
-            algName = KeyUtil.getAlgorithm(this.encodedKey).getName();
-        } catch (IOException e) {
-            // On error leave algorithmName as null.
-        }
-        algorithmName = algName;
     }
 
     /**
