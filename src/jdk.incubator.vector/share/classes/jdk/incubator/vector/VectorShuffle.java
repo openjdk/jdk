@@ -320,6 +320,36 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
 
     /**
      * Creates a shuffle for a given species from
+     * an {@link MemorySegment} starting at a byte offset.
+     *
+     * <p> For each shuffle lane, where {@code N} is the shuffle lane
+     * index, the integer in-memory at index {@code offset + N * 4} is validated
+     * against the species {@code VLENGTH}, and (if invalid)
+     * is partially wrapped to an exceptional index in the
+     * range {@code [-VLENGTH..-1]}.
+     *
+     *
+     * @param species the shuffle species
+     * @param sourceIndexes the source indexes in memory which the shuffle will draw from
+     * @param offset the offset into the segment
+     * @param order the byte order
+     * @param <E> the boxed element type
+     * @return a shuffle where each lane's source index is set to the given
+     *         {@code int} value, partially wrapped if exceptional
+     * @throws IndexOutOfBoundsException if {@code offset < 0}, or
+     *         {@code offset > sourceIndexes.byteSize() - VLENGTH * 4}
+     */
+    @ForceInline
+    public static final <E> VectorShuffle<E> fromMemorySegment(VectorSpecies<E> species, MemorySegment sourceIndexes,
+                                                               long offset, ByteOrder order) {
+        long memsize = species.length() * 4;
+        MemorySegment arraySlice = sourceIndexes.asSlice(offset, memsize);
+        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT_UNALIGNED.withOrder(order));
+        return species.shuffleFromArray(indices,0);
+    }
+
+    /**
+     * Creates a shuffle for a given species from
      * the successive values of an operator applied to
      * the range {@code [0..VLENGTH-1]}.
      *
@@ -528,30 +558,22 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
     public abstract void intoArray(int[] a, int offset);
 
     /**
-     * Stores this shuffle into a {@link MemorySegment} starting at the given offset.
-     * @param ms the memory segment
-     * @param offset the offset into the segment
-     * @param bo the byte order
-     */
-    public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
-
-    /**
-     * Load a VectorShuffle from a {@link MemorySegment} starting at the given offset.
-     * @param vsp the {@link VectorSpecies} corresponding to the shuffle
-     * @param segment the memory segment
+     * Stores this shuffle into a {@link MemorySegment} starting at offset.
+     * <p>
+     * For each shuffle lane {@code N}, the lane source index
+     * stored for that lane element is stored into the
+     * {@link MemorySegment} at {@code offset + N * 4}.
+     *
+     * @apiNote Shuffle source indexes are always in the
+     * range from {@code -VLENGTH} to {@code VLENGTH-1}.
+     * @param a the memory segment
      * @param offset the offset into the segment
      * @param order the byte order
-     * @param <E> the boxed element type
-     * @return a VectorShuffle from the {@link MemorySegment}
+     * @throws IndexOutOfBoundsException if {@code offset < 0} or
+     *        {@code offset > a.byteSize() - this.length() * 4}
      */
-    @ForceInline
-    public static final <E> VectorShuffle<E> fromMemorySegment(VectorSpecies<E> vsp, MemorySegment segment,
-                                                                   long offset, ByteOrder order) {
-        long memsize = vsp.length() * 4;
-        MemorySegment arraySlice = segment.asSlice(offset, memsize);
-        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT_UNALIGNED.withOrder(order));
-        return vsp.shuffleFromArray(indices,0);
-    }
+    public abstract void intoMemorySegment(MemorySegment a, long offset, ByteOrder order);
+
 
     /**
      * Converts this shuffle into a vector, creating a vector
