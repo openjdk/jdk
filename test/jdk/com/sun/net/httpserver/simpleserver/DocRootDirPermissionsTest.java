@@ -24,10 +24,11 @@
 /*
  * @test
  * @summary Tests file permission checks during the creation of a `FileServerHandler`
+ * @requires (os.family != "windows")
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
- * @run main/manual/othervm -ea RootDirPermissionsTest true
- * @run main/manual/othervm -ea RootDirPermissionsTest false
+ * @run main/othervm -ea DocRootDirPermissionsTest true
+ * @run main/othervm -ea DocRootDirPermissionsTest false
  */
 
 import java.io.IOException;
@@ -73,24 +74,28 @@ import static java.nio.file.StandardOpenOption.CREATE;
  * 2)  reuses the test directory created in the previous run, revoking
  *     read access.
 * */
-public class RootDirPermissionsTest {
+public class DocRootDirPermissionsTest {
 
-    static final Path CWD = Path.of(".").toAbsolutePath().normalize();
-    static final Path TEST_DIR = CWD.resolve("RootDir");
-    static final InetSocketAddress LOOPBACK_ADDR =
+    private static final Path CWD = Path.of(".").toAbsolutePath().normalize();
+    private static final Path TEST_DIR = CWD.resolve("RootDir");
+    private static final InetSocketAddress LOOPBACK_ADDR =
             new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
-    static final boolean ENABLE_LOGGING = true;
-    static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
+    private static final boolean ENABLE_LOGGING = true;
+    private static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
-    static boolean readPermitted;
-    static String lastModifiedDir;
-    static String lastModifiedFile;
+    private static boolean readPermitted;
+    private static String lastModifiedDir;
+    private static String lastModifiedFile;
 
-    static Set<PosixFilePermission> posixPermissions;
-    static List<AclEntry> acls;
+    private static Set<PosixFilePermission> posixPermissions;
+    private static List<AclEntry> acls;
 
     public static void main(String[] args) throws Exception {
+        new DocRootDirPermissionsTest().run(args);
+    }
+
+    protected void run(String[] args) throws Exception{
         setupLogging();
         readPermitted = Boolean.parseBoolean(args[0]);
         if (readPermitted) {
@@ -107,7 +112,7 @@ public class RootDirPermissionsTest {
         }
     }
 
-    private static void revokePermissions() throws IOException {
+    private void revokePermissions() throws IOException {
         if (!Files.isReadable(TEST_DIR)) {
             // good nothing to do:
             System.out.println("File is already not readable: nothing to do");
@@ -164,7 +169,7 @@ public class RootDirPermissionsTest {
         System.out.println("File is readable: " + Files.isReadable(TEST_DIR));
     }
 
-    private static void restorePermissions() throws IOException {
+    private void restorePermissions() throws IOException {
         if (Files.getFileStore(TEST_DIR).supportsFileAttributeView("posix")) {
             if (posixPermissions != null) {
                 System.out.println("Restoring original POSIX permissions");
@@ -181,7 +186,7 @@ public class RootDirPermissionsTest {
         }
     }
 
-    private static void setupLogging() {
+    private void setupLogging() {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             LOGGER.setLevel(Level.ALL);
@@ -190,7 +195,7 @@ public class RootDirPermissionsTest {
         }
     }
 
-    private static void createTestDir() throws IOException {
+    private void createTestDir() throws IOException {
         if (Files.exists(TEST_DIR)) {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
@@ -200,7 +205,7 @@ public class RootDirPermissionsTest {
         lastModifiedFile = getLastModified(file);
     }
 
-    private static void testDirectoryGET() throws Exception {
+    private void testDirectoryGET() throws Exception {
         var expectedBody = openHTML + """
                 <h1>Directory listing for &#x2F;</h1>
                 <ul>
@@ -225,7 +230,7 @@ public class RootDirPermissionsTest {
         }
     }
 
-    private static void testFileGET() throws Exception {
+    private void testFileGET() throws Exception {
         var expectedBody = "some text";
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, TEST_DIR, OutputLevel.VERBOSE);
@@ -245,7 +250,7 @@ public class RootDirPermissionsTest {
         }
     }
 
-    private static void testCreateHandler(){
+    private void testCreateHandler(){
         try {
             SimpleFileServer.createFileServer(LOOPBACK_ADDR, TEST_DIR, OutputLevel.NONE);
             throw new RuntimeException("Handler creation expected to fail");
@@ -257,7 +262,7 @@ public class RootDirPermissionsTest {
         } catch (IllegalArgumentException expected) { }
     }
 
-    static final String openHTML = """
+    private static final String openHTML = """
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -266,12 +271,12 @@ public class RootDirPermissionsTest {
                 <body>
                 """;
 
-    static final String closeHTML = """
+    private static final String closeHTML = """
                 </body>
                 </html>
                 """;
 
-    static URI uri(HttpServer server, String path) {
+    private URI uri(HttpServer server, String path) {
         return URIBuilder.newBuilder()
                 .host("localhost")
                 .port(server.getAddress().getPort())
@@ -280,7 +285,7 @@ public class RootDirPermissionsTest {
                 .buildUnchecked();
     }
 
-    static String getLastModified(Path path) throws IOException {
+    private String getLastModified(Path path) throws IOException {
         return Files.getLastModifiedTime(path).toInstant().atZone(ZoneId.of("GMT"))
                 .format(DateTimeFormatter.RFC_1123_DATE_TIME);
     }
