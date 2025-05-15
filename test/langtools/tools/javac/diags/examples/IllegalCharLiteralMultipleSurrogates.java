@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,8 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8145255
- * @run main/othervm java.base/sun.security.ssl.TestHkdf
- * @summary HKDF for Sun JSSE
- */
+// key: compiler.err.illegal.char.literal.multiple.surrogates
 
+class IllegalCharLiteralMultipleSurrogates {
+    char c = '\uD83D\uDE0A';
+}
