@@ -149,7 +149,7 @@ public final class DecimalDigits {
      * @param buf   target buffer, Latin1-encoded
      * @return index of the most significant digit or minus sign, if present
      */
-    public static int getCharsLatin1(int i, int index, byte[] buf) {
+    public static int uncheckedGetCharsLatin1(int i, int index, byte[] buf) {
         // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         int q;
         int charPos = index;
@@ -163,20 +163,20 @@ public final class DecimalDigits {
         while (i <= -100) {
             q = i / 100;
             charPos -= 2;
-            putPairLatin1(buf, charPos, (q * 100) - i);
+            uncheckedPutPairLatin1(buf, charPos, (q * 100) - i);
             i = q;
         }
 
         // We know there are at most two digits left at this point.
         if (i <= -10) {
             charPos -= 2;
-            putPairLatin1(buf, charPos, -i);
+            uncheckedPutPairLatin1(buf, charPos, -i);
         } else {
-            putCharLatin1(buf, --charPos, '0' - i);
+            uncheckedPutCharLatin1(buf, --charPos, '0' - i);
         }
 
         if (negative) {
-            putCharLatin1(buf, --charPos, '-');
+            uncheckedPutCharLatin1(buf, --charPos, '-');
         }
         return charPos;
     }
@@ -199,7 +199,7 @@ public final class DecimalDigits {
      * @param buf   target buffer, Latin1-encoded
      * @return index of the most significant digit or minus sign, if present
      */
-    public static int getCharsLatin1(long i, int index, byte[] buf) {
+    public static int uncheckedGetCharsLatin1(long i, int index, byte[] buf) {
         // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         long q;
         int charPos = index;
@@ -213,7 +213,7 @@ public final class DecimalDigits {
         while (i < Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
-            putPairLatin1(buf, charPos, (int)((q * 100) - i));
+            uncheckedPutPairLatin1(buf, charPos, (int)((q * 100) - i));
             i = q;
         }
 
@@ -223,27 +223,27 @@ public final class DecimalDigits {
         while (i2 <= -100) {
             q2 = i2 / 100;
             charPos -= 2;
-            putPairLatin1(buf, charPos, (q2 * 100) - i2);
+            uncheckedPutPairLatin1(buf, charPos, (q2 * 100) - i2);
             i2 = q2;
         }
 
         // We know there are at most two digits left at this point.
         if (i2 <= -10) {
             charPos -= 2;
-            putPairLatin1(buf, charPos, -i2);
+            uncheckedPutPairLatin1(buf, charPos, -i2);
         } else {
-            putCharLatin1(buf, --charPos, '0' - i2);
+            uncheckedPutCharLatin1(buf, --charPos, '0' - i2);
         }
 
         if (negative) {
-            putCharLatin1(buf, --charPos, '-');
+            uncheckedPutCharLatin1(buf, --charPos, '-');
         }
         return charPos;
     }
 
 
     /**
-     * This is a variant of {@link DecimalDigits#getCharsLatin1(int, int, byte[])}, but for
+     * This is a variant of {@link DecimalDigits#uncheckedGetCharsLatin1(int, int, byte[])}, but for
      * UTF-16 coder.
      *
      * @param i     value to convert
@@ -251,7 +251,7 @@ public final class DecimalDigits {
      * @param buf   target buffer, UTF16-coded.
      * @return index of the most significant digit or minus sign, if present
      */
-    public static int getCharsUTF16(int i, int index, byte[] buf) {
+    public static int uncheckedGetCharsUTF16(int i, int index, byte[] buf) {
         // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         int q;
         int charPos = index;
@@ -265,27 +265,27 @@ public final class DecimalDigits {
         while (i <= -100) {
             q = i / 100;
             charPos -= 2;
-            putPairUTF16(buf, charPos, (q * 100) - i);
+            uncheckedPutPairUTF16(buf, charPos, (q * 100) - i);
             i = q;
         }
 
         // We know there are at most two digits left at this point.
         if (i <= -10) {
             charPos -= 2;
-            putPairUTF16(buf, charPos, -i);
+            uncheckedPutPairUTF16(buf, charPos, -i);
         } else {
-            putCharUTF16(buf, --charPos, '0' - i);
+            uncheckedPutCharUTF16(buf, --charPos, '0' - i);
         }
 
         if (negative) {
-            putCharUTF16(buf, --charPos, '-');
+            uncheckedPutCharUTF16(buf, --charPos, '-');
         }
         return charPos;
     }
 
 
     /**
-     * This is a variant of {@link DecimalDigits#getCharsLatin1(long, int, byte[])}, but for
+     * This is a variant of {@link DecimalDigits#uncheckedGetCharsLatin1(long, int, byte[])}, but for
      * UTF-16 coder.
      *
      * @param i     value to convert
@@ -293,7 +293,7 @@ public final class DecimalDigits {
      * @param buf   target buffer, UTF16-coded.
      * @return index of the most significant digit or minus sign, if present
      */
-    public static int getCharsUTF16(long i, int index, byte[] buf) {
+    public static int uncheckedGetCharsUTF16(long i, int index, byte[] buf) {
         // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         long q;
         int charPos = index;
@@ -307,7 +307,7 @@ public final class DecimalDigits {
         while (i < Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
-            putPairUTF16(buf, charPos, (int)((q * 100) - i));
+            uncheckedPutPairUTF16(buf, charPos, (int)((q * 100) - i));
             i = q;
         }
 
@@ -317,26 +317,26 @@ public final class DecimalDigits {
         while (i2 <= -100) {
             q2 = i2 / 100;
             charPos -= 2;
-            putPairUTF16(buf, charPos, (q2 * 100) - i2);
+            uncheckedPutPairUTF16(buf, charPos, (q2 * 100) - i2);
             i2 = q2;
         }
 
         // We know there are at most two digits left at this point.
         if (i2 <= -10) {
             charPos -= 2;
-            putPairUTF16(buf, charPos, -i2);
+            uncheckedPutPairUTF16(buf, charPos, -i2);
         } else {
-            putCharUTF16(buf, --charPos, '0' - i2);
+            uncheckedPutCharUTF16(buf, --charPos, '0' - i2);
         }
 
         if (negative) {
-            putCharUTF16(buf, --charPos, '-');
+            uncheckedPutCharUTF16(buf, --charPos, '-');
         }
         return charPos;
     }
 
     /**
-     * This is a variant of {@link DecimalDigits#getCharsUTF16(long, int, byte[])}, but for
+     * This is a variant of {@link DecimalDigits#uncheckedGetCharsUTF16(long, int, byte[])}, but for
      * UTF-16 coder.
      *
      * @param i     value to convert
@@ -406,10 +406,10 @@ public final class DecimalDigits {
      * @param charPos insert point
      * @param v to convert
      */
-    public static void putPairLatin1(byte[] buf, int charPos, int v) {
+    public static void uncheckedPutPairLatin1(byte[] buf, int charPos, int v) {
         int packed = DIGITS[v & 0x7f];
-        putCharLatin1(buf, charPos, packed & 0xFF);
-        putCharLatin1(buf, charPos + 1, packed >> 8);
+        uncheckedPutCharLatin1(buf, charPos, packed & 0xFF);
+        uncheckedPutCharLatin1(buf, charPos + 1, packed >> 8);
     }
 
     /**
@@ -419,17 +419,17 @@ public final class DecimalDigits {
      * @param charPos insert point
      * @param v to convert
      */
-    public static void putPairUTF16(byte[] buf, int charPos, int v) {
+    public static void uncheckedPutPairUTF16(byte[] buf, int charPos, int v) {
         int packed = DIGITS[v & 0x7f];
-        putCharUTF16(buf, charPos, packed & 0xFF);
-        putCharUTF16(buf, charPos + 1, packed >> 8);
+        uncheckedPutCharUTF16(buf, charPos, packed & 0xFF);
+        uncheckedPutCharUTF16(buf, charPos + 1, packed >> 8);
     }
 
-    private static void putCharLatin1(byte[] buf, int charPos, int c) {
+    private static void uncheckedPutCharLatin1(byte[] buf, int charPos, int c) {
         UNSAFE.putByte(buf, ARRAY_BYTE_BASE_OFFSET + charPos, (byte) c);
     }
 
-    private static void putCharUTF16(byte[] buf, int charPos, int c) {
+    private static void uncheckedPutCharUTF16(byte[] buf, int charPos, int c) {
         UNSAFE.putCharUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + ((long) charPos << 1), (char) c);
     }
 }
