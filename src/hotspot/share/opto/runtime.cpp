@@ -140,6 +140,7 @@ static bool check_compiled_frame(JavaThread* thread) {
 #define C2_STUB_TYPEFUNC(name) name ## _Type
 #define C2_STUB_C_FUNC(name) CAST_FROM_FN_PTR(address, name ## _C)
 #define C2_STUB_NAME(name) stub_name(OptoStubId::name ## _id)
+#define C2_STUB_ID(name) OptoStubId::name ## _id
 
 // Almost all the C functions targeted from the generated stubs are
 // implemented locally to OptoRuntime with names that can be generated
@@ -152,27 +153,29 @@ static bool check_compiled_frame(JavaThread* thread) {
 
 #define GEN_C2_STUB(name, fancy_jump, pass_tls, pass_retpc  )         \
   C2_STUB_FIELD_NAME(name) =                                          \
-    generate_stub(env,                                                  \
+    generate_stub(env,                                                \
                   C2_STUB_TYPEFUNC(name),                             \
                   C2_STUB_C_FUNC(name),                               \
                   C2_STUB_NAME(name),                                 \
-                  fancy_jump,                                           \
-                  pass_tls,                                             \
-                  pass_retpc);                                          \
+                  (int)C2_STUB_ID(name),                              \
+                  fancy_jump,                                         \
+                  pass_tls,                                           \
+                  pass_retpc);                                        \
   if (C2_STUB_FIELD_NAME(name) == nullptr) { return false; }          \
 
 #define C2_JVMTI_STUB_C_FUNC(name) CAST_FROM_FN_PTR(address, SharedRuntime::name)
 
 #define GEN_C2_JVMTI_STUB(name)                                       \
-  STUB_FIELD_NAME(name) =                                               \
-    generate_stub(env,                                                  \
-                  notify_jvmti_vthread_Type,                            \
+  STUB_FIELD_NAME(name) =                                             \
+    generate_stub(env,                                                \
+                  notify_jvmti_vthread_Type,                          \
                   C2_JVMTI_STUB_C_FUNC(name),                         \
                   C2_STUB_NAME(name),                                 \
-                  0,                                                    \
-                  true,                                                 \
-                  false);                                               \
-  if (STUB_FIELD_NAME(name) == nullptr) { return false; }               \
+                  (int)C2_STUB_ID(name),                              \
+                  0,                                                  \
+                  true,                                               \
+                  false);                                             \
+  if (STUB_FIELD_NAME(name) == nullptr) { return false; }             \
 
 bool OptoRuntime::generate(ciEnv* env) {
 
@@ -276,15 +279,15 @@ const TypeFunc* OptoRuntime::_dtrace_object_alloc_Type            = nullptr;
 // Helper method to do generation of RunTimeStub's
 address OptoRuntime::generate_stub(ciEnv* env,
                                    TypeFunc_generator gen, address C_function,
-                                   const char *name, int is_fancy_jump,
-                                   bool pass_tls,
+                                   const char *name, int stub_id,
+                                   int is_fancy_jump, bool pass_tls,
                                    bool return_pc) {
 
   // Matching the default directive, we currently have no method to match.
   DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_full_optimization));
   CompilationMemoryStatisticMark cmsm(directive);
   ResourceMark rm;
-  Compile C(env, gen, C_function, name, is_fancy_jump, pass_tls, return_pc, directive);
+  Compile C(env, gen, C_function, name, stub_id, is_fancy_jump, pass_tls, return_pc, directive);
   DirectivesStack::release(directive);
   return  C.stub_entry_point();
 }
