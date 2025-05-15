@@ -185,7 +185,6 @@ jobs:
 
       - name: 'Run tests'
         id: run-tests
-        if: ${{ inputs.static-suffix != '-static' }}
         run: >
           make test-prebuilt
           TEST='${{ matrix.test-suite }}'
