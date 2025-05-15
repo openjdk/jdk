@@ -561,9 +561,10 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
                 iters = 2 if RegOp in [RegRegNddInstruction] else 1
+                demote = [True, False]
                 for i in range(iters):
                     test_reg1 = random.choice(test_regs)
-                    test_reg2 = random.choice(test_regs) if i == 0 else test_reg1
+                    test_reg2 =  test_reg1 if demote[i] else random.choice(test_regs)
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
@@ -578,9 +579,9 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
-                for i in range(2):
+                for demote in [True, False]:
                     test_reg1 =  random.choice(test_regs)
-                    test_reg2 = test_reg1 if i == 0 else random.choice(test_regs)
+                    test_reg2 = test_reg1 if demote else random.choice(test_regs)
                     test_reg3 = random.choice(test_regs)
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
@@ -674,10 +675,11 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                         print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
                 iters = 2 if RegOp in [RegRegImmNddInstruction] else 1
+                demote = [True, False]
                 for i in range(iters):
                     imm = random.choice(get_immediate_list(op_name, width))
                     test_reg1 = random.choice(test_regs)
-                    test_reg2 = test_reg1 if i == 1 else random.choice(test_regs)
+                    test_reg2 = test_reg1 if demote[i] else random.choice(test_regs)
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
@@ -727,12 +729,13 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
                 iters = 2 if RegOp in [RegRegMemNddInstruction] else 1
+                demote = [True, False]
                 for i in range(iters):
                     filtered_regs = [reg for reg in test_regs if reg != 'rsp']
                     test_reg1 = random.choice(test_regs)
                     test_mem_base = random.choice(test_regs)
                     test_mem_idx = random.choice(filtered_regs)
-                    test_reg2 = random.choice(test_regs) if i == 1 else test_reg1
+                    test_reg2 = test_reg1 if demote[i] else random.choice(test_regs)
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_mem_base, test_mem_idx, test_reg2)
                     instr = RegOp(*op, reg1=test_reg1, mem_base=test_mem_base, mem_idx=test_mem_idx, reg2=test_reg2)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
@@ -749,10 +752,10 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                         instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3, imm=imm)
                         print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
-                for i in range(2):
+                for demote in [True, False]:
                     imm = random.choice(get_immediate_list(op_name, width))
                     test_reg1 = random.choice(test_regs)
-                    test_reg2 = random.choice(test_regs) if i == 0 else test_reg1
+                    test_reg2 =  test_reg1 if demote else random.choice(test_regs)
                     test_reg3 = random.choice(test_regs)
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3, imm=imm)
