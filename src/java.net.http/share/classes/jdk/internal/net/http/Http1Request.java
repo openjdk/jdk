@@ -88,9 +88,7 @@ class Http1Request {
                 // First line contains `GET /foo HTTP/1.1`.
                 // Convert it to look like other `Log.logHeaders()` outputs.
                 if (firstLine[0]) {
-                    int protocolFieldPrefixIndex = line.lastIndexOf(' ');
-                    assert protocolFieldPrefixIndex > 0;
-                    sb.append("  ").append(line, 0, protocolFieldPrefixIndex).append('\n');
+                    sb.append("  ").append(line).append('\n');
                     firstLine[0] = false;
                 } else if (!line.isBlank()) {
                     sb.append("    ").append(line).append('\n');
