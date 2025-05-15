@@ -58,6 +58,7 @@ void ResourceArea::verify_has_resource_mark() {
 }
 
 #endif // ASSERT
+
 //------------------------------ResourceMark-----------------------------------
 // The following routines are declared in allocation.hpp and used everywhere:
 
@@ -76,4 +77,3 @@ extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_s
 extern void resource_free_bytes( Thread* thread, char *old, size_t size ) {
   thread->resource_area()->Afree(old, size);
 }
-

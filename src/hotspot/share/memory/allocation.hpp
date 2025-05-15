@@ -373,6 +373,7 @@ extern char* resource_allocate_bytes(Thread* thread, size_t size,
 extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_size,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 extern void resource_free_bytes( Thread* thread, char *old, size_t size );
+
 //----------------------------------------------------------------------
 // Base class for objects allocated in the resource area.
 class ResourceObj {
@@ -544,6 +545,8 @@ protected:
 // deallocate obj of type in heap without calling dtor
 #define FREE_C_HEAP_OBJ(objname)\
   FreeHeap((char*)objname);
+
+
 //------------------------------ReallocMark---------------------------------
 // Code which uses REALLOC_RESOURCE_ARRAY should check an associated
 // ReallocMark, which is declared in the same scope as the reallocated
