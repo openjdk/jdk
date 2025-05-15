@@ -627,7 +627,6 @@ void C2_MacroAssembler::count_positives(Register src, Register cnt, Register res
   subf(result, src, result);      // Result is offset from src.
 }
 
-
 void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorRegister vSrc,
                                 VectorRegister vTmp1, VectorRegister vTmp2) {
 
@@ -694,4 +693,71 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
   fn_vec_op(opcode, vTmp1, vTmp1, vTmp2); // vTmp1 <- [op(i0,i1,i2,i3), op(i0,i1,i2,i3), op(i0,i1,i2,i3), op(i0,i1,i2,i3)]
   mfvsrwz(dst, vTmp1.to_vsr());           //
   fn_scalar_op(opcode, dst, iSrc);        // dst <- op(iSrc, dst)
+}
+
+void C2_MacroAssembler::reduceL(int opcode, Register dst, Register iSrc, VectorRegister vSrc, VectorRegister vTmp) {
+
+  auto fn_vec_op = [this](int opcode, const VectorRegister &dst, const VectorRegister &a, const VectorRegister &b) {
+    switch(opcode) {
+      case Op_AddReductionVL:
+        vaddudm(dst, a, b);
+        break;
+      case Op_MulReductionVL:
+        // TODO: vmulld (>= ppc10)
+        assert(false, "not implemented");
+        vmuluwm(dst, a , b);
+        break;
+      case Op_AndReductionV:
+        vand(dst, a, b);
+        break;
+      case Op_OrReductionV:
+        vor(dst, a, b);
+        break;
+      case Op_XorReductionV:
+        vxor(dst, a, b);
+        break;
+      case Op_MinReductionV:
+        vminsd(dst, a, b);
+        break;
+      case Op_MaxReductionV:
+        vmaxsd(dst, a, b);
+        break;
+      default: assert(false, "wrong opcode");
+    }
+  };
+
+  auto fn_scalar_op = [this](int opcode, const Register &dst, const Register &src) {
+    switch (opcode) {
+      case Op_AddReductionVL:
+        add(dst, src, dst);
+        break;
+      case Op_MulReductionVL:
+        mulld(dst, src, dst);
+        break;
+      case Op_AndReductionV:
+        andr(dst, src, dst);
+        break;
+      case Op_OrReductionV:
+        orr(dst, src, dst);
+        break;
+      case Op_XorReductionV:
+        xorr(dst, src, dst);
+        break;
+      case Op_MinReductionV:
+        cmpd(CR0, src, dst);
+        isel(dst, CR0, Assembler::less, /*invert*/false, src, dst);
+        break;
+      case Op_MaxReductionV:
+        cmpd(CR0, src, dst);
+        isel(dst, CR0, Assembler::greater, /*invert*/false, src, dst);
+        break;
+      default: assert(false, "wrong opcode");
+    }
+  };
+
+  // vSrc = [l0,l1]
+  vsldoi(vTmp, vSrc, vSrc, 8);          // vTmp <- [l1,l0]
+  fn_vec_op(opcode, vTmp, vSrc, vTmp);  // vTmp <- [op(l0,l1), op(l1,l0)]
+  mfvsrd(dst, vTmp.to_vsr());           //
+  fn_scalar_op(opcode, dst, iSrc);      // dst <- op(iSrc, dst)
 }
