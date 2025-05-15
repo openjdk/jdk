@@ -98,9 +98,6 @@ public final class Resources {
         Path path = toSafeFilePath(dir.getFileSystem(), name);
         if (path != null) {
             Path file = dir.resolve(path);
-            if (!Files.exists(file)) { // Don't use Files.notExists(file)
-                return null;
-            }
             try {
                 BasicFileAttributes attrs;
                 attrs = Files.readAttributes(file, BasicFileAttributes.class);
