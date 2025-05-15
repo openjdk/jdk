@@ -203,12 +203,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private int bitCountPlusOne;
 
     /**
-     * One plus the bitLength of this BigInteger. This is a stable variable.
+     * One plus the bitLength of the magnitude of this BigInteger.
+     * This is a stable variable.
      * (either value is acceptable).
      *
-     * @see #bitLength()
+     * @see #magBitLength()
      */
-    private int bitLengthPlusOne;
+    private int magBitLengthPlusOne;
 
     /**
      * Two plus the lowest set bit of this BigInteger. This is a stable variable.
@@ -1754,9 +1755,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     // are only considering the magnitudes as non-negative. The
                     // Toom-Cook multiplication algorithm determines the sign
                     // at its end from the two signum values.
-                    if ((long)bitLength(mag, mag.length) +
-                        (long)bitLength(val.mag, val.mag.length) >
-                        32L*MAX_MAG_LENGTH) {
+                    if ((long) this.magBitLength() + val.magBitLength() >
+                        (long) Integer.SIZE * MAX_MAG_LENGTH) {
                         reportOverflow();
                     }
                 }
@@ -2269,7 +2269,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 // For a discussion of overflow detection see multiply()
                 //
                 if (!isRecursion) {
-                    if (bitLength(mag, mag.length) > 16L*MAX_MAG_LENGTH) {
+                    if (magBitLength() > (Integer.SIZE / 2) * MAX_MAG_LENGTH) {
                         reportOverflow();
                     }
                 }
@@ -2638,7 +2638,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     ? new BigInteger(result << bitsToShift, newSign)
                     : new BigInteger(result, newSign).shiftLeft(bitsToShift);
         }
-        // (bitLength(mag, mag.length) - 1L) * exponent + 1L > Integer.MAX_VALUE
+        // (magBitLength() - 1L) * exponent + 1L > Integer.MAX_VALUE
         if (scaleFactor + bitsToShift - exponent >= Integer.MAX_VALUE) {
             reportOverflow();
         }
@@ -2822,11 +2822,16 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
-     * Calculate bitlength of contents of the first len elements an int array,
-     * assuming there are no leading zero ints.
+     * Calculate bitlength of the magnitude of this {@code BigInteger}.
      */
-    private static int bitLength(int[] val, int len) {
-        return len == 0 ? 0 : len * Integer.SIZE - Integer.numberOfLeadingZeros(val[0]);
+    private int magBitLength() {
+        int n = magBitLengthPlusOne - 1;
+        if (n == -1) { // not initialized
+            n = mag.length == 0 ? 0
+                    : mag.length * Integer.SIZE - Integer.numberOfLeadingZeros(mag[0]);
+            magBitLengthPlusOne = n + 1;
+        }
+        return n;
     }
 
     /**
@@ -3123,7 +3128,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         // Select an appropriate window size
         int wbits = 0;
-        int ebits = bitLength(exp, exp.length);
+        int ebits = y.magBitLength();
         // if exponent is 65537 (0x10001), use minimum window size
         if ((ebits != 17) || (exp[0] != 65537)) {
             while (ebits > bnExpModThreshTable[wbits]) {
@@ -3848,19 +3853,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         representation of this BigInteger, <em>excluding</em> a sign bit.
      */
     public int bitLength() {
-        int n = bitLengthPlusOne - 1;
-        if (n == -1) { // bitLength not initialized yet
-            // Calculate the bit length of the magnitude
-            n = bitLength(mag, mag.length);
-            if (signum < 0
-                    // Check if magnitude is a power of two
-                    && Integer.lowestOneBit(mag[0]) == mag[0]
-                    && numberOfTrailingZeroInts() == mag.length - 1) {
-                n--;
-            }
-            bitLengthPlusOne = n + 1;
-        }
-        return n;
+        return signum < 0
+                // Check if magnitude is a power of two
+                && Integer.lowestOneBit(mag[0]) == mag[0]
+                && numberOfTrailingZeroInts() == mag.length - 1
+            ? magBitLength() - 1 : magBitLength();
     }
 
     /**
@@ -4388,7 +4385,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return 0.0f;
         }
 
-        int exponent = bitLength(mag, mag.length) - 1;
+        int exponent = magBitLength() - 1;
 
         // exponent == floor(log2(abs(this)))
         if (exponent < Long.SIZE - 1) {
@@ -4473,7 +4470,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return 0.0;
         }
 
-        int exponent = bitLength(mag, mag.length) - 1;
+        int exponent = magBitLength() - 1;
 
         // exponent == floor(log2(abs(this))Double)
         if (exponent < Long.SIZE - 1) {
@@ -5034,7 +5031,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Returns the mag array as an array of bytes.
      */
     private byte[] magSerializedForm() {
-        byte[] result = new byte[(bitLength(mag, mag.length) + 7) >>> 3];
+        byte[] result = new byte[(magBitLength() + 7) >>> 3];
 
         for (int i = result.length - 1, bytesCopied = 4, intIndex = mag.length - 1, nextInt = 0;
              i >= 0; i--) {
