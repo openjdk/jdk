@@ -314,11 +314,11 @@ CollectedHeap::CollectedHeap() :
 
   // Create the ring log
   if (LogEvents) {
-    _heap_log = new HeapGCLog();
     _metaspace_log = new MetaspaceGCLog();
+    _heap_log = new HeapGCLog();
   } else {
-    _heap_log = nullptr;
     _metaspace_log = nullptr;
+    _heap_log = nullptr;
   }
 }
 
