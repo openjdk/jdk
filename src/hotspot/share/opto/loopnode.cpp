@@ -1296,8 +1296,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
   set_ctrl(int_stride, C->root());
   Node* inner_phi = new PhiNode(head, new_phi_t);
   Node* inner_incr = new AddINode(inner_phi, int_stride);
-  Node* inner_cmp = nullptr;
-  inner_cmp = new CmpINode(inner_incr, new_limit);
+  Node* inner_cmp = new CmpINode(inner_incr, new_limit);
   Node* inner_bol = new BoolNode(inner_cmp, exit_test->in(1)->as_Bool()->_test._test);
   inner_phi->set_req(LoopNode::EntryControl, int_zero);
   inner_phi->set_req(LoopNode::LoopBackControl, inner_incr);
