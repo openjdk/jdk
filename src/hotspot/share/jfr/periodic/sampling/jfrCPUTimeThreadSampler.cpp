@@ -62,9 +62,9 @@ static bool is_excluded(JavaThread* thread) {
 static JavaThread* get_java_thread_if_valid() {
   Thread* raw_thread = Thread::current_or_null_safe();
   JavaThread* jt;
-
-  if (raw_thread == nullptr || !raw_thread->is_Java_thread() ||
-      (jt = JavaThread::cast(raw_thread))->is_exiting()) {
+  assert(raw_thread != nullptr, "invariant");
+  assert(raw_thread->is_Java_thread(), "invariant");
+  if ((jt = JavaThread::cast(raw_thread))->is_exiting()) {
     return nullptr;
   }
 
@@ -241,9 +241,7 @@ void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
     return;
   }
   JfrThreadLocal* tl = thread->jfr_thread_local();
-  if (tl == nullptr) {
-    return;
-  }
+  assert(tl != nullptr, "invariant");
   tl->cpu_time_jfr_queue().ensure_capacity_for_period(_current_sampling_period_ns / 1000000);
   timer_t timerid;
   if (create_timer_for_thread(thread, timerid)) {
@@ -253,9 +251,7 @@ void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
 
 void JfrCPUTimeThreadSampler::on_javathread_terminate(JavaThread* thread) {
   JfrThreadLocal* tl = thread->jfr_thread_local();
-  if (tl == nullptr) {
-    return;
-  }
+  assert(tl != nullptr, "invariant");
   if (tl->has_cpu_timer()) {
     timer_delete(tl->cpu_timer());
     tl->unset_cpu_timer();
@@ -567,12 +563,9 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
     return;
   }
   JfrThreadLocal* tl = jt->jfr_thread_local();
-  if (tl == nullptr) {
-    return;
-  }
   if (!check_state(jt) ||
       jt->is_at_poll_safepoint() ||
-      jt->is_JfrRecorder_thread() || jt->is_JfrSampler_thread()) {
+      jt->is_JfrRecorder_thread()) {
       tl->cpu_time_jfr_queue().increment_lost_samples();
       tl->set_wants_out_of_safepoint_sampling(false);
     return;
@@ -621,7 +614,7 @@ static void set_timer_time(timer_t timerid, int64_t period_nanos) {
     its.it_interval.tv_nsec = period_nanos % NANOSECS_PER_SEC;
   }
   its.it_value = its.it_interval;
-  if (timer_settime(timerid, 0, &its, NULL) == -1) {
+  if (timer_settime(timerid, 0, &its, nullptr) == -1) {
     warning("Failed to set timer for thread sampling: %s", os::strerror(os::get_last_error()));
   }
 }
