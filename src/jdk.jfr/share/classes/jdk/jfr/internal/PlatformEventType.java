@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import jdk.jfr.SettingDescriptor;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.ImplicitFields;
 import jdk.jfr.internal.util.Utils;
-import jdk.jfr.internal.tracing.Modification;
-
 /**
  * Implementation of event type.
  *
@@ -74,13 +72,13 @@ public final class PlatformEventType extends Type {
         super(name, Type.SUPER_TYPE_EVENT, id);
         this.dynamicSettings = dynamicSettings;
         this.isJVM = Type.isDefinedByJVM(id);
-        this.isMethodSampling = determineMethodSampling();
+        this.isMethodSampling = isJVM && (name.equals(Type.EVENT_NAME_PREFIX + "ExecutionSample") || name.equals(Type.EVENT_NAME_PREFIX + "NativeMethodSample"));
         this.isJDK = isJDK;
-        this.stackTraceOffset = determineStackTraceOffset();
+        this.stackTraceOffset = stackTraceOffset(name, isJDK);
     }
 
-    private boolean isExceptionEvent() {
-        switch (getName()) {
+    private static boolean isExceptionEvent(String name) {
+        switch (name) {
             case Type.EVENT_NAME_PREFIX + "JavaErrorThrow" :
             case Type.EVENT_NAME_PREFIX + "JavaExceptionThrow" :
                 return true;
@@ -88,8 +86,8 @@ public final class PlatformEventType extends Type {
         return false;
     }
 
-    private boolean isStaticCommit() {
-        switch (getName()) {
+    private static boolean isUsingConfiguration(String name) {
+        switch (name) {
             case Type.EVENT_NAME_PREFIX + "SocketRead"  :
             case Type.EVENT_NAME_PREFIX + "SocketWrite" :
             case Type.EVENT_NAME_PREFIX + "FileRead"    :
@@ -100,42 +98,16 @@ public final class PlatformEventType extends Type {
         return false;
     }
 
-    private int determineStackTraceOffset() {
+    private static int stackTraceOffset(String name, boolean isJDK) {
         if (isJDK) {
-            // Order matters
-            if (isExceptionEvent()) {
+            if (isExceptionEvent(name)) {
                 return 4;
             }
-            if (getModification() == Modification.TRACING) {
-                return 5;
-            }
-            if (isStaticCommit()) {
+            if (isUsingConfiguration(name)) {
                 return 3;
             }
         }
         return 3;
-    }
-
-    private boolean determineMethodSampling() {
-        if (!isJVM) {
-            return false;
-        }
-        switch (getName()) {
-            case Type.EVENT_NAME_PREFIX + "ExecutionSample":
-            case Type.EVENT_NAME_PREFIX + "NativeMethodSample":
-                return true;
-        }
-        return false;
-    }
-
-    public Modification getModification() {
-        switch (getName()) {
-            case Type.EVENT_NAME_PREFIX + "MethodTrace":
-                return Modification.TRACING;
-            case Type.EVENT_NAME_PREFIX + "MethodTiming":
-                return Modification.TIMING;
-        }
-        return Modification.NONE;
     }
 
     public void add(SettingDescriptor settingDescriptor) {

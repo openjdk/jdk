@@ -31,7 +31,6 @@ import jdk.jfr.Event;
 
 public final class SecuritySupport {
     private static final Module JFR_MODULE = Event.class.getModule();
-    private static final String TRACING_PACKAGE_NAME = "jdk.jfr.tracing";
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     static {
@@ -61,10 +60,6 @@ public final class SecuritySupport {
 
     static void addEventsExport(Class<?> clazz) {
         Modules.addExports(JFR_MODULE, "jdk.jfr.events", clazz.getModule());
-    }
-
-    public static void addTracingExport() {
-        Modules.addExports(JFR_MODULE, TRACING_PACKAGE_NAME);
     }
 
     static void addReadEdge(Class<?> clazz) {

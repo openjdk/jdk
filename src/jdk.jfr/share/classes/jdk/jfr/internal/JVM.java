@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -682,69 +682,4 @@ public final class JVM {
      * @return {@code true} if this is a product build, {@code false} otherwise.
      */
     public static native boolean isProduct();
-
-    /**
-    * Sets method tracing filters.
-     *
-     * A filter can be a class, a method, or an annotation.
-     *
-     * For example, the following three filters:
-     * <ul>
-     * <li>Method timing on all methods in class com.foo.Bar</li>
-     * <li>Method tracing on the method com.foo.Bar::baz</li>
-     * <li>Method timing and tracing on all methods or classes with the annotation @com.foo.Foo</li>
-     * </ul>
-     * can be set using the following code:
-     * <pre>
-     * String[] classes = new String[3];
-     * classes[0] = "com/foo/Bar";
-     * classes[1] = "com/foo/Bar";
-     * classes[2] = null;
-     *
-     * String[] methods = new String[3];
-     * methods[0] = null;
-     * methods[1] = "baz";
-     * methods[2] = null;
-     *
-     * String[] annotations = new String[3];
-     * annotations[0] = null;
-     * annotations[1] = null;
-     * annotations[2] = "com/foo/Foo";
-     *
-     * int[] modifications = new int[3];
-     * modifications[0] = 1; // filter should apply to timing
-     * modifications[1] = 2; // filter should apply to tracing
-     * modifications[2] = 1 | 2; // filter should apply to both timing and tracing
-     *
-     * JVM.setMethodTraceFilters(classes, methods, annotations, modifications);
-     * </pre>
-     * The filter will be applied to currently and future loaded classes.
-     * <p>
-     * If a method is overloaded, the filter matches against all methods. It's not possible
-     * to match specific method parameters or annotation values.
-     * <p>
-     * Only one type of a filter - class, method, or annotation - can be used per array index.
-     * <p>
-     * If the filter is matched, JVMUpcalls::onMethodTrace will be invoked with
-     * the bytecode. If a filter is replaced, and method no longer requires instrumentation,
-     * the method will also be called with modification = 0;
-     *
-     * @param classes, not {@code null}, array of class names
-     * @param methods, not {@code null}, array of method names
-     * @param annotations, not {@code null}, array of annotation names
-     * @param modifications, not {@code null}, array of modification flags
-     * @return the published IDs, or null if no classes has been published.
-     */
-    public static native long[] setMethodTraceFilters(
-        String[] classes,
-        String[] methods,
-        String[] annotations,
-        int[] modification);
-
-    /**
-     * Returns IDs for method-traced classes that have been unloaded.
-     *
-     * @return the unloaded IDs, or null if no unloading has occurred.
-     */
-    public static native long[] drainStaleMethodTracerIds();
 }

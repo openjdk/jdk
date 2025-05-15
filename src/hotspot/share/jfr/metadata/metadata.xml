@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -1287,16 +1287,6 @@
     <Field type="Method" name="method" label="Deprecated Method" />
     <Field type="Ticks" name="invocationTime" label="Invocation Time" description="The time the deprecated method was invoked for the first time" />
     <Field type="boolean" name="forRemoval" label="For Removal" />
-  </Event>
-
-  <Event name="MethodTrace" category="Java Application" label="Method Trace" thread="true" stackTrace="true" startTime="true">
-    <Field type="Method" name="method" label="Method" />
-  </Event>
-
-  <Event name="MethodTiming" category="Java Application" label="Method Timing" thread="false" stackTrace="false" startTime="false" period="everyChunk">
-    <Field type="Method" name="method" label="Method" />
-    <Field type="long" name="invocations" label="Invocations" description = "The number of times the method was invoked"/>
-    <Field type="Tickspan" name="average" label="Average" description="An approximation of the wall-clock time it took for the method to execute"/>
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

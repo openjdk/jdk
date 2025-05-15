@@ -35,7 +35,6 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/support/jfrThreadId.inline.hpp"
 #include "logging/log.hpp"
-#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.inline.hpp"
@@ -930,16 +929,3 @@ bool JfrJavaSupport::compute_field_offset(int &dest_offset,
   dest_offset = fd.offset();
   return true;
 }
-
-jlongArray JfrJavaSupport::create_long_array(GrowableArray<jlong>* array, TRAPS) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-  assert(array != nullptr, "invariant");
-  assert(array->is_nonempty(), "invariant");
-  const int length = array->length();
-  assert(length > 0, "invariant");
-  typeArrayOop obj = oopFactory::new_typeArray(T_LONG, length, CHECK_NULL);
-  ArrayAccess<>::arraycopy_from_native(&array->first(), obj, typeArrayOopDesc::element_offset<jlong>(0), length);
-  array->clear();
-  return static_cast<jlongArray>(JfrJavaSupport::local_jni_handle(obj, THREAD));
-}
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,14 +92,6 @@ public final class Bytecode {
             case "java.lang.Thread" -> CD_Thread;
             default -> throw new InternalError("Unsupported JFR type " + v.getTypeName());
         };
-    }
-
-    public static String internalName(String className) {
-        return className != null ? className.replace(".", "/") : null;
-    }
-
-    public static String descriptorName(String className) {
-        return className != null ? ("L" + internalName(className) + ";") : null;
     }
 
     public static ClassDesc classDesc(Class<?> clazz) {

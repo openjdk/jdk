@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,11 +77,7 @@ inline traceid JfrTraceId::load_leakp(const Klass* klass, const Method* method) 
 }
 
 inline traceid JfrTraceId::load_leakp_previous_epoch(const Klass* klass, const Method* method) {
-  return JfrTraceIdLoadBarrier::load_leakp_previous_epoch(klass, method);
-}
-
-inline traceid JfrTraceId::load_previous_epoch(const Klass* klass) {
-  return JfrTraceIdLoadBarrier::load_previous_epoch(klass);
+  return JfrTraceIdLoadBarrier::load_leakp_previuos_epoch(klass, method);
 }
 
 template <typename T>

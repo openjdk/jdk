@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,10 +168,6 @@ void JNICALL jfr_unregister_stack_filter(JNIEnv* env, jclass jvm, jlong id);
 jlong JNICALL jfr_nanos_now(JNIEnv* env, jclass jvm);
 
 jboolean JNICALL jfr_is_product(JNIEnv* env, jclass jvm);
-
-jlongArray JNICALL jfr_set_method_trace_filters(JNIEnv* env, jclass jvm, jobjectArray classes, jobjectArray methods, jobjectArray annotations, jintArray modifications);
-
-jlongArray JNICALL jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass);
 
 #ifdef __cplusplus
 }

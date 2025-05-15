@@ -361,16 +361,6 @@ public class Events {
         }
     }
 
-    public static RecordedEvent getFirst(List<RecordedEvent> events, String name) throws Exception {
-        for (RecordedEvent event : events) {
-            if (event.getEventType().getName().equals(name)) {
-                return event;
-            }
-        }
-        Asserts.fail("Missing event " + name + " in recording " + events.toString());
-        return null;
-    }
-
     private static boolean containsEvent(List<RecordedEvent> events, String name) {
         for (RecordedEvent event : events) {
             if (event.getEventType().getName().equals(name)) {
@@ -378,12 +368,6 @@ public class Events {
             }
         }
         return false;
-    }
-
-    public static void assertEventCount(List<RecordedEvent> events, int count) throws Exception {
-        if (events.size() != count) {
-            throw new Exception("Expected " + count + " events, found " + events.size());
-        }
     }
 
     public static void assertTopFrame(RecordedEvent event, Class<?> expectedClass, String expectedMethodName) {

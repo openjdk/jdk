@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,9 +112,7 @@ class ClearArtifact<const Method*> {
     assert(METHOD_IS_NOT_LEAKP(method), "invariant");
     assert(METHOD_IS_NOT_TRANSIENT(method), "invariant");
     SET_PREVIOUS_EPOCH_METHOD_CLEARED_BIT(method);
-    if (METHOD_FLAG_USED_PREVIOUS_EPOCH_BIT(method)) {
-      CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method);
-    }
+    CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method);
     assert(IS_THIS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
     assert(IS_PREVIOUS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
     return true;

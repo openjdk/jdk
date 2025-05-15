@@ -34,9 +34,7 @@
 class CallInfo;
 class ciKlass;
 class ciMethod;
-class ClassFileParser;
 class GraphBuilder;
-class InstanceKlass;
 class JavaThread;
 class Klass;
 class outputStream;
@@ -60,8 +58,6 @@ class Jfr : AllStatic {
   static bool is_excluded(Thread* thread);
   static void include_thread(Thread* thread);
   static void exclude_thread(Thread* thread);
-  static void on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS);
-  static void on_klass_redefinition(const InstanceKlass* ik, Thread* thread);
   static void on_thread_start(Thread* thread);
   static void on_thread_exit(Thread* thread);
   static void on_resolution(const CallInfo& info, TRAPS);

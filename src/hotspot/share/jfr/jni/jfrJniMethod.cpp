@@ -49,7 +49,6 @@
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
-#include "jfr/support/methodtracer/jfrMethodTracer.hpp"
 #include "jfr/utilities/jfrJavaLog.hpp"
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTime.hpp"
@@ -438,13 +437,3 @@ NO_TRANSITION(jboolean, jfr_is_product(JNIEnv* env, jclass jvm))
   return false;
 #endif
 NO_TRANSITION_END
-
-JVM_ENTRY_NO_ENV(jlongArray, jfr_set_method_trace_filters(JNIEnv* env, jclass jvm, jobjectArray classes, jobjectArray methods, jobjectArray annotations, jintArray modifications))
-  return JfrMethodTracer::set_filters(env, classes, methods, annotations, modifications, thread);
-JVM_END
-
-JVM_ENTRY_NO_ENV(jlongArray, jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass jvm))
-  return JfrMethodTracer::drain_stale_class_ids(thread);
-JVM_END
-
-
