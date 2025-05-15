@@ -908,7 +908,7 @@ protected:
     patch((address)&insn, 31, 27, funct5);
     emit(insn);
   }
-  
+
   template <AmoOperationFunct5 funct5, AmoWidthFunct3 width>
   void amo_base(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
     amo_base<funct5, width>(Rd, Rs1, Rs2->raw_encoding(), aqrl);
