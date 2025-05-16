@@ -69,7 +69,7 @@ public class TestTemplate {
     private static final MyPrimitive myInt = new MyPrimitive("int");
     private static final MyPrimitive myLong = new MyPrimitive("long");
 
-    // Simulate a Classes. Subtypes start with the name of the super type.
+    // Simulate classes. Subtypes start with the name of the super type.
     private record MyClass(String name) implements Name.Type {
         @Override
         public boolean isSubtypeOf(Name.Type other) {

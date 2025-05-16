@@ -59,15 +59,16 @@ public class TestTutorial {
         CompileFramework comp = new CompileFramework();
 
         // Add java source files.
-        comp.addJavaSourceCode("p.xyz.InnerTest1", generateWithListOfTokens());
-        comp.addJavaSourceCode("p.xyz.InnerTest2", generateWithTemplateArguments());
-        comp.addJavaSourceCode("p.xyz.InnerTest3", generateWithHashtagAndDollarReplacements());
-        comp.addJavaSourceCode("p.xyz.InnerTest4", generateWithCustomHooks());
-        comp.addJavaSourceCode("p.xyz.InnerTest5", generateWithLibraryHooks());
-        comp.addJavaSourceCode("p.xyz.InnerTest6", generateWithRecursionAndBindingsAndFuel());
-        comp.addJavaSourceCode("p.xyz.InnerTest7", generateWithNamesSimple());
-        comp.addJavaSourceCode("p.xyz.InnerTest8", generateWithNamesForFieldsAndVariables());
-        comp.addJavaSourceCode("p.xyz.InnerTest9", generateWithNamesForMethods());
+        comp.addJavaSourceCode("p.xyz.InnerTest1",  generateWithListOfTokens());
+        comp.addJavaSourceCode("p.xyz.InnerTest2",  generateWithTemplateArguments());
+        comp.addJavaSourceCode("p.xyz.InnerTest3",  generateWithHashtagAndDollarReplacements());
+        comp.addJavaSourceCode("p.xyz.InnerTest4",  generateWithCustomHooks());
+        comp.addJavaSourceCode("p.xyz.InnerTest5",  generateWithLibraryHooks());
+        comp.addJavaSourceCode("p.xyz.InnerTest6",  generateWithRecursionAndBindingsAndFuel());
+        comp.addJavaSourceCode("p.xyz.InnerTest7",  generateWithNamesSimple());
+        comp.addJavaSourceCode("p.xyz.InnerTest8",  generateWithNamesForFieldsAndVariables());
+        comp.addJavaSourceCode("p.xyz.InnerTest9",  generateWithNamesForMethods());
+        comp.addJavaSourceCode("p.xyz.InnerTest10", generateWithNamesForFuzzing());
 
         // Compile the source files.
         // Hint: if you want to see the generated source code, you can enable
@@ -76,15 +77,16 @@ public class TestTutorial {
         comp.compile();
 
         // Object ret = p.xyz.InnerTest1.main();
-        comp.invoke("p.xyz.InnerTest1", "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest2", "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest3", "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest4", "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest5", "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest6", "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest7", "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest8", "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest9", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest1",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest2",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest3",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest4",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest5",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest6",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest7",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest8",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest9",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest10", "main", new Object[] {});
     }
 
     // This example shows the use of various Tokens.
@@ -760,5 +762,119 @@ public class TestTutorial {
 
         // Render templateClass to String.
         return templateClass.render();
+    }
+
+    // There are two more concepts to understand more deeply with Names.
+    //
+    // One is the use of mutable and immutable Names.
+    // In some cases, we only want to sample Names that are mutable, because
+    // we want to store to a field or variable. We have to make sure that we
+    // do not generate code that tries to store to a final field or variable.
+    // In other cases, we are only want to load, and we do not care if the
+    // fields or variables are final or non-final.
+    //
+    // Another concept is subtyping of Name Types. With primitive types, this
+    // is irrelevant, but with instances of Objects, this becomes relevant.
+    // We may want to load an object of any field or variable of a certain
+    // class, or any subclass.
+    //
+    // Let us look at an example that demonstrates these two concepts.
+    //
+    // First, we define a Name Type that represents different classes, that
+    // may or may not be in a subtype relation. Subtypes start with the name
+    // of the super type.
+    private record MyClass(String name) implements Name.Type {
+        @Override
+        public boolean isSubtypeOf(Name.Type other) {
+            return other instanceof MyClass(String n) && name().startsWith(n);
+        }
+
+        @Override
+        public String toString() { return name(); }
+    }
+    private static final MyClass myClassA   = new MyClass("MyClassA");
+    private static final MyClass myClassA1  = new MyClass("MyClassA1");
+    private static final MyClass myClassA2  = new MyClass("MyClassA2");
+    private static final MyClass myClassA11 = new MyClass("MyClassA11");
+    private static final MyClass myClassB   = new MyClass("MyClassB");
+    private static final List<MyClass> myClassList = List.of(myClassA, myClassA1, myClassA2, myClassA11, myClassB);
+
+    public static String generateWithNamesForFuzzing() {
+        var templateStaticField = Template.make("type", "mutable", (Name.Type type, Boolean mutable) -> body(
+            addName(new Name($("field"), type, mutable, 1)),
+            let("isFinal", mutable ? "" : "final"),
+            """
+            public static #isFinal #type $field = new #type();
+            """
+        ));
+
+        var templateLoad = Template.make("type", (Name.Type type) -> body(
+            // We only load from the field, so we do not need a mutable one,
+            // we can load from final and non-final fields.
+            let("field", sampleName(type, false).name()),
+            """
+            System.out.println("#field: " + #field);
+            """
+        ));
+
+        var templateStore = Template.make("type", (Name.Type type) -> body(
+            // We are storing to a field, so it better be non-final, i.e. mutable.
+            let("field", sampleName(type, true).name()),
+            """
+            #field = null;
+            """
+        ));
+
+        var templateClass = Template.make(() -> body(
+            """
+            package p.xyz;
+
+            public class InnerTest10 {
+                // First, we define our classes.
+                public static class MyClassA {}
+                public static class MyClassA1 extends MyClassA {}
+                public static class MyClassA2 extends MyClassA {}
+                public static class MyClassA11 extends MyClassA1 {}
+                public static class MyClassB {}
+
+                // Now, we define a list of static fields. Some of them are final, others not.
+                """,
+                // We must create a CLASS_HOOK and insert the fields to it. Otherwise,
+                // addName is restricted to the scope of the templateStaticField. But
+                // with the insertion to CLASS_HOOK, the addName goes through the scope
+                // of the templateStaticField out to the scope of the CLASS_HOOK.
+                Hooks.CLASS_HOOK.set(
+                    myClassList.stream().map(c ->
+                        (Object)Hooks.CLASS_HOOK.insert(templateStaticField.asToken(c, true))
+                    ).toList(),
+                    myClassList.stream().map(c ->
+                        (Object)Hooks.CLASS_HOOK.insert(templateStaticField.asToken(c, false))
+                    ).toList(),
+                    """
+
+                    public static void main() {
+                        // All fields are still in their initial state.
+                        """,
+                        myClassList.stream().map(c -> templateLoad.asToken(c)).toList(),
+                        """
+                        // Now lets mutate some fields.
+                        """,
+                        myClassList.stream().map(c -> templateStore.asToken(c)).toList(),
+                        """
+                        // And now some fields are different than before.
+                        """,
+                        myClassList.stream().map(c -> templateLoad.asToken(c)).toList(),
+                        """
+                    }
+                    """
+                ),
+            """
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.render();
+
     }
 }
