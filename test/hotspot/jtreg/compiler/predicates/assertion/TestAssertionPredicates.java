@@ -33,6 +33,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates Xbatch
  */
 
@@ -43,6 +44,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates NoTieredCompilation
  */
 
@@ -54,6 +56,7 @@
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=inline,compiler.predicates.assertion.TestAssertionPredicates::inline
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates Xcomp
  */
 
@@ -65,6 +68,7 @@
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=inline,compiler.predicates.assertion.TestAssertionPredicates::inline
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates XcompNoTiered
  */
 
@@ -76,6 +80,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates LoopMaxUnroll0
  */
 
@@ -87,6 +92,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates LoopMaxUnroll2
  */
 
@@ -98,6 +104,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates LoopUnrollLimit40
  */
 
@@ -109,6 +116,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates LoopUnrollLimit150
  */
 
@@ -120,6 +128,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates NoProfiledLoopPredicate
  */
 
@@ -131,6 +140,7 @@
  * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates DataUpdate
  */
 
@@ -141,6 +151,7 @@
  * @run main/othervm -Xcomp -XX:-BlockLayoutByFrequency -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates CloneDown
  */
 
@@ -152,6 +163,7 @@
  * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:+StressGCM -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates Stress
  */
 
@@ -163,7 +175,20 @@
  * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:+StressGCM -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates Stress
+ */
+
+/*
+ * @test id=StressXcompMaxUnroll0
+ * @key randomness
+ * @bug 8288981 8356084
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+AbortVMOnCompilationFailure
+ *                   -XX:LoopMaxUnroll=0 -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   compiler.predicates.assertion.TestAssertionPredicates StressXcompMaxUnroll0
  */
 
 /*
@@ -174,6 +199,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates NoLoopPredication
  */
 
@@ -185,6 +211,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates NoLoopPredication
  */
 
@@ -211,6 +238,7 @@ public class TestAssertionPredicates {
     static boolean flagFalse, flagFalse2;
     static int iFld = 34;
     static int iFld2, iFld3;
+    static int two = 2;
     static long lFld, lFldOne = 1;
     static float fFld;
     static short sFld;
@@ -223,7 +251,7 @@ public class TestAssertionPredicates {
     }
 
     static Foo foo = new Foo();
-
+    static int fooArrSize = 10000001;
 
     public static void main(String[] args) {
         switch (args[0]) {
@@ -300,7 +328,7 @@ public class TestAssertionPredicates {
                     test8308504No2();
                 }
             }
-            case "DataUpdate" -> {
+            case "DataUpdate", "StressXcompMaxUnroll0" -> {
                 for (int i = 0; i < 10; i++) {
                     // The following tests create large arrays. Limit the number of invocations to reduce the time spent.
                     flag = !flag;
@@ -308,6 +336,7 @@ public class TestAssertionPredicates {
                     testDataUpdateUnswitchUnroll();
                     testDataUpdateUnroll();
                     testDataUpdatePeelingUnroll();
+                    testPeelingThreeTimesDataUpdate();
                 }
             }
             case "CloneDown" -> {
@@ -1049,18 +1078,18 @@ public class TestAssertionPredicates {
         for (int i = 0; i < limit; i++) {
             fooArr[10000000 * i] = foo;
         }
-        // 9) This loop is not optimized in any way because we have a call inside the loop. This loop is only required
+        // 10) This loop is not optimized in any way because we have a call inside the loop. This loop is only required
         //    to trigger a crash.
-        // 10) During GCM with StressGCM, we could schedule the LoadN from the main loop before checking if we should
+        // 11) During GCM with StressGCM, we could schedule the LoadN from the main loop before checking if we should
         //     enter the main loop. When 'flag' is true, we only have an array of size 20000001. We then perform
         //     the LoadN[3*10000000] and crash when the memory is unmapped.
         for (float f = 0; f < 1.6f; f += 0.5f) {
             // 2) Loop is unswitched
-            // 3) Both loop are peeled (we focus on one of those since both are almost identical except for the
+            // 4) Both loop are peeled (we focus on one of those since both are almost identical except for the
             //    unswitched condition):
             //      Peeled iteration [i = 0]
             //      Loop [i = 1..4, stride = 1]
-            // 4) Loop unroll policy now returns true.
+            // 5) Loop unroll policy now returns true.
             //    Peeled iteration [i = 0]
             //    - Loop is pre-main-posted
             //        Loop-pre[i = 1..4, stride = 1]
@@ -1070,16 +1099,16 @@ public class TestAssertionPredicates {
             //        Loop-pre[i = 1..4, stride = 1]
             //        Loop-main[i = 2..4, stride = 2]
             //        Loop-post[i = 2..4, stride = 1]
-            // 5) During IGVN, we find that the backedge is never taken for main loop (we would over-iteratre) and it
+            // 6) During IGVN, we find that the backedge is never taken for main loop (we would over-iteratre) and it
             //    collapses to a single iteration.
-            // 6) After loop opts, the pre-loop is removed.
+            // 7) After loop opts, the pre-loop is removed.
             for (int i = 0; i < limit; i++) {
                 // 1) Hoisted with a Hoisted Range Check Predicate
-                // 7) The 'i = 1' value is propagated to the single main loop iteration and we have the following
+                // 8) The 'i = 1' value is propagated to the single main loop iteration and we have the following
                 //    fixed-index accesses:
                 //      LoadN[2*10000000];
                 //      LoadN[3*10000000];
-                // 8) Without explicitly pinning the LoadN from the main loop at the main loop entry (i.e. below the
+                // 9) Without explicitly pinning the LoadN from the main loop at the main loop entry (i.e. below the
                 //    zero trip guard), they are still pinned below the Hoisted Range Check Predicate before the loop.
                 fooArr[i * 10000000].iFld += 34;
                 if (flagFalse) {
@@ -1312,10 +1341,73 @@ public class TestAssertionPredicates {
         }
     }
 
+
+    // -Xcomp -XX:LoopMaxUnroll=0 -XX:+StressGCM -XX:CompileCommand=compileonly,Test*::*
+    private static void testPeelingThreeTimesDataUpdate() {
+        Foo[] fooArr = new Foo[fooArrSize];
+        for (int i = 0; i < two; i++) {
+            fooArr[10000000 * i] = foo;
+        }
+        int x = 0;
+
+        // 2) The Hoisted Range Check Predicate is accompanied by two Template Assertion Predicates. The LoadN node,
+        //    previously pinned at the hoisted range check, is now pinned at the Template Assertion Predicate. Note
+        //    that the LoadN is still inside the loop body.
+        // 3) The loop is now peeled 3 times which also peels 3 loads from 'fooArr' out of the loop:
+        //       // Peeled section from 1st Loop Peeling
+        //       ...
+        //       LoadN[0]
+        //       ...
+        //       <loop entry guard>
+        //       // Peeled section from 2nd Loop Peeling
+        //       ...
+        //       LoadN[10000000]
+        //       Initialized Assertion Predicate (***)
+        //       <loop entry guard>
+        //       // Peeled section from 3rd Loop Peeling
+        //       ...
+        //       LoadN[20000000]
+        //       ...
+        //       Initialized Assertion Predicate
+        //       <loop entry guard>
+        //       Template Assertion Predicate
+        //       Initialized Assertion Predicate
+        // Loop:
+        //   LoadN[i*10000000]
+        //
+        // To avoid that the peeled LoadN nodes float above the corresponding loop entry guards, we need to pin them
+        // below. That is done by updating the dependency of the peeled LoadN to the new Template Assertion Predicate.
+        // This is currently broken: We wrongly set the dependency to the Initialized Assertion Predicate instead of the
+        // Template Assertion Predicate. We can then no longer find the dependency and miss to update it in the next
+        // Loop Peeling application. As a result, all the LoadN pile up at the originally added Initialized Assertion
+        // Predicate of the first Loop Peeling application at (***).
+        //
+        // With GCM, we could schedule LoadN[20000000] at (***), before the loop entry corresponding loop entry guard
+        // for this load. We then crash during runtime because we are accessing an out-of-range index. The fix is to
+        // properly update the data dependencies to the Template Assertion Predicates and not the Initialized Assertion
+        // Predicates.
+        for (int i = 0; i < two; i++) {
+            // 1) Hoisted with a Hoisted Range Check Predicate
+            x += fooArr[i * 10000000].iFld;
+
+            if (iFld2 == 4) {
+                return;
+            }
+
+            if (i > 0 && iFld2 == 3) {
+                iFld2 = 42;
+                return;
+            }
+
+            if (i > 1 && iFld2 == 2) {
+                return;
+            }
+        }
+    }
+
     /*
      * Tests collected in JBS and duplicated issues
      */
-
 
     // -Xbatch -XX:CompileCommand=compileonly,Test*::*
     static void test8305428() {

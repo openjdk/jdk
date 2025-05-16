@@ -669,6 +669,16 @@
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
                                                                             \
+  product(uint, VerifyConstraintCasts, 0, DIAGNOSTIC,                       \
+          "Perform runtime checks to verify the value of a "                \
+          "ConstraintCast lies inside its type"                             \
+          "0 = does not perform any verification, "                         \
+          "1 = perform verification on ConstraintCastNodes that are "       \
+              "present during code emission, "                              \
+          "2 = Do not do widening of ConstraintCastNodes so that we can "   \
+              "have more verification coverage")                            \
+          range(0, 2)                                                       \
+                                                                            \
   product(intx, MaxInlineLevel, 15,                                         \
           "maximum number of nested calls that are inlined by high tier "   \
           "compiler")                                                       \
@@ -750,9 +760,6 @@
   product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL,        \
           "Enables aggressive reboxing of vectors")                         \
                                                                             \
-  product(bool, UseVectorStubs, false, EXPERIMENTAL,                        \
-          "Use stubs for vector transcendental operations")                 \
-                                                                            \
   product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \
                                                                             \
@@ -820,6 +827,15 @@
   product(bool, UseStoreStoreForCtor, true, DIAGNOSTIC,                     \
           "Use StoreStore barrier instead of Release barrier at the end "   \
           "of constructors")                                                \
+                                                                            \
+  develop(bool, KillPathsReachableByDeadTypeNode, true,                     \
+          "When a Type node becomes top, make paths where the node is "     \
+          "used dead by replacing them with a Halt node. Turning this off " \
+          "could corrupt the graph in rare cases and should be used with "  \
+          "care.")                                                          \
+                                                                            \
+  develop(bool, StressLoopPeeling, false,                                   \
+          "Randomize loop peeling decision")                                \
 
 // end of C2_FLAGS
 

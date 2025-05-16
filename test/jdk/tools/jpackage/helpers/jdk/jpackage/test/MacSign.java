@@ -29,9 +29,9 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -42,7 +42,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
+import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -63,6 +65,7 @@ import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 /**
  * Utilities to setup identities and keychains for sign testing.
@@ -393,15 +396,52 @@ public final class MacSign {
         }
 
         List<X509Certificate> findCertificates() {
-            final var in = new ByteArrayInputStream(
-                    security("find-certificate", "-ap", name).saveOutput().execute().getOutput().stream().collect(joining("\n")).getBytes(StandardCharsets.UTF_8));
-            return toFunction(CERT_FACTORY::generateCertificates).apply(in).stream().map(X509Certificate.class::cast).toList();
+            final List<X509Certificate> certs = new ArrayList<>();
+            try (final var in = new BufferedInputStream(new ByteArrayInputStream(
+                    security("find-certificate", "-ap", name).executeAndGetOutput().stream().collect(joining("\n")).getBytes(StandardCharsets.UTF_8)))) {
+                while (in.available() > 0) {
+                    final X509Certificate cert;
+                    try {
+                        cert = (X509Certificate) CERT_FACTORY.generateCertificate(in);
+                    } catch (Exception ex) {
+                        TKit.trace("Failed to parse certificate data: " + ex);
+                        continue;
+                    }
+                    certs.add(cert);
+                }
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+            return certs;
         }
 
         public static void addToSearchList(Collection<Keychain> keychains) {
             security("list-keychains", "-d", "user", "-s", "login.keychain")
-            .addArguments(keychains.stream().map(Keychain::name).toList())
-            .execute();
+                    .addArguments(keychains.stream().map(Keychain::name).toList())
+                    .execute();
+        }
+
+        public static void withAddedKeychains(Collection<Keychain> keychains, Runnable runnable) {
+            final var curKeychains = activeKeychainFiles();
+            addToSearchList(keychains);
+            try {
+                runnable.run();
+            } finally {
+                security("list-keychains", "-d", "user", "-s")
+                        .addArguments(curKeychains.stream().map(Path::toString).toList())
+                        .execute();
+            }
+        }
+
+        private static List<Path> activeKeychainFiles() {
+            // $ security list-keychains
+            //     "/Users/alexeysemenyuk/Library/Keychains/login.keychain-db"
+            //     "/Library/Keychains/System.keychain"
+            return security("list-keychains", "-d", "user").executeAndGetOutput().stream().map(line -> {
+                return line.stripLeading();
+            }).filter(line -> {
+                return line.charAt(0) == '"' && line.charAt(line.length() - 1) == '"';
+            }).map(line -> line.substring(1, line.length() - 1)).map(Path::of).toList();
         }
 
         private Executor createExecutor(String command) {
@@ -409,40 +449,57 @@ public final class MacSign {
         }
     }
 
-    record ResolvedCertificateRequest(CertificateRequest request, X509Certificate cert, VerifyStatus verifyStatus) {
+    private enum VerifyStatus {
+        VERIFY_OK,
+        VERIFY_EXPIRED,
+        VERIFY_ERROR,
+        VERIFY_UNTRUSTED,
+        VERIFY_EXPIRED_UNTRUSTED,
+        UNVERIFIED
+    }
+
+    private record ResolvedCertificateRequest(InstalledCertificate installed, X509Certificate cert, VerifyStatus verifyStatus) {
         ResolvedCertificateRequest {
-            Objects.requireNonNull(request);
+            Objects.requireNonNull(installed);
             Objects.requireNonNull(cert);
             Objects.requireNonNull(verifyStatus);
         }
 
-        enum VerifyStatus {
-            VERIFY_OK,
-            VERIFY_ERROR,
-            UNVERIFIED
+        CertificateRequest request() {
+            if (!verified()) {
+                throw new IllegalStateException();
+            }
+            return new CertificateRequest(installed.name(), installed.type(), installed.days(), installed.expired(),
+                    Set.of(VerifyStatus.VERIFY_OK, VerifyStatus.VERIFY_EXPIRED).contains(verifyStatus));
         }
 
         ResolvedCertificateRequest(X509Certificate cert) {
-            this(new CertificateRequest(cert), cert, VerifyStatus.UNVERIFIED);
+            this(new InstalledCertificate(cert), cert, VerifyStatus.UNVERIFIED);
         }
 
-        ResolvedCertificateRequest copyVerified(boolean verifySuccess) {
-            return new ResolvedCertificateRequest(request, cert,
-                    verifySuccess ? VerifyStatus.VERIFY_OK : VerifyStatus.VERIFY_ERROR);
+        ResolvedCertificateRequest copyVerified(VerifyStatus verifyStatus) {
+            if (verifyStatus == VerifyStatus.UNVERIFIED) {
+                throw new IllegalArgumentException();
+            }
+            return new ResolvedCertificateRequest(installed, cert, verifyStatus);
+        }
+
+        private boolean verified() {
+            return verifyStatus != VerifyStatus.UNVERIFIED;
         }
     }
 
-    record CertificateStats(List<ResolvedCertificateRequest> allResolvedCertificateRequests,
-            List<X509Certificate> allCertificates, List<CertificateRequest> knownCertificateRequests,
+    private record CertificateStats(List<ResolvedCertificateRequest> allResolvedCertificateRequests,
+            List<CertificateRequest> knownCertificateRequests,
             Map<X509Certificate, Throwable> unmappedCertificates) {
 
-        private static CertificateStats get(KeychainWithCertsSpec spec) {
+        static CertificateStats get(KeychainWithCertsSpec spec) {
             return CACHE.computeIfAbsent(spec, CertificateStats::create);
         }
 
         Map<CertificateRequest, List<X509Certificate>> mapKnownCertificateRequests() {
             return knownCertificateRequests.stream().collect(groupingBy(x -> x, mapping(certificateRequest -> {
-                return allResolvedCertificateRequests.stream().filter(v -> {
+                return allVerifiedResolvedCertificateRequest().filter(v -> {
                     return v.request().equals(certificateRequest);
                 }).map(ResolvedCertificateRequest::cert);
             }, flatMapping(x -> x, toList()))));
@@ -450,15 +507,19 @@ public final class MacSign {
 
         Set<CertificateRequest> verifyFailedCertificateRequests() {
             return knownCertificateRequests.stream().filter(certificateRequest -> {
-                return allResolvedCertificateRequests.stream().anyMatch(v -> {
-                    return v.request().equals(certificateRequest) && v.verifyStatus() == ResolvedCertificateRequest.VerifyStatus.VERIFY_ERROR;
+                return allVerifiedResolvedCertificateRequest().anyMatch(v -> {
+                    return v.request().equals(certificateRequest) && v.verifyStatus() != certificateRequest.expectedVerifyStatus();
                 });
             }).collect(toSet());
         }
 
         Set<CertificateRequest> unmappedCertificateRequests() {
             return Comm.compare(Set.copyOf(knownCertificateRequests),
-                    allResolvedCertificateRequests.stream().map(ResolvedCertificateRequest::request).collect(toSet())).unique1();
+                    allVerifiedResolvedCertificateRequest().map(ResolvedCertificateRequest::request).collect(toSet())).unique1();
+        }
+
+        private Stream<ResolvedCertificateRequest> allVerifiedResolvedCertificateRequest() {
+            return allResolvedCertificateRequests.stream().filter(ResolvedCertificateRequest::verified);
         }
 
         private static CertificateStats create(KeychainWithCertsSpec spec) {
@@ -482,24 +543,24 @@ public final class MacSign {
                         continue;
                     }
 
-                    if (spec.certificateRequests().contains(resolvedCertificateRequest.request)) {
+                    if (spec.certificateRequests().stream().anyMatch(resolvedCertificateRequest.installed()::match)) {
                         final var certFile = workDir.resolve(CertificateHash.of(cert).toString() + ".pem");
-                        final var verifySuccess = verifyCertificate(resolvedCertificateRequest, spec.keychain(), certFile);
-                        resolvedCertificateRequest = resolvedCertificateRequest.copyVerified(verifySuccess);
+                        final var verifyStatus = verifyCertificate(resolvedCertificateRequest, spec.keychain(), certFile);
+                        resolvedCertificateRequest = resolvedCertificateRequest.copyVerified(verifyStatus);
                     }
 
                     allResolvedCertificateRequests.add(resolvedCertificateRequest);
                 }
             });
 
-            return new CertificateStats(allResolvedCertificateRequests, List.copyOf(allCertificates),
+            return new CertificateStats(allResolvedCertificateRequests,
                     List.copyOf(spec.certificateRequests()), unmappedCertificates);
         }
 
         private static final Map<KeychainWithCertsSpec, CertificateStats> CACHE = new ConcurrentHashMap<>();
     }
 
-    record PemData(String label, byte[] data) {
+    private record PemData(String label, byte[] data) {
         PemData {
             Objects.requireNonNull(label);
             Objects.requireNonNull(data);
@@ -532,23 +593,41 @@ public final class MacSign {
             return String.format("-----%s-----\n", Objects.requireNonNull(str));
         }
 
-        private final static Base64.Encoder ENCODER = Base64.getMimeEncoder(64, "\n".getBytes());
+        private static final Base64.Encoder ENCODER = Base64.getMimeEncoder(64, "\n".getBytes());
     }
 
-    public record CertificateHash(byte[] value) {
+    public enum DigestAlgorithm {
+        SHA1(20, () -> MessageDigest.getInstance("SHA-1")),
+        SHA256(32, () -> MessageDigest.getInstance("SHA-256"));
+
+        DigestAlgorithm(int hashLength, ThrowingSupplier<MessageDigest> createDigest) {
+            this.hashLength = hashLength;
+            this.createDigest = createDigest;
+        }
+
+        final int hashLength;
+        final ThrowingSupplier<MessageDigest> createDigest;
+    }
+
+    public record CertificateHash(byte[] value, DigestAlgorithm alg) {
         public CertificateHash {
             Objects.requireNonNull(value);
-            if (value.length != 20) {
-                throw new IllegalArgumentException("Invalid SHA-1 hash");
+            Objects.requireNonNull(alg);
+            if (value.length != alg.hashLength) {
+                throw new IllegalArgumentException(String.format("Invalid %s hash", alg));
             }
         }
 
         public static CertificateHash of(X509Certificate cert) {
+            return of(cert, DigestAlgorithm.SHA1);
+        }
+
+        public static CertificateHash of(X509Certificate cert, DigestAlgorithm alg) {
             return new CertificateHash(toSupplier(() -> {
-                final MessageDigest md = MessageDigest.getInstance("SHA-1");
+                final MessageDigest md = alg.createDigest.get();
                 md.update(cert.getEncoded());
                 return md.digest();
-            }).get());
+            }).get(), alg);
         }
 
         @Override
@@ -601,14 +680,61 @@ public final class MacSign {
         private final String verifyPolicy;
     }
 
-    public record CertificateRequest(String name, CertificateType type, int days) implements Comparable<CertificateRequest>{
+    public enum StandardCertificateNamePrefix {
+        CODE_SIGND("Developer ID Application: "),
+        INSTALLER("Developer ID Installer: ");
+
+        StandardCertificateNamePrefix(String value) {
+            this.value = Objects.requireNonNull(value);
+        }
+
+        public String value() {
+            return value;
+        }
+
+        private final String value;
+    }
+
+    public record NameWithPrefix(String prefix, String name) {
+        public NameWithPrefix {
+            Objects.requireNonNull(prefix);
+            Objects.requireNonNull(name);
+        }
+    }
+
+    public record CertificateRequest(String name, CertificateType type, int days, boolean expired, boolean trusted)
+            implements Comparable<CertificateRequest> {
+
         public CertificateRequest {
             Objects.requireNonNull(name);
             Objects.requireNonNull(type);
+            if (days <= 0) {
+                throw new IllegalArgumentException();
+            }
         }
 
-        CertificateRequest(X509Certificate cert) {
-            this(getSubjectCN(cert), getType(cert), getDurationInDays(cert));
+        public String shortName() {
+            return nameWithPrefix().map(NameWithPrefix::name).orElseThrow();
+        }
+
+        public Optional<NameWithPrefix> nameWithPrefix() {
+            return Stream.of(StandardCertificateNamePrefix.values()).map(StandardCertificateNamePrefix::value).filter(prefix -> {
+                return name.startsWith(prefix);
+            }).map(prefix -> {
+                return new NameWithPrefix(prefix, name.substring(prefix.length()));
+            }).findAny();
+        }
+
+        VerifyStatus expectedVerifyStatus() {
+            if (expired && !trusted) {
+                return VerifyStatus.VERIFY_EXPIRED_UNTRUSTED;
+            } else if (!trusted) {
+                return VerifyStatus.VERIFY_UNTRUSTED;
+            } else if (expired) {
+                return VerifyStatus.VERIFY_EXPIRED;
+            } else {
+                return VerifyStatus.VERIFY_OK;
+            }
         }
 
         @Override
@@ -623,8 +749,8 @@ public final class MacSign {
                 return this;
             }
 
-            public Builder commonName(String v) {
-                commonName = v;
+            public Builder subjectCommonName(String v) {
+                subjectCommonName = v;
                 return this;
             }
 
@@ -638,8 +764,26 @@ public final class MacSign {
                 return this;
             }
 
+            public Builder expired(boolean v) {
+                expired = v;
+                return this;
+            }
+
+            public Builder expired() {
+                return expired(true);
+            }
+
+            public Builder trusted(boolean v) {
+                trusted = v;
+                return this;
+            }
+
+            public Builder untrusted() {
+                return trusted(false);
+            }
+
             public CertificateRequest create() {
-                return new CertificateRequest(validatedCN(), type, days);
+                return new CertificateRequest(validatedCN(), type, days, expired, trusted);
             }
 
             private String validatedUserName() {
@@ -647,13 +791,13 @@ public final class MacSign {
             }
 
             private String validatedCN() {
-                return Optional.ofNullable(commonName).orElseGet(() -> {
+                return Optional.ofNullable(subjectCommonName).orElseGet(() -> {
                     switch (type) {
                         case CODE_SIGN -> {
-                            return "Developer ID Application: " + validatedUserName();
+                            return StandardCertificateNamePrefix.CODE_SIGND.value() + validatedUserName();
                         }
                         case INSTALLER -> {
-                            return "Developer ID Installer: " + validatedUserName();
+                            return StandardCertificateNamePrefix.INSTALLER.value() + validatedUserName();
                         }
                         default -> {
                             throw new UnsupportedOperationException();
@@ -663,9 +807,41 @@ public final class MacSign {
             }
 
             private String userName;
-            private String commonName; // CN
+            private String subjectCommonName; // CN
             private CertificateType type = CertificateType.CODE_SIGN;
             private int days = 365;
+            private boolean expired;
+            private boolean trusted = true;
+        }
+
+        private static final Comparator<CertificateRequest> COMPARATOR =
+                Comparator.comparing(CertificateRequest::name)
+                .thenComparing(Comparator.comparing(CertificateRequest::type))
+                .thenComparing(Comparator.comparingInt(CertificateRequest::days))
+                .thenComparing(Comparator.comparing(CertificateRequest::expired, Boolean::compare))
+                .thenComparing(Comparator.comparing(CertificateRequest::trusted, Boolean::compare));
+    }
+
+    private record InstalledCertificate(String name, CertificateType type, int days, boolean expired) implements Comparable<InstalledCertificate> {
+        InstalledCertificate {
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(type);
+            if (days <= 0) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        InstalledCertificate(X509Certificate cert) {
+            this(getSubjectCN(cert), getType(cert), getDurationInDays(cert), getExpired(cert));
+        }
+
+        boolean match(CertificateRequest request) {
+            return name.equals(request.name()) && type.equals(request.type()) && days == request.days() && expired == request.expired();
+        }
+
+        @Override
+        public int compareTo(InstalledCertificate o) {
+            return COMPARATOR.compare(this, o);
         }
 
         private static String getSubjectCN(X509Certificate cert) {
@@ -697,13 +873,23 @@ public final class MacSign {
         private static int getDurationInDays(X509Certificate cert) {
             final var notBefore = cert.getNotBefore();
             final var notAfter = cert.getNotAfter();
-            return (int)TimeUnit.DAYS.convert(notAfter.getTime() - notBefore.getTime(), TimeUnit.MILLISECONDS);
+            return (int) TimeUnit.DAYS.convert(notAfter.getTime() - notBefore.getTime(), TimeUnit.MILLISECONDS);
         }
 
-        private static final Comparator<CertificateRequest> COMPARATOR =
-                Comparator.comparing(CertificateRequest::name)
-                .thenComparing(Comparator.comparing(CertificateRequest::type))
-                .thenComparing(Comparator.comparingInt(CertificateRequest::days));
+        private static boolean getExpired(X509Certificate cert) {
+            try {
+                cert.checkValidity();
+                return false;
+            } catch (CertificateExpiredException | CertificateNotYetValidException ex) {
+                return true;
+            }
+        }
+
+        private static final Comparator<InstalledCertificate> COMPARATOR =
+                Comparator.comparing(InstalledCertificate::name)
+                .thenComparing(Comparator.comparing(InstalledCertificate::type))
+                .thenComparing(Comparator.comparingInt(InstalledCertificate::days))
+                .thenComparing(Comparator.comparing(InstalledCertificate::expired, Boolean::compare));
     }
 
     /**
@@ -715,8 +901,10 @@ public final class MacSign {
      * Created certificates will be imported into the keychains, and every
      * certificate will be marked as trusted.
      * <p>
-     * The user will be prompted to enter the user login password as
-     * many times as the number of unique certificates this function will create.
+     * The user will be prompted to enter the user login password as many times as
+     * the number of unique certificates this function will create.
+     * <p>
+     * Created keychains will NOT be added to the keychain search list.
      *
      * @param specs the keychains and signing identities configuration
      */
@@ -767,14 +955,14 @@ public final class MacSign {
                             "-A").execute();
                 });
 
-                trustConfig.put(certPemFile.getValue(), keychains.getFirst());
+                if (certPemFile.getKey().trusted()) {
+                    trustConfig.put(certPemFile.getValue(), keychains.getFirst());
+                }
             }
 
             // Trust certificates.
             trustCertificates(trustConfig);
         });
-
-        Keychain.addToSearchList(specs.stream().map(KeychainWithCertsSpec::keychain).toList());
     }
 
     /**
@@ -820,11 +1008,11 @@ public final class MacSign {
             TKit.trace(String.format("In [%s] keychain:", keychain.name()));
             final var certificateStat = certificateStats.get(keychain);
             final var resolvedCertificateRequests = certificateStat.allResolvedCertificateRequests().stream()
-                    .sorted(Comparator.comparing(ResolvedCertificateRequest::request)).toList();
+                    .sorted(Comparator.comparing(ResolvedCertificateRequest::installed)).toList();
             for (final var resolvedCertificateRequest : resolvedCertificateRequests) {
                 TKit.trace(String.format("  Certificate with hash=%s: %s[%s]",
                         CertificateHash.of(resolvedCertificateRequest.cert()),
-                        resolvedCertificateRequest.request(),
+                        resolvedCertificateRequest.installed(),
                         resolvedCertificateRequest.verifyStatus()));
             }
 
@@ -849,7 +1037,31 @@ public final class MacSign {
         return !missingKeychain && !missingCertificates && !invalidCertificates;
     }
 
-    public static Map<CertificateRequest, X509Certificate> mapCertificateRequests(KeychainWithCertsSpec spec) {
+    public final static class ResolvedKeychain {
+        public ResolvedKeychain(KeychainWithCertsSpec spec) {
+            this.spec = Objects.requireNonNull(spec);
+        }
+
+        public KeychainWithCertsSpec spec() {
+            return spec;
+        }
+
+        public Map<CertificateRequest, X509Certificate> mapCertificateRequests() {
+            if (certMap == null) {
+                synchronized (this) {
+                    if (certMap == null) {
+                        certMap = MacSign.mapCertificateRequests(spec);
+                    }
+                }
+            }
+            return certMap;
+        }
+
+        private final KeychainWithCertsSpec spec;
+        private volatile Map<CertificateRequest, X509Certificate> certMap;
+    }
+
+    private static Map<CertificateRequest, X509Certificate> mapCertificateRequests(KeychainWithCertsSpec spec) {
         return CertificateStats.get(spec).mapKnownCertificateRequests().entrySet().stream().collect(toMap(Map.Entry::getKey, e -> {
             return e.getValue().stream().reduce((x, y) -> {
                 throw new IllegalStateException(String.format(
@@ -876,18 +1088,39 @@ public final class MacSign {
         });
     }
 
-    private static boolean verifyCertificate(ResolvedCertificateRequest resolvedCertificateRequest, Keychain keychain, Path certFile) {
+    private static VerifyStatus verifyCertificate(ResolvedCertificateRequest resolvedCertificateRequest, Keychain keychain, Path certFile) {
         PemData.of(resolvedCertificateRequest.cert()).save(certFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        for (final var mode : List.of("-q", "-v")) {
-            final var ok = security("verify-cert", "-L", "-n", mode,
+        Executor.Result result = null;
+        for (final var quite : List.of(true, false)) {
+            result = security("verify-cert", "-L", "-n",
+                    quite ? "-q" : "-v",
                     "-c", certFile.normalize().toString(),
                     "-k", keychain.name(),
-                    "-p", resolvedCertificateRequest.request().type().verifyPolicy()).executeWithoutExitCodeCheck().getExitCode() == 0;
-            if (ok) {
-                return true;
+                    "-p", resolvedCertificateRequest.installed().type().verifyPolicy()).saveOutput(!quite).executeWithoutExitCodeCheck();
+            if (result.exitCode() == 0) {
+                return VerifyStatus.VERIFY_OK;
             }
         }
-        return false;
+
+        final var expired = result.getOutput().stream().anyMatch(line -> {
+            // Look up for "Certificate has expired, or is not yet valid (check date) [TemporalValidity]" string
+            return line.contains("    Certificate has expired, or is not yet valid (check date) [TemporalValidity]");
+        });
+
+        final var untrusted = result.getOutput().stream().anyMatch(line -> {
+            // Look up for "The root of the certificate chain is not trusted [AnchorTrusted]" string
+            return line.contains("    The root of the certificate chain is not trusted [AnchorTrusted]");
+        });
+
+        if (expired && untrusted) {
+            return VerifyStatus.VERIFY_EXPIRED_UNTRUSTED;
+        } else if (untrusted) {
+            return VerifyStatus.VERIFY_UNTRUSTED;
+        } else if (expired) {
+            return VerifyStatus.VERIFY_EXPIRED;
+        } else {
+            return VerifyStatus.VERIFY_ERROR;
+        }
     }
 
     private static void traceSigningEnvironment(Collection<KeychainWithCertsSpec> specs) {
@@ -968,7 +1201,15 @@ public final class MacSign {
                                 "CN=" + certificateRequest.name()
                         ));
 
-                        final var openssl = Executor.of(OPENSSL.toString(), "req",
+                        final Executor openssl;
+                        if (certificateRequest.expired()) {
+                            final var format = String.format("-%dd", certificateRequest.days + 1);
+                            openssl = Executor.of(FAKETIME.toString(), "-f", format, OPENSSL.toString());
+                        } else {
+                            openssl = Executor.of(OPENSSL.toString());
+                        }
+
+                        openssl.addArguments("req",
                                 "-x509", "-utf8", "-sha256", "-nodes",
                                 "-new", // Prevents LibreSSL variant of openssl command from hanging
                                 "-days", Integer.toString(certificateRequest.days()),
@@ -1039,5 +1280,9 @@ public final class MacSign {
     // However, jtreg will alter the value of the PATH env variable and
     // /usr/bin/openssl will preempt /usr/local/bin/openssl.
     // To workaround this jtreg behavior support specifying path to openssl command.
-    private static final Path OPENSSL = Path.of(Optional.ofNullable(TKit.getConfigProperty("openssl")).orElse("openssl"));
+    private static final Path OPENSSL = Path.of(Optional.ofNullable(TKit.getConfigProperty("openssl")).orElse("/usr/local/bin/openssl"));
+
+    // faketime is not a standard macOS command.
+    // One way to get it is with Homebrew.
+    private static final Path FAKETIME = Path.of(Optional.ofNullable(TKit.getConfigProperty("faketime")).orElse("/usr/local/bin/faketime"));
 }

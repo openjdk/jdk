@@ -69,7 +69,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
@@ -303,6 +302,20 @@ ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name) : ClassP
 ClassPathZipEntry::~ClassPathZipEntry() {
   ZipLibrary::close(_zip);
   FREE_C_HEAP_ARRAY(char, _zip_name);
+}
+
+bool ClassPathZipEntry::has_entry(JavaThread* current, const char* name) {
+  ThreadToNativeFromVM ttn(current);
+  // check whether zip archive contains name
+  jint name_len;
+  jint filesize;
+  jzentry* entry = ZipLibrary::find_entry(_zip, name, &filesize, &name_len);
+  if (entry == nullptr) {
+    return false;
+  } else {
+     ZipLibrary::free_entry(_zip, entry);
+    return true;
+  }
 }
 
 u1* ClassPathZipEntry::open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate) {
@@ -1187,10 +1200,20 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     return;
   }
 
+  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
+    // A class loaded by a user-defined classloader.
+    assert(ik->shared_classpath_index() < 0, "not assigned yet");
+    ik->set_shared_classpath_index(UNREGISTERED_INDEX);
+    SystemDictionaryShared::set_shared_class_misc_info(ik, (ClassFileStream*)stream);
+    return;
+  }
+
   assert(has_jrt_entry(), "CDS dumping does not support exploded JDK build");
 
   ResourceMark rm(current);
   int classpath_index = -1;
+  bool found_invalid = false;
+
   PackageEntry* pkg_entry = ik->package();
 
   if (!AOTClassLocationConfig::dumptime_is_ready()) {
@@ -1228,10 +1251,13 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
             classpath_index = i;
           } else {
             if (cl->from_boot_classpath()) {
-              // The class must be from boot loader append path which consists of
-              // -Xbootclasspath/a and jvmti appended entries.
-              assert(loader == nullptr, "sanity");
-              classpath_index = i;
+              if (loader != nullptr) {
+                // Probably loaded by jdk/internal/loader/ClassLoaders$BootClassLoader. Don't archive
+                // such classes.
+                found_invalid = true;
+              } else {
+                classpath_index = i;
+              }
             }
           }
         } else {
@@ -1242,28 +1268,23 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
           }
         }
       }
-      if (classpath_index >= 0) {
-        return false; // quit iterating
+      if (classpath_index >= 0 || found_invalid) {
+        return false; // Break the AOTClassLocationConfig::dumptime_iterate() loop.
       } else {
         return true; // Keep iterating
       }
     });
+  }
 
-    // No path entry found for this class: most likely a shared class loaded by the
-    // user defined classloader.
-    if (classpath_index < 0 && !SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
-      assert(ik->shared_classpath_index() < 0, "not assigned yet");
-      ik->set_shared_classpath_index(UNREGISTERED_INDEX);
-      SystemDictionaryShared::set_shared_class_misc_info(ik, (ClassFileStream*)stream);
-      return;
-    }
+  if (found_invalid) {
+    assert(classpath_index == -1, "sanity");
   }
 
   const char* const class_name = ik->name()->as_C_string();
   const char* const file_name = file_name_for_class_name(class_name,
                                                          ik->name()->utf8_length());
   assert(file_name != nullptr, "invariant");
-  ClassLoaderExt::record_result(checked_cast<s2>(classpath_index), ik, redefined);
+  ClassLoaderExt::record_result_for_builtin_loader(checked_cast<s2>(classpath_index), ik, redefined);
 }
 
 void ClassLoader::record_hidden_class(InstanceKlass* ik) {

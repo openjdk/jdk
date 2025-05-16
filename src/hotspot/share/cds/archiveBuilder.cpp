@@ -42,6 +42,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
+#include "code/aotCodeCache.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
@@ -163,6 +164,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _pz_region("pz", MAX_SHARED_DELTA), // protection zone -- used only during dumping; does NOT exist in cds archive.
   _rw_region("rw", MAX_SHARED_DELTA),
   _ro_region("ro", MAX_SHARED_DELTA),
+  _ac_region("ac", MAX_SHARED_DELTA),
   _ptrmap(mtClassShared),
   _rw_ptrmap(mtClassShared),
   _ro_ptrmap(mtClassShared),
@@ -306,10 +308,12 @@ void ArchiveBuilder::sort_klasses() {
 }
 
 address ArchiveBuilder::reserve_buffer() {
-  size_t buffer_size = LP64_ONLY(CompressedClassSpaceSize) NOT_LP64(256 * M);
+  // AOTCodeCache::max_aot_code_size() accounts for aot code region.
+  size_t buffer_size = LP64_ONLY(CompressedClassSpaceSize) NOT_LP64(256 * M) + AOTCodeCache::max_aot_code_size();
   ReservedSpace rs = MemoryReserver::reserve(buffer_size,
                                              MetaspaceShared::core_region_alignment(),
-                                             os::vm_page_size());
+                                             os::vm_page_size(),
+                                             mtNone);
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve %zu bytes of output buffer.", buffer_size);
     MetaspaceShared::unrecoverable_writing_error();
@@ -531,6 +535,13 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
   } else if (ref->msotype() == MetaspaceObj::MethodDataType ||
              ref->msotype() == MetaspaceObj::MethodCountersType) {
     return set_to_null;
+  } else if (ref->msotype() == MetaspaceObj::AdapterHandlerEntryType) {
+    if (AOTCodeCache::is_dumping_adapter()) {
+      AdapterHandlerEntry* entry = (AdapterHandlerEntry*)ref->obj();
+      return AdapterHandlerLibrary::is_abstract_method_adapter(entry) ? set_to_null : make_a_copy;
+    } else {
+      return set_to_null;
+    }
   } else {
     if (ref->msotype() == MetaspaceObj::ClassType) {
       Klass* klass = (Klass*)ref->obj();
@@ -702,6 +713,11 @@ void ArchiveBuilder::mark_and_relocate_to_buffered_addr(address* ptr_location) {
     *ptr_location = get_buffered_addr(*ptr_location);
   }
   ArchivePtrMarker::mark_pointer(ptr_location);
+}
+
+bool ArchiveBuilder::has_been_archived(address src_addr) const {
+  SourceObjInfo* p = _src_obj_table.get(src_addr);
+  return (p != nullptr);
 }
 
 bool ArchiveBuilder::has_been_buffered(address src_addr) const {
@@ -972,6 +988,15 @@ address ArchiveBuilder::offset_to_buffered_address(u4 offset) const {
   return buffered_addr;
 }
 
+void ArchiveBuilder::start_ac_region() {
+  ro_region()->pack();
+  start_dump_region(&_ac_region);
+}
+
+void ArchiveBuilder::end_ac_region() {
+  _ac_region.pack();
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
 narrowKlass ArchiveBuilder::get_requested_narrow_klass(Klass* k) {
   assert(CDSConfig::is_dumping_heap(), "sanity");
@@ -1081,8 +1106,9 @@ int ArchiveBuilder::precomputed_narrow_klass_shift() {
 #endif // _LP64
 
 void ArchiveBuilder::relocate_to_requested() {
-  ro_region()->pack();
-
+  if (!ro_region()->is_packed()) {
+    ro_region()->pack();
+  }
   size_t my_archive_size = buffer_top() - buffer_bottom();
 
   if (CDSConfig::is_dumping_static_archive()) {
@@ -1201,7 +1227,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 #undef _LOG_PREFIX
 
   // Log information about a region, whose address at dump time is [base .. top). At
-  // runtime, this region will be mapped to requested_base. requested_base is 0 if this
+  // runtime, this region will be mapped to requested_base. requested_base is nullptr if this
   // region will be mapped at os-selected addresses (such as the bitmap region), or will
   // be accessed with os::read (the header).
   //
@@ -1210,7 +1236,11 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   static void log_region(const char* name, address base, address top, address requested_base) {
     size_t size = top - base;
     base = requested_base;
-    top = requested_base + size;
+    if (requested_base == nullptr) {
+      top = (address)size;
+    } else {
+      top = requested_base + size;
+    }
     log_info(cds, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " %9zu bytes]",
                        name, p2i(base), p2i(top), size);
   }
@@ -1522,6 +1552,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
 
   write_region(mapinfo, MetaspaceShared::rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
   write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
+  write_region(mapinfo, MetaspaceShared::ac, &_ac_region, /*read_only=*/false,/*allow_exec=*/false);
 
   // Split pointer map into read-write and read-only bitmaps
   ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap);
@@ -1574,6 +1605,7 @@ void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo, ArchiveHeapInfo* h
 
   _rw_region.print(total_reserved);
   _ro_region.print(total_reserved);
+  _ac_region.print(total_reserved);
 
   print_bitmap_region_stats(bitmap_used, total_reserved);
 

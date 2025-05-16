@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8262891 8269146 8269113
+ * @bug 8262891 8269146 8269113 8348928
  * @summary Verify errors related to pattern switches.
  * @compile/fail/ref=SwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
  */
@@ -305,6 +305,24 @@ public class SwitchErrors {
             //error - illegal combination of pattern, constant and default
             case Integer o when o != null, 1, default:
                 break;
+        }
+    }
+
+    void testPatternWithoutBindingCantOverridePatternWithBinding8348928a(Object o) {
+        record R(int i, String s) {}
+        switch (o) {
+            case Integer _, R(int x, String _) -> {}
+            default -> {}
+        }
+    }
+
+    void testPatternWithoutBindingCantOverridePatternWithBinding8348928b(Object o) {
+        record R(int i, String s) {}
+        switch (o) {
+            case Integer _:
+            case R(int x, String _):
+                break;
+            default:
         }
     }
 }

@@ -886,7 +886,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void copy_memory_v(Register s, Register d, Register count, int step) {
     bool is_backward = step < 0;
-    int granularity = uabs(step);
+    int granularity = g_uabs(step);
 
     const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
     assert_different_registers(s, d, cnt, vl, tmp1, tmp2);
@@ -948,7 +948,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     bool is_backwards = step < 0;
-    int granularity = uabs(step);
+    int granularity = g_uabs(step);
 
     const Register src = x30, dst = x31, cnt = x15, tmp3 = x16, tmp4 = x17, tmp5 = x14, tmp6 = x13;
     const Register gct1 = x28, gct2 = x29, gct3 = t2;
@@ -2029,44 +2029,40 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter();
 
-    Label L_fill_elements, L_exit1;
+    Label L_fill_elements;
 
     int shift = -1;
     switch (t) {
       case T_BYTE:
         shift = 0;
+        // Short arrays (< 8 bytes) fill by element
+        __ mv(tmp_reg, 8 >> shift);
+        __ bltu(count, tmp_reg, L_fill_elements);
 
         // Zero extend value
         // 8 bit -> 16 bit
         __ zext(value, value, 8);
-        __ mv(tmp_reg, value);
-        __ slli(tmp_reg, tmp_reg, 8);
+        __ slli(tmp_reg, value, 8);
         __ orr(value, value, tmp_reg);
 
         // 16 bit -> 32 bit
-        __ mv(tmp_reg, value);
-        __ slli(tmp_reg, tmp_reg, 16);
+        __ slli(tmp_reg, value, 16);
         __ orr(value, value, tmp_reg);
-
-        __ mv(tmp_reg, 8 >> shift); // Short arrays (< 8 bytes) fill by element
-        __ bltu(count, tmp_reg, L_fill_elements);
         break;
       case T_SHORT:
         shift = 1;
-        // Zero extend value
-        // 16 bit -> 32 bit
-        __ zext(value, value, 16);
-        __ mv(tmp_reg, value);
-        __ slli(tmp_reg, tmp_reg, 16);
-        __ orr(value, value, tmp_reg);
-
         // Short arrays (< 8 bytes) fill by element
         __ mv(tmp_reg, 8 >> shift);
         __ bltu(count, tmp_reg, L_fill_elements);
+
+        // Zero extend value
+        // 16 bit -> 32 bit
+        __ zext(value, value, 16);
+        __ slli(tmp_reg, value, 16);
+        __ orr(value, value, tmp_reg);
         break;
       case T_INT:
         shift = 2;
-
         // Short arrays (< 8 bytes) fill by element
         __ mv(tmp_reg, 8 >> shift);
         __ bltu(count, tmp_reg, L_fill_elements);
@@ -2125,48 +2121,64 @@ class StubGenerator: public StubCodeGenerator {
       __ fill_words(to, cnt_words, value);
     }
 
-    // Remaining count is less than 8 bytes. Fill it by a single store.
-    // Note that the total length is no less than 8 bytes.
-    if (!AvoidUnalignedAccesses && (t == T_BYTE || t == T_SHORT)) {
-      __ beqz(count, L_exit1);
-      __ shadd(to, count, to, tmp_reg, shift); // points to the end
-      __ sd(value, Address(to, -8)); // overwrite some elements
-      __ bind(L_exit1);
-      __ leave();
-      __ ret();
-    }
-
-    // Handle copies less than 8 bytes.
-    Label L_fill_2, L_fill_4, L_exit2;
-    __ bind(L_fill_elements);
+    // Remaining count is less than 8 bytes and address is heapword aligned.
+    Label L_fill_1, L_fill_2, L_exit1;
     switch (t) {
       case T_BYTE:
-        __ test_bit(t0, count, 0);
+        __ test_bit(t0, count, 2);
         __ beqz(t0, L_fill_2);
-        __ sb(value, Address(to, 0));
-        __ addi(to, to, 1);
+        __ sw(value, Address(to, 0));
+        __ addi(to, to, 4);
         __ bind(L_fill_2);
         __ test_bit(t0, count, 1);
-        __ beqz(t0, L_fill_4);
+        __ beqz(t0, L_fill_1);
         __ sh(value, Address(to, 0));
         __ addi(to, to, 2);
-        __ bind(L_fill_4);
-        __ test_bit(t0, count, 2);
-        __ beqz(t0, L_exit2);
-        __ sw(value, Address(to, 0));
+        __ bind(L_fill_1);
+        __ test_bit(t0, count, 0);
+        __ beqz(t0, L_exit1);
+        __ sb(value, Address(to, 0));
         break;
       case T_SHORT:
-        __ test_bit(t0, count, 0);
-        __ beqz(t0, L_fill_4);
-        __ sh(value, Address(to, 0));
-        __ addi(to, to, 2);
-        __ bind(L_fill_4);
         __ test_bit(t0, count, 1);
-        __ beqz(t0, L_exit2);
+        __ beqz(t0, L_fill_2);
         __ sw(value, Address(to, 0));
+        __ addi(to, to, 4);
+        __ bind(L_fill_2);
+        __ test_bit(t0, count, 0);
+        __ beqz(t0, L_exit1);
+        __ sh(value, Address(to, 0));
         break;
       case T_INT:
-        __ beqz(count, L_exit2);
+        __ beqz(count, L_exit1);
+        __ sw(value, Address(to, 0));
+        break;
+      default: ShouldNotReachHere();
+    }
+    __ bind(L_exit1);
+    __ leave();
+    __ ret();
+
+    // Handle copies less than 8 bytes.
+    Label L_loop1, L_loop2, L_exit2;
+    __ bind(L_fill_elements);
+    __ beqz(count, L_exit2);
+    switch (t) {
+      case T_BYTE:
+        __ bind(L_loop1);
+        __ sb(value, Address(to, 0));
+        __ addi(to, to, 1);
+        __ subiw(count, count, 1);
+        __ bnez(count, L_loop1);
+        break;
+      case T_SHORT:
+        __ bind(L_loop2);
+        __ sh(value, Address(to, 0));
+        __ addi(to, to, 2);
+        __ subiw(count, count, 2 >> shift);
+        __ bnez(count, L_loop2);
+        break;
+      case T_INT:
         __ sw(value, Address(to, 0));
         break;
       default: ShouldNotReachHere();
@@ -2174,6 +2186,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_exit2);
     __ leave();
     __ ret();
+
     return start;
   }
 
@@ -6458,58 +6471,6 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
-  void generate_vector_math_stubs() {
-    if (!UseRVV) {
-      log_info(library)("vector is not supported, skip loading vector math (sleef) library!");
-      return;
-    }
-
-    // Get native vector math stub routine addresses
-    void* libsleef = nullptr;
-    char ebuf[1024];
-    char dll_name[JVM_MAXPATHLEN];
-    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "sleef")) {
-      libsleef = os::dll_load(dll_name, ebuf, sizeof ebuf);
-    }
-    if (libsleef == nullptr) {
-      log_info(library)("Failed to load native vector math (sleef) library, %s!", ebuf);
-      return;
-    }
-
-    // Method naming convention
-    //   All the methods are named as <OP><T>_<U><suffix>
-    //
-    //   Where:
-    //     <OP>     is the operation name, e.g. sin, cos
-    //     <T>      is to indicate float/double
-    //              "fx/dx" for vector float/double operation
-    //     <U>      is the precision level
-    //              "u10/u05" represents 1.0/0.5 ULP error bounds
-    //               We use "u10" for all operations by default
-    //               But for those functions do not have u10 support, we use "u05" instead
-    //     <suffix> rvv, indicates riscv vector extension
-    //
-    //   e.g. sinfx_u10rvv is the method for computing vector float sin using rvv instructions
-    //
-    log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "sleef" JNI_LIB_SUFFIX, p2i(libsleef));
-
-    for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
-      int vop = VectorSupport::VECTOR_OP_MATH_START + op;
-      if (vop == VectorSupport::VECTOR_OP_TANH) { // skip tanh because of performance regression
-        continue;
-      }
-
-      // The native library does not support u10 level of "hypot".
-      const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
-
-      snprintf(ebuf, sizeof(ebuf), "%sfx_%srvv", VectorSupport::mathname[op], ulf);
-      StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
-
-      snprintf(ebuf, sizeof(ebuf), "%sdx_%srvv", VectorSupport::mathname[op], ulf);
-      StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
-    }
-  }
-
 #endif // COMPILER2
 
   /**
@@ -6740,8 +6701,6 @@ static const int64_t right_3_bits = right_n_bits(3);
     generate_compare_long_strings();
 
     generate_string_indexof_stubs();
-
-    generate_vector_math_stubs();
 
 #endif // COMPILER2
   }

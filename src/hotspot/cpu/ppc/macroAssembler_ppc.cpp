@@ -774,93 +774,82 @@ void MacroAssembler::clobber_carg_stack_slots(Register tmp) {
   }
 }
 
-// Uses ordering which corresponds to ABI:
-//    _savegpr0_14:  std  r14,-144(r1)
-//    _savegpr0_15:  std  r15,-136(r1)
-//    _savegpr0_16:  std  r16,-128(r1)
-void MacroAssembler::save_nonvolatile_gprs(Register dst, int offset) {
-  std(R14, offset, dst);   offset += 8;
-  std(R15, offset, dst);   offset += 8;
-  std(R16, offset, dst);   offset += 8;
-  std(R17, offset, dst);   offset += 8;
-  std(R18, offset, dst);   offset += 8;
-  std(R19, offset, dst);   offset += 8;
-  std(R20, offset, dst);   offset += 8;
-  std(R21, offset, dst);   offset += 8;
-  std(R22, offset, dst);   offset += 8;
-  std(R23, offset, dst);   offset += 8;
-  std(R24, offset, dst);   offset += 8;
-  std(R25, offset, dst);   offset += 8;
-  std(R26, offset, dst);   offset += 8;
-  std(R27, offset, dst);   offset += 8;
-  std(R28, offset, dst);   offset += 8;
-  std(R29, offset, dst);   offset += 8;
-  std(R30, offset, dst);   offset += 8;
-  std(R31, offset, dst);   offset += 8;
+void MacroAssembler::save_nonvolatile_registers(Register dst, int offset, bool include_fp_regs, bool include_vector_regs) {
+  BLOCK_COMMENT("save_nonvolatile_registers {");
 
-  stfd(F14, offset, dst);   offset += 8;
-  stfd(F15, offset, dst);   offset += 8;
-  stfd(F16, offset, dst);   offset += 8;
-  stfd(F17, offset, dst);   offset += 8;
-  stfd(F18, offset, dst);   offset += 8;
-  stfd(F19, offset, dst);   offset += 8;
-  stfd(F20, offset, dst);   offset += 8;
-  stfd(F21, offset, dst);   offset += 8;
-  stfd(F22, offset, dst);   offset += 8;
-  stfd(F23, offset, dst);   offset += 8;
-  stfd(F24, offset, dst);   offset += 8;
-  stfd(F25, offset, dst);   offset += 8;
-  stfd(F26, offset, dst);   offset += 8;
-  stfd(F27, offset, dst);   offset += 8;
-  stfd(F28, offset, dst);   offset += 8;
-  stfd(F29, offset, dst);   offset += 8;
-  stfd(F30, offset, dst);   offset += 8;
-  stfd(F31, offset, dst);
+  for (int i = 14; i < 32; i++) {
+    std(as_Register(i), offset, dst);
+    offset += 8;
+  }
+
+  if (include_fp_regs) {
+    for (int i = 14; i < 32; i++) {
+      stfd(as_FloatRegister(i), offset, dst);
+      offset += 8;
+    }
+  }
+
+  if (include_vector_regs) {
+    assert(is_aligned(offset, StackAlignmentInBytes), "should be");
+    if (PowerArchitecturePPC64 >= 10) {
+      for (int i = 20; i < 32; i += 2) {
+        stxvp(as_VectorRegister(i)->to_vsr(), offset, dst);
+        offset += 32;
+      }
+    } else {
+      for (int i = 20; i < 32; i++) {
+        if (PowerArchitecturePPC64 >= 9) {
+          stxv(as_VectorRegister(i)->to_vsr(), offset, dst);
+        } else {
+          Register spill_addr = R0;
+          addi(spill_addr, dst, offset);
+          stxvd2x(as_VectorRegister(i)->to_vsr(), spill_addr);
+        }
+        offset += 16;
+      }
+    }
+  }
+
+  BLOCK_COMMENT("} save_nonvolatile_registers ");
 }
 
-// Uses ordering which corresponds to ABI:
-//    _restgpr0_14:  ld   r14,-144(r1)
-//    _restgpr0_15:  ld   r15,-136(r1)
-//    _restgpr0_16:  ld   r16,-128(r1)
-void MacroAssembler::restore_nonvolatile_gprs(Register src, int offset) {
-  ld(R14, offset, src);   offset += 8;
-  ld(R15, offset, src);   offset += 8;
-  ld(R16, offset, src);   offset += 8;
-  ld(R17, offset, src);   offset += 8;
-  ld(R18, offset, src);   offset += 8;
-  ld(R19, offset, src);   offset += 8;
-  ld(R20, offset, src);   offset += 8;
-  ld(R21, offset, src);   offset += 8;
-  ld(R22, offset, src);   offset += 8;
-  ld(R23, offset, src);   offset += 8;
-  ld(R24, offset, src);   offset += 8;
-  ld(R25, offset, src);   offset += 8;
-  ld(R26, offset, src);   offset += 8;
-  ld(R27, offset, src);   offset += 8;
-  ld(R28, offset, src);   offset += 8;
-  ld(R29, offset, src);   offset += 8;
-  ld(R30, offset, src);   offset += 8;
-  ld(R31, offset, src);   offset += 8;
+void MacroAssembler::restore_nonvolatile_registers(Register src, int offset, bool include_fp_regs, bool include_vector_regs) {
+  BLOCK_COMMENT("restore_nonvolatile_registers {");
 
-  // FP registers
-  lfd(F14, offset, src);   offset += 8;
-  lfd(F15, offset, src);   offset += 8;
-  lfd(F16, offset, src);   offset += 8;
-  lfd(F17, offset, src);   offset += 8;
-  lfd(F18, offset, src);   offset += 8;
-  lfd(F19, offset, src);   offset += 8;
-  lfd(F20, offset, src);   offset += 8;
-  lfd(F21, offset, src);   offset += 8;
-  lfd(F22, offset, src);   offset += 8;
-  lfd(F23, offset, src);   offset += 8;
-  lfd(F24, offset, src);   offset += 8;
-  lfd(F25, offset, src);   offset += 8;
-  lfd(F26, offset, src);   offset += 8;
-  lfd(F27, offset, src);   offset += 8;
-  lfd(F28, offset, src);   offset += 8;
-  lfd(F29, offset, src);   offset += 8;
-  lfd(F30, offset, src);   offset += 8;
-  lfd(F31, offset, src);
+  for (int i = 14; i < 32; i++) {
+    ld(as_Register(i), offset, src);
+    offset += 8;
+  }
+
+  if (include_fp_regs) {
+    for (int i = 14; i < 32; i++) {
+      lfd(as_FloatRegister(i), offset, src);
+      offset += 8;
+    }
+  }
+
+  if (include_vector_regs) {
+    assert(is_aligned(offset, StackAlignmentInBytes), "should be");
+    if (PowerArchitecturePPC64 >= 10) {
+      for (int i = 20; i < 32; i += 2) {
+        lxvp(as_VectorRegister(i)->to_vsr(), offset, src);
+        offset += 32;
+      }
+    } else {
+      for (int i = 20; i < 32; i++) {
+        if (PowerArchitecturePPC64 >= 9) {
+          lxv(as_VectorRegister(i)->to_vsr(), offset, src);
+        } else {
+          Register spill_addr = R0;
+          addi(spill_addr, src, offset);
+          lxvd2x(as_VectorRegister(i)->to_vsr(), spill_addr);
+        }
+        offset += 16;
+      }
+    }
+  }
+
+  BLOCK_COMMENT("} restore_nonvolatile_registers");
 }
 
 // For verify_oops.
@@ -1027,13 +1016,6 @@ void MacroAssembler::push_frame(unsigned int bytes, Register tmp) {
 // Push a frame of size `bytes' plus native_abi_reg_args on top.
 void MacroAssembler::push_frame_reg_args(unsigned int bytes, Register tmp) {
   push_frame(bytes + frame::native_abi_reg_args_size, tmp);
-}
-
-// Setup up a new C frame with a spill area for non-volatile GPRs and
-// additional space for local variables.
-void MacroAssembler::push_frame_reg_args_nonvolatiles(unsigned int bytes,
-                                                      Register tmp) {
-  push_frame(bytes + frame::native_abi_reg_args_size + frame::spill_nonvolatiles_size, tmp);
 }
 
 // Pop current C frame.
@@ -1337,7 +1319,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // Get oop result if there is one and reset the value in the thread.
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result);
+    get_vm_result_oop(oop_result);
   }
 
   _last_calls_return_pc = return_pc;
@@ -3000,7 +2982,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
   Label slow_path;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     li(tmp1, 0);
     std(tmp1, in_bytes(BasicObjectLock::lock_offset()) + BasicLock::object_monitor_cache_offset_in_bytes(), box);
   }
@@ -3425,34 +3407,34 @@ void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, R
   set_last_Java_frame(/*sp=*/sp, /*pc=*/tmp1);
 }
 
-void MacroAssembler::get_vm_result(Register oop_result) {
+void MacroAssembler::get_vm_result_oop(Register oop_result) {
   // Read:
   //   R16_thread
-  //   R16_thread->in_bytes(JavaThread::vm_result_offset())
+  //   R16_thread->in_bytes(JavaThread::vm_result_oop_offset())
   //
   // Updated:
   //   oop_result
-  //   R16_thread->in_bytes(JavaThread::vm_result_offset())
+  //   R16_thread->in_bytes(JavaThread::vm_result_oop_offset())
 
-  ld(oop_result, in_bytes(JavaThread::vm_result_offset()), R16_thread);
+  ld(oop_result, in_bytes(JavaThread::vm_result_oop_offset()), R16_thread);
   li(R0, 0);
-  std(R0, in_bytes(JavaThread::vm_result_offset()), R16_thread);
+  std(R0, in_bytes(JavaThread::vm_result_oop_offset()), R16_thread);
 
   verify_oop(oop_result, FILE_AND_LINE);
 }
 
-void MacroAssembler::get_vm_result_2(Register metadata_result) {
+void MacroAssembler::get_vm_result_metadata(Register metadata_result) {
   // Read:
   //   R16_thread
-  //   R16_thread->in_bytes(JavaThread::vm_result_2_offset())
+  //   R16_thread->in_bytes(JavaThread::vm_result_metadata_offset())
   //
   // Updated:
   //   metadata_result
-  //   R16_thread->in_bytes(JavaThread::vm_result_2_offset())
+  //   R16_thread->in_bytes(JavaThread::vm_result_metadata_offset())
 
-  ld(metadata_result, in_bytes(JavaThread::vm_result_2_offset()), R16_thread);
+  ld(metadata_result, in_bytes(JavaThread::vm_result_metadata_offset()), R16_thread);
   li(R0, 0);
-  std(R0, in_bytes(JavaThread::vm_result_2_offset()), R16_thread);
+  std(R0, in_bytes(JavaThread::vm_result_metadata_offset()), R16_thread);
 }
 
 Register MacroAssembler::encode_klass_not_null(Register dst, Register src) {
@@ -4999,18 +4981,26 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
 //  - t1, t2: temporary register
 void MacroAssembler::lightweight_lock(Register box, Register obj, Register t1, Register t2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(box, obj, t1, t2);
+  assert_different_registers(box, obj, t1, t2, R0);
 
   Label push;
-  const Register top = t1;
-  const Register mark = t2;
   const Register t = R0;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     li(t, 0);
     std(t, in_bytes(BasicObjectLock::lock_offset()) + BasicLock::object_monitor_cache_offset_in_bytes(), box);
   }
+
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(t1, obj);
+    lbz(t1, in_bytes(Klass::misc_flags_offset()), t1);
+    testbitdi(CR0, R0, t1, exact_log2(KlassFlags::_misc_is_value_based_class));
+    bne(CR0, slow);
+  }
+
+  const Register top = t1;
+  const Register mark = t2;
 
   // Check if the lock-stack is full.
   lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
