@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class exevent008 {
     private ExceptionRequest eRequest;
     private ReferenceType rType, rTypeEx;
     private String cmd;
-    private int counter1 = 0, counter2 = 0;
+    private volatile int counter1 = 0, counter2 = 0;
     private volatile int tot_res = PASSED;
 
     public static void main (String argv[]) {
