@@ -64,7 +64,7 @@ public class TestSymlinkLoad {
         // make sure it runs as expected
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Hello World")
-            .shouldHaveExitValue(0);
+              .shouldHaveExitValue(0);
 
         // create a symlink to the classfile in a subdir with a given name
         Path classFile = Path.of(destDir + File.separator + className + ".class");
@@ -77,7 +77,7 @@ public class TestSymlinkLoad {
                 bootCP + File.separator + subdir, className);
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Hello World")
-            .shouldHaveExitValue(0);
+              .shouldHaveExitValue(0);
 
         // remove the subdir
         FileUtils.deleteFileTreeWithRetry(Path.of(pathToFolderForSymlink));
