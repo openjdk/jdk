@@ -25,6 +25,7 @@
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
+#include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
@@ -114,8 +115,8 @@ void ZRelocationSetSelectorGroup::select_inner() {
   const int npages = _live_pages.length();
   int selected_from = 0;
   int selected_to = 0;
-  size_t npages_selected[ZPageAgeMax + 1] = { 0 };
-  size_t selected_live_bytes[ZPageAgeMax + 1] = { 0 };
+  size_t npages_selected[ZPageAgeCount] = { 0 };
+  size_t selected_live_bytes[ZPageAgeCount] = { 0 };
   size_t selected_forwarding_entries = 0;
 
   size_t from_live_bytes = 0;
@@ -146,8 +147,8 @@ void ZRelocationSetSelectorGroup::select_inner() {
     if (diff_reclaimable > _fragmentation_limit) {
       selected_from = from;
       selected_to = to;
-      selected_live_bytes[static_cast<uint>(page->age())] += page_live_bytes;
-      npages_selected[static_cast<uint>(page->age())] += 1;
+      selected_live_bytes[untype(page->age())] += page_live_bytes;
+      npages_selected[untype(page->age())] += 1;
       selected_forwarding_entries = from_forwarding_entries;
     }
 
@@ -169,7 +170,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
   _forwarding_entries = selected_forwarding_entries;
 
   // Update statistics
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+  for (uint i = 0; i < ZPageAgeCount; ++i) {
     _stats[i]._relocate = selected_live_bytes[i];
     _stats[i]._npages_selected = npages_selected[i];
   }
@@ -197,7 +198,7 @@ void ZRelocationSetSelectorGroup::select() {
   }
 
   ZRelocationSetSelectorGroupStats s{};
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+  for (uint i = 0; i < ZPageAgeCount; ++i) {
     s._npages_candidates += _stats[i].npages_candidates();
     s._total += _stats[i].total();
     s._empty += _stats[i].empty();
@@ -236,8 +237,8 @@ void ZRelocationSetSelector::select() {
 ZRelocationSetSelectorStats ZRelocationSetSelector::stats() const {
   ZRelocationSetSelectorStats stats;
 
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    const ZPageAge age = static_cast<ZPageAge>(i);
+  for (ZPageAge age : ZPageAgeRange()) {
+    const uint i = untype(age);
     stats._small[i] = _small.stats(age);
     stats._medium[i] = _medium.stats(age);
     stats._large[i] = _large.stats(age);

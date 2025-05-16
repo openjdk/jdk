@@ -488,11 +488,11 @@ public:
   }
 
   ZPage* shared(ZPageAge age) {
-    return _shared[static_cast<uint>(age) - 1];
+    return _shared[untype(age) - 1];
   }
 
   void set_shared(ZPageAge age, ZPage* page) {
-    _shared[static_cast<uint>(age) - 1] = page;
+    _shared[untype(age) - 1] = page;
   }
 
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
@@ -570,11 +570,11 @@ private:
 
 
   ZPage* target(ZPageAge age) {
-    return _target[static_cast<uint>(age) - 1];
+    return _target[untype(age) - 1];
   }
 
   void set_target(ZPageAge age, ZPage* page) {
-    _target[static_cast<uint>(age) - 1] = page;
+    _target[untype(age) - 1] = page;
   }
 
   size_t object_alignment() const {
@@ -1232,12 +1232,12 @@ ZPageAge ZRelocate::compute_to_age(ZPageAge from_age) {
     return ZPageAge::old;
   }
 
-  const uint age = static_cast<uint>(from_age);
+  const uint age = untype(from_age);
   if (age >= ZGeneration::young()->tenuring_threshold()) {
     return ZPageAge::old;
   }
 
-  return static_cast<ZPageAge>(age + 1);
+  return to_zpageage(age + 1);
 }
 
 class ZFlipAgePagesTask : public ZTask {

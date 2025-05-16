@@ -106,7 +106,7 @@
                                                                             \
   product(int, ZTenuringThreshold, -1, DIAGNOSTIC,                          \
           "Young generation tenuring threshold, -1 for dynamic computation")\
-          range(-1, static_cast<int>(ZPageAgeMax))                          \
+          range(-1, static_cast<int>(ZPageAgeCount) - 1)                    \
                                                                             \
   develop(bool, ZVerifyOops, false,                                         \
           "Verify accessed oops")                                           \
