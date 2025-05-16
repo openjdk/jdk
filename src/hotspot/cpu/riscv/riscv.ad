@@ -1933,8 +1933,8 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_MaxHF:
     case Op_MinHF:
     case Op_MulHF:
-    case Op_SubHF:
     case Op_SqrtHF:
+    case Op_SubHF:
       return UseZfh;
 
     case Op_CMoveF:
