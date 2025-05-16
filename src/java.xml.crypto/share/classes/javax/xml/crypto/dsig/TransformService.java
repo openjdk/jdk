@@ -39,6 +39,7 @@ import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.XMLCryptoContext;
 import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 
+import sun.security.jca.ProvidersFilter;
 
 /**
  * A Service Provider Interface for transform and canonicalization algorithms.
@@ -135,12 +136,20 @@ public abstract class TransformService implements Transform {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses the
-     * {@code jdk.security.provider.preferred}
-     * {@link Security#getProperty(String) Security} property to determine
-     * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
-     * {@link Security#getProviders() Security.getProviders()}.
+     * The JDK Reference Implementation additionally uses the following
+     * properties to customize the behavior of this method:
+     * <ul>
+     * <li> The {@code jdk.security.provider.preferred}
+     * {@link Security#getProperty(String) Security} property determines
+     * the preferred provider order for the specified algorithm.
+     * This may be different from the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.</li>
+     * <li> The {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties determine
+     * which services are enabled. A service that is not enabled by the
+     * filter will not make its algorithm implementation available.</li>
+     * </ul>
      *
      * @param algorithm the URI of the algorithm. See the
      *    {@code TransformService} section in the
@@ -177,7 +186,7 @@ public abstract class TransformService implements Transform {
         Provider[] provs = Security.getProviders();
         for (Provider p : provs) {
             Service s = p.getService("TransformService", algorithm);
-            if (s != null) {
+            if (s != null && ProvidersFilter.isAllowed(s)) {
                 String value = s.getAttribute("MechanismType");
                 if ((value == null && dom) ||
                     (value != null && value.equals(mechanismType))) {
@@ -203,6 +212,14 @@ public abstract class TransformService implements Transform {
      * (ex: DOM) as supplied by the specified provider. Note that the specified
      * <code>Provider</code> object does not have to be registered in the
      * provider list.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its algorithm implementation available.
      *
      * @param algorithm the URI of the algorithm. See the
      *    {@code TransformService} section in the
@@ -239,7 +256,7 @@ public abstract class TransformService implements Transform {
             dom = true;
         }
         Service s = provider.getService("TransformService", algorithm);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             String value = s.getAttribute("MechanismType");
             if ((value == null && dom) ||
                 (value != null && value.equals(mechanismType))) {
@@ -266,6 +283,14 @@ public abstract class TransformService implements Transform {
      *
      * <p>Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its algorithm implementation available.
      *
      * @param algorithm the URI of the algorithm. See the
      *    {@code TransformService} section in the
@@ -310,7 +335,7 @@ public abstract class TransformService implements Transform {
                                               provider);
         }
         Service s = p.getService("TransformService", algorithm);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             String value = s.getAttribute("MechanismType");
             if ((value == null && dom) ||
                 (value != null && value.equals(mechanismType))) {

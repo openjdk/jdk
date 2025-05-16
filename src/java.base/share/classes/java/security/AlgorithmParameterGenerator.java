@@ -148,12 +148,20 @@ public class AlgorithmParameterGenerator {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses the
-     * {@code jdk.security.provider.preferred}
-     * {@link Security#getProperty(String) Security} property to determine
-     * the preferred provider order for the specified algorithm. This
-     * may be different from the order of providers returned by
-     * {@link Security#getProviders() Security.getProviders()}.
+     * The JDK Reference Implementation additionally uses the following
+     * properties to customize the behavior of this method:
+     * <ul>
+     * <li> The {@code jdk.security.provider.preferred}
+     * {@link Security#getProperty(String) Security} property determines
+     * the preferred provider order for the specified algorithm.
+     * This may be different from the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.</li>
+     * <li> The {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties determine
+     * which services are enabled. A service that is not enabled by the
+     * filter will not make its algorithm implementation available.</li>
+     * </ul>
      *
      * @param algorithm the name of the algorithm this
      * parameter generator is associated with.
@@ -200,6 +208,14 @@ public class AlgorithmParameterGenerator {
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its algorithm implementation available.
      *
      * @param algorithm the name of the algorithm this
      * parameter generator is associated with.
@@ -251,6 +267,14 @@ public class AlgorithmParameterGenerator {
      * {@code AlgorithmParameterGeneratorSpi} implementation from the specified
      * provider is returned.  Note that the specified provider does not
      * have to be registered in the provider list.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its algorithm implementation available.
      *
      * @param algorithm the string name of the algorithm this
      * parameter generator is associated with.
