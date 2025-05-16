@@ -1524,6 +1524,21 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   -XX:VerifyIterativeGVN=1110
     case Op_CastII:
       return false;
+
+    // MaxLNode::Ideal
+    //   calls AddNode::Ideal
+    //   calls commute -> decides to swap edges
+    //
+    // Another notification issue, because we check inputs of inputs?
+    // MaxL -> Phi -> Loop
+    // MaxL -> Phi -> MaxL
+    //
+    // Found with:
+    //   compiler/c2/irTests/TestIfMinMax.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_MaxL:
+    case Op_MinL:
+      return false;
   }
 
   if (n->is_Load()) {
