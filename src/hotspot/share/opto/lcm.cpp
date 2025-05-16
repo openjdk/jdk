@@ -77,7 +77,7 @@ static bool needs_explicit_null_check_for_read(Node *val) {
 }
 
 void PhaseCFG::move_node_and_its_projections_to_block(Node* n, Block* b) {
-  assert(n->bottom_type() != Type::CONTROL, "cannot move control node");
+  assert(!is_CFG(n), "cannot move CFG node");
   Block* old = get_block_for_node(n);
   old->find_remove(n);
   b->add_inst(n);
@@ -94,7 +94,7 @@ void PhaseCFG::move_node_and_its_projections_to_block(Node* n, Block* b) {
 }
 
 void PhaseCFG::ensure_node_is_at_block_or_above(Node* n, Block* b) {
-  assert(n->bottom_type() != Type::CONTROL, "cannot move control node");
+  assert(!is_CFG(n), "cannot move CFG node");
   Block* current = get_block_for_node(n);
   if (current->dominates(b)) {
     return; // n is already placed above b, do nothing.
