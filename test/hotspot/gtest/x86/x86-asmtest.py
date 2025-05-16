@@ -30,7 +30,7 @@ OBJDUMP = "objdump"
 X86_AS = "as"
 X86_OBJCOPY = "objcopy"
 SEED = 1327
-ENABLE_DEMOTION = True
+TEST_DEMOTION = True
 
 random.seed(SEED)
 
@@ -302,7 +302,7 @@ class CondRegRegRegInstruction(Instruction):
         self.reg3 = Register().generate(reg3, width)
         self.cond = cond
         self.generate_operands(self.reg1, self.reg2, self.reg3)
-        self.demote = ENABLE_DEMOTION
+        self.demote = True
     
     def cstr(self):
         return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
@@ -323,7 +323,7 @@ class CondRegRegMemInstruction(Instruction):
         self.mem = Address().generate(mem_base, mem_idx, width)
         self.cond = cond
         self.generate_operands(self.reg1, self.reg2, self.mem)
-        self.demote = ENABLE_DEMOTION
+        self.demote = True
     
     def cstr(self):
         return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
@@ -368,7 +368,7 @@ class RegRegNddInstruction(NFInstruction):
         self.reg1 = Register().generate(reg1, width)
         self.reg2 = Register().generate(reg2, width)
         self.generate_operands(self.reg1, self.reg2)
-        self.demote = ENABLE_DEMOTION
+        self.demote = True
 
     def astr(self):
         if self.demote and self._aname not in ['popcnt', 'lzcnt', 'tzcnt']:
@@ -408,7 +408,7 @@ class RegRegImmNddInstruction(NFInstruction):
         self.reg2 = Register().generate(reg2, width)
         self.imm = Immediate().generate(imm)
         self.generate_operands(self.reg1, self.reg2, self.imm)
-        self.demote = ENABLE_DEMOTION
+        self.demote = True
 
     def astr(self):
         if self.demote and self._aname not in ['imul']:
@@ -424,7 +424,7 @@ class RegRegMemNddInstruction(NFInstruction):
         self.reg2 = Register().generate(reg2, width)
         self.mem = Address().generate(mem_base, mem_idx, width)
         self.generate_operands(self.reg1, self.reg2, self.mem)
-        self.demote = ENABLE_DEMOTION
+        self.demote = True
 
     def astr(self):
         if self.demote:
@@ -440,7 +440,7 @@ class RegRegRegNddInstruction(NFInstruction):
         self.reg2 = Register().generate(reg2, width)
         self.reg3 = Register().generate(reg3, width)
         self.generate_operands(self.reg1, self.reg2, self.reg3)
-        self.demote = ENABLE_DEMOTION
+        self.demote = True
 
     def astr(self):
         hdr = f'{{load}}'
@@ -458,7 +458,7 @@ class RegRegRegImmNddInstruction(NFInstruction):
         self.reg3 = Register().generate(reg3, width)
         self.imm = Immediate().generate(imm)
         self.generate_operands(self.reg1, self.reg2, self.reg3, self.imm)
-        self.demote = ENABLE_DEMOTION
+        self.demote = True
 
     def astr(self):
         if self.demote:
@@ -552,7 +552,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [TwoRegInstruction, MoveRegRegInstruction, RegRegNddInstruction]:
-            demote_options = [False, True] if RegOp in [RegRegNddInstruction] else [False]
+            demote_options = [False, True] if TEST_DEMOTION and RegOp in [RegRegNddInstruction]  else [False]
             for demote in demote_options:
                 for i in range(len(test_regs) if full_set else 1):
                     test_reg1 = test_regs[i] if full_set else random.choice(test_regs)
@@ -564,7 +564,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegRegRegNddInstruction, CondRegRegRegInstruction]:
-            for demote in [False, True]:
+            for demote in [False, True] if TEST_DEMOTION else [False]:
                 for i in range(len(test_regs) if full_set else 1):
                     test_reg1 = test_regs[i] if full_set else random.choice(test_regs)
                     test_reg2 = test_reg1 if demote \
@@ -652,7 +652,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegRegImmInstruction, RegRegImmNddInstruction]:
-            demote_options = [False, True] if RegOp in [RegRegImmNddInstruction] else [False]
+            demote_options = [False, True] if TEST_DEMOTION and RegOp in [RegRegImmNddInstruction] else [False]
             for demote in demote_options:
                 imm_list = get_immediate_list(op_name, width)
                 if not full_set:
@@ -699,7 +699,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegMemRegNddInstruction, RegRegMemNddInstruction, CondRegRegMemInstruction]:
-            demote_options = [False] if RegOp in [RegMemRegNddInstruction] else [False, True]
+            demote_options = [False] if TEST_DEMOTION and RegOp not in [RegMemRegNddInstruction] else [False, True]
             for demote in demote_options:
                 for i in range(len(test_regs) if full_set else 1):
                     test_reg1 = test_regs[i] if full_set else random.choice(test_regs)
@@ -716,7 +716,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegRegRegImmNddInstruction]:
-            for demote in [False, True]:
+            for demote in [False, True] if TEST_DEMOTION else [False]:
                 imm_list = get_immediate_list(op_name, width)
                 if not full_set:
                     imm_list = [random.choice(imm_list)]
