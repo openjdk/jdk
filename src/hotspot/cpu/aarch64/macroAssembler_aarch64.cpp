@@ -5340,7 +5340,41 @@ bool MacroAssembler::set_klass_decode_mode(address base, int shift, const size_t
   return _klass_decode_mode != KlassDecodeNone;
 }
 
+static Register pick_different_tmp(Register dst, Register src) {
+  auto tmps = RegSet::of(r0, r1, r2) - RegSet::of(src, dst);
+  return *tmps.begin();
+}
+
+void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src) {
+  // we have to load the klass base from the AOT constants area but
+  // not the shift because it is not allowed to change
+  int shift = CompressedKlassPointers::shift();
+  assert(shift >= 0 && shift < 4, "unexpected compressd klass shift!");
+  if (dst != src) {
+    // we can load the base into dst, subtract it formthe src and shift down
+    lea(dst, ExternalAddress(CompressedKlassPointers::base_addr()));
+    ldr(dst, dst);
+    sub(dst, src, dst);
+    lsr(dst, dst, shift);
+  } else {
+    // we need an extra register in order to load the coop base
+    Register tmp = pick_different_tmp(dst, src);
+    RegSet regs = RegSet::of(tmp);
+    push(regs, sp);
+    lea(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+    ldr(tmp, tmp);
+    sub(dst, src, tmp);
+    lsr(dst, dst, shift);
+    pop(regs, sp);
+  }
+}
+
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
+  if (AOTCodeCache::is_on_for_dump()) {
+    encode_klass_not_null_for_aot(dst, src);
+    return;
+  }
+
   switch (klass_decode_mode()) {
   case KlassDecodeZero:
     if (CompressedKlassPointers::shift() != 0) {
@@ -5377,8 +5411,35 @@ void MacroAssembler::encode_klass_not_null(Register r) {
   encode_klass_not_null(r, r);
 }
 
+void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src) {
+  // we have to load the klass base from the AOT constants area but
+  // not the shift because it is not allowed to change
+  int shift = CompressedKlassPointers::shift();
+  assert(shift >= 0 && shift < 4, "unexpected compressd klass shift!");
+  if (dst != src) {
+    // we can load the base into dst then add the offset with a suitable shift
+    lea(dst, ExternalAddress(CompressedKlassPointers::base_addr()));
+    ldr(dst, dst);
+    add(dst, dst, src, LSL,  shift);
+  } else {
+    // we need an extra register in order to load the coop base
+    Register tmp = pick_different_tmp(dst, src);
+    RegSet regs = RegSet::of(tmp);
+    push(regs, sp);
+    lea(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+    ldr(tmp, tmp);
+    add(dst, tmp,  src, LSL,  shift);
+    pop(regs, sp);
+  }
+}
+
 void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   assert (UseCompressedClassPointers, "should only be used for compressed headers");
+
+  if (AOTCodeCache::is_on_for_dump()) {
+    decode_klass_not_null_for_aot(dst, src);
+    return;
+  }
 
   switch (klass_decode_mode()) {
   case KlassDecodeZero:
@@ -6654,7 +6715,7 @@ void MacroAssembler::get_thread(Register dst) {
   protect_return_address();
   push(saved_regs, sp);
 
-  mov(lr, CAST_FROM_FN_PTR(address, JavaThread::aarch64_get_thread_helper));
+  mov(lr, ExternalAddress(CAST_FROM_FN_PTR(address, JavaThread::aarch64_get_thread_helper)));
   blr(lr);
   if (dst != c_rarg0) {
     mov(dst, c_rarg0);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -669,6 +669,16 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
     // workaround macOS bug where IP_ADD_MEMBERSHIP fails intermittently
     if (n < 0 && errno == ENOMEM) {
         n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
+    }
+#endif
+#ifdef _AIX
+    // workaround AIX bug where IP_ADD_MEMBERSHIP fails intermittently
+    if (n < 0 && errno == EAGAIN) {
+        int countdown = 3;
+        while (n < 0 && errno == EAGAIN && countdown > 0) {
+            n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
+            countdown--;
+        }
     }
 #endif
 
