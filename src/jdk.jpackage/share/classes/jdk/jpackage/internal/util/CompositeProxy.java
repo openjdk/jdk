@@ -197,7 +197,6 @@ public final class CompositeProxy {
      *
      *     static final CompositeProxyTunnel INSTANCE = new CompositeProxyTunnel();
      * }
-     * }
      */
     public interface InvokeTunnel {
         /**

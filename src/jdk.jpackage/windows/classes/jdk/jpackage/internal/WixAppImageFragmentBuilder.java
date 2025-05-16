@@ -937,7 +937,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         static Set<ShortcutsFolder> getForPackage(WinMsiPackage pkg) {
             var launchers = Optional.ofNullable(pkg.app().launchers()).map(
                     List::stream).orElseGet(Stream::of);
-            return  launchers.map(launcher -> {
+            return launchers.map(launcher -> {
                 return Stream.of(ShortcutsFolder.values()).filter(shortcutsFolder -> {
                     return shortcutsFolder.isRequestedFor((WinLauncher)launcher);
                 });

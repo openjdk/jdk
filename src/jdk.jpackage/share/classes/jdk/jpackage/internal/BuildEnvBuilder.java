@@ -24,8 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.I18N.buildConfigException;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,18 +42,19 @@ final class BuildEnvBuilder {
     BuildEnv create() throws ConfigException {
         Objects.requireNonNull(appImageDir);
 
-        var exceptionBuilder = buildConfigException("ERR_BuildRootInvalid", root);
-        if (!Files.exists(root)) {
-        } else if (!Files.isDirectory(root)) {
-            throw exceptionBuilder.create();
-        } else {
+        var exceptionBuilder = I18N.buildConfigException("ERR_BuildRootInvalid", root);
+        if (Files.isDirectory(root)) {
             try (var rootDirContents = Files.list(root)) {
                 if (rootDirContents.findAny().isPresent()) {
+                    // The root directory is not empty.
                     throw exceptionBuilder.create();
                 }
             } catch (IOException ioe) {
                 throw exceptionBuilder.cause(ioe).create();
             }
+        } else if (Files.exists(root)) {
+            // The root is not a directory.
+            throw exceptionBuilder.create();
         }
 
         return BuildEnv.withAppImageDir(BuildEnv.create(root, Optional.ofNullable(resourceDir),

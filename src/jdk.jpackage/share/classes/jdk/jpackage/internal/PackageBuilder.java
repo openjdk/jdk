@@ -62,7 +62,7 @@ final class PackageBuilder {
                     case WIN_EXE, WIN_MSI -> {
                         installDirName = Optional.empty();
                     }
-                    case MAC_DMG,MAC_PKG -> {
+                    case MAC_DMG, MAC_PKG -> {
                         installDirName = Optional.of(app.appImageDirName());
                     }
                 }
