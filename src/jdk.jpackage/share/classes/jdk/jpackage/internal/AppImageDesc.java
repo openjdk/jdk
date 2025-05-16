@@ -30,15 +30,15 @@ import java.util.Optional;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
 
-record AppImageDesc(AppImageLayout appImageLyout, Path path) {
+record AppImageDesc(AppImageLayout appImageLayout, Path path) {
 
     AppImageDesc {
-        Objects.requireNonNull(appImageLyout);
+        Objects.requireNonNull(appImageLayout);
         Objects.requireNonNull(path);
     }
 
     AppImageLayout resolvedAppImagelayout() {
-        return appImageLyout.resolveAt(path);
+        return appImageLayout.resolveAt(path);
     }
 
     Optional<ApplicationLayout> asResolvedApplicationLayout() {
@@ -46,7 +46,7 @@ record AppImageDesc(AppImageLayout appImageLyout, Path path) {
     }
 
     Optional<ApplicationLayout> asApplicationLayout() {
-        if (appImageLyout instanceof ApplicationLayout layout) {
+        if (appImageLayout instanceof ApplicationLayout layout) {
             return Optional.of(layout);
         } else {
             return Optional.empty();

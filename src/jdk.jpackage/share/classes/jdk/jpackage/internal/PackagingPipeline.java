@@ -458,7 +458,7 @@ final class PackagingPipeline {
         }
 
         final var pkgEnv = new PackageBuildEnv<>(
-                BuildEnv.withAppImageDir(env, dstAppImageDesc.path()), pkg, dstAppImageDesc.appImageLyout(), outputDir);
+                BuildEnv.withAppImageDir(env, dstAppImageDesc.path()), pkg, dstAppImageDesc.appImageLayout(), outputDir);
 
         return new PackagingTaskContext(pkgEnv, srcAppImageDesc);
     }
