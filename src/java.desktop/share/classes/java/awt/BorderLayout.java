@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,28 +89,37 @@ import java.io.Serial;
  * the {@code CENTER} component may stretch both horizontally
  * and vertically to fill any space left over.
  * <p>
- * Here is an example of five buttons in an applet laid out using
+ * Here is an example of five buttons in a window laid out using
  * the {@code BorderLayout} layout manager:
  * <p>
- * <img src="doc-files/BorderLayout-1.gif" alt="Diagram of an applet
+ * <img src="doc-files/BorderLayout-1.png" alt="Diagram of a window
  * demonstrating BorderLayout. Each section of the BorderLayout contains a
  * Button corresponding to its position in the layout, one of: North, West,
  * Center, East, or South." style="margin: 7px 10px;">
  * <p>
- * The code for this applet is as follows:
+ * The code for this program is as follows:
  *
  * <hr><blockquote><pre>
- * import java.awt.*;
- * import java.applet.Applet;
+ * import java.awt.BorderLayout;
+ * import java.awt.Button;
+ * import java.awt.EventQueue;
+ * import java.awt.Frame;
  *
- * public class buttonDir extends Applet {
- *   public void init() {
- *     setLayout(new BorderLayout());
- *     add(new Button("North"), BorderLayout.NORTH);
- *     add(new Button("South"), BorderLayout.SOUTH);
- *     add(new Button("East"), BorderLayout.EAST);
- *     add(new Button("West"), BorderLayout.WEST);
- *     add(new Button("Center"), BorderLayout.CENTER);
+ * public class BorderLayoutExample {
+ *
+ *   public static void main(String[] args) throws Exception {
+ *
+ *     EventQueue.invokeAndWait(() -> {
+ *        Frame frame = new Frame("BorderLayout");
+ *        frame.setLayout(new BorderLayout());
+ *        frame.add(new Button("North"), BorderLayout.NORTH);
+ *        frame.add(new Button("South"), BorderLayout.SOUTH);
+ *        frame.add(new Button("East"), BorderLayout.EAST);
+ *        frame.add(new Button("West"), BorderLayout.WEST);
+ *        frame.add(new Button("Center"), BorderLayout.CENTER);
+ *        frame.setSize(300, 300);
+ *        frame.setVisible(true);
+ *     });
  *   }
  * }
  * </pre></blockquote><hr>
