@@ -1516,6 +1516,14 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   -XX:VerifyIterativeGVN=1110
     case Op_CastLL:
       return false;
+
+    // Similar case happens to CastII
+    //
+    // Found With:
+    //   compiler/c2/TestScalarReplacementMaxLiveNodes.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_CastII:
+      return false;
   }
 
   if (n->is_Load()) {
