@@ -228,6 +228,8 @@ public class Symtab {
     public final Type constantBootstrapsType;
     public final Type valueBasedType;
     public final Type valueBasedInternalType;
+    public final Type requiresIdentityType;
+    public final Type requiresIdentityInternalType;
     public final Type classDescType;
     public final Type enumDescType;
 
@@ -610,6 +612,8 @@ public class Symtab {
         constantBootstrapsType = enterClass("java.lang.invoke.ConstantBootstraps");
         valueBasedType = enterClass("jdk.internal.ValueBased");
         valueBasedInternalType = enterSyntheticAnnotation("jdk.internal.ValueBased+Annotation");
+        requiresIdentityType = enterClass("jdk.internal.RequiresIdentity");
+        requiresIdentityInternalType = enterSyntheticAnnotation("jdk.internal.RequiresIdentity+Annotation");
         classDescType = enterClass("java.lang.constant.ClassDesc");
         enumDescType = enterClass("java.lang.Enum$EnumDesc");
         // For serialization lint checking
