@@ -132,6 +132,9 @@ public final class Http3Connection implements AutoCloseable {
     // value of true implies no more streams will be initiated on this connection,
     // and the connection will be closed once the in-progress streams complete.
     private volatile boolean finalStream;
+    // set to true if we decide to open a new connection
+    // due to stream limit reached
+    private volatile boolean streamLimitReached;
 
     private static final int GOAWAY_SENT = 1; // local endpoint sent GOAWAY
     private static final int GOAWAY_RECEIVED = 2; // received GOAWAY from remote peer
@@ -406,8 +409,11 @@ public final class Http3Connection implements AutoCloseable {
             // we didn't create the stream and thus the server hasn't yet processed this request.
             // mark the request as unprocessed to allow it to be retried on a different connection.
             exchange.markUnprocessedByPeer();
-            return MinimalFuture.failedFuture(new IOException("cannot initiate additional new" +
-                    " streams on chosen connection"));
+            String message = "cannot initiate additional new streams on chosen connection";
+            IOException cause = streamLimitReached
+                    ? new StreamLimitException(HTTP_3, message)
+                    : new IOException(message);
+            return MinimalFuture.failedFuture(cause);
         }
         // TODO: this duration is currently "computed" from the request timeout duration.
         // this computation needs a bit more thought
@@ -456,8 +462,7 @@ public final class Http3Connection implements AutoCloseable {
                         // being able to initiate new requests on this connection), we mark the
                         // connection as "final stream" (i.e. don't consider this (pooled)
                         // connection for subsequent requests)
-                        client.streamLimitReached(this, exchange.request);
-                        this.setFinalStream();
+                        this.streamLimitReachedWith(exchange);
                         return MinimalFuture.failedFuture(new StreamLimitException(HTTP_3,
                                 "No more streams allowed on connection"));
                     } else if (cause instanceof ClosedChannelException) {
@@ -471,6 +476,12 @@ public final class Http3Connection implements AutoCloseable {
                     return MinimalFuture.failedFuture(cause);
                 });
         return h3ExchangeCf.thenCompose(Function.identity());
+    }
+
+    private void streamLimitReachedWith(Exchange<?> exchange) {
+        streamLimitReached = true;
+        client.streamLimitReached(this, exchange.request);
+        setFinalStream();
     }
 
     private <T> Http3ExchangeImpl<T> createHttp3ExchangeImpl(Exchange<T> exchange, QuicBidiStream stream) {
