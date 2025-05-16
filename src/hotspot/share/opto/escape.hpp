@@ -563,7 +563,7 @@ private:
                         // Memory Phi    - most recent unique Phi split out
                         //                 from this Phi
                         // MemNode       - new memory input for this node
-                        // ChecCastPP    - allocation that this is a cast of
+                        // CheckCastPP   - allocation that this is a cast of
                         // allocation    - CheckCastPP of the allocation
 
   // manage entries in _node_map
