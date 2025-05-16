@@ -25,9 +25,6 @@
 
 package java.security.spec;
 
-import sun.security.util.KeyUtil;
-
-import java.io.IOException;
 import java.security.DEREncodable;
 
 /**
@@ -77,14 +74,8 @@ import java.security.DEREncodable;
 
 public non-sealed class PKCS8EncodedKeySpec extends EncodedKeySpec implements
     DEREncodable {
-
-    private String algorithmName;
-
     /**
      * Creates a new {@code PKCS8EncodedKeySpec} with the given encoded key.
-     * This constructor extracts the algorithm name from the encoded bytes,
-     * which may be an OID if no standard algorithm name is defined. If the
-     * algorithm name cannot be extracted, it is set to null.
      *
      * @param encodedKey the key, which is assumed to be
      * encoded according to the PKCS #8 standard. The contents of
@@ -94,11 +85,6 @@ public non-sealed class PKCS8EncodedKeySpec extends EncodedKeySpec implements
      */
     public PKCS8EncodedKeySpec(byte[] encodedKey) {
         super(encodedKey);
-        try {
-            algorithmName = KeyUtil.getAlgorithm(encodedKey).getName();
-        } catch (IOException e) {
-            // On error leave algorithmName as null.
-        }
     }
 
     /**
@@ -128,18 +114,9 @@ public non-sealed class PKCS8EncodedKeySpec extends EncodedKeySpec implements
     }
 
     /**
-     * Returns the name of the algorithm of the encoded key.
+     * Returns the key bytes, encoded according to the PKCS #8 standard.
      *
-     * @return the name of the algorithm, or null if not specified
-     */
-    public String getAlgorithm() {
-        return (algorithmName == null ? super.getAlgorithm() : algorithmName);
-    }
-
-    /**
-     * Returns the private key bytes, encoded according to the PKCS #8 standard.
-     *
-     * @return the PKCS #8 encoding of the private key. Returns a new array
+     * @return the PKCS #8 encoding of the key. Returns a new array
      * each time this method is called.
      */
     public byte[] getEncoded() {

@@ -346,8 +346,8 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @return an {@code EncryptedPrivateKeyInfo}
      * @throws IllegalArgumentException on initialization errors based on the
      * arguments passed to the method
-     * @throws RuntimeException on an encryption errors
-     * @throws NullPointerException if the key or password are null. If
+     * @throws RuntimeException on an encryption error
+     * @throws NullPointerException if the key or password are {@code null}. If
      * {@code params} is non-null when {@code algorithm} is {@code null}.
      *
      * @implNote The {@code jdk.epkcs8.defaultAlgorithm} Security Property
@@ -398,8 +398,8 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @return an {@code EncryptedPrivateKeyInfo}
      * @throws IllegalArgumentException on initialization errors based on the
      * arguments passed to the method
-     * @throws RuntimeException on an encryption errors
-     * @throws NullPointerException when the {code key} or {@code password}
+     * @throws RuntimeException on an encryption error
+     * @throws NullPointerException when the {@code key} or {@code password}
      * is {@code null}
      *
      * @implNote The {@code jdk.epkcs8.defaultAlgorithm} Security Property
@@ -435,9 +435,9 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @return an {@code EncryptedPrivateKeyInfo}
      * @throws IllegalArgumentException on initialization errors based on the
      * arguments passed to the method
-     * @throws RuntimeException on an encryption errors
+     * @throws RuntimeException on an encryption error
      * @throws NullPointerException if the {@code key} or {@code encKey} are
-     * null. If {@code params} is non-null, {@code algorithm} cannot be
+     * {@code null}. If {@code params} is non-null, {@code algorithm} cannot be
      * {@code null}.
      *
      * @implNote The {@code jdk.epkcs8.defaultAlgorithm} Security Property
@@ -544,10 +544,10 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
         Objects.requireNonNull(decryptKey,"decryptKey cannot be null.");
         PKCS8EncodedKeySpec p = getKeySpecImpl(decryptKey, provider);
         if (provider == null) {
-            return KeyFactory.getInstance(p.getAlgorithm()).
+            return KeyFactory.getInstance(KeyUtil.getAlgorithm(p.getEncoded())).
                 generatePrivate(p);
         }
-        return KeyFactory.getInstance(p.getAlgorithm(),
+        return KeyFactory.getInstance(KeyUtil.getAlgorithm(p.getEncoded()),
             provider).generatePrivate(p);
     }
 

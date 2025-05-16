@@ -29,6 +29,7 @@ import jdk.internal.javac.PreviewFeature;
 
 import sun.security.pkcs.PKCS8Key;
 import sun.security.rsa.RSAPrivateCrtKeyImpl;
+import sun.security.util.KeyUtil;
 import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
@@ -52,7 +53,7 @@ import java.util.Objects;
  * methods return an instance of a class that matches the data
  * type and implements {@link DEREncodable}.
  *
- * The following lists the supported PEM types and the {@code DEREncodable}
+ * <p> The following lists the supported PEM types and the {@code DEREncodable}
  * types that each are decoded as:
  * <ul>
  *  <li>CERTIFICATE : {@code X509Certificate}</li>
@@ -62,13 +63,12 @@ import java.util.Objects;
  *  <li>PRIVATE KEY : {@code PrivateKey}</li>
  *  <li>PRIVATE KEY : {@code PKCS8EncodedKeySpec} (Only supported when passed as a {@code Class} parameter)</li>
  *  <li>PRIVATE KEY : {@code KeyPair} (if the encoding also contains a public key)</li>
- *  <li>RSA PRIVATE KEY : {@code RSAPrivateKey}</li>
  *  <li>ENCRYPTED PRIVATE KEY : {@code EncryptedPrivateKeyInfo} </li>
  *  <li>ENCRYPTED PRIVATE KEY : {@code PrivateKey} (if configured with Decryption)</li>
  *  <li>Other types : {@code PEMRecord} </li>
  * </ul>
  *
- * The {@code PublicKey} and {@code PrivateKey} types, an algorithm specific
+ * <p> The {@code PublicKey} and {@code PrivateKey} types, an algorithm specific
  * subclass is returned if the underlying algorithm is supported. For example an
  * ECPublicKey and ECPrivateKey for Elliptic Curve keys.
  *
@@ -98,9 +98,9 @@ import java.util.Objects;
  * encrypted private key PEM data using the given password.
  * Configuring an instance for decryption does not prevent decoding with
  * unencrypted PEM. Any encrypted PEM that fails decryption
- * will throw a {@link RuntimeException}. When an encrypted PEM is used with a
- * decoder not configured for decryption, an {@link EncryptedPrivateKeyInfo}
- * object is returned.
+ * will throw a {@link RuntimeException}. When an encrypted private key PEM is
+ * used with a decoder not configured for decryption, an
+ * {@link EncryptedPrivateKeyInfo} object is returned.
  *
  * <p>This class is immutable and thread-safe.
  *
@@ -110,7 +110,7 @@ import java.util.Objects;
  *     PrivateKey priKey = pd.decode(priKeyPEM, PrivateKey.class);
  * }
  *
- * <p> Here is an example of a {@code PEMDecoder} configured with decryption
+ * <p> Here is an example of a {@code PEMEncoder} configured with decryption
  * and a factory provider:
  * {@snippet lang = java:
  *     PEMEncoder pe = PEMEncoder.of().withDecryption(password).
@@ -118,9 +118,9 @@ import java.util.Objects;
  *     byte[] pemData = pe.encode(privKey);
  * }
  *
- * @implNote An implementation may support other PEM types and DEREncodables.
- * This implementation support PEM types:  {@code CERTIFICATE}, {@code X509 CRL},
- * {@code PRIVATE KEY}, {@code PUBLIC KEY}, {@code ENCRYPTED PRIVATE KEY},
+ * @implNote An implementation may support other PEM types and
+ * {@code DEREncodables}. This implementation additionally supports PEM types:
+ * {@code X509 CERTIFICATE}, {@code X.509 CERTIFICATE}, {@code CRL},
  * and {@code RSA PRIVATE KEY}.
  *
  * @see PEMEncoder
@@ -179,7 +179,8 @@ public final class PEMDecoder {
                 case Pem.PUBLIC_KEY -> {
                     X509EncodedKeySpec spec =
                         new X509EncodedKeySpec(decoder.decode(pem.pem()));
-                    yield (getKeyFactory(spec.getAlgorithm())).
+                    yield getKeyFactory(
+                        KeyUtil.getAlgorithm(spec.getEncoded())).
                         generatePublic(spec);
                 }
                 case Pem.PRIVATE_KEY -> {

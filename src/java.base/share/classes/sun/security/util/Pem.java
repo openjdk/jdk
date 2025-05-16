@@ -60,7 +60,8 @@ public class Pem {
         String algo = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
         DEFAULT_ALGO = (algo == null || algo.isBlank()) ?
             "PBEWithHmacSHA256AndAES_128" : algo;
-        pbePattern = Pattern.compile("^PBEWith.*And.*");
+        pbePattern = Pattern.compile("^PBEWith.*And.*",
+            Pattern.CASE_INSENSITIVE);
     }
 
     public static final String CERTIFICATE = "CERTIFICATE";
@@ -234,7 +235,8 @@ public class Pem {
                 case -1 ->
                     throw new EOFException("Incomplete header");
                 case '-' -> hyphen++;
-                case WS, '\t', '\n', '\r' -> {} // skip whitespace, tab, etc
+                case WS, '\t','\r' -> {} // skip whitespace, tab, etc
+                case '\n' -> {}
                 default -> sb.append((char) c);
             }
         } while (hyphen == 0);
@@ -283,7 +285,7 @@ public class Pem {
         if (footer.length() < 14 || !footer.startsWith("-----END ") ||
             !footer.endsWith("-----")) {
             // Not an IOE because the read pointer is correctly at the end.
-            throw new IllegalArgumentException("Illegal footer: " + footer);
+            throw new IOException("Illegal footer: " + footer);
         }
 
         // Verify the object type in the header and the footer are the same.
@@ -310,8 +312,7 @@ public class Pem {
 
     public static String pemEncoded(String type, byte[] der) {
         if (b64Encoder == null) {
-            b64Encoder = Base64.getMimeEncoder(64,
-                System.lineSeparator().getBytes());
+            b64Encoder = Base64.getMimeEncoder(0, new byte[0]);
         }
         return pemEncoded(new PEMRecord(type, b64Encoder.encodeToString(der)));
     }
@@ -325,7 +326,8 @@ public class Pem {
         StringBuilder sb = new StringBuilder(1024);
         sb.append("-----BEGIN ").append(pem.type()).append("-----");
         sb.append(System.lineSeparator());
-        sb.append(pem.pem());
+        sb.append(pem.pem().replaceAll("(.{64})", "$1" +
+            System.lineSeparator()));
         sb.append(System.lineSeparator());
         sb.append("-----END ").append(pem.type()).append("-----");
         sb.append(System.lineSeparator());

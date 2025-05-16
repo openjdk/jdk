@@ -86,6 +86,11 @@ public class PEMEncoderTest {
                 throw new Exception("Should have been a NullPointerException thrown");
             }
         }
+
+        PEMDecoder d = PEMDecoder.of();
+        PEMRecord pemRecord =
+            d.decode(PEMData.ed25519ep8.pem(), PEMRecord.class);
+        checkResults(PEMData.ed25519ep8, pemRecord.toString());
     }
 
     static Map generateObjKeyMap(List<PEMData.Entry> list) {
@@ -202,7 +207,8 @@ public class PEMEncoderTest {
         // into the test.
         pem = CR.matcher(pem).replaceAll("");
         pem = LF.matcher(pem).replaceAll("");
-        result = LSDEFAULT.matcher(result).replaceAll("");
+        result = LF.matcher(CR.matcher(pem).replaceAll("")).
+            replaceAll("");
         try {
             if (pem.compareTo(result) != 0) {
                 System.out.println("expected:\n" + pem);

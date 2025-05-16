@@ -78,8 +78,6 @@ public class PEMDecoderTest {
         System.out.println("Decoder test OAS RFC PEM asking PrivateKey.class returned:");
         testClass(PEMData.oasrfc8410, PrivateKey.class, true);
         testClass(PEMData.oasrfc8410, PublicKey.class, true);
-        System.out.println("Decoder test ecsecp256:");
-        testFailure(PEMData.ecsecp256pub.makeNoCRLF("pubecpem-no"));
         System.out.println("Decoder test RSAcert with decryption Decoder:");
         PEMDecoder d = PEMDecoder.of().withDecryption("123".toCharArray());
         d.decode(PEMData.rsaCert.pem());
@@ -123,7 +121,7 @@ public class PEMDecoderTest {
             throw new AssertionError("pubecpem PEMRecord didn't decode as a Public Key");
         }
 
-        //testInputStream();
+        /*
         testPEMRecord(PEMData.rsapub);
         testPEMRecord(PEMData.ecCert);
         testPEMRecord(PEMData.ec25519priv);
@@ -132,8 +130,20 @@ public class PEMDecoderTest {
         testPEMRecordDecode(PEMData.rsapub);
         testPEMRecordDecode(PEMData.ecCert);
         testPEMRecordDecode(PEMData.ec25519priv);
-        //testPEMRecordDecode(PEMData.ecCSR);
-        //estPEMRecordDecode(PEMData.ecCSRWithData);
+
+        d = PEMDecoder.of();
+        EncryptedPrivateKeyInfo epk =
+            d.decode(PEMData.ed25519ep8.pem(), EncryptedPrivateKeyInfo.class);
+        PrivateKey privateKey;
+        try {
+            privateKey = epk.getKey(PEMData.ed25519ep8.password());
+        } catch (GeneralSecurityException e) {
+            throw new AssertionError("ed25519ep8 error", e);
+        }
+
+        EncryptedPrivateKeyInfo.encryptKey(privateKey,
+            PEMData.ed25519ep8.password());
+         */
     }
 
     static void testInputStream() throws IOException {

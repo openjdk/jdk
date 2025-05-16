@@ -482,13 +482,30 @@ public final class KeyUtil {
 
     /**
      * With a given DER encoded bytes, read through and return the AlgorithmID
+     * stored if it can be found.  If none is found or there is an IOException,
+     * null is returned.
+     *
+     * @param encoded DER encoded bytes
+     * @return AlgorithmID stored in the DER encoded bytes or null.
+     */
+    public static String getAlgorithm(byte[] encoded) {
+        try {
+            return getAlgorithmId(encoded).getName();
+        } catch (IOException e) {
+            // We want the result, not the details why it failed.
+            return null;
+        }
+    }
+
+    /**
+     * With a given DER encoded bytes, read through and return the AlgorithmID
      * stored if it can be found.
      *
      * @param encoded DER encoded bytes
      * @return AlgorithmID stored in the DER encoded bytes
-     * @throws IOException
+     * @throws IOException if there was a DER or other parsing error
      */
-    public static AlgorithmId getAlgorithm(byte[] encoded) throws IOException {
+    public static AlgorithmId getAlgorithmId(byte[] encoded) throws IOException {
         DerInputStream is = new DerInputStream(encoded);
         DerValue value = is.getDerValue();
         if (value.tag != DerValue.tag_Sequence) {

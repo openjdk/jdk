@@ -83,12 +83,12 @@ import java.util.concurrent.locks.ReentrantLock;
  *  <li>{@code X509Certificate} : CERTIFICATE</li>
  *  <li>{@code X509CRL} : X509 CRL</li>
  *  <li>{@code PublicKey}: PUBLIC KEY</li>
- *  <li>{@code X509EncodedKeySpec} : PUBLIC KEY</li>
  *  <li>{@code PrivateKey} : PRIVATE KEY</li>
- *  <li>{@code PKCS8EncodedKeySpec} : PRIVATE KEY</li>
- *  <li>{@code KeyPair} : PRIVATE KEY</li>
- *  <li>{@code EncryptedPrivateKeyInfo} : ENCRYPTED PRIVATE KEY</li>
  *  <li>{@code PrivateKey} (if configured with encryption): ENCRYPTED PRIVATE KEY</li>
+ *  <li>{@code EncryptedPrivateKeyInfo} : ENCRYPTED PRIVATE KEY</li>
+ *  <li>{@code KeyPair} : PRIVATE KEY</li>
+ *  <li>{@code X509EncodedKeySpec} : PUBLIC KEY</li>
+ *  <li>{@code PKCS8EncodedKeySpec} : PRIVATE KEY</li>
  *  <li>{@code PEMRecord} : {@code PEMRecord.type()}</li>
  *  </ul>
  *
@@ -108,8 +108,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * }
  *
  * @implNote An implementation may support other PEM types and DEREncodables.
- * This implementation support PEM types:  {@code CERTIFICATE}, {@code X509 CRL},
- * {@code PRIVATE KEY}, {@code PUBLIC KEY}, and {@code ENCRYPTED PRIVATE KEY}.
+ *
  *
  * @see PEMDecoder
  * @see PEMRecord

@@ -29,6 +29,7 @@ import jdk.internal.javac.PreviewFeature;
 
 import sun.security.util.Pem;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -84,8 +85,8 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
 
         // With no validity checking on `type`, the constructor accept anything
         // including lowercase.  The onus is on the caller.
-        if (type.startsWith("-") || type.contains("BEGIN") ||
-            type.contains("END") || type.endsWith("-")) {
+        if (type.startsWith("-") || type.startsWith("BEGIN ") ||
+            type.startsWith("END ")) {
             throw new IllegalArgumentException("PEM syntax labels found.  " +
                 "Only the PEM type identifier is allowed");
         }
