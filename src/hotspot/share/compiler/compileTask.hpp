@@ -29,6 +29,7 @@
 #include "code/nmethod.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.hpp"
+#include "oops/unloadableMethodHandle.hpp"
 #include "utilities/xmlstream.hpp"
 
 class DirectiveSet;
@@ -83,8 +84,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   static CompileTask*  _task_free_list;
   Monitor*             _lock;
   int                  _compile_id;
-  Method*              _method;
-  jobject              _method_holder;
+  UnloadableMethodHandle _method_handle;
   int                  _osr_bci;
   bool                 _is_complete;
   bool                 _is_success;
@@ -126,8 +126,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
   static CompileTask* allocate();
   static void         free(CompileTask* task);
 
+  inline Method* method();
+
   int          compile_id() const                { return _compile_id; }
-  Method*      method() const                    { return _method; }
   int          osr_bci() const                   { return _osr_bci; }
   bool         is_complete() const               { return _is_complete; }
   bool         is_blocking() const               { return _is_blocking; }
@@ -210,7 +211,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         set_prev(CompileTask* prev)       { _prev = prev; }
   bool         is_free() const                   { return _is_free; }
   void         set_is_free(bool val)             { _is_free = val; }
-  bool         is_unloaded() const;
+  bool         is_unloaded();
 
   // RedefineClasses support
   void         metadata_do(MetadataClosure* f);
