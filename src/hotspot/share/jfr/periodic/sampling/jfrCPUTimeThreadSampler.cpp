@@ -286,7 +286,7 @@ void JfrCPUTimeThreadSampler::disenroll() {
     log_info(jfr)("Disenrolling CPU thread sampler");
     stop_timer();
     Atomic::store(&_stop_signals, true);
-    while (_active_signal_handlers > 0) {
+    while (Atomic::load_acquire(&_active_signal_handlers) > 0) {
       // wait for all signal handlers to finish
       os::naked_short_nanosleep(1000);
     }
@@ -536,9 +536,9 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
   if (Atomic::load(&_sampler->_stop_signals)) {
     return;
   }
-  Atomic::inc(&_sampler->_active_signal_handlers);
+  Atomic::inc(&_sampler->_active_signal_handlers, memory_order_acq_rel);
   _sampler->handle_timer_signal(info, context);
-  Atomic::dec(&_sampler->_active_signal_handlers);
+  Atomic::dec(&_sampler->_active_signal_handlers, memory_order_acq_rel);
 }
 
 void JfrCPUTimeThreadSampler::sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt) {
