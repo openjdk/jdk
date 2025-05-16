@@ -3120,7 +3120,7 @@ void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loo
         assert(r->is_Region() || r->is_top(), "unexpected Phi's control");
         if (r->is_Region()) {
           for (uint j = 1; j < u->req(); ++j) {
-            if (u->in(j) == n) {
+            if (u->in(j) == n && r->in(j) != nullptr) {
               make_path_dead(igvn, loop, r, j, phase_str);
             }
           }
