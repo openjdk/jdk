@@ -87,10 +87,10 @@ void AOTLinkedClassBulkLoader::exit_on_exception(JavaThread* current) {
   assert(current->has_pending_exception(), "precondition");
   ResourceMark rm(current);
   if (current->pending_exception()->is_a(vmClasses::OutOfMemoryError_klass())) {
-    log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
+    log_error(aot)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
                    "%zuM", MaxHeapSize/M);
   } else {
-    log_error(cds)("%s: %s", current->pending_exception()->klass()->external_name(),
+    log_error(aot)("%s: %s", current->pending_exception()->klass()->external_name(),
                    java_lang_String::as_utf8_string(java_lang_Throwable::message(current->pending_exception())));
   }
   vm_exit_during_initialization("Unexpected exception when loading aot-linked classes.");
@@ -199,9 +199,9 @@ void AOTLinkedClassBulkLoader::load_classes_impl(AOTLinkedClassCategory class_ca
 
         if (actual != ik) {
           ResourceMark rm(THREAD);
-          log_error(cds)("Unable to resolve %s class from CDS archive: %s", category_name, ik->external_name());
-          log_error(cds)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(ik), p2i(actual));
-          log_error(cds)("JVMTI class retransformation is not supported when archive was generated with -XX:+AOTClassLinking.");
+          log_error(aot)("Unable to resolve %s class from %s: %s", category_name, CDSConfig::type_of_archive_being_loaded(), ik->external_name());
+          log_error(aot)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(ik), p2i(actual));
+          log_error(aot)("JVMTI class retransformation is not supported when archive was generated with -XX:+AOTClassLinking.");
           MetaspaceShared::unrecoverable_loading_error();
         }
         assert(actual->is_loaded(), "must be");

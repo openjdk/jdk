@@ -50,7 +50,7 @@ void RecordComponent::deallocate_contents(ClassLoaderData* loader_data) {
 }
 
 void RecordComponent::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(RecordComponent): %p", this);
+  log_trace(aot)("Iter(RecordComponent): %p", this);
   it->push(&_annotations);
   it->push(&_type_annotations);
 }

@@ -37,7 +37,7 @@ public class ModuleOption {
     public static void main(String[] args) throws Exception {
         final String moduleOption = "jdk.httpserver/sun.net.httpserver.simpleserver.Main";
         final String incubatorModule = "jdk.incubator.vector";
-        final String loggingOption = "-Xlog:aot=debug,cds+module=debug,aot+heap=info,cds=debug,module=trace";
+        final String loggingOption = "-Xlog:aot=debug,aot+module=debug,aot+heap=info,cds=debug,module=trace";
         // Pattern of a module version string.
         // e.g. JDK 22:     "java 22"
         //      JDK 22.0.1: "java 22.0.1"
@@ -62,7 +62,7 @@ public class ModuleOption {
         oa.shouldHaveExitValue(0)
           // version of the jdk.httpserver module, e.g. java 22-ea
           .shouldMatch(versionPattern)
-          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.httpserver");
+          .shouldMatch("aot,module.*Restored from archive: entry.0x.*name jdk.httpserver");
 
         // different module specified during runtime
         oa = TestCommon.execCommon(

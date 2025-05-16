@@ -866,9 +866,9 @@ void InstanceKlass::initialize_with_aot_initialized_mirror(TRAPS) {
     initialize(CHECK);
     return;
   }
-  if (log_is_enabled(Info, cds, init)) {
+  if (log_is_enabled(Info, aot, init)) {
     ResourceMark rm;
-    log_info(cds, init)("%s (aot-inited)", external_name());
+    log_info(aot, init)("%s (aot-inited)", external_name());
   }
 
   link_class(CHECK);
@@ -2567,9 +2567,9 @@ void InstanceKlass::clean_method_data() {
 void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   Klass::metaspace_pointers_do(it);
 
-  if (log_is_enabled(Trace, cds)) {
+  if (log_is_enabled(Trace, aot)) {
     ResourceMark rm;
-    log_trace(cds)("Iter(InstanceKlass): %p (%s)", this, external_name());
+    log_trace(aot)("Iter(InstanceKlass): %p (%s)", this, external_name());
   }
 
   it->push(&_annotations);

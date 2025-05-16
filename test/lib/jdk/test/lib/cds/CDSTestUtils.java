@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,7 +255,7 @@ public class CDSTestUtils {
         for (String p : opts.prefix) cmd.add(p);
 
         cmd.add("-Xshare:dump");
-        cmd.add("-Xlog:cds,cds+hashtables");
+        cmd.add("-Xlog:cds,aot+hashtables");
         if (opts.archiveName == null)
             opts.archiveName = getDefaultArchiveName();
         cmd.add("-XX:SharedArchiveFile=" + opts.archiveName);

@@ -116,7 +116,7 @@ void CppVtableCloner<T>::initialize(const char* name, CppVtableInfo* info) {
 
   // We already checked (and, if necessary, adjusted n) when the vtables were allocated, so we are
   // safe to do memcpy.
-  log_debug(cds, vtables)("Copying %3d vtable entries for %s", n, name);
+  log_debug(aot, vtables)("Copying %3d vtable entries for %s", n, name);
   memcpy(dstvtable, srcvtable, sizeof(intptr_t) * n);
 }
 
@@ -166,7 +166,7 @@ int CppVtableCloner<T>::get_vtable_length(const char* name) {
       break;
     }
   }
-  log_debug(cds, vtables)("Found   %3d vtable entries for %s", vtable_len, name);
+  log_debug(aot, vtables)("Found   %3d vtable entries for %s", vtable_len, name);
 
   return vtable_len;
 }

@@ -2767,10 +2767,10 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     // creates the module graph, etc. It's safe to not start the other
     // threads which are launched by class static initializers
     // (ReferenceHandler, FinalizerThread and CleanerImpl).
-    if (log_is_enabled(Info, cds)) {
+    if (log_is_enabled(Info, aot)) {
       ResourceMark rm;
       oop t = JNIHandles::resolve_non_null(jthread);
-      log_info(cds)("JVM_StartThread() ignored: %s", t->klass()->external_name());
+      log_info(aot)("JVM_StartThread() ignored: %s", t->klass()->external_name());
     }
     return;
   }
@@ -3463,7 +3463,7 @@ JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
     if (seed == 0) { // don't let this ever be zero.
       seed = 0x87654321;
     }
-    log_debug(cds)("JVM_GetRandomSeedForDumping() = " JLONG_FORMAT, seed);
+    log_debug(aot)("JVM_GetRandomSeedForDumping() = " JLONG_FORMAT, seed);
     return seed;
   } else {
     return 0;
@@ -3526,7 +3526,7 @@ JVM_ENTRY(jboolean, JVM_NeedsClassInitBarrierForCDS(JNIEnv* env, jclass cls))
       // If we cannot cache the class in AOT-initialized state, java.lang.invoke handles
       // must emit barriers to ensure class initialization during production run.
       ResourceMark rm(THREAD);
-      log_debug(cds)("NeedsClassInitBarrierForCDS: %s", k->external_name());
+      log_debug(aot)("NeedsClassInitBarrierForCDS: %s", k->external_name());
       return true;
     }
   }

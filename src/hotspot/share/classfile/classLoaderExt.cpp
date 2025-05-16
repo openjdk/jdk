@@ -105,7 +105,7 @@ void ClassLoaderExt::record_result_for_builtin_loader(s2 classpath_index, Instan
     // which requires all the boot classes to be from known locations. This is an
     // uncommon scenario (even in test cases). Let's simply disable heap object archiving.
     ResourceMark rm;
-    log_warning(cds)("CDS heap objects cannot be written because class %s maybe modified by ClassFileLoadHook.",
+    log_warning(aot)("heap objects cannot be written because class %s maybe modified by ClassFileLoadHook.",
                      result->external_name());
     CDSConfig::disable_heap_dumping();
   }

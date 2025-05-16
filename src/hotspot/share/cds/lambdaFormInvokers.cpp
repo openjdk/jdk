@@ -150,7 +150,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
 
   if (HAS_PENDING_EXCEPTION) {
     if (!PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
-      log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+      log_error(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
       if (CDSConfig::is_dumping_static_archive()) {
         log_error(aot)("Failed to generate LambdaForm holder classes. Is your classlist out of date?");

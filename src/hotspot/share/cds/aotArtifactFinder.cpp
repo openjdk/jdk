@@ -22,9 +22,10 @@
  *
  */
 
-#include "cds/aotClassLinker.hpp"
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotClassLinker.hpp"
+#include "cds/aotLogging.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/heapShared.hpp"
@@ -155,9 +156,9 @@ void AOTArtifactFinder::find_artifacts() {
     if (!info.is_excluded() && _seen_classes->get(k) == nullptr) {
       info.set_excluded();
       info.set_has_checked_exclusion();
-      if (log_is_enabled(Debug, cds)) {
+      if (aot_log_is_enabled(Debug, aot)) {
         ResourceMark rm;
-        log_debug(cds)("Skipping %s: %s class", k->name()->as_C_string(),
+        aot_log_debug(aot)("Skipping %s: %s class", k->name()->as_C_string(),
                       k->is_hidden() ? "Unreferenced hidden" : "AOT tooling");
       }
     }
