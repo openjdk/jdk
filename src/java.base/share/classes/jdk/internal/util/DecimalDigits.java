@@ -406,7 +406,7 @@ public final class DecimalDigits {
      * Insert the 2-bytes integer into the buf as 2 decimal digit ASCII bytes,
      * only least significant 16 bits of {@code v} are used.
      * <p>
-     * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
+     * <b>WARNING: This method does not perform any bound checks.</b>
      *
      * @param buf byte buffer to copy into
      * @param charPos insert point
