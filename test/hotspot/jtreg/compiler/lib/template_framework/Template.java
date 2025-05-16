@@ -50,7 +50,7 @@ import java.util.List;
  * use of Templates.
  *
  * <p>
- * Once we rendered the source code to a {@link String}, we can compile it with the {@code CompileFramework}.
+ * Once we rendered the source code to a {@link String}, we can compile it with the {@link CompileFramework}.
  *
  * <p>
  * <strong>Example:</strong>
@@ -83,9 +83,9 @@ import java.util.List;
  * }
  *
  * <p>
- * To get an executable test, we define a Template that produces a class body with a main method. The Template
+ * To get an executable test, we define a {@link Template} that produces a class body with a main method. The Template
  * takes a list of types, and calls the {@code testTemplate} defined above for each type and operator. We use
- * the {@code TestFramework} to call our {@code @Test} methods.
+ * the {@link TestFramework} to call our {@code @Test} methods.
  *
  * <p>
  * {@snippet lang=java :
@@ -108,7 +108,7 @@ import java.util.List;
  *
  *     """,
  *     // Call the testTemplate for each type and operator, generating a
- *     // list of lists of (Template) Tokens:
+ *     // list of lists of TemplateToken:
  *     types.stream().map((Type type) ->
  *         type.operators().stream().map((String operator) ->
  *             testTemplate.asToken(type.name(), operator, type.generator())).toList()
@@ -122,6 +122,7 @@ import java.util.List;
  * <p>
  * Finally, we generate the list of types, and pass it to the class template:
  *
+ * <p>
  * {@snippet lang=java :
  * List<Type> types = List.of(
  *     new Type("byte",   GEN_BYTE::next,   List.of("+", "-", "*", "&", "|", "^")),
@@ -140,15 +141,15 @@ import java.util.List;
  * <p>
  * <strong>Details:</strong>
  * <p>
- * A Template can have zero or more arguments. A template can be created with {@code make} methods like
+ * A {@link Template} can have zero or more arguments. A template can be created with {@code make} methods like
  * {@link Template#make(String, Function)}. For each number of arguments there is an implementation
- * (e.g. {@code Template.TwoArgs} for two arguments). This allows the use of Generics for the
+ * (e.g. {@link Template.TwoArgs} for two arguments). This allows the use of Generics for the
  * Template argument types, i.e. the Template arguments can be type checked.
  *
  * <p>
  * A {@link Template} can be rendered to a {@link String} (e.g. {@link Template.ZeroArgs#render()}).
- * Alternatively, we can generate a {@link Token} (e.g. {@link Template.ZeroArgs#asToken()}),
- * and use the {@link Token} inside another {@link Template#body}.
+ * Alternatively, we can generate a {@link Token} (more specifically, a {@link TemplateToken}) with {@code asToken()}
+ * (e.g. {@link Template.ZeroArgs#asToken()}), and use the {@link Token} inside another {@link Template#body}.
  *
  * <p>
  * Ideally, we would have used {@link String} Templates to inject these Template arguments into the strings.
@@ -165,7 +166,7 @@ import java.util.List;
  * Templates, which allows sharing of these identifier names between Templates.
  *
  * <p>
- * A {@link TemplateToken} can not just be used in {@link Template#body}, but but it can also be
+ * A {@link TemplateToken} can not just be used in {@link Template#body}, but it can also be
  * {@link Hook#insert}ed to where a {@link Hook} was {@link Hook#set} earlier (in some outer scope of the code).
  * For example, while generating code in a method, one can reach out to the scope of the class, and insert a
  * new field, or define a utility method.
