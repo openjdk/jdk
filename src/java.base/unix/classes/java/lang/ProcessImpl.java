@@ -96,15 +96,15 @@ final class ProcessImpl extends Process {
         }
 
         try {
-            // Should be value of a LaunchMechanism enum
-            LaunchMechanism lm = LaunchMechanism.valueOf(s.toUpperCase(Locale.ROOT));
-            switch (OperatingSystem.current()) {
-                case LINUX:
-                case AIX:
-                case MACOS:
-                    return lm;
-                case WINDOWS:
-                    // fall through to throw to Error
+            // On Posix platforms, chose a launch mechanism (should be value of a LaunchMechanism enum)
+            if (OperatingSystem.current() != OperatingSystem.WINDOWS) {
+                String v = s.toUpperCase(Locale.ROOT);
+                if (v.equals("VFORK")) {
+                    System.err.println("The VFORK launch mechanism has been removed; please either remove the " +
+                            "jdk.lang.Process.launchMechanism property (preferred) or use " +
+                            "-Djdk.lang.Process.launchMechanism=FORK instead.");
+                }
+                return LaunchMechanism.valueOf(v);
             }
         } catch (IllegalArgumentException e) {
         }
