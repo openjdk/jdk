@@ -14719,6 +14719,12 @@ peephole
   peepreplace (leaL_rReg_immI2_peep());
 %}
 
+peephole
+%{
+  peepmatch (leaPCompressedOopOffset);
+  peepprocedure (lea_remove_redundant);
+%}
+
 // These peephole rules matches instructions which set flags and are followed by a testI/L_reg
 // The test instruction is redudanent in case the downstream instuctions (like JCC or CMOV) only use flags that are already set by the previous instruction
 

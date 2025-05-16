@@ -22,6 +22,13 @@
  *
  */
 
+#include "opto/addnode.hpp"
+#include "opto/block.hpp"
+#include "opto/machnode.hpp"
+#include "opto/node.hpp"
+#include "opto/optoreg.hpp"
+#include "opto/regalloc.hpp"
+#include <cstddef>
 #ifdef COMPILER2
 
 #include "peephole_x86_64.hpp"
@@ -233,6 +240,86 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
     }
   }
   return false;
+}
+
+// This function removes redundant LEAs that result from chained dereferences that match to
+// leaPCompressedOopOffset. This happens for ideal graphs of the form
+// LoadN -> DecodeN -> AddP. Matching with leaPCompressedOopoffset consumes both the AddP and
+// the DecodeN. However, after matching the DecodeN is added back as the base for the
+// leaPCompressedOopOffset, which is nessecary if the oop derived by leaPCompressedOopOffset
+// is added to an OopMap, since OopMaps cannot contain derived oop with narrow oops as a base.
+// This results in the following graph after matching:
+//   LoadN/MemToRegSpillCopy
+//         |     \
+//         | decode_heap_oop_not_null
+//         |     /                  \
+//   leaPCompressedOopOffset     MachProj
+// The decode_heap_oop_not_null will emit a lea with an unused result if the derived oop does
+// not end up in an OopMap.
+// This peephole recognizes graphs of the shape as shown above, ensures that the result of the
+// decode is only used by the derived oop and removes that decode if this is the case.
+bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                                    MachNode* (*new_root)(), uint inst0_rule) {
+  MachNode* lea_derived_oop = block->get_node(block_index)->as_Mach();
+  assert(lea_derived_oop->rule() == inst0_rule, "sanity");
+  assert(lea_derived_oop->ideal_Opcode() == Op_AddP, "sanity");
+
+  Node* lea_base = lea_derived_oop->in(AddPNode::Base);
+  // Only remove decode if the block order is DecodeN -> MachProj -> LeaPCompressedOopOffset.
+  if (lea_base == nullptr || block_index < 2 || block->get_node(block_index - 2) != lea_base) {
+    return false;
+  }
+
+  // The lea (lea_derived_oop) and the decode (lea_base) must have the same parent.
+  if (lea_derived_oop->in(AddPNode::Address) != lea_base->in(1)) {
+    return false;
+  }
+
+  if (lea_base->outcnt() != 2) {
+    return false;
+  }
+
+  // Ensure the decode only has the leaPCompressedOopOffset and a MachProj leaf as children.
+  Node* proj = nullptr;
+  for (DUIterator_Fast imax, i = lea_base->fast_outs(imax); i < imax; i++) {
+    Node* out = lea_base->fast_out(i);
+    if (out == lea_derived_oop) {
+      continue;
+    }
+    if (out->is_MachProj() && out->outcnt() == 0) {
+      proj = out;
+      continue;
+    }
+    // There is other stuff we do not expect...
+    return false;
+  }
+
+  // Ensure the MachProj is inbetween the decode and the lea in the block order.
+  if (block->get_node(block_index -1) != proj) {
+    tty->print_cr("%s: the MachProj is not in the right place", __FUNCTION__);
+    return false;
+  }
+
+  // We now have verified that the decode is redundant.
+  MachNode* decode_to_remove = lea_base->isa_Mach();
+  MachProjNode* proj_to_remove = proj->isa_MachProj();
+  if (decode_to_remove == nullptr || proj_to_remove == nullptr) {
+    return false;
+  }
+
+  // Remove the projection
+  block->remove_node(block_index-1);
+  cfg_->map_node_to_block(decode_to_remove, nullptr);
+
+  // Remove the decode
+  decode_to_remove->set_removed();
+  block->remove_node(block_index -2);
+  cfg_->map_node_to_block(proj_to_remove, nullptr);
+
+  // Rewire the base of the lea.
+  lea_derived_oop->set_req(AddPNode::Base, lea_derived_oop->in(AddPNode::Address));
+
+  return true;
 }
 
 bool Peephole::lea_coalesce_reg(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
