@@ -30,10 +30,10 @@ import java.util.List;
 
 /**
  * The {@link CodeFrame} represents a frame (i.e. scope) of code, appending {@link Code} to the {@code 'codeList'}
- * as {@link Token}s are rendered, and adding names to the {@link NameSet}s as they get defined by {@link Template#define}.
+ * as {@link Token}s are rendered, and adding names to the {@link NameSet}s with {@link Template#addName}.
  * {@link Hook}s can be added to a frame, which allows code to be inserted at that location later.
  * When a {@link Hook} is {@link Hook#set}, this separates the Template into an outer and inner
- * {@link CodeFrame}, ensuring that names that are {@link Template#defineName}'d inside the inner frame
+ * {@link CodeFrame}, ensuring that names that are {@link Template#addName}'d inside the inner frame
  * are only available inside that frame.
  *
  * <p>
