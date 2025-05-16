@@ -821,7 +821,7 @@ void ParallelScavengeHeap::resize_old_gen_after_full_gc() {
   size_t desired_capacity = calculate_desired_old_gen_capacity(old_gen()->used_in_bytes());
 
   // If MinHeapFreeRatio is at its default value; shrink cautiously. Otherwise, users expect prompt shrinking.
-  if (FLAG_IS_DEFAULT(MinHeapFreeRatio) && MinHeapFreeRatio == 0) {
+  if (FLAG_IS_DEFAULT(MinHeapFreeRatio)) {
     if (desired_capacity < current_capacity) {
       // Shrinking
       if (total_full_collections() < AdaptiveSizePolicyReadyThreshold) {
