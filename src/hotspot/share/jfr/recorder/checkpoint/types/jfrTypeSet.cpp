@@ -1225,9 +1225,6 @@ static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer
   } else {
     _artifacts->initialize(class_unload);
   }
-  if (!_class_unload) {
-    JfrKlassUnloading::sort(previous_epoch());
-  }
   assert(_artifacts != nullptr, "invariant");
   assert(!_artifacts->has_klass_entries(), "invariant");
 }

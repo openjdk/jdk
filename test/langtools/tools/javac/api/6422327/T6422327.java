@@ -25,7 +25,7 @@
  * @test
  * @bug     6422327
  * @summary JSR 199: JavaCompilerTool can compile and generate '.class' of non '.java' files
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler

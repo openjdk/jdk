@@ -1295,7 +1295,7 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
 #endif
 
   void MachNopNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc*) const {
-    Assembler::CompressibleRegion cr(masm); // nops shall be 2-byte under RVC for alignment purposes.
+    Assembler::CompressibleScope scope(masm); // nops shall be 2-byte under RVC for alignment purposes.
     for (int i = 0; i < _count; i++) {
       __ nop();
     }
@@ -1371,7 +1371,7 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // insert a nop at the start of the prolog so we can patch in a
   // branch if we need to invalidate the method later
   {
-    Assembler::IncompressibleRegion ir(masm);  // keep the nop as 4 bytes for patching.
+    Assembler::IncompressibleScope scope(masm); // keep the nop as 4 bytes for patching.
     MacroAssembler::assert_alignment(__ pc());
     __ nop();  // 4 bytes
   }
@@ -1596,7 +1596,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ unspill(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
       } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
         // vpr to vpr
-        __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
+        __ vsetvli_helper(T_BYTE, MaxVectorSize);
+        __ vmv_v_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
       } else {
         ShouldNotReachHere();
       }
@@ -1614,7 +1615,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ unspill_vmask(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
       } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
         // vmask to vmask
-        __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
+        __ vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+        __ vmv_v_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
       } else {
         ShouldNotReachHere();
       }
@@ -1752,7 +1754,7 @@ void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 #endif
 
 void BoxLockNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
-  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see BoxLockNode::size()
+  Assembler::IncompressibleScope scope(masm); // Fixed length: see BoxLockNode::size()
 
   assert_cond(ra_ != nullptr);
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
@@ -1914,9 +1916,10 @@ bool Matcher::match_rule_supported(int opcode) {
 
     case Op_FmaF:
     case Op_FmaD:
+      return UseFMA;
     case Op_FmaVF:
     case Op_FmaVD:
-      return UseFMA;
+      return UseRVV && UseFMA;
 
     case Op_ConvHF2F:
     case Op_ConvF2HF:
@@ -1933,6 +1936,12 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_SubHF:
     case Op_SqrtHF:
       return UseZfh;
+
+    case Op_CMoveF:
+    case Op_CMoveD:
+    case Op_CMoveP:
+    case Op_CMoveN:
+      return false;
   }
 
   return true; // Per default match rules are supported.
@@ -1944,11 +1953,11 @@ const RegMask* Matcher::predicate_reg_mask(void) {
 
 // Vector calling convention not yet implemented.
 bool Matcher::supports_vector_calling_convention(void) {
-  return EnableVectorSupport && UseVectorStubs;
+  return EnableVectorSupport;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  assert(EnableVectorSupport, "sanity");
   assert(ideal_reg == Op_VecA, "sanity");
   // check more info at https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc
   int lo = V8_num;
@@ -2395,7 +2404,7 @@ encode %{
   %}
 
   enc_class riscv_enc_java_static_call(method meth) %{
-    Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
+    Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset
 
     address addr = (address)$meth$$method;
     address call = nullptr;
@@ -2442,7 +2451,7 @@ encode %{
   %}
 
   enc_class riscv_enc_java_dynamic_call(method meth) %{
-    Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
+    Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset
     int method_index = resolved_method_index(masm);
     address call = __ ic_call((address)$meth$$method, method_index);
     if (call == nullptr) {
@@ -2461,7 +2470,7 @@ encode %{
   %}
 
   enc_class riscv_enc_java_to_runtime(method meth) %{
-    Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
+    Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset
 
     // Some calls to generated routines (arraycopy code) are scheduled by C2
     // as runtime calls. if so we can call them using a far call (they will be
@@ -4395,6 +4404,12 @@ pipe_class pipe_slow()
   fixed_latency(16);
   DECODE : ID;
   LDST   : MEM;
+%}
+
+// The real do-nothing guy
+pipe_class real_empty()
+%{
+    instruction_count(0);
 %}
 
 // Empty pipeline class
@@ -6439,7 +6454,6 @@ instruct addI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immIAdd src2) %{
   format %{ "addiw  $dst, $src1, $src2\t#@addI_reg_imm" %}
 
   ins_encode %{
-    int32_t con = (int32_t)$src2$$constant;
     __ addiw(as_Register($dst$$reg),
              as_Register($src1$$reg),
              $src2$$constant);
@@ -6501,7 +6515,6 @@ instruct addP_reg_imm(iRegPNoSp dst, iRegP src1, immLAdd src2) %{
   format %{ "addi  $dst, $src1, $src2\t# ptr, #@addP_reg_imm" %}
 
   ins_encode %{
-    // src2 is imm, so actually call the addi
     __ addi(as_Register($dst$$reg),
             as_Register($src1$$reg),
             $src2$$constant);
@@ -6823,7 +6836,7 @@ instruct UmodL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 // Integer Shifts
 
 // Shift Left Register
-// In RV64I, only the low 5 bits of src2 are considered for the shift amount
+// Only the low 5 bits of src2 are considered for the shift amount, all other bits are ignored.
 instruct lShiftI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (LShiftI src1 src2));
   ins_cost(ALU_COST);
@@ -6856,7 +6869,7 @@ instruct lShiftI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immI src2) %{
 %}
 
 // Shift Right Logical Register
-// In RV64I, only the low 5 bits of src2 are considered for the shift amount
+// Only the low 5 bits of src2 are considered for the shift amount, all other bits are ignored.
 instruct urShiftI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (URShiftI src1 src2));
   ins_cost(ALU_COST);
@@ -6889,7 +6902,7 @@ instruct urShiftI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immI src2) %{
 %}
 
 // Shift Right Arithmetic Register
-// In RV64I, only the low 5 bits of src2 are considered for the shift amount
+// Only the low 5 bits of src2 are considered for the shift amount, all other bits are ignored.
 instruct rShiftI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (RShiftI src1 src2));
   ins_cost(ALU_COST);
@@ -6924,7 +6937,7 @@ instruct rShiftI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immI src2) %{
 // Long Shifts
 
 // Shift Left Register
-// In RV64I, only the low 6 bits of src2 are considered for the shift amount
+// Only the low 6 bits of src2 are considered for the shift amount, all other bits are ignored.
 instruct lShiftL_reg_reg(iRegLNoSp dst, iRegL src1, iRegIorL2I src2) %{
   match(Set dst (LShiftL src1 src2));
 
@@ -6959,7 +6972,7 @@ instruct lShiftL_reg_imm(iRegLNoSp dst, iRegL src1, immI src2) %{
 %}
 
 // Shift Right Logical Register
-// In RV64I, only the low 6 bits of src2 are considered for the shift amount
+// Only the low 6 bits of src2 are considered for the shift amount, all other bits are ignored.
 instruct urShiftL_reg_reg(iRegLNoSp dst, iRegL src1, iRegIorL2I src2) %{
   match(Set dst (URShiftL src1 src2));
 
@@ -7012,7 +7025,7 @@ instruct urShiftP_reg_imm(iRegLNoSp dst, iRegP src1, immI src2) %{
 %}
 
 // Shift Right Arithmetic Register
-// In RV64I, only the low 6 bits of src2 are considered for the shift amount
+// Only the low 6 bits of src2 are considered for the shift amount, all other bits are ignored.
 instruct rShiftL_reg_reg(iRegLNoSp dst, iRegL src1, iRegIorL2I src2) %{
   match(Set dst (RShiftL src1 src2));
 
@@ -7902,78 +7915,102 @@ instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
 // ============================================================================
 // MemBar Instruction
 
-instruct load_fence() %{
+// RVTSO
+
+instruct unnecessary_membar_rvtso() %{
+  predicate(UseZtso);
   match(LoadFence);
-  ins_cost(ALU_COST);
-
-  format %{ "#@load_fence" %}
-
-  ins_encode %{
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-instruct membar_acquire() %{
+  match(StoreFence);
+  match(StoreStoreFence);
   match(MemBarAcquire);
-  ins_cost(ALU_COST);
-
-  format %{ "#@membar_acquire\n\t"
-            "fence ir iorw" %}
-
-  ins_encode %{
-    __ block_comment("membar_acquire");
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct membar_acquire_lock() %{
+  match(MemBarRelease);
+  match(MemBarStoreStore);
   match(MemBarAcquireLock);
+  match(MemBarReleaseLock);
+
   ins_cost(0);
 
-  format %{ "#@membar_acquire_lock (elided)" %}
+  size(0);
+
+  format %{ "#@unnecessary_membar_rvtso elided/tso (empty encoding)" %}
+  ins_encode %{
+    __ block_comment("unnecessary_membar_rvtso");
+  %}
+  ins_pipe(real_empty);
+%}
+
+instruct membar_volatile_rvtso() %{
+  predicate(UseZtso);
+  match(MemBarVolatile);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@membar_volatile_rvtso\n\t"
+            "fence w, r"%}
 
   ins_encode %{
-    __ block_comment("membar_acquire_lock (elided)");
+    __ block_comment("membar_volatile_rvtso");
+    __ membar(MacroAssembler::StoreLoad);
   %}
 
+  ins_pipe(pipe_slow);
+%}
+
+instruct unnecessary_membar_volatile_rvtso() %{
+  predicate(UseZtso && Matcher::post_store_load_barrier(n));
+  match(MemBarVolatile);
+  ins_cost(0);
+
+  size(0);
+  
+  format %{ "#@unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
+  ins_encode %{
+    __ block_comment("unnecessary_membar_volatile_rvtso");
+  %}
+  ins_pipe(real_empty);
+%}
+
+// RVWMO
+
+instruct membar_aqcuire_rvwmo() %{
+  predicate(!UseZtso);
+  match(LoadFence);
+  match(MemBarAcquire);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@membar_aqcuire_rvwmo\n\t"
+            "fence r, rw" %}
+
+  ins_encode %{
+    __ block_comment("membar_aqcuire_rvwmo");
+    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  %}
   ins_pipe(pipe_serial);
 %}
 
-instruct store_fence() %{
+instruct membar_release_rvwmo() %{
+  predicate(!UseZtso);
   match(StoreFence);
-  ins_cost(ALU_COST);
-
-  format %{ "#@store_fence" %}
-
-  ins_encode %{
-    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-instruct membar_release() %{
   match(MemBarRelease);
-  ins_cost(ALU_COST);
+  ins_cost(VOLATILE_REF_COST);
 
-  format %{ "#@membar_release\n\t"
-            "fence iorw ow" %}
+  format %{ "#@membar_release_rvwmo\n\t"
+            "fence rw, w" %}
 
   ins_encode %{
-    __ block_comment("membar_release");
+    __ block_comment("membar_release_rvwmo");
     __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   %}
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_storestore() %{
+instruct membar_storestore_rvwmo() %{
+  predicate(!UseZtso);
   match(MemBarStoreStore);
   match(StoreStoreFence);
-  ins_cost(ALU_COST);
+  ins_cost(VOLATILE_REF_COST);
 
-  format %{ "MEMBAR-store-store\t#@membar_storestore" %}
+  format %{ "#@membar_storestore_rvwmo\n\t"
+            "fence w, w" %}
 
   ins_encode %{
     __ membar(MacroAssembler::StoreStore);
@@ -7981,32 +8018,48 @@ instruct membar_storestore() %{
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_release_lock() %{
-  match(MemBarReleaseLock);
-  ins_cost(0);
+instruct membar_volatile_rvwmo() %{
+  predicate(!UseZtso);
+  match(MemBarVolatile);
+  ins_cost(VOLATILE_REF_COST);
 
-  format %{ "#@membar_release_lock (elided)" %}
+  format %{ "#@membar_volatile_rvwmo\n\t"
+            "fence w, r"%}
 
   ins_encode %{
-    __ block_comment("membar_release_lock (elided)");
+    __ block_comment("membar_volatile_rvwmo");
+    __ membar(MacroAssembler::StoreLoad);
   %}
 
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_volatile() %{
-  match(MemBarVolatile);
-  ins_cost(ALU_COST);
+instruct membar_lock_rvwmo() %{
+  predicate(!UseZtso);
+  match(MemBarAcquireLock);
+  match(MemBarReleaseLock);
+  ins_cost(0);
 
-  format %{ "#@membar_volatile\n\t"
-             "fence iorw iorw"%}
+  format %{ "#@membar_lock_rvwmo (elided)" %}
 
   ins_encode %{
-    __ block_comment("membar_volatile");
-    __ membar(MacroAssembler::StoreLoad);
+    __ block_comment("membar_lock_rvwmo (elided)");
   %}
 
   ins_pipe(pipe_serial);
+%}
+
+instruct unnecessary_membar_volatile_rvwmo() %{
+  predicate(!UseZtso && Matcher::post_store_load_barrier(n));
+  match(MemBarVolatile);
+  ins_cost(0);
+
+  size(0);
+  format %{ "#@unnecessary_membar_volatile_rvwmo (unnecessary so empty encoding)" %}
+  ins_encode %{
+    __ block_comment("unnecessary_membar_volatile_rvwmo");
+  %}
+  ins_pipe(real_empty);
 %}
 
 instruct spin_wait() %{
@@ -9894,12 +9947,15 @@ instruct far_cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP0 zero, la
 
 // ============================================================================
 // Conditional Move Instructions
+
+// --------- CMoveI ---------
+
 instruct cmovI_cmpI(iRegINoSp dst, iRegI src, iRegI op1, iRegI op2, cmpOp cop) %{
   match(Set dst (CMoveI (Binary cop (CmpI op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpI\n\t"
+    "CMoveI $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpI\n\t"
   %}
 
   ins_encode %{
@@ -9916,7 +9972,7 @@ instruct cmovI_cmpU(iRegINoSp dst, iRegI src, iRegI op1, iRegI op2, cmpOpU cop) 
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpU\n\t"
+    "CMoveI $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpU\n\t"
   %}
 
   ins_encode %{
@@ -9933,7 +9989,7 @@ instruct cmovI_cmpL(iRegINoSp dst, iRegI src, iRegL op1, iRegL op2, cmpOp cop) %
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpL\n\t"
+    "CMoveI $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpL\n\t"
   %}
 
   ins_encode %{
@@ -9950,7 +10006,7 @@ instruct cmovI_cmpUL(iRegINoSp dst, iRegI src, iRegL op1, iRegL op2, cmpOpU cop)
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpUL\n\t"
+    "CMoveI $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpUL\n\t"
   %}
 
   ins_encode %{
@@ -9962,12 +10018,46 @@ instruct cmovI_cmpUL(iRegINoSp dst, iRegI src, iRegL op1, iRegL op2, cmpOpU cop)
   ins_pipe(pipe_class_compare);
 %}
 
+instruct cmovI_cmpF(iRegINoSp dst, iRegI src, fRegF op1, fRegF op2, cmpOp cop) %{
+  match(Set dst (CMoveI (Binary cop (CmpF op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveI $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpF\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_cmp_fp($cop$$cmpcode,
+                        as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                        as_Register($dst$$reg), as_Register($src$$reg), true /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovI_cmpD(iRegINoSp dst, iRegI src, fRegD op1, fRegD op2, cmpOp cop) %{
+  match(Set dst (CMoveI (Binary cop (CmpD op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveI $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpD\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_cmp_fp($cop$$cmpcode | C2_MacroAssembler::double_branch_mask,
+                        as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                        as_Register($dst$$reg), as_Register($src$$reg), false /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
 instruct cmovI_cmpN(iRegINoSp dst, iRegI src, iRegN op1, iRegN op2, cmpOpU cop) %{
   match(Set dst (CMoveI (Binary cop (CmpN op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpN\n\t"
+    "CMoveI $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpN\n\t"
   %}
 
   ins_encode %{
@@ -9984,7 +10074,7 @@ instruct cmovI_cmpP(iRegINoSp dst, iRegI src, iRegP op1, iRegP op2, cmpOpU cop) 
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpP\n\t"
+    "CMoveI $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpP\n\t"
   %}
 
   ins_encode %{
@@ -9996,12 +10086,14 @@ instruct cmovI_cmpP(iRegINoSp dst, iRegI src, iRegP op1, iRegP op2, cmpOpU cop) 
   ins_pipe(pipe_class_compare);
 %}
 
+// --------- CMoveL ---------
+
 instruct cmovL_cmpL(iRegLNoSp dst, iRegL src, iRegL op1, iRegL op2, cmpOp cop) %{
   match(Set dst (CMoveL (Binary cop (CmpL op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpL\n\t"
+    "CMoveL $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpL\n\t"
   %}
 
   ins_encode %{
@@ -10018,7 +10110,7 @@ instruct cmovL_cmpUL(iRegLNoSp dst, iRegL src, iRegL op1, iRegL op2, cmpOpU cop)
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpUL\n\t"
+    "CMoveL $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpUL\n\t"
   %}
 
   ins_encode %{
@@ -10035,7 +10127,7 @@ instruct cmovL_cmpI(iRegLNoSp dst, iRegL src, iRegI op1, iRegI op2, cmpOp cop) %
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpI\n\t"
+    "CMoveL $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpI\n\t"
   %}
 
   ins_encode %{
@@ -10052,7 +10144,7 @@ instruct cmovL_cmpU(iRegLNoSp dst, iRegL src, iRegI op1, iRegI op2, cmpOpU cop) 
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpU\n\t"
+    "CMoveL $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpU\n\t"
   %}
 
   ins_encode %{
@@ -10064,12 +10156,46 @@ instruct cmovL_cmpU(iRegLNoSp dst, iRegL src, iRegI op1, iRegI op2, cmpOpU cop) 
   ins_pipe(pipe_class_compare);
 %}
 
+instruct cmovL_cmpF(iRegLNoSp dst, iRegL src, fRegF op1, fRegF op2, cmpOp cop) %{
+  match(Set dst (CMoveL (Binary cop (CmpF op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveL $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpF\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_cmp_fp($cop$$cmpcode,
+                        as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                        as_Register($dst$$reg), as_Register($src$$reg), true /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovL_cmpD(iRegLNoSp dst, iRegL src, fRegD op1, fRegD op2, cmpOp cop) %{
+  match(Set dst (CMoveL (Binary cop (CmpD op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveL $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpD\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_cmp_fp($cop$$cmpcode | C2_MacroAssembler::double_branch_mask,
+                        as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                        as_Register($dst$$reg), as_Register($src$$reg), false /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
 instruct cmovL_cmpN(iRegLNoSp dst, iRegL src, iRegN op1, iRegN op2, cmpOpU cop) %{
   match(Set dst (CMoveL (Binary cop (CmpN op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpN\n\t"
+    "CMoveL $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpN\n\t"
   %}
 
   ins_encode %{
@@ -10086,7 +10212,7 @@ instruct cmovL_cmpP(iRegLNoSp dst, iRegL src, iRegP op1, iRegP op2, cmpOpU cop) 
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpP\n\t"
+    "CMoveL $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpP\n\t"
   %}
 
   ins_encode %{
@@ -10847,7 +10973,8 @@ instruct ShouldNotReachHere() %{
 
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
 

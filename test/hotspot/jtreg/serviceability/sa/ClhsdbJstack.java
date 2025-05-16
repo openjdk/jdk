@@ -33,6 +33,7 @@ import jtreg.SkippedException;
  * @bug 8190198
  * @summary Test clhsdb Jstack command
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbJstack true
  */
@@ -43,6 +44,7 @@ import jtreg.SkippedException;
  * @requires vm.compMode != "Xcomp"
  * @summary Test clhsdb Jstack command
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbJstack false
  */

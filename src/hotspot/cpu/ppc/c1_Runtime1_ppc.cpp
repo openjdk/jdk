@@ -82,10 +82,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result,
     if (oop_result1->is_valid() || metadata_result->is_valid()) {
       li(R0, 0);
       if (oop_result1->is_valid()) {
-        std(R0, in_bytes(JavaThread::vm_result_offset()), R16_thread);
+        std(R0, in_bytes(JavaThread::vm_result_oop_offset()), R16_thread);
       }
       if (metadata_result->is_valid()) {
-        std(R0, in_bytes(JavaThread::vm_result_2_offset()), R16_thread);
+        std(R0, in_bytes(JavaThread::vm_result_metadata_offset()), R16_thread);
       }
     }
 
@@ -112,10 +112,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result,
 
   // Get oop results if there are any and reset the values in the thread.
   if (oop_result1->is_valid()) {
-    get_vm_result(oop_result1);
+    get_vm_result_oop(oop_result1);
   }
   if (metadata_result->is_valid()) {
-    get_vm_result_2(metadata_result);
+    get_vm_result_metadata(metadata_result);
   }
 
   return (int)(return_pc - code_section()->start());
@@ -162,8 +162,7 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
     Register r = as_Register(i);
     if (FrameMap::reg_needs_save(r)) {
       int sp_offset = cpu_reg_save_offsets[i];
-      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset>>2), r->as_VMReg());
-      oop_map->set_callee_saved(VMRegImpl::stack2reg((sp_offset>>2) + 1), r->as_VMReg()->next());
+      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset >> 2), r->as_VMReg());
     }
   }
 
@@ -171,8 +170,7 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
     for (i = 0; i < FrameMap::nof_fpu_regs; i++) {
       FloatRegister r = as_FloatRegister(i);
       int sp_offset = fpu_reg_save_offsets[i];
-      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset>>2), r->as_VMReg());
-      oop_map->set_callee_saved(VMRegImpl::stack2reg((sp_offset>>2) + 1), r->as_VMReg()->next());
+      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset >> 2), r->as_VMReg());
     }
   }
 

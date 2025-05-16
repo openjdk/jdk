@@ -473,11 +473,9 @@ public:
       _remset_table_iterator(remembered)  {
     _mark->prepare_work();
     _remembered->_page_allocator->enable_safe_destroy();
-    _remembered->_page_allocator->enable_safe_recycle();
   }
 
   ~ZRememberedScanMarkFollowTask() {
-    _remembered->_page_allocator->disable_safe_recycle();
     _remembered->_page_allocator->disable_safe_destroy();
     _mark->finish_work();
     // We are done scanning the set of old pages.

@@ -130,10 +130,6 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       // Use optimized stub code for CRC32C methods.
       case vmIntrinsics::_updateBytesCRC32C: return java_util_zip_CRC32C_updateBytes;
       case vmIntrinsics::_updateDirectByteBufferCRC32C: return java_util_zip_CRC32C_updateDirectByteBuffer;
-      case vmIntrinsics::_intBitsToFloat:    return java_lang_Float_intBitsToFloat;
-      case vmIntrinsics::_floatToRawIntBits: return java_lang_Float_floatToRawIntBits;
-      case vmIntrinsics::_longBitsToDouble:  return java_lang_Double_longBitsToDouble;
-      case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
       case vmIntrinsics::_float16ToFloat:    return java_lang_Float_float16ToFloat;
       case vmIntrinsics::_floatToFloat16:    return java_lang_Float_floatToFloat16;
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
@@ -224,14 +220,6 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
                                   : return vmIntrinsics::_updateDirectByteBufferCRC32C;
   case java_lang_Thread_currentThread
                                   : return vmIntrinsics::_currentThread;
-  case java_lang_Float_intBitsToFloat
-                                  : return vmIntrinsics::_intBitsToFloat;
-  case java_lang_Float_floatToRawIntBits
-                                  : return vmIntrinsics::_floatToRawIntBits;
-  case java_lang_Double_longBitsToDouble
-                                  : return vmIntrinsics::_longBitsToDouble;
-  case java_lang_Double_doubleToRawLongBits
-                                  : return vmIntrinsics::_doubleToRawLongBits;
   case java_lang_Float_float16ToFloat
                                   : return vmIntrinsics::_float16ToFloat;
   case java_lang_Float_floatToFloat16
@@ -331,10 +319,6 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_util_zip_CRC32C_updateDirectByteBuffer: tty->print("java_util_zip_CRC32C_updateDirectByteByffer"); break;
     case java_lang_ref_reference_get          : tty->print("java_lang_ref_reference_get"); break;
     case java_lang_Thread_currentThread       : tty->print("java_lang_Thread_currentThread"); break;
-    case java_lang_Float_intBitsToFloat       : tty->print("java_lang_Float_intBitsToFloat"); break;
-    case java_lang_Float_floatToRawIntBits    : tty->print("java_lang_Float_floatToRawIntBits"); break;
-    case java_lang_Double_longBitsToDouble    : tty->print("java_lang_Double_longBitsToDouble"); break;
-    case java_lang_Double_doubleToRawLongBits : tty->print("java_lang_Double_doubleToRawLongBits"); break;
     case java_lang_Float_float16ToFloat       : tty->print("java_lang_Float_float16ToFloat"); break;
     case java_lang_Float_floatToFloat16       : tty->print("java_lang_Float_floatToFloat16"); break;
     default:

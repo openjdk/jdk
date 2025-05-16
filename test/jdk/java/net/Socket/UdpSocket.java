@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,61 +21,52 @@
  * questions.
  */
 
-/**
- * @test
- * @run testng/othervm UdpSocket
- * @summary Basic test for a Socket to a UDP socket
- */
-
-import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.DatagramChannel;
-import java.util.Arrays;
 
 import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.testng.Assert.fail;
 
-@Test
+/*
+ * @test
+ * @summary Basic test for the UDP sockets through the java.net.Socket constructors
+ * @run testng UdpSocket
+ */
 public class UdpSocket {
 
-    private static final int MAX_RETRIES = 3;
-
     /**
-     * Test using the Socket API to send/receive datagrams
+     * Verifies that the {@code Socket} constructors that take the {@code stream}
+     * parameter don't allow construction of UDP sockets.
      */
-    public void testSendReceive() throws IOException {
-        final String MESSAGE = "hello";
-
-        try (DatagramChannel dc = DatagramChannel.open()) {
-            var loopback = InetAddress.getLoopbackAddress();
-            dc.bind(new InetSocketAddress(loopback, 0));
-
-            int port = ((InetSocketAddress) dc.getLocalAddress()).getPort();
-            try (Socket s = new Socket(loopback, port, false)) {
-                // send datagram with socket output stream
-                byte[] array1 = MESSAGE.getBytes("UTF-8");
-                s.getOutputStream().write(array1);
-
-                // receive the datagram
-                var buf = ByteBuffer.allocate(100);
-                SocketAddress remote = dc.receive(buf);
-                buf.flip();
-                assertTrue(buf.remaining() == MESSAGE.length(), "Unexpected size");
-
-                // echo the datagram
-                dc.send(buf, remote);
-
-                // receive datagram with the socket input stream
-                byte[] array2 = new byte[100];
-                int n = s.getInputStream().read(array2);
-                assertTrue(n == MESSAGE.length(), "Unexpected size");
-                assertEquals(Arrays.copyOf(array1, n), Arrays.copyOf(array2, n),
-                            "Unexpected contents");
-            }
+    @Test
+    public void testUDPConstructors() throws Exception {
+        try {
+            new Socket("doesnotmatter", 12345, false);
+            fail("Socket constructor was expected to throw IllegalArgumentException" +
+                    " for stream=false, but didn't");
+        } catch (IllegalArgumentException iae) {
+            // verify it's thrown for the right reason
+            assertExceptionMessage(iae);
         }
+
+        try {
+            new Socket(InetAddress.getLoopbackAddress(), 12345, false);
+            fail("Socket constructor was expected to throw IllegalArgumentException" +
+                    " for stream=false, but didn't");
+        } catch (IllegalArgumentException iae) {
+            // verify it's thrown for the right reason
+            assertExceptionMessage(iae);
+        }
+    }
+
+    private static void assertExceptionMessage(final IllegalArgumentException iae) {
+        final String msg = iae.getMessage();
+        if (msg != null && msg.contains(
+                "Socket constructor does not support creation of datagram socket")) {
+            // contains the expected message
+            return;
+        }
+        // unexpected exception message, propagate the original exception
+        throw iae;
     }
 }
