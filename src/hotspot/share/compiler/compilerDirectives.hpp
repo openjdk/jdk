@@ -141,6 +141,7 @@ public:
   void append_inline(InlineMatcher* m);
   bool should_inline(ciMethod* inlinee);
   bool should_not_inline(ciMethod* inlinee);
+  bool is_estimated_size_bigger_than(ciMethod* inlinee, const int threshold);
   void print_inline(outputStream* st);
   DirectiveSet* compilecommand_compatibility_init(const methodHandle& method);
   bool is_exclusive_copy() { return _directive == nullptr; }

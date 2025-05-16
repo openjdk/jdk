@@ -421,7 +421,7 @@ void InlineMatcher::print(outputStream* st) {
   print_base(st);
 }
 
-InlineMatcher* InlineMatcher::parse_method_pattern(char* line, const char*& error_msg) {
+InlineMatcher* InlineMatcher::parse_method_pattern(char*& line, const char*& error_msg) {
   assert(error_msg == nullptr, "Dont call here with error_msg already set");
   InlineMatcher* im = new InlineMatcher();
   MethodMatcher::parse_method_pattern(line, error_msg, im);
@@ -441,21 +441,44 @@ bool InlineMatcher::match(const methodHandle& method, int inline_action) {
   return false;
 }
 
+bool InlineMatcher::match_if_bigger_than(const methodHandle& method, const int threshold) {
+  for (InlineMatcher* current = this; current != nullptr; current = current->next()) {
+    if (current->matches(method)) {
+      return (current->_inline_instructions_size > threshold);
+    }
+  }
+  return false;
+}
+
 InlineMatcher* InlineMatcher::parse_inline_pattern(char* str, const char*& error_msg) {
+  // Reuse the existing `inline` directive attribute for inlining control:
+  //
+  // - Prefix with '+' to force inlining of any matching Java method:
+  //     e.g., inline: ["+java/lang*.*"]
+  //
+  // - Prefix with '-' to prevent inlining of any matching Java method:
+  //     e.g., inline: ["-sun*.*"]
+  //
+  // - Suffix with ':<size>' to specify cached compiled size for a matching method:
+  //     e.g., inline: ["java.lang.StringCoding::countPositives([BII)I:408"]
+  //
+  // Note: If multiple inline rules match the same method, only the first match is effective.
+
   // check first token is +/-
   InlineType _inline_action;
    switch (str[0]) {
    case '-':
      _inline_action = InlineMatcher::dont_inline;
+     str++;
      break;
    case '+':
      _inline_action = InlineMatcher::force_inline;
+     str++;
      break;
    default:
-     error_msg = "Missing leading inline type (+/-)";
-     return nullptr;
+    _inline_action = InlineMatcher::unknown_inline;
+     break;
    }
-   str++;
 
    assert(error_msg == nullptr, "error_msg must not be set yet");
    InlineMatcher* im = InlineMatcher::parse_method_pattern(str, error_msg);
@@ -464,6 +487,26 @@ InlineMatcher* InlineMatcher::parse_inline_pattern(char* str, const char*& error
      return nullptr;
    }
    im->set_action(_inline_action);
+
+  // Parse method size
+  bool set_size = false;
+  if (str[0] != '\0') {
+    // Skip any leading spaces
+    int whitespace_read = 0;
+    sscanf(str, "%*[ \t]%n", &whitespace_read);
+    str += whitespace_read;
+    int size = 0;
+    if (str[0] >= '0' && str[0] <= '9') {
+      sscanf(str, "%d", &size);
+      im->set_size(size);
+      set_size = true;
+    }
+  }
+  // TODO: More logic to detect and handle incorrectly formatted input to this function
+  if (_inline_action == InlineMatcher::unknown_inline && !set_size) {
+    error_msg = "Missing leading inline type (+/-) or missing method size";
+    return nullptr;
+  }
    return im;
 }
 

@@ -577,6 +577,14 @@ public:
   int dependencies_size  () const { return int(          dependencies_end () -           dependencies_begin ()); }
   int handler_table_size () const { return int(          handler_table_end() -           handler_table_begin()); }
   int nul_chk_table_size () const { return int(          nul_chk_table_end() -           nul_chk_table_begin()); }
+  int inline_instructions_size() const {
+    int isize = 0;
+    if (comp_level() == CompLevel_full_optimization) {
+      isize = insts_end() - verified_entry_point() - skipped_instructions_size();
+    }
+    return isize > 0 ? isize : 0;
+  }
+
 #if INCLUDE_JVMCI
   int speculations_size  () const { return int(          speculations_end () -           speculations_begin ()); }
   int jvmci_data_size    () const { return int(          jvmci_data_end   () -           jvmci_data_begin   ()); }

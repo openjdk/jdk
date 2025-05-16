@@ -630,6 +630,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintNMethods, false, DIAGNOSTIC,                           \
           "Print assembly code for nmethods when generated")                \
                                                                             \
+  product(bool, PrintOptoMethodSize, false, DIAGNOSTIC,                     \
+          "Print estimated inlined instruction size for nmethods compiled"  \
+          "by C2")                                                          \
+                                                                            \
   product(bool, PrintNativeNMethods, false, DIAGNOSTIC,                     \
           "Print assembly code for native nmethods when generated")         \
                                                                             \

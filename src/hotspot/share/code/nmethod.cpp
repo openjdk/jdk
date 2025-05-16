@@ -3065,6 +3065,23 @@ void nmethod::print_on_impl(outputStream* st) const {
 
   print_on_with_msg(st, nullptr);
 
+  // Introduce a dumping interface for C2-compiled method sizes
+  if (PrintOptoMethodSize && comp_level() == CompLevel_full_optimization) {
+    Method* m = method();
+    // "InlineSmallCode / 4" used by C2 to block inlining of cold and medium methods
+    int inline_small_code_size  = InlineSmallCode / 4;
+    if (inline_instructions_size() > inline_small_code_size &&
+        m->code_size() < FreqInlineSize) {
+      st->print("Collecting method size {class_name} ");
+      m->method_holder()->name()->print_value_on(st);
+      st->print("{method_name} ");
+      m->name()->print_value_on(st);
+      st->print("{signature} ");
+      m->signature()->print_value_on(st);
+      st->print_cr("{Inline instruction size: %d}", inline_instructions_size());
+    }
+  }
+
   if (WizardMode) {
     st->print("((nmethod*) " INTPTR_FORMAT ") ", p2i(this));
     st->print(" for method " INTPTR_FORMAT , p2i(method()));
