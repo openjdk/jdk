@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,35 @@
 
 package java.security;
 
-import java.security.spec.AlgorithmParameterSpec;
+import jdk.internal.javac.PreviewFeature;
+
+import javax.crypto.EncryptedPrivateKeyInfo;
+import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 /**
- * An asymmetric key, which can be either a public key or a private key.
- * This interface contains methods that are common to either a public key or
- * a private key.
+ * This interface is implemented by security API classes that contain
+ * binary-encodable key or certificate material.
+ * These APIs or their subclasses typically provide methods to convert
+ * their instances to and from byte arrays in the Distinguished
+ * Encoding Rules (DER) format.
  *
- * @since 22
+ * @see AsymmetricKey
+ * @see KeyPair
+ * @see PKCS8EncodedKeySpec
+ * @see X509EncodedKeySpec
+ * @see EncryptedPrivateKeyInfo
+ * @see X509Certificate
+ * @see X509CRL
+ * @see PEMRecord
+ *
+ * @since 25
  */
-public non-sealed interface AsymmetricKey extends Key, DEREncodable {
-    /**
-     * Returns the parameters associated with this key.
-     * The parameters are optional and may be either
-     * explicitly specified or implicitly created during
-     * key pair generation.
-     *
-     * @implSpec
-     * The default implementation returns {@code null}.
-     *
-     * @return the associated parameters, may be {@code null}
-     */
-    default AlgorithmParameterSpec getParams() {
-        return null;
-    }
+
+@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+public sealed interface DEREncodable permits AsymmetricKey, KeyPair,
+    PKCS8EncodedKeySpec, X509EncodedKeySpec, EncryptedPrivateKeyInfo,
+    X509Certificate, X509CRL, PEMRecord {
 }
