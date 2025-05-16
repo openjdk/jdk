@@ -27,8 +27,7 @@
 #include "gc/z/zPageAge.hpp"
 
 inline uint untype(ZPageAge age) {
-  const uint value = static_cast<uint>(age);
-  return value;
+  return static_cast<uint>(age);
 }
 
 inline ZPageAge to_zpageage(uint age) {
