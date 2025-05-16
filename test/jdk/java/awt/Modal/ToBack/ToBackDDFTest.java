@@ -34,7 +34,7 @@ public class ToBackDDFTest {
     private volatile CustomDialog dialog;
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     private Frame hiddenFrame;
 
@@ -47,7 +47,7 @@ public class ToBackDDFTest {
         modalityType = modType;
         setModal = modal;
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(this::createGUI);
     }
 

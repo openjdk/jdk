@@ -31,7 +31,7 @@ public class BlockingDDTest {
     private TestDialog parent, dialog;
 
     private static final int delay = 1000;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     private final Dialog.ModalityType modalityType;
     private final boolean setModal;
@@ -40,7 +40,7 @@ public class BlockingDDTest {
 
         modalityType = modType;
         setModal = modal;
-        robot = new ExtendedRobot();
+        robot = new Robot();
         createGUI();
     }
 
