@@ -120,30 +120,6 @@ public class PEMDecoderTest {
         if (((PEMRecord) result).type().compareTo(Pem.PUBLIC_KEY) != 0) {
             throw new AssertionError("pubecpem PEMRecord didn't decode as a Public Key");
         }
-
-        /*
-        testPEMRecord(PEMData.rsapub);
-        testPEMRecord(PEMData.ecCert);
-        testPEMRecord(PEMData.ec25519priv);
-        testPEMRecord(PEMData.ecCSR);
-        testPEMRecord(PEMData.ecCSRWithData);
-        testPEMRecordDecode(PEMData.rsapub);
-        testPEMRecordDecode(PEMData.ecCert);
-        testPEMRecordDecode(PEMData.ec25519priv);
-
-        d = PEMDecoder.of();
-        EncryptedPrivateKeyInfo epk =
-            d.decode(PEMData.ed25519ep8.pem(), EncryptedPrivateKeyInfo.class);
-        PrivateKey privateKey;
-        try {
-            privateKey = epk.getKey(PEMData.ed25519ep8.password());
-        } catch (GeneralSecurityException e) {
-            throw new AssertionError("ed25519ep8 error", e);
-        }
-
-        EncryptedPrivateKeyInfo.encryptKey(privateKey,
-            PEMData.ed25519ep8.password());
-         */
     }
 
     static void testInputStream() throws IOException {
