@@ -115,8 +115,13 @@ public class HashedPasswordFileTest {
 
     private File createNewPasswordFile() throws IOException {
         File file = new File(getPasswordFilePath());
-        if (file.exists()) {
-            file.delete();
+        if (file.exists() && !file.delete()) {
+            // if the password file exists but is not deleted, try to make it
+            // writable then try again to remove it
+            if (!file.canWrite() && file.setWritable(true, true)) {
+                if (!file.delete())
+                    System.err.println("WARNING: Password file not deleted");
+            }
         }
         file.createNewFile();
         return file;
