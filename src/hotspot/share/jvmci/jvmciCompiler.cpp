@@ -48,7 +48,7 @@ JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
 
 JVMCICompiler* JVMCICompiler::instance(bool require_non_null, TRAPS) {
   if (!EnableJVMCI) {
-    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVMCI is not enabled")
+    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), JAVA_NOT_ENABLED_ERROR_MESSAGE)
   }
   if (_instance == nullptr && require_non_null) {
     THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "The JVMCI compiler instance has not been created");
