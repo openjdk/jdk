@@ -24,17 +24,16 @@
 /* @test
  * @bug 8355954
  * @summary Verify correct behavior of File.delete
- * @library .. /test/lib
- * @build jdk.test.lib.Platform
  * @run junit DeleteReadOnly
  * @run junit/othervm -Djdk.io.File.allowDeleteReadOnlyFiles=true DeleteReadOnly
  */
 import java.io.File;
 import java.io.IOException;
-
-import jdk.test.lib.Platform;
+import java.nio.file.Files;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,8 +42,7 @@ public class DeleteReadOnly {
     private static final String PROP = "jdk.io.File.allowDeleteReadOnlyFiles";
     private static final boolean DELETE_READ_ONLY = Boolean.getBoolean(PROP);
 
-    private static final File DIR = new File(".", "dir");
-    private static final File FILE = new File(DIR, "file");
+    private static final File ROOT = new File(".");
 
     void deleteReadOnlyFile(File f) {
         f.setReadOnly();
@@ -52,27 +50,38 @@ public class DeleteReadOnly {
     }
 
     @Test
-    void deleteReadOnlyRegularFile() throws IOException {
-        assertTrue(DIR.mkdir());
-        assertTrue(FILE.createNewFile());
+    @EnabledOnOs({OS.AIX, OS.LINUX, OS.MAC})
+    void deleteReadOnlyRegularFileUnix() throws IOException {
+        File dir = Files.createTempDirectory(ROOT.toPath(), "dir").toFile();
+        File file = File.createTempFile("tow", "hee", dir);
 
-        FILE.setReadOnly();
+        file.setReadOnly();
+        assertTrue(file.delete());
+        assertTrue(dir.delete());
+    }
 
-        boolean deleted = FILE.delete();
-        boolean shouldBeDeleted = !Platform.isWindows() || DELETE_READ_ONLY;
-        assertEquals(shouldBeDeleted, deleted);
+    @Test
+    @EnabledOnOs({OS.WINDOWS})
+    void deleteReadOnlyRegularFileWindows() throws IOException {
+        File dir = Files.createTempDirectory(ROOT.toPath(), "dir").toFile();
+        File file = File.createTempFile("tow", "hee", dir);
+
+        file.setReadOnly();
+
+        boolean deleted = file.delete();
+        assertEquals(DELETE_READ_ONLY, deleted);
 
         if (!deleted) {
-            FILE.setWritable(true);
-            assertTrue(FILE.delete());
+            file.setWritable(true);
+            assertTrue(file.delete());
         }
 
-        assertTrue(DIR.delete());
+        assertTrue(dir.delete());
     }
 
     @Test
     void deleteReadOnlyDirectory() throws IOException {
-        assertTrue(DIR.mkdir());
-        deleteReadOnlyFile(DIR);
+        File dir = Files.createTempDirectory(ROOT.toPath(), "dir").toFile();
+        deleteReadOnlyFile(dir);
     }
 }
