@@ -659,7 +659,6 @@ void PSParallelCompact::pre_compact()
   _space_info[from_space_id].set_space(heap->young_gen()->from_space());
   _space_info[to_space_id].set_space(heap->young_gen()->to_space());
 
-  // Increment the invocation count
   heap->increment_total_collections(true);
 
   CodeCache::on_gc_marking_cycle_start();
@@ -844,8 +843,8 @@ bool PSParallelCompact::check_maximum_compaction(size_t total_live_words,
   bool is_max_on_system_gc = UseMaximumCompactionOnSystemGC
                           && GCCause::is_user_requested_gc(heap->gc_cause());
 
-  // Check if all live objs are larger than old-gen.
-  const bool is_old_gen_overflowing = (total_live_words > old_space->capacity_in_words());
+  // Check if all live objs are too much for old-gen.
+  const bool is_old_gen_too_full = (total_live_words >= old_space->capacity_in_words());
 
   // JVM flags
   const uint total_invocations = heap->total_full_collections();
@@ -857,7 +856,7 @@ bool PSParallelCompact::check_maximum_compaction(size_t total_live_words,
   const bool is_region_full =
     full_region_prefix_end >= _summary_data.region_align_down(old_space->top());
 
-  if (is_max_on_system_gc || is_old_gen_overflowing || is_interval_ended || is_region_full) {
+  if (is_max_on_system_gc || is_old_gen_too_full || is_interval_ended || is_region_full) {
     _maximum_compaction_gc_num = total_invocations;
     return true;
   }
@@ -891,6 +890,13 @@ void PSParallelCompact::summary_phase()
     bool maximum_compaction = check_maximum_compaction(total_live_words,
                                                        old_space,
                                                        full_region_prefix_end);
+    {
+      GCTraceTime(Info, gc, phases) tm("Summary Phase: expand", &_gc_timer);
+      size_t live_and_waste_words = total_live_words + old_space->capacity_in_words() * (MarkSweepDeadRatio / 100.0);
+      // Try to expand old-gen in order to fit all live objs (plus waste).
+      ParallelScavengeHeap::heap()->old_gen()->try_expand_till_size(live_and_waste_words * HeapWordSize);
+    }
+
     HeapWord* dense_prefix_end = maximum_compaction
                                  ? full_region_prefix_end
                                  : compute_dense_prefix_for_old_space(old_space,
@@ -1001,7 +1007,6 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
   _gc_tracer.report_gc_start(heap->gc_cause(), _gc_timer.gc_start());
 
   GCCause::Cause gc_cause = heap->gc_cause();
-  PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
 
@@ -1071,78 +1076,12 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
     // done before resizing.
     post_compact();
 
-    // Let the size policy know we're done
-    size_policy->major_collection_end(old_gen->used_in_bytes(), gc_cause);
+    size_policy->major_collection_end();
+
+    size_policy->sample_old_gen_used_bytes(MAX2(pre_gc_values.old_gen_used(), old_gen->used_in_bytes()));
 
     if (UseAdaptiveSizePolicy) {
-      log_debug(gc, ergo)("AdaptiveSizeStart: collection: %d ", heap->total_collections());
-      log_trace(gc, ergo)("old_gen_capacity: %zu young_gen_capacity: %zu",
-                          old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
-
-      // Don't check if the size_policy is ready here.  Let
-      // the size_policy check that internally.
-      if (UseAdaptiveGenerationSizePolicyAtMajorCollection &&
-          AdaptiveSizePolicy::should_update_promo_stats(gc_cause)) {
-        // Swap the survivor spaces if from_space is empty. The
-        // resize_young_gen() called below is normally used after
-        // a successful young GC and swapping of survivor spaces;
-        // otherwise, it will fail to resize the young gen with
-        // the current implementation.
-        if (young_gen->from_space()->is_empty()) {
-          young_gen->from_space()->clear(SpaceDecorator::Mangle);
-          young_gen->swap_spaces();
-        }
-
-        // Calculate optimal free space amounts
-        assert(young_gen->max_gen_size() >
-          young_gen->from_space()->capacity_in_bytes() +
-          young_gen->to_space()->capacity_in_bytes(),
-          "Sizes of space in young gen are out-of-bounds");
-
-        size_t young_live = young_gen->used_in_bytes();
-        size_t eden_live = young_gen->eden_space()->used_in_bytes();
-        size_t old_live = old_gen->used_in_bytes();
-        size_t cur_eden = young_gen->eden_space()->capacity_in_bytes();
-        size_t max_old_gen_size = old_gen->max_gen_size();
-        size_t max_eden_size = young_gen->max_gen_size() -
-          young_gen->from_space()->capacity_in_bytes() -
-          young_gen->to_space()->capacity_in_bytes();
-
-        // Used for diagnostics
-        size_policy->clear_generation_free_space_flags();
-
-        size_policy->compute_generations_free_space(young_live,
-                                                    eden_live,
-                                                    old_live,
-                                                    cur_eden,
-                                                    max_old_gen_size,
-                                                    max_eden_size,
-                                                    true /* full gc*/);
-
-        size_policy->check_gc_overhead_limit(eden_live,
-                                             max_old_gen_size,
-                                             max_eden_size,
-                                             true /* full gc*/,
-                                             gc_cause,
-                                             heap->soft_ref_policy());
-
-        size_policy->decay_supplemental_growth(true /* full gc*/);
-
-        heap->resize_old_gen(
-          size_policy->calculated_old_free_size_in_bytes());
-
-        heap->resize_young_gen(size_policy->calculated_eden_size_in_bytes(),
-                               size_policy->calculated_survivor_size_in_bytes());
-      }
-
-      log_debug(gc, ergo)("AdaptiveSizeStop: collection: %d ", heap->total_collections());
-    }
-
-    if (UsePerfData) {
-      PSGCAdaptivePolicyCounters* const counters = heap->gc_policy_counters();
-      counters->update_counters();
-      counters->update_old_capacity(old_gen->capacity_in_bytes());
-      counters->update_young_capacity(young_gen->capacity_in_bytes());
+      heap->resize_after_full_gc();
     }
 
     heap->resize_all_tlabs();
@@ -1161,7 +1100,11 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
     heap->update_counters();
 
     heap->post_full_gc_dump(&_gc_timer);
+
+    size_policy->record_gc_pause_end_instant();
   }
+
+  heap->gc_epilogue(true);
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     Universe::verify("After GC");
@@ -1169,8 +1112,6 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
 
   heap->print_heap_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
-
-  AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
 
   _gc_timer.register_gc_end();
 
@@ -1587,11 +1528,11 @@ void PSParallelCompact::forward_to_new_addr() {
         HeapWord* top = sp->top();
 
         if (dense_prefix_addr == top) {
+          // Empty space
           continue;
         }
 
         const SplitInfo& split_info = _space_info[SpaceId(id)].split_info();
-
         size_t dense_prefix_region = _summary_data.addr_to_region_idx(dense_prefix_addr);
         size_t top_region = _summary_data.addr_to_region_idx(_summary_data.region_align_up(top));
         size_t start_region;
@@ -1635,7 +1576,7 @@ void PSParallelCompact::forward_to_new_addr() {
 
 #ifdef ASSERT
 void PSParallelCompact::verify_forward() {
-  HeapWord* old_dense_prefix_addr = dense_prefix(SpaceId(old_space_id));
+  HeapWord* const old_dense_prefix_addr = dense_prefix(SpaceId(old_space_id));
   RegionData* old_region = _summary_data.region(_summary_data.addr_to_region_idx(old_dense_prefix_addr));
   HeapWord* bump_ptr = old_region->partial_obj_size() != 0
                        ? old_dense_prefix_addr + old_region->partial_obj_size()
@@ -1728,7 +1669,7 @@ void PSParallelCompact::prepare_region_draining_tasks(uint parallel_gc_threads)
   // id + 1 is used to test termination so unsigned  can
   // be used with an old_space_id == 0.
   FillableRegionLogger region_logger;
-  for (unsigned int id = to_space_id; id + 1 > old_space_id; --id) {
+  for (unsigned int id = last_space_id - 1; id + 1 > old_space_id; --id) {
     SpaceInfo* const space_info = _space_info + id;
     HeapWord* const new_top = space_info->new_top();
 
