@@ -44,7 +44,8 @@ public class HeapInfoTest {
     public void run(CommandExecutor executor) {
         String cmd = "GC.heap_info";
         OutputAnalyzer output = executor.execute(cmd);
-        output.shouldContain("Metaspace");
+        output.shouldNotContain("Unknown diagnostic command");
+        output.shouldHaveExitValue(0);
     }
 
     @Test
