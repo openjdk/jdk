@@ -44,11 +44,6 @@ public class DeleteReadOnly {
 
     private static final File ROOT = new File(".");
 
-    void deleteReadOnlyFile(File f) {
-        f.setReadOnly();
-        assertTrue(f.delete());
-    }
-
     @Test
     @EnabledOnOs({OS.AIX, OS.LINUX, OS.MAC})
     void deleteReadOnlyRegularFileUnix() throws IOException {
@@ -82,6 +77,7 @@ public class DeleteReadOnly {
     @Test
     void deleteReadOnlyDirectory() throws IOException {
         File dir = Files.createTempDirectory(ROOT.toPath(), "dir").toFile();
-        deleteReadOnlyFile(dir);
+        dir.setReadOnly();
+        assertTrue(dir.delete());
     }
 }
