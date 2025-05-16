@@ -1639,6 +1639,16 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     case Op_CastLL:
       return false;
 
+    // Same issue for CheckCastPP, uses ConstraintCastNode::Identity and
+    // checks dominator, which may be changed, but too far up for notification
+    // to work.
+    //
+    // Found with:
+    //   compiler/c2/irTests/TestSkeletonPredicates.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_CheckCastPP:
+      return false;
+
     // In SubNode::Identity, we do:
     //   Convert "(X+Y) - Y" into X and "(X+Y) - X" into Y
     // In the example, the AddI had an input replaced, the AddI is
