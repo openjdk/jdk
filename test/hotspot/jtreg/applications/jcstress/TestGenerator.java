@@ -56,7 +56,7 @@ import java.util.function.Predicate;
  * added to classpath. One can replace @notest by @test in jtreg test
  * description above to run this class with jtreg.
  *
- * @see <a href=https://wiki.openjdk.org/display/CodeTools/jcstress>jcstress</a>
+ * @see <a href="https://github.com/openjdk/jcstress">jcstress</a>
  */
 public class TestGenerator {
     private static final String COPYRIGHT;

@@ -259,7 +259,9 @@ public class TestVMProcess {
         int exitCode = oa.getExitValue();
         String stdErr = oa.getStderr();
         String stdOut = "";
-        if (exitCode == 134) {
+        boolean osIsWindows = Platform.isWindows();
+        boolean JVMHadError = (!osIsWindows && exitCode == 134) || (osIsWindows && exitCode == -1);
+        if (JVMHadError) {
             // Also dump the stdout if we experience a JVM error (e.g. to show hit assertions etc.).
             stdOut = System.lineSeparator() + System.lineSeparator() + "Standard Output" + System.lineSeparator()
                      + "---------------" + System.lineSeparator() + oa.getOutput();

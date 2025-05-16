@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.math.FloatToDecimal;
 import jdk.internal.util.DecimalDigits;
 
-import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.Spliterator;
@@ -121,7 +120,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
                 ? length + 16 : Integer.MAX_VALUE;
         final byte initCoder = str.coder();
         coder = initCoder;
-        value = (initCoder == LATIN1)
+        value = (isLatin1(coder))
                 ? new byte[capacity] : StringUTF16.newBytesFor(capacity);
         append(str);
     }
@@ -180,12 +179,13 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int count1 = this.count;
         int count2 = another.count;
 
+        byte coder = this.coder;
         if (coder == another.coder) {
-            return isLatin1() ? StringLatin1.compareTo(val1, val2, count1, count2)
-                              : StringUTF16.compareTo(val1, val2, count1, count2);
+            return isLatin1(coder) ? StringLatin1.compareTo(val1, val2, count1, count2)
+                    : StringUTF16.compareTo(val1, val2, count1, count2);
         }
-        return isLatin1() ? StringLatin1.compareToUTF16(val1, val2, count1, count2)
-                          : StringUTF16.compareToLatin1(val1, val2, count1, count2);
+        return isLatin1(coder) ? StringLatin1.compareToUTF16(val1, val2, count1, count2)
+                : StringUTF16.compareToLatin1(val1, val2, count1, count2);
     }
 
     /**
@@ -228,39 +228,116 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     public void ensureCapacity(int minimumCapacity) {
         if (minimumCapacity > 0) {
-            ensureCapacityInternal(minimumCapacity);
+            value = ensureCapacitySameCoder(value, coder, minimumCapacity);
         }
     }
 
     /**
-     * For positive values of {@code minimumCapacity}, this method
-     * behaves like {@code ensureCapacity}, however it is never
-     * synchronized.
-     * If {@code minimumCapacity} is non positive due to numeric
-     * overflow, this method throws {@code OutOfMemoryError}.
+     * {@return true if the byte array should be replaced due to increased capacity or coder change}
+     * <ul>
+     *     <li>The new coder is different than the old coder
+     *     <li>The new length is greater than to the current length
+     *     <li>The new length is negative, as it might have overflowed due to an increment
+     * </ul>
+     *
+     * @param value       a byte array
+     * @param coder       old coder
+     * @param newCapacity new capacity in characters
+     * @param newCoder    new coder
      */
-    private void ensureCapacityInternal(int minimumCapacity) {
+    private static boolean needsNewBuffer(byte[] value, byte coder, int newCapacity, byte newCoder) {
+        long newLength = (long) newCapacity << newCoder;
+        return coder != newCoder || newLength > value.length || 0 > newLength;
+    }
+
+    /**
+     * {@return the value, with the requested coder, in a buffer with at least the minimum capacity}
+     * If the coder matches and there is enough room, the same buffer is returned.
+     * Otherwise, a new buffer is allocated and the string is copied or inflated to match the new coder.
+     * For positive values of {@code minimumCapacity}, this method
+     * behaves like the public {@linkplain #ensureCapacity}, however it is never synchronized.
+     * If {@code minimumCapacity} is non-positive due to numeric
+     * overflow, this method throws {@code OutOfMemoryError}.
+     * @param value the current buffer
+     * @param coder of the current buffer
+     * @param count the count of chars in the current buffer
+     * @param minimumCapacity the new minimum capacity
+     * @param newCoder the desired new coder
+     */
+    private static byte[] ensureCapacityNewCoder(byte[] value, byte coder, int count,
+                                                 int minimumCapacity, byte newCoder) {
+        assert coder == newCoder || newCoder == UTF16 : "bad new coder UTF16 -> LATIN1";
+        // overflow-conscious code
+        // Compute the new larger size if growth is requested, otherwise keep the capacity the same
+        int oldCapacity = value.length >> coder;
+        int growth = minimumCapacity - oldCapacity;
+        int newCapacity = (growth <= 0)
+                ? oldCapacity               // Do not reduce capacity even if requested
+                : newCapacity(value, newCoder, minimumCapacity);
+        assert count <= newCapacity : "count exceeds new capacity";
+
+        if (coder == newCoder) {
+            if (newCapacity > oldCapacity) {
+                // copy all bytes to new larger buffer
+                value = Arrays.copyOf(value, newCapacity << newCoder);
+            }
+            return value;
+        } else {
+            // inflate (and grow if additional length is requested)
+            byte[] newValue = StringUTF16.newBytesFor(newCapacity);
+            StringLatin1.inflate(value, 0, newValue, 0, count);
+            return newValue;
+        }
+    }
+
+    /**
+     * {@return the value buffer sufficient to hold the minimumCapactity and a copy of the contents}
+     * There is no change to the coder.
+     * The current value buffer is returned if the size is already sufficient.
+     * For positive values of {@code minimumCapacity}, this method
+     * behaves like {@code ensureCapacity}, however it is never synchronized.
+     * If {@code minimumCapacity} is non-positive due to numeric
+     * overflow, this method throws {@code OutOfMemoryError}.
+     * @param value the current buffer
+     * @param coder of the current buffer
+     * @param minimumCapacity the new minimum capacity
+     */
+    private static byte[] ensureCapacitySameCoder(byte[] value, byte coder, int minimumCapacity) {
         // overflow-conscious code
         int oldCapacity = value.length >> coder;
         if (minimumCapacity - oldCapacity > 0) {
             value = Arrays.copyOf(value,
-                    newCapacity(minimumCapacity) << coder);
+                    newCapacity(value, coder, minimumCapacity) << coder);
         }
+        return value;
+    }
+
+    /**
+     * Inflates the internal 8-bit latin1 storage to 16-bit <hi=0, low> pair storage.
+     * @param value the current byte array buffer
+     * @param count the number of latin1 characters to convert to UTF16
+     * @return the new buffer, the caller is responsible for updates to the coder
+     */
+    private static byte[] inflateToUTF16(byte[] value, int count) {
+        assert count <= value.length : "count > value.length";
+        byte[] newValue = StringUTF16.newBytesFor(value.length);
+        StringLatin1.inflate(value, 0, newValue, 0, count);
+        return newValue;
     }
 
     /**
      * Returns a capacity at least as large as the given minimum capacity.
-     * Returns the current capacity increased by the current length + 2 if
-     * that suffices.
-     * Will not return a capacity greater than
-     * {@code (SOFT_MAX_ARRAY_LENGTH >> coder)}
+     * Returns the current capacity increased by the current length + 2 if that suffices.
+     * Will not return a capacity greater than {@code (SOFT_MAX_ARRAY_LENGTH >> coder)}
      * unless the given minimum capacity is greater than that.
      *
+     * @param value the current buffer
+     * @param coder of the current buffer
      * @param  minCapacity the desired minimum capacity
      * @throws OutOfMemoryError if minCapacity is less than zero or
      *         greater than (Integer.MAX_VALUE >> coder)
      */
-    private int newCapacity(int minCapacity) {
+    private static int newCapacity(byte[] value, byte coder, int minCapacity) {
         int oldLength = value.length;
         int newLength = minCapacity << coder;
         int growth = newLength - oldLength;
@@ -269,20 +346,6 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
         return length >> coder;
-    }
-
-    /**
-     * If the coder is "isLatin1", this inflates the internal 8-bit storage
-     * to 16-bit <hi=0, low> pair storage.
-     */
-    private void inflate() {
-        if (!isLatin1()) {
-            return;
-        }
-        byte[] buf = StringUTF16.newBytesFor(value.length);
-        StringLatin1.inflate(value, 0, buf, 0, count);
-        this.value = buf;
-        this.coder = UTF16;
     }
 
     /**
@@ -328,17 +391,16 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         if (newLength < 0) {
             throw new StringIndexOutOfBoundsException(newLength);
         }
-        ensureCapacityInternal(newLength);
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = ensureCapacitySameCoder(this.value, coder, newLength);
         if (count < newLength) {
-            if (isLatin1()) {
-                StringLatin1.fillNull(value, count, newLength);
-            } else {
-                StringUTF16.fillNull(value, count, newLength);
-            }
+            Arrays.fill(value, count << coder, newLength << coder, (byte)0);
         } else if (count > newLength) {
             maybeLatin1 = true;
         }
-        count = newLength;
+        this.count = newLength;
+        this.value = value;
     }
 
     /**
@@ -360,8 +422,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     @Override
     public char charAt(int index) {
+        byte coder = this.coder;
+        byte[] value = this.value;
+        // Count should be less than or equal to capacity (racy reads and writes can produce inconsistent values)
+        int count = Math.min(this.count, value.length >> coder);
         checkIndex(index, count);
-        if (isLatin1()) {
+        if (isLatin1(coder)) {
             return (char)(value[index] & 0xff);
         }
         return StringUTF16.getChar(value, index);
@@ -389,10 +455,11 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *             sequence.
      */
     public int codePointAt(int index) {
+        byte coder = this.coder;
         int count = this.count;
         byte[] value = this.value;
         checkIndex(index, count);
-        if (isLatin1()) {
+        if (isLatin1(coder)) {
             return value[index] & 0xff;
         }
         return StringUTF16.codePointAtSB(value, index, count);
@@ -420,9 +487,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *            of this sequence.
      */
     public int codePointBefore(int index) {
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = this.value;
         int i = index - 1;
         checkIndex(i, count);
-        if (isLatin1()) {
+        if (isLatin1(coder)) {
             return value[i] & 0xff;
         }
         return StringUTF16.codePointBeforeSB(value, index);
@@ -449,8 +519,11 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * {@code beginIndex} is larger than {@code endIndex}.
      */
     public int codePointCount(int beginIndex, int endIndex) {
-        Preconditions.checkFromToIndex(beginIndex, endIndex, length(), null);
-        if (isLatin1()) {
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = this.value;
+        Preconditions.checkFromToIndex(beginIndex, endIndex, count, null);
+        if (isLatin1(coder)) {
             return endIndex - beginIndex;
         }
         return StringUTF16.codePointCountSB(value, beginIndex, endIndex);
@@ -484,39 +557,15 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
-     * Characters are copied from this sequence into the
-     * destination character array {@code dst}. The first character to
-     * be copied is at index {@code srcBegin}; the last character to
-     * be copied is at index {@code srcEnd-1}. The total number of
-     * characters to be copied is {@code srcEnd-srcBegin}. The
-     * characters are copied into the subarray of {@code dst} starting
-     * at index {@code dstBegin} and ending at index:
-     * <pre>{@code
-     * dstbegin + (srcEnd-srcBegin) - 1
-     * }</pre>
-     *
-     * @param      srcBegin   start copying at this offset.
-     * @param      srcEnd     stop copying at this offset.
-     * @param      dst        the array to copy the data into.
-     * @param      dstBegin   offset into {@code dst}.
-     * @throws     IndexOutOfBoundsException  if any of the following is true:
-     *             <ul>
-     *             <li>{@code srcBegin} is negative
-     *             <li>{@code dstBegin} is negative
-     *             <li>the {@code srcBegin} argument is greater than
-     *             the {@code srcEnd} argument.
-     *             <li>{@code srcEnd} is greater than
-     *             {@code this.length()}.
-     *             <li>{@code dstBegin+srcEnd-srcBegin} is greater than
-     *             {@code dst.length}
-     *             </ul>
+     * {@inheritDoc CharSequence}
      */
+    @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin)
     {
         Preconditions.checkFromToIndex(srcBegin, srcEnd, count, Preconditions.SIOOBE_FORMATTER);  // compatible to old version
         int n = srcEnd - srcBegin;
         Preconditions.checkFromToIndex(dstBegin, dstBegin + n, dst.length, Preconditions.IOOBE_FORMATTER);
-        if (isLatin1()) {
+        if (isLatin1(coder)) {
             StringLatin1.getChars(value, srcBegin, srcEnd, dst, dstBegin);
         } else {
             StringUTF16.getChars(value, srcBegin, srcEnd, dst, dstBegin);
@@ -538,14 +587,19 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *             negative or greater than or equal to {@code length()}.
      */
     public void setCharAt(int index, char ch) {
+        byte coder = this.coder;
+        int count = this.count;
         checkIndex(index, count);
-        if (isLatin1() && StringLatin1.canEncode(ch)) {
+        byte[] value  = this.value;
+        byte newCoder = (byte)(coder | StringLatin1.coderFromChar(ch));
+        if (needsNewBuffer(value, coder, count, newCoder)) {
+            this.value = value = ensureCapacityNewCoder(value, coder, count, count, newCoder);
+            this.coder = coder = newCoder;
+        }
+        if (isLatin1(coder)) {
             value[index] = (byte)ch;
         } else {
-            if (isLatin1()) {
-                inflate();
-            }
-            StringUTF16.putCharSB(value, index, ch);
+            StringUTF16.putChar(value, index, ch);
             maybeLatin1 = true;
         }
     }
@@ -587,10 +641,17 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         if (str == null) {
             return appendNull();
         }
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = this.value;
         int len = str.length();
-        ensureCapacityInternal(count + len);
-        putStringAt(count, str);
-        count += len;
+        byte newCoder = (byte)(coder | str.coder());
+        if (needsNewBuffer(value, coder, count + len, newCoder)) {
+            this.value = value = ensureCapacityNewCoder(value, coder, count, count + len, newCoder);
+            this.coder = newCoder;
+        }
+        str.getBytes(value, count, newCoder);
+        this.count = count + len;
         return this;
     }
 
@@ -612,10 +673,16 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             return appendNull();
         }
         int len = asb.length();
-        ensureCapacityInternal(count + len);
-        inflateIfNeededFor(asb);
-        asb.getBytes(value, count, coder);
-        count += len;
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = this.value;
+        byte newCoder = (byte)(coder | asb.coder);
+        if (needsNewBuffer(value, coder, count + len, newCoder)) {
+            this.value = value = ensureCapacityNewCoder(value, coder, count, count + len, newCoder);
+            this.coder = newCoder;
+        }
+        asb.getBytes(value, count, newCoder);
+        this.count = count + len;
         maybeLatin1 |= asb.maybeLatin1;
         return this;
     }
@@ -626,28 +693,26 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         if (s == null) {
             return appendNull();
         }
-        if (s instanceof String) {
-            return this.append((String)s);
+        if (s instanceof String str) {
+            return this.append(str);
         }
-        if (s instanceof AbstractStringBuilder) {
-            return this.append((AbstractStringBuilder)s);
+        if (s instanceof AbstractStringBuilder asb) {
+            return this.append(asb);
         }
         return this.append(s, 0, s.length());
     }
 
     private AbstractStringBuilder appendNull() {
-        ensureCapacityInternal(count + 4);
+        byte coder = this.coder;
         int count = this.count;
-        byte[] val = this.value;
-        if (isLatin1()) {
-            val[count++] = 'n';
-            val[count++] = 'u';
-            val[count++] = 'l';
-            val[count++] = 'l';
-        } else {
-            count = StringUTF16.putCharsAt(val, count, 'n', 'u', 'l', 'l');
-        }
-        this.count = count;
+        int newCount = count + 4;
+        byte[] value = ensureCapacitySameCoder(this.value, coder, newCount);
+        if (isLatin1(coder))
+            StringLatin1.putCharsAt(value, count, 'n', 'u', 'l', 'l');
+        else
+            StringUTF16.putCharsAt(value, count, 'n', 'u', 'l', 'l');
+        this.count = newCount;
+        this.value = value;
         return this;
     }
 
@@ -691,12 +756,17 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         }
         Preconditions.checkFromToIndex(start, end, s.length(), Preconditions.IOOBE_FORMATTER);
         int len = end - start;
-        ensureCapacityInternal(count + len);
-        if (s instanceof String) {
-            appendChars((String)s, start, end);
-        } else {
-            appendChars(s, start, end);
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] currValue = ensureCapacitySameCoder(this.value, coder, count + len);
+        byte[] value = (s instanceof String str)
+            ? appendChars(currValue, coder, count, str, start, end)
+            : appendChars(currValue, coder, count, s, start, end);
+        if (currValue != value) {
+            this.coder = UTF16;
         }
+        this.count = count + len;
+        this.value = value;
         return this;
     }
 
@@ -719,8 +789,15 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     public AbstractStringBuilder append(char[] str) {
         int len = str.length;
-        ensureCapacityInternal(count + len);
-        appendChars(str, 0, len);
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] currValue = ensureCapacitySameCoder(this.value, coder, count + len);
+        byte[] value = appendChars(currValue, coder, count, str, 0, len);
+        if (currValue != value) {
+            this.coder = UTF16;
+        }
+        this.count = count + len;
+        this.value = value;
         return this;
     }
 
@@ -749,8 +826,15 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     public AbstractStringBuilder append(char[] str, int offset, int len) {
         int end = offset + len;
         Preconditions.checkFromToIndex(offset, end, str.length, Preconditions.IOOBE_FORMATTER);
-        ensureCapacityInternal(count + len);
-        appendChars(str, offset, end);
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] currValue = ensureCapacitySameCoder(value, coder, count + len);
+        byte[] value = appendChars(currValue, coder, count, str, offset, end);
+        if (currValue != value) {
+            this.coder = UTF16;
+        }
+        this.count = count + len;
+        this.value = value;
         return this;
     }
 
@@ -767,30 +851,24 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(boolean b) {
-        ensureCapacityInternal(count + (b ? 4 : 5));
+        byte coder = this.coder;
         int count = this.count;
-        byte[] val = this.value;
-        if (isLatin1()) {
-            if (b) {
-                val[count++] = 't';
-                val[count++] = 'r';
-                val[count++] = 'u';
-                val[count++] = 'e';
-            } else {
-                val[count++] = 'f';
-                val[count++] = 'a';
-                val[count++] = 'l';
-                val[count++] = 's';
-                val[count++] = 'e';
-            }
+
+        int newCount = count + (b ? 4 : 5);
+        byte[] value = ensureCapacitySameCoder(this.value, coder, newCount);
+        if (b) {
+            if (isLatin1(coder))
+                StringLatin1.putCharsAt(value, count, 't', 'r', 'u', 'e');
+            else
+                StringUTF16.putCharsAt(value, count, 't', 'r', 'u', 'e');
         } else {
-            if (b) {
-                count = StringUTF16.putCharsAt(val, count, 't', 'r', 'u', 'e');
-            } else {
-                count = StringUTF16.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
-            }
+            if (isLatin1(coder))
+                StringLatin1.putCharsAt(value, count, 'f', 'a', 'l', 's', 'e');
+            else
+                StringUTF16.putCharsAt(value, count, 'f', 'a', 'l', 's', 'e');
         }
-        this.count = count;
+        this.value = value;
+        this.count = newCount;
         return this;
     }
 
@@ -811,15 +889,20 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     @Override
     public AbstractStringBuilder append(char c) {
-        ensureCapacityInternal(count + 1);
-        if (isLatin1() && StringLatin1.canEncode(c)) {
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = this.value;
+        byte newCoder = (byte) (coder | StringLatin1.coderFromChar(c));
+        if (needsNewBuffer(value, coder, count + 1, newCoder)) {
+            this.value = value = ensureCapacityNewCoder(value, coder, count, count + 1, newCoder);
+            this.coder = coder = newCoder;
+        }
+        if (isLatin1(coder)) {
             value[count++] = (byte)c;
         } else {
-            if (isLatin1()) {
-                inflate();
-            }
-            StringUTF16.putCharSB(value, count++, c);
+            StringUTF16.putChar(value, count++, c);
         }
+        this.count = count;
         return this;
     }
 
@@ -836,14 +919,16 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(int i) {
+        byte coder = this.coder;
         int count = this.count;
         int spaceNeeded = count + DecimalDigits.stringSize(i);
-        ensureCapacityInternal(spaceNeeded);
-        if (isLatin1()) {
+        byte[] value = ensureCapacitySameCoder(this.value, coder, spaceNeeded);
+        if (isLatin1(coder)) {
             DecimalDigits.getCharsLatin1(i, spaceNeeded, value);
         } else {
             DecimalDigits.getCharsUTF16(i, spaceNeeded, value);
         }
+        this.value = value;
         this.count = spaceNeeded;
         return this;
     }
@@ -861,14 +946,16 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(long l) {
+        byte coder = this.coder;
         int count = this.count;
         int spaceNeeded = count + DecimalDigits.stringSize(l);
-        ensureCapacityInternal(spaceNeeded);
-        if (isLatin1()) {
+        byte[] value = ensureCapacitySameCoder(this.value, coder, spaceNeeded);
+        if (isLatin1(coder)) {
             DecimalDigits.getCharsLatin1(l, spaceNeeded, value);
         } else {
             DecimalDigits.getCharsUTF16(l, spaceNeeded, value);
         }
+        this.value = value;
         this.count = spaceNeeded;
         return this;
     }
@@ -886,9 +973,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(float f) {
-        ensureCapacityInternal(count + FloatToDecimal.MAX_CHARS);
-        FloatToDecimal toDecimal = isLatin1() ? FloatToDecimal.LATIN1 : FloatToDecimal.UTF16;
-        count = toDecimal.putDecimal(value, count, f);
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = ensureCapacitySameCoder(this.value, coder,count + FloatToDecimal.MAX_CHARS);
+        FloatToDecimal toDecimal = isLatin1(coder) ? FloatToDecimal.LATIN1 : FloatToDecimal.UTF16;
+        this.count = toDecimal.putDecimal(value, count, f);
+        this.value = value;
         return this;
     }
 
@@ -905,9 +995,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(double d) {
-        ensureCapacityInternal(count + DoubleToDecimal.MAX_CHARS);
-        DoubleToDecimal toDecimal = isLatin1() ? DoubleToDecimal.LATIN1 : DoubleToDecimal.UTF16;
-        count = toDecimal.putDecimal(value, count, d);
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = ensureCapacitySameCoder(this.value, coder,count + DoubleToDecimal.MAX_CHARS);
+        DoubleToDecimal toDecimal = isLatin1(coder) ? DoubleToDecimal.LATIN1 : DoubleToDecimal.UTF16;
+        this.count = toDecimal.putDecimal(value, count, d);
+        this.value = value;
         return this;
     }
 
@@ -933,7 +1026,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         Preconditions.checkFromToIndex(start, end, count, Preconditions.SIOOBE_FORMATTER);
         int len = end - start;
         if (len > 0) {
-            shift(end, -len);
+            shift(value, coder, count, end, -len);
             this.count = count - len;
             maybeLatin1 = true;
         }
@@ -984,9 +1077,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *              {@code length()}.
      */
     public AbstractStringBuilder deleteCharAt(int index) {
+        int count = this.count;
         checkIndex(index, count);
-        shift(index + 1, -1);
-        count--;
+        shift(value, coder, count, index + 1, -1);
+        this.count = count - 1;
         maybeLatin1 = true;
         return this;
     }
@@ -1011,6 +1105,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *             greater than {@code end}.
      */
     public AbstractStringBuilder replace(int start, int end, String str) {
+        byte coder = this.coder;
         int count = this.count;
         if (end > count) {
             end = count;
@@ -1018,10 +1113,15 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         Preconditions.checkFromToIndex(start, end, count, Preconditions.SIOOBE_FORMATTER);
         int len = str.length();
         int newCount = count + len - (end - start);
-        ensureCapacityInternal(newCount);
-        shift(end, newCount - count);
+        byte newCoder = (byte) (coder | str.coder());
+        byte[] value = this.value;
+        if (needsNewBuffer(value, coder, newCount, newCoder) ) {
+            this.value = value = ensureCapacityNewCoder(value, coder, count, newCount, newCoder);
+            this.coder = coder = newCoder;
+        }
+        shift(value, coder, count, end, newCount - count);
+        str.getBytes(value, start, coder);
         this.count = newCount;
-        putStringAt(start, str);
         maybeLatin1 = true;
         return this;
     }
@@ -1087,13 +1187,13 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     public String substring(int start, int end) {
         Preconditions.checkFromToIndex(start, end, count, Preconditions.SIOOBE_FORMATTER);
-        if (isLatin1()) {
+        if (isLatin1(coder)) {
             return StringLatin1.newString(value, start, end - start);
         }
         return StringUTF16.newString(value, start, end - start);
     }
 
-    private void shift(int offset, int n) {
+    private static void shift(byte[] value, byte coder, int count, int offset, int n) {
         System.arraycopy(value, offset << coder,
                          value, (offset + n) << coder, (count - offset) << coder);
     }
@@ -1122,12 +1222,19 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     public AbstractStringBuilder insert(int index, char[] str, int offset,
                                         int len)
     {
+        byte coder = this.coder;
+        int count = this.count;
         checkOffset(index, count);
         Preconditions.checkFromToIndex(offset, offset + len, str.length, Preconditions.SIOOBE_FORMATTER);
-        ensureCapacityInternal(count + len);
-        shift(index, len);
+        byte[] value = ensureCapacitySameCoder(this.value, coder, count + len);
+        shift(value, coder, count, index, len);
         count += len;
-        putCharsAt(index, str, offset, offset + len);
+        byte[] newValue = putCharsAt(value, coder, count, index, str, offset, offset + len);
+        if  (newValue != value) {
+            this.coder = UTF16;
+        }
+        this.value = newValue;
+        this.count = count;
         return this;
     }
 
@@ -1186,15 +1293,22 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @throws     StringIndexOutOfBoundsException  if the offset is invalid.
      */
     public AbstractStringBuilder insert(int offset, String str) {
+        byte coder = this.coder;
+        int count = this.count;
         checkOffset(offset, count);
         if (str == null) {
             str = "null";
         }
         int len = str.length();
-        ensureCapacityInternal(count + len);
-        shift(offset, len);
-        count += len;
-        putStringAt(offset, str);
+        byte newCoder = (byte) (coder | str.coder());
+        byte[] value = this.value;
+        if (needsNewBuffer(value, coder, count + len, newCoder)) {
+            this.value = value = ensureCapacityNewCoder(value, coder, count, count + len, newCoder);
+            this.coder = coder = newCoder;
+        }
+        shift(value, coder, count, offset, len);
+        this.count = count + len;
+        str.getBytes(value, offset, coder);
         return this;
     }
 
@@ -1223,12 +1337,19 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @throws     StringIndexOutOfBoundsException  if the offset is invalid.
      */
     public AbstractStringBuilder insert(int offset, char[] str) {
+        byte coder = this.coder;
+        int count = this.count;
         checkOffset(offset, count);
         int len = str.length;
-        ensureCapacityInternal(count + len);
-        shift(offset, len);
+        byte[] currValue = ensureCapacitySameCoder(this.value, coder, count + len);
+        shift(currValue, coder, count, offset, len);
         count += len;
-        putCharsAt(offset, str, 0, len);
+        byte[] newValue = putCharsAt(currValue, coder, count, offset, str, 0, len);
+        if (currValue != newValue) {
+            this.coder = UTF16;
+        }
+        this.count = count;
+        this.value = newValue;
         return this;
     }
 
@@ -1288,7 +1409,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * The {@code dstOffset} argument must be greater than or equal to
      * {@code 0}, and less than or equal to the {@linkplain #length() length}
      * of this sequence.
-     * <p>The start argument must be nonnegative, and not greater than
+     * <p>The start argument must be non-negative, and not greater than
      * {@code end}.
      * <p>The end argument must be greater than or equal to
      * {@code start}, and less than or equal to the length of s.
@@ -1318,17 +1439,23 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         if (s == null) {
             s = "null";
         }
+        byte coder = this.coder;
+        int count = this.count;
         checkOffset(dstOffset, count);
         Preconditions.checkFromToIndex(start, end, s.length(), Preconditions.IOOBE_FORMATTER);
         int len = end - start;
-        ensureCapacityInternal(count + len);
-        shift(dstOffset, len);
+        byte[] currValue = ensureCapacitySameCoder(this.value, coder, count + len);
+        shift(currValue, coder, count, dstOffset, len);
         count += len;
-        if (s instanceof String) {
-            putStringAt(dstOffset, (String) s, start, end);
-        } else {
-            putCharsAt(dstOffset, s, start, end);
+        // Coder of CharSequence may be a mismatch, requiring the value array to be inflated
+        byte[] newValue = (s instanceof String str)
+            ? putStringAt(currValue, coder, count, dstOffset, str, start, end)
+            : putCharsAt(currValue, coder, count, dstOffset, s, start, end);
+        if (currValue != newValue) {
+            this.coder = UTF16;
         }
+        this.value = newValue;
+        this.count = count;
         return this;
     }
 
@@ -1375,18 +1502,23 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @throws     IndexOutOfBoundsException  if the offset is invalid.
      */
     public AbstractStringBuilder insert(int offset, char c) {
+        byte coder = this.coder;
+        int count = this.count;
         checkOffset(offset, count);
-        ensureCapacityInternal(count + 1);
-        shift(offset, 1);
-        count += 1;
-        if (isLatin1() && StringLatin1.canEncode(c)) {
+        byte newCoder = (byte)(coder | StringLatin1.coderFromChar(c));
+        byte[] value = this.value;
+
+        if (needsNewBuffer(value, coder, count + 1, newCoder)) {
+            this.value = value = ensureCapacityNewCoder(value, coder, count, count + 1, newCoder);
+            this.coder = coder = newCoder;
+        }
+        shift(value, coder, count, offset, 1);
+        if (isLatin1(coder)) {
             value[offset] = (byte)c;
         } else {
-            if (isLatin1()) {
-                inflate();
-            }
             StringUTF16.putCharSB(value, offset, c);
         }
+        this.count = count + 1;
         return this;
     }
 
@@ -1587,7 +1719,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         byte[] val = this.value;
         int count = this.count;
         int n = count - 1;
-        if (isLatin1()) {
+        if (isLatin1(this.coder)) {
             for (int j = (n-1) >> 1; j >= 0; j--) {
                 int k = n - j;
                 byte cj = val[j];
@@ -1652,7 +1784,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
                     byte[] val = this.value;
                     int count = this.count;
                     byte coder = this.coder;
-                    return coder == LATIN1
+                    return isLatin1(coder)
                            ? new StringLatin1.CharsSpliterator(val, 0, count, 0)
                            : new StringUTF16.CodePointsSpliterator(val, 0, count, 0);
                 },
@@ -1698,145 +1830,220 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         return COMPACT_STRINGS ? coder : UTF16;
     }
 
+    // Package access for String and StringBuffer.
     final boolean isLatin1() {
+        return isLatin1(coder);
+    }
+
+    private static boolean isLatin1(byte coder) {
         return COMPACT_STRINGS && coder == LATIN1;
     }
 
-    private final void putCharsAt(int index, char[] s, int off, int end) {
-        if (isLatin1()) {
-            byte[] val = this.value;
-            for (int i = off, j = index; i < end; i++) {
+    /**
+     * {@return Return the buffer containing the composed string and inserted characters}
+     * If the buffer coder needs to support UTF16 and does not, it is inflated and a different
+     * buffer is returned. The caller is responsible for setting the coder and updating the value ref
+     * based solely on the difference in the buffer reference.
+     *
+     * @param value byte array destination for the string (if the coder matches)
+     * @param coder the original buffer coder
+     * @param count the count of characters in the original buffer
+     * @param index the insertion point
+     * @param s char[] array to insert from
+     * @param off offset of the first character
+     * @param end the offset of the last character (exclusive)
+     */
+    private static byte[] putCharsAt(byte[] value, byte coder, int count, int index, char[] s, int off, int end) {
+        if (isLatin1(coder)) {
+            int latin1Len = StringUTF16.compress(s, off, value, index, end - off);
+            for (int i = off + latin1Len, j = index + latin1Len; i < end; i++) {
                 char c = s[i];
                 if (StringLatin1.canEncode(c)) {
-                    val[j++] = (byte)c;
+                    value[j++] = (byte)c;
                 } else {
-                    inflate();
-                    StringUTF16.putCharsSB(this.value, j, s, i, end);
-                    return;
+                    value = inflateToUTF16(value, count);
+                    // Store c to make sure sb has a UTF16 char
+                    StringUTF16.putCharSB(value, j++, c);
+                    i++;
+                    StringUTF16.putCharsSB(value, j, s, i, end);
+                    return value;
                 }
             }
         } else {
-            StringUTF16.putCharsSB(this.value, index, s, off, end);
+            StringUTF16.putCharsSB(value, index, s, off, end);
         }
+        return value;
     }
 
-    private final void putCharsAt(int index, CharSequence s, int off, int end) {
-        if (isLatin1()) {
-            byte[] val = this.value;
+    /**
+     * {@return Return the buffer containing the composed string and inserted characters}
+     * If the buffer coder needs to support UTF16 and does not, it is inflated and a different
+     * buffer is returned. The caller is responsible for setting the coder and updating the value ref
+     * based solely on the difference in the buffer reference.
+     *
+     * @param value byte array destination for the string (if the coder matches)
+     * @param coder the original buffer coder
+     * @param count the count of characters in the original buffer
+     * @param index the insertion point
+     * @param s CharSequence to insert from
+     * @param off offset of the first character
+     * @param end the offset of the last character (exclusive)
+     */
+    private static byte[] putCharsAt(byte[] value, byte coder, int count, int index, CharSequence s, int off, int end) {
+        if (isLatin1(coder)) {
             for (int i = off, j = index; i < end; i++) {
                 char c = s.charAt(i);
                 if (StringLatin1.canEncode(c)) {
-                    val[j++] = (byte)c;
+                    value[j++] = (byte)c;
                 } else {
-                    inflate();
+                    value = inflateToUTF16(value, count);
                     // store c to make sure it has a UTF16 char
-                    StringUTF16.putChar(this.value, j++, c);
+                    StringUTF16.putCharSB(value, j++, c);
                     i++;
-                    StringUTF16.putCharsSB(this.value, j, s, i, end);
-                    return;
+                    StringUTF16.putCharsSB(value, j, s, i, end);
+                    return value;
                 }
             }
         } else {
-            StringUTF16.putCharsSB(this.value, index, s, off, end);
+            StringUTF16.putCharsSB(value, index, s, off, end);
         }
+        return value;
     }
 
-    private void inflateIfNeededFor(String input) {
-        if (COMPACT_STRINGS && (coder != input.coder())) {
-            inflate();
+    private static byte[] inflateIfNeededFor(byte[] value, int count, byte coder, byte otherCoder) {
+        if (COMPACT_STRINGS && (coder == LATIN1 && otherCoder == UTF16)) {
+            return inflateToUTF16(value, count);
         }
+        return value;
     }
 
-    private void inflateIfNeededFor(AbstractStringBuilder input) {
-        if (COMPACT_STRINGS && (coder != input.getCoder())) {
-            inflate();
-        }
+    /**
+     * {@return the buffer with the substring inserted}
+     * If the substring contains UTF16 characters and the current coder is LATIN1, inflation occurs
+     * into a new buffer and returned; the caller must update the coder to UTF16.
+     * Since the contents are immutable, a simple copy of characters is sufficient.
+     * @param value an existing buffer to insert into
+     * @param coder the coder of the buffer
+     * @param count the count of characters in the buffer
+     * @param index the index to insert the string
+     * @param str the string
+     */
+     private static byte[] putStringAt(byte[] value, byte coder, int count, int index, String str, int off, int end) {
+        byte[] newValue = inflateIfNeededFor(value, count, coder, str.coder());
+        coder = (newValue == value) ? coder : UTF16;
+        str.getBytes(newValue, off, index, coder, end - off);
+        return newValue;
     }
 
-    private void putStringAt(int index, String str, int off, int end) {
-        inflateIfNeededFor(str);
-        str.getBytes(value, off, index, coder, end - off);
-    }
-
-    private void putStringAt(int index, String str) {
-        inflateIfNeededFor(str);
-        str.getBytes(value, index, coder);
-    }
-
-    private final void appendChars(char[] s, int off, int end) {
-        int count = this.count;
-        if (isLatin1()) {
-            byte[] val = this.value;
-            for (int i = off, j = count; i < end; i++) {
+    /**
+     * {@return buffer with new characters appended, possibly inflated}
+     * The value buffer capacity must be large enough to hold the additional (end - off) characters
+     * (assuming they are all latin1).
+     * The buffer will be inflated if any character is UTF16 and the buffer is latin1.
+     * If the returned buffer is different then passed in, the new coder is UTF16.
+     * The caller is responsible for updating the count.
+     * @param value the current buffer
+     * @param coder the coder of the buffer
+     * @param count the character count
+     * @param s a char array
+     * @param off the offset of the first character to append
+     * @param end end last (exclusive) character to append
+     */
+    private static byte[] appendChars(byte[] value, byte coder, int count, char[] s, int off, int end) {
+        if (isLatin1(coder)) {
+            int latin1Len = StringUTF16.compress(s, off, value, count, end - off);
+            for (int i = off + latin1Len, j = count + latin1Len; i < end; i++) {
                 char c = s[i];
                 if (StringLatin1.canEncode(c)) {
-                    val[j++] = (byte)c;
+                    value[j++] = (byte)c;
                 } else {
-                    this.count = count = j;
-                    inflate();
-                    StringUTF16.putCharsSB(this.value, j, s, i, end);
-                    this.count = count + end - i;
-                    return;
+                    value = inflateToUTF16(value, j);
+                    // Store c to make sure sb has a UTF16 char
+                    StringUTF16.putCharSB(value, j++, c);
+                    i++;
+                    StringUTF16.putCharsSB(value, j, s, i, end);
+                    return value;
                 }
             }
         } else {
-            StringUTF16.putCharsSB(this.value, count, s, off, end);
+            StringUTF16.putCharsSB(value, count, s, off, end);
         }
-        this.count = count + end - off;
+        return value;
     }
 
-    private final void appendChars(String s, int off, int end) {
-        if (isLatin1()) {
+    /**
+     * {@return buffer with new characters appended, possibly inflated}
+     * The value buffer capacity must be large enough to hold the additional (end - off) characters
+     * (assuming they are all latin1).
+     * The buffer will be inflated if any character is UTF16 and the buffer is latin1.
+     * If the returned buffer is different then passed in, the new coder is UTF16.
+     * The caller is responsible for updating the count.
+     * @param value the current buffer
+     * @param coder the coder of the buffer
+     * @param count the character count
+     * @param s a string
+     * @param off the offset of the first character to append
+     * @param end end last (exclusive) character to append
+     */
+    private static byte[] appendChars(byte[] value, byte coder, int count, String s, int off, int end) {
+        if (isLatin1(coder)) {
             if (s.isLatin1()) {
-                System.arraycopy(s.value(), off, this.value, this.count, end - off);
+                System.arraycopy(s.value(), off, value, count, end - off);
             } else {
                 // We might need to inflate, but do it as late as possible since
                 // the range of characters we're copying might all be latin1
-                byte[] val = this.value;
                 for (int i = off, j = count; i < end; i++) {
                     char c = s.charAt(i);
                     if (StringLatin1.canEncode(c)) {
-                        val[j++] = (byte) c;
+                        value[j++] = (byte) c;
                     } else {
-                        count = j;
-                        inflate();
-                        System.arraycopy(s.value(), i << UTF16, this.value, j << UTF16, (end - i) << UTF16);
-                        count += end - i;
-                        return;
+                        value = inflateToUTF16(value, j);
+                        System.arraycopy(s.value(), i << UTF16, value, j << UTF16, (end - i) << UTF16);
+                        return value;
                     }
                 }
             }
         } else if (s.isLatin1()) {
-            StringUTF16.putCharsSB(this.value, this.count, s, off, end);
+            StringUTF16.putCharsSB(value, count, s, off, end);
         } else { // both UTF16
-            System.arraycopy(s.value(), off << UTF16, this.value, this.count << UTF16, (end - off) << UTF16);
+            System.arraycopy(s.value(), off << UTF16, value, count << UTF16, (end - off) << UTF16);
         }
-        count += end - off;
+        return value;
     }
 
-    private final void appendChars(CharSequence s, int off, int end) {
-        if (isLatin1()) {
-            byte[] val = this.value;
+    /**
+     * {@return buffer with new characters appended, possibly inflated}
+     * The value buffer capacity must be large enough to hold the additional (end - off) characters
+     * (assuming they are all latin1).
+     * The buffer will be inflated if any character is UTF16 and the buffer is latin1.
+     * If the returned buffer is different then passed in, the new coder is UTF16.
+     * The caller is responsible for updating the count.
+     * @param value the current buffer
+     * @param coder the coder of the buffer
+     * @param count the character count
+     * @param s CharSequence to append characters from
+     * @param off the offset of the first character to append
+     * @param end end last (exclusive) character to append
+     */
+    private static byte[] appendChars(byte[] value, byte coder, int count, CharSequence s, int off, int end) {
+        if (isLatin1(coder)) {
             for (int i = off, j = count; i < end; i++) {
                 char c = s.charAt(i);
                 if (StringLatin1.canEncode(c)) {
-                    val[j++] = (byte)c;
+                    value[j++] = (byte)c;
                 } else {
-                    count = j;
-                    inflate();
+                    value = inflateToUTF16(value, j);
                     // Store c to make sure sb has a UTF16 char
-                    StringUTF16.putChar(this.value, j++, c);
-                    count = j;
+                    StringUTF16.putCharSB(value, j++, c);
                     i++;
-                    StringUTF16.putCharsSB(this.value, j, s, i, end);
-                    count += end - i;
-                    return;
+                    StringUTF16.putCharsSB(value, j, s, i, end);
+                    return value;
                 }
             }
         } else {
-            StringUTF16.putCharsSB(this.value, count, s, off, end);
+            StringUTF16.putCharsSB(value, count, s, off, end);
         }
-        count += end - off;
+        return value;
     }
 
     /**
@@ -1866,7 +2073,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
 
         if (lengthCoder < ((long)UTF16 << 32)) {
             System.arraycopy(value, 0, buffer, (int)lengthCoder, count);
-        } else if (coder == LATIN1) {
+        } else if (isLatin1(coder)) {
             StringUTF16.inflate(value, 0, buffer, (int)lengthCoder, count);
         } else {
             System.arraycopy(value, 0, buffer, (int)lengthCoder << 1, count << 1);
@@ -1876,16 +2083,19 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     private AbstractStringBuilder repeat(char c, int count) {
-        int limit = this.count + count;
-        ensureCapacityInternal(limit);
-        boolean isLatin1 = isLatin1();
-        if (isLatin1 && StringLatin1.canEncode(c)) {
-            Arrays.fill(value, this.count, limit, (byte)c);
+        byte coder = this.coder;
+        int prevCount = this.count;
+        int limit = prevCount + count;
+        byte[] value = this.value;
+        byte newCoder = (byte) (coder | StringLatin1.coderFromChar(c));
+        if (needsNewBuffer(value, coder, limit, newCoder)) {
+            this.value = value = ensureCapacityNewCoder(value, coder, prevCount, limit, newCoder);
+            this.coder = coder = newCoder;
+        }
+        if (isLatin1(coder)) {
+            Arrays.fill(value, prevCount, limit, (byte)c);
         } else {
-            if (isLatin1) {
-                inflate();
-            }
-            for (int index = this.count; index < limit; index++) {
+            for (int index = prevCount; index < limit; index++) {
                 StringUTF16.putCharSB(value, index, c);
             }
         }
@@ -1970,20 +2180,36 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         } else if (length == 1) {
             return repeat(cs.charAt(0), count);
         }
+        byte coder = this.coder;
         int offset = this.count;
+        byte[] value = this.value;
         int valueLength = length << coder;
         if ((Integer.MAX_VALUE - offset) / count < valueLength) {
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
         int total = count * length;
         int limit = offset + total;
-        ensureCapacityInternal(limit);
         if (cs instanceof String str) {
-            putStringAt(offset, str);
+            byte newCoder = (byte)(coder | str.coder());
+            if (needsNewBuffer(value, coder, limit, newCoder)) {
+                this.value = value = ensureCapacityNewCoder(value, coder, offset, limit, newCoder);
+                this.coder = coder = newCoder;
+            }
+            str.getBytes(value, offset, newCoder);
         } else if (cs instanceof AbstractStringBuilder asb) {
-            append(asb);
+            byte newCoder = (byte)(coder | asb.coder);
+            if (needsNewBuffer(value, coder, limit, newCoder)) {
+                this.value = value = ensureCapacityNewCoder(value, coder, offset, limit, newCoder);
+                this.coder = coder = newCoder;
+            }
+            asb.getBytes(value, offset, newCoder);
         } else {
-            appendChars(cs, 0, length);
+            byte[] currValue = ensureCapacitySameCoder(value, coder, limit);
+            value = appendChars(currValue, coder, offset, cs, 0, length);
+            if (currValue != value) {
+                this.coder = coder = UTF16;
+            }
+            this.value = value;
         }
         String.repeatCopyRest(value, offset << coder, total << coder, length << coder);
         this.count = limit;

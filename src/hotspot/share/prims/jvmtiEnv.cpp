@@ -199,7 +199,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
-    debug_only(VMNativeEntryWrapper __vew;)
+    DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
     JvmtiVTMSTransitionDisabler disabler(thread);
     ThreadsListHandle tlh(current_thread);
@@ -988,6 +988,10 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
         self_tobj = Handle(current, thread_oop);
         continue; // self suspend after all other suspends
       }
+      if (java_lang_VirtualThread::is_instance(thread_oop)) {
+        oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
+        java_thread = carrier_thread == nullptr ? nullptr : java_lang_Thread::thread(carrier_thread);
+      }
       results[i] = suspend_thread(thread_oop, java_thread, /* single_suspend */ true);
     }
   }
@@ -1113,6 +1117,10 @@ JvmtiEnv::ResumeThreadList(jint request_count, const jthread* request_list, jvmt
         results[i] = err;
         continue;
       }
+    }
+    if (java_lang_VirtualThread::is_instance(thread_oop)) {
+      oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
+      java_thread = carrier_thread == nullptr ? nullptr : java_lang_Thread::thread(carrier_thread);
     }
     results[i] = resume_thread(thread_oop, java_thread, /* single_resume */ true);
   }

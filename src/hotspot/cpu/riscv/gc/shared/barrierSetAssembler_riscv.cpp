@@ -226,7 +226,7 @@ void BarrierSetAssembler::clear_patching_epoch() {
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see entry_barrier_offset()
+  Assembler::IncompressibleScope scope(masm); // Fixed length: see entry_barrier_offset()
 
   Label local_guard;
   NMethodPatchingType patching_type = nmethod_patching_type();
