@@ -1626,17 +1626,28 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     debug.log("%s Too many probe time outs: %s", packetNumberSpace, backoff);
                     debug.log(String.valueOf(rttEstimator.state()));
                     debug.log("State: %s", stateHandle().snapshot().toString());
+                }
+                if (Log.quicRetransmit() || Log.quicCC()) {
+                    Log.logQuic("%s OUT: %s: Too many probe timeouts %s"
+                            .formatted(logTag(), packetNumberSpace,
+                                    rttEstimator.state()));
+                    StringBuilder sb = new StringBuilder(logTag());
+                    sb.append(" State: ").append(stateHandle().snapshot().toString());
+                    for (PacketNumberSpace sp : PacketNumberSpace.values()) {
+                        if (sp == PacketNumberSpace.NONE) continue;
+                        if (packetSpaces.get(sp) instanceof PacketSpaceManager m) {
+                            sb.append("\nPacketSpace: ").append(sp).append('\n');
+                            m.debugState("  ", sb);
+                        }
+                    }
+                    Log.logQuic(sb.toString());
+                } else if (debug.on()) {
                     for (PacketNumberSpace sp : PacketNumberSpace.values()) {
                         if (sp == PacketNumberSpace.NONE) continue;
                         if (packetSpaces.get(sp) instanceof PacketSpaceManager m) {
                             m.debugState();
                         }
                     }
-                }
-                if (Log.quicRetransmit() || Log.quicCC()) {
-                    Log.logQuic("%s OUT: %s: Too many probe timeouts %s"
-                            .formatted(QuicConnectionImpl.this.logTag(), packetNumberSpace,
-                                    rttEstimator.state()));
                 }
                 var pto = rttEstimator.getBasePtoDuration();
                 var to = pto.multipliedBy(backoff);

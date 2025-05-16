@@ -35,6 +35,7 @@ import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.TimeLine;
 import jdk.internal.net.http.quic.ConnectionTerminator.IdleTerminationApprover;
+import jdk.internal.net.http.quic.packets.QuicPacket.PacketNumberSpace;
 import jdk.internal.net.http.quic.streams.QuicConnectionStreams;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -429,14 +430,26 @@ public final class IdleTimeoutManager {
         assert timeoutVal.isPresent() : "unexpectedly idle timing" +
                 " out connection, when no idle timeout is configured";
         final long timeoutMillis = timeoutVal.get();
-        // silently close the connection and discard all its state
-        if (debug.on()) {
-            debug.log("silently closing connection due to idle timeout (" + timeoutMillis
-                    + " milli seconds)");
-        } else {
-            Log.logQuic("{0} silently closing connection due to idle timeout ({1} milli seconds)",
-                    connection.logTag(), timeoutMillis);
+
+        // log idle timeout, with packet space statistics
+        String msg = "silently closing connection due to idle timeout (" + timeoutMillis
+                + " milli seconds)";
+        StringBuilder sb = new StringBuilder();
+        for (PacketNumberSpace sp : PacketNumberSpace.values()) {
+            if (sp == PacketNumberSpace.NONE) continue;
+            if (connection.packetNumberSpaces().get(sp) instanceof PacketSpaceManager m) {
+                sb.append("\n  PacketSpace: ").append(sp).append('\n');
+                m.debugState("    ", sb);
+            }
         }
+        if (Log.quic()) {
+            if (debug.on()) debug.log(msg);
+            Log.logQuic("{0} {1}: {2}", connection.logTag(), msg, sb.toString());
+        } else if (debug.on()) {
+            debug.log("%s: %s", msg, sb);
+        }
+
+        // silently close the connection and discard all its state
         final TerminationCause cause = forSilentTermination("connection idle timed out ("
                 + timeoutMillis + " milli seconds)");
         connection.terminator.terminate(cause);

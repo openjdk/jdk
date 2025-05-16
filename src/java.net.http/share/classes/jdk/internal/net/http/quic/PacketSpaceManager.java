@@ -2064,12 +2064,29 @@ public sealed class PacketSpaceManager implements PacketSpace
         if (debug.on()) {
             debug.log("state: %s", isClosed() ? "closed" : "opened" );
             debug.log("AckFrame: " + nextAckFrame);
-            debug.log("Pending acks %s, pending retransmissions %s",
-                    pendingAcknowledgements.stream().map(PendingAcknowledgement::prettyPrint)
-                            .collect(Collectors.joining(", ", "(", ")")),
-                    pendingRetransmission.stream().map(PendingAcknowledgement::prettyPrint)
-                            .collect(Collectors.joining(", ", "(", ")")));
+            String pendingAcks = pendingAcknowledgements.stream()
+                    .map(PendingAcknowledgement::prettyPrint)
+                    .collect(Collectors.joining(", ", "(", ")"));
+            String pendingRetransmit = pendingRetransmission.stream()
+                    .map(PendingAcknowledgement::prettyPrint)
+                    .collect(Collectors.joining(", ", "(", ")"));
+            debug.log("Pending acks: %s", pendingAcks);
+            debug.log("Pending retransmit: %s", pendingRetransmit);
         }
+    }
+
+    void debugState(String prefix, StringBuilder sb) {
+        String state = isClosed() ? "closed" : "opened";
+        sb.append(prefix).append("State: ").append(state).append('\n');
+        sb.append(prefix).append("AckFrame: ").append(nextAckFrame).append('\n');
+        String pendingAcks = pendingAcknowledgements.stream()
+                .map(PendingAcknowledgement::prettyPrint)
+                .collect(Collectors.joining(", ", "(", ")"));
+        String pendingRetransmit = pendingRetransmission.stream()
+                .map(PendingAcknowledgement::prettyPrint)
+                .collect(Collectors.joining(", ", "(", ")"));
+        sb.append(prefix).append("Pending acks: ").append(pendingAcks).append('\n');
+        sb.append(prefix).append("Pending retransmit: ").append(pendingRetransmit);
     }
 
     @Override
