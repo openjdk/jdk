@@ -33,6 +33,7 @@
 #include "gc/z/zLargePages.hpp"
 #include "gc/z/zNMT.hpp"
 #include "gc/z/zNUMA.hpp"
+#include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zThreadLocalAllocBuffer.hpp"
 #include "gc/z/zTracer.hpp"
@@ -68,6 +69,7 @@ void ZInitialize::initialize(ZBarrierSet* barrier_set) {
   ZJNICritical::initialize();
   ZDriver::initialize();
   ZGCIdPrinter::initialize();
+  ZObjectAllocator::initialize();
 
   pd_initialize();
 }

@@ -25,7 +25,7 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/z/zLock.inline.hpp"
-#include "gc/z/zObjectAllocator.hpp"
+#include "gc/z/zObjectAllocator.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zStat.hpp"
@@ -39,6 +39,13 @@
 
 static const ZStatCounter ZCounterUndoObjectAllocationSucceeded("Memory", "Undo Object Allocation Succeeded", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterUndoObjectAllocationFailed("Memory", "Undo Object Allocation Failed", ZStatUnitOpsPerSecond);
+
+ZObjectAllocator::Allocators ZObjectAllocator::_allocators;
+
+void ZObjectAllocator::initialize() {
+  ZPageAgeRange::Iterator it = ZPageAgeRange().begin();
+  _allocators.initialize(it);
+}
 
 ZObjectAllocator::ZObjectAllocator(ZPageAge age)
   : _age(age),
@@ -56,10 +63,6 @@ ZPage* const* ZObjectAllocator::shared_small_page_addr() const {
 }
 
 ZPage* ZObjectAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags) {
-  return ZHeap::heap()->alloc_page(type, size, flags, _age);
-}
-
-ZPage* ZObjectAllocator::alloc_page_for_relocation(ZPageType type, size_t size, ZAllocationFlags flags) {
   return ZHeap::heap()->alloc_page(type, size, flags, _age);
 }
 
@@ -201,18 +204,17 @@ zaddress ZObjectAllocator::alloc_object(size_t size, ZAllocationFlags flags) {
 }
 
 zaddress ZObjectAllocator::alloc_object(size_t size) {
-  const ZAllocationFlags flags;
-  return alloc_object(size, flags);
-}
-
-zaddress ZObjectAllocator::alloc_object_for_relocation(size_t size) {
   ZAllocationFlags flags;
-  flags.set_non_blocking();
+
+  if (_age != ZPageAge::eden) {
+    // Object allocation for relocation should not block
+    flags.set_non_blocking();
+  }
 
   return alloc_object(size, flags);
 }
 
-void ZObjectAllocator::undo_alloc_object_for_relocation(zaddress addr, size_t size) {
+void ZObjectAllocator::undo_alloc_object(zaddress addr, size_t size) {
   ZPage* const page = ZHeap::heap()->page(addr);
 
   if (page->is_large()) {
@@ -225,10 +227,6 @@ void ZObjectAllocator::undo_alloc_object_for_relocation(zaddress addr, size_t si
       ZStatInc(ZCounterUndoObjectAllocationFailed);
     }
   }
-}
-
-ZPageAge ZObjectAllocator::age() const {
-  return _age;
 }
 
 size_t ZObjectAllocator::remaining() const {

@@ -28,7 +28,6 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/z/zAllocator.inline.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
@@ -41,6 +40,7 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zMark.inline.hpp"
+#include "gc/z/zObjectAllocator.inline.hpp"
 #include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
@@ -841,10 +841,7 @@ void ZGenerationYoung::mark_start() {
   ZHeap::heap()->reset_tlab_used();
 
   // Retire allocating pages
-  ZAllocator::eden()->retire_pages();
-  for (ZPageAge age : ZPageAgeRangeSurvivor) {
-    ZAllocator::relocation(age)->retire_pages();
-  }
+  ZObjectAllocator::retire_pages(ZPageAgeRangeYoung);
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();
@@ -1201,7 +1198,7 @@ void ZGenerationOld::mark_start() {
   flip_mark_start();
 
   // Retire allocating pages
-  ZAllocator::old()->retire_pages();
+  ZObjectAllocator::retire_pages(ZPageAgeRangeOld);
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,40 +21,31 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
-#define SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
+#ifndef SHARE_GC_Z_ZOBJECTALLOCATOR_INLINE_HPP
+#define SHARE_GC_Z_ZOBJECTALLOCATOR_INLINE_HPP
 
-#include "gc/z/zAllocator.hpp"
+#include "gc/z/zObjectAllocator.hpp"
 
-#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zPageAge.inline.hpp"
 
-inline ZAllocatorEden* ZAllocator::eden() {
-  return _eden;
+inline ZObjectAllocator* ZObjectAllocator::allocator(ZPageAge age) {
+  return _allocators->at(untype(age));
 }
 
-inline ZAllocatorForRelocation* ZAllocator::relocation(ZPageAge page_age) {
-  return _relocation[untype(page_age - 1)];
+inline ZObjectAllocator* ZObjectAllocator::eden() {
+  return allocator(ZPageAge::eden);
 }
 
-inline ZAllocatorForRelocation* ZAllocator::old() {
-  return relocation(ZPageAge::old);
-}
-
-inline zaddress ZAllocatorEden::alloc_tlab(size_t size) {
+inline zaddress ZObjectAllocator::alloc_tlab(size_t size) {
   guarantee(size <= ZHeap::heap()->max_tlab_size(), "TLAB too large");
-  return _object_allocator.alloc_object(size);
+  return alloc_object(size);
 }
 
-inline zaddress ZAllocatorEden::alloc_object(size_t size) {
-  const zaddress addr = _object_allocator.alloc_object(size);
-
-  if (is_null(addr)) {
-    ZHeap::heap()->out_of_memory();
+inline void ZObjectAllocator::retire_pages(ZPageAgeRange range) {
+  for (ZPageAge age : range) {
+    _allocators->at(untype(age))->retire_pages();
   }
-
-  return addr;
 }
 
-#endif // SHARE_GC_Z_ZALLOCATOR_INLINE_HPP
+#endif // SHARE_GC_Z_ZOBJECTALLOCATOR_INLINE_HPP
