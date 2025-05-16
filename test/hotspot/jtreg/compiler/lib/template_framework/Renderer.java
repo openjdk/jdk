@@ -31,12 +31,16 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * The {@link Renderer} class is used to keep track of the states during a nested
- * Template rendering. There can only be a single {@link Renderer} active
- * at any point, since there are static methods that reference {@link Renderer#getCurrent}.
+ * The {@link Renderer} class renders a tokenized {@link Template} in the form of a {@link TemplateToken}.
+ * It also keeps track of the states during a nested Template rendering. There can only be a single
+ * {@link Renderer} active at any point, since there are static methods that reference 
+ * {@link Renderer#getCurrent}.
  *
- * The {@link Renderer} instance keeps track of the current frames,
- * see {@link TemplateFrame} and {@link CodeFrame}.
+ * <p>
+ * The {@link Renderer} instance keeps track of the current frames.
+ * 
+ * @see TemplateFrame
+ * @see CodeFrame
  */
 class Renderer {
     private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile("\\$([a-zA-Z_][a-zA-Z0-9_]*)");
@@ -45,6 +49,7 @@ class Renderer {
     /**
      * There can be at most one Renderer instance at any time.
      *
+     * <p>
      * When using nested templates, the user of the Template Framework may be tempted to first render
      * the nested template to a {@link String}, and then use this {@link String} as a token in an outer
      * {@link Template#body}. This would be a bad pattern: the outer and nested {@link Template} would
@@ -54,11 +59,13 @@ class Renderer {
      * that the inner {@link Template} has access to the outer {@link Template}, but they would actually
      * be separated. This could lead to unexpected behavior or even bugs.
      *
+     * <p>
      * Instead, the user should create a {@link TemplateToken} from the inner {@link Template}, and
      * use that {@link TemplateToken} in the {@link Template#body} of the outer {@link Template}.
      * This way, the inner and outer {@link Template}s get rendered together, and the inner {@link Template}
      * has access to the {@link Name}s and {@link Hook}s of the outer {@link Template}.
      *
+     * <p>
      * The {@link Renderer} instance exists during the whole rendering process. Should the user ever
      * attempt to render a nested {@link Template} to a {@link String}, we would detect that there is
      * already a {@link Renderer} instance for the outer {@link Template}, and throw a {@link RendererException}.
@@ -66,9 +73,9 @@ class Renderer {
     private static Renderer renderer = null;
 
     private int nextTemplateFrameId;
-    private TemplateFrame baseTemplateFrame;
+    private final TemplateFrame baseTemplateFrame;
     private TemplateFrame currentTemplateFrame;
-    private CodeFrame baseCodeFrame;
+    private final CodeFrame baseCodeFrame;
     private CodeFrame currentCodeFrame;
 
     // We do not want any other instances, so we keep it private.

@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * The {@link Template#body} and {@link Hook#set} are given a list of tokens, which are either
  * {@link Token}s or {@link String}s or some permitted boxed primitives. These are then parsed
- * and all non {@link Token}s are converted to {@link StringToken}s. The parsing also flattens
+ * and all non-{@link Token}s are converted to {@link StringToken}s. The parsing also flattens
  * {@link List}s.
  */
 sealed interface Token permits StringToken,
@@ -48,7 +48,7 @@ sealed interface Token permits StringToken,
         if (objects == null) {
             throw new IllegalArgumentException("Unexpected tokens: null");
         }
-        List<Token> outputList = new ArrayList<Token>();
+        List<Token> outputList = new ArrayList<>();
         parseToken(Arrays.asList(objects), outputList);
         return outputList;
     }

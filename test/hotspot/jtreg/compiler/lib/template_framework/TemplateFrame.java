@@ -28,11 +28,11 @@ import java.util.Map;
 
 /**
  * The {@link TemplateFrame} is the frame for a {@link Template}, i.e. the corresponding
- * {@link TemplateToken}. It ensures that each template use has its own unique {@link id}
+ * {@link TemplateToken}. It ensures that each template use has its own unique {@link #id}
  * used to deconflict names using {@link Template#$}. It also has a set of hashtag
  * replacements, which combine the key-value pairs from the template argument and the
- * {@link Template#let} definitions. The {@link parent} relationship provides a trace
- * for the use chain of templates. The {@link fuel} is reduced over this chain, to give
+ * {@link Template#let} definitions. The {@link #parent} relationship provides a trace
+ * for the use chain of templates. The {@link #fuel} is reduced over this chain, to give
  * a heuristic on how much time is spent on the code from the template corresponding to
  * the frame, and to give a termination criterion to avoid nesting templates too deeply.
  *
@@ -41,10 +41,10 @@ import java.util.Map;
  */
 class TemplateFrame {
     final TemplateFrame parent;
-    final int id;
-    final Map<String, String> hashtagReplacements = new HashMap<>();
+    private final int id;
+    private final Map<String, String> hashtagReplacements = new HashMap<>();
     final float fuel;
-    float fuelCost;
+    private float fuelCost;
 
     public static TemplateFrame makeBase(int id, float fuel) {
         return new TemplateFrame(null, id, fuel, 0.0f);
@@ -66,11 +66,9 @@ class TemplateFrame {
     }
 
     void addHashtagReplacement(String key, String value) {
-        if (!hashtagReplacements.containsKey(key)) {
-            hashtagReplacements.put(key, value);
-            return;
+        if (hashtagReplacements.putIfAbsent(key, value) != null) {
+            throw new RendererException("Duplicate hashtag replacement for #" + key);
         }
-        throw new RendererException("Duplicate hashtag replacement for #" + key);
     }
 
     String getHashtagReplacement(String key) {

@@ -24,8 +24,9 @@
 package compiler.lib.template_framework;
 
 /**
- * Represents a Template with filled arguments, ready for instantiation, either
- * as a {@link Token} inside another {@link Template} or with {@link #render}.
+ * Represents a tokenized {@link Template} (after calling {@code asToken()}) ready for
+ * instantiation either as a {@link Token} inside another {@link Template} or as
+ * a {@link String} with {@link #render}.
  */
 public sealed abstract class TemplateToken implements Token
                                            permits TemplateToken.ZeroArgs,
@@ -36,8 +37,8 @@ public sealed abstract class TemplateToken implements Token
     private TemplateToken() {}
 
     /**
-     * Represents a zero-argument {@link TemplateToken}, already filled with arguments, ready for
-     * instantiation either as a {@link Token} inside another {@link Template} or
+     * Represents a tokenized zero-argument {@link Template} ready for instantiation
+     * either as a {@link Token} inside another {@link Template} or as a {@link String}
      * with {@link #render}.
      */
     static final class ZeroArgs extends TemplateToken implements Token {
@@ -57,8 +58,9 @@ public sealed abstract class TemplateToken implements Token
     }
 
     /**
-     * Represents a one-argument {@link TemplateToken}, already filled with arguments, ready for instantiation
-     * either as a {@link Token} inside another {@link Template} or with {@link #render}.
+     * Represents a tokenized one-argument {@link Template}, already filled with arguments, ready for
+     * instantiation either as a {@link Token} inside another {@link Template} or as a {@link String} 
+     * with {@link #render}.
      *
      * @param <A> The type of the (first) argument.
      */
@@ -83,8 +85,9 @@ public sealed abstract class TemplateToken implements Token
     }
 
     /**
-     * Represents a two-argument {@link TemplateToken}, already filled with arguments, ready for instantiation
-     * either as a {@link Token} inside another {@link Template} or with {@link #render}.
+     * Represents a tokenized two-argument {@link Template}, already filled with arguments, ready for
+     * instantiation either as a {@link Token} inside another {@link Template} or as a {@link String}
+     * with {@link #render}.
      *
      * @param <A> The type of the first argument.
      * @param <B> The type of the second argument.
@@ -113,8 +116,9 @@ public sealed abstract class TemplateToken implements Token
     }
 
     /**
-     * Represents a three-argument {@link TemplateToken}, already filled with arguments, ready for instantiation
-     * either as a {@link Token} inside another {@link Template} or with {@link #render}.
+     * Represents a tokenized three-argument {@link TemplateToken}, already filled with arguments, ready for
+     * instantiation either as a {@link Token} inside another {@link Template} or as a {@link String}
+     * with {@link #render}.
      *
      * @param <A> The type of the first argument.
      * @param <B> The type of the second argument.

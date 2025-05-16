@@ -72,14 +72,14 @@ class CodeFrame {
     }
 
     /**
-     * Creates a base frame, which has no {@link parent}.
+     * Creates a base frame, which has no {@link #parent}.
      */
     public static CodeFrame makeBase() {
         return new CodeFrame(null, false);
     }
 
     /**
-     * Creates a normal frame, which has a {@link parent} and which defines an inner
+     * Creates a normal frame, which has a {@link #parent} and which defines an inner
      * {@link NameSet}, for the names that are generated inside this frame. Once this
      * frame is exited, the name from inside this frame are not available anymore.
      */
@@ -88,7 +88,7 @@ class CodeFrame {
     }
 
     /**
-     * Creates a special frame, which has a {@link parent} but uses the {@link NameSet}
+     * Creates a special frame, which has a {@link #parent} but uses the {@link NameSet}
      * from the parent frame, allowing {@link Template#defineName} to persist in the outer
      * frame when the current frame is exited. This is necessary for {@link Hook#insert},
      * where we would possibly want to make field or variable definitions during the insertion
