@@ -242,7 +242,7 @@ public final class PathGroup {
     }
 
     /**
-     * Similar to {@link #copy(PathGroup)} but moves files/directories instead of
+     * Similar to {@link #copy(PathGroup, CopyOption...)} but moves files/directories instead of
      * copying.
      *
      * @param dst the destination path group
@@ -255,7 +255,7 @@ public final class PathGroup {
     }
 
     /**
-     * Similar to {@link #copy(PathGroup)} but uses the given handler to transform
+     * Similar to {@link #copy(PathGroup, CopyOption...)} but uses the given handler to transform
      * paths instead of coping.
      *
      * @param dst the destination path group
