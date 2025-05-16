@@ -209,7 +209,8 @@ public sealed interface Template permits Template.ZeroArgs,
          * Creates a {@link TemplateToken} which can be used as a {@link Token} inside
          * a {@link Template} for nested code generation.
          *
-         * @return The template all (zero) arguments applied.
+         * @return The {@link TemplateToken} to use the {@link Template} inside another
+         *         {@link Template}.
          */
         public TemplateToken asToken() {
             return new TemplateToken.ZeroArgs(this);
@@ -252,7 +253,8 @@ public sealed interface Template permits Template.ZeroArgs,
          * a {@link Template} for nested code generation.
          *
          * @param a The value for the (first) argument.
-         * @return The template its argument applied.
+         * @return The {@link TemplateToken} to use the {@link Template} inside another
+         *         {@link Template}.
          */
         public TemplateToken asToken(A a) {
             return new TemplateToken.OneArgs<>(this, a);
@@ -300,7 +302,8 @@ public sealed interface Template permits Template.ZeroArgs,
          *
          * @param a The value for the first argument.
          * @param b The value for the second argument.
-         * @return The template all (two) arguments applied.
+         * @return The {@link TemplateToken} to use the {@link Template} inside another
+         *         {@link Template}.
          */
         public TemplateToken asToken(A a, B b) {
             return new TemplateToken.TwoArgs<>(this, a, b);
@@ -375,7 +378,8 @@ public sealed interface Template permits Template.ZeroArgs,
          * @param a The value for the first argument.
          * @param b The value for the second argument.
          * @param c The value for the third argument.
-         * @return The template all (three) arguments applied.
+         * @return The {@link TemplateToken} to use the {@link Template} inside another
+         *         {@link Template}.
          */
         public TemplateToken asToken(A a, B b, C c) {
             return new TemplateToken.ThreeArgs<>(this, a, b, c);
