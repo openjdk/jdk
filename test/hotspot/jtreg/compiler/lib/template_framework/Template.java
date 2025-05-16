@@ -29,6 +29,9 @@ import java.util.function.Supplier;
 
 import java.util.List;
 
+import compiler.lib.compile_framework.CompileFramework;
+import compiler.lib.ir_framework.TestFramework;
+
 /**
  * The Template Framework allows the generation of code with Templates. The goal is that these Templates are
  * easy to write, and allow regression tests to cover a larger scope, and to make template based fuzzing easy
@@ -614,14 +617,14 @@ public sealed interface Template permits Template.ZeroArgs,
      * Default amount of fuel for Template rendering. It guides the nesting depth of Templates. Can be changed when
      * rendering a template with {@code render(fuel)} (e.g. {@link ZeroArgs#render(float)}).
      */
-    public final static float DEFAULT_FUEL = 100.0f;
+    float DEFAULT_FUEL = 100.0f;
 
     /**
      * The default amount of fuel spent per Template. It is subtracted from the current {@link #fuel} at every
      * nesting level, and once the {@link #fuel} reaches zero, the nesting is supposed to terminate. Can be changed
      * with {@link #setFuelCost(float)} inside {@link #body(Object...)}.
      */
-    public final static float DEFAULT_FUEL_COST = 10.0f;
+    float DEFAULT_FUEL_COST = 10.0f;
 
     /**
      * The current remaining fuel for nested Templates. Every level of Template nesting
@@ -632,9 +635,9 @@ public sealed interface Template permits Template.ZeroArgs,
      * <p>
      * Example of a recursive Template, which checks the remaining {@link #fuel} at every level,
      * and terminates if it reaches zero. It also demonstrates the use of {@link TemplateBinding} for
-     * the recursive use of Templates. We {@link Template.OneArgs#render} with {@code 30} total fuel, 
+     * the recursive use of Templates. We {@link Template.OneArgs#render} with {@code 30} total fuel,
      * and spend {@code 5} fuel at each recursion level.
-     * 
+     *
      * <p>
      * {@snippet lang=java :
      * var binding = new TemplateBinding<Template.OneArgs<Integer>>();
