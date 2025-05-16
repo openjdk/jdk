@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,10 @@ tier2_part3 = \
     :jdk_net
 
 tier3 = \
+    :tier3_part1 \
+    :tier3_part2
+
+tier3_part1 = \
     :build \
     :jdk_vector \
     -:jdk_vector_sanity \
@@ -91,8 +95,10 @@ tier3 = \
     :jdk_svc \
     -:jdk_svc_sanity \
     -:svc_tools \
-    :jdk_jpackage \
     :jdk_since_checks
+
+tier3_part2 = \
+    :jdk_jpackage
 
 # Everything not in other tiers
 tier4 = \
