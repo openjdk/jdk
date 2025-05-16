@@ -1938,18 +1938,18 @@ int ConstantPool::find_matching_entry(int pattern_i,
 // Compare this constant pool's bootstrap specifier at idx1 to the constant pool
 // cp2's bootstrap specifier at idx2.
 bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, int idx2) {
-  int k1 = operand_bootstrap_method_ref_index_at(idx1);
-  int k2 = cp2->operand_bootstrap_method_ref_index_at(idx2);
+  int k1 = bsm_attribute_entry(idx1)->bootstrap_method_index();
+  int k2 = cp2->bsm_attribute_entry(idx2)->bootstrap_method_index();
   bool match = compare_entry_to(k1, cp2, k2);
 
   if (!match) {
     return false;
   }
-  int argc = operand_argument_count_at(idx1);
-  if (argc == cp2->operand_argument_count_at(idx2)) {
+  int argc = bsm_attribute_entry(idx1)->argument_count();
+  if (argc == cp2->bsm_attribute_entry(idx2)->argument_count()) {
     for (int j = 0; j < argc; j++) {
-      k1 = operand_argument_index_at(idx1, j);
-      k2 = cp2->operand_argument_index_at(idx2, j);
+      k1 = bsm_attribute_entry(idx1)->argument_index(j);
+      k2 = cp2->bsm_attribute_entry(idx2)->argument_index(j);
       match = compare_entry_to(k1, cp2, k2);
       if (!match) {
         return false;

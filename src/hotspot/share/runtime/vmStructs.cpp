@@ -1482,14 +1482,6 @@
                                                                           \
   declare_constant(Symbol::max_symbol_length)                             \
                                                                           \
-  /***********************************************/                       \
-  /* ConstantPool* layout enum for InvokeDynamic */                       \
-  /***********************************************/                       \
-                                                                          \
-  declare_constant(ConstantPool::_indy_bsm_offset)                        \
-  declare_constant(ConstantPool::_indy_argc_offset)                       \
-  declare_constant(ConstantPool::_indy_argv_offset)                       \
-                                                                          \
   /***************************************/                               \
   /* JavaThreadStatus enum               */                               \
   /***************************************/                               \
