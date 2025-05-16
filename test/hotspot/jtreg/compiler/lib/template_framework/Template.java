@@ -144,7 +144,7 @@ import java.util.List;
  * A {@link Template} can have zero or more arguments. A template can be created with {@code make} methods like
  * {@link Template#make(String, Function)}. For each number of arguments there is an implementation
  * (e.g. {@link Template.TwoArgs} for two arguments). This allows the use of Generics for the
- * Template argument types, i.e. the Template arguments can be type checked.
+ * Template argument types which enables type checking of the Template arguments.
  *
  * <p>
  * A {@link Template} can be rendered to a {@link String} (e.g. {@link Template.ZeroArgs#render()}).
@@ -174,9 +174,11 @@ import java.util.List;
  * <p>
  * A {@link TemplateBinding} allows the recursive use of Templates. With the indirection of such a binding,
  * a Template can reference itself. To ensure the termination of recursion, the templates are rendered
- * with a certain amount of {@link #fuel}, which is decreased at each Template nesting by a certain amount
- * (can be changed with {@link #setFuelCost}). Recursive templates are supposed to terminate once the {@link #fuel}
- * is depleted (i.e. reaches zero).
+ * with a certain amount of {@link #fuel} (default: 100, see {@link #DEFAULT_FUEL}), which is decreased at each
+ * Template nesting by a certain amount (default: 10, see {@link #DEFAULT_FUEL_COST}). The default fuel for a
+ * template can be changed when we {@code render()} it (e.g. {@link ZeroArgs#render(float)}) and the default
+ * fuel cost with {@link #setFuelCost}) when defining the {@link #body(Object...)}. Recursive templates are
+ * supposed to terminate once the {@link #fuel} is depleted (i.e. reaches zero).
  *
  * <p>
  * Code generation often involves defining fields and variables, which are then available inside a defined
@@ -227,7 +229,7 @@ public sealed interface Template permits Template.ZeroArgs,
         }
 
         /**
-         * Renders the {@link Template} to {@link String}.
+         * Renders the {@link Template} to a {@link String}.
          *
          * @param fuel The amount of fuel provided for recursive Template instantiations.
          * @return The {@link String}, resulting from rendering the {@link Template}.
@@ -408,10 +410,9 @@ public sealed interface Template permits Template.ZeroArgs,
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(float fuel, A a, B b, C c) {
-            return new TemplateToken.ThreeArgs(this, a, b, c).render(fuel);
+            return new TemplateToken.ThreeArgs<>(this, a, b, c).render(fuel);
         }
     }
-
 
     /**
      * Creates a {@link Template} with no arguments.
@@ -610,13 +611,15 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Default amount of fuel for Template rendering. It guides the nesting depth of Templates.
+     * Default amount of fuel for Template rendering. It guides the nesting depth of Templates. Can be changed when
+     * rendering a template with {@code render(fuel)} (e.g. {@link ZeroArgs#render(float)}).
      */
     public final static float DEFAULT_FUEL = 100.0f;
 
     /**
      * The default amount of fuel spent per Template. It is subtracted from the current {@link #fuel} at every
-     * nesting level, and once the {@link #fuel} reaches zero, the nesting is supposed to terminate.
+     * nesting level, and once the {@link #fuel} reaches zero, the nesting is supposed to terminate. Can be changed
+     * with {@link #setFuelCost(float)} inside {@link #body(Object...)}.
      */
     public final static float DEFAULT_FUEL_COST = 10.0f;
 
@@ -629,7 +632,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * <p>
      * Example of a recursive Template, which checks the remaining {@link #fuel} at every level,
      * and terminates if it reaches zero. It also demonstrates the use of {@link TemplateBinding} for
-     * the recursive use of Templates. We {@link Template.OneArgs#render} with {@code 30} total fuel, and spend {@code 5} fuel at each recursion level.
+     * the recursive use of Templates. We {@link Template.OneArgs#render} with {@code 30} total fuel, 
+     * and spend {@code 5} fuel at each recursion level.
+     * 
+     * <p>
      * {@snippet lang=java :
      * var binding = new TemplateBinding<Template.OneArgs<Integer>>();
      * var template = Template.make("depth", (Integer depth) -> body(
@@ -638,7 +644,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *     """
      *     System.out.println("Currently at depth #depth with fuel #fuel");
      *     """,
-     *     (fuel() > 0) ? binding.get().asToken(depth + 1)
+     *     (fuel() > 0) ? binding.get().asToken(depth + 1) :
      *                    "// terminate\n"
      * ));
      * binding.bind(template);
