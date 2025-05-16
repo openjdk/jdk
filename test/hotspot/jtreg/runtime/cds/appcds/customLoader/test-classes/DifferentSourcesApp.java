@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,24 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_CDS_UNREGISTEREDCLASSES_HPP
-#define SHARE_CDS_UNREGISTEREDCLASSES_HPP
+import java.nio.file.Path;
+import java.nio.file.FileSystems;
+import java.net.URL;
+import java.net.URLClassLoader;
 
-#include "memory/allStatic.hpp"
-#include "runtime/handles.hpp"
-
-class InstanceKlass;
-class Symbol;
-
-class UnregisteredClasses: AllStatic {
-public:
-  static InstanceKlass* load_class(Symbol* name, const char* path, TRAPS);
-  static void initialize(TRAPS);
-  // Returns true if the class is loaded internally for dumping unregistered classes.
-  static bool check_for_exclusion(const InstanceKlass* k);
-};
-
-#endif // SHARE_CDS_UNREGISTEREDCLASSES_HPP
+/**
+ * See ../DifferentSourcesTest.java for details.
+ */
+public class DifferentSourcesApp {
+    public static void main(String args[]) throws Exception {
+        Path base = FileSystems.getDefault().getPath("base.jar");
+        Path sub = FileSystems.getDefault().getPath("sub.jar");
+        URL[] urls = new URL[] { base.toUri().toURL(), sub.toUri().toURL() };
+        URLClassLoader cl = new URLClassLoader(urls, /* parent = */ null);
+        Class<?> cls = cl.loadClass("CustomLoadee5Child");
+        System.out.println(cls.getName());
+    }
+}
