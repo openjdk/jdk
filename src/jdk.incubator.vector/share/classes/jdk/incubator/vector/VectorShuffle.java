@@ -332,9 +332,9 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      *
      *
      * @param species the shuffle species
-     * @param sourceIndexes the source indexes in memory which the shuffle will draw from
+     * @param ms the source indexes in memory which the shuffle will draw from
      * @param offset the offset into the segment
-     * @param order the byte order
+     * @param bo the byte order
      * @param <E> the boxed element type
      * @return a shuffle where each lane's source index is set to the given
      *         {@code int} value, partially wrapped if exceptional
@@ -343,11 +343,11 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      * @since 25
      */
     @ForceInline
-    public static final <E> VectorShuffle<E> fromMemorySegment(VectorSpecies<E> species, MemorySegment sourceIndexes,
-                                                               long offset, ByteOrder order) {
+    public static final <E> VectorShuffle<E> fromMemorySegment(VectorSpecies<E> species, MemorySegment ms,
+                                                               long offset, ByteOrder bo) {
         long memsize = species.length() * 4;
-        MemorySegment arraySlice = sourceIndexes.asSlice(offset, memsize);
-        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT_UNALIGNED.withOrder(order));
+        MemorySegment arraySlice = ms.asSlice(offset, memsize);
+        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT_UNALIGNED.withOrder(bo));
         return species.shuffleFromArray(indices,0);
     }
 
@@ -573,12 +573,13 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      * range from {@code -VLENGTH} to {@code VLENGTH-1}.
      * @param ms the memory segment
      * @param offset the offset into the segment
-     * @param order the byte order
+     * @param bo the byte order
      * @throws IndexOutOfBoundsException if {@code offset < 0} or
      *        {@code offset > a.byteSize() - this.length() * 4}
+     * @throws IllegalArgumentException if the segment {@code ms} is read-only
      * @since 25
      */
-    public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder order);
+    public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
 
 
     /**
