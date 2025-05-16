@@ -1242,7 +1242,7 @@ void AOTCodeAddressTable::init_extrs() {
   SET_ADDRESS(_extrs, SharedRuntime::handle_wrong_method);
   SET_ADDRESS(_extrs, SharedRuntime::handle_wrong_method_abstract);
   SET_ADDRESS(_extrs, SharedRuntime::handle_wrong_method_ic_miss);
-#if defined(AARCH64)
+#if defined(AARCH64) && !defined(ZERO)
   SET_ADDRESS(_extrs, JavaThread::aarch64_get_thread_helper);
 #endif
   {

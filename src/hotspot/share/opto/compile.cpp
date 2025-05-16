@@ -731,7 +731,8 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps || StressBailout) {
+      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps || StressBailout ||
+      StressLoopPeeling) {
     initialize_stress_seed(directive);
   }
 
