@@ -28,7 +28,6 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
@@ -205,102 +204,69 @@ void G1BarrierSetAssembler::generate_c2_pre_barrier_stub(MacroAssembler* masm,
   BLOCK_COMMENT("} generate_c2_pre_barrier_stub");
 }
 
+static void generate_post_barrier_fast_path(MacroAssembler* masm,
+                                            const Register store_addr,
+                                            const Register new_val,
+                                            const Register thread,
+                                            const Register tmp1,
+                                            const Register tmp2,
+                                            Label& done,
+                                            bool new_val_may_be_null) {
+
+  __ block_comment("generate_post_barrier_fast_path {");
+
+  assert(thread == Z_thread, "must be");
+  assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, noreg);
+
+  // Does store cross heap regions?
+  if (VM_Version::has_DistinctOpnds()) {
+    __ z_xgrk(tmp1, store_addr, new_val);    // tmp1 := store address ^ new value
+  } else {
+    __ z_lgr(tmp1, store_addr);
+    __ z_xgr(tmp1, new_val);
+  }
+  __ z_srag(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes); // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
+  __ branch_optimized(Assembler::bcondEqual, done);
+
+  // Crosses regions, storing null?
+  if (new_val_may_be_null) {
+    __ z_ltgr(new_val, new_val);
+    __ z_bre(done);
+  } else {
+#ifdef ASSERT
+    __ z_ltgr(new_val, new_val);
+    __ asm_assert(Assembler::bcondNotZero, "null oop not allowed (G1 post)", 0x322); // Checked by caller.
+#endif
+  }
+
+  __ z_srag(tmp1, store_addr, CardTable::card_shift());
+
+  Address card_table_addr(thread, in_bytes(G1ThreadLocalData::card_table_base_offset()));
+  __ z_alg(tmp1, card_table_addr);     // tmp1 := card address
+
+  if(UseCondCardMark) {
+    __ z_cli(0, tmp1, G1CardTable::clean_card_val());
+    __ branch_optimized(Assembler::bcondNotEqual, done);
+  }
+
+  static_assert(G1CardTable::dirty_card_val() == 0, "must be to use z_mvi");
+  __ z_mvi(0, tmp1, G1CardTable::dirty_card_val()); // *(card address) := dirty_card_val
+
+  __ block_comment("} generate_post_barrier_fast_path");
+}
+
 void G1BarrierSetAssembler::g1_write_barrier_post_c2(MacroAssembler* masm,
                                                      Register store_addr,
                                                      Register new_val,
                                                      Register thread,
                                                      Register tmp1,
                                                      Register tmp2,
-                                                     G1PostBarrierStubC2* stub) {
+                                                     bool new_val_may_be_null) {
   BLOCK_COMMENT("g1_write_barrier_post_c2 {");
-
-  assert(thread == Z_thread, "must be");
-  assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, Z_R1_scratch);
-
-  assert(store_addr != noreg && new_val != noreg && tmp1 != noreg && tmp2 != noreg, "expecting a register");
-
-  stub->initialize_registers(thread, tmp1, tmp2);
-
-  BLOCK_COMMENT("generate_region_crossing_test {");
-  if (VM_Version::has_DistinctOpnds()) {
-    __ z_xgrk(tmp1, store_addr, new_val);
-  } else {
-    __ z_lgr(tmp1, store_addr);
-    __ z_xgr(tmp1, new_val);
-  }
-  __ z_srag(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);
-  __ branch_optimized(Assembler::bcondEqual, *stub->continuation());
-  BLOCK_COMMENT("} generate_region_crossing_test");
-
-  // crosses regions, storing null?
-  if ((stub->barrier_data() & G1C2BarrierPostNotNull) == 0) {
-    __ z_ltgr(new_val, new_val);
-    __ branch_optimized(Assembler::bcondEqual, *stub->continuation());
-  }
-
-  BLOCK_COMMENT("generate_card_young_test {");
-  CardTableBarrierSet* ct = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-  // calculate address of card
-  __ load_const_optimized(tmp2, (address)ct->card_table()->byte_map_base());      // Card table base.
-  __ z_srlg(tmp1, store_addr, CardTable::card_shift());         // Index into card table.
-  __ z_algr(tmp1, tmp2);                                      // Explicit calculation needed for cli.
-
-  // Filter young.
-  __ z_cli(0, tmp1, G1CardTable::g1_young_card_val());
-
-  BLOCK_COMMENT("} generate_card_young_test");
-
-  // From here on, tmp1 holds the card address.
-  __ branch_optimized(Assembler::bcondNotEqual, *stub->entry());
-
-  __ bind(*stub->continuation());
-
+  Label done;
+  generate_post_barrier_fast_path(masm, store_addr, new_val, thread, tmp1, tmp2, done, new_val_may_be_null);
+  __ bind(done);
   BLOCK_COMMENT("} g1_write_barrier_post_c2");
-}
-
-void G1BarrierSetAssembler::generate_c2_post_barrier_stub(MacroAssembler* masm,
-                                                          G1PostBarrierStubC2* stub) const {
-
-  BLOCK_COMMENT("generate_c2_post_barrier_stub {");
-
-  Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
-  Label runtime;
-
-  Register thread     = stub->thread();
-  Register tmp1       = stub->tmp1(); // tmp1 holds the card address.
-  Register tmp2       = stub->tmp2();
-  Register Rcard_addr = tmp1;
-
-  __ bind(*stub->entry());
-
-  BLOCK_COMMENT("generate_card_clean_test {");
-  __ z_sync(); // Required to support concurrent cleaning.
-  __ z_cli(0, Rcard_addr, 0); // Reload after membar.
-  __ branch_optimized(Assembler::bcondEqual, *stub->continuation());
-  BLOCK_COMMENT("} generate_card_clean_test");
-
-  BLOCK_COMMENT("generate_dirty_card {");
-  // Storing a region crossing, non-null oop, card is clean.
-  // Dirty card and log.
-  STATIC_ASSERT(CardTable::dirty_card_val() == 0);
-  __ z_mvi(0, Rcard_addr, CardTable::dirty_card_val());
-  BLOCK_COMMENT("} generate_dirty_card");
-
-  generate_queue_test_and_insertion(masm,
-                                    G1ThreadLocalData::dirty_card_queue_index_offset(),
-                                    G1ThreadLocalData::dirty_card_queue_buffer_offset(),
-                                    runtime,
-                                    Z_thread, tmp1, tmp2);
-
-  __ branch_optimized(Assembler::bcondAlways, *stub->continuation());
-
-  __ bind(runtime);
-
-  generate_c2_barrier_runtime_call(masm, stub, tmp1, CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry));
-
-  __ branch_optimized(Assembler::bcondAlways, *stub->continuation());
-
-  BLOCK_COMMENT("} generate_c2_post_barrier_stub");
 }
 
 #endif //COMPILER2
@@ -451,99 +417,9 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
                                                   Register Rtmp1, Register Rtmp2, Register Rtmp3) {
   bool not_null = (decorators & IS_NOT_NULL) != 0;
 
-  assert_different_registers(Rstore_addr, Rnew_val, Rtmp1, Rtmp2); // Most probably, Rnew_val == Rtmp3.
-
-  Label callRuntime, filtered;
-
-  CardTableBarrierSet* ct = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-
-  BLOCK_COMMENT("g1_write_barrier_post {");
-
-  // Does store cross heap regions?
-  // It does if the two addresses specify different grain addresses.
-  if (VM_Version::has_DistinctOpnds()) {
-    __ z_xgrk(Rtmp1, Rstore_addr, Rnew_val);
-  } else {
-    __ z_lgr(Rtmp1, Rstore_addr);
-    __ z_xgr(Rtmp1, Rnew_val);
-  }
-  __ z_srag(Rtmp1, Rtmp1, G1HeapRegion::LogOfHRGrainBytes);
-  __ z_bre(filtered);
-
-  // Crosses regions, storing null?
-  if (not_null) {
-#ifdef ASSERT
-    __ z_ltgr(Rnew_val, Rnew_val);
-    __ asm_assert(Assembler::bcondNotZero, "null oop not allowed (G1 post)", 0x322); // Checked by caller.
-#endif
-  } else {
-    __ z_ltgr(Rnew_val, Rnew_val);
-    __ z_bre(filtered);
-  }
-
-  Rnew_val = noreg; // end of lifetime
-
-  // Storing region crossing non-null, is card already dirty?
-  assert_different_registers(Rtmp1, Rtmp2, Rtmp3);
-  // Make sure not to use Z_R0 for any of these registers.
-  Register Rcard_addr = (Rtmp1 != Z_R0_scratch) ? Rtmp1 : Rtmp3;
-  Register Rbase      = (Rtmp2 != Z_R0_scratch) ? Rtmp2 : Rtmp3;
-
-  // calculate address of card
-  __ load_const_optimized(Rbase, (address)ct->card_table()->byte_map_base());      // Card table base.
-  __ z_srlg(Rcard_addr, Rstore_addr, CardTable::card_shift());         // Index into card table.
-  __ z_algr(Rcard_addr, Rbase);                                      // Explicit calculation needed for cli.
-  Rbase = noreg; // end of lifetime
-
-  // Filter young.
-  __ z_cli(0, Rcard_addr, G1CardTable::g1_young_card_val());
-  __ z_bre(filtered);
-
-  // Check the card value. If dirty, we're done.
-  // This also avoids false sharing of the (already dirty) card.
-  __ z_sync(); // Required to support concurrent cleaning.
-  __ z_cli(0, Rcard_addr, G1CardTable::dirty_card_val()); // Reload after membar.
-  __ z_bre(filtered);
-
-  // Storing a region crossing, non-null oop, card is clean.
-  // Dirty card and log.
-  __ z_mvi(0, Rcard_addr, G1CardTable::dirty_card_val());
-
-  Register Rcard_addr_x = Rcard_addr;
-  Register Rqueue_index = (Rtmp2 != Z_R0_scratch) ? Rtmp2 : Rtmp1;
-  if (Rcard_addr == Rqueue_index) {
-    Rcard_addr_x = Z_R0_scratch;  // Register shortage. We have to use Z_R0.
-  }
-  __ lgr_if_needed(Rcard_addr_x, Rcard_addr);
-
-  generate_queue_test_and_insertion(masm,
-                                    G1ThreadLocalData::dirty_card_queue_index_offset(),
-                                    G1ThreadLocalData::dirty_card_queue_buffer_offset(),
-                                    callRuntime,
-                                    Z_thread, Rcard_addr_x, Rqueue_index);
-  __ z_bru(filtered);
-
-  __ bind(callRuntime);
-
-  // TODO: do we need a frame? Introduced to be on the safe side.
-  bool needs_frame = true;
-  __ lgr_if_needed(Rcard_addr, Rcard_addr_x); // copy back asap. push_frame will destroy Z_R0_scratch!
-
-  // VM call need frame to access(write) O register.
-  if (needs_frame) {
-    __ save_return_pc();
-    __ push_frame_abi160(0); // Will use Z_R0 as tmp on old CPUs.
-  }
-
-  // Save the live input values.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), Rcard_addr, Z_thread);
-
-  if (needs_frame) {
-    __ pop_frame();
-    __ restore_return_pc();
-  }
-
-  __ bind(filtered);
+  Label done;
+  generate_post_barrier_fast_path(masm, Rstore_addr, Rnew_val, Z_thread, Rtmp1, Rtmp2, done, !not_null);
+  __ bind(done);
 
   BLOCK_COMMENT("} g1_write_barrier_post");
 }
@@ -615,21 +491,18 @@ void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrier
   __ branch_optimized(Assembler::bcondAlways, *stub->continuation());
 }
 
-void G1BarrierSetAssembler::gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarrierStub* stub) {
-  G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
-  __ bind(*stub->entry());
-  ce->check_reserved_argument_area(16); // RT stub needs 2 spill slots.
-  assert(stub->addr()->is_register(), "Precondition.");
-  assert(stub->new_val()->is_register(), "Precondition.");
-  Register new_val_reg = stub->new_val()->as_register();
-  __ z_ltgr(new_val_reg, new_val_reg);
-  __ branch_optimized(Assembler::bcondZero, *stub->continuation());
-  __ z_lgr(Z_R1_scratch, stub->addr()->as_pointer_register());
-  ce->emit_call_c(bs->post_barrier_c1_runtime_code_blob()->code_begin());
-  __ branch_optimized(Assembler::bcondAlways, *stub->continuation());
-}
-
 #undef __
+
+void G1BarrierSetAssembler::g1_write_barrier_post_c1(MacroAssembler* masm,
+                                                     Register store_addr,
+                                                     Register new_val,
+                                                     Register thread,
+                                                     Register tmp1,
+                                                     Register tmp2) {
+   Label done;
+   generate_post_barrier_fast_path(masm, store_addr, new_val, thread, tmp1, tmp2, done, true /* new_val_may_be_null */);
+   masm->bind(done);
+}
 
 #define __ sasm->
 
@@ -702,92 +575,6 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
                   Z_thread);
   __ z_lgr(pre_val, tmp); // restore pre_val
   restore_volatile_registers(sasm);
-  __ z_bru(restart);
-}
-
-void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler* sasm) {
-  // Z_R1_scratch: oop address, address of updated memory slot
-
-  BarrierSet* bs = BarrierSet::barrier_set();
-  __ set_info("g1_post_barrier_slow_id", false);
-
-  Register addr_oop  = Z_R1_scratch;
-  Register addr_card = Z_R1_scratch;
-  Register r1        = Z_R6; // Must be saved/restored.
-  Register r2        = Z_R7; // Must be saved/restored.
-  Register cardtable = r1;   // Must be non-volatile, because it is used to save addr_card.
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-  CardTable::CardValue* byte_map_base = ct->byte_map_base();
-
-  // Save registers used below (see assertion in G1PreBarrierStub::emit_code()).
-  __ z_stg(r1, 0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-
-  Label not_already_dirty, restart, refill, young_card;
-
-  // Calculate address of card corresponding to the updated oop slot.
-  AddressLiteral rs(byte_map_base);
-  __ z_srlg(addr_card, addr_oop, CardTable::card_shift());
-  addr_oop = noreg; // dead now
-  __ load_const_optimized(cardtable, rs); // cardtable := <card table base>
-  __ z_agr(addr_card, cardtable); // addr_card := addr_oop>>card_shift + cardtable
-
-  __ z_cli(0, addr_card, (int)G1CardTable::g1_young_card_val());
-  __ z_bre(young_card);
-
-  __ z_sync(); // Required to support concurrent cleaning.
-
-  __ z_cli(0, addr_card, (int)CardTable::dirty_card_val());
-  __ z_brne(not_already_dirty);
-
-  __ bind(young_card);
-  // We didn't take the branch, so we're already dirty: restore
-  // used registers and return.
-  __ z_lg(r1, 0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-  __ z_br(Z_R14);
-
-  // Not dirty.
-  __ bind(not_already_dirty);
-
-  // First, dirty it: [addr_card] := 0
-  __ z_mvi(0, addr_card, CardTable::dirty_card_val());
-
-  Register idx = cardtable; // Must be non-volatile, because it is used to save addr_card.
-  Register buf = r2;
-  cardtable = noreg; // now dead
-
-  // Save registers used below (see assertion in G1PreBarrierStub::emit_code()).
-  __ z_stg(r2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-
-  ByteSize dirty_card_q_index_byte_offset = G1ThreadLocalData::dirty_card_queue_index_offset();
-  ByteSize dirty_card_q_buf_byte_offset = G1ThreadLocalData::dirty_card_queue_buffer_offset();
-
-  __ bind(restart);
-
-  // Get the index into the update buffer. G1DirtyCardQueue::_index is
-  // a size_t so z_ltg is appropriate here.
-  __ z_ltg(idx, Address(Z_thread, dirty_card_q_index_byte_offset));
-
-  // index == 0?
-  __ z_brz(refill);
-
-  __ z_lg(buf, Address(Z_thread, dirty_card_q_buf_byte_offset));
-  __ add2reg(idx, -oopSize);
-
-  __ z_stg(addr_card, 0, idx, buf); // [_buf + index] := <address_of_card>
-  __ z_stg(idx, Address(Z_thread, dirty_card_q_index_byte_offset));
-  // Restore killed registers and return.
-  __ z_lg(r1, 0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-  __ z_lg(r2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-  __ z_br(Z_R14);
-
-  __ bind(refill);
-  save_volatile_registers(sasm);
-  __ z_lgr(idx, addr_card); // Save addr_card, tmp3 must be non-volatile.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1DirtyCardQueueSet::handle_zero_index_for_thread),
-                                   Z_thread);
-  __ z_lgr(addr_card, idx);
-  restore_volatile_registers(sasm); // Restore addr_card.
   __ z_bru(restart);
 }
 
