@@ -259,8 +259,51 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new ReinterpretHF2SNode(binop);
     }
   }
+
+  Node* con_inp = nullptr;
+  Node* var_inp = nullptr;
+  if (Float16NodeFactory::is_float32_binary_oper(in(1)->Opcode())) {
+    Node* f32bOp = in(1);
+    // Check if incoming binary operation has one floating point constant
+    // input and other a half precision to single precision upcasting node.
+    // We land here because prior HalfFloat to Float conversion promotes
+    // integral constant holding Float16 value to a floating point constant
+    // i.e. ConvHF2F ConI(short) => ConF
+    if (f32bOp->in(1)->is_Con() && f32bOp->in(2)->Opcode() == Op_ConvHF2F) {
+      con_inp = f32bOp->in(1);
+      var_inp = f32bOp->in(2)->in(1);
+    } else if (f32bOp->in(2)->is_Con() &&  f32bOp->in(1)->Opcode() == Op_ConvHF2F) {
+      con_inp = f32bOp->in(2);
+      var_inp = f32bOp->in(1)->in(1);
+    }
+
+    if (con_inp && var_inp &&
+        con_inp->bottom_type()->is_float_constant() &&
+        Matcher::match_rule_supported(Float16NodeFactory::get_float16_binary_oper(f32bOp->Opcode())) &&
+        Matcher::match_rule_supported(Op_ReinterpretS2HF) &&
+        Matcher::match_rule_supported(Op_ReinterpretHF2S) &&
+        StubRoutines::hf2f_adr() != nullptr &&
+        StubRoutines::f2hf_adr() != nullptr) {
+      jfloat conF = con_inp->bottom_type()->getf();
+      // If constant lie within Float16 value range, convert it to
+      // a half-float constant.
+      if (StubRoutines::hf2f(StubRoutines::f2hf(conF)) == conF) {
+        Node* new_var_inp = phase->transform(new ReinterpretS2HFNode(var_inp));
+        Node* new_con_inp = phase->makecon(TypeH::make(conF));
+        Node* f16bOp = nullptr;
+        if (f32bOp->in(1) == con_inp) {
+          f16bOp = phase->transform(Float16NodeFactory::make(f32bOp->Opcode(), f32bOp->in(0), new_con_inp, new_var_inp));
+        } else {
+          f16bOp = phase->transform(Float16NodeFactory::make(f32bOp->Opcode(), f32bOp->in(0), new_var_inp, new_con_inp));
+        }
+        return new ReinterpretHF2SNode(f16bOp);
+      }
+    }
+  }
+
   return nullptr;
 }
+
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvF2INode::Value(PhaseGVN* phase) const {
