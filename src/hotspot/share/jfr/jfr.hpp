@@ -72,6 +72,7 @@ class Jfr : AllStatic {
   static bool on_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
   static void on_backpatching(const Method* callee_method, JavaThread* jt);
   static void initialize_main_thread(JavaThread* jt);
+  static void on_safepoint(JavaThread* jt);
 };
 
 #endif // SHARE_JFR_JFR_HPP

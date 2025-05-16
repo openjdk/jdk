@@ -182,6 +182,7 @@ void OSThreadSampler::do_task(const SuspendedThreadTaskContext& context) {
 * using a signal handler / __try block. Don't take locks, rely on destructors or
 * leave memory (in case of signal / exception) in an inconsistent state. */
 void OSThreadSampler::protected_task(const SuspendedThreadTaskContext& context) {
+  NoResourceMark nrm;
   JavaThread* const jt = JavaThread::cast(context.thread());
   // Skip sample if we signaled a thread that moved to other state
   if (!thread_state_in_java(jt)) {
@@ -234,6 +235,7 @@ static void write_native_event(JfrThreadSampleClosure& closure, JavaThread* jt, 
 }
 
 void JfrNativeSamplerCallback::call() {
+  NoResourceMark nrm;
   // When a thread is only attach it will be native without a last java frame
   if (!_jt->has_last_Java_frame()) {
     return;

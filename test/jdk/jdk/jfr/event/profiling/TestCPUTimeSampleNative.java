@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,44 @@
 
 package jdk.jfr.event.profiling;
 
+import java.time.Duration;
+
+import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordingStream;
+import jdk.jfr.internal.JVM;
 import jdk.test.lib.jfr.EventNames;
 
-/**
+/*
  * @test
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & os.family == "linux"
  * @library /test/lib
- * @build jdk.jfr.event.profiling.BaseTestFullStackTrace
- * @run main/othervm jdk.jfr.event.profiling.TestFullStackTrace
+ * @modules jdk.jfr/jdk.jfr.internal
+ * @run main jdk.jfr.event.profiling.TestCPUTimeSampleNative
  */
-public class TestFullStackTrace {
+public class TestCPUTimeSampleNative {
 
-    public static void main(String[] args) throws Throwable {
-        new BaseTestFullStackTrace(EventNames.ExecutionSample, "sampledThread").run();
+    static String nativeEvent = EventNames.CPUTimeSample;
+
+    static volatile boolean alive = true;
+
+    public static void main(String[] args) throws Exception {
+        try (RecordingStream rs = new RecordingStream()) {
+            rs.enable(nativeEvent).with("throttle", "1ms");
+            rs.onEvent(nativeEvent, e -> {
+                alive = false;
+                rs.close();
+            });
+            Thread t = new Thread(TestCPUTimeSampleNative::nativeMethod);
+            t.setDaemon(true);
+            t.start();
+            rs.start();
+        }
+
     }
 
+    public static void nativeMethod() {
+        while (alive) {
+            JVM.getPid();
+        }
+    }
 }
