@@ -59,7 +59,7 @@ public sealed abstract class TemplateToken implements Token
 
     /**
      * Represents a tokenized one-argument {@link Template}, already filled with arguments, ready for
-     * instantiation either as a {@link Token} inside another {@link Template} or as a {@link String} 
+     * instantiation either as a {@link Token} inside another {@link Template} or as a {@link String}
      * with {@link #render}.
      *
      * @param <A> The type of the (first) argument.

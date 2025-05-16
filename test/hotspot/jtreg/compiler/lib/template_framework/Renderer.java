@@ -33,12 +33,12 @@ import java.util.stream.Stream;
 /**
  * The {@link Renderer} class renders a tokenized {@link Template} in the form of a {@link TemplateToken}.
  * It also keeps track of the states during a nested Template rendering. There can only be a single
- * {@link Renderer} active at any point, since there are static methods that reference 
+ * {@link Renderer} active at any point, since there are static methods that reference
  * {@link Renderer#getCurrent}.
  *
  * <p>
  * The {@link Renderer} instance keeps track of the current frames.
- * 
+ *
  * @see TemplateFrame
  * @see CodeFrame
  */
