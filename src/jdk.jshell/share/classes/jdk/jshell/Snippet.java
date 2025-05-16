@@ -524,7 +524,7 @@ public abstract class Snippet {
 
         /**
          * The snippet is inactive because it does not yet exist.
-         * Used only in {@link SnippetEvent#previousStatus} for new
+         * Used only in {@link SnippetEvent#previousStatus()} for new
          * snippets.
          * {@link jdk.jshell.JShell#status(jdk.jshell.Snippet) JShell.status(Snippet)}
          * will never return this {@code Status}.
