@@ -69,6 +69,22 @@ public class TestTemplate {
     private static final MyPrimitive myInt = new MyPrimitive("int");
     private static final MyPrimitive myLong = new MyPrimitive("long");
 
+    // Simulate a Classes. Subtypes start with the name of the super type.
+    private record MyClass(String name) implements Name.Type {
+        @Override
+        public boolean isSubtypeOf(Name.Type other) {
+            return other instanceof MyClass(String n) && name().startsWith(n);
+        }
+
+        @Override
+        public String toString() { return name(); }
+    }
+    private static final MyClass myClassA   = new MyClass("myClassA");
+    private static final MyClass myClassA1  = new MyClass("myClassA1");
+    private static final MyClass myClassA2  = new MyClass("myClassA2");
+    private static final MyClass myClassA11 = new MyClass("myClassA11");
+    private static final MyClass myClassB   = new MyClass("myClassB");
+
     public static void main(String[] args) {
         testSingleLine();
         testMultiLine();
@@ -91,6 +107,7 @@ public class TestTemplate {
         testNames();
         testNames2();
         testNames3();
+        testNames4();
         testListArgument();
 
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
@@ -1086,6 +1103,77 @@ public class TestTemplate {
             define immutable
             [int: 1L and 2L]
             [int: 0L and 0L]
+            }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testNames4() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make("type", (Name.Type type) -> body(
+            "  [#type: ", weighNames(type, true), " and ", weighNames(type, false), "]\n"
+        ));
+
+        List<Name.Type> types = List.of(myClassA, myClassA1, myClassA2, myClassA11, myClassB);
+        var template2 = Template.make(() -> body(
+            "Weigh Names:\n",
+            types.stream().map(t -> template1.asToken(t)).toList()
+        ));
+
+        var template3 = Template.make("type", (Name.Type type) -> body(
+            let("name", sampleName(type, true)),
+            "Sample #type: #name\n"
+        ));
+
+        var template4 = Template.make(() -> body(
+            "class $W {\n",
+            template2.asToken(),
+            hook1.set(
+                "Create name for myClassA11, should be visible for the super classes\n",
+                addName(new Name($("v1"), myClassA11, true, 1)),
+                template3.asToken(myClassA11),
+                template3.asToken(myClassA1),
+                template3.asToken(myClassA),
+                "Create name for myClassA, should never be visible for the sub classes\n",
+                addName(new Name($("v2"), myClassA, true, 1)),
+                template3.asToken(myClassA11),
+                template3.asToken(myClassA1),
+                template2.asToken()
+            ),
+            template2.asToken(),
+            "}\n"
+        ));
+
+        String code = template4.render();
+        String expected =
+            """
+            class W_1 {
+            Weigh Names:
+              [myClassA: 0L and 0L]
+              [myClassA1: 0L and 0L]
+              [myClassA2: 0L and 0L]
+              [myClassA11: 0L and 0L]
+              [myClassB: 0L and 0L]
+            Create name for myClassA11, should be visible for the super classes
+            Sample myClassA11: Name[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA1: Name[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA: Name[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Create name for myClassA, should never be visible for the sub classes
+            Sample myClassA11: Name[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA1: Name[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Weigh Names:
+              [myClassA: 2L and 2L]
+              [myClassA1: 1L and 1L]
+              [myClassA2: 0L and 0L]
+              [myClassA11: 1L and 1L]
+              [myClassB: 0L and 0L]
+            Weigh Names:
+              [myClassA: 0L and 0L]
+              [myClassA1: 0L and 0L]
+              [myClassA2: 0L and 0L]
+              [myClassA11: 0L and 0L]
+              [myClassB: 0L and 0L]
             }
             """;
         checkEQ(code, expected);
