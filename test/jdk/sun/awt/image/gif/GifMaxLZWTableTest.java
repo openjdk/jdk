@@ -24,18 +24,18 @@
 /*
  * @test
  * @bug 8351913
- * @summary Checks that sun.awt.image.GifImageDecoder decodes gifs like the
- *          ImageIO decoder does.
+ * @summary Checks that sun.awt.image.GifImageDecoder decodes a gif correctly
+ *          that maxes out its LZW compression table at 4096 entries.
  */
 
 import java.net.URL;
 
-public class GifDecodeTest {
+public class GifMaxLZWTableTest {
 
     public static void main(String[] args) throws Throwable {
         // this is frame #44 from
         // https://upload.wikimedia.org/wikipedia/commons/8/8b/Scanner-abdominal-portal.gif
-        URL srcURL = GifEmptyBackgroundTest.class.getResource("Scanner-abdominal-portal.gif-44.gif");
+        URL srcURL = GifMaxLZWTableTest.class.getResource("Scanner-abdominal-portal.gif-44.gif");
         GifComparison.run(srcURL);
     }
 }
