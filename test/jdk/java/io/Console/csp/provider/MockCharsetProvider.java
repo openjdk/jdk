@@ -32,27 +32,27 @@ import java.nio.charset.spi.CharsetProvider;
 import java.util.Collections;
 import java.util.Iterator;
 
-// A test charset provider that decodes every input byte into Z
-public class ZCharsetProvider extends CharsetProvider {
+// A test charset provider that decodes every input byte into its uppercase
+public class MockCharsetProvider extends CharsetProvider {
 
     @Override
     public Iterator charsets() {
-        return Collections.singleton(new ZCharsetProvider.ZCharset()).iterator();
+        return Collections.singleton(new MockCharsetProvider.MockCharset()).iterator();
     }
 
     @Override
     public Charset charsetForName(String charsetName) {
-        if (charsetName.equals("Z")) {
-            return new ZCharsetProvider.ZCharset();
+        if (charsetName.equals("Mock")) {
+            return new MockCharsetProvider.MockCharset();
         } else {
             return null;
         }
     }
 
-    public static class ZCharset extends Charset {
+    public static class MockCharset extends Charset {
 
-        public ZCharset() {
-            super("Z", null);
+        public MockCharset() {
+            super("Mock", null);
         }
 
         @Override
@@ -62,7 +62,7 @@ public class ZCharsetProvider extends CharsetProvider {
 
         @Override
         public CharsetDecoder newDecoder() {
-            return new ZCharsetDecoder(this, 1, 1);
+            return new MockCharsetDecoder(this, 1, 1);
         }
 
         @Override
@@ -71,16 +71,18 @@ public class ZCharsetProvider extends CharsetProvider {
         }
     }
 
-    private static class ZCharsetDecoder extends CharsetDecoder {
-        public ZCharsetDecoder(Charset cs, float averageCharsPerByte, float maxCharsPerByte) {
+    private static class MockCharsetDecoder extends CharsetDecoder {
+        public MockCharsetDecoder(Charset cs, float averageCharsPerByte, float maxCharsPerByte) {
             super(cs, averageCharsPerByte, maxCharsPerByte);
         }
 
         @Override
         protected CoderResult decodeLoop(ByteBuffer in, CharBuffer out) {
             while (in.remaining() > 0) {
-                in.get();
-                out.put('Z');
+                char c = (char)in.get();
+                if (c != '\n') {
+                    out.put(Character.toUpperCase(c));
+                }
             }
             return CoderResult.UNDERFLOW;
         }

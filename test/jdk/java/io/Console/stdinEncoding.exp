@@ -24,11 +24,23 @@
 set java [lrange $argv 0 end]
 
 eval spawn $java
+
+# Console::readLine()
 send "abc\r"
 
-# expect 4 'Z's converted with ZCharset with the input 'abc\r'
-expect "ZZZZ" {
+# Console::readPassword()
+send "def\r"
+
+# Console::reader()
+send "ghi\r"
+
+# check the output
+expect "ABCDEFGHI" {
     expect eof
+    send_error "Mocked output received"
     exit 0
 }
+
+# fail
+send_error "Mocked output not received."
 exit 1

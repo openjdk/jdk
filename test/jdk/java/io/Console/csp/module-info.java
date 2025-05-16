@@ -22,5 +22,5 @@
  */
 
 module csp {
-    provides java.nio.charset.spi.CharsetProvider with provider.ZCharsetProvider;
+    provides java.nio.charset.spi.CharsetProvider with provider.MockCharsetProvider;
 }

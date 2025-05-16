@@ -24,6 +24,7 @@
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+import java.io.BufferedReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -64,16 +65,29 @@ public class StdinEncodingTest {
             jdkDir + "/bin/java",
             "--module-path",
             testClasses + "/modules",
-            "-Dstdin.encoding=Z",
+            "-Dstdin.encoding=Mock", // <- gist of this test
             "StdinEncodingTest");
         output.reportDiagnosticSummary();
         var eval = output.getExitValue();
-        if (eval != 0) {
-            throw new RuntimeException("Test failed. Exit value from 'expect' command: " + eval);
-        }
+        assertEquals(0, eval, "Test failed. Exit value from 'expect' command: " + eval);
     }
 
     public static void main(String... args) throws Throwable {
-        System.out.println(System.console().readLine());
+        // check stdin.encoding
+        if (!"Mock".equals(System.getProperty("stdin.encoding"))) {
+            throw new RuntimeException("Mock charset was not set in stdin.encoding");
+        }
+        var con = System.console();
+
+        // Console.readLine()
+        System.out.print(con.readLine());
+
+        // Console.readPassword()
+        System.out.print(String.valueOf(con.readPassword()));
+
+        // Console.reader()
+        try (var br = new BufferedReader(con.reader())) {
+            System.out.print(br.readLine());
+        }
     }
 }
