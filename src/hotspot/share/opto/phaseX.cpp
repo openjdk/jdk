@@ -1504,6 +1504,18 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   -XX:VerifyIterativeGVN=1110
     case Op_ArrayCopy:
       return false;
+
+    // CastLLNode::Ideal
+    //    calls ConstraintCastNode::optimize_integer_cast -> pushes CastLL through SubL
+    //
+    // Could be a notification issue, where updates inputs of CastLL do not notify
+    // down through SubL to CastLL.
+    //
+    // Found With:
+    //   compiler/c2/TestMergeStoresMemorySegment.java#byte-array
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_CastLL:
+      return false;
   }
 
   if (n->is_Load()) {
@@ -1544,7 +1556,7 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
 
   // We just saw a new Idealization which was not done during IGVN.
   tty->cr();
-  tty->print_cr("Missed Ideal optimization:");
+  tty->print_cr("Missed Ideal optimization (can_reshape=%s):", can_reshape ? "true": "false");
   if (i == n) {
     tty->print_cr("The node was reshaped by Ideal.");
   } else {
