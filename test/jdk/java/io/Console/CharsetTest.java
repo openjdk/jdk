@@ -50,8 +50,7 @@ public class CharsetTest {
             // check "expect" command availability
             var expect = Paths.get("/usr/bin/expect");
             if (!Files.exists(expect) || !Files.isExecutable(expect)) {
-                System.out.println("'expect' command not found. Test ignored.");
-                return;
+                throw new jtreg.SkippedException("'expect' command not found. Test ignored.");
             }
 
             // invoking "expect" command
