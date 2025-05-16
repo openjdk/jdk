@@ -195,7 +195,7 @@ public final class DecimalDigits {
      * (negative to positive) will expose -Long.MIN_VALUE that overflows
      * long.
      * <p>
-     * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
+     * <b>WARNING: This method does not perform any bound checks. </b>
      *
      * @param i     value to convert
      * @param index next index, after the least significant digit
