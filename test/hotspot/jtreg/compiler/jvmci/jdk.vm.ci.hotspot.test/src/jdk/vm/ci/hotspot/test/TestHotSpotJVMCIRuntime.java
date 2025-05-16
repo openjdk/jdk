@@ -170,6 +170,7 @@ public class TestHotSpotJVMCIRuntime {
             ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+EnableJVMCI",
+                "--add-modules=jdk.internal.vm.ci",
                 "-XX:-UseJVMCICompiler",
                 "-XX:+UseJVMCINativeLibrary",
                 "-Dtest.jvmci.forceEnomemOnLibjvmciInit=true",
