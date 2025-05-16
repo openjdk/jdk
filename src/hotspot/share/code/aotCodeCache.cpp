@@ -129,12 +129,25 @@ void AOTCodeCache::initialize() {
 #if defined(ZERO) || !(defined(AMD64) || defined(AARCH64))
   log_info(aot, codecache, init)("AOT Code Cache is not supported on this platform.");
   AOTAdapterCaching = false;
+  AOTStubCaching = false;
   return;
 #else
   if (FLAG_IS_DEFAULT(AOTCache)) {
     log_info(aot, codecache, init)("AOT Code Cache is not used: AOTCache is not specified.");
     AOTAdapterCaching = false;
+    AOTStubCaching = false;
     return; // AOTCache must be specified to dump and use AOT code
+  }
+
+  if (VerifyOops) {
+    // Disable AOT stubs caching when VerifyOops flag is on.
+    // Verify oops code generated a lot of C strings which overflow
+    // AOT C string table (which has fixed size).
+    // AOT C string table will be reworked later to handle such cases.
+    //
+    // Note: AOT adapters are not affected - they don't have oop operations.
+    log_info(aot, codecache, init)("AOT Stubs Caching is not supported with VerifyOops.");
+    FLAG_SET_ERGO(AOTStubCaching, false);
   }
 
   bool is_dumping = false;
