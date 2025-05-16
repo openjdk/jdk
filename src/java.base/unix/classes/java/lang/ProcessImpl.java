@@ -82,8 +82,7 @@ final class ProcessImpl extends Process {
     private static enum LaunchMechanism {
         // order IS important!
         FORK,
-        POSIX_SPAWN,
-        VFORK
+        POSIX_SPAWN
     }
 
     /**
@@ -101,13 +100,9 @@ final class ProcessImpl extends Process {
             LaunchMechanism lm = LaunchMechanism.valueOf(s.toUpperCase(Locale.ROOT));
             switch (OperatingSystem.current()) {
                 case LINUX:
-                    return lm;      // All options are valid for Linux
                 case AIX:
                 case MACOS:
-                    if (lm != LaunchMechanism.VFORK) {
-                        return lm; // All but VFORK are valid
-                    }
-                    break;
+                    return lm;
                 case WINDOWS:
                     // fall through to throw to Error
             }
@@ -256,7 +251,6 @@ final class ProcessImpl extends Process {
      * <pre>
      *   1 - fork(2) and exec(2)
      *   2 - posix_spawn(3P)
-     *   3 - vfork(2) and exec(2)
      * </pre>
      * @param fds an array of three file descriptors.
      *        Indexes 0, 1, and 2 correspond to standard input,

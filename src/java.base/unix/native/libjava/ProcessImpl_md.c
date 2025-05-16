@@ -57,7 +57,7 @@
  *   changing paths...
  * - then exec(2) the target binary
  *
- * There are three ways to fork off:
+ * On the OS-side are four ways to fork off:
  *
  * A) fork(2). Portable and safe (no side effects) but may fail with ENOMEM on
  *    all Unices when invoked from a VM with a high memory footprint. On Unices
@@ -74,34 +74,19 @@
  *
  * B) vfork(2): Portable and fast but very unsafe. It bypasses the memory
  *    problems related to fork(2) by starting the child in the memory image of
- *    the parent. Things that can go wrong include:
- *    - Programming errors in the child process before the exec(2) call may
- *      trash memory in the parent process, most commonly the stack of the
- *      thread invoking vfork.
- *    - Signals received by the child before the exec(2) call may be at best
- *      misdirected to the parent, at worst immediately kill child and parent.
- *
- *    This is mitigated by very strict rules about what one is allowed to do in
- *    the child process between vfork(2) and exec(2), which is basically nothing.
- *    However, we always broke this rule by doing the pre-exec work between
- *    vfork(2) and exec(2).
- *
- *    Also note that vfork(2) has been deprecated by the OpenGroup, presumably
- *    because of its many dangers.
+ *    the parent. This mode is inherently dangerous, and the danger partly outside
+ *    the control of the programmer. Therefore we don't support vfork (anymore)
  *
  * C) clone(2): This is a Linux specific call which gives the caller fine
  *    grained control about how exactly the process fork is executed. It is
  *    powerful, but Linux-specific.
  *
- * Aside from these three possibilities there is a forth option:  posix_spawn(3).
- * Where fork/vfork/clone all fork off the process and leave pre-exec work and
- * calling exec(2) to the user, posix_spawn(3) offers the user fork+exec-like
- * functionality in one package, similar to CreateProcess() on Windows.
- *
- * It is not a system call in itself, but usually a wrapper implemented within
- * the libc in terms of one of (fork|vfork|clone)+exec - so whether or not it
- * has advantages over calling the naked (fork|vfork|clone) functions depends
- * on how posix_spawn(3) is implemented.
+ * D) posix_spawn(3): Where fork/vfork/clone all fork off the process and leave
+ * pre-exec work and calling exec(2) to the user, posix_spawn(3) offers the user
+ * fork+exec-like functionality in one package, similar to CreateProcess() on Windows.
+ * It is not a system call, but usually a wrapper implemented within the libc in terms
+ * of one of (fork|vfork|clone)+exec - so whether or not it has advantages over calling
+ * the naked (fork|vfork|clone) functions depends on how posix_spawn(3) is implemented.
  *
  * Note that when using posix_spawn(3), we exec twice: first a tiny binary called
  * the jspawnhelper, then in the jspawnhelper we do the pre-exec work and exec a
@@ -486,28 +471,6 @@ static int copystrings(char *buf, int offset, const char * const *arg) {
 __attribute_noinline__
 #endif
 
-/* vfork(2) is deprecated on Darwin */
-#ifndef __APPLE__
-static pid_t
-vforkChild(ChildStuff *c) {
-    volatile pid_t resultPid;
-
-    /*
-     * We separate the call to vfork into a separate function to make
-     * very sure to keep stack of child from corrupting stack of parent,
-     * as suggested by the scary gcc warning:
-     *  warning: variable 'foo' might be clobbered by 'longjmp' or 'vfork'
-     */
-    resultPid = vfork();
-
-    if (resultPid == 0) {
-        childProcess(c);
-    }
-    assert(resultPid != 0);  /* childProcess never returns */
-    return resultPid;
-}
-#endif
-
 static pid_t
 forkChild(ChildStuff *c) {
     pid_t resultPid;
@@ -652,11 +615,6 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
 static pid_t
 startChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) {
     switch (c->mode) {
-/* vfork(2) is deprecated on Darwin*/
-      #ifndef __APPLE__
-      case MODE_VFORK:
-        return vforkChild(c);
-      #endif
       case MODE_FORK:
         return forkChild(c);
       case MODE_POSIX_SPAWN:
@@ -765,9 +723,6 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
 
     if (resultPid < 0) {
         switch (c->mode) {
-          case MODE_VFORK:
-            throwInternalIOException(env, errno, "vfork failed", c->mode);
-            break;
           case MODE_FORK:
             throwInternalIOException(env, errno, "fork failed", c->mode);
             break;
