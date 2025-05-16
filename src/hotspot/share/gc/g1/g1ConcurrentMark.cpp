@@ -487,7 +487,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   // _tasks set inside the constructor
 
   _task_queues(new G1CMTaskQueueSet(_max_num_tasks)),
-  _terminator(_max_num_tasks, _task_queues),
+  _terminator(_max_num_tasks, _task_queues, TERMINATION_EVENT_NAME("Concurrent Marking")),
 
   _first_overflow_barrier_sync(),
   _second_overflow_barrier_sync(),
@@ -1007,7 +1007,8 @@ public:
   }
 
   G1CMConcurrentMarkingTask(G1ConcurrentMark* cm) :
-      WorkerTask("Concurrent Mark"), _cm(cm) { }
+      WorkerTask("Concurrent Mark"), _cm(cm) {
+  }
 
   ~G1CMConcurrentMarkingTask() { }
 };
@@ -1832,6 +1833,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
 
 class G1CMRemarkTask : public WorkerTask {
   G1ConcurrentMark* _cm;
+  const char* _original_termination_event_name;
 public:
   void work(uint worker_id) {
     G1CMTask* task = _cm->task(worker_id);
@@ -1855,7 +1857,12 @@ public:
 
   G1CMRemarkTask(G1ConcurrentMark* cm, uint active_workers) :
     WorkerTask("Par Remark"), _cm(cm) {
-    _cm->terminator()->reset_for_reuse(active_workers);
+    _original_termination_event_name = _cm->terminator()->termination_event_name();
+    _cm->terminator()->reset_for_reuse(active_workers, TERMINATION_EVENT_NAME("Par Remark"));
+  }
+
+  ~G1CMRemarkTask() {
+    _cm->terminator()->set_termination_event_name(_original_termination_event_name);
   }
 };
 
