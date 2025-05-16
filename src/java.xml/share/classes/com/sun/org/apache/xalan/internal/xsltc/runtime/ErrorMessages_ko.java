@@ -92,14 +92,14 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * is a class name.  Used for internal errors in the processor.
          */
         {BasisLibrary.RUN_TIME_INTERNAL_ERR,
-        "''{0}''\uC5D0 \uB7F0\uD0C0\uC784 \uB0B4\uBD80 \uC624\uB958\uAC00 \uC788\uC2B5\uB2C8\uB2E4."},
+        "''{0}''에 런타임 내부 오류가 있습니다."},
 
         /*
          * Note to translators:  <xsl:copy> is a keyword that should not be
          * translated.
          */
         {BasisLibrary.RUN_TIME_COPY_ERR,
-        "<xsl:copy>\uB97C \uC2E4\uD589\uD558\uB294 \uC911 \uB7F0\uD0C0\uC784 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
+        "<xsl:copy>를 실행하는 중 런타임 오류가 발생했습니다."},
 
         /*
          * Note to translators:  The substitution text refers to data types.
@@ -108,7 +108,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * {0}.
          */
         {BasisLibrary.DATA_CONVERSION_ERR,
-        "''{0}''\uC5D0\uC11C ''{1}''(\uC73C)\uB85C\uC758 \uBCC0\uD658\uC774 \uBD80\uC801\uD569\uD569\uB2C8\uB2E4."},
+        "''{0}''에서 ''{1}''(으)로의 변환이 부적합합니다."},
 
         /*
          * Note to translators:  This message is displayed if the function named
@@ -116,7 +116,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * is the acronym naming the product.
          */
         {BasisLibrary.EXTERNAL_FUNC_ERR,
-        "XSLTC\uB294 \uC678\uBD80 \uD568\uC218 ''{0}''\uC744(\uB97C) \uC9C0\uC6D0\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "XSLTC는 외부 함수 ''{0}''을(를) 지원하지 않습니다."},
 
         /*
          * Note to translators:  This message is displayed if two values are
@@ -124,7 +124,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * unknown.
          */
         {BasisLibrary.EQUALITY_EXPR_ERR,
-        "\uB3D9\uB4F1\uC131 \uD45C\uD604\uC2DD\uC5D0 \uC54C \uC218 \uC5C6\uB294 \uC778\uC218 \uC720\uD615\uC774 \uC788\uC2B5\uB2C8\uB2E4."},
+        "동등성 표현식에 알 수 없는 인수 유형이 있습니다."},
 
         /*
          * Note to translators:  The substitution text for {0} will be a data
@@ -133,7 +133,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * permitted for a call to this function.
          */
         {BasisLibrary.INVALID_ARGUMENT_ERR,
-        "''{1}''\uC5D0 \uB300\uD55C \uD638\uCD9C\uC5D0 \uBD80\uC801\uD569\uD55C \uC778\uC218 \uC720\uD615 ''{0}''\uC774(\uAC00) \uC788\uC2B5\uB2C8\uB2E4."},
+        "''{1}''에 대한 호출에 부적합한 인수 유형 ''{0}''이(가) 있습니다."},
 
         /*
          * Note to translators:  There is way of specifying a format for a
@@ -141,7 +141,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * particular value using the specified pattern.
          */
         {BasisLibrary.FORMAT_NUMBER_ERR,
-        "''{1}'' \uD328\uD134\uC744 \uC0AC\uC6A9\uD558\uC5EC ''{0}'' \uC22B\uC790\uC758 \uD615\uC2DD\uC744 \uC9C0\uC815\uD558\uB824\uACE0 \uC2DC\uB3C4\uD558\uB294 \uC911\uC785\uB2C8\uB2E4."},
+        "''{1}'' 패턴을 사용하여 ''{0}'' 숫자의 형식을 지정하려고 시도하는 중입니다."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -149,7 +149,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * iterator.  (See definition of iterator above.)
          */
         {BasisLibrary.ITERATOR_CLONE_ERR,
-        "''{0}'' \uC774\uD130\uB808\uC774\uD130\uB97C \uBCF5\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 이터레이터를 복제할 수 없습니다."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -158,7 +158,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * support.
          */
         {BasisLibrary.AXIS_SUPPORT_ERR,
-        "''{0}'' \uCD95\uC5D0 \uB300\uD55C \uC774\uD130\uB808\uC774\uD130\uB294 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 축에 대한 이터레이터는 지원되지 않습니다."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -167,7 +167,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * support.
          */
         {BasisLibrary.TYPED_AXIS_SUPPORT_ERR,
-        "\uC785\uB825\uB41C \uCD95 ''{0}''\uC5D0 \uB300\uD55C \uC774\uD130\uB808\uC774\uD130\uB294 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "입력된 축 ''{0}''에 대한 이터레이터는 지원되지 않습니다."},
 
         /*
          * Note to translators:  This message is reported if the stylesheet
@@ -176,7 +176,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * specifies the name of the attribute.
          */
         {BasisLibrary.STRAY_ATTRIBUTE_ERR,
-        "''{0}'' \uC18D\uC131\uC774 \uC694\uC18C\uC5D0 \uD3EC\uD568\uB418\uC5B4 \uC788\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 속성이 요소에 포함되어 있지 않습니다."},
 
         /*
          * Note to translators:  As with the preceding message, a namespace
@@ -186,7 +186,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * namespace declaration.
          */
         {BasisLibrary.STRAY_NAMESPACE_ERR,
-        "\uB124\uC784\uC2A4\uD398\uC774\uC2A4 \uC120\uC5B8 ''{0}''=''{1}''\uC774(\uAC00) \uC694\uC18C\uC5D0 \uD3EC\uD568\uB418\uC5B4 \uC788\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "네임스페이스 선언 ''{0}''=''{1}''이(가) 요소에 포함되어 있지 않습니다."},
 
         /*
          * Note to translators:  The stylesheet contained a reference to a
@@ -194,14 +194,14 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * text is the name of the prefix.
          */
         {BasisLibrary.NAMESPACE_PREFIX_ERR,
-        "''{0}'' \uC811\uB450\uC5B4\uC5D0 \uB300\uD55C \uB124\uC784\uC2A4\uD398\uC774\uC2A4\uAC00 \uC120\uC5B8\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 접두어에 대한 네임스페이스가 선언되지 않았습니다."},
 
         /*
          * Note to translators:  The following represents an internal error.
          * DOMAdapter is a Java class in XSLTC.
          */
         {BasisLibrary.DOM_ADAPTER_INIT_ERR,
-        "\uC18C\uC2A4 DOM\uC758 \uC798\uBABB\uB41C \uC720\uD615\uC744 \uC0AC\uC6A9\uD558\uC5EC DOMAdapter\uAC00 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "소스 DOM의 잘못된 유형을 사용하여 DOMAdapter가 생성되었습니다."},
 
         /*
          * Note to translators:  The following message indicates that the XML
@@ -210,7 +210,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * DTD.
          */
         {BasisLibrary.PARSER_DTD_SUPPORT_ERR,
-        "\uC0AC\uC6A9 \uC911\uC778 SAX \uAD6C\uBB38 \uBD84\uC11D\uAE30\uAC00 DTD \uC120\uC5B8 \uC774\uBCA4\uD2B8\uB97C \uCC98\uB9AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "사용 중인 SAX 구문 분석기가 DTD 선언 이벤트를 처리하지 않습니다."},
 
         /*
          * Note to translators:  The following message indicates that the XML
@@ -219,14 +219,14 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * declarations.
          */
         {BasisLibrary.NAMESPACES_SUPPORT_ERR,
-        "\uC0AC\uC6A9 \uC911\uC778 SAX \uAD6C\uBB38 \uBD84\uC11D\uAE30\uAC00 XML \uB124\uC784\uC2A4\uD398\uC774\uC2A4\uB97C \uC9C0\uC6D0\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "사용 중인 SAX 구문 분석기가 XML 네임스페이스를 지원하지 않습니다."},
 
         /*
          * Note to translators:  The substitution text is the URI that was in
          * error.
          */
         {BasisLibrary.CANT_RESOLVE_RELATIVE_URI_ERR,
-        "URI \uCC38\uC870 ''{0}''\uC744(\uB97C) \uBD84\uC11D\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "URI 참조 ''{0}''을(를) 분석할 수 없습니다."},
 
          /*
          * Note to translators:  The stylesheet contained an element that was
@@ -234,7 +234,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * gives the element name.
          */
         {BasisLibrary.UNSUPPORTED_XSL_ERR,
-        "''{0}''\uC740(\uB294) \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uB294 XSL \uC694\uC18C\uC785\uB2C8\uB2E4."},
+        "''{0}''은(는) 지원되지 않는 XSL 요소입니다."},
 
         /*
          * Note to translators:  The stylesheet referred to an extension to the
@@ -243,7 +243,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * gives the extension name.
          */
         {BasisLibrary.UNSUPPORTED_EXT_ERR,
-        "''{0}''\uC740(\uB294) \uC54C \uC218 \uC5C6\uB294 XSLTC \uD655\uC7A5\uC785\uB2C8\uB2E4."},
+        "''{0}''은(는) 알 수 없는 XSLTC 확장입니다."},
 
 
         /*
@@ -253,7 +253,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * the name of the translet class.
          */
         {BasisLibrary.UNKNOWN_TRANSLET_VERSION_ERR,
-        "\uC9C0\uC815\uB41C translet ''{0}''\uC774(\uAC00) \uC0AC\uC6A9 \uC911\uC778 XSLTC \uB7F0\uD0C0\uC784 \uBC84\uC804\uBCF4\uB2E4 \uCD5C\uC2E0\uC758 XSLTC \uBC84\uC804\uC744 \uC0AC\uC6A9\uD558\uC5EC \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC774 translet\uC744 \uC2E4\uD589\uD558\uB824\uBA74 \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uB97C \uC7AC\uCEF4\uD30C\uC77C\uD558\uAC70\uB098 \uCD5C\uC2E0 XSLTC \uBC84\uC804\uC744 \uC0AC\uC6A9\uD574\uC57C \uD569\uB2C8\uB2E4."},
+        "지정된 translet ''{0}''이(가) 사용 중인 XSLTC 런타임 버전보다 최신의 XSLTC 버전을 사용하여 생성되었습니다. 이 translet을 실행하려면 스타일시트를 재컴파일하거나 최신 XSLTC 버전을 사용해야 합니다."},
 
         /*
          * Note to translators:  An attribute whose effective value is required
@@ -262,7 +262,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {BasisLibrary.INVALID_QNAME_ERR,
-        "\uAC12\uC774 QName\uC774\uC5B4\uC57C \uD558\uB294 \uC18D\uC131\uC758 \uAC12\uC774 ''{0}''\uC785\uB2C8\uB2E4."},
+        "값이 QName이어야 하는 속성의 값이 ''{0}''입니다."},
 
 
         /*
@@ -272,13 +272,13 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {BasisLibrary.INVALID_NCNAME_ERR,
-        "\uAC12\uC774 NCName\uC774\uC5B4\uC57C \uD558\uB294 \uC18D\uC131\uC758 \uAC12\uC774 ''{0}''\uC785\uB2C8\uB2E4."},
+        "값이 NCName이어야 하는 속성의 값이 ''{0}''입니다."},
 
         {BasisLibrary.UNALLOWED_EXTENSION_FUNCTION_ERR,
-        "\uBCF4\uC548 \uCC98\uB9AC \uAE30\uB2A5\uC774 true\uB85C \uC124\uC815\uB41C \uACBD\uC6B0 \uD655\uC7A5 \uD568\uC218 ''{0}''\uC744(\uB97C) \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "보안 처리 기능이 true로 설정된 경우 확장 함수 ''{0}''을(를) 사용할 수 없습니다."},
 
         {BasisLibrary.UNALLOWED_EXTENSION_ELEMENT_ERR,
-        "\uBCF4\uC548 \uCC98\uB9AC \uAE30\uB2A5\uC774 true\uB85C \uC124\uC815\uB41C \uACBD\uC6B0 \uD655\uC7A5 \uC694\uC18C ''{0}''\uC744(\uB97C) \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "보안 처리 기능이 true로 설정된 경우 확장 요소 ''{0}''을(를) 사용할 수 없습니다."},
     };
     }
 

@@ -184,222 +184,222 @@ public class XMLErrorResources_zh_TW extends ListResourceBundle
     {"ER0000" , "{0}" },
 
     { ER_FUNCTION_NOT_SUPPORTED,
-      "\u4E0D\u652F\u63F4\u51FD\u6578\uFF01"},
+      "不支援函數！"},
 
     { ER_CANNOT_OVERWRITE_CAUSE,
-      "\u7121\u6CD5\u8986\u5BEB\u539F\u56E0"},
+      "無法覆寫原因"},
 
     { ER_NO_DEFAULT_IMPL,
-      "\u627E\u4E0D\u5230\u9810\u8A2D\u7684\u5BE6\u884C"},
+      "找不到預設的實行"},
 
     { ER_CHUNKEDINTARRAY_NOT_SUPPORTED,
-      "\u76EE\u524D\u4E0D\u652F\u63F4 ChunkedIntArray({0})"},
+      "目前不支援 ChunkedIntArray({0})"},
 
     { ER_OFFSET_BIGGER_THAN_SLOT,
-      "\u4F4D\u79FB\u5927\u65BC\u4F4D\u7F6E"},
+      "位移大於位置"},
 
     { ER_COROUTINE_NOT_AVAIL,
-      "\u6C92\u6709\u53EF\u7528\u7684\u5171\u540C\u5E38\u5F0F\uFF0Cid={0}"},
+      "沒有可用的共同常式，id={0}"},
 
     { ER_COROUTINE_CO_EXIT,
-      "CoroutineManager \u6536\u5230 co_exit() \u8981\u6C42"},
+      "CoroutineManager 收到 co_exit() 要求"},
 
     { ER_COJOINROUTINESET_FAILED,
-      "co_joinCoroutineSet() \u5931\u6557"},
+      "co_joinCoroutineSet() 失敗"},
 
     { ER_COROUTINE_PARAM,
-      "\u5171\u540C\u5E38\u5F0F\u53C3\u6578\u932F\u8AA4 ({0})"},
+      "共同常式參數錯誤 ({0})"},
 
     { ER_PARSER_DOTERMINATE_ANSWERS,
-      "\n\u672A\u9810\u671F: \u5256\u6790\u5668 doTerminate \u7B54\u8986 {0}"},
+      "\n未預期: 剖析器 doTerminate 答覆 {0}"},
 
     { ER_NO_PARSE_CALL_WHILE_PARSING,
-      "\u5256\u6790\u6642\u53EF\u80FD\u672A\u547C\u53EB parse"},
+      "剖析時可能未呼叫 parse"},
 
     { ER_TYPED_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "\u932F\u8AA4: \u672A\u5BE6\u884C\u8EF8 {0} \u7684\u985E\u578B\u91CD\u8907\u7A0B\u5F0F"},
+      "錯誤: 未實行軸 {0} 的類型重複程式"},
 
     { ER_ITERATOR_AXIS_NOT_IMPLEMENTED,
-      "\u932F\u8AA4: \u672A\u5BE6\u884C\u8EF8 {0} \u7684\u91CD\u8907\u7A0B\u5F0F"},
+      "錯誤: 未實行軸 {0} 的重複程式"},
 
     { ER_ITERATOR_CLONE_NOT_SUPPORTED,
-      "\u4E0D\u652F\u63F4\u91CD\u8907\u7A0B\u5F0F\u8907\u88FD"},
+      "不支援重複程式複製"},
 
     { ER_UNKNOWN_AXIS_TYPE,
-      "\u4E0D\u660E\u7684\u8EF8\u5468\u904A\u985E\u578B: {0}"},
+      "不明的軸周遊類型: {0}"},
 
     { ER_AXIS_NOT_SUPPORTED,
-      "\u4E0D\u652F\u63F4\u8EF8\u5468\u904A\u7A0B\u5F0F: {0}"},
+      "不支援軸周遊程式: {0}"},
 
     { ER_NO_DTMIDS_AVAIL,
-      "\u4E0D\u518D\u6709\u53EF\u7528\u7684 DTM ID"},
+      "不再有可用的 DTM ID"},
 
     { ER_NOT_SUPPORTED,
-      "\u4E0D\u652F\u63F4: {0}"},
+      "不支援: {0}"},
 
     { ER_NODE_NON_NULL,
-      "\u7BC0\u9EDE\u5FC5\u9808\u662F\u975E\u7A7A\u503C\u7684 getDTMHandleFromNode"},
+      "節點必須是非空值的 getDTMHandleFromNode"},
 
     { ER_COULD_NOT_RESOLVE_NODE,
-      "\u7121\u6CD5\u89E3\u6790\u7BC0\u9EDE\u70BA\u63A7\u5236\u4EE3\u78BC"},
+      "無法解析節點為控制代碼"},
 
     { ER_STARTPARSE_WHILE_PARSING,
-       "\u5256\u6790\u6642\u53EF\u80FD\u672A\u547C\u53EB startParse"},
+       "剖析時可能未呼叫 startParse"},
 
     { ER_STARTPARSE_NEEDS_SAXPARSER,
-       "startParse \u9700\u8981\u975E\u7A7A\u503C SAXParser"},
+       "startParse 需要非空值 SAXParser"},
 
     { ER_COULD_NOT_INIT_PARSER,
-       "\u7121\u6CD5\u8D77\u59CB\u5256\u6790\u5668"},
+       "無法起始剖析器"},
 
     { ER_EXCEPTION_CREATING_POOL,
-       "\u5EFA\u7ACB\u96C6\u5340\u7684\u65B0\u57F7\u884C\u8655\u7406\u6642\u767C\u751F\u7570\u5E38\u72C0\u6CC1"},
+       "建立集區的新執行處理時發生異常狀況"},
 
     { ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
-       "\u8DEF\u5F91\u5305\u542B\u7121\u6548\u7684\u9041\u96E2\u5E8F\u5217"},
+       "路徑包含無效的遁離序列"},
 
     { ER_SCHEME_REQUIRED,
-       "\u914D\u7F6E\u662F\u5FC5\u8981\u9805\u76EE\uFF01"},
+       "配置是必要項目！"},
 
     { ER_NO_SCHEME_IN_URI,
-       "\u5728 URI \u4E2D\u627E\u4E0D\u5230\u914D\u7F6E: {0}"},
+       "在 URI 中找不到配置: {0}"},
 
     { ER_NO_SCHEME_INURI,
-       "\u5728 URI \u627E\u4E0D\u5230\u914D\u7F6E"},
+       "在 URI 找不到配置"},
 
     { ER_PATH_INVALID_CHAR,
-       "\u8DEF\u5F91\u5305\u542B\u7121\u6548\u7684\u5B57\u5143: {0}"},
+       "路徑包含無效的字元: {0}"},
 
     { ER_SCHEME_FROM_NULL_STRING,
-       "\u7121\u6CD5\u5F9E\u7A7A\u503C\u5B57\u4E32\u8A2D\u5B9A\u914D\u7F6E"},
+       "無法從空值字串設定配置"},
 
     { ER_SCHEME_NOT_CONFORMANT,
-       "\u914D\u7F6E\u4E0D\u4E00\u81F4\u3002"},
+       "配置不一致。"},
 
     { ER_HOST_ADDRESS_NOT_WELLFORMED,
-       "\u4E3B\u6A5F\u6C92\u6709\u5B8C\u6574\u7684\u4F4D\u5740"},
+       "主機沒有完整的位址"},
 
     { ER_PORT_WHEN_HOST_NULL,
-       "\u4E3B\u6A5F\u70BA\u7A7A\u503C\u6642\uFF0C\u7121\u6CD5\u8A2D\u5B9A\u9023\u63A5\u57E0"},
+       "主機為空值時，無法設定連接埠"},
 
     { ER_INVALID_PORT,
-       "\u7121\u6548\u7684\u9023\u63A5\u57E0\u865F\u78BC"},
+       "無效的連接埠號碼"},
 
     { ER_FRAG_FOR_GENERIC_URI,
-       "\u53EA\u80FD\u5C0D\u4E00\u822C URI \u8A2D\u5B9A\u7247\u6BB5"},
+       "只能對一般 URI 設定片段"},
 
     { ER_FRAG_WHEN_PATH_NULL,
-       "\u8DEF\u5F91\u70BA\u7A7A\u503C\u6642\uFF0C\u7121\u6CD5\u8A2D\u5B9A\u7247\u6BB5"},
+       "路徑為空值時，無法設定片段"},
 
     { ER_FRAG_INVALID_CHAR,
-       "\u7247\u6BB5\u5305\u542B\u7121\u6548\u7684\u5B57\u5143"},
+       "片段包含無效的字元"},
 
     { ER_PARSER_IN_USE,
-      "\u5256\u6790\u5668\u4F7F\u7528\u4E2D"},
+      "剖析器使用中"},
 
     { ER_CANNOT_CHANGE_WHILE_PARSING,
-      "\u5256\u6790\u6642\u7121\u6CD5\u8B8A\u66F4 {0} {1}"},
+      "剖析時無法變更 {0} {1}"},
 
     { ER_SELF_CAUSATION_NOT_PERMITTED,
-      "\u4E0D\u5141\u8A31\u81EA\u884C\u5F15\u767C"},
+      "不允許自行引發"},
 
     { ER_NO_USERINFO_IF_NO_HOST,
-      "\u5982\u679C\u6C92\u6709\u6307\u5B9A\u4E3B\u6A5F\uFF0C\u4E0D\u53EF\u6307\u5B9A Userinfo"},
+      "如果沒有指定主機，不可指定 Userinfo"},
 
     { ER_NO_PORT_IF_NO_HOST,
-      "\u5982\u679C\u6C92\u6709\u6307\u5B9A\u4E3B\u6A5F\uFF0C\u4E0D\u53EF\u6307\u5B9A\u9023\u63A5\u57E0"},
+      "如果沒有指定主機，不可指定連接埠"},
 
     { ER_NO_QUERY_STRING_IN_PATH,
-      "\u5728\u8DEF\u5F91\u53CA\u67E5\u8A62\u5B57\u4E32\u4E2D\u4E0D\u53EF\u6307\u5B9A\u67E5\u8A62\u5B57\u4E32"},
+      "在路徑及查詢字串中不可指定查詢字串"},
 
     { ER_NO_FRAGMENT_STRING_IN_PATH,
-      "\u8DEF\u5F91\u548C\u7247\u6BB5\u4E0D\u80FD\u540C\u6642\u6307\u5B9A\u7247\u6BB5"},
+      "路徑和片段不能同時指定片段"},
 
     { ER_CANNOT_INIT_URI_EMPTY_PARMS,
-      "\u7121\u6CD5\u4EE5\u7A7A\u767D\u53C3\u6578\u8D77\u59CB\u8A2D\u5B9A URI"},
+      "無法以空白參數起始設定 URI"},
 
     { ER_METHOD_NOT_SUPPORTED,
-      "\u5C1A\u4E0D\u652F\u63F4\u65B9\u6CD5"},
+      "尚不支援方法"},
 
     { ER_INCRSAXSRCFILTER_NOT_RESTARTABLE,
-      "IncrementalSAXSource_Filter \u76EE\u524D\u7121\u6CD5\u91CD\u65B0\u555F\u52D5"},
+      "IncrementalSAXSource_Filter 目前無法重新啟動"},
 
     { ER_XMLRDR_NOT_BEFORE_STARTPARSE,
-      "XMLReader \u4E0D\u80FD\u5728 startParse \u8981\u6C42\u4E4B\u524D"},
+      "XMLReader 不能在 startParse 要求之前"},
 
     { ER_AXIS_TRAVERSER_NOT_SUPPORTED,
-      "\u4E0D\u652F\u63F4\u8EF8\u5468\u904A\u7A0B\u5F0F: {0}"},
+      "不支援軸周遊程式: {0}"},
 
     { ER_ERRORHANDLER_CREATED_WITH_NULL_PRINTWRITER,
-      "\u4F7F\u7528\u7A7A\u503C PrintWriter \u5EFA\u7ACB ListingErrorHandler\uFF01"},
+      "使用空值 PrintWriter 建立 ListingErrorHandler！"},
 
     { ER_SYSTEMID_UNKNOWN,
-      "\u4E0D\u660E\u7684 SystemId"},
+      "不明的 SystemId"},
 
     { ER_LOCATION_UNKNOWN,
-      "\u4E0D\u660E\u7684\u932F\u8AA4\u4F4D\u7F6E"},
+      "不明的錯誤位置"},
 
     { ER_PREFIX_MUST_RESOLVE,
-      "\u524D\u7F6E\u78BC\u5FC5\u9808\u89E3\u6790\u70BA\u547D\u540D\u7A7A\u9593: {0}"},
+      "前置碼必須解析為命名空間: {0}"},
 
     { ER_CREATEDOCUMENT_NOT_SUPPORTED,
-      "XPathContext \u4E2D\u4E0D\u652F\u63F4 createDocument()\uFF01"},
+      "XPathContext 中不支援 createDocument()！"},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT,
-      "\u5C6C\u6027\u5B50\u9805\u4E0D\u5177\u6709\u64C1\u6709\u8005\u6587\u4EF6\uFF01"},
+      "屬性子項不具有擁有者文件！"},
 
     { ER_CHILD_HAS_NO_OWNER_DOCUMENT_ELEMENT,
-      "\u5C6C\u6027\u5B50\u9805\u4E0D\u5177\u6709\u64C1\u6709\u8005\u6587\u4EF6\u5143\u7D20\uFF01"},
+      "屬性子項不具有擁有者文件元素！"},
 
     { ER_CANT_OUTPUT_TEXT_BEFORE_DOC,
-      "\u8B66\u544A: \u7121\u6CD5\u5728\u6587\u4EF6\u5143\u7D20\u4E4B\u524D\u8F38\u51FA\u6587\u5B57\uFF01\u6B63\u5728\u5FFD\u7565..."},
+      "警告: 無法在文件元素之前輸出文字！正在忽略..."},
 
     { ER_CANT_HAVE_MORE_THAN_ONE_ROOT,
-      "DOM \u7684\u6839\u4E0D\u80FD\u8D85\u904E\u4E00\u500B\uFF01"},
+      "DOM 的根不能超過一個！"},
 
     { ER_ARG_LOCALNAME_NULL,
-       "\u5F15\u6578 'localName' \u70BA\u7A7A\u503C"},
+       "引數 'localName' 為空值"},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The localname is the portion after the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_LOCALNAME_INVALID,
-       "QNAME \u4E2D\u7684 Localname \u61C9\u70BA\u6709\u6548\u7684 NCName"},
+       "QNAME 中的 Localname 應為有效的 NCName"},
 
     // Note to translators:  A QNAME has the syntactic form [NCName:]NCName
     // The prefix is the portion before the optional colon; the message indicates
     // that there is a problem with that part of the QNAME.
     { ER_ARG_PREFIX_INVALID,
-       "QNAME \u4E2D\u7684\u524D\u7F6E\u78BC\u61C9\u70BA\u6709\u6548\u7684 NCName"},
+       "QNAME 中的前置碼應為有效的 NCName"},
 
     { ER_NAME_CANT_START_WITH_COLON,
-      "\u540D\u7A31\u4E0D\u80FD\u4EE5\u5192\u865F\u70BA\u958B\u982D"},
+      "名稱不能以冒號為開頭"},
 
-    { "BAD_CODE", "createMessage \u7684\u53C3\u6578\u8D85\u51FA\u7BC4\u570D"},
-    { "FORMAT_FAILED", "messageFormat \u547C\u53EB\u671F\u9593\u767C\u751F\u7570\u5E38\u72C0\u6CC1"},
-    { "line", "\u884C\u865F"},
-    { "column","\u8CC7\u6599\u6B04\u7DE8\u865F"},
+    { "BAD_CODE", "createMessage 的參數超出範圍"},
+    { "FORMAT_FAILED", "messageFormat 呼叫期間發生異常狀況"},
+    { "line", "行號"},
+    { "column","資料欄編號"},
 
     {ER_SERIALIZER_NOT_CONTENTHANDLER,
-      "serializer \u985E\u5225 ''{0}'' \u4E0D\u5BE6\u884C org.xml.sax.ContentHandler\u3002"},
+      "serializer 類別 ''{0}'' 不實行 org.xml.sax.ContentHandler。"},
 
     {ER_RESOURCE_COULD_NOT_FIND,
-      "\u627E\u4E0D\u5230\u8CC7\u6E90 [ {0} ]\u3002\n{1}" },
+      "找不到資源 [ {0} ]。\n{1}" },
 
     {ER_RESOURCE_COULD_NOT_LOAD,
-      "\u7121\u6CD5\u8F09\u5165\u8CC7\u6E90 [ {0} ]: {1} \n {2} \t {3}" },
+      "無法載入資源 [ {0} ]: {1} \n {2} \t {3}" },
 
     {ER_BUFFER_SIZE_LESSTHAN_ZERO,
-      "\u7DE9\u885D\u5340\u5927\u5C0F <=0" },
+      "緩衝區大小 <=0" },
 
     {ER_INVALID_UTF16_SURROGATE,
-      "\u5075\u6E2C\u5230\u7121\u6548\u7684 UTF-16 \u4EE3\u7406: {0}\uFF1F" },
+      "偵測到無效的 UTF-16 代理: {0}？" },
 
     {ER_OIERROR,
-      "IO \u932F\u8AA4" },
+      "IO 錯誤" },
 
     {ER_ILLEGAL_ATTRIBUTE_POSITION,
-      "\u5728\u7522\u751F\u5B50\u9805\u7BC0\u9EDE\u4E4B\u5F8C\uFF0C\u6216\u5728\u7522\u751F\u5143\u7D20\u4E4B\u524D\uFF0C\u4E0D\u53EF\u65B0\u589E\u5C6C\u6027 {0}\u3002\u5C6C\u6027\u6703\u88AB\u5FFD\u7565\u3002"},
+      "在產生子項節點之後，或在產生元素之前，不可新增屬性 {0}。屬性會被忽略。"},
 
       /*
        * Note to translators:  The stylesheet contained a reference to a
@@ -407,7 +407,7 @@ public class XMLErrorResources_zh_TW extends ListResourceBundle
        * text is the name of the prefix.
        */
     {ER_NAMESPACE_PREFIX,
-      "\u5B57\u9996 ''{0}'' \u7684\u547D\u540D\u7A7A\u9593\u5C1A\u672A\u5BA3\u544A\u3002" },
+      "字首 ''{0}'' 的命名空間尚未宣告。" },
       /*
        * Note to translators:  This message is reported if the stylesheet
        * being processed attempted to construct an XML document with an
@@ -415,7 +415,7 @@ public class XMLErrorResources_zh_TW extends ListResourceBundle
        * specifies the name of the attribute.
        */
     {ER_STRAY_ATTRIBUTE,
-      "\u5C6C\u6027 ''{0}'' \u5728\u5143\u7D20\u4E4B\u5916\u3002" },
+      "屬性 ''{0}'' 在元素之外。" },
 
       /*
        * Note to translators:  As with the preceding message, a namespace
@@ -425,16 +425,16 @@ public class XMLErrorResources_zh_TW extends ListResourceBundle
        * namespace declaration.
        */
     {ER_STRAY_NAMESPACE,
-      "\u547D\u540D\u7A7A\u9593\u5BA3\u544A ''{0}''=''{1}'' \u8D85\u51FA\u5143\u7D20\u5916\u3002" },
+      "命名空間宣告 ''{0}''=''{1}'' 超出元素外。" },
 
     {ER_COULD_NOT_LOAD_RESOURCE,
-      "\u7121\u6CD5\u8F09\u5165 ''{0}'' (\u6AA2\u67E5 CLASSPATH)\uFF0C\u76EE\u524D\u53EA\u4F7F\u7528\u9810\u8A2D\u503C"},
+      "無法載入 ''{0}'' (檢查 CLASSPATH)，目前只使用預設值"},
 
     { ER_ILLEGAL_CHARACTER,
-       "\u5617\u8A66\u8F38\u51FA\u6574\u6578\u503C {0} \u7684\u5B57\u5143\uFF0C\u4F46\u662F\u5B83\u4E0D\u662F\u4EE5\u6307\u5B9A\u7684 {1} \u8F38\u51FA\u7DE8\u78BC\u5448\u73FE\u3002"},
+       "嘗試輸出整數值 {0} 的字元，但是它不是以指定的 {1} 輸出編碼呈現。"},
 
     {ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-      "\u7121\u6CD5\u8F09\u5165\u8F38\u51FA\u65B9\u6CD5 ''{1}'' \u7684\u5C6C\u6027\u6A94 ''{0}'' (\u6AA2\u67E5 CLASSPATH)" }
+      "無法載入輸出方法 ''{1}'' 的屬性檔 ''{0}'' (檢查 CLASSPATH)" }
 
 
   };

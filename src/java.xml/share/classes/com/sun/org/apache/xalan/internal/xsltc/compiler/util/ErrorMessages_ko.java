@@ -95,7 +95,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
     {
       return new Object[][] {
         {ErrorMsg.MULTIPLE_STYLESHEET_ERR,
-        "\uB3D9\uC77C\uD55C \uD30C\uC77C\uC5D0 \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uAC00 \uB450 \uAC1C \uC774\uC0C1 \uC815\uC758\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "동일한 파일에 스타일시트가 두 개 이상 정의되었습니다."},
 
         /*
          * Note to translators:  The substitution text is the name of a
@@ -103,7 +103,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * same stylesheet.
          */
         {ErrorMsg.TEMPLATE_REDEF_ERR,
-        "\uC774 \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uC5D0\uB294 ''{0}'' \uD15C\uD50C\uB9AC\uD2B8\uAC00 \uC774\uBBF8 \uC815\uC758\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "이 스타일시트에는 ''{0}'' 템플리트가 이미 정의되었습니다."},
 
 
         /*
@@ -112,14 +112,14 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * template is undefined.
          */
         {ErrorMsg.TEMPLATE_UNDEF_ERR,
-        "\uC774 \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uC5D0\uB294 ''{0}'' \uD15C\uD50C\uB9AC\uD2B8\uAC00 \uC815\uC758\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+        "이 스타일시트에는 ''{0}'' 템플리트가 정의되지 않았습니다."},
 
         /*
          * Note to translators:  The substitution text is the name of a variable
          * that was defined more than once.
          */
         {ErrorMsg.VARIABLE_REDEF_ERR,
-        "\uB3D9\uC77C\uD55C \uBC94\uC704\uC5D0\uC11C ''{0}'' \uBCC0\uC218\uAC00 \uC5EC\uB7EC \uAC1C \uC815\uC758\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "동일한 범위에서 ''{0}'' 변수가 여러 개 정의되었습니다."},
 
         /*
          * Note to translators:  The substitution text is the name of a variable
@@ -127,7 +127,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * but it was never defined.
          */
         {ErrorMsg.VARIABLE_UNDEF_ERR,
-        "\uBCC0\uC218 \uB610\uB294 \uB9E4\uAC1C\uBCC0\uC218 ''{0}''\uC774(\uAC00) \uC815\uC758\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+        "변수 또는 매개변수 ''{0}''이(가) 정의되지 않았습니다."},
 
         /*
          * Note to translators:  The word "class" here refers to a Java class.
@@ -135,7 +135,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * not be found.  The substitution text is the name of the class.
          */
         {ErrorMsg.CLASS_NOT_FOUND_ERR,
-        "''{0}'' \uD074\uB798\uC2A4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 클래스를 찾을 수 없습니다."},
 
         /*
          * Note to translators:  The word "method" here refers to a Java method.
@@ -144,7 +144,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * Java keyword.
          */
         {ErrorMsg.METHOD_NOT_FOUND_ERR,
-        "\uC678\uBD80 \uBA54\uC18C\uB4DC ''{0}''\uC744(\uB97C) \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uC774 \uBA54\uC18C\uB4DC\uB294 public\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+        "외부 메소드 ''{0}''을(를) 찾을 수 없습니다. 이 메소드는 public이어야 합니다."},
 
         /*
          * Note to translators:  The word "method" here refers to a Java method.
@@ -153,42 +153,42 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * arguments or return type could be found.
          */
         {ErrorMsg.ARGUMENT_CONVERSION_ERR,
-        "''{0}'' \uBA54\uC18C\uB4DC\uC5D0 \uB300\uD55C \uD638\uCD9C\uC5D0\uC11C \uC778\uC218/\uBC18\uD658 \uC720\uD615\uC744 \uBCC0\uD658\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 메소드에 대한 호출에서 인수/반환 유형을 변환할 수 없습니다."},
 
         /*
          * Note to translators:  The file or URI named in the substitution text
          * is missing.
          */
         {ErrorMsg.FILE_NOT_FOUND_ERR,
-        "\uD30C\uC77C \uB610\uB294 URI ''{0}''\uC744(\uB97C) \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "파일 또는 URI ''{0}''을(를) 찾을 수 없습니다."},
 
         /*
          * Note to translators:  This message is displayed when the URI
          * mentioned in the substitution text is not well-formed syntactically.
          */
         {ErrorMsg.INVALID_URI_ERR,
-        "URI ''{0}''\uC774(\uAC00) \uBD80\uC801\uD569\uD569\uB2C8\uB2E4."},
+        "URI ''{0}''이(가) 부적합합니다."},
 
         /*
          * Note to translators:  This message is displayed when the URI
          * mentioned in the substitution text is not well-formed syntactically.
          */
         {ErrorMsg.CATALOG_EXCEPTION,
-        "JAXP08090001: CatalogResolver\uAC00 \"{0}\" \uCE74\uD0C8\uB85C\uADF8\uC5D0 \uC0AC\uC6A9\uC73C\uB85C \uC124\uC815\uB418\uC5C8\uC9C0\uB9CC CatalogException\uC774 \uBC18\uD658\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "JAXP08090001: CatalogResolver가 \"{0}\" 카탈로그에 사용으로 설정되었지만 CatalogException이 반환되었습니다."},
 
         /*
          * Note to translators:  The file or URI named in the substitution text
          * exists but could not be opened.
          */
         {ErrorMsg.FILE_ACCESS_ERR,
-        "\uD30C\uC77C \uB610\uB294 URI ''{0}''\uC744(\uB97C) \uC5F4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "파일 또는 URI ''{0}''을(를) 열 수 없습니다."},
 
         /*
          * Note to translators: <xsl:stylesheet> and <xsl:transform> are
          * keywords that should not be translated.
          */
         {ErrorMsg.MISSING_ROOT_ERR,
-        "<xsl:stylesheet> \uB610\uB294 <xsl:transform> \uC694\uC18C\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."},
+        "<xsl:stylesheet> 또는 <xsl:transform> 요소가 필요합니다."},
 
         /*
          * Note to translators:  The stylesheet contained a reference to a
@@ -196,21 +196,21 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * text is the name of the prefix.
          */
         {ErrorMsg.NAMESPACE_UNDEF_ERR,
-        "\uB124\uC784\uC2A4\uD398\uC774\uC2A4 \uC811\uB450\uC5B4 ''{0}''\uC774(\uAC00) \uC120\uC5B8\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+        "네임스페이스 접두어 ''{0}''이(가) 선언되지 않았습니다."},
 
         /*
          * Note to translators:  The Java function named in the stylesheet could
          * not be found.
          */
         {ErrorMsg.FUNCTION_RESOLVE_ERR,
-        "''{0}'' \uD568\uC218\uC5D0 \uB300\uD55C \uD638\uCD9C\uC744 \uBD84\uC11D\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 함수에 대한 호출을 분석할 수 없습니다."},
 
         /*
          * Note to translators:  The substitution text is the name of a
          * function.  A literal string here means a constant string value.
          */
         {ErrorMsg.NEED_LITERAL_ERR,
-        "''{0}''\uC5D0 \uB300\uD55C \uC778\uC218\uB294 \uB9AC\uD130\uB7F4 \uBB38\uC790\uC5F4\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+        "''{0}''에 대한 인수는 리터럴 문자열이어야 합니다."},
 
         /*
          * Note to translators:  This message indicates there was a syntactic
@@ -218,7 +218,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * the expression.
          */
         {ErrorMsg.XPATH_PARSER_ERR,
-        "XPath \uD45C\uD604\uC2DD ''{0}''\uC758 \uAD6C\uBB38\uC744 \uBD84\uC11D\uD558\uB294 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
+        "XPath 표현식 ''{0}''의 구문을 분석하는 중 오류가 발생했습니다."},
 
         /*
          * Note to translators:  An element in the stylesheet requires a
@@ -226,7 +226,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * attribute was not specified in the stylesheet.
          */
         {ErrorMsg.REQUIRED_ATTR_ERR,
-        "\uD544\uC218 \uC18D\uC131 ''{0}''\uC774(\uAC00) \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "필수 속성 ''{0}''이(가) 누락되었습니다."},
 
         /*
          * Note to translators:  This message indicates that a character not
@@ -234,7 +234,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * text is the offending character.
          */
         {ErrorMsg.ILLEGAL_CHAR_ERR,
-        "XPath \uD45C\uD604\uC2DD\uC5D0 \uC798\uBABB\uB41C \uBB38\uC790 ''{0}''\uC774(\uAC00) \uC788\uC2B5\uB2C8\uB2E4."},
+        "XPath 표현식에 잘못된 문자 ''{0}''이(가) 있습니다."},
 
         /*
          * Note to translators:  A processing instruction is a mark-up item in
@@ -243,7 +243,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * text is the name.
          */
         {ErrorMsg.ILLEGAL_PI_ERR,
-        "''{0}''\uC740(\uB294) \uBA85\uB839 \uCC98\uB9AC\uC5D0 \uC798\uBABB\uB41C \uC774\uB984\uC785\uB2C8\uB2E4."},
+        "''{0}''은(는) 명령 처리에 잘못된 이름입니다."},
 
         /*
          * Note to translators:  This message is reported if the stylesheet
@@ -252,7 +252,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * specifies the name of the attribute.
          */
         {ErrorMsg.STRAY_ATTRIBUTE_ERR,
-        "''{0}'' \uC18D\uC131\uC774 \uC694\uC18C\uC5D0 \uD3EC\uD568\uB418\uC5B4 \uC788\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 속성이 요소에 포함되어 있지 않습니다."},
 
         /*
          * Note to translators:  An attribute that wasn't recognized was
@@ -261,7 +261,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * text.
          */
         {ErrorMsg.ILLEGAL_ATTRIBUTE_ERR,
-        "''{0}''\uC740(\uB294) \uC798\uBABB\uB41C \uC18D\uC131\uC785\uB2C8\uB2E4."},
+        "''{0}''은(는) 잘못된 속성입니다."},
 
         /*
          * Note to translators:  "import" and "include" are keywords that should
@@ -270,14 +270,14 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * directly or indirectly.
          */
         {ErrorMsg.CIRCULAR_INCLUDE_ERR,
-        "\uC21C\uD658 import/include\uC785\uB2C8\uB2E4. ''{0}'' \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uAC00 \uC774\uBBF8 \uB85C\uB4DC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "순환 import/include입니다. ''{0}'' 스타일시트가 이미 로드되었습니다."},
 
         /*
          * Note to translators:  "xsl:import" and "xsl:include" are keywords that
          * should not be translated.
          */
         {ErrorMsg.IMPORT_PRECEDE_OTHERS_ERR,
-        "xsl:import \uC694\uC18C \uD558\uC704\uB294 xsl:include \uC694\uC18C \uD558\uC704\uB97C \uD3EC\uD568\uD574 xsl:stylesheet \uC694\uC18C\uC758 \uBAA8\uB4E0 \uB2E4\uB978 \uC694\uC18C \uD558\uC704 \uC55E\uC5D0 \uC640\uC57C \uD569\uB2C8\uB2E4."},
+        "xsl:import 요소 하위는 xsl:include 요소 하위를 포함해 xsl:stylesheet 요소의 모든 다른 요소 하위 앞에 와야 합니다."},
 
         /*
          * Note to translators:  A result-tree fragment is a portion of a
@@ -285,7 +285,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * keyword and should not be translated.
          */
         {ErrorMsg.RESULT_TREE_SORT_ERR,
-        "Result-tree \uBD80\uBD84\uC744 \uC815\uB82C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4(<xsl:sort> \uC694\uC18C\uAC00 \uBB34\uC2DC\uB428). \uACB0\uACFC \uD2B8\uB9AC\uB97C \uC0DD\uC131\uD560 \uB54C\uB294 \uB178\uB4DC\uB97C \uC815\uB82C\uD574\uC57C \uD569\uB2C8\uB2E4."},
+        "Result-tree 부분을 정렬할 수 없습니다(<xsl:sort> 요소가 무시됨). 결과 트리를 생성할 때는 노드를 정렬해야 합니다."},
 
         /*
          * Note to translators:  A name can be given to a particular style to be
@@ -293,35 +293,35 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * of such a style for which more than one declaration was encountered.
          */
         {ErrorMsg.SYMBOLS_REDEF_ERR,
-        "\uC2ED\uC9C4\uC218 \uD615\uC2DD ''{0}''\uC774(\uAC00) \uC774\uBBF8 \uC815\uC758\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "십진수 형식 ''{0}''이(가) 이미 정의되었습니다."},
 
         /*
          * Note to translators:  The stylesheet version named in the
          * substitution text is not supported.
          */
         {ErrorMsg.XSL_VERSION_ERR,
-        "XSLTC\uB294 XSL \uBC84\uC804 ''{0}''\uC744(\uB97C) \uC9C0\uC6D0\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "XSLTC는 XSL 버전 ''{0}''을(를) 지원하지 않습니다."},
 
         /*
          * Note to translators:  The definitions of one or more variables or
          * parameters depend on one another.
          */
         {ErrorMsg.CIRCULAR_VARIABLE_ERR,
-        "''{0}''\uC5D0 \uC21C\uD658 \uBCC0\uC218/\uB9E4\uAC1C\uBCC0\uC218 \uCC38\uC870\uAC00 \uC788\uC2B5\uB2C8\uB2E4."},
+        "''{0}''에 순환 변수/매개변수 참조가 있습니다."},
 
         /*
          * Note to translators:  The operator in an expresion with two operands was
          * not recognized.
          */
         {ErrorMsg.ILLEGAL_BINARY_OP_ERR,
-        "\uBC14\uC774\uB108\uB9AC \uD45C\uD604\uC2DD\uC5D0 \uB300\uD574 \uC54C \uC218 \uC5C6\uB294 \uC5F0\uC0B0\uC790\uC785\uB2C8\uB2E4."},
+        "바이너리 표현식에 대해 알 수 없는 연산자입니다."},
 
         /*
          * Note to translators:  This message is produced if a reference to a
          * function has too many or too few arguments.
          */
         {ErrorMsg.ILLEGAL_ARG_ERR,
-        "\uD568\uC218 \uD638\uCD9C\uC5D0 \uB300\uD55C \uC778\uC218\uAC00 \uC798\uBABB\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "함수 호출에 대한 인수가 잘못되었습니다."},
 
         /*
          * Note to translators:  "document()" is the name of function and must
@@ -329,7 +329,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * representation of an XML document.
          */
         {ErrorMsg.DOCUMENT_ARG_ERR,
-        "document() \uD568\uC218\uC5D0 \uB300\uD55C \uB450\uBC88\uC9F8 \uC778\uC218\uB294 node-set\uC5EC\uC57C \uD569\uB2C8\uB2E4."},
+        "document() 함수에 대한 두번째 인수는 node-set여야 합니다."},
 
         /*
          * Note to translators:  "<xsl:when>" and "<xsl:choose>" are keywords
@@ -337,7 +337,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * in the stylesheet.
          */
         {ErrorMsg.MISSING_WHEN_ERR,
-        "<xsl:choose>\uC5D0\uB294 <xsl:when> \uC694\uC18C\uAC00 \uD558\uB098 \uC774\uC0C1 \uD544\uC694\uD569\uB2C8\uB2E4."},
+        "<xsl:choose>에는 <xsl:when> 요소가 하나 이상 필요합니다."},
 
         /*
          * Note to translators:  "<xsl:otherwise>" and "<xsl:choose>" are
@@ -345,7 +345,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * syntax error in the stylesheet.
          */
         {ErrorMsg.MULTIPLE_OTHERWISE_ERR,
-        "<xsl:choose>\uC5D0\uC11C\uB294 <xsl:otherwise> \uC694\uC18C\uAC00 \uD558\uB098\uB9CC \uD5C8\uC6A9\uB429\uB2C8\uB2E4."},
+        "<xsl:choose>에서는 <xsl:otherwise> 요소가 하나만 허용됩니다."},
 
         /*
          * Note to translators:  "<xsl:otherwise>" and "<xsl:choose>" are
@@ -353,7 +353,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * syntax error in the stylesheet.
          */
         {ErrorMsg.STRAY_OTHERWISE_ERR,
-        "<xsl:otherwise>\uB294 <xsl:choose>\uC5D0\uC11C\uB9CC \uC0AC\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."},
+        "<xsl:otherwise>는 <xsl:choose>에서만 사용할 수 있습니다."},
 
         /*
          * Note to translators:  "<xsl:when>" and "<xsl:choose>" are keywords
@@ -361,7 +361,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * in the stylesheet.
          */
         {ErrorMsg.STRAY_WHEN_ERR,
-        "<xsl:when>\uC740 <xsl:choose>\uC5D0\uC11C\uB9CC \uC0AC\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."},
+        "<xsl:when>은 <xsl:choose>에서만 사용할 수 있습니다."},
 
         /*
          * Note to translators:  "<xsl:when>", "<xsl:otherwise>" and
@@ -369,21 +369,21 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * message describes a syntax error in the stylesheet.
          */
         {ErrorMsg.WHEN_ELEMENT_ERR,
-        "<xsl:choose>\uC5D0\uC11C\uB294 <xsl:when> \uBC0F <xsl:otherwise> \uC694\uC18C\uB9CC \uD5C8\uC6A9\uB429\uB2C8\uB2E4."},
+        "<xsl:choose>에서는 <xsl:when> 및 <xsl:otherwise> 요소만 허용됩니다."},
 
         /*
          * Note to translators:  "<xsl:attribute-set>" and "name" are keywords
          * that should not be translated.
          */
         {ErrorMsg.UNNAMED_ATTRIBSET_ERR,
-        "<xsl:attribute-set>\uC5D0 'name' \uC18D\uC131\uC774 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "<xsl:attribute-set>에 'name' 속성이 누락되었습니다."},
 
         /*
          * Note to translators:  An element in the stylesheet contained an
          * element of a type that it was not permitted to contain.
          */
         {ErrorMsg.ILLEGAL_CHILD_ERR,
-        "\uD558\uC704 \uC694\uC18C\uAC00 \uC798\uBABB\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "하위 요소가 잘못되었습니다."},
 
         /*
          * Note to translators:  The stylesheet tried to create an element with
@@ -391,7 +391,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * the name.
          */
         {ErrorMsg.ILLEGAL_ELEM_NAME_ERR,
-        "''{0}'' \uC694\uC18C\uB97C \uD638\uCD9C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 요소를 호출할 수 없습니다."},
 
         /*
          * Note to translators:  The stylesheet tried to create an attribute
@@ -399,7 +399,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * contains the name.
          */
         {ErrorMsg.ILLEGAL_ATTR_NAME_ERR,
-        "''{0}'' \uC18D\uC131\uC744 \uD638\uCD9C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 속성을 호출할 수 없습니다."},
 
         /*
          * Note to translators:  The children of the outermost element of a
@@ -409,7 +409,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * "<xsl:stylesheet>" is a keyword that should not be translated.
          */
         {ErrorMsg.ILLEGAL_TEXT_NODE_ERR,
-        "\uD14D\uC2A4\uD2B8 \uB370\uC774\uD130\uAC00 \uCD5C\uC0C1\uC704 \uB808\uBCA8 <xsl:stylesheet> \uC694\uC18C\uC5D0 \uD3EC\uD568\uB418\uC5B4 \uC788\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "텍스트 데이터가 최상위 레벨 <xsl:stylesheet> 요소에 포함되어 있지 않습니다."},
 
         /*
          * Note to translators:  JAXP is an acronym for the Java API for XML
@@ -417,14 +417,14 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * XSLTC to process the XML input document had a configuration problem.
          */
         {ErrorMsg.SAX_PARSER_CONFIG_ERR,
-        "JAXP \uAD6C\uBB38 \uBD84\uC11D\uAE30\uAC00 \uC81C\uB300\uB85C \uAD6C\uC131\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+        "JAXP 구문 분석기가 제대로 구성되지 않았습니다."},
 
         /*
          * Note to translators:  The substitution text names the internal error
          * encountered.
          */
         {ErrorMsg.INTERNAL_ERR,
-        "\uBCF5\uAD6C\uD560 \uC218 \uC5C6\uB294 XSLTC \uB0B4\uBD80 \uC624\uB958: ''{0}''"},
+        "복구할 수 없는 XSLTC 내부 오류: ''{0}''"},
 
         /*
          * Note to translators:  The stylesheet contained an element that was
@@ -432,7 +432,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * gives the element name.
          */
         {ErrorMsg.UNSUPPORTED_XSL_ERR,
-        "''{0}''\uC740(\uB294) \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uB294 XSL \uC694\uC18C\uC785\uB2C8\uB2E4."},
+        "''{0}''은(는) 지원되지 않는 XSL 요소입니다."},
 
         /*
          * Note to translators:  The stylesheet referred to an extension to the
@@ -441,7 +441,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * gives the extension name.
          */
         {ErrorMsg.UNSUPPORTED_EXT_ERR,
-        "''{0}''\uC740(\uB294) \uC54C \uC218 \uC5C6\uB294 XSLTC \uD655\uC7A5\uC785\uB2C8\uB2E4."},
+        "''{0}''은(는) 알 수 없는 XSLTC 확장입니다."},
 
         /*
          * Note to translators:  The XML document given to XSLTC as a stylesheet
@@ -451,20 +451,20 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * for that namespace was seen.
          */
         {ErrorMsg.MISSING_XSLT_URI_ERR,
-        "\uC785\uB825 \uBB38\uC11C\uB294 \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uAC00 \uC544\uB2D9\uB2C8\uB2E4. XSL \uB124\uC784\uC2A4\uD398\uC774\uC2A4\uAC00 \uB8E8\uD2B8 \uC694\uC18C\uC5D0 \uC120\uC5B8\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+        "입력 문서는 스타일시트가 아닙니다. XSL 네임스페이스가 루트 요소에 선언되지 않았습니다."},
 
         /*
          * Note to translators:  XSLTC could not find the stylesheet document
          * with the name specified by the substitution text.
          */
         {ErrorMsg.MISSING_XSLT_TARGET_ERR,
-        "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uB300\uC0C1 ''{0}''\uC744(\uB97C) \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "스타일시트 대상 ''{0}''을(를) 찾을 수 없습니다."},
 
         /*
          * Note to translators:  access to the stylesheet target is denied
          */
         {ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
-        "accessExternalStylesheet \uC18D\uC131\uC73C\uB85C \uC124\uC815\uB41C \uC81C\uD55C\uC73C\uB85C \uC778\uD574 ''{1}'' \uC561\uC138\uC2A4\uAC00 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC73C\uBBC0\uB85C \uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uB300\uC0C1 ''{0}''\uC744(\uB97C) \uC77D\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "accessExternalStylesheet 속성으로 설정된 제한으로 인해 ''{1}'' 액세스가 허용되지 않으므로 스타일시트 대상 ''{0}''을(를) 읽을 수 없습니다."},
 
         /*
          * Note to translators:  This message represents an internal error in
@@ -472,21 +472,21 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * that is missing some functionality.
          */
         {ErrorMsg.NOT_IMPLEMENTED_ERR,
-        "\uAD6C\uD604\uB418\uC9C0 \uC54A\uC74C: ''{0}''."},
+        "구현되지 않음: ''{0}''."},
 
         /*
          * Note to translators:  The XML document given to XSLTC as a stylesheet
          * was not, in fact, a stylesheet.
          */
         {ErrorMsg.NOT_STYLESHEET_ERR,
-        "\uC785\uB825 \uBB38\uC11C\uC5D0 XSL \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uAC00 \uD3EC\uD568\uB418\uC5B4 \uC788\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "입력 문서에 XSL 스타일시트가 포함되어 있지 않습니다."},
 
         /*
          * Note to translators:  The element named in the substitution text was
          * encountered in the stylesheet but is not recognized.
          */
         {ErrorMsg.ELEMENT_PARSE_ERR,
-        "''{0}'' \uC694\uC18C\uC758 \uAD6C\uBB38\uC744 \uBD84\uC11D\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 요소의 구문을 분석할 수 없습니다."},
 
         /*
          * Note to translators:  "use", "<key>", "node", "node-set", "string"
@@ -495,7 +495,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * attribute was not one of the permitted values.
          */
         {ErrorMsg.KEY_USE_ATTR_ERR,
-        "<key>\uC758 use \uC18D\uC131\uC740 node, node-set, string \uB610\uB294 number\uC5EC\uC57C \uD569\uB2C8\uB2E4."},
+        "<key>의 use 속성은 node, node-set, string 또는 number여야 합니다."},
 
         /*
          * Note to translators:  An XML document can specify the version of the
@@ -503,14 +503,14 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * the version specified for the output document was not valid.
          */
         {ErrorMsg.OUTPUT_VERSION_ERR,
-        "\uCD9C\uB825 XML \uBB38\uC11C \uBC84\uC804\uC740 1.0\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+        "출력 XML 문서 버전은 1.0이어야 합니다."},
 
         /*
          * Note to translators:  The operator in a comparison operation was
          * not recognized.
          */
         {ErrorMsg.ILLEGAL_RELAT_OP_ERR,
-        "\uAD00\uACC4 \uD45C\uD604\uC2DD\uC5D0 \uB300\uD574 \uC54C \uC218 \uC5C6\uB294 \uC5F0\uC0B0\uC790\uC785\uB2C8\uB2E4."},
+        "관계 표현식에 대해 알 수 없는 연산자입니다."},
 
         /*
          * Note to translators:  An attribute set defines as a set of XML
@@ -520,7 +520,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * that is in error.
          */
         {ErrorMsg.ATTRIBSET_UNDEF_ERR,
-        "\uC874\uC7AC\uD558\uC9C0 \uC54A\uB294 \uC18D\uC131 \uC9D1\uD569 ''{0}''\uC744(\uB97C) \uC0AC\uC6A9\uD558\uB824\uACE0 \uC2DC\uB3C4\uD558\uB294 \uC911\uC785\uB2C8\uB2E4."},
+        "존재하지 않는 속성 집합 ''{0}''을(를) 사용하려고 시도하는 중입니다."},
 
         /*
          * Note to translators:  The term "attribute value template" is a term
@@ -530,13 +530,13 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * contains the expression that was in error.
          */
         {ErrorMsg.ATTR_VAL_TEMPLATE_ERR,
-        "\uC18D\uC131\uAC12 \uD15C\uD50C\uB9AC\uD2B8 ''{0}''\uC758 \uAD6C\uBB38\uC744 \uBD84\uC11D\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "속성값 템플리트 ''{0}''의 구문을 분석할 수 없습니다."},
 
         /*
          * Note to translators:  ???
          */
         {ErrorMsg.UNKNOWN_SIG_TYPE_ERR,
-        "''{0}'' \uD074\uB798\uC2A4\uC5D0 \uB300\uD55C \uC11C\uBA85\uC5D0 \uC54C \uC218 \uC5C6\uB294 \uB370\uC774\uD130 \uC720\uD615\uC774 \uC788\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 클래스에 대한 서명에 알 수 없는 데이터 유형이 있습니다."},
 
         /*
          * Note to translators:  The substitution text refers to data types.
@@ -545,30 +545,30 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * type {0}.
          */
         {ErrorMsg.DATA_CONVERSION_ERR,
-        "\uB370\uC774\uD130 \uC720\uD615 ''{0}''\uC744(\uB97C) ''{1}''(\uC73C)\uB85C \uBCC0\uD658\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "데이터 유형 ''{0}''을(를) ''{1}''(으)로 변환할 수 없습니다."},
 
         /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.
          */
         {ErrorMsg.NO_TRANSLET_CLASS_ERR,
-        "\uC774 Templates\uC5D0\uB294 \uC801\uD569\uD55C translet \uD074\uB798\uC2A4 \uC815\uC758\uAC00 \uD3EC\uD568\uB418\uC5B4 \uC788\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "이 Templates에는 적합한 translet 클래스 정의가 포함되어 있지 않습니다."},
 
         /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.
          */
         {ErrorMsg.NO_MAIN_TRANSLET_ERR,
-        "\uC774 Templates\uC5D0\uB294 \uC774\uB984\uC774 ''{0}''\uC778 \uD074\uB798\uC2A4\uAC00 \uD3EC\uD568\uB418\uC5B4 \uC788\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "이 Templates에는 이름이 ''{0}''인 클래스가 포함되어 있지 않습니다."},
 
         /*
          * Note to translators:  The substitution text is the name of a class.
          */
         {ErrorMsg.TRANSLET_CLASS_ERR,
-        "Translet \uD074\uB798\uC2A4 ''{0}''\uC744(\uB97C) \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "Translet 클래스 ''{0}''을(를) 로드할 수 없습니다."},
 
         {ErrorMsg.TRANSLET_OBJECT_ERR,
-        "Translet \uD074\uB798\uC2A4\uAC00 \uB85C\uB4DC\uB418\uC5C8\uC9C0\uB9CC translet \uC778\uC2A4\uD134\uC2A4\uB97C \uC0DD\uC131\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "Translet 클래스가 로드되었지만 translet 인스턴스를 생성할 수 없습니다."},
 
         /*
          * Note to translators:  "ErrorListener" is a Java interface name that
@@ -577,28 +577,28 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * substitution text with "null" Java value.
          */
         {ErrorMsg.ERROR_LISTENER_NULL_ERR,
-        "''{0}''\uC5D0 \uB300\uD55C ErrorListener\uB97C null\uB85C \uC124\uC815\uD558\uB824\uACE0 \uC2DC\uB3C4\uD558\uB294 \uC911"},
+        "''{0}''에 대한 ErrorListener를 null로 설정하려고 시도하는 중"},
 
         /*
          * Note to translators:  StreamSource, SAXSource and DOMSource are Java
          * interface names that should not be translated.
          */
         {ErrorMsg.JAXP_UNKNOWN_SOURCE_ERR,
-        "XSLTC\uB294 StreamSource, SAXSource \uBC0F DOMSource\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4."},
+        "XSLTC는 StreamSource, SAXSource 및 DOMSource만 지원합니다."},
 
         /*
          * Note to translators:  "Source" is a Java class name that should not
          * be translated.  The substitution text is the name of Java method.
          */
         {ErrorMsg.JAXP_NO_SOURCE_ERR,
-        "''{0}''(\uC73C)\uB85C \uC804\uB2EC\uB41C Source \uAC1D\uCCB4\uC5D0 \uCF58\uD150\uCE20\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "''{0}''(으)로 전달된 Source 객체에 콘텐츠가 없습니다."},
 
         /*
          * Note to translators:  The message indicates that XSLTC failed to
          * compile the stylesheet into a translet (class file).
          */
         {ErrorMsg.JAXP_COMPILE_ERR,
-        "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uB97C \uCEF4\uD30C\uC77C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "스타일시트를 컴파일할 수 없습니다."},
 
         /*
          * Note to translators:  "TransformerFactory" is a class name.  In this
@@ -609,17 +609,17 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * translate the term "attribute".
          */
         {ErrorMsg.JAXP_INVALID_ATTR_ERR,
-        "TransformerFactory\uC5D0\uC11C ''{0}'' \uC18D\uC131\uC744 \uC778\uC2DD\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4."},
+        "TransformerFactory에서 ''{0}'' 속성을 인식하지 못했습니다."},
 
         {ErrorMsg.JAXP_INVALID_ATTR_VALUE_ERR,
-        "''{0}'' \uC18D\uC131\uC5D0 \uB300\uD574 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC740 \uAC12\uC774 \uC9C0\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 속성에 대해 올바르지 않은 값이 지정되었습니다."},
 
         /*
          * Note to translators:  "setResult()" and "startDocument()" are Java
          * method names that should not be translated.
          */
         {ErrorMsg.JAXP_SET_RESULT_ERR,
-        "setResult()\uB294 startDocument() \uC55E\uC5D0 \uD638\uCD9C\uB418\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+        "setResult()는 startDocument() 앞에 호출되어야 합니다."},
 
         /*
          * Note to translators:  "Transformer" is a Java interface name that
@@ -629,7 +629,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * met.
          */
         {ErrorMsg.JAXP_NO_TRANSLET_ERR,
-        "Transformer\uC5D0 \uCEA1\uC290\uD654\uB41C translet \uAC1D\uCCB4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "Transformer에 캡슐화된 translet 객체가 없습니다."},
 
         /*
          * Note to translators:  The XML document that results from a
@@ -637,14 +637,14 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * message is produced if that requirement is not met.
          */
         {ErrorMsg.JAXP_NO_HANDLER_ERR,
-        "\uBCC0\uD658 \uACB0\uACFC\uC5D0 \uB300\uD574 \uC815\uC758\uB41C \uCD9C\uB825 \uCC98\uB9AC\uAE30\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "변환 결과에 대해 정의된 출력 처리기가 없습니다."},
 
         /*
          * Note to translators:  "Result" is a Java interface name in this
          * context.  The substitution text is a method name.
          */
         {ErrorMsg.JAXP_NO_RESULT_ERR,
-        "''{0}''(\uC73C)\uB85C \uC804\uB2EC\uB41C Result \uAC1D\uCCB4\uAC00 \uBD80\uC801\uD569\uD569\uB2C8\uB2E4."},
+        "''{0}''(으)로 전달된 Result 객체가 부적합합니다."},
 
         /*
          * Note to translators:  "Transformer" is a Java interface name.  The
@@ -654,7 +654,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * would be best to translate the term "property".
          */
         {ErrorMsg.JAXP_UNKNOWN_PROP_ERR,
-        "\uBD80\uC801\uD569\uD55C Transformer \uC18D\uC131 ''{0}''\uC5D0 \uC561\uC138\uC2A4\uD558\uB824\uACE0 \uC2DC\uB3C4\uD558\uB294 \uC911\uC785\uB2C8\uB2E4."},
+        "부적합한 Transformer 속성 ''{0}''에 액세스하려고 시도하는 중입니다."},
 
         /*
          * Note to translators:  SAX2DOM is the name of a Java class that should
@@ -662,28 +662,28 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * DOM object and converts it to something that uses the SAX API.
          */
         {ErrorMsg.SAX2DOM_ADAPTER_ERR,
-        "SAX2DOM \uC5B4\uB311\uD130\uB97C \uC0DD\uC131\uD560 \uC218 \uC5C6\uC74C: ''{0}''."},
+        "SAX2DOM 어댑터를 생성할 수 없음: ''{0}''."},
 
         /*
          * Note to translators:  "XSLTCSource.build()" is a Java method name.
          * "systemId" is an XML term that is short for "system identification".
          */
         {ErrorMsg.XSLTC_SOURCE_ERR,
-        "systemId\uB97C \uC124\uC815\uD558\uC9C0 \uC54A\uC740 \uC0C1\uD0DC\uB85C XSLTCSource.build()\uAC00 \uD638\uCD9C\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "systemId를 설정하지 않은 상태로 XSLTCSource.build()가 호출되었습니다."},
 
         { ErrorMsg.ER_RESULT_NULL,
-            "\uACB0\uACFC\uB294 \uB110\uC774 \uC544\uB2C8\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+            "결과는 널이 아니어야 합니다."},
 
         /*
          * Note to translators:  This message indicates that the value argument
          * of setParameter must be a valid Java Object.
          */
         {ErrorMsg.JAXP_INVALID_SET_PARAM_VALUE,
-        "{0} \uB9E4\uAC1C\uBCC0\uC218\uC758 \uAC12\uC740 \uC801\uD569\uD55C Java \uAC1D\uCCB4\uC5EC\uC57C \uD569\uB2C8\uB2E4."},
+        "{0} 매개변수의 값은 적합한 Java 객체여야 합니다."},
 
 
         {ErrorMsg.COMPILE_STDIN_ERR,
-        "-i \uC635\uC158\uC740 -o \uC635\uC158\uACFC \uD568\uAED8 \uC0AC\uC6A9\uD574\uC57C \uD569\uB2C8\uB2E4."},
+        "-i 옵션은 -o 옵션과 함께 사용해야 합니다."},
 
 
         /*
@@ -696,7 +696,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * documentation.
          */
         {ErrorMsg.COMPILE_USAGE_STR,
-        "\uC0AC\uC6A9\uBC95\n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Compile [-o <output>]\n      [-d <directory>] [-j <jarfile>] [-p <package>]\n      [-n] [-x] [-u] [-v] [-h] { <stylesheet> | -i }\n\n\uC635\uC158\n   -o <output>    \uC0DD\uC131\uB41C translet\uC5D0 <output> \uC774\uB984\uC744\n                  \uC9C0\uC815\uD569\uB2C8\uB2E4. \uAE30\uBCF8\uC801\uC73C\uB85C translet \uC774\uB984\uC740\n                  <stylesheet> \uC774\uB984\uC5D0\uC11C \uD30C\uC0DD\uB429\uB2C8\uB2E4. \uC5EC\uB7EC \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uB97C\n                  \uCEF4\uD30C\uC77C\uD558\uB294 \uACBD\uC6B0 \uC774 \uC635\uC158\uC740 \uBB34\uC2DC\uB429\uB2C8\uB2E4.\n   -d <directory> translet\uC5D0 \uB300\uD55C \uB300\uC0C1 \uB514\uB809\uD1A0\uB9AC\uB97C \uC9C0\uC815\uD569\uB2C8\uB2E4.\n   -j <jarfile>   translet \uD074\uB798\uC2A4\uB97C <jarfile>\uC774\uB77C\uB294 \uC774\uB984\uC774 \uC9C0\uC815\uB41C jar \uD30C\uC77C\uC5D0\n                  \uD328\uD0A4\uC9C0\uD654\uD569\uB2C8\uB2E4.\n   -p <package>   \uC0DD\uC131\uB41C \uBAA8\uB4E0 translet \uD074\uB798\uC2A4\uC5D0 \uB300\uD574 \uD328\uD0A4\uC9C0 \uC774\uB984 \uC811\uB450\uC5B4\uB97C\n                  \uC9C0\uC815\uD569\uB2C8\uB2E4.\n   -n             \uD15C\uD50C\uB9AC\uD2B8 \uC778\uB77C\uC778\uC744 \uC0AC\uC6A9\uC73C\uB85C \uC124\uC815\uD569\uB2C8\uB2E4. \uC77C\uBC18\uC801\uC73C\uB85C \uAE30\uBCF8 \uB3D9\uC791\uC744\n                  \uC0AC\uC6A9\uD558\uB294 \uAC83\uC774 \uC88B\uC2B5\uB2C8\uB2E4.\n   -x             \uCD94\uAC00 \uB514\uBC84\uAE45 \uBA54\uC2DC\uC9C0 \uCD9C\uB825\uC744 \uC124\uC815\uD569\uB2C8\uB2E4.\n   -u             <stylesheet> \uC778\uC218\uB97C URL\uB85C \uD574\uC11D\uD569\uB2C8\uB2E4.\n   -i             \uCEF4\uD30C\uC77C\uB7EC\uAC00 stdin\uC5D0\uC11C \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uB97C \uAC15\uC81C\uB85C \uC77D\uB3C4\uB85D \uD569\uB2C8\uB2E4.\n   -v             \uCEF4\uD30C\uC77C\uB7EC\uC758 \uBC84\uC804\uC744 \uC778\uC1C4\uD569\uB2C8\uB2E4.\n   -h             \uC774 \uC0AC\uC6A9\uBC95 \uC9C0\uCE68\uC744 \uC778\uC1C4\uD569\uB2C8\uB2E4.\n"},
+        "사용법\n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Compile [-o <output>]\n      [-d <directory>] [-j <jarfile>] [-p <package>]\n      [-n] [-x] [-u] [-v] [-h] { <stylesheet> | -i }\n\n옵션\n   -o <output>    생성된 translet에 <output> 이름을\n                  지정합니다. 기본적으로 translet 이름은\n                  <stylesheet> 이름에서 파생됩니다. 여러 스타일시트를\n                  컴파일하는 경우 이 옵션은 무시됩니다.\n   -d <directory> translet에 대한 대상 디렉토리를 지정합니다.\n   -j <jarfile>   translet 클래스를 <jarfile>이라는 이름이 지정된 jar 파일에\n                  패키지화합니다.\n   -p <package>   생성된 모든 translet 클래스에 대해 패키지 이름 접두어를\n                  지정합니다.\n   -n             템플리트 인라인을 사용으로 설정합니다. 일반적으로 기본 동작을\n                  사용하는 것이 좋습니다.\n   -x             추가 디버깅 메시지 출력을 설정합니다.\n   -u             <stylesheet> 인수를 URL로 해석합니다.\n   -i             컴파일러가 stdin에서 스타일시트를 강제로 읽도록 합니다.\n   -v             컴파일러의 버전을 인쇄합니다.\n   -h             이 사용법 지침을 인쇄합니다.\n"},
 
         /*
          * Note to translators:  This message contains usage information for a
@@ -708,7 +708,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * documentation.
          */
         {ErrorMsg.TRANSFORM_USAGE_STR,
-        "\uC0AC\uC6A9\uBC95 \n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Transform [-j <jarfile>]\n      [-x] [-n <iterations>] {-u <document_url> | <document>}\n      <class> [<param1>=<value1> ...]\n\n   translet <class>\uB97C \uC0AC\uC6A9\uD558\uC5EC <document>\uB85C \uC9C0\uC815\uB41C XML \uBB38\uC11C\uB97C \n   \uBCC0\uD658\uD569\uB2C8\uB2E4. translet <class>\uB294 \n   \uC0AC\uC6A9\uC790\uC758 CLASSPATH \uB610\uB294 \uC120\uD0DD\uC801\uC73C\uB85C \uC9C0\uC815\uB41C <jarfile>\uC5D0 \uC788\uC2B5\uB2C8\uB2E4.\n\uC635\uC158\n   -j <jarfile>    translet\uC744 \uB85C\uB4DC\uD574 \uC62C jarfile\uC744 \uC9C0\uC815\uD569\uB2C8\uB2E4.\n   -x              \uCD94\uAC00 \uB514\uBC84\uAE45 \uBA54\uC2DC\uC9C0 \uCD9C\uB825\uC744 \uC124\uC815\uD569\uB2C8\uB2E4.\n   -n <iterations> \uBCC0\uD658\uC744 <iterations>\uD68C \uC2E4\uD589\uD558\uACE0\n                   \uD504\uB85C\uD30C\uC77C \uC791\uC131 \uC815\uBCF4\uB97C \uD45C\uC2DC\uD569\uB2C8\uB2E4.\n   -u <document_url> XML \uC785\uB825 \uBB38\uC11C\uB97C URL\uB85C \uC9C0\uC815\uD569\uB2C8\uB2E4.\n"},
+        "사용법 \n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Transform [-j <jarfile>]\n      [-x] [-n <iterations>] {-u <document_url> | <document>}\n      <class> [<param1>=<value1> ...]\n\n   translet <class>를 사용하여 <document>로 지정된 XML 문서를 \n   변환합니다. translet <class>는 \n   사용자의 CLASSPATH 또는 선택적으로 지정된 <jarfile>에 있습니다.\n옵션\n   -j <jarfile>    translet을 로드해 올 jarfile을 지정합니다.\n   -x              추가 디버깅 메시지 출력을 설정합니다.\n   -n <iterations> 변환을 <iterations>회 실행하고\n                   프로파일 작성 정보를 표시합니다.\n   -u <document_url> XML 입력 문서를 URL로 지정합니다.\n"},
 
 
 
@@ -719,7 +719,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * one of the other kinds of elements mentioned.
          */
         {ErrorMsg.STRAY_SORT_ERR,
-        "<xsl:sort>\uB294 <xsl:for-each> \uB610\uB294 <xsl:apply-templates>\uC5D0\uC11C\uB9CC \uC0AC\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."},
+        "<xsl:sort>는 <xsl:for-each> 또는 <xsl:apply-templates>에서만 사용할 수 있습니다."},
 
         /*
          * Note to translators:  The message indicates that the encoding
@@ -728,14 +728,14 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * the program.
          */
         {ErrorMsg.UNSUPPORTED_ENCODING,
-        "\uC774 JVM\uC5D0\uC11C\uB294 \uCD9C\uB825 \uC778\uCF54\uB529 ''{0}''\uC774(\uAC00) \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "이 JVM에서는 출력 인코딩 ''{0}''이(가) 지원되지 않습니다."},
 
         /*
          * Note to translators:  The message indicates that the XPath expression
          * named in the substitution text was not well formed syntactically.
          */
         {ErrorMsg.SYNTAX_ERR,
-        "''{0}''\uC5D0 \uAD6C\uBB38 \uC624\uB958\uAC00 \uC788\uC2B5\uB2C8\uB2E4."},
+        "''{0}''에 구문 오류가 있습니다."},
 
         /*
          * Note to translators:  The substitution text is the name of a Java
@@ -744,7 +744,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * class.
          */
         {ErrorMsg.CONSTRUCTOR_NOT_FOUND,
-        "\uC678\uBD80 constructor ''{0}''\uC744(\uB97C) \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "외부 constructor ''{0}''을(를) 찾을 수 없습니다."},
 
         /*
          * Note to translators:  "static" is the Java keyword.  The substitution
@@ -752,7 +752,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * is not of the required type.
          */
         {ErrorMsg.NO_JAVA_FUNCT_THIS_REF,
-        "\uBE44static Java \uD568\uC218 ''{0}''\uC5D0 \uB300\uD55C \uCCAB\uBC88\uC9F8 \uC778\uC218\uB294 \uC801\uD569\uD55C \uAC1D\uCCB4 \uCC38\uC870\uAC00 \uC544\uB2D9\uB2C8\uB2E4."},
+        "비static Java 함수 ''{0}''에 대한 첫번째 인수는 적합한 객체 참조가 아닙니다."},
 
         /*
          * Note to translators:  An XPath expression was not of the type
@@ -760,7 +760,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * expression that was in error.
          */
         {ErrorMsg.TYPE_CHECK_ERR,
-        "''{0}'' \uD45C\uD604\uC2DD\uC758 \uC720\uD615\uC744 \uD655\uC778\uD558\uB294 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
+        "''{0}'' 표현식의 유형을 확인하는 중 오류가 발생했습니다."},
 
         /*
          * Note to translators:  An XPath expression was not of the type
@@ -768,21 +768,21 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * problematic expression is unknown.
          */
         {ErrorMsg.TYPE_CHECK_UNK_LOC_ERR,
-        "\uC54C \uC218 \uC5C6\uB294 \uC704\uCE58\uC5D0\uC11C \uD45C\uD604\uC2DD\uC758 \uC720\uD615\uC744 \uD655\uC778\uD558\uB294 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
+        "알 수 없는 위치에서 표현식의 유형을 확인하는 중 오류가 발생했습니다."},
 
         /*
          * Note to translators:  The substitution text is the name of a command-
          * line option that was not recognized.
          */
         {ErrorMsg.ILLEGAL_CMDLINE_OPTION_ERR,
-        "\uBA85\uB839\uD589 \uC635\uC158 ''{0}''\uC774(\uAC00) \uBD80\uC801\uD569\uD569\uB2C8\uB2E4."},
+        "명령행 옵션 ''{0}''이(가) 부적합합니다."},
 
         /*
          * Note to translators:  The substitution text is the name of a command-
          * line option.
          */
         {ErrorMsg.CMDLINE_OPT_MISSING_ARG_ERR,
-        "\uBA85\uB839\uD589 \uC635\uC158 ''{0}''\uC5D0 \uD544\uC218 \uC778\uC218\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+        "명령행 옵션 ''{0}''에 필수 인수가 누락되었습니다."},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -836,14 +836,14 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * Note to translators:  The substitution text is the name of a class.
          */
         {ErrorMsg.TRANSFORM_WITH_TRANSLET_STR,
-        "translet ''{0}''\uC744(\uB97C) \uC0AC\uC6A9\uD558\uC5EC \uBCC0\uD658\uD558\uC2ED\uC2DC\uC624. "},
+        "translet ''{0}''을(를) 사용하여 변환하십시오. "},
 
         /*
          * Note to translators:  The first substitution is the name of a class,
          * while the second substitution is the name of a jar file.
          */
         {ErrorMsg.TRANSFORM_WITH_JAR_STR,
-        "jar \uD30C\uC77C ''{1}''\uC758 translet ''{0}''\uC744(\uB97C) \uC0AC\uC6A9\uD558\uC5EC \uBCC0\uD658\uD558\uC2ED\uC2DC\uC624."},
+        "jar 파일 ''{1}''의 translet ''{0}''을(를) 사용하여 변환하십시오."},
 
         /*
          * Note to translators:  "TransformerFactory" is the name of a Java
@@ -851,7 +851,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * the name of the class that could not be instantiated.
          */
         {ErrorMsg.COULD_NOT_CREATE_TRANS_FACT,
-        "TransformerFactory \uD074\uB798\uC2A4 ''{0}''\uC758 \uC778\uC2A4\uD134\uC2A4\uB97C \uC0DD\uC131\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "TransformerFactory 클래스 ''{0}''의 인스턴스를 생성할 수 없습니다."},
 
         /*
          * Note to translators:  This message is produced when the user
@@ -861,7 +861,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * specifies the name the processor used instead.
          */
         {ErrorMsg.TRANSLET_NAME_JAVA_CONFLICT,
-         "''{0}'' \uC774\uB984\uC5D0\uB294 Java \uD074\uB798\uC2A4 \uC774\uB984\uC5D0 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uB294 \uBB38\uC790\uAC00 \uD3EC\uD568\uB418\uC5B4 \uC788\uC5B4 \uC774 \uC774\uB984\uC744 translet \uD074\uB798\uC2A4\uC758 \uC774\uB984\uC73C\uB85C \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB300\uC2E0 ''{1}'' \uC774\uB984\uC774 \uC0AC\uC6A9\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+         "''{0}'' 이름에는 Java 클래스 이름에 허용되지 않는 문자가 포함되어 있어 이 이름을 translet 클래스의 이름으로 사용할 수 없습니다. 대신 ''{1}'' 이름이 사용되었습니다."},
 
         /*
          * Note to translators:  The following message is used as a header.
@@ -869,7 +869,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * this message.
          */
         {ErrorMsg.COMPILER_ERROR_KEY,
-        "\uCEF4\uD30C\uC77C\uB7EC \uC624\uB958:"},
+        "컴파일러 오류:"},
 
         /*
          * Note to translators:  The following message is used as a header.
@@ -877,7 +877,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * beneath this message.
          */
         {ErrorMsg.COMPILER_WARNING_KEY,
-        "\uCEF4\uD30C\uC77C\uB7EC \uACBD\uACE0:"},
+        "컴파일러 경고:"},
 
         /*
          * Note to translators:  The following message is used as a header.
@@ -887,7 +887,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * stylesheet (see above).
          */
         {ErrorMsg.RUNTIME_ERROR_KEY,
-        "Translet \uC624\uB958:"},
+        "Translet 오류:"},
 
         /*
          * Note to translators:  An attribute whose value is constrained to
@@ -896,7 +896,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {ErrorMsg.INVALID_QNAME_ERR,
-        "\uAC12\uC774 QName \uB610\uB294 \uACF5\uBC31\uC73C\uB85C \uAD6C\uBD84\uB41C QName \uBAA9\uB85D\uC774\uC5B4\uC57C \uD558\uB294 \uC18D\uC131\uC758 \uAC12\uC774 ''{0}''\uC785\uB2C8\uB2E4."},
+        "값이 QName 또는 공백으로 구분된 QName 목록이어야 하는 속성의 값이 ''{0}''입니다."},
 
         /*
          * Note to translators:  An attribute whose value is required to
@@ -905,7 +905,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {ErrorMsg.INVALID_NCNAME_ERR,
-        "\uAC12\uC774 NCName\uC774\uC5B4\uC57C \uD558\uB294 \uC18D\uC131\uC758 \uAC12\uC774 ''{0}''\uC785\uB2C8\uB2E4."},
+        "값이 NCName이어야 하는 속성의 값이 ''{0}''입니다."},
 
         /*
          * Note to translators:  An attribute with an incorrect value was
@@ -918,19 +918,19 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * attribute.
          */
         {ErrorMsg.INVALID_METHOD_IN_OUTPUT,
-        "<xsl:output> \uC694\uC18C\uC5D0 \uB300\uD55C method \uC18D\uC131\uC758 \uAC12\uC774 ''{0}''\uC785\uB2C8\uB2E4. \uAC12\uC740 ''xml'', ''html'', ''text'' \uB610\uB294 qname-but-not-ncname \uC911 \uD558\uB098\uC5EC\uC57C \uD569\uB2C8\uB2E4."},
+        "<xsl:output> 요소에 대한 method 속성의 값이 ''{0}''입니다. 값은 ''xml'', ''html'', ''text'' 또는 qname-but-not-ncname 중 하나여야 합니다."},
 
         {ErrorMsg.JAXP_GET_FEATURE_NULL_NAME,
-        "\uAE30\uB2A5 \uC774\uB984\uC740 TransformerFactory.getFeature(\uBB38\uC790\uC5F4 \uC774\uB984)\uC5D0\uC11C \uB110\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "기능 이름은 TransformerFactory.getFeature(문자열 이름)에서 널일 수 없습니다."},
 
         {ErrorMsg.JAXP_SET_FEATURE_NULL_NAME,
-        "\uAE30\uB2A5 \uC774\uB984\uC740 TransformerFactory.setFeature(\uBB38\uC790\uC5F4 \uC774\uB984, \uBD80\uC6B8 \uAC12)\uC5D0\uC11C \uB110\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "기능 이름은 TransformerFactory.setFeature(문자열 이름, 부울 값)에서 널일 수 없습니다."},
 
         {ErrorMsg.JAXP_UNSUPPORTED_FEATURE,
-        "\uC774 TransformerFactory\uC5D0\uC11C ''{0}'' \uAE30\uB2A5\uC744 \uC124\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "이 TransformerFactory에서 ''{0}'' 기능을 설정할 수 없습니다."},
 
         {ErrorMsg.JAXP_SECUREPROCESSING_FEATURE,
-        "FEATURE_SECURE_PROCESSING: \uBCF4\uC548 \uAD00\uB9AC\uC790\uAC00 \uC788\uC744 \uACBD\uC6B0 \uAE30\uB2A5\uC744 false\uB85C \uC124\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "FEATURE_SECURE_PROCESSING: 보안 관리자가 있을 경우 기능을 false로 설정할 수 없습니다."},
 
         /*
          * Note to translators:  This message describes an internal error in the
@@ -940,7 +940,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * technical term internal to XSLTC and should not be translated.
          */
         {ErrorMsg.OUTLINE_ERR_TRY_CATCH,
-         "\uB0B4\uBD80 XSLTC \uC624\uB958: \uC0DD\uC131\uB41C \uBC14\uC774\uD2B8 \uCF54\uB4DC\uAC00 try-catch-finally \uBE14\uB85D\uC744 \uD3EC\uD568\uD558\uBBC0\uB85C outlined \uCC98\uB9AC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+         "내부 XSLTC 오류: 생성된 바이트 코드가 try-catch-finally 블록을 포함하므로 outlined 처리할 수 없습니다."},
 
         /*
          * Note to translators:  This message describes an internal error in the
@@ -953,7 +953,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * pair must also be between that same enclosing pair.
          */
         {ErrorMsg.OUTLINE_ERR_UNBALANCED_MARKERS,
-         "\uB0B4\uBD80 XSLTC \uC624\uB958: OutlineableChunkStart \uBC0F OutlineableChunkEnd \uD45C\uC2DC\uC790\uC758 \uC9DD\uC774 \uB9DE\uC544\uC57C \uD558\uACE0 \uC62C\uBC14\uB974\uAC8C \uC911\uCCA9\uB418\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+         "내부 XSLTC 오류: OutlineableChunkStart 및 OutlineableChunkEnd 표시자의 짝이 맞아야 하고 올바르게 중첩되어야 합니다."},
 
         /*
          * Note to translators:  This message describes an internal error in the
@@ -966,7 +966,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          * should not be translated.
          */
         {ErrorMsg.OUTLINE_ERR_DELETED_TARGET,
-         "\uB0B4\uBD80 XSLTC \uC624\uB958: outlined \uCC98\uB9AC\uB41C \uBC14\uC774\uD2B8 \uCF54\uB4DC \uBE14\uB85D\uC5D0 \uC18D\uD55C \uBA85\uB839\uC774 \uC5EC\uC804\uD788 \uC6D0\uB798 \uBA54\uC18C\uB4DC\uC5D0\uC11C \uCC38\uC870\uB429\uB2C8\uB2E4."
+         "내부 XSLTC 오류: outlined 처리된 바이트 코드 블록에 속한 명령이 여전히 원래 메소드에서 참조됩니다."
         },
 
 
@@ -977,7 +977,7 @@ public class ErrorMessages_ko extends ListResourceBundle {
          *
          */
         {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
-         "\uB0B4\uBD80 XSLTC \uC624\uB958: translet\uC758 \uBA54\uC18C\uB4DC\uAC00 Java Virtual Machine\uC758 \uBA54\uC18C\uB4DC \uAE38\uC774 \uC81C\uD55C\uC778 64KB\uB97C \uCD08\uACFC\uD569\uB2C8\uB2E4. \uB300\uAC1C \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uC758 \uD15C\uD50C\uB9AC\uD2B8\uAC00 \uB9E4\uC6B0 \uD06C\uAE30 \uB54C\uBB38\uC5D0 \uBC1C\uC0DD\uD569\uB2C8\uB2E4. \uB354 \uC791\uC740 \uD15C\uD50C\uB9AC\uD2B8\uB97C \uC0AC\uC6A9\uD558\uB3C4\uB85D \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uB97C \uC7AC\uAD6C\uC131\uD574 \uBCF4\uC2ED\uC2DC\uC624."
+         "내부 XSLTC 오류: translet의 메소드가 Java Virtual Machine의 메소드 길이 제한인 64KB를 초과합니다. 대개 스타일시트의 템플리트가 매우 크기 때문에 발생합니다. 더 작은 템플리트를 사용하도록 스타일시트를 재구성해 보십시오."
         },
 
     };

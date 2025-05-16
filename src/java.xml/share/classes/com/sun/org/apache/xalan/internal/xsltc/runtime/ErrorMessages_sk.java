@@ -90,14 +90,14 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * is a class name.  Used for internal errors in the processor.
          */
         {BasisLibrary.RUN_TIME_INTERNAL_ERR,
-        "Intern\u00e1 chyba \u010dasu spustenia v ''{0}''"},
+        "Interná chyba času spustenia v ''{0}''"},
 
         /*
          * Note to translators:  <xsl:copy> is a keyword that should not be
          * translated.
          */
         {BasisLibrary.RUN_TIME_COPY_ERR,
-        "Chyba \u010dasu spustenia pri sp\u00fa\u0161\u0165an\u00ed <xsl:copy>."},
+        "Chyba času spustenia pri spúšťaní <xsl:copy>."},
 
         /*
          * Note to translators:  The substitution text refers to data types.
@@ -106,7 +106,7 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * {0}.
          */
         {BasisLibrary.DATA_CONVERSION_ERR,
-        "Neplatn\u00e1 konverzia z ''{0}'' na ''{1}''."},
+        "Neplatná konverzia z ''{0}'' na ''{1}''."},
 
         /*
          * Note to translators:  This message is displayed if the function named
@@ -114,7 +114,7 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * is the acronym naming the product.
          */
         {BasisLibrary.EXTERNAL_FUNC_ERR,
-        "XSLTC nepodporuje extern\u00fa funkciu ''{0}''."},
+        "XSLTC nepodporuje externú funkciu ''{0}''."},
 
         /*
          * Note to translators:  This message is displayed if two values are
@@ -122,7 +122,7 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * unknown.
          */
         {BasisLibrary.EQUALITY_EXPR_ERR,
-        "Nezn\u00e1my typ argumentu je v\u00fdrazom rovnosti."},
+        "Neznámy typ argumentu je výrazom rovnosti."},
 
         /*
          * Note to translators:  The substitution text for {0} will be a data
@@ -131,7 +131,7 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * permitted for a call to this function.
          */
         {BasisLibrary.INVALID_ARGUMENT_ERR,
-        "Neplatn\u00fd typ argumentu ''{0}'' vo volan\u00ed do ''{1}''"},
+        "Neplatný typ argumentu ''{0}'' vo volaní do ''{1}''"},
 
         /*
          * Note to translators:  There is way of specifying a format for a
@@ -139,7 +139,7 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * particular value using the specified pattern.
          */
         {BasisLibrary.FORMAT_NUMBER_ERR,
-        "Pokus o form\u00e1tovanie \u010d\u00edsla ''{0}'' pomocou vzoru ''{1}''."},
+        "Pokus o formátovanie čísla ''{0}'' pomocou vzoru ''{1}''."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -147,7 +147,7 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * iterator.  (See definition of iterator above.)
          */
         {BasisLibrary.ITERATOR_CLONE_ERR,
-        "Nie je mo\u017en\u00e9 klonova\u0165 iter\u00e1tor ''{0}''."},
+        "Nie je možné klonovať iterátor ''{0}''."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -156,7 +156,7 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * support.
          */
         {BasisLibrary.AXIS_SUPPORT_ERR,
-        "Iter\u00e1tor pre os ''{0}'' nie je podporovan\u00fd."},
+        "Iterátor pre os ''{0}'' nie je podporovaný."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -165,7 +165,7 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * support.
          */
         {BasisLibrary.TYPED_AXIS_SUPPORT_ERR,
-        "Iter\u00e1tor pre nap\u00edsan\u00fa os ''{0}'' nie je podporovan\u00fd."},
+        "Iterátor pre napísanú os ''{0}'' nie je podporovaný."},
 
         /*
          * Note to translators:  This message is reported if the stylesheet
@@ -174,7 +174,7 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * specifies the name of the attribute.
          */
         {BasisLibrary.STRAY_ATTRIBUTE_ERR,
-        "Atrib\u00fat ''{0}'' je mimo elementu."},
+        "Atribút ''{0}'' je mimo elementu."},
 
         /*
          * Note to translators:  As with the preceding message, a namespace
@@ -184,7 +184,7 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * namespace declaration.
          */
         {BasisLibrary.STRAY_NAMESPACE_ERR,
-        "Deklar\u00e1cia n\u00e1zvov\u00e9ho priestoru ''{0}''=''{1}'' je mimo elementu."},
+        "Deklarácia názvového priestoru ''{0}''=''{1}'' je mimo elementu."},
 
         /*
          * Note to translators:  The stylesheet contained a reference to a
@@ -192,14 +192,14 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * text is the name of the prefix.
          */
         {BasisLibrary.NAMESPACE_PREFIX_ERR,
-        "N\u00e1zvov\u00fd priestor pre predponu ''{0}'' nebol deklarovan\u00fd."},
+        "Názvový priestor pre predponu ''{0}'' nebol deklarovaný."},
 
         /*
          * Note to translators:  The following represents an internal error.
          * DOMAdapter is a Java class in XSLTC.
          */
         {BasisLibrary.DOM_ADAPTER_INIT_ERR,
-        "DOMAdapter bol vytvoren\u00fd pomocou nespr\u00e1vneho typu zdrojov\u00e9ho DOM."},
+        "DOMAdapter bol vytvorený pomocou nesprávneho typu zdrojového DOM."},
 
         /*
          * Note to translators:  The following message indicates that the XML
@@ -208,7 +208,7 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * DTD.
          */
         {BasisLibrary.PARSER_DTD_SUPPORT_ERR,
-        "Analyz\u00e1tor SAX, ktor\u00fd pou\u017e\u00edvate, nesprac\u00fava udalosti deklar\u00e1cie DTD."},
+        "Analyzátor SAX, ktorý používate, nespracúva udalosti deklarácie DTD."},
 
         /*
          * Note to translators:  The following message indicates that the XML
@@ -217,14 +217,14 @@ public class ErrorMessages_sk extends ListResourceBundle {
          * declarations.
          */
         {BasisLibrary.NAMESPACES_SUPPORT_ERR,
-        "Analyz\u00e1tor SAX, ktor\u00fd pou\u017e\u00edvate, nem\u00e1 podporu pre n\u00e1zvov\u00e9 priestory XML."},
+        "Analyzátor SAX, ktorý používate, nemá podporu pre názvové priestory XML."},
 
         /*
          * Note to translators:  The substitution text is the URI that was in
          * error.
          */
         {BasisLibrary.CANT_RESOLVE_RELATIVE_URI_ERR,
-        "Nebolo mo\u017en\u00e9 rozl\u00ed\u0161i\u0165 referenciu URI ''{0}''."}
+        "Nebolo možné rozlíšiť referenciu URI ''{0}''."}
     };
 
     }
