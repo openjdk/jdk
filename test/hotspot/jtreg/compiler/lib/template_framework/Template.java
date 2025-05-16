@@ -223,7 +223,7 @@ public sealed interface Template permits Template.ZeroArgs,
         }
 
         /**
-         * Renders the {@link Template} to {@link String}.
+         * Renders the {@link Template} to a {@link String}.
          *
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
@@ -267,7 +267,7 @@ public sealed interface Template permits Template.ZeroArgs,
         }
 
         /**
-         * Renders the {@link Template} to {@link String}.
+         * Renders the {@link Template} to a {@link String}.
          *
          * @param a The value for the first argument.
          * @return The {@link String}, resulting from rendering the {@link Template}.
@@ -277,7 +277,7 @@ public sealed interface Template permits Template.ZeroArgs,
         }
 
         /**
-         * Renders the {@link Template} to {@link String}.
+         * Renders the {@link Template} to a {@link String}.
          *
          * @param a The value for the first argument.
          * @param fuel The amount of fuel provided for recursive Template instantiations.
@@ -316,7 +316,7 @@ public sealed interface Template permits Template.ZeroArgs,
         }
 
         /**
-         * Renders the {@link Template} to {@link String}.
+         * Renders the {@link Template} to a {@link String}.
          *
          * @param a The value for the first argument.
          * @param b The value for the second argument.
@@ -327,7 +327,7 @@ public sealed interface Template permits Template.ZeroArgs,
         }
 
         /**
-         * Renders the {@link Template} to {@link String}.
+         * Renders the {@link Template} to a {@link String}.
          *
          * @param a The value for the first argument.
          * @param b The value for the second argument.
@@ -392,7 +392,7 @@ public sealed interface Template permits Template.ZeroArgs,
         }
 
         /**
-         * Renders the {@link Template} to {@link String}.
+         * Renders the {@link Template} to a {@link String}.
          *
          * @param a The value for the first argument.
          * @param b The value for the second argument.
@@ -404,7 +404,7 @@ public sealed interface Template permits Template.ZeroArgs,
         }
 
         /**
-         * Renders the {@link Template} to {@link String}.
+         * Renders the {@link Template} to a {@link String}.
          *
          * @param a The value for the first argument.
          * @param b The value for the second argument.
