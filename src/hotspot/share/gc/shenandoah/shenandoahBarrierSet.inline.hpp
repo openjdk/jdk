@@ -66,15 +66,16 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
   shenandoah_assert_in_cset(load_addr, obj);
 
   oop fwd = resolve_forwarded_not_null_mutator(obj);
+  if (obj->is_self_forwarded()) {
+    assert(resolve_forwarded_not_null(obj) == obj, "This doesn't resolve self forwarded pointers");
+    return obj;
+  }
+
   if (obj == fwd) {
     assert(_heap->is_evacuation_in_progress() || _heap->heap_region_containing(obj)->has_evacuation_failures(), "evac should be in progress");
-    if (_heap->should_evacuate_object(obj)) {
-      Thread* const t = Thread::current();
-      ShenandoahEvacOOMScope scope(t);
-      fwd = _heap->evacuate_object(obj, t);
-    } else {
-      return ShenandoahForwarding::try_forward_to_self(obj);
-    }
+    Thread* const t = Thread::current();
+    ShenandoahEvacOOMScope scope(t);
+    fwd = _heap->evacuate_object(obj, t);
   }
 
   if (load_addr != nullptr && fwd != obj) {
@@ -99,14 +100,9 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
 
     oop fwd = resolve_forwarded_not_null(obj);
     if (obj == fwd && _heap->is_evacuation_in_progress()) {
-      // TODO: Move this decision into shHeap::evacuate
-      if (_heap->should_evacuate_object(obj)) {
-        Thread* t = Thread::current();
-        ShenandoahEvacOOMScope oom_evac_scope(t);
-        return _heap->evacuate_object(obj, t);
-      } else {
-        return ShenandoahForwarding::try_forward_to_self(obj);
-      }
+      Thread* t = Thread::current();
+      ShenandoahEvacOOMScope oom_evac_scope(t);
+      return _heap->evacuate_object(obj, t);
     }
     return fwd;
   }

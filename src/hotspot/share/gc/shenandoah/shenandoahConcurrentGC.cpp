@@ -881,6 +881,10 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
       }
     } else if (_evac_in_progress && _heap->in_collection_set(obj)) {
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      if (resolved->is_self_forwarded()) {
+        return;
+      }
+
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, _thread);
       }

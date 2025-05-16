@@ -1304,13 +1304,15 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  // TODO: We don't want GC threads to evacuate objects in regions that have evacuation failures.
-  // TODO: The LRB does this for mutators, we should do the same for GC threads.
   ShenandoahHeapRegion* r = heap_region_containing(p);
-  assert(!r->is_humongous(), "never evacuate humongous objects");
+  if (_has_self_forwarded_objects && r->has_evacuation_failures()) {
+    // We don't want GC threads to evacuate objects in regions that have evacuation failures. We'd
+    // rather have them concentrate on regions that still have a chance of being completely evacuated.
+    return ShenandoahForwarding::try_forward_to_self(p);
+  }
 
-  ShenandoahAffiliation target_gen = r->affiliation();
-  return try_evacuate_object(p, thread, r, target_gen);
+  assert(!r->is_humongous(), "never evacuate humongous objects");
+  return try_evacuate_object(p, thread, r, YOUNG_GENERATION);
 }
 
 oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region,
@@ -1350,12 +1352,15 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     // that they may succeed evacuating other regions - this region is already failed).
     //
     // We still indicate that this region contains objects that were not evacuated.
-    ShenandoahHeapRegion* r = heap_region_containing(p);
-    r->set_has_evacuation_failures(true);
+    from_region->set_has_evacuation_failures(true);
     _has_self_forwarded_objects = true;
-    log_debug(gc)("Could not evacuate " PTR_FORMAT " from region: %zu", p2i(p), r->index());
+    log_debug(gc)("Could not evacuate " PTR_FORMAT " from region: %zu", p2i(p), from_region->index());
     return ShenandoahForwarding::try_forward_to_self(p);
   }
+
+//  if (ZapUnusedHeapArea) {
+//    assert(*copy == (HeapWord)0xBAADBABEBAADBABE, "Evacuting into used memory!?");
+//  }
 
   // Copy the object:
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
@@ -1378,11 +1383,15 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
       // For LAB allocations, it is enough to rollback the allocation ptr. Either the next
       // object will overwrite this stale copy, or the filler object on LAB retirement will
       // do this.
+      // if (ZapUnusedHeapArea) {
+      //  SpaceMangler::mangle_region(MemRegion(copy, size));
+      // }
       ShenandoahThreadLocalData::gclab(thread)->undo_allocation(copy, size);
     } else {
       // For non-LAB allocations, we have no way to retract the allocation, and
       // have to explicitly overwrite the copy with the filler object. With that overwrite,
       // we have to keep the fwdptr initialized and pointing to our (stale) copy.
+      // What fwdptr? we failed to update the header in the from-space object?
       assert(size >= ShenandoahHeap::min_fill_size(), "previously allocated object known to be larger than min_size");
       fill_with_object(copy, size);
       shenandoah_assert_correct(nullptr, copy_val);

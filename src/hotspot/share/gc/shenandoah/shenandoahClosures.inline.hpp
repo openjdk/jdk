@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_INLINE_HPP
 
+#include "shenandoahBarrierSet.hpp"
+#include "shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahClosures.hpp"
 
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -157,6 +159,10 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      if (resolved->is_self_forwarded()) {
+        return;
+      }
+
       if (resolved == obj) {
         Thread* thr = STABLE_THREAD ? _thread : Thread::current();
         assert(thr == Thread::current(), "Wrong thread");
