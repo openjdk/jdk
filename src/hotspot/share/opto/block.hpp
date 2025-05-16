@@ -48,7 +48,7 @@ struct Tarjan;
 // allocation I do not need a destructor to reclaim storage.
 class Block_Array : public ArenaObj {
   uint _size;                   // allocated size, as opposed to formal limit
-  debug_only(uint _limit;)      // limit to formal domain
+  DEBUG_ONLY(uint _limit;)      // limit to formal domain
   Arena *_arena;                // Arena to allocate in
   ReallocMark _nesting;         // Safety checks for arena reallocation
 protected:
@@ -57,7 +57,7 @@ protected:
 
 public:
   Block_Array(Arena *a) : _size(OptoBlockListSize), _arena(a) {
-    debug_only(_limit=0);
+    DEBUG_ONLY(_limit=0);
     _blocks = NEW_ARENA_ARRAY( a, Block *, OptoBlockListSize );
     for( int i = 0; i < OptoBlockListSize; i++ ) {
       _blocks[i] = nullptr;
@@ -69,7 +69,7 @@ public:
   { assert( i < Max(), "oob" ); return _blocks[i]; }
   // Extend the mapping: index i maps to Block *n.
   void map( uint i, Block *n ) { grow(i); _blocks[i] = n; }
-  uint Max() const { debug_only(return _limit); return _size; }
+  uint Max() const { DEBUG_ONLY(return _limit); return _size; }
 };
 
 
@@ -210,7 +210,7 @@ public:
   uint _freg_pressure;
   uint _fhrp_index;
 
-  // Mark and visited bits for an LCA calculation in insert_anti_dependences.
+  // Mark and visited bits for an LCA calculation in raise_above_anti_dependences.
   // Since they hold unique node indexes, they do not need reinitialization.
   node_idx_t _raise_LCA_mark;
   void    set_raise_LCA_mark(node_idx_t x)    { _raise_LCA_mark = x; }
@@ -487,10 +487,10 @@ class PhaseCFG : public Phase {
   // Used when building the CFG and creating end nodes for blocks.
   MachNode* _goto;
 
-  Block* insert_anti_dependences(Block* LCA, Node* load, bool verify = false);
+  Block* raise_above_anti_dependences(Block* LCA, Node* load, bool verify = false);
   void verify_anti_dependences(Block* LCA, Node* load) const {
     assert(LCA == get_block_for_node(load), "should already be scheduled");
-    const_cast<PhaseCFG*>(this)->insert_anti_dependences(LCA, load, true);
+    const_cast<PhaseCFG*>(this)->raise_above_anti_dependences(LCA, load, true);
   }
 
   bool move_to_next(Block* bx, uint b_index);

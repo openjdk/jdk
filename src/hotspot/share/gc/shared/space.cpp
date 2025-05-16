@@ -76,10 +76,11 @@ void ContiguousSpace::mangle_unused_area(MemRegion mr) {
 
 #endif  // NOT_PRODUCT
 
-void ContiguousSpace::print() const { print_on(tty); }
+void ContiguousSpace::print() const { print_on(tty, ""); }
 
-void ContiguousSpace::print_on(outputStream* st) const {
-  st->print_cr(" space %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+void ContiguousSpace::print_on(outputStream* st, const char* prefix) const {
+  st->print_cr("%sspace %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               prefix,
                capacity() / K, (int) ((double) used() * 100 / capacity()),
                p2i(bottom()), p2i(top()), p2i(end()));
 }

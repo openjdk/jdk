@@ -491,7 +491,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       if (n->needs_anti_dependence_check() &&
           n->in(LoadNode::Memory) == best->in(StoreNode::Memory)) {
         // Found anti-dependent load
-        insert_anti_dependences(block, n);
+        raise_above_anti_dependences(block, n);
         if (C->failing()) {
           return;
         }
@@ -1363,7 +1363,7 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
       sb->insert_node(clone, 1);
       map_node_to_block(clone, sb);
       if (clone->needs_anti_dependence_check()) {
-        insert_anti_dependences(sb, clone);
+        raise_above_anti_dependences(sb, clone);
         if (C->failing()) {
           return;
         }

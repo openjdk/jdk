@@ -267,7 +267,6 @@ class CompileBroker: AllStatic {
                                           const methodHandle& method,
                                           int                 osr_bci,
                                           int                 comp_level,
-                                          const methodHandle& hot_method,
                                           int                 hot_count,
                                           CompileTask::CompileReason compile_reason,
                                           bool                blocking);
@@ -288,7 +287,6 @@ class CompileBroker: AllStatic {
   static void compile_method_base(const methodHandle& method,
                                   int osr_bci,
                                   int comp_level,
-                                  const methodHandle& hot_method,
                                   int hot_count,
                                   CompileTask::CompileReason compile_reason,
                                   bool blocking,
@@ -322,7 +320,6 @@ public:
   static nmethod* compile_method(const methodHandle& method,
                                  int osr_bci,
                                  int comp_level,
-                                 const methodHandle& hot_method,
                                  int hot_count,
                                  CompileTask::CompileReason compile_reason,
                                  TRAPS);
@@ -333,7 +330,6 @@ private:
   static nmethod* compile_method(const methodHandle& method,
                                    int osr_bci,
                                    int comp_level,
-                                   const methodHandle& hot_method,
                                    int hot_count,
                                    CompileTask::CompileReason compile_reason,
                                    DirectiveSet* directive,

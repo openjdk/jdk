@@ -26,6 +26,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/javaClasses.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compilationFailureInfo.hpp"
@@ -474,7 +475,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_late_inlines(         &_string_late_inlines, useful);
   remove_useless_late_inlines(         &_boxing_late_inlines, useful);
   remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
-  debug_only(verify_graph_edges(true /*check for no_dead_code*/, root_and_safepoints);)
+  DEBUG_ONLY(verify_graph_edges(true /*check for no_dead_code*/, root_and_safepoints);)
 }
 
 // ============================================================================
@@ -630,6 +631,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _ilt(nullptr),
       _stub_function(nullptr),
       _stub_name(nullptr),
+      _stub_id(-1),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
@@ -899,6 +901,7 @@ Compile::Compile(ciEnv* ci_env,
                  TypeFunc_generator generator,
                  address stub_function,
                  const char* stub_name,
+                 int stub_id,
                  int is_fancy_jump,
                  bool pass_tls,
                  bool return_pc,
@@ -910,6 +913,7 @@ Compile::Compile(ciEnv* ci_env,
       _entry_bci(InvocationEntryBci),
       _stub_function(stub_function),
       _stub_name(stub_name),
+      _stub_id(stub_id),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
@@ -960,6 +964,16 @@ Compile::Compile(ciEnv* ci_env,
 #endif
       _allowed_reasons(0) {
   C = this;
+
+  // try to reuse an existing stub
+  {
+    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, _stub_id, stub_name);
+    if (blob != nullptr) {
+      RuntimeStub* rs = blob->as_runtime_stub();
+      _stub_entry_point = rs->entry_point();
+      return;
+    }
+  }
 
   TraceTime t1(nullptr, &_t_totalCompilation, CITime, false);
   TraceTime t2(nullptr, &_t_stubCompilation, CITime, false);
@@ -5205,32 +5219,39 @@ IdealGraphPrinter* Compile::_debug_network_printer = nullptr;
 
 // Called from debugger. Prints method to the default file with the default phase name.
 // This works regardless of any Ideal Graph Visualizer flags set or not.
-void igv_print() {
-  Compile::current()->igv_print_method_to_file();
+// Use in debugger (gdb/rr): p igv_print($sp, $fp, $pc).
+void igv_print(void* sp, void* fp, void* pc) {
+  frame fr(sp, fp, pc);
+  Compile::current()->igv_print_method_to_file(nullptr, false, &fr);
 }
 
 // Same as igv_print() above but with a specified phase name.
-void igv_print(const char* phase_name) {
-  Compile::current()->igv_print_method_to_file(phase_name);
+void igv_print(const char* phase_name, void* sp, void* fp, void* pc) {
+  frame fr(sp, fp, pc);
+  Compile::current()->igv_print_method_to_file(phase_name, false, &fr);
 }
 
 // Called from debugger. Prints method with the default phase name to the default network or the one specified with
 // the network flags for the Ideal Graph Visualizer, or to the default file depending on the 'network' argument.
 // This works regardless of any Ideal Graph Visualizer flags set or not.
-void igv_print(bool network) {
+// Use in debugger (gdb/rr): p igv_print(true, $sp, $fp, $pc).
+void igv_print(bool network, void* sp, void* fp, void* pc) {
+  frame fr(sp, fp, pc);
   if (network) {
-    Compile::current()->igv_print_method_to_network();
+    Compile::current()->igv_print_method_to_network(nullptr, &fr);
   } else {
-    Compile::current()->igv_print_method_to_file();
+    Compile::current()->igv_print_method_to_file(nullptr, false, &fr);
   }
 }
 
-// Same as igv_print(bool network) above but with a specified phase name.
-void igv_print(bool network, const char* phase_name) {
+// Same as igv_print(bool network, ...) above but with a specified phase name.
+// Use in debugger (gdb/rr): p igv_print(true, "MyPhase", $sp, $fp, $pc).
+void igv_print(bool network, const char* phase_name, void* sp, void* fp, void* pc) {
+  frame fr(sp, fp, pc);
   if (network) {
-    Compile::current()->igv_print_method_to_network(phase_name);
+    Compile::current()->igv_print_method_to_network(phase_name, &fr);
   } else {
-    Compile::current()->igv_print_method_to_file(phase_name);
+    Compile::current()->igv_print_method_to_file(phase_name, false, &fr);
   }
 }
 
@@ -5242,16 +5263,20 @@ void igv_print_default() {
 // Called from debugger, especially when replaying a trace in which the program state cannot be altered like with rr replay.
 // A method is appended to an existing default file with the default phase name. This means that igv_append() must follow
 // an earlier igv_print(*) call which sets up the file. This works regardless of any Ideal Graph Visualizer flags set or not.
-void igv_append() {
-  Compile::current()->igv_print_method_to_file("Debug", true);
+// Use in debugger (gdb/rr): p igv_append($sp, $fp, $pc).
+void igv_append(void* sp, void* fp, void* pc) {
+  frame fr(sp, fp, pc);
+  Compile::current()->igv_print_method_to_file(nullptr, true, &fr);
 }
 
-// Same as igv_append() above but with a specified phase name.
-void igv_append(const char* phase_name) {
-  Compile::current()->igv_print_method_to_file(phase_name, true);
+// Same as igv_append(...) above but with a specified phase name.
+// Use in debugger (gdb/rr): p igv_append("MyPhase", $sp, $fp, $pc).
+void igv_append(const char* phase_name, void* sp, void* fp, void* pc) {
+  frame fr(sp, fp, pc);
+  Compile::current()->igv_print_method_to_file(phase_name, true, &fr);
 }
 
-void Compile::igv_print_method_to_file(const char* phase_name, bool append) {
+void Compile::igv_print_method_to_file(const char* phase_name, bool append, const frame* fr) {
   const char* file_name = "custom_debug.xml";
   if (_debug_file_printer == nullptr) {
     _debug_file_printer = new IdealGraphPrinter(C, file_name, append);
@@ -5259,23 +5284,23 @@ void Compile::igv_print_method_to_file(const char* phase_name, bool append) {
     _debug_file_printer->update_compiled_method(C->method());
   }
   tty->print_cr("Method %s to %s", append ? "appended" : "printed", file_name);
-  _debug_file_printer->print_graph(phase_name);
+  _debug_file_printer->print_graph(phase_name, fr);
 }
 
-void Compile::igv_print_method_to_network(const char* phase_name) {
+void Compile::igv_print_method_to_network(const char* phase_name, const frame* fr) {
   ResourceMark rm;
   GrowableArray<const Node*> empty_list;
-  igv_print_graph_to_network(phase_name, empty_list);
+  igv_print_graph_to_network(phase_name, empty_list, fr);
 }
 
-void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes) {
+void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, const frame* fr) {
   if (_debug_network_printer == nullptr) {
     _debug_network_printer = new IdealGraphPrinter(C);
   } else {
     _debug_network_printer->update_compiled_method(C->method());
   }
   tty->print_cr("Method printed over network stream to IGV");
-  _debug_network_printer->print(name, C->root(), visible_nodes);
+  _debug_network_printer->print(name, C->root(), visible_nodes, fr);
 }
 #endif
 

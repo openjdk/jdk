@@ -86,7 +86,7 @@ abstract public class CDSAppTester {
     }
 
     public enum RunMode {
-        TRAINING,       // -XX:DumpLoadedClassList OR {-XX:AOTMode=create -XX:AOTConfiguration}
+        TRAINING,       // -XX:DumpLoadedClassList OR {-XX:AOTMode=record -XX:AOTConfiguration}
         DUMP_STATIC,    // -Xshare:dump
         DUMP_DYNAMIC,   // -XX:ArchiveClassesArExit
         ASSEMBLY,       // JEP 483 (assembly phase, app logic not executed)
@@ -347,7 +347,7 @@ abstract public class CDSAppTester {
         return executeAndCheck(cmdLine, runMode, dynamicArchiveFile, dynamicArchiveFileLog);
     }
 
-    private OutputAnalyzer productionRun() throws Exception {
+    public OutputAnalyzer productionRun() throws Exception {
         return productionRun(null, null);
     }
 
@@ -430,5 +430,12 @@ abstract public class CDSAppTester {
         recordAOTConfiguration();
         createAOTCache();
         productionRun();
+    }
+
+    // See JEP 483; stop at the assembly run; do not execute production run
+    public void runAOTAssemblyWorkflow() throws Exception {
+        this.workflow = Workflow.AOT;
+        recordAOTConfiguration();
+        createAOTCache();
     }
 }
