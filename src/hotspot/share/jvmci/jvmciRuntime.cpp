@@ -720,7 +720,7 @@ JRT_END
 JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *libjvmciOrHotspotEnv, jclass c))
   JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
   if (!EnableJVMCI) {
-    JVMCI_THROW_MSG_NULL(InternalError, "JVMCI is not enabled");
+    JVMCI_THROW_MSG_NULL(InternalError, JVMCI_NOT_ENABLED_ERROR_MESSAGE);
   }
   JVMCIENV->runtime()->initialize_HotSpotJVMCIRuntime(JVMCI_CHECK_NULL);
   JVMCIObject runtime = JVMCIENV->runtime()->get_HotSpotJVMCIRuntime(JVMCI_CHECK_NULL);
@@ -732,7 +732,7 @@ JVM_END
 JVM_ENTRY_NO_ENV(jlong, JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets_handle))
   JVMCIENV_FROM_JNI(thread, env);
   if (!EnableJVMCI) {
-    JVMCI_THROW_MSG_0(InternalError, "JVMCI is not enabled");
+    JVMCI_THROW_MSG_0(InternalError, JVMCI_NOT_ENABLED_ERROR_MESSAGE);
   }
   JVMCIPrimitiveArray offsets = JVMCIENV->wrap(offsets_handle);
   JVMCIENV->put_int_at(offsets, 0, SystemProperty::next_offset_in_bytes());
@@ -1515,7 +1515,7 @@ JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *libjvmciOrHotspotEnv, jc
   JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
 
   if (!EnableJVMCI) {
-    JVMCI_THROW_MSG(InternalError, "JVMCI is not enabled");
+    JVMCI_THROW_MSG(InternalError, JVMCI_NOT_ENABLED_ERROR_MESSAGE);
   }
 
   JVMCIENV->runtime()->initialize(JVMCIENV);

@@ -45,7 +45,12 @@ class fileStream;
                     constraint)                                             \
                                                                             \
   product(bool, EnableJVMCI, false, EXPERIMENTAL,                           \
-          "Enable JVMCI. Defaults to true if UseJVMCICompiler is true.")    \
+          "Enable JVMCI support in the VM. "                                \
+          "Defaults to true if UseJVMCICompiler is true or "                \
+          "--add-modules=jdk.internal.vm.ci was specified. "                \
+          "If explicity set to true on the command line OR defaulted to "   \
+          "true by UseJVMCICompiler and libjvmci is not enabled, the "      \
+          "behavior --add-modules=jdk.internal.vm.ci is triggered.")        \
                                                                             \
   product(bool, UseGraalJIT, false, EXPERIMENTAL,                           \
           "Select the Graal JVMCI compiler. This is an alias for: "         \
