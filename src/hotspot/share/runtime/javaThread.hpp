@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -216,7 +216,6 @@ class JavaThread: public Thread {
   enum SuspendFlags {
     // NOTE: avoid using the sign-bit as cc generates different test code
     //       when the sign-bit is used, and sometimes incorrectly - see CR 6398077
-    _trace_flag             = 0x00000004U, // call tracing backend
     _obj_deopt              = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
   };
 
@@ -227,11 +226,8 @@ class JavaThread: public Thread {
   inline void clear_suspend_flag(SuspendFlags f);
 
  public:
-  inline void set_trace_flag();
-  inline void clear_trace_flag();
   inline void set_obj_deopt_flag();
   inline void clear_obj_deopt_flag();
-  bool is_trace_suspend()      { return (_suspend_flags & _trace_flag) != 0; }
   bool is_obj_deopt_suspend()  { return (_suspend_flags & _obj_deopt) != 0; }
 
   // Asynchronous exception support
@@ -599,8 +595,13 @@ private:
   bool has_last_Java_frame() const               { return _anchor.has_last_Java_frame(); }
   intptr_t* last_Java_sp() const                 { return _anchor.last_Java_sp(); }
 
-  // last_Java_pc
+  // last Java fp
+  intptr_t* last_Java_fp() const                 { return _anchor.last_Java_fp(); }
 
+  // This is used by JFR when sampling interpreter frames.
+  JFR_ONLY(intptr_t* sender_Java_fp() const      { return _anchor.last_sender_Java_fp(); })
+
+  // last_Java_pc
   address last_Java_pc(void)                     { return _anchor.last_Java_pc(); }
 
   // Safepoint support
@@ -751,7 +752,7 @@ private:
   // Support for object deoptimization and JFR suspension
   void handle_special_runtime_exit_condition();
   bool has_special_runtime_exit_condition() {
-    return (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
+    return (_suspend_flags & _obj_deopt) != 0;
   }
 
   // Stack-locking support (not for LM_LIGHTWEIGHT)

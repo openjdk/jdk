@@ -70,6 +70,9 @@
 #if INCLUDE_ZGC
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #endif
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 #include <type_traits>
 
@@ -608,6 +611,7 @@ void FreezeBase::unwind_frames() {
   ContinuationEntry* entry = _cont.entry();
   entry->flush_stack_processing(_thread);
   assert_frames_in_continuation_are_safe(_thread);
+  JFR_ONLY(Jfr::check_and_process_sample_request(_thread);)
   assert(LockingMode != LM_LEGACY || !monitors_on_stack(_thread), "unexpected monitors on stack");
   set_anchor_to_entry(_thread, entry);
 }
