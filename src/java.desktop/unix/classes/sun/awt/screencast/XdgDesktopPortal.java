@@ -50,8 +50,12 @@ public class XdgDesktopPortal {
 
         String defaultMethod = METHOD_X11;
         if (isOnWayland) {
-            Integer gnomeShellVersion = ((UNIXToolkit) Toolkit.getDefaultToolkit())
-                    .getGnomeShellMajorVersion();
+            Integer gnomeShellVersion = null;
+
+            UNIXToolkit toolkit = (UNIXToolkit) Toolkit.getDefaultToolkit();
+            if ("gnome".equals(toolkit.getDesktop())) {
+                gnomeShellVersion = toolkit.getGnomeShellMajorVersion();
+            }
 
             defaultMethod = (gnomeShellVersion != null && gnomeShellVersion >= 47)
                     ? METHOD_REMOTE_DESKTOP
