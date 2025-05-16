@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -617,11 +617,14 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         glib_version_2_68 = !fp_glib_check_version(2, 68, 0);
         if (glib_version_2_68) {
+            // those function are called only by Screencast / Remote desktop
             fp_g_string_replace = dl_symbol("g_string_replace"); //since: 2.68
             fp_g_uuid_string_is_valid = //since: 2.52
                     dl_symbol("g_uuid_string_is_valid");
+            fp_g_variant_print = dl_symbol("g_variant_print"); // since 2.24
         }
         fp_g_string_printf = dl_symbol("g_string_printf");
+        fp_g_strconcat = dl_symbol("g_strconcat");
 
         fp_g_error_free = dl_symbol("g_error_free");
         fp_g_unix_fd_list_get = dl_symbol("g_unix_fd_list_get");
@@ -3102,6 +3105,7 @@ static void gtk3_init(GtkApi* gtk) {
     gtk->g_variant_new_string = fp_g_variant_new_string;
     gtk->g_variant_new_boolean = fp_g_variant_new_boolean;
     gtk->g_variant_new_uint32 = fp_g_variant_new_uint32;
+    gtk->g_variant_print = fp_g_variant_print;
 
     gtk->g_variant_get = fp_g_variant_get;
     gtk->g_variant_get_string = fp_g_variant_get_string;
@@ -3126,6 +3130,7 @@ static void gtk3_init(GtkApi* gtk) {
     gtk->g_string_free = fp_g_string_free;
     gtk->g_string_replace = fp_g_string_replace;
     gtk->g_string_printf = fp_g_string_printf;
+    gtk->g_strconcat = fp_g_strconcat;
     gtk->g_uuid_string_is_valid = fp_g_uuid_string_is_valid;
 
     gtk->g_main_context_iteration = fp_g_main_context_iteration;
