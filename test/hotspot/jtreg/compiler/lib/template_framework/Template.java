@@ -450,7 +450,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param body The {@link TemplateBody} created by {@link Template#body}.
      * @param <A> Type of the (first) argument.
      * @param arg0Name The name of the (first) argument for hashtag replacement.
-     * @return An {@link Template} with one argument.
+     * @return A {@link Template} with one argument.
      */
     static <A> Template.OneArgs<A> make(String arg0Name, Function<A, TemplateBody> body) {
         return new Template.OneArgs<>(arg0Name, body);
@@ -669,7 +669,7 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Weight the {@link Name}s for the specified {@link Name.Type}.
+     * Weigh the {@link Name}s for the specified {@link Name.Type}.
      *
      * @param type The type of the names to weigh.
      * @param onlyMutable Determines if we weigh the mutable names or all.

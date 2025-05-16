@@ -139,7 +139,7 @@ public class TestTutorial {
             // looks awkward, given all the additional quotes and commands required.
             // Optimal would have been Java String Templates, but since those do not
             // currently exist, we use hashtag replacements. These can be either
-            // defined by capturing arguments as string names, or by a "let" definition,
+            // defined by capturing arguments as string names, or by using a "let" definition,
             // see further down for examples. Which one should be preferred is a code
             // style question. Generally, we prefer the use of hashtag replacements
             // because that allows easy use of multiline strings (i.e. text blocks).
