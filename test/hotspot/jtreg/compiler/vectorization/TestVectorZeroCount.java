@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 8349637
+ * @requires vm.compiler2.enabled
  * @summary Ensure that vectorization of numberOfLeadingZeros and numberOfTrailingZeros outputs correct values
  * @library /test/lib /
  * @run main/othervm compiler.vectorization.TestVectorZeroCount
