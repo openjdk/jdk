@@ -47,7 +47,7 @@
 // =============================================
 //
 // A subset of the original CDS logs (the "CDS Compatibility Logs") have been
-// selected in JDK 25. These logs are guarded using the aot_log_xxx compatibility
+// chosen in JDK 25. These logs are guarded using the aot_log_xxx compatibility
 // macros. Before JDK 25, such code looked like this:
 //
 //      log_info(cds)("trying to map %s%s", info, _full_path);
@@ -76,10 +76,12 @@
 // Rules on selection and printing
 //
 // [1] When using AOT cache
-//     - These logs can be selected ONLY with -Xlog:aot. They are always printed with [aot] decoration
+//     - These logs are selected via the aot tag, and not the cds tag.
+//       They are always printed with [aot] decoration
 //
 // [2] When using CDS archives
-//     - These logs can be selected ONLY with -Xlog:cds. They are always printed with [cds] decoration
+//     - These logs are selected via the cds tag, and not the aot tag.
+//       They are always printed with [cds] decoration
 //
 // Deprecation Process
 // ===================
