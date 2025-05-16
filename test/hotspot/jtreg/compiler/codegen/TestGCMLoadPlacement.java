@@ -27,6 +27,7 @@ package compiler.codegen;
  * @test
  * @bug 8333393
  * @summary Test that loads are not scheduled too late.
+ * @requires vm.compiler2.enabled
  * @run main/othervm -XX:CompileCommand=compileonly,*Test*::test
  *                   -XX:-TieredCompilation -Xbatch
  *                   -XX:PerMethodTrapLimit=0

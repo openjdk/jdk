@@ -26,6 +26,7 @@
  * @bug 8289748
  * @summary SIGFPE caused by C2 IdealLoopTree::do_remove_empty_loop
  * @key stress randomness
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM
  *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestRemoveEmptyCountedLoop::test*

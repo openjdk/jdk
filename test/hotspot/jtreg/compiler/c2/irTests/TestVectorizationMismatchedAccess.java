@@ -37,6 +37,7 @@ import java.nio.ByteOrder;
  * @bug 8300258
  * @key randomness
  * @summary C2: vectorization fails on simple ByteBuffer loop
+ * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox

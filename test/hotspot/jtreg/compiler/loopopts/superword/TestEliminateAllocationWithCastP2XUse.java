@@ -27,6 +27,7 @@ package compiler.loopopts.superword;
  * @test
  * @bug 8342498
  * @summary Test SuperWord, when it aligns to field-store, and the corresponding allocation is eliminated.
+ * @requires vm.compiler2.enabled
  * @run driver compiler.loopopts.superword.TestEliminateAllocationWithCastP2XUse
  * @run main/othervm -Xbatch
  *                   -XX:-SplitIfBlocks -XX:LoopMaxUnroll=8
