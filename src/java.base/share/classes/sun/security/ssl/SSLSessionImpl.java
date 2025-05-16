@@ -1495,11 +1495,11 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     /*
-     * deriveKey is used for switching between Keys/Data.  Will redo
-     * if we ever introduce additional types.
+     * keyAlg is used for switching between Keys/Data.  If keyAlg is
+     * non-null, we are producing a Key, otherwise data.
      */
     public Object exportKeyingMaterial(
-            boolean deriveKey, String label, byte[] context, int length)
+            String keyAlg, String label, byte[] context, int length)
             throws SSLKeyException {
 
         // Global preconditions
@@ -1580,7 +1580,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                     md = MessageDigest.getInstance(hashAlg.toString());
                     emptyHash = md.digest();
                 } catch (NoSuchAlgorithmException nsae) {
-                    throw new RuntimeException(
+                    throw new ProviderException(
                             "Hash algorithm " + cipherSuite.hashAlg.name +
                                     " is not available", nsae);
                 }
@@ -1611,8 +1611,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                             hash, length);
 
                     // ...now the final expand.
-                    return (deriveKey ?
-                            hkdf.deriveKey("TlsExporterKeyingMaterial",
+                    return ((keyAlg != null) ?
+                            hkdf.deriveKey(keyAlg,
                                     HKDFParameterSpec.expandOnly(derivedSecret,
                                             hkdfInfo, length)) :
                             hkdf.deriveData(
@@ -1699,12 +1699,21 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             try {
                 @SuppressWarnings("deprecation")
                 TlsPrfParameterSpec spec = new TlsPrfParameterSpec(
-                        masterSecret, label, seed, length,
+                        masterSecret, keyAlg, label, seed, length,
                         hashAlg.name, hashAlg.hashLength, hashAlg.blockSize);
                 KeyGenerator kg = KeyGenerator.getInstance(prfAlg);
                 kg.init(spec);
                 SecretKey key = kg.generateKey();
-                return (deriveKey ? key : key.getEncoded());
+                if (keyAlg != null) {
+                    return key;
+                } else {
+                    byte[] b = key.getEncoded();
+                    if (b == null) {
+                        throw new UnsupportedOperationException(
+                                "Could not extract encoding from SecretKey");
+                    }
+                    return b;
+                }
             } catch (NoSuchAlgorithmException |
                      InvalidAlgorithmParameterException e) {
                 throw new SSLKeyException("Could not generate Exporter/PRF", e);
@@ -1723,9 +1732,17 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * algorithms defined in RFCs 5705/8446.
      */
     @Override
-    public SecretKey exportKeyingMaterialKey(
+    public SecretKey exportKeyingMaterialKey(String keyAlg,
             String label, byte[] context, int length) throws SSLKeyException {
-        return (SecretKey)exportKeyingMaterial(true, label, context, length);
+
+        Objects.requireNonNull(keyAlg, "keyAlg can not be null");
+        if (keyAlg.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "keyAlg is empty");
+        }
+
+        return (SecretKey) exportKeyingMaterial(keyAlg, label, context,
+                length);
     }
 
     /**
@@ -1735,7 +1752,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     @Override
     public byte[] exportKeyingMaterialData(
             String label, byte[] context, int length) throws SSLKeyException {
-        return (byte[])exportKeyingMaterial(false, label, context, length);
+        return (byte[])exportKeyingMaterial(null, label, context, length);
     }
 
     /** Returns a string representation of this SSL session */

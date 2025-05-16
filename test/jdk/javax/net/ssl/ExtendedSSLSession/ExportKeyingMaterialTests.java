@@ -250,8 +250,10 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
         // non-extractable keys if .equals() doesn't work.
 
         // Inputs exactly equal.
-        clientKey = clientSession.exportKeyingMaterialKey("hello", bytes, 128);
-        serverKey = serverSession.exportKeyingMaterialKey("hello", bytes, 128);
+        clientKey = clientSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", bytes, 128);
+        serverKey = serverSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", bytes, 128);
         assertEquals(clientKey, serverKey,
                 "Key: Equal inputs but exporters are not equal");
         log("Key: Equal inputs test passed");
@@ -265,10 +267,10 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
         log("Data: Equal inputs test passed");
 
         // Different labels, now use exportKeyingMaterialData() for coverage
-        clientKey = clientSession.exportKeyingMaterialKey("hello",
-                bytes, 128);
-        serverKey = serverSession.exportKeyingMaterialKey("goodbye",
-                bytes, 128);
+        clientKey = clientSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", bytes, 128);
+        serverKey = serverSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "goodbye", bytes, 128);
         assertNotEquals(clientKey, serverKey,
                 "Key: Different labels but exporters same");
         log("Key: Different labels test passed");
@@ -282,10 +284,10 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
         log("Data: Different labels test passed");
 
         // Different output sizes
-        clientKey = clientSession.exportKeyingMaterialKey("hello",
-                bytes, 128);
-        serverKey = serverSession.exportKeyingMaterialKey("hello",
-                bytes, 127);
+        clientKey = clientSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", bytes, 128);
+        serverKey = serverSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", bytes, 127);
         assertNotEquals(clientKey, serverKey,
                 "Key: Different output sizes but exporters same");
         log("Key: Different output size test passed");
@@ -301,10 +303,10 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
         log("Data: Different output size test passed");
 
         // Different context values
-        clientKey = clientSession.exportKeyingMaterialKey("hello",
-                bytes, 128);
-        serverKey = serverSession.exportKeyingMaterialKey("hello",
-                bytesDiff, 128);
+        clientKey = clientSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", bytes, 128);
+        serverKey = serverSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", bytesDiff, 128);
         assertNotEquals(clientKey, serverKey,
                 "Key: Different context but exporters same");
         log("Key: Different context test passed");
@@ -318,10 +320,10 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
         log("Data: Different context test passed");
 
         // Different context sizes
-        clientKey = clientSession.exportKeyingMaterialKey("hello",
-                bytes, 128);
-        serverKey = serverSession.exportKeyingMaterialKey("hello",
-                bytesDiffSize, 128);
+        clientKey = clientSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", bytes, 128);
+        serverKey = serverSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", bytesDiffSize, 128);
         assertNotEquals(clientKey, serverKey,
                 "Key: Different context sizes but exporters same");
         log("Key: Different context sizes test passed");
@@ -335,10 +337,10 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
         log("Data: Different context sizes test passed");
 
         // No context, but otherwise the same
-        clientKey = clientSession.exportKeyingMaterialKey("hello",
-                null, 128);
-        serverKey = serverSession.exportKeyingMaterialKey("hello",
-                null, 128);
+        clientKey = clientSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", null, 128);
+        serverKey = serverSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", null, 128);
         assertEquals(clientKey, serverKey,
                 "Key: No context and exporters are not the same");
         log("Key: No context test passed");
@@ -352,10 +354,10 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
         log("Data: No context test passed");
 
         // Smaller key size
-        clientKey = clientSession.exportKeyingMaterialKey("hello",
-                bytes, 1);
-        serverKey = serverSession.exportKeyingMaterialKey("hello",
-                bytes, 1);
+        clientKey = clientSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", bytes, 1);
+        serverKey = serverSession.exportKeyingMaterialKey(
+                "TlsExporterKeyingMaterial", "hello", bytes, 1);
         assertEquals(clientKey, serverKey,
                 "Key: Smaller key size should be the same");
         log("Key: Smaller key size test passed");
@@ -369,6 +371,20 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
         log("Data: Smaller key size test passed");
 
         // Check error conditions
+
+        try {
+            clientSession.exportKeyingMaterialKey(null, "hello", bytes, 32);
+            throw new Exception("null keyAlg accepted");
+        } catch (NullPointerException e) {
+            log("null keyAlg test passed");
+        }
+
+        try {
+            clientSession.exportKeyingMaterialKey("", "hello", bytes, 32);
+            throw new Exception("empty keyAlg accepted");
+        } catch (IllegalArgumentException e) {
+            log("empty keyAlg test passed");
+        }
 
         try {
             clientSession.exportKeyingMaterialData("hello", bytes, -1);

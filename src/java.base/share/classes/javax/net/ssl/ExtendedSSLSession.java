@@ -186,6 +186,12 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * @implSpec The default implementation throws
      *           {@code UnsupportedOperationException}.
      *
+     * @param keyAlg  the algorithm of the resultant {@code SecretKey} object.
+     *                See the SecretKey Algorithms section in the
+     *                <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     *                Java Security Standard Algorithm Names Specification</a>
+     *                for information about standard secret key algorithm
+     *                names.
      * @param label   the label bytes used in the EKM calculation.
      *                {@code label} will be converted to a {@code byte[]}
      *                before the operation begins
@@ -193,10 +199,10 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * @param length  the number of bytes of EKM material needed
      *
      * @throws SSLKeyException if the key cannot be generated
-     * @throws IllegalArgumentException if {@code length} is non-positive,
-     *         or if the {@code label} or {@code context} length can
-     *         not be accommodated
-     * @throws NullPointerException if {@code label} is null
+     * @throws IllegalArgumentException if {@code keyAlg} is empty,
+     *         {@code length} is non-positive, or if the {@code label} or
+     *         {@code context} length can not be accommodated
+     * @throws NullPointerException if {@code keyAlg} or {@code label} is null
      * @throws UnsupportedOperationException if the underlying provider
      *         does not implement the operation
      *
@@ -205,7 +211,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *
      * @since 25
      */
-    public SecretKey exportKeyingMaterialKey(
+    public SecretKey exportKeyingMaterialKey(String keyAlg,
             String label, byte[] context, int length) throws SSLKeyException {
         throw new UnsupportedOperationException();
     }
@@ -224,8 +230,8 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * <P>
      * Depending on the chosen underlying key derivation mechanism, the
      * raw bytes might not be extractable/exportable.  In such cases, the
-     * {@link #exportKeyingMaterialKey(String, byte[], int)} method should be
-     * used instead to access the generated key material.
+     * {@link #exportKeyingMaterialKey(String, String, byte[], int)} method
+     * should be used instead to access the generated key material.
      *
      * @spec https://www.rfc-editor.org/info/rfc5705
      *     RFC 5705: Keying Material Exporters for Transport Layer
@@ -248,11 +254,11 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *         not be accommodated
      * @throws NullPointerException if {@code label} is null
      * @throws UnsupportedOperationException if the underlying provider
-     *         does not implement the operation
+     *         does not implement the operation, or if the derived
+     *         keying material is not extractable
      *
      * @return a byte array of size {@code length} that contains the EKM
-     *         material, or null if the derived key material does not support
-     *         encoding
+     *         material
      * @since 25
      */
     public byte[] exportKeyingMaterialData(

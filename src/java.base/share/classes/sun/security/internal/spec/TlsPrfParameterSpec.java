@@ -45,6 +45,7 @@ import javax.crypto.SecretKey;
 public class TlsPrfParameterSpec implements AlgorithmParameterSpec {
 
     private final SecretKey secret;
+    private final String keyAlg;
     private final String label;
     private final byte[] seed;
     private final int outputLength;
@@ -72,6 +73,33 @@ public class TlsPrfParameterSpec implements AlgorithmParameterSpec {
     public TlsPrfParameterSpec(SecretKey secret, String label,
             byte[] seed, int outputLength,
             String prfHashAlg, int prfHashLength, int prfBlockSize) {
+        this(secret, null, label, seed, outputLength, prfHashAlg,
+                prfHashLength, prfBlockSize);
+    }
+
+    /**
+     * Constructs a new TlsPrfParameterSpec.
+     *
+     * @param secret the secret to use in the calculation (or null)
+     * @param keyAlg the algorithm name that the generated SecretKey should
+     *               have, or null if the default should be used
+     * @param label the label to use in the calculation
+     * @param seed the random seed to use in the calculation
+     * @param outputLength the length in bytes of the output key to be produced
+     * @param prfHashAlg the name of the TLS PRF hash algorithm to use.
+     *        Used only for TLS 1.2+.  TLS1.1 and earlier use a fixed PRF.
+     * @param prfHashLength the output length of the TLS PRF hash algorithm.
+     *        Used only for TLS 1.2+.
+     * @param prfBlockSize the input block size of the TLS PRF hash algorithm.
+     *        Used only for TLS 1.2+.
+     *
+     * @throws NullPointerException if label or seed is null
+     * @throws IllegalArgumentException if outputLength is negative
+     */
+    public TlsPrfParameterSpec(SecretKey secret, String keyAlg,
+            String label, byte[] seed, int outputLength,
+            String prfHashAlg, int prfHashLength, int prfBlockSize) {
+
         if ((label == null) || (seed == null)) {
             throw new NullPointerException("label and seed must not be null");
         }
@@ -79,12 +107,24 @@ public class TlsPrfParameterSpec implements AlgorithmParameterSpec {
             throw new IllegalArgumentException("outputLength must be positive");
         }
         this.secret = secret;
+        this.keyAlg = keyAlg;
         this.label = label;
         this.seed = seed.clone();
         this.outputLength = outputLength;
         this.prfHashAlg = prfHashAlg;
         this.prfHashLength = prfHashLength;
         this.prfBlockSize = prfBlockSize;
+    }
+
+    /**
+     * Returns the key algorithm name to use when generating the SecretKey,
+     * or null if there is no keyAlg.
+     *
+     * @return the key algorithm name, or null if there is no
+     * secret.
+     */
+    public String getKeyAlg() {
+        return keyAlg;
     }
 
     /**
