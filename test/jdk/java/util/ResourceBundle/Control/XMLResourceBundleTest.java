@@ -86,9 +86,9 @@ public class XMLResourceBundleTest {
         rb = ResourceBundle.getBundle("XmlRB", Locale.JAPAN, xmlControl);
         type = rb.getString("type");
         // Expect fullwidth "XML"
-        if (!type.equals("\uff38\uff2d\uff2c")) {
+        if (!type.equals("ＸＭＬ")) {
             throw new RuntimeException("Locale.JAPAN: type: got " + type
-                                       + ", expected \uff38\uff2d\uff2c (fullwidth XML)");
+                                       + ", expected ＸＭＬ (fullwidth XML)");
         }
     }
 

@@ -43,11 +43,11 @@ public class SquareEraCharacterTest {
         return new Object[][] {
 
             // square era character, expected decomposed string
-            {'\u337e',  "\u660e\u6cbb"},    // Meizi
-            {'\u337d',  "\u5927\u6b63"},    // Taisho
-            {'\u337c',  "\u662d\u548c"},    // Showa
-            {'\u337b',  "\u5e73\u6210"},    // Heisei
-            {'\u32ff',  "\u4ee4\u548c"},    // Reiwa
+            {'㍾',  "明治"},    // Meizi
+            {'㍽',  "大正"},    // Taisho
+            {'㍼',  "昭和"},    // Showa
+            {'㍻',  "平成"},    // Heisei
+            {'㋿',  "令和"},    // Reiwa
         };
     }
 

@@ -55,15 +55,15 @@ public final class Basic extends AccessibleBundle {
 
     private static void testStandardResource() {
         test(ALERT.toDisplayString(Locale.ENGLISH), "alert");
-        test(ALERT.toDisplayString(Locale.JAPAN), "\u30a2\u30e9\u30fc\u30c8");
+        test(ALERT.toDisplayString(Locale.JAPAN), "アラート");
         test(LABEL.toDisplayString(Locale.ENGLISH), "label");
-        test(LABEL.toDisplayString(Locale.JAPAN), "\u30e9\u30d9\u30eb");
+        test(LABEL.toDisplayString(Locale.JAPAN), "ラベル");
         test(PANEL.toDisplayString(Locale.ENGLISH), "panel");
-        test(PANEL.toDisplayString(Locale.JAPAN), "\u30D1\u30CD\u30EB");
+        test(PANEL.toDisplayString(Locale.JAPAN), "パネル");
         test(MANAGES_DESCENDANTS.toDisplayString(Locale.ENGLISH),
              "manages descendants");
         test(MANAGES_DESCENDANTS.toDisplayString(Locale.JAPAN),
-             "\u5B50\u5B6B\u3092\u7BA1\u7406");
+             "子孫を管理");
     }
 
     private static void test(final String actual, final String expected) {

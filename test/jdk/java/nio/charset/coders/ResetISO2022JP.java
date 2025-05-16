@@ -39,7 +39,7 @@ public class ResetISO2022JP {
     }
 
     static String encode(boolean reuseEncoder) {
-        String s = "\u3042\u3043\u3044";
+        String s = "あぃい";
 
         CharsetEncoder e = Charset.forName("ISO-2022-JP").newEncoder();
 

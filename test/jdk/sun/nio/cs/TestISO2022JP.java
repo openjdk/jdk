@@ -43,103 +43,103 @@ public class TestISO2022JP {
         "\b\t\n\u000B\f\r" +
         "\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017" +
         "\u0018\u0019\u001A\u001C\u001D\u001E\u001F" +
-        "\u0020\u0021\"\u0023\u0024\u0025\u0026\'" +
-        "\u0028\u0029\u002A\u002B\u002C\u002D\u002E\u002F" +
-        "\u0030\u0031\u0032\u0033\u0034\u0035\u0036\u0037" +
-        "\u0038\u0039\u003A\u003B\u003C\u003D\u003E\u003F" +
-        "\u0040\u0041\u0042\u0043\u0044\u0045\u0046\u0047" +
-        "\u0048\u0049\u004A\u004B\u004C\u004D\u004E\u004F" +
-        "\u0050\u0051\u0052\u0053\u0054\u0055\u0056\u0057" +
-        "\u0058\u0059\u005A\u005B\\\u005D\u005E\u005F" +
-        "\u0060\u0061\u0062\u0063\u0064\u0065\u0066\u0067" +
-        "\u0068\u0069\u006A\u006B\u006C\u006D\u006E\u006F" +
-        "\u0070\u0071\u0072\u0073\u0074\u0075\u0076\u0077" +
-        "\u0078\u0079\u007A\u007B\u007C\u007D\u007E\u00A5\u203E";
+        " !\"#$%&\'" +
+        "()*+,-./" +
+        "01234567" +
+        "89:;<=>?" +
+        "@ABCDEFG" +
+        "HIJKLMNO" +
+        "PQRSTUVW" +
+        "XYZ[\\]^_" +
+        "`abcdefg" +
+        "hijklmno" +
+        "pqrstuvw" +
+        "xyz{|}~¥‾";
 
      // Subset of chars sourced from JISX0208:1983
 
      private final static String JISX0208SUBSET =
-        "u3000\u3001\u3002\uFF0C\uFF0E\u30FB\uFF1A" +
-        "\uFF1B\uFF1F\uFF01\u309B\u309C\u00B4\uFF40\u00A8" +
-        "\uFF3E\uFFE3\uFF3F\u30FD\u30FE\u309D\u309E\u3003" +
-        "\u4EDD\u3005\u3006\u3007\u30FC\u2014\u2010\uFF0F" +
-        "\uFF3C\u301C\u2016\uFF5C\u2026\u2025\u2018\u2019" +
-        "\u5C05\u5C07\u5C08\u5C0D\u5C13\u5C20\u5C22\u5C28" +
-        "\u5C38\u5C39\u5C41\u5C46\u5C4E\u5C53\u5C50\u5C4F" +
-        "\u5B71\u5C6C\u5C6E\u4E62\u5C76\u5C79\u5C8C\u5C91" +
-        "\u5C94\u599B\u5CAB\u5CBB\u5CB6\u5CBC\u5CB7\u5CC5" +
-        "\u5CBE\u5CC7\u5CD9\u5CE9\u5CFD\u5CFA\u5CED\u5D8C" +
-        "\u5CEA\u5D0B\u5D15\u5D17\u5D5C\u5D1F\u5D1B\u5D11" +
-        "\u5D14\u5D22\u5D1A\u5D19\u5D18\u5D4C\u5D52\u5D4E" +
-        "\u5D4B\u5D6C\u5D73\u5D76\u5D87\u5D84\u5D82\u5DA2" +
-        "\u5D9D\u5DAC\u5DAE\u5DBD\u5D90\u5DB7\u5DBC\u5DC9" +
-        "\u5DCD\u5DD3\u5DD2\u5DD6\u5DDB\u5DEB\u5DF2\u5DF5" +
-        "\u5E0B\u5E1A\u5E19\u5E11\u5E1B\u5E36\u5E37\u5E44" +
-        "\u5E43\u5E40\u5E4E\u5E57\u5E54\u5E5F\u5E62\u5E64" +
-        "\u5E47\u5E75\u5E76\u5E7A\u9EBC\u5E7F\u5EA0\u5EC1" +
-        "\u5EC2\u5EC8\u5ED0\u5ECF\u5ED6\u5EE3\u5EDD\u5EDA" +
-        "\u5EDB\u5EE2\u5EE1\u5EE8\u5EE9\u5EEC\u5EF1\u5EF3" +
-        "\u5EF0\u5EF4\u5EF8\u5EFE\u5F03\u5F09\u5F5D\u5F5C" +
-        "\u5F0B\u5F11\u5F16\u5F29\u5F2D\u5F38\u5F41\u5F48" +
-        "\u5F4C\u5F4E\u5F2F\u5F51\u5F56\u5F57\u5F59\u5F61" +
-        "\u5F6D\u5F73\u5F77\u5F83\u5F82\u5F7F\u5F8A\u5F88" +
-        "\u5F91\u5F87\u5F9E\u5F99\u5F98\u5FA0\u5FA8\u5FAD" +
-        "\u5FBC\u5FD6\u5FFB\u5FE4\u5FF8\u5FF1\u5FDD\u60B3" +
-        "\u5FFF\u6021\u6060\u6019\u6010\u6029\u600E\u6031" +
-        "\u62EE\u62F1\u6327\u6302\u6308\u62EF\u62F5\u6350" +
-        "\u633E\u634D\u641C\u634F\u6396\u638E\u6380\u63AB" +
-        "\u6376\u63A3\u638F\u6389\u639F\u63B5\u636B\u6369" +
-        "\u63BE\u63E9\u63C0\u63C6\u63E3\u63C9\u63D2\u63F6" +
-        "\u63C4\u6416\u6434\u6406\u6413\u6426\u6436\u651D" +
-        "\u6417\u6428\u640F\u6467\u646F\u6476\u644E\u652A" +
-        "\u6495\u6493\u64A5\u64A9\u6488\u64BC\u64DA\u64D2" +
-        "\u64C5\u64C7\u64BB\u64D8\u64C2\u64F1\u64E7\u8209" +
-        "\u64E0\u64E1\u62AC\u64E3\u64EF\u652C\u64F6\u64F4" +
-        "\u64F2\u64FA\u6500\u64FD\u6518\u651C\u6505\u6524" +
-        "\u6523\u652B\u6534\u6535\u6537\u6536\u6538\u754B" +
-        "\u6741\u6738\u6737\u6746\u675E\u6760\u6759\u6763" +
-        "\u6764\u6789\u6770\u67A9\u677C\u676A\u678C\u678B" +
-        "\u67A6\u67A1\u6785\u67B7\u67EF\u67B4\u67EC\u67B3" +
-        "\u67E9\u67B8\u67E4\u67DE\u67DD\u67E2\u67EE\u67B9" +
-        "\u67CE\u67C6\u67E7\u6A9C\u681E\u6846\u6829\u6840" +
-        "\u684D\u6832\u684E\u68B3\u682B\u6859\u6863\u6877" +
-        "\u687F\u689F\u688F\u68AD\u6894\u689D\u689B\u6883" +
-        "\u6AAE\u68B9\u6874\u68B5\u68A0\u68BA\u690F\u688D" +
-        "\u687E\u6901\u68CA\u6908\u68D8\u6922\u6926\u68E1" +
-        "\u690C\u68CD\u68D4\u68E7\u68D5\u6936\u6912\u6904" +
-        "\u68D7\u68E3\u6925\u68F9\u68E0\u68EF\u6928\u692A" +
-        "\u691A\u6923\u6921\u68C6\u6979\u6977\u695C\u6978" +
-        "\u6CD7\u6CC5\u6CDD\u6CAE\u6CB1\u6CBE\u6CBA\u6CDB" +
-        "\u6CEF\u6CD9\u6CEA\u6D1F\u884D\u6D36\u6D2B\u6D3D" +
-        "\u6D38\u6D19\u6D35\u6D33\u6D12\u6D0C\u6D63\u6D93" +
-        "\u6D64\u6D5A\u6D79\u6D59\u6D8E\u6D95\u6FE4\u6D85" +
-        "\u6DF9\u6E15\u6E0A\u6DB5\u6DC7\u6DE6\u6DB8\u6DC6" +
-        "\u6DEC\u6DDE\u6DCC\u6DE8\u6DD2\u6DC5\u6DFA\u6DD9" +
-        "\u724B\u7258\u7274\u727E\u7282\u7281\u7287\u7292" +
-        "\u7296\u72A2\u72A7\u72B9\u72B2\u72C3\u72C6\u72C4" +
-        "\u9D59\u9D72\u9D89\u9D87\u9DAB\u9D6F\u9D7A\u9D9A" +
-        "\u9DA4\u9DA9\u9DB2\u9DC4\u9DC1\u9DBB\u9DB8\u9DBA" +
-        "\u9DC6\u9DCF\u9DC2\u9DD9\u9DD3\u9DF8\u9DE6\u9DED" +
-        "\u9DEF\u9DFD\u9E1A\u9E1B\u9E1E\u9E75\u9E79\u9E7D" +
-        "\u9E81\u9E88\u9E8B\u9E8C\u9E92\u9E95\u9E91\u9E9D" +
-        "\u9EA5\u9EA9\u9EB8\u9EAA\u9EAD\u9761\u9ECC\u9ECE" +
-        "\u9ECF\u9ED0\u9ED4\u9EDC\u9EDE\u9EDD\u9EE0\u9EE5" +
-        "\u9EE8\u9EEF\u9EF4\u9EF6\u9EF7\u9EF9\u9EFB\u9EFC" +
-        "\u9EFD\u9F07\u9F08\u76B7\u9F15\u9F21\u9F2C\u9F3E" +
-        "\u9F4A\u9F52\u9F54\u9F63\u9F5F\u9F60\u9F61\u9F66" +
-        "\u9F67\u9F6C\u9F6A\u9F77\u9F72\u9F76\u9F95\u9F9C" +
-        "\u9FA0\u582F\u69C7\u9059\u7464\u51DC\u7199";
+        "u3000、。，．・：" +
+        "；？！゛゜´｀¨" +
+        "＾￣＿ヽヾゝゞ〃" +
+        "仝々〆〇ー—‐／" +
+        "＼〜‖｜…‥‘’" +
+        "尅將專對尓尠尢尨" +
+        "尸尹屁屆屎屓屐屏" +
+        "孱屬屮乢屶屹岌岑" +
+        "岔妛岫岻岶岼岷峅" +
+        "岾峇峙峩峽峺峭嶌" +
+        "峪崋崕崗嵜崟崛崑" +
+        "崔崢崚崙崘嵌嵒嵎" +
+        "嵋嵬嵳嵶嶇嶄嶂嶢" +
+        "嶝嶬嶮嶽嶐嶷嶼巉" +
+        "巍巓巒巖巛巫已巵" +
+        "帋帚帙帑帛帶帷幄" +
+        "幃幀幎幗幔幟幢幤" +
+        "幇幵并幺麼广庠廁" +
+        "廂廈廐廏廖廣廝廚" +
+        "廛廢廡廨廩廬廱廳" +
+        "廰廴廸廾弃弉彝彜" +
+        "弋弑弖弩弭弸彁彈" +
+        "彌彎弯彑彖彗彙彡" +
+        "彭彳彷徃徂彿徊很" +
+        "徑徇從徙徘徠徨徭" +
+        "徼忖忻忤忸忱忝悳" +
+        "忿怡恠怙怐怩怎怱" +
+        "拮拱挧挂挈拯拵捐" +
+        "挾捍搜捏掖掎掀掫" +
+        "捶掣掏掉掟掵捫捩" +
+        "掾揩揀揆揣揉插揶" +
+        "揄搖搴搆搓搦搶攝" +
+        "搗搨搏摧摯摶摎攪" +
+        "撕撓撥撩撈撼據擒" +
+        "擅擇撻擘擂擱擧舉" +
+        "擠擡抬擣擯攬擶擴" +
+        "擲擺攀擽攘攜攅攤" +
+        "攣攫攴攵攷收攸畋" +
+        "杁朸朷杆杞杠杙杣" +
+        "杤枉杰枩杼杪枌枋" +
+        "枦枡枅枷柯枴柬枳" +
+        "柩枸柤柞柝柢柮枹" +
+        "柎柆柧檜栞框栩桀" +
+        "桍栲桎梳栫桙档桷" +
+        "桿梟梏梭梔條梛梃" +
+        "檮梹桴梵梠梺椏梍" +
+        "桾椁棊椈棘椢椦棡" +
+        "椌棍棔棧棕椶椒椄" +
+        "棗棣椥棹棠棯椨椪" +
+        "椚椣椡棆楹楷楜楸" +
+        "泗泅泝沮沱沾沺泛" +
+        "泯泙泪洟衍洶洫洽" +
+        "洸洙洵洳洒洌浣涓" +
+        "浤浚浹浙涎涕濤涅" +
+        "淹渕渊涵淇淦涸淆" +
+        "淬淞淌淨淒淅淺淙" +
+        "牋牘牴牾犂犁犇犒" +
+        "犖犢犧犹犲狃狆狄" +
+        "鵙鵲鶉鶇鶫鵯鵺鶚" +
+        "鶤鶩鶲鷄鷁鶻鶸鶺" +
+        "鷆鷏鷂鷙鷓鷸鷦鷭" +
+        "鷯鷽鸚鸛鸞鹵鹹鹽" +
+        "麁麈麋麌麒麕麑麝" +
+        "麥麩麸麪麭靡黌黎" +
+        "黏黐黔黜點黝黠黥" +
+        "黨黯黴黶黷黹黻黼" +
+        "黽鼇鼈皷鼕鼡鼬鼾" +
+        "齊齒齔齣齟齠齡齦" +
+        "齧齬齪齷齲齶龕龜" +
+        "龠堯槇遙瑤凜熙";
 
     final static String JISX0202KATAKANA =
-        "\uFF61\uFF62\uFF63\uFF64" +
-        "\uFF65\uFF66\uFF67\uFF68\uFF69\uFF6A\uFF6B\uFF6C" +
-        "\uFF6D\uFF6E\uFF6F\uFF70\uFF71\uFF72\uFF73\uFF74" +
-        "\uFF75\uFF76\uFF77\uFF78\uFF79\uFF7A\uFF7B\uFF7C" +
-        "\uFF7D\uFF7E\uFF7F\uFF80\uFF81\uFF82\uFF83\uFF84" +
-        "\uFF85\uFF86\uFF87\uFF88\uFF89\uFF8A\uFF8B\uFF8C" +
-        "\uFF8D\uFF8E\uFF8F\uFF90\uFF91\uFF92\uFF93\uFF94" +
-        "\uFF95\uFF96\uFF97\uFF98\uFF99\uFF9A\uFF9B\uFF9C" +
-        "\uFF9D\uFF9E\uFF9F";
+        "｡｢｣､" +
+        "･ｦｧｨｩｪｫｬ" +
+        "ｭｮｯｰｱｲｳｴ" +
+        "ｵｶｷｸｹｺｻｼ" +
+        "ｽｾｿﾀﾁﾂﾃﾄ" +
+        "ﾅﾆﾇﾈﾉﾊﾋﾌ" +
+        "ﾍﾎﾏﾐﾑﾒﾓﾔ" +
+        "ﾕﾖﾗﾘﾙﾚﾛﾜ" +
+        "ﾝﾞﾟ";
 
 
     final static byte[] expectedBytes1 = {
@@ -527,7 +527,7 @@ public class TestISO2022JP {
 
 
     private static String JISX0212 =
-        "\u02d8\u6896\u9fa5";
+        "˘梖龥";
 
     private static byte[] expectedBytes_JISX0212 = {
         (byte)0x1b, (byte)0x24, (byte)0x28, (byte)0x44,

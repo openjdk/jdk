@@ -53,28 +53,28 @@ public class GermanTest {
      * Shared data for TestPrimary() and TestTertiary()
      */
     private static final String testSourceData[] = {
-        "Gr\u00F6\u00DFe",
+        "Größe",
         "abc",
-        "T\u00F6ne",
-        "T\u00F6ne",
-        "T\u00F6ne",
-        "a\u0308bc",
-        "\u00E4bc",
-        "\u00E4bc",
-        "Stra\u00DFe",
+        "Töne",
+        "Töne",
+        "Töne",
+        "äbc",
+        "äbc",
+        "äbc",
+        "Straße",
         "efg",
-        "\u00E4bc",
-        "Stra\u00DFe"
+        "äbc",
+        "Straße"
     };
 
     private static final String testTargetData[] = {
         "Grossist",
-        "a\u0308bc",
+        "äbc",
         "Ton",
         "Tod",
         "Tofu",
-        "A\u0308bc",
-        "a\u0308bc",
+        "Äbc",
+        "äbc",
         "aebc",
         "Strasse",
         "efg",

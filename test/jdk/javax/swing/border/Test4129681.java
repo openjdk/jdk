@@ -53,7 +53,7 @@ public class Test4129681 {
         Point endPoint = new Point(18, 14);
 
         label = new JLabel("Label");
-        label.setBorder(BorderFactory.createTitledBorder("\u2588".repeat(5)));
+        label.setBorder(BorderFactory.createTitledBorder("█".repeat(5)));
         UIManager.getDefaults().put("Label.disabledForeground", labelDisableColor);
         label.setSize(SIZE);
         label.setEnabled(false);

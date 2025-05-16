@@ -68,9 +68,9 @@ public class UserDefaultControlTest {
         rb = ResourceBundle.getBundle("com.foo.XmlRB", Locale.JAPAN);
         type = rb.getString("type");
         // Expect fullwidth "XML"
-        if (!type.equals("\uff38\uff2d\uff2c")) {
+        if (!type.equals("ＸＭＬ")) {
             throw new RuntimeException("Locale.JAPAN: type: got " + type
-                                       + ", expected \uff38\uff2d\uff2c (fullwidth XML)");
+                                       + ", expected ＸＭＬ (fullwidth XML)");
         }
 
         try {
@@ -98,10 +98,10 @@ public class UserDefaultControlTest {
         rb = ResourceBundleDelegate.getBundle("com.foo.XmlRB", Locale.JAPAN, unnamedModule);
         type = rb.getString("type");
         // Expect fullwidth "XML"
-        if (!type.equals("\uff38\uff2d\uff2c")) {
+        if (!type.equals("ＸＭＬ")) {
             throw new RuntimeException("getBundle called from named module for unnamed module."
                                        + " Locale.JAPAN: type: got " + type
-                                       + ", expected \uff38\uff2d\uff2c (fullwidth XML)");
+                                       + ", expected ＸＭＬ (fullwidth XML)");
         }
     }
 }

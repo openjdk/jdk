@@ -32,10 +32,10 @@ public class Merge01 {
     private static final String GOLDEN_HASH = "1618288402";
 
     private static Random random = new Random(11);
-    private static final String PRE  = "pre\u307E\u3048\u306B";
-    private static final String POST = "post\u3042\u3068\u3067";
-    private static final String TMP = "tmp\u305D\u3046\u304B";
-    private static final String SUF = "suf\u3051\u3069\u3082";
+    private static final String PRE  = "preまえに";
+    private static final String POST = "postあとで";
+    private static final String TMP = "tmpそうか";
+    private static final String SUF = "sufけども";
 
     private static void crop(StringBuilder sb) {
         int max = 100;

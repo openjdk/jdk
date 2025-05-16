@@ -41,9 +41,9 @@ public class CollatorProviderImpl extends CollatorProvider {
         Locale.of("xx", "YY", "ZZZZ")};
 
     static String[] dialect = {
-        "\u3067\u3059\u3002",
-        "\u3084\u3002",
-        "\u3069\u3059\u3002",
+        "です。",
+        "や。",
+        "どす。",
         "-xx-YY-ZZZZ"
     };
 

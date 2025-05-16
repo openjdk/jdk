@@ -39,7 +39,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
 public class MirrorTest {
-    static String target = "\u3042";
+    static String target = "あ";
     static final int SIZE = 50;
     static final int SHIFT = 20;
     static final int LIMIT = 5;

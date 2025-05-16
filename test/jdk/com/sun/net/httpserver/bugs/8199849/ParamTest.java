@@ -135,7 +135,7 @@ public class ParamTest {
 
     }
 
-    static final String password = "Selam D\u00fcnya.";
+    static final String password = "Selam Dünya.";
 
     // "user : <password above>" encoded in UTF-8 and converted to Base 64
 

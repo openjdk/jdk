@@ -114,7 +114,7 @@ public class CurrencyTest {
         }
 
         private static Stream<String> invalidLengthCurrencies() {
-            return Stream.of("\u20AC", "", "12345");
+            return Stream.of("€", "", "12345");
         }
     }
 
@@ -291,7 +291,7 @@ public class CurrencyTest {
     private static Stream<Arguments> symbolProvider() {
         return Stream.of(
                 Arguments.of("USD", Locale.US, "$"),
-                Arguments.of("EUR", Locale.GERMANY, "\u20AC"),
+                Arguments.of("EUR", Locale.GERMANY, "€"),
                 Arguments.of("USD", Locale.PRC, "US$")
         );
     }
@@ -333,15 +333,15 @@ public class CurrencyTest {
     private static Stream<Arguments> displayNameProvider() {
         return Stream.of(
                 Arguments.of("USD", Locale.ENGLISH, "US Dollar"),
-                Arguments.of("FRF", Locale.FRENCH, "franc fran\u00e7ais"),
+                Arguments.of("FRF", Locale.FRENCH, "franc français"),
                 Arguments.of("DEM", Locale.GERMAN, "Deutsche Mark"),
-                Arguments.of("ESP", Locale.of("es"), "peseta espa\u00f1ola"),
+                Arguments.of("ESP", Locale.of("es"), "peseta española"),
                 Arguments.of("ITL", Locale.ITALIAN, "lira italiana"),
-                Arguments.of("JPY", Locale.JAPANESE, "\u65e5\u672c\u5186"),
-                Arguments.of("KRW", Locale.KOREAN, "\ub300\ud55c\ubbfc\uad6d \uc6d0"),
+                Arguments.of("JPY", Locale.JAPANESE, "日本円"),
+                Arguments.of("KRW", Locale.KOREAN, "대한민국 원"),
                 Arguments.of("SEK", Locale.of("sv"), "svensk krona"),
-                Arguments.of("CNY", Locale.SIMPLIFIED_CHINESE, "\u4eba\u6c11\u5e01"),
-                Arguments.of("TWD", Locale.TRADITIONAL_CHINESE, "\u65b0\u53f0\u5e63")
+                Arguments.of("CNY", Locale.SIMPLIFIED_CHINESE, "人民币"),
+                Arguments.of("TWD", Locale.TRADITIONAL_CHINESE, "新台幣")
         );
     }
 

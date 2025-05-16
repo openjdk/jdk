@@ -55,7 +55,7 @@ public class TestDeserializeCNF {
     // and min fraction digits = 5
     private static final CompactNumberFormat COMPACT_FORMAT2 = new CompactNumberFormat("#,##0.###",
             DecimalFormatSymbols.getInstance(Locale.JAPAN),
-            new String[]{"", "", "", "0", "0\u4e07", "00\u4e07", "000\u4e07", "0000\u4e07", "0\u5104", "00\u5104", "000\u5104", "0000\u5104", "0\u5146", "00\u5146", "000\u5146"});
+            new String[]{"", "", "", "0", "0万", "00万", "000万", "0000万", "0億", "00億", "000億", "0000億", "0兆", "00兆", "000兆"});
 
     private static final String FILE_COMPACT_FORMAT1 = "cnf1.ser.txt";
     private static final String FILE_COMPACT_FORMAT2 = "cnf2.ser.txt";

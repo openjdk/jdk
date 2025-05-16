@@ -134,7 +134,7 @@ public class LineBrokenMultiByteCharacter {
      */
     static void verifyClassNameLineBroken(JarFile jar, String className)
             throws IOException {
-        byte[] eAcute = "\u00E9".getBytes(UTF_8);
+        byte[] eAcute = "é".getBytes(UTF_8);
         byte[] eAcuteBroken =
                 new byte[] {eAcute[0], '\r', '\n', ' ', eAcute[1]};
 

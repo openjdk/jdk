@@ -62,9 +62,9 @@ public class RuleBasedCollatorTest {
     @DataProvider(name = "rulesData")
     Object[][] rulesData() {
         //Basic Tailor
-        String BASIC_TAILOR_RULES = "< b=c<\u00e6;A,a";
-        String[] BASIC_TAILOR_DATA = {"\u00e6", "b", "a", "c", "A"};
-        String[] BASIC_TAILOR_EXPECTED = {"b", "c", "\u00e6", "A", "a"};
+        String BASIC_TAILOR_RULES = "< b=c<æ;A,a";
+        String[] BASIC_TAILOR_DATA = {"æ", "b", "a", "c", "A"};
+        String[] BASIC_TAILOR_EXPECTED = {"b", "c", "æ", "A", "a"};
 
         //Contraction
         String CONTRACTION_RULES = US_RULES + "& b < ch ,cH, Ch, CH < c ";
@@ -72,9 +72,9 @@ public class RuleBasedCollatorTest {
         String[] CONTRACTION_EXPECTED = {"b", "ch", "cH", "Ch", "CH", "c"};
 
         //Expansion
-        String EXPANSION_RULES = US_RULES + "& ae = \u00e4 < b";
-        String[] EXPANSION_DATA = {"ad", "af", "\u00e4"};
-        String[] EXPANSION_EXPECTED = {"ad", "\u00e4", "af"};
+        String EXPANSION_RULES = US_RULES + "& ae = ä < b";
+        String[] EXPANSION_DATA = {"ad", "af", "ä"};
+        String[] EXPANSION_EXPECTED = {"ad", "ä", "af"};
 
         //Punctuation
         String PUNCTUATION_RULES = US_RULES + "< ' ' < '-'";
@@ -102,13 +102,13 @@ public class RuleBasedCollatorTest {
     @DataProvider(name = "FrenchSecondarySort")
     Object[][] FrenchSecondarySort() {
         return new Object[][] {
-                { "\u0061\u00e1\u0061", "\u00e1\u0061\u0061", 1 },
-                //{"\u0061\u00e1", "\u00e1\u0041", 1},  //JDK-4406815
-                //{"\u00e1\u0041", "\u0061\u00e1", -1}, //JDK-4406815
-                {"\u1ea0a", "\u1ea2A", -1}, //case ignore
-                { "\u1ea0b", "\u1ea2A", 1 },  //primary overwrite
-                { "\u1e15", "\u1e1d", -1 },   //ignore sec diacritic
-                { "a", "\u1ea1", -1 } };
+                { "aáa", "áaa", 1 },
+                //{"aá", "áA", 1},  //JDK-4406815
+                //{"áA", "aá", -1}, //JDK-4406815
+                {"Ạa", "ẢA", -1}, //case ignore
+                { "Ạb", "ẢA", 1 },  //primary overwrite
+                { "ḕ", "ḝ", -1 },   //ignore sec diacritic
+                { "a", "ạ", -1 } };
     }
 
     @Test(dataProvider = "FrenchSecondarySort")
@@ -132,7 +132,7 @@ public class RuleBasedCollatorTest {
     @Test(dataProvider = "ThaiLaoVowelConsonantSwapping")
     public void testThaiLaoVowelConsonantSwapping(String sData, String tData,
             int expected) throws ParseException {
-        String thai_rule = "& Z < \u0e01 < \u0e2e <\u0e40 < \u0e44!";
+        String thai_rule = "& Z < ก < ฮ <เ < ไ!";
         String rules = US_RULES + thai_rule;
         RuleBasedCollator rc = new RuleBasedCollator(rules);
         int result = rc.compare(sData, tData);

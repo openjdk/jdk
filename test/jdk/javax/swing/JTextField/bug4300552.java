@@ -36,7 +36,7 @@ public class bug4300552 {
     private static JTextField textField;
 
     public static void main(String[] args) throws Exception {
-        textField = new JTextField("\u0633\u0644\u0627\u0645 Peace");
+        textField = new JTextField("سلام Peace");
         testCompOrientation();
 
         textField.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);

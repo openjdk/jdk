@@ -77,7 +77,7 @@ public class Test6968363 implements Runnable, Thread.UncaughtExceptionHandler {
             Thread.setDefaultUncaughtExceptionHandler(this);
             this.frame = new JFrame(getClass().getSimpleName());
             this.frame.add(NORTH, new JLabel("Copy Paste a HINDI text into the field below"));
-            this.frame.add(SOUTH, new JTextField(new MyDocument(), "\u0938", 10));
+            this.frame.add(SOUTH, new JTextField(new MyDocument(), "स", 10));
             this.frame.pack();
             this.frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             this.frame.setLocationRelativeTo(null);

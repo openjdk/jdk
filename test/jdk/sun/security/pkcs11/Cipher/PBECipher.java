@@ -47,7 +47,7 @@ import javax.crypto.spec.PBEParameterSpec;
  */
 
 public final class PBECipher extends PKCS11Test {
-    private static final char[] password = "123456\uA4F7".toCharArray();
+    private static final char[] password = "123456ꓷ".toCharArray();
     private static final byte[] salt = "abcdefgh".getBytes(
             StandardCharsets.UTF_8);
     private static final int iterations = 1000;

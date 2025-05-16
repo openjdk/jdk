@@ -248,11 +248,11 @@ public class BigDecimalParse {
 
         // From: Double.POSITIVE_INFINITY
         // To:   Double.NaN
-        check("\u221e", Double.POSITIVE_INFINITY);
+        check("∞", Double.POSITIVE_INFINITY);
 
         // From: Double.NEGATIVE_INFINITY
         // To:   Double.NaN
-        check("-\u221e", Double.NEGATIVE_INFINITY);
+        check("-∞", Double.NEGATIVE_INFINITY);
     }
 
     /**
@@ -354,8 +354,8 @@ public class BigDecimalParse {
         df.setParseBigDecimal(true);
 
         String[] numbers = {
-            "0", "0.0", "25", "25.0", "25.5", "\u221e", "NaN",
-            "-0", "-0.0", "-25", "-25.0", "-25.5", "-\u221e",
+            "0", "0.0", "25", "25.0", "25.5", "∞", "NaN",
+            "-0", "-0.0", "-25", "-25.0", "-25.5", "-∞",
         };
         int multipliers[] = {5, -5};
         Number[][] expected = {

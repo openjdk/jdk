@@ -37,11 +37,11 @@ public class HongKong {
         Locale reservedLocale = Locale.getDefault();
         try {
             Locale.setDefault(Locale.of("zh", "HK"));
-            checkCountry(Locale.GERMANY, "\u5fb7\u570b");
-            checkCountry(Locale.FRANCE, "\u6cd5\u570b");
-            checkCountry(Locale.ITALY, "\u610f\u5927\u5229");
+            checkCountry(Locale.GERMANY, "德國");
+            checkCountry(Locale.FRANCE, "法國");
+            checkCountry(Locale.ITALY, "意大利");
             checkTimeZone("Asia/Shanghai",
-                            "\u4e2d\u570b\u6a19\u6e96\u6642\u9593");
+                            "中國標準時間");
         } finally {
             // restore the reserved locale
             Locale.setDefault(reservedLocale);

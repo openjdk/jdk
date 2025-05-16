@@ -88,9 +88,9 @@ public class CurrencyTests {
             {CAD, Locale.forLanguageTag("en-US-u-rg-cazzzz"), "$"},
             {CAD, Locale.forLanguageTag("en-CA-u-rg-uszzzz"), "CA$"},
 
-            {JPY, Locale.forLanguageTag("ja-JP-u-rg-uszzzz"), "\uffe5"},
-            {JPY, Locale.forLanguageTag("en-US-u-rg-jpzzzz"), "\u00a5"},
-            {JPY, Locale.forLanguageTag("ko-KR-u-rg-jpzzzz"), "JP\u00a5"},
+            {JPY, Locale.forLanguageTag("ja-JP-u-rg-uszzzz"), "￥"},
+            {JPY, Locale.forLanguageTag("en-US-u-rg-jpzzzz"), "¥"},
+            {JPY, Locale.forLanguageTag("ko-KR-u-rg-jpzzzz"), "JP¥"},
         };
     }
 

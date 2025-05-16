@@ -203,7 +203,7 @@ public class DigestAuth {
             boolean success = true;
             switch (testcase) {
                 case "sha512-256-userhash":
-                    auth = new AuthenticatorImpl("J\u00e4s\u00f8n Doe", "Secret, or not?");
+                    auth = new AuthenticatorImpl("Jäsøn Doe", "Secret, or not?");
                     // file based name service must be used so domain
                     // below resolves to localhost
                     if (usePort80) {

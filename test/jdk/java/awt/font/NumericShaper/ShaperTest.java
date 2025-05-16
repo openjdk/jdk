@@ -51,7 +51,7 @@ public class ShaperTest extends Panel {
     private final TextLayout[][] layouts;
     private final String[] titles;
     private static final String text =
-            "-123 (English) 456.00 (Arabic) \u0641\u0642\u0643 -789 (Thai) \u0e01\u0e33 01.23";
+            "-123 (English) 456.00 (Arabic) فقك -789 (Thai) กำ 01.23";
 
     public static void main(String[] args) throws Exception {
         final String INSTRUCTIONS = """

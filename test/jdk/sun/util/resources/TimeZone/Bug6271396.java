@@ -46,26 +46,26 @@ public class Bug6271396 {
                                         "Australia/Lord_Howe should be " +
                                         "\"Heure standard de Lord Howe\"");
         if (!Lord_Howe.getDisplayName(true, TimeZone.LONG, tzLocale).equals
-           ("heure d\u2019\u00e9t\u00e9 de Lord Howe"))
+           ("heure d’été de Lord Howe"))
              throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                         "daylight saving name for " +
                                         "Australia/Lord_Howe should be " +
-                                        "\"Heure d'\u00e9t\u00e9 de Lord Howe\"");
+                                        "\"Heure d'été de Lord Howe\"");
 
         tzLocale = Locale.TRADITIONAL_CHINESE;
         if (!Lord_Howe.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("\u8c6a\u52f3\u7235\u5cf6\u6a19\u6e96\u6642\u9593"))
+           ("豪勳爵島標準時間"))
              throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                         "non-daylight saving name for " +
                                         "Australia/Lord_Howe should be " +
-                                        "\"\u8c6a\u52f3\u7235\u5cf6" +
-                                        "\u6a19\u6e96\u6642\u9593\"");
+                                        "\"豪勳爵島" +
+                                        "標準時間\"");
         if (!Lord_Howe.getDisplayName(true, TimeZone.LONG, tzLocale).equals
-           ("\u8c6a\u52f3\u7235\u5cf6\u590f\u4ee4\u6642\u9593"))
+           ("豪勳爵島夏令時間"))
              throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                         "daylight saving name for " +
                                         "Australia/Lord_Howe should be " +
-                                        "\"\u8c6a\u52f3\u7235\u5cf6" +
-                                        "\u590f\u4ee4\u6642\u9593\"");
+                                        "\"豪勳爵島" +
+                                        "夏令時間\"");
    }
 }

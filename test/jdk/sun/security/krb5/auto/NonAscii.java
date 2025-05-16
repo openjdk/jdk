@@ -39,7 +39,7 @@
 
 public class NonAscii {
     public static void main(String[] args) throws Exception {
-        String name = "ab\u00e7";
+        String name = "abç";
         char[] password = "password".toCharArray();
         new OneKDC(null).addPrincipal(name, password);
         Context.fromUserPass(name, password, false);

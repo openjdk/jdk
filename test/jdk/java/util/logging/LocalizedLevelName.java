@@ -35,10 +35,10 @@ import java.util.logging.*;
 public class LocalizedLevelName {
     private static Object[] namesMap = {
         "SEVERE",  Locale.ENGLISH,                 "Severe",       Level.SEVERE,
-        "WARNING", Locale.JAPANESE,                "\u8B66\u544A", Level.WARNING,
-        "INFO",    Locale.SIMPLIFIED_CHINESE,      "\u4FE1\u606F", Level.INFO,
-        "SEVERE",  Locale.SIMPLIFIED_CHINESE,      "\u4E25\u91CD", Level.SEVERE,
-        "CONFIG",  Locale.forLanguageTag("zh-CN"), "\u914D\u7F6E", Level.CONFIG,
+        "WARNING", Locale.JAPANESE,                "警告", Level.WARNING,
+        "INFO",    Locale.SIMPLIFIED_CHINESE,      "信息", Level.INFO,
+        "SEVERE",  Locale.SIMPLIFIED_CHINESE,      "严重", Level.SEVERE,
+        "CONFIG",  Locale.forLanguageTag("zh-CN"), "配置", Level.CONFIG,
         "ALL",     Locale.ROOT,                    "All",          Level.ALL,
         "SEVERE",  Locale.ROOT,                    "Severe",       Level.SEVERE,
         "WARNING", Locale.ROOT,                    "Warning",      Level.WARNING,

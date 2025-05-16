@@ -244,20 +244,20 @@ public class VariablesTest extends KullaTesting {
     }
 
     public void variablesMultiByteCharacterType() {
-        assertEval("class \u3042 {}");
-        assertEval("\u3042 \u3042 = null;", added(VALID));
-        assertVariables(variable("\u3042", "\u3042"));
-        assertEval("new \u3042()", added(VALID));
-        assertVariables(variable("\u3042", "\u3042"), variable("\u3042", "$1"));
+        assertEval("class あ {}");
+        assertEval("あ あ = null;", added(VALID));
+        assertVariables(variable("あ", "あ"));
+        assertEval("new あ()", added(VALID));
+        assertVariables(variable("あ", "あ"), variable("あ", "$1"));
 
-        assertEval("class \u3042\u3044\u3046\u3048\u304a {}");
-        assertEval("\u3042\u3044\u3046\u3048\u304a \u3042\u3044\u3046\u3048\u304a = null;", added(VALID));
-        assertVariables(variable("\u3042", "\u3042"), variable("\u3042", "$1"),
-                variable("\u3042\u3044\u3046\u3048\u304a", "\u3042\u3044\u3046\u3048\u304a"));
-        assertEval("new \u3042\u3044\u3046\u3048\u304a();");
-        assertVariables(variable("\u3042", "\u3042"), variable("\u3042", "$1"),
-                variable("\u3042\u3044\u3046\u3048\u304a", "\u3042\u3044\u3046\u3048\u304a"),
-                variable("\u3042\u3044\u3046\u3048\u304a", "$2"));
+        assertEval("class あいうえお {}");
+        assertEval("あいうえお あいうえお = null;", added(VALID));
+        assertVariables(variable("あ", "あ"), variable("あ", "$1"),
+                variable("あいうえお", "あいうえお"));
+        assertEval("new あいうえお();");
+        assertVariables(variable("あ", "あ"), variable("あ", "$1"),
+                variable("あいうえお", "あいうえお"),
+                variable("あいうえお", "$2"));
         assertActiveKeys();
     }
 

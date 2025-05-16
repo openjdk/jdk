@@ -53,7 +53,7 @@ import static java.awt.image.BufferedImage.TYPE_3BYTE_BGR;
  * @run main StretchedFontTest
  */
 public final class StretchedFontTest {
-    private static final String TEXT = "\u6F22";
+    private static final String TEXT = "漢";
     private static final int FONT_SIZE = 20;
 
     private static final Color BACKGROUND = Color.WHITE;

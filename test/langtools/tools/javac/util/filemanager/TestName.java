@@ -45,6 +45,6 @@ public class TestName {
         JavacFileManager.testName("java.lang.Foo Bar", !PACKAGE, !CLASS);
         JavacFileManager.testName("java.lang.Foo+Bar", !PACKAGE, !CLASS);
         JavacFileManager.testName("java.lang.Foo$Bar", PACKAGE, CLASS);
-        JavacFileManager.testName("Peter.von.der.Ah\u00e9", PACKAGE, CLASS);
+        JavacFileManager.testName("Peter.von.der.Ahé", PACKAGE, CLASS);
     }
 }

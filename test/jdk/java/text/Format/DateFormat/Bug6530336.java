@@ -82,9 +82,9 @@ public class Bug6530336 {
                     if (date.matches(".*GMT[\\s+-]\\D.*") ||
                             date.contains("UTC") ||
                             date.contains("TMG") || // Interlingue
-                            date.contains("\u07dc\u07ed\u07d5\u07d6") || // N’Ko
-                            date.contains("\ua2e7\ua0c5\ua395\ua3e6\ua12e\ua209") || // Sichuan Yi, Nuosu
-                            date.contains("\u06af\u0631\u06cc\u0646\u06cc\u0686")) { // Central Kurdish
+                            date.contains("ߜ߭ߕߖ") || // N’Ko
+                            date.contains("ꋧꃅꎕꏦꄮꈉ") || // Sichuan Yi, Nuosu
+                            date.contains("گرینیچ")) { // Central Kurdish
                         continue;
                     }
                     sdf.setTimeZone(timezone_LA);

@@ -102,7 +102,7 @@ public final class TestPBKD extends PKCS11Test {
         }
     }
 
-    private static final char[] pwd = "123456\uA4F7".toCharArray();
+    private static final char[] pwd = "123456ꓷ".toCharArray();
     private static final char[] emptyPwd = new char[0];
     private static final byte[] salt = "abcdefgh".getBytes(
             StandardCharsets.UTF_8);

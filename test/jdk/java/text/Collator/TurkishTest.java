@@ -54,19 +54,19 @@ public class TurkishTest {
      * Data for TestPrimary()
      */
     private static final String[] primarySourceData = {
-        "\u00FCoid",
-        "vo\u0131d",
+        "üoid",
+        "voıd",
         "idea",
         "Idea",
-        "\u0130dea"
+        "İdea"
     };
 
     private static final String[] primaryTargetData = {
         "void",
         "void",
         "Idea",
-        "\u0130dea",
-        "\u0131dea"
+        "İdea",
+        "ıdea"
     };
 
     private static final int[] primaryResults = {
@@ -77,28 +77,28 @@ public class TurkishTest {
      * Data for TestTertiary()
      */
     private static final String[] tertiarySourceData = {
-        "s\u0327",
-        "v\u00E4t",
+        "ş",
+        "vät",
         "old",
-        "\u00FCoid",
-        "h\u011Ealt",
-        "stres\u015E",
-        "vo\u0131d",
+        "üoid",
+        "hĞalt",
+        "stresŞ",
+        "voıd",
         "idea",
        "idea",
-       "\u0131dea"
+       "ıdea"
     };
 
     private static final String tertiaryTargetData[] = {
-        "u\u0308",
+        "ü",
         "vbt",
-        "\u00D6ay",
+        "Öay",
         "void",
         "halt",
-        "\u015Etre\u015Es",
+        "ŞtreŞs",
         "void",
         "Idea",
-       "\u0130dea",
+       "İdea",
        "Idea"
     };
 

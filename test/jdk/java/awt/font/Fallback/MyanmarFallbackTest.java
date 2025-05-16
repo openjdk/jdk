@@ -50,7 +50,7 @@ public class MyanmarFallbackTest {
         }
 
         Font dialog = new Font(Font.DIALOG, Font.PLAIN, 12);
-        if (-1 != dialog.canDisplayUpTo("\u1000\u103C")) {
+        if (-1 != dialog.canDisplayUpTo("ကြ")) {
             throw new RuntimeException("Cannot display Myanmar characters");
         }
     }

@@ -44,7 +44,7 @@ import java.text.AttributedString;
 public class bug6636983 {
     private Robot robot;
 
-    private final AttributedString Hiragana_A = new AttributedString("\u3042");
+    private final AttributedString Hiragana_A = new AttributedString("あ");
 
     void sendInputMethodEvent() {
         InputMethodEvent ime = new InputMethodEvent(

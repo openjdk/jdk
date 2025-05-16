@@ -50,7 +50,7 @@ import java.util.Locale;
  */
 public class I18NJarTest extends TestHelper {
     private static final File cwd = new File(".");
-    private static final File dir = new File("\uFF66\uFF67\uFF68\uFF69");
+    private static final File dir = new File("ｦｧｨｩ");
     private static final String encoding = System.getProperty("sun.jnu.encoding", "");
     private static final String LANG = System.getenv("LANG");
     private static final String LC_ALL = System.getenv("LC_ALL");

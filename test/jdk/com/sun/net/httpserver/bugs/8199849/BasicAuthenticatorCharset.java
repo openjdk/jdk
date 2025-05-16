@@ -55,7 +55,7 @@ public class BasicAuthenticatorCharset {
     public static volatile int failCount = 0;
 
     static final String TEST_USER = "test";
-    static final String UNICODE_PW = "Selam D\u00fcnya. Ho\u015f\u00e7akal D\u00fcnya";
+    static final String UNICODE_PW = "Selam Dünya. Hoşçakal Dünya";
 
     static Handler testHandler;
     static HttpServer testHttpServer;

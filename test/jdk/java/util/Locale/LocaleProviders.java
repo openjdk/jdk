@@ -261,7 +261,7 @@ public class LocaleProviders {
     static void bug8013903Test() {
         if (IS_WINDOWS) {
             Date sampleDate = new Date(0x10000000000L);
-            String expected = "\u5e73\u6210 16.11.03 (\u6c34) \u5348\u524d 11:53:47";
+            String expected = "平成 16.11.03 (水) 午前 11:53:47";
             Locale l = Locale.of("ja", "JP", "JP");
             SimpleDateFormat sdf = new SimpleDateFormat("GGGG yyyy.MMM.dd '('E')' a hh:mm:ss", l);
             sdf.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
@@ -322,7 +322,7 @@ public class LocaleProviders {
         var lang = Locale.getDefault().getLanguage();
         var cal = Calendar.getInstance();
         var calType = cal.getCalendarType();
-        var expected = "\u4ee4\u548c1\u5e745\u67081\u65e5 \u6c34\u66dc\u65e5 \u5348\u524d0:00:00 \u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593";
+        var expected = "令和1年5月1日 水曜日 午前0:00:00 アメリカ太平洋夏時間";
 
         if (type == LocaleProviderAdapter.Type.HOST &&
             IS_MAC &&

@@ -41,7 +41,7 @@ import javax.swing.JPanel;
  */
 
 public class TestGASPHint extends JPanel {
-    private static final String text = "\u0905\u0901\u0917\u094d\u0930\u0947\u091c\u093c\u0940";
+    private static final String text = "अँग्रेज़ी";
     private static final Font font = getPhysicalFontForText(text, Font.PLAIN, 36);
 
     public static void main(String[] args) throws Exception {

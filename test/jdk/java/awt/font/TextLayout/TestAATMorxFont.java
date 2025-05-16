@@ -57,23 +57,23 @@ public class TestAATMorxFont {
         int y = 50;
         g.setFont(new Font("Gujarati MT", Font.PLAIN, 40));
         System.out.println(g.getFont());
-        g.drawString("\u0A95\u0ACD \u0A95\u0A95\u0A95 \u0A95\u0ACD\u0A95\u0ACD\u0A95", 20, y);
+        g.drawString("ક્ કકક ક્ક્ક", 20, y);
         y += 50;
         g.setFont(new Font("Tamil Sangam MN", Font.PLAIN, 40));
         System.out.println(g.getFont());
-        g.drawString("\u0b95\u0bCD \u0b95\u0b95\u0b95 \u0b95\u0bCD\u0b95\u0bCD\u0b95", 20, y);
+        g.drawString("க் ககக க்க்க", 20, y);
         y += 50;
         g.setFont(new Font("Telugu Sangam MN", Font.PLAIN, 40));
         System.out.println(g.getFont());
-        g.drawString("\u0c15\u0c4D \u0c15\u0c15\u0c15 \u0c15\u0c4D\u0c15\u0c4D\u0c15", 20, y);
+        g.drawString("క్ కకక క్క్క", 20, y);
         y += 50;
         g.setFont(new Font("Devanagari Sangam MN", Font.PLAIN, 40));
         System.out.println(g.getFont());
-        g.drawString("\u0915\u0940 \u0915\u0947 \u0915\u0942", 20, y);
+        g.drawString("की के कू", 20, y);
         y += 50;
-        g.drawString("\u0907\u0930\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915", 20, y);
+        g.drawString("इर्क्क्क्क्क्क्क्क्क्क", 20, y);
         y += 50;
-        g.drawString("\u0930\u093F\u0935\u094D\u092F\u0942 \u0915\u0947 \u092C\u093E\u0926 \u0935\u093F\u0915\u093E\u0938 \u0913\u0932\u0902\u092A\u093F\u0915 \u0938\u0947 \u092C\u093E\u0939\u0930 (\u0926\u0947\u0935\u0928\u093E\u0917\u0930\u0940) (\u0939\u093F\u0928\u094D\u0926\u0940) \u0907\u0930\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915\u094D\u0915", 20, y);
+        g.drawString("रिव्यू के बाद विकास ओलंपिक से बाहर (देवनागरी) (हिन्दी) इर्क्क्क्क्क्क्क्क्क्क", 20, y);
 
     }
 }

@@ -95,8 +95,8 @@ public class Bug4838107 {
                 Arguments.of(0.1234,  "0.123", defaultDf),    // rounded
                 Arguments.of(-1234D,   "-1,234", defaultDf),
                 Arguments.of(-0.1234, "-0.123", defaultDf),    // rounded
-                Arguments.of(Double.POSITIVE_INFINITY, "\u221e", defaultDf),
-                Arguments.of(Double.NEGATIVE_INFINITY, "-\u221e", defaultDf),
+                Arguments.of(Double.POSITIVE_INFINITY, "∞", defaultDf),
+                Arguments.of(Double.NEGATIVE_INFINITY, "-∞", defaultDf),
                 Arguments.of(Double.NaN, "NaN", defaultDf), // without prefix and suffix
                 Arguments.of(0.0,  "0", defaultDf),
                 Arguments.of(-0.0, "-0", defaultDf),   // with the minus sign
@@ -117,8 +117,8 @@ public class Bug4838107 {
                 Arguments.of(0.1234,  "<P>1.234Em01<S>", customDf4),
                 Arguments.of(-1234D,   "<p>m1.234E03<s>", customDf4),
                 Arguments.of(-0.1234, "<p>m1.234Em01<s>", customDf4),
-                Arguments.of(Double.POSITIVE_INFINITY, "<P>\u221e<S>", customDf4),
-                Arguments.of(Double.NEGATIVE_INFINITY, "<p>m\u221e<s>", customDf4),
+                Arguments.of(Double.POSITIVE_INFINITY, "<P>∞<S>", customDf4),
+                Arguments.of(Double.NEGATIVE_INFINITY, "<p>m∞<s>", customDf4),
                 Arguments.of(Double.NaN, "NaN", customDf4), // without prefix and suffix
                 Arguments.of(0.0,  "<P>0E00<S>", customDf4),
                 Arguments.of(-0.0, "<p>m0E00<s>", customDf4) // with the minus sign

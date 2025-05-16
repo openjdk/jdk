@@ -38,8 +38,8 @@ import java.net.*;
 
 public class TestHttpUnicode {
 
-    private static final String TEST_USER = "Selam D\u00fcnya. Ho\u015f\u00e7akal D\u00fcnya";
-    private static final String TEST_PW = "Selam D\u00fcnya. Ho\u015f\u00e7akal D\u00fcnya";
+    private static final String TEST_USER = "Selam Dünya. Hoşçakal Dünya";
+    private static final String TEST_PW = "Selam Dünya. Hoşçakal Dünya";
 
     static class ClientAuthenticator extends java.net.Authenticator {
         public PasswordAuthentication getPasswordAuthentication() {

@@ -54,28 +54,28 @@ public class InvalidModifiedUtf8Test {
     // We change c3 a8 -> c3 e8 (illegal second byte not of the form 0x10xxxxxx)
     private static final String SOURCE_0 = """
         interface CLASSNAME {
-            void ABC\u00e8();       // encodes to: 41 42 43 c3 a8
+            void ABCè();       // encodes to: 41 42 43 c3 a8
         }
     """;
 
     // We change e1 80 80 -> e1 80 40 (illegal third byte not of the form 0x10xxxxxx)
     private static final String SOURCE_1 = """
         interface CLASSNAME {
-            void ABC\u1000();       // encodes to: 41 42 43 e1 80 80
+            void ABCက();       // encodes to: 41 42 43 e1 80 80
         }
     """;
 
     // We change c4 80 -> c1 81 (illegal two-byte encoding for one-byte value)
     private static final String SOURCE_2 = """
         interface CLASSNAME {
-            void ABC\u0100();       // encodes to: 41 42 43 c4 00
+            void ABCĀ();       // encodes to: 41 42 43 c4 00
         }
     """;
 
     // We change e1 80 80 -> e0 84 80 (illegal three-byte encoding for two-byte value)
     private static final String SOURCE_3 = """
         interface CLASSNAME {
-            void ABC\u1000();       // encodes to: 41 42 43 e1 80 80
+            void ABCက();       // encodes to: 41 42 43 e1 80 80
         }
     """;
 

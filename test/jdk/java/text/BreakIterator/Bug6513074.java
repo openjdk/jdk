@@ -33,20 +33,20 @@ import java.util.*;
 public class Bug6513074 {
 
     private static final String[][] source = {
-        {"\ufa30\ufa31 \ufa69\ufa6a",
-         "JIS X 0213 compatibility additions (\\uFA30-\\uFA6A)"},
+        {"侮僧 響頻",
+         "JIS X 0213 compatibility additions (\侮-\頻)"},
     };
 
     private static final String[] expected_line = {
-        "\ufa30/\ufa31 /\ufa69/\ufa6a/",
+        "侮/僧 /響/頻/",
     };
 
     private static final String[] expected_word = {
-        "\ufa30\ufa31/ /\ufa69\ufa6a/",
+        "侮僧/ /響頻/",
     };
 
     private static final String[] expected_char = {
-        "\ufa30/\ufa31/ /\ufa69/\ufa6a/",
+        "侮/僧/ /響/頻/",
     };
 
 

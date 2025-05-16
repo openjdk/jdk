@@ -50,7 +50,7 @@ public class MultiSlotFontTest {
     private static final int WIDTH = 100;
     private static final int HEIGHT = 60;
 
-    private static final String TEST_STR = "\u3042\u3044\u3046\u3048\u304Aabc";
+    private static final String TEST_STR = "あいうえおabc";
     private static final int EXPECTED_HEIGHT = 10;
     private static final int EXPECTED_WIDTH = 77;
     private static final int LIMIT_DIFF_HEIGHT = 3;

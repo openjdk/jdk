@@ -47,8 +47,8 @@ public class TestSpecialValues {
             {Double.MIN_VALUE, "0"},
             {Double.MIN_NORMAL, "0"},
             {Double.NaN, "NaN"},
-            {Double.POSITIVE_INFINITY, "\u221E"},
-            {Double.NEGATIVE_INFINITY, "-\u221E"},
+            {Double.POSITIVE_INFINITY, "∞"},
+            {Double.NEGATIVE_INFINITY, "-∞"},
             {Long.MIN_VALUE, "-9223372T"},
             {Long.MAX_VALUE, "9223372T"},};
     }
@@ -61,8 +61,8 @@ public class TestSpecialValues {
             {"" + Long.MIN_VALUE, Long.MIN_VALUE},
             {"" + Long.MAX_VALUE, Long.MAX_VALUE},
             {"NaN", Double.NaN},
-            {"\u221E", Double.POSITIVE_INFINITY},
-            {"-\u221E", Double.NEGATIVE_INFINITY},};
+            {"∞", Double.POSITIVE_INFINITY},
+            {"-∞", Double.NEGATIVE_INFINITY},};
     }
 
     @Test(dataProvider = "formatSpecialValues")

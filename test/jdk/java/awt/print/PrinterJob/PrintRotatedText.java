@@ -98,7 +98,7 @@ public class PrintRotatedText extends Frame implements ActionListener {
 
     public static final int MAXPAGE = 8;
     // public static final String extra ="\u0391A\u2200B\u2702C\u2778D";
-    public static final String extra ="\u0394\u03A9ABCD";
+    public static final String extra ="ΔΩABCD";
     public String estr=extra;
 
     public int getNumberOfPages() {

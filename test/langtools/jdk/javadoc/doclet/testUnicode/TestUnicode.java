@@ -48,7 +48,7 @@ public class TestUnicode extends JavadocTester {
 
     @Test
     public void testUnicode(Path base) throws Exception {
-        char ellipsis = '\u2026';
+        char ellipsis = '…';
         Path src = Files.createDirectories(base.resolve("src"));
         tb.writeJavaFiles(src,
                 "/** Hel" + ellipsis + "lo {@code World(" + ellipsis + ")}. */\n"
@@ -67,7 +67,7 @@ public class TestUnicode extends JavadocTester {
 
     @Test
     public void testParam(Path base) throws Exception {
-        String chineseElephant = "\u5927\u8c61"; // taken from JDK-8271258
+        String chineseElephant = "大象"; // taken from JDK-8271258
         Path src = Files.createDirectories(base.resolve("src"));
         tb.writeJavaFiles(src,
                 """

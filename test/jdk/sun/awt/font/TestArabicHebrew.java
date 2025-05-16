@@ -91,53 +91,53 @@ public class TestArabicHebrew extends Panel {
     // range.
 
     static final String arabic =
-    "\u060c\u061b\u061f\u0621\u0622\u0623\u0624\u0625\u0626\u0627"
-    + "\u0628\u0629\u062a\u062b\u062c\u062d\u062e\u062f\u0630\u0631"
-    + "\u0632\u0633\u0634\u0635\u0636\u0637\u0638\u0639\u063a\u0640"
-    + "\u0641\u0642\u0643\u0644\u0645\u0646\u0647\u0648\u0649\u064a"
-    + "\u064b\u064c\u064d\u064e\u064f\u0650\u0651\u0652\ufe80\ufe81"
-    + "\ufe82\ufe83\ufe84\ufe85\ufe86\ufe87\ufe88\ufe89\ufe8a\ufe8b"
-    + "\ufe8c\ufe8d\ufe8e\ufe8f\ufe90\ufe91\ufe92\ufe93\ufe94\ufe95"
-    + "\ufe96\ufe97\ufe98\ufe99\ufe9a\ufe9b\ufe9c\ufe9d\ufe9e\ufe9f"
-    + "\ufea0\ufea1\ufea2\ufea3\ufea4\ufea5\ufea6\ufea7\ufea8\ufea9"
-    + "\ufeaa\ufeab\ufeac\ufead\ufeae\ufeaf\ufeb0\ufeb1\ufeb2\ufeb3"
-    + "\ufeb4\ufeb5\ufeb6\ufeb7\ufeb8\ufeb9\ufeba\ufebb\ufebc\ufebd"
-    + "\ufebe\ufebf\ufec0\ufec1\ufec2\ufec3\ufec4\ufec5\ufec6\ufec7"
-    + "\ufec8\ufec9\ufeca\ufecb\ufecc\ufecd\ufece\ufecf\ufed0\ufed1"
-    + "\ufed2\ufed3\ufed4\ufed5\ufed6\ufed7\ufed8\ufed9\ufeda\ufedb"
-    + "\ufedc\ufedd\ufede\ufedf\ufee0\ufee1\ufee2\ufee3\ufee4\ufee5"
-    + "\ufee6\ufee7\ufee8\ufee9\ufeea\ufeeb\ufeec\ufeed\ufeee\ufeef"
-    + "\ufef0\ufef1\ufef2\ufef3\ufef4\ufef5\ufef6\ufef7\ufef8\ufef9"
-    + "\ufefa\ufefb\ufefc";
+    "،؛؟ءآأؤإئا"
+    + "بةتثجحخدذر"
+    + "زسشصضطظعغـ"
+    + "فقكلمنهوىي"
+    + "ًٌٍَُِّْﺀﺁ"
+    + "ﺂﺃﺄﺅﺆﺇﺈﺉﺊﺋ"
+    + "ﺌﺍﺎﺏﺐﺑﺒﺓﺔﺕ"
+    + "ﺖﺗﺘﺙﺚﺛﺜﺝﺞﺟ"
+    + "ﺠﺡﺢﺣﺤﺥﺦﺧﺨﺩ"
+    + "ﺪﺫﺬﺭﺮﺯﺰﺱﺲﺳ"
+    + "ﺴﺵﺶﺷﺸﺹﺺﺻﺼﺽ"
+    + "ﺾﺿﻀﻁﻂﻃﻄﻅﻆﻇ"
+    + "ﻈﻉﻊﻋﻌﻍﻎﻏﻐﻑ"
+    + "ﻒﻓﻔﻕﻖﻗﻘﻙﻚﻛ"
+    + "ﻜﻝﻞﻟﻠﻡﻢﻣﻤﻥ"
+    + "ﻦﻧﻨﻩﻪﻫﻬﻭﻮﻯ"
+    + "ﻰﻱﻲﻳﻴﻵﻶﻷﻸﻹ"
+    + "ﻺﻻﻼ";
 
     // hebrew table includes all characters in hebrew block
 
     static final String hebrew =
-    "\u0591\u0592\u0593\u0594\u0595\u0596\u0597\u0598\u0599\u059a"
-    + "\u059b\u059c\u059d\u059e\u059f\u05a0\u05a1\u05a3\u05a4\u05a5"
-    + "\u05a6\u05a7\u05a8\u05a9\u05aa\u05ab\u05ac\u05ad\u05ae\u05af"
-    + "\u05b0\u05b1\u05b2\u05b3\u05b4\u05b5\u05b6\u05b7\u05b8\u05b9"
-    + "\u05bb\u05bc\u05bd\u05be\u05bf\u05c0\u05c1\u05c2\u05c3\u05c4"
-    + "\u05d0\u05d1\u05d2\u05d3\u05d4\u05d5\u05d6\u05d7\u05d8\u05d9"
-    + "\u05da\u05db\u05dc\u05dd\u05de\u05df\u05e0\u05e1\u05e2\u05e3"
-    + "\u05e4\u05e5\u05e6\u05e7\u05e8\u05e9\u05ea\u05f0\u05f1\u05f2"
-    + "\u05f3\u05f4";
+    "֑֖֚֒֓֔֕֗֘֙"
+    + "֛֣֤֥֜֝֞֟֠֡"
+    + "֦֧֪֭֮֨֩֫֬֯"
+    + "ְֱֲֳִֵֶַָֹ"
+    + "ֻּֽ־ֿ׀ׁׂ׃ׄ"
+    + "אבגדהוזחטי"
+    + "ךכלםמןנסעף"
+    + "פץצקרשתװױײ"
+    + "׳״";
 
     // latin 1 supplement table includes all non-control characters
     // in this range.  Included because of comment in code that claims
     // some problems displaying this range with some SJIS fonts.
 
     static final String latin1sup =
-    "\u00a0\u00a1\u00a2\u00a3\u00a4\u00a5\u00a6\u00a7"
-    + "\u00a8\u00a9\u00aa\u00ab\u00ac\u00ad\u00ae\u00af\u00b0\u00b1"
-    + "\u00b2\u00b3\u00b4\u00b5\u00b6\u00b7\u00b8\u00b9\u00ba\u00bb"
-    + "\u00bc\u00bd\u00be\u00bf\u00c0\u00c1\u00c2\u00c3\u00c4\u00c5"
-    + "\u00c6\u00c7\u00c8\u00c9\u00ca\u00cb\u00cc\u00cd\u00ce\u00cf"
-    + "\u00d0\u00d1\u00d2\u00d3\u00d4\u00d5\u00d6\u00d7\u00d8\u00d9"
-    + "\u00da\u00db\u00dc\u00dd\u00de\u00df\u00e0\u00e1\u00e2\u00e3"
-    + "\u00e4\u00e5\u00e6\u00e7\u00e8\u00e9\u00ea\u00eb\u00ec\u00ed"
-    + "\u00ee\u00ef\u00f0\u00f1\u00f2\u00f3\u00f4\u00f5\u00f6\u00f7"
-    + "\u00f8\u00f9\u00fa\u00fb\u00fc\u00fd\u00fe\u00ff";
+    "\u00a0¡¢£¤¥¦§"
+    + "¨©ª«¬\u00ad®¯°±"
+    + "²³´µ¶·¸¹º»"
+    + "¼½¾¿ÀÁÂÃÄÅ"
+    + "ÆÇÈÉÊËÌÍÎÏ"
+    + "ÐÑÒÓÔÕÖ×ØÙ"
+    + "ÚÛÜÝÞßàáâã"
+    + "äåæçèéêëìí"
+    + "îïðñòóôõö÷"
+    + "øùúûüýþÿ";
 
     public TestArabicHebrew() {
         setLayout(new GridLayout(3, 1));

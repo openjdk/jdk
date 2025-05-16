@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ZipCoding {
 
     // The data to write to ZIP entries in this test
-    private static byte[] ENTRY_DATA = "German Umlaut \u00fc in entry data"
+    private static byte[] ENTRY_DATA = "German Umlaut ü in entry data"
             .getBytes(StandardCharsets.ISO_8859_1);
 
     /**
@@ -58,23 +58,23 @@ public class ZipCoding {
         return Stream.of(
                 // MS code page 932 for the Japanese language
                 Arguments.of("MS932", "MS932",
-                        "\u4e00\u4e01",
-                        "\uff67\uff68\uff69\uff6a\uff6b\uff6c"),
+                        "一丁",
+                        "ｧｨｩｪｫｬ"),
 
                 // Code page for the IBM PC
                 Arguments.of("ibm437", "ibm437",
-                        "\u00e4\u00fc",
-                        "German Umlaut \u00fc in comment"),
+                        "äü",
+                        "German Umlaut ü in comment"),
 
                 // UTF-8 with Japanese characters
                 Arguments.of("utf-8", "utf-8",
-                        "\u4e00\u4e01",
-                        "\uff67\uff68\uff69\uff6a\uff6b\uff6c"),
+                        "一丁",
+                        "ｧｨｩｪｫｬ"),
 
                 // UTF-8 with characters in the Latin1 range
                 Arguments.of("utf-8", "utf-8",
-                        "\u00e4\u00fc",
-                        "German Umlaut \u00fc in comment"),
+                        "äü",
+                        "German Umlaut ü in comment"),
 
                 // UTF-8 with surrogate pairs
                 Arguments.of("utf-8", "utf-8",
@@ -86,13 +86,13 @@ public class ZipCoding {
 
                 // UTF-8 with Japanese characters, opened with MS932
                 Arguments.of("utf-8", "MS932",
-                        "\u4e00\u4e01",
-                        "\uff67\uff68\uff69\uff6a\uff6b\uff6c"),
+                        "一丁",
+                        "ｧｨｩｪｫｬ"),
 
                 // UTF-8 with characters in latin1 range, opened with iso-8859-1
                 Arguments.of("utf-8", "iso-8859-1",
-                        "\u00e4\u00fc",
-                        "German Umlaut \u00fc in comment"),
+                        "äü",
+                        "German Umlaut ü in comment"),
                 // UTF-8 with surrogate pairs, opened with MS932
                 Arguments.of("utf-8", "MS932",
                         "Surrogate\ud801\udc01",

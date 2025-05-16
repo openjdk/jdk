@@ -41,16 +41,16 @@ public class NumberFormatProviderImpl extends NumberFormatProvider {
         Locale.of("zz")};
 
     static String[] dialect = {
-        "\u3067\u3059\u3002",
-        "\u3084\u3002",
-        "\u3069\u3059\u3002",
+        "です。",
+        "や。",
+        "どす。",
         "-zz"
     };
 
     static String[] patterns = {
         "#,##0.###{0};-#,##0.###{1}", // decimal pattern
         "#{0};(#){1}", // integer pattern
-        "\u00A4#,##0{0};-\u00A4#,##0{1}", // currency pattern
+        "¤#,##0{0};-¤#,##0{1}", // currency pattern
         "#,##0%{0}" // percent pattern
     };
     // Constants used by factory methods to specify a style of format.

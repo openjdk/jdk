@@ -78,21 +78,21 @@ public class RTFReadFontCharsetTest {
             "3\\lang1033 - Thailand 222\\line\\kerning2\\f14 cz" +
             "e\\'9c\\'e6 - Polish 238\\par\r\n}\r\n\u0000";
         String expected =
-            "Gr\u00fcezi -  Switzerland 0\n" +
-            "\u3053\u3093\u306b\u3061\u306f - Japanese 128\n" +
-            "\uc548\ub155\ud558\uc138\uc694 - Korean 129\n" +
-            "\u4f60\u597d - China 134\n" +
-            "\u81fa\u7063 - Traditional Chinese - Taiwan 136\n" +
-            "\u03b3\u03b5\u03b9\u03b1 \u03c3\u03bf\u03c5 - Greek 161\n" +
-            "A\u011fa\u00e7 - Turkish (Tree) 162\n" +
-            "\u20ab - Vietnam currency 163\n" +
-            "\u05e9\u05b8\u05c1\u05dc\u05d5\u05b9\u05dd - Hebrew 177\n" +
-            "\u0645\u0631\u062d\u0628\u0627 - Arabic 178\n" +
-            "A\u010di\u016b - Lithuanian (Thank you) 186\n" +
-            "\u0417\u0434\u0440\u0430\u0432\u0441\u0442" +
-            "\u0432\u0443\u0439\u0442\u0435 - Russian 204\n" +
-            "\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35 - Thailand 222\n" +
-            "cze\u015b\u0107 - Polish 238\n" +
+            "Grüezi -  Switzerland 0\n" +
+            "こんにちは - Japanese 128\n" +
+            "안녕하세요 - Korean 129\n" +
+            "你好 - China 134\n" +
+            "臺灣 - Traditional Chinese - Taiwan 136\n" +
+            "γεια σου - Greek 161\n" +
+            "Ağaç - Turkish (Tree) 162\n" +
+            "₫ - Vietnam currency 163\n" +
+            "שָׁלוֹם - Hebrew 177\n" +
+            "مرحبا - Arabic 178\n" +
+            "Ačiū - Lithuanian (Thank you) 186\n" +
+            "Здравст" +
+            "вуйте - Russian 204\n" +
+            "สวัสดี - Thailand 222\n" +
+            "cześć - Polish 238\n" +
             "\n";
         ByteArrayInputStream bais = new ByteArrayInputStream(
             s.getBytes(ISO_8859_1));

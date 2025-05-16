@@ -42,10 +42,10 @@ public class UnicodeMenuItemTest {
                 Click on the "Menu" on the top-left corner of frame.
 
                 The menu should have four entries:
-                1) a row of five unicode characters: \u00c4\u00cb\u00cf\u00d6\u00dc
+                1) a row of five unicode characters: ÄËÏÖÜ
                 2) a menu separator
-                3) a unicode character:  \u012d
-                4) a unicode character:  \u022d
+                3) a unicode character:  ĭ
+                4) a unicode character:  ȭ
 
                 If the menu items look like the list above, the test passes.
                 It is okay if the unicode characters look like empty boxes
@@ -70,16 +70,16 @@ public class UnicodeMenuItemTest {
         MenuBar mb = new MenuBar();
         Menu m = new Menu("Menu");
 
-        MenuItem mi1 = new MenuItem("\u00c4\u00cb\u00cf\u00d6\u00dc");
+        MenuItem mi1 = new MenuItem("ÄËÏÖÜ");
         m.add(mi1);
 
         MenuItem separator = new MenuItem("-");
         m.add(separator);
 
-        MenuItem mi2 = new MenuItem("\u012d");
+        MenuItem mi2 = new MenuItem("ĭ");
         m.add(mi2);
 
-        MenuItem mi3 = new MenuItem("\u022d");
+        MenuItem mi3 = new MenuItem("ȭ");
         m.add(mi3);
 
         mb.add(m);

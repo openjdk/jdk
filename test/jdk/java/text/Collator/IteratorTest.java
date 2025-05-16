@@ -132,7 +132,7 @@ public class IteratorTest {
         // Try a simple one first:
         // The only expansion ends with 'e' and has length 2
         String[][] test1 = {
-            { "< a & ae = \u00e4 < b < e", "" },
+            { "< a & ae = ä < b < e", "" },
             { "a",  "1" },
             { "b",  "1" },
             { "e",  "2" },

@@ -47,7 +47,7 @@ import java.util.Map;
 import jdk.test.lib.process.ProcessTools;
 
 public class i18nEnvArg {
-    final static String EUC_JP_TEXT = "\u6F22\u5B57";
+    final static String EUC_JP_TEXT = "漢字";
 
     /*
      * Checks OS is Linux and OS has ja_JP.eucjp locale or not.

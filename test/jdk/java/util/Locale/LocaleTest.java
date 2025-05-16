@@ -163,31 +163,31 @@ public class LocaleTest {
         {   "English (United States)", "French (France)", "Croatian (Croatia)", "Greek (Greece)", "Norwegian (Norway, Nynorsk)", "Italian", "xx (YY)" },
 
         // display language (French)
-        {   "anglais",  "fran\u00e7ais",   "croate", "grec",    "norv\u00e9gien",    "italien", "xx" },
+        {   "anglais",  "français",   "croate", "grec",    "norvégien",    "italien", "xx" },
         // display country (French)
-        {   "\u00c9tats-Unis",    "France",   "Croatie",  "Gr\u00e8ce",   "Norv\u00e8ge", "",     "YY" },
+        {   "États-Unis",    "France",   "Croatie",  "Grèce",   "Norvège", "",     "YY" },
         // display variant (French)
         {   "",     "",     "",     "",     "",     "",    "" },
         // display name (French)
-        {   "anglais (\u00c9tats-Unis)", "fran\u00e7ais (France)", "croate (Croatie)", "grec (Gr\u00e8ce)", "norv\u00e9gien (Norv\u00e8ge, Nynorsk)", "italien", "xx (YY)" },
+        {   "anglais (États-Unis)", "français (France)", "croate (Croatie)", "grec (Grèce)", "norvégien (Norvège, Nynorsk)", "italien", "xx (YY)" },
 
         // display language (Croatian)
-        {   "engleski",  "francuski", "hrvatski", "gr\u010dki",    "norve\u0161ki", "talijanski", "xx" },
+        {   "engleski",  "francuski", "hrvatski", "grčki",    "norveški", "talijanski", "xx" },
         // display country (Croatian)
-        {   "Sjedinjene Ameri\u010dke Dr\u017eave",    "Francuska",   "Hrvatska",  "Gr\u010dka",   "Norve\u0161ka", "", "YY" },
+        {   "Sjedinjene Američke Države",    "Francuska",   "Hrvatska",  "Grčka",   "Norveška", "", "YY" },
         // display variant (Croatian)
         {   "",     "",     "",     "",     "", "", ""},
         // display name (Croatian)
-        {   "engleski (Sjedinjene Ameri\u010dke Dr\u017eave)", "francuski (Francuska)", "hrvatski (Hrvatska)", "gr\u010dki (Gr\u010dka)", "norve\u0161ki (Norve\u0161ka, Nynorsk)", "talijanski", "xx (YY)" },
+        {   "engleski (Sjedinjene Američke Države)", "francuski (Francuska)", "hrvatski (Hrvatska)", "grčki (Grčka)", "norveški (Norveška, Nynorsk)", "talijanski", "xx (YY)" },
 
         // display language (Greek)
-        {   "\u0391\u03b3\u03b3\u03bb\u03b9\u03ba\u03ac",  "\u0393\u03b1\u03bb\u03bb\u03b9\u03ba\u03ac", "\u039a\u03c1\u03bf\u03b1\u03c4\u03b9\u03ba\u03ac", "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",    "\u039d\u03bf\u03c1\u03b2\u03b7\u03b3\u03b9\u03ba\u03ac", "\u0399\u03c4\u03b1\u03bb\u03b9\u03ba\u03ac", "xx" },
+        {   "Αγγλικά",  "Γαλλικά", "Κροατικά", "Ελληνικά",    "Νορβηγικά", "Ιταλικά", "xx" },
         // display country (Greek)
-        {   "\u0397\u03bd\u03c9\u03bc\u03ad\u03bd\u03b5\u03c2 \u03a0\u03bf\u03bb\u03b9\u03c4\u03b5\u03af\u03b5\u03c2",    "\u0393\u03b1\u03bb\u03bb\u03af\u03b1",   "\u039a\u03c1\u03bf\u03b1\u03c4\u03af\u03b1",  "\u0395\u03bb\u03bb\u03ac\u03b4\u03b1",   "\u039d\u03bf\u03c1\u03b2\u03b7\u03b3\u03af\u03b1", "", "YY" },
+        {   "Ηνωμένες Πολιτείες",    "Γαλλία",   "Κροατία",  "Ελλάδα",   "Νορβηγία", "", "YY" },
         // display variant (Greek)
         {   "",     "",     "",     "",     "", "", "" },
         // display name (Greek)
-        {   "\u0391\u03b3\u03b3\u03bb\u03b9\u03ba\u03ac (\u0397\u03bd\u03c9\u03bc\u03ad\u03bd\u03b5\u03c2 \u03a0\u03bf\u03bb\u03b9\u03c4\u03b5\u03af\u03b5\u03c2)", "\u0393\u03b1\u03bb\u03bb\u03b9\u03ba\u03ac (\u0393\u03b1\u03bb\u03bb\u03af\u03b1)", "\u039a\u03c1\u03bf\u03b1\u03c4\u03b9\u03ba\u03ac (\u039a\u03c1\u03bf\u03b1\u03c4\u03af\u03b1)", "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac (\u0395\u03bb\u03bb\u03ac\u03b4\u03b1)", "\u039d\u03bf\u03c1\u03b2\u03b7\u03b3\u03b9\u03ba\u03ac (\u039d\u03bf\u03c1\u03b2\u03b7\u03b3\u03af\u03b1, Nynorsk)", "\u0399\u03c4\u03b1\u03bb\u03b9\u03ba\u03ac", "xx (YY)" },
+        {   "Αγγλικά (Ηνωμένες Πολιτείες)", "Γαλλικά (Γαλλία)", "Κροατικά (Κροατία)", "Ελληνικά (Ελλάδα)", "Νορβηγικά (Νορβηγία, Nynorsk)", "Ιταλικά", "xx (YY)" },
 
         // display language (<root>)
         {   "English",  "French",   "Croatian", "Greek",    "Norwegian",  "Italian",  "xx" },
@@ -743,8 +743,8 @@ test commented out pending API-change approval
      * @bug 8337603
      */
     static Stream<Arguments> changedISOCodes() {
-        var hebrew = "\u05e2\u05d1\u05e8\u05d9\u05ea";
-        var yiddish = "\u05d9\u05d9\u05b4\u05d3\u05d9\u05e9";
+        var hebrew = "עברית";
+        var yiddish = "ייִדיש";
         var indonesian = "Indonesia";
 
         return Stream.of(
@@ -808,18 +808,18 @@ test commented out pending API-change approval
                                          "anglais (France)",
                                          "espagnol (Allemagne)",
                                         "Croatie",
-                                        "Su\u00e8de",
-                                        "R\u00e9publique dominicaine",
+                                        "Suède",
+                                        "République dominicaine",
                                         "Belgique" };
-        String[] spanishDisplayNames = { "alem\u00E1n (Canad\u00E1)",
-                                         "japon\u00E9s (Sud\u00E1frica)",
-                                         "ruso (M\u00e9xico)",
-                                         "ingl\u00E9s (Francia)",
-                                         "espa\u00f1ol (Alemania)",
+        String[] spanishDisplayNames = { "alemán (Canadá)",
+                                         "japonés (Sudáfrica)",
+                                         "ruso (México)",
+                                         "inglés (Francia)",
+                                         "español (Alemania)",
                                          "Croacia",
                                          "Suecia",
-                                         "Rep\u00fablica Dominicana",
-                                         "B\u00E9lgica" };
+                                         "República Dominicana",
+                                         "Bélgica" };
 
 
         // save the default locale and set to the new default to en_US
@@ -888,8 +888,8 @@ test commented out pending API-change approval
     public void TestThaiCurrencyFormat() {
         DecimalFormat thaiCurrency = (DecimalFormat) NumberFormat.getCurrencyInstance(
                 Locale.of("th", "TH"));
-        if (!thaiCurrency.getPositivePrefix().equals("\u0e3f")) {
-            fail("Thai currency prefix wrong: expected \"\u0e3f\", got \""
+        if (!thaiCurrency.getPositivePrefix().equals("฿")) {
+            fail("Thai currency prefix wrong: expected \"฿\", got \""
                     + thaiCurrency.getPositivePrefix() + "\"");
         }
         if (!thaiCurrency.getPositiveSuffix().equals("")) {
@@ -904,7 +904,7 @@ test commented out pending API-change approval
      * is check that any locales with the EURO variant format a number using the
      * Euro currency symbol.
      *
-     * ASSUME: All locales encode the Euro character "\u20AC".
+     * ASSUME: All locales encode the Euro character "€".
      * If this is changed to use the single-character Euro symbol, this
      * test must be updated.
      *
@@ -914,7 +914,7 @@ test commented out pending API-change approval
     @Test
     public void TestEuroSupport() {
         final String EURO_VARIANT = "EURO";
-        final String EURO_CURRENCY = "\u20AC"; // Look for this string in formatted Euro currency
+        final String EURO_CURRENCY = "€"; // Look for this string in formatted Euro currency
 
         Locale[] locales = NumberFormat.getAvailableLocales();
         for (int i = 0; i < locales.length; ++i) {
@@ -984,7 +984,7 @@ test commented out pending API-change approval
      * Couldn't reproduce this bug -- probably was fixed earlier.
      *
      * ORIGINAL BUG REPORT:
-     * -- basically, hungarian for monday shouldn't have an \u00f4
+     * -- basically, hungarian for monday shouldn't have an ô
      * (o circumflex)in it instead it should be an o with 2 inclined
      * (right) lines over it..
      *
@@ -1002,9 +1002,9 @@ test commented out pending API-change approval
         Date mydate = new Date(98, 3, 13); // A Monday
         DateFormat df_full = new SimpleDateFormat("EEEE", mylocale);
         String str = df_full.format(mydate);
-        // Make sure that o circumflex (\u00F4) is NOT there, and
-        // o double acute (\u0151) IS.
-        if (str.indexOf('\u0151') < 0 || str.indexOf('\u00F4') >= 0) {
+        // Make sure that o circumflex (ô) is NOT there, and
+        // o double acute (ő) IS.
+        if (str.indexOf('ő') < 0 || str.indexOf('ô') >= 0) {
             fail("Fail: Monday in Hungarian is wrong");
         }
     }
@@ -1081,13 +1081,13 @@ test commented out pending API-change approval
             Locale.of("no", "NO", "NY"), Locale.of("nb", "NO"),
             Locale.of("nn", "NO")};
         String[] englishDisplayNames = {"Norwegian (Norway)",
-            "Norwegian (Norway, Bokm\u00e5l)",
+            "Norwegian (Norway, Bokmål)",
             "Norwegian (Norway, Nynorsk)",
-            "Norwegian Bokm\u00e5l (Norway)",
+            "Norwegian Bokmål (Norway)",
             "Norwegian Nynorsk (Norway)"};
         String[] norwegianDisplayNames = {"norsk (Norge)",
-            "norsk (Norge, Bokm\u00e5l)", "norsk (Noreg, Nynorsk)",
-            "norsk bokm\u00e5l (Norge)", "norsk nynorsk (Noreg)"};
+            "norsk (Norge, Bokmål)", "norsk (Noreg, Nynorsk)",
+            "norsk bokmål (Norge)", "norsk nynorsk (Noreg)"};
 
         for (int i = 0; i < locales.length; i++) {
             Locale loc = locales[i];

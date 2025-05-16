@@ -57,8 +57,8 @@ public class EqualsIgnoreCaseBenchmark {
 
     @Setup
     public void setup() {
-        a = ("a\u00e5".repeat(size/2) + "A").getBytes(StandardCharsets.ISO_8859_1);
-        b = ("A\u00c5".repeat(size/2) + "B").getBytes(StandardCharsets.ISO_8859_1);
+        a = ("aå".repeat(size/2) + "A").getBytes(StandardCharsets.ISO_8859_1);
+        b = ("AÅ".repeat(size/2) + "B").getBytes(StandardCharsets.ISO_8859_1);
         len = a.length;
     }
 

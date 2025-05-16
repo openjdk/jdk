@@ -309,16 +309,16 @@ public class Constructors {
             fail("new Formatter(new PrintStream(\"foo\"), \"UTF-16BE\", Locale.ITALIAN");
         }
 
-        String csn = Charset.defaultCharset().newEncoder().canEncode('\u00a3') ?
+        String csn = Charset.defaultCharset().newEncoder().canEncode('£') ?
             "ASCII" : "ISO-8859-1";
         try {
             ByteArrayOutputStream bs[] = { new ByteArrayOutputStream(),
                                            new ByteArrayOutputStream(),
                                            new ByteArrayOutputStream()
             };
-            new Formatter((Appendable)  new PrintStream(bs[0], true, csn)).format("\u00a3");
-            new Formatter((OutputStream)new PrintStream(bs[1], true, csn)).format("\u00a3");
-            new Formatter(              new PrintStream(bs[2], true, csn)).format("\u00a3");
+            new Formatter((Appendable)  new PrintStream(bs[0], true, csn)).format("£");
+            new Formatter((OutputStream)new PrintStream(bs[1], true, csn)).format("£");
+            new Formatter(              new PrintStream(bs[2], true, csn)).format("£");
             if (Arrays.equals(bs[0].toByteArray(), bs[1].toByteArray())) {
                 fail("arrays shouldn't match: " + bs[0].toByteArray());
             } else {

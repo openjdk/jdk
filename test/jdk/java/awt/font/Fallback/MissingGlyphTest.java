@@ -145,7 +145,7 @@ public class MissingGlyphTest {
 
 class MyComponent extends JComponent {
     private final Font font = new Font("Menlo", Font.ITALIC, 100);
-    private final String text = "\u0627"; // Arabic letter alef
+    private final String text = "ا"; // Arabic letter alef
 
     @Override
     protected void paintComponent(Graphics g) {

@@ -46,7 +46,7 @@ public class JapaneseLenientEraTest {
         return new Object[][] {
             // lenient era/year, strict era/year
             { "Meiji 123", "Heisei 2" },
-            { "Sh\u014dwa 65", "Heisei 2" },
+            { "Shōwa 65", "Heisei 2" },
             { "Heisei 32", "Reiwa 2" },
         };
     }

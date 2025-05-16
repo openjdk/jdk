@@ -47,35 +47,35 @@ public class CldrFormatNamesTest {
     static final Object[][] CLDR_DATA = {
         {
             Locale.JAPAN,
-            "field.zone", "\u30bf\u30a4\u30e0\u30be\u30fc\u30f3",
+            "field.zone", "タイムゾーン",
             "java.time.japanese.DatePatterns", new String[] {
-                "Gy\u5e74M\u6708d\u65e5EEEE",
-                "Gy\u5e74M\u6708d\u65e5",
-                "Gy\u5e74M\u6708d\u65e5",
+                "Gy年M月d日EEEE",
+                "Gy年M月d日",
+                "Gy年M月d日",
                 "GGGGGy/M/d",
             },
             "java.time.roc.DatePatterns", new String[] {
-                "Gy\u5e74M\u6708d\u65e5EEEE",
-                "Gy\u5e74M\u6708d\u65e5",
+                "Gy年M月d日EEEE",
+                "Gy年M月d日",
                 "Gy/MM/dd",
                 "Gy/MM/dd",
             },
-            "calendarname.buddhist", "\u4ecf\u66a6",
+            "calendarname.buddhist", "仏暦",
         },
         {
             Locale.PRC,
-            "field.zone", "\u65f6\u533a",
+            "field.zone", "时区",
             "java.time.islamic.DatePatterns", new String[] {
-                "Gy\u5e74M\u6708d\u65e5EEEE",
-                "Gy\u5e74M\u6708d\u65e5",
-                "Gy\u5e74M\u6708d\u65e5",
+                "Gy年M月d日EEEE",
+                "Gy年M月d日",
+                "Gy年M月d日",
                 "Gy/M/d",
             },
-            "calendarname.islamic", "\u4f0a\u65af\u5170\u5386",
+            "calendarname.islamic", "伊斯兰历",
         },
         {
             Locale.GERMANY,
-            "field.dayperiod", "Tagesh\u00e4lfte",
+            "field.dayperiod", "Tageshälfte",
             "java.time.islamic.DatePatterns", new String[] {
                 "EEEE, d. MMMM y G",
                 "d. MMMM y G",
@@ -93,34 +93,34 @@ public class CldrFormatNamesTest {
                 "d MMM y G",
                 "dd/MM/y GGGGG",
             },
-            "calendarname.islamic", "calendrier h\u00e9girien",
+            "calendarname.islamic", "calendrier hégirien",
         },
     };
 
     // Islamic calendar symbol names in ar
     private static final String[] ISLAMIC_MONTH_NAMES = {
-        "\u0645\u062d\u0631\u0645",
-        "\u0635\u0641\u0631",
-        "\u0631\u0628\u064a\u0639 \u0627\u0644\u0623\u0648\u0644",
-        "\u0631\u0628\u064a\u0639 \u0627\u0644\u0622\u062e\u0631",
-        "\u062c\u0645\u0627\u062f\u0649 \u0627\u0644\u0623\u0648\u0644\u0649",
-        "\u062c\u0645\u0627\u062f\u0649 \u0627\u0644\u0622\u062e\u0631\u0629",
-        "\u0631\u062c\u0628",
-        "\u0634\u0639\u0628\u0627\u0646",
-        "\u0631\u0645\u0636\u0627\u0646",
-        "\u0634\u0648\u0627\u0644",
-        "\u0630\u0648 \u0627\u0644\u0642\u0639\u062f\u0629",
-        "\u0630\u0648 \u0627\u0644\u062d\u062c\u0629",
+        "محرم",
+        "صفر",
+        "ربيع الأول",
+        "ربيع الآخر",
+        "جمادى الأولى",
+        "جمادى الآخرة",
+        "رجب",
+        "شعبان",
+        "رمضان",
+        "شوال",
+        "ذو القعدة",
+        "ذو الحجة",
     };
     private static final String[] ISLAMIC_ERA_NAMES = {
         "",
-        "\u0647\u0640",
+        "هـ",
     };
 
     // Minguo calendar symbol names in zh_Hant
     private static final String[] ROC_ERA_NAMES = {
-        "\u6c11\u570b\u524d",
-        "\u6c11\u570b",
+        "民國前",
+        "民國",
     };
 
     private static int errors = 0;

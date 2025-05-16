@@ -52,19 +52,19 @@ public class Bug4395196
                  System.out.println("error at " + sdf.format(now));
                  }
                 df =  DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.MEDIUM,loc);
-                sdf.applyPattern("y\ub144 M\uc6d4 d\uc77c a h:mm:ss");
+                sdf.applyPattern("y년 M월 d일 a h:mm:ss");
                 if( !sdf.format(now).equals(df.format(now))){
                  result++;
                  System.out.println("error at " + sdf.format(now));
                  }
                 df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.LONG,loc);
-                sdf.applyPattern("y. M. d. a h\uc2dc m\ubd84 s\ucd08 z");
+                sdf.applyPattern("y. M. d. a h시 m분 s초 z");
                 if( !sdf.format(now).equals(df.format(now))){
                  result++;
                  System.out.println("error at " + sdf.format(now));
                  }
                 df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.FULL,loc);
-                sdf.applyPattern("yy. M. d. a h\uc2dc m\ubd84 s\ucd08 zzzz");
+                sdf.applyPattern("yy. M. d. a h시 m분 s초 zzzz");
                 if( !sdf.format(now).equals(df.format(now))){
                  result++;
                  System.out.println("error at " + sdf.format(now));

@@ -33,8 +33,8 @@ public class Explicit01 {
 
     private static StringBuilder staticSB = new StringBuilder();
     private static Random random = new Random(11);
-    private static final String PRE  = "pre\u307E\u3048\u306B";
-    private static final String POST = "post\u3042\u3068\u3067";
+    private static final String PRE  = "preまえに";
+    private static final String POST = "postあとで";
 
     private static void crop(StringBuilder sb) {
         int max = 100;

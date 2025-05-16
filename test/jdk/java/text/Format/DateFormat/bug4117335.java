@@ -75,10 +75,10 @@ public class bug4117335 {
         }
     }
 
-    static final String bc = "\u7d00\u5143\u524d";
-    static final String ad = "\u897f\u66a6";
-    static final String jstLong = "\u65e5\u672c\u6a19\u6e96\u6642";
+    static final String bc = "紀元前";
+    static final String ad = "西暦";
+    static final String jstLong = "日本標準時";
     static final String jstShort = "JST";
-    static final String jdtLong = "\u65e5\u672c\u590f\u6642\u9593";
+    static final String jdtLong = "日本夏時間";
     static final String jdtShort = "JDT";
 }

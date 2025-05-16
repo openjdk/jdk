@@ -50,7 +50,7 @@ import javax.imageio.ImageIO;
  * 2. filling in the result of GlyphVector#getOutline
  *
  * Should be the same but is different for some CJK characters
- * (e.g. Katakana character \u30AF).
+ * (e.g. Katakana character ク).
  *
  * @author ikopylov@google.com (Igor Kopylov)
  */
@@ -61,7 +61,7 @@ public class GlyphVectorOutline {
         }
         writeImage(new File(args[0]),
                    new File(args[1]),
-                   "\u30AF");
+                   "ク");
     }
 
     public static void writeImage(File fontFile, File outputFile, String value) throws Exception {

@@ -85,20 +85,20 @@ public class TestNonIsoFormatter {
         return new Object[][] {
             // Chronology, Format Locale, Numbering Locale, ChronoLocalDate, expected string
             { JAPANESE, Locale.JAPANESE, Locale.JAPANESE, JAPANESE.date(IsoDate),
-              "\u5e73\u621025\u5e742\u670811\u65e5\u6708\u66dc\u65e5" }, // Japanese Heisei 25-02-11
+              "平成25年2月11日月曜日" }, // Japanese Heisei 25-02-11
             { HIJRAH, ARABIC, ARABIC, HIJRAH.date(IsoDate),
-              "\u0627\u0644\u0627\u062b\u0646\u064a\u0646\u060c 1 \u0631\u0628\u064a\u0639 "
-              + "\u0627\u0644\u0622\u062e\u0631 1434 \u0647\u0640" }, // Hijrah AH 1434-04-01 (Mon)
+              "الاثنين، 1 ربيع "
+              + "الآخر 1434 هـ" }, // Hijrah AH 1434-04-01 (Mon)
             { MINGUO, Locale.TAIWAN, Locale.TAIWAN, MINGUO.date(IsoDate),
-              "\u6c11\u570b102\u5e742\u670811\u65e5 \u661f\u671f\u4e00" }, // Minguo ROC 102-02-11 (Mon)
+              "民國102年2月11日 星期一" }, // Minguo ROC 102-02-11 (Mon)
             { BUDDHIST, thTH, thTH, BUDDHIST.date(IsoDate),
-              "\u0e27\u0e31\u0e19\u0e08\u0e31\u0e19\u0e17\u0e23\u0e4c\u0e17\u0e35\u0e48"
-              + " 11 \u0e01\u0e38\u0e21\u0e20\u0e32\u0e1e\u0e31\u0e19\u0e18\u0e4c"
-              + " \u0e1e.\u0e28. 2556" }, // ThaiBuddhist BE 2556-02-11
+              "วันจันทร์ที่"
+              + " 11 กุมภาพันธ์"
+              + " พ.ศ. 2556" }, // ThaiBuddhist BE 2556-02-11
             { BUDDHIST, thTH, thTHTH, BUDDHIST.date(IsoDate),
-              "\u0e27\u0e31\u0e19\u0e08\u0e31\u0e19\u0e17\u0e23\u0e4c\u0e17\u0e35\u0e48 \u0e51\u0e51 "
-              + "\u0e01\u0e38\u0e21\u0e20\u0e32\u0e1e\u0e31\u0e19\u0e18\u0e4c \u0e1e.\u0e28. "
-              + "\u0e52\u0e55\u0e55\u0e56" }, // ThaiBuddhist BE 2556-02-11 (with Thai digits)
+              "วันจันทร์ที่ ๑๑ "
+              + "กุมภาพันธ์ พ.ศ. "
+              + "๒๕๕๖" }, // ThaiBuddhist BE 2556-02-11 (with Thai digits)
         };
     }
 
@@ -108,8 +108,8 @@ public class TestNonIsoFormatter {
             // TODO: currently fixed Chronology and Locale.
             // line commented out, as S64.01.09 seems like a reasonable thing to parse
             // (era "S" ended on S64.01.07, but a little leniency is a good thing
-//            { "\u662d\u548c64\u5e741\u67089\u65e5\u6708\u66dc\u65e5" }, // S64.01.09 (Mon)
-            { "\u662d\u548c65\u5e741\u67081\u65e5\u6708\u66dc\u65e5" }, // S65.01.01 (Mon)
+//            { "昭和64年1月9日月曜日" }, // S64.01.09 (Mon)
+            { "昭和65年1月1日月曜日" }, // S65.01.01 (Mon)
         };
     }
 
@@ -124,16 +124,16 @@ public class TestNonIsoFormatter {
             { MINGUO,   Locale.ENGLISH, "Minguo Calendar" },
 
             { ISO8601,  Locale.JAPANESE, "ISO" },    // No data in CLDR; Use Id.
-            { JAPANESE, Locale.JAPANESE, "\u548c\u66a6" },
-            { BUDDHIST, Locale.JAPANESE, "\u4ecf\u66a6" },
+            { JAPANESE, Locale.JAPANESE, "和暦" },
+            { BUDDHIST, Locale.JAPANESE, "仏暦" },
 
             { ISO8601,  thTH, "ISO" },    // No data in CLDR; Use Id.
-            { JAPANESE, thTH, "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e0d\u0e35\u0e48\u0e1b\u0e38\u0e48\u0e19" },
-            { BUDDHIST, thTH, "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e1e\u0e38\u0e17\u0e18" },
+            { JAPANESE, thTH, "ปฏิทินญี่ปุ่น" },
+            { BUDDHIST, thTH, "ปฏิทินพุทธ" },
 
-            { HIJRAH,   ARABIC, "\u0627\u0644\u062a\u0642\u0648\u064a\u0645 "
-                                + "\u0627\u0644\u0647\u062c\u0631\u064a "
-                                + "(\u0623\u0645 \u0627\u0644\u0642\u0631\u0649)" },
+            { HIJRAH,   ARABIC, "التقويم "
+                                + "الهجري "
+                                + "(أم القرى)" },
         };
     }
 
@@ -142,7 +142,7 @@ public class TestNonIsoFormatter {
         return new Object[][] {
             // Chronology, lenient era/year, strict era/year
             { JAPANESE, "Meiji 123", "Heisei 2" },
-            { JAPANESE, "Sh\u014dwa 65", "Heisei 2" },
+            { JAPANESE, "Shōwa 65", "Heisei 2" },
             { JAPANESE, "Heisei 32", "Reiwa 2" },
         };
     }

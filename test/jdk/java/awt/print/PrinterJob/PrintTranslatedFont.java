@@ -132,7 +132,7 @@ public class PrintTranslatedFont extends Frame {
 
             posx = 20;
             posy = 70;
-            str = "Test string compound printing \u2203\u2200";
+            str = "Test string compound printing ∃∀";
             sw = fm.stringWidth(str);
             g2d.drawString(str, posx, posy);
             g2d.drawLine(posx + tx, posy + ty + 2, posx + tx + sw, posy + ty + 2);

@@ -37,7 +37,7 @@ public class SaveComments {
     public static void main(String[] argv) throws IOException {
         String ls = System.getProperty("line.separator");
         String[] input = new String[] {
-          "Comments with \u4e2d\u6587\u6c49\u5b57 included",
+          "Comments with 中文汉字 included",
           "Comments with \n Second comments line",
           "Comments with \n# Second comments line",
           "Comments with \n! Second comments line",
@@ -49,7 +49,7 @@ public class SaveComments {
           "Comments with \n#key4=value4"};
 
         String[] output = new String[] {
-          "#Comments with \\u4E2D\\u6587\\u6C49\\u5B57 included" + ls,
+          "#Comments with \中\文\汉\字 included" + ls,
           "#Comments with " + ls + "# Second comments line" + ls,
           "#Comments with " + ls + "# Second comments line" + ls,
           "#Comments with " + ls + "! Second comments line" + ls,

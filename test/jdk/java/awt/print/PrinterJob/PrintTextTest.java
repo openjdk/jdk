@@ -399,19 +399,19 @@ public class PrintTextTest {
             }
 
             iy += LS;
-            s = "drawString: \u0924\u094d\u0930 \u0915\u0948\u0930\u0947 End.";
+            s = "drawString: त्र कैरे End.";
             g.drawString(s, ix, iy);
             if (!textFont.isTransformed()) {
                 g.drawLine(ix, iy + 1, ix + fm.stringWidth(s), iy + 1);
             }
 
             iy += LS;
-            s = "TextLayout 1: \u0924\u094d\u0930 \u0915\u0948\u0930\u0947 End.";
+            s = "TextLayout 1: त्र कैरे End.";
             TextLayout tl = new TextLayout(s, new HashMap<>(), frc);
             tl.draw(g2d, ix, iy);
 
             iy += LS;
-            s = "TextLayout 2: \u0924\u094d\u0930 \u0915\u0948\u0930\u0947 End.";
+            s = "TextLayout 2: त्र कैरे End.";
             tl = new TextLayout(s, f, frc);
             tl.draw(g2d, ix, iy);
         }
@@ -424,8 +424,8 @@ public class PrintTextTest {
         }
 
         private static final String TEXT =
-            "\u3042\u3044\u3046\u3048\u304a\u30a4\u30ed\u30cf" +
-            "\u30cb\u30db\u30d8\u30c8\u4e00\u4e01\u4e02\u4e05\uff08";
+            "あいうえおイロハ" +
+            "ニホヘト一丁丂丅（";
 
         @Override
         public void paint(Graphics g) {

@@ -64,7 +64,7 @@ public class TestTibetan {
         label.setBorder(new LineBorder(Color.black));
         label.setFont(ourFont);
 
-        final String str = "\u0F04\u0F05\u0F0D\u0F0D\u0020\u0F4F\u0F72\u0F53\u0F0B\u0F4F\u0F72\u0F53\u0F0B\u0F42\u0FB1\u0F72\u0F0B\u0F51\u0F54\u0F60\u0F0B\u0F62\u0FA9\u0F63";  // TinTin.
+        final String str = "༄༅།། ཏིན་ཏིན་གྱི་དཔའ་རྩལ";  // TinTin.
 
         if(AUTOMATIC_TEST) {  /* run the test automatically (else, manually) */
             label.setText(str);

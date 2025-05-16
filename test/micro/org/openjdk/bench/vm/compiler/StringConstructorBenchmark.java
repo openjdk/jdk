@@ -48,7 +48,7 @@ public class StringConstructorBenchmark {
 
   @Setup
   public void setup() {
-    str = "Quizdeltagerne spiste jordb\u00e6r med fl\u00f8de, mens cirkusklovnen. \u042f";//Latin1 ending with Russian
+    str = "Quizdeltagerne spiste jordbær med fløde, mens cirkusklovnen. Я";//Latin1 ending with Russian
     array = str.getBytes(StandardCharsets.UTF_8);
   }
 

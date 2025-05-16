@@ -80,7 +80,7 @@ public class LigatureCaretTest {
      */
     public static void testBidiWithNumbers() {
 
-        String bidiWithNumbers = "abc\u05D0\u05D1\u05D2123abc";
+        String bidiWithNumbers = "abcאבג123abc";
         Font font = getFontForText(bidiWithNumbers);
         if (font == null) {
             return;
@@ -129,7 +129,7 @@ public class LigatureCaretTest {
     public static void testLamAlef() {
 
         // lam-alef form a mandantory ligature.
-        final String lamAlef = "\u0644\u0627";
+        final String lamAlef = "لا";
         final String ltrText = "abcd";
 
         Font font = getFontForText(lamAlef+ltrText);

@@ -80,16 +80,16 @@ public class TestParseBigDecimal {
     Object[][] compactParseData() {
         return new Object[][]{
             // compact number format instance, string to parse, parsed number
-            {FORMAT_DZ_LONG, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2"
-                + "\u0F42 \u0F21", new BigDecimal("1000")},
-            {FORMAT_DZ_LONG, "-\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2"
-                + "\u0F42 \u0F23", new BigDecimal("-3000")},
-            {FORMAT_DZ_LONG, "\u0F51\u0F74\u0F44\u0F0B\u0F55\u0FB1\u0F74\u0F62"
-                + "\u0F0B\u0F66\u0F0B\u0F61\u0F0B \u0F21"
-                + "\u0F22\u0F23\u0F24\u0F25\u0F27", new BigDecimal("12345700000000000000")},
-            {FORMAT_DZ_LONG, "-\u0F51\u0F74\u0F44\u0F0B\u0F55\u0FB1\u0F74\u0F62"
-                + "\u0F0B\u0F66\u0F0B\u0F61\u0F0B \u0F21"
-                + "\u0F22\u0F23\u0F24\u0F25\u0F27", new BigDecimal("-12345700000000000000")},
+            {FORMAT_DZ_LONG, "སྟོང་ཕྲ"
+                + "ག ༡", new BigDecimal("1000")},
+            {FORMAT_DZ_LONG, "-སྟོང་ཕྲ"
+                + "ག ༣", new BigDecimal("-3000")},
+            {FORMAT_DZ_LONG, "དུང་ཕྱུར"
+                + "་ས་ཡ་ ༡"
+                + "༢༣༤༥༧", new BigDecimal("12345700000000000000")},
+            {FORMAT_DZ_LONG, "-དུང་ཕྱུར"
+                + "་ས་ཡ་ ༡"
+                + "༢༣༤༥༧", new BigDecimal("-12345700000000000000")},
             {FORMAT_EN_US_SHORT, "-0.0", new BigDecimal("-0.0")},
             {FORMAT_EN_US_SHORT, "0", new BigDecimal("0")},
             {FORMAT_EN_US_SHORT, "499", new BigDecimal("499")},
@@ -121,17 +121,17 @@ public class TestParseBigDecimal {
             {FORMAT_EN_LONG, "12345679 trillion", new BigDecimal("12345679000000000000")},
             {FORMAT_HI_IN_LONG, "999", new BigDecimal("999")},
             {FORMAT_HI_IN_LONG, "-999", new BigDecimal("-999")},
-            {FORMAT_HI_IN_LONG, "1 \u0939\u091C\u093C\u093E\u0930", new BigDecimal("1000")},
-            {FORMAT_HI_IN_LONG, "-1 \u0939\u091C\u093C\u093E\u0930", new BigDecimal("-1000")},
-            {FORMAT_HI_IN_LONG, "3 \u0939\u091C\u093C\u093E\u0930", new BigDecimal("3000")},
-            {FORMAT_HI_IN_LONG, "12345679 \u0916\u0930\u092C", new BigDecimal("1234567900000000000")},
-            {FORMAT_HI_IN_LONG, "-12345679 \u0916\u0930\u092C", new BigDecimal("-1234567900000000000")},
+            {FORMAT_HI_IN_LONG, "1 हज़ार", new BigDecimal("1000")},
+            {FORMAT_HI_IN_LONG, "-1 हज़ार", new BigDecimal("-1000")},
+            {FORMAT_HI_IN_LONG, "3 हज़ार", new BigDecimal("3000")},
+            {FORMAT_HI_IN_LONG, "12345679 खरब", new BigDecimal("1234567900000000000")},
+            {FORMAT_HI_IN_LONG, "-12345679 खरब", new BigDecimal("-1234567900000000000")},
             {FORMAT_JA_JP_SHORT, "-99", new BigDecimal("-99")},
-            {FORMAT_JA_JP_SHORT, "1\u4E07", new BigDecimal("10000")},
-            {FORMAT_JA_JP_SHORT, "30\u4E07", new BigDecimal("300000")},
-            {FORMAT_JA_JP_SHORT, "-30\u4E07", new BigDecimal("-300000")},
-            {FORMAT_JA_JP_SHORT, "12345679\u5146", new BigDecimal("12345679000000000000")},
-            {FORMAT_JA_JP_SHORT, "-12345679\u5146", new BigDecimal("-12345679000000000000")},
+            {FORMAT_JA_JP_SHORT, "1万", new BigDecimal("10000")},
+            {FORMAT_JA_JP_SHORT, "30万", new BigDecimal("300000")},
+            {FORMAT_JA_JP_SHORT, "-30万", new BigDecimal("-300000")},
+            {FORMAT_JA_JP_SHORT, "12345679兆", new BigDecimal("12345679000000000000")},
+            {FORMAT_JA_JP_SHORT, "-12345679兆", new BigDecimal("-12345679000000000000")},
             {FORMAT_IT_SHORT, "-99", new BigDecimal("-99")},
             {FORMAT_IT_SHORT, "1\u00a0Mln", new BigDecimal("1000000")},
             {FORMAT_IT_SHORT, "30\u00a0Mln", new BigDecimal("30000000")},

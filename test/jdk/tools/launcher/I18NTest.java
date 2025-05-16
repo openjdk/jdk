@@ -76,9 +76,9 @@ public class I18NTest extends TestHelper {
     public static void createPlatformFile() throws Exception {
         List<String> buffer = new ArrayList<>();
         // "HelloWorld" with an accented e
-        fileName = "i18nH\u00e9lloWorld";
+        fileName = "i18nHélloWorld";
         buffer.clear();
-        buffer.add("public class i18nH\u00e9lloWorld {");
+        buffer.add("public class i18nHélloWorld {");
         buffer.add("    public static void main(String [] argv) {");
         buffer.add("        System.out.println(\"Hello Cp1252 World\");");
         buffer.add("    }");

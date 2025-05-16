@@ -61,19 +61,19 @@ public class Merge01 {
     public static String randomString() {
         int t = random.nextInt(100);
         String pre = "" + t / 10;
-        String post = "" + t + 'a'  + '\u307E' + random.nextInt(20);
+        String post = "" + t + 'a'  + 'ま' + random.nextInt(20);
         //merge:
         String s = crop(pre + post);
         staticS = crop(s + staticS);
 
         int r = pre.hashCode() * post.hashCode() - random.nextInt(1000);
-        return randomCut(pre + "" + r % 50 + "-" + r + "o" + "\u306B" + post + staticS, 10);
+        return randomCut(pre + "" + r % 50 + "-" + r + "o" + "に" + post + staticS, 10);
     }
 
     private static final CompilerTest<Integer> test = new CompilerTest<Integer>("Merge01") {
         @Override
         public Integer execute(Random random) {
-            String res = randomString() + "t\u306B";
+            String res = randomString() + "tに";
             int t = 200;
             while (t > 0) {
                 t -= random.nextInt(50);

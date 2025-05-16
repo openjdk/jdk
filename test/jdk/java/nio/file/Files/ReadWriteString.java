@@ -67,7 +67,7 @@ public class ReadWriteString {
     final String TEXT_UNICODE = "\u201CHello\u201D";
     final String TEXT_ASCII = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n abcdefghijklmnopqrstuvwxyz\n 1234567890\n";
     final static String TEXT_PERSON_CART_WHEELING = "\ud83e\udd38";
-    private static final String JA_STRING = "\u65e5\u672c\u8a9e\u6587\u5b57\u5217";
+    private static final String JA_STRING = "日本語文字列";
     private static final Charset WINDOWS_1252 = Charset.forName("windows-1252");
     private static final Charset WINDOWS_31J = Charset.forName("windows-31j");
 
@@ -104,8 +104,8 @@ public class ReadWriteString {
             {path, "\u00A0\u00A1", US_ASCII},
             {path, "\ud800", UTF_8},
             {path, JA_STRING, ISO_8859_1},
-            {path, "\u041e", WINDOWS_1252}, // cyrillic capital letter O
-            {path, "\u091c", WINDOWS_31J}, // devanagari letter ja
+            {path, "О", WINDOWS_1252}, // cyrillic capital letter O
+            {path, "ज", WINDOWS_31J}, // devanagari letter ja
         };
     }
 

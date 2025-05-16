@@ -40,9 +40,9 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider {
         Locale.of("xx", "YY")};
 
     static String[] dialect = {
-        "\u3067\u3059\u3002",
-        "\u3084\u3002",
-        "\u3069\u3059\u3002",
+        "です。",
+        "や。",
+        "どす。",
         "-xx-YY"
     };
 

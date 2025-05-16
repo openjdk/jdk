@@ -211,17 +211,17 @@ public class TestAnchorNames extends JavadocTester {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "package p; public class Def {\n"
-                + "    public int \u00e0\u00e9;\n"              // a`e'
-                + "    public void \u00c0\u00c9() { }\n"        // A`E'
-                + "    public int \u03b1\u03b2\u03b3;\n"        // alpha beta gamma
-                + "    public void \u0391\u0392\u0393() { }\n"  // ALPHA BETA GAMMA
+                + "    public int àé;\n"              // a`e'
+                + "    public void ÀÉ() { }\n"        // A`E'
+                + "    public int αβγ;\n"        // alpha beta gamma
+                + "    public void ΑΒΓ() { }\n"  // ALPHA BETA GAMMA
                 + "}",
                 "package p; \n"
                 + "/**\n"
-                + " * {@link Def#\u00e0\u00e9 &agrave;&eacute;}<br>\n"
-                + " * {@link Def#\u00c0\u00c9() &Agrave;&Eacute;}<br>\n"
-                + " * {@link Def#\u03b1\u03b2\u03b3 &alpha;&beta;&gamma;}<br>\n"
-                + " * {@link Def#\u0391\u0392\u0393() &Alpha;&Beta;&Gamma;}<br>\n"
+                + " * {@link Def#àé &agrave;&eacute;}<br>\n"
+                + " * {@link Def#ÀÉ() &Agrave;&Eacute;}<br>\n"
+                + " * {@link Def#αβγ &alpha;&beta;&gamma;}<br>\n"
+                + " * {@link Def#ΑΒΓ() &Alpha;&Beta;&Gamma;}<br>\n"
                 + " */\n"
                 + "public class Ref { }");
 
@@ -233,10 +233,10 @@ public class TestAnchorNames extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/Def.html", true,
-                "<section class=\"detail\" id=\"\u00e0\u00e9\">",
-                "<section class=\"detail\" id=\"\u00c0\u00c9()\">",
-                "<section class=\"detail\" id=\"\u03b1\u03b2\u03b3\">",
-                "<section class=\"detail\" id=\"\u0391\u0392\u0393()\">");
+                "<section class=\"detail\" id=\"àé\">",
+                "<section class=\"detail\" id=\"ÀÉ()\">",
+                "<section class=\"detail\" id=\"αβγ\">",
+                "<section class=\"detail\" id=\"ΑΒΓ()\">");
 
         checkOutput("p/Ref.html", true,
                 """

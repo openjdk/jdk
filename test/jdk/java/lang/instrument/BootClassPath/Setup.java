@@ -114,20 +114,20 @@ public class Setup {
     private static final String filePathEncoding = System.getProperty("sun.jnu.encoding");
 
     // language names taken from java.util.Locale.getDisplayLanguage for the respective language
-    private static final String arabic = "\u0627\u0644\u0639\u0631\u0628\u064a\u0629";
-    private static final String s_chinese = "\u4e2d\u6587";
-    private static final String t_chinese = "\u4e2d\u6587";
-    private static final String russian = "\u0440\u0443\u0441\u0441\u043A\u0438\u0439";
-    private static final String hindi = "\u0939\u093f\u0902\u0926\u0940";
-    private static final String greek = "\u03b5\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac";
-    private static final String hebrew = "\u05e2\u05d1\u05e8\u05d9\u05ea";
-    private static final String japanese = "\u65e5\u672c\u8a9e";
-    private static final String korean = "\ud55c\uad6d\uc5b4";
-    private static final String lithuanian = "Lietuvi\u0173";
-    private static final String czech = "\u010de\u0161tina";
-    private static final String turkish = "T\u00fcrk\u00e7e";
-    private static final String spanish = "espa\u00f1ol";
-    private static final String thai = "\u0e44\u0e17\u0e22";
+    private static final String arabic = "العربية";
+    private static final String s_chinese = "中文";
+    private static final String t_chinese = "中文";
+    private static final String russian = "русский";
+    private static final String hindi = "हिंदी";
+    private static final String greek = "ελληνικά";
+    private static final String hebrew = "עברית";
+    private static final String japanese = "日本語";
+    private static final String korean = "한국어";
+    private static final String lithuanian = "Lietuvių";
+    private static final String czech = "čeština";
+    private static final String turkish = "Türkçe";
+    private static final String spanish = "español";
+    private static final String thai = "ไทย";
     private static final String unicode = arabic + s_chinese + t_chinese
             + russian + hindi + greek + hebrew + japanese + korean
             + lithuanian + czech + turkish + spanish + thai;
