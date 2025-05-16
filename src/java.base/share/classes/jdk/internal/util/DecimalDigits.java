@@ -143,6 +143,8 @@ public final class DecimalDigits {
      * values, to cover the Integer.MIN_VALUE case. Converting otherwise
      * (negative to positive) will expose -Integer.MIN_VALUE that overflows
      * integer.
+     * <p>
+     * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
      *
      * @param i     value to convert
      * @param index next index, after the least significant digit
@@ -150,7 +152,6 @@ public final class DecimalDigits {
      * @return index of the most significant digit or minus sign, if present
      */
     public static int uncheckedGetCharsLatin1(int i, int index, byte[] buf) {
-        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         int q;
         int charPos = index;
 
@@ -193,6 +194,8 @@ public final class DecimalDigits {
      * values, to cover the Long.MIN_VALUE case. Converting otherwise
      * (negative to positive) will expose -Long.MIN_VALUE that overflows
      * long.
+     * <p>
+     * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
      *
      * @param i     value to convert
      * @param index next index, after the least significant digit
@@ -200,7 +203,6 @@ public final class DecimalDigits {
      * @return index of the most significant digit or minus sign, if present
      */
     public static int uncheckedGetCharsLatin1(long i, int index, byte[] buf) {
-        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         long q;
         int charPos = index;
 
@@ -245,6 +247,8 @@ public final class DecimalDigits {
     /**
      * This is a variant of {@link DecimalDigits#uncheckedGetCharsLatin1(int, int, byte[])}, but for
      * UTF-16 coder.
+     * <p>
+     * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
      *
      * @param i     value to convert
      * @param index next index, after the least significant digit
@@ -252,7 +256,6 @@ public final class DecimalDigits {
      * @return index of the most significant digit or minus sign, if present
      */
     public static int uncheckedGetCharsUTF16(int i, int index, byte[] buf) {
-        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         int q;
         int charPos = index;
 
@@ -287,6 +290,8 @@ public final class DecimalDigits {
     /**
      * This is a variant of {@link DecimalDigits#uncheckedGetCharsLatin1(long, int, byte[])}, but for
      * UTF-16 coder.
+     * <p>
+     * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
      *
      * @param i     value to convert
      * @param index next index, after the least significant digit
@@ -294,7 +299,6 @@ public final class DecimalDigits {
      * @return index of the most significant digit or minus sign, if present
      */
     public static int uncheckedGetCharsUTF16(long i, int index, byte[] buf) {
-        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         long q;
         int charPos = index;
 
@@ -345,7 +349,6 @@ public final class DecimalDigits {
      * @return index of the most significant digit or minus sign, if present
      */
     public static int getChars(long i, int index, char[] buf) {
-        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         long q;
         int charPos = index;
 
@@ -402,6 +405,9 @@ public final class DecimalDigits {
     /**
      * Insert the 2-bytes integer into the buf as 2 decimal digit ASCII bytes,
      * only least significant 16 bits of {@code v} are used.
+     * <p>
+     * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
+     *
      * @param buf byte buffer to copy into
      * @param charPos insert point
      * @param v to convert
@@ -415,6 +421,9 @@ public final class DecimalDigits {
     /**
      * Insert the 2-chars integer into the buf as 2 decimal digit UTF16 bytes,
      * only least significant 16 bits of {@code v} are used.
+     * <p>
+     * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
+     *
      * @param buf byte buffer to copy into
      * @param charPos insert point
      * @param v to convert
@@ -425,10 +434,18 @@ public final class DecimalDigits {
         uncheckedPutCharUTF16(buf, charPos + 1, packed >> 8);
     }
 
+    /**
+     * <p>
+     * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
+     */
     private static void uncheckedPutCharLatin1(byte[] buf, int charPos, int c) {
         UNSAFE.putByte(buf, ARRAY_BYTE_BASE_OFFSET + charPos, (byte) c);
     }
 
+    /**
+     * <p>
+     * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
+     */
     private static void uncheckedPutCharUTF16(byte[] buf, int charPos, int c) {
         UNSAFE.putCharUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + ((long) charPos << 1), (char) c);
     }
