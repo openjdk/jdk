@@ -425,13 +425,20 @@ public final class IdleTimeoutManager {
         if (shutdown.get()) {
             return; // nothing to do - the idle timeout manager has been shutdown
         }
+        final Optional<Long> timeoutVal = getIdleTimeout();
+        assert timeoutVal.isPresent() : "unexpectedly idle timing" +
+                " out connection, when no idle timeout is configured";
+        final long timeoutMillis = timeoutVal.get();
         // silently close the connection and discard all its state
         if (debug.on()) {
-            debug.log("silently closing connection due to idle timeout");
+            debug.log("silently closing connection due to idle timeout (" + timeoutMillis
+                    + " milli seconds)");
         } else {
-            Log.logQuic("{0} silently closing connection due to idle timeout", connection.logTag());
+            Log.logQuic("{0} silently closing connection due to idle timeout ({1} milli seconds)",
+                    connection.logTag(), timeoutMillis);
         }
-        final TerminationCause cause = forSilentTermination("connection idle timed out");
+        final TerminationCause cause = forSilentTermination("connection idle timed out ("
+                + timeoutMillis + " milli seconds)");
         connection.terminator.terminate(cause);
     }
 }
