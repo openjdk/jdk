@@ -434,10 +434,6 @@ public final class DecimalDigits {
         uncheckedPutCharUTF16(buf, charPos + 1, packed >> 8);
     }
 
-    /**
-     * <p>
-     * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
-     */
     private static void uncheckedPutCharLatin1(byte[] buf, int charPos, int c) {
         assert charPos >= 0 && charPos < buf.length;
         UNSAFE.putByte(buf, ARRAY_BYTE_BASE_OFFSET + charPos, (byte) c);
