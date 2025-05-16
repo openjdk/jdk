@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -532,9 +532,10 @@ class UnixNativeDispatcher {
     /**
      * Capabilities
      */
-    private static final int SUPPORTS_OPENAT        = 1 << 1;  // syscalls
-    private static final int SUPPORTS_XATTR         = 1 << 3;
-    private static final int SUPPORTS_BIRTHTIME     = 1 << 16; // other features
+    private static final int SUPPORTS_OPENAT             = 1 << 1;  // syscalls
+    private static final int SUPPORTS_UNLINK_DIR_FAILURE = 1 << 2;
+    private static final int SUPPORTS_XATTR              = 1 << 3;
+    private static final int SUPPORTS_BIRTHTIME          = 1 << 16; // other features
     private static final int capabilities;
 
     /**
@@ -542,6 +543,13 @@ class UnixNativeDispatcher {
      */
     static boolean openatSupported() {
         return (capabilities & SUPPORTS_OPENAT) != 0;
+    }
+
+    /**
+     * Supports EISDIR error of unlink(2)
+     */
+    static boolean unlinkDirFailureSupported() {
+        return (capabilities & SUPPORTS_UNLINK_DIR_FAILURE) != 0;
     }
 
     /**
