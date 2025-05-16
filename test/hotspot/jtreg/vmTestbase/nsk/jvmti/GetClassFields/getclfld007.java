@@ -25,13 +25,9 @@ package nsk.jvmti.GetClassFields;
 
 import java.io.PrintStream;
 import java.io.InputStream;
+import java.lang.classfile.ClassFile;
 import java.util.List;
 import java.util.ArrayList;
-
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.Opcodes;
 
 
 public class getclfld007 {
@@ -79,44 +75,29 @@ public class getclfld007 {
 
 
     static void check(Class cls) throws Exception {
-        FieldExplorer explorer = new FieldExplorer(cls);
-        List<String> fields = explorer.get();
+        List<String> fields = getFields(cls);
         check(cls, fields.toArray(new String[0]));
     }
 
-    // helper class to get list of the class fields
-    // in the order they appear in the class file
-    static class FieldExplorer extends ClassVisitor {
-        private final Class cls;
-        private List<String> fieldNameAndSig = new ArrayList<>();
-        private FieldExplorer(Class cls) {
-            super(Opcodes.ASM7);
-            this.cls = cls;
-        }
+    private static InputStream getClassBytes(Class<?> cls) throws Exception {
+        String clsName = cls.getName();
+        String clsPath = clsName.replace('.', '/') + ".class";
+        return cls.getClassLoader().getResourceAsStream(clsPath);
+    }
 
-        @Override
-        public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
-            System.out.println("  field '" + name + "', type = " + descriptor);
-            fieldNameAndSig.add(name);
-            fieldNameAndSig.add(descriptor);
-            return super.visitField(access, name, descriptor, signature, value);
-        }
-
-        private InputStream getClassBytes() throws Exception {
-            String clsName = cls.getName();
-            String clsPath = clsName.replace('.', '/') + ".class";
-            return cls.getClassLoader().getResourceAsStream(clsPath);
-        }
-
-        // each field is represented by 2 Strings in the list: name and type descriptor
-        public List<String> get() throws Exception {
-            System.out.println("Class " + cls.getName());
-            try (InputStream classBytes = getClassBytes()) {
-                ClassReader classReader = new ClassReader(classBytes);
-                classReader.accept(this, 0);
+    // get list of the class fields in the order they appear in the class file
+    // each field is represented by 2 Strings in the list: name and type descriptor
+    public static List<String> getFields(Class<?> cls) throws Exception {
+        System.out.println("Class " + cls.getName());
+        List<String> fieldNameAndSig = new ArrayList<>();
+        try (InputStream classBytes = getClassBytes(cls)) {
+            var classModel = ClassFile.of().parse(classBytes.readAllBytes());
+            for (var field : classModel.fields()) {
+                fieldNameAndSig.add(field.fieldName().stringValue());
+                fieldNameAndSig.add(field.fieldType().stringValue());
             }
-            return fieldNameAndSig;
         }
+        return fieldNameAndSig;
     }
 
     static class InnerClass1 {
