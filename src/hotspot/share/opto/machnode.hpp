@@ -534,6 +534,8 @@ public:
 //------------------------------MachEpilogNode--------------------------------
 // Machine function Epilog Node
 class MachEpilogNode : public MachIdealNode {
+private:
+  bool _do_polling;
 public:
   MachEpilogNode(bool do_poll = false) : _do_polling(do_poll) {}
   virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
@@ -541,11 +543,6 @@ public:
   virtual int reloc() const;
   virtual const Pipeline *pipeline() const;
   virtual uint size_of() const { return sizeof(MachEpilogNode); }
-
-private:
-  bool _do_polling;
-
-public:
   bool do_polling() const { return _do_polling; }
 
 #ifndef PRODUCT
