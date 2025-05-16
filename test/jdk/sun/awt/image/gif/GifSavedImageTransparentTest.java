@@ -23,11 +23,9 @@
 
 /*
  * @test
- * @bug 8356137
+ * @bug 8357034
  * @summary This test verifies that when the transparent pixel index changes
  * and we're rendering on top of another frame we respect the new transparency.
- *
- * TODO: replace bug ID when one becomes available
  */
 
 import java.awt.Color;
