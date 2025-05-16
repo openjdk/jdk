@@ -484,6 +484,13 @@ static const char* get_type(Klass* k) {
     type = "prim";
   } else {
     InstanceKlass* src_ik = InstanceKlass::cast(src_k);
+    if (CDSConfig::is_dumping_final_static_archive() && src_ik->class_loader_data() == nullptr) {
+      // When dumping the final archive, FinalImageRecipes::load_all_classes() adds the
+      // unregistered classes by calling SystemDictionaryShared::add_unregistered_class(). Such
+      // classes are not actually loaded so they don't have a class_loader_data.
+      precond(src_ik->is_shared_unregistered_class());
+      return "unreg";
+    }
     oop loader = src_ik->class_loader();
     if (loader == nullptr) {
       type = "boot";
