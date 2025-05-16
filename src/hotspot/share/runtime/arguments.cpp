@@ -1801,11 +1801,9 @@ bool Arguments::check_vm_args_consistency() {
   status = CompilerConfig::check_args_consistency(status);
 #if INCLUDE_JVMCI
   if (status && EnableJVMCI) {
-    // libjvmci doesn't require resolving jdk.internal.vm.ci as it is
-    // compiled into the libjvmci image itself. Without libjvmci, there
-    // is no other representation of the jdk.internal.vm.ci module
-    // so it needs to be added to the root module set.
-    if (!UseJVMCINativeLibrary && ClassLoader::is_module_observable("jdk.internal.vm.ci") && !_jvmci_module_added) {
+    // Add the JVMCI module if not using libjvmci or EnableJVMCI
+    // was explicitly set on the command line.
+    if ((!UseJVMCINativeLibrary || FLAG_IS_CMDLINE(EnableJVMCI)) && ClassLoader::is_module_observable("jdk.internal.vm.ci") && !_jvmci_module_added) {
       if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
         return false;
       }

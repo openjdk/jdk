@@ -48,10 +48,9 @@ class fileStream;
           "Enable JVMCI support in the VM. "                                \
           "Defaults to true if UseJVMCICompiler is true or "                \
           "--add-modules=jdk.internal.vm.ci was specified. "                \
-          "If true and UseJVMCINativeLibrary is false (i.e. libjvmci is "   \
-          "not available or not selected), the behavior of adding the "     \
-          "jdk.internal.vm.ci module is triggered, as if the "   \
-          "--add-modules=jdk.internal.vm.ci option was specified.")         \
+          "If explicity set to true on the command line OR defaulted to "   \
+          "true by UseJVMCICompiler and libjvmci is not enabled, the "      \
+          "behavior --add-modules=jdk.internal.vm.ci is triggered.")        \
                                                                             \
   product(bool, UseGraalJIT, false, EXPERIMENTAL,                           \
           "Select the Graal JVMCI compiler. This is an alias for: "         \
