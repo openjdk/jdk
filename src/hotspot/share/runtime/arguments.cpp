@@ -1810,8 +1810,6 @@ bool Arguments::check_vm_args_consistency() {
         return false;
       }
     }
-    PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
-        AddProperty, UnwriteableProperty, InternalProperty);
   }
 #endif
 
