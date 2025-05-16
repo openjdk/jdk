@@ -439,6 +439,7 @@ public final class DecimalDigits {
      * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
      */
     private static void uncheckedPutCharLatin1(byte[] buf, int charPos, int c) {
+        assert charPos >= 0 && charPos < buf.length;
         UNSAFE.putByte(buf, ARRAY_BYTE_BASE_OFFSET + charPos, (byte) c);
     }
 
@@ -447,6 +448,7 @@ public final class DecimalDigits {
      * <b>WARNING: Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller. </b>
      */
     private static void uncheckedPutCharUTF16(byte[] buf, int charPos, int c) {
+        assert charPos >= 0 && charPos < (buf.length >> 1);
         UNSAFE.putCharUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + ((long) charPos << 1), (char) c);
     }
 }
