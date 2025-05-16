@@ -66,7 +66,8 @@ public class TestTutorial {
         comp.addJavaSourceCode("p.xyz.InnerTest5", generateWithLibraryHooks());
         comp.addJavaSourceCode("p.xyz.InnerTest6", generateWithRecursionAndBindingsAndFuel());
         comp.addJavaSourceCode("p.xyz.InnerTest7", generateWithNamesSimple());
-        comp.addJavaSourceCode("p.xyz.InnerTest8", generateWithNames());
+        comp.addJavaSourceCode("p.xyz.InnerTest8", generateWithNamesForFieldsAndVariables());
+        comp.addJavaSourceCode("p.xyz.InnerTest9", generateWithNamesForMethods());
 
         // Compile the source files.
         // Hint: if you want to see the generated source code, you can enable
@@ -83,6 +84,7 @@ public class TestTutorial {
         comp.invoke("p.xyz.InnerTest6", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest7", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest8", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest9", "main", new Object[] {});
     }
 
     // This example shows the use of various Tokens.
@@ -529,7 +531,7 @@ public class TestTutorial {
     private static final MyPrimitive myInt = new MyPrimitive("int");
     private static final MyPrimitive myLong = new MyPrimitive("long");
 
-    public static String generateWithNames() {
+    public static String generateWithNamesForFieldsAndVariables() {
         // Define a static field.
         var templateStaticField = Template.make("type", (Name.Type type) -> body(
             addName(new Name($("field"), type, true, 1)),
@@ -666,6 +668,94 @@ public class TestTutorial {
             """
             }
             """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.render();
+    }
+
+    // We kept the Names purposfully abstract, so that it can not just be used for
+    // fields or variables, but many other applications. Some ideas:
+    // - Method names. The Type could represent the signature of the static method
+    //                 or the class of the non-static method.
+    // - Class names. Type could represent the signature of the constructor, so
+    //                that we could instantiate random instances.
+    // - try/catch blocks. If a specific Exception is caught in the scope, we could
+    //                     register that Exception, and in the inner scope we can
+    //                     check the weight for an Exception and its subtypes. If
+    //                     the weight is non-zero, we know the exception would be
+    //                     caught.
+    //
+    // Let us show an examples with Method names. But for simplicity, we assume they
+    // all have the same signature: they take two int arguments and return an int.
+    private record MyMethod() implements Name.Type {
+        @Override
+        public boolean isSubtypeOf(Name.Type other) {
+            return other instanceof MyMethod();
+        }
+
+        @Override
+        public String name() { return "<not used, don't worry>"; }
+    }
+    private static final MyMethod myMethod = new MyMethod();
+
+    public static String generateWithNamesForMethods() {
+        // Define a method, which takes two ints, returns the result of op.
+        var templateMethod = Template.make("op", (String op) -> body(
+            // Register the method name, so we can later sample.
+            // Note: method names are not mutable.
+            addName(new Name($("methodName"), myMethod, false, 1)),
+            """
+            public static int $methodName(int a, int b) {
+                return a #op b;
+            }
+            """
+        ));
+
+        var templateSample = Template.make(() -> body(
+            // Sample a random method, and retrieve its name.
+            let("methodName", sampleName(myMethod, false).name()),
+            """
+            System.out.println("Calling #methodName with inputs 7 and 11");
+            System.out.println("  result: " + #methodName(7, 11));
+            """
+        ));
+
+        var templateClass = Template.make(() -> body(
+            """
+            package p.xyz;
+
+            public class InnerTest9 {
+                // Let us define some methods that we can sample from later.
+            """,
+            // We must set a CLASS_HOOK here, and insert the method definitions to that hook.
+            Hooks.CLASS_HOOK.set(
+                // If we directly nest the templateMethod, then the addName goes to the nested
+                // scope, and is not available at the class scope, i.e. it is not visible
+                // for sampleName in outside of the templateMethod.
+                // DO NOT DO THIS, the nested addName will not be visible:
+                "// We cannot sample from the following methods:\n",
+                templateMethod.asToken("+"),
+                templateMethod.asToken("-"),
+                // However, if we insert to the CLASS_HOOK, then the Rendere makes the
+                // scope of the inserted templateMethod transparent, and the addName
+                // goes out to the scope of the CLASS_HOOK (but no further than that).
+                // RATHER, DO THIS, to ensure the addName is visible:
+                Hooks.CLASS_HOOK.insert(templateMethod.asToken("*")),
+                Hooks.CLASS_HOOK.insert(templateMethod.asToken("|")),
+                Hooks.CLASS_HOOK.insert(templateMethod.asToken("&")),
+                """
+
+                    public static void main() {
+                        // Now, we call some random methods, but only those that were inserted
+                        // to the CLASS_HOOK.
+                        """,
+                        Collections.nCopies(10, templateSample.asToken()),
+                        """
+                    }
+                }
+                """
+            )
         ));
 
         // Render templateClass to String.
