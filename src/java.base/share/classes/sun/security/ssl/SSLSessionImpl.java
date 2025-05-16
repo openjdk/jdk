@@ -1656,7 +1656,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
 
             // context length must fit in 2 unsigned bytes.
-            if ((context != null) && context.length > 0xFFFF) {
+            if ((context != null) && (context.length > 0xFFFF)) {
                 throw new IllegalArgumentException(
                         "Only 16-bit context lengths supported");
             }

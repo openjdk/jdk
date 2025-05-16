@@ -166,7 +166,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
     }
 
     /**
-     * Generate Exported Keying Material (EKM) calculated according to the
+     * Generates Exported Keying Material (EKM) calculated according to the
      * algorithms defined in RFCs 5705/8446.
      * <P>
      * RFC 5705 (for (D)TLSv1.2 and earlier) calculates different EKM
@@ -211,7 +211,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
     }
 
     /**
-     * Generate Exported Keying Material (EKM) calculated according to the
+     * Generates Exported Keying Material (EKM) calculated according to the
      * algorithms defined in RFCs 5705/8446.
      * <P>
      * RFC 5705 (for (D)TLSv1.2 and earlier) calculates different EKM

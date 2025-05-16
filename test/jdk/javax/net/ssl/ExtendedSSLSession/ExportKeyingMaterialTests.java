@@ -264,7 +264,7 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
                 "Data: Equal inputs but exporters are not equal");
         log("Data: Equal inputs test passed");
 
-        // Different labels, now use exportKeyMaterialData() for coverage
+        // Different labels, now use exportKeyingMaterialData() for coverage
         clientKey = clientSession.exportKeyingMaterialKey("hello",
                 bytes, 128);
         serverKey = serverSession.exportKeyingMaterialKey("goodbye",
