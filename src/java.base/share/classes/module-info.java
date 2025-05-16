@@ -270,9 +270,11 @@ module java.base {
         java.prefs,
         java.security.jgss,
         java.smartcardio,
+        java.net.http,
         jdk.charsets,
         jdk.incubator.vector,
         jdk.internal.vm.ci,
+        jdk.httpserver,
         jdk.jlink,
         jdk.jpackage,
         jdk.net;
