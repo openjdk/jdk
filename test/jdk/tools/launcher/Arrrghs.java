@@ -611,9 +611,25 @@ public class Arrrghs extends TestHelper {
         if (!tr.testStatus)
             System.out.println(tr);
 
+        createJar(new File("some.jar"), new File("Foo"),
+            "private void main(String[] args){}",
+            "void main() {System.out.println(\"THE_CHOSEN_ONE\");}");
+        tr = doExec(javaCmd, "-jar", "some.jar");
+        tr.contains("THE_CHOSEN_ONE");
+        if (!tr.testStatus)
+            System.out.println(tr);
+
         //method with a wrong return type with parameter, usable method without parameter:
         createJar(new File("some.jar"), new File("Foo"),
             "public static int main(String[] args){ return -1; }",
+            "void main() {System.out.println(\"THE_CHOSEN_ONE\");}");
+        tr = doExec(javaCmd, "-jar", "some.jar");
+        tr.contains("THE_CHOSEN_ONE");
+        if (!tr.testStatus)
+            System.out.println(tr);
+
+        createJar(new File("some.jar"), new File("Foo"),
+            "public int main(String[] args){ return -1; }",
             "void main() {System.out.println(\"THE_CHOSEN_ONE\");}");
         tr = doExec(javaCmd, "-jar", "some.jar");
         tr.contains("THE_CHOSEN_ONE");

@@ -802,11 +802,43 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     @Test
+    public void testWrongMainPrivateInstance(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                          """
+                          public class WrongMainPrivate {
+                              private void main(String[] args) {}
+                              void main() {
+                                  System.out.println("correct");
+                              }
+                          }
+                          """);
+        testSuccess(base.resolve("WrongMainPrivate.java"),
+                    "correct\n");
+    }
+
+    @Test
     public void testWrongMainReturnType(Path base) throws IOException {
         tb.writeJavaFiles(base,
                           """
                           public class WrongMainReturnType {
                               public static int main(String[] args) {
+                                  return -1;
+                              }
+                              void main() {
+                                  System.out.println("correct");
+                              }
+                          }
+                          """);
+        testSuccess(base.resolve("WrongMainReturnType.java"),
+                    "correct\n");
+    }
+
+    @Test
+    public void testWrongMainReturnTypeInstance(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                          """
+                          public class WrongMainReturnType {
+                              public int main(String[] args) {
                                   return -1;
                               }
                               void main() {
