@@ -441,7 +441,7 @@ double SharedRuntime::dabs(double f)  {
 
 #endif
 
-#if defined(__SOFTFP__) || defined(PPC)
+#if defined(__SOFTFP__)
 double SharedRuntime::dsqrt(double f) {
   return sqrt(f);
 }

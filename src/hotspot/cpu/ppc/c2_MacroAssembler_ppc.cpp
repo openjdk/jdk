@@ -234,14 +234,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   // Save diff in case we need it for a tie-breaker.
   subf_(diff, cnt2, cnt1); // diff = cnt1 - cnt2
   // if (diff > 0) { cnt1 = cnt2; }
-  if (VM_Version::has_isel()) {
-    isel(cnt1, CR0, Assembler::greater, /*invert*/ false, cnt2);
-  } else {
-    Label Lskip;
-    blt(CR0, Lskip);
-    mr(cnt1, cnt2);
-    bind(Lskip);
-  }
+  isel(cnt1, CR0, Assembler::greater, /*invert*/ false, cnt2);
 
   // Rename registers
   Register chr1 = result;
