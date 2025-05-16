@@ -1674,12 +1674,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11InputMethodBase_isCompositionEnabledN
 {
     X11InputMethodData *pX11IMData = NULL;
     char * ret = NULL;
-#if defined(__linux__) && defined(_LP64) && !defined(_LITTLE_ENDIAN)
-    // XIMPreeditState value which is used for XGetICValues must be 32bit on BigEndian XOrg's xlib
-    unsigned int state = XIMPreeditUnKnown;
-#else
     XIMPreeditState state = XIMPreeditUnKnown;
-#endif
 
     XVaNestedList   pr_atrb;
 
