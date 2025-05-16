@@ -928,8 +928,8 @@ public class Flow {
                                 } else {
                                     instantiated = infer.instantiatePatternType(selectorType, csym);
                                 }
-
-                                return instantiated != null && types.isCastable(selectorType, instantiated);
+                                return instantiated != null &&
+                                        (instantiated.isErroneous() || types.isCastable(selectorType, instantiated));
                             });
 
                             for (PatternDescription pdOther : patterns) {
