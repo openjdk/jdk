@@ -164,90 +164,96 @@
     __ incrementl(Address(r27, r13, (Address::ScaleFactor)1, +0x2366d44f));     //    inc dword ptr [r27+r13*2+0x2366d44f]    IID152
     __ decrementl(Address(r28, +0x1e7c7207));                                   //    dec dword ptr [r28+0x1e7c7207]    IID153
     __ imull(r14, Address(r14, r17, (Address::ScaleFactor)3, +0x13a05771), 268435456); //    imul r14d, dword ptr [r14+r17*8+0x13a05771], 268435456    IID154
-    __ imull(r18, r18, 16);                                                     //    imul r18d, r18d, 16    IID155
-    __ shldl(r31, r31, 16);                                                     //    shld r31d, r31d, 16    IID156
-    __ shrdl(r24, r24, 4);                                                      //    shrd r24d, r24d, 4    IID157
-    __ movzbl(r31, Address(r9, -0x28559fc5));                                   //    movzx r31d, byte ptr [r9-0x28559fc5]    IID158
-    __ movzwl(r12, Address(r20, rcx, (Address::ScaleFactor)1, +0x602e13f3));    //    movzx r12d, word ptr [r20+rcx*2+0x602e13f3]    IID159
-    __ movsbl(r15, Address(r29, r19, (Address::ScaleFactor)3, -0x64733fd2));    //    movsx r15d, byte ptr [r29+r19*8-0x64733fd2]    IID160
-    __ movswl(r12, Address(r29, r15, (Address::ScaleFactor)2, +0x60d6eee5));    //    movsx r12d, word ptr [r29+r15*4+0x60d6eee5]    IID161
-    __ movzbl(r14, r31);                                                        //    movzx r14d, r31b    IID162
-    __ movzwl(r9, r23);                                                         //    movzx r9d, r23w    IID163
-    __ movsbl(r21, r17);                                                        //    movsx r21d, r17b    IID164
-    __ movswl(r13, r29);                                                        //    movsx r13d, r29w    IID165
-    __ cmpxchgb(r15, Address(r12, r15, (Address::ScaleFactor)3, +0x359a710e));  //    cmpxchg byte ptr [r12+r15*8+0x359a710e], r15b    IID166
-    __ cmpxchgw(r29, Address(r27, r16, (Address::ScaleFactor)1, -0x7ae5ad9d));  //    cmpxchg word ptr [r27+r16*2-0x7ae5ad9d], r29w    IID167
-    __ cmpxchgl(r25, Address(r25, r19, (Address::ScaleFactor)2, +0x3e3f816d));  //    cmpxchg dword ptr [r25+r19*4+0x3e3f816d], r25d    IID168
-    __ eidivl(r13, false);                                                      //    {EVEX}idiv r13d    IID169
-    __ eidivl(r30, true);                                                       //    {NF}idiv r30d    IID170
-    __ edivl(r12, false);                                                       //    {EVEX}div r12d    IID171
+    __ imull(r18, r23, 16);                                                     //    imul r18d, r23d, 16    IID155
+    __ shldl(r24, r31, 4);                                                      //    shld r24d, r31d, 4    IID156
+    __ shrdl(r11, r30, 2);                                                      //    shrd r11d, r30d, 2    IID157
+    __ movzbl(rbx, Address(r23, r24, (Address::ScaleFactor)1, -0x5cb6670d));    //    movzx ebx, byte ptr [r23+r24*2-0x5cb6670d]    IID158
+    __ movzwl(r20, Address(rcx, r16, (Address::ScaleFactor)0, -0x64733fd2));    //    movzx r20d, word ptr [rcx+r16*1-0x64733fd2]    IID159
+    __ movsbl(r12, Address(r29, r15, (Address::ScaleFactor)2, +0x60d6eee5));    //    movsx r12d, byte ptr [r29+r15*4+0x60d6eee5]    IID160
+    __ movswl(r14, Address(r31, r9, (Address::ScaleFactor)3, +0x1aa5948));      //    movsx r14d, word ptr [r31+r9*8+0x1aa5948]    IID161
+    __ movzbl(r13, r29);                                                        //    movzx r13d, r29b    IID162
+    __ movzwl(r15, r12);                                                        //    movzx r15d, r12w    IID163
+    __ movsbl(r15, r25);                                                        //    movsx r15d, r25b    IID164
+    __ movswl(r27, r24);                                                        //    movsx r27d, r24w    IID165
+    __ cmpxchgb(r24, Address(r28, r25, (Address::ScaleFactor)0, +0x33efa575));  //    cmpxchg byte ptr [r28+r25*1+0x33efa575], r24b    IID166
+    __ cmpxchgw(r13, Address(rcx, r15, (Address::ScaleFactor)2, +0x2ac1ae4));   //    cmpxchg word ptr [rcx+r15*4+0x2ac1ae4], r13w    IID167
+    __ cmpxchgl(r8, Address(r26, r11, (Address::ScaleFactor)1, -0x5b6bd4de));   //    cmpxchg dword ptr [r26+r11*2-0x5b6bd4de], r8d    IID168
+    __ eidivl(r30, false);                                                      //    {EVEX}idiv r30d    IID169
+    __ eidivl(r12, true);                                                       //    {NF}idiv r12d    IID170
+    __ edivl(r17, false);                                                       //    {EVEX}div r17d    IID171
     __ edivl(r17, true);                                                        //    {NF}div r17d    IID172
-    __ eimull(r17, false);                                                      //    {EVEX}imul r17d    IID173
 #endif // _LP64
-    __ eimull(rcx, true);                                                       //    {NF}imul ecx    IID174
+    __ eimull(rcx, false);                                                      //    {EVEX}imul ecx    IID173
 #ifdef _LP64
-    __ emull(r13, false);                                                       //    {EVEX}mul r13d    IID175
-    __ emull(r23, true);                                                        //    {NF}mul r23d    IID176
-    __ emull(Address(r25, r22, (Address::ScaleFactor)0, -0x278b6eeb), false);   //    {EVEX}mul dword ptr [r25+r22*1-0x278b6eeb]    IID177
-    __ emull(Address(r24, r13, (Address::ScaleFactor)2, -0x49a8f01f), true);    //    {NF}mul dword ptr [r24+r13*4-0x49a8f01f]    IID178
-    __ elzcntl(rcx, r25, false);                                                //    {EVEX}lzcnt ecx, r25d    IID179
-    __ elzcntl(r30, r30, false);                                                //    {EVEX}lzcnt r30d, r30d    IID180
-    __ elzcntl(r9, r31, true);                                                  //    {NF}lzcnt r9d, r31d    IID181
+    __ eimull(r13, true);                                                       //    {NF}imul r13d    IID174
+    __ emull(r23, false);                                                       //    {EVEX}mul r23d    IID175
+    __ emull(r25, true);                                                        //    {NF}mul r25d    IID176
+    __ emull(Address(r22, r10, (Address::ScaleFactor)1, -0x3d379b56), false);   //    {EVEX}mul dword ptr [r22+r10*2-0x3d379b56]    IID177
+    __ emull(Address(r11, -0x3249efaf), true);                                  //    {NF}mul dword ptr [r11-0x3249efaf]    IID178
+    __ elzcntl(r9, r16, false);                                                 //    {EVEX}lzcnt r9d, r16d    IID179
+    __ elzcntl(r23, r23, false);                                                //    {EVEX}lzcnt r23d, r23d    IID180
+    __ elzcntl(r28, r8, true);                                                  //    {NF}lzcnt r28d, r8d    IID181
+    __ elzcntl(r30, r30, true);                                                 //    {NF}lzcnt r30d, r30d    IID182
+    __ enegl(r23, r11, false);                                                  //    {EVEX}neg r23d, r11d    IID183
+    __ enegl(r13, r13, false);                                                  //    neg r13d    IID184
+    __ enegl(r16, r11, true);                                                   //    {NF}neg r16d, r11d    IID185
+    __ enegl(r11, r11, true);                                                   //    {NF}neg r11d, r11d    IID186
+    __ epopcntl(r26, rcx, false);                                               //    {EVEX}popcnt r26d, ecx    IID187
 #endif // _LP64
-    __ elzcntl(rcx, rcx, true);                                                 //    {NF}lzcnt ecx, ecx    IID182
+    __ epopcntl(rbx, rbx, false);                                               //    {EVEX}popcnt ebx, ebx    IID188
 #ifdef _LP64
-    __ enegl(r25, r24, false);                                                  //    {EVEX}neg r25d, r24d    IID183
-    __ enegl(r14, r14, false);                                                  //    neg r14d    IID184
-    __ enegl(r15, r9, true);                                                    //    {NF}neg r15d, r9d    IID185
-    __ enegl(r16, r16, true);                                                   //    {NF}neg r16d, r16d    IID186
-    __ epopcntl(r23, r28, false);                                               //    {EVEX}popcnt r23d, r28d    IID187
-    __ epopcntl(r8, r8, false);                                                 //    {EVEX}popcnt r8d, r8d    IID188
-    __ epopcntl(r30, r23, true);                                                //    {NF}popcnt r30d, r23d    IID189
-    __ epopcntl(r11, r11, true);                                                //    {NF}popcnt r11d, r11d    IID190
-    __ enotl(r13, r16);                                                         //    {EVEX}not r13d, r16d    IID191
-    __ enotl(r11, r11);                                                         //    not r11d    IID192
-    __ eroll(r11, r26, false);                                                  //    {EVEX}rol r11d, r26d, cl    IID193
+    __ epopcntl(r10, r14, true);                                                //    {NF}popcnt r10d, r14d    IID189
+    __ epopcntl(r29, r29, true);                                                //    {NF}popcnt r29d, r29d    IID190
+    __ enotl(r15, r20);                                                         //    {EVEX}not r15d, r20d    IID191
+    __ enotl(r17, r17);                                                         //    not r17d    IID192
+    __ eroll(r12, r12, false);                                                  //    rol r12d, cl    IID193
 #endif // _LP64
-    __ eroll(rcx, rcx, false);                                                  //    rol ecx, cl    IID194
+    __ eroll(rbx, rbx, false);                                                  //    rol ebx, cl    IID194
 #ifdef _LP64
-    __ eroll(rbx, r10, true);                                                   //    {NF}rol ebx, r10d, cl    IID195
-    __ eroll(r14, r14, true);                                                   //    {NF}rol r14d, r14d, cl    IID196
-    __ erorl(r29, r15, false);                                                  //    {EVEX}ror r29d, r15d, cl    IID197
-    __ erorl(r20, r20, false);                                                  //    ror r20d, cl    IID198
-    __ erorl(r17, r12, true);                                                   //    {NF}ror r17d, r12d, cl    IID199
-    __ erorl(r12, r12, true);                                                   //    {NF}ror r12d, r12d, cl    IID200
-    __ esall(rbx, r23, false);                                                  //    {EVEX}sal ebx, r23d, cl    IID201
+    __ eroll(r23, r27, true);                                                   //    {NF}rol r23d, r27d, cl    IID195
+    __ eroll(r29, r29, true);                                                   //    {NF}rol r29d, r29d, cl    IID196
+    __ erorl(r20, r28, false);                                                  //    {EVEX}ror r20d, r28d, cl    IID197
+#endif // _LP64
+    __ erorl(rdx, rdx, false);                                                  //    ror edx, cl    IID198
+#ifdef _LP64
+    __ erorl(r8, r27, true);                                                    //    {NF}ror r8d, r27d, cl    IID199
+#endif // _LP64
+    __ erorl(rbx, rbx, true);                                                   //    {NF}ror ebx, ebx, cl    IID200
+#ifdef _LP64
+    __ esall(r15, r11, false);                                                  //    {EVEX}sal r15d, r11d, cl    IID201
     __ esall(r27, r27, false);                                                  //    sal r27d, cl    IID202
-    __ esall(r29, r20, true);                                                   //    {NF}sal r29d, r20d, cl    IID203
-    __ esall(r28, r28, true);                                                   //    {NF}sal r28d, r28d, cl    IID204
-    __ esarl(rdx, r8, false);                                                   //    {EVEX}sar edx, r8d, cl    IID205
-    __ esarl(r27, r27, false);                                                  //    sar r27d, cl    IID206
-    __ esarl(rbx, r15, true);                                                   //    {NF}sar ebx, r15d, cl    IID207
-    __ esarl(r11, r11, true);                                                   //    {NF}sar r11d, r11d, cl    IID208
-    __ edecl(r27, r29, false);                                                  //    {EVEX}dec r27d, r29d    IID209
-    __ edecl(r25, r25, false);                                                  //    dec r25d    IID210
-    __ edecl(r12, r8, true);                                                    //    {NF}dec r12d, r8d    IID211
-    __ edecl(r11, r11, true);                                                   //    {NF}dec r11d, r11d    IID212
-    __ eincl(r18, rdx, false);                                                  //    {EVEX}inc r18d, edx    IID213
-    __ eincl(r13, r13, false);                                                  //    inc r13d    IID214
-    __ eincl(r23, r24, true);                                                   //    {NF}inc r23d, r24d    IID215
-    __ eincl(r15, r15, true);                                                   //    {NF}inc r15d, r15d    IID216
-    __ eshll(r15, r26, false);                                                  //    {EVEX}shl r15d, r26d, cl    IID217
-    __ eshll(r28, r28, false);                                                  //    shl r28d, cl    IID218
-    __ eshll(rbx, r25, true);                                                   //    {NF}shl ebx, r25d, cl    IID219
-    __ eshll(r14, r14, true);                                                   //    {NF}shl r14d, r14d, cl    IID220
-    __ eshrl(r12, rcx, false);                                                  //    {EVEX}shr r12d, ecx, cl    IID221
-    __ eshrl(r23, r23, false);                                                  //    shr r23d, cl    IID222
-    __ eshrl(r29, r22, true);                                                   //    {NF}shr r29d, r22d, cl    IID223
-    __ eshrl(r24, r24, true);                                                   //    {NF}shr r24d, r24d, cl    IID224
-    __ etzcntl(r15, r9, false);                                                 //    {EVEX}tzcnt r15d, r9d    IID225
-    __ etzcntl(r31, r31, false);                                                //    {EVEX}tzcnt r31d, r31d    IID226
-    __ etzcntl(r28, r21, true);                                                 //    {NF}tzcnt r28d, r21d    IID227
-    __ etzcntl(r18, r18, true);                                                 //    {NF}tzcnt r18d, r18d    IID228
-    __ elzcntl(r24, Address(r14, +0x24dd14aa), false);                          //    {EVEX}lzcnt r24d, dword ptr [r14+0x24dd14aa]    IID229
-    __ elzcntl(r26, Address(r8, r30, (Address::ScaleFactor)2, +0xf73f97a), true); //    {NF}lzcnt r26d, dword ptr [r8+r30*4+0xf73f97a]    IID230
-    __ enegl(r20, Address(r22, r27, (Address::ScaleFactor)2, -0x1c7c7f06), false); //    {EVEX}neg r20d, dword ptr [r22+r27*4-0x1c7c7f06]    IID231
-    __ enegl(r16, Address(r28, r13, (Address::ScaleFactor)3, -0x602e1b3d), true); //    {NF}neg r16d, dword ptr [r28+r13*8-0x602e1b3d]    IID232
+    __ esall(r29, r25, true);                                                   //    {NF}sal r29d, r25d, cl    IID203
+    __ esall(r12, r12, true);                                                   //    {NF}sal r12d, r12d, cl    IID204
+    __ esarl(r8, r11, false);                                                   //    {EVEX}sar r8d, r11d, cl    IID205
+    __ esarl(r18, r18, false);                                                  //    sar r18d, cl    IID206
+    __ esarl(rdx, r13, true);                                                   //    {NF}sar edx, r13d, cl    IID207
+    __ esarl(r23, r23, true);                                                   //    {NF}sar r23d, r23d, cl    IID208
+    __ edecl(r24, r15, false);                                                  //    {EVEX}dec r24d, r15d    IID209
+    __ edecl(r15, r15, false);                                                  //    dec r15d    IID210
+    __ edecl(r26, r28, true);                                                   //    {NF}dec r26d, r28d    IID211
+#endif // _LP64
+    __ edecl(rbx, rbx, true);                                                   //    {NF}dec ebx, ebx    IID212
+#ifdef _LP64
+    __ eincl(r25, r14, false);                                                  //    {EVEX}inc r25d, r14d    IID213
+    __ eincl(r12, r12, false);                                                  //    inc r12d    IID214
+    __ eincl(rcx, r23, true);                                                   //    {NF}inc ecx, r23d    IID215
+    __ eincl(r29, r29, true);                                                   //    {NF}inc r29d, r29d    IID216
+    __ eshll(r22, r24, false);                                                  //    {EVEX}shl r22d, r24d, cl    IID217
+    __ eshll(r15, r15, false);                                                  //    shl r15d, cl    IID218
+    __ eshll(r9, r31, true);                                                    //    {NF}shl r9d, r31d, cl    IID219
+    __ eshll(r28, r28, true);                                                   //    {NF}shl r28d, r28d, cl    IID220
+    __ eshrl(r21, r18, false);                                                  //    {EVEX}shr r21d, r18d, cl    IID221
+    __ eshrl(r24, r24, false);                                                  //    shr r24d, cl    IID222
+    __ eshrl(r14, r19, true);                                                   //    {NF}shr r14d, r19d, cl    IID223
+    __ eshrl(r8, r8, true);                                                     //    {NF}shr r8d, r8d, cl    IID224
+    __ etzcntl(r25, r9, false);                                                 //    {EVEX}tzcnt r25d, r9d    IID225
+    __ etzcntl(r26, r26, false);                                                //    {EVEX}tzcnt r26d, r26d    IID226
+    __ etzcntl(r8, r30, true);                                                  //    {NF}tzcnt r8d, r30d    IID227
+    __ etzcntl(r26, r26, true);                                                 //    {NF}tzcnt r26d, r26d    IID228
+    __ elzcntl(r29, Address(r25, r20, (Address::ScaleFactor)3, -0x9c80fe2), false); //    {EVEX}lzcnt r29d, dword ptr [r25+r20*8-0x9c80fe2]    IID229
+    __ elzcntl(r22, Address(r27, r19, (Address::ScaleFactor)2, +0x38f27c09), true); //    {NF}lzcnt r22d, dword ptr [r27+r19*4+0x38f27c09]    IID230
+    __ enegl(r21, Address(r14, r30, (Address::ScaleFactor)2, +0x39f92c7b), false); //    {EVEX}neg r21d, dword ptr [r14+r30*4+0x39f92c7b]    IID231
+    __ enegl(r26, Address(r23, r14, (Address::ScaleFactor)3, -0x602e1b3d), true); //    {NF}neg r26d, dword ptr [r23+r14*8-0x602e1b3d]    IID232
     __ epopcntl(r25, Address(r28, r23, (Address::ScaleFactor)1, +0x4ff120ef), false); //    {EVEX}popcnt r25d, dword ptr [r28+r23*2+0x4ff120ef]    IID233
     __ epopcntl(r29, Address(r24, r16, (Address::ScaleFactor)3, -0x6821bb43), true); //    {NF}popcnt r29d, dword ptr [r24+r16*8-0x6821bb43]    IID234
     __ esall(r23, Address(r11, r31, (Address::ScaleFactor)2, +0x7f4224bb), false); //    {EVEX}sal r23d, dword ptr [r11+r31*4+0x7f4224bb], cl    IID235
@@ -294,94 +300,94 @@
     __ exorl(r31, Address(r30, r28, (Address::ScaleFactor)0, +0x17281e3a), r31, true); //    {NF}xor r31d, dword ptr [r30+r28*1+0x17281e3a], r31d    IID276
     __ exorb(rdx, Address(rbx, r31, (Address::ScaleFactor)2, +0x2477b5bb), rdx, false); //    {EVEX}xor dl, byte ptr [rbx+r31*4+0x2477b5bb], dl    IID277
     __ exorb(r16, Address(r11, rcx, (Address::ScaleFactor)3, +0x20fc1a0a), r16, true); //    {NF}xor r16b, byte ptr [r11+rcx*8+0x20fc1a0a], r16b    IID278
-    __ eaddl(r12, r12, 65536, false);                                           //    add r12d, 65536    IID279
-    __ eaddl(r11, r20, 16, false);                                              //    {EVEX}add r11d, r20d, 16    IID280
-    __ eaddl(rax, r24, 16, false);                                              //    {EVEX}add eax, r24d, 16    IID281
-    __ eaddl(r18, r18, 1048576, true);                                          //    {NF}add r18d, r18d, 1048576    IID282
-    __ eaddl(r29, r13, 1, true);                                                //    {NF}add r29d, r13d, 1    IID283
-    __ eaddl(rax, r13, 1, true);                                                //    {NF}add eax, r13d, 1    IID284
-    __ eandl(r31, r31, 1, false);                                               //    and r31d, 1    IID285
-    __ eandl(r23, r29, 65536, false);                                           //    {EVEX}and r23d, r29d, 65536    IID286
-    __ eandl(rax, r15, 65536, false);                                           //    {EVEX}and eax, r15d, 65536    IID287
-    __ eandl(r21, r21, 268435456, true);                                        //    {NF}and r21d, r21d, 268435456    IID288
-    __ eandl(r15, r13, 256, true);                                              //    {NF}and r15d, r13d, 256    IID289
+    __ eaddl(r12, rbx, 65536, false);                                           //    {EVEX}add r12d, ebx, 65536    IID279
+    __ eaddl(rax, r11, 65536, false);                                           //    {EVEX}add eax, r11d, 65536    IID280
+    __ eaddl(r24, r24, 268435456, false);                                       //    add r24d, 268435456    IID281
+    __ eaddl(r18, r26, 1048576, true);                                          //    {NF}add r18d, r26d, 1048576    IID282
+    __ eaddl(rax, r27, 1048576, true);                                          //    {NF}add eax, r27d, 1048576    IID283
+    __ eaddl(r29, r29, 1, true);                                                //    {NF}add r29d, r29d, 1    IID284
+    __ eandl(r13, rcx, 65536, false);                                           //    {EVEX}and r13d, ecx, 65536    IID285
+    __ eandl(rax, r31, 65536, false);                                           //    {EVEX}and eax, r31d, 65536    IID286
+    __ eandl(r23, r23, 65536, false);                                           //    and r23d, 65536    IID287
+    __ eandl(r23, r23, 1048576, true);                                          //    {NF}and r23d, r23d, 1048576    IID288
+    __ eandl(rax, r19, 1048576, true);                                          //    {NF}and eax, r19d, 1048576    IID289
+    __ eandl(r15, r15, 256, true);                                              //    {NF}and r15d, r15d, 256    IID290
+    __ eimull(rdx, r18, 65536, false);                                          //    {EVEX}imul edx, r18d, 65536    IID291
+    __ eimull(rax, r15, 65536, false);                                          //    {EVEX}imul eax, r15d, 65536    IID292
+    __ eimull(r8, r8, 256, false);                                              //    {EVEX}imul r8d, r8d, 256    IID293
+    __ eimull(r27, r30, 256, true);                                             //    {NF}imul r27d, r30d, 256    IID294
+    __ eimull(rax, r19, 256, true);                                             //    {NF}imul eax, r19d, 256    IID295
+    __ eimull(r15, r15, 256, true);                                             //    {NF}imul r15d, r15d, 256    IID296
+    __ eorl(r21, r12, 16777216, false);                                         //    {EVEX}or r21d, r12d, 16777216    IID297
 #endif // _LP64
-    __ eandl(rax, rdx, 256, true);                                              //    {NF}and eax, edx, 256    IID290
+    __ eorl(rax, rbx, 16777216, false);                                         //    {EVEX}or eax, ebx, 16777216    IID298
 #ifdef _LP64
-    __ eimull(r15, r15, 16777216, false);                                       //    {EVEX}imul r15d, r15d, 16777216    IID291
-    __ eimull(r8, r9, 256, false);                                              //    {EVEX}imul r8d, r9d, 256    IID292
-    __ eimull(rax, r27, 256, false);                                            //    {EVEX}imul eax, r27d, 256    IID293
-    __ eimull(r9, r9, 268435456, true);                                         //    {NF}imul r9d, r9d, 268435456    IID294
-    __ eimull(r18, r21, 1048576, true);                                         //    {NF}imul r18d, r21d, 1048576    IID295
-    __ eimull(rax, r12, 1048576, true);                                         //    {NF}imul eax, r12d, 1048576    IID296
-    __ eorl(r19, r19, 16, false);                                               //    or r19d, 16    IID297
-    __ eorl(r11, r18, 256, false);                                              //    {EVEX}or r11d, r18d, 256    IID298
-    __ eorl(rax, r8, 256, false);                                               //    {EVEX}or eax, r8d, 256    IID299
-    __ eorl(r14, r14, 1, true);                                                 //    {NF}or r14d, r14d, 1    IID300
-    __ eorl(r10, r9, 268435456, true);                                          //    {NF}or r10d, r9d, 268435456    IID301
-    __ eorl(rax, r15, 268435456, true);                                         //    {NF}or eax, r15d, 268435456    IID302
-    __ ercll(r8, r8, 4);                                                        //    rcl r8d, 4    IID303
-    __ ercll(r16, r21, 16);                                                     //    {EVEX}rcl r16d, r21d, 16    IID304
-    __ ercll(rax, r18, 16);                                                     //    {EVEX}rcl eax, r18d, 16    IID305
-    __ eroll(r28, r28, 16, false);                                              //    rol r28d, 16    IID306
-    __ eroll(r26, r14, 4, false);                                               //    {EVEX}rol r26d, r14d, 4    IID307
-    __ eroll(rax, r10, 4, false);                                               //    {EVEX}rol eax, r10d, 4    IID308
-    __ eroll(r22, r22, 1, true);                                                //    {NF}rol r22d, r22d, 1    IID309
-    __ eroll(r18, r22, 2, true);                                                //    {NF}rol r18d, r22d, 2    IID310
-    __ eroll(rax, r30, 2, true);                                                //    {NF}rol eax, r30d, 2    IID311
-    __ erorl(r23, r23, 16, false);                                              //    ror r23d, 16    IID312
-    __ erorl(r11, r8, 16, false);                                               //    {EVEX}ror r11d, r8d, 16    IID313
-    __ erorl(rax, r16, 16, false);                                              //    {EVEX}ror eax, r16d, 16    IID314
-    __ erorl(r11, r11, 8, true);                                                //    {NF}ror r11d, r11d, 8    IID315
-    __ erorl(r29, r16, 2, true);                                                //    {NF}ror r29d, r16d, 2    IID316
-    __ erorl(rax, r16, 2, true);                                                //    {NF}ror eax, r16d, 2    IID317
-    __ esall(r15, r15, 16, false);                                              //    sal r15d, 16    IID318
-    __ esall(r9, r18, 8, false);                                                //    {EVEX}sal r9d, r18d, 8    IID319
+    __ eorl(r27, r27, 268435456, false);                                        //    or r27d, 268435456    IID299
+    __ eorl(r11, r18, 256, true);                                               //    {NF}or r11d, r18d, 256    IID300
+    __ eorl(rax, r8, 256, true);                                                //    {NF}or eax, r8d, 256    IID301
+    __ eorl(r14, r14, 1, true);                                                 //    {NF}or r14d, r14d, 1    IID302
+    __ ercll(r30, r22, 16);                                                     //    {EVEX}rcl r30d, r22d, 16    IID303
+    __ ercll(rax, r25, 16);                                                     //    {EVEX}rcl eax, r25d, 16    IID304
+    __ ercll(r10, r10, 8);                                                      //    rcl r10d, 8    IID305
+    __ eroll(r15, r13, 2, false);                                               //    {EVEX}rol r15d, r13d, 2    IID306
+    __ eroll(rax, r8, 2, false);                                                //    {EVEX}rol eax, r8d, 2    IID307
+    __ eroll(r16, r16, 16, false);                                              //    rol r16d, 16    IID308
+    __ eroll(r18, r26, 16, true);                                               //    {NF}rol r18d, r26d, 16    IID309
+    __ eroll(rax, r23, 16, true);                                               //    {NF}rol eax, r23d, 16    IID310
+    __ eroll(r26, r26, 4, true);                                                //    {NF}rol r26d, r26d, 4    IID311
+    __ erorl(r10, r27, 4, false);                                               //    {EVEX}ror r10d, r27d, 4    IID312
+    __ erorl(rax, r26, 4, false);                                               //    {EVEX}ror eax, r26d, 4    IID313
+    __ erorl(r22, r22, 1, false);                                               //    ror r22d, 1    IID314
+    __ erorl(r18, r22, 2, true);                                                //    {NF}ror r18d, r22d, 2    IID315
+    __ erorl(rax, r30, 2, true);                                                //    {NF}ror eax, r30d, 2    IID316
+    __ erorl(r23, r23, 16, true);                                               //    {NF}ror r23d, r23d, 16    IID317
+    __ esall(r11, r8, 16, false);                                               //    {EVEX}sal r11d, r8d, 16    IID318
+    __ esall(rax, r16, 16, false);                                              //    {EVEX}sal eax, r16d, 16    IID319
+    __ esall(r11, r11, 8, false);                                               //    sal r11d, 8    IID320
+    __ esall(r29, r16, 2, true);                                                //    {NF}sal r29d, r16d, 2    IID321
+    __ esall(rax, r16, 2, true);                                                //    {NF}sal eax, r16d, 2    IID322
+    __ esall(r15, r15, 16, true);                                               //    {NF}sal r15d, r15d, 16    IID323
+    __ esarl(r9, r18, 8, false);                                                //    {EVEX}sar r9d, r18d, 8    IID324
 #endif // _LP64
-    __ esall(rax, rbx, 8, false);                                               //    {EVEX}sal eax, ebx, 8    IID320
+    __ esarl(rax, rbx, 8, false);                                               //    {EVEX}sar eax, ebx, 8    IID325
 #ifdef _LP64
-    __ esall(r19, r19, 4, true);                                                //    {NF}sal r19d, r19d, 4    IID321
-    __ esall(r17, r25, 16, true);                                               //    {NF}sal r17d, r25d, 16    IID322
-    __ esall(rax, r16, 16, true);                                               //    {NF}sal eax, r16d, 16    IID323
-    __ esarl(r14, r14, 8, false);                                               //    sar r14d, 8    IID324
-    __ esarl(r19, r15, 4, false);                                               //    {EVEX}sar r19d, r15d, 4    IID325
-    __ esarl(rax, r27, 4, false);                                               //    {EVEX}sar eax, r27d, 4    IID326
-    __ esarl(r23, r23, 8, true);                                                //    {NF}sar r23d, r23d, 8    IID327
-    __ esarl(r8, r28, 16, true);                                                //    {NF}sar r8d, r28d, 16    IID328
-    __ esarl(rax, r24, 16, true);                                               //    {NF}sar eax, r24d, 16    IID329
-    __ eshll(r31, r31, 2, false);                                               //    shl r31d, 2    IID330
-    __ eshll(rbx, r16, 16, false);                                              //    {EVEX}shl ebx, r16d, 16    IID331
-    __ eshll(rax, r24, 16, false);                                              //    {EVEX}shl eax, r24d, 16    IID332
-    __ eshll(r25, r25, 16, true);                                               //    {NF}shl r25d, r25d, 16    IID333
-    __ eshll(r21, r16, 4, true);                                                //    {NF}shl r21d, r16d, 4    IID334
-    __ eshll(rax, r24, 4, true);                                                //    {NF}shl eax, r24d, 4    IID335
-    __ eshrl(r13, r13, 1, false);                                               //    shr r13d, 1    IID336
-    __ eshrl(r26, r17, 16, false);                                              //    {EVEX}shr r26d, r17d, 16    IID337
-    __ eshrl(rax, r29, 16, false);                                              //    {EVEX}shr eax, r29d, 16    IID338
-    __ eshrl(r12, r12, 1, true);                                                //    {NF}shr r12d, r12d, 1    IID339
-    __ eshrl(r30, r8, 2, true);                                                 //    {NF}shr r30d, r8d, 2    IID340
-    __ eshrl(rax, r24, 2, true);                                                //    {NF}shr eax, r24d, 2    IID341
-    __ esubl(r8, r8, 1, false);                                                 //    sub r8d, 1    IID342
-    __ esubl(r13, rbx, 4096, false);                                            //    {EVEX}sub r13d, ebx, 4096    IID343
-    __ esubl(rax, r25, 4096, false);                                            //    {EVEX}sub eax, r25d, 4096    IID344
-    __ esubl(r18, r18, 65536, true);                                            //    {NF}sub r18d, r18d, 65536    IID345
-    __ esubl(r19, r26, 256, true);                                              //    {NF}sub r19d, r26d, 256    IID346
-    __ esubl(rax, r25, 256, true);                                              //    {NF}sub eax, r25d, 256    IID347
-    __ exorl(r25, r25, 1, false);                                               //    xor r25d, 1    IID348
-    __ exorl(r24, rcx, 16777216, false);                                        //    {EVEX}xor r24d, ecx, 16777216    IID349
-    __ exorl(rax, r30, 16777216, false);                                        //    {EVEX}xor eax, r30d, 16777216    IID350
-    __ exorl(r17, r17, 1048576, true);                                          //    {NF}xor r17d, r17d, 1048576    IID351
-    __ exorl(r24, r8, 1, true);                                                 //    {NF}xor r24d, r8d, 1    IID352
-    __ exorl(rax, r27, 1, true);                                                //    {NF}xor eax, r27d, 1    IID353
+    __ esarl(r19, r19, 4, false);                                               //    sar r19d, 4    IID326
+    __ esarl(r17, r25, 16, true);                                               //    {NF}sar r17d, r25d, 16    IID327
+    __ esarl(rax, r16, 16, true);                                               //    {NF}sar eax, r16d, 16    IID328
+    __ esarl(r14, r14, 8, true);                                                //    {NF}sar r14d, r14d, 8    IID329
+    __ eshll(r19, r15, 4, false);                                               //    {EVEX}shl r19d, r15d, 4    IID330
+    __ eshll(rax, r27, 4, false);                                               //    {EVEX}shl eax, r27d, 4    IID331
+    __ eshll(r23, r23, 8, false);                                               //    shl r23d, 8    IID332
+    __ eshll(r8, r28, 16, true);                                                //    {NF}shl r8d, r28d, 16    IID333
+    __ eshll(rax, r24, 16, true);                                               //    {NF}shl eax, r24d, 16    IID334
+    __ eshll(r31, r31, 2, true);                                                //    {NF}shl r31d, r31d, 2    IID335
+    __ eshrl(rbx, r16, 16, false);                                              //    {EVEX}shr ebx, r16d, 16    IID336
+    __ eshrl(rax, r24, 16, false);                                              //    {EVEX}shr eax, r24d, 16    IID337
+    __ eshrl(r25, r25, 16, false);                                              //    shr r25d, 16    IID338
+    __ eshrl(r21, r16, 4, true);                                                //    {NF}shr r21d, r16d, 4    IID339
+    __ eshrl(rax, r24, 4, true);                                                //    {NF}shr eax, r24d, 4    IID340
+    __ eshrl(r13, r13, 1, true);                                                //    {NF}shr r13d, r13d, 1    IID341
+    __ esubl(r29, r8, 16777216, false);                                         //    {EVEX}sub r29d, r8d, 16777216    IID342
+    __ esubl(rax, r12, 16777216, false);                                        //    {EVEX}sub eax, r12d, 16777216    IID343
+    __ esubl(r30, r30, 4096, false);                                            //    sub r30d, 4096    IID344
+    __ esubl(r24, rdx, 16, true);                                               //    {NF}sub r24d, edx, 16    IID345
+    __ esubl(rax, r8, 16, true);                                                //    {NF}sub eax, r8d, 16    IID346
+    __ esubl(r13, r13, 4096, true);                                             //    {NF}sub r13d, r13d, 4096    IID347
+    __ exorl(r25, r13, 16, false);                                              //    {EVEX}xor r25d, r13d, 16    IID348
+    __ exorl(rax, r18, 16, false);                                              //    {EVEX}xor eax, r18d, 16    IID349
+    __ exorl(r19, r19, 256, false);                                             //    xor r19d, 256    IID350
+    __ exorl(r25, r21, 1, true);                                                //    {NF}xor r25d, r21d, 1    IID351
+    __ exorl(rax, r24, 1, true);                                                //    {NF}xor eax, r24d, 1    IID352
+    __ exorl(r24, r24, 16777216, true);                                         //    {NF}xor r24d, r24d, 16777216    IID353
+    __ esubl_imm32(r30, r26, 65536, false);                                     //    {EVEX}sub r30d, r26d, 65536    IID354
+    __ esubl_imm32(rax, r22, 65536, false);                                     //    {EVEX}sub eax, r22d, 65536    IID355
+    __ esubl_imm32(r17, r17, 67108864, false);                                  //    sub r17d, 67108864    IID356
+    __ esubl_imm32(r24, r8, 65536, true);                                       //    {NF}sub r24d, r8d, 65536    IID357
+    __ esubl_imm32(rax, r27, 65536, true);                                      //    {NF}sub eax, r27d, 65536    IID358
 #endif // _LP64
-    __ esubl_imm32(rdx, rdx, 1073741824, false);                                //    sub edx, 1073741824    IID354
+    __ esubl_imm32(rdx, rdx, 1073741824, true);                                 //    {NF}sub edx, edx, 1073741824    IID359
 #ifdef _LP64
-    __ esubl_imm32(r22, r22, 1073741824, false);                                //    sub r22d, 1073741824    IID355
-    __ esubl_imm32(rax, r23, 1073741824, false);                                //    {EVEX}sub eax, r23d, 1073741824    IID356
-    __ esubl_imm32(r19, r19, 16777216, true);                                   //    {NF}sub r19d, r19d, 16777216    IID357
-    __ esubl_imm32(r30, r24, 4194304, true);                                    //    {NF}sub r30d, r24d, 4194304    IID358
-    __ esubl_imm32(rax, r29, 4194304, true);                                    //    {NF}sub eax, r29d, 4194304    IID359
-    __ eaddl(r10, r10, Address(r8, r26, (Address::ScaleFactor)3, +0x3ac41cbd), false); //    add r10d, dword ptr [r8+r26*8+0x3ac41cbd]    IID360
+    __ eaddl(r31, r31, Address(r30, r20, (Address::ScaleFactor)3, +0x3ac41cbd), false); //    add r31d, dword ptr [r30+r20*8+0x3ac41cbd]    IID360
     __ eaddl(r24, r30, Address(r13, r17, (Address::ScaleFactor)1, +0x1efdc2e3), false); //    {EVEX}add r24d, r30d, dword ptr [r13+r17*2+0x1efdc2e3]    IID361
     __ eaddl(r16, r16, Address(r9, r15, (Address::ScaleFactor)1, +0x14551c8d), true); //    {NF}add r16d, r16d, dword ptr [r9+r15*2+0x14551c8d]    IID362
     __ eaddl(r30, rdx, Address(r11, r27, (Address::ScaleFactor)2, -0x55f79314), true); //    {NF}add r30d, edx, dword ptr [r11+r27*4-0x55f79314]    IID363
@@ -627,22 +633,22 @@
     __ incrementq(Address(r11, r30, (Address::ScaleFactor)2, +0x3eeb8fd0));     //    inc qword ptr [r11+r30*4+0x3eeb8fd0]    IID599
     __ decrementq(Address(r26, r29, (Address::ScaleFactor)0, +0x275ad945));     //    dec qword ptr [r26+r29*1+0x275ad945]    IID600
     __ imulq(r29, Address(r19, r20, (Address::ScaleFactor)2, -0x3f0f3db9), 4096); //    imul r29, qword ptr [r19+r20*4-0x3f0f3db9], 4096    IID601
-    __ imulq(r30, r30, 16);                                                     //    imul r30, r30, 16    IID602
-    __ shldq(r11, r11, 8);                                                      //    shld r11, r11, 8    IID603
-    __ shrdq(r28, r28, 2);                                                      //    shrd r28, r28, 2    IID604
-    __ pop2(r15, r23);                                                          //    {load}pop2 r23, r15    IID605
-    __ pop2p(r11, r26);                                                         //    {load}pop2p r26, r11    IID606
-    __ push2(r28, r20);                                                         //    {load}push2 r20, r28    IID607
-    __ push2p(r23, rbx);                                                        //    {load}push2p rbx, r23    IID608
-    __ movzbq(r24, Address(r15, r12, (Address::ScaleFactor)0, -0x2b4502f9));    //    movzx r24, byte ptr [r15+r12*1-0x2b4502f9]    IID609
-    __ movzwq(rcx, Address(r23, r9, (Address::ScaleFactor)0, -0x3d2d7a14));     //    movzx rcx, word ptr [r23+r9*1-0x3d2d7a14]    IID610
-    __ movsbq(r16, Address(r20, -0x46116c0d));                                  //    movsx r16, byte ptr [r20-0x46116c0d]    IID611
-    __ movswq(r13, Address(r9, r23, (Address::ScaleFactor)1, -0x242ffe4a));     //    movsx r13, word ptr [r9+r23*2-0x242ffe4a]    IID612
-    __ movzbq(r24, r26);                                                        //    movzx r24, r26b    IID613
-    __ movzwq(r22, r15);                                                        //    movzx r22, r15w    IID614
-    __ movsbq(r18, r21);                                                        //    movsx r18, r21b    IID615
-    __ movswq(r30, r17);                                                        //    movsx r30, r17w    IID616
-    __ cmpxchgq(r29, Address(r12, r30, (Address::ScaleFactor)3, +0xf4e30b2));   //    cmpxchg qword ptr [r12+r30*8+0xf4e30b2], r29    IID617
+    __ imulq(r30, r20, 16);                                                     //    imul r30, r20, 16    IID602
+    __ shldq(r12, r28, 2);                                                      //    shld r12, r28, 2    IID603
+    __ shrdq(r15, r26, 16);                                                     //    shrd r15, r26, 16    IID604
+    __ pop2(r20, r11);                                                          //    {load}pop2 r11, r20    IID605
+    __ pop2p(rbx, r28);                                                         //    {load}pop2p r28, rbx    IID606
+    __ push2(r24, r23);                                                         //    {load}push2 r23, r24    IID607
+    __ push2p(r12, r15);                                                        //    {load}push2p r15, r12    IID608
+    __ movzbq(r11, Address(rcx, r30, (Address::ScaleFactor)1, -0x32ffb1c2));    //    movzx r11, byte ptr [rcx+r30*2-0x32ffb1c2]    IID609
+    __ movzwq(r23, Address(r9, r12, (Address::ScaleFactor)1, -0x54823e69));     //    movzx r23, word ptr [r9+r12*2-0x54823e69]    IID610
+    __ movsbq(r20, Address(r13, rcx, (Address::ScaleFactor)1, +0x4e1758c4));    //    movsx r20, byte ptr [r13+rcx*2+0x4e1758c4]    IID611
+    __ movswq(rcx, Address(r13, r9, (Address::ScaleFactor)3, -0x226aab94));     //    movsx rcx, word ptr [r13+r9*8-0x226aab94]    IID612
+    __ movzbq(r13, r24);                                                        //    movzx r13, r24b    IID613
+    __ movzwq(r26, r22);                                                        //    movzx r26, r22w    IID614
+    __ movsbq(r15, r18);                                                        //    movsx r15, r18b    IID615
+    __ movswq(r21, r30);                                                        //    movsx r21, r30w    IID616
+    __ cmpxchgq(r17, Address(r29, r12, (Address::ScaleFactor)3, +0xf4e30b2));   //    cmpxchg qword ptr [r29+r12*8+0xf4e30b2], r17    IID617
     __ eidivq(r30, false);                                                      //    {EVEX}idiv r30    IID618
     __ eidivq(r17, true);                                                       //    {NF}idiv r17    IID619
     __ edivq(r31, false);                                                       //    {EVEX}div r31    IID620
@@ -755,94 +761,94 @@
     __ esubq(r20, Address(rbx, r25, (Address::ScaleFactor)3, +0x2f0329e), 1, true); //    {NF}sub r20, qword ptr [rbx+r25*8+0x2f0329e], 1    IID727
     __ exorq(r12, Address(r31, r12, (Address::ScaleFactor)3, -0x37505c8c), 256, false); //    {EVEX}xor r12, qword ptr [r31+r12*8-0x37505c8c], 256    IID728
     __ exorq(r21, Address(r15, r25, (Address::ScaleFactor)0, +0x43c49623), 65536, true); //    {NF}xor r21, qword ptr [r15+r25*1+0x43c49623], 65536    IID729
-    __ eaddq(r25, r25, 4096, false);                                            //    add r25, 4096    IID730
-    __ eaddq(r10, r16, 268435456, false);                                       //    {EVEX}add r10, r16, 268435456    IID731
-    __ eaddq(rax, r17, 268435456, false);                                       //    {EVEX}add rax, r17, 268435456    IID732
-    __ eaddq(r23, r23, 16, true);                                               //    {NF}add r23, r23, 16    IID733
-    __ eaddq(r31, rbx, 256, true);                                              //    {NF}add r31, rbx, 256    IID734
-    __ eaddq(rax, r16, 256, true);                                              //    {NF}add rax, r16, 256    IID735
-    __ eandq(r24, r24, 256, false);                                             //    and r24, 256    IID736
-    __ eandq(r9, r22, 256, false);                                              //    {EVEX}and r9, r22, 256    IID737
-    __ eandq(rax, r28, 256, false);                                             //    {EVEX}and rax, r28, 256    IID738
-    __ eandq(r25, r25, 16777216, true);                                         //    {NF}and r25, r25, 16777216    IID739
-    __ eandq(r16, r21, 268435456, true);                                        //    {NF}and r16, r21, 268435456    IID740
-    __ eandq(rax, rbx, 268435456, true);                                        //    {NF}and rax, rbx, 268435456    IID741
-    __ eimulq(r13, r13, 268435456, false);                                      //    {EVEX}imul r13, r13, 268435456    IID742
-    __ eimulq(rdx, r8, 1048576, false);                                         //    {EVEX}imul rdx, r8, 1048576    IID743
-    __ eimulq(rax, r22, 1048576, false);                                        //    {EVEX}imul rax, r22, 1048576    IID744
-    __ eimulq(r12, r12, 65536, true);                                           //    {NF}imul r12, r12, 65536    IID745
-    __ eimulq(r24, r13, 65536, true);                                           //    {NF}imul r24, r13, 65536    IID746
-    __ eimulq(rax, r21, 65536, true);                                           //    {NF}imul rax, r21, 65536    IID747
-    __ eorq(rbx, rbx, 16, false);                                               //    or rbx, 16    IID748
-    __ eorq(r24, r27, 65536, false);                                            //    {EVEX}or r24, r27, 65536    IID749
-    __ eorq(rax, r17, 65536, false);                                            //    {EVEX}or rax, r17, 65536    IID750
-    __ eorq(r24, r24, 65536, true);                                             //    {NF}or r24, r24, 65536    IID751
-    __ eorq(r13, r31, 1048576, true);                                           //    {NF}or r13, r31, 1048576    IID752
-    __ eorq(rax, r21, 1048576, true);                                           //    {NF}or rax, r21, 1048576    IID753
-    __ erclq(r30, r30, 4);                                                      //    rcl r30, 4    IID754
-    __ erclq(r8, r13, 8);                                                       //    {EVEX}rcl r8, r13, 8    IID755
-    __ erclq(rax, r31, 8);                                                      //    {EVEX}rcl rax, r31, 8    IID756
-    __ erolq(r13, r13, 4, false);                                               //    rol r13, 4    IID757
-    __ erolq(r14, r29, 4, false);                                               //    {EVEX}rol r14, r29, 4    IID758
-    __ erolq(rax, r22, 4, false);                                               //    {EVEX}rol rax, r22, 4    IID759
-    __ erolq(r8, r8, 8, true);                                                  //    {NF}rol r8, r8, 8    IID760
-    __ erolq(r30, r15, 2, true);                                                //    {NF}rol r30, r15, 2    IID761
-    __ erolq(rax, r28, 2, true);                                                //    {NF}rol rax, r28, 2    IID762
-    __ erorq(r15, r15, 16, false);                                              //    ror r15, 16    IID763
-    __ erorq(r16, r12, 8, false);                                               //    {EVEX}ror r16, r12, 8    IID764
-    __ erorq(rax, r9, 8, false);                                                //    {EVEX}ror rax, r9, 8    IID765
-    __ erorq(r23, r23, 2, true);                                                //    {NF}ror r23, r23, 2    IID766
-    __ erorq(r15, r9, 16, true);                                                //    {NF}ror r15, r9, 16    IID767
-    __ erorq(rax, r8, 16, true);                                                //    {NF}ror rax, r8, 16    IID768
-    __ esalq(r25, r25, 1, false);                                               //    sal r25, 1    IID769
-    __ esalq(r9, r17, 16, false);                                               //    {EVEX}sal r9, r17, 16    IID770
-    __ esalq(rax, r20, 16, false);                                              //    {EVEX}sal rax, r20, 16    IID771
-    __ esalq(r27, r27, 1, true);                                                //    {NF}sal r27, r27, 1    IID772
-    __ esalq(r20, r31, 1, true);                                                //    {NF}sal r20, r31, 1    IID773
-    __ esalq(rax, r18, 1, true);                                                //    {NF}sal rax, r18, 1    IID774
-    __ esarq(r28, r28, 16, false);                                              //    sar r28, 16    IID775
-    __ esarq(r26, r18, 16, false);                                              //    {EVEX}sar r26, r18, 16    IID776
-    __ esarq(rax, r24, 16, false);                                              //    {EVEX}sar rax, r24, 16    IID777
-    __ esarq(r22, r22, 16, true);                                               //    {NF}sar r22, r22, 16    IID778
-    __ esarq(r27, r29, 1, true);                                                //    {NF}sar r27, r29, 1    IID779
-    __ esarq(rax, r18, 1, true);                                                //    {NF}sar rax, r18, 1    IID780
-    __ eshlq(r21, r21, 1, false);                                               //    shl r21, 1    IID781
-    __ eshlq(r12, rcx, 2, false);                                               //    {EVEX}shl r12, rcx, 2    IID782
-    __ eshlq(rax, r24, 2, false);                                               //    {EVEX}shl rax, r24, 2    IID783
-    __ eshlq(r22, r22, 8, true);                                                //    {NF}shl r22, r22, 8    IID784
-    __ eshlq(r17, r23, 8, true);                                                //    {NF}shl r17, r23, 8    IID785
-    __ eshlq(rax, r27, 8, true);                                                //    {NF}shl rax, r27, 8    IID786
-    __ eshrq(r23, r23, 1, false);                                               //    shr r23, 1    IID787
-    __ eshrq(r8, r25, 16, false);                                               //    {EVEX}shr r8, r25, 16    IID788
-    __ eshrq(rax, r23, 16, false);                                              //    {EVEX}shr rax, r23, 16    IID789
-    __ eshrq(r9, r9, 4, true);                                                  //    {NF}shr r9, r9, 4    IID790
-    __ eshrq(r22, r13, 1, true);                                                //    {NF}shr r22, r13, 1    IID791
-    __ eshrq(rax, r11, 1, true);                                                //    {NF}shr rax, r11, 1    IID792
-    __ esubq(r12, r12, 4096, false);                                            //    sub r12, 4096    IID793
-    __ esubq(rcx, r30, 268435456, false);                                       //    {EVEX}sub rcx, r30, 268435456    IID794
-    __ esubq(rax, r19, 268435456, false);                                       //    {EVEX}sub rax, r19, 268435456    IID795
-    __ esubq(r13, r13, 256, true);                                              //    {NF}sub r13, r13, 256    IID796
-    __ esubq(r18, r11, 268435456, true);                                        //    {NF}sub r18, r11, 268435456    IID797
-    __ esubq(rax, r9, 268435456, true);                                         //    {NF}sub rax, r9, 268435456    IID798
-    __ exorq(r29, r29, 1, false);                                               //    xor r29, 1    IID799
-    __ exorq(r10, r22, 1048576, false);                                         //    {EVEX}xor r10, r22, 1048576    IID800
-    __ exorq(rax, r9, 1048576, false);                                          //    {EVEX}xor rax, r9, 1048576    IID801
-    __ exorq(r12, r12, 4096, true);                                             //    {NF}xor r12, r12, 4096    IID802
-    __ exorq(r26, r31, 268435456, true);                                        //    {NF}xor r26, r31, 268435456    IID803
-    __ exorq(rax, r12, 268435456, true);                                        //    {NF}xor rax, r12, 268435456    IID804
-    __ eorq_imm32(r28, r28, 65536, false);                                      //    or r28, 65536    IID805
-    __ eorq_imm32(r15, r30, 16777216, false);                                   //    {EVEX}or r15, r30, 16777216    IID806
-    __ eorq_imm32(rax, rcx, 16777216, false);                                   //    {EVEX}or rax, rcx, 16777216    IID807
-    __ eorq_imm32(r26, r26, 262144, false);                                     //    or r26, 262144    IID808
-    __ eorq_imm32(r12, r14, 65536, false);                                      //    {EVEX}or r12, r14, 65536    IID809
-    __ eorq_imm32(rax, r21, 65536, false);                                      //    {EVEX}or rax, r21, 65536    IID810
-    __ esubq_imm32(r20, r20, 67108864, false);                                  //    sub r20, 67108864    IID811
-    __ esubq_imm32(r11, rbx, 268435456, false);                                 //    {EVEX}sub r11, rbx, 268435456    IID812
-    __ esubq_imm32(rax, r23, 268435456, false);                                 //    {EVEX}sub rax, r23, 268435456    IID813
-    __ esubq_imm32(r31, r31, 1073741824, true);                                 //    {NF}sub r31, r31, 1073741824    IID814
-    __ esubq_imm32(r29, r28, 4194304, true);                                    //    {NF}sub r29, r28, 4194304    IID815
-    __ esubq_imm32(rax, r19, 4194304, true);                                    //    {NF}sub rax, r19, 4194304    IID816
-    __ eaddq(r20, r20, Address(rdx, +0x3875f17c), false);                       //    add r20, qword ptr [rdx+0x3875f17c]    IID817
+    __ eaddq(r25, r19, 4096, false);                                            //    {EVEX}add r25, r19, 4096    IID730
+    __ eaddq(rax, r10, 4096, false);                                            //    {EVEX}add rax, r10, 4096    IID731
+    __ eaddq(r17, r17, 1048576, false);                                         //    add r17, 1048576    IID732
+    __ eaddq(r23, r31, 16, true);                                               //    {NF}add r23, r31, 16    IID733
+    __ eaddq(rax, r9, 16, true);                                                //    {NF}add rax, r9, 16    IID734
+    __ eaddq(r16, r16, 16, true);                                               //    {NF}add r16, r16, 16    IID735
+    __ eandq(r24, r10, 256, false);                                             //    {EVEX}and r24, r10, 256    IID736
+    __ eandq(rax, r9, 256, false);                                              //    {EVEX}and rax, r9, 256    IID737
+    __ eandq(r25, r25, 16777216, false);                                        //    and r25, 16777216    IID738
+    __ eandq(r16, r21, 268435456, true);                                        //    {NF}and r16, r21, 268435456    IID739
+    __ eandq(rax, rbx, 268435456, true);                                        //    {NF}and rax, rbx, 268435456    IID740
+    __ eandq(r13, r13, 268435456, true);                                        //    {NF}and r13, r13, 268435456    IID741
+    __ eimulq(rdx, r8, 1048576, false);                                         //    {EVEX}imul rdx, r8, 1048576    IID742
+    __ eimulq(rax, r22, 1048576, false);                                        //    {EVEX}imul rax, r22, 1048576    IID743
+    __ eimulq(r12, r12, 65536, false);                                          //    {EVEX}imul r12, r12, 65536    IID744
+    __ eimulq(r24, r13, 65536, true);                                           //    {NF}imul r24, r13, 65536    IID745
+    __ eimulq(rax, r21, 65536, true);                                           //    {NF}imul rax, r21, 65536    IID746
+    __ eimulq(rbx, rbx, 16, true);                                              //    {NF}imul rbx, rbx, 16    IID747
+    __ eorq(r24, r27, 65536, false);                                            //    {EVEX}or r24, r27, 65536    IID748
+    __ eorq(rax, r17, 65536, false);                                            //    {EVEX}or rax, r17, 65536    IID749
+    __ eorq(r24, r24, 65536, false);                                            //    or r24, 65536    IID750
+    __ eorq(r13, r31, 1048576, true);                                           //    {NF}or r13, r31, 1048576    IID751
+    __ eorq(rax, r21, 1048576, true);                                           //    {NF}or rax, r21, 1048576    IID752
+    __ eorq(r30, r30, 1048576, true);                                           //    {NF}or r30, r30, 1048576    IID753
+    __ erclq(r8, r13, 8);                                                       //    {EVEX}rcl r8, r13, 8    IID754
+    __ erclq(rax, r31, 8);                                                      //    {EVEX}rcl rax, r31, 8    IID755
+    __ erclq(r13, r13, 4);                                                      //    rcl r13, 4    IID756
+    __ erolq(r14, r29, 4, false);                                               //    {EVEX}rol r14, r29, 4    IID757
+    __ erolq(rax, r22, 4, false);                                               //    {EVEX}rol rax, r22, 4    IID758
+    __ erolq(r8, r8, 8, false);                                                 //    rol r8, 8    IID759
+    __ erolq(r30, r15, 2, true);                                                //    {NF}rol r30, r15, 2    IID760
+    __ erolq(rax, r28, 2, true);                                                //    {NF}rol rax, r28, 2    IID761
+    __ erolq(r15, r15, 16, true);                                               //    {NF}rol r15, r15, 16    IID762
+    __ erorq(r16, r12, 8, false);                                               //    {EVEX}ror r16, r12, 8    IID763
+    __ erorq(rax, r9, 8, false);                                                //    {EVEX}ror rax, r9, 8    IID764
+    __ erorq(r23, r23, 2, false);                                               //    ror r23, 2    IID765
+    __ erorq(r15, r9, 16, true);                                                //    {NF}ror r15, r9, 16    IID766
+    __ erorq(rax, r8, 16, true);                                                //    {NF}ror rax, r8, 16    IID767
+    __ erorq(r25, r25, 1, true);                                                //    {NF}ror r25, r25, 1    IID768
+    __ esalq(r9, r17, 16, false);                                               //    {EVEX}sal r9, r17, 16    IID769
+    __ esalq(rax, r20, 16, false);                                              //    {EVEX}sal rax, r20, 16    IID770
+    __ esalq(r27, r27, 1, false);                                               //    sal r27, 1    IID771
+    __ esalq(r20, r31, 1, true);                                                //    {NF}sal r20, r31, 1    IID772
+    __ esalq(rax, r18, 1, true);                                                //    {NF}sal rax, r18, 1    IID773
+    __ esalq(r28, r28, 16, true);                                               //    {NF}sal r28, r28, 16    IID774
+    __ esarq(r26, r18, 16, false);                                              //    {EVEX}sar r26, r18, 16    IID775
+    __ esarq(rax, r24, 16, false);                                              //    {EVEX}sar rax, r24, 16    IID776
+    __ esarq(r22, r22, 16, false);                                              //    sar r22, 16    IID777
+    __ esarq(r27, r29, 1, true);                                                //    {NF}sar r27, r29, 1    IID778
+    __ esarq(rax, r18, 1, true);                                                //    {NF}sar rax, r18, 1    IID779
+    __ esarq(r21, r21, 1, true);                                                //    {NF}sar r21, r21, 1    IID780
+    __ eshlq(r12, rcx, 2, false);                                               //    {EVEX}shl r12, rcx, 2    IID781
+    __ eshlq(rax, r24, 2, false);                                               //    {EVEX}shl rax, r24, 2    IID782
+    __ eshlq(r22, r22, 8, false);                                               //    shl r22, 8    IID783
+    __ eshlq(r17, r23, 8, true);                                                //    {NF}shl r17, r23, 8    IID784
+    __ eshlq(rax, r27, 8, true);                                                //    {NF}shl rax, r27, 8    IID785
+    __ eshlq(r23, r23, 1, true);                                                //    {NF}shl r23, r23, 1    IID786
+    __ eshrq(r8, r25, 16, false);                                               //    {EVEX}shr r8, r25, 16    IID787
+    __ eshrq(rax, r23, 16, false);                                              //    {EVEX}shr rax, r23, 16    IID788
+    __ eshrq(r9, r9, 4, false);                                                 //    shr r9, 4    IID789
+    __ eshrq(r22, r13, 1, true);                                                //    {NF}shr r22, r13, 1    IID790
+    __ eshrq(rax, r11, 1, true);                                                //    {NF}shr rax, r11, 1    IID791
+    __ eshrq(r12, r12, 2, true);                                                //    {NF}shr r12, r12, 2    IID792
+    __ esubq(rcx, r30, 268435456, false);                                       //    {EVEX}sub rcx, r30, 268435456    IID793
+    __ esubq(rax, r19, 268435456, false);                                       //    {EVEX}sub rax, r19, 268435456    IID794
+    __ esubq(r13, r13, 256, false);                                             //    sub r13, 256    IID795
+    __ esubq(r18, r11, 268435456, true);                                        //    {NF}sub r18, r11, 268435456    IID796
+    __ esubq(rax, r9, 268435456, true);                                         //    {NF}sub rax, r9, 268435456    IID797
+    __ esubq(r29, r29, 1, true);                                                //    {NF}sub r29, r29, 1    IID798
+    __ exorq(r10, r22, 1048576, false);                                         //    {EVEX}xor r10, r22, 1048576    IID799
+    __ exorq(rax, r9, 1048576, false);                                          //    {EVEX}xor rax, r9, 1048576    IID800
+    __ exorq(r12, r12, 4096, false);                                            //    xor r12, 4096    IID801
+    __ exorq(r26, r31, 268435456, true);                                        //    {NF}xor r26, r31, 268435456    IID802
+    __ exorq(rax, r12, 268435456, true);                                        //    {NF}xor rax, r12, 268435456    IID803
+    __ exorq(r28, r28, 1, true);                                                //    {NF}xor r28, r28, 1    IID804
+    __ eorq_imm32(r15, r30, 16777216, false);                                   //    {EVEX}or r15, r30, 16777216    IID805
+    __ eorq_imm32(rax, rcx, 16777216, false);                                   //    {EVEX}or rax, rcx, 16777216    IID806
+    __ eorq_imm32(r26, r26, 262144, false);                                     //    or r26, 262144    IID807
+    __ eorq_imm32(r12, r14, 65536, false);                                      //    {EVEX}or r12, r14, 65536    IID808
+    __ eorq_imm32(rax, r21, 65536, false);                                      //    {EVEX}or rax, r21, 65536    IID809
+    __ eorq_imm32(r20, r20, 67108864, false);                                   //    or r20, 67108864    IID810
+    __ esubq_imm32(r11, rbx, 268435456, false);                                 //    {EVEX}sub r11, rbx, 268435456    IID811
+    __ esubq_imm32(rax, r23, 268435456, false);                                 //    {EVEX}sub rax, r23, 268435456    IID812
+    __ esubq_imm32(r31, r31, 1073741824, false);                                //    sub r31, 1073741824    IID813
+    __ esubq_imm32(r29, r28, 4194304, true);                                    //    {NF}sub r29, r28, 4194304    IID814
+    __ esubq_imm32(rax, r19, 4194304, true);                                    //    {NF}sub rax, r19, 4194304    IID815
+    __ esubq_imm32(rdx, rdx, 1073741824, true);                                 //    {NF}sub rdx, rdx, 1073741824    IID816
+    __ eaddq(r10, r10, Address(rdx, rdx, (Address::ScaleFactor)3, +0x3875f17c), false); //    add r10, qword ptr [rdx+rdx*8+0x3875f17c]    IID817
     __ eaddq(r29, rcx, Address(r12, r17, (Address::ScaleFactor)2, +0x32c71076), false); //    {EVEX}add r29, rcx, qword ptr [r12+r17*4+0x32c71076]    IID818
     __ eaddq(r16, r16, Address(r19, +0x4b1e9da4), true);                        //    {NF}add r16, r16, qword ptr [r19+0x4b1e9da4]    IID819
     __ eaddq(r17, r25, Address(r22, r18, (Address::ScaleFactor)2, +0x17f69003), true); //    {NF}add r17, r25, qword ptr [r22+r18*4+0x17f69003]    IID820
@@ -1118,90 +1124,96 @@
     0xd5, 0x13, 0xff, 0x84, 0x6b, 0x4f, 0xd4, 0x66, 0x23,                            // IID152
     0xd5, 0x11, 0xff, 0x8c, 0x24, 0x07, 0x72, 0x7c, 0x1e,                            // IID153
     0xd5, 0x25, 0x69, 0xb4, 0xce, 0x71, 0x57, 0xa0, 0x13, 0x00, 0x00, 0x00, 0x10,    // IID154
-    0xd5, 0x50, 0x6b, 0xd2, 0x10,                                                    // IID155
-    0xd5, 0xd5, 0xa4, 0xff, 0x10,                                                    // IID156
-    0xd5, 0xd5, 0xac, 0xc0, 0x04,                                                    // IID157
-    0xd5, 0xc5, 0xb6, 0xb9, 0x3b, 0x60, 0xaa, 0xd7,                                  // IID158
-    0xd5, 0x94, 0xb7, 0xa4, 0x4c, 0xf3, 0x13, 0x2e, 0x60,                            // IID159
-    0xd5, 0xb5, 0xbe, 0xbc, 0xdd, 0x2e, 0xc0, 0x8c, 0x9b,                            // IID160
-    0xd5, 0x97, 0xbf, 0xa4, 0xbd, 0xe5, 0xee, 0xd6, 0x60,                            // IID161
-    0xd5, 0x95, 0xb6, 0xf7,                                                          // IID162
-    0xd5, 0x94, 0xb7, 0xcf,                                                          // IID163
-    0xd5, 0xd0, 0xbe, 0xe9,                                                          // IID164
-    0xd5, 0x95, 0xbf, 0xed,                                                          // IID165
-    0x47, 0x0f, 0xb0, 0xbc, 0xfc, 0x0e, 0x71, 0x9a, 0x35,                            // IID166
-    0x66, 0xd5, 0xf5, 0xb1, 0xac, 0x43, 0x63, 0x52, 0x1a, 0x85,                      // IID167
-    0xd5, 0xf5, 0xb1, 0x8c, 0x99, 0x6d, 0x81, 0x3f, 0x3e,                            // IID168
-    0x62, 0xd4, 0x7c, 0x08, 0xf7, 0xfd,                                              // IID169
-    0x62, 0xdc, 0x7c, 0x0c, 0xf7, 0xfe,                                              // IID170
-    0x62, 0xd4, 0x7c, 0x08, 0xf7, 0xf4,                                              // IID171
+    0xd5, 0x50, 0x6b, 0xd7, 0x10,                                                    // IID155
+    0xd5, 0xd5, 0xa4, 0xf8, 0x04,                                                    // IID156
+    0xd5, 0xc5, 0xac, 0xf3, 0x02,                                                    // IID157
+    0xd5, 0xb2, 0xb6, 0x9c, 0x47, 0xf3, 0x98, 0x49, 0xa3,                            // IID158
+    0xd5, 0xe0, 0xb7, 0xa4, 0x01, 0x2e, 0xc0, 0x8c, 0x9b,                            // IID159
+    0xd5, 0x97, 0xbe, 0xa4, 0xbd, 0xe5, 0xee, 0xd6, 0x60,                            // IID160
+    0xd5, 0x97, 0xbf, 0xb4, 0xcf, 0x48, 0x59, 0xaa, 0x01,                            // IID161
+    0xd5, 0x95, 0xb6, 0xed,                                                          // IID162
+    0x45, 0x0f, 0xb7, 0xfc,                                                          // IID163
+    0xd5, 0x95, 0xbe, 0xf9,                                                          // IID164
+    0xd5, 0xd5, 0xbf, 0xd8,                                                          // IID165
+    0xd5, 0xf7, 0xb0, 0x84, 0x0c, 0x75, 0xa5, 0xef, 0x33,                            // IID166
+    0x66, 0x46, 0x0f, 0xb1, 0xac, 0xb9, 0xe4, 0x1a, 0xac, 0x02,                      // IID167
+    0xd5, 0x97, 0xb1, 0x84, 0x5a, 0x22, 0x2b, 0x94, 0xa4,                            // IID168
+    0x62, 0xdc, 0x7c, 0x08, 0xf7, 0xfe,                                              // IID169
+    0x62, 0xd4, 0x7c, 0x0c, 0xf7, 0xfc,                                              // IID170
+    0x62, 0xfc, 0x7c, 0x08, 0xf7, 0xf1,                                              // IID171
     0x62, 0xfc, 0x7c, 0x0c, 0xf7, 0xf1,                                              // IID172
-    0x62, 0xfc, 0x7c, 0x08, 0xf7, 0xe9,                                              // IID173
 #endif // _LP64
-    0x62, 0xf4, 0x7c, 0x0c, 0xf7, 0xe9,                                              // IID174
+    0x62, 0xf4, 0x7c, 0x08, 0xf7, 0xe9,                                              // IID173
 #ifdef _LP64
-    0x62, 0xd4, 0x7c, 0x08, 0xf7, 0xe5,                                              // IID175
-    0x62, 0xfc, 0x7c, 0x0c, 0xf7, 0xe7,                                              // IID176
-    0x62, 0xdc, 0x78, 0x08, 0xf7, 0xa4, 0x31, 0x15, 0x91, 0x74, 0xd8,                // IID177
-    0x62, 0x9c, 0x7c, 0x0c, 0xf7, 0xa4, 0xa8, 0xe1, 0x0f, 0x57, 0xb6,                // IID178
-    0x62, 0xdc, 0x7c, 0x08, 0xf5, 0xc9,                                              // IID179
-    0x62, 0x4c, 0x7c, 0x08, 0xf5, 0xf6,                                              // IID180
-    0x62, 0x5c, 0x7c, 0x0c, 0xf5, 0xcf,                                              // IID181
+    0x62, 0xd4, 0x7c, 0x0c, 0xf7, 0xed,                                              // IID174
+    0x62, 0xfc, 0x7c, 0x08, 0xf7, 0xe7,                                              // IID175
+    0x62, 0xdc, 0x7c, 0x0c, 0xf7, 0xe1,                                              // IID176
+    0x62, 0xbc, 0x7c, 0x08, 0xf7, 0xa4, 0x56, 0xaa, 0x64, 0xc8, 0xc2,                // IID177
+    0x62, 0xd4, 0x7c, 0x0c, 0xf7, 0xa3, 0x51, 0x10, 0xb6, 0xcd,                      // IID178
+    0x62, 0x7c, 0x7c, 0x08, 0xf5, 0xc8,                                              // IID179
+    0x62, 0xec, 0x7c, 0x08, 0xf5, 0xff,                                              // IID180
+    0x62, 0x44, 0x7c, 0x0c, 0xf5, 0xe0,                                              // IID181
+    0x62, 0x4c, 0x7c, 0x0c, 0xf5, 0xf6,                                              // IID182
+    0x62, 0xd4, 0x44, 0x10, 0xf7, 0xdb,                                              // IID183
+    0x41, 0xf7, 0xdd,                                                                // IID184
+    0x62, 0xd4, 0x7c, 0x14, 0xf7, 0xdb,                                              // IID185
+    0x62, 0xd4, 0x24, 0x1c, 0xf7, 0xdb,                                              // IID186
+    0x62, 0x64, 0x7c, 0x08, 0x88, 0xd1,                                              // IID187
 #endif // _LP64
-    0x62, 0xf4, 0x7c, 0x0c, 0xf5, 0xc9,                                              // IID182
+    0x62, 0xf4, 0x7c, 0x08, 0x88, 0xdb,                                              // IID188
 #ifdef _LP64
-    0x62, 0xdc, 0x34, 0x10, 0xf7, 0xd8,                                              // IID183
-    0x41, 0xf7, 0xde,                                                                // IID184
-    0x62, 0xd4, 0x04, 0x1c, 0xf7, 0xd9,                                              // IID185
-    0x62, 0xfc, 0x7c, 0x14, 0xf7, 0xd8,                                              // IID186
-    0x62, 0xcc, 0x7c, 0x08, 0x88, 0xfc,                                              // IID187
-    0x62, 0x54, 0x7c, 0x08, 0x88, 0xc0,                                              // IID188
-    0x62, 0x6c, 0x7c, 0x0c, 0x88, 0xf7,                                              // IID189
-    0x62, 0x54, 0x7c, 0x0c, 0x88, 0xdb,                                              // IID190
-    0x62, 0xfc, 0x14, 0x18, 0xf7, 0xd0,                                              // IID191
-    0x41, 0xf7, 0xd3,                                                                // IID192
-    0x62, 0xdc, 0x24, 0x18, 0xd3, 0xc2,                                              // IID193
+    0x62, 0x54, 0x7c, 0x0c, 0x88, 0xd6,                                              // IID189
+    0x62, 0x4c, 0x7c, 0x0c, 0x88, 0xed,                                              // IID190
+    0x62, 0xfc, 0x04, 0x18, 0xf7, 0xd4,                                              // IID191
+    0xd5, 0x10, 0xf7, 0xd1,                                                          // IID192
+    0x41, 0xd3, 0xc4,                                                                // IID193
 #endif // _LP64
-    0xd3, 0xc1,                                                                      // IID194
+    0xd3, 0xc3,                                                                      // IID194
 #ifdef _LP64
-    0x62, 0xd4, 0x64, 0x1c, 0xd3, 0xc2,                                              // IID195
-    0x62, 0xd4, 0x0c, 0x1c, 0xd3, 0xc6,                                              // IID196
-    0x62, 0xd4, 0x14, 0x10, 0xd3, 0xcf,                                              // IID197
-    0xd5, 0x10, 0xd3, 0xcc,                                                          // IID198
-    0x62, 0xd4, 0x74, 0x14, 0xd3, 0xcc,                                              // IID199
-    0x62, 0xd4, 0x1c, 0x1c, 0xd3, 0xcc,                                              // IID200
-    0x62, 0xfc, 0x64, 0x18, 0xd3, 0xe7,                                              // IID201
+    0x62, 0xdc, 0x44, 0x14, 0xd3, 0xc3,                                              // IID195
+    0x62, 0xdc, 0x14, 0x14, 0xd3, 0xc5,                                              // IID196
+    0x62, 0xdc, 0x5c, 0x10, 0xd3, 0xcc,                                              // IID197
+#endif // _LP64
+    0xd3, 0xca,                                                                      // IID198
+#ifdef _LP64
+    0x62, 0xdc, 0x3c, 0x1c, 0xd3, 0xcb,                                              // IID199
+#endif // _LP64
+    0x62, 0xf4, 0x64, 0x1c, 0xd3, 0xcb,                                              // IID200
+#ifdef _LP64
+    0x62, 0xd4, 0x04, 0x18, 0xd3, 0xe3,                                              // IID201
     0xd5, 0x11, 0xd3, 0xe3,                                                          // IID202
-    0x62, 0xfc, 0x14, 0x14, 0xd3, 0xe4,                                              // IID203
-    0x62, 0xdc, 0x1c, 0x14, 0xd3, 0xe4,                                              // IID204
-    0x62, 0xd4, 0x6c, 0x18, 0xd3, 0xf8,                                              // IID205
-    0xd5, 0x11, 0xd3, 0xfb,                                                          // IID206
-    0x62, 0xd4, 0x64, 0x1c, 0xd3, 0xff,                                              // IID207
-    0x62, 0xd4, 0x24, 0x1c, 0xd3, 0xfb,                                              // IID208
-    0x62, 0xdc, 0x24, 0x10, 0xff, 0xcd,                                              // IID209
-    0xd5, 0x11, 0xff, 0xc9,                                                          // IID210
-    0x62, 0xd4, 0x1c, 0x1c, 0xff, 0xc8,                                              // IID211
-    0x62, 0xd4, 0x24, 0x1c, 0xff, 0xcb,                                              // IID212
-    0x62, 0xf4, 0x6c, 0x10, 0xff, 0xc2,                                              // IID213
-    0x41, 0xff, 0xc5,                                                                // IID214
-    0x62, 0xdc, 0x44, 0x14, 0xff, 0xc0,                                              // IID215
-    0x62, 0xd4, 0x04, 0x1c, 0xff, 0xc7,                                              // IID216
-    0x62, 0xdc, 0x04, 0x18, 0xd3, 0xe2,                                              // IID217
-    0xd5, 0x11, 0xd3, 0xe4,                                                          // IID218
-    0x62, 0xdc, 0x64, 0x1c, 0xd3, 0xe1,                                              // IID219
-    0x62, 0xd4, 0x0c, 0x1c, 0xd3, 0xe6,                                              // IID220
-    0x62, 0xf4, 0x1c, 0x18, 0xd3, 0xe9,                                              // IID221
-    0xd5, 0x10, 0xd3, 0xef,                                                          // IID222
-    0x62, 0xfc, 0x14, 0x14, 0xd3, 0xee,                                              // IID223
-    0x62, 0xdc, 0x3c, 0x14, 0xd3, 0xe8,                                              // IID224
-    0x62, 0x54, 0x7c, 0x08, 0xf4, 0xf9,                                              // IID225
-    0x62, 0x4c, 0x7c, 0x08, 0xf4, 0xff,                                              // IID226
-    0x62, 0x6c, 0x7c, 0x0c, 0xf4, 0xe5,                                              // IID227
-    0x62, 0xec, 0x7c, 0x0c, 0xf4, 0xd2,                                              // IID228
-    0x62, 0x44, 0x7c, 0x08, 0xf5, 0x86, 0xaa, 0x14, 0xdd, 0x24,                      // IID229
-    0x62, 0x04, 0x78, 0x0c, 0xf5, 0x94, 0xb0, 0x7a, 0xf9, 0x73, 0x0f,                // IID230
-    0x62, 0xbc, 0x58, 0x10, 0xf7, 0x9c, 0x9e, 0xfa, 0x80, 0x83, 0xe3,                // IID231
-    0x62, 0x9c, 0x7c, 0x14, 0xf7, 0x9c, 0xec, 0xc3, 0xe4, 0xd1, 0x9f,                // IID232
+    0x62, 0xdc, 0x14, 0x14, 0xd3, 0xe1,                                              // IID203
+    0x62, 0xd4, 0x1c, 0x1c, 0xd3, 0xe4,                                              // IID204
+    0x62, 0xd4, 0x3c, 0x18, 0xd3, 0xfb,                                              // IID205
+    0xd5, 0x10, 0xd3, 0xfa,                                                          // IID206
+    0x62, 0xd4, 0x6c, 0x1c, 0xd3, 0xfd,                                              // IID207
+    0x62, 0xfc, 0x44, 0x14, 0xd3, 0xff,                                              // IID208
+    0x62, 0xd4, 0x3c, 0x10, 0xff, 0xcf,                                              // IID209
+    0x41, 0xff, 0xcf,                                                                // IID210
+    0x62, 0xdc, 0x2c, 0x14, 0xff, 0xcc,                                              // IID211
+#endif // _LP64
+    0x62, 0xf4, 0x64, 0x1c, 0xff, 0xcb,                                              // IID212
+#ifdef _LP64
+    0x62, 0xd4, 0x34, 0x10, 0xff, 0xc6,                                              // IID213
+    0x41, 0xff, 0xc4,                                                                // IID214
+    0x62, 0xfc, 0x74, 0x1c, 0xff, 0xc7,                                              // IID215
+    0x62, 0xdc, 0x14, 0x14, 0xff, 0xc5,                                              // IID216
+    0x62, 0xdc, 0x4c, 0x10, 0xd3, 0xe0,                                              // IID217
+    0x41, 0xd3, 0xe7,                                                                // IID218
+    0x62, 0xdc, 0x34, 0x1c, 0xd3, 0xe7,                                              // IID219
+    0x62, 0xdc, 0x1c, 0x14, 0xd3, 0xe4,                                              // IID220
+    0x62, 0xfc, 0x54, 0x10, 0xd3, 0xea,                                              // IID221
+    0xd5, 0x11, 0xd3, 0xe8,                                                          // IID222
+    0x62, 0xfc, 0x0c, 0x1c, 0xd3, 0xeb,                                              // IID223
+    0x62, 0xd4, 0x3c, 0x1c, 0xd3, 0xe8,                                              // IID224
+    0x62, 0x44, 0x7c, 0x08, 0xf4, 0xc9,                                              // IID225
+    0x62, 0x4c, 0x7c, 0x08, 0xf4, 0xd2,                                              // IID226
+    0x62, 0x5c, 0x7c, 0x0c, 0xf4, 0xc6,                                              // IID227
+    0x62, 0x4c, 0x7c, 0x0c, 0xf4, 0xd2,                                              // IID228
+    0x62, 0x4c, 0x78, 0x08, 0xf5, 0xac, 0xe1, 0x1e, 0xf0, 0x37, 0xf6,                // IID229
+    0x62, 0xcc, 0x78, 0x0c, 0xf5, 0xb4, 0x9b, 0x09, 0x7c, 0xf2, 0x38,                // IID230
+    0x62, 0x94, 0x50, 0x10, 0xf7, 0x9c, 0xb6, 0x7b, 0x2c, 0xf9, 0x39,                // IID231
+    0x62, 0xbc, 0x2c, 0x14, 0xf7, 0x9c, 0xf7, 0xc3, 0xe4, 0xd1, 0x9f,                // IID232
     0x62, 0x4c, 0x78, 0x08, 0x88, 0x8c, 0x7c, 0xef, 0x20, 0xf1, 0x4f,                // IID233
     0x62, 0x4c, 0x78, 0x0c, 0x88, 0xac, 0xc0, 0xbd, 0x44, 0xde, 0x97,                // IID234
     0x62, 0x94, 0x40, 0x10, 0xd3, 0xa4, 0xbb, 0xbb, 0x24, 0x42, 0x7f,                // IID235
@@ -1248,94 +1260,94 @@
     0x62, 0x0c, 0x00, 0x14, 0x31, 0xbc, 0x26, 0x3a, 0x1e, 0x28, 0x17,                // IID276
     0x62, 0xb4, 0x68, 0x18, 0x30, 0x94, 0xbb, 0xbb, 0xb5, 0x77, 0x24,                // IID277
     0x62, 0xc4, 0x7c, 0x14, 0x30, 0x84, 0xcb, 0x0a, 0x1a, 0xfc, 0x20,                // IID278
-    0x41, 0x81, 0xc4, 0x00, 0x00, 0x01, 0x00,                                        // IID279
-    0x62, 0xfc, 0x24, 0x18, 0x83, 0xc4, 0x10,                                        // IID280
-    0x62, 0xdc, 0x7c, 0x18, 0x83, 0xc0, 0x10,                                        // IID281
-    0x62, 0xfc, 0x6c, 0x14, 0x81, 0xc2, 0x00, 0x00, 0x10, 0x00,                      // IID282
-    0x62, 0xd4, 0x14, 0x14, 0x83, 0xc5, 0x01,                                        // IID283
-    0x62, 0xd4, 0x7c, 0x1c, 0x83, 0xc5, 0x01,                                        // IID284
-    0xd5, 0x11, 0x83, 0xe7, 0x01,                                                    // IID285
-    0x62, 0xdc, 0x44, 0x10, 0x81, 0xe5, 0x00, 0x00, 0x01, 0x00,                      // IID286
-    0x62, 0xd4, 0x7c, 0x18, 0x81, 0xe7, 0x00, 0x00, 0x01, 0x00,                      // IID287
-    0x62, 0xfc, 0x54, 0x14, 0x81, 0xe5, 0x00, 0x00, 0x00, 0x10,                      // IID288
-    0x62, 0xd4, 0x04, 0x1c, 0x81, 0xe5, 0x00, 0x01, 0x00, 0x00,                      // IID289
+    0x62, 0xf4, 0x1c, 0x18, 0x81, 0xc3, 0x00, 0x00, 0x01, 0x00,                      // IID279
+    0x62, 0xd4, 0x7c, 0x18, 0x81, 0xc3, 0x00, 0x00, 0x01, 0x00,                      // IID280
+    0xd5, 0x11, 0x81, 0xc0, 0x00, 0x00, 0x00, 0x10,                                  // IID281
+    0x62, 0xdc, 0x6c, 0x14, 0x81, 0xc2, 0x00, 0x00, 0x10, 0x00,                      // IID282
+    0x62, 0xdc, 0x7c, 0x1c, 0x81, 0xc3, 0x00, 0x00, 0x10, 0x00,                      // IID283
+    0x62, 0xdc, 0x14, 0x14, 0x83, 0xc5, 0x01,                                        // IID284
+    0x62, 0xf4, 0x14, 0x18, 0x81, 0xe1, 0x00, 0x00, 0x01, 0x00,                      // IID285
+    0x62, 0xdc, 0x7c, 0x18, 0x81, 0xe7, 0x00, 0x00, 0x01, 0x00,                      // IID286
+    0xd5, 0x10, 0x81, 0xe7, 0x00, 0x00, 0x01, 0x00,                                  // IID287
+    0x62, 0xfc, 0x44, 0x14, 0x81, 0xe7, 0x00, 0x00, 0x10, 0x00,                      // IID288
+    0x62, 0xfc, 0x7c, 0x1c, 0x81, 0xe3, 0x00, 0x00, 0x10, 0x00,                      // IID289
+    0x62, 0xd4, 0x04, 0x1c, 0x81, 0xe7, 0x00, 0x01, 0x00, 0x00,                      // IID290
+    0x62, 0xfc, 0x7c, 0x08, 0x69, 0xd2, 0x00, 0x00, 0x01, 0x00,                      // IID291
+    0x62, 0xd4, 0x7c, 0x08, 0x69, 0xc7, 0x00, 0x00, 0x01, 0x00,                      // IID292
+    0x62, 0x54, 0x7c, 0x08, 0x69, 0xc0, 0x00, 0x01, 0x00, 0x00,                      // IID293
+    0x62, 0x4c, 0x7c, 0x0c, 0x69, 0xde, 0x00, 0x01, 0x00, 0x00,                      // IID294
+    0x62, 0xfc, 0x7c, 0x0c, 0x69, 0xc3, 0x00, 0x01, 0x00, 0x00,                      // IID295
+    0x62, 0x54, 0x7c, 0x0c, 0x69, 0xff, 0x00, 0x01, 0x00, 0x00,                      // IID296
+    0x62, 0xd4, 0x54, 0x10, 0x81, 0xcc, 0x00, 0x00, 0x00, 0x01,                      // IID297
 #endif // _LP64
-    0x62, 0xf4, 0x7c, 0x1c, 0x81, 0xe2, 0x00, 0x01, 0x00, 0x00,                      // IID290
+    0x62, 0xf4, 0x7c, 0x18, 0x81, 0xcb, 0x00, 0x00, 0x00, 0x01,                      // IID298
 #ifdef _LP64
-    0x62, 0x54, 0x7c, 0x08, 0x69, 0xff, 0x00, 0x00, 0x00, 0x01,                      // IID291
-    0x62, 0x54, 0x7c, 0x08, 0x69, 0xc1, 0x00, 0x01, 0x00, 0x00,                      // IID292
-    0x62, 0xdc, 0x7c, 0x08, 0x69, 0xc3, 0x00, 0x01, 0x00, 0x00,                      // IID293
-    0x62, 0x54, 0x7c, 0x0c, 0x69, 0xc9, 0x00, 0x00, 0x00, 0x10,                      // IID294
-    0x62, 0xec, 0x7c, 0x0c, 0x69, 0xd5, 0x00, 0x00, 0x10, 0x00,                      // IID295
-    0x62, 0xd4, 0x7c, 0x0c, 0x69, 0xc4, 0x00, 0x00, 0x10, 0x00,                      // IID296
-    0xd5, 0x10, 0x83, 0xcb, 0x10,                                                    // IID297
-    0x62, 0xfc, 0x24, 0x18, 0x81, 0xca, 0x00, 0x01, 0x00, 0x00,                      // IID298
-    0x62, 0xd4, 0x7c, 0x18, 0x81, 0xc8, 0x00, 0x01, 0x00, 0x00,                      // IID299
-    0x62, 0xd4, 0x0c, 0x1c, 0x83, 0xce, 0x01,                                        // IID300
-    0x62, 0xd4, 0x2c, 0x1c, 0x81, 0xc9, 0x00, 0x00, 0x00, 0x10,                      // IID301
-    0x62, 0xd4, 0x7c, 0x1c, 0x81, 0xcf, 0x00, 0x00, 0x00, 0x10,                      // IID302
-    0x41, 0xc1, 0xd0, 0x04,                                                          // IID303
-    0x62, 0xfc, 0x7c, 0x10, 0xc1, 0xd5, 0x10,                                        // IID304
-    0x62, 0xfc, 0x7c, 0x18, 0xc1, 0xd2, 0x10,                                        // IID305
-    0xd5, 0x11, 0xc1, 0xc4, 0x10,                                                    // IID306
-    0x62, 0xd4, 0x2c, 0x10, 0xc1, 0xc6, 0x04,                                        // IID307
-    0x62, 0xd4, 0x7c, 0x18, 0xc1, 0xc2, 0x04,                                        // IID308
-    0x62, 0xfc, 0x4c, 0x14, 0xd1, 0xc6,                                              // IID309
-    0x62, 0xfc, 0x6c, 0x14, 0xc1, 0xc6, 0x02,                                        // IID310
-    0x62, 0xdc, 0x7c, 0x1c, 0xc1, 0xc6, 0x02,                                        // IID311
-    0xd5, 0x10, 0xc1, 0xcf, 0x10,                                                    // IID312
-    0x62, 0xd4, 0x24, 0x18, 0xc1, 0xc8, 0x10,                                        // IID313
-    0x62, 0xfc, 0x7c, 0x18, 0xc1, 0xc8, 0x10,                                        // IID314
-    0x62, 0xd4, 0x24, 0x1c, 0xc1, 0xcb, 0x08,                                        // IID315
-    0x62, 0xfc, 0x14, 0x14, 0xc1, 0xc8, 0x02,                                        // IID316
-    0x62, 0xfc, 0x7c, 0x1c, 0xc1, 0xc8, 0x02,                                        // IID317
-    0x41, 0xc1, 0xe7, 0x10,                                                          // IID318
-    0x62, 0xfc, 0x34, 0x18, 0xc1, 0xe2, 0x08,                                        // IID319
+    0xd5, 0x11, 0x81, 0xcb, 0x00, 0x00, 0x00, 0x10,                                  // IID299
+    0x62, 0xfc, 0x24, 0x1c, 0x81, 0xca, 0x00, 0x01, 0x00, 0x00,                      // IID300
+    0x62, 0xd4, 0x7c, 0x1c, 0x81, 0xc8, 0x00, 0x01, 0x00, 0x00,                      // IID301
+    0x62, 0xd4, 0x0c, 0x1c, 0x83, 0xce, 0x01,                                        // IID302
+    0x62, 0xfc, 0x0c, 0x10, 0xc1, 0xd6, 0x10,                                        // IID303
+    0x62, 0xdc, 0x7c, 0x18, 0xc1, 0xd1, 0x10,                                        // IID304
+    0x41, 0xc1, 0xd2, 0x08,                                                          // IID305
+    0x62, 0xd4, 0x04, 0x18, 0xc1, 0xc5, 0x02,                                        // IID306
+    0x62, 0xd4, 0x7c, 0x18, 0xc1, 0xc0, 0x02,                                        // IID307
+    0xd5, 0x10, 0xc1, 0xc0, 0x10,                                                    // IID308
+    0x62, 0xdc, 0x6c, 0x14, 0xc1, 0xc2, 0x10,                                        // IID309
+    0x62, 0xfc, 0x7c, 0x1c, 0xc1, 0xc7, 0x10,                                        // IID310
+    0x62, 0xdc, 0x2c, 0x14, 0xc1, 0xc2, 0x04,                                        // IID311
+    0x62, 0xdc, 0x2c, 0x18, 0xc1, 0xcb, 0x04,                                        // IID312
+    0x62, 0xdc, 0x7c, 0x18, 0xc1, 0xca, 0x04,                                        // IID313
+    0xd5, 0x10, 0xd1, 0xce,                                                          // IID314
+    0x62, 0xfc, 0x6c, 0x14, 0xc1, 0xce, 0x02,                                        // IID315
+    0x62, 0xdc, 0x7c, 0x1c, 0xc1, 0xce, 0x02,                                        // IID316
+    0x62, 0xfc, 0x44, 0x14, 0xc1, 0xcf, 0x10,                                        // IID317
+    0x62, 0xd4, 0x24, 0x18, 0xc1, 0xe0, 0x10,                                        // IID318
+    0x62, 0xfc, 0x7c, 0x18, 0xc1, 0xe0, 0x10,                                        // IID319
+    0x41, 0xc1, 0xe3, 0x08,                                                          // IID320
+    0x62, 0xfc, 0x14, 0x14, 0xc1, 0xe0, 0x02,                                        // IID321
+    0x62, 0xfc, 0x7c, 0x1c, 0xc1, 0xe0, 0x02,                                        // IID322
+    0x62, 0xd4, 0x04, 0x1c, 0xc1, 0xe7, 0x10,                                        // IID323
+    0x62, 0xfc, 0x34, 0x18, 0xc1, 0xfa, 0x08,                                        // IID324
 #endif // _LP64
-    0x62, 0xf4, 0x7c, 0x18, 0xc1, 0xe3, 0x08,                                        // IID320
+    0x62, 0xf4, 0x7c, 0x18, 0xc1, 0xfb, 0x08,                                        // IID325
 #ifdef _LP64
-    0x62, 0xfc, 0x64, 0x14, 0xc1, 0xe3, 0x04,                                        // IID321
-    0x62, 0xdc, 0x74, 0x14, 0xc1, 0xe1, 0x10,                                        // IID322
-    0x62, 0xfc, 0x7c, 0x1c, 0xc1, 0xe0, 0x10,                                        // IID323
-    0x41, 0xc1, 0xfe, 0x08,                                                          // IID324
-    0x62, 0xd4, 0x64, 0x10, 0xc1, 0xff, 0x04,                                        // IID325
-    0x62, 0xdc, 0x7c, 0x18, 0xc1, 0xfb, 0x04,                                        // IID326
-    0x62, 0xfc, 0x44, 0x14, 0xc1, 0xff, 0x08,                                        // IID327
-    0x62, 0xdc, 0x3c, 0x1c, 0xc1, 0xfc, 0x10,                                        // IID328
-    0x62, 0xdc, 0x7c, 0x1c, 0xc1, 0xf8, 0x10,                                        // IID329
-    0xd5, 0x11, 0xc1, 0xe7, 0x02,                                                    // IID330
-    0x62, 0xfc, 0x64, 0x18, 0xc1, 0xe0, 0x10,                                        // IID331
-    0x62, 0xdc, 0x7c, 0x18, 0xc1, 0xe0, 0x10,                                        // IID332
-    0x62, 0xdc, 0x34, 0x14, 0xc1, 0xe1, 0x10,                                        // IID333
-    0x62, 0xfc, 0x54, 0x14, 0xc1, 0xe0, 0x04,                                        // IID334
-    0x62, 0xdc, 0x7c, 0x1c, 0xc1, 0xe0, 0x04,                                        // IID335
-    0x41, 0xd1, 0xed,                                                                // IID336
-    0x62, 0xfc, 0x2c, 0x10, 0xc1, 0xe9, 0x10,                                        // IID337
-    0x62, 0xdc, 0x7c, 0x18, 0xc1, 0xed, 0x10,                                        // IID338
-    0x62, 0xd4, 0x1c, 0x1c, 0xd1, 0xec,                                              // IID339
-    0x62, 0xd4, 0x0c, 0x14, 0xc1, 0xe8, 0x02,                                        // IID340
-    0x62, 0xdc, 0x7c, 0x1c, 0xc1, 0xe8, 0x02,                                        // IID341
-    0x41, 0x83, 0xe8, 0x01,                                                          // IID342
-    0x62, 0xf4, 0x14, 0x18, 0x81, 0xeb, 0x00, 0x10, 0x00, 0x00,                      // IID343
-    0x62, 0xdc, 0x7c, 0x18, 0x81, 0xe9, 0x00, 0x10, 0x00, 0x00,                      // IID344
-    0x62, 0xfc, 0x6c, 0x14, 0x81, 0xea, 0x00, 0x00, 0x01, 0x00,                      // IID345
-    0x62, 0xdc, 0x64, 0x14, 0x81, 0xea, 0x00, 0x01, 0x00, 0x00,                      // IID346
-    0x62, 0xdc, 0x7c, 0x1c, 0x81, 0xe9, 0x00, 0x01, 0x00, 0x00,                      // IID347
-    0xd5, 0x11, 0x83, 0xf1, 0x01,                                                    // IID348
-    0x62, 0xf4, 0x3c, 0x10, 0x81, 0xf1, 0x00, 0x00, 0x00, 0x01,                      // IID349
-    0x62, 0xdc, 0x7c, 0x18, 0x81, 0xf6, 0x00, 0x00, 0x00, 0x01,                      // IID350
-    0x62, 0xfc, 0x74, 0x14, 0x81, 0xf1, 0x00, 0x00, 0x10, 0x00,                      // IID351
-    0x62, 0xd4, 0x3c, 0x14, 0x83, 0xf0, 0x01,                                        // IID352
-    0x62, 0xdc, 0x7c, 0x1c, 0x83, 0xf3, 0x01,                                        // IID353
+    0xd5, 0x10, 0xc1, 0xfb, 0x04,                                                    // IID326
+    0x62, 0xdc, 0x74, 0x14, 0xc1, 0xf9, 0x10,                                        // IID327
+    0x62, 0xfc, 0x7c, 0x1c, 0xc1, 0xf8, 0x10,                                        // IID328
+    0x62, 0xd4, 0x0c, 0x1c, 0xc1, 0xfe, 0x08,                                        // IID329
+    0x62, 0xd4, 0x64, 0x10, 0xc1, 0xe7, 0x04,                                        // IID330
+    0x62, 0xdc, 0x7c, 0x18, 0xc1, 0xe3, 0x04,                                        // IID331
+    0xd5, 0x10, 0xc1, 0xe7, 0x08,                                                    // IID332
+    0x62, 0xdc, 0x3c, 0x1c, 0xc1, 0xe4, 0x10,                                        // IID333
+    0x62, 0xdc, 0x7c, 0x1c, 0xc1, 0xe0, 0x10,                                        // IID334
+    0x62, 0xdc, 0x04, 0x14, 0xc1, 0xe7, 0x02,                                        // IID335
+    0x62, 0xfc, 0x64, 0x18, 0xc1, 0xe8, 0x10,                                        // IID336
+    0x62, 0xdc, 0x7c, 0x18, 0xc1, 0xe8, 0x10,                                        // IID337
+    0xd5, 0x11, 0xc1, 0xe9, 0x10,                                                    // IID338
+    0x62, 0xfc, 0x54, 0x14, 0xc1, 0xe8, 0x04,                                        // IID339
+    0x62, 0xdc, 0x7c, 0x1c, 0xc1, 0xe8, 0x04,                                        // IID340
+    0x62, 0xd4, 0x14, 0x1c, 0xd1, 0xed,                                              // IID341
+    0x62, 0xd4, 0x14, 0x10, 0x81, 0xe8, 0x00, 0x00, 0x00, 0x01,                      // IID342
+    0x62, 0xd4, 0x7c, 0x18, 0x81, 0xec, 0x00, 0x00, 0x00, 0x01,                      // IID343
+    0xd5, 0x11, 0x81, 0xee, 0x00, 0x10, 0x00, 0x00,                                  // IID344
+    0x62, 0xf4, 0x3c, 0x14, 0x83, 0xea, 0x10,                                        // IID345
+    0x62, 0xd4, 0x7c, 0x1c, 0x83, 0xe8, 0x10,                                        // IID346
+    0x62, 0xd4, 0x14, 0x1c, 0x81, 0xed, 0x00, 0x10, 0x00, 0x00,                      // IID347
+    0x62, 0xd4, 0x34, 0x10, 0x83, 0xf5, 0x10,                                        // IID348
+    0x62, 0xfc, 0x7c, 0x18, 0x83, 0xf2, 0x10,                                        // IID349
+    0xd5, 0x10, 0x81, 0xf3, 0x00, 0x01, 0x00, 0x00,                                  // IID350
+    0x62, 0xfc, 0x34, 0x14, 0x83, 0xf5, 0x01,                                        // IID351
+    0x62, 0xdc, 0x7c, 0x1c, 0x83, 0xf0, 0x01,                                        // IID352
+    0x62, 0xdc, 0x3c, 0x14, 0x81, 0xf0, 0x00, 0x00, 0x00, 0x01,                      // IID353
+    0x62, 0xdc, 0x0c, 0x10, 0x81, 0xea, 0x00, 0x00, 0x01, 0x00,                      // IID354
+    0x62, 0xfc, 0x7c, 0x18, 0x81, 0xee, 0x00, 0x00, 0x01, 0x00,                      // IID355
+    0xd5, 0x10, 0x81, 0xe9, 0x00, 0x00, 0x00, 0x04,                                  // IID356
+    0x62, 0xd4, 0x3c, 0x14, 0x81, 0xe8, 0x00, 0x00, 0x01, 0x00,                      // IID357
+    0x62, 0xdc, 0x7c, 0x1c, 0x81, 0xeb, 0x00, 0x00, 0x01, 0x00,                      // IID358
 #endif // _LP64
-    0x81, 0xea, 0x00, 0x00, 0x00, 0x40,                                              // IID354
+    0x62, 0xf4, 0x6c, 0x1c, 0x81, 0xea, 0x00, 0x00, 0x00, 0x40,                      // IID359
 #ifdef _LP64
-    0xd5, 0x10, 0x81, 0xee, 0x00, 0x00, 0x00, 0x40,                                  // IID355
-    0x62, 0xfc, 0x7c, 0x18, 0x81, 0xef, 0x00, 0x00, 0x00, 0x40,                      // IID356
-    0x62, 0xfc, 0x64, 0x14, 0x81, 0xeb, 0x00, 0x00, 0x00, 0x01,                      // IID357
-    0x62, 0xdc, 0x0c, 0x14, 0x81, 0xe8, 0x00, 0x00, 0x40, 0x00,                      // IID358
-    0x62, 0xdc, 0x7c, 0x1c, 0x81, 0xed, 0x00, 0x00, 0x40, 0x00,                      // IID359
-    0xd5, 0x27, 0x03, 0x94, 0xd0, 0xbd, 0x1c, 0xc4, 0x3a,                            // IID360
+    0xd5, 0x75, 0x03, 0xbc, 0xe6, 0xbd, 0x1c, 0xc4, 0x3a,                            // IID360
     0x62, 0x44, 0x38, 0x10, 0x03, 0xb4, 0x4d, 0xe3, 0xc2, 0xfd, 0x1e,                // IID361
     0x62, 0x84, 0x7c, 0x14, 0x03, 0x84, 0x79, 0x8d, 0x1c, 0x55, 0x14,                // IID362
     0x62, 0x94, 0x08, 0x14, 0x03, 0x94, 0x9b, 0xec, 0x6c, 0x08, 0xaa,                // IID363
@@ -1579,22 +1591,22 @@
     0xd5, 0x2b, 0xff, 0x84, 0xb3, 0xd0, 0x8f, 0xeb, 0x3e,                            // IID599
     0xd5, 0x3b, 0xff, 0x8c, 0x2a, 0x45, 0xd9, 0x5a, 0x27,                            // IID600
     0xd5, 0x7c, 0x69, 0xac, 0xa3, 0x47, 0xc2, 0xf0, 0xc0, 0x00, 0x10, 0x00, 0x00,    // IID601
-    0xd5, 0x5d, 0x6b, 0xf6, 0x10,                                                    // IID602
-    0x4d, 0x0f, 0xa4, 0xdb, 0x08,                                                    // IID603
-    0xd5, 0xdd, 0xac, 0xe4, 0x02,                                                    // IID604
-    0x62, 0xd4, 0x44, 0x10, 0x8f, 0xc7,                                              // IID605
-    0x62, 0xd4, 0xac, 0x10, 0x8f, 0xc3,                                              // IID606
-    0x62, 0xdc, 0x5c, 0x10, 0xff, 0xf4,                                              // IID607
-    0x62, 0xfc, 0xe4, 0x18, 0xff, 0xf7,                                              // IID608
-    0xd5, 0xcf, 0xb6, 0x84, 0x27, 0x07, 0xfd, 0xba, 0xd4,                            // IID609
-    0xd5, 0x9a, 0xb7, 0x8c, 0x0f, 0xec, 0x85, 0xd2, 0xc2,                            // IID610
-    0xd5, 0xd8, 0xbe, 0x84, 0x24, 0xf3, 0x93, 0xee, 0xb9,                            // IID611
-    0xd5, 0xad, 0xbf, 0xac, 0x79, 0xb6, 0x01, 0xd0, 0xdb,                            // IID612
-    0xd5, 0xdd, 0xb6, 0xc2,                                                          // IID613
-    0xd5, 0xc9, 0xb7, 0xf7,                                                          // IID614
-    0xd5, 0xd8, 0xbe, 0xd5,                                                          // IID615
-    0xd5, 0xdc, 0xbf, 0xf1,                                                          // IID616
-    0xd5, 0xef, 0xb1, 0xac, 0xf4, 0xb2, 0x30, 0x4e, 0x0f,                            // IID617
+    0xd5, 0x5c, 0x6b, 0xf4, 0x10,                                                    // IID602
+    0xd5, 0xcd, 0xa4, 0xe4, 0x02,                                                    // IID603
+    0xd5, 0xcd, 0xac, 0xd7, 0x10,                                                    // IID604
+    0x62, 0xfc, 0x24, 0x18, 0x8f, 0xc4,                                              // IID605
+    0x62, 0xf4, 0x9c, 0x10, 0x8f, 0xc3,                                              // IID606
+    0x62, 0xdc, 0x44, 0x10, 0xff, 0xf0,                                              // IID607
+    0x62, 0xd4, 0x84, 0x18, 0xff, 0xf4,                                              // IID608
+    0xd5, 0xae, 0xb6, 0x9c, 0x71, 0x3e, 0x4e, 0x00, 0xcd,                            // IID609
+    0xd5, 0xcb, 0xb7, 0xbc, 0x61, 0x97, 0xc1, 0x7d, 0xab,                            // IID610
+    0xd5, 0xc9, 0xbe, 0xa4, 0x4d, 0xc4, 0x58, 0x17, 0x4e,                            // IID611
+    0x4b, 0x0f, 0xbf, 0x8c, 0xcd, 0x6c, 0x54, 0x95, 0xdd,                            // IID612
+    0xd5, 0x9d, 0xb6, 0xe8,                                                          // IID613
+    0xd5, 0xdc, 0xb7, 0xd6,                                                          // IID614
+    0xd5, 0x9c, 0xbe, 0xfa,                                                          // IID615
+    0xd5, 0xd9, 0xbf, 0xee,                                                          // IID616
+    0xd5, 0xdb, 0xb1, 0x8c, 0xe5, 0xb2, 0x30, 0x4e, 0x0f,                            // IID617
     0x62, 0xdc, 0xfc, 0x08, 0xf7, 0xfe,                                              // IID618
     0x62, 0xfc, 0xfc, 0x0c, 0xf7, 0xf9,                                              // IID619
     0x62, 0xdc, 0xfc, 0x08, 0xf7, 0xf7,                                              // IID620
@@ -1707,94 +1719,94 @@
     0x62, 0xb4, 0xd8, 0x14, 0x83, 0xac, 0xcb, 0x9e, 0x32, 0xf0, 0x02, 0x01,          // IID727
     0x62, 0x9c, 0x9c, 0x18, 0x81, 0xb4, 0xe7, 0x74, 0xa3, 0xaf, 0xc8, 0x00, 0x01, 0x00, 0x00, // IID728
     0x62, 0x94, 0xd0, 0x14, 0x81, 0xb4, 0x0f, 0x23, 0x96, 0xc4, 0x43, 0x00, 0x00, 0x01, 0x00, // IID729
-    0xd5, 0x19, 0x81, 0xc1, 0x00, 0x10, 0x00, 0x00,                                  // IID730
-    0x62, 0xfc, 0xac, 0x18, 0x81, 0xc0, 0x00, 0x00, 0x00, 0x10,                      // IID731
-    0x62, 0xfc, 0xfc, 0x18, 0x81, 0xc1, 0x00, 0x00, 0x00, 0x10,                      // IID732
-    0x62, 0xfc, 0xc4, 0x14, 0x83, 0xc7, 0x10,                                        // IID733
-    0x62, 0xf4, 0x84, 0x14, 0x81, 0xc3, 0x00, 0x01, 0x00, 0x00,                      // IID734
-    0x62, 0xfc, 0xfc, 0x1c, 0x81, 0xc0, 0x00, 0x01, 0x00, 0x00,                      // IID735
-    0xd5, 0x19, 0x81, 0xe0, 0x00, 0x01, 0x00, 0x00,                                  // IID736
-    0x62, 0xfc, 0xb4, 0x18, 0x81, 0xe6, 0x00, 0x01, 0x00, 0x00,                      // IID737
-    0x62, 0xdc, 0xfc, 0x18, 0x81, 0xe4, 0x00, 0x01, 0x00, 0x00,                      // IID738
-    0x62, 0xdc, 0xb4, 0x14, 0x81, 0xe1, 0x00, 0x00, 0x00, 0x01,                      // IID739
-    0x62, 0xfc, 0xfc, 0x14, 0x81, 0xe5, 0x00, 0x00, 0x00, 0x10,                      // IID740
-    0x62, 0xf4, 0xfc, 0x1c, 0x81, 0xe3, 0x00, 0x00, 0x00, 0x10,                      // IID741
-    0x62, 0x54, 0xfc, 0x08, 0x69, 0xed, 0x00, 0x00, 0x00, 0x10,                      // IID742
-    0x62, 0xd4, 0xfc, 0x08, 0x69, 0xd0, 0x00, 0x00, 0x10, 0x00,                      // IID743
-    0x62, 0xfc, 0xfc, 0x08, 0x69, 0xc6, 0x00, 0x00, 0x10, 0x00,                      // IID744
-    0x62, 0x54, 0xfc, 0x0c, 0x69, 0xe4, 0x00, 0x00, 0x01, 0x00,                      // IID745
-    0x62, 0x44, 0xfc, 0x0c, 0x69, 0xc5, 0x00, 0x00, 0x01, 0x00,                      // IID746
-    0x62, 0xfc, 0xfc, 0x0c, 0x69, 0xc5, 0x00, 0x00, 0x01, 0x00,                      // IID747
-    0x48, 0x83, 0xcb, 0x10,                                                          // IID748
-    0x62, 0xdc, 0xbc, 0x10, 0x81, 0xcb, 0x00, 0x00, 0x01, 0x00,                      // IID749
-    0x62, 0xfc, 0xfc, 0x18, 0x81, 0xc9, 0x00, 0x00, 0x01, 0x00,                      // IID750
-    0x62, 0xdc, 0xbc, 0x14, 0x81, 0xc8, 0x00, 0x00, 0x01, 0x00,                      // IID751
-    0x62, 0xdc, 0x94, 0x1c, 0x81, 0xcf, 0x00, 0x00, 0x10, 0x00,                      // IID752
-    0x62, 0xfc, 0xfc, 0x1c, 0x81, 0xcd, 0x00, 0x00, 0x10, 0x00,                      // IID753
-    0xd5, 0x19, 0xc1, 0xd6, 0x04,                                                    // IID754
-    0x62, 0xd4, 0xbc, 0x18, 0xc1, 0xd5, 0x08,                                        // IID755
-    0x62, 0xdc, 0xfc, 0x18, 0xc1, 0xd7, 0x08,                                        // IID756
-    0x49, 0xc1, 0xc5, 0x04,                                                          // IID757
-    0x62, 0xdc, 0x8c, 0x18, 0xc1, 0xc5, 0x04,                                        // IID758
-    0x62, 0xfc, 0xfc, 0x18, 0xc1, 0xc6, 0x04,                                        // IID759
-    0x62, 0xd4, 0xbc, 0x1c, 0xc1, 0xc0, 0x08,                                        // IID760
-    0x62, 0xd4, 0x8c, 0x14, 0xc1, 0xc7, 0x02,                                        // IID761
-    0x62, 0xdc, 0xfc, 0x1c, 0xc1, 0xc4, 0x02,                                        // IID762
-    0x49, 0xc1, 0xcf, 0x10,                                                          // IID763
-    0x62, 0xd4, 0xfc, 0x10, 0xc1, 0xcc, 0x08,                                        // IID764
-    0x62, 0xd4, 0xfc, 0x18, 0xc1, 0xc9, 0x08,                                        // IID765
-    0x62, 0xfc, 0xc4, 0x14, 0xc1, 0xcf, 0x02,                                        // IID766
-    0x62, 0xd4, 0x84, 0x1c, 0xc1, 0xc9, 0x10,                                        // IID767
-    0x62, 0xd4, 0xfc, 0x1c, 0xc1, 0xc8, 0x10,                                        // IID768
-    0xd5, 0x19, 0xd1, 0xe1,                                                          // IID769
-    0x62, 0xfc, 0xb4, 0x18, 0xc1, 0xe1, 0x10,                                        // IID770
-    0x62, 0xfc, 0xfc, 0x18, 0xc1, 0xe4, 0x10,                                        // IID771
-    0x62, 0xdc, 0xa4, 0x14, 0xd1, 0xe3,                                              // IID772
-    0x62, 0xdc, 0xdc, 0x14, 0xd1, 0xe7,                                              // IID773
-    0x62, 0xfc, 0xfc, 0x1c, 0xd1, 0xe2,                                              // IID774
-    0xd5, 0x19, 0xc1, 0xfc, 0x10,                                                    // IID775
-    0x62, 0xfc, 0xac, 0x10, 0xc1, 0xfa, 0x10,                                        // IID776
-    0x62, 0xdc, 0xfc, 0x18, 0xc1, 0xf8, 0x10,                                        // IID777
-    0x62, 0xfc, 0xcc, 0x14, 0xc1, 0xfe, 0x10,                                        // IID778
-    0x62, 0xdc, 0xa4, 0x14, 0xd1, 0xfd,                                              // IID779
-    0x62, 0xfc, 0xfc, 0x1c, 0xd1, 0xfa,                                              // IID780
-    0xd5, 0x18, 0xd1, 0xe5,                                                          // IID781
-    0x62, 0xf4, 0x9c, 0x18, 0xc1, 0xe1, 0x02,                                        // IID782
-    0x62, 0xdc, 0xfc, 0x18, 0xc1, 0xe0, 0x02,                                        // IID783
-    0x62, 0xfc, 0xcc, 0x14, 0xc1, 0xe6, 0x08,                                        // IID784
-    0x62, 0xfc, 0xf4, 0x14, 0xc1, 0xe7, 0x08,                                        // IID785
-    0x62, 0xdc, 0xfc, 0x1c, 0xc1, 0xe3, 0x08,                                        // IID786
-    0xd5, 0x18, 0xd1, 0xef,                                                          // IID787
-    0x62, 0xdc, 0xbc, 0x18, 0xc1, 0xe9, 0x10,                                        // IID788
-    0x62, 0xfc, 0xfc, 0x18, 0xc1, 0xef, 0x10,                                        // IID789
-    0x62, 0xd4, 0xb4, 0x1c, 0xc1, 0xe9, 0x04,                                        // IID790
-    0x62, 0xd4, 0xcc, 0x14, 0xd1, 0xed,                                              // IID791
-    0x62, 0xd4, 0xfc, 0x1c, 0xd1, 0xeb,                                              // IID792
-    0x49, 0x81, 0xec, 0x00, 0x10, 0x00, 0x00,                                        // IID793
-    0x62, 0xdc, 0xf4, 0x18, 0x81, 0xee, 0x00, 0x00, 0x00, 0x10,                      // IID794
-    0x62, 0xfc, 0xfc, 0x18, 0x81, 0xeb, 0x00, 0x00, 0x00, 0x10,                      // IID795
-    0x62, 0xd4, 0x94, 0x1c, 0x81, 0xed, 0x00, 0x01, 0x00, 0x00,                      // IID796
-    0x62, 0xd4, 0xec, 0x14, 0x81, 0xeb, 0x00, 0x00, 0x00, 0x10,                      // IID797
-    0x62, 0xd4, 0xfc, 0x1c, 0x81, 0xe9, 0x00, 0x00, 0x00, 0x10,                      // IID798
-    0xd5, 0x19, 0x83, 0xf5, 0x01,                                                    // IID799
-    0x62, 0xfc, 0xac, 0x18, 0x81, 0xf6, 0x00, 0x00, 0x10, 0x00,                      // IID800
-    0x62, 0xd4, 0xfc, 0x18, 0x81, 0xf1, 0x00, 0x00, 0x10, 0x00,                      // IID801
-    0x62, 0xd4, 0x9c, 0x1c, 0x81, 0xf4, 0x00, 0x10, 0x00, 0x00,                      // IID802
-    0x62, 0xdc, 0xac, 0x14, 0x81, 0xf7, 0x00, 0x00, 0x00, 0x10,                      // IID803
-    0x62, 0xd4, 0xfc, 0x1c, 0x81, 0xf4, 0x00, 0x00, 0x00, 0x10,                      // IID804
-    0xd5, 0x19, 0x81, 0xcc, 0x00, 0x00, 0x01, 0x00,                                  // IID805
-    0x62, 0xdc, 0x84, 0x18, 0x81, 0xce, 0x00, 0x00, 0x00, 0x01,                      // IID806
-    0x62, 0xf4, 0xfc, 0x18, 0x81, 0xc9, 0x00, 0x00, 0x00, 0x01,                      // IID807
-    0xd5, 0x19, 0x81, 0xca, 0x00, 0x00, 0x04, 0x00,                                  // IID808
-    0x62, 0xd4, 0x9c, 0x18, 0x81, 0xce, 0x00, 0x00, 0x01, 0x00,                      // IID809
-    0x62, 0xfc, 0xfc, 0x18, 0x81, 0xcd, 0x00, 0x00, 0x01, 0x00,                      // IID810
-    0xd5, 0x18, 0x81, 0xec, 0x00, 0x00, 0x00, 0x04,                                  // IID811
-    0x62, 0xf4, 0xa4, 0x18, 0x81, 0xeb, 0x00, 0x00, 0x00, 0x10,                      // IID812
-    0x62, 0xfc, 0xfc, 0x18, 0x81, 0xef, 0x00, 0x00, 0x00, 0x10,                      // IID813
-    0x62, 0xdc, 0x84, 0x14, 0x81, 0xef, 0x00, 0x00, 0x00, 0x40,                      // IID814
-    0x62, 0xdc, 0x94, 0x14, 0x81, 0xec, 0x00, 0x00, 0x40, 0x00,                      // IID815
-    0x62, 0xfc, 0xfc, 0x1c, 0x81, 0xeb, 0x00, 0x00, 0x40, 0x00,                      // IID816
-    0xd5, 0x48, 0x03, 0xa2, 0x7c, 0xf1, 0x75, 0x38,                                  // IID817
+    0x62, 0xfc, 0xb4, 0x10, 0x81, 0xc3, 0x00, 0x10, 0x00, 0x00,                      // IID730
+    0x62, 0xd4, 0xfc, 0x18, 0x81, 0xc2, 0x00, 0x10, 0x00, 0x00,                      // IID731
+    0xd5, 0x18, 0x81, 0xc1, 0x00, 0x00, 0x10, 0x00,                                  // IID732
+    0x62, 0xdc, 0xc4, 0x14, 0x83, 0xc7, 0x10,                                        // IID733
+    0x62, 0xd4, 0xfc, 0x1c, 0x83, 0xc1, 0x10,                                        // IID734
+    0x62, 0xfc, 0xfc, 0x14, 0x83, 0xc0, 0x10,                                        // IID735
+    0x62, 0xd4, 0xbc, 0x10, 0x81, 0xe2, 0x00, 0x01, 0x00, 0x00,                      // IID736
+    0x62, 0xd4, 0xfc, 0x18, 0x81, 0xe1, 0x00, 0x01, 0x00, 0x00,                      // IID737
+    0xd5, 0x19, 0x81, 0xe1, 0x00, 0x00, 0x00, 0x01,                                  // IID738
+    0x62, 0xfc, 0xfc, 0x14, 0x81, 0xe5, 0x00, 0x00, 0x00, 0x10,                      // IID739
+    0x62, 0xf4, 0xfc, 0x1c, 0x81, 0xe3, 0x00, 0x00, 0x00, 0x10,                      // IID740
+    0x62, 0xd4, 0x94, 0x1c, 0x81, 0xe5, 0x00, 0x00, 0x00, 0x10,                      // IID741
+    0x62, 0xd4, 0xfc, 0x08, 0x69, 0xd0, 0x00, 0x00, 0x10, 0x00,                      // IID742
+    0x62, 0xfc, 0xfc, 0x08, 0x69, 0xc6, 0x00, 0x00, 0x10, 0x00,                      // IID743
+    0x62, 0x54, 0xfc, 0x08, 0x69, 0xe4, 0x00, 0x00, 0x01, 0x00,                      // IID744
+    0x62, 0x44, 0xfc, 0x0c, 0x69, 0xc5, 0x00, 0x00, 0x01, 0x00,                      // IID745
+    0x62, 0xfc, 0xfc, 0x0c, 0x69, 0xc5, 0x00, 0x00, 0x01, 0x00,                      // IID746
+    0x62, 0xf4, 0xfc, 0x0c, 0x6b, 0xdb, 0x10,                                        // IID747
+    0x62, 0xdc, 0xbc, 0x10, 0x81, 0xcb, 0x00, 0x00, 0x01, 0x00,                      // IID748
+    0x62, 0xfc, 0xfc, 0x18, 0x81, 0xc9, 0x00, 0x00, 0x01, 0x00,                      // IID749
+    0xd5, 0x19, 0x81, 0xc8, 0x00, 0x00, 0x01, 0x00,                                  // IID750
+    0x62, 0xdc, 0x94, 0x1c, 0x81, 0xcf, 0x00, 0x00, 0x10, 0x00,                      // IID751
+    0x62, 0xfc, 0xfc, 0x1c, 0x81, 0xcd, 0x00, 0x00, 0x10, 0x00,                      // IID752
+    0x62, 0xdc, 0x8c, 0x14, 0x81, 0xce, 0x00, 0x00, 0x10, 0x00,                      // IID753
+    0x62, 0xd4, 0xbc, 0x18, 0xc1, 0xd5, 0x08,                                        // IID754
+    0x62, 0xdc, 0xfc, 0x18, 0xc1, 0xd7, 0x08,                                        // IID755
+    0x49, 0xc1, 0xd5, 0x04,                                                          // IID756
+    0x62, 0xdc, 0x8c, 0x18, 0xc1, 0xc5, 0x04,                                        // IID757
+    0x62, 0xfc, 0xfc, 0x18, 0xc1, 0xc6, 0x04,                                        // IID758
+    0x49, 0xc1, 0xc0, 0x08,                                                          // IID759
+    0x62, 0xd4, 0x8c, 0x14, 0xc1, 0xc7, 0x02,                                        // IID760
+    0x62, 0xdc, 0xfc, 0x1c, 0xc1, 0xc4, 0x02,                                        // IID761
+    0x62, 0xd4, 0x84, 0x1c, 0xc1, 0xc7, 0x10,                                        // IID762
+    0x62, 0xd4, 0xfc, 0x10, 0xc1, 0xcc, 0x08,                                        // IID763
+    0x62, 0xd4, 0xfc, 0x18, 0xc1, 0xc9, 0x08,                                        // IID764
+    0xd5, 0x18, 0xc1, 0xcf, 0x02,                                                    // IID765
+    0x62, 0xd4, 0x84, 0x1c, 0xc1, 0xc9, 0x10,                                        // IID766
+    0x62, 0xd4, 0xfc, 0x1c, 0xc1, 0xc8, 0x10,                                        // IID767
+    0x62, 0xdc, 0xb4, 0x14, 0xd1, 0xc9,                                              // IID768
+    0x62, 0xfc, 0xb4, 0x18, 0xc1, 0xe1, 0x10,                                        // IID769
+    0x62, 0xfc, 0xfc, 0x18, 0xc1, 0xe4, 0x10,                                        // IID770
+    0xd5, 0x19, 0xd1, 0xe3,                                                          // IID771
+    0x62, 0xdc, 0xdc, 0x14, 0xd1, 0xe7,                                              // IID772
+    0x62, 0xfc, 0xfc, 0x1c, 0xd1, 0xe2,                                              // IID773
+    0x62, 0xdc, 0x9c, 0x14, 0xc1, 0xe4, 0x10,                                        // IID774
+    0x62, 0xfc, 0xac, 0x10, 0xc1, 0xfa, 0x10,                                        // IID775
+    0x62, 0xdc, 0xfc, 0x18, 0xc1, 0xf8, 0x10,                                        // IID776
+    0xd5, 0x18, 0xc1, 0xfe, 0x10,                                                    // IID777
+    0x62, 0xdc, 0xa4, 0x14, 0xd1, 0xfd,                                              // IID778
+    0x62, 0xfc, 0xfc, 0x1c, 0xd1, 0xfa,                                              // IID779
+    0x62, 0xfc, 0xd4, 0x14, 0xd1, 0xfd,                                              // IID780
+    0x62, 0xf4, 0x9c, 0x18, 0xc1, 0xe1, 0x02,                                        // IID781
+    0x62, 0xdc, 0xfc, 0x18, 0xc1, 0xe0, 0x02,                                        // IID782
+    0xd5, 0x18, 0xc1, 0xe6, 0x08,                                                    // IID783
+    0x62, 0xfc, 0xf4, 0x14, 0xc1, 0xe7, 0x08,                                        // IID784
+    0x62, 0xdc, 0xfc, 0x1c, 0xc1, 0xe3, 0x08,                                        // IID785
+    0x62, 0xfc, 0xc4, 0x14, 0xd1, 0xe7,                                              // IID786
+    0x62, 0xdc, 0xbc, 0x18, 0xc1, 0xe9, 0x10,                                        // IID787
+    0x62, 0xfc, 0xfc, 0x18, 0xc1, 0xef, 0x10,                                        // IID788
+    0x49, 0xc1, 0xe9, 0x04,                                                          // IID789
+    0x62, 0xd4, 0xcc, 0x14, 0xd1, 0xed,                                              // IID790
+    0x62, 0xd4, 0xfc, 0x1c, 0xd1, 0xeb,                                              // IID791
+    0x62, 0xd4, 0x9c, 0x1c, 0xc1, 0xec, 0x02,                                        // IID792
+    0x62, 0xdc, 0xf4, 0x18, 0x81, 0xee, 0x00, 0x00, 0x00, 0x10,                      // IID793
+    0x62, 0xfc, 0xfc, 0x18, 0x81, 0xeb, 0x00, 0x00, 0x00, 0x10,                      // IID794
+    0x49, 0x81, 0xed, 0x00, 0x01, 0x00, 0x00,                                        // IID795
+    0x62, 0xd4, 0xec, 0x14, 0x81, 0xeb, 0x00, 0x00, 0x00, 0x10,                      // IID796
+    0x62, 0xd4, 0xfc, 0x1c, 0x81, 0xe9, 0x00, 0x00, 0x00, 0x10,                      // IID797
+    0x62, 0xdc, 0x94, 0x14, 0x83, 0xed, 0x01,                                        // IID798
+    0x62, 0xfc, 0xac, 0x18, 0x81, 0xf6, 0x00, 0x00, 0x10, 0x00,                      // IID799
+    0x62, 0xd4, 0xfc, 0x18, 0x81, 0xf1, 0x00, 0x00, 0x10, 0x00,                      // IID800
+    0x49, 0x81, 0xf4, 0x00, 0x10, 0x00, 0x00,                                        // IID801
+    0x62, 0xdc, 0xac, 0x14, 0x81, 0xf7, 0x00, 0x00, 0x00, 0x10,                      // IID802
+    0x62, 0xd4, 0xfc, 0x1c, 0x81, 0xf4, 0x00, 0x00, 0x00, 0x10,                      // IID803
+    0x62, 0xdc, 0x9c, 0x14, 0x83, 0xf4, 0x01,                                        // IID804
+    0x62, 0xdc, 0x84, 0x18, 0x81, 0xce, 0x00, 0x00, 0x00, 0x01,                      // IID805
+    0x62, 0xf4, 0xfc, 0x18, 0x81, 0xc9, 0x00, 0x00, 0x00, 0x01,                      // IID806
+    0xd5, 0x19, 0x81, 0xca, 0x00, 0x00, 0x04, 0x00,                                  // IID807
+    0x62, 0xd4, 0x9c, 0x18, 0x81, 0xce, 0x00, 0x00, 0x01, 0x00,                      // IID808
+    0x62, 0xfc, 0xfc, 0x18, 0x81, 0xcd, 0x00, 0x00, 0x01, 0x00,                      // IID809
+    0xd5, 0x18, 0x81, 0xcc, 0x00, 0x00, 0x00, 0x04,                                  // IID810
+    0x62, 0xf4, 0xa4, 0x18, 0x81, 0xeb, 0x00, 0x00, 0x00, 0x10,                      // IID811
+    0x62, 0xfc, 0xfc, 0x18, 0x81, 0xef, 0x00, 0x00, 0x00, 0x10,                      // IID812
+    0xd5, 0x19, 0x81, 0xef, 0x00, 0x00, 0x00, 0x40,                                  // IID813
+    0x62, 0xdc, 0x94, 0x14, 0x81, 0xec, 0x00, 0x00, 0x40, 0x00,                      // IID814
+    0x62, 0xfc, 0xfc, 0x1c, 0x81, 0xeb, 0x00, 0x00, 0x40, 0x00,                      // IID815
+    0x62, 0xf4, 0xec, 0x1c, 0x81, 0xea, 0x00, 0x00, 0x00, 0x40,                      // IID816
+    0x4c, 0x03, 0x94, 0xd2, 0x7c, 0xf1, 0x75, 0x38,                                  // IID817
     0x62, 0xd4, 0x90, 0x10, 0x03, 0x8c, 0x8c, 0x76, 0x10, 0xc7, 0x32,                // IID818
     0x62, 0xec, 0xfc, 0x14, 0x03, 0x83, 0xa4, 0x9d, 0x1e, 0x4b,                      // IID819
     0x62, 0x6c, 0xf0, 0x14, 0x03, 0x8c, 0x96, 0x03, 0x90, 0xf6, 0x17,                // IID820
@@ -2074,7 +2086,7 @@
     5,    // IID155
     5,    // IID156
     5,    // IID157
-    8,    // IID158
+    9,    // IID158
     9,    // IID159
     9,    // IID160
     9,    // IID161
@@ -2089,40 +2101,44 @@
     6,    // IID170
     6,    // IID171
     6,    // IID172
-    6,    // IID173
 #endif // _LP64
-    6,    // IID174
+    6,    // IID173
 #ifdef _LP64
+    6,    // IID174
     6,    // IID175
     6,    // IID176
     11,   // IID177
-    11,   // IID178
+    10,   // IID178
     6,    // IID179
     6,    // IID180
     6,    // IID181
-#endif // _LP64
     6,    // IID182
-#ifdef _LP64
     6,    // IID183
     3,    // IID184
     6,    // IID185
     6,    // IID186
     6,    // IID187
+#endif // _LP64
     6,    // IID188
+#ifdef _LP64
     6,    // IID189
     6,    // IID190
     6,    // IID191
-    3,    // IID192
-    6,    // IID193
+    4,    // IID192
+    3,    // IID193
 #endif // _LP64
     2,    // IID194
 #ifdef _LP64
     6,    // IID195
     6,    // IID196
     6,    // IID197
-    4,    // IID198
+#endif // _LP64
+    2,    // IID198
+#ifdef _LP64
     6,    // IID199
+#endif // _LP64
     6,    // IID200
+#ifdef _LP64
     6,    // IID201
     4,    // IID202
     6,    // IID203
@@ -2132,15 +2148,17 @@
     6,    // IID207
     6,    // IID208
     6,    // IID209
-    4,    // IID210
+    3,    // IID210
     6,    // IID211
+#endif // _LP64
     6,    // IID212
+#ifdef _LP64
     6,    // IID213
     3,    // IID214
     6,    // IID215
     6,    // IID216
     6,    // IID217
-    4,    // IID218
+    3,    // IID218
     6,    // IID219
     6,    // IID220
     6,    // IID221
@@ -2151,7 +2169,7 @@
     6,    // IID226
     6,    // IID227
     6,    // IID228
-    10,   // IID229
+    11,   // IID229
     11,   // IID230
     11,   // IID231
     11,   // IID232
@@ -2201,93 +2219,93 @@
     11,   // IID276
     11,   // IID277
     11,   // IID278
-    7,    // IID279
-    7,    // IID280
-    7,    // IID281
+    10,   // IID279
+    10,   // IID280
+    8,    // IID281
     10,   // IID282
-    7,    // IID283
+    10,   // IID283
     7,    // IID284
-    5,    // IID285
+    10,   // IID285
     10,   // IID286
-    10,   // IID287
+    8,    // IID287
     10,   // IID288
     10,   // IID289
-#endif // _LP64
     10,   // IID290
-#ifdef _LP64
     10,   // IID291
     10,   // IID292
     10,   // IID293
     10,   // IID294
     10,   // IID295
     10,   // IID296
-    5,    // IID297
+    10,   // IID297
+#endif // _LP64
     10,   // IID298
-    10,   // IID299
-    7,    // IID300
+#ifdef _LP64
+    8,    // IID299
+    10,   // IID300
     10,   // IID301
-    10,   // IID302
-    4,    // IID303
+    7,    // IID302
+    7,    // IID303
     7,    // IID304
-    7,    // IID305
-    5,    // IID306
+    4,    // IID305
+    7,    // IID306
     7,    // IID307
-    7,    // IID308
-    6,    // IID309
+    5,    // IID308
+    7,    // IID309
     7,    // IID310
     7,    // IID311
-    5,    // IID312
+    7,    // IID312
     7,    // IID313
-    7,    // IID314
+    4,    // IID314
     7,    // IID315
     7,    // IID316
     7,    // IID317
-    4,    // IID318
+    7,    // IID318
     7,    // IID319
-#endif // _LP64
-    7,    // IID320
-#ifdef _LP64
+    4,    // IID320
     7,    // IID321
     7,    // IID322
     7,    // IID323
-    4,    // IID324
+    7,    // IID324
+#endif // _LP64
     7,    // IID325
-    7,    // IID326
+#ifdef _LP64
+    5,    // IID326
     7,    // IID327
     7,    // IID328
     7,    // IID329
-    5,    // IID330
+    7,    // IID330
     7,    // IID331
-    7,    // IID332
+    5,    // IID332
     7,    // IID333
     7,    // IID334
     7,    // IID335
-    3,    // IID336
+    7,    // IID336
     7,    // IID337
-    7,    // IID338
-    6,    // IID339
+    5,    // IID338
+    7,    // IID339
     7,    // IID340
-    7,    // IID341
-    4,    // IID342
+    6,    // IID341
+    10,   // IID342
     10,   // IID343
-    10,   // IID344
-    10,   // IID345
-    10,   // IID346
+    8,    // IID344
+    7,    // IID345
+    7,    // IID346
     10,   // IID347
-    5,    // IID348
-    10,   // IID349
-    10,   // IID350
-    10,   // IID351
+    7,    // IID348
+    7,    // IID349
+    8,    // IID350
+    7,    // IID351
     7,    // IID352
-    7,    // IID353
-#endif // _LP64
-    6,    // IID354
-#ifdef _LP64
-    8,    // IID355
-    10,   // IID356
+    10,   // IID353
+    10,   // IID354
+    10,   // IID355
+    8,    // IID356
     10,   // IID357
     10,   // IID358
+#endif // _LP64
     10,   // IID359
+#ifdef _LP64
     9,    // IID360
     11,   // IID361
     11,   // IID362
@@ -2660,15 +2678,15 @@
     12,   // IID727
     15,   // IID728
     15,   // IID729
-    8,    // IID730
+    10,   // IID730
     10,   // IID731
-    10,   // IID732
+    8,    // IID732
     7,    // IID733
-    10,   // IID734
-    10,   // IID735
-    8,    // IID736
+    7,    // IID734
+    7,    // IID735
+    10,   // IID736
     10,   // IID737
-    10,   // IID738
+    8,    // IID738
     10,   // IID739
     10,   // IID740
     10,   // IID741
@@ -2677,73 +2695,73 @@
     10,   // IID744
     10,   // IID745
     10,   // IID746
-    10,   // IID747
-    4,    // IID748
+    7,    // IID747
+    10,   // IID748
     10,   // IID749
-    10,   // IID750
+    8,    // IID750
     10,   // IID751
     10,   // IID752
     10,   // IID753
-    5,    // IID754
+    7,    // IID754
     7,    // IID755
-    7,    // IID756
-    4,    // IID757
+    4,    // IID756
+    7,    // IID757
     7,    // IID758
-    7,    // IID759
+    4,    // IID759
     7,    // IID760
     7,    // IID761
     7,    // IID762
-    4,    // IID763
+    7,    // IID763
     7,    // IID764
-    7,    // IID765
+    5,    // IID765
     7,    // IID766
     7,    // IID767
-    7,    // IID768
-    4,    // IID769
+    6,    // IID768
+    7,    // IID769
     7,    // IID770
-    7,    // IID771
+    4,    // IID771
     6,    // IID772
     6,    // IID773
-    6,    // IID774
-    5,    // IID775
+    7,    // IID774
+    7,    // IID775
     7,    // IID776
-    7,    // IID777
-    7,    // IID778
+    5,    // IID777
+    6,    // IID778
     6,    // IID779
     6,    // IID780
-    4,    // IID781
+    7,    // IID781
     7,    // IID782
-    7,    // IID783
+    5,    // IID783
     7,    // IID784
     7,    // IID785
-    7,    // IID786
-    4,    // IID787
+    6,    // IID786
+    7,    // IID787
     7,    // IID788
-    7,    // IID789
-    7,    // IID790
+    4,    // IID789
+    6,    // IID790
     6,    // IID791
-    6,    // IID792
-    7,    // IID793
+    7,    // IID792
+    10,   // IID793
     10,   // IID794
-    10,   // IID795
+    7,    // IID795
     10,   // IID796
     10,   // IID797
-    10,   // IID798
-    5,    // IID799
+    7,    // IID798
+    10,   // IID799
     10,   // IID800
-    10,   // IID801
+    7,    // IID801
     10,   // IID802
     10,   // IID803
-    10,   // IID804
-    8,    // IID805
+    7,    // IID804
+    10,   // IID805
     10,   // IID806
-    10,   // IID807
-    8,    // IID808
+    8,    // IID807
+    10,   // IID808
     10,   // IID809
-    10,   // IID810
-    8,    // IID811
+    8,    // IID810
+    10,   // IID811
     10,   // IID812
-    10,   // IID813
+    8,    // IID813
     10,   // IID814
     10,   // IID815
     10,   // IID816
@@ -3024,90 +3042,96 @@
     "__ incrementl(Address(r27, r13, (Address::ScaleFactor)1, +0x2366d44f));",            // IID152
     "__ decrementl(Address(r28, +0x1e7c7207));",                                          // IID153
     "__ imull(r14, Address(r14, r17, (Address::ScaleFactor)3, +0x13a05771), 268435456);", // IID154
-    "__ imull(r18, r18, 16);",                                                            // IID155
-    "__ shldl(r31, r31, 16);",                                                            // IID156
-    "__ shrdl(r24, r24, 4);",                                                             // IID157
-    "__ movzbl(r31, Address(r9, -0x28559fc5));",                                          // IID158
-    "__ movzwl(r12, Address(r20, rcx, (Address::ScaleFactor)1, +0x602e13f3));",           // IID159
-    "__ movsbl(r15, Address(r29, r19, (Address::ScaleFactor)3, -0x64733fd2));",           // IID160
-    "__ movswl(r12, Address(r29, r15, (Address::ScaleFactor)2, +0x60d6eee5));",           // IID161
-    "__ movzbl(r14, r31);",                                                               // IID162
-    "__ movzwl(r9, r23);",                                                                // IID163
-    "__ movsbl(r21, r17);",                                                               // IID164
-    "__ movswl(r13, r29);",                                                               // IID165
-    "__ cmpxchgb(r15, Address(r12, r15, (Address::ScaleFactor)3, +0x359a710e));",         // IID166
-    "__ cmpxchgw(r29, Address(r27, r16, (Address::ScaleFactor)1, -0x7ae5ad9d));",         // IID167
-    "__ cmpxchgl(r25, Address(r25, r19, (Address::ScaleFactor)2, +0x3e3f816d));",         // IID168
-    "__ eidivl(r13, false);",                                                             // IID169
-    "__ eidivl(r30, true);",                                                              // IID170
-    "__ edivl(r12, false);",                                                              // IID171
+    "__ imull(r18, r23, 16);",                                                            // IID155
+    "__ shldl(r24, r31, 4);",                                                             // IID156
+    "__ shrdl(r11, r30, 2);",                                                             // IID157
+    "__ movzbl(rbx, Address(r23, r24, (Address::ScaleFactor)1, -0x5cb6670d));",           // IID158
+    "__ movzwl(r20, Address(rcx, r16, (Address::ScaleFactor)0, -0x64733fd2));",           // IID159
+    "__ movsbl(r12, Address(r29, r15, (Address::ScaleFactor)2, +0x60d6eee5));",           // IID160
+    "__ movswl(r14, Address(r31, r9, (Address::ScaleFactor)3, +0x1aa5948));",             // IID161
+    "__ movzbl(r13, r29);",                                                               // IID162
+    "__ movzwl(r15, r12);",                                                               // IID163
+    "__ movsbl(r15, r25);",                                                               // IID164
+    "__ movswl(r27, r24);",                                                               // IID165
+    "__ cmpxchgb(r24, Address(r28, r25, (Address::ScaleFactor)0, +0x33efa575));",         // IID166
+    "__ cmpxchgw(r13, Address(rcx, r15, (Address::ScaleFactor)2, +0x2ac1ae4));",          // IID167
+    "__ cmpxchgl(r8, Address(r26, r11, (Address::ScaleFactor)1, -0x5b6bd4de));",          // IID168
+    "__ eidivl(r30, false);",                                                             // IID169
+    "__ eidivl(r12, true);",                                                              // IID170
+    "__ edivl(r17, false);",                                                              // IID171
     "__ edivl(r17, true);",                                                               // IID172
-    "__ eimull(r17, false);",                                                             // IID173
 #endif // _LP64
-    "__ eimull(rcx, true);",                                                              // IID174
+    "__ eimull(rcx, false);",                                                             // IID173
 #ifdef _LP64
-    "__ emull(r13, false);",                                                              // IID175
-    "__ emull(r23, true);",                                                               // IID176
-    "__ emull(Address(r25, r22, (Address::ScaleFactor)0, -0x278b6eeb), false);",          // IID177
-    "__ emull(Address(r24, r13, (Address::ScaleFactor)2, -0x49a8f01f), true);",           // IID178
-    "__ elzcntl(rcx, r25, false);",                                                       // IID179
-    "__ elzcntl(r30, r30, false);",                                                       // IID180
-    "__ elzcntl(r9, r31, true);",                                                         // IID181
+    "__ eimull(r13, true);",                                                              // IID174
+    "__ emull(r23, false);",                                                              // IID175
+    "__ emull(r25, true);",                                                               // IID176
+    "__ emull(Address(r22, r10, (Address::ScaleFactor)1, -0x3d379b56), false);",          // IID177
+    "__ emull(Address(r11, -0x3249efaf), true);",                                         // IID178
+    "__ elzcntl(r9, r16, false);",                                                        // IID179
+    "__ elzcntl(r23, r23, false);",                                                       // IID180
+    "__ elzcntl(r28, r8, true);",                                                         // IID181
+    "__ elzcntl(r30, r30, true);",                                                        // IID182
+    "__ enegl(r23, r11, false);",                                                         // IID183
+    "__ enegl(r13, r13, false);",                                                         // IID184
+    "__ enegl(r16, r11, true);",                                                          // IID185
+    "__ enegl(r11, r11, true);",                                                          // IID186
+    "__ epopcntl(r26, rcx, false);",                                                      // IID187
 #endif // _LP64
-    "__ elzcntl(rcx, rcx, true);",                                                        // IID182
+    "__ epopcntl(rbx, rbx, false);",                                                      // IID188
 #ifdef _LP64
-    "__ enegl(r25, r24, false);",                                                         // IID183
-    "__ enegl(r14, r14, false);",                                                         // IID184
-    "__ enegl(r15, r9, true);",                                                           // IID185
-    "__ enegl(r16, r16, true);",                                                          // IID186
-    "__ epopcntl(r23, r28, false);",                                                      // IID187
-    "__ epopcntl(r8, r8, false);",                                                        // IID188
-    "__ epopcntl(r30, r23, true);",                                                       // IID189
-    "__ epopcntl(r11, r11, true);",                                                       // IID190
-    "__ enotl(r13, r16);",                                                                // IID191
-    "__ enotl(r11, r11);",                                                                // IID192
-    "__ eroll(r11, r26, false);",                                                         // IID193
+    "__ epopcntl(r10, r14, true);",                                                       // IID189
+    "__ epopcntl(r29, r29, true);",                                                       // IID190
+    "__ enotl(r15, r20);",                                                                // IID191
+    "__ enotl(r17, r17);",                                                                // IID192
+    "__ eroll(r12, r12, false);",                                                         // IID193
 #endif // _LP64
-    "__ eroll(rcx, rcx, false);",                                                         // IID194
+    "__ eroll(rbx, rbx, false);",                                                         // IID194
 #ifdef _LP64
-    "__ eroll(rbx, r10, true);",                                                          // IID195
-    "__ eroll(r14, r14, true);",                                                          // IID196
-    "__ erorl(r29, r15, false);",                                                         // IID197
-    "__ erorl(r20, r20, false);",                                                         // IID198
-    "__ erorl(r17, r12, true);",                                                          // IID199
-    "__ erorl(r12, r12, true);",                                                          // IID200
-    "__ esall(rbx, r23, false);",                                                         // IID201
+    "__ eroll(r23, r27, true);",                                                          // IID195
+    "__ eroll(r29, r29, true);",                                                          // IID196
+    "__ erorl(r20, r28, false);",                                                         // IID197
+#endif // _LP64
+    "__ erorl(rdx, rdx, false);",                                                         // IID198
+#ifdef _LP64
+    "__ erorl(r8, r27, true);",                                                           // IID199
+#endif // _LP64
+    "__ erorl(rbx, rbx, true);",                                                          // IID200
+#ifdef _LP64
+    "__ esall(r15, r11, false);",                                                         // IID201
     "__ esall(r27, r27, false);",                                                         // IID202
-    "__ esall(r29, r20, true);",                                                          // IID203
-    "__ esall(r28, r28, true);",                                                          // IID204
-    "__ esarl(rdx, r8, false);",                                                          // IID205
-    "__ esarl(r27, r27, false);",                                                         // IID206
-    "__ esarl(rbx, r15, true);",                                                          // IID207
-    "__ esarl(r11, r11, true);",                                                          // IID208
-    "__ edecl(r27, r29, false);",                                                         // IID209
-    "__ edecl(r25, r25, false);",                                                         // IID210
-    "__ edecl(r12, r8, true);",                                                           // IID211
-    "__ edecl(r11, r11, true);",                                                          // IID212
-    "__ eincl(r18, rdx, false);",                                                         // IID213
-    "__ eincl(r13, r13, false);",                                                         // IID214
-    "__ eincl(r23, r24, true);",                                                          // IID215
-    "__ eincl(r15, r15, true);",                                                          // IID216
-    "__ eshll(r15, r26, false);",                                                         // IID217
-    "__ eshll(r28, r28, false);",                                                         // IID218
-    "__ eshll(rbx, r25, true);",                                                          // IID219
-    "__ eshll(r14, r14, true);",                                                          // IID220
-    "__ eshrl(r12, rcx, false);",                                                         // IID221
-    "__ eshrl(r23, r23, false);",                                                         // IID222
-    "__ eshrl(r29, r22, true);",                                                          // IID223
-    "__ eshrl(r24, r24, true);",                                                          // IID224
-    "__ etzcntl(r15, r9, false);",                                                        // IID225
-    "__ etzcntl(r31, r31, false);",                                                       // IID226
-    "__ etzcntl(r28, r21, true);",                                                        // IID227
-    "__ etzcntl(r18, r18, true);",                                                        // IID228
-    "__ elzcntl(r24, Address(r14, +0x24dd14aa), false);",                                 // IID229
-    "__ elzcntl(r26, Address(r8, r30, (Address::ScaleFactor)2, +0xf73f97a), true);",      // IID230
-    "__ enegl(r20, Address(r22, r27, (Address::ScaleFactor)2, -0x1c7c7f06), false);",     // IID231
-    "__ enegl(r16, Address(r28, r13, (Address::ScaleFactor)3, -0x602e1b3d), true);",      // IID232
+    "__ esall(r29, r25, true);",                                                          // IID203
+    "__ esall(r12, r12, true);",                                                          // IID204
+    "__ esarl(r8, r11, false);",                                                          // IID205
+    "__ esarl(r18, r18, false);",                                                         // IID206
+    "__ esarl(rdx, r13, true);",                                                          // IID207
+    "__ esarl(r23, r23, true);",                                                          // IID208
+    "__ edecl(r24, r15, false);",                                                         // IID209
+    "__ edecl(r15, r15, false);",                                                         // IID210
+    "__ edecl(r26, r28, true);",                                                          // IID211
+#endif // _LP64
+    "__ edecl(rbx, rbx, true);",                                                          // IID212
+#ifdef _LP64
+    "__ eincl(r25, r14, false);",                                                         // IID213
+    "__ eincl(r12, r12, false);",                                                         // IID214
+    "__ eincl(rcx, r23, true);",                                                          // IID215
+    "__ eincl(r29, r29, true);",                                                          // IID216
+    "__ eshll(r22, r24, false);",                                                         // IID217
+    "__ eshll(r15, r15, false);",                                                         // IID218
+    "__ eshll(r9, r31, true);",                                                           // IID219
+    "__ eshll(r28, r28, true);",                                                          // IID220
+    "__ eshrl(r21, r18, false);",                                                         // IID221
+    "__ eshrl(r24, r24, false);",                                                         // IID222
+    "__ eshrl(r14, r19, true);",                                                          // IID223
+    "__ eshrl(r8, r8, true);",                                                            // IID224
+    "__ etzcntl(r25, r9, false);",                                                        // IID225
+    "__ etzcntl(r26, r26, false);",                                                       // IID226
+    "__ etzcntl(r8, r30, true);",                                                         // IID227
+    "__ etzcntl(r26, r26, true);",                                                        // IID228
+    "__ elzcntl(r29, Address(r25, r20, (Address::ScaleFactor)3, -0x9c80fe2), false);",    // IID229
+    "__ elzcntl(r22, Address(r27, r19, (Address::ScaleFactor)2, +0x38f27c09), true);",    // IID230
+    "__ enegl(r21, Address(r14, r30, (Address::ScaleFactor)2, +0x39f92c7b), false);",     // IID231
+    "__ enegl(r26, Address(r23, r14, (Address::ScaleFactor)3, -0x602e1b3d), true);",      // IID232
     "__ epopcntl(r25, Address(r28, r23, (Address::ScaleFactor)1, +0x4ff120ef), false);",  // IID233
     "__ epopcntl(r29, Address(r24, r16, (Address::ScaleFactor)3, -0x6821bb43), true);",   // IID234
     "__ esall(r23, Address(r11, r31, (Address::ScaleFactor)2, +0x7f4224bb), false);",     // IID235
@@ -3154,94 +3178,94 @@
     "__ exorl(r31, Address(r30, r28, (Address::ScaleFactor)0, +0x17281e3a), r31, true);", // IID276
     "__ exorb(rdx, Address(rbx, r31, (Address::ScaleFactor)2, +0x2477b5bb), rdx, false);", // IID277
     "__ exorb(r16, Address(r11, rcx, (Address::ScaleFactor)3, +0x20fc1a0a), r16, true);", // IID278
-    "__ eaddl(r12, r12, 65536, false);",                                                  // IID279
-    "__ eaddl(r11, r20, 16, false);",                                                     // IID280
-    "__ eaddl(rax, r24, 16, false);",                                                     // IID281
-    "__ eaddl(r18, r18, 1048576, true);",                                                 // IID282
-    "__ eaddl(r29, r13, 1, true);",                                                       // IID283
-    "__ eaddl(rax, r13, 1, true);",                                                       // IID284
-    "__ eandl(r31, r31, 1, false);",                                                      // IID285
-    "__ eandl(r23, r29, 65536, false);",                                                  // IID286
-    "__ eandl(rax, r15, 65536, false);",                                                  // IID287
-    "__ eandl(r21, r21, 268435456, true);",                                               // IID288
-    "__ eandl(r15, r13, 256, true);",                                                     // IID289
+    "__ eaddl(r12, rbx, 65536, false);",                                                  // IID279
+    "__ eaddl(rax, r11, 65536, false);",                                                  // IID280
+    "__ eaddl(r24, r24, 268435456, false);",                                              // IID281
+    "__ eaddl(r18, r26, 1048576, true);",                                                 // IID282
+    "__ eaddl(rax, r27, 1048576, true);",                                                 // IID283
+    "__ eaddl(r29, r29, 1, true);",                                                       // IID284
+    "__ eandl(r13, rcx, 65536, false);",                                                  // IID285
+    "__ eandl(rax, r31, 65536, false);",                                                  // IID286
+    "__ eandl(r23, r23, 65536, false);",                                                  // IID287
+    "__ eandl(r23, r23, 1048576, true);",                                                 // IID288
+    "__ eandl(rax, r19, 1048576, true);",                                                 // IID289
+    "__ eandl(r15, r15, 256, true);",                                                     // IID290
+    "__ eimull(rdx, r18, 65536, false);",                                                 // IID291
+    "__ eimull(rax, r15, 65536, false);",                                                 // IID292
+    "__ eimull(r8, r8, 256, false);",                                                     // IID293
+    "__ eimull(r27, r30, 256, true);",                                                    // IID294
+    "__ eimull(rax, r19, 256, true);",                                                    // IID295
+    "__ eimull(r15, r15, 256, true);",                                                    // IID296
+    "__ eorl(r21, r12, 16777216, false);",                                                // IID297
 #endif // _LP64
-    "__ eandl(rax, rdx, 256, true);",                                                     // IID290
+    "__ eorl(rax, rbx, 16777216, false);",                                                // IID298
 #ifdef _LP64
-    "__ eimull(r15, r15, 16777216, false);",                                              // IID291
-    "__ eimull(r8, r9, 256, false);",                                                     // IID292
-    "__ eimull(rax, r27, 256, false);",                                                   // IID293
-    "__ eimull(r9, r9, 268435456, true);",                                                // IID294
-    "__ eimull(r18, r21, 1048576, true);",                                                // IID295
-    "__ eimull(rax, r12, 1048576, true);",                                                // IID296
-    "__ eorl(r19, r19, 16, false);",                                                      // IID297
-    "__ eorl(r11, r18, 256, false);",                                                     // IID298
-    "__ eorl(rax, r8, 256, false);",                                                      // IID299
-    "__ eorl(r14, r14, 1, true);",                                                        // IID300
-    "__ eorl(r10, r9, 268435456, true);",                                                 // IID301
-    "__ eorl(rax, r15, 268435456, true);",                                                // IID302
-    "__ ercll(r8, r8, 4);",                                                               // IID303
-    "__ ercll(r16, r21, 16);",                                                            // IID304
-    "__ ercll(rax, r18, 16);",                                                            // IID305
-    "__ eroll(r28, r28, 16, false);",                                                     // IID306
-    "__ eroll(r26, r14, 4, false);",                                                      // IID307
-    "__ eroll(rax, r10, 4, false);",                                                      // IID308
-    "__ eroll(r22, r22, 1, true);",                                                       // IID309
-    "__ eroll(r18, r22, 2, true);",                                                       // IID310
-    "__ eroll(rax, r30, 2, true);",                                                       // IID311
-    "__ erorl(r23, r23, 16, false);",                                                     // IID312
-    "__ erorl(r11, r8, 16, false);",                                                      // IID313
-    "__ erorl(rax, r16, 16, false);",                                                     // IID314
-    "__ erorl(r11, r11, 8, true);",                                                       // IID315
-    "__ erorl(r29, r16, 2, true);",                                                       // IID316
-    "__ erorl(rax, r16, 2, true);",                                                       // IID317
-    "__ esall(r15, r15, 16, false);",                                                     // IID318
-    "__ esall(r9, r18, 8, false);",                                                       // IID319
+    "__ eorl(r27, r27, 268435456, false);",                                               // IID299
+    "__ eorl(r11, r18, 256, true);",                                                      // IID300
+    "__ eorl(rax, r8, 256, true);",                                                       // IID301
+    "__ eorl(r14, r14, 1, true);",                                                        // IID302
+    "__ ercll(r30, r22, 16);",                                                            // IID303
+    "__ ercll(rax, r25, 16);",                                                            // IID304
+    "__ ercll(r10, r10, 8);",                                                             // IID305
+    "__ eroll(r15, r13, 2, false);",                                                      // IID306
+    "__ eroll(rax, r8, 2, false);",                                                       // IID307
+    "__ eroll(r16, r16, 16, false);",                                                     // IID308
+    "__ eroll(r18, r26, 16, true);",                                                      // IID309
+    "__ eroll(rax, r23, 16, true);",                                                      // IID310
+    "__ eroll(r26, r26, 4, true);",                                                       // IID311
+    "__ erorl(r10, r27, 4, false);",                                                      // IID312
+    "__ erorl(rax, r26, 4, false);",                                                      // IID313
+    "__ erorl(r22, r22, 1, false);",                                                      // IID314
+    "__ erorl(r18, r22, 2, true);",                                                       // IID315
+    "__ erorl(rax, r30, 2, true);",                                                       // IID316
+    "__ erorl(r23, r23, 16, true);",                                                      // IID317
+    "__ esall(r11, r8, 16, false);",                                                      // IID318
+    "__ esall(rax, r16, 16, false);",                                                     // IID319
+    "__ esall(r11, r11, 8, false);",                                                      // IID320
+    "__ esall(r29, r16, 2, true);",                                                       // IID321
+    "__ esall(rax, r16, 2, true);",                                                       // IID322
+    "__ esall(r15, r15, 16, true);",                                                      // IID323
+    "__ esarl(r9, r18, 8, false);",                                                       // IID324
 #endif // _LP64
-    "__ esall(rax, rbx, 8, false);",                                                      // IID320
+    "__ esarl(rax, rbx, 8, false);",                                                      // IID325
 #ifdef _LP64
-    "__ esall(r19, r19, 4, true);",                                                       // IID321
-    "__ esall(r17, r25, 16, true);",                                                      // IID322
-    "__ esall(rax, r16, 16, true);",                                                      // IID323
-    "__ esarl(r14, r14, 8, false);",                                                      // IID324
-    "__ esarl(r19, r15, 4, false);",                                                      // IID325
-    "__ esarl(rax, r27, 4, false);",                                                      // IID326
-    "__ esarl(r23, r23, 8, true);",                                                       // IID327
-    "__ esarl(r8, r28, 16, true);",                                                       // IID328
-    "__ esarl(rax, r24, 16, true);",                                                      // IID329
-    "__ eshll(r31, r31, 2, false);",                                                      // IID330
-    "__ eshll(rbx, r16, 16, false);",                                                     // IID331
-    "__ eshll(rax, r24, 16, false);",                                                     // IID332
-    "__ eshll(r25, r25, 16, true);",                                                      // IID333
-    "__ eshll(r21, r16, 4, true);",                                                       // IID334
-    "__ eshll(rax, r24, 4, true);",                                                       // IID335
-    "__ eshrl(r13, r13, 1, false);",                                                      // IID336
-    "__ eshrl(r26, r17, 16, false);",                                                     // IID337
-    "__ eshrl(rax, r29, 16, false);",                                                     // IID338
-    "__ eshrl(r12, r12, 1, true);",                                                       // IID339
-    "__ eshrl(r30, r8, 2, true);",                                                        // IID340
-    "__ eshrl(rax, r24, 2, true);",                                                       // IID341
-    "__ esubl(r8, r8, 1, false);",                                                        // IID342
-    "__ esubl(r13, rbx, 4096, false);",                                                   // IID343
-    "__ esubl(rax, r25, 4096, false);",                                                   // IID344
-    "__ esubl(r18, r18, 65536, true);",                                                   // IID345
-    "__ esubl(r19, r26, 256, true);",                                                     // IID346
-    "__ esubl(rax, r25, 256, true);",                                                     // IID347
-    "__ exorl(r25, r25, 1, false);",                                                      // IID348
-    "__ exorl(r24, rcx, 16777216, false);",                                               // IID349
-    "__ exorl(rax, r30, 16777216, false);",                                               // IID350
-    "__ exorl(r17, r17, 1048576, true);",                                                 // IID351
-    "__ exorl(r24, r8, 1, true);",                                                        // IID352
-    "__ exorl(rax, r27, 1, true);",                                                       // IID353
+    "__ esarl(r19, r19, 4, false);",                                                      // IID326
+    "__ esarl(r17, r25, 16, true);",                                                      // IID327
+    "__ esarl(rax, r16, 16, true);",                                                      // IID328
+    "__ esarl(r14, r14, 8, true);",                                                       // IID329
+    "__ eshll(r19, r15, 4, false);",                                                      // IID330
+    "__ eshll(rax, r27, 4, false);",                                                      // IID331
+    "__ eshll(r23, r23, 8, false);",                                                      // IID332
+    "__ eshll(r8, r28, 16, true);",                                                       // IID333
+    "__ eshll(rax, r24, 16, true);",                                                      // IID334
+    "__ eshll(r31, r31, 2, true);",                                                       // IID335
+    "__ eshrl(rbx, r16, 16, false);",                                                     // IID336
+    "__ eshrl(rax, r24, 16, false);",                                                     // IID337
+    "__ eshrl(r25, r25, 16, false);",                                                     // IID338
+    "__ eshrl(r21, r16, 4, true);",                                                       // IID339
+    "__ eshrl(rax, r24, 4, true);",                                                       // IID340
+    "__ eshrl(r13, r13, 1, true);",                                                       // IID341
+    "__ esubl(r29, r8, 16777216, false);",                                                // IID342
+    "__ esubl(rax, r12, 16777216, false);",                                               // IID343
+    "__ esubl(r30, r30, 4096, false);",                                                   // IID344
+    "__ esubl(r24, rdx, 16, true);",                                                      // IID345
+    "__ esubl(rax, r8, 16, true);",                                                       // IID346
+    "__ esubl(r13, r13, 4096, true);",                                                    // IID347
+    "__ exorl(r25, r13, 16, false);",                                                     // IID348
+    "__ exorl(rax, r18, 16, false);",                                                     // IID349
+    "__ exorl(r19, r19, 256, false);",                                                    // IID350
+    "__ exorl(r25, r21, 1, true);",                                                       // IID351
+    "__ exorl(rax, r24, 1, true);",                                                       // IID352
+    "__ exorl(r24, r24, 16777216, true);",                                                // IID353
+    "__ esubl_imm32(r30, r26, 65536, false);",                                            // IID354
+    "__ esubl_imm32(rax, r22, 65536, false);",                                            // IID355
+    "__ esubl_imm32(r17, r17, 67108864, false);",                                         // IID356
+    "__ esubl_imm32(r24, r8, 65536, true);",                                              // IID357
+    "__ esubl_imm32(rax, r27, 65536, true);",                                             // IID358
 #endif // _LP64
-    "__ esubl_imm32(rdx, rdx, 1073741824, false);",                                       // IID354
+    "__ esubl_imm32(rdx, rdx, 1073741824, true);",                                        // IID359
 #ifdef _LP64
-    "__ esubl_imm32(r22, r22, 1073741824, false);",                                       // IID355
-    "__ esubl_imm32(rax, r23, 1073741824, false);",                                       // IID356
-    "__ esubl_imm32(r19, r19, 16777216, true);",                                          // IID357
-    "__ esubl_imm32(r30, r24, 4194304, true);",                                           // IID358
-    "__ esubl_imm32(rax, r29, 4194304, true);",                                           // IID359
-    "__ eaddl(r10, r10, Address(r8, r26, (Address::ScaleFactor)3, +0x3ac41cbd), false);", // IID360
+    "__ eaddl(r31, r31, Address(r30, r20, (Address::ScaleFactor)3, +0x3ac41cbd), false);", // IID360
     "__ eaddl(r24, r30, Address(r13, r17, (Address::ScaleFactor)1, +0x1efdc2e3), false);", // IID361
     "__ eaddl(r16, r16, Address(r9, r15, (Address::ScaleFactor)1, +0x14551c8d), true);",  // IID362
     "__ eaddl(r30, rdx, Address(r11, r27, (Address::ScaleFactor)2, -0x55f79314), true);", // IID363
@@ -3485,22 +3509,22 @@
     "__ incrementq(Address(r11, r30, (Address::ScaleFactor)2, +0x3eeb8fd0));",            // IID599
     "__ decrementq(Address(r26, r29, (Address::ScaleFactor)0, +0x275ad945));",            // IID600
     "__ imulq(r29, Address(r19, r20, (Address::ScaleFactor)2, -0x3f0f3db9), 4096);",      // IID601
-    "__ imulq(r30, r30, 16);",                                                            // IID602
-    "__ shldq(r11, r11, 8);",                                                             // IID603
-    "__ shrdq(r28, r28, 2);",                                                             // IID604
-    "__ pop2(r15, r23);",                                                                 // IID605
-    "__ pop2p(r11, r26);",                                                                // IID606
-    "__ push2(r28, r20);",                                                                // IID607
-    "__ push2p(r23, rbx);",                                                               // IID608
-    "__ movzbq(r24, Address(r15, r12, (Address::ScaleFactor)0, -0x2b4502f9));",           // IID609
-    "__ movzwq(rcx, Address(r23, r9, (Address::ScaleFactor)0, -0x3d2d7a14));",            // IID610
-    "__ movsbq(r16, Address(r20, -0x46116c0d));",                                         // IID611
-    "__ movswq(r13, Address(r9, r23, (Address::ScaleFactor)1, -0x242ffe4a));",            // IID612
-    "__ movzbq(r24, r26);",                                                               // IID613
-    "__ movzwq(r22, r15);",                                                               // IID614
-    "__ movsbq(r18, r21);",                                                               // IID615
-    "__ movswq(r30, r17);",                                                               // IID616
-    "__ cmpxchgq(r29, Address(r12, r30, (Address::ScaleFactor)3, +0xf4e30b2));",          // IID617
+    "__ imulq(r30, r20, 16);",                                                            // IID602
+    "__ shldq(r12, r28, 2);",                                                             // IID603
+    "__ shrdq(r15, r26, 16);",                                                            // IID604
+    "__ pop2(r20, r11);",                                                                 // IID605
+    "__ pop2p(rbx, r28);",                                                                // IID606
+    "__ push2(r24, r23);",                                                                // IID607
+    "__ push2p(r12, r15);",                                                               // IID608
+    "__ movzbq(r11, Address(rcx, r30, (Address::ScaleFactor)1, -0x32ffb1c2));",           // IID609
+    "__ movzwq(r23, Address(r9, r12, (Address::ScaleFactor)1, -0x54823e69));",            // IID610
+    "__ movsbq(r20, Address(r13, rcx, (Address::ScaleFactor)1, +0x4e1758c4));",           // IID611
+    "__ movswq(rcx, Address(r13, r9, (Address::ScaleFactor)3, -0x226aab94));",            // IID612
+    "__ movzbq(r13, r24);",                                                               // IID613
+    "__ movzwq(r26, r22);",                                                               // IID614
+    "__ movsbq(r15, r18);",                                                               // IID615
+    "__ movswq(r21, r30);",                                                               // IID616
+    "__ cmpxchgq(r17, Address(r29, r12, (Address::ScaleFactor)3, +0xf4e30b2));",          // IID617
     "__ eidivq(r30, false);",                                                             // IID618
     "__ eidivq(r17, true);",                                                              // IID619
     "__ edivq(r31, false);",                                                              // IID620
@@ -3613,94 +3637,94 @@
     "__ esubq(r20, Address(rbx, r25, (Address::ScaleFactor)3, +0x2f0329e), 1, true);",    // IID727
     "__ exorq(r12, Address(r31, r12, (Address::ScaleFactor)3, -0x37505c8c), 256, false);", // IID728
     "__ exorq(r21, Address(r15, r25, (Address::ScaleFactor)0, +0x43c49623), 65536, true);", // IID729
-    "__ eaddq(r25, r25, 4096, false);",                                                   // IID730
-    "__ eaddq(r10, r16, 268435456, false);",                                              // IID731
-    "__ eaddq(rax, r17, 268435456, false);",                                              // IID732
-    "__ eaddq(r23, r23, 16, true);",                                                      // IID733
-    "__ eaddq(r31, rbx, 256, true);",                                                     // IID734
-    "__ eaddq(rax, r16, 256, true);",                                                     // IID735
-    "__ eandq(r24, r24, 256, false);",                                                    // IID736
-    "__ eandq(r9, r22, 256, false);",                                                     // IID737
-    "__ eandq(rax, r28, 256, false);",                                                    // IID738
-    "__ eandq(r25, r25, 16777216, true);",                                                // IID739
-    "__ eandq(r16, r21, 268435456, true);",                                               // IID740
-    "__ eandq(rax, rbx, 268435456, true);",                                               // IID741
-    "__ eimulq(r13, r13, 268435456, false);",                                             // IID742
-    "__ eimulq(rdx, r8, 1048576, false);",                                                // IID743
-    "__ eimulq(rax, r22, 1048576, false);",                                               // IID744
-    "__ eimulq(r12, r12, 65536, true);",                                                  // IID745
-    "__ eimulq(r24, r13, 65536, true);",                                                  // IID746
-    "__ eimulq(rax, r21, 65536, true);",                                                  // IID747
-    "__ eorq(rbx, rbx, 16, false);",                                                      // IID748
-    "__ eorq(r24, r27, 65536, false);",                                                   // IID749
-    "__ eorq(rax, r17, 65536, false);",                                                   // IID750
-    "__ eorq(r24, r24, 65536, true);",                                                    // IID751
-    "__ eorq(r13, r31, 1048576, true);",                                                  // IID752
-    "__ eorq(rax, r21, 1048576, true);",                                                  // IID753
-    "__ erclq(r30, r30, 4);",                                                             // IID754
-    "__ erclq(r8, r13, 8);",                                                              // IID755
-    "__ erclq(rax, r31, 8);",                                                             // IID756
-    "__ erolq(r13, r13, 4, false);",                                                      // IID757
-    "__ erolq(r14, r29, 4, false);",                                                      // IID758
-    "__ erolq(rax, r22, 4, false);",                                                      // IID759
-    "__ erolq(r8, r8, 8, true);",                                                         // IID760
-    "__ erolq(r30, r15, 2, true);",                                                       // IID761
-    "__ erolq(rax, r28, 2, true);",                                                       // IID762
-    "__ erorq(r15, r15, 16, false);",                                                     // IID763
-    "__ erorq(r16, r12, 8, false);",                                                      // IID764
-    "__ erorq(rax, r9, 8, false);",                                                       // IID765
-    "__ erorq(r23, r23, 2, true);",                                                       // IID766
-    "__ erorq(r15, r9, 16, true);",                                                       // IID767
-    "__ erorq(rax, r8, 16, true);",                                                       // IID768
-    "__ esalq(r25, r25, 1, false);",                                                      // IID769
-    "__ esalq(r9, r17, 16, false);",                                                      // IID770
-    "__ esalq(rax, r20, 16, false);",                                                     // IID771
-    "__ esalq(r27, r27, 1, true);",                                                       // IID772
-    "__ esalq(r20, r31, 1, true);",                                                       // IID773
-    "__ esalq(rax, r18, 1, true);",                                                       // IID774
-    "__ esarq(r28, r28, 16, false);",                                                     // IID775
-    "__ esarq(r26, r18, 16, false);",                                                     // IID776
-    "__ esarq(rax, r24, 16, false);",                                                     // IID777
-    "__ esarq(r22, r22, 16, true);",                                                      // IID778
-    "__ esarq(r27, r29, 1, true);",                                                       // IID779
-    "__ esarq(rax, r18, 1, true);",                                                       // IID780
-    "__ eshlq(r21, r21, 1, false);",                                                      // IID781
-    "__ eshlq(r12, rcx, 2, false);",                                                      // IID782
-    "__ eshlq(rax, r24, 2, false);",                                                      // IID783
-    "__ eshlq(r22, r22, 8, true);",                                                       // IID784
-    "__ eshlq(r17, r23, 8, true);",                                                       // IID785
-    "__ eshlq(rax, r27, 8, true);",                                                       // IID786
-    "__ eshrq(r23, r23, 1, false);",                                                      // IID787
-    "__ eshrq(r8, r25, 16, false);",                                                      // IID788
-    "__ eshrq(rax, r23, 16, false);",                                                     // IID789
-    "__ eshrq(r9, r9, 4, true);",                                                         // IID790
-    "__ eshrq(r22, r13, 1, true);",                                                       // IID791
-    "__ eshrq(rax, r11, 1, true);",                                                       // IID792
-    "__ esubq(r12, r12, 4096, false);",                                                   // IID793
-    "__ esubq(rcx, r30, 268435456, false);",                                              // IID794
-    "__ esubq(rax, r19, 268435456, false);",                                              // IID795
-    "__ esubq(r13, r13, 256, true);",                                                     // IID796
-    "__ esubq(r18, r11, 268435456, true);",                                               // IID797
-    "__ esubq(rax, r9, 268435456, true);",                                                // IID798
-    "__ exorq(r29, r29, 1, false);",                                                      // IID799
-    "__ exorq(r10, r22, 1048576, false);",                                                // IID800
-    "__ exorq(rax, r9, 1048576, false);",                                                 // IID801
-    "__ exorq(r12, r12, 4096, true);",                                                    // IID802
-    "__ exorq(r26, r31, 268435456, true);",                                               // IID803
-    "__ exorq(rax, r12, 268435456, true);",                                               // IID804
-    "__ eorq_imm32(r28, r28, 65536, false);",                                             // IID805
-    "__ eorq_imm32(r15, r30, 16777216, false);",                                          // IID806
-    "__ eorq_imm32(rax, rcx, 16777216, false);",                                          // IID807
-    "__ eorq_imm32(r26, r26, 262144, false);",                                            // IID808
-    "__ eorq_imm32(r12, r14, 65536, false);",                                             // IID809
-    "__ eorq_imm32(rax, r21, 65536, false);",                                             // IID810
-    "__ esubq_imm32(r20, r20, 67108864, false);",                                         // IID811
-    "__ esubq_imm32(r11, rbx, 268435456, false);",                                        // IID812
-    "__ esubq_imm32(rax, r23, 268435456, false);",                                        // IID813
-    "__ esubq_imm32(r31, r31, 1073741824, true);",                                        // IID814
-    "__ esubq_imm32(r29, r28, 4194304, true);",                                           // IID815
-    "__ esubq_imm32(rax, r19, 4194304, true);",                                           // IID816
-    "__ eaddq(r20, r20, Address(rdx, +0x3875f17c), false);",                              // IID817
+    "__ eaddq(r25, r19, 4096, false);",                                                   // IID730
+    "__ eaddq(rax, r10, 4096, false);",                                                   // IID731
+    "__ eaddq(r17, r17, 1048576, false);",                                                // IID732
+    "__ eaddq(r23, r31, 16, true);",                                                      // IID733
+    "__ eaddq(rax, r9, 16, true);",                                                       // IID734
+    "__ eaddq(r16, r16, 16, true);",                                                      // IID735
+    "__ eandq(r24, r10, 256, false);",                                                    // IID736
+    "__ eandq(rax, r9, 256, false);",                                                     // IID737
+    "__ eandq(r25, r25, 16777216, false);",                                               // IID738
+    "__ eandq(r16, r21, 268435456, true);",                                               // IID739
+    "__ eandq(rax, rbx, 268435456, true);",                                               // IID740
+    "__ eandq(r13, r13, 268435456, true);",                                               // IID741
+    "__ eimulq(rdx, r8, 1048576, false);",                                                // IID742
+    "__ eimulq(rax, r22, 1048576, false);",                                               // IID743
+    "__ eimulq(r12, r12, 65536, false);",                                                 // IID744
+    "__ eimulq(r24, r13, 65536, true);",                                                  // IID745
+    "__ eimulq(rax, r21, 65536, true);",                                                  // IID746
+    "__ eimulq(rbx, rbx, 16, true);",                                                     // IID747
+    "__ eorq(r24, r27, 65536, false);",                                                   // IID748
+    "__ eorq(rax, r17, 65536, false);",                                                   // IID749
+    "__ eorq(r24, r24, 65536, false);",                                                   // IID750
+    "__ eorq(r13, r31, 1048576, true);",                                                  // IID751
+    "__ eorq(rax, r21, 1048576, true);",                                                  // IID752
+    "__ eorq(r30, r30, 1048576, true);",                                                  // IID753
+    "__ erclq(r8, r13, 8);",                                                              // IID754
+    "__ erclq(rax, r31, 8);",                                                             // IID755
+    "__ erclq(r13, r13, 4);",                                                             // IID756
+    "__ erolq(r14, r29, 4, false);",                                                      // IID757
+    "__ erolq(rax, r22, 4, false);",                                                      // IID758
+    "__ erolq(r8, r8, 8, false);",                                                        // IID759
+    "__ erolq(r30, r15, 2, true);",                                                       // IID760
+    "__ erolq(rax, r28, 2, true);",                                                       // IID761
+    "__ erolq(r15, r15, 16, true);",                                                      // IID762
+    "__ erorq(r16, r12, 8, false);",                                                      // IID763
+    "__ erorq(rax, r9, 8, false);",                                                       // IID764
+    "__ erorq(r23, r23, 2, false);",                                                      // IID765
+    "__ erorq(r15, r9, 16, true);",                                                       // IID766
+    "__ erorq(rax, r8, 16, true);",                                                       // IID767
+    "__ erorq(r25, r25, 1, true);",                                                       // IID768
+    "__ esalq(r9, r17, 16, false);",                                                      // IID769
+    "__ esalq(rax, r20, 16, false);",                                                     // IID770
+    "__ esalq(r27, r27, 1, false);",                                                      // IID771
+    "__ esalq(r20, r31, 1, true);",                                                       // IID772
+    "__ esalq(rax, r18, 1, true);",                                                       // IID773
+    "__ esalq(r28, r28, 16, true);",                                                      // IID774
+    "__ esarq(r26, r18, 16, false);",                                                     // IID775
+    "__ esarq(rax, r24, 16, false);",                                                     // IID776
+    "__ esarq(r22, r22, 16, false);",                                                     // IID777
+    "__ esarq(r27, r29, 1, true);",                                                       // IID778
+    "__ esarq(rax, r18, 1, true);",                                                       // IID779
+    "__ esarq(r21, r21, 1, true);",                                                       // IID780
+    "__ eshlq(r12, rcx, 2, false);",                                                      // IID781
+    "__ eshlq(rax, r24, 2, false);",                                                      // IID782
+    "__ eshlq(r22, r22, 8, false);",                                                      // IID783
+    "__ eshlq(r17, r23, 8, true);",                                                       // IID784
+    "__ eshlq(rax, r27, 8, true);",                                                       // IID785
+    "__ eshlq(r23, r23, 1, true);",                                                       // IID786
+    "__ eshrq(r8, r25, 16, false);",                                                      // IID787
+    "__ eshrq(rax, r23, 16, false);",                                                     // IID788
+    "__ eshrq(r9, r9, 4, false);",                                                        // IID789
+    "__ eshrq(r22, r13, 1, true);",                                                       // IID790
+    "__ eshrq(rax, r11, 1, true);",                                                       // IID791
+    "__ eshrq(r12, r12, 2, true);",                                                       // IID792
+    "__ esubq(rcx, r30, 268435456, false);",                                              // IID793
+    "__ esubq(rax, r19, 268435456, false);",                                              // IID794
+    "__ esubq(r13, r13, 256, false);",                                                    // IID795
+    "__ esubq(r18, r11, 268435456, true);",                                               // IID796
+    "__ esubq(rax, r9, 268435456, true);",                                                // IID797
+    "__ esubq(r29, r29, 1, true);",                                                       // IID798
+    "__ exorq(r10, r22, 1048576, false);",                                                // IID799
+    "__ exorq(rax, r9, 1048576, false);",                                                 // IID800
+    "__ exorq(r12, r12, 4096, false);",                                                   // IID801
+    "__ exorq(r26, r31, 268435456, true);",                                               // IID802
+    "__ exorq(rax, r12, 268435456, true);",                                               // IID803
+    "__ exorq(r28, r28, 1, true);",                                                       // IID804
+    "__ eorq_imm32(r15, r30, 16777216, false);",                                          // IID805
+    "__ eorq_imm32(rax, rcx, 16777216, false);",                                          // IID806
+    "__ eorq_imm32(r26, r26, 262144, false);",                                            // IID807
+    "__ eorq_imm32(r12, r14, 65536, false);",                                             // IID808
+    "__ eorq_imm32(rax, r21, 65536, false);",                                             // IID809
+    "__ eorq_imm32(r20, r20, 67108864, false);",                                          // IID810
+    "__ esubq_imm32(r11, rbx, 268435456, false);",                                        // IID811
+    "__ esubq_imm32(rax, r23, 268435456, false);",                                        // IID812
+    "__ esubq_imm32(r31, r31, 1073741824, false);",                                       // IID813
+    "__ esubq_imm32(r29, r28, 4194304, true);",                                           // IID814
+    "__ esubq_imm32(rax, r19, 4194304, true);",                                           // IID815
+    "__ esubq_imm32(rdx, rdx, 1073741824, true);",                                        // IID816
+    "__ eaddq(r10, r10, Address(rdx, rdx, (Address::ScaleFactor)3, +0x3875f17c), false);", // IID817
     "__ eaddq(r29, rcx, Address(r12, r17, (Address::ScaleFactor)2, +0x32c71076), false);", // IID818
     "__ eaddq(r16, r16, Address(r19, +0x4b1e9da4), true);",                               // IID819
     "__ eaddq(r17, r25, Address(r22, r18, (Address::ScaleFactor)2, +0x17f69003), true);", // IID820
