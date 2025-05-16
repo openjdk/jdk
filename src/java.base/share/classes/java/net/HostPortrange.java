@@ -29,7 +29,7 @@ import java.util.Formatter;
 import java.util.Locale;
 import sun.net.util.IPAddressUtil;
 
-import static jdk.internal.util.Exceptions.filterNetInfo;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
@@ -82,7 +82,7 @@ class HostPortrange {
             } else {
                 throw new IllegalArgumentException(
                            formatMsg("invalid IPv6 address%s",
-                                     filterNetInfo(str).prefixWith(": ")));
+                                     filterNonSocketInfo(str).prefixWith(": ")));
             }
             int sep = str.indexOf(':', rb + 1);
             if (sep != -1 && str.length() > sep) {
@@ -162,7 +162,7 @@ class HostPortrange {
             portrange = parsePort(portstr);
         } catch (Exception e) {
             throw new IllegalArgumentException(
-                formatMsg("invalid port range%s", filterNetInfo(portstr).prefixWith(": ")));
+                formatMsg("invalid port range%s", filterNonSocketInfo(portstr).prefixWith(": ")));
         }
     }
 

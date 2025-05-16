@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static jdk.internal.util.Exceptions.formatMsg;
-import static jdk.internal.util.Exceptions.filterNetInfo;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 
 public class IPAddressUtil {
     private static final int INADDR4SZ = 4;
@@ -165,7 +165,7 @@ public class IPAddressUtil {
      */
     public static IllegalArgumentException invalidIpAddressLiteral(String src) {
         return new IllegalArgumentException(
-            formatMsg("Invalid IP address literal%s", filterNetInfo(src).prefixWith(": ")));
+            formatMsg("Invalid IP address literal%s", filterNonSocketInfo(src).prefixWith(": ")));
     }
 
     /*

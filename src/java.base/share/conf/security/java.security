@@ -1294,21 +1294,13 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #
 # The categories are:
 #
-#  socket   - IOExceptions thrown by the java.net socket types (for example, Socket,
-#             ServerSocket, DatagramSocket) and the NetworkChannel types in the
-#             java.nio.channels package will contain enhanced exception message
-#             information
+#  hostInfo - All networking related exceptions will contain enhanced
+#             exception message information.
 #
-#  addressLookup - UnknownHostExceptions and other exceptions thrown by the
-#             java.net.InetAddress class
-#
-#  net      - All other exceptions thrown in networking code not included
-#             in the categories above. This include URL/URI, NetworkInterface
-#             and URLConnection among others.
-#
-#  hostInfo - Special value which signifies the three categories above combined
-#             (socket, addressLookup, net). This is provided for compatibility
-#             with previous releases.
+#  hostInfoExclSocket - The hostInfo category defined above, excluding
+#             IOExceptions thrown by java.net.Socket and the NetworkChannel
+#             types in the java.nio.channels package, will contain enhanced
+#             exception message information
 #
 #  jar      - enables more detailed information in the IOExceptions thrown
 #             by classes in the java.util.jar package
@@ -1323,7 +1315,8 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # restricted setting with all categories disabled. The following is the default
 # (out of the box) setting, meaning these categories are not restricted.
 #
-jdk.includeInExceptions=addressLookup,net,userInfo
+jdk.includeInExceptions=hostInfoExclSocket
+
 #
 # Disabled mechanisms for the Simple Authentication and Security Layer (SASL)
 #

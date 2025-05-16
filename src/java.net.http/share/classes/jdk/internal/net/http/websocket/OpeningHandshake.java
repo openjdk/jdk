@@ -61,7 +61,7 @@ import java.util.concurrent.CompletableFuture;
 import static java.lang.String.format;
 import static jdk.internal.net.http.common.Utils.isValidName;
 import static jdk.internal.net.http.common.Utils.stringOf;
-import static jdk.internal.util.Exceptions.filterNetInfo;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 import static jdk.internal.util.Exceptions.formatMsg;
 
 public class OpeningHandshake {
@@ -340,11 +340,11 @@ public class OpeningHandshake {
         if (uri.getHost() == null)
             throw new IllegalArgumentException(
                 formatMsg("URI must contain a host%s",
-                          filterNetInfo(uri.toString()).prefixWith(": ")));
+                          filterNonSocketInfo(uri.toString()).prefixWith(": ")));
         if (uri.getFragment() != null)
             throw new IllegalArgumentException(
                 formatMsg("URI must not contain a fragment%s",
-                          filterNetInfo(uri.toString()).prefixWith(": ")));
+                          filterNonSocketInfo(uri.toString()).prefixWith(": ")));
         return uri;
     }
 

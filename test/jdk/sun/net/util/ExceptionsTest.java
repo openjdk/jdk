@@ -26,9 +26,8 @@ import java.util.Arrays;
 import jdk.internal.util.Exceptions;
 import jdk.internal.util.Exceptions.SensitiveInfo;
 import static jdk.internal.util.Exceptions.formatMsg;
-import static jdk.internal.util.Exceptions.filterNetInfo;
-import static jdk.internal.util.Exceptions.enhancedLookupExceptions;
-import static jdk.internal.util.Exceptions.enhancedNetExceptions;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.enhancedNonSocketExceptions;
 
 /*
  * @test
@@ -44,13 +43,13 @@ import static jdk.internal.util.Exceptions.enhancedNetExceptions;
 public class ExceptionsTest {
 
     static boolean netEnabled() {
-        System.out.printf("netEnabled = %b\n", enhancedNetExceptions());
-        return enhancedNetExceptions();
+        System.out.printf("netEnabled = %b\n", enhancedNonSocketExceptions());
+        return enhancedNonSocketExceptions();
     }
 
     static boolean dnsEnabled() {
-        System.out.printf("dnsEnabled = %b\n", enhancedLookupExceptions());
-        return enhancedLookupExceptions();
+        System.out.printf("dnsEnabled = %b\n", enhancedNonSocketExceptions());
+        return enhancedNonSocketExceptions();
     }
 
     static boolean hostFileEnabled() {
@@ -132,7 +131,7 @@ public class ExceptionsTest {
                 var repArg = s.substring(REP.length(), s.indexOf(')'));
                 sa[index-1] = sa[index-1].replaceWith(repArg);
             } else {
-                sa[index++] = filterNetInfo(s);
+                sa[index++] = filterNonSocketInfo(s);
             }
         }
         return Arrays.copyOf(sa, index);

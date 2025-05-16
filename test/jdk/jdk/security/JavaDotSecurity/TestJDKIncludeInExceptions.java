@@ -28,7 +28,7 @@ import java.security.Security;
  * @bug 8207846 8208691
  * @summary Test the default setting of the jdk.net.includeInExceptions
  *          security property
- * @comment In OpenJDK, this property has value "addressLookup,net" by default
+ * @comment In OpenJDK, this property has value "hostInfoExclSocket" by default
  *          This test assures the default is not changed.
  * @run main TestJDKIncludeInExceptions
  */
@@ -36,7 +36,7 @@ public class TestJDKIncludeInExceptions {
 
     public static void main(String args[]) throws Exception {
         String incInExc = Security.getProperty("jdk.includeInExceptions");
-        if (incInExc == null || !incInExc.equals("addressLookup,net,userInfo")) {
+        if (incInExc == null || !incInExc.equals("hostInfoExclSocket")) {
             throw new RuntimeException("Test failed: default value of " +
                 "jdk.includeInExceptions security property does not have expected value: " +
                 incInExc);

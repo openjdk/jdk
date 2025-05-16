@@ -50,9 +50,8 @@ import jdk.internal.misc.VM;
  * as parameters which contain the text that may have to be filtered.
  *
  * The SensitiveInfo objects should be generated with one of the following:
- *     public static SensitiveInfo filterLookupInfo(String host)
  *     public static SensitiveInfo filterSocketInfo(String s)
- *     public static SensitiveInfo filterNetInfo(String s)
+ *     public static SensitiveInfo filterNonSocketInfo(String s)
  *     public static SensitiveInfo filterJarName(String name)
  *     public static SensitiveInfo filterUserName(String name)
  */
@@ -60,8 +59,7 @@ public final class Exceptions {
     private Exceptions() {}
 
     private static volatile boolean enhancedSocketExceptionText;
-    private static volatile boolean enhancedNetExceptionText;
-    private static volatile boolean enhancedLookupExceptionText;
+    private static volatile boolean enhancedNonSocketExceptionText;
     private static volatile boolean enhancedUserExceptionText;
     private static volatile boolean enhancedJarExceptionText;
     private static volatile boolean initialized = false;
@@ -78,9 +76,8 @@ public final class Exceptions {
      * controlled. Consider using a unique value for the
      * SecurityProperties.includedInExceptions(String value) mechanism
      * Current values defined are "socket", "jar", "userInfo"
-     * "net", "addressLookup". The value "hostInfo" exists for
-     * compatibility and is the same as the combination of
-     * "socket,addressLookup,net"
+     * "hostInfo", "hostInfoExclSocket".
+     *
      * New code can also piggy back on existing categories
      *
      * A SensitiveInfo contains the following components
@@ -151,26 +148,14 @@ public final class Exceptions {
         }
     }
 
-    static final class NetInfo extends SensitiveInfo {
-        public NetInfo(String host) {
+    static final class NonSocketInfo extends SensitiveInfo {
+        public NonSocketInfo(String host) {
              super(host);
         }
         @Override
         public String output() {
             setup();
-            return super.output(enhancedNetExceptionText);
-        }
-    }
-
-
-    static final class LookupInfo extends SensitiveInfo {
-        public LookupInfo(String host) {
-             super(host);
-        }
-        @Override
-        public String output() {
-            setup();
-            return super.output(enhancedLookupExceptionText);
+            return super.output(enhancedNonSocketExceptionText);
         }
     }
 
@@ -226,12 +211,8 @@ public final class Exceptions {
         return new SocketInfo(host);
     }
 
-    public static SensitiveInfo filterNetInfo(String host) {
-        return new NetInfo(host);
-    }
-
-    public static SensitiveInfo filterLookupInfo(String host) {
-        return new LookupInfo(host);
+    public static SensitiveInfo filterNonSocketInfo(String host) {
+        return new NonSocketInfo(host);
     }
 
     public static SensitiveInfo filterJarName(String name) {
@@ -268,32 +249,23 @@ public final class Exceptions {
     public static void setup() {
         if (initialized || !VM.isBooted())
             return;
-        // for compatibility
-        var hostCompatFlag = SecurityProperties.includedInExceptions("hostInfo");
-        enhancedSocketExceptionText = SecurityProperties.includedInExceptions("socket")
-                                      | hostCompatFlag;
-        enhancedNetExceptionText = SecurityProperties.includedInExceptions("net")
-                                      | hostCompatFlag;
-        enhancedLookupExceptionText = SecurityProperties.includedInExceptions("addressLookup")
-                                      | hostCompatFlag;
+        enhancedSocketExceptionText = SecurityProperties.includedInExceptions("hostInfo");
+        enhancedNonSocketExceptionText = SecurityProperties.includedInExceptions("hostInfoExclSocket")
+                                      | enhancedSocketExceptionText;
+
         enhancedUserExceptionText = SecurityProperties.includedInExceptions("userInfo");
         enhancedJarExceptionText = SecurityProperties.INCLUDE_JAR_NAME_IN_EXCEPTIONS;
         initialized = true;
     }
 
-    public static boolean enhancedNetExceptions() {
+    public static boolean enhancedNonSocketExceptions() {
         setup();
-        return enhancedNetExceptionText;
+        return enhancedNonSocketExceptionText;
     }
 
     public static boolean enhancedSocketExceptions() {
         setup();
         return enhancedSocketExceptionText;
-    }
-
-    public static boolean enhancedLookupExceptions() {
-        setup();
-        return enhancedLookupExceptionText;
     }
 
     /**

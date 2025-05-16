@@ -69,7 +69,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4_FIRST;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
-import static jdk.internal.util.Exceptions.filterLookupInfo;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
@@ -906,7 +906,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         @Override
         public InetAddress[] get() throws UnknownHostException {
             if (inetAddresses == null) {
-                throw new UnknownHostException(formatMsg("%s", filterLookupInfo(host)));
+                throw new UnknownHostException(formatMsg("%s", filterNonSocketInfo(host)));
             }
             return inetAddresses;
         }
@@ -1100,7 +1100,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     }
                     if (inetAddresses == null || inetAddresses.length == 0) {
                         throw ex == null
-                            ? new UnknownHostException(formatMsg("%s", filterLookupInfo(host)))
+                            ? new UnknownHostException(formatMsg("%s", filterNonSocketInfo(host)))
                             : ex;
                     }
                     return inetAddresses;
@@ -1211,16 +1211,16 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             } catch (IOException e) {
                 throw new UnknownHostException(
                     formatMsg("Unable to resolve address %s as hosts file %s not found",
-                              filterLookupInfo(Arrays.toString(addr)),
-                              filterLookupInfo(hostsFile)
+                              filterNonSocketInfo(Arrays.toString(addr)),
+                              filterNonSocketInfo(hostsFile)
                                    .replaceWith("from ${jdk.net.hosts.file} system property")));
             }
 
             if ((host == null) || (host.isEmpty()) || (host.equals(" "))) {
                 throw new UnknownHostException(
                     formatMsg("Requested address %s resolves to an invalid entry in hosts file %s",
-                              filterLookupInfo(Arrays.toString(addr)),
-                              filterLookupInfo(hostsFile)
+                              filterNonSocketInfo(Arrays.toString(addr)),
+                              filterNonSocketInfo(hostsFile)
                                    .replaceWith("from ${jdk.net.hosts.file} system property")));
             }
             return host;
@@ -1284,7 +1284,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             } catch (IOException e) {
                 throw new UnknownHostException(
                     formatMsg("Unable to resolve host %s as hosts file %s not found",
-                              filterLookupInfo(host), filterLookupInfo(hostsFile)
+                              filterNonSocketInfo(host), filterNonSocketInfo(hostsFile)
                                    .replaceWith("from ${jdk.net.hosts.file} system property")));
 
             }
@@ -1319,7 +1319,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             if (addressesList.isEmpty()) {
                 throw new UnknownHostException(
                     formatMsg("Unable to resolve host %s in hosts file %s",
-                              filterLookupInfo(hostName), filterLookupInfo(hostsFile)
+                              filterNonSocketInfo(hostName), filterNonSocketInfo(hostsFile)
                                    .replaceWith("from ${jdk.net.hosts.file} system property")));
             }
         }
@@ -1557,7 +1557,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     // Here we check the address string for ambiguity only
                     inetAddress = Inet4Address.parseAddressString(host, false);
                 } catch (IllegalArgumentException iae) {
-                    var uhe = new UnknownHostException(formatMsg("%s", filterLookupInfo(host)));
+                    var uhe = new UnknownHostException(formatMsg("%s", filterNonSocketInfo(host)));
                     uhe.initCause(iae);
                     throw uhe;
                 }
@@ -1585,7 +1585,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     private static UnknownHostException invalidIPv6LiteralException(String host, boolean wrapInBrackets) {
         String hostString = wrapInBrackets ? "[" + host + "]" : host;
         return new UnknownHostException(formatMsg("%sinvalid IPv6 address literal",
-                                                  filterLookupInfo(hostString).suffixWith(": ")));
+                                                  filterNonSocketInfo(hostString).suffixWith(": ")));
     }
 
     /**
@@ -1723,7 +1723,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         InetAddress[] result = addresses == null ? null
                 : addresses.toArray(InetAddress[]::new);
         if (result == null || result.length == 0) {
-            throw ex == null ? new UnknownHostException(formatMsg("%s", filterLookupInfo(host)))
+            throw ex == null ? new UnknownHostException(formatMsg("%s", filterNonSocketInfo(host)))
                              : ex;
         }
         return result;
@@ -1797,7 +1797,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             } catch (UnknownHostException uhe) {
                 // Rethrow with a more informative error message.
                     UnknownHostException uhe2 =
-                        new UnknownHostException(formatMsg(filterLookupInfo(local)
+                        new UnknownHostException(formatMsg(filterNonSocketInfo(local)
                                                                .suffixWith(": ") + uhe.getMessage()));
                 uhe2.initCause(uhe);
                 throw uhe2;

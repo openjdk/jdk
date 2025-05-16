@@ -54,7 +54,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static jdk.internal.util.Exceptions.formatMsg;
-import static jdk.internal.util.Exceptions.filterNetInfo;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 
 /**
  * A multicast datagram socket based on a datagram channel.
@@ -493,7 +493,7 @@ public class DatagramSocketAdaptor
         if (ni == null) {
             String address = inf.getHostAddress();
             throw new SocketException(formatMsg("No network interface found with address %s",
-                                                filterNetInfo(address)));
+                                                filterNonSocketInfo(address)));
         }
         synchronized (outgoingInterfaceLock) {
             // set interface and update cached values

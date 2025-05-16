@@ -109,7 +109,7 @@ int getEnhancedExceptionsAllowed(JNIEnv *env) {
     }
     cls = (*env)->FindClass(env, "jdk/internal/util/Exceptions");
     CHECK_NULL_THROW_ERROR(cls);
-    fid = (*env)->GetStaticFieldID(env, cls, "enhancedLookupExceptionText", "Z");
+    fid = (*env)->GetStaticFieldID(env, cls, "enhancedNonSocketExceptionText", "Z");
     CHECK_NULL_THROW_ERROR(fid);
     enhancedExceptionsAllowed = (*env)->GetStaticBooleanField(env, cls, fid);
     enhancedExceptionsInitialized = 1;

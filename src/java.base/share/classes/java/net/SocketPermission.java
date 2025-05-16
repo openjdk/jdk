@@ -46,7 +46,7 @@ import sun.security.util.RegisteredDomain;
 import sun.security.util.SecurityConstants;
 import sun.security.util.Debug;
 
-import static jdk.internal.util.Exceptions.filterNetInfo;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
@@ -395,7 +395,7 @@ public final class SocketPermission extends Permission
                 host = host.substring(start, rb);
             } else {
                 throw new IllegalArgumentException(
-                    formatMsg("invalid host/port%s", filterNetInfo(host).prefixWith(": ")));
+                    formatMsg("invalid host/port%s", filterNonSocketInfo(host).prefixWith(": ")));
             }
             sep = hostport.indexOf(':', rb+1);
         } else {
@@ -413,7 +413,7 @@ public final class SocketPermission extends Permission
                 portrange = parsePort(port);
             } catch (Exception e) {
                 throw new IllegalArgumentException(
-                    formatMsg("invalid port range%s", filterNetInfo(port).prefixWith(": ")));
+                    formatMsg("invalid port range%s", filterNonSocketInfo(port).prefixWith(": ")));
             }
         } else {
             portrange = new int[] { PORT_MIN, PORT_MAX };
@@ -786,7 +786,7 @@ public final class SocketPermission extends Permission
             throw uhe;
         }  catch (IndexOutOfBoundsException iobe) {
             invalid = true;
-            throw new UnknownHostException(formatMsg("%s", filterNetInfo(getName())));
+            throw new UnknownHostException(formatMsg("%s", filterNonSocketInfo(getName())));
         }
     }
 

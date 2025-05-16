@@ -31,7 +31,7 @@ import java.util.Objects;
 import sun.net.util.IPAddressUtil;
 
 import static jdk.internal.util.Exceptions.formatMsg;
-import static jdk.internal.util.Exceptions.filterNetInfo;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 
 /**
  * The abstract class {@code URLStreamHandler} is the common
@@ -209,7 +209,7 @@ public abstract class URLStreamHandler {
                         if (!IPAddressUtil.
                             isIPv6LiteralAddress(host.substring(1, ind))) {
                             throw new IllegalArgumentException(
-                                formatMsg("Invalid host%s", filterNetInfo(host).prefixWith(": ")));
+                                formatMsg("Invalid host%s", filterNonSocketInfo(host).prefixWith(": ")));
                         }
 
                         port = -1 ;
@@ -224,13 +224,13 @@ public abstract class URLStreamHandler {
                             } else {
                                 throw new IllegalArgumentException(
                                     formatMsg("Invalid authority field%s",
-                                               filterNetInfo(authority).prefixWith(": ")));
+                                               filterNonSocketInfo(authority).prefixWith(": ")));
                             }
                         }
                     } else {
                         throw new IllegalArgumentException(
                             formatMsg("Invalid authority field%s",
-                                       filterNetInfo(authority).prefixWith(": ")));
+                                       filterNonSocketInfo(authority).prefixWith(": ")));
                     }
                 } else {
                     ind = host.indexOf(':');

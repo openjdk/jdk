@@ -45,7 +45,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.Exceptions;
 import sun.nio.cs.UTF_8;
 
-import static jdk.internal.util.Exceptions.filterNetInfo;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
@@ -2036,7 +2036,7 @@ public final class URI
     {
         if (scheme != null) {
             if (path != null && !path.isEmpty() && path.charAt(0) != '/')
-                throw new URISyntaxException(formatMsg("%s", filterNetInfo(s)),
+                throw new URISyntaxException(formatMsg("%s", filterNonSocketInfo(s)),
                                              "Relative path in absolute URI");
         }
     }
@@ -2993,14 +2993,14 @@ public final class URI
         // -- Methods for throwing URISyntaxException in various ways --
 
         private void fail(String reason) throws URISyntaxException {
-            throw new URISyntaxException(formatMsg("%s", filterNetInfo(input)), reason);
+            throw new URISyntaxException(formatMsg("%s", filterNonSocketInfo(input)), reason);
         }
 
         private void fail(String reason, int p) throws URISyntaxException {
-            if (!Exceptions.enhancedNetExceptions()) {
+            if (!Exceptions.enhancedNonSocketExceptions()) {
                 p = -1;
             }
-            throw new URISyntaxException(formatMsg("%s", filterNetInfo(input)), reason, p);
+            throw new URISyntaxException(formatMsg("%s", filterNonSocketInfo(input)), reason, p);
         }
 
         private void failExpecting(String expected, int p)

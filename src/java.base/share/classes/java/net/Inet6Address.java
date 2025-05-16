@@ -35,7 +35,7 @@ import java.io.ObjectStreamField;
 import java.util.Enumeration;
 import java.util.Arrays;
 import java.util.Objects;
-import static jdk.internal.util.Exceptions.filterLookupInfo;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
@@ -585,7 +585,7 @@ class Inet6Address extends InetAddress {
                 // IPv4-mapped address must not contain zone-id
                 throw new UnknownHostException(
                     formatMsg("%sinvalid IPv4-mapped address",
-                              filterLookupInfo(addressLiteral).suffixWith(": ")));
+                              filterNonSocketInfo(addressLiteral).suffixWith(": ")));
             }
             return new Inet4Address(null, addrBytes);
         }

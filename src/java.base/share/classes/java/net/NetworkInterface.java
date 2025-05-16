@@ -34,7 +34,7 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import static jdk.internal.util.Exceptions.filterNetInfo;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
 import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
@@ -326,7 +326,8 @@ public final class NetworkInterface {
             }
         } else {
             throw new IllegalArgumentException(
-                formatMsg("invalid address type%s", filterNetInfo(addr.toString()).prefixWith(": ")));
+                formatMsg("invalid address type%s",
+                          filterNonSocketInfo(addr.toString()).prefixWith(": ")));
         }
         return getByInetAddress0(addr);
     }
