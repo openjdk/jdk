@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class LambdaWithJavaAgent {
 
         // run with archive
         CDSOptions runOpts = (new CDSOptions())
-            .addPrefix("-cp", appJar, "-Xlog:class+load,cds=debug",
+            .addPrefix("-cp", appJar, "-Xlog:class+load=debug,cds=debug,class+path=debug",
                        "-XX:+UnlockDiagnosticVMOptions",
                        "-XX:+AllowArchivingWithJavaAgent",
                        useJavaAgent)

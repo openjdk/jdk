@@ -41,7 +41,7 @@ public class AddopensOption {
         final String moduleOption = "jdk.httpserver/sun.net.httpserver.simpleserver.Main";
         final String addOpensNio = "java.base/java.nio=ALL-UNNAMED";
         final String addOpensTimeFormat = "java.base/java.time.format=ALL-UNNAMED";
-        final String loggingOption = "-Xlog:cds=debug,cds+module=debug,cds+heap=info,module=trace";
+        final String loggingOption = "-Xlog:aot=debug,cds+module=debug,aot+heap=info,cds=debug,module=trace";
         final String versionPattern = "java.[0-9][0-9].*";
         final String subgraphCannotBeUsed = "subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled";
         final String warningIncubator = "WARNING: Using incubator modules: jdk.incubator.vector";

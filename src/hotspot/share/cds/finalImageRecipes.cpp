@@ -181,9 +181,9 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
         Klass* actual = SystemDictionary::resolve_or_fail(ik->name(), class_loader, true, CHECK);
         if (actual != ik) {
           ResourceMark rm(THREAD);
-          log_error(cds)("Unable to resolve class from CDS archive: %s", ik->external_name());
-          log_error(cds)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(ik), p2i(actual));
-          log_error(cds)("Please check if your VM command-line is the same as in the training run");
+          log_error(aot)("Unable to resolve class from CDS archive: %s", ik->external_name());
+          log_error(aot)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(ik), p2i(actual));
+          log_error(aot)("Please check if your VM command-line is the same as in the training run");
           MetaspaceShared::unrecoverable_writing_error();
         }
         assert(ik->is_loaded(), "must be");
@@ -205,9 +205,9 @@ void FinalImageRecipes::apply_recipes(TRAPS) {
   if (_final_image_recipes != nullptr) {
     _final_image_recipes->apply_recipes_impl(THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+      log_error(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
-      log_error(cds)("Please check if your VM command-line is the same as in the training run");
+      log_error(aot)("Please check if your VM command-line is the same as in the training run");
       MetaspaceShared::unrecoverable_writing_error("Unexpected exception, use -Xlog:cds,exceptions=trace for detail");
     }
   }

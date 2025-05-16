@@ -83,10 +83,10 @@ void LambdaFormInvokers::append(char* line) {
 class PrintLambdaFormMessage {
  public:
   PrintLambdaFormMessage() {
-    log_info(cds)("Regenerate MethodHandle Holder classes...");
+    log_info(aot)("Regenerate MethodHandle Holder classes...");
   }
   ~PrintLambdaFormMessage() {
-    log_info(cds)("Regenerate MethodHandle Holder classes...done");
+    log_info(aot)("Regenerate MethodHandle Holder classes...done");
   }
 };
 
@@ -114,7 +114,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
 
   PrintLambdaFormMessage plm;
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
-    log_info(cds)("Nothing to regenerate for holder classes");
+    log_info(aot)("Nothing to regenerate for holder classes");
     return;
   }
 
@@ -153,9 +153,9 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
       log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
       if (CDSConfig::is_dumping_static_archive()) {
-        log_error(cds)("Failed to generate LambdaForm holder classes. Is your classlist out of date?");
+        log_error(aot)("Failed to generate LambdaForm holder classes. Is your classlist out of date?");
       } else {
-        log_error(cds)("Failed to generate LambdaForm holder classes. Was the base archive generated with an outdated classlist?");
+        log_error(aot)("Failed to generate LambdaForm holder classes. Was the base archive generated with an outdated classlist?");
       }
       CLEAR_PENDING_EXCEPTION;
     }
@@ -226,7 +226,7 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   if (!klass->is_shared()) {
     SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
   }
-  log_info(cds, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
+  log_info(aot, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
                  class_name, p2i(klass), p2i(result));
 }
 
@@ -256,7 +256,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
       }
       assert(index == count, "Should match");
     }
-    log_debug(cds)("Total LF lines stored into %s: %d", CDSConfig::type_of_archive_being_written(), count);
+    log_debug(aot)("Total LF lines stored into %s: %d", CDSConfig::type_of_archive_being_written(), count);
   }
 }
 
@@ -268,7 +268,7 @@ void LambdaFormInvokers::read_static_archive_invokers() {
       char* str = line->adr_at(0);
       append(str);
     }
-    log_debug(cds)("Total LF lines read from %s: %d", CDSConfig::type_of_archive_being_loaded(), _static_archive_invokers->length());
+    log_debug(aot)("Total LF lines read from %s: %d", CDSConfig::type_of_archive_being_loaded(), _static_archive_invokers->length());
   }
 }
 

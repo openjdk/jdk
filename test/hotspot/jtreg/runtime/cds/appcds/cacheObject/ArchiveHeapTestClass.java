@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class ArchiveHeapTestClass {
         extraOpts = TestCommon.concat(extraOpts,
                                       "-Xbootclasspath/a:" + bootJar,
                                       "-XX:ArchiveHeapTestClass=" + bootClass,
-                                      "-Xlog:cds+heap");
+                                      "-Xlog:aot+heap");
         return TestCommon.dump(appJar, classlist, extraOpts);
     }
 
@@ -109,13 +109,13 @@ public class ArchiveHeapTestClass {
         testCase("Simple positive case");
         output = dumpBootAndHello(CDSTestClassA_name);
         mustSucceed(output, CDSTestClassA.getOutput()); // make sure <clinit> is executed
-        output.shouldMatch("warning.*cds.*Loading ArchiveHeapTestClass " + CDSTestClassA_name);
-        output.shouldMatch("warning.*cds.*Initializing ArchiveHeapTestClass " + CDSTestClassA_name);
+        output.shouldMatch("warning.*aot.*Loading ArchiveHeapTestClass " + CDSTestClassA_name);
+        output.shouldMatch("warning.*aot.*Initializing ArchiveHeapTestClass " + CDSTestClassA_name);
         output.shouldContain("Archived field " + CDSTestClassA_name + "::" + ARCHIVE_TEST_FIELD_NAME);
         output.shouldMatch("Archived object klass CDSTestClassA .*\\[LCDSTestClassA;");
         output.shouldMatch("Archived object klass CDSTestClassA .*CDSTestClassA\\$YY");
 
-        TestCommon.run("-Xbootclasspath/a:" + bootJar, "-cp", appJar, "-Xlog:cds+heap", CDSTestClassA_name)
+        TestCommon.run("-Xbootclasspath/a:" + bootJar, "-cp", appJar, "-Xlog:aot+heap", CDSTestClassA_name)
             .assertNormalExit(CDSTestClassA.getOutput(),
                               "resolve subgraph " + CDSTestClassA_name);
 
@@ -169,7 +169,7 @@ public class ArchiveHeapTestClass {
         output = dumpBootAndHello(CDSTestClassG_name, "-XX:+AOTClassLinking", "-Xlog:cds+class=debug");
         mustSucceed(output);
 
-        TestCommon.run("-Xbootclasspath/a:" + bootJar, "-cp", appJar, "-Xlog:cds+heap,cds+init",
+        TestCommon.run("-Xbootclasspath/a:" + bootJar, "-cp", appJar, "-Xlog:aot+heap,cds+init",
                        CDSTestClassG_name)
             .assertNormalExit("init subgraph " + CDSTestClassG_name,
                               "Initialized from CDS");
