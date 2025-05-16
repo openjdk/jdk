@@ -5769,7 +5769,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
 
   int injected_fields_count = _temp_field_info->length() - _java_fields_count;
   _fieldinfo_stream =
-    FieldInfoStream::create_FieldInfoStream(_temp_field_info, _java_fields_count,
+    FieldInfoStream::create_FieldInfoStream(_cp, _temp_field_info, _java_fields_count,
                                             injected_fields_count, loader_data(), CHECK);
   _fields_status =
     MetadataFactory::new_array<FieldStatus>(_loader_data, _temp_field_info->length(),

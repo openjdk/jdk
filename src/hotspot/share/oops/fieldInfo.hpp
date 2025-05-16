@@ -220,29 +220,26 @@ public:
   void map_field_info(const FieldInfo& fi);
 };
 
-
 // Gadget for decoding and reading the stream of field records.
 class FieldInfoReader {
-  friend class FieldInfoStream;
-  friend class ClassFileParser;
-  friend class FieldStreamBase;
-  friend class FieldInfo;
-
   UNSIGNED5::Reader<const u1*, int> _r;
   int _next_index;
 
-  public:
+public:
   FieldInfoReader(const Array<u1>* fi);
 
-  private:
-  uint32_t next_uint() { return _r.next_uint(); }
+private:
   void skip(int n) { int s = _r.try_skip(n); assert(s == n,""); }
 
 public:
-  int has_next() { return _r.has_next(); }
-  int position() { return _r.position(); }
-  int next_index() { return _next_index; }
+  void read_field_counts(int *java_fields, int *injected_fields);
+  int has_next() const { return _r.position() < _r.limit(); }
+  int position() const { return _r.position(); }
+  int next_index() const { return _next_index; }
   void read_field_info(FieldInfo& fi);
+
+  int sorted_table_lookup(const Symbol *name, const Symbol *signature, ConstantPool *cp, int java_fields);
+
   // skip a whole field record, both required and optional bits
   FieldInfoReader&  skip_field_info();
 
@@ -257,7 +254,8 @@ public:
 // The format of the stream, after decompression, is a series of
 // integers organized like this:
 //
-//   FieldInfoStream := j=num_java_fields k=num_injected_fields Field[j+k] End
+//   FieldInfoStream := j=num_java_fields k=num_injected_fields SortedFieldTable_offset(0/4 bytes) Field[j+k] SortedFieldRecord[j] End
+//   SortedFieldRecord := stream_position(2-3 bytes) field_index(1-2 bytes)
 //   Field := name sig offset access flags Optionals(flags)
 //   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
 //                   gsig?[i&is_generic]     // signature attr
@@ -271,11 +269,16 @@ class FieldInfoStream : AllStatic {
   friend class ClassFileParser;
 
  public:
+  // Don't generate the table for small classes at all.
+  static const int SORTED_FIELD_TABLE_THRESHOLD = 16;
+
   static int num_java_fields(const Array<u1>* fis);
   static int num_injected_java_fields(const Array<u1>* fis);
   static int num_total_fields(const Array<u1>* fis);
 
-  static Array<u1>* create_FieldInfoStream(GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
+  static int compare_symbols(const Symbol *s1, const Symbol *s2);
+
+  static Array<u1>* create_FieldInfoStream(ConstantPool* constants, GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
                                                           ClassLoaderData* loader_data, TRAPS);
   static GrowableArray<FieldInfo>* create_FieldInfoArray(const Array<u1>* fis, int* java_fields_count, int* injected_fields_count);
   static void print_from_fieldinfo_stream(Array<u1>* fis, outputStream* os, ConstantPool* cp);

@@ -43,7 +43,7 @@ FieldStreamBase::FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool
   initialize();
 }
 
-FieldStreamBase::FieldStreamBase(Array<u1>* fieldinfo_stream, ConstantPool* constants) :
+FieldStreamBase::FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants) :
         _fieldinfo_stream(fieldinfo_stream),
         _reader(FieldInfoReader(_fieldinfo_stream)),
         _constants(constantPoolHandle(Thread::current(), constants)),
@@ -60,6 +60,25 @@ FieldStreamBase::FieldStreamBase(InstanceKlass* klass) :
          _limit(FieldInfoStream::num_total_fields(_fieldinfo_stream)) {
   assert(klass == field_holder(), "");
   initialize();
+}
+
+inline bool JavaFieldStream::lookup(const Symbol *name, const Symbol *signature) {
+  if (_limit > FieldInfoStream::SORTED_FIELD_TABLE_THRESHOLD) {
+    int index = _reader.sorted_table_lookup(name, signature, _constants(), _limit);
+    if (index >= 0) {
+      assert(index < _limit, "must be");
+      _index = index;
+      _reader.read_field_info(_fi_buf);
+      return true;
+    }
+  } else {
+    for (; !done(); next()) {
+      if (this->name() == name && this->signature() == signature) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 #endif // SHARE_OOPS_FIELDSTREAMS_INLINE_HPP
