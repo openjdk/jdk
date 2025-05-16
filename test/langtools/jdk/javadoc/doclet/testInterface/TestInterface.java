@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4682448 4947464 5029946 8025633 8026567 8035473 8139101 8175200
-             8186332 8186703 8182765 8187288 8261976 8303349 8319988
+             8186332 8186703 8182765 8187288 8261976 8303349 8319988 8350920
  * @summary  Verify that the public modifier does not show up in the
  *           documentation for public methods, as recommended by the JLS.
  *           If A implements I and B extends A, B should be in the list of
@@ -211,7 +211,40 @@ public class TestInterface extends JavadocTester {
                 OfDouble</a>, <a href="Spliterator.OfInt.html" title="interface in pkg2">Spliter\
                 ator.OfInt</a>&lt;Integer&gt;, <a href="Spliterator.OfPrimitive.html" title="int\
                 erface in pkg2">Spliterator.OfPrimitive</a>&lt;T,<wbr>T_CONS,<wbr>T_SPLITR&gt;</\
-                code></div>""");
+                code>
+                <div class="summary-table three-column-summary">
+                <div class="table-header col-first">Modifier and Type</div>
+                <div class="table-header col-second">Interface</div>
+                <div class="table-header col-last">Description</div>
+                <div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
+                <div class="col-second even-row-color"><code><a href="Spliterator.OfDouble.html"\
+                 class="type-name-link" title="interface in pkg2">Spliterator.OfDouble</a></code\
+                ></div>
+                <div class="col-last even-row-color">&nbsp;</div>
+                <div class="col-first odd-row-color"><code>static interface&nbsp;</code></div>
+                <div class="col-second odd-row-color"><code><a href="Spliterator.OfInt.html" cla\
+                ss="type-name-link" title="interface in pkg2">Spliterator.OfInt</a>&lt;<a href="\
+                Spliterator.OfInt.html#type-param-Integer" title="type parameter in Spliterator.\
+                OfInt">Integer</a>&gt;</code></div>
+                <div class="col-last odd-row-color">&nbsp;</div>
+                <div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
+                <div class="col-second even-row-color"><code><a href="Spliterator.OfPrimitive.ht\
+                ml" class="type-name-link" title="interface in pkg2">Spliterator.OfPrimitive</a>\
+                &lt;<a href="Spliterator.OfPrimitive.html#type-param-T" title="type parameter in\
+                 Spliterator.OfPrimitive">T</a>, <a href="Spliterator.OfPrimitive.html#type-para\
+                m-T_CONS" title="type parameter in Spliterator.OfPrimitive">T_CONS</a>, <a href\
+                ="Spliterator.OfPrimitive.html#type-param-T_SPLITR" title="type parameter in Sp\
+                literator.OfPrimitive">T_SPLITR</a> extends <a href="Spliterator.OfPrimitive.ht\
+                ml" title="interface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Spliterat\
+                or.OfPrimitive.html#type-param-T" title="type parameter in Spliterator.OfPrimit\
+                ive">T</a>,<wbr><a href="Spliterator.OfPrimitive.html#type-param-T_CONS" title=\
+                "type parameter in Spliterator.OfPrimitive">T_CONS</a>,<wbr><a href="Spliterato\
+                r.OfPrimitive.html#type-param-T_SPLITR" title="type parameter in Spliterator.Of\
+                Primitive">T_SPLITR</a>&gt;&gt;</code></div>
+                <div class="col-last even-row-color">&nbsp;</div>
+                </div>
+                </div>
+                </section>""");
         checkOutput("pkg2/Spliterator.html", true,
             """
                 <div class="caption"><span>Nested Classes</span></div>
