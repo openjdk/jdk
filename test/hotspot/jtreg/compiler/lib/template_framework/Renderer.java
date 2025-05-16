@@ -43,8 +43,25 @@ class Renderer {
     private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#([a-zA-Z_][a-zA-Z0-9_]*)");
 
     /**
-     * There can be at most one Renderer instance at any time. This is to avoid that users accidentally
-     * render templates to strings, rather than letting them all render together.
+     * There can be at most one Renderer instance at any time.
+     *
+     * When using nested templates, the user of the Template Framework may be tempted to first render
+     * the nested template to a {@link String}, and then use this {@link String} as a token in an outer
+     * {@link Template#body}. This would be a bad pattern: the outer and nested {@link Template} would
+     * be rendered separately, and could not interact. For example, the nested {@link Template} would
+     * not have access to the scopes of the outer {@link Template}. The inner {@link Template} could
+     * not access {@link Name}s and {@link Hook}s from the outer {@link Template}. The user might assume
+     * that the inner {@link Template} has access to the outer {@link Template}, but they would actually
+     * be separated. This could lead to unexpected behavior or even bugs.
+     *
+     * Instead, the user should create a {@link TemplateToken} from the inner {@link Template}, and
+     * use that {@link TemplateToken} in the {@link Template#body} of the outer {@link Template}.
+     * This way, the inner and outer {@link Template}s get rendered together, and the inner {@link Template}
+     * has access to the {@link Name}s and {@link Hook}s of the outer {@link Template}.
+     *
+     * The {@link Renderer} instance exists during the whole rendering process. Should the user ever
+     * attempt to render a nested {@link Template} to a {@link String}, we would detect that there is
+     * already a {@link Renderer} instance for the outer {@link Template}, and throw a {@link RendererException}.
      */
     private static Renderer renderer = null;
 
