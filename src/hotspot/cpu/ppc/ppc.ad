@@ -13164,6 +13164,19 @@ instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_pipe(pipe_class_default);
 %}
 
+instruct minL_reg_reg_isel(iRegLdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 cr0) %{
+  match(Set dst (MinL src1 src2));
+  effect(KILL cr0);
+  predicate(VM_Version::has_isel());
+  ins_cost(DEFAULT_COST*2);
+
+  ins_encode %{
+    __ cmpd(CR0, $src1$$Register, $src2$$Register);
+    __ isel($dst$$Register, CR0, Assembler::less, /*invert*/false, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct maxI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   match(Set dst (MaxI src1 src2));
   ins_cost(DEFAULT_COST*6);
@@ -13192,6 +13205,19 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
 
   ins_encode %{
     __ cmpw(CR0, $src1$$Register, $src2$$Register);
+    __ isel($dst$$Register, CR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxL_reg_reg_isel(iRegLdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 cr0) %{
+  match(Set dst (MaxL src1 src2));
+  effect(KILL cr0);
+  predicate(VM_Version::has_isel());
+  ins_cost(DEFAULT_COST*2);
+
+  ins_encode %{
+    __ cmpd(CR0, $src1$$Register, $src2$$Register);
     __ isel($dst$$Register, CR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
