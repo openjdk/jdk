@@ -537,7 +537,7 @@ void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
 template <typename E, typename Derived>
 void GrowableArrayWithAllocator<E, Derived>::grow(int j) {
   // grow the array by increasing _capacity to the first power of two larger than the size we need
-  expand_to(next_power_of_2(j));
+  expand_to(next_power_of_2(MAX2(j, 4)));
 }
 
 template <typename E, typename Derived>
@@ -754,13 +754,21 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
   }
 
 public:
-  GrowableArray() : GrowableArray(2 /* initial_capacity */) {}
+  GrowableArray() : GrowableArrayWithAllocator<E, GrowableArray>(nullptr, 0), _metadata() {
+    init_checks();
+  }
 
   explicit GrowableArray(int initial_capacity) :
       GrowableArrayWithAllocator<E, GrowableArray>(
           allocate(initial_capacity),
           initial_capacity),
       _metadata() {
+    init_checks();
+  }
+
+  explicit GrowableArray(MemTag mem_tag) :
+      GrowableArrayWithAllocator<E, GrowableArray>(nullptr, 0),
+      _metadata(mem_tag) {
     init_checks();
   }
 
@@ -825,7 +833,9 @@ class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHe
   }
 
 public:
-  GrowableArrayCHeap(int initial_capacity = 0) :
+  GrowableArrayCHeap() : GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT>>(nullptr, 0) {}
+
+  explicit GrowableArrayCHeap(int initial_capacity) :
       GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> >(
           allocate(initial_capacity, MT),
           initial_capacity) {}
