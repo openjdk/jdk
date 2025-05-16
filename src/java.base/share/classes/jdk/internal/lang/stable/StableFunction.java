@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-// Note: It would be possible to just use `LazyMap::get` with some additional logic
+// Note: It would be possible to just use `StableMap::get` with some additional logic
 // instead of this class but explicitly providing a class like this provides better
 // debug capability, exception handling, and may provide better performance.
 /**

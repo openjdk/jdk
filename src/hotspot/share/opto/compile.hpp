@@ -308,6 +308,7 @@ class Compile : public Phase {
   InlineTree*           _ilt;                   // Ditto (temporary).
   address               _stub_function;         // VM entry for stub being compiled, or null
   const char*           _stub_name;             // Name of stub or adapter being compiled, or null
+  int                   _stub_id;               // unique id for stub or -1
   address               _stub_entry_point;      // Compile code entry for generated stub, or null
 
   // Control of this compilation.
@@ -570,6 +571,7 @@ public:
   InlineTree*       ilt() const                 { return _ilt; }
   address           stub_function() const       { return _stub_function; }
   const char*       stub_name() const           { return _stub_name; }
+  int               stub_id() const             { return _stub_id; }
   address           stub_entry_point() const    { return _stub_entry_point; }
   void          set_stub_entry_point(address z) { _stub_entry_point = z; }
 
@@ -673,13 +675,13 @@ public:
   void init_igv();
   void dump_igv(const char* graph_name, int level = 3) {
     if (should_print_igv(level)) {
-      _igv_printer->print_graph(graph_name);
+      _igv_printer->print_graph(graph_name, nullptr);
     }
   }
 
-  void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
-  void igv_print_method_to_network(const char* phase_name = "Debug");
-  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes);
+  void igv_print_method_to_file(const char* phase_name = nullptr, bool append = false, const frame* fr = nullptr);
+  void igv_print_method_to_network(const char* phase_name = nullptr, const frame* fr = nullptr);
+  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, const frame* fr);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
@@ -1140,7 +1142,7 @@ public:
   // convention.
   Compile(ciEnv* ci_env, const TypeFunc *(*gen)(),
           address stub_function, const char *stub_name,
-          int is_fancy_jump, bool pass_tls,
+          int stub_id, int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
 
   ~Compile();

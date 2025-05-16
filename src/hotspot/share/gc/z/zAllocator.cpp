@@ -39,10 +39,6 @@ ZAllocatorEden::ZAllocatorEden()
   ZAllocator::_eden = this;
 }
 
-size_t ZAllocatorEden::tlab_used() const {
-  return _object_allocator.used();
-}
-
 size_t ZAllocatorEden::remaining() const {
   return _object_allocator.remaining();
 }
