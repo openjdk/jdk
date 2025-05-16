@@ -3616,7 +3616,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             // Find out whether any one-bits were shifted off the end.
             int nzInts = numberOfTrailingZeroInts();
             if (nInts > nzInts || nInts == nzInts
-                    && nBits > Integer.numberOfTrailingZeros(magLen - 1 - nzInts)) {
+                    && nBits > Integer.numberOfTrailingZeros(mag[magLen - 1 - nzInts])) {
                 newMag = javaIncrement(newMag);
             }
         }
