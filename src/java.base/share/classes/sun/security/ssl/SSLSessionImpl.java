@@ -256,6 +256,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     /**
+     * Re-assemble new session ticket.
+     * <p>
      * < 2 bytes > protocolVersion
      * < 2 bytes > cipherSuite
      * < 1 byte > localSupportedSignAlgs entries

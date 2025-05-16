@@ -25,12 +25,18 @@
 
 package sun.security.ssl;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -223,6 +229,20 @@ final class SessionTicketExtension {
                 if (data.length == 0) {
                     return data;
                 }
+
+                // Compress the session before encryption.
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        GZIPOutputStream gos = new GZIPOutputStream(baos)) {
+                    final int uncompressedLen = data.length;
+                    gos.write(data, 0, uncompressedLen);
+                    gos.finish();
+                    data = baos.toByteArray();
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.fine("uncompressed bytes: " + uncompressedLen
+                                + "; compressed bytes: " + data.length);
+                    }
+                }
+
                 encrypted = c.doFinal(data);
                 byte[] result = new byte[encrypted.length + Integer.BYTES +
                         iv.length];
@@ -242,7 +262,7 @@ final class SessionTicketExtension {
             }
         }
 
-        ByteBuffer decrypt(HandshakeContext hc) {
+        ByteBuffer decrypt(HandshakeContext hc) throws IOException {
             int keyID;
             byte[] iv;
             try {
@@ -268,6 +288,26 @@ final class SessionTicketExtension {
                 out = ByteBuffer.allocate(data.remaining() - GCM_TAG_LEN / 8);
                 c.doFinal(data, out);
                 out.flip();
+
+                // Uncompress the session after decryption.
+                final int compressedLen = out.remaining();
+                byte[] bytes = new byte[compressedLen];
+                out.get(bytes);
+                try (final GZIPInputStream gis = new GZIPInputStream(
+                        new ByteArrayInputStream(bytes))) {
+                    final byte[] tmp = new byte[compressedLen * 3];
+                    int count = 0;
+                    int b;
+                    while ((b = gis.read()) >= 0) {
+                        tmp[count++] = (byte) b;
+                    }
+                    out = ByteBuffer.wrap(Arrays.copyOf(tmp, count));
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.fine("compressed bytes: " + compressedLen
+                                + "; uncompressed bytes: " + out.remaining());
+                    }
+                }
+
                 return out;
             } catch (Exception e) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {

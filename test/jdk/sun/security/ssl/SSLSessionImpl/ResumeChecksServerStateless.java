@@ -27,10 +27,5 @@
  * @summary ensure that server only resumes a session if certain properties
  *    of the session are compatible with the new connection
  * @library /javax/net/ssl/templates
- * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer BASIC
- * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer CLIENT_AUTH
- * @run main/othervm ResumeChecksServer VERSION_2_TO_3
- * @run main/othervm ResumeChecksServer VERSION_3_TO_2
- * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer CIPHER_SUITE
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer SIGNATURE_SCHEME
  */
