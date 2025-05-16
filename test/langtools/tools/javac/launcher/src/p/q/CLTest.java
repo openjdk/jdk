@@ -44,28 +44,37 @@ import java.util.spi.ToolProvider;
 public class CLTest {
     public static void main(String... args) throws Exception {
         try {
-            ServiceLoader.load(ToolProvider.class, CLTest.class.getClassLoader()).stream()
-                    .map(ServiceLoader.Provider::get)
-                    .filter(toolProvider -> toolProvider.name().equals("Tool"))
-                    .findFirst()
-                    .orElseThrow();
-
-            new CLTest().run();
+            var test = new CLTest();
+            test.loadToolProviderByName(); // run first to create Tool.class
+            test.getGetResources();
         } catch (Throwable t) {
             t.printStackTrace();
             System.exit(1);
         }
     }
 
-    void run() throws Exception {
+    void loadToolProviderByName() {
+        ServiceLoader.load(ToolProvider.class).stream()
+                .map(ServiceLoader.Provider::get)
+                .filter(toolProvider -> toolProvider.name().equals("Tool"))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    void getGetResources() throws Exception {
         String[] names = {
+            // scheme -> file:
                 "Tool.java",
-                "Tool.class",
                 "p/q/CLTest.java",
+                "META-INF/services/java.util.spi.ToolProvider",
+            // scheme -> sourcelauncher-memoryclassloaderNNN:
+                "Tool.class",
                 "p/q/CLTest.class",
                 "p/q/CLTest$Inner.class",
                 "p/q/CLTest2.class",
+            // scheme -> jrt:
                 "java/lang/Object.class",
+            // no scheme applicable
                 "UNKNOWN.class",
                 "UNKNOWN"
         };
@@ -110,6 +119,14 @@ public class CLTest {
             List<URL> list = new ArrayList<>();
             while (e.hasMoreElements()) {
                 list.add(e.nextElement());
+            }
+
+            if (name.contains("META-INF")) {
+                if (list.size() == 0) {
+                    error("resource not found: " + name);
+                }
+                // one or more resources found, as expected
+                return;
             }
 
             switch (list.size()) {
