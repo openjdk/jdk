@@ -439,7 +439,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
 
         /**
-         * Invoked by the {@link QuicSelector} when this channel
+         * Invoked by the {@link QuicSelector} when this endpoint's channel
          * is selected.
          *
          * @param readyOps The operations that are ready for this endpoint.
@@ -729,13 +729,30 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         // we can't prevent incoming datagram from being received
         // at this level of the stack. If there is a datagram available,
         // we must read it immediately and put it in the read queue.
-        // Flow control, which is implemented at the higher level,
-        // should ensure that the queue does not overflow.
         //
-        // At the moment we have a single endpoint, a single
-        // channel, and a single selector thread, so we can do
-        // the reading directly in the selector thread and offload
-        // the parsing (the readLoop) to the executor.
+        // We maintain a counter of the number of bytes currently
+        // in the read queue. If that number exceeds a high watermark
+        // threshold, we will pause reading, and thus stop adding
+        // to the queue.
+        //
+        // As the read queue gets emptied, reading will be resumed
+        // when a low watermark threshold is crossed in the other
+        // direction.
+        //
+        // At the moment we have a single channel per endpoint,
+        // and we're using a single endpoint by default.
+        //
+        // We have a single selector thread, and we copy off
+        // the data from off-heap to on-heap before adding it
+        // to the queue.
+        //
+        // We can therefore do the reading directly in the
+        // selector thread and offload the parsing (the readLoop)
+        // to the executor.
+        //
+        // The readLoop will in turn resume the reading, if needed,
+        // when it crosses the low watermark threshold.
+        //
         boolean nonBlocking = channelType() == NON_BLOCKING_WITH_SELECTOR;
         int count;
         final var buffer = this.receiveBuffer;
@@ -744,7 +761,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         // if blocking we want to nudge the scheduler after each read since we don't
         // know how much the next receive will take. If non-blocking, we nudge it
         // after three consecutive read.
-        final int maxBeforeStart = nonBlocking ? 3 : 1; // nudge again it after 3 buffers
+        final int maxBeforeStart = nonBlocking ? 3 : 1; // nudge again after 3 buffers
         int readLoopStarted = initialStart;
         int totalpkt = 0;
         try {
@@ -758,10 +775,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 assert limit > pos;
 
                 final SocketAddress source = channel.receive(buffer);
+                assert source != null || !channel.isBlocking();
                 if (source == null) {
                     if (debug.on()) debug.log("nothing to read...");
                     if (nonBlocking) break;
-                    assert channel.isBlocking();
                 }
 
                 totalpkt++;
@@ -818,9 +835,14 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                             sincepkt = 0;
                         }
                     }
+                    // check buffered.get() directly as it may have
+                    // been decremented by the read loop already
                     if (this.buffered.get() >= MAX_BUFFERED_HIGH) {
+                        // we passed the high watermark, let's pause reading.
+                        // the read loop should already have been kicked
+                        // of above, or will be below when we exit the while
+                        // loop
                         pauseReading();
-                        readLoopScheduler.runOrSchedule(executor);
                     }
                 } else {
                     if (debug.on()) debug.log("Dropped empty datagram");

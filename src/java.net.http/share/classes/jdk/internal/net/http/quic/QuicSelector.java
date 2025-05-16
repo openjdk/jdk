@@ -303,8 +303,13 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
         }
 
         /**
-         * Shuts down the {@code QuicSelector} by invoking {@link Selector#close()}.
-         * This method doesn't wait for the selctor thread to terminate.
+         * Shuts down the {@code QuicSelector} by marking the
+         * {@linkplain QuicSelector#shutdown() selector done},
+         * and {@linkplain Selector#wakeup() waking up the
+         * selector thread}.
+         * Upon waking up, the selector thread will invoke
+         * {@link Selector#close()}.
+         * This method doesn't wait for the selector thread to terminate.
          * @see #awaitTermination(long, TimeUnit)
          */
         public void shutdown() {
