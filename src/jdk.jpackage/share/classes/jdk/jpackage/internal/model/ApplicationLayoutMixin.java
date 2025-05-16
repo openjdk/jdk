@@ -49,7 +49,7 @@ public interface ApplicationLayoutMixin {
     /**
      * Path to directory with application's desktop integration files.
      */
-    Path destktopIntegrationDirectory();
+    Path desktopIntegrationDirectory();
 
     /**
      * Path to directory with additional application content.
@@ -59,6 +59,6 @@ public interface ApplicationLayoutMixin {
     /**
      * Default implementation of {@link ApplicationLayoutMixin} interface.
      */
-    record Stub(Path launchersDirectory, Path appDirectory, Path appModsDirectory, Path destktopIntegrationDirectory, Path contentDirectory) implements ApplicationLayoutMixin {
+    record Stub(Path launchersDirectory, Path appDirectory, Path appModsDirectory, Path desktopIntegrationDirectory, Path contentDirectory) implements ApplicationLayoutMixin {
     }
 }

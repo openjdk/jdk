@@ -44,7 +44,7 @@ final class ApplicationLayoutUtils {
             .launchersDirectory("Contents/MacOS")
             .appDirectory("Contents/app")
             .runtimeDirectory("Contents/runtime/Contents/Home")
-            .destktopIntegrationDirectory("Contents/Resources")
+            .desktopIntegrationDirectory("Contents/Resources")
             .appModsDirectory("Contents/app/mods")
             .contentDirectory("Contents")
             .create();
@@ -53,7 +53,7 @@ final class ApplicationLayoutUtils {
             .launchersDirectory("bin")
             .appDirectory("lib/app")
             .runtimeDirectory("lib/runtime")
-            .destktopIntegrationDirectory("lib")
+            .desktopIntegrationDirectory("lib")
             .appModsDirectory("lib/app/mods")
             .contentDirectory("lib")
             .create();

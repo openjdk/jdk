@@ -117,7 +117,7 @@ final class LinuxPackageBuilder {
                         .launchersDirectory(prefix.resolve("bin"))
                         .appDirectory(lib.resolve("app"))
                         .runtimeDirectory(lib.resolve("runtime"))
-                        .destktopIntegrationDirectory(lib)
+                        .desktopIntegrationDirectory(lib)
                         .appModsDirectory(lib.resolve("app/mods"))
                         .contentDirectory(lib)
                         .create(),

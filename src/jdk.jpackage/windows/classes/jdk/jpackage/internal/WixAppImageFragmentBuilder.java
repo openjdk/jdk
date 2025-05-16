@@ -175,7 +175,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private Path getInstalledFaIcoPath(FileAssociation fa) {
         String fname = String.format("fa_%s.ico", fa.extension());
-        return installedAppImage.destktopIntegrationDirectory().resolve(fname);
+        return installedAppImage.desktopIntegrationDirectory().resolve(fname);
     }
 
     private void initFileAssociations() {

@@ -412,7 +412,7 @@ final class MacPackagingPipeline {
 
     private static class ApplicationIcon implements ApplicationImageTaskAction<MacApplication, MacApplicationLayout> {
         static Path getPath(Application app, ApplicationLayout appLayout) {
-            return appLayout.destktopIntegrationDirectory().resolve(app.name() + ".icns");
+            return appLayout.desktopIntegrationDirectory().resolve(app.name() + ".icns");
         }
 
         @Override
@@ -431,7 +431,7 @@ final class MacPackagingPipeline {
                 .filter(FileAssociation::hasIcon)
                 .map(FileAssociation::icon)
                 .map(Optional::get).toList()) {
-            Files.copy(faIcon, env.resolvedLayout().destktopIntegrationDirectory().resolve(faIcon.getFileName()));
+            Files.copy(faIcon, env.resolvedLayout().desktopIntegrationDirectory().resolve(faIcon.getFileName()));
         }
     }
 

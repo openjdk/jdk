@@ -78,7 +78,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             appDirectory = appLayout.appDirectory();
             runtimeDirectory = appLayout.runtimeDirectory();
             appModsDirectory = appLayout.appModsDirectory();
-            destktopIntegrationDirectory = appLayout.destktopIntegrationDirectory();
+            desktopIntegrationDirectory = appLayout.desktopIntegrationDirectory();
             contentDirectory = appLayout.contentDirectory();
         }
 
@@ -89,13 +89,13 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             Objects.requireNonNull(launchersDirectory);
             Objects.requireNonNull(appDirectory);
             Objects.requireNonNull(appModsDirectory);
-            Objects.requireNonNull(destktopIntegrationDirectory);
+            Objects.requireNonNull(desktopIntegrationDirectory);
             Objects.requireNonNull(contentDirectory);
 
             return ApplicationLayout.create(new AppImageLayout.Stub(
                     rootDirectory, runtimeDirectory), new ApplicationLayoutMixin.Stub(
                     launchersDirectory, appDirectory, appModsDirectory,
-                    destktopIntegrationDirectory, contentDirectory));
+                    desktopIntegrationDirectory, contentDirectory));
         }
 
         public Builder setAll(String path) {
@@ -108,7 +108,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             appDirectory(path);
             runtimeDirectory(path);
             appModsDirectory(path);
-            destktopIntegrationDirectory(path);
+            desktopIntegrationDirectory(path);
             contentDirectory(path);
             return this;
         }
@@ -119,7 +119,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             appDirectory(resolveNullablePath(base, appDirectory));
             runtimeDirectory(resolveNullablePath(base, runtimeDirectory));
             appModsDirectory(resolveNullablePath(base, appModsDirectory));
-            destktopIntegrationDirectory(resolveNullablePath(base, destktopIntegrationDirectory));
+            desktopIntegrationDirectory(resolveNullablePath(base, desktopIntegrationDirectory));
             contentDirectory(resolveNullablePath(base, contentDirectory));
             return this;
         }
@@ -169,12 +169,12 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             return this;
         }
 
-        public Builder destktopIntegrationDirectory(String v) {
-            return destktopIntegrationDirectory(Path.of(v));
+        public Builder desktopIntegrationDirectory(String v) {
+            return desktopIntegrationDirectory(Path.of(v));
         }
 
-        public Builder destktopIntegrationDirectory(Path v) {
-            destktopIntegrationDirectory = v;
+        public Builder desktopIntegrationDirectory(Path v) {
+            desktopIntegrationDirectory = v;
             return this;
         }
 
@@ -192,7 +192,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
         private Path appDirectory;
         private Path runtimeDirectory;
         private Path appModsDirectory;
-        private Path destktopIntegrationDirectory;
+        private Path desktopIntegrationDirectory;
         private Path contentDirectory;
     }
 }

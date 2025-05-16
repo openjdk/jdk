@@ -61,7 +61,7 @@ public class ApplicationLayoutTest {
                 .runtimeDirectory("runtime")
                 .appModsDirectory("mods")
                 .contentDirectory("content")
-                .destktopIntegrationDirectory("lib/apps")
+                .desktopIntegrationDirectory("lib/apps")
                 .create();
 
         final var dstAppImageRoot = tempDir.resolve("dst");

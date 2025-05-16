@@ -71,7 +71,7 @@ final class LinuxPackagingPipeline {
         for (var launcher : env.app().launchers()) {
             createLauncherIconResource(env.app(), launcher, env.env()::createResource).ifPresent(iconResource -> {
                 String iconFileName = launcher.executableName() + ".png";
-                Path iconTarget = env.resolvedLayout().destktopIntegrationDirectory().resolve(iconFileName);
+                Path iconTarget = env.resolvedLayout().desktopIntegrationDirectory().resolve(iconFileName);
                 try {
                     iconResource.saveToFile(iconTarget);
                 } catch (IOException ex) {

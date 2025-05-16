@@ -334,8 +334,8 @@ final class DesktopIntegration extends ShellCustomAction {
      *  - installPath(): path where it should be installed by package manager;
      */
     private InstallableFile createDesktopFile(String fileName) {
-        var srcPath = pkg.asPackageApplicationLayout().orElseThrow().resolveAt(env.appImageDir()).destktopIntegrationDirectory().resolve(fileName);
-        var installPath = pkg.asInstalledPackageApplicationLayout().orElseThrow().destktopIntegrationDirectory().resolve(fileName);
+        var srcPath = pkg.asPackageApplicationLayout().orElseThrow().resolveAt(env.appImageDir()).desktopIntegrationDirectory().resolve(fileName);
+        var installPath = pkg.asInstalledPackageApplicationLayout().orElseThrow().desktopIntegrationDirectory().resolve(fileName);
         return new InstallableFile(srcPath, installPath);
     }
 
