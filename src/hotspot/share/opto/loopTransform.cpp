@@ -516,10 +516,10 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
   if (StressLoopPeeling) {
     LoopNode* loop_head = _head->as_Loop();
     static constexpr uint max_peeling_opportunities = 5;
-    if (loop_head->_peeling_opportunities_count < max_peeling_opportunities) {
-      loop_head->_peeling_opportunities_count++;
+    if (loop_head->_stress_peeling_attempts < max_peeling_opportunities) {
+      loop_head->_stress_peeling_attempts++;
       // In case of stress, let's just pick randomly...
-      return phase->C->random() % 2 == 0 ? estimate : 0;
+      return ((phase->C->random() % 2) == 0) ? estimate : 0;
     }
     return 0;
   }

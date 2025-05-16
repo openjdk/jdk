@@ -835,7 +835,7 @@
           "care.")                                                          \
                                                                             \
   develop(bool, StressLoopPeeling, false,                                   \
-          "Randomize peeling decision")                                     \
+          "Randomize loop peeling decision")                                \
 
 // end of C2_FLAGS
 

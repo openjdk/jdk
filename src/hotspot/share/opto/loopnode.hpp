@@ -134,7 +134,7 @@ public:
   float profile_trip_cnt()             { return _profile_trip_cnt; }
 
 #ifndef PRODUCT
-  uint _peeling_opportunities_count = 0;
+  uint _stress_peeling_attempts = 0;
 #endif
 
   LoopNode(Node *entry, Node *backedge)
