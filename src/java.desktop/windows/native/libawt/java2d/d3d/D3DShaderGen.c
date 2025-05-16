@@ -56,9 +56,8 @@ static char *strHeaderFile = "D3DShaders.h";
 
 // REMIND
 //#define J2dTraceLn(a, b) fprintf(stderr, "%s\n", b);
-//#define J2dTraceLn1(a, b, c) fprintf(stderr, b, c);
-#define J2dTraceLn(a, b)
-#define J2dTraceLn1(a, b, c)
+//#define J2dTraceLn(a, b, c) fprintf(stderr, b, c);
+#define J2dTraceLn(level, ...)
 
 /************************* General shader support ***************************/
 
@@ -212,7 +211,7 @@ D3DShaderGen_GenerateConvolveShader(int flags)
     char *edge;
     char finalSource[2000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "D3DShaderGen_GenerateConvolveShader: flags=%d",
                 flags);
 
@@ -273,7 +272,7 @@ D3DShaderGen_GenerateRescaleShader(int flags)
     char *postRescale = "";
     char finalSource[2000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "D3DShaderGen_GenerateRescaleShader: flags=%d",
                 flags);
 
@@ -338,7 +337,7 @@ D3DShaderGen_GenerateLookupShader(int flags)
     char *postLookup = "";
     char finalSource[2000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "D3DShaderGen_GenerateLookupShader: flags=%d",
                 flags);
 
@@ -427,7 +426,7 @@ D3DShaderGen_GenerateBasicGradShader(int flags)
     char *maskCode = "";
     char finalSource[3000];
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "D3DShaderGen_GenerateBasicGradShader",
                 flags);
 
@@ -689,7 +688,7 @@ D3DShaderGen_GenerateLinearGradShader(int flags)
     char *paintVars;
     char *distCode;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "D3DShaderGen_GenerateLinearGradShader",
                 flags);
 
@@ -720,7 +719,7 @@ D3DShaderGen_GenerateRadialGradShader(int flags)
     char *paintVars;
     char *distCode;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "D3DShaderGen_GenerateRadialGradShader",
                 flags);
 

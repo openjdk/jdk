@@ -65,7 +65,7 @@ void MTLRenderQueue_CheckPreviousOp(jint op) {
         return;
     }
 
-    J2dTraceLn1(J2D_TRACE_VERBOSE,
+    J2dTraceLn(J2D_TRACE_VERBOSE,
                 "MTLRenderQueue_CheckPreviousOp: new op=%d", op);
 
     switch (mtlPreviousOp) {
@@ -104,7 +104,7 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
 {
     unsigned char *b, *end;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "MTLRenderQueue_flushBuffer: limit=%d", limit);
 
     b = (unsigned char *)jlong_to_ptr(buf);
@@ -119,7 +119,7 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
         while (b < end) {
             jint opcode = NEXT_INT(b);
 
-            J2dTraceLn2(J2D_TRACE_VERBOSE,
+            J2dTraceLn(J2D_TRACE_VERBOSE,
                     "MTLRenderQueue_flushBuffer: opcode=%d, rem=%d",
                     opcode, (end-b));
 
@@ -868,7 +868,7 @@ Java_sun_java2d_metal_MTLRenderQueue_flushBuffer
                 }
 
                 default:
-                    J2dRlsTraceLn1(J2D_TRACE_ERROR,
+                    J2dRlsTraceLn(J2D_TRACE_ERROR,
                         "MTLRenderQueue_flushBuffer: invalid opcode=%d", opcode);
                     return;
             }

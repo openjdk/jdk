@@ -94,8 +94,8 @@ OGLMaskFill_MaskFill(OGLContext *oglc,
     RETURN_IF_NULL(oglc);
     CHECK_PREVIOUS_OP(OGL_STATE_MASK_OP);
 
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d", x, y, w, h);
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  maskoff=%d maskscan=%d",
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d", x, y, w, h);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  maskoff=%d maskscan=%d",
                 maskoff, maskscan);
 
     {

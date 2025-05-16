@@ -733,7 +733,7 @@ HRESULT D3DVertexCacher::Render(int actionType)
         res = lpD3DVertexBuffer->Unlock();
         UINT currentVertex = firstPendingVertex;
         UINT batchSize;
-        J2dTraceLn2(J2D_TRACE_VERBOSE,
+        J2dTraceLn(J2D_TRACE_VERBOSE,
                     "D3DVC::Render Starting flushing of %d vertices "\
                     "in %d batches",
                     pendingVertices,
@@ -785,7 +785,7 @@ HRESULT D3DVertexCacher::EnsureCapacity(D3DPRIMITIVETYPE newPType, UINT vNum)
         // if we can't fit new vertices in the vertex buffer,
         // render whatever we have in the buffer and start
         // from the beginning of the vertex buffer
-        J2dTraceLn2(J2D_TRACE_VERBOSE,
+        J2dTraceLn(J2D_TRACE_VERBOSE,
                     "D3DVC::EnsureCapacity exceeded capacity. "\
                     "current v: %d, requested vertices: %d\n",
                     firstUnusedVertex, vNum);
@@ -794,7 +794,7 @@ HRESULT D3DVertexCacher::EnsureCapacity(D3DPRIMITIVETYPE newPType, UINT vNum)
         }
     }
 
-    J2dTraceLn5(J2D_TRACE_VERBOSE,
+    J2dTraceLn(J2D_TRACE_VERBOSE,
                 "D3DVC::EnsureCapacity current batch: %d "\
                 " batch.type=%d newType=%d vNum=%d firstUnusedV=%d",
                 currentBatch, batches[currentBatch].pType, newPType, vNum,

@@ -62,7 +62,7 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
     unsigned char *bbuf;
     jint *pBuf;
 
-    J2dTraceLn1(J2D_TRACE_INFO,
+    J2dTraceLn(J2D_TRACE_INFO,
                 "BufferedMaskBlit_enqueueTile: bpos=%d",
                 bpos);
 
@@ -139,13 +139,13 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
             srcScanStride -= width * srcPixelStride;
             h = height;
 
-            J2dTraceLn4(J2D_TRACE_VERBOSE,
+            J2dTraceLn(J2D_TRACE_VERBOSE,
                         "  sx=%d sy=%d w=%d h=%d",
                         srcInfo.bounds.x1, srcInfo.bounds.y1, width, height);
-            J2dTraceLn2(J2D_TRACE_VERBOSE,
+            J2dTraceLn(J2D_TRACE_VERBOSE,
                         "  maskoff=%d maskscan=%d",
                         maskoff, maskscan);
-            J2dTraceLn2(J2D_TRACE_VERBOSE,
+            J2dTraceLn(J2D_TRACE_VERBOSE,
                         "  pixstride=%d scanstride=%d",
                         srcPixelStride, srcScanStride);
 

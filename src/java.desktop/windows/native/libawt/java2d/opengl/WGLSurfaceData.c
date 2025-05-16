@@ -212,7 +212,7 @@ OGLSD_MakeOGLContextCurrent(JNIEnv *env, OGLSDOps *srcOps, OGLSDOps *dstOps)
 
     J2dTraceLn(J2D_TRACE_INFO, "OGLSD_MakeOGLContextCurrent");
 
-    J2dTraceLn4(J2D_TRACE_VERBOSE, "  src: %d %p dst: %d %p",
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  src: %d %p dst: %d %p",
                 srcOps->drawableType, srcOps,
                 dstOps->drawableType, dstOps);
 
@@ -354,7 +354,7 @@ OGLSD_InitOGLWindow(JNIEnv *env, OGLSDOps *oglsdo)
     oglsdo->height = wbounds.bottom - wbounds.top;
     wglsdo->pbufferDC = 0;
 
-    J2dTraceLn2(J2D_TRACE_VERBOSE, "  created window: w=%d h=%d",
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  created window: w=%d h=%d",
                 oglsdo->width, oglsdo->height);
 
     return JNI_TRUE;
