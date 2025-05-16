@@ -114,11 +114,11 @@ public class TestAlignVector {
                            "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=250");
 
         switch (args[0]) {
-            case "NoAlignVector"         -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
-            case "AlignVector"           -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
-            case "VerifyAlignVector"     -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyAlignVector"); }
-            case "NoAlignVector-COH"     -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
-            case "VerifyAlignVector-COH" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyAlignVector"); }
+            case "NoAlignVector"         -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "AlignVector"           -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            case "VerifyAlignVector"     -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyAlignVector"); }
+            case "NoAlignVector-COH"     -> { framework.addFlags("-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "VerifyAlignVector-COH" -> { framework.addFlags("-XX:+UseCompactObjectHeaders", "-XX:+AlignVector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyAlignVector"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         }
         framework.start();
