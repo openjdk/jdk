@@ -26,6 +26,7 @@
  * @test
  * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
  * @requires vm.cds.supports.aot.code.caching
+ * @requires vm.flagless
  * @library /test/lib /test/setup_aot
  * @build AOTCodeFlags JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
