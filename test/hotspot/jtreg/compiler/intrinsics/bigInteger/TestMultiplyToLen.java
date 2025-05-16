@@ -29,6 +29,7 @@
  *
  * @library /test/lib
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:CompileCommand=exclude,compiler.intrinsics.bigInteger.TestMultiplyToLen::main
  *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestMultiplyToLen::base_multiply,ccstrlist,DisableIntrinsic,_multiplyToLen
  *      -XX:CompileCommand=option,java.math.BigInteger::multiply,ccstrlist,DisableIntrinsic,_multiplyToLen
