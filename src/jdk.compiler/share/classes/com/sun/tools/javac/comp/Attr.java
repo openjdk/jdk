@@ -5471,15 +5471,9 @@ public class Attr extends JCTree.Visitor {
                                                         .stream()
                                                         .anyMatch(d -> d.tsym == c);
                             if (!thisIsASuper) {
-                                KindName subtypingLeftKind;
-                                if (subType.tsym.isEnum()) subtypingLeftKind = KindName.ENUM;
-                                else if (subType.isInterface()) subtypingLeftKind = KindName.INTERFACE;
-                                else if (subType.tsym.enclClass().isRecord()) subtypingLeftKind = KindName.RECORD;
-                                else subtypingLeftKind = KindName.CLASS;
-
                                 if(c.isInterface()) {
                                     log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
-                                            Errors.InvalidPermitsClause(Fragments.DoesntImplementSealed(subtypingLeftKind, subType)));
+                                            Errors.InvalidPermitsClause(Fragments.DoesntImplementSealed(kindName(subType.tsym), subType)));
                                 } else {
                                     log.error(TreeInfo.diagnosticPositionFor(subType.tsym, env.tree),
                                             Errors.InvalidPermitsClause(Fragments.DoesntExtendSealed(subType)));
