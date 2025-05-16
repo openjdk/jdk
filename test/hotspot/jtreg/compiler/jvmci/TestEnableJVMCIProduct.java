@@ -64,35 +64,23 @@ public class TestEnableJVMCIProduct {
                       .collect(Collectors.joining(",")));
             return;
         }
-
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-XX:+UnlockExperimentalVMOptions", "-XX:+UseJVMCICompiler",
-            "-XX:+PrintFlagsFinal", "--version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        boolean useJVMCINativeLibrary = output.firstMatch("bool +UseJVMCINativeLibrary += true") != null;
-        // If libjvmci is not in use, then the JVMCI module must be explicitly
-        // added with --add-modules=jdk.internal.vm.ci
-        String addJVMCIModule = useJVMCINativeLibrary ?
-            "--add-modules=java.base" : // effectively a nop
-            "--add-modules=jdk.internal.vm.ci";
-
         // Test EnableJVMCIProduct without any other explicit JVMCI option
-        test("-XX:-PrintWarnings", addJVMCIModule,
+        test("-XX:-PrintWarnings",
             new Expectation("EnableJVMCI", "true", "default"),
             new Expectation("UseJVMCICompiler", "true", "default"));
-        test("-XX:+UseJVMCICompiler", addJVMCIModule,
+        test("-XX:+UseJVMCICompiler",
             new Expectation("EnableJVMCI", "true", "default"),
             new Expectation("UseJVMCICompiler", "true", "command line"));
-        test("-XX:-UseJVMCICompiler", addJVMCIModule,
+        test("-XX:-UseJVMCICompiler",
             new Expectation("EnableJVMCI", "true", "default"),
             new Expectation("UseJVMCICompiler", "false", "command line"));
-        test("-XX:+EnableJVMCI", addJVMCIModule,
+        test("-XX:+EnableJVMCI",
             new Expectation("EnableJVMCI", "true", "command line"),
             new Expectation("UseJVMCICompiler", "true", "default"));
-        test("-XX:-EnableJVMCI", addJVMCIModule,
+        test("-XX:-EnableJVMCI",
             new Expectation("EnableJVMCI", "false", "command line"),
             new Expectation("UseJVMCICompiler", "false", "default"));
-        test("-XX:+EnableJVMCIProduct", addJVMCIModule,
+        test("-XX:+EnableJVMCIProduct",
             new Expectation("EnableJVMCIProduct", "true", "(?:command line|jimage)"),
             new Expectation("EnableJVMCI", "true", "default"),
             new Expectation("UseJVMCICompiler", "true", "default"));
@@ -100,14 +88,13 @@ public class TestEnableJVMCIProduct {
 
     static int id;
 
-    static void test(String explicitFlag, String addJVMCIModule, Expectation... expectations) throws Exception {
+    static void test(String explicitFlag, Expectation... expectations) throws Exception {
         String[] flags = {"-XX:+EnableJVMCIProduct", "-XX:+UseGraalJIT"};
         String cwd = System.getProperty("user.dir");
-
         for (String flag : flags) {
             Path propsPath = Path.of("props." + id++);
             ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-XX:+UnlockExperimentalVMOptions", addJVMCIModule, flag, "-XX:-UnlockExperimentalVMOptions",
+                "-XX:+UnlockExperimentalVMOptions", flag, "-XX:-UnlockExperimentalVMOptions",
                 explicitFlag,
                 "-XX:+PrintFlagsFinal",
                 "--class-path=" + System.getProperty("java.class.path"),

@@ -1805,10 +1805,10 @@ bool Arguments::check_vm_args_consistency() {
     // compiled into the libjvmci image itself. Without libjvmci, there
     // is no other representation of the jdk.internal.vm.ci module
     // so it needs to be added to the root module set.
-    if (ClassLoader::is_module_observable("jdk.internal.vm.ci") && !UseJVMCINativeLibrary && !_jvmci_module_added) {
-      jio_fprintf(defaultStream::error_stream(),
-        "'+EnableJVMCI' requires '--add-modules=jdk.internal.vm.ci' when UseJVMCINativeLibrary is false\n");
-      return false;
+    if (!UseJVMCINativeLibrary && ClassLoader::is_module_observable("jdk.internal.vm.ci") && !_jvmci_module_added) {
+      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
+        return false;
+      }
     }
     PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
         AddProperty, UnwriteableProperty, InternalProperty);
