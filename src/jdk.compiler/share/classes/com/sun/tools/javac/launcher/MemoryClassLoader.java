@@ -27,6 +27,7 @@ package com.sun.tools.javac.launcher;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -283,6 +284,12 @@ final class MemoryClassLoader extends ClassLoader {
             return path == null ? null : path.toUri().toURL();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        } catch (IOError error) {
+            Throwable cause = error.getCause();
+            if (cause instanceof IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            throw new RuntimeException(cause);
         }
     }
 
