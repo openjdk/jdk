@@ -742,7 +742,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -DABI_ELFv2"
       fi
     elif test "x$FLAGS_CPU" = xs390x; then
-      $1_CFLAGS_CPU="-mbackchain -march=z13 -mtune=z15"
+      $1_CFLAGS_CPU="-mbackchain -march=z13"
     fi
 
     if test "x$FLAGS_CPU_ARCH" != xarm &&  test "x$FLAGS_CPU_ARCH" != xppc; then
