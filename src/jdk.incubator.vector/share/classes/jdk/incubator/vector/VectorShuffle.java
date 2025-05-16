@@ -320,11 +320,13 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
 
     /**
      * Creates a shuffle for a given species from
-     * an {@link MemorySegment} starting at a byte offset.
+     * a {@link MemorySegment} starting at a byte offset.
      *
      * <p> For each shuffle lane, where {@code N} is the shuffle lane
-     * index, the integer in-memory at index {@code offset + N * 4} is validated
-     * against the species {@code VLENGTH}, and (if invalid)
+     * index, the integer in-memory at index {@code offset + N * 4}
+     * is loaded using an {@link ValueLayout#JAVA_INT_UNALIGNED unaligned int} layout
+     * and the given {@link ByteOrder} {@code order}. The loaded {@code int} value
+     * is validated against the species {@code VLENGTH}, and (if invalid)
      * is partially wrapped to an exceptional index in the
      * range {@code [-VLENGTH..-1]}.
      *
@@ -338,6 +340,7 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      *         {@code int} value, partially wrapped if exceptional
      * @throws IndexOutOfBoundsException if {@code offset < 0}, or
      *         {@code offset > sourceIndexes.byteSize() - VLENGTH * 4}
+     * @since 25
      */
     @ForceInline
     public static final <E> VectorShuffle<E> fromMemorySegment(VectorSpecies<E> species, MemorySegment sourceIndexes,
@@ -562,17 +565,20 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      * <p>
      * For each shuffle lane {@code N}, the lane source index
      * stored for that lane element is stored into the
-     * {@link MemorySegment} at {@code offset + N * 4}.
+     * {@link MemorySegment} at {@code offset + N * 4}
+     * using an {@link ValueLayout#JAVA_INT_UNALIGNED unaligned int}
+     * layout and the given {@link ByteOrder} {@code order}.
      *
      * @apiNote Shuffle source indexes are always in the
      * range from {@code -VLENGTH} to {@code VLENGTH-1}.
-     * @param a the memory segment
+     * @param ms the memory segment
      * @param offset the offset into the segment
      * @param order the byte order
      * @throws IndexOutOfBoundsException if {@code offset < 0} or
      *        {@code offset > a.byteSize() - this.length() * 4}
+     * @since 25
      */
-    public abstract void intoMemorySegment(MemorySegment a, long offset, ByteOrder order);
+    public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder order);
 
 
     /**
