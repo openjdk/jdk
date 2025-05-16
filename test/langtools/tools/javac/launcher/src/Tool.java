@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,21 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8145255
- * @run main/othervm java.base/sun.security.ssl.TestHkdf
- * @summary HKDF for Sun JSSE
- */
+// unnamed package
 
+import java.io.PrintWriter;
+import java.util.spi.ToolProvider;
+
+public class Tool implements ToolProvider {
+    @Override
+    public String name() {
+        return "Tool";
+    }
+
+    @Override
+    public int run(PrintWriter out, PrintWriter err, String... args) {
+        out.println("Tool/out");
+        err.println("Tool/err");
+        return 0;
+    }
+}

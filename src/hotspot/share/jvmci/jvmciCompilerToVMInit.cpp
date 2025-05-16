@@ -125,6 +125,7 @@ int CompilerToVM::Data::cardtable_shift;
 
 #ifdef X86
 int CompilerToVM::Data::L1_line_size;
+bool CompilerToVM::Data::supports_avx512_simd_sort;
 #endif
 
 size_t CompilerToVM::Data::vm_page_size;
@@ -256,6 +257,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
 #ifdef X86
   L1_line_size = VM_Version::L1_line_size();
+  supports_avx512_simd_sort = VM_Version::supports_avx512_simd_sort();
 #endif
 
   vm_page_size = os::vm_page_size();

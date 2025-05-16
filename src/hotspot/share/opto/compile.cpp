@@ -26,6 +26,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/javaClasses.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compilationFailureInfo.hpp"
@@ -630,6 +631,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _ilt(nullptr),
       _stub_function(nullptr),
       _stub_name(nullptr),
+      _stub_id(-1),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
@@ -729,7 +731,8 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps || StressBailout) {
+      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps || StressBailout ||
+      StressLoopPeeling) {
     initialize_stress_seed(directive);
   }
 
@@ -899,6 +902,7 @@ Compile::Compile(ciEnv* ci_env,
                  TypeFunc_generator generator,
                  address stub_function,
                  const char* stub_name,
+                 int stub_id,
                  int is_fancy_jump,
                  bool pass_tls,
                  bool return_pc,
@@ -910,6 +914,7 @@ Compile::Compile(ciEnv* ci_env,
       _entry_bci(InvocationEntryBci),
       _stub_function(stub_function),
       _stub_name(stub_name),
+      _stub_id(stub_id),
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
@@ -960,6 +965,16 @@ Compile::Compile(ciEnv* ci_env,
 #endif
       _allowed_reasons(0) {
   C = this;
+
+  // try to reuse an existing stub
+  {
+    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, _stub_id, stub_name);
+    if (blob != nullptr) {
+      RuntimeStub* rs = blob->as_runtime_stub();
+      _stub_entry_point = rs->entry_point();
+      return;
+    }
+  }
 
   TraceTime t1(nullptr, &_t_totalCompilation, CITime, false);
   TraceTime t2(nullptr, &_t_stubCompilation, CITime, false);
