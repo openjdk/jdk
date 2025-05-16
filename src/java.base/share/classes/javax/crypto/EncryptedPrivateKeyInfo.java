@@ -322,8 +322,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
 
     /**
      * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from a given
-     * {@code PrivateKey}.  A valid password-based encryption (PBE) algorithm
-     * and password must be specified.
+     * {@code PrivateKey}.  A password must be specified.
      *
      * <p> The PBE algorithm string format details can be found in the
      * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
@@ -339,7 +338,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @param params the {@code AlgorithmParameterSpec} to be used with
      *               encryption.  The provider default will be used if
      *               {@code null}.
-     * @param provider the {@code Provider} will be used for PBE
+     * @param provider the {@code Provider} to be used for PBE
      *                 {@link SecretKeyFactory} generation and {@link Cipher}
      *                 encryption operations. The default provider list will be
      *                 used if {@code null}.
@@ -390,7 +389,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
     /**
      * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from a given
      * {@code PrivateKey} and password.  Default algorithm and parameters are
-     * used.
+     * used.  A password must be specified.
      *
      * @param key the {@code PrivateKey} to be encrypted
      * @param password the password used in the PBE encryption.  This array
@@ -416,13 +415,13 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
 
     /**
      * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from the given
-     * {@link PrivateKey} using the {@code encKey} and given parameters.
+     * {@link PrivateKey} using {@code encKey} and given parameters.
      *
      * @param key the {@code PrivateKey} to be encrypted
      * @param encKey the password-based encryption (PBE) {@code Key} used to
      *              encrypt {@code key}.
      * @param algorithm the PBE encryption algorithm.  The default algorithm is
-     *                 will be used if {@code null}; however, {@code null} is
+     *                 used if {@code null}; however, {@code null} is
      *                 not allowed when {@code params} is non-null.
      * @param params the {@code AlgorithmParameterSpec} to be used with
      *               encryption. The provider list default will be used if
@@ -543,12 +542,17 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
         throws GeneralSecurityException {
         Objects.requireNonNull(decryptKey,"decryptKey cannot be null.");
         PKCS8EncodedKeySpec p = getKeySpecImpl(decryptKey, provider);
-        if (provider == null) {
-            return KeyFactory.getInstance(KeyUtil.getAlgorithm(p.getEncoded())).
-                generatePrivate(p);
+        try {
+            if (provider == null) {
+                return KeyFactory.getInstance(
+                    KeyUtil.getAlgorithm(p.getEncoded())).
+                    generatePrivate(p);
+            }
+            return KeyFactory.getInstance(KeyUtil.getAlgorithm(p.getEncoded()),
+                provider).generatePrivate(p);
+        } catch (IOException e) {
+            throw new GeneralSecurityException(e);
         }
-        return KeyFactory.getInstance(KeyUtil.getAlgorithm(p.getEncoded()),
-            provider).generatePrivate(p);
     }
 
     /**
@@ -673,23 +677,9 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
         }
     }
 
-    @SuppressWarnings("fallthrough")
     private static PKCS8EncodedKeySpec pkcs8EncodingToSpec(byte[] encodedKey)
         throws IOException {
-        DerInputStream in = new DerInputStream(encodedKey);
-        DerValue[] values = in.getSequence(3);
-
-        switch (values.length) {
-        case 4:
-            checkTag(values[3], DerValue.TAG_CONTEXT, "attributes");
-            /* fall through */
-        case 3:
-            checkTag(values[0], DerValue.tag_Integer, "version");
-            String keyAlg = AlgorithmId.parse(values[1]).getName();
-            checkTag(values[2], DerValue.tag_OctetString, "privateKey");
-            return new PKCS8EncodedKeySpec(encodedKey, keyAlg);
-        default:
-            throw new IOException("invalid key encoding");
-        }
+            return new PKCS8EncodedKeySpec(encodedKey,
+                KeyUtil.getAlgorithm(encodedKey));
     }
 }

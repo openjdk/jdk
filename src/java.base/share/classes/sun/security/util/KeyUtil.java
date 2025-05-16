@@ -26,6 +26,7 @@
 package sun.security.util;
 
 import java.io.IOException;
+import java.lang.reflect.GenericArrayType;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.*;
@@ -488,12 +489,12 @@ public final class KeyUtil {
      * @param encoded DER encoded bytes
      * @return AlgorithmID stored in the DER encoded bytes or null.
      */
-    public static String getAlgorithm(byte[] encoded) {
+    public static String getAlgorithm(byte[] encoded) throws IOException {
         try {
             return getAlgorithmId(encoded).getName();
         } catch (IOException e) {
-            // We want the result, not the details why it failed.
-            return null;
+            throw new IOException("No recognized algorithm detected in " +
+                "encoding", e);
         }
     }
 

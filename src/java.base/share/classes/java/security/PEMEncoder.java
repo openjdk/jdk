@@ -107,7 +107,8 @@ import java.util.concurrent.locks.ReentrantLock;
  *     byte[] pemData = pe.encode(privKey);
  * }
  *
- * @implNote An implementation may support other PEM types and DEREncodables.
+ * @implNote An implementation may support other PEM types and
+ * {@code DEREncodables}.
  *
  *
  * @see PEMDecoder
@@ -299,7 +300,7 @@ public final class PEMEncoder {
                     keySpec.clearPassword();
                     keySpec = null;
                 } catch (GeneralSecurityException e) {
-                    throw new RuntimeException("Security property " +
+                    throw new IllegalArgumentException("Security property " +
                         "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
                         "valid algorithm.  Operation cannot be performed.", e);
                 } finally {
@@ -321,15 +322,14 @@ public final class PEMEncoder {
                 cipher = Cipher.getInstance(Pem.DEFAULT_ALGO);
                 cipher.init(Cipher.ENCRYPT_MODE, key);
             } catch (GeneralSecurityException e) {
-                throw new RuntimeException("Security property " +
+                throw new IllegalArgumentException("Security property " +
                     "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
                     "valid algorithm.  Operation cannot be performed.", e);
             }
 
-            new AlgorithmId(Pem.getPBEID(Pem.DEFAULT_ALGO),
-                cipher.getParameters()).encode(out);
-
             try {
+                new AlgorithmId(Pem.getPBEID(Pem.DEFAULT_ALGO),
+                    cipher.getParameters()).encode(out);
                 out.putOctetString(cipher.doFinal(privateBytes));
                 return Pem.pemEncoded(Pem.ENCRYPTED_PRIVATE_KEY,
                     DerValue.wrap(DerValue.tag_Sequence, out).toByteArray());

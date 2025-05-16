@@ -292,7 +292,7 @@ public class Pem {
         String headerType = header.substring(11, header.length() - 5);
         String footerType = footer.substring(9, footer.length() - 5);
         if (!headerType.equals(footerType)) {
-            throw new IllegalArgumentException("Header and footer do not " +
+            throw new IOException("Header and footer do not " +
                 "match: " + headerType + " " + footerType);
         }
 
