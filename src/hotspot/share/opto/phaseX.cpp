@@ -1540,6 +1540,20 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     case Op_MinL:
       return false;
 
+    // OrINode::Ideal
+    //   calls AddNode::Ideal
+    //   calls commute -> left is Load, right not -> commute.
+    //
+    // Not sure why notification does not work here, seems like
+    // the depth is only 1, so it should work. Needs investigation.
+    //
+    // Found with:
+    //   compiler/codegen/TestCharVect2.java#id0
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_OrI:
+    case Op_OrL:
+      return false;
+
     // Bool -> constant folded to 1.
     // Issue with notification?
     //
