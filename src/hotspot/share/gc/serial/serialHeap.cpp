@@ -607,24 +607,11 @@ void SerialHeap::collect(GCCause::Cause cause) {
   bool should_run_young_gc =  (cause == GCCause::_wb_young_gc)
                 DEBUG_ONLY(|| (cause == GCCause::_scavenge_alot));
 
-  while (true) {
-    VM_SerialGCCollect op(!should_run_young_gc,
-                          gc_count_before,
-                          full_gc_count_before,
-                          cause);
-    VMThread::execute(&op);
-    if (!GCCause::is_explicit_full_gc(cause)) {
-      return;
-    }
-
-    {
-      MutexLocker ml(Heap_lock);
-      // Read the GC count while holding the Heap_lock
-      if (full_gc_count_before != total_full_collections()) {
-        return;
-      }
-    }
-  }
+  VM_SerialGCCollect op(!should_run_young_gc,
+                        gc_count_before,
+                        full_gc_count_before,
+                        cause);
+  VMThread::execute(&op);
 }
 
 void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
