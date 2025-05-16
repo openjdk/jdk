@@ -26,7 +26,7 @@
  * @bug 8027314
  * @summary Warn if experimental vm option is used and -XX:+UnlockExperimentalVMOptions isn't specified.
  * @requires vm.flagless
- * @requires ! vm.opt.final.UnlockExperimentalVMOptions
+ * @requires !vm.opt.final.UnlockExperimentalVMOptions
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -37,7 +37,7 @@
  * @bug 8027314
  * @summary Warn if diagnostic vm option is used and -XX:+UnlockDiagnosticVMOptions isn't specified.
  * @requires vm.flagless
- * @requires ! vm.debug
+ * @requires !vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -59,7 +59,7 @@
  * @bug 8027314
  * @summary Warn if develop vm option is used with product version of VM.
  * @requires vm.flagless
- * @requires ! vm.debug
+ * @requires !vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
