@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,16 +101,19 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     }
 
     @Override
-    protected void addExtraSection(Content content) {
-        addSummaryAPI(builder.getForRemoval(), HtmlIds.FOR_REMOVAL,
-                TERMINALLY_DEPRECATED_KEY, "doclet.Element", content);
+    protected void addContentsLinks(Content list) {
+        if (!builder.getForRemoval().isEmpty()) {
+            addContentsLink(HtmlIds.FOR_REMOVAL, "doclet.Terminally_Deprecated", list);
+        }
+        super.addContentsLinks(list);
     }
 
     @Override
-    protected void addExtraIndexLink(Content target) {
-        if (!builder.getForRemoval().isEmpty()) {
-            addIndexLink(HtmlIds.FOR_REMOVAL, "doclet.Terminally_Deprecated", target);
-        }
+    protected void addSummaries(Content content) {
+        // Add terminally deprecated APIs before other deprecated APIs
+        addSummaryAPI(builder.getForRemoval(), HtmlIds.FOR_REMOVAL,
+                TERMINALLY_DEPRECATED_KEY, "doclet.Element", content);
+        super.addSummaries(content);
     }
 
     @Override

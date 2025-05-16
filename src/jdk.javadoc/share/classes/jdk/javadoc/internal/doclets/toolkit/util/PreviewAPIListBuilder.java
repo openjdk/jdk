@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,9 +122,8 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
                 elementJeps.put(element, jep);
                 return true;
             }
-        }
-        // If preview tag is defined map elements to preview tags
-        if (previewNoteTag != null) {
+        } else if (previewNoteTag != null) {
+            // If preview tag is defined map elements to preview tags
             CommentHelper ch = utils.getCommentHelper(element);
             if (ch.dcTree != null) {
                 var jep = ch.dcTree.getFullBody().stream()
@@ -137,7 +136,7 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
                 if (jep.isPresent()) {
                     elementNotes.add(element);
                     elementJeps.put(element, jep.get());
-                    // Don't return true as this is not actual preview API.
+                    return false; // Not part of preview API.
                 }
             }
         }

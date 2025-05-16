@@ -119,9 +119,9 @@ public class PreviewNote implements Taglet {
         }
 
         if (reporter == null) {
-            throw new IllegalArgumentException("@" + TAG_NAME + " taglet content must be begin or end");
+            throw new IllegalArgumentException("@" + TAG_NAME + ": unexpected content");
         }
-        reporter.print(Diagnostic.Kind.ERROR, "@" + TAG_NAME + " taglet content must be begin or end");
+        reporter.print(Diagnostic.Kind.ERROR, "@" + TAG_NAME + ": unexpected content");
         return "";
     }
 }

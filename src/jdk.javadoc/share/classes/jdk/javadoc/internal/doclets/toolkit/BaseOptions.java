@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,8 +239,9 @@ public abstract class BaseOptions {
 
     /**
      * Argument for command-line option {@code --preview-note-tag}.
-     * If set, the JavaDoc inline tag with the given name is considered
-     * a preview note and added to the preview API page.
+     * If set, the JavaDoc inline tag with the given name causes the
+     * tagged element to be included in the preview API page as
+     * permanent API affected by a preview feature.
      */
     private String previewNoteTag = null;
 
@@ -958,7 +959,7 @@ public abstract class BaseOptions {
 
     /**
      * Argument for command-line option {@code --preview-note-tag}.
-     * Name of inline tag for preview notes.
+     * Name of inline tag for preview notes on permanent APIs.
      */
     public String previewNoteTag() { return previewNoteTag; }
 
