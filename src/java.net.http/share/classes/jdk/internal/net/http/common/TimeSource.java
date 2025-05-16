@@ -25,7 +25,6 @@
 package jdk.internal.net.http.common;
 
 import java.time.Instant;
-import java.time.InstantSource;
 
 /**
  * A {@link TimeLine} based on {@link System#nanoTime()} for the
@@ -52,7 +51,7 @@ public final class TimeSource implements TimeLine {
         // The use of Integer.MAX_VALUE is arbitrary.
         // Any value not too close to Long.MAX_VALUE
         // would do.
-        static final int TIME_WINDOW = Integer.MAX_VALUE;
+        static final long TIME_WINDOW = Integer.MAX_VALUE;
 
         final Instant first;
         final long firstNanos;

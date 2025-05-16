@@ -46,6 +46,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.HeaderFrame;
@@ -65,6 +66,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -154,6 +156,22 @@ public class ContinuationFrameTest {
 
     static final int ITERATION_COUNT = 20;
 
+    HttpClient sharedClient;
+    HttpClient httpClient(boolean shared) {
+        if (!shared || sharedClient == null) {
+            var client = HttpClient.newBuilder()
+                    .proxy(HttpClient.Builder.NO_PROXY)
+                    .sslContext(sslContext)
+                    .build();
+            if (sharedClient == null) {
+                sharedClient = client;
+            }
+            TRACKER.track(client);
+            return client;
+        }
+        return sharedClient;
+    }
+
     @Test(dataProvider = "variants")
     void test(String uri,
               boolean sameClient,
@@ -165,11 +183,7 @@ public class ContinuationFrameTest {
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
-                client = HttpClient.newBuilder()
-                         .proxy(HttpClient.Builder.NO_PROXY)
-                         .sslContext(sslContext)
-                         .build();
-                TRACKER.track(client);
+                client = httpClient(sameClient);
             }
 
             HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
@@ -186,7 +200,12 @@ public class ContinuationFrameTest {
                 out.println("Got response: " + resp);
                 assertTrue(resp.statusCode() == 204,
                     "Expected 204, got:" + resp.statusCode());
-                assertEquals(resp.version(), HTTP_2);
+                if (HTTP_3.equals(resp.version())) {
+                    assertTrue(uri.contains("/https2/"),
+                            "HTTP/3 not expected with " + uri);
+                } else {
+                    assertEquals(resp.version(), HTTP_2);
+                }
                 continue;
             }
             out.println("Got response: " + resp);
@@ -194,7 +213,12 @@ public class ContinuationFrameTest {
             assertTrue(resp.statusCode() == 200,
                        "Expected 200, got:" + resp.statusCode());
             assertEquals(resp.body(), "Hello there!");
-            assertEquals(resp.version(), HTTP_2);
+            if (HTTP_3.equals(resp.version())) {
+                assertTrue(uri.contains("/https2/"),
+                        "HTTP/3 not expected with " + uri);
+            } else {
+                assertEquals(resp.version(), HTTP_2);
+            }
         }
     }
 
@@ -229,6 +253,7 @@ public class ContinuationFrameTest {
 
     @AfterTest
     public void teardown() throws Exception {
+        sharedClient = null;
         AssertionError fail = TRACKER.check(500);
         try {
             http2TestServer.stop();
