@@ -25,8 +25,10 @@
  * @test
  * @bug 8350329
  * @summary C2: Div looses dependency on condition that guarantees divisor not zero in counted loop after peeling
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseLoopPredicate -XX:+StressGCM -XX:StressSeed=31780379 TestPeeledLoopNoBackedgeFloatingDiv
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseLoopPredicate -XX:+StressGCM TestPeeledLoopNoBackedgeFloatingDiv
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:-UseLoopPredicate
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=31780379 TestPeeledLoopNoBackedgeFloatingDiv
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:-UseLoopPredicate
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM TestPeeledLoopNoBackedgeFloatingDiv
  * @run main/othervm TestPeeledLoopNoBackedgeFloatingDiv
  */
 
