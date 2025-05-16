@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -143,6 +144,8 @@ public final class Http3ClientImpl implements AutoCloseable {
         transportParameters.setIntParameter(initial_max_stream_data_bidi_remote, 0);
         final Duration h3IdleTimeout = client.idleConnectionTimeout(HTTP_3).orElse(null);
         if (h3IdleTimeout != null) {
+            final long defaultQuicIdleTimeout =
+                    TimeUnit.SECONDS.toMillis(Utils.getLongProperty("jdk.httpclient.quic.idleTimeout", 30));
             final long h3Millis = h3IdleTimeout.toMillis();
             // If a h3 idle timeout has been configured, then we introduce a quic idle timeout
             // which is (much) higher than the h3 idle timeout. This gives the h3 layer enough
@@ -151,9 +154,10 @@ public final class Http3ClientImpl implements AutoCloseable {
             if (h3Millis > 0) {
                 final long quicIdleMillis;
                 if (h3Millis <= 60000) {
-                    quicIdleMillis = Math.max(30000, h3Millis * 2); // at least 30 seconds
+                    quicIdleMillis = Math.max(defaultQuicIdleTimeout,
+                            Math.max(30000, h3Millis * 2)); // at least 30 seconds
                 } else {
-                    quicIdleMillis = h3Millis + 60000; // a minute more than h3 timeout
+                    quicIdleMillis = Math.max(defaultQuicIdleTimeout, h3Millis + 60000); // a minute more than h3 timeout
                 }
                 transportParameters.setIntParameter(max_idle_timeout, quicIdleMillis);
             }
