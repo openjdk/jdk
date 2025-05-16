@@ -3679,15 +3679,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
     @Override
     public CompletableFuture<Long> requestSendPing() {
-        var space = quicTLSEngine.getCurrentSendKeySpace();
-        boolean sendPing = space == KeySpace.ONE_RTT;
-
-        if (sendPing) {
-            var spaceManager = packetSpaces.get(PacketNumberSpace.of(space));
-            return spaceManager.requestSendPing();
-        }
-
-        return MinimalFuture.completedFuture(-1L);
+        final KeySpace space = quicTLSEngine.getCurrentSendKeySpace();
+        final PacketSpace spaceManager = packetSpaces.get(PacketNumberSpace.of(space));
+        return spaceManager.requestSendPing();
     }
 
     /**

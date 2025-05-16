@@ -129,7 +129,7 @@ public final class IdleTimeoutManager {
         lastActivityAt = System.nanoTime(); // TODO: timeline().instant()?
     }
 
-    void keepAliveWithPing() {
+    private void keepAliveWithPing() {
         keepAlive();
         if (debug.on()) {
             debug.log("sending PING to keep the connection alive");
