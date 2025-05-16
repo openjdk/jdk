@@ -45,10 +45,10 @@
  */
 
 /* @test VMCompileCommandWarningDiagnostic
- * @bug 8027314
+ * @bug 8351958
  * @summary Warn if compile command that is an alias for a diagnostic vm option is used and -XX:+UnlockDiagnosticVMOptions isn't specified.
  * @requires vm.flagless
- * @requires ! vm.debug
+ * @requires !vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -94,7 +94,7 @@ public class VMOptionWarning {
                 break;
             }
             case "DiagnosticCompileCommand": {
-                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:CompileCommand=PrintAssembly,*::*", "-version");
+                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:CompileCommand=PrintAssembly,MyClass::myMethod", "-version");
                 output = new OutputAnalyzer(pb.start());
                 output.shouldNotHaveExitValue(0);
                 output.shouldContain("Error: VM option 'PrintAssembly' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.");
