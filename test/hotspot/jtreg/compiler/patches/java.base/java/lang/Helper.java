@@ -120,14 +120,14 @@ public class Helper {
 
     public static int getChars(int i, int begin, int end, byte[] value) {
         StringUTF16.checkBoundsBeginEnd(begin, end, value);
-        int pos = DecimalDigits.getCharsUTF16(i, end, value);
+        int pos = DecimalDigits.uncheckedGetCharsUTF16(i, end, value);
         assert begin == pos;
         return pos;
     }
 
     public static int getChars(long l, int begin, int end, byte[] value) {
         StringUTF16.checkBoundsBeginEnd(begin, end, value);
-        int pos = DecimalDigits.getCharsUTF16(l, end, value);
+        int pos = DecimalDigits.uncheckedGetCharsUTF16(l, end, value);
         assert begin == pos;
         return pos;
     }
