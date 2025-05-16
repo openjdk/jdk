@@ -1539,6 +1539,15 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     case Op_MaxL:
     case Op_MinL:
       return false;
+
+    // Bool -> constant folded to 1.
+    // Issue with notification?
+    //
+    // Found with:
+    //   compiler/c2/irTests/TestVectorizationMismatchedAccess.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_Bool:
+      return false;
   }
 
   if (n->is_Load()) {
