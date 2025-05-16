@@ -200,7 +200,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * @param function The {@link Supplier} that creates the {@link TemplateBody}.
      */
-    public record ZeroArgs(Supplier<TemplateBody> function) implements Template {
+    record ZeroArgs(Supplier<TemplateBody> function) implements Template {
         TemplateBody instantiate() {
             return function.get();
         }
@@ -243,7 +243,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param <A> The type of the (first) argument.
      * @param function The {@link Function} that creates the {@link TemplateBody} given the template argument.
      */
-    public record OneArgs<A>(String arg0Name, Function<A, TemplateBody> function) implements Template {
+    record OneArgs<A>(String arg0Name, Function<A, TemplateBody> function) implements Template {
         TemplateBody instantiate(A a) {
             return function.apply(a);
         }
@@ -267,7 +267,7 @@ public sealed interface Template permits Template.ZeroArgs,
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(A a) {
-            return new TemplateToken.OneArgs(this, a).render();
+            return new TemplateToken.OneArgs<>(this, a).render();
         }
 
         /**
@@ -278,7 +278,7 @@ public sealed interface Template permits Template.ZeroArgs,
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(float fuel, A a) {
-            return new TemplateToken.OneArgs(this, a).render(fuel);
+            return new TemplateToken.OneArgs<>(this, a).render(fuel);
         }
     }
 
@@ -291,7 +291,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param <B> The type of the second argument.
      * @param function The {@link BiFunction} that creates the {@link TemplateBody} given the template arguments.
      */
-    public record TwoArgs<A, B>(String arg0Name, String arg1Name, BiFunction<A, B, TemplateBody> function) implements Template {
+    record TwoArgs<A, B>(String arg0Name, String arg1Name, BiFunction<A, B, TemplateBody> function) implements Template {
         TemplateBody instantiate(A a, B b) {
             return function.apply(a, b);
         }
@@ -317,7 +317,7 @@ public sealed interface Template permits Template.ZeroArgs,
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(A a, B b) {
-            return new TemplateToken.TwoArgs(this, a, b).render();
+            return new TemplateToken.TwoArgs<>(this, a, b).render();
         }
 
         /**
@@ -329,7 +329,7 @@ public sealed interface Template permits Template.ZeroArgs,
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(float fuel, A a, B b) {
-            return new TemplateToken.TwoArgs(this, a, b).render(fuel);
+            return new TemplateToken.TwoArgs<>(this, a, b).render(fuel);
         }
     }
 
@@ -342,7 +342,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param <R> Type of the return value.
      */
     @FunctionalInterface
-    public interface TriFunction<T, U, V, R> {
+    interface TriFunction<T, U, V, R> {
 
         /**
          * Function definition for the three argument functions.
@@ -366,7 +366,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param <C> The type of the third argument.
      * @param function The function with three arguments that creates the {@link TemplateBody} given the template arguments.
      */
-    public record ThreeArgs<A, B, C>(String arg0Name, String arg1Name, String arg2Name, TriFunction<A, B, C, TemplateBody> function) implements Template {
+    record ThreeArgs<A, B, C>(String arg0Name, String arg1Name, String arg2Name, TriFunction<A, B, C, TemplateBody> function) implements Template {
         TemplateBody instantiate(A a, B b, C c) {
             return function.apply(a, b, c);
         }
@@ -394,7 +394,7 @@ public sealed interface Template permits Template.ZeroArgs,
          * @return The {@link String}, resulting from rendering the {@link Template}.
          */
         public String render(A a, B b, C c) {
-            return new TemplateToken.ThreeArgs(this, a, b, c).render();
+            return new TemplateToken.ThreeArgs<>(this, a, b, c).render();
         }
 
         /**
@@ -511,6 +511,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * boxed primitive types (e.g. {@link Integer} or auto-boxed {@code int}), any {@link Token},
      * or {@link List}s of any of these.
      *
+     * <p>
      * {@snippet lang=java :
      * var template = Template.make(() -> body(
      *     """
@@ -537,6 +538,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * current Template that is being instantiated. It returns the same
      * dollar replacement as the string use {@code "$name"}.
      *
+     * <p>
      * Here an example where a Template creates a local variable {@code 'var'},
      * with an implicit dollar replacement, and then captures that dollar replacement
      * using {@link #$} for the use inside a nested template.
@@ -559,6 +561,7 @@ public sealed interface Template permits Template.ZeroArgs,
     /**
      * Define a hashtag replacement for {@code "#key"}, with a specific value.
      *
+     * <p>
      * {@snippet lang=java :
      * var template = Template.make("a", (Integer a) -> body(
      *     let("b", a * 5),
@@ -583,6 +586,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * Define a hashtag replacement for {@code "#key"}, with a specific value, which is also captured
      * by the provided {@code 'function'} with type {@code <T>}.
      *
+     * <p>
      * {@snippet lang=java :
      * var template = Template.make("a", (Integer a) -> let("b", a * 2, (Integer b) -> body(
      *     """
