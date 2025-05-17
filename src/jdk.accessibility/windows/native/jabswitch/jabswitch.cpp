@@ -323,7 +323,7 @@ void printVersion() {
 
 int regEnable() {
     HKEY hKey;
-    DWORD retval = -1;
+ // DWORD retval = -1;
     LSTATUS err;
     err = RegOpenKeyEx(HKEY_CURRENT_USER, ACCESSIBILITY_USER_KEY, NULL, KEY_READ|KEY_WRITE, &hKey);
     if (err == ERROR_SUCCESS) {
@@ -331,7 +331,7 @@ int regEnable() {
         DWORD dataLength = DEFAULT_ALLOC;
         TCHAR dataBuffer[DEFAULT_ALLOC];
         TCHAR *data = dataBuffer;
-        bool freeData = false;
+     // bool freeData = false;
         err = RegQueryValueEx(hKey, ACCESSIBILITY_CONFIG, 0, &dataType, (BYTE *)data, &dataLength);
         if (err == ERROR_MORE_DATA) {
             if (dataLength > 0 && dataLength < MAX_ALLOC) {
@@ -364,7 +364,7 @@ int regEnable() {
 int regDeleteValue(HKEY hFamilyKey, LPCWSTR lpSubKey)
 {
     HKEY hKey;
-    DWORD retval = -1;
+ // DWORD retval = -1;
     LSTATUS err;
     err = RegOpenKeyEx(hFamilyKey, lpSubKey, NULL, KEY_READ|KEY_WRITE|KEY_WOW64_64KEY, &hKey);
     if (err != ERROR_SUCCESS)
@@ -376,7 +376,7 @@ int regDeleteValue(HKEY hFamilyKey, LPCWSTR lpSubKey)
         TCHAR dataBuffer[DEFAULT_ALLOC];
         TCHAR searchBuffer[DEFAULT_ALLOC];
         TCHAR *data = dataBuffer;
-        bool freeData = false;
+     // bool freeData = false;
         err = RegQueryValueEx(hKey, ACCESSIBILITY_CONFIG, 0, &dataType, (BYTE *)data, &dataLength);
         if (err == ERROR_MORE_DATA) {
             if (dataLength > 0 && dataLength < MAX_ALLOC) {
