@@ -77,6 +77,41 @@ public:
   }
 };
 
+// A single entry from a BootstrapMethods (BSM) attribute.
+// It is an overlaid view of two or more consecutive u2 words within the
+// ConstantPool::bsm_attribute_entries array.
+class BSMAttributeEntry {
+ private:
+  u2 _bootstrap_method_index;
+  u2 _argument_count;
+  // C++ does not have a "Flexible Array Member" feature.
+  //u2 _argument_indexes[_argument_count];
+  const u2* argument_indexes() const { return (const u2*)(this+1); }
+
+  // These are overlays on top of Array<u2> data.  Do not construct.
+  BSMAttributeEntry() = delete;
+
+  // See also parse_classfile_bootstrap_methods_attribute in the class
+  // file parser, which builds this layout.
+
+ public:
+  int bootstrap_method_index() const { return _bootstrap_method_index; }
+  int argument_count()         const { return _argument_count; }
+  int argument_index(int n)    const { assert((uint)n < _argument_count, "oob");
+                                       return argument_indexes()[n];
+                                     }
+ private:
+  // how to locate one of these inside a packed u2 data array:
+  static BSMAttributeEntry* entry_at_offset(Array<u2>* entries, int offset) {
+    assert(0 <= offset && offset+1 < entries->length(), "oob-1");
+    // Overlay the struct within the array
+    BSMAttributeEntry* bsme = reinterpret_cast<BSMAttributeEntry*>(entries->adr_at(offset));
+    assert(offset+1+bsme->argument_count() < entries->length(), "oob-2");
+    return bsme;
+  }
+  friend class ConstantPool;  // uses entry_at_offset
+};
+
 class ConstantPool : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -89,11 +124,14 @@ class ConstantPool : public Metadata {
   Array<u1>*           _tags;        // the tag array describing the constant pool's contents
   ConstantPoolCache*   _cache;       // the cache holding interpreter runtime information
   InstanceKlass*       _pool_holder; // the corresponding class
-  Array<u2>*           _operands;    // for variable-sized (InvokeDynamic) nodes, usually empty
 
   // Consider using an array of compressed klass pointers to
   // save space on 64-bit platforms.
   Array<Klass*>*       _resolved_klasses;
+
+  // Support for indy/condy BootstrapMethods attribute, with variable-sized entries
+  Array<u4>*           _bsm_attribute_offsets;  // offsets to the BSMEs
+  Array<u2>*           _bsm_attribute_entries;  // BSMAttributeEntry structs (variable-sized)
 
   u2              _major_version;        // major version number of class file
   u2              _minor_version;        // minor version number of class file
@@ -130,7 +168,8 @@ class ConstantPool : public Metadata {
 
   u1* tag_addr_at(int cp_index) const            { return tags()->adr_at(cp_index); }
 
-  void set_operands(Array<u2>* operands)       { _operands = operands; }
+  void set_bsm_attribute_offsets(Array<u4>* offs) { _bsm_attribute_offsets = offs; }
+  void set_bsm_attribute_entries(Array<u2>* data) { _bsm_attribute_entries = data; }
 
   u2 flags() const                             { return _flags; }
   void set_flags(u2 f)                         { _flags = f; }
@@ -171,7 +210,8 @@ class ConstantPool : public Metadata {
   virtual bool is_constantPool() const      { return true; }
 
   Array<u1>* tags() const                   { return _tags; }
-  Array<u2>* operands() const               { return _operands; }
+  Array<u2>* bsm_attribute_entries() const  { return _bsm_attribute_entries; }
+  Array<u4>* bsm_attribute_offsets() const  { return _bsm_attribute_offsets; }
 
   bool has_preresolution() const            { return (_flags & _has_preresolution) != 0; }
   void set_has_preresolution() {
@@ -253,11 +293,6 @@ class ConstantPool : public Metadata {
   void allocate_resolved_klasses(ClassLoaderData* loader_data, int num_klasses, TRAPS);
   void initialize_unresolved_klasses(ClassLoaderData* loader_data, TRAPS);
 
-  // Given the per-instruction index of an indy instruction, report the
-  // main constant pool entry for its bootstrap specifier.
-  // From there, uncached_name/signature_ref_at will get the name/type.
-  inline u2 invokedynamic_bootstrap_ref_index_at(int indy_index) const;
-
   // Assembly code support
   static ByteSize tags_offset()         { return byte_offset_of(ConstantPool, _tags); }
   static ByteSize cache_offset()        { return byte_offset_of(ConstantPool, _cache); }
@@ -294,14 +329,14 @@ class ConstantPool : public Metadata {
     *int_at_addr(cp_index) = ref_index;
   }
 
-  void dynamic_constant_at_put(int cp_index, int bsms_attribute_index, int name_and_type_index) {
+  void dynamic_constant_at_put(int cp_index, int bsm_attribute_index, int name_and_type_index) {
     tag_at_put(cp_index, JVM_CONSTANT_Dynamic);
-    *int_at_addr(cp_index) = ((jint) name_and_type_index<<16) | bsms_attribute_index;
+    *int_at_addr(cp_index) = ((jint) name_and_type_index<<16) | bsm_attribute_index;
   }
 
-  void invoke_dynamic_at_put(int cp_index, int bsms_attribute_index, int name_and_type_index) {
+  void invoke_dynamic_at_put(int cp_index, int bsm_attribute_index, int name_and_type_index) {
     tag_at_put(cp_index, JVM_CONSTANT_InvokeDynamic);
-    *int_at_addr(cp_index) = ((jint) name_and_type_index<<16) | bsms_attribute_index;
+    *int_at_addr(cp_index) = ((jint) name_and_type_index<<16) | bsm_attribute_index;
   }
 
   void unresolved_string_at_put(int cp_index, Symbol* s) {
@@ -519,122 +554,37 @@ class ConstantPool : public Metadata {
     assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
     return extract_low_short_from_int(*int_at_addr(cp_index));
   }
-  int bootstrap_operand_base(int cp_index) {
-    int bsms_attribute_index = bootstrap_methods_attribute_index(cp_index);
-    return operand_offset_at(operands(), bsms_attribute_index);
-  }
-  // The first part of the operands array consists of an index into the second part.
-  // Extract a 32-bit index value from the first part.
-  static int operand_offset_at(Array<u2>* operands, int bsms_attribute_index) {
-    int n = (bsms_attribute_index * 2);
-    assert(n >= 0 && n+2 <= operands->length(), "oob");
-    // The first 32-bit index points to the beginning of the second part
-    // of the operands array.  Make sure this index is in the first part.
-    DEBUG_ONLY(int second_part = build_int_from_shorts(operands->at(0),
-                                                       operands->at(1)));
-    assert(second_part == 0 || n+2 <= second_part, "oob (2)");
-    int offset = build_int_from_shorts(operands->at(n+0),
-                                       operands->at(n+1));
-    // The offset itself must point into the second part of the array.
-    assert(offset == 0 || (offset >= second_part && offset <= operands->length()), "oob (3)");
-    return offset;
-  }
-  static void operand_offset_at_put(Array<u2>* operands, int bsms_attribute_index, int offset) {
-    int n = bsms_attribute_index * 2;
-    assert(n >= 0 && n+2 <= operands->length(), "oob");
-    operands->at_put(n+0, extract_low_short_from_int(offset));
-    operands->at_put(n+1, extract_high_short_from_int(offset));
-  }
-  static int operand_array_length(Array<u2>* operands) {
-    if (operands == nullptr || operands->length() == 0)  return 0;
-    int second_part = operand_offset_at(operands, 0);
-    return (second_part / 2);
+  BSMAttributeEntry* bsm_attribute_entry(int bsm_attribute_index) {
+    int offset = bsm_attribute_offsets()->at(bsm_attribute_index);
+    return BSMAttributeEntry::entry_at_offset(bsm_attribute_entries(), offset);
   }
 
-#ifdef ASSERT
-  // operand tuples fit together exactly, end to end
-  static int operand_limit_at(Array<u2>* operands, int bsms_attribute_index) {
-    int nextidx = bsms_attribute_index + 1;
-    if (nextidx == operand_array_length(operands))
-      return operands->length();
-    else
-      return operand_offset_at(operands, nextidx);
+  int bsm_attribute_count() const {
+    if (bsm_attribute_offsets() == nullptr)  return 0;
+    return bsm_attribute_offsets()->length();
   }
-  int bootstrap_operand_limit(int cp_index) {
-    int bsms_attribute_index = bootstrap_methods_attribute_index(cp_index);
-    return operand_limit_at(operands(), bsms_attribute_index);
+  int bsm_entry_count() const {
+    if (bsm_attribute_entries() == nullptr)  return 0;
+    return bsm_attribute_entries()->length();
   }
-#endif //ASSERT
 
-  // Layout of InvokeDynamic and Dynamic bootstrap method specifier
-  // data in second part of operands array.  This encodes one record in
-  // the BootstrapMethods attribute.  The whole specifier also includes
-  // the name and type information from the main constant pool entry.
-  enum {
-         _indy_bsm_offset  = 0,  // CONSTANT_MethodHandle bsm
-         _indy_argc_offset = 1,  // u2 argc
-         _indy_argv_offset = 2   // u2 argv[argc]
-  };
+  // convenience method, to perform a common extra indirection via CP entry:
+  BSMAttributeEntry* bootstrap_methods_attribute_entry(int cp_index) {
+    return bsm_attribute_entry(bootstrap_methods_attribute_index(cp_index));
+  }
 
-  // These functions are used in RedefineClasses for CP merge
-
-  int operand_offset_at(int bsms_attribute_index) {
-    assert(0 <= bsms_attribute_index &&
-           bsms_attribute_index < operand_array_length(operands()),
-           "Corrupted CP operands");
-    return operand_offset_at(operands(), bsms_attribute_index);
-  }
-  u2 operand_bootstrap_method_ref_index_at(int bsms_attribute_index) {
-    int offset = operand_offset_at(bsms_attribute_index);
-    return operands()->at(offset + _indy_bsm_offset);
-  }
-  u2 operand_argument_count_at(int bsms_attribute_index) {
-    int offset = operand_offset_at(bsms_attribute_index);
-    u2 argc = operands()->at(offset + _indy_argc_offset);
-    return argc;
-  }
-  u2 operand_argument_index_at(int bsms_attribute_index, int j) {
-    int offset = operand_offset_at(bsms_attribute_index);
-    return operands()->at(offset + _indy_argv_offset + j);
-  }
-  int operand_next_offset_at(int bsms_attribute_index) {
-    int offset = operand_offset_at(bsms_attribute_index) + _indy_argv_offset
-                   + operand_argument_count_at(bsms_attribute_index);
-    return offset;
-  }
-  // Compare a bootstrap specifier data in the operands arrays
-  bool compare_operand_to(int bsms_attribute_index1, const constantPoolHandle& cp2,
-                          int bsms_attribute_index2);
-  // Find a bootstrap specifier data in the operands array
-  int find_matching_operand(int bsms_attribute_index, const constantPoolHandle& search_cp,
-                            int operands_cur_len);
-  // Resize the operands array with delta_len and delta_size
-  void resize_operands(int delta_len, int delta_size, TRAPS);
-  // Extend the operands array with the length and size of the ext_cp operands
-  void extend_operands(const constantPoolHandle& ext_cp, TRAPS);
-  // Shrink the operands array to a smaller array with new_len length
-  void shrink_operands(int new_len, TRAPS);
-
-  u2 bootstrap_method_ref_index_at(int cp_index) {
-    assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
-    int op_base = bootstrap_operand_base(cp_index);
-    return operands()->at(op_base + _indy_bsm_offset);
-  }
-  u2 bootstrap_argument_count_at(int cp_index) {
-    assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
-    int op_base = bootstrap_operand_base(cp_index);
-    u2 argc = operands()->at(op_base + _indy_argc_offset);
-    DEBUG_ONLY(int end_offset = op_base + _indy_argv_offset + argc;
-               int next_offset = bootstrap_operand_limit(cp_index));
-    assert(end_offset == next_offset, "matched ending");
-    return argc;
-  }
-  u2 bootstrap_argument_index_at(int cp_index, int j) {
-    int op_base = bootstrap_operand_base(cp_index);
-    DEBUG_ONLY(int argc = operands()->at(op_base + _indy_argc_offset));
-    assert((uint)j < (uint)argc, "oob");
-    return operands()->at(op_base + _indy_argv_offset + j);
-  }
+  // Compare BSM attribute entries between two CPs
+  bool compare_bsme_to(int bsme_index1, const constantPoolHandle& cp2,
+                       int bsme_index2);
+  // Find a matching BSM attribute entries in another CP
+  int find_matching_bsme(int bsme_index, const constantPoolHandle& search_cp,
+                         int search_len);
+  // Resize the BSM data arrays with delta_len and delta_size
+  void resize_bsm_data(int delta_len, int delta_size, TRAPS);
+  // Extend the BSM data arrays with the length and size of the BSM data in ext_cp
+  void extend_bsm_data(const constantPoolHandle& ext_cp, TRAPS);
+  // Shrink the BSM data arrays to a smaller array with new_len length
+  void shrink_bsm_data(int new_len, TRAPS);
 
   // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,
   // name_and_type_ref_index_at) all expect to be passed indices obtained
@@ -721,12 +671,13 @@ private:
     return resolve_constant_at_impl(h_this, cp_index, _possible_index_sentinel, &found_it, THREAD);
   }
 
-  void copy_bootstrap_arguments_at(int cp_index,
+  void copy_bootstrap_arguments_at(int bsme_index,
                                    int start_arg, int end_arg,
                                    objArrayHandle info, int pos,
                                    bool must_resolve, Handle if_not_available, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    copy_bootstrap_arguments_at_impl(h_this, cp_index, start_arg, end_arg,
+    copy_bootstrap_arguments_at_impl(h_this, bsme_index,
+                                     start_arg, end_arg,
                                      info, pos, must_resolve, if_not_available, THREAD);
   }
 
@@ -820,7 +771,8 @@ private:
 
   static oop resolve_constant_at_impl(const constantPoolHandle& this_cp, int cp_index, int cache_index,
                                       bool* status_return, TRAPS);
-  static void copy_bootstrap_arguments_at_impl(const constantPoolHandle& this_cp, int cp_index,
+  static void copy_bootstrap_arguments_at_impl(const constantPoolHandle& this_cp,
+                                               int bsme_index,
                                                int start_arg, int end_arg,
                                                objArrayHandle info, int pos,
                                                bool must_resolve, Handle if_not_available, TRAPS);
@@ -840,7 +792,7 @@ private:
   }
   static void copy_cp_to_impl(const constantPoolHandle& from_cp, int start_cpi, int end_cpi, const constantPoolHandle& to_cp, int to_cpi, TRAPS);
   static void copy_entry_to(const constantPoolHandle& from_cp, int from_cpi, const constantPoolHandle& to_cp, int to_cpi);
-  static void copy_operands(const constantPoolHandle& from_cp, const constantPoolHandle& to_cp, TRAPS);
+  static void copy_bsm_data(const constantPoolHandle& from_cp, const constantPoolHandle& to_cp, TRAPS);
   int  find_matching_entry(int pattern_i, const constantPoolHandle& search_cp);
   int  version() const                    { return _saved._version; }
   void set_version(int version)           { _saved._version = version; }
