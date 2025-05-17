@@ -575,7 +575,7 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
 
     /**
      * Stores this shuffle into a {@linkplain MemorySegment memory segment}
-     * starting at an offset using explicit byte order and a mask.
+     * starting at an offset using explicit byte order.
      * <p>
      * Bytes are extracted from shuffle lanes according
      * to the specified byte ordering.
