@@ -1098,7 +1098,7 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   clone_template_and_replace_init_input(const TemplateAssertionPredicate& template_assertion_predicate) const;
 
   InitializedAssertionPredicate initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate,
-                                                         Node* new_control) const;
+                                                         IfTrueNode* cloned_template_predicate_tail) const;
   void rewire_to_old_predicate_chain_head(Node* initialized_assertion_predicate_success_proj) const;
 
  public:
@@ -1176,6 +1176,7 @@ class CloneUnswitchedLoopPredicatesVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_false_path_loop;
 
   PhaseIdealLoop* const _phase;
+  const bool _is_counted_loop;
 
  public:
   CloneUnswitchedLoopPredicatesVisitor(LoopNode* true_path_loop_head,
@@ -1254,6 +1255,11 @@ class EliminateUselessPredicates : public StackObj {
   template <class PredicateList>
   void mark_maybe_useful_predicates_on_list_useless(const PredicateList& predicate_list) const;
 
+#ifdef ASSERT
+  void verify_loop_nodes_of_useless_templates_assertion_predicates_are_dead() const;
+  Unique_Node_List collect_loop_nodes_of_useless_template_assertion_predicates() const;
+  void verify_associated_loop_nodes_are_dead(const Unique_Node_List& loop_nodes_of_useless_template_assertion_predicates) const;
+#endif // ASSERT
  public:
   EliminateUselessPredicates(PhaseIterGVN& igvn, IdealLoopTree* ltree_root)
       : C(igvn.C), _parse_predicates(igvn.C->parse_predicates()),

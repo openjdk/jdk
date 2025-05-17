@@ -815,7 +815,7 @@ protected:
     emit(insn);
   }
 
- public:
+ protected:
 
   enum barrier {
     i = 0b1000, o = 0b0100, r = 0b0010, w = 0b0001,
@@ -845,6 +845,8 @@ protected:
     patch((address)&insn, 31, 20, 0b000000000000); // fm
     emit(insn);
   }
+
+ public:
 
 #define INSN(NAME, op, funct3, funct7)                      \
   void NAME() {                                             \
@@ -1902,8 +1904,14 @@ enum VectorMask {
   INSN(vand_vv, 0b1010111, 0b000, 0b001001);
 
   // Vector Single-Width Integer Add and Subtract
-  INSN(vsub_vv, 0b1010111, 0b000, 0b000010);
   INSN(vadd_vv, 0b1010111, 0b000, 0b000000);
+  INSN(vsub_vv, 0b1010111, 0b000, 0b000010);
+
+  // Vector Saturating Integer Add and Subtract
+  INSN(vsadd_vv,  0b1010111, 0b000, 0b100001);
+  INSN(vsaddu_vv, 0b1010111, 0b000, 0b100000);
+  INSN(vssub_vv,  0b1010111, 0b000, 0b100011);
+  INSN(vssubu_vv, 0b1010111, 0b000, 0b100010);
 
   // Vector Register Gather Instructions
   INSN(vrgather_vv,     0b1010111, 0b000, 0b001100);
@@ -2321,6 +2329,7 @@ enum Nf {
   }
 
   // Vector Bit-manipulation used in Cryptography (Zvbb) Extension
+  INSN(vandn_vx,   0b1010111, 0b100, 0b000001);
   INSN(vrol_vx,    0b1010111, 0b100, 0b010101);
   INSN(vror_vx,    0b1010111, 0b100, 0b010100);
 
@@ -2507,17 +2516,17 @@ enum Nf {
 //    wrappers such as 'add' which do the compressing work through 'c_add' depending on the
 //    the operands of the instruction and availability of the RVC hardware extension.
 //
-// 2. 'CompressibleRegion' and 'IncompressibleRegion' are introduced to mark assembler scopes
+// 2. 'CompressibleScope' and 'IncompressibleScope' are introduced to mark assembler scopes
 //     within which instructions are qualified or unqualified to be compressed into their 16-bit
 //     versions. An example:
 //
-//      CompressibleRegion cr(_masm);
+//      CompressibleScope scope(_masm);
 //      __ add(...);       // this instruction will be compressed into 'c.add' when possible
 //      {
-//         IncompressibleRegion ir(_masm);
+//         IncompressibleScope scope(_masm);
 //         __ add(...);    // this instruction will not be compressed
 //         {
-//            CompressibleRegion cr(_masm);
+//            CompressibleScope scope(_masm);
 //            __ add(...); // this instruction will be compressed into 'c.add' when possible
 //         }
 //      }
@@ -2526,40 +2535,40 @@ enum Nf {
 //    distinguish compressed 16-bit instructions from normal 32-bit ones.
 
 private:
-  bool _in_compressible_region;
+  bool _in_compressible_scope;
 public:
-  bool in_compressible_region() const { return _in_compressible_region; }
-  void set_in_compressible_region(bool b) { _in_compressible_region = b; }
+  bool in_compressible_scope() const { return _in_compressible_scope; }
+  void set_in_compressible_scope(bool b) { _in_compressible_scope = b; }
 public:
 
-  // an abstract compressible region
-  class AbstractCompressibleRegion : public StackObj {
+  // An abstract compressible scope
+  class AbstractCompressibleScope : public StackObj {
   protected:
     Assembler *_masm;
-    bool _saved_in_compressible_region;
+    bool _saved_in_compressible_scope;
   protected:
-    AbstractCompressibleRegion(Assembler *_masm)
+    AbstractCompressibleScope(Assembler *_masm)
     : _masm(_masm)
-    , _saved_in_compressible_region(_masm->in_compressible_region()) {}
+    , _saved_in_compressible_scope(_masm->in_compressible_scope()) {}
   };
-  // a compressible region
-  class CompressibleRegion : public AbstractCompressibleRegion {
+  // A compressible scope
+  class CompressibleScope : public AbstractCompressibleScope {
   public:
-    CompressibleRegion(Assembler *_masm) : AbstractCompressibleRegion(_masm) {
-      _masm->set_in_compressible_region(true);
+    CompressibleScope(Assembler *_masm) : AbstractCompressibleScope(_masm) {
+      _masm->set_in_compressible_scope(true);
     }
-    ~CompressibleRegion() {
-      _masm->set_in_compressible_region(_saved_in_compressible_region);
+    ~CompressibleScope() {
+      _masm->set_in_compressible_scope(_saved_in_compressible_scope);
     }
   };
-  // an incompressible region
-  class IncompressibleRegion : public AbstractCompressibleRegion {
+  // An incompressible scope
+  class IncompressibleScope : public AbstractCompressibleScope {
   public:
-    IncompressibleRegion(Assembler *_masm) : AbstractCompressibleRegion(_masm) {
-      _masm->set_in_compressible_region(false);
+    IncompressibleScope(Assembler *_masm) : AbstractCompressibleScope(_masm) {
+      _masm->set_in_compressible_scope(false);
     }
-    ~IncompressibleRegion() {
-      _masm->set_in_compressible_region(_saved_in_compressible_region);
+    ~IncompressibleScope() {
+      _masm->set_in_compressible_scope(_saved_in_compressible_scope);
     }
   };
 
@@ -2574,13 +2583,13 @@ public:
   template <typename Callback>
   void relocate(RelocationHolder const& rspec, Callback emit_insts, int format = 0) {
     AbstractAssembler::relocate(rspec, format);
-    IncompressibleRegion ir(this);  // relocations
+    IncompressibleScope scope(this); // relocations
     emit_insts();
   }
   template <typename Callback>
   void relocate(relocInfo::relocType rtype, Callback emit_insts, int format = 0) {
     AbstractAssembler::relocate(rtype, format);
-    IncompressibleRegion ir(this);  // relocations
+    IncompressibleScope scope(this); // relocations
     emit_insts();
   }
 
@@ -3161,7 +3170,7 @@ private:
 
 public:
   bool do_compress() const {
-    return UseRVC && in_compressible_region();
+    return UseRVC && in_compressible_scope();
   }
 
   bool do_compress_zcb(Register reg1 = noreg, Register reg2 = noreg) const {
@@ -3815,7 +3824,7 @@ public:
   static const unsigned long branch_range = 1 * M;
 
   static bool reachable_from_branch_at(address branch, address target) {
-    return uabs(target - branch) < branch_range;
+    return g_uabs(target - branch) < branch_range;
   }
 
   // Decode the given instruction, checking if it's a 16-bit compressed
@@ -3829,7 +3838,7 @@ public:
     }
   }
 
-  Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(true) {}
+  Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_scope(true) {}
 };
 
 #endif // CPU_RISCV_ASSEMBLER_RISCV_HPP

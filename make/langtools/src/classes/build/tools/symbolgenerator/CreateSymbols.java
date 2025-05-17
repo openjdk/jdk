@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,18 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.ConstantValueEntry;
+import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
+import java.lang.reflect.AccessFlag;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.FileVisitResult;
@@ -52,6 +64,9 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.stream.Stream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,79 +103,21 @@ import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
 
 import com.sun.source.util.JavacTask;
-import com.sun.tools.classfile.AccessFlags;
-import com.sun.tools.classfile.Annotation;
-import com.sun.tools.classfile.Annotation.Annotation_element_value;
-import com.sun.tools.classfile.Annotation.Array_element_value;
-import com.sun.tools.classfile.Annotation.Class_element_value;
-import com.sun.tools.classfile.Annotation.Enum_element_value;
-import com.sun.tools.classfile.Annotation.Primitive_element_value;
-import com.sun.tools.classfile.Annotation.element_value;
-import com.sun.tools.classfile.Annotation.element_value_pair;
-import com.sun.tools.classfile.AnnotationDefault_attribute;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Attributes;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ClassWriter;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Double_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Float_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Integer_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Long_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Module_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Package_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_String_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Utf8_info;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
-import com.sun.tools.classfile.ConstantPool.InvalidIndex;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.ConstantValue_attribute;
-import com.sun.tools.classfile.Deprecated_attribute;
-import com.sun.tools.classfile.Descriptor;
-import com.sun.tools.classfile.Exceptions_attribute;
-import com.sun.tools.classfile.Field;
-import com.sun.tools.classfile.InnerClasses_attribute;
-import com.sun.tools.classfile.InnerClasses_attribute.Info;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.ModulePackages_attribute;
-import com.sun.tools.classfile.MethodParameters_attribute;
-import com.sun.tools.classfile.ModuleMainClass_attribute;
-import com.sun.tools.classfile.ModuleResolution_attribute;
-import com.sun.tools.classfile.ModuleTarget_attribute;
-import com.sun.tools.classfile.Module_attribute;
-import com.sun.tools.classfile.Module_attribute.ExportsEntry;
-import com.sun.tools.classfile.Module_attribute.OpensEntry;
-import com.sun.tools.classfile.Module_attribute.ProvidesEntry;
-import com.sun.tools.classfile.Module_attribute.RequiresEntry;
-import com.sun.tools.classfile.NestHost_attribute;
-import com.sun.tools.classfile.NestMembers_attribute;
-import com.sun.tools.classfile.PermittedSubclasses_attribute;
-import com.sun.tools.classfile.Record_attribute;
-import com.sun.tools.classfile.Record_attribute.ComponentInfo;
-import com.sun.tools.classfile.RuntimeAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeParameterAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeVisibleAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeVisibleParameterAnnotations_attribute;
-import com.sun.tools.classfile.Signature_attribute;
 import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Pair;
 import java.nio.file.DirectoryStream;
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import static java.lang.classfile.ClassFile.ACC_PROTECTED;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 
 /**
  * A tool for processing the .sym.txt files.
  *
  * To add historical data for JDK N, N >= 11, do the following:
  *  * cd <open-jdk-checkout>/src/jdk.compiler/share/data/symbols
- *  * <jdk-N>/bin/java --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
- *                     --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+ *  * <jdk-N>/bin/java --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
  *                     --add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
  *                     --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
  *                     --add-modules jdk.jdeps \
@@ -382,10 +339,10 @@ public class CreateSymbols {
                                         !allClasses.contains(ann.annotationType.substring(1, ann.annotationType.length() - 1)));
     }
 
-    private ZipEntry createZipEntry(String name, long timestamp) {
+    private ZipEntry createZipEntry(String name, long timeMillisSinceEpoch) {
+        Instant time = Instant.ofEpochMilli(timeMillisSinceEpoch);
         ZipEntry ze = new ZipEntry(name);
-
-        ze.setTime(timestamp);
+        ze.setTimeLocal(LocalDateTime.ofInstant(time, ZoneOffset.UTC));
         return ze;
     }
 
@@ -409,7 +366,7 @@ public class CreateSymbols {
                             reader.moveNext();
                             break;
                         default:
-                            throw new IllegalStateException("Unknown key: " + reader.lineKey);
+                            throw new IllegalArgumentException("Unknown key: " + reader.lineKey);
                     }
                 }
             }
@@ -432,7 +389,7 @@ public class CreateSymbols {
                         reader.moveNext();
                         break;
                     default:
-                        throw new IllegalStateException("Unknown key: " + reader.lineKey);
+                        throw new IllegalArgumentException("Unknown key: " + reader.lineKey);
                 }
             }
         }
@@ -830,31 +787,12 @@ public class CreateSymbols {
                     ModuleHeaderDescription header,
                     char version,
                     Function<Character, String> version2ModuleVersion) throws IOException {
-        List<CPInfo> constantPool = new ArrayList<>();
-        constantPool.add(null);
-        int currentClass = addClass(constantPool, "module-info");
-        int superclass = 0;
-        int[] interfaces = new int[0];
-        AccessFlags flags = new AccessFlags(header.flags);
-        Map<String, Attribute> attributesMap = new HashMap<>();
-        String versionString = Character.toString(version);
-        addAttributes(moduleDescription, header, constantPool, attributesMap,
-                      version2ModuleVersion.apply(version));
-        Attributes attributes = new Attributes(attributesMap);
-        CPInfo[] cpData = constantPool.toArray(new CPInfo[constantPool.size()]);
-        ConstantPool cp = new ConstantPool(cpData);
-        ClassFile classFile = new ClassFile(0xCAFEBABE,
-                Target.DEFAULT.minorVersion,
-                Target.DEFAULT.majorVersion,
-                cp,
-                flags,
-                currentClass,
-                superclass,
-                interfaces,
-                new Field[0],
-                new Method[0],
-                attributes);
+        var classFile = ClassFile.of().build(ClassDesc.of("module-info"), clb -> {
+            clb.withFlags(header.flags);
+            addAttributes(moduleDescription, header, clb, version2ModuleVersion.apply(version));
+        });
 
+        String versionString = Character.toString(version);
         doWrite(directory2FileData, versionString, moduleDescription.name, "module-info" + EXTENSION, classFile);
     }
 
@@ -863,57 +801,26 @@ public class CreateSymbols {
                     ClassHeaderDescription header,
                     String module,
                     String version) throws IOException {
-        List<CPInfo> constantPool = new ArrayList<>();
-        constantPool.add(null);
-        List<Method> methods = new ArrayList<>();
-        for (MethodDescription methDesc : classDescription.methods) {
-            if (disjoint(methDesc.versions, version))
-                continue;
-            Descriptor descriptor = new Descriptor(addString(constantPool, methDesc.descriptor));
-            //TODO: LinkedHashMap to avoid param annotations vs. Signature problem in javac's ClassReader:
-            Map<String, Attribute> attributesMap = new LinkedHashMap<>();
-            addAttributes(methDesc, constantPool, attributesMap);
-            Attributes attributes = new Attributes(attributesMap);
-            AccessFlags flags = new AccessFlags(methDesc.flags);
-            int nameString = addString(constantPool, methDesc.name);
-            methods.add(new Method(flags, nameString, descriptor, attributes));
-        }
-        List<Field> fields = new ArrayList<>();
-        for (FieldDescription fieldDesc : classDescription.fields) {
-            if (disjoint(fieldDesc.versions, version))
-                continue;
-            Descriptor descriptor = new Descriptor(addString(constantPool, fieldDesc.descriptor));
-            Map<String, Attribute> attributesMap = new HashMap<>();
-            addAttributes(fieldDesc, constantPool, attributesMap);
-            Attributes attributes = new Attributes(attributesMap);
-            AccessFlags flags = new AccessFlags(fieldDesc.flags);
-            int nameString = addString(constantPool, fieldDesc.name);
-            fields.add(new Field(flags, nameString, descriptor, attributes));
-        }
-        int currentClass = addClass(constantPool, classDescription.name);
-        int superclass = header.extendsAttr != null ? addClass(constantPool, header.extendsAttr) : 0;
-        int[] interfaces = new int[header.implementsAttr.size()];
-        int i = 0;
-        for (String intf : header.implementsAttr) {
-            interfaces[i++] = addClass(constantPool, intf);
-        }
-        AccessFlags flags = new AccessFlags(header.flags);
-        Map<String, Attribute> attributesMap = new HashMap<>();
-        addAttributes(header, constantPool, attributesMap);
-        Attributes attributes = new Attributes(attributesMap);
-        ConstantPool cp = new ConstantPool(constantPool.toArray(new CPInfo[constantPool.size()]));
-        ClassFile classFile = new ClassFile(0xCAFEBABE,
-                Target.DEFAULT.minorVersion,
-                Target.DEFAULT.majorVersion,
-                cp,
-                flags,
-                currentClass,
-                superclass,
-                interfaces,
-                fields.toArray(new Field[0]),
-                methods.toArray(new Method[0]),
-                attributes);
-
+        var classFile = ClassFile.of().build(ClassDesc.ofInternalName(classDescription.name), clb -> {
+            if (header.extendsAttr != null)
+                clb.withSuperclass(ClassDesc.ofInternalName(header.extendsAttr));
+            clb.withInterfaceSymbols(header.implementsAttr.stream().map(ClassDesc::ofInternalName).collect(Collectors.toList()))
+                    .withFlags(header.flags);
+            for (FieldDescription fieldDesc : classDescription.fields) {
+                if (disjoint(fieldDesc.versions, version))
+                    continue;
+                clb.withField(fieldDesc.name, ClassDesc.ofDescriptor(fieldDesc.descriptor), fb -> {
+                    addAttributes(fieldDesc, fb);
+                    fb.withFlags(fieldDesc.flags);
+                });
+            }
+            for (MethodDescription methDesc : classDescription.methods) {
+                if (disjoint(methDesc.versions, version))
+                    continue;
+                clb.withMethod(methDesc.name, MethodTypeDesc.ofDescriptor(methDesc.descriptor), methDesc.flags, mb -> addAttributes(methDesc, mb));
+            }
+            addAttributes(header, clb);
+        });
         doWrite(directory2FileData, version, module, classDescription.name + EXTENSION, classFile);
     }
 
@@ -921,19 +828,13 @@ public class CreateSymbols {
                          String version,
                          String moduleName,
                          String fileName,
-                         ClassFile classFile) throws IOException {
+                         byte[] classFile) throws IOException {
         int lastSlash = fileName.lastIndexOf('/');
         String pack = lastSlash != (-1) ? fileName.substring(0, lastSlash + 1) : "/";
         String directory = version + "/" + moduleName + "/" + pack;
         String fullFileName = version + "/" + moduleName + "/" + fileName;
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            ClassWriter w = new ClassWriter();
-
-            w.write(classFile, out);
-
-            openDirectory(directory2FileData, directory)
-                .add(new FileData(fullFileName, out.toByteArray()));
-        }
+        openDirectory(directory2FileData, directory)
+                .add(new FileData(fullFileName, classFile));
     }
 
     private Set<FileData> openDirectory(Map<String, Set<FileData>> directory2FileData,
@@ -955,278 +856,147 @@ public class CreateSymbols {
 
     private void addAttributes(ModuleDescription md,
                                ModuleHeaderDescription header,
-                               List<CPInfo> cp,
-                               Map<String, Attribute> attributes,
+                               ClassBuilder builder,
                                String moduleVersion) {
-        addGenericAttributes(header, cp, attributes);
+        addGenericAttributes(header, builder);
         if (header.moduleResolution != null) {
-            int attrIdx = addString(cp, Attribute.ModuleResolution);
-            final ModuleResolution_attribute resIdx =
-                    new ModuleResolution_attribute(attrIdx,
-                                                   header.moduleResolution);
-            attributes.put(Attribute.ModuleResolution, resIdx);
+            builder.with(ModuleResolutionAttribute.of(header.moduleResolution));
         }
         if (header.moduleTarget != null) {
-            int attrIdx = addString(cp, Attribute.ModuleTarget);
-            int targetIdx = addString(cp, header.moduleTarget);
-            attributes.put(Attribute.ModuleTarget,
-                           new ModuleTarget_attribute(attrIdx, targetIdx));
+            builder.with(ModuleTargetAttribute.of(header.moduleTarget));
         }
         if (header.moduleMainClass != null) {
-            int attrIdx = addString(cp, Attribute.ModuleMainClass);
-            int targetIdx = addClassName(cp, header.moduleMainClass);
-            attributes.put(Attribute.ModuleMainClass,
-                           new ModuleMainClass_attribute(attrIdx, targetIdx));
+            builder.with(ModuleMainClassAttribute.of(ClassDesc.ofInternalName(header.moduleMainClass)));
         }
-        int versionIdx = addString(cp, moduleVersion);
-        int attrIdx = addString(cp, Attribute.Module);
-        attributes.put(Attribute.Module,
-                       new Module_attribute(attrIdx,
-                             addModuleName(cp, md.name),
-                             0,
-                             versionIdx,
-                             header.requires
-                                   .stream()
-                                   .map(r -> createRequiresEntry(cp, r))
-                                   .collect(Collectors.toList())
-                                   .toArray(new RequiresEntry[0]),
-                             header.exports
-                                   .stream()
-                                   .map(e -> createExportsEntry(cp, e))
-                                   .collect(Collectors.toList())
-                                   .toArray(new ExportsEntry[0]),
-                             header.opens
-                                   .stream()
-                                   .map(e -> createOpensEntry(cp, e))
-                                   .collect(Collectors.toList())
-                                   .toArray(new OpensEntry[0]),
-                             header.uses
-                                   .stream()
-                                   .mapToInt(u -> addClassName(cp, u))
-                                   .toArray(),
-                             header.provides
-                                   .stream()
-                                   .map(p -> createProvidesEntry(cp, p))
-                                   .collect(Collectors.toList())
-                                   .toArray(new ProvidesEntry[0])));
-        addInnerClassesAttribute(header, cp, attributes);
+        builder.with(ModuleAttribute.of(ModuleDesc.of(md.name), mb -> {
+            mb.moduleVersion(moduleVersion);
+            for (var req : header.requires) {
+                mb.requires(ModuleDesc.of(req.moduleName), req.flags, req.version); // nullable version
+            }
+            for (var exp : header.exports) {
+                if (exp.isQualified()) {
+                    mb.exports(PackageDesc.ofInternalName(exp.packageName()), 0, exp.to.stream().map(ModuleDesc::of).toArray(ModuleDesc[]::new));
+                } else {
+                    mb.exports(PackageDesc.ofInternalName(exp.packageName()), 0);
+                }
+            }
+            for (var open : header.opens) {
+                mb.opens(PackageDesc.ofInternalName(open), 0);
+            }
+            for (var use : header.uses) {
+                mb.uses(ClassDesc.ofInternalName(use));
+            }
+            for (var provide : header.provides) {
+                mb.provides(ClassDesc.ofInternalName(provide.interfaceName),
+                        provide.implNames.stream().map(ClassDesc::ofInternalName).toArray(ClassDesc[]::new));
+            }
+        }));
+        addInnerClassesAttribute(header, builder);
     }
 
-    private static RequiresEntry createRequiresEntry(List<CPInfo> cp,
-            RequiresDescription r) {
-        final int idx = addModuleName(cp, r.moduleName);
-        return new RequiresEntry(idx,
-                                 r.flags,
-                                 r.version != null
-                                         ? addString(cp, r.version)
-                                         : 0);
-    }
-
-    private static ExportsEntry createExportsEntry(List<CPInfo> cp,
-                                                   ExportsDescription export) {
-        int[] to;
-        if (export.isQualified()) {
-            to = export.to.stream()
-                          .mapToInt(module -> addModuleName(cp, module))
-                          .toArray();
-        } else {
-            to = new int[0];
-        }
-        return new ExportsEntry(addPackageName(cp, export.packageName()), 0, to);
-    }
-
-    private static OpensEntry createOpensEntry(List<CPInfo> cp, String e) {
-        return new OpensEntry(addPackageName(cp, e), 0, new int[0]);
-    }
-
-    private static ProvidesEntry createProvidesEntry(List<CPInfo> cp,
-            ModuleHeaderDescription.ProvidesDescription p) {
-        final int idx = addClassName(cp, p.interfaceName);
-        return new ProvidesEntry(idx, p.implNames
-                                       .stream()
-                                       .mapToInt(i -> addClassName(cp, i))
-                                       .toArray());
-    }
-
-    private void addAttributes(ClassHeaderDescription header,
-            List<CPInfo> constantPool, Map<String, Attribute> attributes) {
-        addGenericAttributes(header, constantPool, attributes);
+    private void addAttributes(ClassHeaderDescription header, ClassBuilder builder) {
+        addGenericAttributes(header, builder);
         if (header.nestHost != null) {
-            int attributeString = addString(constantPool, Attribute.NestHost);
-            int nestHost = addClass(constantPool, header.nestHost);
-            attributes.put(Attribute.NestHost,
-                           new NestHost_attribute(attributeString, nestHost));
+            builder.with(NestHostAttribute.of(ClassDesc.ofInternalName(header.nestHost)));
         }
         if (header.nestMembers != null && !header.nestMembers.isEmpty()) {
-            int attributeString = addString(constantPool, Attribute.NestMembers);
-            int[] nestMembers = new int[header.nestMembers.size()];
-            int i = 0;
-            for (String intf : header.nestMembers) {
-                nestMembers[i++] = addClass(constantPool, intf);
-            }
-            attributes.put(Attribute.NestMembers,
-                           new NestMembers_attribute(attributeString, nestMembers));
+            builder.with(NestMembersAttribute.ofSymbols(header.nestMembers.stream().map(ClassDesc::ofInternalName).collect(Collectors.toList())));
         }
         if (header.isRecord) {
-            assert header.recordComponents != null;
-            int attributeString = addString(constantPool, Attribute.Record);
-            ComponentInfo[] recordComponents = new ComponentInfo[header.recordComponents.size()];
-            int i = 0;
-            for (RecordComponentDescription rcd : header.recordComponents) {
-                int name = addString(constantPool, rcd.name);
-                Descriptor desc = new Descriptor(addString(constantPool, rcd.descriptor));
-                Map<String, Attribute> nestedAttrs = new HashMap<>();
-                addGenericAttributes(rcd, constantPool, nestedAttrs);
-                Attributes attrs = new Attributes(nestedAttrs);
-                recordComponents[i++] = new ComponentInfo(name, desc, attrs);
-            }
-            attributes.put(Attribute.Record,
-                           new Record_attribute(attributeString, recordComponents));
+            builder.with(RecordAttribute.of(header.recordComponents.stream().map(desc -> {
+                List<Attribute<?>> attributes = new ArrayList<>();
+                addGenericAttributes(desc, attributes::add, builder.constantPool());
+                return RecordComponentInfo.of(desc.name, ClassDesc.ofDescriptor(desc.descriptor), attributes);
+            }).collect(Collectors.toList())));
         }
         if (header.isSealed) {
-            int attributeString = addString(constantPool, Attribute.PermittedSubclasses);
-            int[] subclasses = new int[header.permittedSubclasses.size()];
-            int i = 0;
-            for (String intf : header.permittedSubclasses) {
-                subclasses[i++] = addClass(constantPool, intf);
-            }
-            attributes.put(Attribute.PermittedSubclasses,
-                    new PermittedSubclasses_attribute(attributeString, subclasses));
+            builder.with(PermittedSubclassesAttribute.ofSymbols(header.permittedSubclasses.stream().map(ClassDesc::ofInternalName).collect(Collectors.toList())));
         }
-        addInnerClassesAttribute(header, constantPool, attributes);
+        addInnerClassesAttribute(header, builder);
     }
 
-    private void addInnerClassesAttribute(HeaderDescription header,
-            List<CPInfo> constantPool, Map<String, Attribute> attributes) {
+    private void addInnerClassesAttribute(HeaderDescription header, ClassBuilder builder) {
         if (header.innerClasses != null && !header.innerClasses.isEmpty()) {
-            Info[] innerClasses = new Info[header.innerClasses.size()];
-            int i = 0;
-            for (InnerClassInfo info : header.innerClasses) {
-                innerClasses[i++] =
-                        new Info(info.innerClass == null ? 0 : addClass(constantPool, info.innerClass),
-                                 info.outerClass == null ? 0 : addClass(constantPool, info.outerClass),
-                                 info.innerClassName == null ? 0 : addString(constantPool, info.innerClassName),
-                                 new AccessFlags(info.innerClassFlags));
-            }
-            int attributeString = addString(constantPool, Attribute.InnerClasses);
-            attributes.put(Attribute.InnerClasses,
-                           new InnerClasses_attribute(attributeString, innerClasses));
+            builder.with(InnerClassesAttribute.of(header.innerClasses.stream()
+                    .map(info -> java.lang.classfile.attribute.InnerClassInfo.of(
+                            ClassDesc.ofInternalName(info.innerClass),
+                            Optional.ofNullable(info.outerClass).map(ClassDesc::ofInternalName),
+                            Optional.ofNullable(info.innerClassName),
+                            info.innerClassFlags
+                    )).collect(Collectors.toList())));
         }
     }
 
-    private void addAttributes(MethodDescription desc, List<CPInfo> constantPool, Map<String, Attribute> attributes) {
-        addGenericAttributes(desc, constantPool, attributes);
+    private void addAttributes(MethodDescription desc, MethodBuilder builder) {
+        addGenericAttributes(desc, builder);
         if (desc.thrownTypes != null) {
-            int[] exceptions = new int[desc.thrownTypes.size()];
-            int i = 0;
-            for (String exc : desc.thrownTypes) {
-                exceptions[i++] = addClass(constantPool, exc);
-            }
-            int attributeString = addString(constantPool, Attribute.Exceptions);
-            attributes.put(Attribute.Exceptions,
-                           new Exceptions_attribute(attributeString, exceptions));
+            builder.with(ExceptionsAttribute.ofSymbols(desc.thrownTypes.stream()
+                    .map(ClassDesc::ofInternalName).collect(Collectors.toList())));
         }
         if (desc.annotationDefaultValue != null) {
-            int attributeString = addString(constantPool, Attribute.AnnotationDefault);
-            element_value attributeValue = createAttributeValue(constantPool,
-                                                                desc.annotationDefaultValue);
-            attributes.put(Attribute.AnnotationDefault,
-                           new AnnotationDefault_attribute(attributeString, attributeValue));
+            builder.with(AnnotationDefaultAttribute.of(createAttributeValue(desc.annotationDefaultValue)));
         }
         if (desc.classParameterAnnotations != null && !desc.classParameterAnnotations.isEmpty()) {
-            int attributeString =
-                    addString(constantPool, Attribute.RuntimeInvisibleParameterAnnotations);
-            Annotation[][] annotations =
-                    createParameterAnnotations(constantPool, desc.classParameterAnnotations);
-            attributes.put(Attribute.RuntimeInvisibleParameterAnnotations,
-                           new RuntimeInvisibleParameterAnnotations_attribute(attributeString,
-                                   annotations));
+            builder.with(RuntimeInvisibleParameterAnnotationsAttribute.of(createParameterAnnotations(desc.classParameterAnnotations)));
         }
         if (desc.runtimeParameterAnnotations != null && !desc.runtimeParameterAnnotations.isEmpty()) {
-            int attributeString =
-                    addString(constantPool, Attribute.RuntimeVisibleParameterAnnotations);
-            Annotation[][] annotations =
-                    createParameterAnnotations(constantPool, desc.runtimeParameterAnnotations);
-            attributes.put(Attribute.RuntimeVisibleParameterAnnotations,
-                           new RuntimeVisibleParameterAnnotations_attribute(attributeString,
-                                   annotations));
+            builder.with(RuntimeVisibleParameterAnnotationsAttribute.of(createParameterAnnotations(desc.runtimeParameterAnnotations)));
         }
         if (desc.methodParameters != null && !desc.methodParameters.isEmpty()) {
-            int attributeString =
-                    addString(constantPool, Attribute.MethodParameters);
-            MethodParameters_attribute.Entry[] entries =
-                    desc.methodParameters
-                        .stream()
-                        .map(p -> new MethodParameters_attribute.Entry(p.name == null || p.name.isEmpty() ? 0
-                                                                                                          : addString(constantPool, p.name),
-                                                                       p.flags))
-                        .toArray(s -> new MethodParameters_attribute.Entry[s]);
-            attributes.put(Attribute.MethodParameters,
-                           new MethodParameters_attribute(attributeString, entries));
+            builder.with(MethodParametersAttribute.of(desc.methodParameters.stream()
+                    .map(mp -> MethodParameterInfo.ofParameter(Optional.ofNullable(mp.name), mp.flags)).collect(Collectors.toList())));
         }
     }
 
-    private void addAttributes(FieldDescription desc, List<CPInfo> constantPool, Map<String, Attribute> attributes) {
-        addGenericAttributes(desc, constantPool, attributes);
+    private void addAttributes(FieldDescription desc, FieldBuilder builder) {
+        addGenericAttributes(desc, builder);
         if (desc.constantValue != null) {
-            Pair<Integer, Character> constantPoolEntry =
-                    addConstant(constantPool, desc.constantValue, false);
-            Assert.checkNonNull(constantPoolEntry);
-            int constantValueString = addString(constantPool, Attribute.ConstantValue);
-            attributes.put(Attribute.ConstantValue,
-                           new ConstantValue_attribute(constantValueString, constantPoolEntry.fst));
+            var cp = builder.constantPool();
+            ConstantValueEntry entry = switch (desc.constantValue) {
+                case Boolean v -> cp.intEntry(v ? 1 : 0);
+                case Character v -> cp.intEntry(v);
+                case Integer v -> cp.intEntry(v);
+                case Long v -> cp.longEntry(v);
+                case Float v -> cp.floatEntry(v);
+                case Double v -> cp.doubleEntry(v);
+                case String v -> cp.stringEntry(v);
+                default -> throw new IllegalArgumentException(desc.constantValue.getClass().toString());
+            };
+            builder.with(ConstantValueAttribute.of(entry));
         }
     }
 
-    private void addGenericAttributes(FeatureDescription desc, List<CPInfo> constantPool, Map<String, Attribute> attributes) {
+    @SuppressWarnings("unchecked")
+    private void addGenericAttributes(FeatureDescription desc, ClassFileBuilder<?, ?> builder) {
+        addGenericAttributes(desc, (Consumer<? super Attribute<?>>) builder, builder.constantPool());
+    }
+
+    private void addGenericAttributes(FeatureDescription desc, Consumer<? super Attribute<?>> sink, ConstantPoolBuilder cpb) {
+        @SuppressWarnings("unchecked")
+        var builder = (Consumer<Attribute<?>>) sink;
         if (desc.deprecated) {
-            int attributeString = addString(constantPool, Attribute.Deprecated);
-            attributes.put(Attribute.Deprecated,
-                           new Deprecated_attribute(attributeString));
+            builder.accept(DeprecatedAttribute.of());
         }
         if (desc.signature != null) {
-            int attributeString = addString(constantPool, Attribute.Signature);
-            int signatureString = addString(constantPool, desc.signature);
-            attributes.put(Attribute.Signature,
-                           new Signature_attribute(attributeString, signatureString));
+            builder.accept(SignatureAttribute.of(cpb.utf8Entry(desc.signature)));
         }
         if (desc.classAnnotations != null && !desc.classAnnotations.isEmpty()) {
-            int attributeString = addString(constantPool, Attribute.RuntimeInvisibleAnnotations);
-            Annotation[] annotations = createAnnotations(constantPool, desc.classAnnotations);
-            attributes.put(Attribute.RuntimeInvisibleAnnotations,
-                           new RuntimeInvisibleAnnotations_attribute(attributeString, annotations));
+            builder.accept(RuntimeInvisibleAnnotationsAttribute.of(createAnnotations(desc.classAnnotations)));
         }
         if (desc.runtimeAnnotations != null && !desc.runtimeAnnotations.isEmpty()) {
-            int attributeString = addString(constantPool, Attribute.RuntimeVisibleAnnotations);
-            Annotation[] annotations = createAnnotations(constantPool, desc.runtimeAnnotations);
-            attributes.put(Attribute.RuntimeVisibleAnnotations,
-                           new RuntimeVisibleAnnotations_attribute(attributeString, annotations));
+            builder.accept(RuntimeVisibleAnnotationsAttribute.of(createAnnotations(desc.runtimeAnnotations)));
         }
     }
 
-    private Annotation[] createAnnotations(List<CPInfo> constantPool, List<AnnotationDescription> desc) {
-        Annotation[] result = new Annotation[desc.size()];
-        int i = 0;
-
-        for (AnnotationDescription ad : desc) {
-            result[i++] = createAnnotation(constantPool, ad);
-        }
-
-        return result;
+    private List<Annotation> createAnnotations(List<AnnotationDescription> desc) {
+        return desc.stream().map(this::createAnnotation).collect(Collectors.toList());
     }
 
-    private Annotation[][] createParameterAnnotations(List<CPInfo> constantPool, List<List<AnnotationDescription>> desc) {
-        Annotation[][] result = new Annotation[desc.size()][];
-        int i = 0;
-
-        for (List<AnnotationDescription> paramAnnos : desc) {
-            result[i++] = createAnnotations(constantPool, paramAnnos);
-        }
-
-        return result;
+    private List<List<Annotation>> createParameterAnnotations(List<List<AnnotationDescription>> desc) {
+        return desc.stream().map(this::createAnnotations).collect(Collectors.toList());
     }
 
-    private Annotation createAnnotation(List<CPInfo> constantPool, AnnotationDescription desc) {
+    private Annotation createAnnotation(AnnotationDescription desc) {
         String annotationType = desc.annotationType;
         Map<String, Object> values = desc.values;
 
@@ -1257,184 +1027,33 @@ public class CreateSymbols {
             annotationType = RESTRICTED_ANNOTATION_INTERNAL;
         }
 
-        return new Annotation(null,
-                              addString(constantPool, annotationType),
-                              createElementPairs(constantPool, values));
+        return Annotation.of(ClassDesc.ofDescriptor(annotationType),
+                createElementPairs(values));
     }
 
-    private element_value_pair[] createElementPairs(List<CPInfo> constantPool, Map<String, Object> annotationAttributes) {
-        element_value_pair[] pairs = new element_value_pair[annotationAttributes.size()];
-        int i = 0;
-
-        for (Entry<String, Object> e : annotationAttributes.entrySet()) {
-            int elementNameString = addString(constantPool, e.getKey());
-            element_value value = createAttributeValue(constantPool, e.getValue());
-            pairs[i++] = new element_value_pair(elementNameString, value);
-        }
-
-        return pairs;
+    private List<AnnotationElement> createElementPairs(Map<String, Object> annotationAttributes) {
+        return annotationAttributes.entrySet().stream()
+                .map(e -> AnnotationElement.of(e.getKey(), createAttributeValue(e.getValue())))
+                .collect(Collectors.toList());
     }
 
-    private element_value createAttributeValue(List<CPInfo> constantPool, Object value) {
-        Pair<Integer, Character> constantPoolEntry = addConstant(constantPool, value, true);
-        if (constantPoolEntry != null) {
-            return new Primitive_element_value(constantPoolEntry.fst, constantPoolEntry.snd);
-        } else if (value instanceof EnumConstant) {
-            EnumConstant ec = (EnumConstant) value;
-            return new Enum_element_value(addString(constantPool, ec.type),
-                                          addString(constantPool, ec.constant),
-                                          'e');
-        } else if (value instanceof ClassConstant) {
-            ClassConstant cc = (ClassConstant) value;
-            return new Class_element_value(addString(constantPool, cc.type), 'c');
-        } else if (value instanceof AnnotationDescription) {
-            Annotation annotation = createAnnotation(constantPool, ((AnnotationDescription) value));
-            return new Annotation_element_value(annotation, '@');
-        } else if (value instanceof Collection) {
-            @SuppressWarnings("unchecked")
-                    Collection<Object> array = (Collection<Object>) value;
-            element_value[] values = new element_value[array.size()];
-            int i = 0;
-
-            for (Object elem : array) {
-                values[i++] = createAttributeValue(constantPool, elem);
-            }
-
-            return new Array_element_value(values, '[');
-        }
-        throw new IllegalStateException(value.getClass().getName());
-    }
-
-    private static Pair<Integer, Character> addConstant(List<CPInfo> constantPool, Object value, boolean annotation) {
-        if (value instanceof Boolean) {
-            return Pair.of(addToCP(constantPool, new CONSTANT_Integer_info(((Boolean) value) ? 1 : 0)), 'Z');
-        } else if (value instanceof Byte) {
-            return Pair.of(addToCP(constantPool, new CONSTANT_Integer_info((byte) value)), 'B');
-        } else if (value instanceof Character) {
-            return Pair.of(addToCP(constantPool, new CONSTANT_Integer_info((char) value)), 'C');
-        } else if (value instanceof Short) {
-            return Pair.of(addToCP(constantPool, new CONSTANT_Integer_info((short) value)), 'S');
-        } else if (value instanceof Integer) {
-            return Pair.of(addToCP(constantPool, new CONSTANT_Integer_info((int) value)), 'I');
-        } else if (value instanceof Long) {
-            return Pair.of(addToCP(constantPool, new CONSTANT_Long_info((long) value)), 'J');
-        } else if (value instanceof Float) {
-            return Pair.of(addToCP(constantPool, new CONSTANT_Float_info((float) value)), 'F');
-        } else if (value instanceof Double) {
-            return Pair.of(addToCP(constantPool, new CONSTANT_Double_info((double) value)), 'D');
-        } else if (value instanceof String) {
-            int stringIndex = addString(constantPool, (String) value);
-            if (annotation) {
-                return Pair.of(stringIndex, 's');
-            } else {
-                return Pair.of(addToCP(constantPool, new CONSTANT_String_info(null, stringIndex)), 's');
-            }
-        }
-
-        return null;
-    }
-
-    private static int addString(List<CPInfo> constantPool, String string) {
-        Assert.checkNonNull(string);
-
-        int i = 0;
-        for (CPInfo info : constantPool) {
-            if (info instanceof CONSTANT_Utf8_info) {
-                if (((CONSTANT_Utf8_info) info).value.equals(string)) {
-                    return i;
-                }
-            }
-            i++;
-        }
-
-        return addToCP(constantPool, new CONSTANT_Utf8_info(string));
-    }
-
-    private static int addInt(List<CPInfo> constantPool, int value) {
-        int i = 0;
-        for (CPInfo info : constantPool) {
-            if (info instanceof CONSTANT_Integer_info) {
-                if (((CONSTANT_Integer_info) info).value == value) {
-                    return i;
-                }
-            }
-            i++;
-        }
-
-        return addToCP(constantPool, new CONSTANT_Integer_info(value));
-    }
-
-    private static int addModuleName(List<CPInfo> constantPool, String moduleName) {
-        int nameIdx = addString(constantPool, moduleName);
-        int i = 0;
-        for (CPInfo info : constantPool) {
-            if (info instanceof CONSTANT_Module_info) {
-                if (((CONSTANT_Module_info) info).name_index == nameIdx) {
-                    return i;
-                }
-            }
-            i++;
-        }
-
-        return addToCP(constantPool, new CONSTANT_Module_info(null, nameIdx));
-    }
-
-    private static int addPackageName(List<CPInfo> constantPool, String packageName) {
-        int nameIdx = addString(constantPool, packageName);
-        int i = 0;
-        for (CPInfo info : constantPool) {
-            if (info instanceof CONSTANT_Package_info) {
-                if (((CONSTANT_Package_info) info).name_index == nameIdx) {
-                    return i;
-                }
-            }
-            i++;
-        }
-
-        return addToCP(constantPool, new CONSTANT_Package_info(null, nameIdx));
-    }
-
-    private static int addClassName(List<CPInfo> constantPool, String className) {
-        int nameIdx = addString(constantPool, className);
-        int i = 0;
-        for (CPInfo info : constantPool) {
-            if (info instanceof CONSTANT_Class_info) {
-                if (((CONSTANT_Class_info) info).name_index == nameIdx) {
-                    return i;
-                }
-            }
-            i++;
-        }
-
-        return addToCP(constantPool, new CONSTANT_Class_info(null, nameIdx));
-    }
-
-    private static int addToCP(List<CPInfo> constantPool, CPInfo entry) {
-        int result = constantPool.size();
-
-        constantPool.add(entry);
-
-        if (entry.size() > 1) {
-            constantPool.add(null);
-        }
-
-        return result;
-    }
-
-    private static int addClass(List<CPInfo> constantPool, String className) {
-        int classNameIndex = addString(constantPool, className);
-
-        int i = 0;
-        for (CPInfo info : constantPool) {
-            if (info instanceof CONSTANT_Class_info) {
-                if (((CONSTANT_Class_info) info).name_index == classNameIndex) {
-                    return i;
-                }
-            }
-            i++;
-        }
-
-        return addToCP(constantPool, new CONSTANT_Class_info(null, classNameIndex));
+    private AnnotationValue createAttributeValue(Object value) {
+        return switch (value) {
+            case Boolean v -> AnnotationValue.ofBoolean(v);
+            case Byte v -> AnnotationValue.ofByte(v);
+            case Character v -> AnnotationValue.ofChar(v);
+            case Short v -> AnnotationValue.ofShort(v);
+            case Integer v -> AnnotationValue.ofInt(v);
+            case Long v -> AnnotationValue.ofLong(v);
+            case Float v -> AnnotationValue.ofFloat(v);
+            case Double v -> AnnotationValue.ofDouble(v);
+            case String v -> AnnotationValue.ofString(v);
+            case EnumConstant v -> AnnotationValue.ofEnum(ClassDesc.ofDescriptor(v.type), v.constant);
+            case ClassConstant v -> AnnotationValue.ofClass(ClassDesc.ofDescriptor(v.type));
+            case AnnotationDescription v -> AnnotationValue.ofAnnotation(createAnnotation(v));
+            case Collection<?> v -> AnnotationValue.ofArray(v.stream().map(this::createAttributeValue).collect(Collectors.toList()));
+            default -> throw new IllegalArgumentException(value.getClass().getName());
+        };
     }
     //</editor-fold>
     //</editor-fold>
@@ -1509,7 +1128,7 @@ public class CreateSymbols {
                     classFileData.add(data.toByteArray());
                 }
             } catch (IOException ex) {
-                throw new IllegalStateException(ex);
+                throw new IllegalArgumentException(ex);
             }
 
             return classFileData;
@@ -1525,12 +1144,8 @@ public class CreateSymbols {
                 new HashMap<>();
 
         for (byte[] classFileData : classData) {
-            try (InputStream in = new ByteArrayInputStream(classFileData)) {
-                inspectModuleInfoClassFile(in,
-                                           currentVersionModules, version);
-            } catch (IOException | ConstantPoolException ex) {
-                throw new IllegalStateException(ex);
-            }
+            inspectModuleInfoClassFile(classFileData,
+                    currentVersionModules, version);
         }
 
         ExcludeIncludeList currentEIList;
@@ -1561,28 +1176,25 @@ public class CreateSymbols {
             try (InputStream in = new ByteArrayInputStream(classFileData)) {
                 inspectClassFile(in, currentVersionClasses,
                                  currentEIList, version,
-                                 cf -> {
-                                     PermittedSubclasses_attribute permitted = (PermittedSubclasses_attribute) cf.getAttribute(Attribute.PermittedSubclasses);
+                                 cm -> {
+                                     var permitted = cm.findAttribute(Attributes.permittedSubclasses()).orElse(null);
                                      if (permitted != null) {
-                                         try {
-                                             String currentPack = cf.getName().substring(0, cf.getName().lastIndexOf('/'));
+                                         var name = cm.thisClass().asInternalName();
+                                         String currentPack = name.substring(0, name.lastIndexOf('/'));
 
-                                             for (int i = 0; i < permitted.subtypes.length; i++) {
-                                                 String permittedClassName = cf.constant_pool.getClassInfo(permitted.subtypes[i]).getName();
-                                                 if (!currentEIList.accepts(permittedClassName, false)) {
-                                                     String permittedPack = permittedClassName.substring(0, permittedClassName.lastIndexOf('/'));
+                                         for (var sub : permitted.permittedSubclasses()) {
+                                             String permittedClassName = sub.asInternalName();
+                                             if (!currentEIList.accepts(permittedClassName, false)) {
+                                                 String permittedPack = permittedClassName.substring(0, permittedClassName.lastIndexOf('/'));
 
-                                                     extraModulesPackagesToDerive.computeIfAbsent(permittedPack, x -> new HashSet<>())
-                                                                                 .add(currentPack);
-                                                 }
+                                                 extraModulesPackagesToDerive.computeIfAbsent(permittedPack, x -> new HashSet<>())
+                                                                             .add(currentPack);
                                              }
-                                         } catch (ConstantPoolException ex) {
-                                             throw new IllegalStateException(ex);
                                          }
                                      }
                                  });
-            } catch (IOException | ConstantPoolException ex) {
-                throw new IllegalStateException(ex);
+            } catch (IOException ex) {
+                throw new IllegalArgumentException(ex);
             }
         }
 
@@ -1648,12 +1260,8 @@ public class CreateSymbols {
                     Path moduleInfo = p.resolve("module-info.class");
 
                     if (Files.isReadable(moduleInfo)) {
-                        ModuleDescription md;
-
-                        try (InputStream in = Files.newInputStream(moduleInfo)) {
-                            md = inspectModuleInfoClassFile(in,
+                        ModuleDescription md = inspectModuleInfoClassFile(Files.readAllBytes(moduleInfo),
                                     currentVersionModules, version);
-                        }
                         if (md == null) {
                             continue;
                         }
@@ -1715,8 +1323,8 @@ public class CreateSymbols {
                     }
                 }
             }
-        } catch (IOException | ConstantPoolException ex) {
-            throw new IllegalStateException(ex);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException(ex);
         }
 
         finishClassLoading(classes, modules, currentVersionModules, currentVersionClasses, currentEIList, version, baseline);
@@ -1724,7 +1332,7 @@ public class CreateSymbols {
 
     private void loadFromDirectoryHandleClassFile(Path path, ClassList currentVersionClasses,
                                                   ExcludeIncludeList currentEIList, String version,
-                                                  List<String> todo) throws IOException, ConstantPoolException {
+                                                  List<String> todo) throws IOException {
         try (InputStream in = Files.newInputStream(path)) {
             inspectClassFile(in, currentVersionClasses,
                              currentEIList, version,
@@ -2244,45 +1852,41 @@ public class CreateSymbols {
     public static String PROFILE_ANNOTATION = "Ljdk/Profile+Annotation;";
     public static boolean ALLOW_NON_EXISTING_CLASSES = false;
 
-    private void inspectClassFile(InputStream in, ClassList classes, ExcludeIncludeList excludesIncludes, String version) throws IOException, ConstantPoolException {
+    private void inspectClassFile(InputStream in, ClassList classes, ExcludeIncludeList excludesIncludes, String version) throws IOException {
         inspectClassFile(in, classes, excludesIncludes, version, cf -> {});
     }
 
     private void inspectClassFile(InputStream in, ClassList classes, ExcludeIncludeList excludesIncludes, String version,
-                                  Consumer<ClassFile> extraTask) throws IOException, ConstantPoolException {
-        ClassFile cf = ClassFile.read(in);
+                                  Consumer<ClassModel> extraTask) throws IOException {
+        ClassModel cm = ClassFile.of().parse(in.readAllBytes());
 
-        if (cf.access_flags.is(AccessFlags.ACC_MODULE)) {
+        if (cm.isModuleInfo()) {
             return ;
         }
 
-        if (!excludesIncludes.accepts(cf.getName(), true)) {
+        if (!excludesIncludes.accepts(cm.thisClass().asInternalName(), true)) {
             return ;
         }
 
-        extraTask.accept(cf);
+        extraTask.accept(cm);
 
         ClassHeaderDescription headerDesc = new ClassHeaderDescription();
 
-        headerDesc.flags = cf.access_flags.flags;
+        headerDesc.flags = cm.flags().flagsMask();
 
-        if (cf.super_class != 0) {
-            headerDesc.extendsAttr = cf.getSuperclassName();
+        if (cm.superclass().isPresent()) {
+            headerDesc.extendsAttr = cm.superclass().get().asInternalName();
         }
-        List<String> interfaces = new ArrayList<>();
-        for (int i = 0; i < cf.interfaces.length; i++) {
-            interfaces.add(cf.getInterfaceName(i));
-        }
-        headerDesc.implementsAttr = interfaces;
-        for (Attribute attr : cf.attributes) {
-            if (!readAttribute(cf, headerDesc, attr))
+        headerDesc.implementsAttr = cm.interfaces().stream().map(ClassEntry::asInternalName).collect(Collectors.toList());
+        for (var attr : cm.attributes()) {
+            if (!readAttribute(headerDesc, attr))
                 return ;
         }
 
         ClassDescription clazzDesc = null;
 
         for (ClassDescription cd : classes) {
-            if (cd.name.equals(cf.getName())) {
+            if (cd.name.equals(cm.thisClass().asInternalName())) {
                 clazzDesc = cd;
                 break;
             }
@@ -2290,54 +1894,54 @@ public class CreateSymbols {
 
         if (clazzDesc == null) {
             clazzDesc = new ClassDescription();
-            clazzDesc.name = cf.getName();
+            clazzDesc.name = cm.thisClass().asInternalName();
             classes.add(clazzDesc);
         }
 
         addClassHeader(clazzDesc, headerDesc, version, null);
 
-        for (Method m : cf.methods) {
-            if (!include(m.access_flags.flags))
+        for (var m : cm.methods()) {
+            if (!include(m.flags().flagsMask()))
                 continue;
             MethodDescription methDesc = new MethodDescription();
-            methDesc.flags = m.access_flags.flags;
-            methDesc.name = m.getName(cf.constant_pool);
-            methDesc.descriptor = m.descriptor.getValue(cf.constant_pool);
-            for (Attribute attr : m.attributes) {
-                readAttribute(cf, methDesc, attr);
+            methDesc.flags = m.flags().flagsMask();
+            methDesc.name = m.methodName().stringValue();
+            methDesc.descriptor = m.methodType().stringValue();
+            for (var attr : m.attributes()) {
+                readAttribute(methDesc, attr);
             }
             addMethod(clazzDesc, methDesc, version, null);
         }
-        for (Field f : cf.fields) {
-            if (!include(f.access_flags.flags))
+        for (var f : cm.fields()) {
+            if (!include(f.flags().flagsMask()))
                 continue;
             FieldDescription fieldDesc = new FieldDescription();
-            fieldDesc.flags = f.access_flags.flags;
-            fieldDesc.name = f.getName(cf.constant_pool);
-            fieldDesc.descriptor = f.descriptor.getValue(cf.constant_pool);
-            for (Attribute attr : f.attributes) {
-                readAttribute(cf, fieldDesc, attr);
+            fieldDesc.flags = f.flags().flagsMask();
+            fieldDesc.name = f.fieldName().stringValue();
+            fieldDesc.descriptor = f.fieldType().stringValue();
+            for (var attr : f.attributes()) {
+                readAttribute(fieldDesc, attr);
             }
             addField(clazzDesc, fieldDesc, version, null);
         }
     }
 
-    private ModuleDescription inspectModuleInfoClassFile(InputStream in,
+    private ModuleDescription inspectModuleInfoClassFile(byte[] data,
             Map<String, ModuleDescription> modules,
-            String version) throws IOException, ConstantPoolException {
-        ClassFile cf = ClassFile.read(in);
+            String version) {
+        ClassModel cm = ClassFile.of().parse(data);
 
-        if (!cf.access_flags.is(AccessFlags.ACC_MODULE)) {
+        if (!cm.flags().has(AccessFlag.MODULE)) {
             return null;
         }
 
         ModuleHeaderDescription headerDesc = new ModuleHeaderDescription();
 
         headerDesc.versions = version;
-        headerDesc.flags = cf.access_flags.flags;
+        headerDesc.flags = cm.flags().flagsMask();
 
-        for (Attribute attr : cf.attributes) {
-            if (!readAttribute(cf, headerDesc, attr))
+        for (var attr : cm.attributes()) {
+            if (!readAttribute(headerDesc, attr))
                 return null;
         }
 
@@ -2361,56 +1965,46 @@ public class CreateSymbols {
         Set<String> additionalIncludes = new HashSet<>();
 
         for (byte[] classFileData : classData) {
-            try (InputStream in = new ByteArrayInputStream(classFileData)) {
-                ClassFile cf = ClassFile.read(in);
-
-                additionalIncludes.addAll(otherRelevantTypesWithOwners(cf));
-            } catch (IOException | ConstantPoolException ex) {
-                throw new IllegalStateException(ex);
-            }
+            additionalIncludes.addAll(otherRelevantTypesWithOwners(ClassFile.of().parse(classFileData)));
         }
 
         return additionalIncludes;
     }
 
-    private Set<String> otherRelevantTypesWithOwners(ClassFile cf) {
+    private Set<String> otherRelevantTypesWithOwners(ClassModel cm) {
         Set<String> supertypes = new HashSet<>();
 
-        try {
-            if (cf.access_flags.is(AccessFlags.ACC_MODULE)) {
-                return supertypes;
-            }
-
-            Set<String> additionalClasses = new HashSet<>();
-
-            if (cf.super_class != 0) {
-                additionalClasses.add(cf.getSuperclassName());
-            }
-            for (int i = 0; i < cf.interfaces.length; i++) {
-                additionalClasses.add(cf.getInterfaceName(i));
-            }
-            PermittedSubclasses_attribute permitted = (PermittedSubclasses_attribute) cf.getAttribute(Attribute.PermittedSubclasses);
-            if (permitted != null) {
-                for (int i = 0; i < permitted.subtypes.length; i++) {
-                    additionalClasses.add(cf.constant_pool.getClassInfo(permitted.subtypes[i]).getName());
-                }
-            }
-
-            for (String additional : additionalClasses) {
-                int dollar;
-
-                supertypes.add(additional);
-
-                while ((dollar = additional.lastIndexOf('$')) != (-1)) {
-                    additional = additional.substring(0, dollar);
-                    supertypes.add(additional);
-                }
-            }
-
+        if (cm.flags().has(AccessFlag.MODULE)) {
             return supertypes;
-        } catch (ConstantPoolException ex) {
-            throw new IllegalStateException(ex);
         }
+
+        Set<String> additionalClasses = new HashSet<>();
+
+        if (cm.superclass().isPresent()) {
+            additionalClasses.add(cm.superclass().get().asInternalName());
+        }
+        for (var iface : cm.interfaces()) {
+            additionalClasses.add(iface.asInternalName());
+        }
+        var permitted = cm.findAttribute(Attributes.permittedSubclasses()).orElse(null);
+        if (permitted != null) {
+            for (var sub : permitted.permittedSubclasses()) {
+                additionalClasses.add(sub.asInternalName());
+            }
+        }
+
+        for (String additional : additionalClasses) {
+            int dollar;
+
+            supertypes.add(additional);
+
+            while ((dollar = additional.lastIndexOf('$')) != (-1)) {
+                additional = additional.substring(0, dollar);
+                supertypes.add(additional);
+            }
+        }
+
+        return supertypes;
     }
 
     private void addModuleHeader(ModuleDescription moduleDesc,
@@ -2435,7 +2029,7 @@ public class CreateSymbols {
     }
 
     private boolean include(int accessFlags) {
-        return (accessFlags & (AccessFlags.ACC_PUBLIC | AccessFlags.ACC_PROTECTED)) != 0;
+        return (accessFlags & (ACC_PUBLIC | ACC_PROTECTED)) != 0;
     }
 
     private void addClassHeader(ClassDescription clazzDesc, ClassHeaderDescription headerDesc, String version, String baseline) {
@@ -2531,367 +2125,135 @@ public class CreateSymbols {
         }
     }
 
-    private boolean readAttribute(ClassFile cf, FeatureDescription feature, Attribute attr) throws ConstantPoolException {
-        String attrName = attr.getName(cf.constant_pool);
-        switch (attrName) {
-            case Attribute.AnnotationDefault:
-                assert feature instanceof MethodDescription;
-                element_value defaultValue = ((AnnotationDefault_attribute) attr).default_value;
-                ((MethodDescription) feature).annotationDefaultValue =
-                        convertElementValue(cf.constant_pool, defaultValue);
-                break;
-            case "Deprecated":
-                feature.deprecated = true;
-                break;
-            case "Exceptions":
-                assert feature instanceof MethodDescription;
-                List<String> thrownTypes = new ArrayList<>();
-                Exceptions_attribute exceptionAttr = (Exceptions_attribute) attr;
-                for (int i = 0; i < exceptionAttr.exception_index_table.length; i++) {
-                    thrownTypes.add(exceptionAttr.getException(i, cf.constant_pool));
-                }
-                ((MethodDescription) feature).thrownTypes = thrownTypes;
-                break;
-            case Attribute.InnerClasses:
+    private boolean readAttribute(FeatureDescription feature, Attribute<?> attr) {
+        switch (attr) {
+            case AnnotationDefaultAttribute a ->
+                    ((MethodDescription) feature).annotationDefaultValue = convertElementValue(a.defaultValue());
+            case DeprecatedAttribute _ -> feature.deprecated = true;
+            case ExceptionsAttribute a -> ((MethodDescription) feature).thrownTypes = a.exceptions().stream().map(ClassEntry::asInternalName).collect(Collectors.toList());
+            case InnerClassesAttribute a -> {
                 if (feature instanceof ModuleHeaderDescription)
                     break; //XXX
-                assert feature instanceof ClassHeaderDescription;
-                List<InnerClassInfo> innerClasses = new ArrayList<>();
-                InnerClasses_attribute innerClassesAttr = (InnerClasses_attribute) attr;
-                for (int i = 0; i < innerClassesAttr.number_of_classes; i++) {
-                    CONSTANT_Class_info outerClassInfo =
-                            innerClassesAttr.classes[i].getOuterClassInfo(cf.constant_pool);
-                    InnerClassInfo info = new InnerClassInfo();
-                    CONSTANT_Class_info innerClassInfo =
-                            innerClassesAttr.classes[i].getInnerClassInfo(cf.constant_pool);
-                    info.innerClass = innerClassInfo != null ? innerClassInfo.getName() : null;
-                    info.outerClass = outerClassInfo != null ? outerClassInfo.getName() : null;
-                    info.innerClassName = innerClassesAttr.classes[i].getInnerName(cf.constant_pool);
-                    info.innerClassFlags = innerClassesAttr.classes[i].inner_class_access_flags.flags;
-                    innerClasses.add(info);
-                }
-                ((ClassHeaderDescription) feature).innerClasses = innerClasses;
-                break;
-            case "RuntimeInvisibleAnnotations":
-                feature.classAnnotations = annotations2Description(cf.constant_pool, attr);
-                break;
-            case "RuntimeVisibleAnnotations":
-                feature.runtimeAnnotations = annotations2Description(cf.constant_pool, attr);
-                break;
-            case "Signature":
-                feature.signature = ((Signature_attribute) attr).getSignature(cf.constant_pool);
-                break;
-            case "ConstantValue":
-                assert feature instanceof FieldDescription;
-                Object value = convertConstantValue(cf.constant_pool.get(((ConstantValue_attribute) attr).constantvalue_index), ((FieldDescription) feature).descriptor);
-                if (((FieldDescription) feature).descriptor.equals("C")) {
-                    value = (char) (int) value;
-                }
-                ((FieldDescription) feature).constantValue = value;
-                break;
-            case "SourceFile":
-                //ignore, not needed
-                break;
-            case "BootstrapMethods":
-                //ignore, not needed
-                break;
-            case "Code":
-                //ignore, not needed
-                break;
-            case "EnclosingMethod":
+                ((ClassHeaderDescription) feature).innerClasses = a.classes().stream().map(cfi -> {
+                    var info = new InnerClassInfo();
+                    info.innerClass = cfi.innerClass().asInternalName();
+                    info.outerClass = cfi.outerClass().map(ClassEntry::asInternalName).orElse(null);
+                    info.innerClassName = cfi.innerName().map(Utf8Entry::stringValue).orElse(null);
+                    info.innerClassFlags = cfi.flagsMask();
+                    return info;
+                }).collect(Collectors.toList());
+            }
+            case RuntimeInvisibleAnnotationsAttribute a -> feature.classAnnotations = annotations2Description(a.annotations());
+            case RuntimeVisibleAnnotationsAttribute a -> feature.runtimeAnnotations = annotations2Description(a.annotations());
+            case SignatureAttribute a -> feature.signature = a.signature().stringValue();
+            case ConstantValueAttribute a -> {
+                var f = (FieldDescription) feature;
+                f.constantValue = convertConstantValue(a.constant(), f.descriptor);
+            }
+            case SourceFileAttribute _, BootstrapMethodsAttribute _, CodeAttribute _, SyntheticAttribute _ -> {}
+            case EnclosingMethodAttribute _ -> {
                 return false;
-            case "Synthetic":
-                break;
-            case "RuntimeVisibleParameterAnnotations":
-                assert feature instanceof MethodDescription;
-                ((MethodDescription) feature).runtimeParameterAnnotations =
-                        parameterAnnotations2Description(cf.constant_pool, attr);
-                break;
-            case "RuntimeInvisibleParameterAnnotations":
-                assert feature instanceof MethodDescription;
-                ((MethodDescription) feature).classParameterAnnotations =
-                        parameterAnnotations2Description(cf.constant_pool, attr);
-                break;
-            case Attribute.Module: {
-                assert feature instanceof ModuleHeaderDescription;
-                ModuleHeaderDescription header =
-                        (ModuleHeaderDescription) feature;
-                Module_attribute mod = (Module_attribute) attr;
-
-                header.name = cf.constant_pool
-                                .getModuleInfo(mod.module_name)
-                                .getName();
-
-                header.exports =
-                        Arrays.stream(mod.exports)
-                              .map(ee -> ExportsDescription.create(cf, ee))
-                              .collect(Collectors.toList());
+            }
+            case RuntimeVisibleParameterAnnotationsAttribute a -> ((MethodDescription) feature).runtimeParameterAnnotations = parameterAnnotations2Description(a.parameterAnnotations());
+            case RuntimeInvisibleParameterAnnotationsAttribute a -> ((MethodDescription) feature).classParameterAnnotations = parameterAnnotations2Description(a.parameterAnnotations());
+            case ModuleAttribute a -> {
+                ModuleHeaderDescription header = (ModuleHeaderDescription) feature;
+                header.name = a.moduleName().name().stringValue();
+                header.exports = a.exports().stream().map(ExportsDescription::create).collect(Collectors.toList());
                 if (header.extraModulePackages != null) {
                     header.exports.forEach(ed -> header.extraModulePackages.remove(ed.packageName()));
                 }
-                header.requires =
-                        Arrays.stream(mod.requires)
-                              .map(r -> RequiresDescription.create(cf, r))
-                              .collect(Collectors.toList());
-                header.uses = Arrays.stream(mod.uses_index)
-                                    .mapToObj(use -> getClassName(cf, use))
-                                    .collect(Collectors.toList());
-                header.provides =
-                        Arrays.stream(mod.provides)
-                              .map(p -> ProvidesDescription.create(cf, p))
-                              .collect(Collectors.toList());
-                break;
+                header.requires = a.requires().stream().map(RequiresDescription::create).collect(Collectors.toList());
+                header.uses = a.uses().stream().map(ClassEntry::asInternalName).collect(Collectors.toList());
+                header.provides = a.provides().stream().map(ProvidesDescription::create).collect(Collectors.toList());
             }
-            case Attribute.ModuleTarget: {
-                assert feature instanceof ModuleHeaderDescription;
-                ModuleHeaderDescription header =
-                        (ModuleHeaderDescription) feature;
-                ModuleTarget_attribute mod = (ModuleTarget_attribute) attr;
-                if (mod.target_platform_index != 0) {
-                    header.moduleTarget =
-                            cf.constant_pool
-                              .getUTF8Value(mod.target_platform_index);
-                }
-                break;
-            }
-            case Attribute.ModuleResolution: {
-                assert feature instanceof ModuleHeaderDescription;
-                ModuleHeaderDescription header =
-                        (ModuleHeaderDescription) feature;
-                ModuleResolution_attribute mod =
-                        (ModuleResolution_attribute) attr;
-                header.moduleResolution = mod.resolution_flags;
-                break;
-            }
-            case Attribute.ModulePackages:
-                assert feature instanceof ModuleHeaderDescription;
-                ModuleHeaderDescription header =
-                        (ModuleHeaderDescription) feature;
-                ModulePackages_attribute mod =
-                        (ModulePackages_attribute) attr;
-                header.extraModulePackages = new ArrayList<>();
-                for (int i = 0; i < mod.packages_count; i++) {
-                    String packageName = getPackageName(cf, mod.packages_index[i]);
+            case ModuleTargetAttribute a -> ((ModuleHeaderDescription) feature).moduleTarget = a.targetPlatform().stringValue();
+            case ModuleResolutionAttribute a -> ((ModuleHeaderDescription) feature).moduleResolution = a.resolutionFlags();
+            case ModulePackagesAttribute a -> {
+                var header = (ModuleHeaderDescription) feature;
+                header.extraModulePackages = a.packages().stream().<String>mapMulti((packageItem, sink) -> {
+                    var packageName = packageItem.name().stringValue();
                     if (header.exports == null ||
-                        header.exports.stream().noneMatch(ed -> ed.packageName().equals(packageName))) {
-                        header.extraModulePackages.add(packageName);
+                            header.exports.stream().noneMatch(ed -> ed.packageName().equals(packageName))) {
+                        sink.accept(packageName);
                     }
-                }
-                break;
-            case Attribute.ModuleHashes:
-                break;
-            case Attribute.NestHost: {
-                assert feature instanceof ClassHeaderDescription;
-                NestHost_attribute nestHost = (NestHost_attribute) attr;
-                ClassHeaderDescription chd = (ClassHeaderDescription) feature;
-                chd.nestHost = nestHost.getNestTop(cf.constant_pool).getName();
-                break;
+                }).collect(Collectors.toList());
             }
-            case Attribute.NestMembers: {
-                assert feature instanceof ClassHeaderDescription;
-                NestMembers_attribute nestMembers = (NestMembers_attribute) attr;
-                ClassHeaderDescription chd = (ClassHeaderDescription) feature;
-                chd.nestMembers = Arrays.stream(nestMembers.members_indexes)
-                                        .mapToObj(i -> getClassName(cf, i))
-                                        .collect(Collectors.toList());
-                break;
-            }
-            case Attribute.Record: {
-                assert feature instanceof ClassHeaderDescription;
-                Record_attribute record = (Record_attribute) attr;
-                List<RecordComponentDescription> components = new ArrayList<>();
-                for (ComponentInfo info : record.component_info_arr) {
-                    RecordComponentDescription rcd = new RecordComponentDescription();
-                    rcd.name = info.getName(cf.constant_pool);
-                    rcd.descriptor = info.descriptor.getValue(cf.constant_pool);
-                    for (Attribute nestedAttr : info.attributes) {
-                        readAttribute(cf, rcd, nestedAttr);
-                    }
-                    components.add(rcd);
-                }
-                ClassHeaderDescription chd = (ClassHeaderDescription) feature;
+            case ModuleHashesAttribute _ -> {}
+            case NestHostAttribute a -> ((ClassHeaderDescription) feature).nestHost = a.nestHost().asInternalName();
+            case NestMembersAttribute a -> ((ClassHeaderDescription) feature).nestMembers = a.nestMembers().stream().map(ClassEntry::asInternalName).collect(Collectors.toList());
+            case RecordAttribute a -> {
+                var chd = (ClassHeaderDescription) feature;
                 chd.isRecord = true;
-                chd.recordComponents = components;
-                break;
+                chd.recordComponents = a.components().stream().map(rci -> {
+                    var rcd = new RecordComponentDescription();
+                    rcd.name = rci.name().stringValue();
+                    rcd.descriptor = rci.descriptor().stringValue();
+                    rci.attributes().forEach(child -> readAttribute(rcd, child));
+                    return rcd;
+                }).collect(Collectors.toList());
             }
-            case Attribute.MethodParameters: {
-                assert feature instanceof MethodDescription;
-                MethodParameters_attribute params = (MethodParameters_attribute) attr;
-                MethodDescription method = (MethodDescription) feature;
-                method.methodParameters = new ArrayList<>();
-                for (MethodParameters_attribute.Entry e : params.method_parameter_table) {
-                    String name = e.name_index == 0 ? null
-                            : cf.constant_pool.getUTF8Value(e.name_index);
-                    MethodDescription.MethodParam param =
-                            new MethodDescription.MethodParam(e.flags, name);
-                    method.methodParameters.add(param);
-                }
-                break;
-            }
-            case Attribute.PermittedSubclasses: {
-                assert feature instanceof ClassHeaderDescription;
-                PermittedSubclasses_attribute permittedSubclasses = (PermittedSubclasses_attribute) attr;
-                ClassHeaderDescription chd = (ClassHeaderDescription) feature;
-                chd.permittedSubclasses = Arrays.stream(permittedSubclasses.subtypes)
-                        .mapToObj(i -> getClassName(cf, i))
-                        .collect(Collectors.toList());
+            case MethodParametersAttribute a -> ((MethodDescription) feature).methodParameters = a.parameters().stream()
+                    .map(mpi -> new MethodDescription.MethodParam(mpi.flagsMask(), mpi.name().map(Utf8Entry::stringValue).orElse(null)))
+                    .collect(Collectors.toList());
+            case PermittedSubclassesAttribute a -> {
+                var chd = (ClassHeaderDescription) feature;
                 chd.isSealed = true;
-                break;
+                chd.permittedSubclasses = a.permittedSubclasses().stream().map(ClassEntry::asInternalName).collect(Collectors.toList());
             }
-            case Attribute.ModuleMainClass: {
-                ModuleMainClass_attribute moduleMainClass = (ModuleMainClass_attribute) attr;
-                assert feature instanceof ModuleHeaderDescription;
-                ModuleHeaderDescription mhd = (ModuleHeaderDescription) feature;
-                mhd.moduleMainClass = moduleMainClass.getMainClassName(cf.constant_pool);
-                break;
-            }
-            default:
-                throw new IllegalStateException("Unhandled attribute: " +
-                                                attrName);
+            case ModuleMainClassAttribute a -> ((ModuleHeaderDescription) feature).moduleMainClass = a.mainClass().asInternalName();
+            default -> throw new IllegalArgumentException("Unhandled attribute: " + attr.attributeName()); // Do nothing
         }
 
         return true;
     }
 
-    private static String getClassName(ClassFile cf, int idx) {
-        try {
-            return cf.constant_pool.getClassInfo(idx).getName();
-        } catch (InvalidIndex ex) {
-            throw new IllegalStateException(ex);
-        } catch (ConstantPool.UnexpectedEntry ex) {
-            throw new IllegalStateException(ex);
-        } catch (ConstantPoolException ex) {
-            throw new IllegalStateException(ex);
-        }
-    }
-
-    private static String getPackageName(ClassFile cf, int idx) {
-        try {
-            return cf.constant_pool.getPackageInfo(idx).getName();
-        } catch (InvalidIndex ex) {
-            throw new IllegalStateException(ex);
-        } catch (ConstantPool.UnexpectedEntry ex) {
-            throw new IllegalStateException(ex);
-        } catch (ConstantPoolException ex) {
-            throw new IllegalStateException(ex);
-        }
-    }
-
-    private static String getModuleName(ClassFile cf, int idx) {
-        try {
-            return cf.constant_pool.getModuleInfo(idx).getName();
-        } catch (InvalidIndex ex) {
-            throw new IllegalStateException(ex);
-        } catch (ConstantPool.UnexpectedEntry ex) {
-            throw new IllegalStateException(ex);
-        } catch (ConstantPoolException ex) {
-            throw new IllegalStateException(ex);
-        }
-    }
-
     public static String INJECTED_VERSION = null;
 
-    private static String getVersion(ClassFile cf, int idx) {
+    private static String getVersion(Optional<Utf8Entry> version) {
         if (INJECTED_VERSION != null) {
             return INJECTED_VERSION;
         }
-        if (idx == 0)
-            return null;
-        try {
-            return ((CONSTANT_Utf8_info) cf.constant_pool.get(idx)).value;
-        } catch (InvalidIndex ex) {
-            throw new IllegalStateException(ex);
-        }
+        return version.map(Utf8Entry::stringValue).orElse(null);
     }
 
-    Object convertConstantValue(CPInfo info, String descriptor) throws ConstantPoolException {
-        if (info instanceof CONSTANT_Integer_info) {
-            if ("Z".equals(descriptor))
-                return ((CONSTANT_Integer_info) info).value == 1;
-            else
-                return ((CONSTANT_Integer_info) info).value;
-        } else if (info instanceof CONSTANT_Long_info) {
-            return ((CONSTANT_Long_info) info).value;
-        } else if (info instanceof CONSTANT_Float_info) {
-            return ((CONSTANT_Float_info) info).value;
-        } else if (info instanceof CONSTANT_Double_info) {
-            return ((CONSTANT_Double_info) info).value;
-        } else if (info instanceof CONSTANT_String_info) {
-            return ((CONSTANT_String_info) info).getString();
+    Object convertConstantValue(ConstantValueEntry info, String descriptor) {
+        if (descriptor.length() == 1 && info instanceof IntegerEntry ie) {
+            var i = ie.intValue();
+            return switch (descriptor.charAt(0)) {
+                case 'I', 'B', 'S' -> i;
+                case 'C' -> (char) i;
+                case 'Z' -> i == 1;
+                default -> throw new IllegalArgumentException(descriptor);
+            };
         }
-        throw new IllegalStateException(info.getClass().getName());
+        return info.constantValue();
     }
 
-    Object convertElementValue(ConstantPool cp, element_value val) throws InvalidIndex, ConstantPoolException {
-        switch (val.tag) {
-            case 'Z':
-                return ((CONSTANT_Integer_info) cp.get(((Primitive_element_value) val).const_value_index)).value != 0;
-            case 'B':
-                return (byte) ((CONSTANT_Integer_info) cp.get(((Primitive_element_value) val).const_value_index)).value;
-            case 'C':
-                return (char) ((CONSTANT_Integer_info) cp.get(((Primitive_element_value) val).const_value_index)).value;
-            case 'S':
-                return (short) ((CONSTANT_Integer_info) cp.get(((Primitive_element_value) val).const_value_index)).value;
-            case 'I':
-                return ((CONSTANT_Integer_info) cp.get(((Primitive_element_value) val).const_value_index)).value;
-            case 'J':
-                return ((CONSTANT_Long_info) cp.get(((Primitive_element_value) val).const_value_index)).value;
-            case 'F':
-                return ((CONSTANT_Float_info) cp.get(((Primitive_element_value) val).const_value_index)).value;
-            case 'D':
-                return ((CONSTANT_Double_info) cp.get(((Primitive_element_value) val).const_value_index)).value;
-            case 's':
-                return ((CONSTANT_Utf8_info) cp.get(((Primitive_element_value) val).const_value_index)).value;
-
-            case 'e':
-                return new EnumConstant(cp.getUTF8Value(((Enum_element_value) val).type_name_index),
-                        cp.getUTF8Value(((Enum_element_value) val).const_name_index));
-            case 'c':
-                return new ClassConstant(cp.getUTF8Value(((Class_element_value) val).class_info_index));
-
-            case '@':
-                return annotation2Description(cp, ((Annotation_element_value) val).annotation_value);
-
-            case '[':
-                List<Object> values = new ArrayList<>();
-                for (element_value elem : ((Array_element_value) val).values) {
-                    values.add(convertElementValue(cp, elem));
-                }
-                return values;
-            default:
-                throw new IllegalStateException("Currently unhandled tag: " + val.tag);
-        }
+    Object convertElementValue(AnnotationValue val) {
+        return switch (val) {
+            case AnnotationValue.OfConstant oc -> oc.resolvedValue();
+            case AnnotationValue.OfEnum oe -> new EnumConstant(oe.className().stringValue(), oe.constantName().stringValue());
+            case AnnotationValue.OfClass oc -> new ClassConstant(oc.className().stringValue());
+            case AnnotationValue.OfArray oa -> oa.values().stream().map(this::convertElementValue).collect(Collectors.toList());
+            case AnnotationValue.OfAnnotation oa -> annotation2Description(oa.annotation());
+        };
     }
 
-    private List<AnnotationDescription> annotations2Description(ConstantPool cp, Attribute attr) throws ConstantPoolException {
-        RuntimeAnnotations_attribute annotationsAttr = (RuntimeAnnotations_attribute) attr;
-        List<AnnotationDescription> descs = new ArrayList<>();
-        for (Annotation a : annotationsAttr.annotations) {
-            descs.add(annotation2Description(cp, a));
-        }
-        return descs;
+    private List<AnnotationDescription> annotations2Description(List<java.lang.classfile.Annotation> annos) {
+        return annos.stream().map(this::annotation2Description).collect(Collectors.toList());
     }
 
-    private List<List<AnnotationDescription>> parameterAnnotations2Description(ConstantPool cp, Attribute attr) throws ConstantPoolException {
-        RuntimeParameterAnnotations_attribute annotationsAttr =
-                (RuntimeParameterAnnotations_attribute) attr;
-        List<List<AnnotationDescription>> descs = new ArrayList<>();
-        for (Annotation[] attrAnnos : annotationsAttr.parameter_annotations) {
-            List<AnnotationDescription> paramDescs = new ArrayList<>();
-            for (Annotation ann : attrAnnos) {
-                paramDescs.add(annotation2Description(cp, ann));
-            }
-            descs.add(paramDescs);
-        }
-        return descs;
+    private List<List<AnnotationDescription>> parameterAnnotations2Description(List<List<java.lang.classfile.Annotation>> annos) {
+        return annos.stream().map(this::annotations2Description).collect(Collectors.toList());
     }
 
-    private AnnotationDescription annotation2Description(ConstantPool cp, Annotation a) throws ConstantPoolException {
-        String annotationType = cp.getUTF8Value(a.type_index);
+    private AnnotationDescription annotation2Description(java.lang.classfile.Annotation a) {
+        String annotationType = a.className().stringValue();
         Map<String, Object> values = new HashMap<>();
 
-        for (element_value_pair e : a.element_value_pairs) {
-            values.put(cp.getUTF8Value(e.element_name_index), convertElementValue(cp, e.value));
+        for (var e : a.elements()) {
+            values.put(e.name().stringValue(), convertElementValue(e.value()));
         }
 
         return new AnnotationDescription(annotationType, values);
@@ -3181,7 +2543,7 @@ public class CreateSymbols {
                     case "-module":
                         break OUTER;
                     default:
-                        throw new IllegalStateException(reader.lineKey);
+                        throw new IllegalArgumentException(reader.lineKey);
                 }
             }
         }
@@ -3396,15 +2758,11 @@ public class CreateSymbols {
                 return new ExportsDescription(packageName, to);
             }
 
-            public static ExportsDescription create(ClassFile cf,
-                                                    ExportsEntry ee) {
-                String packageName = getPackageName(cf, ee.exports_index);
+            public static ExportsDescription create(ModuleExportInfo ee) {
+                String packageName = ee.exportedPackage().name().stringValue();
                 List<String> to = null;
-                if (ee.exports_to_count > 0) {
-                    to = new ArrayList<>();
-                    for (int moduleIndex : ee.exports_to_index) {
-                        to.add(getModuleName(cf, moduleIndex));
-                    }
+                if (!ee.exportsTo().isEmpty()) {
+                    to = ee.exportsTo().stream().map(m -> m.name().stringValue()).collect(Collectors.toList());
                 }
                 return new ExportsDescription(packageName, to);
             }
@@ -3447,12 +2805,11 @@ public class CreateSymbols {
                                                ver);
             }
 
-            public static RequiresDescription create(ClassFile cf,
-                                                     RequiresEntry req) {
-                String mod = getModuleName(cf, req.requires_index);
-                String ver = getVersion(cf, req.requires_version_index);
+            public static RequiresDescription create(ModuleRequireInfo req) {
+                String mod = req.requires().name().stringValue();
+                String ver = getVersion(req.requiresVersion());
                 return new RequiresDescription(mod,
-                                               req.requires_flags,
+                                               req.requiresFlagsMask(),
                                                ver);
             }
 
@@ -3515,13 +2872,9 @@ public class CreateSymbols {
                                                implsList);
             }
 
-            public static ProvidesDescription create(ClassFile cf,
-                                                     ProvidesEntry prov) {
-                String api = getClassName(cf, prov.provides_index);
-                List<String> impls =
-                        Arrays.stream(prov.with_index)
-                              .mapToObj(wi -> getClassName(cf, wi))
-                              .collect(Collectors.toList());
+            public static ProvidesDescription create(ModuleProvideInfo prov) {
+                String api = prov.provides().asInternalName();
+                List<String> impls = prov.providesWith().stream().map(ClassEntry::asInternalName).collect(Collectors.toList());
                 return new ProvidesDescription(api, impls);
             }
 
@@ -3676,7 +3029,7 @@ public class CreateSymbols {
                     case "-module":
                         break OUTER;
                     default:
-                        throw new IllegalStateException(reader.lineKey);
+                        throw new IllegalArgumentException(reader.lineKey);
                 }
             }
         }
@@ -4073,7 +3426,7 @@ public class CreateSymbols {
     static class FieldDescription extends FeatureDescription {
         String name;
         String descriptor;
-        Object constantValue;
+        Object constantValue; // Uses (unsigned) Integer for byte/short
         String keyName = "field";
 
         @Override
@@ -4149,7 +3502,7 @@ public class CreateSymbols {
                     case "D": constantValue = Double.parseDouble(inConstantValue); break;
                     case "Ljava/lang/String;": constantValue = inConstantValue; break;
                     default:
-                        throw new IllegalStateException("Unrecognized field type: " + descriptor);
+                        throw new IllegalArgumentException("Unrecognized field type: " + descriptor);
                 }
             }
 
@@ -4416,7 +3769,7 @@ public class CreateSymbols {
             if (desc != null || allowNull)
                 return desc;
 
-            throw new IllegalStateException("Cannot find: " + name);
+            throw new IllegalArgumentException("Cannot find: " + name);
         }
 
         private static final ClassDescription NONE = new ClassDescription();
@@ -4565,7 +3918,7 @@ public class CreateSymbols {
                     valuePointer[0] += 5;
                     return false;
                 } else {
-                    throw new IllegalStateException("Unrecognized boolean structure: " + value);
+                    throw new IllegalArgumentException("Unrecognized boolean structure: " + value);
                 }
             case 'B': return Byte.parseByte(readDigits(value, valuePointer));
             case 'C': return value.charAt(valuePointer[0]++);
@@ -4593,7 +3946,7 @@ public class CreateSymbols {
             case '@':
                 return parseAnnotation(value, valuePointer);
             default:
-                throw new IllegalStateException("Unrecognized signature type: " + value.charAt(valuePointer[0] - 1) + "; value=" + value);
+                throw new IllegalArgumentException("Unrecognized signature type: " + value.charAt(valuePointer[0] - 1) + "; value=" + value);
         }
     }
 

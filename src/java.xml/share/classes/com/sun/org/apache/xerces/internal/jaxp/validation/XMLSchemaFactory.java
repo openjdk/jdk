@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,7 +30,6 @@ import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.StAXInputSource;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.XMLGrammarPoolImpl;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
@@ -41,7 +40,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import javax.xml.XMLConstants;
-import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
@@ -50,12 +48,15 @@ import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
+import jdk.xml.internal.FeaturePropertyBase;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.JdkProperty.ImplPropMap;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.w3c.dom.Node;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.ErrorHandler;
@@ -70,7 +71,7 @@ import org.xml.sax.SAXParseException;
  *
  * @author Kohsuke Kawaguchi
  *
- * @LastModified: Nov 2024
+ * @LastModified: May 2025
  */
 public final class XMLSchemaFactory extends SchemaFactory {
 
@@ -152,19 +153,19 @@ public final class XMLSchemaFactory extends SchemaFactory {
         fXMLSchemaLoader.setErrorHandler(fErrorHandlerWrapper);
         fUseGrammarPoolOnly = true;
 
-        // Enable secure processing feature by default
-        fSecurityManager = new XMLSecurityManager(true);
-        fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
+        // security (property) managers updated with current system properties
+        JdkXmlConfig config = JdkXmlConfig.getInstance(false);
+        fSecurityManager = config.getXMLSecurityManager(true);
+        fSecurityPropertyMgr = config.getXMLSecurityPropertyManager(true);
+        fXmlFeatures = config.getXMLFeatures(true);
 
-        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
-        fXMLSchemaLoader.setProperty(XML_SECURITY_PROPERTY_MANAGER,
-                fSecurityPropertyMgr);
+        fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
+        fXMLSchemaLoader.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
 
         // use catalog
         fXMLSchemaLoader.setFeature(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
 
         fXMLSchemaLoader.setProperty(JdkConstants.CDATA_CHUNK_SIZE, JdkConstants.CDATA_CHUNK_SIZE_DEFAULT);
-        fXmlFeatures = new JdkXmlFeatures(fSecurityManager.isSecureProcessing());
         fOverrideDefaultParser = fXmlFeatures.getFeature(
                 JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
         fXMLSchemaLoader.setFeature(JdkConstants.OVERRIDE_PARSER, fOverrideDefaultParser);
@@ -403,10 +404,11 @@ public final class XMLSchemaFactory extends SchemaFactory {
         }
         try {
             /** Check to see if the property is managed by the security manager **/
-            String propertyValue = (fSecurityManager != null) ?
-                    fSecurityManager.getLimitAsString(name) : null;
-            return propertyValue != null ? propertyValue :
-                    fXMLSchemaLoader.getProperty(name);
+            String value;
+            if ((value = JdkXmlUtils.getProperty(fSecurityManager, fSecurityPropertyMgr, name)) != null) {
+                return value;
+            }
+            return fXMLSchemaLoader.getProperty(name);
         }
         catch (XMLConfigurationException e) {
             String identifier = e.getIdentifier();
@@ -444,9 +446,9 @@ public final class XMLSchemaFactory extends SchemaFactory {
             fSecurityManager.setSecureProcessing(value);
             if (value) {
                 fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD,
-                        XMLSecurityPropertyManager.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                        FeaturePropertyBase.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA,
-                        XMLSecurityPropertyManager.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                        FeaturePropertyBase.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
             }
 
             fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
@@ -499,7 +501,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
             return;
         } else if (name.equals(JdkConstants.XML_SECURITY_PROPERTY_MANAGER)) {
             if (object == null) {
-                fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+                fSecurityPropertyMgr = JdkXmlConfig.getInstance(false).getXMLSecurityPropertyManager(true);
             } else {
                 fSecurityPropertyMgr = (XMLSecurityPropertyManager)object;
             }
@@ -512,15 +514,9 @@ public final class XMLSchemaFactory extends SchemaFactory {
                     "property-not-supported", new Object [] {name}));
         }
         try {
-            //check if the property is managed by security manager
-            if (fSecurityManager == null ||
-                    !fSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, object)) {
-                //check if the property is managed by security property manager
-                if (fSecurityPropertyMgr == null ||
-                        !fSecurityPropertyMgr.setValue(name, XMLSecurityPropertyManager.State.APIPROPERTY, object)) {
-                    //fall back to the existing property manager
-                    fXMLSchemaLoader.setProperty(name, object);
-                }
+            if (!JdkXmlUtils.setProperty(fSecurityManager, fSecurityPropertyMgr, name, object)) {
+                //fall back to the existing property manager
+                fXMLSchemaLoader.setProperty(name, object);
             }
         }
         catch (XMLConfigurationException e) {

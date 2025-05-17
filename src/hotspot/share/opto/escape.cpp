@@ -2192,6 +2192,13 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "intpoly_assign") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "ghash_processBlocks") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "chacha20Block") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyberNtt") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyberInverseNtt") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyberNttMult") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyberAddPoly_2") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyberAddPoly_3") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyber12To16") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyberBarrettReduce") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "dilithiumAlmostNtt") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "dilithiumAlmostInverseNtt") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "dilithiumNttMult") == 0 ||
@@ -2819,14 +2826,14 @@ int ConnectionGraph::find_init_values_null(JavaObjectNode* pta, PhaseValues* pha
         offsets_worklist.append(offset);
         Node* value = nullptr;
         if (ini != nullptr) {
-          // StoreP::memory_type() == T_ADDRESS
+          // StoreP::value_basic_type() == T_ADDRESS
           BasicType ft = UseCompressedOops ? T_NARROWOOP : T_ADDRESS;
           Node* store = ini->find_captured_store(offset, type2aelembytes(ft, true), phase);
           // Make sure initializing store has the same type as this AddP.
           // This AddP may reference non existing field because it is on a
           // dead branch of bimorphic call which is not eliminated yet.
           if (store != nullptr && store->is_Store() &&
-              store->as_Store()->memory_type() == ft) {
+              store->as_Store()->value_basic_type() == ft) {
             value = store->in(MemNode::ValueIn);
 #ifdef ASSERT
             if (VerifyConnectionGraph) {
@@ -4560,7 +4567,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         }
       }
     } else {
-      debug_only(n->dump();)
+      DEBUG_ONLY(n->dump();)
       assert(false, "EA: unexpected node");
       continue;
     }

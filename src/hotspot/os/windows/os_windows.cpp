@@ -63,7 +63,6 @@
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/suspendedThreadTask.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -76,6 +75,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/population_count.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
@@ -110,9 +110,6 @@
 #include <mmsystem.h>
 #include <winsock2.h>
 #include <versionhelpers.h>
-
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(-1)
 
 // For DLL loading/load error detection
 // Values of PE COFF
@@ -1224,16 +1221,16 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   if (freq < NANOSECS_PER_SEC) {
     // the performance counter is 64 bits and we will
     // be multiplying it -- so no wrap in 64 bits
-    info_ptr->max_value = ALL_64_BITS;
+    info_ptr->max_value = all_bits_jlong;
   } else if (freq > NANOSECS_PER_SEC) {
     // use the max value the counter can reach to
     // determine the max value which could be returned
-    julong max_counter = (julong)ALL_64_BITS;
+    julong max_counter = (julong)all_bits_jlong;
     info_ptr->max_value = (jlong)(max_counter / (freq / NANOSECS_PER_SEC));
   } else {
     // the performance counter is 64 bits and we will
     // be using it directly -- so no wrap in 64 bits
-    info_ptr->max_value = ALL_64_BITS;
+    info_ptr->max_value = all_bits_jlong;
   }
 
   // using a counter, so no skipping
@@ -2206,26 +2203,16 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   buf[0] = '\0';
-  if (Arguments::sun_java_launcher_is_altjvm()) {
-    // Support for the java launcher's '-XXaltjvm=<path>' option. Check
-    // for a JAVA_HOME environment variable and fix up the path so it
-    // looks like jvm.dll is installed there (append a fake suffix
-    // hotspot/jvm.dll).
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
     char* java_home_var = ::getenv("JAVA_HOME");
     if (java_home_var != nullptr && java_home_var[0] != 0 &&
         strlen(java_home_var) < (size_t)buflen) {
-      strncpy(buf, java_home_var, buflen);
-
-      // determine if this is a legacy image or modules image
-      // modules image doesn't have "jre" subdirectory
-      size_t len = strlen(buf);
-      char* jrebin_p = buf + len;
-      jio_snprintf(jrebin_p, buflen-len, "\\jre\\bin\\");
-      if (0 != _access(buf, 0)) {
-        jio_snprintf(jrebin_p, buflen-len, "\\bin\\");
-      }
-      len = strlen(buf);
-      jio_snprintf(buf + len, buflen-len, "hotspot\\jvm.dll");
+      stringStream ss(buf, buflen);
+      ss.print("%s\\bin\\%s\\jvm%s",
+               java_home_var, Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+      assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+             "buf has been truncated");
     }
   }
 
@@ -2600,6 +2587,7 @@ static inline void report_error(Thread* t, DWORD exception_code,
 //-----------------------------------------------------------------------------
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
+  PreserveLastError ple;
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
   PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
   DWORD exception_code = exception_record->ExceptionCode;
@@ -3028,7 +3016,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                 PAGE_READWRITE);
   // If reservation failed, return null
   if (p_buf == nullptr) return nullptr;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC);
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC, mtNone);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -3089,7 +3077,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
         // need to create a dummy 'reserve' record to match
         // the release.
         MemTracker::record_virtual_memory_reserve((address)p_buf,
-                                                  bytes_to_release, CALLER_PC);
+                                                  bytes_to_release, CALLER_PC, mtNone);
         os::release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
@@ -3107,9 +3095,9 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   // Although the memory is allocated individually, it is returned as one.
   // NMT records it as one block.
   if ((flags & MEM_COMMIT) != 0) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC, mtNone);
   } else {
-    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC, mtNone);
   }
 
   // made it this far, success
@@ -3249,7 +3237,7 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag = mtNone) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity (page size)");
   assert(is_aligned(size, os::vm_allocation_granularity()),
@@ -3263,7 +3251,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
     char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, mem_tag) :
-                                         os::reserve_memory(extra_size, false, mem_tag);
+                                         os::reserve_memory(extra_size, mem_tag);
     if (extra_base == nullptr) {
       return nullptr;
     }
@@ -3280,7 +3268,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
     // Which may fail, hence the loop.
     aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, mem_tag) :
-                                     os::attempt_reserve_memory_at(aligned_base, size, false, mem_tag);
+                                     os::attempt_reserve_memory_at(aligned_base, size, mem_tag);
   }
 
   assert(aligned_base != nullptr,
@@ -3289,9 +3277,9 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   return aligned_base;
 }
 
-char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool exec) {
   // exec can be ignored
-  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
+  return map_or_reserve_memory_aligned(size, alignment, -1/* file_desc */, mem_tag);
 }
 
 char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag) {
@@ -4367,9 +4355,9 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
+    permit_forbidden_function::exit(exit_code);
   } else { // EPT_PROCESS_DIE
-    ALLOW_C_FUNCTION(::_exit, ::_exit(exit_code);)
+    permit_forbidden_function::_exit(exit_code);
   }
 
   // Should not reach here
@@ -4821,14 +4809,14 @@ jlong os::thread_cpu_time(Thread* thread, bool user_sys_cpu_time) {
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;        // the max value -- all 64 bits
+  info_ptr->max_value = all_bits_jlong;     // the max value -- all 64 bits
   info_ptr->may_skip_backward = false;      // GetThreadTimes returns absolute time
   info_ptr->may_skip_forward = false;       // GetThreadTimes returns absolute time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;   // user+system time is returned
 }
 
 void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;        // the max value -- all 64 bits
+  info_ptr->max_value = all_bits_jlong;     // the max value -- all 64 bits
   info_ptr->may_skip_backward = false;      // GetThreadTimes returns absolute time
   info_ptr->may_skip_forward = false;       // GetThreadTimes returns absolute time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;   // user+system time is returned
@@ -5140,7 +5128,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   }
 
   char* result = nullptr;
-  ALLOW_C_FUNCTION(::_fullpath, char* p = ::_fullpath(nullptr, filename, 0);)
+  char* p = permit_forbidden_function::_fullpath(nullptr, filename, 0);
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -5148,7 +5136,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
-    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
+    permit_forbidden_function::free(p); // *not* os::free
   }
   return result;
 }
@@ -5196,7 +5184,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     }
 
     // Record virtual memory allocation
-    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC, mtNone);
 
     DWORD bytes_read;
     OVERLAPPED overlapped;
