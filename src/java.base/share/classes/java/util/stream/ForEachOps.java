@@ -29,11 +29,13 @@ import jdk.internal.invoke.MhUtil;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.concurrent.CountedCompleter;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.LongConsumer;
+import java.util.function.LongFunction;
 import java.lang.invoke.VarHandle;
 import java.lang.invoke.MethodHandles;
 
@@ -118,6 +120,22 @@ final class ForEachOps {
                                                       boolean ordered) {
         Objects.requireNonNull(action);
         return new ForEachOp.OfDouble(action, ordered);
+    }
+
+    /**
+     * Constructs a {@code TerminalOp} that accumulates elements into a
+     * container provided by a sized supplier, using the provided accumulator.
+     *
+     * <p>This OP only supports parallel evaluation.
+     *
+     * @return the {@code TerminalOp} instance
+     */
+    public static <A, T> TerminalOp<T, A> makeAccumulateSized(
+        LongFunction<A> sizedSupplier,
+        BiConsumer<A, ? super T> accumulator) {
+        Objects.requireNonNull(sizedSupplier);
+        Objects.requireNonNull(accumulator);
+        return new AccumulateSizedOp<>(sizedSupplier, accumulator);
     }
 
     /**
@@ -250,6 +268,56 @@ final class ForEachOps {
             }
         }
     }
+
+    /**
+     * Specialized implementation class for parallel streams that collect into a
+     * presized collection.
+     */
+    static class AccumulateSizedOp<T, R> implements TerminalOp<T, R>, TerminalSink<T, R> {
+        final LongFunction<R> sizedSupplier;
+        final BiConsumer<R, ? super T> accumulator;
+        R container;
+
+        AccumulateSizedOp(LongFunction<R> sizedSupplier,
+                          BiConsumer<R, ? super T> accumulator) {
+            this.sizedSupplier = sizedSupplier;
+            this.accumulator = accumulator;
+        }
+
+        // TerminalOp
+
+        @Override
+        public int getOpFlags() {
+            return StreamOpFlag.NOT_ORDERED;
+        }
+
+        @Override
+        public <S> R evaluateSequential(PipelineHelper<T> helper,
+                                        Spliterator<S> spliterator) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <S> R evaluateParallel(PipelineHelper<T> helper,
+                                      Spliterator<S> spliterator) {
+            container = sizedSupplier.apply(spliterator.getExactSizeIfKnown());
+            new ForEachOps.ForEachTask<>(helper, spliterator, helper.wrapSink(this)).invoke();
+            return container;
+        }
+
+        // TerminalSink
+
+        @Override
+        public void accept(T u) {
+            accumulator.accept(container, u);
+        }
+
+        @Override
+        public R get() {
+            return container;
+        }
+    }
+
 
     /** A {@code ForkJoinTask} for performing a parallel for-each operation */
     @SuppressWarnings("serial")
