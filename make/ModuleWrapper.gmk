@@ -64,6 +64,23 @@ ifeq ($(MAKEFILE_PREFIX), Lib)
   endif
 endif
 
+ifeq ($(MAKEFILE_PREFIX), Launcher)
+  # We need to keep track of which launchers are created by this module. This
+  # information is required for static builds, to know which relaunchers to
+  # create. The variable $(MODULE)_INCLUDED_LAUNCHERS is added to for each call
+  # to SetupBuildLauncher. The file module-included-launchers.txt is then read
+  # in StaticLibs.gmk.
+  ifneq ($($(MODULE)_INCLUDED_LAUNCHERS), )
+    LAUNCHERS_LIST := $(SUPPORT_OUTPUTDIR)/modules_static-launchers/$(MODULE)/module-included-launchers.txt
+
+    $(LAUNCHERS_LIST): $(TARGETS)
+	$(call MakeDir, $(@D))
+	$(ECHO) $($(MODULE)_INCLUDED_LAUNCHERS) > $@
+
+    TARGETS += $(LAUNCHERS_LIST)
+  endif
+endif
+
 # Setup copy rules from the modules directories to the jdk image directory.
 ifeq ($(call isTargetOs, windows), true)
   TO_BIN_FILTER := %$(SHARED_LIBRARY_SUFFIX) %.diz %.pdb %.map
