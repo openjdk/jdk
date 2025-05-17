@@ -650,9 +650,11 @@
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
           "Verify Iterative Global Value Numbering"                         \
-          "=XY, with Y: verify Def-Use modifications during IGVN"           \
-          "          X: verify that type(n) == n->Value() after IGVN"       \
-          "X and Y in 0=off; 1=on")                                         \
+          "=DCBA, with A: verify Def-Use modifications during IGVN"         \
+          "            B: verify that type(n) == n->Value() after IGVN"     \
+          "            C: verify all Node::Ideal were applied in IGVN"      \
+          "            D: verify all Node::Identity were applied in IGVN"   \
+          "A, B, C, and D in 0=off; 1=on")                                  \
           constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
   develop(bool, TraceCISCSpill, false,                                      \
