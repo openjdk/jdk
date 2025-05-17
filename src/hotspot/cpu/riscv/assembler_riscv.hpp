@@ -671,29 +671,63 @@ protected:
 
 #undef INSN
 
-// Load/store register (all modes)
-#define INSN(NAME, op, funct3)                                                                     \
-  void NAME(Register Rd, Register Rs, const int32_t offset) {                                      \
-    guarantee(is_simm12(offset), "offset is invalid.");                                            \
-    unsigned insn = 0;                                                                             \
-    int32_t val = offset & 0xfff;                                                                  \
-    patch((address)&insn, 6, 0, op);                                                               \
-    patch((address)&insn, 14, 12, funct3);                                                         \
-    patch_reg((address)&insn, 15, Rs);                                                             \
-    patch_reg((address)&insn, 7, Rd);                                                              \
-    patch((address)&insn, 31, 20, val);                                                            \
-    emit(insn);                                                                                    \
+ private:
+  // Load
+  enum LoadWidthFunct3 : uint8_t {
+    LOAD_WIDTH_BYTE              = 0b000,
+    LOAD_WIDTH_HALFWORD          = 0b001,
+    LOAD_WIDTH_WORD              = 0b010,
+    LOAD_WIDTH_DOUBLEWORD        = 0b011,
+    LOAD_WIDTH_BYTE_UNSIGNED     = 0b100,
+    LOAD_WIDTH_HALFWORD_UNSIGNED = 0b101,
+    LOAD_WIDTH_WORD_UNSIGNED     = 0b110,
+    // 0b111 is reserved
+  };
+
+  static constexpr uint32_t OP_LOAD_MAJOR = 0b0000011;
+
+  template <LoadWidthFunct3 width>
+  void load_base(Register Rd, Register Rs, const int32_t offset) {
+    guarantee(is_simm12(offset), "offset is invalid.");
+    unsigned insn = 0;
+    int32_t val = offset & 0xfff;
+    patch((address)&insn,  6,  0, OP_LOAD_MAJOR);
+    patch_reg((address)&insn,  7, Rd);
+    patch((address)&insn, 14, 12, width);
+    patch_reg((address)&insn, 15, Rs);
+    patch((address)&insn, 31, 20, val);
+    emit(insn);
   }
 
-  INSN(lb,  0b0000011, 0b000);
-  INSN(_lbu, 0b0000011, 0b100);
-  INSN(_lh,  0b0000011, 0b001);
-  INSN(_lhu, 0b0000011, 0b101);
-  INSN(_lw, 0b0000011, 0b010);
-  INSN(lwu, 0b0000011, 0b110);
-  INSN(_ld, 0b0000011, 0b011);
+ public:
 
-#undef INSN
+  void lb(Register Rd, Register Rs, const int32_t offset) {
+    load_base<LOAD_WIDTH_BYTE>(Rd, Rs, offset);
+  }
+
+  void _lbu(Register Rd, Register Rs, const int32_t offset) {
+    load_base<LOAD_WIDTH_BYTE_UNSIGNED>(Rd, Rs, offset);
+  }
+
+  void _lh(Register Rd, Register Rs, const int32_t offset) {
+    load_base<LOAD_WIDTH_HALFWORD>(Rd, Rs, offset);
+  }
+
+  void _lhu(Register Rd, Register Rs, const int32_t offset) {
+    load_base<LOAD_WIDTH_HALFWORD_UNSIGNED>(Rd, Rs, offset);
+  }
+
+  void _lw(Register Rd, Register Rs, const int32_t offset) {
+    load_base<LOAD_WIDTH_WORD>(Rd, Rs, offset);
+  }
+
+  void lwu(Register Rd, Register Rs, const int32_t offset) {
+    load_base<LOAD_WIDTH_WORD_UNSIGNED>(Rd, Rs, offset);
+  }
+
+  void _ld(Register Rd, Register Rs, const int32_t offset) {
+    load_base<LOAD_WIDTH_DOUBLEWORD>(Rd, Rs, offset);
+  }
 
 #define INSN(NAME, op, funct3)                                                                           \
   void NAME(Register Rs1, Register Rs2, const int64_t offset) {                                          \
@@ -724,30 +758,60 @@ protected:
 
 #undef INSN
 
-#define INSN(NAME, REGISTER, op, funct3)                                                                    \
-  void NAME(REGISTER Rs1, Register Rs2, const int32_t offset) {                                             \
-    guarantee(is_simm12(offset), "offset is invalid.");                                                     \
-    unsigned insn = 0;                                                                                      \
-    uint32_t val  = offset & 0xfff;                                                                         \
-    uint32_t low  = val & 0x1f;                                                                             \
-    uint32_t high = (val >> 5) & 0x7f;                                                                      \
-    patch((address)&insn, 6, 0, op);                                                                        \
-    patch((address)&insn, 14, 12, funct3);                                                                  \
-    patch_reg((address)&insn, 15, Rs2);                                                                     \
-    patch_reg((address)&insn, 20, Rs1);                                                                     \
-    patch((address)&insn, 11, 7, low);                                                                      \
-    patch((address)&insn, 31, 25, high);                                                                    \
-    emit(insn);                                                                                             \
-  }                                                                                                         \
+ private:
 
-  INSN(_sb,   Register,      0b0100011, 0b000);
-  INSN(_sh,   Register,      0b0100011, 0b001);
-  INSN(_sw,  Register,      0b0100011, 0b010);
-  INSN(_sd,  Register,      0b0100011, 0b011);
-  INSN(fsw,  FloatRegister, 0b0100111, 0b010);
-  INSN(_fsd, FloatRegister, 0b0100111, 0b011);
+  enum StoreWidthFunct3 : uint8_t {
+    STORE_WIDTH_BYTE        = 0b000,
+    STORE_WIDTH_HALFWORD    = 0b001,
+    STORE_WIDTH_WORD        = 0b010,
+    STORE_WIDTH_DOUBLEWORD  = 0b011,
+    // 0b100 to 0b111 are reserved for this opcode
+  };
 
-#undef INSN
+  static constexpr uint32_t OP_STORE_MAJOR    = 0b0100011;
+  static constexpr uint32_t OP_FP_STORE_MAJOR = 0b0100111;
+
+  template <uint8_t op_code, StoreWidthFunct3 width>
+  void store_base(uint8_t Rs2, Register Rs1, const int32_t offset) {
+    guarantee(is_simm12(offset), "offset is invalid.");
+    unsigned insn = 0;
+    uint32_t val  = offset & 0xfff;
+    uint32_t low  = val & 0x1f;
+    uint32_t high = (val >> 5) & 0x7f;
+    patch((address)&insn,  6,  0, op_code);
+    patch((address)&insn, 11,  7, low);
+    patch((address)&insn, 14, 12, width);
+    patch_reg((address)&insn, 15, Rs1);
+    patch((address)&insn, 24, 20, Rs2);
+    patch((address)&insn, 31, 25, high);
+    emit(insn);
+  }
+
+ public:
+
+  void _sb(Register Rs2, Register Rs1, const int32_t offset) {
+    store_base<OP_STORE_MAJOR, STORE_WIDTH_BYTE>(Rs2->raw_encoding(), Rs1, offset);
+  }
+
+  void _sh(Register Rs2, Register Rs1, const int32_t offset) {
+    store_base<OP_STORE_MAJOR, STORE_WIDTH_HALFWORD>(Rs2->raw_encoding(), Rs1, offset);
+  }
+
+  void _sw(Register Rs2, Register Rs1, const int32_t offset) {
+    store_base<OP_STORE_MAJOR, STORE_WIDTH_WORD>(Rs2->raw_encoding(), Rs1, offset);
+  }
+
+  void _sd(Register Rs2, Register Rs1, const int32_t offset) {
+    store_base<OP_STORE_MAJOR, STORE_WIDTH_DOUBLEWORD>(Rs2->raw_encoding(), Rs1, offset);
+  }
+
+  void fsw(FloatRegister Rs2, Register Rs1, const int32_t offset) {
+    store_base<OP_FP_STORE_MAJOR, STORE_WIDTH_WORD>(Rs2->raw_encoding(), Rs1, offset);
+  }
+
+  void _fsd(FloatRegister Rs2, Register Rs1, const int32_t offset) {
+    store_base<OP_FP_STORE_MAJOR, STORE_WIDTH_DOUBLEWORD>(Rs2->raw_encoding(), Rs1, offset);
+  }
 
 #define INSN(NAME, op, funct3)                                                        \
   void NAME(Register Rd, const uint32_t csr, Register Rs1) {                          \
@@ -3285,24 +3349,19 @@ public:
 #undef INSN
 
 // --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(FloatRegister Rd, Register Rs, const int32_t offset) {                           \
-    /* fsd -> c.fsdsp/c.fsd */                                                               \
-    if (do_compress()) {                                                                     \
-      if (is_c_fldsdsp(Rs, offset)) {                                                        \
-        c_fsdsp(Rd, offset);                                                                 \
-        return;                                                                              \
-      } else if (is_c_fldsd(Rs, Rd, offset)) {                                               \
-        c_fsd(Rd, Rs, offset);                                                               \
-        return;                                                                              \
-      }                                                                                      \
-    }                                                                                        \
-    _fsd(Rd, Rs, offset);                                                                    \
+  void fsd(FloatRegister Rd, Register Rs, const int32_t offset) {
+    /* fsd -> c.fsdsp/c.fsd */
+    if (do_compress()) {
+      if (is_c_fldsdsp(Rs, offset)) {
+        c_fsdsp(Rd, offset);
+        return;
+      } else if (is_c_fldsd(Rs, Rd, offset)) {
+        c_fsd(Rd, Rs, offset);
+        return;
+      }
+    }
+    _fsd(Rd, Rs, offset);
   }
-
-  INSN(fsd);
-
-#undef INSN
 
 // --------------------------
 // Unconditional branch instructions
