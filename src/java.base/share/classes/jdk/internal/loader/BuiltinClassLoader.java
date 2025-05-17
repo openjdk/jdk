@@ -790,17 +790,10 @@ public class BuiltinClassLoader
     protected Package defineOrCheckPackage(String pn, Manifest man, URL url) {
         Package pkg = getAndVerifyPackage(pn, man, url);
         if (pkg == null) {
-            try {
-                if (man != null) {
-                    pkg = definePackage(pn, man, url);
-                } else {
-                    pkg = definePackage(pn, null, null, null, null, null, null, null);
-                }
-            } catch (IllegalArgumentException iae) {
-                // defined by another thread so need to re-verify
-                pkg = getAndVerifyPackage(pn, man, url);
-                if (pkg == null)
-                    throw new InternalError("Cannot find package: " + pn);
+            if (man != null) {
+                pkg = definePackage(pn, man, url);
+            } else {
+                pkg = definePackage(pn, null, null, null, null, null, null, null);
             }
         }
         return pkg;
