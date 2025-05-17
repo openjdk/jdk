@@ -8389,6 +8389,14 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_libmCbrt() {
+    StubGenStubId stub_id = StubGenStubId::dcbrt_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ generate_libmCbrt();
+    return start;
+  }
+
   // code for comparing 16 characters of strings with Latin1 and Utf16 encoding
   void compare_string_16_x_LU(Register tmpL, Register tmpU, Label &DIFF1,
       Label &DIFF2) {
@@ -11292,7 +11300,7 @@ class StubGenerator: public StubCodeGenerator {
     // }
   };
 
-  // Initialization
+    // Initialization
   void generate_initial_stubs() {
     // Generate initial stubs and initializes the entry points
 
@@ -11331,6 +11339,10 @@ class StubGenerator: public StubCodeGenerator {
 
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos)) {
       StubRoutines::_dcos = generate_dsin_dcos(/* isCos = */ true);
+    }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcbrt)) {
+      StubRoutines::_dcbrt = generate_libmCbrt(); // from stubGenerator_aarch64_cbrt.cpp
     }
 
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_float16ToFloat) &&
