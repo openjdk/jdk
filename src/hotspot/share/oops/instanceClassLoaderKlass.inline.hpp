@@ -25,9 +25,8 @@
 #ifndef SHARE_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP
 #define SHARE_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP
 
-#include "oops/instanceClassLoaderKlass.hpp"
-
 #include "classfile/javaClasses.hpp"
+#include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
@@ -36,8 +35,8 @@
 #include "utilities/macros.hpp"
 
 template <typename T, class OopClosureType>
-inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate<T>(obj, closure);
+inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute) {
+  InstanceKlass::oop_oop_iterate<T>(obj, closure, klute);
 
   if (Devirtualizer::do_metadata(closure)) {
     ClassLoaderData* cld = java_lang_ClassLoader::loader_data(obj);
@@ -49,16 +48,15 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* c
 }
 
 template <typename T, class OopClosureType>
-inline void InstanceClassLoaderKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure);
-
+inline void InstanceClassLoaderKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute) {
+  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure, klute);
   assert(!Devirtualizer::do_metadata(closure),
       "Code to handle metadata is not implemented");
 }
 
 template <typename T, class OopClosureType>
-inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr);
+inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute) {
+  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr, klute);
 
   if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {

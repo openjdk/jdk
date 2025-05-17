@@ -36,6 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/klassInfoLUT.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 
@@ -176,6 +177,7 @@ void AOTLinkedClassBulkLoader::load_classes_impl(AOTLinkedClassCategory class_ca
   }
 
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(loader());
+  KlassInfoLUT::register_cld_if_needed(loader_data);
 
   for (int i = 0; i < classes->length(); i++) {
     InstanceKlass* ik = classes->at(i);

@@ -41,8 +41,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-void* ArrayKlass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, true, THREAD);
+void* ArrayKlass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, bool preferred, TRAPS) throw() {
+  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, true, preferred, THREAD);
 }
 
 ArrayKlass::ArrayKlass() {

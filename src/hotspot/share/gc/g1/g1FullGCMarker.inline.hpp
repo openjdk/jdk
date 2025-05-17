@@ -39,6 +39,7 @@
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -108,7 +109,7 @@ void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
     push_objarray(array, end_index);
   }
 
-  array->oop_iterate_range(mark_closure(), beg_index, end_index);
+  OopIteratorClosureDispatch::oop_oop_iterate_range(array, mark_closure(), beg_index, end_index);
 }
 
 inline void G1FullGCMarker::follow_object(oop obj) {

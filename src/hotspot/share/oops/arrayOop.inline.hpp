@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,26 @@
  *
  */
 
-#ifndef SHARE_OOPS_OBJLAYOUT_INLINE_HPP
-#define SHARE_OOPS_OBJLAYOUT_INLINE_HPP
+#ifndef SHARE_OOPS_ARRAYOOP_INLINE_HPP
+#define SHARE_OOPS_ARRAYOOP_INLINE_HPP
 
-// Be frugal with includes here to prevent circularities.
+#include "oops/arrayOop.hpp"
+#include "oops/objLayout.inline.hpp"
 
-#include "oops/objLayout.hpp"
-
-template<HeaderMode mode>
-constexpr inline bool ObjLayoutHelpers::oop_has_klass_gap() {
-  return mode == HeaderMode::Compressed;
+template <HeaderMode mode>
+inline constexpr int arrayOopDesc::length_offset_in_bytes_nobranches() {
+  return ObjLayoutHelpers::markword_plus_klass_in_bytes<mode>();
 }
 
-template<HeaderMode mode>
-constexpr inline int ObjLayoutHelpers::markword_plus_klass_in_bytes() {
-  switch (mode) {
-  case HeaderMode::Uncompressed:  return sizeof(markWord) + sizeof(Klass*);
-  case HeaderMode::Compressed:    return sizeof(markWord) + sizeof(narrowKlass);
-  case HeaderMode::Compact:       return sizeof(markWord);
-  }
-  return 0;
+template <HeaderMode mode>
+inline int* arrayOopDesc::length_addr_nobranches() const {
+  return field_addr<int>(length_offset_in_bytes_nobranches<mode>());
 }
 
-template<HeaderMode headermode, typename elemtype>
-constexpr inline int ObjLayoutHelpers::array_first_element_offset_in_bytes() {
-  return align_up(markword_plus_klass_in_bytes<headermode>() + BytesPerInt, sizeof(elemtype));
+template <HeaderMode mode>
+inline int arrayOopDesc::length_nobranches() const {
+  const int len = *length_addr_nobranches<mode>();
+  return len;
 }
 
-#endif // SHARE_OOPS_OBJLAYOUT_INLINE_HPP
+#endif // SHARE_OOPS_ARRAYOOP_INLINE_HPP

@@ -26,6 +26,8 @@
 #define SHARE_OOPS_INSTANCESTACKCHUNKKLASS_HPP
 
 #include "oops/instanceKlass.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
+#include "oops/klassKind.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -105,7 +107,7 @@ class InstanceStackChunkKlass: public InstanceKlass {
   friend class Continuations;
 
 public:
-  static const KlassKind Kind = InstanceStackChunkKlassKind;
+  static constexpr KlassKind Kind = InstanceStackChunkKlassKind;
 
 private:
   static int _offset_of_stack;
@@ -149,19 +151,28 @@ public:
   // Forward iteration
   // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Reverse iteration
   // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Bounded range iteration
   // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute);
 
 private:
+
+  // non-static (external iteration function just redirect to these)
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_header(stackChunkOop chunk, OopClosureType* closure);
 

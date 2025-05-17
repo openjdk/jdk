@@ -26,6 +26,7 @@
 #define SHARE_OOPS_OBJARRAYOOP_HPP
 
 #include "oops/arrayOop.hpp"
+#include "oops/objLayout.hpp"
 #include "utilities/align.hpp"
 #include <type_traits>
 
@@ -60,6 +61,12 @@ class objArrayOopDesc : public arrayOopDesc {
   // base is the address following the header.
   HeapWord* base() const;
 
+  // Variants of base_offset_in_bytes/base avoid dynamic switching for UseCompressedOops/UseCompressedClassPointers/UseCompactObjectHeaders
+  template <HeaderMode mode, typename OopType>
+  inline constexpr static int base_offset_in_bytes_nobranches();
+  template <HeaderMode mode, typename OopType>
+  inline HeapWord* base_nobranches() const;
+
   // Accessing
   oop obj_at(int index) const;
 
@@ -81,10 +88,6 @@ class objArrayOopDesc : public arrayOopDesc {
 
   Klass* element_klass();
 
-public:
-  // special iterators for index ranges, returns size of object
-  template <typename OopClosureType>
-  void oop_iterate_range(OopClosureType* blk, int start, int end);
 };
 
 // See similar requirement for oopDesc.

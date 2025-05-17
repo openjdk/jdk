@@ -36,7 +36,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/typeArrayKlass.inline.hpp"
+#include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/macros.hpp"
@@ -52,6 +52,16 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
 
   TypeArrayKlass* ak = TypeArrayKlass::allocate(null_loader_data, type, sym, CHECK_NULL);
 
+  {
+    char tmp[1024];
+    const int size = ArrayKlass::static_size(TypeArrayKlass::header_size());
+    log_debug(metaspace)("Returning new TAK @" PTR_FORMAT " for %s, BasicType %d, nKlass=%u, word size=%d",
+                          p2i(ak),
+                          ak->name()->as_C_string(tmp, sizeof(tmp)),
+                          (int)type,
+                          CompressedKlassPointers::encode(ak), size);
+  }
+
   // Call complete_create_array_klass after all instance variables have been initialized.
   complete_create_array_klass(ak, ak->super(), ModuleEntryTable::javabase_moduleEntry(), CHECK_NULL);
 
@@ -62,6 +72,10 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
   // an array class without a mirror.
   null_loader_data->add_class(ak);
   JFR_ONLY(ASSIGN_PRIMITIVE_CLASS_ID(ak);)
+
+  // Add to KLUT
+  ak->register_with_klut();
+
   return ak;
 }
 
@@ -70,8 +84,9 @@ TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType
       "array klasses must be same size as InstanceKlass");
 
   int size = ArrayKlass::static_size(TypeArrayKlass::header_size());
+  const bool preferred = UseCompactObjectHeaders && KlassInfoLUT::is_preferred_typearrayklass(name);
 
-  return new (loader_data, size, THREAD) TypeArrayKlass(type, name);
+  return new (loader_data, size, preferred, THREAD) TypeArrayKlass(type, name);
 }
 
 u2 TypeArrayKlass::compute_modifier_flags() const {

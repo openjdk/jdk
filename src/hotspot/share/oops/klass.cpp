@@ -46,6 +46,8 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/klassInfoLUT.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -291,7 +293,17 @@ static markWord make_prototype(const Klass* kls) {
   return prototype;
 }
 
-Klass::Klass() : _kind(UnknownKlassKind) {
+static constexpr uint64_t stamp = 0x04f63b9b436c16d5ULL;
+
+static uint64_t calc_stamp(const void* p) {
+  return stamp;
+}
+
+bool Klass::check_stamp() const {
+  return _stamp == stamp;
+}
+
+Klass::Klass() : _kind(UnknownKlassKind), _stamp(calc_stamp(this)) {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for cds");
 }
 
@@ -301,7 +313,9 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 // which doesn't zero out the memory before calling the constructor.
 Klass::Klass(KlassKind kind) : _kind(kind),
                                _prototype_header(make_prototype(this)),
-                               _shared_class_path_index(-1) {
+                               _shared_class_path_index(-1),
+                               _stamp(calc_stamp(this))
+                               {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
@@ -809,6 +823,7 @@ void Klass::remove_unshareable_info() {
   // Null out class_loader_data because we don't share that yet.
   set_class_loader_data(nullptr);
   set_is_shared();
+  KlassInfoLUT::shared_klass_cld_changed(this);
 
   // FIXME: validation in Klass::hash_secondary_supers() may fail for shared klasses.
   // Even though the bitmaps always match, the canonical order of elements in the table
@@ -868,6 +883,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // modify the CLD list outside a safepoint.
   if (class_loader_data() == nullptr) {
     set_class_loader_data(loader_data);
+    KlassInfoLUT::shared_klass_cld_changed(this);
 
     // Add to class loader list first before creating the mirror
     // (same order as class file parsing)
@@ -1347,4 +1363,8 @@ void Klass::on_secondary_supers_verification_failure(Klass* super, Klass* sub, b
   sub->print();
   fatal("%s: %s implements %s: linear_search: %d; table_lookup: %d",
         msg, sub->external_name(), super->external_name(), linear_result, table_result);
+}
+
+void Klass::register_with_klut() {
+  _klute = KlassInfoLUT::register_klass(this);
 }
