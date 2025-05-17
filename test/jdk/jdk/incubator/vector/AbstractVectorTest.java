@@ -22,17 +22,13 @@
  */
 
 import java.lang.Integer;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.Stream;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.Utils;

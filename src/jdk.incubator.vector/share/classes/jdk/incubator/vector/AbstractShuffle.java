@@ -64,6 +64,11 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
 
     abstract AbstractVector<?> toBitsVector0();
 
+    /**
+     * {@inheritDoc} <!--workaround-->
+     * @since 19
+     */
+
     @Override
     @ForceInline
     public final int[] toArray() {
@@ -95,6 +100,7 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
         }
         return this;
     }
+
 
     @Override
     @ForceInline
