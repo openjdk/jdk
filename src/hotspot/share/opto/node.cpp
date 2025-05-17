@@ -2948,13 +2948,7 @@ bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || 
                                                       Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
 
 bool Node::is_pure_function() const {
-  switch (Opcode()) {
-  case Op_ModD:
-  case Op_ModF:
-    return true;
-  default:
-    return false;
-  }
+  return is_PureCall();
 }
 
 // `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
