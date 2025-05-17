@@ -94,7 +94,7 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
       } else if (p0->is_CMove()) {
         // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
         set_all_req_with_vectors(pack, vtn);
-        VTransformBoolVectorNode* vtn_mask_cmp = vtn->in(1)->isa_BoolVector();
+        VTransformBoolVectorNode* vtn_mask_cmp = vtn->in_req(1)->isa_BoolVector();
         if (vtn_mask_cmp->test()._is_negated) {
           vtn->swap_req(2, 3); // swap if test was negated.
         }
@@ -299,17 +299,24 @@ void SuperWordVTransformBuilder::set_all_req_with_vectors(const Node_List* pack,
   }
 }
 
-void SuperWordVTransformBuilder::add_memory_dependencies_of_node_to_vtnode(Node*n, VTransformNode* vtn, VectorSet& vtn_memory_dependencies) {
+void SuperWordVTransformBuilder::add_memory_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_memory_dependencies) {
+  // If we cannot speculate, then all dependencies must be strong edges, i.e. scheduling must respect them.
+  bool are_speculative_checks_possible = _vloop.are_speculative_checks_possible();
+
   for (VLoopDependencyGraph::PredsIterator preds(_vloop_analyzer.dependency_graph(), n); !preds.done(); preds.next()) {
     Node* pred = preds.current();
     if (!_vloop.in_bb(pred)) { continue; }
     if (!preds.is_current_memory_edge()) { continue; }
+    assert(n->is_Mem() && pred->is_Mem(), "only memory edges");
 
     // Only track every memory edge once.
     VTransformNode* dependency = get_vtnode(pred);
     if (vtn_memory_dependencies.test_set(dependency->_idx)) { continue; }
 
-    assert(n->is_Mem() && pred->is_Mem(), "only memory edges");
-    vtn->add_memory_dependency(dependency); // Add every dependency only once per vtn.
+    if (are_speculative_checks_possible && preds.is_current_weak_memory_edge()) {
+      vtn->add_weak_memory_edge(dependency);
+    } else {
+      vtn->add_strong_memory_edge(dependency);
+    }
   }
 }
