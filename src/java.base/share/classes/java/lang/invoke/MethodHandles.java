@@ -2821,10 +2821,10 @@ assertEquals("[x, y, z]", pb.command().toString());
          * if and only if one of the following is true:
          * <ul>
          * <li>{@code targetClass} is in {@code M0} and {@code M1}
-         *     {@linkplain Module#reads reads} {@code M0} and the type is
+         *     {@linkplain Module#canRead(Module)}  reads} {@code M0} and the type is
          *     in a package that is exported to at least {@code M1}.
          * <li>{@code targetClass} is in {@code M1} and {@code M0}
-         *     {@linkplain Module#reads reads} {@code M1} and the type is
+         *     {@linkplain Module#canRead(Module)}  reads} {@code M1} and the type is
          *     in a package that is exported to at least {@code M0}.
          * <li>{@code targetClass} is in a third module {@code M2} and both {@code M0}
          *     and {@code M1} reads {@code M2} and the type is in a package
@@ -4890,7 +4890,7 @@ assert((int)twice.invokeExact(21) == 42);
      * @param type the type of the desired method handle
      * @return a constant method handle of the given type, which returns a default value of the given return type
      * @throws NullPointerException if the argument is null
-     * @see MethodHandles#primitiveZero
+     * @see <code>primitiveZero(Wrapper)</code>
      * @see MethodHandles#constant
      * @since 9
      */
