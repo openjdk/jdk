@@ -484,7 +484,7 @@ void InterpreterMacroAssembler::remove_activation(
   // the stack, will call InterpreterRuntime::at_unwind.
   Label slow_path;
   Label fast_path;
-  safepoint_poll(slow_path, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+  safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
   br(Assembler::AL, fast_path);
   bind(slow_path);
   push(state);
