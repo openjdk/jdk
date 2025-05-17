@@ -100,16 +100,24 @@ final class ProcessImpl extends Process {
             // Should be value of a LaunchMechanism enum
             LaunchMechanism lm = LaunchMechanism.valueOf(s.toUpperCase(Locale.ROOT));
             switch (OperatingSystem.current()) {
-                case LINUX:
-                    return lm;      // All options are valid for Linux
+                case LINUX: {
+                    // All options are valid for Linux, but VFORK is deprecated and results
+                    // in a warning
+                    if (lm == LaunchMechanism.VFORK) {
+                        System.err.println("VFORK MODE DEPRECATED");
+                        System.err.println("The VFORK launch mechanism has been deprecated for being dangerous.\n" +
+                                           "It will be removed in a future java version. Either remove the\n" +
+                                           "jdk.lang.Process.launchMechanism property (preferred) or use FORK mode\n" +
+                                           "instead (-Djdk.lang.Process.launchMechanism=FORK).");
+                    }
+                    return lm;
+                }
                 case AIX:
                 case MACOS:
                     if (lm != LaunchMechanism.VFORK) {
                         return lm; // All but VFORK are valid
                     }
                     break;
-                case WINDOWS:
-                    // fall through to throw to Error
             }
         } catch (IllegalArgumentException e) {
         }
