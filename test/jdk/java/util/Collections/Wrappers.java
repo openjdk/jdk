@@ -31,11 +31,21 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Queue;
+import java.util.SequencedCollection;
+import java.util.SequencedSet;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
@@ -44,6 +54,12 @@ import static org.testng.Assert.assertTrue;
 @Test(groups = "unit")
 public class Wrappers {
     static Object[][] collections;
+    static int total = 0;
+
+    @AfterClass
+    public void printTotal() {
+        System.out.println(">>>> Total missing overrides = " + total);
+    }
 
     @DataProvider(name="collections")
     public static Object[][] collectionCases() {
@@ -141,27 +157,48 @@ public class Wrappers {
 
     static Method[] defaultMethods;
 
+    static final List<Class<?>> interfaces = List.of(
+        Iterable.class,
+        Collection.class,
+        SequencedCollection.class,
+        List.class,
+        Set.class,
+        SequencedSet.class,
+        SortedSet.class,
+        NavigableSet.class,
+        Queue.class,
+        Deque.class);
+
+    static final Map<Class<?>, List<Method>> defaultMethodMap = new HashMap<>();
+
     static {
-        List<Method> list = new ArrayList<>();
-        Method[] methods = Collection.class.getMethods();
-        for (Method m: methods) {
-            if (m.isDefault()) {
-                list.add(m);
+        for (var intf : interfaces) {
+            List<Method> list = new ArrayList<>();
+            Method[] methods = intf.getMethods();
+            for (Method m: methods) {
+                if (m.isDefault()) {
+                    list.add(m);
+                }
             }
+            defaultMethodMap.put(intf, list);
         }
-        defaultMethods = list.toArray(new Method[0]);
     }
 
     @Test(dataProvider = "collections")
     public static void testAllDefaultMethodsOverridden(Collection c) throws NoSuchMethodException {
         Class cls = c.getClass();
         var notOverridden = new ArrayList<Method>();
-        for (Method m: defaultMethods) {
-            Method m2 = cls.getMethod(m.getName(), m.getParameterTypes());
-            if (m2.isDefault()) {
-                notOverridden.add(m);
+        for (var entry : defaultMethodMap.entrySet()) {
+            if (entry.getKey().isInstance(c)) {
+                for (Method m : entry.getValue()) {
+                    Method m2 = cls.getMethod(m.getName(), m.getParameterTypes());
+                    if (m2.isDefault()) {
+                        notOverridden.add(m);
+                    }
+                }
             }
         }
+        total += notOverridden.size();
         assertTrue(notOverridden.isEmpty(), cls.getName() + " does not override " + notOverridden);
     }
 }
