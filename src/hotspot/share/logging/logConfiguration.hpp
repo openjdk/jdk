@@ -24,6 +24,7 @@
 #ifndef SHARE_LOGGING_LOGCONFIGURATION_HPP
 #define SHARE_LOGGING_LOGCONFIGURATION_HPP
 
+#include "logging/logFileOutput.hpp"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logLevel.hpp"
 #include "memory/allStatic.hpp"
@@ -72,7 +73,7 @@ private:
   static AsyncMode _async_mode;
 
   // Create a new output. Returns null if failed.
-  static LogOutput* new_output(const char* name, const char* options, outputStream* errstream);
+  static LogFileOutput* new_output(const char* name, const char* options, outputStream* errstream);
 
   // Add an output to the list of configured outputs. Returns the assigned index.
   static size_t add_output(LogOutput* out);
