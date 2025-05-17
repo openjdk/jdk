@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -367,9 +367,8 @@ public class AArch64TestAssembler extends TestAssembler {
     @Override
     public void emitCallPrologue(CallingConvention cc, Object... prim) {
         growFrame(cc.getStackSize());
-        AllocatableValue[] args = cc.getArguments();
-        for (int i = 0; i < args.length; i++) {
-            emitLoad(args[i], prim[i]);
+        for (int i = 0; i < cc.getArgumentCount(); i++) {
+            emitLoad(cc.getArgument(i), prim[i]);
         }
     }
 
