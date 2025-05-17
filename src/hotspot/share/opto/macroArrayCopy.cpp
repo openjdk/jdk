@@ -230,9 +230,6 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
     return;
   }
 
-  int inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(type);
-  Node* casted_length = new CastLLNode(*ctrl, length, TypeLong::make(0, inline_limit, Type::WidenMin));
-  transform_later(casted_length);
   Node* copy_bytes = new LShiftXNode(length, intcon(shift));
   transform_later(copy_bytes);
 
@@ -243,6 +240,9 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   inline_block  = generate_guard(ctrl, bol_le, nullptr, PROB_FAIR);
   stub_block = *ctrl;
 
+  int inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(type);
+  Node* casted_length = new CastLLNode(inline_block, length, TypeLong::make(0, inline_limit, Type::WidenMin), ConstraintCastNode::StrongDependency);
+  transform_later(casted_length);
   Node* mask_gen = VectorMaskGenNode::make(casted_length, type);
   transform_later(mask_gen);
 

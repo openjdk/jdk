@@ -76,8 +76,6 @@ compiler/interpreter/Test6833129.java 8335266 generic-i586
 compiler/ciReplay/TestInliningProtectionDomain.java 8349191 generic-all
 compiler/ciReplay/TestIncrementalInlining.java 8349191 generic-all
 
-compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
-
 #############################################################################
 
 # :hotspot_gc
