@@ -922,6 +922,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         } else {
             DecimalDigits.putPairUTF16(value, count, i);
         }
+        this.value = value;
         this.count = count + 2;
     }
 
