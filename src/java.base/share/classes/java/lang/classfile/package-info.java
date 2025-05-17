@@ -168,7 +168,7 @@
  * <p>
  * For nonstandard attributes, user-provided attribute mappers can be specified
  * through the use of the {@link
- * ClassFile.AttributeMapperOption#of(Function)}}
+ * ClassFile.AttributeMapperOption#of(Function)}
  * classfile option.  Implementations of custom attributes should extend {@link
  * CustomAttribute}.
  *
@@ -185,11 +185,11 @@
  * -- unrecognized or problematic original attributes (default is {@code PASS_ALL_ATTRIBUTES})</li>
  *   <li>{@link ClassFile.ClassHierarchyResolverOption#of(ClassHierarchyResolver)}
  * -- specify a custom class hierarchy resolver used by stack map generation</li>
- *   <li>{@link ClassFile.ConstantPoolSharingOption}}
+ *   <li>{@link ClassFile.ConstantPoolSharingOption}
  * -- share constant pool when transforming (default is {@code SHARED_POOL})</li>
- *   <li>{@link ClassFile.DeadCodeOption}}
+ *   <li>{@link ClassFile.DeadCodeOption}
  * -- patch out unreachable code (default is {@code PATCH_DEAD_CODE})</li>
- *   <li>{@link ClassFile.DeadLabelsOption}}
+ *   <li>{@link ClassFile.DeadLabelsOption}
  * -- filter unresolved labels (default is {@code FAIL_ON_DEAD_LABELS})</li>
  *   <li>{@link ClassFile.DebugElementsOption}
  * -- processing of debug information, such as local variable metadata (default is {@code PASS_DEBUG}) </li>

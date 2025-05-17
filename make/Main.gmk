@@ -875,6 +875,12 @@ $(eval $(call SetupTarget, static-libs-graal-bundles, \
     DEPS := static-libs-graal-image, \
 ))
 
+$(eval $(call SetupTarget, static-jdk-bundles, \
+    MAKEFILE := Bundles, \
+    TARGET := static-jdk-bundles, \
+    DEPS := static-jdk-image, \
+))
+
 ifeq ($(JCOV_ENABLED), true)
   $(eval $(call SetupTarget, jcov-bundles, \
       MAKEFILE := Bundles, \
@@ -1321,10 +1327,7 @@ endif
 ################################################################################
 
 # all-images builds all our deliverables as images.
-all-images: product-images test-image all-docs-images
-ifeq ($(call isTargetOs, linux macosx windows), true)
-  all-images: static-jdk-image
-endif
+all-images: product-images static-jdk-image test-image all-docs-images
 
 # all-bundles packages all our deliverables as tar.gz bundles.
 all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles

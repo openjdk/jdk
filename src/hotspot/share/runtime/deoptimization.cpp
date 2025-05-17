@@ -377,8 +377,9 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* co
       realloc_failures = Deoptimization::realloc_objects(thread, &deoptee, &map, objects, THREAD);
       JRT_END
     }
-    bool skip_internal = (compiled_method != nullptr) && !compiled_method->is_compiled_by_jvmci();
-    Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, skip_internal);
+    guarantee(compiled_method != nullptr, "deopt must be associated with an nmethod");
+    bool is_jvmci = compiled_method->is_compiled_by_jvmci();
+    Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, is_jvmci);
     if (TraceDeoptimization) {
       print_objects(deoptee_thread, objects, realloc_failures);
     }
@@ -841,13 +842,24 @@ void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_arr
 }
 
 #ifndef PRODUCT
+// Return true if the execution after the provided bytecode continues at the
+// next bytecode in the code. This is not the case for gotos, returns, and
+// throws.
 static bool falls_through(Bytecodes::Code bc) {
   switch (bc) {
-    // List may be incomplete.  Here we really only care about bytecodes where compiled code
-    // can deoptimize.
     case Bytecodes::_goto:
     case Bytecodes::_goto_w:
     case Bytecodes::_athrow:
+    case Bytecodes::_areturn:
+    case Bytecodes::_dreturn:
+    case Bytecodes::_freturn:
+    case Bytecodes::_ireturn:
+    case Bytecodes::_lreturn:
+    case Bytecodes::_jsr:
+    case Bytecodes::_ret:
+    case Bytecodes::_return:
+    case Bytecodes::_lookupswitch:
+    case Bytecodes::_tableswitch:
       return false;
     default:
       return true;
@@ -1458,27 +1470,26 @@ public:
   }
 };
 
-static int compare(ReassignedField* left, ReassignedField* right) {
-  return left->_offset - right->_offset;
+// Gets the fields of `klass` that are eliminated by escape analysis and need to be reassigned
+static GrowableArray<ReassignedField>* get_reassigned_fields(InstanceKlass* klass, GrowableArray<ReassignedField>* fields, bool is_jvmci) {
+  InstanceKlass* super = klass->superklass();
+  if (super != nullptr) {
+    get_reassigned_fields(super, fields, is_jvmci);
+  }
+  for (AllFieldStream fs(klass); !fs.done(); fs.next()) {
+    if (!fs.access_flags().is_static() && (is_jvmci || !fs.field_flags().is_injected())) {
+      ReassignedField field;
+      field._offset = fs.offset();
+      field._type = Signature::basic_type(fs.signature());
+      fields->append(field);
+    }
+  }
+  return fields;
 }
 
-// Restore fields of an eliminated instance object using the same field order
-// returned by HotSpotResolvedObjectTypeImpl.getInstanceFields(true)
-static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap* reg_map, ObjectValue* sv, int svIndex, oop obj, bool skip_internal) {
-  GrowableArray<ReassignedField>* fields = new GrowableArray<ReassignedField>();
-  InstanceKlass* ik = klass;
-  while (ik != nullptr) {
-    for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
-      if (!fs.access_flags().is_static() && (!skip_internal || !fs.field_flags().is_injected())) {
-        ReassignedField field;
-        field._offset = fs.offset();
-        field._type = Signature::basic_type(fs.signature());
-        fields->append(field);
-      }
-    }
-    ik = ik->superklass();
-  }
-  fields->sort(compare);
+// Restore fields of an eliminated instance object employing the same field order used by the compiler.
+static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap* reg_map, ObjectValue* sv, int svIndex, oop obj, bool is_jvmci) {
+  GrowableArray<ReassignedField>* fields = get_reassigned_fields(klass, new GrowableArray<ReassignedField>(), is_jvmci);
   for (int i = 0; i < fields->length(); i++) {
     ScopeValue* scope_field = sv->field_at(svIndex);
     StackValue* value = StackValue::create_stack_value(fr, reg_map, scope_field);
@@ -1560,7 +1571,7 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
 }
 
 // restore fields of all eliminated objects and arrays
-void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal) {
+void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool is_jvmci) {
   for (int i = 0; i < objects->length(); i++) {
     assert(objects->at(i)->is_object(), "invalid debug information");
     ObjectValue* sv = (ObjectValue*) objects->at(i);
@@ -1604,7 +1615,7 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     }
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), skip_internal);
+      reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), is_jvmci);
     } else if (k->is_typeArray_klass()) {
       TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       reassign_type_array_elements(fr, reg_map, sv, (typeArrayOop) obj(), ak->element_type());
@@ -1665,6 +1676,12 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
           // We have lost information about the correct state of the lock stack.
           // Entering may create an invalid lock stack. Inflate the lock if it
           // was fast_locked to restore the valid lock stack.
+          if (UseObjectMonitorTable) {
+            // UseObjectMonitorTable expects the BasicLock cache to be either a
+            // valid ObjectMonitor* or nullptr. Right now it is garbage, set it
+            // to nullptr.
+            lock->clear_object_monitor_cache();
+          }
           ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
           if (deoptee_thread->lock_stack().contains(obj())) {
             LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,

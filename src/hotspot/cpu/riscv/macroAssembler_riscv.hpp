@@ -122,8 +122,8 @@ class MacroAssembler: public Assembler {
                Register arg_1, Register arg_2, Register arg_3,
                bool check_exceptions = true);
 
-  void get_vm_result(Register oop_result, Register java_thread);
-  void get_vm_result_2(Register metadata_result, Register java_thread);
+  void get_vm_result_oop(Register oop_result, Register java_thread);
+  void get_vm_result_metadata(Register metadata_result, Register java_thread);
 
   // These always tightly bind to MacroAssembler::call_VM_leaf_base
   // bypassing the virtual implementation
@@ -241,12 +241,6 @@ class MacroAssembler: public Assembler {
   virtual void null_check(Register reg, int offset = -1);
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
-
-  // idiv variant which deals with MINLONG as dividend and -1 as divisor
-  int corrected_idivl(Register result, Register rs1, Register rs2,
-                      bool want_remainder, bool is_signed);
-  int corrected_idivq(Register result, Register rs1, Register rs2,
-                      bool want_remainder, bool is_signed);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -423,14 +417,16 @@ class MacroAssembler: public Assembler {
   // We used four bit to indicate the read and write bits in the predecessors and successors,
   // and extended i for r, o for w if UseConservativeFence enabled.
   enum Membar_mask_bits {
-    StoreStore = 0b0101,               // (pred = ow   + succ =   ow)
-    LoadStore  = 0b1001,               // (pred = ir   + succ =   ow)
-    StoreLoad  = 0b0110,               // (pred = ow   + succ =   ir)
-    LoadLoad   = 0b1010,               // (pred = ir   + succ =   ir)
-    AnyAny     = LoadStore | StoreLoad // (pred = iorw + succ = iorw)
+    StoreStore = 0b0101,               // (pred = w   + succ = w)
+    LoadStore  = 0b1001,               // (pred = r   + succ = w)
+    StoreLoad  = 0b0110,               // (pred = w   + succ = r)
+    LoadLoad   = 0b1010,               // (pred = r   + succ = r)
+    AnyAny     = LoadStore | StoreLoad // (pred = rw  + succ = rw)
   };
 
   void membar(uint32_t order_constraint);
+
+ private:
 
   static void membar_mask_to_pred_succ(uint32_t order_constraint,
                                        uint32_t& predecessor, uint32_t& successor) {
@@ -443,7 +439,7 @@ class MacroAssembler: public Assembler {
     // 11(rw)-> 1111(iorw)
     if (UseConservativeFence) {
       predecessor |= predecessor << 2;
-      successor |= successor << 2;
+      successor   |= successor << 2;
     }
   }
 
@@ -451,25 +447,13 @@ class MacroAssembler: public Assembler {
     return ((predecessor & 0x3) << 2) | (successor & 0x3);
   }
 
-  void fence(uint32_t predecessor, uint32_t successor) {
-    if (UseZtso) {
-      if ((pred_succ_to_membar_mask(predecessor, successor) & StoreLoad) == StoreLoad) {
-        // TSO allows for stores to be reordered after loads. When the compiler
-        // generates a fence to disallow that, we are required to generate the
-        // fence for correctness.
-        Assembler::fence(predecessor, successor);
-      } else {
-        // TSO guarantees other fences already.
-      }
-    } else {
-      // always generate fence for RVWMO
-      Assembler::fence(predecessor, successor);
-    }
-  }
+ public:
 
   void cmodx_fence();
 
   void pause() {
+    // Zihintpause
+    // PAUSE is encoded as a FENCE instruction with pred=W, succ=0, fm=0, rd=x0, and rs1=x0.
     Assembler::fence(w, 0);
   }
 
@@ -673,6 +657,11 @@ class MacroAssembler: public Assembler {
   void cmov_gt(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src);
 
+  void cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
@@ -686,9 +675,9 @@ class MacroAssembler: public Assembler {
   // JALR, return address stack updates:
   // | rd is x1/x5 | rs1 is x1/x5 | rd=rs1 | RAS action
   // | ----------- | ------------ | ------ |-------------
-  // |     No      |      No      |   —    | None
-  // |     No      |      Yes     |   —    | Pop
-  // |     Yes     |      No      |   —    | Push
+  // |     No      |      No      |   -    | None
+  // |     No      |      Yes     |   -    | Pop
+  // |     Yes     |      No      |   -    | Push
   // |     Yes     |      Yes     |   No   | Pop, then push
   // |     Yes     |      Yes     |   Yes  | Push
   //
@@ -760,7 +749,7 @@ class MacroAssembler: public Assembler {
     guarantee(rtype == relocInfo::internal_word_type,                       \
               "only internal_word_type relocs make sense here");            \
     relocate(InternalAddress(dest).rspec());                                \
-    IncompressibleRegion ir(this);  /* relocations */
+    IncompressibleScope scope(this);  /* relocations */
 
 #define INSN(NAME)                                                                                       \
   void NAME(Register Rs1, Register Rs2, const address dest) {                                            \
@@ -921,8 +910,10 @@ public:
   void movptr2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
  public:
   // float imm move
+  static bool can_hf_imm_load(short imm);
   static bool can_fp_imm_load(float imm);
   static bool can_dp_imm_load(double imm);
+  void fli_h(FloatRegister Rd, short imm);
   void fli_s(FloatRegister Rd, float imm);
   void fli_d(FloatRegister Rd, double imm);
 
@@ -979,7 +970,7 @@ public:
     guarantee(rtype == relocInfo::internal_word_type,                       \
               "only internal_word_type relocs make sense here");            \
     relocate(InternalAddress(dest).rspec());                                \
-    IncompressibleRegion ir(this);  /* relocations */
+    IncompressibleScope scope(this);  /* relocations */
 
 #define INSN(NAME)                                                                                 \
   void NAME(Register Rd, address dest) {                                                           \

@@ -425,6 +425,19 @@ void Threads::initialize_jsr292_core_classes(TRAPS) {
   }
 }
 
+// One-shot PeriodicTask subclass for reading the release file
+class ReadReleaseFileTask : public PeriodicTask {
+ public:
+  ReadReleaseFileTask() : PeriodicTask(100) {}
+
+  virtual void task() {
+    os::read_image_release_file();
+
+    // Reclaim our storage and disenroll ourself.
+    delete this;
+  }
+};
+
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   extern void JDK_Version_init();
 
@@ -445,6 +458,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize the os module
   os::init();
+
+  // Initialize memory pools
+  Arena::initialize_chunk_pool();
 
   MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 
@@ -579,6 +595,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return status;
   }
+
+  // Have the WatcherThread read the release file in the background.
+  ReadReleaseFileTask* read_task = new ReadReleaseFileTask();
+  read_task->enroll();
 
   // Create WatcherThread as soon as we can since we need it in case
   // of hangs during error reporting.
@@ -1031,6 +1051,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
 void Threads::add(JavaThread* p, bool force_daemon) {
   // The threads lock must be owned at this point
   assert(Threads_lock->owned_by_self(), "must have threads lock");
+  assert(p->monitor_owner_id() != 0, "should be set");
 
   BarrierSet::barrier_set()->on_thread_attach(p);
 

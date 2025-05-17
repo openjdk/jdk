@@ -27,7 +27,6 @@
 
 #include "cds/archiveHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
-
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
@@ -37,24 +36,26 @@
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/tlab_globals.hpp"
-
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
+#include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
+#include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
-#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -73,18 +74,9 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
-#include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
-#include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
-#include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
-
-#if INCLUDE_JFR
-#include "gc/shenandoah/shenandoahJfrSupport.hpp"
-#endif
-
-#include "memory/allocation.hpp"
 #include "memory/allocation.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/memoryReserver.hpp"
@@ -103,9 +95,15 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
+#if INCLUDE_JFR
+#include "gc/shenandoah/shenandoahJfrSupport.hpp"
+#endif
 
 class ShenandoahPretouchHeapTask : public WorkerTask {
 private:
@@ -166,7 +164,7 @@ static ReservedSpace reserve(size_t size, size_t preferred_page_size) {
     size = align_up(size, alignment);
   }
 
-  const ReservedSpace reserved = MemoryReserver::reserve(size, alignment, preferred_page_size);
+  const ReservedSpace reserved = MemoryReserver::reserve(size, alignment, preferred_page_size, mtGC);
   if (!reserved.is_reserved()) {
     vm_exit_during_initialization("Could not reserve space");
   }
@@ -303,7 +301,7 @@ jint ShenandoahHeap::initialize() {
                                           bitmap_size_orig, bitmap_page_size,
                                           bitmap.base(),
                                           bitmap.size(), bitmap.page_size());
-  MemTracker::record_virtual_memory_tag(bitmap.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(bitmap, mtGC);
   _bitmap_region = MemRegion((HeapWord*) bitmap.base(), bitmap.size() / HeapWordSize);
   _bitmap_region_special = bitmap.special();
 
@@ -327,7 +325,7 @@ jint ShenandoahHeap::initialize() {
       os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), bitmap_page_size, false,
                                 "Cannot commit verification bitmap memory");
     }
-    MemTracker::record_virtual_memory_tag(verify_bitmap.base(), mtGC);
+    MemTracker::record_virtual_memory_tag(verify_bitmap, mtGC);
     MemRegion verify_bitmap_region = MemRegion((HeapWord *) verify_bitmap.base(), verify_bitmap.size() / HeapWordSize);
     _verification_bit_map.initialize(_heap_region, verify_bitmap_region);
     _verifier = new ShenandoahVerifier(this, &_verification_bit_map);
@@ -341,7 +339,7 @@ jint ShenandoahHeap::initialize() {
                                           bitmap_size_orig, aux_bitmap_page_size,
                                           aux_bitmap.base(),
                                           aux_bitmap.size(), aux_bitmap.page_size());
-  MemTracker::record_virtual_memory_tag(aux_bitmap.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(aux_bitmap, mtGC);
   _aux_bitmap_region = MemRegion((HeapWord*) aux_bitmap.base(), aux_bitmap.size() / HeapWordSize);
   _aux_bitmap_region_special = aux_bitmap.special();
   _aux_bit_map.initialize(_heap_region, _aux_bitmap_region);
@@ -359,7 +357,7 @@ jint ShenandoahHeap::initialize() {
                                           region_storage_size_orig, region_page_size,
                                           region_storage.base(),
                                           region_storage.size(), region_storage.page_size());
-  MemTracker::record_virtual_memory_tag(region_storage.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(region_storage, mtGC);
   if (!region_storage.special()) {
     os::commit_memory_or_exit(region_storage.base(), region_storage_size, region_page_size, false,
                               "Cannot commit region memory");
@@ -380,7 +378,7 @@ jint ShenandoahHeap::initialize() {
     for (uintptr_t addr = min; addr <= max; addr <<= 1u) {
       char* req_addr = (char*)addr;
       assert(is_aligned(req_addr, cset_align), "Should be aligned");
-      cset_rs = MemoryReserver::reserve(req_addr, cset_size, cset_align, cset_page_size);
+      cset_rs = MemoryReserver::reserve(req_addr, cset_size, cset_align, cset_page_size, mtGC);
       if (cset_rs.is_reserved()) {
         assert(cset_rs.base() == req_addr, "Allocated where requested: " PTR_FORMAT ", " PTR_FORMAT, p2i(cset_rs.base()), addr);
         _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
@@ -389,7 +387,7 @@ jint ShenandoahHeap::initialize() {
     }
 
     if (_collection_set == nullptr) {
-      cset_rs = MemoryReserver::reserve(cset_size, cset_align, os::vm_page_size());
+      cset_rs = MemoryReserver::reserve(cset_size, cset_align, os::vm_page_size(), mtGC);
       if (!cset_rs.is_reserved()) {
         vm_exit_during_initialization("Cannot reserve memory for collection set");
       }
@@ -407,7 +405,6 @@ jint ShenandoahHeap::initialize() {
 
   {
     ShenandoahHeapLocker locker(lock());
-
     _free_set = new ShenandoahFreeSet(this, _num_regions);
     for (size_t i = 0; i < _num_regions; i++) {
       HeapWord* start = (HeapWord*)sh_rs.base() + ShenandoahHeapRegion::region_size_words() * i;
@@ -423,17 +420,13 @@ jint ShenandoahHeap::initialize() {
 
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
-
-    // Initialize to complete
-    _marking_context->mark_complete();
-   _free_set->rebuild();
-
+    size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
+    young_generation()->set_evacuation_reserve(young_reserve);
     if (mode()->is_generational()) {
-      size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
-      young_generation()->set_evacuation_reserve(young_reserve);
       old_generation()->set_evacuation_reserve((size_t) 0);
       old_generation()->set_promoted_reserve((size_t) 0);
     }
+    _free_set->rebuild();
   }
 
   if (AlwaysPreTouch) {
@@ -592,7 +585,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 #pragma warning( pop )
 #endif
 
-void ShenandoahHeap::print_on(outputStream* st) const {
+void ShenandoahHeap::print_heap_on(outputStream* st) const {
   st->print_cr("Shenandoah Heap");
   st->print_cr(" %zu%s max, %zu%s soft max, %zu%s committed, %zu%s used",
                byte_size_in_proper_unit(max_capacity()), proper_unit_for_byte_size(max_capacity()),
@@ -643,12 +636,15 @@ void ShenandoahHeap::print_on(outputStream* st) const {
   }
 
   st->cr();
-  MetaspaceUtils::print_on(st);
 
   if (Verbose) {
     st->cr();
     print_heap_regions_on(st);
   }
+}
+
+void ShenandoahHeap::print_gc_on(outputStream* st) const {
+  print_heap_regions_on(st);
 }
 
 class ShenandoahInitWorkerGCLABClosure : public ThreadClosure {
@@ -2178,8 +2174,8 @@ size_t ShenandoahHeap::tlab_used(Thread* thread) const {
 }
 
 bool ShenandoahHeap::try_cancel_gc(GCCause::Cause cause) {
-  jbyte prev = _cancelled_gc.cmpxchg(cause, GCCause::_no_gc);
-  return prev == GCCause::_no_gc;
+  const GCCause::Cause prev = _cancelled_gc.xchg(cause);
+  return prev == GCCause::_no_gc || prev == GCCause::_shenandoah_concurrent_gc;
 }
 
 void ShenandoahHeap::cancel_concurrent_mark() {
@@ -2243,6 +2239,9 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
       ShenandoahGCPhase gc_phase(phase);
       ShenandoahGCWorkerPhase worker_phase(phase);
       bool unloading_occurred = SystemDictionary::do_unloading(gc_timer());
+
+      // Clean JVMCI metadata handles.
+      JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
 
       uint num_workers = _workers->active_workers();
       ShenandoahClassUnloadingTask unlink_task(phase, num_workers, unloading_occurred);
@@ -2583,12 +2582,6 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
                           ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
                           ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
   rebuild_free_set_within_phase();
-}
-
-void ShenandoahHeap::print_extended_on(outputStream *st) const {
-  print_on(st);
-  st->cr();
-  print_heap_regions_on(st);
 }
 
 bool ShenandoahHeap::is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self) {

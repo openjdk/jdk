@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,16 @@ public interface RegisterConfig {
      * Gets the registers whose values must be preserved by the callee.
      */
     RegisterArray getCalleeSaveRegisters();
+
+    /**
+     * Returns the storage kind for a callee-save register, which determines how the register is
+     * saved and restored. For example, according to the Windows x64 ABI, the upper portions of
+     * XMM0-XMM15 are considered destroyed, so saving the full width of these registers is not
+     * necessary.
+     */
+    default PlatformKind getCalleeSaveRegisterStorageKind(Architecture arch, Register calleeSaveRegister) {
+        return arch.getLargestStorableKind(calleeSaveRegister.getRegisterCategory());
+    }
 
     /**
      * Gets a map from register {@linkplain Register#number numbers} to register

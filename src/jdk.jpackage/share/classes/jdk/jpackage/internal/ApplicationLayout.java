@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,17 @@
 package jdk.jpackage.internal;
 
 import jdk.internal.util.OperatingSystem;
-
+import jdk.jpackage.internal.util.PathGroup;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 
 /**
  * Application directory layout.
  */
-public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayout> {
+public final class ApplicationLayout {
     enum PathRole {
         /**
          * Java run-time directory.
@@ -84,14 +86,32 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
         this.data = data;
     }
 
-    @Override
     public PathGroup pathGroup() {
         return data;
     }
 
-    @Override
     public ApplicationLayout resolveAt(Path root) {
         return new ApplicationLayout(pathGroup().resolveAt(root));
+    }
+
+    public List<Path> roots() {
+        return data.roots();
+    }
+
+    public long sizeInBytes() throws IOException {
+        return data.sizeInBytes();
+    }
+
+    public void copy(ApplicationLayout other) throws IOException {
+        data.copy(other.data);
+    }
+
+    public void move(ApplicationLayout other) throws IOException {
+        data.move(other.data);
+    }
+
+    public void transform(ApplicationLayout other, PathGroup.TransformHandler handler) throws IOException {
+        data.transform(other.data, handler);
     }
 
     /**

@@ -53,6 +53,10 @@
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #endif
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahRuntime.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#endif
 
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
   static_field(CompilerToVM::Data,             oopDesc_klass_offset_in_bytes,          int)                                          \
@@ -118,6 +122,7 @@
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
                                                                                                                                      \
   X86_ONLY(static_field(CompilerToVM::Data,    L1_line_size,                           int))                                         \
+  X86_ONLY(static_field(CompilerToVM::Data,    supports_avx512_simd_sort,              bool))                                        \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             vm_page_size,                           size_t)                                       \
                                                                                                                                      \
@@ -129,6 +134,8 @@
   static_field(CompilerToVM::Data,             sizeof_arrayOopDesc,                    int)                                          \
   static_field(CompilerToVM::Data,             sizeof_BasicLock,                       int)                                          \
   ZGC_ONLY(static_field(CompilerToVM::Data,    sizeof_ZStoreBarrierEntry,              int))                                         \
+  SHENANDOAHGC_ONLY(static_field(CompilerToVM::Data, shenandoah_in_cset_fast_test_addr, address))                                    \
+  SHENANDOAHGC_ONLY(static_field(CompilerToVM::Data, shenandoah_region_size_bytes_shift,int))                                        \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
@@ -144,7 +151,7 @@
                                                                                                                                      \
   static_field(CompilerToVM::Data,             data_section_item_alignment,            int)                                          \
                                                                                                                                      \
-  JVMTI_ONLY(static_field(CompilerToVM::Data,  _should_notify_object_alloc,            int*))                                         \
+  JVMTI_ONLY(static_field(CompilerToVM::Data,  _should_notify_object_alloc,            int*))                                        \
                                                                                                                                      \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
@@ -227,7 +234,7 @@
   nonstatic_field(JavaThread,                  _scopedValueCache,                             OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _monitor_owner_id,                             int64_t)                               \
-  nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
+  nonstatic_field(JavaThread,                  _vm_result_oop,                                oop)                                   \
   nonstatic_field(JavaThread,                  _stack_overflow_state._stack_overflow_limit,   address)                               \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
@@ -395,6 +402,13 @@
   static_field(StubRoutines,                _sha3_implCompress,                               address)                               \
   static_field(StubRoutines,                _double_keccak,                                   address)                               \
   static_field(StubRoutines,                _sha3_implCompressMB,                             address)                               \
+  static_field(StubRoutines,                _kyberNtt,                                        address)                               \
+  static_field(StubRoutines,                _kyberInverseNtt,                                 address)                               \
+  static_field(StubRoutines,                _kyberNttMult,                                    address)                               \
+  static_field(StubRoutines,                _kyberAddPoly_2,                                  address)                               \
+  static_field(StubRoutines,                _kyberAddPoly_3,                                  address)                               \
+  static_field(StubRoutines,                _kyber12To16,                                     address)                               \
+  static_field(StubRoutines,                _kyberBarrettReduce,                              address)                               \
   static_field(StubRoutines,                _dilithiumAlmostNtt,                              address)                               \
   static_field(StubRoutines,                _dilithiumAlmostInverseNtt,                       address)                               \
   static_field(StubRoutines,                _dilithiumNttMult,                                address)                               \
@@ -888,6 +902,13 @@
   declare_function(JVMCIRuntime::load_and_clear_exception)                \
   G1GC_ONLY(declare_function(JVMCIRuntime::write_barrier_pre))            \
   G1GC_ONLY(declare_function(JVMCIRuntime::write_barrier_post))           \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_strong))         \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_strong_narrow))  \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_weak))           \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_weak_narrow))    \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_phantom))        \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_phantom_narrow)) \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::write_barrier_pre))                     \
   declare_function(JVMCIRuntime::validate_object)                         \
                                                                           \
   declare_function(JVMCIRuntime::test_deoptimize_call_int)
@@ -934,6 +955,15 @@
 
 #endif // INCLUDE_ZGC
 
+#if INCLUDE_SHENANDOAHGC
+
+#define VM_INT_CONSTANTS_JVMCI_SHENANDOAH(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
+   declare_constant_with_value("ShenandoahThreadLocalData::gc_state_offset", in_bytes(ShenandoahThreadLocalData::gc_state_offset())) \
+   declare_constant_with_value("ShenandoahThreadLocalData::satb_mark_queue_index_offset", in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset())) \
+   declare_constant_with_value("ShenandoahThreadLocalData::satb_mark_queue_buffer_offset", in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset())) \
+   declare_constant_with_value("ShenandoahThreadLocalData::card_table_offset", in_bytes(ShenandoahThreadLocalData::card_table_offset())) \
+
+#endif
 
 #ifdef LINUX
 
@@ -968,7 +998,11 @@
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field) \
   volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*) \
-  static_field(VM_Version, _has_intel_jcc_erratum, bool)
+  static_field(VM_Version,                     _features,                      VM_Version::VM_Features) \
+                                                                                                        \
+  nonstatic_field(VM_Version::VM_Features,     _features_bitmap[0],            uint64_t)                \
+  static_field(VM_Version::VM_Features,        _features_bitmap_size,          int)                     \
+  static_field(VM_Version,                     _has_intel_jcc_erratum,         bool)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant) \
   LP64_ONLY(declare_constant(frame::arg_reg_save_area_bytes))       \
@@ -976,7 +1010,8 @@
   declare_constant(frame::interpreter_frame_last_sp_offset)
 
 #define DECLARE_LONG_CPU_FEATURE_CONSTANT(id, name, bit) GENERATE_VM_LONG_CONSTANT_ENTRY(VM_Version::CPU_##id)
-#define VM_LONG_CPU_FEATURE_CONSTANTS CPU_FEATURE_FLAGS(DECLARE_LONG_CPU_FEATURE_CONSTANT)
+#define VM_LONG_CPU_FEATURE_CONSTANTS \
+   CPU_FEATURE_FLAGS(DECLARE_LONG_CPU_FEATURE_CONSTANT)
 
 #endif
 
@@ -1055,6 +1090,11 @@ VMIntConstantEntry JVMCIVMStructs::localHotSpotVMIntConstants[] = {
   VM_INT_CONSTANTS_JVMCI_ZGC(GENERATE_VM_INT_CONSTANT_ENTRY,
                               GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
                               GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+#endif
+#if INCLUDE_SHENANDOAHGC
+  VM_INT_CONSTANTS_JVMCI_SHENANDOAH(GENERATE_VM_INT_CONSTANT_ENTRY,
+                                    GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
+                                    GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 #endif
 #ifdef VM_INT_CPU_FEATURE_CONSTANTS
   VM_INT_CPU_FEATURE_CONSTANTS

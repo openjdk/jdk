@@ -35,11 +35,10 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
@@ -47,8 +46,9 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
-#include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/shenandoahWorkGroup.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "memory/allocation.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/vmThread.hpp"
@@ -688,10 +688,6 @@ void ShenandoahConcurrentGC::op_init_mark() {
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
   if (heap->mode()->is_generational()) {
-    if (_generation->is_young()) {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
-      _generation->swap_card_tables();
-    }
 
     if (_generation->is_global()) {
       heap->old_generation()->cancel_gc();
@@ -701,6 +697,14 @@ void ShenandoahConcurrentGC::op_init_mark() {
       // abandoned.
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
       heap->old_generation()->transfer_pointers_from_satb();
+    }
+    {
+      // After we swap card table below, the write-table is all clean, and the read table holds
+      // cards dirty prior to the start of GC. Young and bootstrap collection will update
+      // the write card table as a side effect of remembered set scanning. Global collection will
+      // update the card table as a side effect of global marking of old objects.
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
+      _generation->swap_card_tables();
     }
   }
 

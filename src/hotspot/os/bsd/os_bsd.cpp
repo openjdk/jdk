@@ -55,7 +55,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
@@ -113,9 +112,6 @@
 #endif
 
 #define MAX_PATH    (2 * K)
-
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
@@ -815,7 +811,7 @@ jlong os::javaTimeNanos() {
 }
 
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->max_value = all_bits_jlong;
   info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
@@ -1502,70 +1498,44 @@ void os::jvm_path(char *buf, jint buflen) {
     return;
   }
 
-  if (Arguments::sun_java_launcher_is_altjvm()) {
-    // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
-    // value for buf is "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm.so"
-    // or "<JAVA_HOME>/jre/lib/<vmtype>/libjvm.dylib". If "/jre/lib/"
-    // appears at the right place in the string, then assume we are
-    // installed in a JDK and we're done. Otherwise, check for a
-    // JAVA_HOME environment variable and construct a path to the JVM
-    // being overridden.
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
+    // Look for JAVA_HOME in the environment.
+    char* java_home_var = ::getenv("JAVA_HOME");
+    if (java_home_var != nullptr && java_home_var[0] != 0) {
 
-    const char *p = buf + strlen(buf) - 1;
-    for (int count = 0; p > buf && count < 5; ++count) {
-      for (--p; p > buf && *p != '/'; --p)
-        /* empty */ ;
-    }
+      // Check the current module name "libjvm"
+      const char* p = strrchr(buf, '/');
+      assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-    if (strncmp(p, "/jre/lib/", 9) != 0) {
-      // Look for JAVA_HOME in the environment.
-      char* java_home_var = ::getenv("JAVA_HOME");
-      if (java_home_var != nullptr && java_home_var[0] != 0) {
-        char* jrelib_p;
-        int len;
+      stringStream ss(buf, buflen);
+      rp = os::realpath(java_home_var, buf, buflen);
+      if (rp == nullptr) {
+        return;
+      }
 
-        // Check the current module name "libjvm"
-        p = strrchr(buf, '/');
-        assert(strstr(p, "/libjvm") == p, "invalid library name");
+      assert((int)strlen(buf) < buflen, "Ran out of buffer space");
+      // Add the appropriate library and JVM variant subdirs
+      ss.print("%s/lib/%s", buf, Abstract_VM_Version::vm_variant());
 
-        rp = os::realpath(java_home_var, buf, buflen);
+      if (0 != access(buf, F_OK)) {
+        ss.reset();
+        ss.print("%s/lib", buf);
+      }
+
+      // If the path exists within JAVA_HOME, add the JVM library name
+      // to complete the path to JVM being overridden.  Otherwise fallback
+      // to the path to the current library.
+      if (0 == access(buf, F_OK)) {
+        // Use current module name "libjvm"
+        ss.print("/libjvm%s", JNI_LIB_SUFFIX);
+        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+               "buf has been truncated");
+      } else {
+        // Fall back to path of current library
+        rp = os::realpath(dli_fname, buf, buflen);
         if (rp == nullptr) {
           return;
-        }
-
-        // determine if this is a legacy image or modules image
-        // modules image doesn't have "jre" subdirectory
-        len = strlen(buf);
-        assert(len < buflen, "Ran out of buffer space");
-        jrelib_p = buf + len;
-
-        // Add the appropriate library subdir
-        snprintf(jrelib_p, buflen-len, "/jre/lib");
-        if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "/lib");
-        }
-
-        // Add the appropriate JVM variant subdir
-        len = strlen(buf);
-        jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/%s", Abstract_VM_Version::vm_variant());
-        if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "%s", "");
-        }
-
-        // If the path exists within JAVA_HOME, add the JVM library name
-        // to complete the path to JVM being overridden.  Otherwise fallback
-        // to the path to the current library.
-        if (0 == access(buf, F_OK)) {
-          // Use current module name "libjvm"
-          len = strlen(buf);
-          snprintf(buf + len, buflen-len, "/libjvm%s", JNI_LIB_SUFFIX);
-        } else {
-          // Fall back to path of current library
-          rp = os::realpath(dli_fname, buf, buflen);
-          if (rp == nullptr) {
-            return;
-          }
         }
       }
     }
@@ -2449,14 +2419,14 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time
   info_ptr->may_skip_forward = false;      // elapsed time not wall time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned
 }
 
 void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time
   info_ptr->may_skip_forward = false;      // elapsed time not wall time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned

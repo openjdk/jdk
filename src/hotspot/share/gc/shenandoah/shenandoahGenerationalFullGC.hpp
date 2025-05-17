@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALFULLGC_HPP
 
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/growableArray.hpp"
