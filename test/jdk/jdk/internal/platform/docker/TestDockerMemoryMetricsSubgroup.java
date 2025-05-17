@@ -22,11 +22,13 @@
  */
 
 import jdk.internal.platform.Metrics;
+import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerfileConfig;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
+import jdk.test.lib.containers.docker.ContainerRuntimeVersionTestUtils;
 
 import java.util.ArrayList;
 
@@ -45,6 +47,8 @@ import jtreg.SkippedException;
  */
 
 public class TestDockerMemoryMetricsSubgroup {
+    private static final boolean IS_DOCKER = Container.ENGINE_COMMAND.contains("docker");
+    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
     private static final String imageName =
             DockerfileConfig.getBaseImageName() + ":" +
             DockerfileConfig.getBaseImageVersion();
@@ -58,6 +62,12 @@ public class TestDockerMemoryMetricsSubgroup {
         if (!DockerTestUtils.canTestDocker()) {
             System.out.println("Unable to run docker tests.");
             return;
+        }
+        if (IS_DOCKER && ContainerRuntimeVersionTestUtils.DOCKER_VERSION_20_10_0.compareTo(ContainerRuntimeVersionTestUtils.getContainerRuntimeVersion()) > 0) {
+            throw new SkippedException("Docker version too old for this test. Expected >= 20.10.0");
+        }
+        if (IS_PODMAN && ContainerRuntimeVersionTestUtils.PODMAN_VERSION_1_5_0.compareTo(ContainerRuntimeVersionTestUtils.getContainerRuntimeVersion()) > 0) {
+            throw new SkippedException("Podman version too old for this test. Expected >= 1.5.0");
         }
         if ("cgroupv1".equals(metrics.getProvider())) {
             testMemoryLimitSubgroupV1("200m", "400m", false);
