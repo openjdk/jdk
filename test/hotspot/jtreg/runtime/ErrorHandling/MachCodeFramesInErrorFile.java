@@ -123,6 +123,7 @@ public class MachCodeFramesInErrorFile {
             "-XX:CompileCommand=compileonly,MachCodeFramesInErrorFile$Crasher.crashIn*",
             "-XX:CompileCommand=dontinline,MachCodeFramesInErrorFile$Crasher.crashIn*",
             "-XX:CompileCommand=dontinline,*/Unsafe.getLong", // ensures VM call when crashInJava == false
+            "-XX:PrintAssemblyOptions=platform-asm",
             Crasher.class.getName(),
             crashInJava ? "crashInJava" : "crashInVM");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
