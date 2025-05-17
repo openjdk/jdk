@@ -768,15 +768,17 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseValues
   return false;
 }
 
-// As an optimization, choose optimum vector size for copy length known at compile time.
-int ArrayCopyNode::get_partial_inline_vector_lane_count(BasicType type, int const_len) {
-  int lane_count = ArrayOperationPartialInlineSize/type2aelembytes(type);
-  if (const_len > 0) {
-    int size_in_bytes = const_len * type2aelembytes(type);
-    if (size_in_bytes <= 16)
-      lane_count = 16/type2aelembytes(type);
-    else if (size_in_bytes > 16 && size_in_bytes <= 32)
-      lane_count = 32/type2aelembytes(type);
+// As an optimization, choose the optimal vector size for bounded copy length
+int ArrayCopyNode::get_partial_inline_vector_lane_count(BasicType type, jlong max_len) {
+  assert(max_len > 0, JLONG_FORMAT, max_len);
+  // We only care if max_size_in_bytes is not larger than 32, we also want to avoid multiplication
+  // overflow, so clamp max_len to [0, 64]
+  int max_size_in_bytes = MIN2<jlong>(max_len, 64) * type2aelembytes(type);
+  if (ArrayOperationPartialInlineSize > 16 && max_size_in_bytes <= 16) {
+    return 16 / type2aelembytes(type);
+  } else if (ArrayOperationPartialInlineSize > 32 && max_size_in_bytes <= 32) {
+    return 32 / type2aelembytes(type);
+  } else {
+    return ArrayOperationPartialInlineSize / type2aelembytes(type);
   }
-  return lane_count;
 }

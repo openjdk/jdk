@@ -204,27 +204,24 @@ void PhaseMacroExpand::generate_limit_guard(Node** ctrl, Node* offset, Node* sub
 void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode** mem, const TypePtr* adr_type,
                                                        RegionNode** exit_block, Node** result_memory, Node* length,
                                                        Node* src_start, Node* dst_start, BasicType type) {
-  const TypePtr *src_adr_type = _igvn.type(src_start)->isa_ptr();
-  Node* inline_block = nullptr;
-  Node* stub_block = nullptr;
   int inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(type);
 
-  int const_len = -1;
-  const TypeInt* lty = nullptr;
-  if (length->Opcode() == Op_ConvI2L) {
-    lty = _igvn.type(length->in(1))->isa_int();
-  } else  {
-    lty = _igvn.type(length)->isa_int();
-  }
-  if (lty && lty->is_con()) {
-    const_len = lty->get_con();
+  const TypeLong* length_type = _igvn.type(length)->isa_long();
+  if (length_type == nullptr) {
+    assert(_igvn.type(length) == Type::TOP, "");
+    return;
+  } else if (length_type->_hi <= 0) {
+    // Nothing to copy
+    return;
+  } else if (length_type->_lo > inline_limit) {
+    // Cannot inline
+    return;
   }
 
   // Return if copy length is greater than partial inline size limit or
   // target does not supports masked load/stores.
-  int lane_count = ArrayCopyNode::get_partial_inline_vector_lane_count(type, const_len);
-  if (const_len > inline_limit ||
-      !Matcher::match_rule_supported_vector(Op_LoadVectorMasked, lane_count, type)  ||
+  int lane_count = ArrayCopyNode::get_partial_inline_vector_lane_count(type, length_type->_hi);
+  if (!Matcher::match_rule_supported_vector(Op_LoadVectorMasked, lane_count, type)  ||
       !Matcher::match_rule_supported_vector(Op_StoreVectorMasked, lane_count, type) ||
       !Matcher::match_rule_supported_vector(Op_VectorMaskGen, lane_count, type)) {
     return;
@@ -234,19 +231,20 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   transform_later(cmp_le);
   Node* bol_le = new BoolNode(cmp_le, BoolTest::le);
   transform_later(bol_le);
-  inline_block  = generate_guard(ctrl, bol_le, nullptr, PROB_FAIR);
-  stub_block = *ctrl;
+  Node* inline_block = generate_guard(ctrl, bol_le, nullptr, PROB_FAIR);
+  Node* stub_block = *ctrl;
 
   Node* casted_length = new CastLLNode(inline_block, length, TypeLong::make(0, inline_limit, Type::WidenMin), ConstraintCastNode::RegularDependency);
   transform_later(casted_length);
   Node* mask_gen = VectorMaskGenNode::make(casted_length, type);
   transform_later(mask_gen);
 
-  unsigned vec_size = lane_count *  type2aelembytes(type);
+  unsigned vec_size = lane_count * type2aelembytes(type);
   if (C->max_vector_size() < vec_size) {
     C->set_max_vector_size(vec_size);
   }
 
+  const TypePtr* src_adr_type = _igvn.type(src_start)->isa_ptr();
   const TypeVect * vt = TypeVect::make(type, lane_count);
   Node* mm = (*mem)->memory_at(C->get_alias_index(src_adr_type));
   Node* masked_load = new LoadVectorMaskedNode(inline_block, mm, src_start,
