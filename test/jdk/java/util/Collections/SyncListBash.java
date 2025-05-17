@@ -24,12 +24,12 @@
 /*
  * @test
  * @bug     8351230
+ * @summary Test that List's new SequencedCollection methods are properly
+ *          synchronized on a synchronized list.
  * @library /test/lib
  * @build   jdk.test.lib.Utils
  * @run     main SyncListBash f
  * @run     main SyncListBash r
- * @summary Test that List's new SequencedCollection methods are properly
- *          synchronized on a synchronized list.
  */
 
 import java.util.*;
