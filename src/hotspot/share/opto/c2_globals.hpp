@@ -833,6 +833,9 @@
           "used dead by replacing them with a Halt node. Turning this off " \
           "could corrupt the graph in rare cases and should be used with "  \
           "care.")                                                          \
+                                                                            \
+  develop(bool, StressLoopPeeling, false,                                   \
+          "Randomize loop peeling decision")                                \
 
 // end of C2_FLAGS
 

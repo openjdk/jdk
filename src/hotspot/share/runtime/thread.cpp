@@ -52,10 +52,7 @@
 #include "jfr/jfr.hpp"
 #endif
 
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
-// Current thread is maintained as a thread-local variable
 THREAD_LOCAL Thread* Thread::_thr_current = nullptr;
-#endif
 
 // ======= Thread ========
 // Base class for all threads: VMThread, WatcherThread, ConcurrentMarkSweepThread,
@@ -158,10 +155,8 @@ void Thread::initialize_tlab() {
 }
 
 void Thread::initialize_thread_current() {
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   assert(_thr_current == nullptr, "Thread::current already initialized");
   _thr_current = this;
-#endif
   assert(ThreadLocalStorage::thread() == nullptr, "ThreadLocalStorage::thread already initialized");
   ThreadLocalStorage::set_thread(this);
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
@@ -169,9 +164,7 @@ void Thread::initialize_thread_current() {
 
 void Thread::clear_thread_current() {
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   _thr_current = nullptr;
-#endif
   ThreadLocalStorage::set_thread(nullptr);
 }
 

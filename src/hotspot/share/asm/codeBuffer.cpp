@@ -23,6 +23,7 @@
  */
 
 #include "asm/codeBuffer.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/oopRecorder.inline.hpp"
 #include "compiler/disassembler.hpp"
@@ -722,7 +723,7 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 #ifndef PRODUCT
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("done with CodeBuffer:");
-    ((CodeBuffer*)this)->print();
+    ((CodeBuffer*)this)->print_on(tty);
   }
 #endif //PRODUCT
 
@@ -861,7 +862,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 #ifndef PRODUCT
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("expanding CodeBuffer:");
-    this->print();
+    this->print_on(tty);
   }
 
   if (StressCodeBuffers && blob() != nullptr) {
@@ -949,7 +950,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   _decode_begin = nullptr;  // sanity
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("expanded CodeBuffer:");
-    this->print();
+    this->print_on(tty);
   }
 #endif //PRODUCT
 }
@@ -1066,125 +1067,31 @@ void CodeBuffer::decode() {
   _decode_begin = insts_end();
 }
 
-void CodeSection::print(const char* name) {
+void CodeSection::print_on(outputStream* st, const char* name) {
   csize_t locs_size = locs_end() - locs_start();
-  tty->print_cr(" %7s.code = " PTR_FORMAT " : " PTR_FORMAT " : " PTR_FORMAT " (%d of %d)",
+  st->print_cr(" %7s.code = " PTR_FORMAT " : " PTR_FORMAT " : " PTR_FORMAT " (%d of %d)",
                 name, p2i(start()), p2i(end()), p2i(limit()), size(), capacity());
-  tty->print_cr(" %7s.locs = " PTR_FORMAT " : " PTR_FORMAT " : " PTR_FORMAT " (%d of %d) point=%d",
+  st->print_cr(" %7s.locs = " PTR_FORMAT " : " PTR_FORMAT " : " PTR_FORMAT " (%d of %d) point=%d",
                 name, p2i(locs_start()), p2i(locs_end()), p2i(locs_limit()), locs_size, locs_capacity(), locs_point_off());
   if (PrintRelocations && (locs_size != 0)) {
     RelocIterator iter(this);
-    iter.print();
+    iter.print_on(st);
   }
 }
 
-void CodeBuffer::print() {
-  tty->print_cr("CodeBuffer:");
+void CodeBuffer::print_on(outputStream* st) {
+  st->print_cr("CodeBuffer:%s", name());
   for (int n = 0; n < (int)SECT_LIMIT; n++) {
     // print each section
     CodeSection* cs = code_section(n);
-    cs->print(code_section_name(n));
+    cs->print_on(st, code_section_name(n));
   }
 }
 
-// ----- CHeapString -----------------------------------------------------------
-
-class CHeapString : public CHeapObj<mtCode> {
- public:
-  CHeapString(const char* str) : _string(os::strdup(str)) {}
- ~CHeapString() {
-    os::free((void*)_string);
-    _string = nullptr;
-  }
-  const char* string() const { return _string; }
-
- private:
-  const char* _string;
-};
-
-// ----- AsmRemarkCollection ---------------------------------------------------
-
-class AsmRemarkCollection : public CHeapObj<mtCode> {
- public:
-  AsmRemarkCollection() : _ref_cnt(1), _remarks(nullptr), _next(nullptr) {}
- ~AsmRemarkCollection() {
-    assert(is_empty(), "Must 'clear()' before deleting!");
-    assert(_ref_cnt == 0, "No uses must remain when deleting!");
-  }
-  AsmRemarkCollection* reuse() {
-    precond(_ref_cnt > 0);
-    return _ref_cnt++, this;
-  }
-
-  const char* insert(uint offset, const char* remark);
-  const char* lookup(uint offset) const;
-  const char* next(uint offset) const;
-
-  bool is_empty() const { return _remarks == nullptr; }
-  uint clear();
-
- private:
-  struct Cell : CHeapString {
-    Cell(const char* remark, uint offset) :
-        CHeapString(remark), offset(offset), prev(nullptr), next(nullptr) {}
-    void push_back(Cell* cell) {
-      Cell* head = this;
-      Cell* tail = prev;
-      tail->next = cell;
-      cell->next = head;
-      cell->prev = tail;
-      prev = cell;
-    }
-    uint offset;
-    Cell* prev;
-    Cell* next;
-  };
-  uint  _ref_cnt;
-  Cell* _remarks;
-  // Using a 'mutable' iteration pointer to allow 'const' on lookup/next (that
-  // does not change the state of the list per se), supportig a simplistic
-  // iteration scheme.
-  mutable Cell* _next;
-};
-
-// ----- DbgStringCollection ---------------------------------------------------
-
-class DbgStringCollection : public CHeapObj<mtCode> {
- public:
-  DbgStringCollection() : _ref_cnt(1), _strings(nullptr) {}
- ~DbgStringCollection() {
-    assert(is_empty(), "Must 'clear()' before deleting!");
-    assert(_ref_cnt == 0, "No uses must remain when deleting!");
-  }
-  DbgStringCollection* reuse() {
-    precond(_ref_cnt > 0);
-    return _ref_cnt++, this;
-  }
-
-  const char* insert(const char* str);
-  const char* lookup(const char* str) const;
-
-  bool is_empty() const { return _strings == nullptr; }
-  uint clear();
-
- private:
-  struct Cell : CHeapString {
-    Cell(const char* dbgstr) :
-        CHeapString(dbgstr), prev(nullptr), next(nullptr) {}
-    void push_back(Cell* cell) {
-      Cell* head = this;
-      Cell* tail = prev;
-      tail->next = cell;
-      cell->next = head;
-      cell->prev = tail;
-      prev = cell;
-    }
-    Cell* prev;
-    Cell* next;
-  };
-  uint  _ref_cnt;
-  Cell* _strings;
-};
+CHeapString::~CHeapString() {
+  os::free((void*)_string);
+  _string = nullptr;
+}
 
 // ----- AsmRemarks ------------------------------------------------------------
 //
@@ -1210,13 +1117,13 @@ bool AsmRemarks::is_empty() const {
 }
 
 void AsmRemarks::share(const AsmRemarks &src) {
-  precond(is_empty());
+  precond(_remarks == nullptr || is_empty());
   clear();
   _remarks = src._remarks->reuse();
 }
 
 void AsmRemarks::clear() {
-  if (_remarks->clear() == 0) {
+  if (_remarks != nullptr && _remarks->clear() == 0) {
     delete _remarks;
   }
   _remarks = nullptr;
@@ -1262,13 +1169,13 @@ bool DbgStrings::is_empty() const {
 }
 
 void DbgStrings::share(const DbgStrings &src) {
-  precond(is_empty());
+  precond(_strings == nullptr || is_empty());
   clear();
   _strings = src._strings->reuse();
 }
 
 void DbgStrings::clear() {
-  if (_strings->clear() == 0) {
+  if (_strings != nullptr && _strings->clear() == 0) {
     delete _strings;
   }
   _strings = nullptr;
