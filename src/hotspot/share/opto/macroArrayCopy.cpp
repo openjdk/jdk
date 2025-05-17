@@ -207,41 +207,37 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   const TypePtr *src_adr_type = _igvn.type(src_start)->isa_ptr();
   Node* inline_block = nullptr;
   Node* stub_block = nullptr;
+  int inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(type);
 
   int const_len = -1;
   const TypeInt* lty = nullptr;
-  uint shift  = exact_log2(type2aelembytes(type));
   if (length->Opcode() == Op_ConvI2L) {
     lty = _igvn.type(length->in(1))->isa_int();
   } else  {
     lty = _igvn.type(length)->isa_int();
   }
   if (lty && lty->is_con()) {
-    const_len = lty->get_con() << shift;
+    const_len = lty->get_con();
   }
 
   // Return if copy length is greater than partial inline size limit or
   // target does not supports masked load/stores.
   int lane_count = ArrayCopyNode::get_partial_inline_vector_lane_count(type, const_len);
-  if ( const_len > ArrayOperationPartialInlineSize ||
+  if (const_len > inline_limit ||
       !Matcher::match_rule_supported_vector(Op_LoadVectorMasked, lane_count, type)  ||
       !Matcher::match_rule_supported_vector(Op_StoreVectorMasked, lane_count, type) ||
       !Matcher::match_rule_supported_vector(Op_VectorMaskGen, lane_count, type)) {
     return;
   }
 
-  Node* copy_bytes = new LShiftXNode(length, intcon(shift));
-  transform_later(copy_bytes);
-
-  Node* cmp_le = new CmpULNode(copy_bytes, longcon(ArrayOperationPartialInlineSize));
+  Node* cmp_le = new CmpULNode(length, longcon(inline_limit));
   transform_later(cmp_le);
   Node* bol_le = new BoolNode(cmp_le, BoolTest::le);
   transform_later(bol_le);
   inline_block  = generate_guard(ctrl, bol_le, nullptr, PROB_FAIR);
   stub_block = *ctrl;
 
-  int inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(type);
-  Node* casted_length = new CastLLNode(inline_block, length, TypeLong::make(0, inline_limit, Type::WidenMin), ConstraintCastNode::StrongDependency);
+  Node* casted_length = new CastLLNode(inline_block, length, TypeLong::make(0, inline_limit, Type::WidenMin), ConstraintCastNode::RegularDependency);
   transform_later(casted_length);
   Node* mask_gen = VectorMaskGenNode::make(casted_length, type);
   transform_later(mask_gen);

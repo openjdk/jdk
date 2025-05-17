@@ -28,8 +28,6 @@
 #include "gc/shared/gc_globals.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"
-#include "runtime/sharedRuntime.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 const TypeFunc* ArrayCopyNode::_arraycopy_type_Type = nullptr;
