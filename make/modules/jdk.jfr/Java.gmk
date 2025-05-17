@@ -25,7 +25,7 @@
 
 ################################################################################
 
-DISABLED_WARNINGS_java += dangling-doc-comments exports
+DISABLED_WARNINGS_java += dangling-doc-comments exports suppression
 COPY := .xsd .xml .dtd .ini
 JAVAC_FLAGS := -XDstringConcat=inline
 
