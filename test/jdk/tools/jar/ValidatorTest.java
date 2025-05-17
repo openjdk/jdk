@@ -321,19 +321,4 @@ class ValidatorTest {
     private Stream<Path> mkpath(String... args) {
         return Arrays.stream(args).map(d -> Path.of(".", d.split("/")));
     }
-
-    private void rm(String cmdline) {
-        System.out.println("rm -rf " + cmdline);
-        mkpath(cmdline.split(" +")).forEach(p -> {
-            try {
-                if (Files.isDirectory(p)) {
-                    FileUtils.deleteFileTreeWithRetry(p);
-                } else {
-                    FileUtils.deleteFileIfExistsWithRetry(p);
-                }
-            } catch (IOException x) {
-                throw new UncheckedIOException(x);
-            }
-        });
-    }
 }

@@ -62,7 +62,7 @@ final class Validator {
      * - the file name is not '.' or '..'
      * - does not contain a backslash, '\'
      * - does not contain a drive letter
-     * - path element does not include '..'
+     * - path element does not include '.' or '..'
      */
     private static final Pattern INVALID_ZIP_ENTRY_NAME_PATTERN = Pattern.compile(
             // Don't allow a '..' in the path
@@ -113,8 +113,8 @@ final class Validator {
      * MUST be forward slashes '/' as opposed to
      * backwards slashes '\' for compatibility with Amiga
      * and UNIX file systems etc.
-     * Also validate that the file name is not "." and that any name element is
-     * not equal to ".."
+     * Also validate that the file name is not "." or "..", and that any name
+     * element is not equal to "." or ".."
      *
      * @param entryName CEN/LOC header file name field entry
      * @return true if a valid Zip Entry file name; false otherwise
@@ -128,8 +128,12 @@ final class Validator {
      * - Valid entry name
      * - No duplicate entries
      * - CEN and LOC should have same entries, in the same order
-     * NOTE: This implementation assumes CEN entries are to be added before
-     *       add any LOC entries.
+     *
+     * NOTE: In order to check the encounter order based on the CEN listing,
+     *       this implementation assumes CEN entries are to be added before
+     *       add any LOC entries. That is, addCenEntry should be called before
+     *       calls to addLocEntry to ensure encounter order can be compared
+     *       properly.
      */
     private class EntryValidator {
         // A place holder when an entry is not yet seen in the directory
@@ -152,6 +156,9 @@ final class Validator {
                     new EntryEncounter(order, count + 1);
             }
 
+            /**
+             * True if this entry is not in the directory.
+             */
             boolean isPlaceHolder() {
                 return count == 0;
             }
@@ -203,7 +210,6 @@ final class Validator {
                         PLACE_HOLDER,
                         new EntryEncounter(locEncounterOrder, 1)));
             } else {
-                assert !entryInfo.cen().isPlaceHolder();
                 entries.put(entryName, new EntryInfo(
                         entryInfo.cen(),
                         entryInfo.loc().increase(() -> entryInfo.cen().isPlaceHolder() ? locEncounterOrder : locEncounterOrder++)));
