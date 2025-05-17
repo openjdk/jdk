@@ -126,11 +126,80 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
             Class<?> c = Class.forName(JrtFileSystemProvider.class.getName(), false, cl);
             @SuppressWarnings({ "deprecation", "suppression" })
             Object tmp = c.newInstance();
-            return ((FileSystemProvider)tmp).newFileSystem(uri, newEnv);
+            return new ClassLoaderClosingFileSystem(
+                ((FileSystemProvider)tmp).newFileSystem(uri, newEnv));
         } catch (ClassNotFoundException |
                  IllegalAccessException |
                  InstantiationException e) {
             throw new IOException(e);
+        }
+    }
+
+    private static class ClassLoaderClosingFileSystem extends FileSystem {
+        private final FileSystem delegate;
+
+        ClassLoaderClosingFileSystem(FileSystem delegate) {
+            this.delegate = delegate;
+        }
+        @Override
+        public void close() throws IOException {
+            delegate.close();
+            ((URLClassLoader) provider().getClass().getClassLoader()).close();
+        }
+
+        @Override
+        public FileSystemProvider provider() {
+            return delegate.provider();
+        }
+
+        @Override
+        public boolean isOpen() {
+            return delegate.isOpen();
+        }
+
+        @Override
+        public boolean isReadOnly() {
+            return delegate.isReadOnly();
+        }
+
+        @Override
+        public String getSeparator() {
+            return delegate.getSeparator();
+        }
+
+        @Override
+        public Iterable<Path> getRootDirectories() {
+            return delegate.getRootDirectories();
+        }
+
+        @Override
+        public Iterable<FileStore> getFileStores() {
+            return delegate.getFileStores();
+        }
+
+        @Override
+        public Set<String> supportedFileAttributeViews() {
+            return delegate.supportedFileAttributeViews();
+        }
+
+        @Override
+        public Path getPath(String first, String... more) {
+            return delegate.getPath(first, more);
+        }
+
+        @Override
+        public PathMatcher getPathMatcher(String syntaxAndPattern) {
+            return delegate.getPathMatcher(syntaxAndPattern);
+        }
+
+        @Override
+        public UserPrincipalLookupService getUserPrincipalLookupService() {
+            return delegate.getUserPrincipalLookupService();
+        }
+
+        @Override
+        public WatchService newWatchService() throws IOException {
+            return delegate.newWatchService();
         }
     }
 
