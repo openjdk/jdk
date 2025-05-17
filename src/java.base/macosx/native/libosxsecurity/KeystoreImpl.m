@@ -458,6 +458,34 @@ static bool createTrustedCertEntry(JNIEnv *env,  jobject keyStore,
     return true;
 }
 
+static bool validateCertificate(SecCertificateRef certRef) {
+    SecTrustRef secTrust = NULL;
+    CFMutableArrayRef subjCerts = CFArrayCreateMutable(NULL, 1, &kCFTypeArrayCallBacks);
+    CFArraySetValueAtIndex(subjCerts, 0, certRef);
+
+    SecPolicyRef policy = SecPolicyCreateBasicX509();
+    OSStatus ortn = SecTrustCreateWithCertificates(subjCerts, policy, &secTrust);
+    bool result = false;
+    if (ortn) {
+        /* should never happen */
+        cssmPerror("SecTrustCreateWithCertificates", ortn);
+        goto errOut;
+    }
+
+    result = SecTrustEvaluateWithError(secTrust, NULL);
+errOut:
+   if (policy) {
+       CFRelease(policy);
+   }
+   if (secTrust) {
+       CFRelease(secTrust);
+   }
+   if (subjCerts) {
+       CFRelease(subjCerts);
+   }
+   return result;
+}
+
 static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore,
                                         jmethodID jm_createTrustedCertEntry,
                                         jclass jc_arrayListClass,
@@ -492,9 +520,14 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore,
                 goto errOut;
             }
 
-            // Only add certificates with trust settings
+            // If no trust settings we need to verify the certificate first
             if (inputTrust == NULL) {
-                continue;
+                bool valid = validateCertificate(certRef);
+                if (valid) {
+                  inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+                } else {
+                    continue;
+                }
             }
 
             // Create java object for certificate with trust settings
