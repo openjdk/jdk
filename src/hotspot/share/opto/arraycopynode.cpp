@@ -771,8 +771,8 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseValues
 // As an optimization, choose the optimal vector size for bounded copy length
 int ArrayCopyNode::get_partial_inline_vector_lane_count(BasicType type, jlong max_len) {
   assert(max_len > 0, JLONG_FORMAT, max_len);
-  // We only care if max_size_in_bytes is not larger than 32, we also want to avoid multiplication
-  // overflow, so clamp max_len to [0, 64]
+  // We only care whether max_size_in_bytes is not larger than 32, we also want to avoid
+  // multiplication overflow, so clamp max_len to [0, 64]
   int max_size_in_bytes = MIN2<jlong>(max_len, 64) * type2aelembytes(type);
   if (ArrayOperationPartialInlineSize > 16 && max_size_in_bytes <= 16) {
     return 16 / type2aelembytes(type);
