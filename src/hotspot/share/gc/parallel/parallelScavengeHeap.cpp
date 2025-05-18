@@ -337,8 +337,8 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
 
         return op.result();
       }
-
-      if (is_gc_overhead_limit_reached()) {
+      // Was the gc-overhead reached inside the safepoint? If so, this mutator should return null as well for global consistency.
+      if (_gc_overhead_counter >= GCOverheadLimitThreshold) {
         return nullptr;
       }
     }
@@ -360,7 +360,9 @@ static bool check_gc_heap_free_limit(size_t free_bytes, size_t capacity_bytes) {
   return free_bytes * 100 / capacity_bytes < GCHeapFreeLimit;
 }
 
-bool ParallelScavengeHeap::is_gc_overhead_limit_reached() {
+bool ParallelScavengeHeap::check_gc_overhead_limit() {
+  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+
   if (UseGCOverheadLimit) {
     // The goal here is to return null prematurely so that apps can exit
     // gracefully when GC takes the most time.
@@ -370,7 +372,6 @@ bool ParallelScavengeHeap::is_gc_overhead_limit_reached() {
     if (little_mutator_time && little_free_space) {
       _gc_overhead_counter++;
       if (_gc_overhead_counter >= GCOverheadLimitThreshold) {
-        log_info(gc)("GCOverheadLimitThreshold %zu reached.", GCOverheadLimitThreshold);
         return true;
       }
     } else {
@@ -401,16 +402,12 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
 
     collect_at_safepoint(!should_run_young_gc);
 
-    if (is_gc_overhead_limit_reached()) {
-      // Apps expect soft-refs cleared before OOM
-      const bool clear_all_soft_refs = true;
-      PSParallelCompact::invoke(clear_all_soft_refs);
-      return nullptr;
-    }
-
-    result = expand_heap_and_allocate(size, is_tlab);
-    if (result != nullptr) {
-      return result;
+    // If gc-overhead is reached, we will skip allocation.
+    if (!check_gc_overhead_limit()) {
+      result = expand_heap_and_allocate(size, is_tlab);
+      if (result != nullptr) {
+        return result;
+      }
     }
   }
 
@@ -431,7 +428,8 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
     HeapMaximumCompactionInterval = old_interval;
   }
 
-  if (is_gc_overhead_limit_reached()) {
+  if (check_gc_overhead_limit()) {
+    log_info(gc)("GCOverheadLimitThreshold %zu reached.", GCOverheadLimitThreshold);
     return nullptr;
   }
 

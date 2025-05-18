@@ -110,7 +110,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void do_full_collection(bool clear_all_soft_refs) override;
 
-  bool is_gc_overhead_limit_reached();
+  bool check_gc_overhead_limit();
 
   size_t calculate_desired_old_gen_capacity(size_t old_gen_live_size);
 
