@@ -313,7 +313,7 @@ address ArchiveBuilder::reserve_buffer() {
   ReservedSpace rs = MemoryReserver::reserve(buffer_size,
                                              MetaspaceShared::core_region_alignment(),
                                              os::vm_page_size(),
-                                             mtClassShared);
+                                             mtNone);
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve %zu bytes of output buffer.", buffer_size);
     MetaspaceShared::unrecoverable_writing_error();
@@ -536,7 +536,7 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
              ref->msotype() == MetaspaceObj::MethodCountersType) {
     return set_to_null;
   } else if (ref->msotype() == MetaspaceObj::AdapterHandlerEntryType) {
-    if (AOTCodeCache::is_dumping_adapters()) {
+    if (AOTCodeCache::is_dumping_adapter()) {
       AdapterHandlerEntry* entry = (AdapterHandlerEntry*)ref->obj();
       return AdapterHandlerLibrary::is_abstract_method_adapter(entry) ? set_to_null : make_a_copy;
     } else {

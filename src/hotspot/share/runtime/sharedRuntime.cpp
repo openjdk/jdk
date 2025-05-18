@@ -2456,7 +2456,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(int total_args_passed, BasicT
 #if INCLUDE_CDS
   // if we are building the archive then the archived adapter table is
   // not valid and we need to use the ones added to the runtime table
-  if (!AOTCodeCache::is_dumping_adapters()) {
+  if (!AOTCodeCache::is_dumping_adapter()) {
     // Search archived table first. It is read-only table so can be searched without lock
     entry = _aot_adapter_handler_table.lookup(fp, fp->compute_hash(), 0 /* unused */);
     if (entry != nullptr) {
@@ -2838,7 +2838,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     // and we're some non descript Java thread.
     return false;
   }
-  if (!is_transient && AOTCodeCache::is_dumping_adapters()) {
+  if (!is_transient && AOTCodeCache::is_dumping_adapter()) {
     // try to save generated code
     const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
     const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
@@ -2850,7 +2850,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     entry_offset[2] = handler->get_c2i_unverified_entry() - i2c_entry;
     entry_offset[3] = handler->get_c2i_no_clinit_check_entry() - i2c_entry;
     bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name, AdapterHandlerEntry::ENTRIES_COUNT, entry_offset);
-    assert(success || !AOTCodeCache::is_dumping_adapters(), "caching of adapter must be disabled");
+    assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
   handler->relocate(adapter_blob->content_begin());
 #ifndef PRODUCT
@@ -2961,7 +2961,7 @@ void AdapterHandlerEntry::link() {
   // Generate code only if AOTCodeCache is not available, or
   // caching adapters is disabled, or we fail to link
   // the AdapterHandlerEntry to its code in the AOTCodeCache
-  if (AOTCodeCache::is_using_adapters()) {
+  if (AOTCodeCache::is_using_adapter()) {
     adapter_blob = AdapterHandlerLibrary::link_aot_adapter_handler(this);
     if (adapter_blob == nullptr) {
       log_warning(cds)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());

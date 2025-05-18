@@ -622,7 +622,7 @@ void PSYoungGen::print_on(outputStream* st) const {
   st->print(" total %zuK, used %zuK ", capacity_in_bytes() / K, used_in_bytes() / K);
   virtual_space()->print_space_boundaries_on(st);
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
   eden_space()->print_on(st, "eden ");
   from_space()->print_on(st, "from ");
   to_space()->print_on(st, "to   ");

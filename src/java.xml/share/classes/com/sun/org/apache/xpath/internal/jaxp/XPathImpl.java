@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,6 +32,8 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFunctionResolver;
 import javax.xml.xpath.XPathVariableResolver;
+
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.XMLSecurityManager;
 import org.w3c.dom.Document;
@@ -48,7 +50,7 @@ import org.xml.sax.InputSource;
  * New methods: evaluateExpression
  * Refactored to share code with XPathExpressionImpl.
  *
- * @LastModified: May 2022
+ * @LastModified: May 2025
  */
 public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
 
@@ -58,7 +60,9 @@ public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
     private NamespaceContext namespaceContext=null;
 
     XPathImpl(XPathVariableResolver vr, XPathFunctionResolver fr) {
-        this(vr, fr, false, new JdkXmlFeatures(false), new XMLSecurityManager(true));
+        this(vr, fr, false,
+                JdkXmlConfig.getInstance(false).getXMLFeatures(false),
+                JdkXmlConfig.getInstance(false).getXMLSecurityManager(false));
     }
 
     XPathImpl(XPathVariableResolver vr, XPathFunctionResolver fr,

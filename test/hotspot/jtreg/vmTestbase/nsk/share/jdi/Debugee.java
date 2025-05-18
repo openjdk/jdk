@@ -290,25 +290,50 @@ public class Debugee extends DebugeeProcess {
     /**
      * Return a debuggee thread by fetching it from a static field in the debuggee.
      */
+
+    public ThreadReference threadByFieldName(ReferenceType debuggeeClass,
+                                             String threadFieldName) {
+        return threadByFieldName(debuggeeClass, threadFieldName, threadFieldName);
+    }
+
+    public ThreadReference threadByFieldName(ReferenceType debuggeeClass,
+                                             String threadFieldName,
+                                             String threadName) {
+        try {
+            return threadByFieldNameOrThrow(debuggeeClass, threadFieldName, threadName);
+        } catch (JDITestRuntimeException e) {
+            log.display("** Unexpected exception trying to find thread \"" + threadName + "\"");
+            e.printStackTrace(log.getOutStream());
+            return null;
+        }
+    }
+
     public ThreadReference threadByFieldNameOrThrow(ReferenceType debuggeeClass,
                                                     String threadFieldName)
+            throws JDITestRuntimeException {
+        return threadByFieldNameOrThrow(debuggeeClass, threadFieldName, threadFieldName);
+    }
+
+    public ThreadReference threadByFieldNameOrThrow(ReferenceType debuggeeClass,
+                                                    String threadFieldName,
+                                                    String threadName)
             throws JDITestRuntimeException {
 
         Field field = debuggeeClass.fieldByName(threadFieldName);
         if (field == null) {
             throw new JDITestRuntimeException("** Thread field not found ** : "
-                                              + threadFieldName);
+                                              + debuggeeClass.name() + "." + threadFieldName);
         }
 
         ThreadReference thread = (ThreadReference)debuggeeClass.getValue(field);
         if (thread == null) {
             throw new JDITestRuntimeException("** Thread field is null ** : "
-                                              + threadFieldName);
+                                              + debuggeeClass.name() + "." + threadFieldName);
         }
 
-        if (!thread.name().equals(threadFieldName)) {
+        if (!thread.name().equals(threadName)) {
             throw new JDITestRuntimeException("** Thread names do not match ** : "
-                                              + threadFieldName + " vs. " + thread.name());
+                                              + threadName + " vs. " + thread.name());
         }
 
         return thread;
