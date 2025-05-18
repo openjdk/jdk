@@ -338,10 +338,10 @@ void ShenandoahOldGeneration::handle_failed_transfer() {
 }
 
 size_t ShenandoahOldGeneration::usage_trigger_threshold() const {
-  size_t threshold_by_relative_growth = (_live_bytes_at_last_mark *
-                                         (1 + _growth_before_compaction / FRACTIONAL_DENOMINATOR));
-  size_t threshold_by_absolute_growth = (_live_bytes_at_last_mark + (size_t) 
-                                         (ShenandoahMinOldGenGrowthHeapPercent / 100.0 * ShenandoahHeap::heap()->max_capacity()));
+  size_t threshold_by_relative_growth = (size_t)
+    (_live_bytes_at_last_mark * (1 + _growth_before_compaction / (double) FRACTIONAL_DENOMINATOR));
+  size_t threshold_by_absolute_growth =
+    _live_bytes_at_last_mark + (size_t) (ShenandoahHeap::heap()->max_capacity() * ShenandoahMinOldGenGrowthHeapPercent / 100.0);
   return MIN2(threshold_by_relative_growth, threshold_by_absolute_growth);
 }
 
