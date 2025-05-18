@@ -229,7 +229,7 @@ void ShenandoahArguments::initialize_alignments() {
 
 #ifdef KELVIN_HIDEME
   if (FLAG_IS_DEFAULT(TLABSize)) {
-    TLABSize = ShenandoahHeapRegion::region_size_bytes() / 128;
+    TLABSize = MIN2(ShenandoahHeapRegion::region_size_bytes() / 128, (size_t) 64 * 1024);
   }
 #endif
 #undef KELVIN_ARGUMENTS
