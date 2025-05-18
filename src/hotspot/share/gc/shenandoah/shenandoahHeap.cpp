@@ -420,9 +420,9 @@ jint ShenandoahHeap::initialize() {
 
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
-    size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
-    young_generation()->set_evacuation_reserve(young_reserve);
     if (mode()->is_generational()) {
+      size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
+      young_generation()->set_evacuation_reserve(young_reserve);
       old_generation()->set_evacuation_reserve((size_t) 0);
       old_generation()->set_promoted_reserve((size_t) 0);
     }
