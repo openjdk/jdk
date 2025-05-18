@@ -793,7 +793,7 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
 
   // Limit TLAB size for better startup behavior and more equitable distribution of memory between contending mutator threads.
   guarantee(MaxTLABSizeWords == 0, "we should only set it once");
-  MaxTLABSizeWords = align_down(RegionSizeWords / 8, MinObjAlignment);
+  MaxTLABSizeWords = align_down(MIN2(RegionSizeWords / 8, (size_t) (256 * 1024) / HeapWordSize), MinObjAlignment);
 
   guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
   MaxTLABSizeBytes = MaxTLABSizeWords * HeapWordSize;
