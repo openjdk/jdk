@@ -431,42 +431,48 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
         }
 
-        // Load local certificates.
+        // Load local certificates if cert algorithm(s) present.
         len = Record.getInt8(buf);
-        String[] certAlgs = new String[len];
+        if (len == 0) {
+            this.localCerts = null;
+        } else {
+            String[] certAlgs = new String[len];
 
-        for (int i = 0; len > i; i++) {
-            certAlgs[i] = new String(Record.getBytes8(buf));
-        }
-
-        SSLPossession pos = X509Authentication.createPossession(
-                hc, certAlgs);
-
-        if (pos == null) {
-            throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                    "No available certificates");
-        }
-
-        if (!(pos instanceof X509Possession x509Possession)) {
-            throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                    "No available  X.509 certificate");
-        }
-
-        localCerts = x509Possession.popCerts;
-        if (localCerts == null || localCerts.length == 0) {
-            throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                    "No available  X.509 certificate");
-        }
-
-        // Use certs from cache.
-        for (int i = 0; i < localCerts.length; i++) {
-            try {
-                localCerts[i] = X509Factory.cachedGetX509Cert(
-                        localCerts[i].getEncoded());
-            } catch (Exception e) {
-                throw new IOException(e);
+            for (int i = 0; len > i; i++) {
+                certAlgs[i] = new String(Record.getBytes8(buf));
             }
-        } // done loading local certificates.
+
+            SSLPossession pos = X509Authentication.createPossession(
+                    hc, certAlgs);
+
+            if (pos == null) {
+                throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No available certificates for algorithms: "
+                                + Arrays.toString(certAlgs));
+            }
+
+            if (!(pos instanceof X509Possession x509Possession)) {
+                throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No available X.509 certificates for algorithms: "
+                                + Arrays.toString(certAlgs));
+            }
+
+            localCerts = x509Possession.popCerts;
+            if (localCerts == null || localCerts.length == 0) {
+                throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No available  X.509 certificate");
+            }
+
+            // Use certs from cache.
+            for (int i = 0; i < localCerts.length; i++) {
+                try {
+                    localCerts[i] = X509Factory.cachedGetX509Cert(
+                            localCerts[i].getEncoded());
+                } catch (Exception e) {
+                    throw new IOException(e);
+                }
+            }
+        }
 
         this.context = (SSLSessionContextImpl)
                 hc.sslContext.engineGetServerSessionContext();
