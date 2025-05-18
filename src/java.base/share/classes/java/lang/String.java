@@ -692,13 +692,7 @@ public final class String
         cd.onMalformedInput(CodingErrorAction.REPLACE)
                 .onUnmappableCharacter(CodingErrorAction.REPLACE);
         char[] ca = new char[en];
-        int caLen;
-        try {
-            caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
-        } catch (CharacterCodingException x) {
-            // Substitution is enabled, so this shouldn't happen
-            throw new Error(x);
-        }
+        int caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
         if (COMPACT_STRINGS) {
             byte[] val = StringUTF16.compress(ca, 0, caLen);
             return new Str(val, StringUTF16.coderFromArrayLen(val, caLen));
@@ -824,13 +818,7 @@ public final class String
         }
         int en = scale(len, cd.maxCharsPerByte());
         char[] ca = new char[en];
-        int caLen;
-        try {
-            caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
-        } catch (CharacterCodingException x) {
-            // throw via IAE
-            throw new IllegalArgumentException(x);
-        }
+        int caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
         if (COMPACT_STRINGS) {
             byte[] val = StringUTF16.compress(ca, 0, caLen);
             byte coder = StringUTF16.coderFromArrayLen(val, caLen);
@@ -1243,17 +1231,21 @@ public final class String
         return dp;
     }
 
-    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length)
-                                            throws CharacterCodingException {
-        ByteBuffer bb = ByteBuffer.wrap(src, offset, length);
-        CharBuffer cb = CharBuffer.wrap(dst, 0, dst.length);
-        CoderResult cr = cd.decode(bb, cb, true);
-        if (!cr.isUnderflow())
-            cr.throwException();
-        cr = cd.flush(cb);
-        if (!cr.isUnderflow())
-            cr.throwException();
-        return cb.position();
+    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length) {
+        try {
+            ByteBuffer bb = ByteBuffer.wrap(src, offset, length);
+            CharBuffer cb = CharBuffer.wrap(dst, 0, dst.length);
+            CoderResult cr = cd.decode(bb, cb, true);
+            if (!cr.isUnderflow())
+                cr.throwException();
+            cr = cd.flush(cb);
+            if (!cr.isUnderflow())
+                cr.throwException();
+            return cb.position();
+        } catch (CharacterCodingException x) {
+            // Substitution is enabled, so this shouldn't happen
+            throw new Error(x);
+        }
     }
 
     private static int malformed3(byte[] src, int sp) {
