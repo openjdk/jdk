@@ -611,8 +611,9 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab) {
 // mutator_xfer_limit, and any surplus is transferred to the young generation.  mutator_xfer_limit is
 //  the maximum we're able to transfer from young to old.
 void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_xfer_limit,
+                                                                size_t old_available, size_t young_available,
                                                                 size_t old_cset_regions, size_t young_cset_regions) {
-
+  shenandoah_assert_heaplocked();
   // We can limit the old reserve to the size of anticipated promotions:
   // max_old_reserve is an upper bound on memory evacuated from old and promoted to old,
   // clamped by the old generation space available.
@@ -632,8 +633,8 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   // We have to be careful in the event that SOEP is set to 100 by the user.
   assert(ShenandoahOldEvacRatioPercent <= 100, "Error");
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  const size_t old_available = old_generation()->available() + old_cset_regions * region_size_bytes;
-  const size_t young_available = young_generation()->available() + young_cset_regions * region_size_bytes;
+  old_available += old_cset_regions * region_size_bytes;
+  young_available += young_cset_regions * region_size_bytes;
 
   // The free set will reserve this amount of memory to hold young evacuations (initialized to the ideal reserve)
   size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
