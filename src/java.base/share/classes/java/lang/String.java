@@ -558,7 +558,7 @@ public final class String
             this.coder = "".coder;
             return;
         }
-        Str str;
+        String str;
         if (charset == UTF_8.INSTANCE) {
             str = utf8(bytes, offset, length);
         } else if (charset == ISO_8859_1.INSTANCE) {
@@ -568,17 +568,15 @@ public final class String
         } else {
             str = create(charset, bytes, offset, length);
         }
-        this.value = str.value();
-        this.coder = str.coder();
+        this.value = str.value;
+        this.coder = str.coder;
     }
 
-    private record Str(byte[] value, byte coder) {}
-
-    private static Str utf8(byte[] bytes, int offset, int length) {
+    private static String utf8(byte[] bytes, int offset, int length) {
         if (COMPACT_STRINGS) {
             int dp = StringCoding.countPositives(bytes, offset, length);
             if (dp == length) {
-                return new Str(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+                return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
             }
             // Decode with a stable copy, to be the result if the decoded length is the same
             byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
@@ -606,7 +604,7 @@ public final class String
                 if (dp != latin1.length) {
                     latin1 = Arrays.copyOf(latin1, dp);
                 }
-                return new Str(latin1, LATIN1);
+                return new String(latin1, LATIN1);
             }
             byte[] utf16 = StringUTF16.newBytesFor(length);
             StringLatin1.inflate(latin1, 0, utf16, 0, dp);
@@ -614,7 +612,7 @@ public final class String
             if (dp != length) {
                 utf16 = Arrays.copyOf(utf16, dp << 1);
             }
-            return new Str(utf16, UTF16);
+            return new String(utf16, UTF16);
         }
         else { // !COMPACT_STRINGS
             byte[] dst = StringUTF16.newBytesFor(length);
@@ -622,21 +620,21 @@ public final class String
             if (dp != length) {
                 dst = Arrays.copyOf(dst, dp << 1);
             }
-            return new Str(dst, UTF16);
+            return new String(dst, UTF16);
         }
     }
 
-    private static Str iso88591(byte[] bytes, int offset, int length) {
+    private static String iso88591(byte[] bytes, int offset, int length) {
         if (COMPACT_STRINGS) {
-            return new Str(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+            return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
         } else {
-            return new Str(StringLatin1.inflate(bytes, offset, length), UTF16);
+            return new String(StringLatin1.inflate(bytes, offset, length), UTF16);
         }
     }
 
-    private static Str ascii(byte[] bytes, int offset, int length) {
+    private static String ascii(byte[] bytes, int offset, int length) {
         if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
-            return new Str(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+            return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
         } else {
             byte[] dst = StringUTF16.newBytesFor(length);
             int dp = 0;
@@ -644,11 +642,11 @@ public final class String
                 int b = bytes[offset++];
                 StringUTF16.putChar(dst, dp++, (b >= 0) ? (char) b : REPL);
             }
-            return new Str(dst, UTF16);
+            return new String(dst, UTF16);
         }
     }
 
-    private static Str create(Charset charset, byte[] bytes, int offset, int length) {
+    private static String create(Charset charset, byte[] bytes, int offset, int length) {
         // (1)We never cache the "external" cs, the only benefit of creating
         // an additional StringDe/Encoder object to wrap it is to share the
         // de/encode() method. These SD/E objects are short-lived, the young-gen
@@ -663,16 +661,16 @@ public final class String
             // ascii
             if (ad.isASCIICompatible() && !StringCoding.hasNegatives(bytes, offset, length)) {
                 if (COMPACT_STRINGS) {
-                    return new Str(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+                    return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
                 }
-                return new Str(StringLatin1.inflate(bytes, offset, length), UTF16);
+                return new String(StringLatin1.inflate(bytes, offset, length), UTF16);
             }
 
             // fastpath for always Latin1 decodable single byte
             if (COMPACT_STRINGS && ad.isLatin1Decodable()) {
                 byte[] dst = new byte[length];
                 ad.decodeToLatin1(bytes, offset, length, dst);
-                return new Str(dst, LATIN1);
+                return new String(dst, LATIN1);
             }
 
             int en = scale(length, cd.maxCharsPerByte());
@@ -682,9 +680,9 @@ public final class String
             int clen = ad.decode(bytes, offset, length, ca);
             if (COMPACT_STRINGS) {
                 byte[] val = StringUTF16.compress(ca, 0, clen);;
-                return new Str(val, StringUTF16.coderFromArrayLen(val, clen));
+                return new String(val, StringUTF16.coderFromArrayLen(val, clen));
             }
-            return new Str(StringUTF16.toBytes(ca, 0, clen), UTF16);
+            return new String(StringUTF16.toBytes(ca, 0, clen), UTF16);
         }
 
         // decode using CharsetDecoder
@@ -695,9 +693,9 @@ public final class String
         int caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
         if (COMPACT_STRINGS) {
             byte[] val = StringUTF16.compress(ca, 0, caLen);
-            return new Str(val, StringUTF16.coderFromArrayLen(val, caLen));
+            return new String(val, StringUTF16.coderFromArrayLen(val, caLen));
         }
-        return new Str(StringUTF16.toBytes(ca, 0, caLen), UTF16);
+        return new String(StringUTF16.toBytes(ca, 0, caLen), UTF16);
     }
 
     /*
