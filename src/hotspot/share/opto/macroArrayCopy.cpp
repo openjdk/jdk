@@ -218,8 +218,7 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
     return;
   }
 
-  // Return if copy length is greater than partial inline size limit or
-  // target does not supports masked load/stores.
+  // Return if the target does not supports masked load/stores.
   int lane_count = ArrayCopyNode::get_partial_inline_vector_lane_count(type, length_type->_hi);
   if (!Matcher::match_rule_supported_vector(Op_LoadVectorMasked, lane_count, type)  ||
       !Matcher::match_rule_supported_vector(Op_StoreVectorMasked, lane_count, type) ||
