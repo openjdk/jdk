@@ -2543,12 +2543,6 @@ void ShenandoahHeap::final_update_refs_update_region_states() {
 }
 
 void ShenandoahHeap::rebuild_free_set_within_phase() {
-  size_t young_available;
-  size_t old_available;
-  if (mode()->is_generational()) {
-    young_available = young_generation()->available();
-    old_available = old_generation()->available();
-  }
   ShenandoahHeapLocker locker(lock());
   size_t young_cset_regions, old_cset_regions;
   size_t first_old_region, last_old_region, old_region_count;
@@ -2571,8 +2565,7 @@ void ShenandoahHeap::rebuild_free_set_within_phase() {
     // available for transfer to old. Note that transfer of humongous regions does not impact available.
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     size_t allocation_runway = gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
-    gen_heap->compute_old_generation_balance(allocation_runway,
-                                             old_available, young_available, old_cset_regions, young_cset_regions);
+    gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions, young_cset_regions);
   }
   // Rebuild free set based on adjusted generation sizes.
   _free_set->finish_rebuild(young_cset_regions, old_cset_regions, old_region_count);

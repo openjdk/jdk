@@ -611,7 +611,6 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab) {
 // mutator_xfer_limit, and any surplus is transferred to the young generation.  mutator_xfer_limit is
 //  the maximum we're able to transfer from young to old.
 void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_xfer_limit,
-                                                                size_t old_available, size_t young_available,
                                                                 size_t old_cset_regions, size_t young_cset_regions) {
   shenandoah_assert_heaplocked();
   // We can limit the old reserve to the size of anticipated promotions:
@@ -633,7 +632,20 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   // We have to be careful in the event that SOEP is set to 100 by the user.
   assert(ShenandoahOldEvacRatioPercent <= 100, "Error");
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  old_available += old_cset_regions * region_size_bytes;
+
+  ShenandoahOldGeneration* old_gen = old_generation();
+  size_t old_capacity = old_gen->max_capacity();
+  size_t old_usage = old_gen->used_including_humongous_waste();
+  size_t old_available = ((old_capacity >= old_usage)? old_capacity - old_usage: 0) + old_cset_regions * region_size_bytes;
+
+  ShenandoahYoungGeneration* young_gen = young_generation();
+  size_t young_capacity = young_gen->max_capacity();
+  size_t young_usage = young_gen->used_including_humongous_waste();
+  size_t young_available = ((young_capacity >= young_usage)? young_capacity - young_usage: 0);
+  size_t freeset_available = free_set()->available_locked();
+  if (young_available > freeset_available) {
+    young_available = freeset_available;
+  }
   young_available += young_cset_regions * region_size_bytes;
 
   // The free set will reserve this amount of memory to hold young evacuations (initialized to the ideal reserve)
@@ -776,7 +788,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
 
   assert(old_region_deficit == 0 || old_region_surplus == 0, "Only surplus or deficit, never both");
   assert(young_reserve + reserve_for_mixed + reserve_for_promo <= old_available + young_available,
-         "Cannot reserve more memory than is available: %zu = %zu + %zu <= %zu + %zu",
+         "Cannot reserve more memory than is available: %zu + %zu + %zu <= %zu + %zu",
 	 young_reserve, reserve_for_mixed, reserve_for_promo, old_available, young_available);
 
   // deficit/surplus adjustments to generation sizes will precede rebuild

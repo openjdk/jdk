@@ -499,6 +499,11 @@ public:
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
   inline size_t available() const { return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator); }
 
+  // Use this version of available() you the heap lock is held.
+  inline size_t available_locked() const {
+    return _partitions.available_in(ShenandoahFreeSetPartitionId::Mutator);
+  }
+
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
   /*
