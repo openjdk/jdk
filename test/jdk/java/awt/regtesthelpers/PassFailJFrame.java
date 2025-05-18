@@ -149,15 +149,17 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * <p>
  * Before returning from {@code awaitAndCheck}, the framework disposes of
  * all the windows and frames.
+ *
  * <p id="forcePassAndFail">
- * There are two other static methods available,
- * {@link #forcePass() forcePass} and {@link #forceFail() forceFail}, which can
- * be used in semi-automated tests to indicate that the test can be forcefully
- * Passed/Failed. These methods are not immediately evaluated, but it decrements
- * a counter and return. The evaluation happens in {@code awaitAndCheck} and
- * the test will be forcefully Passed/Failed accordingly.
- * Code examples are given in the corresponding method javadoc.
+ * For semi-automatic tests, use {@code forcePass} or
+ * {@code forceFail} methods to forcefully pass or fail the test
+ * when it's determined that the required conditions are already met
+ * or cannot be met correspondingly.
+ * These methods release {@code awaitAndCheck}, and
+ * the test will complete successfully or fail.
  * <p>
+ * Refer to examples of using these methods in the description of the
+ * {@link #forcePass() forcePass} and {@link #forceFail() forceFail} methods.
  *
  * <h2 id="sampleManualTest">Sample Manual Test</h2>
  * A simple test would look like this:
@@ -1302,7 +1304,7 @@ public final class PassFailJFrame {
 
 
     /**
-     * Forcibly pass the test.
+     * Forcefully pass the test.
      * <p>
      * Use this method in semi-automatic tests when
      * the test determines that all the conditions for passing the test are met.
@@ -1319,10 +1321,10 @@ public final class PassFailJFrame {
     }
 
     /**
-     * Forcibly fail the test.
+     * Forcefully fail the test.
      * <p>
      * Use this method in semi-automatic tests when
-     * the test determines that all/any of the conditions for passing the test are not met.
+     * it is determined that the conditions for passing the test cannot be met.
      * <p>
      * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
      * feature isn't supported, throw {@code jtreg.SkippedException} instead.
@@ -1336,10 +1338,10 @@ public final class PassFailJFrame {
     }
 
     /**
-     * Forcibly fail the test and provide a reason.
+     * Forcefully fail the test and provide a reason.
      * <p>
      * Use this method in semi-automatic tests when
-     * the test determines that all/any of the conditions for passing the test are not met.
+     * it is determined that the conditions for passing the test cannot be met.
      * <p>
      * <strong>Do not use</strong> this method in cases where a resource is unavailable or a
      * feature isn't supported, throw {@code jtreg.SkippedException} instead.
