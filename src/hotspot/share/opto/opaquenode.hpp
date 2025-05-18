@@ -124,6 +124,7 @@ public:
 
   void mark_useless(PhaseIterGVN& igvn);
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
+  virtual uint size_of() const { return sizeof(OpaqueMultiversioningNode); }
 };
 
 // This node is used in the context of intrinsics. We sometimes implicitly know that an object is non-null even though
@@ -267,6 +268,7 @@ class ProfileBooleanNode : public Node {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }
+  virtual uint size_of() const { return sizeof(ProfileBooleanNode); }
 };
 
 #endif // SHARE_OPTO_OPAQUENODE_HPP
