@@ -38,7 +38,7 @@ import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
-import jdk.internal.nio.Cleaner;
+import sun.nio.Cleaner;
 import sun.nio.ch.DirectBuffer;
 
 

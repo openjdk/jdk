@@ -25,9 +25,9 @@
 
 package jdk.internal.misc;
 
-import jdk.internal.nio.Cleaner;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import sun.nio.Cleaner;
 import sun.nio.ch.DirectBuffer;
 
 import java.lang.reflect.Field;

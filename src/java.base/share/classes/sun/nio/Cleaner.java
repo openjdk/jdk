@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.nio;
+package sun.nio;
 
 /**
  * {@code Cleaner} represents an object and a cleaning action.

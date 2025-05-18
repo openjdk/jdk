@@ -29,7 +29,7 @@ import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.Objects;
-import jdk.internal.nio.Cleaner;
+import sun.nio.Cleaner;
 
 class BufferCleaner {
     private static final class PhantomCleaner
