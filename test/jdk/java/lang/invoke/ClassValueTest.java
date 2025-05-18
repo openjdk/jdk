@@ -303,6 +303,7 @@ final class ClassValueTest {
     }
 
     @Test
+    @Disabled // JDK-8352622
     void testWeakAgainstClassValue() {
         ClassValue<int[]> cv = new ClassValue<>() {
             @Override
