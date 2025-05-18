@@ -356,7 +356,9 @@ public class ConsoleImpl {
                 buffer = Arrays.copyOf(buffer, 2 * buffer.length);
             }
 
-            buffer[bp++] = b;
+            // Can be negative because widening from byte in write(byte[], int, int).
+            // java.io.OutputStream.write(int b) stipulates "The 24 high-order bits of b are ignored."
+            buffer[bp++] = b & 0xff;
 
             switch (Task.values()[buffer[0]]) {
                 case WRITE_CHARS -> {
@@ -373,7 +375,7 @@ public class ConsoleImpl {
                 }
                 case READ_CHARS -> {
                     if (bp >= 5) {
-                        int len = readInt(b);
+                        int len = readInt(1);
                         int c = console.reader().read();
                         //XXX: EOF handling!
                         sendChars(sinkOutput, new char[] {(char) c}, 0, 1);

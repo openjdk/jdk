@@ -96,14 +96,14 @@ JAVADOC_DISABLED_DOCLINT_PACKAGES := org.w3c.* javax.smartcardio
 
 # The initial set of options for javadoc
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
-    -serialwarn -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
+    -serialwarn -encoding utf-8 -docencoding utf-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
     --override-methods=summary --syntax-highlight
 
 # The reference options must stay stable to allow for comparisons across the
 # development cycle.
 REFERENCE_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
-    -serialwarn -encoding ISO-8859-1 -breakiterator -splitIndex --system none \
+    -serialwarn -encoding utf-8 -breakiterator -splitIndex --system none \
     -html5 -javafx --expand-requires transitive
 
 # Should we add DRAFT stamps to the generated javadoc?
@@ -262,7 +262,7 @@ define create_overview_file
   $$($1_OVERVIEW): $$($1_OVERVIEW_VARDEPS_FILE)
 	$$(call LogInfo, Creating overview.html for $1)
 	$$(call MakeDir, $$(@D))
-	$$(ECHO) -n '$$($1_OVERVIEW_TEXT)' > $$@
+	$$(PRINTF) "%s" '$$($1_OVERVIEW_TEXT)' > $$@
 endef
 
 ################################################################################

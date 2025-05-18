@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,54 +140,7 @@ public class SecuritySupport {
      * found
      */
     public static String readConfig(String propName, boolean stax) {
-        // always load the default configuration file
-        if (firstTime) {
-            synchronized (cacheProps) {
-                if (firstTime) {
-                    boolean found = loadProperties(
-                            Paths.get(System.getProperty("java.home"),
-                                "conf", "jaxp.properties")
-                                .toAbsolutePath().normalize().toString());
-
-                    // attempts to find stax.properties only if jaxp.properties is not available
-                    if (stax && !found) {
-                        found = loadProperties(
-                            Paths.get(System.getProperty("java.home"),
-                                    "conf", "stax.properties")
-                                    .toAbsolutePath().normalize().toString()
-                        );
-                    }
-
-                    // load the custom configure on top of the default if any
-                    String configFile = System.getProperty(JdkConstants.CONFIG_FILE_PROPNAME);
-                    if (configFile != null) {
-                        loadProperties(configFile);
-                    }
-
-                    firstTime = false;
-                }
-            }
-        }
-
-        return cacheProps.getProperty(propName);
-    }
-
-    /**
-     * Loads the properties from the specified file into the cache.
-     * @param file the specified file
-     * @return true if success, false otherwise
-     */
-    private static boolean loadProperties(String file) {
-        File f = new File(file);
-        if (SecuritySupport.doesFileExist(f)) {
-            try (final InputStream in = SecuritySupport.getFileInputStream(f)) {
-                cacheProps.load(in);
-                return true;
-            } catch (IOException e) {
-                // shouldn't happen, but required by method getFileInputStream
-            }
-        }
-        return false;
+        return JdkXmlConfig.getInstance(stax).getJaxpConfig().getProperty(propName);
     }
 
     /**

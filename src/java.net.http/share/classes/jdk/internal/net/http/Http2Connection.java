@@ -69,6 +69,7 @@ import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.ValidatingHeadersConsumer;
+import jdk.internal.net.http.common.ValidatingHeadersConsumer.Context;
 import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.ErrorFrame;
@@ -89,7 +90,6 @@ import jdk.internal.net.http.hpack.Decoder;
 import jdk.internal.net.http.hpack.DecodingCallback;
 import jdk.internal.net.http.hpack.Encoder;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static jdk.internal.net.http.frame.SettingsFrame.DEFAULT_INITIAL_WINDOW_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.ENABLE_PUSH;
 import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.INITIAL_CONNECTION_WINDOW_SIZE;
@@ -340,6 +340,7 @@ class Http2Connection  {
         final AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
         PushPromiseDecoder(int parentStreamId, int pushPromiseStreamId, Stream<?> parent) {
+            super(Context.REQUEST);
             this.parentStreamId = parentStreamId;
             this.pushPromiseStreamId = pushPromiseStreamId;
             this.parent = parent;
@@ -984,7 +985,10 @@ class Http2Connection  {
                     // always decode the headers as they may affect
                     // connection-level HPACK decoding state
                     if (orphanedConsumer == null || frame.getClass() != ContinuationFrame.class) {
-                        orphanedConsumer = new ValidatingHeadersConsumer();
+                        orphanedConsumer = new ValidatingHeadersConsumer(
+                                frame instanceof PushPromiseFrame ?
+                                        Context.REQUEST :
+                                        Context.RESPONSE);
                     }
                     DecodingCallback decoder = orphanedConsumer::onDecoded;
                     try {
@@ -1681,8 +1685,8 @@ class Http2Connection  {
     private List<ByteBuffer> encodeHeaders(OutgoingHeaders<Stream<?>> oh, Stream<?> stream) {
         oh.streamid(stream.streamid);
         if (Log.headers()) {
-            StringBuilder sb = new StringBuilder("HEADERS FRAME (stream=");
-            sb.append(stream.streamid).append(")\n");
+            StringBuilder sb = new StringBuilder("HEADERS FRAME (streamid=%s):\n".formatted(stream.streamid));
+            sb.append("  %s %s\n".formatted(stream.request.method(), stream.request.uri()));
             Log.dumpHeaders(sb, "    ", oh.getAttachment().getRequestPseudoHeaders());
             Log.dumpHeaders(sb, "    ", oh.getSystemHeaders());
             Log.dumpHeaders(sb, "    ", oh.getUserHeaders());

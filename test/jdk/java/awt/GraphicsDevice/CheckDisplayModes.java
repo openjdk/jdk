@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,18 +35,30 @@ public class CheckDisplayModes {
 
     public static void main(String[] args) {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        for (GraphicsDevice graphicDevice : ge.getScreenDevices()) {
+        GraphicsDevice[] allDevices = ge.getScreenDevices();
+
+        for (GraphicsDevice gd : allDevices) {
+            System.out.println("Available screen device: " + gd.getIDstring());
+        }
+
+        for (GraphicsDevice graphicDevice : allDevices) {
+            System.out.println("On screen device " + graphicDevice.getIDstring());
             if (!graphicDevice.isDisplayChangeSupported()) {
                 System.err.println("Display mode change is not supported on this host. Test is considered passed.");
                 continue;
             }
             DisplayMode defaultDisplayMode = graphicDevice.getDisplayMode();
+            System.out.println("Default display mode: " + defaultDisplayMode);
             checkDisplayMode(defaultDisplayMode);
             graphicDevice.setDisplayMode(defaultDisplayMode);
 
             DisplayMode[] displayModes = graphicDevice.getDisplayModes();
+            for (int i = 0; i < displayModes.length; i++) {
+                System.out.println("displayModes[" + i + "] = " + displayModes[i]);
+            }
             boolean isDefaultDisplayModeIncluded = false;
             for (DisplayMode displayMode : displayModes) {
+                System.out.println("Attempting display mode " + displayMode);
                 checkDisplayMode(displayMode);
                 graphicDevice.setDisplayMode(displayMode);
                 if (defaultDisplayMode.equals(displayMode)) {
