@@ -1802,8 +1802,8 @@ bool Arguments::check_vm_args_consistency() {
 #if INCLUDE_JVMCI
   if (status && EnableJVMCI) {
     // Add the JVMCI module if not using libjvmci or EnableJVMCI
-    // was explicitly set on the command line.
-    if ((!UseJVMCINativeLibrary || FLAG_IS_CMDLINE(EnableJVMCI)) && ClassLoader::is_module_observable("jdk.internal.vm.ci") && !_jvmci_module_added) {
+    // was explicitly set on the command line or in the jimage.
+    if ((!UseJVMCINativeLibrary || FLAG_IS_CMDLINE(EnableJVMCI) || FLAG_IS_JIMAGE_RESOURCE(EnableJVMCI)) && ClassLoader::is_module_observable("jdk.internal.vm.ci") && !_jvmci_module_added) {
       if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
         return false;
       }
