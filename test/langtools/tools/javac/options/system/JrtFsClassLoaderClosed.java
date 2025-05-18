@@ -67,7 +67,10 @@ public class JrtFsClassLoaderClosed extends TestRunner {
     @Test
     public void testClosed(Path base) throws IOException {
         src = base.resolve("src");
-        tb.writeJavaFiles(src, "module m {}");
+        tb.writeJavaFiles(
+                src,
+                "module m { requires java.base; }",
+                "package test; public class Test { String string; } ");
 
         classes = base.resolve("classes");
         tb.createDirectories(classes);
