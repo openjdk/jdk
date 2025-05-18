@@ -482,9 +482,9 @@ public final class Utils {
         sb.append(", using ");
         sb.append("@").append(annotation).append("(\"").append(systemDefault).append("\")");
         sb.append( " instead.");
-        //if (type.isSystem()) {
+        if (type.isSystem()) {
             throw new InternalError(sb.toString()); // Fail fast for JDK and JVM events
-        //}
-        // Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, sb.toString());
+        }
+        Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, sb.toString());
     }
 }
