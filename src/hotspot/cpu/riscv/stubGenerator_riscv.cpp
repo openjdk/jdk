@@ -1662,7 +1662,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_exit, L_fill_elements, L_loop;
 
-    const Register to = c_rarg0;
+    const Register dest = c_rarg0;
     const Register count = c_rarg1;
     const Register value = c_rarg2;
     const Register cnt_words = x28; // temp register
@@ -1692,24 +1692,24 @@ class StubGenerator: public StubCodeGenerator {
     // Align source address at 8 bytes address boundary.
     Label L_skip_align1, L_skip_align2, L_skip_align4;
     // One byte misalignment happens.
-    __ test_bit(t0, to, 0);
+    __ test_bit(t0, dest, 0);
     __ beqz(t0, L_skip_align1);
-    __ sb(value, Address(to, 0));
-    __ addi(to, to, 1);
+    __ sb(value, Address(dest, 0));
+    __ addi(dest, dest, 1);
     __ subi(count, count, 1);
     __ bind(L_skip_align1);
     // Two bytes misalignment happens.
-    __ test_bit(t0, to, 1);
+    __ test_bit(t0, dest, 1);
     __ beqz(t0, L_skip_align2);
-    __ sh(value, Address(to, 0));
-    __ addi(to, to, 2);
+    __ sh(value, Address(dest, 0));
+    __ addi(dest, dest, 2);
     __ subi(count, count, 2);
     __ bind(L_skip_align2);
     // Four bytes misalignment happens.
-    __ test_bit(t0, to, 2);
+    __ test_bit(t0, dest, 2);
     __ beqz(t0, L_skip_align4);
-    __ sw(value, Address(to, 0));
-    __ addi(to, to, 4);
+    __ sw(value, Address(dest, 0));
+    __ addi(dest, dest, 4);
     __ subi(count, count, 4);
     __ bind(L_skip_align4);
 
@@ -1718,33 +1718,34 @@ class StubGenerator: public StubCodeGenerator {
     __ slli(tmp_reg, cnt_words, 3);
     __ sub(count, count, tmp_reg);
     {
-      __ fill_words(to, cnt_words, value);
+      __ fill_words(dest, cnt_words, value);
     }
 
     // Remaining count is less than 8 bytes and address is heapword aligned.
     Label L_fill_2, L_fill_1;
     __ test_bit(t0, count, 2);
     __ beqz(t0, L_fill_2);
-    __ sw(value, Address(to, 0));
-    __ addi(to, to, 4);
+    __ sw(value, Address(dest, 0));
+    __ addi(dest, dest, 4);
     __ bind(L_fill_2);
     __ test_bit(t0, count, 1);
     __ beqz(t0, L_fill_1);
-    __ sh(value, Address(to, 0));
-    __ addi(to, to, 2);
+    __ sh(value, Address(dest, 0));
+    __ addi(dest, dest, 2);
     __ bind(L_fill_1);
     __ test_bit(t0, count, 0);
     __ beqz(t0, L_exit);
-    __ sb(value, Address(to, 0));
-    __ j(L_exit);
+    __ sb(value, Address(dest, 0));
+    __ leave();
+    __ ret();
 
     // Handle copies less than 8 bytes
     __ bind(L_fill_elements);
     __ beqz(count, L_exit);
 
     __ bind(L_loop);
-    __ sb(value, Address(to, 0));
-    __ addi(to, to, 1);
+    __ sb(value, Address(dest, 0));
+    __ addi(dest, dest, 1);
     __ subi(count, count, 1);
     __ bnez(count, L_loop);
 
