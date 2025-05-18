@@ -1994,28 +1994,29 @@ class MutableBigInteger {
                 // Allocate sufficient space to store the final root
                 r = new MutableBigInteger(new int[(intLen - 1) / n + 1]);
                 r.copyValue(valueOf(approx));
+
+                // Refine the estimate, avoiding to compute non-significant bits
+                final int trailingZeros = this.getLowestSetBit();
+                int rootShift = (int) (shift / n);
+                for (int rootBits = (int) r.bitLength(); rootShift >= rootBits; rootBits <<= 1) {
+                    r.leftShift(rootBits);
+                    rootShift -= rootBits;
+
+                    // Remove useless bits from the radicand
+                    MutableBigInteger x = new MutableBigInteger(this);
+                    int removedBits = rootShift * n;
+                    x.rightShift(removedBits);
+                    if (removedBits > trailingZeros)
+                        x.add(ONE); // round up to ensure r is an upper bound of the root
+
+                    newtonRecurrenceNthRoot(x, r, n, r.toBigInteger().pow(n - 1));
+                }
+
+                // Shift the approximate root back into the original range.
+                r.safeLeftShift(rootShift);
             }
         }
 
-        // Refine the estimate, avoiding to compute non-significant bits
-        final int trailingZeros = this.getLowestSetBit();
-        int rootShift = (int) (shift / n);
-        for (int rootBits = (int) r.bitLength(); rootShift >= rootBits; rootBits <<= 1) {
-            r.leftShift(rootBits);
-            rootShift -= rootBits;
-
-            // Remove useless bits from the radicand
-            MutableBigInteger x = new MutableBigInteger(this);
-            int removedBits = rootShift * n;
-            x.rightShift(removedBits);
-            if (removedBits > trailingZeros)
-                x.add(ONE); // round up to ensure r is an upper bound of the root
-
-            newtonRecurrenceNthRoot(x, r, n, r.toBigInteger().pow(n - 1));
-        }
-
-        // Shift the approximate root back into the original range.
-        r.safeLeftShift(rootShift);
         // Refine the estimate.
         do {
             BigInteger rBig = r.toBigInteger();
