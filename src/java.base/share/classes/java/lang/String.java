@@ -1239,7 +1239,7 @@ public final class String
             return cb.position();
         } catch (CharacterCodingException x) {
             // Substitution is enabled, so this shouldn't happen
-            throw new Error(x);
+            throw new IllegalArgumentException(x);
         }
     }
 
