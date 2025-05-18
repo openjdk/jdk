@@ -443,12 +443,6 @@ final class PreSharedKeyExtension {
             result = false;
         }
 
-        // Make sure that the server handshake context's
-        // localSupportedCertSignAlgs field is populated.  This is particularly
-        // important when client authentication was used in an initial session,
-        // and it is now being resumed.
-        SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
-
         // Validate the required client authentication.
         if (result &&
             (shc.sslConfig.clientAuthType == CLIENT_AUTH_REQUIRED)) {

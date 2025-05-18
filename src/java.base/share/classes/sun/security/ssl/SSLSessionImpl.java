@@ -29,7 +29,6 @@ import sun.security.provider.X509Factory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -47,11 +46,11 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
-import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLSessionBindingListener;
 import javax.net.ssl.SSLSessionContext;
+import sun.security.ssl.X509Authentication.X509Possession;
 
 /**
  * Implements the SSL session interface, and exposes the session context
@@ -284,33 +283,22 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * < 4 bytes > maximumPacketSize
      * < 4 bytes > negotiatedMaxFragSize
      * < 4 bytes > creationTime
-     * < 2 byte > status response length
+     * < 2 bytes > status response length
      *   < 2 byte > status response entry length
      *   < length in byte > status response entry
      * < 1 byte > Length of peer host
      *   < length in bytes > peer host
      * < 2 bytes> peer port
-     * < 1 byte > Number of peerCerts entries
-     *   < 4 byte > peerCert length
-     *   < length in bytes > peerCert
-     * < 1 byte > localCerts type (Cert, PSK, Anonymous)
-     *   Certificate
-     *     < 1 byte > Number of Certificate entries
-     *       < 4 byte> Certificate length
-     *       < length in bytes> Certificate
-     *   PSK
-     *     < 1 byte > Number of PSK entries
-     *       < 1 bytes > PSK algorithm length
-     *       < length in bytes > PSK algorithm string
-     *       < 4 bytes > PSK key length
-     *       < length in bytes> PSK key
-     *       < 4 bytes > PSK identity length
-     *       < length in bytes> PSK identity
-     *   Anonymous
-     *     < 1 byte >
+     * < 1 byte > Number of Peer Certificate entries
+     * < 4 bytes > Peer certificate length
+     * < length in bytes> Peer certificate
+     * < 1 byte > Number of Local Certificate algorithms
+     * < 1 byte > Local Certificate algorithm length
+     * < length in bytes> Local Certificate algorithm name
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
+        int len;
         boundValues = new ConcurrentHashMap<>();
         this.protocolVersion =
                 ProtocolVersion.valueOf(Record.getInt16(buf));
@@ -323,18 +311,18 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 CipherSuite.valueOf(Record.getInt16(buf));
 
         // Local Supported signature algorithms
-        ArrayList<SignatureScheme> list = new ArrayList<>();
-        int i = Record.getInt8(buf);
-        while (i-- > 0) {
+        List<SignatureScheme> list = new ArrayList<>();
+        len = Record.getInt8(buf);
+        while (len-- > 0) {
             list.add(SignatureScheme.valueOf(
                     Record.getInt16(buf)));
         }
         this.localSupportedSignAlgs = Collections.unmodifiableCollection(list);
 
         // Peer Supported signature algorithms
-        i = Record.getInt8(buf);
+        len = Record.getInt8(buf);
         list.clear();
-        while (i-- > 0) {
+        while (len-- > 0) {
             list.add(SignatureScheme.valueOf(
                     Record.getInt16(buf)));
         }
@@ -386,7 +374,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
 
         // List of SNIServerName
-        int len = Record.getInt16(buf);
+        len = Record.getInt16(buf);
         if (len == 0) {
             this.requestedServerNames = Collections.emptyList();
         } else {
@@ -426,70 +414,64 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
         this.port = Record.getInt16(buf);
 
-        // Peer certs
-        i = Record.getInt8(buf);
-        if (i == 0) {
+        // Peer certs.
+        len = Record.getInt8(buf);
+        if (len == 0) {
             this.peerCerts = null;
         } else {
-            this.peerCerts = new X509Certificate[i];
-            int j = 0;
-            while (i > j) {
+            this.peerCerts = new X509Certificate[len];
+            for (int i = 0; len > i; i++) {
                 b = new byte[buf.getInt()];
                 buf.get(b);
                 try {
-                    this.peerCerts[j] = X509Factory.cachedGetX509Cert(b);
+                    this.peerCerts[i] = X509Factory.cachedGetX509Cert(b);
                 } catch (Exception e) {
                     throw new IOException(e);
                 }
-                j++;
             }
         }
 
-        // Get local certs of PSK
-        switch (Record.getInt8(buf)) {
-            case 0:
-                break;
-            case 1:
-                // number of certs
-                len = buf.get();
-                this.localCerts = new X509Certificate[len];
-                i = 0;
-                while (len > i) {
-                    b = new byte[buf.getInt()];
-                    buf.get(b);
-                    try {
-                        this.localCerts[i] = X509Factory.cachedGetX509Cert(b);
-                    } catch (Exception e) {
-                        throw new IOException(e);
-                    }
-                    i++;
-                }
-                break;
-            case 2:
-                // pre-shared key
-                // Length of pre-shared key algorithm  (one byte)
-                b = Record.getBytes8(buf);
-                String alg = new String(b);
-                // Get encoding
-                b = Record.getBytes16(buf);
-                this.preSharedKey = new SecretKeySpec(b, alg);
-                // Get identity len
-                i = Record.getInt8(buf);
-                if (i > 0) {
-                    this.pskIdentity = Record.getBytes8(buf);
-                } else {
-                    this.pskIdentity = null;
-                }
-                break;
-            default:
-                throw new SSLException("Failed local certs of session.");
+        // Load local certificates.
+        len = Record.getInt8(buf);
+        String[] certAlgs = new String[len];
+
+        for (int i = 0; len > i; i++) {
+            certAlgs[i] = new String(Record.getBytes8(buf));
         }
 
-        context = (SSLSessionContextImpl)
+        SSLPossession pos = X509Authentication.createPossession(
+                hc, certAlgs);
+
+        if (pos == null) {
+            throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    "No available certificates");
+        }
+
+        if (!(pos instanceof X509Possession x509Possession)) {
+            throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    "No available  X.509 certificate");
+        }
+
+        localCerts = x509Possession.popCerts;
+        if (localCerts == null || localCerts.length == 0) {
+            throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    "No available  X.509 certificate");
+        }
+
+        // Use certs from cache.
+        for (int i = 0; i < localCerts.length; i++) {
+            try {
+                localCerts[i] = X509Factory.cachedGetX509Cert(
+                        localCerts[i].getEncoded());
+            } catch (Exception e) {
+                throw new IOException(e);
+            }
+        } // done loading local certificates.
+
+        this.context = (SSLSessionContextImpl)
                 hc.sslContext.engineGetServerSessionContext();
         this.lastUsedTime = System.currentTimeMillis();
     }
-
 
     // Some situations we cannot provide a stateless ticket, but after it
     // has been negotiated
@@ -629,7 +611,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
         hos.putInt16(port);
 
-        // Peer cert
+        // Peer certs.
         if (peerCerts == null || peerCerts.length == 0) {
             hos.putInt8(0);
         } else {
@@ -641,29 +623,16 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
         }
 
-        // Client identity
-        if (localCerts != null && localCerts.length > 0) {
-            // certificate based
-            hos.putInt8(1);
+        // Local certificates' algorithms.
+        // We don't include the complete local certificates in a session ticket
+        // to decrease the size of ClientHello message.
+        if (localCerts == null || localCerts.length == 0) {
+            hos.putInt8(0);
+        } else {
             hos.putInt8(localCerts.length);
             for (X509Certificate c : localCerts) {
-                b = c.getEncoded();
-                hos.putInt32(b.length);
-                hos.writeBytes(b);
+                hos.putBytes8(c.getPublicKey().getAlgorithm().getBytes());
             }
-        } else if (preSharedKey != null) {
-            // pre-shared key
-            hos.putInt8(2);
-            hos.putInt8(preSharedKey.getAlgorithm().length());
-            hos.write(preSharedKey.getAlgorithm().getBytes());
-            b = preSharedKey.getEncoded();
-            hos.putInt32(b.length);
-            hos.writeBytes(b);
-            hos.putInt32(pskIdentity.length);
-            hos.writeBytes(pskIdentity);
-        } else {
-            // anonymous
-            hos.putInt8(0);
         }
 
         return hos.toByteArray();
