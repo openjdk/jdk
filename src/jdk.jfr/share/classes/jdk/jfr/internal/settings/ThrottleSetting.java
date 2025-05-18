@@ -82,7 +82,6 @@ public final class ThrottleSetting extends SettingControl {
                 }
             }
         }
-        // "off" is default
         return Objects.requireNonNullElse(text, defaultValue);
     }
 
