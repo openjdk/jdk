@@ -556,153 +556,154 @@ public final class String
         if (length == 0) {
             this.value = "".value;
             this.coder = "".coder;
-        } else if (charset == UTF_8.INSTANCE) {
-            if (COMPACT_STRINGS) {
-                int dp = StringCoding.countPositives(bytes, offset, length);
-                if (dp == length) {
-                    this.value = Arrays.copyOfRange(bytes, offset, offset + length);
-                    this.coder = LATIN1;
-                    return;
+            return;
+        }
+        Str str;
+        if (charset == UTF_8.INSTANCE) {
+            str = utf8(bytes, offset, length);
+        } else if (charset == ISO_8859_1.INSTANCE) {
+            str = iso88591(bytes, offset, length);
+        } else if (charset == US_ASCII.INSTANCE) {
+            str = ascii(bytes, offset, length);
+        } else {
+            str = create(charset, bytes, offset, length);
+        }
+        this.value = str.value();
+        this.coder = str.coder();
+    }
+
+    private record Str(byte[] value, byte coder) {}
+
+    private static Str utf8(byte[] bytes, int offset, int length) {
+        if (COMPACT_STRINGS) {
+            int dp = StringCoding.countPositives(bytes, offset, length);
+            if (dp == length) {
+                return new Str(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+            }
+            // Decode with a stable copy, to be the result if the decoded length is the same
+            byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
+            int sp = dp;            // first dp bytes are already in the copy
+            while (sp < length) {
+                int b1 = latin1[sp++];
+                if (b1 >= 0) {
+                    latin1[dp++] = (byte) b1;
+                    continue;
                 }
-                // Decode with a stable copy, to be the result if the decoded length is the same
-                byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
-                int sp = dp;            // first dp bytes are already in the copy
-                while (sp < length) {
-                    int b1 = latin1[sp++];
-                    if (b1 >= 0) {
-                        latin1[dp++] = (byte)b1;
+                if ((b1 & 0xfe) == 0xc2 && sp < length) { // b1 either 0xc2 or 0xc3
+                    int b2 = latin1[sp];
+                    if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
+                        latin1[dp++] = (byte) decode2(b1, b2);
+                        sp++;
                         continue;
                     }
-                    if ((b1 & 0xfe) == 0xc2 && sp < length) { // b1 either 0xc2 or 0xc3
-                        int b2 = latin1[sp];
-                        if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
-                            latin1[dp++] = (byte)decode2(b1, b2);
-                            sp++;
-                            continue;
-                        }
-                    }
-                    // anything not a latin1, including the REPL
-                    // we have to go with the utf16
-                    sp--;
-                    break;
                 }
-                if (sp == length) {
-                    if (dp != latin1.length) {
-                        latin1 = Arrays.copyOf(latin1, dp);
-                    }
-                    this.value = latin1;
-                    this.coder = LATIN1;
-                    return;
-                }
-                byte[] utf16 = StringUTF16.newBytesFor(length);
-                StringLatin1.inflate(latin1, 0, utf16, 0, dp);
-                dp = decodeUTF8_UTF16(latin1, sp, length, utf16, dp, true);
-                if (dp != length) {
-                    utf16 = Arrays.copyOf(utf16, dp << 1);
-                }
-                this.value = utf16;
-                this.coder = UTF16;
-            } else { // !COMPACT_STRINGS
-                byte[] dst = StringUTF16.newBytesFor(length);
-                int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, true);
-                if (dp != length) {
-                    dst = Arrays.copyOf(dst, dp << 1);
-                }
-                this.value = dst;
-                this.coder = UTF16;
+                // anything not a latin1, including the REPL
+                // we have to go with the utf16
+                sp--;
+                break;
             }
-        } else if (charset == ISO_8859_1.INSTANCE) {
-            if (COMPACT_STRINGS) {
-                this.value = Arrays.copyOfRange(bytes, offset, offset + length);
-                this.coder = LATIN1;
-            } else {
-                this.value = StringLatin1.inflate(bytes, offset, length);
-                this.coder = UTF16;
-            }
-        } else if (charset == US_ASCII.INSTANCE) {
-            if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
-                this.value = Arrays.copyOfRange(bytes, offset, offset + length);
-                this.coder = LATIN1;
-            } else {
-                byte[] dst = StringUTF16.newBytesFor(length);
-                int dp = 0;
-                while (dp < length) {
-                    int b = bytes[offset++];
-                    StringUTF16.putChar(dst, dp++, (b >= 0) ? (char) b : REPL);
+            if (sp == length) {
+                if (dp != latin1.length) {
+                    latin1 = Arrays.copyOf(latin1, dp);
                 }
-                this.value = dst;
-                this.coder = UTF16;
+                return new Str(latin1, LATIN1);
             }
+            byte[] utf16 = StringUTF16.newBytesFor(length);
+            StringLatin1.inflate(latin1, 0, utf16, 0, dp);
+            dp = decodeUTF8_UTF16(latin1, sp, length, utf16, dp, true);
+            if (dp != length) {
+                utf16 = Arrays.copyOf(utf16, dp << 1);
+            }
+            return new Str(utf16, UTF16);
+        }
+        else { // !COMPACT_STRINGS
+            byte[] dst = StringUTF16.newBytesFor(length);
+            int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, true);
+            if (dp != length) {
+                dst = Arrays.copyOf(dst, dp << 1);
+            }
+            return new Str(dst, UTF16);
+        }
+    }
+
+    private static Str iso88591(byte[] bytes, int offset, int length) {
+        if (COMPACT_STRINGS) {
+            return new Str(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
         } else {
-            // (1)We never cache the "external" cs, the only benefit of creating
-            // an additional StringDe/Encoder object to wrap it is to share the
-            // de/encode() method. These SD/E objects are short-lived, the young-gen
-            // gc should be able to take care of them well. But the best approach
-            // is still not to generate them if not really necessary.
-            // (2)The defensive copy of the input byte/char[] has a big performance
-            // impact, as well as the outgoing result byte/char[]. Need to do the
-            // optimization check of (sm==null && classLoader0==null) for both.
-            CharsetDecoder cd = charset.newDecoder();
-            // ArrayDecoder fastpaths
-            if (cd instanceof ArrayDecoder ad) {
-                // ascii
-                if (ad.isASCIICompatible() && !StringCoding.hasNegatives(bytes, offset, length)) {
-                    if (COMPACT_STRINGS) {
-                        this.value = Arrays.copyOfRange(bytes, offset, offset + length);
-                        this.coder = LATIN1;
-                        return;
-                    }
-                    this.value = StringLatin1.inflate(bytes, offset, length);
-                    this.coder = UTF16;
-                    return;
-                }
+            return new Str(StringLatin1.inflate(bytes, offset, length), UTF16);
+        }
+    }
 
-                // fastpath for always Latin1 decodable single byte
-                if (COMPACT_STRINGS && ad.isLatin1Decodable()) {
-                    byte[] dst = new byte[length];
-                    ad.decodeToLatin1(bytes, offset, length, dst);
-                    this.value = dst;
-                    this.coder = LATIN1;
-                    return;
-                }
+    private static Str ascii(byte[] bytes, int offset, int length) {
+        if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
+            return new Str(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+        } else {
+            byte[] dst = StringUTF16.newBytesFor(length);
+            int dp = 0;
+            while (dp < length) {
+                int b = bytes[offset++];
+                StringUTF16.putChar(dst, dp++, (b >= 0) ? (char) b : REPL);
+            }
+            return new Str(dst, UTF16);
+        }
+    }
 
-                int en = scale(length, cd.maxCharsPerByte());
-                cd.onMalformedInput(CodingErrorAction.REPLACE)
-                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
-                char[] ca = new char[en];
-                int clen = ad.decode(bytes, offset, length, ca);
+    private static Str create(Charset charset, byte[] bytes, int offset, int length) {
+        // (1)We never cache the "external" cs, the only benefit of creating
+        // an additional StringDe/Encoder object to wrap it is to share the
+        // de/encode() method. These SD/E objects are short-lived, the young-gen
+        // gc should be able to take care of them well. But the best approach
+        // is still not to generate them if not really necessary.
+        // (2)The defensive copy of the input byte/char[] has a big performance
+        // impact, as well as the outgoing result byte/char[]. Need to do the
+        // optimization check of (sm==null && classLoader0==null) for both.
+        CharsetDecoder cd = charset.newDecoder();
+        // ArrayDecoder fastpaths
+        if (cd instanceof ArrayDecoder ad) {
+            // ascii
+            if (ad.isASCIICompatible() && !StringCoding.hasNegatives(bytes, offset, length)) {
                 if (COMPACT_STRINGS) {
-                    byte[] val = StringUTF16.compress(ca, 0, clen);;
-                    this.coder = StringUTF16.coderFromArrayLen(val, clen);
-                    this.value = val;
-                    return;
+                    return new Str(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
                 }
-                coder = UTF16;
-                value = StringUTF16.toBytes(ca, 0, clen);
-                return;
+                return new Str(StringLatin1.inflate(bytes, offset, length), UTF16);
             }
 
-            // decode using CharsetDecoder
+            // fastpath for always Latin1 decodable single byte
+            if (COMPACT_STRINGS && ad.isLatin1Decodable()) {
+                byte[] dst = new byte[length];
+                ad.decodeToLatin1(bytes, offset, length, dst);
+                return new Str(dst, LATIN1);
+            }
+
             int en = scale(length, cd.maxCharsPerByte());
             cd.onMalformedInput(CodingErrorAction.REPLACE)
                     .onUnmappableCharacter(CodingErrorAction.REPLACE);
             char[] ca = new char[en];
-            int caLen;
-            try {
-                caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
-            } catch (CharacterCodingException x) {
-                // Substitution is enabled, so this shouldn't happen
-                throw new Error(x);
-            }
+            int clen = ad.decode(bytes, offset, length, ca);
             if (COMPACT_STRINGS) {
-                byte[] val = StringUTF16.compress(ca, 0, caLen);
-                this.coder = StringUTF16.coderFromArrayLen(val, caLen);
-                this.value = val;
-                return;
+                byte[] val = StringUTF16.compress(ca, 0, clen);;
+                return new Str(val, StringUTF16.coderFromArrayLen(val, clen));
             }
-            coder = UTF16;
-            value = StringUTF16.toBytes(ca, 0, caLen);
+            return new Str(StringUTF16.toBytes(ca, 0, clen), UTF16);
         }
+
+        // decode using CharsetDecoder
+        int en = scale(length, cd.maxCharsPerByte());
+        cd.onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        char[] ca = new char[en];
+        int caLen;
+        try {
+            caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
+        } catch (CharacterCodingException x) {
+            // Substitution is enabled, so this shouldn't happen
+            throw new Error(x);
+        }
+        if (COMPACT_STRINGS) {
+            byte[] val = StringUTF16.compress(ca, 0, caLen);
+            return new Str(val, StringUTF16.coderFromArrayLen(val, caLen));
+        }
+        return new Str(StringUTF16.toBytes(ca, 0, caLen), UTF16);
     }
 
     /*
