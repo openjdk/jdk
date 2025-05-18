@@ -2505,25 +2505,23 @@ class StubGenerator: public StubCodeGenerator {
 
     __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
-    Label L_aes128, L_aes192, L_loadkeys, L_savekey;
+    Label L_aes128, L_aes192, L_exit_loadkey, L_savekey;
 
-    int loop = 15;
     __ mv(t0, 52);
     __ blt(keylen, t0, L_aes128);
     __ beq(keylen, t0, L_aes192);
-    __ j(L_loadkeys);
-
-    __ bind(L_aes128);
-    loop = 11;
-    __ j(L_loadkeys);
-
-    __ bind(L_aes192);
-    loop = 13;
-
-    __ bind(L_loadkeys);
 
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    generate_aes_loadkeys(key, working_vregs, loop);
+    generate_aes_loadkeys(key, working_vregs, 15);
+    __ j(L_exit_loadkey);
+    __ bind(L_aes128);
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    generate_aes_loadkeys(key, working_vregs, 11);
+    __ j(L_exit_loadkey);
+    __ bind(L_aes192);
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    generate_aes_loadkeys(key, working_vregs, 13);
+    __ bind(L_exit_loadkey);
 
     // init aes_ctr counter input
     __ vsetivli(x0, 0, Assembler::e8, Assembler::m1);
@@ -2548,13 +2546,36 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(len, len, vlen);
     __ add(in, in, t0);
 
-    // encrypt
+    Label L_aes128_loop, L_aes192_loop, L_exit_aes_loop;
+    __ mv(t0, 52);
+    __ blt(keylen, t0, L_aes128_loop);
+    __ beq(keylen, t0, L_aes192_loop);
+
     __ vmv_v_v(v24, v16);
     __ vxor_vv(v24, v24, working_vregs[0]);
-    for (int i = 1; i < loop - 1; i++) {
+    // encrypt aes256
+    for (int i = 1; i < 14; i++) {
       __ vaesem_vs(v24, working_vregs[i]);
     }
-    __ vaesef_vs(v24, working_vregs[loop - 1]);
+    __ vaesef_vs(v24, working_vregs[14]);
+    __ j(L_exit_aes_loop);
+
+    // encrypt aes128
+    __ bind(L_aes128_loop);
+    for (int i = 1; i < 10; i++) {
+      __ vaesem_vs(v24, working_vregs[i]);
+    }
+    __ vaesef_vs(v24, working_vregs[10]);
+    __ j(L_exit_aes_loop);
+
+    // encrypt aes192
+    __ bind(L_aes128_loop);
+    for (int i = 1; i < 12; i++) {
+      __ vaesem_vs(v24, working_vregs[i]);
+    }
+    __ vaesef_vs(v24, working_vregs[12]);
+    __ bind(L_exit_aes_loop);
+
     __ vxor_vv(v24, v24, v20);
     __ vse32_v(v24, out);
     __ add(out, out, t0);
