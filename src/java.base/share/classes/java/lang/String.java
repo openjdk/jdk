@@ -553,13 +553,10 @@ public final class String
      * disambiguate it against other similar methods of this class.
      */
     private String(Charset charset, byte[] bytes, int offset, int length) {
-        if (length == 0) {
-            this.value = "".value;
-            this.coder = "".coder;
-            return;
-        }
         String str;
-        if (charset == UTF_8.INSTANCE) {
+        if (length == 0) {
+            str = "";
+        } else if (charset == UTF_8.INSTANCE) {
             str = utf8(bytes, offset, length);
         } else if (charset == ISO_8859_1.INSTANCE) {
             str = iso88591(bytes, offset, length);
