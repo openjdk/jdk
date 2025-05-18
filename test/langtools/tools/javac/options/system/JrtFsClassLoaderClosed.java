@@ -23,14 +23,13 @@
 
 /**
  * @test
- * @bug 8331081 8349058
- * @summary Verify 'internal proprietary API' diagnostics if --system is configured
+ * @summary Verify JavacTask closes the JRTFS class loader
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api jdk.compiler/com.sun.tools.javac.file
  *     jdk.compiler/com.sun.tools.javac.jvm jdk.compiler/com.sun.tools.javac.main
  *     jdk.compiler/com.sun.tools.javac.util jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask toolbox.JavapTask toolbox.TestRunner
- * @run main SystemSunProprietary
+ * @run main JrtFsClassLoaderClosed
  */
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
