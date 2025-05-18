@@ -41,7 +41,9 @@ package java.text;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.util.Arrays;
 import jdk.internal.math.FloatingDecimal;
+import jdk.internal.util.DecimalDigits;
 
 /**
  * Digit List. Private to DecimalFormat.
@@ -170,12 +172,13 @@ final class DigitList implements Cloneable {
             return 0.0;
         }
 
-        return Double.parseDouble(getStringBuilder()
-                .append('.')
-                .append(digits, 0, count)
-                .append('E')
-                .append(decimalAt)
-                .toString());
+        int stringSize = DecimalDigits.stringSize(decimalAt);
+        char[] chars = new char[count + 2 + stringSize];
+        chars[0] = '.';
+        System.arraycopy(digits, 0, chars, 1, count);
+        chars[count + 1] = 'E';
+        DecimalDigits.getChars(decimalAt, chars.length, chars);
+        return Double.parseDouble(new String(chars));
     }
 
     /**
@@ -197,10 +200,10 @@ final class DigitList implements Cloneable {
             return Long.MIN_VALUE;
         }
 
-        StringBuilder temp = getStringBuilder();
-        temp.append(digits, 0, count);
-        temp.append("0".repeat(Math.max(0, decimalAt - count)));
-        return Long.parseLong(temp.toString());
+        int e = Math.max(0, decimalAt - count);
+        char[] chars = Arrays.copyOf(digits, count + e);
+        Arrays.fill(chars, count, chars.length, '0');
+        return Long.parseLong(new String(chars));
     }
 
     /**
@@ -730,7 +733,6 @@ final class DigitList implements Cloneable {
             // not carry significant information. They will be recreated on demand.
             // Setting them to null is needed to avoid sharing across clones.
             other.data = null;
-            other.tempBuilder = null;
 
             return other;
         } catch (CloneNotSupportedException e) {
@@ -784,23 +786,7 @@ final class DigitList implements Cloneable {
             return "0";
         }
 
-        return getStringBuilder()
-                .append("0.")
-                .append(digits, 0, count)
-                .append("x10^")
-                .append(decimalAt)
-                .toString();
-    }
-
-    private StringBuilder tempBuilder;
-
-    private StringBuilder getStringBuilder() {
-        if (tempBuilder == null) {
-            tempBuilder = new StringBuilder(MAX_COUNT);
-        } else {
-            tempBuilder.setLength(0);
-        }
-        return tempBuilder;
+        return "0." + new String(digits, 0, count) + "x10^" + decimalAt;
     }
 
     private void extendDigits(int len) {
