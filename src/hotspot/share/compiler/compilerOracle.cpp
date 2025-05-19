@@ -330,7 +330,7 @@ static void register_command(TypedMethodOptionMatcher* matcher,
   assert(CompilerOracle::option_matches_type(option, value), "Value must match option type");
 
   if (option == CompileCommandEnum::Blackhole && !UnlockExperimentalVMOptions) {
-    jio_snprintf(errorbuf, buf_size, "Blackhole compile option is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions");
+    warning("Blackhole compile option is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions");
     // Delete matcher as we don't keep it
     delete matcher;
     return;
