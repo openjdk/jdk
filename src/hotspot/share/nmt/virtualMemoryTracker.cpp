@@ -22,7 +22,6 @@
  *
  */
 #include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/memTracker.hpp"
@@ -30,7 +29,6 @@
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
-#include "utilities/defaultStream.hpp"
 #include "utilities/ostream.hpp"
 
 VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
