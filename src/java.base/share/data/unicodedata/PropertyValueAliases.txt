@@ -1,5 +1,5 @@
 # PropertyValueAliases-17.0.0.txt
-# Date: 2025-01-27, 18:09:29 GMT
+# Date: 2025-04-25, 13:37:02 GMT
 # Copyright (c) 2025 Unicode, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use and license, see https://www.unicode.org/terms_of_use.html
@@ -1142,6 +1142,7 @@ lb ; EX                               ; Exclamation
 lb ; GL                               ; Glue
 lb ; H2                               ; H2
 lb ; H3                               ; H3
+lb ; HH                               ; Unambiguous_Hyphen
 lb ; HL                               ; Hebrew_Letter
 lb ; HY                               ; Hyphen
 lb ; ID                               ; Ideographic
@@ -1720,5 +1721,17 @@ kEH_NoMirror; Y                       ; Yes                              ; T    
 
 kEH_NoRotate; N                       ; No                               ; F                                ; False
 kEH_NoRotate; Y                       ; Yes                              ; T                                ; True
+
+# kMandarin (cjkMandarin)
+
+# @missing: 0000..10FFFF; kMandarin; <none>
+
+# kTotalStrokes (cjkTotalStrokes)
+
+# @missing: 0000..10FFFF; kTotalStrokes; <none>
+
+# kUnihanCore2020 (cjkUnihanCore2020)
+
+# @missing: 0000..10FFFF; kUnihanCore2020; <none>
 
 # EOF
