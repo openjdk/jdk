@@ -53,8 +53,6 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Warner;
 
-import static com.sun.tools.javac.code.Kinds.kindName;
-
 /**
  * An inference context keeps track of the set of variables that are free
  * in the current context. It provides utility methods for opening/closing
