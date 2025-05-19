@@ -51,6 +51,21 @@ closeSafely(int fd)
     return (fd == -1) ? 0 : close(fd);
 }
 
+int
+markCloseOnExec(int fd)
+{
+    const int flags = fcntl(fd, F_GETFD);
+    if (flags < 0) {
+        return -1;
+    }
+    if ((flags & FD_CLOEXEC) == 0) {
+        if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 static int
 isAsciiDigit(char c)
 {
@@ -67,21 +82,15 @@ isAsciiDigit(char c)
 #endif
 
 static int
-closeDescriptors(void)
+markDescriptorsCloseOnExec(void)
 {
     DIR *dp;
     struct dirent *dirp;
-    int from_fd = FAIL_FILENO + 1;
-
-    /* We're trying to close all file descriptors, but opendir() might
-     * itself be implemented using a file descriptor, and we certainly
-     * don't want to close that while it's in use.  We assume that if
-     * opendir() is implemented using a file descriptor, then it uses
-     * the lowest numbered file descriptor, just like open().  So we
-     * close a couple explicitly.  */
-
-    close(from_fd);          /* for possible use by opendir() */
-    close(from_fd + 1);      /* another one for good luck */
+    /* This function marks all file descriptors beyond stderr as CLOEXEC.
+     * That includes the file descriptor used for the fail pipe: we want that
+     * one to stay open up until the execve, but it should be closed with the
+     * execve. */
+    const int fd_from = STDERR_FILENO + 1;
 
 #if defined(_AIX)
     /* AIX does not understand '/proc/self' - it requires the real process ID */
@@ -90,18 +99,21 @@ closeDescriptors(void)
 #endif
 
     if ((dp = opendir(FD_DIR)) == NULL)
-        return 0;
+        return -1;
 
     while ((dirp = readdir(dp)) != NULL) {
         int fd;
         if (isAsciiDigit(dirp->d_name[0]) &&
-            (fd = strtol(dirp->d_name, NULL, 10)) >= from_fd + 2)
-            close(fd);
+            (fd = strtol(dirp->d_name, NULL, 10)) >= fd_from) {
+            if (markCloseOnExec(fd) == -1) {
+                return -1;
+            }
+        }
     }
 
     closedir(dp);
 
-    return 1;
+    return 0;
 }
 
 static int
@@ -393,19 +405,16 @@ childProcess(void *arg)
     fail_pipe_fd = FAIL_FILENO;
 
     /* close everything */
-    if (closeDescriptors() == 0) { /* failed,  close the old way */
+    if (markDescriptorsCloseOnExec() == -1) { /* failed,  close the old way */
         int max_fd = (int)sysconf(_SC_OPEN_MAX);
         int fd;
-        for (fd = FAIL_FILENO + 1; fd < max_fd; fd++)
-            if (close(fd) == -1 && errno != EBADF)
+        for (fd = STDERR_FILENO + 1; fd < max_fd; fd++)
+            if (markCloseOnExec(fd) == -1 && errno != EBADF)
                 goto WhyCantJohnnyExec;
     }
 
     /* change to the new working directory */
     if (p->pdir != NULL && chdir(p->pdir) < 0)
-        goto WhyCantJohnnyExec;
-
-    if (fcntl(FAIL_FILENO, F_SETFD, FD_CLOEXEC) == -1)
         goto WhyCantJohnnyExec;
 
     JDK_execvpe(p->mode, p->argv[0], p->argv, p->envv);
