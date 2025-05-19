@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2025, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -468,11 +468,26 @@ public class TestPosix {
         // create zip file using zipfs with default options
         createTestZipFile(ZIP_FILE, ENV_DEFAULT).close();
         // check entries on zipfs with default options
+        try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_DEFAULT)) {
+            checkEntries(zip, checkExpects.permsInZip);
+        }
+        // check entries on zipfs with posix options
+        try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_POSIX)) {
+            checkEntries(zip, checkExpects.permsPosix);
+        }
+    }
+
+    /**
+     * As {@code testDefault()} but with {@code "accessMode"="readOnly"}.
+     */
+    @Test
+    public void testDefaultReadOnly() throws IOException {
+        // check entries on zipfs with read-only options
         try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_READ_ONLY)) {
             checkEntries(zip, checkExpects.permsInZip);
             checkReadOnlyFileSystem(zip);
         }
-        // check entries on zipfs with posix options
+        // check entries on zipfs with posix and read-only options
         try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_POSIX_READ_ONLY)) {
             checkEntries(zip, checkExpects.permsPosix);
             checkReadOnlyFileSystem(zip);
@@ -490,11 +505,28 @@ public class TestPosix {
         // create zip file using zipfs with posix option
         createTestZipFile(ZIP_FILE, ENV_POSIX).close();
         // check entries on zipfs with default options
+        try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_DEFAULT)) {
+            checkEntries(zip, checkExpects.permsInZip);
+        }
+        // check entries on zipfs with posix options
+        try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_POSIX)) {
+            checkEntries(zip, checkExpects.permsPosix);
+        }
+    }
+
+    /**
+     * As {@code testPosix()} but with {@code "accessMode"="readOnly"}.
+     */
+    @Test
+    public void testPosixReadOnly() throws IOException {
+        // create zip file using zipfs with posix option
+        createTestZipFile(ZIP_FILE, ENV_POSIX).close();
+        // check entries on zipfs with read-only options
         try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_READ_ONLY)) {
             checkEntries(zip, checkExpects.permsInZip);
             checkReadOnlyFileSystem(zip);
         }
-        // check entries on zipfs with posix options
+        // check entries on zipfs with posix and read-only options
         try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_POSIX_READ_ONLY)) {
             checkEntries(zip, checkExpects.permsPosix);
             checkReadOnlyFileSystem(zip);

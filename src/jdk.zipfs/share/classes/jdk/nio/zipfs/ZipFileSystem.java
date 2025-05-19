@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ class ZipFileSystem extends FileSystem {
 
     private final Set<String> supportedFileAttributeViews;
 
-    private enum AccessMode {
+    private enum ZipAccessMode {
         // Creates a file system for read-write access.
         READ_WRITE("readWrite"),
         // Creates a file system for read-only access.
@@ -149,19 +149,19 @@ class ZipFileSystem extends FileSystem {
 
         private final String label;
 
-        AccessMode(String label) {
+        ZipAccessMode(String label) {
             this.label = label;
         }
 
         // Parses the access mode from an environmental parameter.
         // Returns null for missing value to indicate default behavior.
-        static AccessMode from(Object value) {
+        static ZipAccessMode from(Object value) {
             if (value == null) {
                 return null;
             } else if (READ_WRITE.label.equals(value)) {
-                return AccessMode.READ_WRITE;
+                return ZipAccessMode.READ_WRITE;
             } else if (READ_ONLY.label.equals(value)) {
-                return AccessMode.READ_ONLY;
+                return ZipAccessMode.READ_ONLY;
             }
             throw new IllegalArgumentException("Unknown file system access mode: " + value);
         }
@@ -179,8 +179,8 @@ class ZipFileSystem extends FileSystem {
         this.forceEnd64 = isTrue(env, "forceZIP64End");
         this.defaultCompressionMethod = getDefaultCompressionMethod(env);
 
-        AccessMode accessMode = AccessMode.from(env.get(PROPERTY_ACCESS_MODE));
-        boolean forceReadOnly = (accessMode == AccessMode.READ_ONLY);
+        ZipAccessMode accessMode = ZipAccessMode.from(env.get(PROPERTY_ACCESS_MODE));
+        boolean forceReadOnly = (accessMode == ZipAccessMode.READ_ONLY);
 
         this.supportPosix = isTrue(env, PROPERTY_POSIX);
         this.defaultOwner = supportPosix ? initOwner(zfpath, env) : null;
@@ -208,7 +208,7 @@ class ZipFileSystem extends FileSystem {
             }
         }
         // sm and existence check
-        zfpath.getFileSystem().provider().checkAccess(zfpath, java.nio.file.AccessMode.READ);
+        zfpath.getFileSystem().provider().checkAccess(zfpath, AccessMode.READ);
         this.zc = ZipCoder.get(nameEncoding);
         this.ch = Files.newByteChannel(zfpath, READ);
         try {
@@ -223,11 +223,9 @@ class ZipFileSystem extends FileSystem {
         }
         this.provider = provider;
         this.zfpath = zfpath;
+        this.rootdir = new ZipPath(this, new byte[]{'/'});
 
         // Determining a release version uses 'this' instance to read paths etc.
-        // It requires 'entryLookup' and 'readOnly' to have safe defaults (which
-        // is why they are the only non-final fields), and it requires that the
-        // inode map has been initialized.
         Optional<Integer> multiReleaseVersion = determineReleaseVersion(env);
 
         // Set the version-based lookup function for multi-release JARs.
@@ -237,16 +235,12 @@ class ZipFileSystem extends FileSystem {
         // We only allow read-write zip/jar files if they are not multi-release
         // JARs and the underlying file is writable.
         this.readOnly = forceReadOnly || multiReleaseVersion.isPresent() || !Files.isWritable(zfpath);
-        if (readOnly && accessMode == AccessMode.READ_WRITE) {
-            String reason = Files.isWritable(zfpath)
-                    ? "A multi-release JAR file opened with a specified version is not writable"
-                    : "The underlying ZIP file is not writable";
-            throw new IOException(
-                    "A writable ZIP file system could not be opened for: " + zfpath + "\n" + reason);
+        if (readOnly && accessMode == ZipAccessMode.READ_WRITE) {
+            String reason = multiReleaseVersion.isPresent()
+                    ? "the multi-release JAR file is not writable"
+                    : "the ZIP file is not writable";
+            throw new IOException(reason);
         }
-
-        // Pass "this" as a parameter after everything else is set up.
-        this.rootdir = new ZipPath(this, new byte[]{'/'});
     }
 
     /**

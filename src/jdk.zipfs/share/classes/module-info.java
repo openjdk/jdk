@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,7 +260,8 @@ import java.util.Set;
  *           <li>
  *               If the value does not represent a valid
  *               {@linkplain Runtime.Version Java SE Platform version number},
- *               an {@code IllegalArgumentException} will be thrown.
+ *               an {@code IllegalArgumentException} will be thrown when the Zip
+ *               filesystem is created.
  *           </li>
  *       </ul>
  *   </td>
@@ -286,17 +287,18 @@ import java.util.Set;
  *               <em>read-only</em> file system requires the underlying ZIP file to
  *               already exist, and is incompatible with {@code "create"=true}.
  *               Specifying both will cause an {@code IllegalArgumentException}
- *               to be thrown.
+ *               to be thrown when the Zip filesystem is created
  *           </li>
  *           <li>
  *               If the value is {@code "readWrite"}, the file system is created
  *               <em>read-write</em>, and {@link java.nio.file.FileSystem#isReadOnly()
  *               isReadOnly()} will always return {@code false}. If a writable file
- *               system cannot be created, an {@code IOException} will be thrown.
+ *               system cannot be created, an {@code IOException} will be thrown
+ *               when the Zip filesystem is created.
  *           </li>
  *           <li>
  *               Any other values will cause an {@code IllegalArgumentException}
- *               to be thrown.
+ *               to be thrown when the Zip filesystem is created.
  *           </li>
  *       </ul>
  *       The access mode has no effect on reported POSIX file permissions (in cases
