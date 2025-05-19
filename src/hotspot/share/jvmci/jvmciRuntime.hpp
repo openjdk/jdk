@@ -35,7 +35,7 @@
 #include "gc/g1/g1CardTable.hpp"
 #endif // INCLUDE_G1GC
 
-#define JVMCI_NOT_ENABLED_ERROR_MESSAGE "JVMCI is not enabled. Must specify '--add-modules=jdk.internal.vm.ci' or '-XX:+EnableJVMCI' to the java launcher."
+#define JVMCI_NOT_ENABLED_ERROR_MESSAGE "JVMCI is not enabled. Must specify '-XX:+EnableJVMCI' or '--add-modules=jdk.internal.vm.ci' to the java launcher."
 
 class JVMCIEnv;
 class JVMCICompiler;
