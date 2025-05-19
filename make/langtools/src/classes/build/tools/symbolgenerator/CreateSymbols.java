@@ -305,7 +305,7 @@ public class CreateSymbols {
     private static final String VALUE_BASED_ANNOTATION_INTERNAL =
             "Ljdk/internal/ValueBased+Annotation;";
     private static final String REQUIRES_IDENTITY_ANNOTATION =
-            "Ljdk/internal/RequieresIdentity;";
+            "Ljdk/internal/RequiresIdentity;";
     private static final String REQUIRES_IDENTITY_ANNOTATION_INTERNAL =
             "Ljdk/internal/RequiresIdentity+Annotation;";
     public static final Set<String> HARDCODED_ANNOTATIONS = new HashSet<>(

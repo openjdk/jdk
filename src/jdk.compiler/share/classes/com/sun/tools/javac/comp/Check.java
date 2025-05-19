@@ -5845,4 +5845,4 @@ public class Check {
                                 CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected));
         }
     }
- }
+}
