@@ -209,7 +209,7 @@ public class Infer {
                         InferenceContext duppedTo = resultInfo.checkContext.inferenceContext();
                         minContext.dupTo(duppedTo);
                         if (minContext != inferenceContext) {
-                            duppedTo.supplementaryIC = inferenceContext;
+                            duppedTo.parentIC = inferenceContext;
                         }
                         deferredAttrContext.complete();
                         return mt;
