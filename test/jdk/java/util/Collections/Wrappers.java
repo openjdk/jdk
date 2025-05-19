@@ -29,6 +29,7 @@
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -58,7 +59,7 @@ public class Wrappers {
 
     @AfterClass
     public void printTotal() {
-        System.out.println(">>>> Total missing overrides = " + total);
+        System.out.println(">>>> Total inherited default methods = " + total);
     }
 
     @DataProvider(name="collections")
@@ -184,22 +185,32 @@ public class Wrappers {
         }
     }
 
+//    @Test(dataProvider = "collections")
+//    public static void testAllDefaultMethodsOverridden(Collection c) throws NoSuchMethodException {
+//        Class cls = c.getClass();
+//        var notOverridden = new ArrayList<Method>();
+//        for (var entry : defaultMethodMap.entrySet()) {
+//            if (entry.getKey().isInstance(c)) {
+//                for (Method m : entry.getValue()) {
+//                    Method m2 = cls.getMethod(m.getName(), m.getParameterTypes());
+//                    if (m2.isDefault()) {
+//                        notOverridden.add(m);
+//                    }
+//                }
+//            }
+//        }
+//        total += notOverridden.size();
+//        assertTrue(notOverridden.isEmpty(), cls.getName() + " does not override " + notOverridden);
+//    }
+
     @Test(dataProvider = "collections")
-    public static void testAllDefaultMethodsOverridden(Collection c) throws NoSuchMethodException {
-        Class cls = c.getClass();
-        var notOverridden = new ArrayList<Method>();
-        for (var entry : defaultMethodMap.entrySet()) {
-            if (entry.getKey().isInstance(c)) {
-                for (Method m : entry.getValue()) {
-                    Method m2 = cls.getMethod(m.getName(), m.getParameterTypes());
-                    if (m2.isDefault()) {
-                        notOverridden.add(m);
-                    }
-                }
-            }
-        }
-        total += notOverridden.size();
-        assertTrue(notOverridden.isEmpty(), cls.getName() + " does not override " + notOverridden);
+    public static void testNoDefaultMethodsInherited(Collection c) {
+        List<Method> inherited = Arrays.stream(c.getClass().getMethods())
+                                       .filter(Method::isDefault)
+                                       .toList();
+        total += inherited.size();
+        assertTrue(inherited.isEmpty(),
+                   c.getClass().getName() + " inherited default method " + inherited);
     }
 }
 

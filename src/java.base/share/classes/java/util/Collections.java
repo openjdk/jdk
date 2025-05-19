@@ -2531,8 +2531,47 @@ public final class Collections {
         public E first() {
             synchronized (mutex) {return ss.first();}
         }
+
         public E last() {
             synchronized (mutex) {return ss.last();}
+        }
+
+        public void addFirst(E element) {
+            throw new UnsupportedOperationException();
+        }
+
+        public void addLast(E element) {
+            throw new UnsupportedOperationException();
+        }
+
+        public E getFirst() {
+            synchronized (mutex) {
+                return ss.getFirst();
+            }
+        }
+
+        public E getLast() {
+            synchronized (mutex) {
+                return ss.getLast();
+            }
+        }
+
+        public E removeFirst() {
+            synchronized (mutex) {
+                return ss.removeFirst();
+            }
+        }
+
+        public E removeLast() {
+            synchronized (mutex) {
+                return ss.removeLast();
+            }
+        }
+
+        public SortedSet<E> reversed() {
+            synchronized (mutex) {
+                return new SynchronizedSortedSet<>(ss.reversed(), mutex);
+            }
         }
     }
 
@@ -2651,6 +2690,12 @@ public final class Collections {
         public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
             synchronized (mutex) {
                 return new SynchronizedNavigableSet<>(ns.tailSet(fromElement, inclusive), mutex);
+            }
+        }
+
+        public NavigableSet<E> reversed() {
+            synchronized (mutex) {
+                return new SynchronizedNavigableSet<>(ns.reversed(), mutex);
             }
         }
     }
@@ -3641,6 +3686,27 @@ public final class Collections {
         public SortedSet<E> tailSet(E fromElement) {
             return checkedSortedSet(ss.tailSet(fromElement), type);
         }
+        public void addFirst(E element) {
+            throw new UnsupportedOperationException();
+        }
+        public void addLast(E element) {
+            throw new UnsupportedOperationException();
+        }
+        public E getFirst() {
+            return ss.getFirst();
+        }
+        public E getLast() {
+            return ss.getLast();
+        }
+        public E removeFirst() {
+            return ss.removeFirst();
+        }
+        public E removeLast() {
+            return ss.removeLast();
+        }
+        public SortedSet<E> reversed() {
+            return checkedSortedSet(ss.reversed(), type);
+        }
     }
 
     /**
@@ -3725,6 +3791,10 @@ public final class Collections {
 
         public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
             return checkedNavigableSet(ns.tailSet(fromElement, inclusive), type);
+        }
+
+        public NavigableSet<E> reversed() {
+            return checkedNavigableSet(ns.reversed(), type);
         }
     }
 
@@ -3819,7 +3889,6 @@ public final class Collections {
                     i.add(typeCheck(e));
                 }
 
-                @Override
                 public void forEachRemaining(Consumer<? super E> action) {
                     i.forEachRemaining(action);
                 }
@@ -3838,15 +3907,41 @@ public final class Collections {
          *         exception may be thrown after some elements of the list have
          *         already been replaced.
          */
-        @Override
         public void replaceAll(UnaryOperator<E> operator) {
             Objects.requireNonNull(operator);
             list.replaceAll(e -> typeCheck(operator.apply(e)));
         }
 
-        @Override
         public void sort(Comparator<? super E> c) {
             list.sort(c);
+        }
+
+        public void addFirst(E element) {
+            list.addFirst(typeCheck(element));
+        }
+
+        public void addLast(E element) {
+            list.addLast(typeCheck(element));
+        }
+
+        public E getFirst() {
+            return list.getFirst();
+        }
+
+        public E getLast() {
+            return list.getLast();
+        }
+
+        public E removeFirst() {
+            return list.removeFirst();
+        }
+
+        public E removeLast() {
+            return list.removeLast();
+        }
+
+        public List<E> reversed() {
+            return new CheckedList<>(list.reversed(), type);
         }
     }
 
@@ -3866,6 +3961,15 @@ public final class Collections {
         public List<E> subList(int fromIndex, int toIndex) {
             return new CheckedRandomAccessList<>(
                     list.subList(fromIndex, toIndex), type);
+        }
+
+        public List<E> reversed() {
+            var rev = list.reversed();
+            if (rev instanceof RandomAccess) {
+                return new CheckedRandomAccessList<>(rev, type);
+            } else {
+                return new CheckedList<>(rev, type);
+            }
         }
     }
 
