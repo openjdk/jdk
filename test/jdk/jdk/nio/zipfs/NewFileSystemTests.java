@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
@@ -222,10 +221,11 @@ public class NewFileSystemTests {
     public void readOnlyZipFileFailure() throws IOException {
         // Underlying file is read-only.
         Path readOnlyZip = Utils.createJarFile("read_only.zip", Map.of("file.txt", "Hello World"));
-        boolean marked = readOnlyZip.toFile().setReadOnly();
-        assumeTrue(marked, "skipping test since " + readOnlyZip + " couldn't be marked read-only");
-        assertThrows(IOException.class,
-                () -> FileSystems.newFileSystem(readOnlyZip, Map.of("accessMode", "readWrite")));
+        // In theory this can fail, and we should avoid unwanted false-negatives.
+        if (readOnlyZip.toFile().setReadOnly()) {
+            assertThrows(IOException.class,
+                    () -> FileSystems.newFileSystem(readOnlyZip, Map.of("accessMode", "readWrite")));
+        }
     }
 
     /**
