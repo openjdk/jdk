@@ -243,10 +243,6 @@ public:
   // (which must not be this) if it is not JNI_OK.
   void check_init(JVMCI_TRAPS);
 
-  // Checks the value of init_error() and throws an exception in `TRAPS`
-  // if it is not JNI_OK.
-  void check_init(TRAPS);
-
   JVMCIRuntime* runtime() {
     guarantee(_init_error == 0, "invalid JVMCIEnv: %d", _init_error);
     return _runtime;

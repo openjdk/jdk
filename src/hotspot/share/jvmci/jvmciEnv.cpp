@@ -247,19 +247,6 @@ void JVMCIEnv::check_init(JVMCI_TRAPS) {
   JVMCI_THROW_MSG(InternalError, st.freeze());
 }
 
-void JVMCIEnv::check_init(TRAPS) {
-  if (_init_error == JNI_OK) {
-    return;
-  }
-  if (_init_error == JNI_ENOMEM) {
-    THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "JNI_ENOMEM creating or attaching to libjvmci");
-  }
-  stringStream st;
-  st.print("Error creating or attaching to libjvmci (err: %d, description: %s)",
-           _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg);
-  THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), st.freeze());
-}
-
 // Prints a pending exception (if any) and its stack trace to st.
 // Also partially logs the stack trace to the JVMCI event log.
 void JVMCIEnv::describe_pending_exception(outputStream* st) {
