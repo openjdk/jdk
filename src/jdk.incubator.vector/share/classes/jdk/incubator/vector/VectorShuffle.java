@@ -587,7 +587,7 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      * int[] a = this.toArray();
      * var slice = ms.asSlice(offset)
      * for (int n = 0; n < a.length; n++) {
-     *     slice.setAtIndex(ValueLayout.JAVA_INT_UNALIGNED, n);
+     *     slice.setAtIndex(ValueLayout.JAVA_INT_UNALIGNED, a[n]);
      * }
      * }</pre>
      *
