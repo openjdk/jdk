@@ -75,8 +75,8 @@ final class SessionTicketExtension {
             new T12SHSessionTicketConsumer();
 
     static final SSLStringizer steStringizer = new SessionTicketStringizer();
-    // Not need to compress a ticket if it can fit in a single packet. Also,
-    // small buffers when compressed often end up to be larger, not smaller.
+    // No need to compress a ticket if it can fit in a single packet.
+    // Besides, small buffers often end up to be larger when compressed.
     static final int MIN_COMPRESS_SIZE = 600;
 
     // Time in milliseconds until key is changed for encrypting session state
@@ -247,7 +247,7 @@ final class SessionTicketExtension {
                 result[2] = (byte)(key.num >>> 8);
                 result[3] = (byte)(key.num);
                 System.arraycopy(iv, 0, result, Integer.BYTES, iv.length);
-                result[Integer.BYTES + iv.length + 1] = compressed;
+                result[Integer.BYTES + iv.length] = compressed;
                 System.arraycopy(encrypted, 0, result,
                         Integer.BYTES + iv.length + 1, encrypted.length);
                 return result;
