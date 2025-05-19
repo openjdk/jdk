@@ -435,12 +435,12 @@ public class TestTutorial {
     //
     // To get started, we show an example where all Names have the same type, and where
     // all Names are mutable. For simplicity, our type represents the primitive int type.
-    private record MySimpleType() implements Name.Type {
+    private record MySimpleInt() implements Name.Type {
         // The type is only subtype of itself. This is relevant when sampling or weighing
         // Names, because we do not just sample from the given type, but also its subtypes.
         @Override
         public boolean isSubtypeOf(Name.Type other) {
-            return other instanceof MySimpleType();
+            return other instanceof MySimpleInt();
         }
 
         // The name of the type can later be accessed, and used in code. We are working
@@ -448,7 +448,7 @@ public class TestTutorial {
         @Override
         public String name() { return "int"; }
     }
-    private static final MySimpleType mySimpleType = new MySimpleType();
+    private static final MySimpleInt mySimpleInt = new MySimpleInt();
 
     // In this Example, we generate 3 fields, and add their names to the
     // current scope. In a nested Template, we can then sample one of these
@@ -460,7 +460,7 @@ public class TestTutorial {
             // the hashtag replacement "#f".
             // We are picking a mutable Name, because we are not just
             // reading but also writing to the field.
-            let("f", sampleName(mySimpleType, true).name()),
+            let("f", sampleName(mySimpleInt, true).name()),
             """
             // Let us now sample a random field #f, and increment it.
             #f += 42;
@@ -472,17 +472,17 @@ public class TestTutorial {
             // We can then sample from these names in a nested Template.
             // We make all Names mutable, and with the same weight of 1,
             // so that they have equal probability of being sampled.
-            addName(new Name($("f1"), mySimpleType, true, 1)),
-            addName(new Name($("f2"), mySimpleType, true, 1)),
-            addName(new Name($("f3"), mySimpleType, true, 1)),
+            addName(new Name($("f1"), mySimpleInt, true, 1)),
+            addName(new Name($("f2"), mySimpleInt, true, 1)),
+            addName(new Name($("f3"), mySimpleInt, true, 1)),
             """
             package p.xyz;
 
             public class InnerTest7 {
                 // Let us define a some fields.
-                public static int $f1;
-                public static int $f2;
-                public static int $f3;
+                public static int $f1 = 0;
+                public static int $f2 = 0;
+                public static int $f3 = 0;
 
                 public static void main() {
                     // Let us now call the nested template that samples
@@ -690,23 +690,28 @@ public class TestTutorial {
     //
     // Let us show an examples with Method names. But for simplicity, we assume they
     // all have the same signature: they take two int arguments and return an int.
-    private record MyMethod() implements Name.Type {
+    //
+    // Should you ever work on a test where there are methods with different signatures,
+    // then you would have to very carefully study and design the subtype relation between
+    // methods. You may want to read up about covariance and contravariance. This
+    // example ignores all of that, because we only have "(II)I" methods.
+    private record MyMethodType() implements Name.Type {
         @Override
         public boolean isSubtypeOf(Name.Type other) {
-            return other instanceof MyMethod();
+            return other instanceof MyMethodType();
         }
 
         @Override
         public String name() { return "<not used, don't worry>"; }
     }
-    private static final MyMethod myMethod = new MyMethod();
+    private static final MyMethodType myMethodType = new MyMethodType();
 
     public static String generateWithNamesForMethods() {
         // Define a method, which takes two ints, returns the result of op.
         var templateMethod = Template.make("op", (String op) -> body(
             // Register the method name, so we can later sample.
             // Note: method names are not mutable.
-            addName(new Name($("methodName"), myMethod, false, 1)),
+            addName(new Name($("methodName"), myMethodType, false, 1)),
             """
             public static int $methodName(int a, int b) {
                 return a #op b;
@@ -716,7 +721,7 @@ public class TestTutorial {
 
         var templateSample = Template.make(() -> body(
             // Sample a random method, and retrieve its name.
-            let("methodName", sampleName(myMethod, false).name()),
+            let("methodName", sampleName(myMethodType, false).name()),
             """
             System.out.println("Calling #methodName with inputs 7 and 11");
             System.out.println("  result: " + #methodName(7, 11));
@@ -742,7 +747,7 @@ public class TestTutorial {
                 // However, if we insert to the CLASS_HOOK, then the Rendere makes the
                 // scope of the inserted templateMethod transparent, and the addName
                 // goes out to the scope of the CLASS_HOOK (but no further than that).
-                // RATHER, DO THIS, to ensure the addName is visible:
+                // RATHER, DO THIS to ensure the addName is visible:
                 Hooks.CLASS_HOOK.insert(templateMethod.asToken("*")),
                 Hooks.CLASS_HOOK.insert(templateMethod.asToken("|")),
                 Hooks.CLASS_HOOK.insert(templateMethod.asToken("&")),
