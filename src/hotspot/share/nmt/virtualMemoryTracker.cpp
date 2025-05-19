@@ -374,7 +374,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
         VirtualMemorySummary::record_reserved_memory(rgn.size(), mem_tag);
 
         *reserved_rgn = rgn;
-        //return true;
+        return true;
       }
 
       // CDS mapping region.
