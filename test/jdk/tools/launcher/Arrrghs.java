@@ -646,7 +646,7 @@ public class Arrrghs extends TestHelper {
                 }
                 """);
         tr = doExec(javaCmd, "-jar", "some.jar");
-        tr.contains("Error: abstract class Foo can not instantiated");
+        tr.contains("Error: abstract class Foo can not be instantiated");
         if (!tr.testStatus)
             System.out.println(tr);
     }

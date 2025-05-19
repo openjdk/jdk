@@ -783,7 +783,7 @@ public class SourceLauncherTest extends TestRunner {
                           }
                           """);
         testError(base.resolve("AbstractMain.java"), "",
-                "error: abstract class: AbstractMain cannot be instantiated");
+                "error: abstract class: AbstractMain can not be instantiated");
     }
 
     @Test
