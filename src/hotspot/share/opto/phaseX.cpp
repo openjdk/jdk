@@ -1287,6 +1287,12 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     case Op_MinD:
     case Op_MaxF:
     case Op_MaxD:
+    // XorINode::Ideal
+    // Found with:
+    //   compiler/intrinsics/chacha/TestChaCha20.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_XorI:
+    case Op_XorL:
       return false;
 
     // In MulNode::Ideal the edges can be swapped to help value numbering:
