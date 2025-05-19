@@ -53,6 +53,7 @@ public class TestJcmdOutput {
         System.out.println("Verify jcmd error message and that jcmd does not write errors to the target process output");
         output = new OutputAnalyzer((ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Dtest.jdk=" + System.getProperty("test.jdk"),
+                "-Dcompile.jdk=" + System.getProperty("compile.jdk"),
                 "-XX:MinHeapFreeRatio=20", "-XX:MaxHeapFreeRatio=80", runJcmd.class.getName())).start());
 
         output.shouldHaveExitValue(0);
