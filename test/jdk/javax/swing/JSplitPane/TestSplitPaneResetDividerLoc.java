@@ -156,4 +156,4 @@ public class TestSplitPaneResetDividerLoc {
         dialog.setModal(false);
         dialog.setVisible(true);
     }
-} 
+}
