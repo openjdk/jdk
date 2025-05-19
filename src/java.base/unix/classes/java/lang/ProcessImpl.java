@@ -105,10 +105,12 @@ final class ProcessImpl extends Process {
                     // in a warning
                     if (lm == LaunchMechanism.VFORK) {
                         System.err.println("VFORK MODE DEPRECATED");
-                        System.err.println("The VFORK launch mechanism has been deprecated for being dangerous.\n" +
-                                           "It will be removed in a future java version. Either remove the\n" +
-                                           "jdk.lang.Process.launchMechanism property (preferred) or use FORK mode\n" +
-                                           "instead (-Djdk.lang.Process.launchMechanism=FORK).");
+                        System.err.println("""
+                                          The VFORK launch mechanism has been deprecated for being dangerous.
+                                          It will be removed in a future java version. Either remove the
+                                          jdk.lang.Process.launchMechanism property (preferred) or use FORK mode
+                                          instead (-Djdk.lang.Process.launchMechanism=FORK).
+                                          """);
                     }
                     return lm;
                 }
