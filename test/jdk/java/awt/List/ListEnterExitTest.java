@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,10 @@ public class ListEnterExitTest {
                 frame = new Frame("ListEnterExitTest");
                 list.add("Item 1");
                 list.add("Item 2");
+                list.add("Item 3");
+                list.add("Item 4");
+                list.add("Item 5");
+                list.add("Item 6");
                 list.addMouseListener(mouseEnterExitListener);
                 frame.add(list);
                 frame.setLayout(new FlowLayout());
@@ -66,19 +70,23 @@ public class ListEnterExitTest {
             });
 
             final Robot robot = new Robot();
-            robot.delay(1000);
             robot.waitForIdle();
+            robot.delay(1000);
 
             EventQueue.invokeAndWait(() -> {
                 p = list.getLocationOnScreen();
             });
-            robot.mouseMove(p.x + 10, p.y + 10);
-            robot.delay(100);
+            robot.mouseMove(p.x + 30, p.y + 40);
             robot.waitForIdle();
-            robot.mouseMove(p.x - 10, p.y - 10);
             robot.delay(100);
+
+            robot.mouseMove(p.x - 30, p.y + 40);
             robot.waitForIdle();
-            robot.mouseMove(p.x + 10, p.y + 10);
+            robot.delay(100);
+
+            robot.mouseMove(p.x + 30, p.y + 40);
+            robot.waitForIdle();
+            robot.delay(100);
 
             robot.mousePress(InputEvent.BUTTON1_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_MASK);
@@ -107,10 +115,12 @@ class MouseEnterExitListener extends MouseAdapter {
     volatile boolean passed_2 = false;
 
     public void mouseEntered(MouseEvent e) {
+        System.out.println("Mouse Entered Event");
         passed_1 = true;
     }
 
     public void mouseExited(MouseEvent e) {
+        System.out.println("Mouse Exited Event");
         passed_2 = true;
     }
 
