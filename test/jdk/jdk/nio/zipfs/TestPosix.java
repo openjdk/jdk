@@ -482,6 +482,8 @@ public class TestPosix {
      */
     @Test
     public void testDefaultReadOnly() throws IOException {
+        // create zip file using zipfs with default option
+        createTestZipFile(ZIP_FILE, ENV_DEFAULT).close();
         // check entries on zipfs with read-only options
         try (FileSystem zip = FileSystems.newFileSystem(ZIP_FILE, ENV_READ_ONLY)) {
             checkEntries(zip, checkExpects.permsInZip);
