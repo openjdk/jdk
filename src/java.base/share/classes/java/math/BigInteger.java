@@ -3833,7 +3833,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     public int getLowestSetBit() {
         int lsb = lowestSetBitPlusTwo - 2;
         if (lsb == -2) {  // lowestSetBit not initialized yet
-            lsb = signum == 0 ? -1 : numberOfTrailingZeros();
+            if (signum == 0) {
+                lsb = -1;
+            } else {
+                int tz = numberOfTrailingZeroInts();
+                lsb = tz * Integer.SIZE + Integer.numberOfTrailingZeros(mag[mag.length - 1 - tz]);
+            }
             lowestSetBitPlusTwo = lsb + 2;
         }
         return lsb;
@@ -3879,7 +3884,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 bc += Integer.bitCount(mag[i]);
 
             if (signum < 0)
-                bc += numberOfTrailingZeros() - 1;
+                bc += getLowestSetBit() - 1; // Count the trailing zeros
 
             bitCountPlusOne = bc + 1;
         }
@@ -4853,17 +4858,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         return (signum >= 0 ? magInt :
                 (n <= numberOfTrailingZeroInts() ? -magInt : ~magInt));
-    }
-
-    /**
-     * Returns the number of zero bits following the lowest-order ("rightmost")
-     * one-bit in the magnitude. Assumes {@code mag.length != 0}.
-     *
-     * @see #numberOfTrailingZeroInts
-     */
-    private int numberOfTrailingZeros() {
-        int tz = numberOfTrailingZeroInts();
-        return tz * Integer.SIZE + Integer.numberOfTrailingZeros(mag[mag.length - 1 - tz]);
     }
 
     /**
