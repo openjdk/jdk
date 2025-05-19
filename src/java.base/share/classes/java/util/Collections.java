@@ -2733,6 +2733,7 @@ public final class Collections {
                 new SynchronizedList<>(list));
     }
 
+    // used by java.util.Vector
     static <T> List<T> synchronizedList(List<T> list, Object mutex) {
         return (list instanceof RandomAccess ?
                 new SynchronizedRandomAccessList<>(list, mutex) :
@@ -2751,14 +2752,29 @@ public final class Collections {
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final List<E> list;
+        transient SynchronizedList<E> reversedView = null;
+        transient final boolean isReversed;
 
+        // constructs a forward view, using 'this' as the mutex
         SynchronizedList(List<E> list) {
             super(list);
             this.list = list;
+            this.isReversed = false;
         }
+
+        // constructs a forward view, using 'mutex' as the mutex
         SynchronizedList(List<E> list, Object mutex) {
             super(list, mutex);
             this.list = list;
+            this.isReversed = false;
+        }
+
+        // constructs the reversed view; first arg should be reversed view of backing list
+        SynchronizedList(List<E> revList, Object mutex, SynchronizedList<E> forward) {
+            super(revList, mutex);
+            this.list = revList;
+            this.reversedView = forward;
+            this.isReversed = true;
         }
 
         public boolean equals(Object o) {
@@ -2769,7 +2785,6 @@ public final class Collections {
         public int hashCode() {
             synchronized (mutex) {return list.hashCode();}
         }
-
         public E get(int index) {
             synchronized (mutex) {return list.get(index);}
         }
@@ -2782,40 +2797,96 @@ public final class Collections {
         public E remove(int index) {
             synchronized (mutex) {return list.remove(index);}
         }
-
         public int indexOf(Object o) {
             synchronized (mutex) {return list.indexOf(o);}
         }
         public int lastIndexOf(Object o) {
             synchronized (mutex) {return list.lastIndexOf(o);}
         }
-
         public boolean addAll(int index, Collection<? extends E> c) {
             synchronized (mutex) {return list.addAll(index, c);}
         }
-
         public ListIterator<E> listIterator() {
             return list.listIterator(); // Must be manually synched by user
         }
-
         public ListIterator<E> listIterator(int index) {
             return list.listIterator(index); // Must be manually synched by user
         }
-
         public List<E> subList(int fromIndex, int toIndex) {
             synchronized (mutex) {
                 return new SynchronizedList<>(list.subList(fromIndex, toIndex),
                                             mutex);
             }
         }
-
-        @Override
         public void replaceAll(UnaryOperator<E> operator) {
             synchronized (mutex) {list.replaceAll(operator);}
         }
-        @Override
         public void sort(Comparator<? super E> c) {
             synchronized (mutex) {list.sort(c);}
+        }
+        public void addFirst(E element) {
+            synchronized (mutex) {list.addFirst(element);}
+        }
+        public void addLast(E element) {
+            synchronized (mutex) {list.addLast(element);}
+        }
+        public E getFirst() {
+            synchronized (mutex) {return list.getFirst();}
+        }
+        public E getLast() {
+            synchronized (mutex) {return list.getLast();}
+        }
+        public E removeFirst() {
+            synchronized (mutex) {return list.removeFirst();}
+        }
+        public E removeLast() {
+            synchronized (mutex) {return list.removeLast();}
+        }
+
+        /**
+         * Reversed view handling. The reversedView field is transient
+         * and is initialized to null upon construction of the wrapper
+         * and upon deserialization. Reversed views are not serializable.
+         * The reversed view is created on first call to the reversed()
+         * method.
+         *
+         * There are four objects at play here:
+         *
+         * L = original list
+         * Lr = reversed view of original list
+         * S = synchronized forward wrapper: its backing list is L
+         * Sr = synchronized reversed wrapper: its backing list is Lr
+         *
+         * The reversedView field of S points to Sr and vice versa.
+         * This enables the reversed() method always to return the same
+         * object, and for S.reversed().reversed() to return S. This isn't
+         * strictly necessary, because all internal locking is done on S
+         * (which is passed around as mutex). But in the case where the
+         * client does external locking, it's good to minimize the number
+         * of different instances. Note however that external locking on
+         * the reversed wrapper Sr can't be made to work properly with
+         * internal or external locking on the forward wrapper S. (Sublists
+         * of a synchronized wrapper, reversed or not, have the same issue.)
+         *
+         * An alternative would be to have a ReversedSynchronizedList view class. However,
+         * that would require two extra classes (one RandomAccess and one not) and it would
+         * complicate the serialization story.
+         */
+        public List<E> reversed() {
+            synchronized (mutex) {
+                if (reversedView == null) {
+                    reversedView = new SynchronizedList<>(list.reversed(), mutex, this);
+                }
+                return reversedView;
+            }
+        }
+
+        @java.io.Serial
+        private void writeObject(ObjectOutputStream out) throws IOException {
+            if (isReversed) {
+                throw new java.io.NotSerializableException();
+            }
+            out.defaultWriteObject();
         }
 
         /**
@@ -2851,6 +2922,19 @@ public final class Collections {
 
         SynchronizedRandomAccessList(List<E> list, Object mutex) {
             super(list, mutex);
+        }
+
+        SynchronizedRandomAccessList(List<E> list, Object mutex, SynchronizedList<E> forward) {
+            super(list, mutex, forward);
+        }
+
+        public List<E> reversed() {
+            synchronized (mutex) {
+                if (reversedView == null) {
+                    reversedView = new SynchronizedRandomAccessList<>(list.reversed(), mutex, this);
+                }
+                return reversedView;
+            }
         }
 
         public List<E> subList(int fromIndex, int toIndex) {
