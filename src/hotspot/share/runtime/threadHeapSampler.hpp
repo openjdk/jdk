@@ -86,7 +86,7 @@ class ThreadHeapSampler {
       _rnd = 1;
     }
 
-    // Call this after _rnd is initialized to initialize _bytes_until_sample.
+    // Call this after _rnd is initialized to initialize _sample_threshold.
     pick_next_sample();
   }
 
