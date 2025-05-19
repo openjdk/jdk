@@ -25,13 +25,8 @@
 /**
  * @test
  * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
- * @requires vm.cds
- * @requires vm.cds.supports.aot.class.linking
- * @requires vm.flavor != "zero"
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @requires vm.cds.supports.aot.code.caching
  * @requires vm.flagless
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib /test/setup_aot
  * @build AOTCodeFlags JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
@@ -78,6 +73,7 @@ public class AOTCodeFlags {
 
         public List<String> getVMArgsForTestMode() {
             List<String> list = new ArrayList<String>();
+            list.add("-XX:+UnlockDiagnosticVMOptions");
             list.add(isAdapterCachingOn() ? "-XX:+AOTAdapterCaching" : "-XX:-AOTAdapterCaching");
             list.add(isStubCachingOn() ? "-XX:+AOTStubCaching" : "-XX:-AOTStubCaching");
             return list;
@@ -94,8 +90,7 @@ public class AOTCodeFlags {
             case RunMode.ASSEMBLY:
             case RunMode.PRODUCTION: {
                     List<String> args = getVMArgsForTestMode();
-                    args.addAll(List.of("-XX:+UnlockDiagnosticVMOptions",
-                                        "-Xlog:aot+codecache+init=debug",
+                    args.addAll(List.of("-Xlog:aot+codecache+init=debug",
                                         "-Xlog:aot+codecache+exit=debug"));
                     return args.toArray(new String[0]);
                 }
