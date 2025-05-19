@@ -261,18 +261,22 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * < 2 bytes > cipherSuite
      * < 1 byte > localSupportedSignAlgs entries
      *   < 2 bytes per entries > localSupportedSignAlgs
-     * < 2 bytes > preSharedKey length
-     * < length in bytes > preSharedKey
-     * < 1 byte > masterSecret length
-     *   < 1 byte > masterSecret algorithm length
-     *   < length in bytes > masterSecret algorithm
-     *   < 2 bytes > masterSecretKey length
-     *   < length in bytes> masterSecretKey
-     * < 1 byte > useExtendedMasterSecret
+     * select (protocolVersion)
+     *   case TLS13Plus:
+     *     < 1 byte > preSharedKey algorithm length
+     *     < length in bytes > preSharedKey algorithm
+     *     < 2 bytes > preSharedKey length
+     *     < length in bytes > preSharedKey
+     *   case non-TLS13Plus:
+     *     < 1 byte > masterSecret algorithm length
+     *     < length in bytes > masterSecret algorithm
+     *     < 2 bytes > masterSecretKey length
+     *     < length in bytes> masterSecretKey
+     *     < 1 byte > useExtendedMasterSecret
      * < 1 byte > identificationProtocol length
-     * < length in bytes > identificationProtocol
+     *   < length in bytes > identificationProtocol
      * < 1 byte > serverNameIndication length
-     * < length in bytes > serverNameIndication
+     *   < length in bytes > serverNameIndication
      * < 1 byte > Number of requestedServerNames entries
      *   < 1 byte > ServerName length
      *   < length in bytes > ServerName
@@ -286,15 +290,16 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *   < length in bytes > peer host
      * < 2 bytes> peer port
      * < 1 byte > Number of Peer Certificate entries
-     * < 4 bytes > Peer certificate length
-     * < length in bytes> Peer certificate
+     *   < 4 bytes > Peer certificate length
+     *   < length in bytes> Peer certificate
      * < 1 byte > Number of Local Certificate algorithms
-     * < 1 byte > Local Certificate algorithm length
-     *   < length in bytes> Local Certificate algorithm name
+     *   < 1 byte > Local Certificate algorithm length
+     *   < length in bytes> Local Certificate algorithm
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
         int len;
+        byte[] b;
         boundValues = new ConcurrentHashMap<>();
         this.protocolVersion =
                 ProtocolVersion.valueOf(Record.getInt16(buf));
@@ -315,26 +320,34 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
         this.localSupportedSignAlgs = Collections.unmodifiableCollection(list);
 
-        // PSK
-        byte[] b = Record.getBytes16(buf);
-        if (b.length > 0) {
-            b = Record.getBytes16(buf);
-            this.preSharedKey = new SecretKeySpec(b, "TlsMasterSecret");
-        } else {
-            this.preSharedKey = null;
-        }
+        if (protocolVersion.useTLS13PlusSpec()) {
+            // Pre-shared key algorithm
+            b = Record.getBytes8(buf);
+            if (b.length > 0) {
+                String alg = new String(b);
+                // Pre-shared key
+                b = Record.getBytes16(buf);
+                this.preSharedKey = new SecretKeySpec(b, alg);
+            } else {
+                this.preSharedKey = null;
+            }
 
-        // Master secret length of secret key algorithm  (one byte)
-        b = Record.getBytes8(buf);
-        if (b.length > 0) {
-            b = Record.getBytes16(buf);
-            this.masterSecret = new SecretKeySpec(b, "TlsMasterSecret");
+            this.useExtendedMasterSecret = false;
         } else {
-            this.masterSecret = null;
-        }
+            // Master secret key algorithm
+            b = Record.getBytes8(buf);
+            if (b.length > 0) {
+                String alg = new String(b);
+                // Master secret key
+                b = Record.getBytes16(buf);
+                this.masterSecret = new SecretKeySpec(b, alg);
+            } else {
+                this.masterSecret = null;
+            }
 
-        // Use extended master secret
-        this.useExtendedMasterSecret = (Record.getInt8(buf) != 0);
+            // Extended master secret usage.
+            this.useExtendedMasterSecret = (Record.getInt8(buf) != 0);
+        }
 
         // Identification Protocol
         b = Record.getBytes8(buf);
@@ -439,7 +452,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             localCerts = x509Possession.popCerts;
             if (localCerts == null || localCerts.length == 0) {
                 throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "No available  X.509 certificate");
+                        "No available local X.509 certificate");
             }
 
             // Use certs from cache.
@@ -498,35 +511,27 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             hos.putInt16(s.id);
         }
 
-        // PSK
-        if (preSharedKey == null ||
-                preSharedKey.getAlgorithm() == null) {
-            hos.putInt16(0);
-        } else {
-            hos.putInt16(preSharedKey.getAlgorithm().length());
-            if (preSharedKey.getAlgorithm().length() != 0) {
-                hos.write(preSharedKey.getAlgorithm().getBytes());
+        if (protocolVersion.useTLS13PlusSpec()) {
+            // PSK
+            if (preSharedKey == null ||
+                    preSharedKey.getAlgorithm() == null) {
+                hos.putInt8(0);
+            } else {
+                hos.putBytes8(preSharedKey.getAlgorithm().getBytes());
+                hos.putBytes16(preSharedKey.getEncoded());
             }
-            b = preSharedKey.getEncoded();
-            hos.putInt16(b.length);
-            hos.write(b, 0, b.length);
-        }
-
-        // Master Secret
-        if (getMasterSecret() == null ||
-                getMasterSecret().getAlgorithm() == null) {
-            hos.putInt8(0);
         } else {
-            hos.putInt8(getMasterSecret().getAlgorithm().length());
-            if (getMasterSecret().getAlgorithm().length() != 0) {
-                hos.write(getMasterSecret().getAlgorithm().getBytes());
+            // Master Secret
+            if (getMasterSecret() == null ||
+                    getMasterSecret().getAlgorithm() == null) {
+                hos.putInt8(0);
+            } else {
+                hos.putBytes8(masterSecret.getAlgorithm().getBytes());
+                hos.putBytes16(masterSecret.getEncoded());
             }
-            b = getMasterSecret().getEncoded();
-            hos.putInt16(b.length);
-            hos.write(b, 0, b.length);
-        }
 
-        hos.putInt8(useExtendedMasterSecret ? 1 : 0);
+            hos.putInt8(useExtendedMasterSecret ? 1 : 0);
+        }
 
         // Identification Protocol
         if (identificationProtocol == null) {
