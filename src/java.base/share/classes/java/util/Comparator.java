@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import java.util.function.ToDoubleFunction;
-import java.util.Comparators;
 
 /**
  * A comparison function, which imposes a <i>total ordering</i> on
@@ -187,6 +186,42 @@ public interface Comparator<T> {
      */
     default Comparator<T> reversed() {
         return Collections.reverseOrder(this);
+    }
+
+    /**
+     * Returns the greater of two values according to this comparator.
+     * If the arguments are equal with respect to this comparator,
+     * the {@code b} argument is returned.
+     *
+     * @param   a   an argument.
+     * @param   b   another argument.
+     * @return  the larger of {@code a} and {@code b} according to this comparator.
+     * @throws  ClassCastException if the collection contains elements that are
+     *          not <i>mutually comparable</i> (for example, strings and
+     *          integers).
+     *
+     * @since 25
+     */
+    default T max(T a, T b) {
+        return compare(a, b) > 0 ? a : b;
+    }
+
+    /**
+     * Returns the smaller of two values according to this comparator.
+     * If the arguments are equal with respect to this comparator,
+     * the {@code a} argument is returned.
+     *
+     * @param   a   an argument.
+     * @param   b   another argument.
+     * @return  the smaller of {@code a} and {@code b} according to this comparator.
+     * @throws  ClassCastException if the collection contains elements that are
+     *          not <i>mutually comparable</i> (for example, strings and
+     *          integers).
+     *
+     * @since 25
+     */
+    default T min(T a, T b) {
+        return compare(a, b) > 0 ? b : a;
     }
 
     /**
