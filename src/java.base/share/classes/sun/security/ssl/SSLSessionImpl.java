@@ -263,8 +263,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *   < 2 bytes per entries > localSupportedSignAlgs
      * < 2 bytes > preSharedKey length
      * < length in bytes > preSharedKey
-     * < 1 byte > pskIdentity length
-     * < length in bytes > pskIdentity
      * < 1 byte > masterSecret length
      *   < 1 byte > masterSecret algorithm length
      *   < length in bytes > masterSecret algorithm
@@ -292,7 +290,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * < length in bytes> Peer certificate
      * < 1 byte > Number of Local Certificate algorithms
      * < 1 byte > Local Certificate algorithm length
-     * < length in bytes> Local Certificate algorithm name
+     *   < length in bytes> Local Certificate algorithm name
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
@@ -324,14 +322,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             this.preSharedKey = new SecretKeySpec(b, "TlsMasterSecret");
         } else {
             this.preSharedKey = null;
-        }
-
-        // PSK identity
-        b = Record.getBytes8(buf);
-        if (b.length > 0) {
-            this.pskIdentity = b;
-        } else {
-            this.pskIdentity = null;
         }
 
         // Master secret length of secret key algorithm  (one byte)
@@ -520,14 +510,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             b = preSharedKey.getEncoded();
             hos.putInt16(b.length);
             hos.write(b, 0, b.length);
-        }
-
-        // PSK Identity
-        if (pskIdentity == null) {
-            hos.putInt8(0);
-        } else {
-            hos.putInt8(pskIdentity.length);
-            hos.write(pskIdentity, 0, pskIdentity.length);
         }
 
         // Master Secret
