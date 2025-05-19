@@ -587,18 +587,8 @@ public class InferenceContext {
 
     @Override
     public String toString() {
-        String result = "Inference vars: " + inferencevars + '\n' +
+        return "Inference vars: " + inferencevars + '\n' +
                "Undet vars: " + undetvars + '\n';
-        /*
-        // keep it for debugging
-        if (!freeTypeListeners.isEmpty()) {
-            result += "Free Listeners:\n";
-            for (Map.Entry<FreeTypeListener, List<Type>> entry : freeTypeListeners.entrySet()) {
-                result += "    " + entry.getKey().toString() + "  vars: " + entry.getValue() + '\n';
-            }
-        }
-        */
-        return result;
     }
 
     /* Method Types.capture() generates a new type every time it's applied
