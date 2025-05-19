@@ -174,7 +174,8 @@
   nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
   nonstatic_field(ConstantPool,                _cache,                                        ConstantPoolCache*)                    \
   nonstatic_field(ConstantPool,                _pool_holder,                                  InstanceKlass*)                        \
-  nonstatic_field(ConstantPool,                _operands,                                     Array<u2>*)                            \
+  nonstatic_field(ConstantPool,                _bsm_attribute_offsets,                        Array<u4>*)                            \
+  nonstatic_field(ConstantPool,                _bsm_attribute_entries,                        Array<u2>*)                            \
   nonstatic_field(ConstantPool,                _resolved_klasses,                             Array<Klass*>*)                        \
   nonstatic_field(ConstantPool,                _length,                                       int)                                   \
   nonstatic_field(ConstantPool,                _minor_version,                                u2)                                    \
@@ -189,7 +190,7 @@
   nonstatic_field(ConstantPoolCache,           _resolved_method_entries,                      Array<ResolvedMethodEntry>*)           \
   nonstatic_field(ResolvedMethodEntry,         _cpool_index,                                  u2)                                    \
   nonstatic_field(ConstantPoolCache,           _resolved_indy_entries,                        Array<ResolvedIndyEntry>*)             \
-  nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
+  nonstatic_field(ResolvedIndyEntry,           _cp_index,                                     u2)                                    \
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                ObjArrayKlass*)                        \
   nonstatic_field(InstanceKlass,               _methods,                                      Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
@@ -1481,14 +1482,6 @@
   /*********************************/                                     \
                                                                           \
   declare_constant(Symbol::max_symbol_length)                             \
-                                                                          \
-  /***********************************************/                       \
-  /* ConstantPool* layout enum for InvokeDynamic */                       \
-  /***********************************************/                       \
-                                                                          \
-  declare_constant(ConstantPool::_indy_bsm_offset)                        \
-  declare_constant(ConstantPool::_indy_argc_offset)                       \
-  declare_constant(ConstantPool::_indy_argv_offset)                       \
                                                                           \
   /***************************************/                               \
   /* JavaThreadStatus enum               */                               \

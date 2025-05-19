@@ -363,11 +363,12 @@ class VM_RedefineClasses: public VM_Operation {
   int                         _index_map_count;
   intArray *                  _index_map_p;
 
-  // _operands_index_map_count is just an optimization for knowing if
-  // _operands_index_map_p contains any entries.
-  int                         _operands_cur_length;
-  int                         _operands_index_map_count;
-  intArray *                  _operands_index_map_p;
+  // _bsm_data_index_map_count is just an optimization for knowing if
+  // _bsm_data_index_map_p contains any entries.
+  int                         _bsm_data_cur_length;   // bsm_attribute_offsets fillp
+  int                         _bsm_data_next_offset;  // bsm_attribute_entries fillp
+  int                         _bsm_data_index_map_count;
+  intArray*                   _bsm_data_index_map_p;
 
   // ptr to _class_count scratch_classes
   InstanceKlass**             _scratch_classes;
@@ -429,17 +430,17 @@ class VM_RedefineClasses: public VM_Operation {
   // Support for constant pool merging (these routines are in alpha order):
   void append_entry(const constantPoolHandle& scratch_cp, int scratch_i,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
-  void append_operand(const constantPoolHandle& scratch_cp, int scratch_bootstrap_spec_index,
+  void append_bsm_data(const constantPoolHandle& scratch_cp, int scratch_bsm_attr_entry_index,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
-  void finalize_operands_merge(const constantPoolHandle& merge_cp, TRAPS);
+  void finalize_bsm_data_merge(const constantPoolHandle& merge_cp, TRAPS);
   u2 find_or_append_indirect_entry(const constantPoolHandle& scratch_cp, int scratch_i,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
-  int find_or_append_operand(const constantPoolHandle& scratch_cp, int scratch_bootstrap_spec_index,
+  int find_or_append_bsm_data(const constantPoolHandle& scratch_cp, int scratch_bsm_attr_entry_index,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
-  u2 find_new_index(int old_index);
-  int find_new_operand_index(int old_bootstrap_spec_index);
-  void map_index(const constantPoolHandle& scratch_cp, int old_index, int new_index);
-  void map_operand_index(int old_bootstrap_spec_index, int new_bootstrap_spec_index);
+  u2 find_new_cp_index(int old_cp_index);
+  int find_new_bsm_index(int old_bsme_index);
+  void map_cp_index(const constantPoolHandle& scratch_cp, int old_index, int new_index);
+  void map_bsm_index(int old_bsme_index, int new_bsme_index);
   bool merge_constant_pools(const constantPoolHandle& old_cp,
     const constantPoolHandle& scratch_cp, constantPoolHandle& merge_cp_p,
     int& merge_cp_length_p, TRAPS);

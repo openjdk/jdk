@@ -191,13 +191,14 @@ u2* ConstMethod::last_u2_element() const {
 u2* ConstMethod::generic_signature_index_addr() const {
   // Located at the end of the constMethod.
   assert(has_generic_signature(), "called only if generic signature exists");
-  return last_u2_element();
+  int offset = 0;  // this is always the last u2 (before possible pointers)
+  return last_u2_element() - offset;
 }
 
 u2* ConstMethod::method_parameters_length_addr() const {
   assert(has_method_parameters(), "called only if table is present");
-  return has_generic_signature() ? (last_u2_element() - 1) :
-                                    last_u2_element();
+  int offset = has_generic_signature() ? 1 : 0;
+  return last_u2_element() - offset;
 }
 
 u2* ConstMethod::checked_exceptions_length_addr() const {

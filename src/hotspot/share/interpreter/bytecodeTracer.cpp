@@ -284,7 +284,7 @@ void BytecodePrinter::print_dynamic(int cp_index, outputStream* st) {
     return;
   }
 
-  int bsm = constants->bootstrap_method_ref_index_at(cp_index);
+  int bsm = constants->bootstrap_methods_attribute_index(cp_index);
   st->print(" bsm=%d", bsm);
 
   Symbol* name = constants->uncached_name_ref_at(cp_index);
@@ -310,7 +310,7 @@ void BytecodePrinter::print_invokedynamic(int indy_index, int cp_index, outputSt
 // cp_index: must be the cp_index of a JVM_CONSTANT_{Dynamic, DynamicInError, InvokeDynamic}
 void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
   assert(constants()->tag_at(cp_index).has_bootstrap(), "must be");
-  int bsm = constants()->bootstrap_method_ref_index_at(cp_index);
+  int bsm = constants()->bootstrap_methods_attribute_index(cp_index);
   const char* ref_kind = "";
   switch (constants()->method_handle_ref_kind_at(bsm)) {
   case JVM_REF_getField         : ref_kind = "REF_getField"; break;
@@ -326,12 +326,13 @@ void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
   }
   st->print("  BSM: %s", ref_kind);
   print_field_or_method(constants()->method_handle_index_at(bsm), st);
-  int argc = constants()->bootstrap_argument_count_at(cp_index);
+  BSMAttributeEntry* bsme = constants()->bootstrap_methods_attribute_entry(cp_index);
+  int argc = bsme->argument_count();
   st->print("  arguments[%d] = {", argc);
   if (argc > 0) {
     st->cr();
     for (int arg_i = 0; arg_i < argc; arg_i++) {
-      int arg = constants()->bootstrap_argument_index_at(cp_index, arg_i);
+      int arg = bsme->argument_index(arg_i);
       st->print("    ");
       print_constant(arg, st);
     }

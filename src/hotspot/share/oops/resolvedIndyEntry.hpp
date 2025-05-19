@@ -46,7 +46,7 @@ class ResolvedIndyEntry {
 
   Method* _method;               // Adapter method for indy call
   u2 _resolved_references_index; // Index of resolved references array that holds the appendix oop
-  u2 _cpool_index;               // Constant pool index
+  u2 _cp_index;                  // Constant pool index
   u2 _number_of_parameters;      // Number of arguments for adapter method
   u1 _return_type;               // Adapter method return type
   u1 _flags;                     // Flags: [0000|00|has_appendix|resolution_failed]
@@ -55,17 +55,17 @@ public:
   ResolvedIndyEntry() :
     _method(nullptr),
     _resolved_references_index(0),
-    _cpool_index(0),
+    _cp_index(0),
     _number_of_parameters(0),
     _return_type(0),
     _flags(0) {}
-  ResolvedIndyEntry(u2 resolved_references_index, u2 cpool_index) :
+  ResolvedIndyEntry(int resolved_references_index, int cpool_index) :
     _method(nullptr),
-    _resolved_references_index(resolved_references_index),
-    _cpool_index(cpool_index),
     _number_of_parameters(0),
     _return_type(0),
-    _flags(0) {}
+    _flags(0) {
+    init(resolved_references_index, cpool_index);
+  }
 
   // Bit shift to get flags
   enum {
@@ -76,7 +76,7 @@ public:
   // Getters
   Method* method()               const { return Atomic::load_acquire(&_method); }
   u2 resolved_references_index() const { return _resolved_references_index;     }
-  u2 constant_pool_index()       const { return _cpool_index;                   }
+  u2 constant_pool_index()       const { return _cp_index;   }
   u2 num_parameters()            const { return _number_of_parameters;          }
   u1 return_type()               const { return _return_type;                   }
   bool is_resolved()             const { return method() != nullptr;            }
@@ -90,10 +90,19 @@ public:
   void print_on(outputStream* st) const;
 
   // Initialize with fields available before resolution
-  void init(u2 resolved_references_index, u2 cpool_index) {
-    _resolved_references_index = resolved_references_index;
-    _cpool_index = cpool_index;
+  void init(int resolved_references_index, int cpool_index) {
+    _resolved_references_index = checked_cast<u2>(resolved_references_index);
+    assert(cpool_index != 0, "");
+    _cp_index = checked_cast<u2>(cpool_index);
   }
+
+  // Symbolic reference queries
+  u2 name_index(ConstantPool* cp) const;
+  u2 signature_index(ConstantPool* cp) const;
+  u2 bsme_index(ConstantPool* cp) const;
+  Symbol* name(ConstantPool* cp) const            { return cp->symbol_at(name_index(cp)); }
+  Symbol* signature(ConstantPool* cp) const       { return cp->symbol_at(signature_index(cp)); }
+  BSMAttributeEntry* bsme(ConstantPool* cp) const { return cp->bsm_attribute_entry(bsme_index(cp)); }
 
   void set_num_parameters(int value) {
     assert(_number_of_parameters == 0 || _number_of_parameters == value,
@@ -104,9 +113,9 @@ public:
   }
 
   // Populate structure with resolution information
-  void fill_in(Method* m, u2 num_params, u1 return_type, bool has_appendix) {
-    set_num_parameters(num_params);
-    _return_type = return_type;
+  void fill_in(Method* m, bool has_appendix) {
+    set_num_parameters(m->size_of_parameters());
+    _return_type = as_TosState(m->result_type());
     set_has_appendix(has_appendix);
     // Set the method last since it is read lock free.
     // Resolution is indicated by whether or not the method is set.
