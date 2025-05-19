@@ -2457,6 +2457,18 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
   }
+  // Special cases
+  switch (opcode) {
+    // Reductions only support INT at the moment.
+    case Op_AddReductionVI:
+    case Op_MulReductionVI:
+    case Op_AndReductionV:
+    case Op_OrReductionV:
+    case Op_XorReductionV:
+    case Op_MinReductionV:
+    case Op_MaxReductionV:
+      return bt == T_INT;
+  }
   return true; // Per default match rules are supported.
 }
 
