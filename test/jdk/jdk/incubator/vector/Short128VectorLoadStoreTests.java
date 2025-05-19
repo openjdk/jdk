@@ -714,7 +714,9 @@ public class Short128VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
            }
        }
 
-       Assert.assertEquals(shuffleFromArray(r, 0), shuffleFromArray(a, 0));
+       for (int i = 0; i < a.length; i++) {
+          Assert.assertEquals(testPartiallyWrapIndex(SPECIES,a[i]), r[i]);
+       }
 
    }
 
@@ -787,9 +789,11 @@ public class Short128VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
                shuffle.intoMemorySegment(r, i, bo);
            }
        }
-       for (int i = 0; i < l; i += s) {
-           VectorShuffle<Short> shuffle = VectorShuffle.fromMemorySegment(SPECIES, r, i, bo);
-           Assert.assertEquals(shuffle, VectorShuffle.fromMemorySegment(SPECIES, a, i, bo));
+
+       for (int i = 0; i < l / 4; i++) {
+           int ai = a.getAtIndex(ValueLayout.JAVA_INT_UNALIGNED.withOrder(bo), i);
+           int ri = r.getAtIndex(ValueLayout.JAVA_INT_UNALIGNED.withOrder(bo), i);
+           Assert.assertEquals(testPartiallyWrapIndex(SPECIES, ai), ri);
        }
    }
 
