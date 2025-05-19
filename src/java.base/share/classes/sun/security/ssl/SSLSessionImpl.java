@@ -252,7 +252,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.localCerts = baseSession.localCerts;
         this.peerCerts = baseSession.peerCerts;
         this.statusResponses = baseSession.statusResponses;
-        this.exporterMasterSecret = baseSession.exporterMasterSecret;
+        this.resumptionMasterSecret = baseSession.resumptionMasterSecret;
         this.context = baseSession.context;
         this.negotiatedMaxFragLen = baseSession.negotiatedMaxFragLen;
         this.maximumPacketSize = baseSession.maximumPacketSize;
@@ -721,27 +721,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     SecretKey getMasterSecret() {
         return masterSecret;
-    }
-
-    /**
-     * Returns the exporter master secret
-     */
-    SecretKey getExporterMasterSecret() {
-        return exporterMasterSecret;
-    }
-
-    /**
-     * Returns the client's RandomCookie
-     */
-    RandomCookie getClientRandom() {
-        return clientRandom;
-    }
-
-    /**
-     * Returns the server's RandomCookie
-     */
-    RandomCookie getServerRandom() {
-        return serverRandom;
     }
 
     SecretKey getResumptionMasterSecret() {
