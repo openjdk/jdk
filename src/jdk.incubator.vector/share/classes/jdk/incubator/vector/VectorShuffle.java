@@ -335,6 +335,7 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      * }
      * VectorShuffle<E> r = VectorShuffle.fromArray(species, ar, 0);
      * }</pre>
+     *
      * @implNote
      * This operation is likely to be more efficient if
      * the specified byte order is the same as
@@ -342,7 +343,6 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      * the platform native order},
      * since this method will not need to reorder
      * the bytes of lane values.
-     *
      *
      * @param species the shuffle species
      * @param ms the source indexes in memory which the shuffle will draw from
