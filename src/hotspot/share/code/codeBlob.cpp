@@ -398,6 +398,7 @@ BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, int size)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
+  Thread::current()->maybe_enable_write();
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   BufferBlob* blob = nullptr;

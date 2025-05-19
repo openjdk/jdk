@@ -141,9 +141,12 @@ enum ThreadPriority {        // JLS 20.20.1-3
 };
 
 enum WXMode {
-  WXWrite,
-  WXExec
+  WXWrite = 0,
+  WXExec = 1,
+  WXArmedForWrite = 2,
 };
+
+bool jit_exec_enabled();
 
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().

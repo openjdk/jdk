@@ -29,6 +29,7 @@
 #include "code/relocInfo.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
@@ -38,7 +39,8 @@
 
 template <typename T>
 static inline void put_native(address p, T x) {
-    memcpy((void*)p, &x, sizeof x);
+  Thread::current()->maybe_enable_write();
+  memcpy((void*)p, &x, sizeof x);
 }
 
 class PhaseCFG;
@@ -221,6 +223,7 @@ class CodeSection {
 
   // Code emission
   void emit_int8(uint8_t x1) {
+    Thread::current()->maybe_enable_write();
     address curr = end();
     *((uint8_t*)  curr++) = x1;
     set_end(curr);
@@ -231,6 +234,7 @@ class CodeSection {
 
   void emit_int16(uint16_t x) { emit_native(x); }
   void emit_int16(uint8_t x1, uint8_t x2) {
+    Thread::current()->maybe_enable_write();
     address curr = end();
     *((uint8_t*)  curr++) = x1;
     *((uint8_t*)  curr++) = x2;
@@ -238,6 +242,7 @@ class CodeSection {
   }
 
   void emit_int24(uint8_t x1, uint8_t x2, uint8_t x3)  {
+    Thread::current()->maybe_enable_write();
     address curr = end();
     *((uint8_t*)  curr++) = x1;
     *((uint8_t*)  curr++) = x2;
@@ -247,6 +252,7 @@ class CodeSection {
 
   void emit_int32(uint32_t x) { emit_native(x); }
   void emit_int32(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4)  {
+    Thread::current()->maybe_enable_write();
     address curr = end();
     *((uint8_t*)  curr++) = x1;
     *((uint8_t*)  curr++) = x2;

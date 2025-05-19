@@ -26,6 +26,12 @@
 #ifndef CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP
 #define CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP
 
+#define pthread_jit_write_protect_np_wrapper(arg)                       \
+do {                                                                    \
+  /* fprintf(stderr, "pthread_jit_write_protect_np(%s)\n", arg == WXWrite ? "WXWrite" : "WXExec"); */ \
+  pthread_jit_write_protect_np(arg);                                    \
+} while (0)
+
 const int StackAlignmentInBytes  = 16;
 const size_t pd_segfault_address = 1024;
 

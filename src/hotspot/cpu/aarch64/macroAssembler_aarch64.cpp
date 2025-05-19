@@ -271,7 +271,9 @@ class Patcher : public RelocActions {
   virtual reloc_insn adrpMovk() { return &Patcher::adrpMovk_impl; }
 
 public:
-  Patcher(address insn_addr) : RelocActions(insn_addr) {}
+  Patcher(address insn_addr) : RelocActions(insn_addr) {
+    Thread::current()->maybe_enable_write();
+  }
 
   virtual int unconditionalBranch(address insn_addr, address &target) {
     intptr_t offset = (target - insn_addr) >> 2;

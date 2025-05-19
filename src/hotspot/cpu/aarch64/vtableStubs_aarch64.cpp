@@ -47,6 +47,8 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int 
 #endif
 
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
+  Thread::current()->maybe_enable_write();
+
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
   VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
@@ -137,6 +139,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
 
 VtableStub* VtableStubs::create_itable_stub(int itable_index) {
+  Thread::current()->maybe_enable_write();
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
   VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);

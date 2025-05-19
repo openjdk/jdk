@@ -199,6 +199,10 @@ NOINLINE frame os::current_frame() {
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
+  if (sig == SIGBUS && thread->maybe_enable_write()) {
+    return true;
+  }
+  
   // Enable WXWrite: this function is called by the signal handler at arbitrary
   // point of execution.
   ThreadWXEnable wx(WXWrite, thread);
@@ -488,8 +492,26 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
+THREAD_LOCAL bool _jit_exec_enabled;
+bool jit_exec_enabled() {
+  return _jit_exec_enabled;;
+}
+
 void os::current_thread_enable_wx(WXMode mode) {
-  pthread_jit_write_protect_np(mode == WXExec);
+  bool exec_enabled = mode != WXWrite;
+  if (exec_enabled != jit_exec_enabled()) {
+    pthread_jit_write_protect_np_wrapper(exec_enabled);
+  }
+  _jit_exec_enabled = exec_enabled;
+}
+
+bool Thread::maybe_enable_write() {
+  if (jit_exec_enabled()) {
+    os::current_thread_enable_wx(WXWrite);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 static inline void atomic_copy64(const volatile void *src, volatile void *dst) {

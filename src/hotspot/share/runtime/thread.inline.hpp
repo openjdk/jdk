@@ -75,6 +75,7 @@ inline void Thread::init_wx() {
   assert(this == Thread::current(), "should only be called for current thread");
   assert(!_wx_init, "second init");
   _wx_state = WXWrite;
+  pthread_jit_write_protect_np_wrapper(false);
   os::current_thread_enable_wx(_wx_state);
   DEBUG_ONLY(_wx_init = true);
 }
@@ -84,8 +85,17 @@ inline WXMode Thread::enable_wx(WXMode new_state) {
   assert(_wx_init, "should be inited");
   WXMode old = _wx_state;
   if (_wx_state != new_state) {
-    _wx_state = new_state;
-    os::current_thread_enable_wx(new_state);
+  _wx_state = new_state;
+  switch (new_state) {
+      case WXWrite:
+      case WXExec:
+        os::current_thread_enable_wx(new_state);
+        break;
+      case WXArmedForWrite:
+        // assert(old == WXExec, "must be");
+        break;
+      default: ShouldNotReachHere();  break;
+    }
   }
   return old;
 }

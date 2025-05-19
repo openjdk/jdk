@@ -96,11 +96,11 @@ protected:
   address ptr_at(int offset) const { return *(address*)addr_at(offset); }
   oop oop_at(int offset) const { return *(oop*)addr_at(offset); }
 
-  void set_char_at(int offset, char c) { *addr_at(offset) = (u_char)c; }
-  void set_int_at(int offset, jint i) { *(jint*)addr_at(offset) = i; }
-  void set_uint_at(int offset, jint i) { *(juint*)addr_at(offset) = i; }
-  void set_ptr_at(int offset, address ptr) { *(address*)addr_at(offset) = ptr; }
-  void set_oop_at(int offset, oop o) { *(oop*)addr_at(offset) = o; }
+  void set_char_at(int offset, char c) { Thread::current()->maybe_enable_write(); *addr_at(offset) = (u_char)c; }
+  void set_int_at(int offset, jint i) { Thread::current()->maybe_enable_write(); *(jint*)addr_at(offset) = i; }
+  void set_uint_at(int offset, jint i) { Thread::current()->maybe_enable_write(); *(juint*)addr_at(offset) = i; }
+  void set_ptr_at(int offset, address ptr) { Thread::current()->maybe_enable_write(); *(address*)addr_at(offset) = ptr; }
+  void set_oop_at(int offset, oop o) { Thread::current()->maybe_enable_write(); *(oop*)addr_at(offset) = o; }
 
   void wrote(int offset);
 

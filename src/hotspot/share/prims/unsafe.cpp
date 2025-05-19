@@ -393,7 +393,7 @@ UNSAFE_ENTRY_SCOPED(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject
   {
     GuardUnsafeAccess guard(thread);
     if (StubRoutines::unsafe_setmemory() != nullptr) {
-      MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
+      // thread->maybe_enable_write();
       StubRoutines::UnsafeSetMemory_stub()(p, sz, value);
     } else {
       Copy::fill_to_memory_atomic(p, sz, value);
@@ -412,7 +412,7 @@ UNSAFE_ENTRY_SCOPED(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobjec
   {
     GuardUnsafeAccess guard(thread);
     if (StubRoutines::unsafe_arraycopy() != nullptr) {
-      MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
+      // MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
       StubRoutines::UnsafeArrayCopy_stub()(src, dst, sz);
     } else {
       Copy::conjoint_memory_atomic(src, dst, sz);

@@ -97,6 +97,8 @@ CodeBuffer::CodeBuffer(CodeBlob* blob) DEBUG_ONLY(: Scrubber(this, sizeof(*this)
 }
 
 void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
+  Thread::current()->maybe_enable_write();
+
   // Always allow for empty slop around each section.
   int slop = (int) CodeSection::end_slop();
 
