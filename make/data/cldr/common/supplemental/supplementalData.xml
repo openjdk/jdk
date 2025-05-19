@@ -1816,6 +1816,8 @@ XXX Code for transations where no currency is involved
 		<language type="mwl" scripts="Latn"/>
 		<language type="mwr" scripts="Deva"/>
 		<language type="mwv" scripts="Latn"/>
+		<language type="mww" scripts="Latn"/>
+		<language type="mww" scripts="Hmnp" alt="secondary"/>
 		<language type="mxc" scripts="Latn"/>
 		<language type="my" scripts="Mymr"/>
 		<language type="myv" scripts="Cyrl"/>
@@ -2587,6 +2589,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="nxq" populationPercent="0.024"/>	<!--Naxi-->
 			<languagePopulation type="khb" populationPercent="0.019" references="R1094"/>	<!--Lü-->
 			<languagePopulation type="tdd" populationPercent="0.019"/>	<!--Tai Nüa-->
+			<languagePopulation type="mww" populationPercent="0.0165"/>	<!--Hmong Daw-->
 			<languagePopulation type="lcp" populationPercent="0.0058"/>	<!--Western Lawa-->
 			<languagePopulation type="en" populationPercent="0.0045"/>	<!--English-->
 			<languagePopulation type="hnj" populationPercent="0.004" references="R1107"/>	<!--Hmong Njua-->
@@ -4163,6 +4166,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="vi" populationPercent="0.34"/>	<!--Vietnamese-->
 			<languagePopulation type="ko" populationPercent="0.3"/>	<!--Korean-->
 			<languagePopulation type="ru" populationPercent="0.24"/>	<!--Russian-->
+			<languagePopulation type="mww" populationPercent="0.066"/>	<!--Hmong Daw-->
 			<languagePopulation type="nv" populationPercent="0.05"/>	<!--Navajo-->
 			<languagePopulation type="yi" populationPercent="0.049" references="R1262"/>	<!--Yiddish-->
 			<languagePopulation type="pdc" populationPercent="0.039"/>	<!--Pennsylvania German-->

@@ -83,7 +83,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%fullShort" value="(full|short)"/>
 		<coverageVariable key="%futurePast" value="(future|past)"/>
 		<coverageVariable key="%fwTypes" value="(fri|mon|sat|sun|thu|tue|wed)"/>
-		<coverageVariable key="%timeFormatItems" value="(E?(H|h)(ms?)?|ms)"/>
+		<coverageVariable key="%timeFormatItems" value="(E?(H|h)(ms?)?|ms|(H|h)v)"/>
 		<coverageVariable key="%timeFormatItemsDayPer" value="(E?Bh(ms?)?)"/>
 		<coverageVariable key="%dayFieldTypes" value="(era|year|year-short|year-narrow|quarter|quarter-short|quarter-narrow|month|month-short|month-narrow|week|week-short|week-narrow|day|day-short|day-narrow|weekday|hour|hour-short|hour-narrow|minute|minute-short|minute-narrow|second|second-short|second-narrow|dayperiod|zone)"/>
 		<coverageVariable key="%fieldTypesForModern" value="(era-short|era-narrow|weekOfMonth|weekOfMonth-short|weekOfMonth-narrow|dayOfYear|dayOfYear-short|dayOfYear-narrow|weekday-short|weekday-narrow|weekdayOfMonth|weekdayOfMonth-short|weekdayOfMonth-narrow|dayperiod-short|dayperiod-narrow|zone-short|zone-narrow)"/>
@@ -162,7 +162,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%territory40" value="(BR|CN|DE|GB|FR|IN|IT|JP|RU|US)"/>
 		<coverageVariable key="%territory60" value="(AT|AU|BE|CA|CH|DK|ES|FI|GR|HK|ID|IE|KR|MX|NL|NO|PL|PT|SA|SE|TH|TR|TW|ZA|XA|XB)"/>
 		<coverageVariable key="%territory60_EU" value="(CZ|EE|HU|LT|LU|LV|MT|SI|SK)"/>
-		<coverageVariable key="%territory80" value="(419|202|0(0[12359]|1[1345789]|2[19]|3[0459]|5[347]|61)|1(4[235]|5[01459])|A[CDEFGILMOQRSWXZ]|B[ABDFGHIJLMNOQSTUVWYZ]|C[CDFGIKLMOPRUVWXYZ]|D[GJMOZ]|E[ACEGHRTUZ]|F[JKMO]|G[ADEFGHILMNPQSTUWY]|H[MNRTU]|I[CLMOQRS]|J[EMO]|K[EGHIMNPWYZ]|L[ABCIKRSTUVY]|M[ACDEFGHKLMNOPQRSTUVWYZ]|N[ACEFGIPRUZ]|OM|P[AEFGHKMNRSWY]|Q[AO]|R[EOSW]|S[BCDGHIJKLMNORSTVXYZ]|T[ACDFGJKLMNOPTVZ]|U[AGMNYZ]|V[ACEGINU]|W[FS]|XK|Y[ET]|Z[MW])"/>
+		<coverageVariable key="%territory80" value="(419|202|0(0[12359]|1[1345789]|2[19]|3[0459]|5[347]|61)|1(4[235]|5[01459])|A[CDEFGILMOQRSWXZ]|B[ABDFGHIJLMNOQSTUVWYZ]|C[CDFGIKLMOPQRUVWXYZ]|D[GJMOZ]|E[ACEGHRTUZ]|F[JKMO]|G[ADEFGHILMNPQSTUWY]|H[MNRTU]|I[CLMOQRS]|J[EMO]|K[EGHIMNPWYZ]|L[ABCIKRSTUVY]|M[ACDEFGHKLMNOPQRSTUVWYZ]|N[ACEFGIPRUZ]|OM|P[AEFGHKMNRSWY]|Q[AO]|R[EOSW]|S[BCDGHIJKLMNORSTVXYZ]|T[ACDFGJKLMNOPTVZ]|U[AGMNYZ]|V[ACEGINU]|W[FS]|XK|Y[ET]|Z[MW])"/>
 		<coverageVariable key="%territory80short" value="(GB|HK|MO|PS|SA|US)"/>
 		<coverageVariable key="%territory100" value="AN"/>
 		<coverageVariable key="%timeZones" value="(Africa|America|Antarctica|Arctic|Asia|Australia|Atlantic|Europe|Indian|Pacific)(/[A-Za-z_\-]++){1,2}"/>
