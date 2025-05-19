@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,8 +457,8 @@ class InvokerBytecodeGenerator {
                 return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);
             }
             case DELEGATE:                  return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);
-            case ZERO:                      // fall-through
-            case IDENTITY: {
+            case IDENTITY:                  // fall-through
+            case CONSTANT: {
                 name = name + "_" + form.returnType().basicTypeChar();
                 return resolveFrom(name, invokerType, LambdaForm.Holder.class);
             }
@@ -468,24 +468,30 @@ class InvokerBytecodeGenerator {
             case LINK_TO_TARGET_METHOD:     // fall-through
             case GENERIC_INVOKER:           // fall-through
             case GENERIC_LINKER:            return resolveFrom(name, invokerType, Invokers.Holder.class);
-            case GET_REFERENCE:             // fall-through
-            case GET_BOOLEAN:               // fall-through
-            case GET_BYTE:                  // fall-through
-            case GET_CHAR:                  // fall-through
-            case GET_SHORT:                 // fall-through
-            case GET_INT:                   // fall-through
-            case GET_LONG:                  // fall-through
-            case GET_FLOAT:                 // fall-through
-            case GET_DOUBLE:                // fall-through
-            case PUT_REFERENCE:             // fall-through
-            case PUT_BOOLEAN:               // fall-through
-            case PUT_BYTE:                  // fall-through
-            case PUT_CHAR:                  // fall-through
-            case PUT_SHORT:                 // fall-through
-            case PUT_INT:                   // fall-through
-            case PUT_LONG:                  // fall-through
-            case PUT_FLOAT:                 // fall-through
-            case PUT_DOUBLE:                // fall-through
+            case FIELD_ACCESS:              // fall-through
+            case FIELD_ACCESS_INIT:         // fall-through
+            case VOLATILE_FIELD_ACCESS:     // fall-through
+            case VOLATILE_FIELD_ACCESS_INIT:// fall-through
+            case FIELD_ACCESS_B:              // fall-through
+            case FIELD_ACCESS_INIT_B:         // fall-through
+            case VOLATILE_FIELD_ACCESS_B:     // fall-through
+            case VOLATILE_FIELD_ACCESS_INIT_B:// fall-through
+            case FIELD_ACCESS_C:              // fall-through
+            case FIELD_ACCESS_INIT_C:         // fall-through
+            case VOLATILE_FIELD_ACCESS_C:     // fall-through
+            case VOLATILE_FIELD_ACCESS_INIT_C:// fall-through
+            case FIELD_ACCESS_S:              // fall-through
+            case FIELD_ACCESS_INIT_S:         // fall-through
+            case VOLATILE_FIELD_ACCESS_S:     // fall-through
+            case VOLATILE_FIELD_ACCESS_INIT_S:// fall-through
+            case FIELD_ACCESS_Z:              // fall-through
+            case FIELD_ACCESS_INIT_Z:         // fall-through
+            case VOLATILE_FIELD_ACCESS_Z:     // fall-through
+            case VOLATILE_FIELD_ACCESS_INIT_Z:// fall-through
+            case FIELD_ACCESS_CAST:              // fall-through
+            case FIELD_ACCESS_INIT_CAST:         // fall-through
+            case VOLATILE_FIELD_ACCESS_CAST:     // fall-through
+            case VOLATILE_FIELD_ACCESS_INIT_CAST:// fall-through
             case DIRECT_NEW_INVOKE_SPECIAL: // fall-through
             case DIRECT_INVOKE_INTERFACE:   // fall-through
             case DIRECT_INVOKE_SPECIAL:     // fall-through
@@ -630,10 +636,6 @@ class InvokerBytecodeGenerator {
                                 case IDENTITY:
                                     assert(name.arguments.length == 1);
                                     emitPushArguments(cob, name, 0);
-                                    continue;
-                                case ZERO:
-                                    assert(name.arguments.length == 0);
-                                    cob.loadConstant((ConstantDesc)name.type.basicTypeWrapper().zero());
                                     continue;
                                 case NONE:
                                     // no intrinsic associated

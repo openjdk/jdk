@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -297,9 +297,9 @@ void printDebug(const char *format, ...);
 #define CLASS_SKIPJACK_PRIVATE_WRAP_PARAMS "sun/security/pkcs11/wrapper/CK_SKIPJACK_PRIVATE_WRAP_PARAMS"
 #define CLASS_SKIPJACK_RELAYX_PARAMS "sun/security/pkcs11/wrapper/CK_SKIPJACK_RELAYX_PARAMS"
 #define CLASS_KEY_WRAP_SET_OAEP_PARAMS "sun/security/pkcs11/wrapper/CK_KEY_WRAP_SET_OAEP_PARAMS"
-#define CLASS_KEY_DERIVATION_STRING_DATA "sun/security/pkcs11/wrapper/CK_KEY_DERIVATION_STRING_DATA"
 */
 
+#define CLASS_KEY_DERIVATION_STRING_DATA "sun/security/pkcs11/wrapper/CK_KEY_DERIVATION_STRING_DATA"
 #define CLASS_SSL3_RANDOM_DATA "sun/security/pkcs11/wrapper/CK_SSL3_RANDOM_DATA"
 // CLASS_SSL3_RANDOM_DATA is used by CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS
 #define CLASS_SSL3_KEY_MAT_OUT "sun/security/pkcs11/wrapper/CK_SSL3_KEY_MAT_OUT"
@@ -310,6 +310,7 @@ void printDebug(const char *format, ...);
 #define CLASS_TLS12_KEY_MAT_PARAMS "sun/security/pkcs11/wrapper/CK_TLS12_KEY_MAT_PARAMS"
 #define CLASS_TLS_PRF_PARAMS "sun/security/pkcs11/wrapper/CK_TLS_PRF_PARAMS"
 #define CLASS_TLS_MAC_PARAMS "sun/security/pkcs11/wrapper/CK_TLS_MAC_PARAMS"
+#define CLASS_HKDF_PARAMS "sun/security/pkcs11/wrapper/CK_HKDF_PARAMS"
 
 /* function to update the CK_NSS_GCM_PARAMS in mechanism pointer with
  * CK_GCM_PARAMS
@@ -394,7 +395,8 @@ CK_PBE_PARAMS_PTR jPbeParamToCKPbeParamPtr(JNIEnv *env, jobject jParam, CK_ULONG
 CK_VOID_PTR jPkcs5Pbkd2ParamToCKPkcs5Pbkd2ParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
 CK_SSL3_MASTER_KEY_DERIVE_PARAMS_PTR jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
 CK_SSL3_KEY_MAT_PARAMS_PTR jSsl3KeyMatParamToCKSsl3KeyMatParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
-CK_KEY_DERIVATION_STRING_DATA jKeyDerivationStringDataToCKKeyDerivationStringData(JNIEnv *env, jobject jParam);
+CK_HKDF_PARAMS_PTR jHkdfParamsToCKHkdfParamsPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
+CK_KEY_DERIVATION_STRING_DATA_PTR jKeyDerivationStringDataToCKKeyDerivationStringDataPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
 CK_RSA_PKCS_PSS_PARAMS_PTR jRsaPkcsPssParamToCKRsaPkcsPssParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
 CK_ECDH1_DERIVE_PARAMS_PTR jEcdh1DeriveParamToCKEcdh1DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
 CK_ECDH2_DERIVE_PARAMS_PTR jEcdh2DeriveParamToCKEcdh2DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);

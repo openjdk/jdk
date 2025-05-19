@@ -65,24 +65,40 @@ import java.util.Objects;
  * new shared secret and key encapsulation message.
  * <p>
  *
- * Example:
+ * Example operation using a fictitious {@code KEM} algorithm {@code ABC}:
  * {@snippet lang = java:
- *    // Receiver side
- *    var kpg = KeyPairGenerator.getInstance("X25519");
- *    var kp = kpg.generateKeyPair();
+ *     // Receiver side
+ *     KeyPairGenerator g = KeyPairGenerator.getInstance("ABC");
+ *     KeyPair kp = g.generateKeyPair();
+ *     publishKey(kp.getPublic());
  *
- *    // Sender side
- *    var kem1 = KEM.getInstance("DHKEM");
- *    var sender = kem1.newEncapsulator(kp.getPublic());
- *    var encapsulated = sender.encapsulate();
- *    var k1 = encapsulated.key();
+ *     // Sender side
+ *     KEM senderKEM = KEM.getInstance("ABC");
+ *     PublicKey receiverPublicKey = retrieveKey();
+ *     ABCKEMParameterSpec senderSpec = new ABCKEMParameterSpec(args);
+ *     KEM.Encapsulator e = senderKEM.newEncapsulator(
+ *             receiverPublicKey, senderSpec, null);
+ *     KEM.Encapsulated enc = e.encapsulate();
+ *     SecretKey senderSecret = enc.key();
  *
- *    // Receiver side
- *    var kem2 = KEM.getInstance("DHKEM");
- *    var receiver = kem2.newDecapsulator(kp.getPrivate());
- *    var k2 = receiver.decapsulate(encapsulated.encapsulation());
+ *     sendBytes(enc.encapsulation());
+ *     sendBytes(enc.params());
  *
- *    assert Arrays.equals(k1.getEncoded(), k2.getEncoded());
+ *     // Receiver side
+ *     byte[] ciphertext = receiveBytes();
+ *     byte[] params = receiveBytes();
+ *
+ *     KEM receiverKEM = KEM.getInstance("ABC");
+ *     AlgorithmParameters algParams =
+ *             AlgorithmParameters.getInstance("ABC");
+ *     algParams.init(params);
+ *     ABCKEMParameterSpec receiverSpec =
+ *             algParams.getParameterSpec(ABCKEMParameterSpec.class);
+ *     KEM.Decapsulator d =
+ *             receiverKEM.newDecapsulator(kp.getPrivate(), receiverSpec);
+ *     SecretKey receiverSecret = d.decapsulate(ciphertext);
+ *
+ *     // senderSecret and receiverSecret should now be equal.
  * }
  *
  * @since 21

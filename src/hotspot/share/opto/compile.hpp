@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ class Node_List;
 class Node_Notes;
 class NodeHash;
 class NodeCloneInfo;
+class OpaqueTemplateAssertionPredicateNode;
 class OptoReg;
 class ParsePredicateNode;
 class PhaseCFG;
@@ -105,7 +106,6 @@ enum LoopOptsMode {
   LoopOptsNone,
   LoopOptsMaxUnroll,
   LoopOptsShenandoahExpand,
-  LoopOptsShenandoahPostExpand,
   LoopOptsSkipSplitIf,
   LoopOptsVerify
 };
@@ -175,7 +175,6 @@ class CloneMap {
 
 class Options {
   friend class Compile;
-  friend class VMStructs;
  private:
   const bool _subsume_loads;         // Load can be matched as part of a larger op.
   const bool _do_escape_analysis;    // Do escape analysis.
@@ -222,7 +221,6 @@ class Options {
 // This class defines a top-level Compiler invocation.
 
 class Compile : public Phase {
-  friend class VMStructs;
 
  public:
   // Fixed alias indexes.  (See also MergeMemNode.)
@@ -238,9 +236,9 @@ class Compile : public Phase {
   // (The time collection itself is always conditionalized on CITime.)
   class TracePhase : public TraceTime {
    private:
-    Compile*    _compile;
+    Compile* const _compile;
     CompileLog* _log;
-    bool _dolog;
+    const bool _dolog;
    public:
     TracePhase(PhaseTraceId phaseTraceId);
     TracePhase(const char* name, PhaseTraceId phaseTraceId);
@@ -320,6 +318,7 @@ class Compile : public Phase {
   uintx                 _max_node_limit;        // Max unique node count during a single compilation.
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
+  bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
   int                   _major_progress;        // Count of something big happening
@@ -372,10 +371,12 @@ class Compile : public Phase {
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
   GrowableArray<ParsePredicateNode*> _parse_predicates; // List of Parse Predicates.
-  // List of OpaqueTemplateAssertionPredicateNode nodes for Template Assertion Predicates.
-  GrowableArray<Node*>  _template_assertion_predicate_opaqs;
+  // List of OpaqueTemplateAssertionPredicateNode nodes for Template Assertion Predicates which can be seen as list
+  // of Template Assertion Predicates themselves.
+  GrowableArray<OpaqueTemplateAssertionPredicateNode*>  _template_assertion_predicate_opaques;
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
+  GrowableArray<Node*>  _for_merge_stores_igvn; // List of nodes for IGVN merge stores
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
@@ -672,29 +673,32 @@ public:
   void init_igv();
   void dump_igv(const char* graph_name, int level = 3) {
     if (should_print_igv(level)) {
-      _igv_printer->print_graph(graph_name);
+      _igv_printer->print_graph(graph_name, nullptr);
     }
   }
 
-  void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
-  void igv_print_method_to_network(const char* phase_name = "Debug");
-  void igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes);
+  void igv_print_method_to_file(const char* phase_name = nullptr, bool append = false, const frame* fr = nullptr);
+  void igv_print_method_to_network(const char* phase_name = nullptr, const frame* fr = nullptr);
+  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, const frame* fr);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
 
+  const GrowableArray<ParsePredicateNode*>& parse_predicates() const {
+    return _parse_predicates;
+  }
+
+  const GrowableArray<OpaqueTemplateAssertionPredicateNode*>& template_assertion_predicate_opaques() const {
+    return _template_assertion_predicate_opaques;
+  }
+
   int           macro_count()             const { return _macro_nodes.length(); }
   int           parse_predicate_count()   const { return _parse_predicates.length(); }
-  int           template_assertion_predicate_count() const { return _template_assertion_predicate_opaqs.length(); }
+  int           template_assertion_predicate_count() const { return _template_assertion_predicate_opaques.length(); }
   int           expensive_count()         const { return _expensive_nodes.length(); }
   int           coarsened_count()         const { return _coarsened_locks.length(); }
 
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
-  ParsePredicateNode* parse_predicate(int idx) const { return _parse_predicates.at(idx); }
-
-  Node* template_assertion_predicate_opaq_node(int idx) const {
-    return _template_assertion_predicate_opaqs.at(idx);
-  }
 
   Node*         expensive_node(int idx)   const { return _expensive_nodes.at(idx); }
 
@@ -730,15 +734,15 @@ public:
     }
   }
 
-  void add_template_assertion_predicate_opaq(Node* n) {
-    assert(!_template_assertion_predicate_opaqs.contains(n),
+  void add_template_assertion_predicate_opaque(OpaqueTemplateAssertionPredicateNode* n) {
+    assert(!_template_assertion_predicate_opaques.contains(n),
            "Duplicate entry in Template Assertion Predicate OpaqueTemplateAssertionPredicate list");
-    _template_assertion_predicate_opaqs.append(n);
+    _template_assertion_predicate_opaques.append(n);
   }
 
-  void remove_template_assertion_predicate_opaq(Node* n) {
+  void remove_template_assertion_predicate_opaque(OpaqueTemplateAssertionPredicateNode* n) {
     if (template_assertion_predicate_count() > 0) {
-      _template_assertion_predicate_opaqs.remove_if_existing(n);
+      _template_assertion_predicate_opaques.remove_if_existing(n);
     }
   }
   void add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks);
@@ -767,6 +771,12 @@ public:
   bool remove_unstable_if_trap(CallStaticJavaNode* unc, bool yield);
   void remove_useless_unstable_if_traps(Unique_Node_List &useful);
   void process_for_unstable_if_traps(PhaseIterGVN& igvn);
+
+  bool     merge_stores_phase() { return _merge_stores_phase;  }
+  void set_merge_stores_phase() { _merge_stores_phase = true;  }
+  void record_for_merge_stores_igvn(Node* n);
+  void remove_from_merge_stores_igvn(Node* n);
+  void process_for_merge_stores_igvn(PhaseIterGVN& igvn);
 
   void shuffle_macro_nodes();
   void sort_macro_nodes();
@@ -1024,7 +1034,7 @@ public:
 
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              update_dead_node_list(Unique_Node_List &useful);
-  void              disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist);
+  void disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist, const Unique_Node_List* root_and_safepoints = nullptr);
 
   void              remove_useless_node(Node* dead);
 
@@ -1231,14 +1241,28 @@ public:
   static void print_intrinsic_statistics() PRODUCT_RETURN;
 
   // Graph verification code
-  // Walk the node list, verifying that there is a one-to-one
-  // correspondence between Use-Def edges and Def-Use edges
-  // The option no_dead_code enables stronger checks that the
-  // graph is strongly connected from root in both directions.
-  void verify_graph_edges(bool no_dead_code = false) PRODUCT_RETURN;
+  // Walk the node list, verifying that there is a one-to-one correspondence
+  // between Use-Def edges and Def-Use edges. The option no_dead_code enables
+  // stronger checks that the graph is strongly connected from starting points
+  // in both directions.
+  // root_and_safepoints is used to give the starting points for the traversal.
+  // If not supplied, only root is used. When this check is called after CCP,
+  // we need to start traversal from Root and safepoints, just like CCP does its
+  // own traversal (see PhaseCCP::transform for reasons).
+  //
+  // To call this function, there are 2 ways to go:
+  // - give root_and_safepoints to start traversal everywhere needed (like after CCP)
+  // - if the whole graph is assumed to be reachable from Root's input,
+  //   root_and_safepoints is not needed (like in PhaseRemoveUseless).
+  //
+  // Failure to specify root_and_safepoints in case the graph is not fully
+  // reachable from Root's input make this check unsound (can miss inconsistencies)
+  // and even incomplete (can make up non-existing problems) if no_dead_code is
+  // true.
+  void verify_graph_edges(bool no_dead_code = false, const Unique_Node_List* root_and_safepoints = nullptr) const PRODUCT_RETURN;
 
   // Verify bi-directional correspondence of edges
-  void verify_bidirectional_edges(Unique_Node_List &visited);
+  void verify_bidirectional_edges(Unique_Node_List& visited, const Unique_Node_List* root_and_safepoints = nullptr) const;
 
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;
@@ -1275,21 +1299,6 @@ public:
   bool needs_clinit_barrier(ciMethod* ik,        ciMethod* accessing_method);
   bool needs_clinit_barrier(ciInstanceKlass* ik, ciMethod* accessing_method);
 
-#ifdef IA32
- private:
-  bool _select_24_bit_instr;   // We selected an instruction with a 24-bit result
-  bool _in_24_bit_fp_mode;     // We are emitting instructions with 24-bit results
-
-  // Remember if this compilation changes hardware mode to 24-bit precision.
-  void set_24_bit_selection_and_mode(bool selection, bool mode) {
-    _select_24_bit_instr = selection;
-    _in_24_bit_fp_mode   = mode;
-  }
-
- public:
-  bool select_24_bit_instr() const { return _select_24_bit_instr; }
-  bool in_24_bit_fp_mode() const   { return _in_24_bit_fp_mode; }
-#endif // IA32
 #ifdef ASSERT
   VerifyMeetResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }

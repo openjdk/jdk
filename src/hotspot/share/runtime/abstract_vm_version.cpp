@@ -34,6 +34,7 @@ const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Versio
 
 uint64_t Abstract_VM_Version::_features = 0;
 const char* Abstract_VM_Version::_features_string = "";
+const char* Abstract_VM_Version::_cpu_info_string = "";
 uint64_t Abstract_VM_Version::_cpu_features = 0;
 
 #ifndef SUPPORTS_NATIVE_CX8
@@ -79,6 +80,10 @@ VirtualizationType Abstract_VM_Version::_detected_virtualization = NoDetectedVir
 
 #ifndef HOTSPOT_BUILD_TIME
   #error HOTSPOT_BUILD_TIME must be defined
+#endif
+
+#ifndef JVM_VARIANT
+  #error JVM_VARIANT must be defined
 #endif
 
 #define VM_RELEASE HOTSPOT_VERSION_STRING
@@ -133,29 +138,43 @@ const char* Abstract_VM_Version::vm_vendor() {
 }
 
 
+// The VM info string should be a constant, but its value cannot be finalized until after VM arguments
+// have been fully processed. And we want to avoid dynamic memory allocation which will cause ASAN
+// report error, so we enumerate all the cases by static const string value.
 const char* Abstract_VM_Version::vm_info_string() {
   switch (Arguments::mode()) {
     case Arguments::_int:
-      return CDSConfig::is_using_archive() ? "interpreted mode, sharing" : "interpreted mode";
+      if (is_vm_statically_linked()) {
+        return CDSConfig::is_using_archive() ? "interpreted mode, static, sharing" : "interpreted mode, static";
+      } else {
+        return CDSConfig::is_using_archive() ? "interpreted mode, sharing" : "interpreted mode";
+      }
     case Arguments::_mixed:
-      if (CDSConfig::is_using_archive()) {
+      if (is_vm_statically_linked()) {
         if (CompilationModeFlag::quick_only()) {
-          return "mixed mode, emulated-client, sharing";
+          return CDSConfig::is_using_archive() ? "mixed mode, emulated-client, static, sharing" : "mixed mode, emulated-client, static";
         } else {
-          return "mixed mode, sharing";
+          return CDSConfig::is_using_archive() ? "mixed mode, static, sharing" : "mixed mode, static";
          }
       } else {
         if (CompilationModeFlag::quick_only()) {
-          return "mixed mode, emulated-client";
+          return CDSConfig::is_using_archive() ? "mixed mode, emulated-client, sharing" : "mixed mode, emulated-client";
         } else {
-          return "mixed mode";
+          return CDSConfig::is_using_archive() ? "mixed mode, sharing" : "mixed mode";
         }
       }
     case Arguments::_comp:
-      if (CompilationModeFlag::quick_only()) {
-         return CDSConfig::is_using_archive() ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
+      if (is_vm_statically_linked()) {
+        if (CompilationModeFlag::quick_only()) {
+          return CDSConfig::is_using_archive() ? "compiled mode, emulated-client, static, sharing" : "compiled mode, emulated-client, static";
+        }
+        return CDSConfig::is_using_archive() ? "compiled mode, static, sharing" : "compiled mode, static";
+      } else {
+        if (CompilationModeFlag::quick_only()) {
+          return CDSConfig::is_using_archive() ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
+        }
+        return CDSConfig::is_using_archive() ? "compiled mode, sharing" : "compiled mode";
       }
-      return CDSConfig::is_using_archive() ? "compiled mode, sharing" : "compiled mode";
   }
   ShouldNotReachHere();
   return "";
@@ -193,6 +212,10 @@ const char* Abstract_VM_Version::vm_release() {
 
 const char *Abstract_VM_Version::vm_platform_string() {
   return OS "-" CPU;
+}
+
+const char* Abstract_VM_Version::vm_variant() {
+  return JVM_VARIANT;
 }
 
 const char* Abstract_VM_Version::internal_vm_info_string() {
@@ -302,19 +325,16 @@ unsigned int Abstract_VM_Version::jvm_version() {
          (Abstract_VM_Version::vm_build_number() & 0xFF);
 }
 
-void Abstract_VM_Version::insert_features_names(char* buf, size_t buflen, const char* features_names[]) {
-  uint64_t features = _features;
-  uint features_names_index = 0;
-
-  while (features != 0) {
-    if (features & 1) {
-      int res = jio_snprintf(buf, buflen, ", %s", features_names[features_names_index]);
-      assert(res > 0, "not enough temporary space allocated");
-      buf += res;
-      buflen -= res;
-    }
-    features >>= 1;
-    ++features_names_index;
+const char* Abstract_VM_Version::extract_features_string(const char* cpu_info_string,
+                                                         size_t cpu_info_string_len,
+                                                         size_t features_offset) {
+  assert(features_offset <= cpu_info_string_len, "");
+  if (features_offset < cpu_info_string_len) {
+    assert(cpu_info_string[features_offset + 0] == ',', "");
+    assert(cpu_info_string[features_offset + 1] == ' ', "");
+    return cpu_info_string + features_offset + 2; // skip initial ", "
+  } else {
+    return ""; // empty
   }
 }
 

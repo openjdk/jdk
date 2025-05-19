@@ -1143,12 +1143,12 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   __ bctr();
 }
 
-AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
-                                                            int total_args_passed,
-                                                            int comp_args_on_stack,
-                                                            const BasicType *sig_bt,
-                                                            const VMRegPair *regs,
-                                                            AdapterFingerPrint* fingerprint) {
+void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
+                                            int total_args_passed,
+                                            int comp_args_on_stack,
+                                            const BasicType *sig_bt,
+                                            const VMRegPair *regs,
+                                            AdapterHandlerEntry* handler) {
   address i2c_entry;
   address c2i_unverified_entry;
   address c2i_entry;
@@ -1223,8 +1223,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, call_interpreter, ientry);
 
-  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry,
-                                          c2i_no_clinit_check_entry);
+  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  return;
 }
 
 // An oop arg. Must pass a handle not the oop itself.
@@ -3100,11 +3100,15 @@ void SharedRuntime::generate_deopt_blob() {
 }
 
 #ifdef COMPILER2
-void OptoRuntime::generate_uncommon_trap_blob() {
+UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  CodeBuffer buffer("uncommon_trap_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   address start = __ pc();
 
@@ -3227,7 +3231,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 
   masm->flush();
 
-  _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, oop_maps, frame_size_in_bytes/wordSize);
+  return UncommonTrapBlob::create(&buffer, oop_maps, frame_size_in_bytes/wordSize);
 }
 #endif // COMPILER2
 
@@ -3403,7 +3407,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   RegisterSaver::restore_live_registers_and_pop_frame(masm, frame_size_in_bytes, /*restore_ctr*/ false);
 
   // Get the returned method.
-  __ get_vm_result_2(R19_method);
+  __ get_vm_result_metadata(R19_method);
 
   __ bctr();
 
@@ -3417,7 +3421,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   __ li(R11_scratch1, 0);
   __ ld(R3_ARG1, thread_(pending_exception));
-  __ std(R11_scratch1, in_bytes(JavaThread::vm_result_offset()), R16_thread);
+  __ std(R11_scratch1, in_bytes(JavaThread::vm_result_oop_offset()), R16_thread);
   __ b64_patchable(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type);
 
   // -------------

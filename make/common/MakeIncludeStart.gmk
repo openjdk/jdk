@@ -29,7 +29,7 @@
 
 # Get the next to last word (by prepending a padding element)
 THIS_INCLUDE_PATH := $(word $(words ${MAKEFILE_LIST}),padding ${MAKEFILE_LIST})
-THIS_INCLUDE := $(patsubst $(TOPDIR)/make/%,%,$(THIS_INCLUDE_PATH))
+THIS_INCLUDE := $(patsubst $(TOPDIR_ALT)/make/%,%,$(patsubst $(TOPDIR)/make/%,%,$(THIS_INCLUDE_PATH)))
 
 # Print an indented message, also counting the top-level makefile as a level
 ifneq ($(INCLUDE_GUARD_$(THIS_INCLUDE)), true)
@@ -39,11 +39,11 @@ else
 endif
 
 ifeq ($(LOG_FLOW), true)
-  $(info :$(foreach s, top $(HELPER_STACK),    )Enter $(THIS_INCLUDE) [$(THIS_INCLUDE_MSG)])
+  $(info :$(foreach s, top $(INCLUDE_STACK) $(SNIPPET_STACK),    )Enter $(THIS_INCLUDE) [$(THIS_INCLUDE_MSG)])
 endif
 
-ifneq ($(filter $(THIS_INCLUDE), $(HELPER_STACK)), )
-  $(error Internal makefile error: Include loop detected: $(THIS_INCLUDE) $(HELPER_STACK))
+ifneq ($(filter $(THIS_INCLUDE), $(INCLUDE_STACK)), )
+  $(error Internal makefile error: Include loop detected: $(THIS_INCLUDE) $(INCLUDE_STACK))
 endif
 
 ifeq ($(words $(MAKEFILE_LIST)), 2)
@@ -66,7 +66,7 @@ ifneq ($(IS_PREINIT_ENV), true)
 endif
 
 # Push our helper name onto the stack
-HELPER_STACK := $(THIS_INCLUDE) $(HELPER_STACK)
+INCLUDE_STACK := $(THIS_INCLUDE) $(INCLUDE_STACK)
 
 # Setup an automatic include guard
 ifneq ($(INCLUDE_GUARD_$(THIS_INCLUDE)), true)

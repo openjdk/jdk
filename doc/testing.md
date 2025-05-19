@@ -345,6 +345,14 @@ The simplest way to run tests with JCov coverage report is to use the special
 target `jcov-test` instead of `test`, e.g. `make jcov-test TEST=jdk_lang`. This
 will make sure the JCov image is built, and that JCov reporting is enabled.
 
+To include JCov coverage for just a subset of all modules, you can use the
+`--with-jcov-modules` arguments to `configure`, e.g.
+`--with-jcov-modules=jdk.compiler,java.desktop`.
+
+For more fine-grained control, you can pass arbitrary filters to JCov using
+`--with-jcov-filters`, and you can specify a specific JDK to instrument
+using `--with-jcov-input-jdk`.
+
 The JCov report is stored in `build/$BUILD/test-results/jcov-output/report`.
 
 Please note that running with JCov reporting can be very memory intensive.

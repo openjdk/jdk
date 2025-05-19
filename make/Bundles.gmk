@@ -174,9 +174,11 @@ else
   JRE_IMAGE_HOMEDIR := $(JRE_IMAGE_DIR)
   JDK_BUNDLE_SUBDIR := jdk-$(VERSION_NUMBER)
   JRE_BUNDLE_SUBDIR := jre-$(VERSION_NUMBER)
+  STATIC_JDK_BUNDLE_SUBDIR := static-jdk-$(VERSION_NUMBER)
   ifneq ($(DEBUG_LEVEL), release)
     JDK_BUNDLE_SUBDIR := $(JDK_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
     JRE_BUNDLE_SUBDIR := $(JRE_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
+    STATIC_JDK_BUNDLE_SUBDIR := $(STATIC_JDK_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
   endif
   # In certain situations, the JDK_IMAGE_DIR points to an image without the
   # the symbols and demos. If so, the symobls and demos can be found in a
@@ -242,7 +244,10 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
       )
 
   JDK_SYMBOLS_BUNDLE_FILES := \
-      $(call FindFiles, $(SYMBOLS_IMAGE_DIR))
+      $(filter-out \
+          %.stripped.pdb, \
+          $(call FindFiles, $(SYMBOLS_IMAGE_DIR)) \
+      )
 
   TEST_DEMOS_BUNDLE_FILES := $(filter $(JDK_DEMOS_IMAGE_HOMEDIR)/demo/%, \
       $(ALL_JDK_DEMOS_FILES))
@@ -497,6 +502,21 @@ ifneq ($(filter static-libs-graal-bundles, $(MAKECMDGOALS)), )
   STATIC_LIBS_GRAAL_TARGETS += $(BUILD_STATIC_LIBS_GRAAL_BUNDLE)
 endif
 
+#################################################################################
+
+ifneq ($(filter static-jdk-bundles, $(MAKECMDGOALS)), )
+  STATIC_JDK_BUNDLE_FILES := $(call FindFiles, $(STATIC_JDK_IMAGE_DIR))
+
+  $(eval $(call SetupBundleFile, BUILD_STATIC_JDK_BUNDLE, \
+      BUNDLE_NAME := $(STATIC_JDK_BUNDLE_NAME), \
+      FILES := $(STATIC_JDK_BUNDLE_FILES), \
+      BASE_DIRS := $(STATIC_JDK_IMAGE_DIR), \
+      SUBDIR := $(STATIC_JDK_BUNDLE_SUBDIR), \
+  ))
+
+  STATIC_JDK_TARGETS += $(BUILD_STATIC_JDK_BUNDLE)
+endif
+
 ################################################################################
 
 product-bundles: $(PRODUCT_TARGETS)
@@ -507,11 +527,12 @@ docs-javase-bundles: $(DOCS_JAVASE_TARGETS)
 docs-reference-bundles: $(DOCS_REFERENCE_TARGETS)
 static-libs-bundles: $(STATIC_LIBS_TARGETS)
 static-libs-graal-bundles: $(STATIC_LIBS_GRAAL_TARGETS)
+static-jdk-bundles: $(STATIC_JDK_TARGETS)
 jcov-bundles: $(JCOV_TARGETS)
 
 .PHONY: product-bundles test-bundles \
     docs-jdk-bundles docs-javase-bundles docs-reference-bundles \
-    static-libs-bundles static-libs-graal-bundles jcov-bundles
+    static-libs-bundles static-libs-graal-bundles static-jdk-bundles jcov-bundles
 
 ################################################################################
 

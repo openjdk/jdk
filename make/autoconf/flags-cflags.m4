@@ -482,6 +482,16 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   else
     DEBUG_CFLAGS_JDK="-DDEBUG"
 
+    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang ; then
+      INIT_PATTERN_FLAG="-ftrivial-auto-var-init=pattern"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$INIT_PATTERN_FLAG],
+          IF_TRUE: [
+            DEBUG_CFLAGS_JDK="$DEBUG_CFLAGS_JDK $INIT_PATTERN_FLAG"
+            DEBUG_CFLAGS_JVM="$INIT_PATTERN_FLAG"
+          ]
+      )
+    fi
+
     if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
       DEBUG_CFLAGS_JVM="-fpic -mcmodel=large"
     fi
@@ -563,11 +573,19 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -fvisibility=hidden -fstack-protector"
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # The -utf-8 option sets source and execution character sets to UTF-8 to enable correct
-    # compilation of all source files regardless of the active code page on Windows.
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -utf-8 -MP"
-    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -utf-8 -Zc:wchar_t-"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -MP"
+    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -Zc:wchar_t-"
   fi
+
+  # Set character encoding in source
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    CHARSET_CFLAGS="-finput-charset=utf-8"
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    # The -utf-8 option sets both source and execution character sets
+    CHARSET_CFLAGS="-utf-8 -validate-charset"
+  fi
+  TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM $CHARSET_CFLAGS"
+  TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK $CHARSET_CFLAGS"
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
@@ -711,15 +729,17 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       $1_CFLAGS_CPU="-fsigned-char -Wno-psabi $ARM_ARCH_TYPE_FLAGS $ARM_FLOAT_TYPE_FLAGS -DJDK_ARCH_ABI_PROP_NAME='\"\$(JDK_ARCH_ABI_PROP_NAME)\"'"
       $1_CFLAGS_CPU_JVM="-DARM"
     elif test "x$FLAGS_CPU_ARCH" = xppc; then
-      $1_CFLAGS_CPU_JVM="-minsert-sched-nops=regroup_exact -mno-multiple -mno-string"
+      $1_CFLAGS_CPU_JVM="-mno-multiple -mno-string"
       if test "x$FLAGS_CPU" = xppc64; then
         # -mminimal-toc fixes `relocation truncated to fit' error for gcc 4.1.
         # Use ppc64 instructions, but schedule for power5
-        $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -mminimal-toc -mcpu=powerpc64 -mtune=power5"
+        $1_CFLAGS_CPU="-mcpu=powerpc64 -mtune=power5"
+        $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -mminimal-toc"
       elif test "x$FLAGS_CPU" = xppc64le; then
         # Little endian machine uses ELFv2 ABI.
         # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
-        $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -DABI_ELFv2 -mcpu=power8 -mtune=power8"
+        $1_CFLAGS_CPU="-mcpu=power8 -mtune=power10"
+        $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -DABI_ELFv2"
       fi
     elif test "x$FLAGS_CPU" = xs390x; then
       $1_CFLAGS_CPU="-mbackchain -march=z10"
@@ -740,7 +760,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       if test "x$FLAGS_CPU" = xppc64le; then
         # Little endian machine uses ELFv2 ABI.
         # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
-        $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -DABI_ELFv2 -mcpu=power8 -mtune=power8"
+        $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -DABI_ELFv2 -mcpu=power8 -mtune=power10"
       fi
     fi
     if test "x$OPENJDK_TARGET_OS" = xaix; then
@@ -912,8 +932,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   # Check whether the compiler supports the Arm C Language Extensions (ACLE)
   # for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
   # ACLE and this flag are required to build the aarch64 SVE related functions in
-  # libvectormath.
-  if test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
+  # libvectormath. Apple Silicon does not support SVE; use macOS as a proxy for
+  # that check.
+  if test "x$OPENJDK_TARGET_CPU" = "xaarch64" && test "x$OPENJDK_TARGET_CPU" = "xlinux"; then
     if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
       AC_LANG_PUSH(C)
       OLD_CFLAGS="$CFLAGS"

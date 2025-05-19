@@ -220,11 +220,10 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
                                    BasicType type,
                                    Register dst,
                                    Address src,
-                                   Register tmp1,
-                                   Register tmp_thread) {
+                                   Register tmp1) {
   if (!ZBarrierSet::barrier_needed(decorators, type)) {
     // Barrier not needed
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1);
     return;
   }
 
@@ -1329,7 +1328,13 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
   const uint16_t value = patch_barrier_relocation_value(format);
   uint8_t* const patch_addr = (uint8_t*)addr + offset;
   if (format == ZBarrierRelocationFormatLoadGoodBeforeShl) {
-    *patch_addr = (uint8_t)value;
+    if (VM_Version::supports_apx_f()) {
+      NativeInstruction* instruction = nativeInstruction_at(addr);
+      uint8_t* const rex2_patch_addr = patch_addr + (instruction->has_rex2_prefix() ? 1 : 0);
+      *rex2_patch_addr = (uint8_t)value;
+    } else {
+      *patch_addr = (uint8_t)value;
+    }
   } else {
     *(uint16_t*)patch_addr = value;
   }

@@ -56,9 +56,9 @@ public abstract class PrivateAccess {
         // deadlock with FlightRecorderPermission.<clinit>
         if (instance == null) {
             // Will trigger
-            // FlightRecorderPermission.<clinit>
+            // EventSettings.<clinit>
             // which will call PrivateAccess.setPrivateAccess
-            new FlightRecorderPermission("accessFlightRecorder");
+            SecuritySupport.ensureClassIsInitialized(EventSettings.class);
         }
         return instance;
     }

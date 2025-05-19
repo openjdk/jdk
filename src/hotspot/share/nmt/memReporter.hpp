@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ class MemReporterBase : public StackObj {
  private:
   const size_t  _scale;         // report in this scale
   outputStream* const _output;  // destination
-  StreamAutoIndentor _auto_indentor;
 
  public:
 
@@ -108,7 +107,7 @@ class MemReporterBase : public StackObj {
 
   // Print summary total, malloc and virtual memory
   void print_total(size_t reserved, size_t committed, size_t peak = 0) const;
-  void print_malloc(const MemoryCounter* c, MemTag mem_tag = mtNone) const;
+  void print_malloc(const MemoryCounter* c, MemTag mem_tag) const;
   void print_virtual_memory(size_t reserved, size_t committed, size_t peak) const;
   void print_arena(const MemoryCounter* c) const;
 
@@ -139,7 +138,7 @@ class MemSummaryReporter : public MemReporterBase {
   virtual void report();
  private:
   // Report summary for each memory tag
-  void report_summary_of_type(MemTag mem_tag, MallocMemory* malloc_memory,
+  void report_summary_of_tag(MemTag mem_tag, MallocMemory* malloc_memory,
     VirtualMemory* virtual_memory);
 
   void report_metadata(Metaspace::MetadataType type) const;
@@ -204,7 +203,7 @@ class MemSummaryDiffReporter : public MemReporterBase {
 
  private:
   // report the comparison of each mem_tag
-  void diff_summary_of_type(MemTag mem_tag,
+  void diff_summary_of_tag(MemTag mem_tag,
     const MallocMemory* early_malloc, const VirtualMemory* early_vm,
     const MetaspaceCombinedStats& early_ms,
     const MallocMemory* current_malloc, const VirtualMemory* current_vm,

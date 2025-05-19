@@ -536,17 +536,6 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
     }
     break;
   }
-  case vmIntrinsics::_isPrimitive        : {
-    assert(x->number_of_arguments() == 1, "wrong type");
-
-    // Class.isPrimitive is known on constant classes:
-    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
-    if (c != nullptr && !c->value()->is_null_object()) {
-      ciType* t = c->value()->java_mirror_type();
-      set_constant(t->is_primitive_type());
-    }
-    break;
-  }
   default:
     break;
   }
@@ -851,7 +840,6 @@ void Canonicalizer::do_Throw          (Throw*           x) {}
 void Canonicalizer::do_Base           (Base*            x) {}
 void Canonicalizer::do_OsrEntry       (OsrEntry*        x) {}
 void Canonicalizer::do_ExceptionObject(ExceptionObject* x) {}
-void Canonicalizer::do_RoundFP        (RoundFP*         x) {}
 void Canonicalizer::do_UnsafeGet      (UnsafeGet*       x) {}
 void Canonicalizer::do_UnsafePut      (UnsafePut*       x) {}
 void Canonicalizer::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}

@@ -25,14 +25,14 @@
 
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalFullGC.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
 #ifdef ASSERT
 void assert_regions_used_not_more_than_capacity(ShenandoahGeneration* generation) {
@@ -89,6 +89,11 @@ void ShenandoahGenerationalFullGC::handle_completion(ShenandoahHeap* heap) {
 
 void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_reconstruct_remembered_set);
+
+  ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
+  scanner->mark_read_table_as_clean();
+  scanner->swap_card_tables();
+
   ShenandoahRegionIterator regions;
   ShenandoahReconstructRememberedSetTask task(&regions);
   heap->workers()->run_task(&task);
@@ -270,8 +275,8 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
   assert(_from_region != nullptr, "must set before work");
   assert((_from_region->bottom() <= cast_from_oop<HeapWord*>(p)) && (cast_from_oop<HeapWord*>(p) < _from_region->top()),
          "Object must reside in _from_region");
-  assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
-  assert(!_heap->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
+  assert(_heap->global_generation()->complete_marking_context()->is_marked(p), "must be marked");
+  assert(!_heap->global_generation()->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
   size_t obj_size = p->size();
   uint from_region_age = _from_region->age();

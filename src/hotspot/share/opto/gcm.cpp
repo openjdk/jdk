@@ -1695,7 +1695,7 @@ void PhaseCFG::global_code_motion() {
   // Enabling the scheduler for register pressure plus finding blocks of size to schedule for it
   // is key to enabling this feature.
   PhaseChaitin regalloc(C->unique(), *this, _matcher, true);
-  ResourceArea live_arena(mtCompiler);      // Arena for liveness
+  ResourceArea live_arena(mtCompiler, Arena::Tag::tag_reglive);      // Arena for liveness
   ResourceMark rm_live(&live_arena);
   PhaseLive live(*this, regalloc._lrg_map.names(), &live_arena, true);
   PhaseIFG ifg(&live_arena);
@@ -2160,8 +2160,13 @@ float Block::succ_prob(uint i) {
     // Pass frequency straight thru to target
     return 1.0f;
 
-  case Op_NeverBranch:
+  case Op_NeverBranch: {
+    Node* succ = n->as_NeverBranch()->proj_out(0)->unique_ctrl_out();
+    if (_succs[i]->head() == succ) {
+      return 1.0f;
+    }
     return 0.0f;
+  }
 
   case Op_TailCall:
   case Op_TailJump:
