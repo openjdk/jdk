@@ -49,8 +49,7 @@ public class FileKey {
 
     @Override
     public int hashCode() {
-        return (int)(st_dev ^ (st_dev >>> 32)) +
-               (int)(st_ino ^ (st_ino >>> 32));
+        return Long.hashCode(st_dev) + Long.hashCode(st_ino);
     }
 
     @Override

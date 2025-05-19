@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,13 @@ class AMD64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final boolean useCountTrailingZerosInstruction = getFlag("UseCountTrailingZerosInstruction", Boolean.class);
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
 
+    final long vmVersionFeatures = getFieldAddress("VM_Version::_features", "VM_Version::VM_Features");
+    final long vmFeaturesFeaturesOffset = getFieldOffset("VM_Version::VM_Features::_features_bitmap[0]", Long.class, "uint64_t");
+    final long vmFeaturesFeaturesSize = getFieldValue("VM_Version::VM_Features::_features_bitmap_size", Long.class, "int");
+
     // CPU capabilities
     final int useSSE = getFlag("UseSSE", Integer.class);
     final int useAVX = getFlag("UseAVX", Integer.class);
-
-    final long vmVersionFeatures = getFieldValue("Abstract_VM_Version::_features", Long.class, "uint64_t");
 
     // CPU feature flags
     final long amd64CX8 = getConstant("VM_Version::CPU_CX8", Long.class);
@@ -88,4 +90,6 @@ class AMD64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final long amd64OSPKE = getConstant("VM_Version::CPU_OSPKE", Long.class);
     final long amd64CET_IBT = getConstant("VM_Version::CPU_CET_IBT", Long.class);
     final long amd64CET_SS = getConstant("VM_Version::CPU_CET_SS", Long.class);
+    final long amd64AVX10_1 = getConstant("VM_Version::CPU_AVX10_1", Long.class);
+    final long amd64AVX10_2 = getConstant("VM_Version::CPU_AVX10_2", Long.class);
 }

@@ -107,6 +107,16 @@ class Basics {
     Object obj3;
     Object obj4;
 
+    public class Helper {
+        private String s;
+
+        public Helper(String s, int i) {
+            this.s = s;
+        }
+
+        public String getString() { return s; }
+    }
+
     @Test
     @IR(failOn = IRNode.STORE, phase = {CompilePhase.DEFAULT, CompilePhase.PRINT_IDEAL})
     @ExpectedFailure(ruleId = 1, failOn = 1) // Only one failure - remove duplicated phases after mapping DEFAULT
@@ -114,73 +124,87 @@ class Basics {
         i = 34;
     }
 
+    // Test failures on ideal phases only.
     @Test
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE, "3", IRNode.ALLOC, "1", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 3})
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 2)
+    @IR(failOn = {IRNode.STORE, IRNode.OOPMAP_WITH, "asdf", IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "2", IRNode.FIELD_ACCESS, "2", IRNode.STORE_I, "1"})
+    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, failOn = 1)
 
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.COUNTED_LOOP})
-    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_IDEAL, failOn = 1)
+    @IR(failOn = {IRNode.STORE_F, IRNode.OOPMAP_WITH, "asdf", IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "2", IRNode.FIELD_ACCESS, "2", IRNode.STORE_I, "2"})
+    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_IDEAL, counts = 3)
 
-    @IR(counts = {IRNode.STORE, "3", IRNode.ALLOC, "1", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, counts = {1, 3})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 2)
+    @IR(failOn = {IRNode.STORE, IRNode.OOPMAP_WITH, "asdf", IRNode.COUNTED_LOOP})
+    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, failOn = 1)
+
+    @IR(counts = {IRNode.STORE, "3", IRNode.FIELD_ACCESS, "2", IRNode.COUNTED_LOOP, "2"})
+    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, counts = {1, 3})
+
+    @IR(failOn = {IRNode.STORE, IRNode.OOPMAP_WITH, "asdf", IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "3", IRNode.FIELD_ACCESS, "2", IRNode.COUNTED_LOOP, "2"})
+    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 3})
 
     @IR(counts = {IRNode.STORE_I, "2"})
-    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, counts = 1)
+    @ExpectedFailure(ruleId = 6, phase = CompilePhase.PRINT_IDEAL, counts = 1)
     public void defaultOnIdeal() {
         i = 34;
         l = 34;
     }
 
+    // Test failures on mach phases only.
     @Test
-    @IR(failOn = {IRNode.STORE_F, IRNode.ALLOC, IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE_F, "3", IRNode.ALLOC, "1", IRNode.COUNTED_LOOP, "2"})
+    @IR(failOn = {IRNode.STORE_F, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE_I, "1", IRNode.FIELD_ACCESS, "2", IRNode.OOPMAP_WITH, "asdf", "< 2"})
     @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, counts = {1, 3})
 
-    @IR(failOn = {IRNode.STORE_F, IRNode.ALLOC, IRNode.COUNTED_LOOP})
-    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
+    @IR(failOn = {IRNode.STORE_F, IRNode.OOPMAP_WITH, "asdf", IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE_I, "1", IRNode.FIELD_ACCESS, "1", IRNode.OOPMAP_WITH, "asdf", "< 2"})
+    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 2)
 
-    @IR(counts = {IRNode.STORE_F, "3", IRNode.ALLOC, "1", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, counts = {1, 3})
+    @IR(failOn = {IRNode.STORE_F, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP})
+    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
 
-    @IR(failOn = {IRNode.STORE_F, IRNode.ALLOC, IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE_F, "3", IRNode.ALLOC, "2", IRNode.COUNTED_LOOP, "2"})
+    @IR(counts = {IRNode.STORE_I, "1", IRNode.FIELD_ACCESS, "1", IRNode.OOPMAP_WITH, "asdf", "3"})
+    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = {2, 3})
 
-    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2, counts = 2)
-    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, counts = {1, 3})
+    @IR(failOn = {IRNode.STORE_F, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE_I, "1", IRNode.FIELD_ACCESS, "1", IRNode.OOPMAP_WITH, "asdf", "3"})
+    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_OPTO_ASSEMBLY,  failOn = 2, counts = {2, 3})
 
-    @IR(counts = {IRNode.ALLOC, "2"})
-    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 1)
-    public Object defaultOnOptoAssembly() {
-        return new Object();
+    @IR(counts = {IRNode.FIELD_ACCESS, "1"})
+    @ExpectedFailure(ruleId = 6, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 1)
+    public void defaultOnOptoAssembly() {
+        i = 34;
+        l = 34;
     }
 
+    // Test failures on ideal and mach phases.
     @Test
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.ALLOC_OF, "Object", IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE, "20", IRNode.ALLOC, "1", IRNode.ALLOC_OF, "Object", "1", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = {2, 3})
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 4})
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "2", IRNode.FIELD_ACCESS, "2", IRNode.STORE_I, "1"})
+    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, failOn = 1)
+    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
 
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.ALLOC_OF, "Object", IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP})
     @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_IDEAL, failOn = 1)
-    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = {2, 3})
+    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
 
-    @IR(counts = {IRNode.STORE, "20", IRNode.ALLOC, "1", IRNode.ALLOC_OF, "Object", "2", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, counts = {1, 4})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 3)
+    @IR(counts = {IRNode.STORE, "20", IRNode.FIELD_ACCESS, "1", IRNode.STORE_I, "1"})
+    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, counts = 1)
+    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 2)
 
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.ALLOC_OF, "Object", IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE, "20", IRNode.ALLOC, "2", IRNode.ALLOC_OF, "Object", "2", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = {2, 3}, counts = {2, 3})
-    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 4})
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "20", IRNode.FIELD_ACCESS, "1", IRNode.COUNTED_LOOP, "2"})
+    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 3})
+    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2, counts = 2)
 
-    @IR(counts = {IRNode.ALLOC, "2", IRNode.ALLOC_OF, "Object", "1"})
-    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 1)
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP, IRNode.STORE_I},
+        counts = {IRNode.STORE, "20", IRNode.FIELD_ACCESS, "1", IRNode.COUNTED_LOOP, "2", IRNode.OOPMAP_WITH, "asdf", "2"})
+    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_IDEAL, failOn = {1, 4}, counts = {1, 3})
+    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2, counts = {2, 4})
     public void defaultOnBoth() {
-        obj = new Object();
+        i = 34;
+        l = 34;
     }
 
     @Test
@@ -238,9 +262,9 @@ class Basics {
     @Test
     @IR(failOn = {IRNode.ALLOC, IRNode.ALLOC_ARRAY},
         counts = {IRNode.ALLOC, "0", IRNode.ALLOC_ARRAY, "0"},
-        phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT})
+        phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.DEFAULT})
     @ExpectedFailure(ruleId = 1, failOn = {1, 2}, counts = {1, 2},
-                     phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.PRINT_OPTO_ASSEMBLY})
+                     phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.BEFORE_MACRO_EXPANSION})
     public void alloc() {
         obj = new Object();
         obj2 = new Object[1];
@@ -248,7 +272,7 @@ class Basics {
 
     @Test
     @IR(counts = {IRNode.ALLOC, "2", IRNode.ALLOC_ARRAY, "2"}, // works for all phases
-        phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT})
+        phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.DEFAULT})
     public void alloc2() {
         obj = new Object();
         obj2 = new Object[1];

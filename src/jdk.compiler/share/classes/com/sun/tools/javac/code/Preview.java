@@ -153,9 +153,7 @@ public class Preview {
         // s participates in the preview API
         return syms.java_base.exports.stream()
                 .filter(ed -> ed.packge.fullname == names.jdk_internal_javac)
-                .anyMatch(ed -> ed.modules.contains(m)) ||
-               //the specification lists the java.se module as participating in preview:
-               m.name == names.java_se;
+                .anyMatch(ed -> ed.modules.contains(m));
     }
 
     /**
@@ -228,11 +226,7 @@ public class Preview {
      */
     public boolean isPreview(Feature feature) {
         return switch (feature) {
-            case IMPLICIT_CLASSES -> true;
-            case FLEXIBLE_CONSTRUCTORS -> true;
             case PRIMITIVE_PATTERNS -> true;
-            case MODULE_IMPORTS -> true;
-            case JAVA_BASE_TRANSITIVE -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
             //for those selected features, and 'false' for all the others.
