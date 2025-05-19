@@ -34,6 +34,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -48,51 +49,16 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class RootPaneDefaultButtonTest {
 
-    record ButtonRenderingExpectation(JButton button,
-                                      boolean appearAsDefault) {}
-
     static class TestDialog extends JDialog {
-        JRadioButton radioButton1 = new JRadioButton(
-                "\"Button 1\" is the default button");
-        JRadioButton radioButton2 = new JRadioButton(
-                "\"Button 2\" is the default button");
-        JRadioButton radioButton3 = new JRadioButton("No default button");
 
         JButton button1 = new JButton("Button 1");
         JButton button2 = new JButton("Button 2");
 
         TestDialog() {
             getContentPane().setLayout(new BorderLayout());
-            getContentPane().add(createRadioButtonPanel(), BorderLayout.NORTH);
             getContentPane().add(createPushButtonRow(), BorderLayout.SOUTH);
+            setUndecorated(true);
             pack();
-
-            radioButton1.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    getRootPane().setDefaultButton(button1);
-                }
-            });
-
-            radioButton2.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    getRootPane().setDefaultButton(button2);
-                }
-            });
-
-            radioButton3.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    getRootPane().setDefaultButton(null);
-                }
-            });
-
-            ButtonGroup g = new ButtonGroup();
-            g.add(radioButton1);
-            g.add(radioButton2);
-            g.add(radioButton3);
-            radioButton1.doClick();
         }
 
         private JPanel createPushButtonRow() {
@@ -102,14 +68,118 @@ public class RootPaneDefaultButtonTest {
             p.setBorder(new EmptyBorder(5,5,5,5));
             return p;
         }
+    }
 
-        private JPanel createRadioButtonPanel() {
-            JPanel p = new JPanel(new GridLayout(3, 1));
-            p.add(radioButton1);
-            p.add(radioButton2);
-            p.add(radioButton3);
-            p.setBorder(new EmptyBorder(5,5,5,5));
-            return p;
+    /**
+     * We want 2 dialogs: one in the foreground and one not in the foreground
+     */
+    static class TestScene {
+        boolean isButton1Default, isButton2Default;
+
+        TestScene(boolean isButton1Default, boolean isButton2Default) {
+            this.isButton1Default = isButton1Default;
+            this.isButton2Default = isButton2Default;
+        }
+
+        void run() throws Exception {
+            SwingUtilities.invokeAndWait(() -> {
+                System.out.println(
+                        "Testing isButton1Default = " + isButton1Default +
+                                " isButton2Default = " + isButton2Default);
+                TestDialog window1 = new TestDialog();
+                TestDialog window2 = new TestDialog();
+
+                if (isButton1Default) {
+                    window1.getRootPane().setDefaultButton(window1.button1);
+                }
+                if (isButton2Default) {
+                    window1.getRootPane().setDefaultButton(window1.button2);
+                }
+
+                Rectangle r1 = new Rectangle(0, 100,
+                        window1.getWidth(), window1.getHeight());
+                window1.setBounds(r1);
+
+                Rectangle r2 = new Rectangle((int) (r1.getMaxX() + 10), 100,
+                        window2.getWidth(), window2.getHeight());
+                window2.setBounds(r2);
+
+                window1.setVisible(true);
+                window2.setVisible(true);
+
+                Rectangle sum = new Rectangle();
+                sum.add(r1);
+                sum.add(r2);
+                BufferedImage bi = new BufferedImage(sum.width, sum.height,
+                        BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = bi.createGraphics();
+                window1.paint(g.create(r1.x, r1.y, r1.width, r1.height));
+                window2.paint(g.create(r2.x, r2.y, r2.width, r2.height));
+                g.dispose();
+
+                // the exact colors may change depending on your system's
+                // appearance. Depending on how you've configured "Appearance"
+                // in the System Settings app: the default button may be blue
+                // (the default), red, purple, etc. So instead of checking for
+                // a specific color: we'll make sure 3-4 are the same color,
+                // and one is significantly different.
+                Color defaultColor = null;
+                Color nonDefaultColor = null;
+
+                JButton[] buttons = new JButton[] {window1.button1,
+                        window1.button2, window2.button1, window2.button2};
+
+                try {
+                    for (int a = 0; a < buttons.length; a++) {
+                        try {
+                            JButton b = buttons[a];
+
+                            Point p = b.getLocationOnScreen();
+                            int x = p.x + 20;
+                            int y = p.y + 10;
+
+                            Color c = new Color(bi.getRGB(x - sum.x, y - sum.y));
+                            if (b.isDefaultButton()) {
+                                if (defaultColor == null) {
+                                    defaultColor = c;
+                                } else {
+                                    throw new IllegalStateException(
+                                            "there should only be at most 1 " +
+                                                    "default button");
+                                }
+                            } else {
+                                if (nonDefaultColor == null) {
+                                    nonDefaultColor = c;
+                                } else if (!isSimilar(nonDefaultColor, c)) {
+                                    throw new IllegalStateException(
+                                            "these two colors should match: " + c +
+                                                    ", " + nonDefaultColor);
+                                }
+                            }
+
+                            if (defaultColor != null && nonDefaultColor != null &&
+                                    isSimilar(defaultColor, nonDefaultColor)) {
+                                throw new IllegalStateException(
+                                        "The default button and non-default " +
+                                                "buttons should look " +
+                                                "different: " + defaultColor +
+                                                " matches " + nonDefaultColor);
+                            }
+                        } catch(Exception e) {
+                            System.err.println("a = " + a);
+                            throw e;
+                        }
+                    }
+                } finally {
+                    System.out.println("defaultColor = " + defaultColor +
+                            " nonDefaultColor = " + nonDefaultColor);
+
+                    window1.dispose();
+                    window2.dispose();
+                }
+
+                System.out.println("Test passed successfully\n");
+            });
         }
     }
 
@@ -132,141 +202,8 @@ public class RootPaneDefaultButtonTest {
             return;
         }
 
-        RootPaneDefaultButtonTest test = new RootPaneDefaultButtonTest();
-        test.run();
-    }
-
-    TestDialog window1, window2;
-    Robot robot;
-
-    public RootPaneDefaultButtonTest() throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            window1 = new TestDialog();
-            window2 = new TestDialog();
-
-            Rectangle r1 = new Rectangle(0, 20,
-                    window1.getWidth(), window1.getHeight());
-            window1.setBounds(r1);
-
-            Rectangle r2 = new Rectangle((int) (r1.getMaxX() + 10), 20,
-                    window2.getWidth(), window2.getHeight());
-            window2.setBounds(r2);
-
-            window1.setVisible(true);
-            window2.setVisible(true);
-        });
-        robot = new Robot();
-    }
-
-
-    /**
-     * This is not run on the EDT; once it finishes this test is complete.
-     */
-    private void run() throws Exception {
-        robot.delay(1000);
-
-        test(robot, window1.radioButton1,
-                new ButtonRenderingExpectation(window1.button1, true),
-                new ButtonRenderingExpectation(window1.button2, false),
-                new ButtonRenderingExpectation(window2.button1, false),
-                new ButtonRenderingExpectation(window2.button2, false));
-
-        test(robot, window1.radioButton2,
-                new ButtonRenderingExpectation(window1.button1, false),
-                new ButtonRenderingExpectation(window1.button2, true),
-                new ButtonRenderingExpectation(window2.button1, false),
-                new ButtonRenderingExpectation(window2.button2, false));
-
-        test(robot, window1.radioButton3,
-                new ButtonRenderingExpectation(window1.button1, false),
-                new ButtonRenderingExpectation(window1.button2, false),
-                new ButtonRenderingExpectation(window2.button1, false),
-                new ButtonRenderingExpectation(window2.button2, false));
-
-        test(robot, window2.radioButton1,
-                new ButtonRenderingExpectation(window1.button1, false),
-                new ButtonRenderingExpectation(window1.button2, false),
-                new ButtonRenderingExpectation(window2.button1, true),
-                new ButtonRenderingExpectation(window2.button2, false));
-
-        test(robot, window2.radioButton2,
-                new ButtonRenderingExpectation(window1.button1, false),
-                new ButtonRenderingExpectation(window1.button2, false),
-                new ButtonRenderingExpectation(window2.button1, false),
-                new ButtonRenderingExpectation(window2.button2, true));
-
-        test(robot, window2.radioButton3,
-                new ButtonRenderingExpectation(window1.button1, false),
-                new ButtonRenderingExpectation(window1.button2, false),
-                new ButtonRenderingExpectation(window2.button1, false),
-                new ButtonRenderingExpectation(window2.button2, false));
-
-        System.out.println("Test passed successfully");
-    }
-
-    private void test(Robot robot, AbstractButton buttonToClick,
-                      ButtonRenderingExpectation... expectations)
-            throws Exception {
-        robot.delay(100);
-
-        Point mouseLoc = buttonToClick.getLocationOnScreen();
-        robot.mouseMove(mouseLoc.x + buttonToClick.getSize().width / 2,
-                mouseLoc.y + buttonToClick.getSize().height / 2);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(20);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-        robot.delay(1000);
-
-        // the colors may change depending on your system's appearance.
-        // Depending on how you've configured "Appearance" in the
-        // System Settings app: the default button may be blue (the default),
-        // red, purple, etc. So instead of checking for a specific color: we'll
-        // make sure 3-4 are the same color, and one is significantly
-        // different.
-        Color defaultColor = null;
-        Color nonDefaultColor = null;
-
-        for (int a = 0; a < expectations.length; a++) {
-            try {
-                ButtonRenderingExpectation expectation = expectations[a];
-                int x = expectation.button.getLocationOnScreen().x + 20;
-                int y = expectation.button.getLocationOnScreen().y + 10;
-
-                // this mouseMove is optional, but it helps debug this test to see
-                // where we're sampling the pixel color from:
-                robot.mouseMove(x, y);
-
-                Color c = robot.getPixelColor(x, y);
-                if (expectation.appearAsDefault) {
-                    if (defaultColor == null) {
-                        defaultColor = c;
-                    } else {
-                        throw new IllegalStateException(
-                                "there should only be at most 1 default button");
-                    }
-                } else {
-                    if (nonDefaultColor == null) {
-                        nonDefaultColor = c;
-                    } else if (!isSimilar(nonDefaultColor, c)) {
-                        throw new IllegalStateException(
-                                "these two colors should match: " + c + ", " +
-                                        nonDefaultColor);
-                    }
-                }
-
-                if (defaultColor != null && nonDefaultColor != null &&
-                        isSimilar(defaultColor, nonDefaultColor)) {
-                    throw new IllegalStateException(
-                            "The default button and non-default buttons should " +
-                                    "look different: " + defaultColor + " matches " +
-                                    nonDefaultColor);
-                }
-            } catch(Exception e) {
-                System.err.println("a = " + a + " defaultColor = " +
-                        defaultColor + " nonDefaultColor = " + nonDefaultColor);
-                throw e;
-            }
-        }
+        new TestScene(true, false).run();
+        new TestScene(false, true).run();
+        new TestScene(false, false).run();
     }
 }
