@@ -261,8 +261,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * < 2 bytes > cipherSuite
      * < 1 byte > localSupportedSignAlgs entries
      *   < 2 bytes per entries > localSupportedSignAlgs
-     * < 1 bytes > peerSupportedSignAlgs entries
-     *   < 2 bytes per entries > peerSupportedSignAlgs
      * < 2 bytes > preSharedKey length
      * < length in bytes > preSharedKey
      * < 1 byte > pskIdentity length
@@ -318,15 +316,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                     Record.getInt16(buf)));
         }
         this.localSupportedSignAlgs = Collections.unmodifiableCollection(list);
-
-        // Peer Supported signature algorithms
-        len = Record.getInt8(buf);
-        list.clear();
-        while (len-- > 0) {
-            list.add(SignatureScheme.valueOf(
-                    Record.getInt16(buf)));
-        }
-        this.peerSupportedSignAlgs = Collections.unmodifiableCollection(list);
 
         // PSK
         byte[] b = Record.getBytes16(buf);
@@ -516,12 +505,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // Local Supported signature algorithms
         hos.putInt8(localSupportedSignAlgs.size());
         for (SignatureScheme s : localSupportedSignAlgs) {
-            hos.putInt16(s.id);
-        }
-
-        // Peer Supported signature algorithms
-        hos.putInt8(peerSupportedSignAlgs.size());
-        for (SignatureScheme s : peerSupportedSignAlgs) {
             hos.putInt16(s.id);
         }
 

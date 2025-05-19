@@ -28,7 +28,6 @@ package sun.security.ssl;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -76,6 +75,9 @@ final class SessionTicketExtension {
             new T12SHSessionTicketConsumer();
 
     static final SSLStringizer steStringizer = new SessionTicketStringizer();
+    // Not need to compress a ticket if it can fit in a single packet. Also,
+    // small buffers when compressed often end up to be larger, not smaller.
+    static final int MIN_COMPRESS_SIZE = 600;
 
     // Time in milliseconds until key is changed for encrypting session state
     private static final int TIMEOUT_DEFAULT = 3600 * 1000;
@@ -202,7 +204,7 @@ final class SessionTicketExtension {
             data = buf;
         }
 
-        public byte[] encrypt(HandshakeContext hc, SSLSessionImpl session) {
+        byte[] encrypt(HandshakeContext hc, SSLSessionImpl session) {
             byte[] encrypted;
 
             if (!hc.statelessResumption ||
@@ -230,29 +232,24 @@ final class SessionTicketExtension {
                     return data;
                 }
 
-                // Compress the session before encryption.
-                try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        GZIPOutputStream gos = new GZIPOutputStream(baos)) {
-                    final int uncompressedLen = data.length;
-                    gos.write(data, 0, uncompressedLen);
-                    gos.finish();
-                    data = baos.toByteArray();
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.fine("uncompressed bytes: " + uncompressedLen
-                                + "; compressed bytes: " + data.length);
-                    }
+                // Compress the session before encryption if needed.
+                byte compressed = 0;
+                if (data.length >= MIN_COMPRESS_SIZE) {
+                    data = compress(data);
+                    compressed = 1;
                 }
 
                 encrypted = c.doFinal(data);
                 byte[] result = new byte[encrypted.length + Integer.BYTES +
-                        iv.length];
+                        iv.length + 1];
                 result[0] = (byte)(key.num >>> 24);
                 result[1] = (byte)(key.num >>> 16);
                 result[2] = (byte)(key.num >>> 8);
                 result[3] = (byte)(key.num);
                 System.arraycopy(iv, 0, result, Integer.BYTES, iv.length);
+                result[Integer.BYTES + iv.length + 1] = compressed;
                 System.arraycopy(encrypted, 0, result,
-                        Integer.BYTES + iv.length, encrypted.length);
+                        Integer.BYTES + iv.length + 1, encrypted.length);
                 return result;
             } catch (Exception e) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -284,28 +281,15 @@ final class SessionTicketExtension {
                         (byte)(keyID)}
                 );
 
+                byte compressed = data.get();
                 ByteBuffer out;
                 out = ByteBuffer.allocate(data.remaining() - GCM_TAG_LEN / 8);
                 c.doFinal(data, out);
                 out.flip();
 
-                // Uncompress the session after decryption.
-                final int compressedLen = out.remaining();
-                byte[] bytes = new byte[compressedLen];
-                out.get(bytes);
-                try (final GZIPInputStream gis = new GZIPInputStream(
-                        new ByteArrayInputStream(bytes))) {
-                    final byte[] tmp = new byte[compressedLen * 3];
-                    int count = 0;
-                    int b;
-                    while ((b = gis.read()) >= 0) {
-                        tmp[count++] = (byte) b;
-                    }
-                    out = ByteBuffer.wrap(Arrays.copyOf(tmp, count));
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.fine("compressed bytes: " + compressedLen
-                                + "; uncompressed bytes: " + out.remaining());
-                    }
+                // Decompress the session after decryption if needed.
+                if (compressed == 1) {
+                    out = decompress(out);
                 }
 
                 return out;
@@ -315,6 +299,50 @@ final class SessionTicketExtension {
                 }
             }
             return null;
+        }
+
+        private static byte[] compress(byte[] input) {
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    GZIPOutputStream gos = new GZIPOutputStream(baos)) {
+                final int decompressedLen = input.length;
+                gos.write(input, 0, decompressedLen);
+                gos.finish();
+
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("decompressed bytes: " + decompressedLen
+                            + "; compressed bytes: " + baos.size());
+                }
+
+                return baos.toByteArray();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+
+        private static ByteBuffer decompress(ByteBuffer input) {
+            final int compressedLen = input.remaining();
+            byte[] bytes = new byte[compressedLen];
+            input.get(bytes);
+
+            try (final GZIPInputStream gis = new GZIPInputStream(
+                    new ByteArrayInputStream(bytes))) {
+                final byte[] tmp = new byte[compressedLen * 3];
+                int count = 0;
+                int b;
+                while ((b = gis.read()) >= 0) {
+                    tmp[count++] = (byte) b;
+                }
+
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("compressed bytes: " + compressedLen
+                            + "; decompressed bytes: " + count);
+                }
+
+                return ByteBuffer.wrap(Arrays.copyOf(tmp, count));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         byte[] getEncoded() {
