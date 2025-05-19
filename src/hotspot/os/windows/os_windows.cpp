@@ -757,7 +757,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   const unsigned initflag = CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION;
   HANDLE thread_handle;
-  int trials_remaining = 3;
+  int trials_remaining = 4;
   DWORD next_delay_ms = 1;
   while (true) {
     thread_handle =
@@ -776,7 +776,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       break;
     }
 
-    if (trials_remaining-- <= 0) {
+    if (--trials_remaining <= 0) {
       break;
     }
 

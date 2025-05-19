@@ -643,7 +643,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     ResourceMark rm;
     pthread_t tid;
     int ret = 0;
-    int trials_remaining = 3;
+    int trials_remaining = 4;
     useconds_t next_delay = 1000;
     while (true) {
       ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
@@ -652,7 +652,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
         break;
       }
 
-      if (trials_remaining-- <= 0) {
+      if (--trials_remaining <= 0) {
         break;
       }
 
