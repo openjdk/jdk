@@ -265,20 +265,23 @@ HeapWord* PSYoungGen::expand_and_allocate(size_t word_size) {
   // For logging purpose
   size_t original_committed_size = virtual_space()->committed_size();
 
+  // Single-iteration "loop"
   while (true) {
+    // Case1: eden is enough without expansion
     if (eden_space()->free_in_words() >= word_size) {
-      // Eden is enough without expansion
       break;
     }
 
     assert(is_aligned(virtual_space()->committed_high_addr(), SpaceAlignment), "inv");
 
+    // Case2: eden needs expansion but no OS committing
     if (pointer_delta(virtual_space()->committed_high_addr(), eden_space()->top(), sizeof(HeapWord)) >= word_size) {
       assert(virtual_space()->committed_high_addr() > (char*)eden_space()->end(), "inv");
       new_eden_end = (HeapWord*) virtual_space()->committed_high_addr();
       break;
     }
 
+    // Case3: eden needs OS committing and expansion
     assert(virtual_space()->reserved_high_addr() > virtual_space()->committed_high_addr(), "inv");
 
     const size_t existing_free_in_eden = eden_space()->free_in_words();
@@ -331,7 +334,7 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
   const size_t current_eden_size = eden_space()->capacity_in_bytes();
   assert(from_space()->capacity_in_bytes() == to_space()->capacity_in_bytes(), "inv");
   const size_t current_survivor_size = from_space()->capacity_in_bytes();
-  assert(max_gen_size() > 2 * current_survivor_size, "inv");
+  assert(current_eden_size + 2 * current_survivor_size <= max_gen_size(), "inv");
 
   PSAdaptiveSizePolicy* size_policy = ParallelScavengeHeap::heap()->size_policy();
 
@@ -374,9 +377,10 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
 }
 
 void PSYoungGen::resize_after_full_gc() {
-  // We usually resize young-gen only after a successful young-gc. However, in emergency state, we wanna expand young-gen to its max-capacity.
+  // We usually resize young-gen only after a successful young-gc. However, in
+  // an emergency state, we want to expand young-gen to its max-capacity.
   // Young-gen should be empty normally after a full-gc.
-  if (eden_space()->is_empty() && to_space()->is_empty()) {
+  if (eden_space()->is_empty() && from_space()->is_empty() && to_space()->is_empty()) {
     return;
   }
 
