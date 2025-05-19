@@ -6291,8 +6291,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x208F,   // 208F      ; UNKNOWN
             0x2090,   // 2090..209C; LATIN
             0x209D,   // 209D..209F; UNKNOWN
-            0x20A0,   // 20A0..20C0; COMMON
-            0x20C1,   // 20C1..20CF; UNKNOWN
+            0x20A0,   // 20A0..20C1; COMMON
+            0x20C2,   // 20C2..20CF; UNKNOWN
             0x20D0,   // 20D0..20F0; INHERITED
             0x20F1,   // 20F1..20FF; UNKNOWN
             0x2100,   // 2100..2125; COMMON
@@ -6677,8 +6677,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x10920,  // 10920..10939; LYDIAN
             0x1093A,  // 1093A..1093E; UNKNOWN
             0x1093F,  // 1093F       ; LYDIAN
-            0x10940,  // 10940..1095C; SIDETIC
-            0x1095D,  // 1095D..1097F; UNKNOWN
+            0x10940,  // 10940..10959; SIDETIC
+            0x1095A,  // 1095A..1097F; UNKNOWN
             0x10980,  // 10980..1099F; MEROITIC_HIEROGLYPHS
             0x109A0,  // 109A0..109B7; MEROITIC_CURSIVE
             0x109B8,  // 109B8..109BB; UNKNOWN
@@ -7390,12 +7390,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x1FBFB,  // 1FBFB..1FFFF; UNKNOWN
             0x20000,  // 20000..2A6DF; HAN
             0x2A6E0,  // 2A6E0..2A6FF; UNKNOWN
-            0x2A700,  // 2A700..2B73E; HAN
-            0x2B73F,  // 2B73F       ; UNKNOWN
-            0x2B740,  // 2B740..2B81D; HAN
+            0x2A700,  // 2A700..2B81D; HAN
             0x2B81E,  // 2B81E..2B81F; UNKNOWN
-            0x2B820,  // 2B820..2CEA1; HAN
-            0x2CEA2,  // 2CEA2..2CEAF; UNKNOWN
+            0x2B820,  // 2B820..2CEAD; HAN
+            0x2CEAE,  // 2CEAE..2CEAF; UNKNOWN
             0x2CEB0,  // 2CEB0..2EBE0; HAN
             0x2EBE1,  // 2EBE1..2EBEF; UNKNOWN
             0x2EBF0,  // 2EBF0..2EE5D; HAN
@@ -8017,8 +8015,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             UNKNOWN,                  // 208F
             LATIN,                    // 2090..209C
             UNKNOWN,                  // 209D..209F
-            COMMON,                   // 20A0..20C0
-            UNKNOWN,                  // 20C1..20CF
+            COMMON,                   // 20A0..20C1
+            UNKNOWN,                  // 20C2..20CF
             INHERITED,                // 20D0..20F0
             UNKNOWN,                  // 20F1..20FF
             COMMON,                   // 2100..2125
@@ -8403,8 +8401,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             LYDIAN,                   // 10920..10939
             UNKNOWN,                  // 1093A..1093E
             LYDIAN,                   // 1093F
-            SIDETIC,                  // 10940..1095C
-            UNKNOWN,                  // 1095D..1097F
+            SIDETIC,                  // 10940..10959
+            UNKNOWN,                  // 1095A..1097F
             MEROITIC_HIEROGLYPHS,     // 10980..1099F
             MEROITIC_CURSIVE,         // 109A0..109B7
             UNKNOWN,                  // 109B8..109BB
@@ -9116,12 +9114,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             UNKNOWN,                  // 1FBFB..1FFFF
             HAN,                      // 20000..2A6DF
             UNKNOWN,                  // 2A6E0..2A6FF
-            HAN,                      // 2A700..2B73E
-            UNKNOWN,                  // 2B73F
-            HAN,                      // 2B740..2B81D
+            HAN,                      // 2A700..2B81D
             UNKNOWN,                  // 2B81E..2B81F
-            HAN,                      // 2B820..2CEA1
-            UNKNOWN,                  // 2CEA2..2CEAF
+            HAN,                      // 2B820..2CEAD
+            UNKNOWN,                  // 2CEAE..2CEAF
             HAN,                      // 2CEB0..2EBE0
             UNKNOWN,                  // 2EBE1..2EBEF
             HAN,                      // 2EBF0..2EE5D

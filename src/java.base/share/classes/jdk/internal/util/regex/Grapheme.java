@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,6 @@ public final class Grapheme {
                 case 0x113D1:
                 case 0x1193F:
                 case 0x11941:
-                case 0x11A3A:
                 case 0x11A84:
                 case 0x11A85:
                 case 0x11A86:

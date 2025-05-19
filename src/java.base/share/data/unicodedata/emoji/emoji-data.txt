@@ -1,11 +1,11 @@
 # emoji-data.txt
-# Date: 2025-01-29, 17:53:31 GMT
+# Date: 2025-01-30, 21:48:29 GMT
 # Copyright (c) 2025 Unicode, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use and license, see https://www.unicode.org/terms_of_use.html
 #
 # Emoji Data for UTS #51
-# Used with Emoji Version 17.0 and subsequent minor revisions (if any)
+# Version: 17.0
 #
 # For documentation and usage, see https://www.unicode.org/reports/tr51
 #

@@ -1,5 +1,5 @@
 # GraphemeBreakProperty-17.0.0.txt
-# Date: 2025-01-27, 18:09:16 GMT
+# Date: 2025-05-08, 22:20:13 GMT
 # Copyright (c) 2025 Unicode, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use and license, see https://www.unicode.org/terms_of_use.html
@@ -30,12 +30,11 @@
 113D1         ; Prepend # Lo       TULU-TIGALARI REPHA
 1193F         ; Prepend # Lo       DIVES AKURU PREFIXED NASAL SIGN
 11941         ; Prepend # Lo       DIVES AKURU INITIAL RA
-11A3A         ; Prepend # Lo       ZANABAZAR SQUARE CLUSTER-INITIAL LETTER RA
 11A84..11A89  ; Prepend # Lo   [6] SOYOMBO SIGN JIHVAMULIYA..SOYOMBO CLUSTER-INITIAL LETTER SA
 11D46         ; Prepend # Lo       MASARAM GONDI REPHA
 11F02         ; Prepend # Lo       KAWI SIGN REPHA
 
-# Total code points: 28
+# Total code points: 27
 
 # ================================================
 
