@@ -122,6 +122,7 @@
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
                                                                                                                                      \
   X86_ONLY(static_field(CompilerToVM::Data,    L1_line_size,                           int))                                         \
+  X86_ONLY(static_field(CompilerToVM::Data,    supports_avx512_simd_sort,              bool))                                        \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             vm_page_size,                           size_t)                                       \
                                                                                                                                      \

@@ -323,6 +323,12 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     }
   }
 
+  if (UnregisteredClasses::check_for_exclusion(k)) {
+    ResourceMark rm;
+    log_info(cds)("Skipping %s: used only when dumping CDS archive", k->name()->as_C_string());
+    return true;
+  }
+
   InstanceKlass* super = k->java_super();
   if (super != nullptr && check_for_exclusion(super, nullptr)) {
     ResourceMark rm;
@@ -339,12 +345,6 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
       log_warning(cds)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
     }
-  }
-
-  if (k == UnregisteredClasses::UnregisteredClassLoader_klass()) {
-    ResourceMark rm;
-    log_info(cds)("Skipping %s: used only when dumping CDS archive", k->name()->as_C_string());
-    return true;
   }
 
   return false; // false == k should NOT be excluded
@@ -463,6 +463,15 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
     name->increment_refcount();
   }
   return (klass == *v);
+}
+
+InstanceKlass* SystemDictionaryShared::get_unregistered_class(Symbol* name) {
+  assert(CDSConfig::is_dumping_archive() || ClassListWriter::is_enabled(), "sanity");
+  if (_unregistered_classes_table == nullptr) {
+    return nullptr;
+  }
+  InstanceKlass** k = _unregistered_classes_table->get(name);
+  return k != nullptr ? *k : nullptr;
 }
 
 void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlass* klass) {
@@ -732,6 +741,11 @@ bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   DumpTimeClassInfo* p = _dumptime_table->get(ik);
   return (p == nullptr) ? false : p->failed_verification();
+}
+
+void SystemDictionaryShared::set_from_class_file_load_hook(InstanceKlass* ik) {
+  warn_excluded(ik, "From ClassFileLoadHook");
+  set_excluded(ik);
 }
 
 void SystemDictionaryShared::dumptime_classes_do(MetaspaceClosure* it) {
