@@ -46,7 +46,7 @@ final class ShutdownHook extends Thread {
         // starting any "real" operations. In low memory situations,
         // we would like to take an OOM as early as possible.
         tlabDummyObject = new Object();
-        recorder.setInShutDown();
+        PlatformRecorder.setInShutDown();
         for (PlatformRecording recording : recorder.getRecordings()) {
             if (recording.getDumpOnExit() && recording.getState() == RecordingState.RUNNING) {
                 dump(recording);

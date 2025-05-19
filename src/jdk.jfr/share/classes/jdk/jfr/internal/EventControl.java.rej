@@ -1,0 +1,29 @@
+diff a/src/jdk.jfr/share/classes/jdk/jfr/internal/EventControl.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/EventControl.java	(rejected hunks)
+@@ -333,15 +340,26 @@
+         String def = type.getAnnotationValue(Period.class, PeriodSetting.DEFAULT_VALUE);
+         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_PERIOD, PeriodSetting.NAME, def, Collections.emptyList()));
+         return new Control(new PeriodSetting(type), def);
+     }
+ 
++    private Control defineMethodFilter(PlatformEventType type, Modification modification) {
++        String def = "";
++        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_METHOD_FILTER, "filter", def, Collections.emptyList()));
++        return new Control(new MethodSetting(type, modification, def), def);
++    }
++
+     void disable() {
+         for (NamedControl nc : namedControls) {
+             if (nc.control.isType(EnabledSetting.class)) {
+                 nc.control.setValue("false");
+-                return;
++            } else {
++                String v = nc.control.getDefaultValue();
++                // Avoids slow retransformation during shutdown
++                if (v != null && !PlatformRecorder.isInShutDown()) {
++                    nc.control.setValue(v);
++                }
+             }
+         }
+     }
+ 
+     void writeActiveSettingEvent(long timestamp) {

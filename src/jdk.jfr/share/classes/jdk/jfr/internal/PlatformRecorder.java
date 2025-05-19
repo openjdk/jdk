@@ -25,7 +25,6 @@
 
 package jdk.jfr.internal;
 
-import static jdk.jfr.internal.LogLevel.ERROR;
 import static jdk.jfr.internal.LogLevel.INFO;
 import static jdk.jfr.internal.LogLevel.TRACE;
 import static jdk.jfr.internal.LogLevel.WARN;
@@ -59,7 +58,7 @@ import jdk.jfr.internal.util.Utils;
 
 public final class PlatformRecorder {
 
-
+    private static volatile boolean inShutdown;
     private final ArrayList<PlatformRecording> recordings = new ArrayList<>();
     private static final List<FlightRecorderListener> changeListeners = new ArrayList<>();
     private final Repository repository;
@@ -67,7 +66,6 @@ public final class PlatformRecorder {
     private Timer timer;
     private long recordingCounter = 0;
     private RepositoryChunk currentChunk;
-    private boolean inShutdown;
     private boolean runPeriodicTask;
 
     public PlatformRecorder() throws Exception {
@@ -150,12 +148,12 @@ public final class PlatformRecorder {
         }
     }
 
-    synchronized void setInShutDown() {
-        this.inShutdown = true;
+    static void setInShutDown() {
+        inShutdown = true;
     }
 
-    synchronized boolean isInShutDown() {
-        return this.inShutdown;
+    static boolean isInShutDown() {
+        return inShutdown;
     }
 
     // called by shutdown hook
