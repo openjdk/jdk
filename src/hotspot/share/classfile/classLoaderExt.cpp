@@ -67,18 +67,20 @@ int ClassLoaderExt::compare_module_names(const char** p1, const char** p2) {
   return strcmp(*p1, *p2);
 }
 
-void ClassLoaderExt::record_result(s2 classpath_index, InstanceKlass* result, bool redefined) {
+void ClassLoaderExt::record_result_for_builtin_loader(s2 classpath_index, InstanceKlass* result, bool redefined) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
-  // We need to remember where the class comes from during dumping.
   oop loader = result->class_loader();
-  s2 classloader_type = ClassLoader::BOOT_LOADER;
+  s2 classloader_type;
   if (SystemDictionary::is_system_class_loader(loader)) {
     classloader_type = ClassLoader::APP_LOADER;
     AOTClassLocationConfig::dumptime_set_has_app_classes();
   } else if (SystemDictionary::is_platform_class_loader(loader)) {
     classloader_type = ClassLoader::PLATFORM_LOADER;
     AOTClassLocationConfig::dumptime_set_has_platform_classes();
+  } else {
+    precond(loader == nullptr);
+    classloader_type = ClassLoader::BOOT_LOADER;
   }
 
   if (CDSConfig::is_dumping_preimage_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {
