@@ -21,17 +21,19 @@
  * questions.
  */
 
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.security.Security;
-import java.time.*;
-import java.util.*;
-import javax.net.ssl.*;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Date;
 
-/**
+/*
  * @test
- * @bug 8346587
+ * @bug 8346587 8350498
  * @summary Check that TLS Server certificates chaining back to distrusted
- *          Camerfirma roots are invalid
+ *          Camerfirma root are invalid
  * @library /test/lib
  * @modules java.base/sun.security.validator
  * @run main/othervm Camerfirma after policyOn invalid
@@ -42,13 +44,11 @@ import javax.net.ssl.*;
 
 public class Camerfirma {
 
-    private static final String certPath = "chains" + File.separator + "camerfirma";
+    private static final String CERT_PATH = "chains" + File.separator + "camerfirma";
 
     // Each of the roots have a test certificate chain stored in a file
     // named "<root>-chain.pem".
-    private static String[] rootsToTest = new String[] {
-            "camerfirmachamberscommerceca", "camerfirmachambersca",
-            "camerfirmachambersignca"};
+    private static final String ROOT_TO_TEST = "camerfirmachambersca";
 
     // Date after the restrictions take effect
     private static final ZonedDateTime DISTRUST_DATE =
@@ -56,7 +56,7 @@ public class Camerfirma {
 
     public static void main(String[] args) throws Exception {
 
-        // All of the test certificates are signed with SHA-1 so we need
+        // All the test certificates are signed with SHA-1, so we need
         // to remove the constraint that disallows SHA-1 certificates.
         String prop = Security.getProperty("jdk.certpath.disabledAlgorithms");
         String newProp = prop.replace(", SHA1 jdkCA & usage TLSServer", "");
@@ -70,6 +70,6 @@ public class Camerfirma {
         };
 
         Date notBefore = distrust.getNotBefore(DISTRUST_DATE);
-        distrust.testCertificateChain(certPath, notBefore, tms, rootsToTest);
+        distrust.testCertificateChain(CERT_PATH, notBefore, tms, ROOT_TO_TEST);
     }
 }

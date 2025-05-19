@@ -48,6 +48,10 @@ JRT_LEAF(void, ShenandoahRuntime::write_ref_field_pre(oopDesc * orig, JavaThread
   ShenandoahBarrierSet::satb_mark_queue_set().enqueue_known_active(queue, orig);
 JRT_END
 
+void ShenandoahRuntime::write_barrier_pre(oopDesc* orig) {
+  write_ref_field_pre(orig, JavaThread::current());
+}
+
 JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_strong(oopDesc* src, oop* load_addr))
   return ShenandoahBarrierSet::barrier_set()->load_reference_barrier_mutator(src, load_addr);
 JRT_END
