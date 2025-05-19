@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -38,10 +38,6 @@
   static ByteSize last_Java_fp_offset()          {
     return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_fp_offset();
   }
-
-  JFR_ONLY(static ByteSize last_sender_Java_fp_offset() {
-    return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_sender_Java_fp_offset();
-  })
 
   bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext,
     bool isInJava);

@@ -598,10 +598,8 @@ private:
   // last Java fp
   intptr_t* last_Java_fp() const                 { return _anchor.last_Java_fp(); }
 
-  // This is used by JFR when sampling interpreter frames.
-  JFR_ONLY(intptr_t* sender_Java_fp() const      { return _anchor.last_sender_Java_fp(); })
-
   // last_Java_pc
+
   address last_Java_pc(void)                     { return _anchor.last_Java_pc(); }
 
   // Safepoint support

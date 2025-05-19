@@ -106,7 +106,7 @@ static bool compute_sender_frame(JfrSampleRequest& request, frame& sender_frame,
       assert(method != nullptr, "invariant");
       request._sample_pc = method;
       // Got the Method*. Validate bcp.
-      if (!method->is_native() && !method->contains(static_cast<address>(request._sample_bcp))) {
+      if (!method->is_native() &&  !method->contains(static_cast<address>(request._sample_bcp))) {
         request._sample_bcp = frame->interpreter_frame_bcp();
       }
       break;

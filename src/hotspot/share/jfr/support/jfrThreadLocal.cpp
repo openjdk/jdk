@@ -58,7 +58,6 @@ JfrThreadLocal::JfrThreadLocal() :
   _checkpoint_buffer_epoch_0(nullptr),
   _checkpoint_buffer_epoch_1(nullptr),
   _sample_state(0),
-  _sample_thread_state(_thread_uninitialized),
   _dcmd_arena(nullptr),
   _thread(),
   _vthread_id(0),
@@ -274,6 +273,10 @@ ByteSize JfrThreadLocal::notified_offset() {
 
 ByteSize JfrThreadLocal::sample_state_offset() {
   return byte_offset_of(JfrThreadLocal, _sample_state);
+}
+
+ByteSize JfrThreadLocal::sampling_critical_section_offset() {
+  return byte_offset_of(JfrThreadLocal, _sampling_critical_section);
 }
 
 void JfrThreadLocal::set(bool* exclusion_field, bool state) {

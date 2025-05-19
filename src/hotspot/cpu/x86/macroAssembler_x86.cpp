@@ -2456,14 +2456,10 @@ void MacroAssembler::round_to(Register reg, int modulus) {
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod) {
-  return safepoint_poll(slow_path, rbp, at_return, in_nmethod);
-}
-
-void MacroAssembler::safepoint_poll(Label& slow_path, Register fp_reg, bool at_return, bool in_nmethod) {
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
     // we may safely use rsp instead to perform the stack watermark check.
-    cmpptr(in_nmethod ? rsp : fp_reg, Address(r15_thread, JavaThread::polling_word_offset()));
+    cmpptr(in_nmethod ? rsp : rbp, Address(r15_thread, JavaThread::polling_word_offset()));
     jcc(Assembler::above, slow_path);
     return;
   }

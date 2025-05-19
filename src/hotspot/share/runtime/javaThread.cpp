@@ -1081,6 +1081,7 @@ void JavaThread::handle_special_runtime_exit_condition() {
   }
 }
 
+
 // Asynchronous exceptions support
 //
 void JavaThread::handle_async_exception(oop java_throwable) {

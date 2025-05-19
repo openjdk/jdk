@@ -1147,6 +1147,30 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(L);
   }
 
+#if INCLUDE_JFR
+  __ enter_jfr_critical_section();
+
+  // This poll test is to uphold the invariant that a JFR sampled frame
+  // must not return to its caller without a prior safepoint poll check.
+  // The earlier poll check in this routine is insufficient for this purpose
+  // because the thread has transitioned back to Java.
+
+  Label slow_path;
+  Label fast_path;
+  __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
+  __ jmp(fast_path);
+  __ bind(slow_path);
+  __ push(dtos);
+  __ push(ltos);
+  __ set_last_Java_frame(noreg, rbp, (address)__ pc(), rscratch1);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), r15_thread);
+  __ reset_last_Java_frame(true);
+  __ pop(ltos);
+  __ pop(dtos);
+  __ bind(fast_path);
+
+#endif // INCLUDE_JFR
+
   // jvmti support
   // Note: This must happen _after_ handling/throwing any exceptions since
   //       the exception handler code notifies the runtime of method exits
@@ -1164,41 +1188,16 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                        (frame::interpreter_frame_result_handler_offset) * wordSize));
   __ call(t);
 
-  // Remove activation
-
-  // For asynchronous profiling to work correctly, we must remove the
-  // activation frame _before_ we test the method return safepoint poll.
-  // This is equivalent to how it is done for compiled frames.
-  // Removing an interpreter activation frame from a sampling perspective means
-  // updating the frame link (fp). But since we are unwinding the current frame,
-  // we must save the current rbp in a temporary register, this_fp, for use
-  // as the last java fp should we decide to unwind.
-  // The asynchronous profiler will only see the updated rfp, either using the
-  // CPU context or by reading the last_sender_Java_fp() field as part of the ljf.
-  const Register this_fp = rscratch2;
-  __ make_sender_fp_current(this_fp, rscratch1);
-
-  // The interpreter frame is now unwound from a sampling perspective,
-  // meaning it sees the sender frame as the current frame from this point onwards.
-
-  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
-  // that would normally not be safe to use. Such bad returns into unsafe territory of
-  // the stack, will call InterpreterRuntime::at_unwind.
-  Label slow_path;
-  Label fast_path;
-  __ safepoint_poll(slow_path, this_fp, true, false);
-  __ jmp(fast_path);
-  __ bind(slow_path);
-  __ push(dtos);
-  __ push(ltos);
-  __ call_VM_with_sender_Java_fp_entry(this_fp, rscratch1, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), false /* save_bcp */);
-  __ pop(ltos);
-  __ pop(dtos);
-  __ bind(fast_path);
-
   // remove activation
-  __ movptr(rdi, Address(this_fp, wordSize)); // get return address
-  __ movptr(rsp, Address(this_fp, frame::interpreter_frame_sender_sp_offset* wordSize)); // get sender sp
+  __ movptr(t, Address(rbp,
+                       frame::interpreter_frame_sender_sp_offset *
+                       wordSize)); // get sender sp
+  __ leave();                                // remove frame anchor
+  __ pop(rdi);                               // get return address
+  __ mov(rsp, t);                            // set sp to sender sp
+
+  JFR_ONLY(__ leave_jfr_critical_section();)
+
   __ jmp(rdi);
 
   if (inc_counter) {
@@ -1465,7 +1464,6 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ movptr(c_rarg1, Address(rbp, frame::return_addr_offset * wordSize));
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
                                InterpreterRuntime::interpreter_contains), c_rarg1);
-    __ restore_bcp();
     __ testl(rax, rax);
     __ jcc(Assembler::notZero, caller_not_deoptimized);
 

@@ -39,11 +39,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   virtual void call_VM_leaf_base(address entry_point,
                                  int number_of_arguments);
 
-  void call_VM_with_sender_Java_fp_entry(Register fp_reg,
-                                         Register tmp,
-                                         address entry_point,
-                                         bool store_bcp = true);
-
  protected:
 
   virtual void call_VM_base(Register oop_result,
@@ -74,11 +69,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Interpreter-specific registers
   void save_bcp() {
-    save_bcp(rbp);
-  }
-
-  void save_bcp(Register fp_register) {
-    movptr(Address(fp_register, frame::interpreter_frame_bcp_offset * wordSize), _bcp_register);
+    movptr(Address(rbp, frame::interpreter_frame_bcp_offset * wordSize), _bcp_register);
   }
 
   void restore_bcp() {
@@ -209,9 +200,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
                          bool throw_monitor_exception = true,
                          bool install_monitor_exception = true,
                          bool notify_jvmdi = true);
-
-  void make_sender_fp_current(Register save_this_fp, Register tmp);
-
   void get_method_counters(Register method, Register mcs, Label& skip);
 
   // Object locking
@@ -277,15 +265,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void notify_method_entry();
   void notify_method_exit(TosState state, NotifyMethodExitMode mode);
 
+  JFR_ONLY(void enter_jfr_critical_section();)
+  JFR_ONLY(void leave_jfr_critical_section();)
+
  private:
 
   Register _locals_register; // register that contains the pointer to the locals
   Register _bcp_register; // register that contains the bcp
-
-  void call_VM_with_sender_Java_fp(Register fp_reg,
-                                   Register tmp,
-                                   address entry_point,
-                                   bool store_bcp);
 
  public:
   void profile_obj_type(Register obj, const Address& mdo_addr);

@@ -81,24 +81,6 @@ static inline address interpreter_frame_return_address(const JfrSampleRequest& r
   return frame::interpreter_return_address(static_cast<intptr_t*>(request._sample_bcp));
 }
 
-static inline intptr_t* continuation_frame_sender_fp(void* sp) {
-  assert(sp != nullptr, "invariant");
-  return reinterpret_cast<intptr_t*>(static_cast<address>(sp) + (ContinuationEntry::size()));
-}
-
-static inline address continuation_frame_sender_pc(void* sp) {
-  assert(sp != nullptr, "invariant");
-  return static_cast<address>(sp) + (ContinuationEntry::size() + wordSize);
-}
-
-static inline void update_continuation_frame_sender_pc(JfrSampleRequest& request) {
-  request._sample_pc = continuation_frame_sender_pc(request._sample_sp);
-}
-
-static inline void update_continuation_frame_sender_sp(JfrSampleRequest& request) {
-  request._sample_sp = static_cast<address>(request._sample_sp) + (ContinuationEntry::size() + 2 * wordSize);
-}
-
 static inline intptr_t* frame_sender_sp(const JfrSampleRequest& request, JavaThread* jt) {
   assert(fp_in_stack(request, jt), "invariant");
   return frame::sender_sp(static_cast<intptr_t*>(request._sample_bcp));
@@ -146,23 +128,11 @@ static inline bool is_continuation_frame(const JfrSampleRequest& request) {
   return is_continuation_frame(static_cast<address>(request._sample_pc));
 }
 
-static void update_continuation_frame_sender(JfrSampleRequest& request, intptr_t* last_fp) {
-  assert(last_fp != nullptr, "invariant");
-  update_frame_sender_sp(request, last_fp);
-  update_continuation_frame_sender_pc(request);
-  update_continuation_frame_sender_sp(request);
-}
-
-static intptr_t* update_continuation_frame_sender(JfrSampleRequest& request) {
-  update_continuation_frame_sender(request, static_cast<intptr_t*>(request._sample_bcp));
-  request._sample_bcp = nullptr;
-  return continuation_frame_sender_fp(request._sample_sp);
-}
-
 static intptr_t* sender_for_interpreter_frame(JfrSampleRequest& request, JavaThread* jt) {
   update_interpreter_frame_pc(request, jt); // pick up return address
   if (is_continuation_frame(request)) {
-    return update_continuation_frame_sender(request);
+    request._sample_pc = nullptr;
+    return nullptr;
   }
   update_frame_sender_sp(request, jt);
   intptr_t* fp = nullptr;
@@ -177,6 +147,7 @@ static bool build(JfrSampleRequest& request, intptr_t* fp, JavaThread* jt);
 
 static bool build_for_interpreter(JfrSampleRequest& request, JavaThread* jt) {
   assert(is_interpreter(request), "invariant");
+  assert(jt != nullptr, "invariant");
   if (!fp_in_stack(request, jt)) {
     return false;
   }
@@ -211,9 +182,7 @@ static bool build(JfrSampleRequest& request, intptr_t* fp, JavaThread* jt) {
   const CodeBlob* const cb = CodeCache::find_blob(request._sample_pc);
   if (cb != nullptr) {
     // 2. Is nmethod?
-    if (cb->is_nmethod()) {
-      return true;
-    }
+    return cb->is_nmethod();
     // 3. What kind of CodeBlob or Stub?
     // Longer plan is to make stubs and blobs parsable,
     // and we will have a list of cases here for each blob type
@@ -224,36 +193,10 @@ static bool build(JfrSampleRequest& request, intptr_t* fp, JavaThread* jt) {
   return false;
 }
 
-// We have logically unwound the interpreter frame at the sensitive safepoint poll site,
-// by updating the fp link, and the sender frame is represented by sender_Java_fp.
-// We need to use sender_Java_fp as the last fp in these contexts, else we would
-// re-sample an interpreter frame whose poll return check we are currently processing, causing a race.
-static inline intptr_t* process_sender_Java_fp(JfrSampleRequest& request, intptr_t* sender_Java_fp, intptr_t* last_fp, JavaThread* jt) {
-  assert(sender_Java_fp != nullptr, "invariant");
-  assert(last_fp != nullptr, "invariant");
-  assert(in_stack(last_fp, jt), "invariant");
-  assert(jt != nullptr, "invariant");
-  assert(jt->has_last_Java_frame(), "invariant");
-  if (p2i(sender_Java_fp) == 1) {
-    // A marker that the fp of the sender is undetermined, which implies
-    // the sender is a compiled frame to be used instead.
-    update_interpreter_frame_sender_pc(request, last_fp); // pick up return address
-    update_frame_sender_sp(request, last_fp); // sender sp
-    return nullptr;
-  }
-  if (JfrThreadLocal::is_vthread(jt)) {
-    if (is_continuation_frame(frame::interpreter_return_address(last_fp))) {
-      update_continuation_frame_sender(request, last_fp);
-    }
-  }
-  return sender_Java_fp;
-}
-
 static bool build_from_ljf(JfrSampleRequest& request,
                            const SuspendedThreadTaskContext& context,
                            JavaThread* jt) {
   assert(sp_in_stack(request, jt), "invariant");
-
   // Last Java frame is available, but might not be walkable, fix it.
   address last_pc = jt->last_Java_pc();
   if (last_pc == nullptr) {
@@ -264,23 +207,7 @@ static bool build_from_ljf(JfrSampleRequest& request,
   }
   assert(last_pc != nullptr, "invariant");
   request._sample_pc = last_pc;
-
-  intptr_t* last_fp = jt->last_Java_fp();
-  if (last_fp == nullptr) {
-    if (is_interpreter(request)) {
-      intptr_t* unused_sp;
-      os::fetch_frame_from_context(context.ucontext(), &unused_sp, &last_fp);
-    }
-    return build(request, last_fp, jt);
-  }
-
-  // last fp indicates an interpreter frame. If sender_Java_fp exists,
-  // this ljf represents a sensitive method return safepoint poll site in the interpreter.
-  intptr_t* const sender_Java_fp = jt->sender_Java_fp();
-  if (sender_Java_fp != nullptr) {
-    last_fp = process_sender_Java_fp(request, sender_Java_fp, last_fp, jt);
-  }
-  return build(request, last_fp, jt);
+  return build(request, jt->last_Java_fp(), jt);
 }
 
 static inline JfrSampleResult set_request_and_arm_local_poll(JfrSampleRequest& request, JfrThreadLocal* tl, JavaThread* jt) {
@@ -321,8 +248,13 @@ JfrSampleResult JfrSampleRequestBuilder::build_java_sample_request(const Suspend
 
   JfrSampleRequest request;
 
+  if (tl->in_sampling_critical_section()) {
+    return set_biased_java_sample(request, tl, jt);
+  }
+
   // Prioritize the ljf, if one exists.
   request._sample_sp = jt->last_Java_sp();
+
   if (request._sample_sp == nullptr || !build_from_ljf(request, context, jt)) {
     intptr_t* fp;
     request._sample_pc = os::fetch_frame_from_context(context.ucontext(), reinterpret_cast<intptr_t**>(&request._sample_sp), &fp);

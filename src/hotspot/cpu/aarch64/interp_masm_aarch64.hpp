@@ -63,15 +63,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
                            Register arg_1);
   void restore_after_resume(bool is_native);
 
-  void call_VM_with_sender_Java_fp_entry(address entry_point);
-
-  void set_last_Java_frame_with_sender_fp(Register last_java_sp,
-                                          Register last_java_fp,
-                                          address last_java_pc,
-                                          Register scratch);
-
-  void reset_last_Java_frame_with_sender_fp(Register fp_reg);
-
   void jump_to_entry(address entry);
 
   virtual void check_and_handle_popframe(Register java_thread);
@@ -79,11 +70,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Interpreter-specific registers
   void save_bcp() {
-    save_bcp(rfp);
-  }
-
-  void save_bcp(Register fp_register) {
-    str(rbcp, Address(fp_register, frame::interpreter_frame_bcp_offset * wordSize));
+    str(rbcp, Address(rfp, frame::interpreter_frame_bcp_offset * wordSize));
   }
 
   void restore_bcp() {
@@ -238,8 +225,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
                          bool install_monitor_exception = true,
                          bool notify_jvmdi = true);
 
-  void make_sender_fp_current(Register save_this_fp, Register tmp);
-
   // FIXME: Give us a valid frame at a null check.
   virtual void null_check(Register reg, int offset = -1) {
 // #ifdef ASSERT
@@ -324,6 +309,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // support for jvmti/dtrace
   void notify_method_entry();
   void notify_method_exit(TosState state, NotifyMethodExitMode mode);
+
+  JFR_ONLY(void enter_jfr_critical_section();)
+  JFR_ONLY(void leave_jfr_critical_section();)
 
   virtual void _call_Unimplemented(address call_site) {
     save_bcp();

@@ -1825,21 +1825,9 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       // it will be preserved in rbx.
       __ mov(rbx, rax);
 
-      // For asynchronous profiling to work correctly, we must remove the
-      // activation frame _before_ we test the method return safepoint poll.
-      // This is equivalent to how it is done for compiled frames.
-      // Removing an interpreter activation frame from a sampling perspective means
-      // updating the frame link (fp). But since we are unwinding the current frame,
-      // we must save the current rbp in a temporary register, this_fp, for use
-      // as the last java fp should we decide to unwind.
-      // The asynchronous profiler will only see the updated rbp, either using the
-      // CPU context or by reading the last_sender_Java_fp() field as part of the ljf.
-      const Register this_fp = rscratch2;
-      __ make_sender_fp_current(this_fp, rax);
+      JFR_ONLY(__ enter_jfr_critical_section();)
 
-      // The interpreter frame is now unwound from a sampling perspective,
-      // meaning it sees the sender frame as the current frame from this point onwards.
-      __ call_VM_with_sender_Java_fp_entry(this_fp, rax, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
+      call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
 
       // rax is OSR buffer, move it to expected parameter location
       __ mov(j_rarg0, rax);
@@ -1848,12 +1836,17 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       // sequence to the OSR nmethod and we don't want collision. These are NOT parameters.
 
       const Register retaddr   = j_rarg2;
+      const Register sender_sp = j_rarg1;
 
-      // pop the rest of the interpreter frame
-      __ movptr(retaddr, Address(this_fp, frame::return_addr_offset * wordSize)); // get return address
-      __ movptr(rsp, Address(this_fp, frame::interpreter_frame_sender_sp_offset* wordSize)); // get sender sp
+      // pop the interpreter frame
+      __ movptr(sender_sp, Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize)); // get sender sp
+      __ leave();                                // remove frame anchor
+      __ pop(retaddr);                           // get return address
+      __ mov(rsp, sender_sp);                    // set sp to sender sp
       // Ensure compiled code always sees stack at proper alignment
       __ andptr(rsp, -(StackAlignmentInBytes));
+
+      JFR_ONLY(__ leave_jfr_critical_section();)
 
       // push the return address
       __ push(retaddr);

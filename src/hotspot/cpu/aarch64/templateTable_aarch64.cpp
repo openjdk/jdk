@@ -1890,42 +1890,30 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
 
     __ mov(r19, r0);                             // save the nmethod
 
-    // For asynchronous profiling to work correctly, we must remove the
-    // activation frame _before_ we test the method return safepoint poll.
-    // This is equivalent to how it is done for compiled frames.
-    // Removing an interpreter activation frame from a sampling perspective means
-    // updating the frame link (fp). But since we are unwinding the current frame,
-    // we must save the current rfp in a temporary register, this_fp, for use
-    // as the last java fp should we decide to unwind.
-    // The asynchronous profiler will only see the updated rfp, either using the
-    // CPU context or by reading the last_sender_Java_fp() field as part of the ljf.
-    const Register this_fp = rscratch2;
-    __ make_sender_fp_current(this_fp, rscratch1);
+    JFR_ONLY(__ enter_jfr_critical_section();)
 
-    // The interpreter frame is now unwound from a sampling perspective,
-    // meaning it sees the sender frame as the current frame from this point onwards.
+    call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
 
-    __ save_bcp(this_fp); // need to save bcp but not restore it.
-    __ set_last_Java_frame_with_sender_fp(esp, this_fp, (address)__ pc(), rscratch1);
-    __ call_VM_with_sender_Java_fp_entry(CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
     // r0 is OSR buffer, move it to expected parameter location
     __ mov(j_rarg0, r0);
-    __ reset_last_Java_frame_with_sender_fp(this_fp);
 
     // remove activation
     // get sender esp
-    __ ldr(esp, Address(this_fp, frame::interpreter_frame_sender_sp_offset* wordSize));
-    __ ldr(lr, Address(this_fp, wordSize));
-    __ authenticate_return_address();
-    __ lea(sp, Address(this_fp, 2 * wordSize));
+    __ ldr(esp,
+        Address(rfp, frame::interpreter_frame_sender_sp_offset * wordSize));
+    // remove frame anchor
+    __ leave();
     // Ensure compiled code always sees stack at proper alignment
     __ andr(sp, esp, -16);
+
+    JFR_ONLY(__ leave_jfr_critical_section();)
 
     // and begin the OSR nmethod
     __ ldr(rscratch1, Address(r19, nmethod::osr_entry_point_offset()));
     __ br(rscratch1);
   }
 }
+
 
 void TemplateTable::if_0cmp(Condition cc)
 {

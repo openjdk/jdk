@@ -27,7 +27,7 @@
 #define CPU_ZERO_JAVAFRAMEANCHOR_ZERO_HPP
 
  private:
-  intptr_t* volatile _last_Java_fp;
+  ZeroFrame* volatile _last_Java_fp;
 
  public:
   // Each arch must define reset, save, restore
@@ -50,7 +50,7 @@
     set(src->_last_Java_sp, src->_last_Java_pc, src->_last_Java_fp);
   }
 
-  void set(intptr_t* sp, address pc, intptr_t* fp) {
+  void set(intptr_t* sp, address pc, ZeroFrame* fp) {
     // In order to make sure the transition state is valid for "this"
     // We must clear _last_Java_sp before copying the rest of the new
     // data
@@ -81,7 +81,7 @@
     return _last_Java_sp;
   }
 
-  intptr_t* last_Java_fp() const {
+  ZeroFrame* last_Java_fp() const {
     return _last_Java_fp;
   }
 

@@ -121,8 +121,6 @@ class MacroAssembler: public Assembler {
  virtual void check_and_handle_earlyret(Register java_thread);
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
-  void safepoint_poll(Label& slow_path, Register fp_reg, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
-
   void rt_call(address dest, Register tmp = rscratch1);
 
   // Load Effective Address

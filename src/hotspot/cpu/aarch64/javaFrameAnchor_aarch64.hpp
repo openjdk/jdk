@@ -30,7 +30,6 @@
 
   // FP value associated with _last_Java_sp:
   intptr_t* volatile        _last_Java_fp;           // pointer is volatile not what it points to
-  JFR_ONLY(intptr_t* volatile _last_sender_Java_fp;) // specialized field for when JFR samples an interpreter frame
 
  public:
   // Each arch must define reset, save, restore
@@ -45,7 +44,6 @@
     OrderAccess::release();
     _last_Java_fp = nullptr;
     _last_Java_pc = nullptr;
-    JFR_ONLY(_last_sender_Java_fp = nullptr;)
   }
 
   void copy(JavaFrameAnchor* src) {
@@ -61,7 +59,6 @@
       OrderAccess::release();
     }
     _last_Java_fp = src->_last_Java_fp;
-    JFR_ONLY(_last_sender_Java_fp = src->_last_sender_Java_fp;)
     _last_Java_pc = src->_last_Java_pc;
     // Must be last so profiler will always see valid frame if has_last_frame() is true
     _last_Java_sp = src->_last_Java_sp;
@@ -75,18 +72,12 @@
 
   address last_Java_pc(void)                     { return _last_Java_pc; }
 
- public:
+  static ByteSize last_Java_fp_offset()          { return byte_offset_of(JavaFrameAnchor, _last_Java_fp); }
 
   void set_last_Java_sp(intptr_t* sp)            { _last_Java_sp = sp; OrderAccess::release(); }
 
   intptr_t*   last_Java_fp() const               { return _last_Java_fp; }
 
   void set_last_Java_fp(intptr_t* fp)            { _last_Java_fp = fp; }
-
-  JFR_ONLY(intptr_t* last_sender_Java_fp() const { return _last_sender_Java_fp; })
-
-  static ByteSize last_Java_fp_offset() { return byte_offset_of(JavaFrameAnchor, _last_Java_fp); }
-
-  JFR_ONLY(static ByteSize last_sender_Java_fp_offset() { return byte_offset_of(JavaFrameAnchor, _last_sender_Java_fp); })
 
 #endif // CPU_AARCH64_JAVAFRAMEANCHOR_AARCH64_HPP

@@ -56,7 +56,6 @@ class JfrThreadLocal {
   JfrBuffer* _checkpoint_buffer_epoch_0;
   JfrBuffer* _checkpoint_buffer_epoch_1;
   volatile int _sample_state;
-  JavaThreadState _sample_thread_state;
   Arena* _dcmd_arena;
   JfrBlobHandle _thread;
   mutable traceid _vthread_id;
@@ -78,6 +77,7 @@ class JfrThreadLocal {
   bool _vthread;
   bool _notified;
   bool _dead;
+  bool _sampling_critical_section;
 
   JfrBuffer* install_native_buffer() const;
   JfrBuffer* install_java_buffer() const;
@@ -220,14 +220,6 @@ class JfrThreadLocal {
     return sample_state() != NO_SAMPLE || has_enqueued_requests();
   }
 
-  void set_sample_thread_state(JavaThreadState state) {
-    _sample_thread_state = state;
-  }
-
-  JavaThreadState sample_thread_state() const {
-    return _sample_thread_state;
-  }
-
   int64_t last_allocated_bytes() const {
     return _last_allocated_bytes;
   }
@@ -331,6 +323,10 @@ class JfrThreadLocal {
     return _dead;
   }
 
+  bool in_sampling_critical_section() const {
+    return _sampling_critical_section;
+  }
+
   static int32_t make_non_reentrant(Thread* thread);
   static void make_reentrant(Thread* thread, int32_t previous_nesting);
 
@@ -360,6 +356,7 @@ class JfrThreadLocal {
   static ByteSize vthread_excluded_offset();
   static ByteSize notified_offset();
   static ByteSize sample_state_offset();
+  static ByteSize sampling_critical_section_offset();
 
   friend class JfrJavaThread;
   friend class JfrCheckpointManager;
