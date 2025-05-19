@@ -55,20 +55,24 @@ innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$FirstVariadicArg ou
 innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$CaptureCallState outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName CaptureCallState flags 19
 innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$Critical outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName Critical flags 4019
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name capturedCallState descriptor ()Ljava/util/stream/Stream;
+method name capturedCallStateMask descriptor ()I flags 1
 
 class name jdk/internal/foreign/abi/LinkerOptions$CaptureCallState
 header extends java/lang/Record implements jdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl nestHost jdk/internal/foreign/abi/LinkerOptions record true flags 31
-recordcomponent name compact descriptor I
+recordcomponent name mask descriptor I
 innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$CaptureCallState outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName CaptureCallState flags 19
 innerclass innerClass jdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl outerClass jdk/internal/foreign/abi/LinkerOptions innerClassName LinkerOptionImpl flags 609
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 -method name <init> descriptor (Ljava/util/Set;)V
+-method name toString descriptor ()Ljava/lang/String;
 -method name hashCode descriptor ()I
 -method name equals descriptor (Ljava/lang/Object;)Z
+-method name saved descriptor ()Ljava/util/Set;
 method name <init> descriptor (I)V flags 1 methodParameters 0:compact
 method name equals descriptor (Ljava/lang/Object;)Z flags 1
 method name hashCode descriptor ()I flags 1
-method name compact descriptor ()I flags 1
+method name toString descriptor ()Ljava/lang/String; flags 1
+method name mask descriptor ()I flags 1
 
 class name jdk/internal/foreign/abi/LinkerOptions$Critical
 header extends java/lang/Enum implements jdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl nestHost jdk/internal/foreign/abi/LinkerOptions flags 4031 signature Ljava/lang/Enum<Ljdk/internal/foreign/abi/LinkerOptions$Critical;>;Ljdk/internal/foreign/abi/LinkerOptions$LinkerOptionImpl;
