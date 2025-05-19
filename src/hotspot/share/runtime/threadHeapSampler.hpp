@@ -77,6 +77,7 @@ class ThreadHeapSampler {
 
  public:
   ThreadHeapSampler() :
+      _sample_threshold(0),
       _tlab_top_at_sample_start(nullptr),
       _accumulated_tlab_bytes_since_sample(0),
       _accumulated_outside_tlab_bytes_since_sample(0) {

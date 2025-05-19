@@ -397,7 +397,6 @@ void ThreadHeapSampler::pick_next_geometric_sample() {
   assert(result > 0 && result < static_cast<double>(SIZE_MAX), "Result is not in an acceptable range.");
   size_t interval = static_cast<size_t>(result);
   _sample_threshold = interval;
-  _sample_threshold = get_sampling_interval();
 }
 
 void ThreadHeapSampler::pick_next_sample() {
