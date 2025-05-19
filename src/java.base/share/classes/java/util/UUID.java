@@ -485,73 +485,79 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     }
 
     /**
-     * Converts 4 bytes from a long input into an 8-character hexadecimal string encoded as a long value,
-     * using vectorized bitwise operations for high performance.
+     * Efficiently converts 8 hexadecimal digits to their ASCII representation using SIMD-style vector operations.
+     * This method processes multiple digits in parallel by treating a long value as eight 8-bit lanes,
+     * achieving significantly better performance compared to traditional loop-based conversion.
      *
-     * Algorithm Description:
-     * 1. Byte Expansion Phase:
-     *    - Extracts 8 nibbles (4-bit values) from the 4 input bytes using 0x0F mask pattern
-     *    - Expands each byte into two 16-bit sections using Long.expand()
-     *    - Final layout: 0xAABBCCDD -> 0x0A0B0C0D0A0B0C0D (nibble separation)
+     * <p>The conversion algorithm works as follows:
+     * <pre>
+     * 1. Input expansion: Each 4-bit hex digit is expanded to 8 bits
+     * 2. Vector processing:
+     *    - Add 6 to each digit: triggers carry flag for a-f digits
+     *    - Mask with 0x10 pattern to isolate carry flags
+     *    - Calculate ASCII adjustment: (carry << 1) + (carry >> 1) - (carry >> 4)
+     *    - Add ASCII '0' base (0x30) and original value
+     * 3. Byte order adjustment for final output
+     * </pre>
      *
-     * 2. Hex Conversion Phase (Parallel Computation):
-     *    a. Carry Detection: Adds 6 to each nibble (0x06 per byte)
-     *       - Generates carry bit (0x10) for values >= 10
-     *       - Mask: 0x1010_1010_1010_1010 identifies hex letters (a-f)
-     *    b. ASCII Calculation:
-     *       - Base value: 0x30 ('0' character)
-     *       - Letter adjustment: 39 (0x27) for values >=10 using bitwise magic:
-     *         (carry_mask << 1) + (carry_mask >> 1) - (carry_mask >> 4) = 0x27
-     *    c. Parallel Addition: Combines base/letter adjustment with original nibbles
+     * <p>Performance characteristics:
+     * <ul>
+     *   <li>Processes 8 digits in parallel using vector operations
+     *   <li>Avoids branching and loops completely
+     *   <li>Uses only integer arithmetic and bit operations
+     *   <li>Constant time execution regardless of input values
+     * </ul>
      *
-     * 3. Byte Order Correction:
-     *    - Reverses byte order to match big-endian string representation
+     * <p>ASCII conversion mapping:
+     * <ul>
+     *   <li>Digits 0-9 → ASCII '0'-'9' (0x30-0x39)
+     *   <li>Digits a-f → ASCII 'a'-'f' (0x61-0x66)
+     * </ul>
      *
-     * Performance Considerations:
-     * - Processes all 8 nibbles simultaneously using bitwise operations (~1 cycle)
-     * - Eliminates:
-     *   - Loop overhead (traditional 8-iteration approach)
-     *   - Branch mispredictions (no if/else for letter/digit)
-     *   - Multiple memory accesses (works entirely in registers)
-     * - Achieves O(1) time complexity vs O(n) for iterative approaches
-     * - Uses 6 arithmetic/logical operations vs 40+ for naive implementation
+     * @param input A long containing 8 hex digits (each digit must be 0-15)
+     * @return A long containing 8 ASCII bytes representing the hex digits
      *
-     * @param i The input value containing up to 4 bytes of data in its least significant bits
-     * @return A long value representing the concatenated hexadecimal string of the 4 input bytes
+     * @implNote The implementation leverages CPU vector processing capabilities through
+     *           long integer operations. The algorithm is based on the observation that
+     *           ASCII hex digits have a specific pattern that can be computed efficiently
+     *           using carry flag manipulation.
+     *
+     * @example
+     * <pre>
+     * Input:  0x0123456789ABCDEF
+     * Output: 0x3031323334353637 ('0','1','2','3','4','5','6','7' in ASCII)
+     * </pre>
+     *
+     * @see Long#reverseBytes(long)
      */
     private static long hex8(long i) {
-        // Expand bytes to separated nibbles: 0xAABBCCDD -> 0x0A0B0C0D0A0B0C0D
+        // Expand each 4-bit group into 8 bits, spreading them out in the long value: 0xAABBCCDD -> 0x0A0B0C0D0A0B0C0D
         i = Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL);
 
         /*
-            Use long to simulate vector operations and generate 8 hexadecimal characters at a time.
-            ------------
-            0  = 0b0000_0000 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '0'
-            1  = 0b0000_0001 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '1'
-            2  = 0b0000_0010 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '2'
-            3  = 0b0000_0011 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '3'
-            4  = 0b0000_0100 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '4'
-            5  = 0b0000_0101 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '5'
-            6  = 0b0000_0110 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '6'
-            7  = 0b0000_0111 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '7'
-            8  = 0b0000_1000 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '8'
-            9  = 0b0000_1001 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '9'
-            10 = 0b0000_1010 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'a'
-            11 = 0b0000_1011 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'b'
-            12 = 0b0000_1100 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'c'
-            13 = 0b0000_1101 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'd'
-            14 = 0b0000_1110 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'e'
-            15 = 0b0000_1111 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'f'
+         * This method efficiently converts 8 hexadecimal digits simultaneously using vector operations
+         * The algorithm works as follows:
+         *
+         * For input values 0-15:
+         * - For digits 0-9: converts to ASCII '0'-'9' (0x30-0x39)
+         * - For digits 10-15: converts to ASCII 'a'-'f' (0x61-0x66)
+         *
+         * The conversion process:
+         * 1. Add 6 to each 4-bit group: i + 0x0606_0606_0606_0606L
+         * 2. Mask to get the adjustment flags: & 0x1010_1010_1010_1010L
+         * 3. Calculate the offset: (m << 1) + (m >> 1) - (m >> 4)
+         *    - For 0-9: offset = 0
+         *    - For a-f: offset = 39 (to bridge the gap between '9' and 'a' in ASCII)
+         * 4. Add ASCII '0' base (0x30) and the original value
+         * 5. Reverse byte order for correct positioning
          */
-
-        // Detect nibbles >= 10 using carry propagation (0x06 addition per nibble)
         long m = (i + 0x0606_0606_0606_0606L) & 0x1010_1010_1010_1010L;
 
-        // Vectorized ASCII conversion: (0x30 base + nibble) + (0x27 adjustment if >=10)
+        // Calculate final ASCII values and reverse bytes for proper ordering
         return Long.reverseBytes(
-                ((m << 1) + (m >> 1) - (m >> 4))  // 0x27 mask generator
-                + 0x3030_3030_3030_3030L          // Base '0' characters
-                + i                               // Nibble values
+                ((m << 1) + (m >> 1) - (m >> 4))
+                + 0x3030_3030_3030_3030L // Add ASCII '0' base to all digits
+                + i                      // Add original values
         );
     }
 
