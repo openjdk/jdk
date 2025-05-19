@@ -152,7 +152,7 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *
  * <p id="forcePassAndFail">
  * For semi-automatic tests, use {@code forcePass} or
- * {@code forceFail} methods to forcefully pass or fail the test
+ * {@code forceFail} methods to forcibly pass or fail the test
  * when it's determined that the required conditions are already met
  * or cannot be met correspondingly.
  * These methods release {@code awaitAndCheck}, and
@@ -1304,7 +1304,7 @@ public final class PassFailJFrame {
 
 
     /**
-     * Forcefully pass the test.
+     * Forcibly pass the test.
      * <p>
      * Use this method in semi-automatic tests when
      * the test determines that all the conditions for passing the test are met.
@@ -1321,7 +1321,7 @@ public final class PassFailJFrame {
     }
 
     /**
-     * Forcefully fail the test.
+     * Forcibly fail the test.
      * <p>
      * Use this method in semi-automatic tests when
      * it is determined that the conditions for passing the test cannot be met.
@@ -1338,7 +1338,7 @@ public final class PassFailJFrame {
     }
 
     /**
-     * Forcefully fail the test and provide a reason.
+     * Forcibly fail the test and provide a reason.
      * <p>
      * Use this method in semi-automatic tests when
      * it is determined that the conditions for passing the test cannot be met.
