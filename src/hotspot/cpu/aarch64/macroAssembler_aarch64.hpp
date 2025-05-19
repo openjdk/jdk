@@ -935,6 +935,8 @@ public:
 
   void set_narrow_oop(Register dst, jobject obj);
 
+  void decode_klass_not_null_for_aot(Register dst, Register src);
+  void encode_klass_not_null_for_aot(Register dst, Register src);
   void encode_klass_not_null(Register r);
   void decode_klass_not_null(Register r);
   void encode_klass_not_null(Register dst, Register src);

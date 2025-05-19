@@ -25,7 +25,7 @@
  * @test
  * @bug     6400207
  * @summary JSR 199: JavaFileManager.list and unset location
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules java.compiler
  *          jdk.compiler
  */

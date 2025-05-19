@@ -747,8 +747,7 @@ void FileMapInfo::open_as_output() {
   // Use remove() to delete the existing file because, on Unix, this will
   // allow processes that have it open continued access to the file.
   remove(_full_path);
-  int mode = CDSConfig::is_dumping_preimage_static_archive() ? 0666 : 0444;
-  int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, mode);
+  int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0666);
   if (fd < 0) {
     log_error(cds)("Unable to create %s %s: (%s).", CDSConfig::type_of_archive_being_written(), _full_path,
                    os::strerror(errno));
