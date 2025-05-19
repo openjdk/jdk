@@ -221,6 +221,7 @@
 
     <event name="jdk.CPUTimeSampleLoss">
       <setting name="enabled" control="method-sampling-enabled">true</setting>
+      <setting name="threshold">0</setting>
     </event>
 
     <event name="jdk.SafepointBegin">
