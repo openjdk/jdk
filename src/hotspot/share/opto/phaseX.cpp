@@ -1720,6 +1720,26 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     //   -XX:VerifyIterativeGVN=1110
     case Op_ConvI2L:
       return false;
+
+    // MaxNode::find_identity_operation
+    //  Finds patterns like Max(A, Max(A, B)) -> Max(A, B)
+    //  This can be a 2-hop search, so maybe notification is not
+    //  good enough.
+    //
+    // Found with:
+    //   compiler/codegen/TestBooleanVect.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_MaxL:
+    case Op_MinL:
+    case Op_MaxI:
+    case Op_MinI:
+    case Op_MaxF:
+    case Op_MinF:
+    case Op_MaxHF:
+    case Op_MinHF:
+    case Op_MaxD:
+    case Op_MinD:
+      return false;
   }
 
   if (n->is_Load()) {
