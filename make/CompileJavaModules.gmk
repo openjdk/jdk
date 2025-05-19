@@ -113,6 +113,7 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     DISABLED_WARNINGS := $(DISABLED_WARNINGS_java), \
     EXCLUDES := $(EXCLUDES), \
     EXCLUDE_FILES := $(EXCLUDE_FILES), \
+    EXCLUDE_PATTERNS := -files, \
     KEEP_ALL_TRANSLATIONS := $(KEEP_ALL_TRANSLATIONS), \
     JAVAC_FLAGS := \
         $(DOCLINT) \

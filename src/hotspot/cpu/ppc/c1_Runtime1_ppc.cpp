@@ -162,8 +162,7 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
     Register r = as_Register(i);
     if (FrameMap::reg_needs_save(r)) {
       int sp_offset = cpu_reg_save_offsets[i];
-      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset>>2), r->as_VMReg());
-      oop_map->set_callee_saved(VMRegImpl::stack2reg((sp_offset>>2) + 1), r->as_VMReg()->next());
+      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset >> 2), r->as_VMReg());
     }
   }
 
@@ -171,8 +170,7 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
     for (i = 0; i < FrameMap::nof_fpu_regs; i++) {
       FloatRegister r = as_FloatRegister(i);
       int sp_offset = fpu_reg_save_offsets[i];
-      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset>>2), r->as_VMReg());
-      oop_map->set_callee_saved(VMRegImpl::stack2reg((sp_offset>>2) + 1), r->as_VMReg()->next());
+      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset >> 2), r->as_VMReg());
     }
   }
 

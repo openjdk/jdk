@@ -612,7 +612,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
 
-  if (AOTCodeCache::is_dumping_adapters()) {
+  if (AOTCodeCache::is_dumping_adapter()) {
     AdapterHandlerLibrary::dump_aot_adapter_table();
   }
 
@@ -645,15 +645,6 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   // Block concurrent class unloading from changing the _dumptime_table
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-
-#if INCLUDE_CDS_JAVA_HEAP
-  if (CDSConfig::is_dumping_heap() && _extra_interned_strings != nullptr) {
-    for (int i = 0; i < _extra_interned_strings->length(); i ++) {
-      OopHandle string = _extra_interned_strings->at(i);
-      HeapShared::add_to_dumped_interned_strings(string.resolve());
-    }
-  }
-#endif
 
   _builder.gather_source_objs();
   _builder.reserve_buffer();
@@ -777,7 +768,7 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
     // Keep scanning until we have linked no more classes.
   }
 
-  // Resolve constant pool entries -- we don't load any new classes during this stage
+  // Eargerly resolve all string constants in constant pools
   {
     ResourceMark rm(THREAD);
     CollectClassesForLinking collect_classes;
@@ -785,7 +776,7 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
     for (int i = 0; i < mirrors->length(); i++) {
       OopHandle mirror = mirrors->at(i);
       InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
-      AOTConstantPoolResolver::dumptime_resolve_constants(ik, CHECK);
+      AOTConstantPoolResolver::preresolve_string_cp_entries(ik, CHECK);
     }
   }
 

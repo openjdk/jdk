@@ -32,6 +32,7 @@
 #include "include/jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
@@ -405,6 +406,9 @@ void CDSConfig::check_aot_flags() {
   if (FLAG_IS_DEFAULT(AOTCache) && AOTAdapterCaching) {
     log_debug(aot,codecache,init)("AOTCache is not specified - AOTAdapterCaching is ignored");
   }
+  if (FLAG_IS_DEFAULT(AOTCache) && AOTStubCaching) {
+    log_debug(aot,codecache,init)("AOTCache is not specified - AOTStubCaching is ignored");
+  }
 
   if (FLAG_IS_DEFAULT(AOTCache) && FLAG_IS_DEFAULT(AOTConfiguration) && FLAG_IS_DEFAULT(AOTMode)) {
     // AOTCache/AOTConfiguration/AOTMode not used.
@@ -430,6 +434,10 @@ void CDSConfig::check_aot_flags() {
       check_aotmode_create();
     }
   }
+
+  // This is an old flag used by CDS regression testing only. It doesn't apply
+  // to the AOT workflow.
+  FLAG_SET_ERGO(AllowArchivingWithJavaAgent, false);
 }
 
 void CDSConfig::check_aotmode_off() {
@@ -480,6 +488,15 @@ void CDSConfig::check_aotmode_create() {
   }
 
   CDSConfig::enable_dumping_static_archive();
+
+  // We don't load any agents in the assembly phase, so we can ensure that the agents
+  // cannot affect the contents of the AOT cache. E.g., we don't want the agents to
+  // redefine any cached classes. We also don't want the agents to modify heap objects that
+  // are cached.
+  //
+  // Since application is not executed in the assembly phase, there's no need to load
+  // the agents anyway -- no one will notice that the agents are not loaded.
+  JvmtiAgentList::disable_agent_list();
 }
 
 void CDSConfig::ergo_init_aot_paths() {
