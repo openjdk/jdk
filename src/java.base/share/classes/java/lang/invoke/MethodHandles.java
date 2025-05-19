@@ -4890,7 +4890,7 @@ assert((int)twice.invokeExact(21) == 42);
      * @param type the type of the desired method handle
      * @return a constant method handle of the given type, which returns a default value of the given return type
      * @throws NullPointerException if the argument is null
-     * @see <code>primitiveZero(Wrapper)</code>
+     * @see MethodHandles#zero(Class)
      * @see MethodHandles#constant
      * @since 9
      */
