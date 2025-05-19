@@ -420,12 +420,12 @@ void ThreadHeapSampler::log_sample_decision(HeapWord* tlab_top) {
   LogTarget(Debug, gc, tlab) log;
   if (log.is_enabled()) {
     const bool should_sample = bytes_since_last_sample(tlab_top) >= _sample_threshold;
-    log_debug(gc, tlab)("Should sample: %s _sample_threshold: %zu total: %zu tlab: %zu unsampled: %zu outside_tlab: %zu",
+    log_debug(gc, tlab)("Should sample: %s _sample_threshold: %zu total: %zu tlab: %zu current tlab: %zu outside_tlab: %zu",
                         should_sample ? "yes" : "no ",
                         _sample_threshold,
                         bytes_since_last_sample(tlab_top),
                         tlab_bytes_since_last_sample(tlab_top),
-                        unsampled_in_current_tlab(tlab_top),
+                        current_tlab_bytes_since_last_sample(tlab_top),
                         outside_tlab_bytes_since_last_sample());
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -56,7 +56,7 @@ class ThreadHeapSampler {
   static double fast_log2(const double& d);
   uint64_t next_random(uint64_t rnd);
 
-  size_t unsampled_in_current_tlab(HeapWord* tlab_top)  const {
+  size_t current_tlab_bytes_since_last_sample(HeapWord* tlab_top)  const {
     // Both can be nullptr if there's not active TLAB, but otherwise
     // they both should be non-null.
     assert((tlab_top != nullptr) == (_tlab_top_at_sample_start != nullptr),
@@ -68,7 +68,7 @@ class ThreadHeapSampler {
   }
 
   size_t tlab_bytes_since_last_sample(HeapWord* tlab_top) const {
-    return _accumulated_tlab_bytes_since_sample + unsampled_in_current_tlab(tlab_top);
+    return _accumulated_tlab_bytes_since_sample + current_tlab_bytes_since_last_sample(tlab_top);
   }
 
   size_t outside_tlab_bytes_since_last_sample() const {
@@ -96,8 +96,8 @@ class ThreadHeapSampler {
   }
 
   size_t bytes_until_sample(HeapWord* tlab_top) const {
-    const size_t unsampled = bytes_since_last_sample(tlab_top);
-    return _sample_threshold - MIN2(unsampled, _sample_threshold);
+    const size_t since_last_sample = bytes_since_last_sample(tlab_top);
+    return _sample_threshold - MIN2(since_last_sample, _sample_threshold);
   }
 
   bool should_sample(HeapWord* tlab_top) const {
@@ -115,7 +115,7 @@ class ThreadHeapSampler {
   }
 
   void retire_tlab(HeapWord* tlab_top) {
-    _accumulated_tlab_bytes_since_sample += unsampled_in_current_tlab(tlab_top);
+    _accumulated_tlab_bytes_since_sample += current_tlab_bytes_since_last_sample(tlab_top);
     _tlab_top_at_sample_start = nullptr;
   }
 
