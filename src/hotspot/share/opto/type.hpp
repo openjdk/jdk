@@ -293,9 +293,9 @@ public:
   const TypeD      *isa_double() const;          // Returns null if not a Double{Top,Con,Bot}
   const TypeD      *is_double_constant() const;  // Asserts it is a DoubleCon
   const TypeD      *isa_double_constant() const; // Returns null if not a DoubleCon
-  const TypeH      *isa_half_float() const;          // Returns null if not a Float{Top,Con,Bot}
-  const TypeH      *is_half_float_constant() const;  // Asserts it is a FloatCon
-  const TypeH      *isa_half_float_constant() const; // Returns null if not a FloatCon
+  const TypeH      *isa_half_float() const;          // Returns null if not a HalfFloat{Top,Con,Bot}
+  const TypeH      *is_half_float_constant() const;  // Asserts it is a HalfFloatCon
+  const TypeH      *isa_half_float_constant() const; // Returns null if not a HalfFloatCon
   const TypeF      *isa_float() const;           // Returns null if not a Float{Top,Con,Bot}
   const TypeF      *is_float_constant() const;   // Asserts it is a FloatCon
   const TypeF      *isa_float_constant() const;  // Returns null if not a FloatCon
