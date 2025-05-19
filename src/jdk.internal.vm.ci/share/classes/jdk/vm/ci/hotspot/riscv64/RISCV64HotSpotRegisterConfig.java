@@ -87,7 +87,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
 
     private final boolean allAllocatableAreCallerSaved;
 
-    private final RegisterAttributes[] attributesMap;
+    private final List<RegisterAttributes> attributesMap;
 
     @Override
     public List<Register> getAllocatableRegisters() {
@@ -107,8 +107,8 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public RegisterAttributes[] getAttributesMap() {
-        return attributesMap.clone();
+    public List<RegisterAttributes> getAttributesMap() {
+        return attributesMap;
     }
 
     private final List<Register> javaGeneralParameterRegisters = List.of(x11, x12, x13, x14, x15, x16, x17, x10);

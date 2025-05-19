@@ -91,7 +91,6 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     }
 
     @Override
-    @SuppressWarnings("try")
     public JVMCIBackend createJVMCIBackend(HotSpotJVMCIRuntime runtime, JVMCIBackend host) {
         assert host == null;
         AArch64HotSpotVMConfig config = new AArch64HotSpotVMConfig(runtime.getConfigStore());
@@ -102,24 +101,24 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         ConstantReflectionProvider constantReflection;
         HotSpotMetaAccessProvider metaAccess;
         StackIntrospection stackIntrospection;
-        try (InitTimer t = timer("create providers")) {
-            try (InitTimer rt = timer("create MetaAccess provider")) {
+        try (InitTimer _ = timer("create providers")) {
+            try (InitTimer _ = timer("create MetaAccess provider")) {
                 metaAccess = createMetaAccess(runtime);
             }
-            try (InitTimer rt = timer("create RegisterConfig")) {
+            try (InitTimer _ = timer("create RegisterConfig")) {
                 regConfig = createRegisterConfig(config, target);
             }
-            try (InitTimer rt = timer("create CodeCache provider")) {
+            try (InitTimer _ = timer("create CodeCache provider")) {
                 codeCache = createCodeCache(runtime, target, regConfig);
             }
-            try (InitTimer rt = timer("create ConstantReflection provider")) {
+            try (InitTimer _ = timer("create ConstantReflection provider")) {
                 constantReflection = createConstantReflection(runtime);
             }
-            try (InitTimer rt = timer("create StackIntrospection provider")) {
+            try (InitTimer _ = timer("create StackIntrospection provider")) {
                 stackIntrospection = new HotSpotStackIntrospection(runtime);
             }
         }
-        try (InitTimer rt = timer("instantiate backend")) {
+        try (InitTimer _ = timer("instantiate backend")) {
             return createBackend(metaAccess, codeCache, constantReflection, stackIntrospection);
         }
     }

@@ -109,10 +109,10 @@ public interface RegisterConfig {
      * Gets a map from register {@linkplain Register#number numbers} to register
      * {@linkplain RegisterAttributes attributes} for this register configuration.
      *
-     * @return an array where an element at index i holds the attributes of the register whose
+     * @return a list where an element at index i holds the attributes of the register whose
      *         number is i
      */
-    RegisterAttributes[] getAttributesMap();
+    List<RegisterAttributes> getAttributesMap();
 
     /**
      * Determines if all {@link #getAllocatableRegisters() allocatable} registers are

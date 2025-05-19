@@ -55,7 +55,7 @@ public class RegisterAttributes {
      * @return an array whose length is the max register number in {@code registers} plus 1. An
      *         element at index i holds the attributes of the register whose number is i.
      */
-    public static RegisterAttributes[] createMap(RegisterConfig registerConfig, List<Register> registers) {
+    public static List<RegisterAttributes> createMap(RegisterConfig registerConfig, List<Register> registers) {
         RegisterAttributes[] map = new RegisterAttributes[registers.size()];
         List<Register> callerSaveRegisters = registerConfig.getCallerSaveRegisters();
         List<Register> calleeSaveRegisters = registerConfig.getCalleeSaveRegisters() == null ? Collections.emptyList() : registerConfig.getCalleeSaveRegisters();
@@ -74,7 +74,7 @@ public class RegisterAttributes {
                 map[i] = NONE;
             }
         }
-        return map;
+        return List.of(map);
     }
 
     /**
