@@ -286,8 +286,9 @@ import java.util.Set;
  *               isReadOnly()} will always return {@code true}. Creating a
  *               <em>read-only</em> file system requires the underlying ZIP file to
  *               already exist, and is incompatible with {@code "create"=true}.
- *               Specifying both will cause an {@code IllegalArgumentException}
- *               to be thrown when the Zip filesystem is created
+ *               Specifying {@code create} as {@code true} and {@code accessMode} as
+ *               {@code readOnly} will cause an {@code IllegalArgumentException}
+ *               to be thrown when the ZIP filesystem is created.
  *           </li>
  *           <li>
  *               If the value is {@code "readWrite"}, the file system is created
@@ -301,8 +302,8 @@ import java.util.Set;
  *               to be thrown when the Zip filesystem is created.
  *           </li>
  *       </ul>
- *       The access mode has no effect on reported POSIX file permissions (in cases
- *       where POSIX support is enabled).
+ *       The {@code accessMode} property has no effect on reported POSIX file
+ *       permissions (in cases where POSIX support is enabled).
  *   </td>
  * </tr>
  * </tbody>

@@ -207,7 +207,7 @@ class ZipFileSystem extends FileSystem {
                 throw new NoSuchFileException(zfpath.toString());
             }
         }
-        // sm and existence check
+        // Existence check
         zfpath.getFileSystem().provider().checkAccess(zfpath, AccessMode.READ);
         this.zc = ZipCoder.get(nameEncoding);
         this.ch = Files.newByteChannel(zfpath, READ);

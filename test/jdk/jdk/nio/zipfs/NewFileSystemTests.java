@@ -42,7 +42,6 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 /**
  * @test
@@ -207,9 +206,10 @@ public class NewFileSystemTests {
         Path multiReleaseJar = createMultiReleaseJar();
         try (FileSystem fs = FileSystems.newFileSystem(multiReleaseJar, Map.of("accessMode", "readWrite"))) {
             assertFalse(fs.isReadOnly());
-            if (!"Default version".equals(Files.readString(fs.getPath("file.txt"), UTF_8))) {
-                fail("unexpected file content");
-            }
+            assertEquals(
+                    Files.readString(fs.getPath("file.txt"), UTF_8),
+                    "Default version",
+                    "unexpected file content");
         }
     }
 
@@ -235,9 +235,10 @@ public class NewFileSystemTests {
         Path multiReleaseJar = createMultiReleaseJar();
         try (FileSystem fs = FileSystems.newFileSystem(multiReleaseJar, Map.of("releaseVersion", "1"))) {
             assertTrue(fs.isReadOnly());
-            if (!"First version".equals(Files.readString(fs.getPath("file.txt"), UTF_8))) {
-                fail("unexpected file content");
-            }
+            assertEquals(
+                    Files.readString(fs.getPath("file.txt"), UTF_8),
+                    "First version",
+                    "unexpected file content");
         }
     }
 

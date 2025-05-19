@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Random;
 import java.util.jar.JarEntry;
@@ -45,11 +46,12 @@ final class Utils {
      * overwritten.
      *
      * @param name the file name of the jar file to create in the working directory.
-     * @param entries a list of JAR entries to be populated with random bytes.
+     * @param entries entries JAR file entry names, whose content will be populated
+     *                with random bytes
      * @return the absolute path to the newly created JAR file.
      */
     static Path createJarFile(String name, String... entries) throws IOException {
-        Path jarFile = Paths.get(name);
+        Path jarFile = Path.of(name);
         Random rand = new Random();
         try (OutputStream out = Files.newOutputStream(jarFile);
              JarOutputStream jout = new JarOutputStream(out)) {
@@ -75,12 +77,12 @@ final class Utils {
      * overwritten.
      *
      * @param name the file name of the jar file to create in the working directory.
-     * @param entries a map of relative file name path strings to file content
-     *               (stored as UTF-8 encoded bytes).
+     * @param entries a map of JAR file entry names to entry content (stored as
+     *                UTF-8 encoded bytes).
      * @return the absolute path to the newly created JAR file.
      */
     static Path createJarFile(String name, Map<String, String> entries) throws IOException {
-        Path jarFile = Paths.get(name);
+        Path jarFile = Path.of(name);
         try (OutputStream out = Files.newOutputStream(jarFile);
              JarOutputStream jout = new JarOutputStream(out)) {
             for (var entry : entries.entrySet()) {
