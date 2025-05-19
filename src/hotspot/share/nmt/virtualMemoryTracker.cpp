@@ -22,6 +22,7 @@
  *
  */
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/memTracker.hpp"
@@ -29,6 +30,7 @@
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
+#include "utilities/defaultStream.hpp"
 #include "utilities/ostream.hpp"
 
 VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
@@ -374,7 +376,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
         VirtualMemorySummary::record_reserved_memory(rgn.size(), mem_tag);
 
         *reserved_rgn = rgn;
-        return true;
+        //return true;
       }
 
       // CDS mapping region.
@@ -401,17 +403,23 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
         return true;
       }
 
-      // Print some more details. Don't use UL here to avoid circularities.
-      tty->print_cr("Error: existing region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %u.\n"
-                    "       new region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %u.",
-                    p2i(reserved_rgn->base()), p2i(reserved_rgn->end()), (unsigned)reserved_rgn->mem_tag(),
-                    p2i(base_addr), p2i(base_addr + size), (unsigned)mem_tag);
+      // Print some more details.
+      stringStream ss;
+      MemTag mem_tag_old = NMTUtil::index_to_tag((unsigned)reserved_rgn->mem_tag());
+      MemTag mem_tag_new = NMTUtil::index_to_tag((unsigned)mem_tag);
+      ss.print_cr("Error: old region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %s.\n"
+                    "       new region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %s.",
+                    p2i(reserved_rgn->base()), p2i(reserved_rgn->end()), NMTUtil::tag_to_name(mem_tag_old),
+                    p2i(base_addr), p2i(base_addr + size), NMTUtil::tag_to_name(mem_tag_new));
       if (MemTracker::tracking_level() == NMT_detail) {
-        tty->print_cr("Existing region allocated from:");
-        reserved_rgn->call_stack()->print_on(tty);
-        tty->print_cr("New region allocated from:");
-        stack.print_on(tty);
+        ss.print_cr("Existing region allocated from:");
+        reserved_rgn->call_stack()->print_on(&ss);
+        ss.print_cr("New region allocated from:");
+        stack.print_on(&ss);
       }
+      const char* msg = ss.as_string(true /* on C-heap */);
+      log_debug(nmt)("%s", msg);
+
       ShouldNotReachHere();
       return false;
     }
