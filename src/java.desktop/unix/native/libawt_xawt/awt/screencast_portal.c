@@ -1127,13 +1127,6 @@ gboolean initAndStartSession(const gchar *token, int *retVal) {
 
 int getPipewireFd(GdkRectangle *affectedBounds,
                   gint affectedBoundsLength) {
-
-    if (affectedBoundsLength == 0) {
-        // remote desktop case, mouse or keyboard interaction
-        // we do not need to get screen data
-        return RESULT_OK;
-    }
-
     if (!checkCanCaptureAllRequiredScreens(affectedBounds,
                                            affectedBoundsLength)) {
         DEBUG_SCREENCAST("The location of the screens has changed, "
