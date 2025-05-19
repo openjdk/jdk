@@ -466,13 +466,9 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
     if (EnableVectorSupport && EnableVectorReboxing && FLAG_IS_DEFAULT(EnableVectorAggressiveReboxing)) {
       FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, true);
     }
-    if (EnableVectorSupport && FLAG_IS_DEFAULT(UseVectorStubs)) {
-      FLAG_SET_DEFAULT(UseVectorStubs, true);
-    }
     log_info(compilation)("EnableVectorSupport=%s",            (EnableVectorSupport            ? "true" : "false"));
     log_info(compilation)("EnableVectorReboxing=%s",           (EnableVectorReboxing           ? "true" : "false"));
     log_info(compilation)("EnableVectorAggressiveReboxing=%s", (EnableVectorAggressiveReboxing ? "true" : "false"));
-    log_info(compilation)("UseVectorStubs=%s",                 (UseVectorStubs                 ? "true" : "false"));
   }
 #endif // COMPILER2_OR_JVMCI
 }
@@ -580,13 +576,15 @@ public:
 };
 
 Modules::ArchivedProperty Modules::_archived_props[] = {
-  // numbered
+  // non-numbered
   {"jdk.module.main", false},
 
-  // non-numbered
+  // numbered
   {"jdk.module.addexports", true},             // --add-exports
   {"jdk.module.addmods", true},                // --add-modules
   {"jdk.module.enable.native.access", true},   // --enable-native-access
+  {"jdk.module.addopens", true},               // --add-opens
+  {"jdk.module.addreads", true},               // --add-reads
 };
 
 constexpr size_t Modules::num_archived_props() {
@@ -607,21 +605,21 @@ void Modules::ArchivedProperty::runtime_check() const {
   bool disable = false;
   if (runtime_value == nullptr) {
     if (_archived_value != nullptr) {
-      log_info(cds)("Mismatched values for property %s: %s specified during dump time but not during runtime", _prop, _archived_value);
+      MetaspaceShared::report_loading_error("Mismatched values for property %s: %s specified during dump time but not during runtime", _prop, _archived_value);
       disable = true;
     }
   } else {
     if (_archived_value == nullptr) {
-      log_info(cds)("Mismatched values for property %s: %s specified during runtime but not during dump time", _prop, runtime_value);
+      MetaspaceShared::report_loading_error("Mismatched values for property %s: %s specified during runtime but not during dump time", _prop, runtime_value);
       disable = true;
     } else if (strcmp(runtime_value, _archived_value) != 0) {
-      log_info(cds)("Mismatched values for property %s: runtime %s dump time %s", _prop, runtime_value, _archived_value);
+      MetaspaceShared::report_loading_error("Mismatched values for property %s: runtime %s dump time %s", _prop, runtime_value, _archived_value);
       disable = true;
     }
   }
 
   if (disable) {
-    log_info(cds)("Disabling optimized module handling");
+    MetaspaceShared::report_loading_error("Disabling optimized module handling");
     CDSConfig::stop_using_optimized_module_handling();
   }
 }

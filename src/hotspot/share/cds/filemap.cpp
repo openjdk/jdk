@@ -173,7 +173,7 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     header_size = c_header_size;
 
     const char* default_base_archive_name = CDSConfig::default_archive_path();
-    const char* current_base_archive_name = CDSConfig::static_archive_path();
+    const char* current_base_archive_name = CDSConfig::input_static_archive_path();
     if (!os::same_files(current_base_archive_name, default_base_archive_name)) {
       base_archive_name_size = strlen(current_base_archive_name) + 1;
       header_size += base_archive_name_size;
@@ -209,7 +209,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
   if (!info->is_static() && base_archive_name_size != 0) {
     // copy base archive name
-    copy_base_archive_name(CDSConfig::static_archive_path());
+    copy_base_archive_name(CDSConfig::input_static_archive_path());
   }
   _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
@@ -326,7 +326,7 @@ bool FileMapInfo::validate_class_location() {
 
   if (header()->has_full_module_graph() && has_extra_module_paths) {
     CDSConfig::stop_using_optimized_module_handling();
-    log_info(cds)("optimized module handling: disabled because extra module path(s) are specified");
+    MetaspaceShared::report_loading_error("optimized module handling: disabled because extra module path(s) are specified");
   }
 
   if (CDSConfig::is_dumping_dynamic_archive()) {
@@ -563,7 +563,7 @@ public:
 // true && (*base_archive_name) != nullptr:
 //      <archive_name> is a valid dynamic archive.
 bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
-                                                    char** base_archive_name) {
+                                                    const char** base_archive_name) {
   FileHeaderHelper file_helper(archive_name, false);
   *base_archive_name = nullptr;
 
@@ -619,7 +619,7 @@ bool FileMapInfo::init_from_file(int fd) {
       // Good
     } else {
       if (CDSConfig::new_aot_flags_used()) {
-        log_warning(cds)("Not a valid %s %s", file_type, _full_path);
+        log_warning(cds)("Not a valid %s (%s)", file_type, _full_path);
       } else {
         log_warning(cds)("Not a base shared archive: %s", _full_path);
       }
@@ -729,7 +729,7 @@ bool FileMapInfo::open_for_read() {
 
 // Write the FileMapInfo information to the file.
 
-void FileMapInfo::open_for_write() {
+void FileMapInfo::open_as_output() {
   LogMessage(cds) msg;
   if (msg.is_info()) {
     if (CDSConfig::is_dumping_preimage_static_archive()) {
@@ -747,8 +747,7 @@ void FileMapInfo::open_for_write() {
   // Use remove() to delete the existing file because, on Unix, this will
   // allow processes that have it open continued access to the file.
   remove(_full_path);
-  int mode = CDSConfig::is_dumping_preimage_static_archive() ? 0666 : 0444;
-  int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, mode);
+  int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0666);
   if (fd < 0) {
     log_error(cds)("Unable to create %s %s: (%s).", CDSConfig::type_of_archive_being_written(), _full_path,
                    os::strerror(errno));
@@ -824,7 +823,7 @@ bool FileMapRegion::check_region_crc(char* base) const {
 
 static const char* region_name(int region_index) {
   static const char* names[] = {
-    "rw", "ro", "bm", "hp"
+    "rw", "ro", "bm", "hp", "ac"
   };
   const int num_regions = sizeof(names)/sizeof(names[0]);
   assert(0 <= region_index && region_index < num_regions, "sanity");
@@ -910,6 +909,9 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
                    " bytes, addr " INTPTR_FORMAT " file offset 0x%08" PRIxPTR
                    " crc 0x%08x",
                    region_name(region), region, size, p2i(requested_base), _file_offset, crc);
+  } else {
+     log_info(cds)("Shared file region (%s) %d: %8zu"
+                   " bytes", region_name(region), region, size);
   }
 
   r->init(region, mapping_offset, size, read_only, allow_exec, crc);
@@ -1066,10 +1068,10 @@ void FileMapInfo::close() {
  */
 static char* map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
-                        bool allow_exec, MemTag mem_tag = mtNone) {
+                        bool allow_exec, MemTag mem_tag) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
-                             AlwaysPreTouch ? false : read_only,
-                             allow_exec, mem_tag);
+                             mem_tag, AlwaysPreTouch ? false : read_only,
+                             allow_exec);
   if (mem != nullptr && AlwaysPreTouch) {
     os::pretouch_memory(mem, mem + bytes);
   }
@@ -1094,7 +1096,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
   assert(WINDOWS_ONLY(false) NOT_WINDOWS(true), "Don't call on Windows");
   // Replace old mapping with new one that is writable.
   char *base = os::map_memory(_fd, _full_path, r->file_offset(),
-                              addr, size, false /* !read_only */,
+                              addr, size, mtNone, false /* !read_only */,
                               r->allow_exec());
   close();
   // These have to be errors because the shared region is now unmapped.
@@ -1111,7 +1113,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
 }
 
 // Memory map a region in the address space.
-static const char* shared_region_name[] = { "ReadWrite", "ReadOnly", "Bitmap", "Heap" };
+static const char* shared_region_name[] = { "ReadWrite", "ReadOnly", "Bitmap", "Heap", "Code" };
 
 MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs) {
   DEBUG_ONLY(FileMapRegion* last_region = nullptr);
@@ -1253,7 +1255,7 @@ char* FileMapInfo::map_bitmap_region() {
   char* bitmap_base = map_memory(_fd, _full_path, r->file_offset(),
                                  requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
   if (bitmap_base == nullptr) {
-    log_info(cds)("failed to map relocation bitmap");
+    MetaspaceShared::report_loading_error("failed to map relocation bitmap");
     return nullptr;
   }
 
@@ -1272,6 +1274,42 @@ char* FileMapInfo::map_bitmap_region() {
                 MetaspaceShared::bm, p2i(r->mapped_base()), p2i(r->mapped_end()),
                 shared_region_name[MetaspaceShared::bm]);
   return bitmap_base;
+}
+
+bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
+  FileMapRegion* r = region_at(MetaspaceShared::ac);
+  assert(r->used() > 0 && r->used_aligned() == rs.size(), "must be");
+
+  char* requested_base = rs.base();
+  assert(requested_base != nullptr, "should be inside code cache");
+
+  char* mapped_base;
+  if (MetaspaceShared::use_windows_memory_mapping()) {
+    if (!read_region(MetaspaceShared::ac, requested_base, r->used_aligned(), /* do_commit = */ true)) {
+      log_info(cds)("Failed to read aot code shared space into reserved space at " INTPTR_FORMAT,
+                    p2i(requested_base));
+      return false;
+    }
+    mapped_base = requested_base;
+  } else {
+    // We do not execute in-place in the AOT code region.
+    // AOT code is copied to the CodeCache for execution.
+    bool read_only = false, allow_exec = false;
+    mapped_base = map_memory(_fd, _full_path, r->file_offset(),
+                             requested_base, r->used_aligned(), read_only, allow_exec, mtClassShared);
+  }
+  if (mapped_base == nullptr) {
+    log_info(cds)("failed to map aot code region");
+    return false;
+  } else {
+    assert(mapped_base == requested_base, "must be");
+    r->set_mapped_from_file(true);
+    r->set_mapped_base(mapped_base);
+    log_info(cds)("Mapped static  region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
+                  MetaspaceShared::ac, p2i(r->mapped_base()), p2i(r->mapped_end()),
+                  shared_region_name[MetaspaceShared::ac]);
+    return true;
+  }
 }
 
 class SharedDataRelocationTask : public ArchiveWorkerTask {
@@ -1415,9 +1453,9 @@ void FileMapInfo::map_or_load_heap_region() {
       success = ArchiveHeapLoader::load_heap_region(this);
     } else {
       if (!UseCompressedOops && !ArchiveHeapLoader::can_map()) {
-        log_info(cds)("Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops");
+        MetaspaceShared::report_loading_error("Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops");
       } else {
-        log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC, UseParallelGC, or UseShenandoahGC are required.");
+        MetaspaceShared::report_loading_error("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC, UseParallelGC, or UseShenandoahGC are required.");
       }
     }
   }
@@ -1429,8 +1467,10 @@ void FileMapInfo::map_or_load_heap_region() {
       // all AOT-linked classes are visible.
       //
       // We get here because the heap is too small. The app will fail anyway. So let's quit.
-      MetaspaceShared::unrecoverable_loading_error("CDS archive has aot-linked classes but the archived "
-                                                   "heap objects cannot be loaded. Try increasing your heap size.");
+      log_error(cds)("%s has aot-linked classes but the archived "
+                     "heap objects cannot be loaded. Try increasing your heap size.",
+                     CDSConfig::type_of_archive_being_loaded());
+      MetaspaceShared::unrecoverable_loading_error();
     }
     CDSConfig::stop_using_full_module_graph("archive heap loading failed");
   }
@@ -1596,7 +1636,7 @@ bool FileMapInfo::map_heap_region_impl() {
   // allocate from java heap
   HeapWord* start = G1CollectedHeap::heap()->alloc_archive_region(word_size, (HeapWord*)requested_start);
   if (start == nullptr) {
-    log_info(cds)("UseSharedSpaces: Unable to allocate java heap region for archive heap.");
+    MetaspaceShared::report_loading_error("UseSharedSpaces: Unable to allocate java heap region for archive heap.");
     return false;
   }
 
@@ -1620,7 +1660,7 @@ bool FileMapInfo::map_heap_region_impl() {
   } else {
     base = map_memory(_fd, _full_path, r->file_offset(),
                       addr, _mapped_heap_memregion.byte_size(), r->read_only(),
-                      r->allow_exec());
+                      r->allow_exec(), mtJavaHeap);
     if (base == nullptr || base != addr) {
       dealloc_heap_region();
       log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
@@ -1631,7 +1671,7 @@ bool FileMapInfo::map_heap_region_impl() {
 
     if (VerifySharedSpaces && !r->check_region_crc(base)) {
       dealloc_heap_region();
-      log_info(cds)("UseSharedSpaces: mapped heap region is corrupt");
+      MetaspaceShared::report_loading_error("UseSharedSpaces: mapped heap region is corrupt");
       return false;
     }
   }
@@ -1655,7 +1695,7 @@ bool FileMapInfo::map_heap_region_impl() {
   if (_heap_pointers_need_patching) {
     char* bitmap_base = map_bitmap_region();
     if (bitmap_base == nullptr) {
-      log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
+      MetaspaceShared::report_loading_error("CDS heap cannot be used because bitmap region cannot be mapped");
       dealloc_heap_region();
       _heap_pointers_need_patching = false;
       return false;
@@ -1759,7 +1799,7 @@ bool FileMapInfo::_memory_mapping_failed = false;
 // [1] validate_header() - done here.
 // [2] validate_shared_path_table - this is done later, because the table is in the RO
 //     region of the archive, which is not mapped yet.
-bool FileMapInfo::initialize() {
+bool FileMapInfo::open_as_input() {
   assert(CDSConfig::is_using_archive(), "UseSharedSpaces expected.");
   assert(Arguments::has_jimage(), "The shared archive file cannot be used with an exploded module build.");
 
@@ -1768,19 +1808,18 @@ bool FileMapInfo::initialize() {
     // are replaced at runtime by JVMTI ClassFileLoadHook. All of those classes are resolved
     // during the JVMTI "early" stage, so we can still use CDS if
     // JvmtiExport::has_early_class_hook_env() is false.
-    log_info(cds)("CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
+    MetaspaceShared::report_loading_error("CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
     return false;
   }
 
   if (!open_for_read() || !init_from_file(_fd) || !validate_header()) {
     if (_is_static) {
-      log_info(cds)("Initialize static archive failed.");
+      MetaspaceShared::report_loading_error("Loading static archive failed.");
       return false;
     } else {
-      log_info(cds)("Initialize dynamic archive failed.");
+      MetaspaceShared::report_loading_error("Loading dynamic archive failed.");
       if (AutoCreateSharedArchive) {
-        CDSConfig::enable_dumping_dynamic_archive();
-        ArchiveClassesAtExit = CDSConfig::dynamic_archive_path();
+        CDSConfig::enable_dumping_dynamic_archive(_full_path);
       }
       return false;
     }
@@ -1793,29 +1832,34 @@ bool FileMapInfo::validate_aot_class_linking() {
   // These checks need to be done after FileMapInfo::initialize(), which gets called before Universe::heap()
   // is available.
   if (header()->has_aot_linked_classes()) {
+    const char* archive_type = CDSConfig::type_of_archive_being_loaded();
     CDSConfig::set_has_aot_linked_classes(true);
     if (JvmtiExport::should_post_class_file_load_hook()) {
-      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
+      log_error(cds)("%s has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.",
+                     archive_type);
       return false;
     }
     if (JvmtiExport::has_early_vmstart_env()) {
-      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when JVMTI early vm start is in use.");
+      log_error(cds)("%s has aot-linked classes. It cannot be used when JVMTI early vm start is in use.",
+                     archive_type);
       return false;
     }
     if (!CDSConfig::is_using_full_module_graph()) {
-      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used.");
+      log_error(cds)("%s has aot-linked classes. It cannot be used when archived full module graph is not used.",
+                     archive_type);
       return false;
     }
 
     const char* prop = Arguments::get_property("java.security.manager");
     if (prop != nullptr && strcmp(prop, "disallow") != 0) {
-      log_error(cds)("CDS archive has aot-linked classes. It cannot be used with -Djava.security.manager=%s.", prop);
+      log_error(cds)("%s has aot-linked classes. It cannot be used with -Djava.security.manager=%s.",
+                     archive_type, prop);
       return false;
     }
 
 #if INCLUDE_JVMTI
     if (Arguments::has_jdwp_agent()) {
-      log_error(cds)("CDS archive has aot-linked classes. It cannot be used with JDWP agent");
+      log_error(cds)("%s has aot-linked classes. It cannot be used with JDWP agent", archive_type);
       return false;
     }
 #endif
@@ -1875,8 +1919,8 @@ bool FileMapHeader::validate() {
   const char* prop = Arguments::get_property("java.system.class.loader");
   if (prop != nullptr) {
     if (has_aot_linked_classes()) {
-      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when the "
-                     "java.system.class.loader property is specified.");
+      log_error(cds)("%s has aot-linked classes. It cannot be used when the "
+                     "java.system.class.loader property is specified.", CDSConfig::type_of_archive_being_loaded());
       return false;
     }
     log_warning(cds)("Archived non-system classes are disabled because the "

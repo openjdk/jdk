@@ -224,6 +224,7 @@ class Http1Response<T> {
 
                 if (Log.headers()) {
                     StringBuilder sb = new StringBuilder("RESPONSE HEADERS:\n");
+                    sb.append("  %s %s %s\n".formatted(request.method(), request.uri(), responseCode));
                     Log.dumpHeaders(sb, "    ", headers);
                     Log.logHeaders(sb.toString());
                 }

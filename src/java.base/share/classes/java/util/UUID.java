@@ -478,7 +478,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         ByteArrayLittleEndian.setLong(buf, 28, hex8(leastSigBits));
 
         try {
-            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+            return jla.uncheckedNewStringNoRepl(buf, StandardCharsets.ISO_8859_1);
         } catch (CharacterCodingException cce) {
             throw new AssertionError(cce);
         }

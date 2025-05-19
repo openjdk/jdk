@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -98,13 +98,7 @@ AC_DEFUN([LIB_SETUP_JVM_LIBS],
   # 32-bit platforms needs fallback library for 8-byte atomic ops on Zero
   if HOTSPOT_CHECK_JVM_VARIANT(zero); then
     if test "x$OPENJDK_$1_OS" = xlinux &&
-        (test "x$OPENJDK_$1_CPU" = xarm ||
-        test "x$OPENJDK_$1_CPU" = xm68k ||
-        test "x$OPENJDK_$1_CPU" = xmips ||
-        test "x$OPENJDK_$1_CPU" = xmipsel ||
-        test "x$OPENJDK_$1_CPU" = xppc ||
-        test "x$OPENJDK_$1_CPU" = xsh ||
-        test "x$OPENJDK_$1_CPU" = xriscv32); then
+        test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
       BASIC_JVM_LIBS_$1="$BASIC_JVM_LIBS_$1 -latomic"
     fi
   fi

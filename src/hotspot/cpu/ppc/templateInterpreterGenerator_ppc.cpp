@@ -119,12 +119,13 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   const FloatRegister floatSlot = F0;
 
   address entry = __ function_entry();
+  int save_nonvolatile_registers_size = __ save_nonvolatile_registers_size(false, false);
 
   __ save_LR(R0);
-  __ save_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
+  __ save_nonvolatile_registers(R1_SP, -save_nonvolatile_registers_size, false, false);
   // We use target_sp for storing arguments in the C frame.
   __ mr(target_sp, R1_SP);
-  __ push_frame_reg_args_nonvolatiles(0, R11_scratch1);
+  __ push_frame(frame::native_abi_reg_args_size + save_nonvolatile_registers_size, R11_scratch1);
 
   __ mr(arg_java, R3_ARG1);
 
@@ -309,7 +310,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   __ bind(loop_end);
 
   __ pop_frame();
-  __ restore_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
+  __ restore_nonvolatile_registers(R1_SP, -save_nonvolatile_registers_size, false, false);
   __ restore_LR(R0);
 
   __ blr();
@@ -2160,12 +2161,12 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   {
     __ pop_ptr(Rexception);
     __ verify_oop(Rexception);
-    __ std(Rexception, in_bytes(JavaThread::vm_result_offset()), R16_thread);
+    __ std(Rexception, in_bytes(JavaThread::vm_result_oop_offset()), R16_thread);
 
     __ unlock_if_synchronized_method(vtos, /* throw_monitor_exception */ false, true);
     __ notify_method_exit(false, vtos, InterpreterMacroAssembler::SkipNotifyJVMTI, false);
 
-    __ get_vm_result(Rexception);
+    __ get_vm_result_oop(Rexception);
 
     // We are done with this activation frame; find out where to go next.
     // The continuation point will be an exception handler, which expects
