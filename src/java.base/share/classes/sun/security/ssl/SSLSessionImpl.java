@@ -283,9 +283,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * < 4 bytes > maximumPacketSize
      * < 4 bytes > negotiatedMaxFragSize
      * < 4 bytes > creationTime
-     * < 2 bytes > status response length
-     *   < 2 byte > status response entry length
-     *   < length in byte > status response entry
      * < 1 byte > Length of peer host
      *   < length in bytes > peer host
      * < 2 bytes> peer port
@@ -382,20 +379,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
         // Get creation time
         this.creationTime = buf.getLong();
-
-        // Get Buffer sizes
-
-        // Status Response
-        len = Record.getInt16(buf);
-        if (len == 0) {
-            statusResponses = Collections.emptyList();
-        } else {
-            statusResponses = new ArrayList<>();
-        }
-        while (len-- > 0) {
-            b = Record.getBytes16(buf);
-            statusResponses.add(b);
-        }
 
         // Get Peer host & port
         b = Record.getBytes8(buf);
@@ -568,15 +551,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // creation time
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         hos.writeBytes(buffer.putLong(creationTime).array());
-
-        // Status Responses
-        List<byte[]> list = getStatusResponses();
-        int l = list.size();
-        hos.putInt16(l);
-        for (byte[] e : list) {
-            hos.putInt16(e.length);
-            hos.write(e);
-        }
 
         // peer Host & Port
         if (host == null || host.length() == 0) {

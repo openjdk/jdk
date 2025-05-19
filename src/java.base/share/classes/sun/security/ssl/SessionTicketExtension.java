@@ -317,7 +317,6 @@ final class SessionTicketExtension {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
         }
 
         private static ByteBuffer decompress(ByteBuffer input) {
