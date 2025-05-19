@@ -56,17 +56,19 @@ public final class ThrottleSetting extends SettingControl {
 
     public ThrottleSetting(PlatformEventType eventType, String defaultValue) {
         this.eventType = Objects.requireNonNull(eventType);
-        if (DEFAULT_VALUE.equals(defaultValue)) {
-            this.defaultValue = DEFAULT_VALUE; // Fast path to avoid parsing
-        } else {
-            if (Rate.of(defaultValue) == null) {
-                Utils.warnInvalidAnnotation(eventType, "Throttle", defaultValue, DEFAULT_VALUE);
-                this.defaultValue = DEFAULT_VALUE;
-            } else {
-                this.defaultValue = defaultValue;
-            }
-        }
+        this.defaultValue = validRate(defaultValue);
         this.value = defaultValue;
+    }
+
+    private String validRate(String defaultValue) {
+        if (DEFAULT_VALUE.equals(defaultValue)) {
+            return DEFAULT_VALUE; // Fast path to avoid parsing
+        }
+        if (Rate.of(defaultValue) == null) {
+            Utils.warnInvalidAnnotation(eventType, "Throttle", defaultValue, DEFAULT_VALUE);
+            return DEFAULT_VALUE;
+        }
+        return defaultValue;
     }
 
     @Override
