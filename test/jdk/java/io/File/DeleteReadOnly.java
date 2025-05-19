@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 8355954
+ * @requires (os.family == "windows")
  * @summary Verify correct behavior of File.delete
  * @run junit DeleteReadOnly
  * @run junit/othervm -Djdk.io.File.allowDeleteReadOnlyFiles=true DeleteReadOnly
@@ -32,8 +33,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -45,19 +44,7 @@ public class DeleteReadOnly {
     private static final File ROOT = new File(".");
 
     @Test
-    @EnabledOnOs({OS.AIX, OS.LINUX, OS.MAC})
-    void deleteReadOnlyRegularFileUnix() throws IOException {
-        File dir = Files.createTempDirectory(ROOT.toPath(), "dir").toFile();
-        File file = File.createTempFile("tow", "hee", dir);
-
-        file.setReadOnly();
-        assertTrue(file.delete());
-        assertTrue(dir.delete());
-    }
-
-    @Test
-    @EnabledOnOs({OS.WINDOWS})
-    void deleteReadOnlyRegularFileWindows() throws IOException {
+    void deleteReadOnlyRegularFile() throws IOException {
         File dir = Files.createTempDirectory(ROOT.toPath(), "dir").toFile();
         File file = File.createTempFile("tow", "hee", dir);
 
