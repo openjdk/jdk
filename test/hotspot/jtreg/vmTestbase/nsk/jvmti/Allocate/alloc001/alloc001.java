@@ -43,6 +43,9 @@
  *
  * @comment Not run on AIX as it does not support ulimit -v
  * @requires os.family != "aix"
+ * @comment Not run on libgraal as it needs at least 32GB of addressable
+ *          virtual memory for its managed heap.
+ * @requires !vm.libgraal.jit
  * @run main/native nsk.jvmti.Allocate.alloc001.alloc001
  */
 

@@ -34,6 +34,9 @@ package gc.arguments;
  * @requires os.family == "linux"
  * @requires vm.gc != "Z"
  * @requires vm.opt.UseCompressedOops == null
+ * @comment Not run on libgraal as it needs at least 32GB of addressable
+ *          virtual memory for its managed heap.
+ * @requires !vm.libgraal.jit
  * @run driver gc.arguments.TestUseCompressedOopsFlagsWithUlimit
  */
 
