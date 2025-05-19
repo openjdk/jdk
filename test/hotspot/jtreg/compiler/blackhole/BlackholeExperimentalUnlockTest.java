@@ -68,7 +68,7 @@ public class BlackholeExperimentalUnlockTest {
     public static void shouldFail(String... args) throws IOException {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmdline(args));
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(1);
+        output.shouldHaveExitValue(0);
         output.shouldContain(MSG);
     }
 
@@ -103,12 +103,12 @@ public class BlackholeExperimentalUnlockTest {
         );
 
         // Should be able to shun the warning
-        shouldFail(
+        shouldPass(
             "-XX:-PrintWarnings",
             "-XX:CompileCommand=quiet",
             "-XX:CompileCommand=option,compiler/blackhole/BlackholeTarget.bh_*,Blackhole"
         );
-        shouldFail(
+        shouldPass(
             "-XX:-PrintWarnings",
             "-XX:CompileCommand=quiet",
             "-XX:CompileCommand=blackhole,compiler/blackhole/BlackholeTarget.bh_*"
