@@ -595,9 +595,6 @@ private:
   bool has_last_Java_frame() const               { return _anchor.has_last_Java_frame(); }
   intptr_t* last_Java_sp() const                 { return _anchor.last_Java_sp(); }
 
-  // last Java fp
-  intptr_t* last_Java_fp() const                 { return _anchor.last_Java_fp(); }
-
   // last_Java_pc
 
   address last_Java_pc(void)                     { return _anchor.last_Java_pc(); }

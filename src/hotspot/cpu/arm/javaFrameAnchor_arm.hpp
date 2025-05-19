@@ -79,6 +79,6 @@ public:
 
   void set_last_Java_sp(intptr_t* sp)            { _last_Java_sp = sp; }
 
-  intptr_t*   last_Java_fp(void) const           { return _last_Java_fp; }
+  intptr_t*   last_Java_fp(void)                 { return _last_Java_fp; }
 
 #endif // CPU_ARM_JAVAFRAMEANCHOR_ARM_HPP

@@ -207,7 +207,7 @@ static bool build_from_ljf(JfrSampleRequest& request,
   }
   assert(last_pc != nullptr, "invariant");
   request._sample_pc = last_pc;
-  return build(request, jt->last_Java_fp(), jt);
+  return build(request, jt->frame_anchor()->last_Java_fp(), jt);
 }
 
 static inline JfrSampleResult set_request_and_arm_local_poll(JfrSampleRequest& request, JfrThreadLocal* tl, JavaThread* jt) {

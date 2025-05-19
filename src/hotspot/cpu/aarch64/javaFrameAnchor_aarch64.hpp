@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,12 +26,12 @@
 #ifndef CPU_AARCH64_JAVAFRAMEANCHOR_AARCH64_HPP
 #define CPU_AARCH64_JAVAFRAMEANCHOR_AARCH64_HPP
 
- private:
+private:
 
   // FP value associated with _last_Java_sp:
   intptr_t* volatile        _last_Java_fp;           // pointer is volatile not what it points to
 
- public:
+public:
   // Each arch must define reset, save, restore
   // These are used by objects that only care about:
   //  1 - initializing a new state (thread creation, javaCalls)
@@ -72,11 +72,15 @@
 
   address last_Java_pc(void)                     { return _last_Java_pc; }
 
+private:
+
   static ByteSize last_Java_fp_offset()          { return byte_offset_of(JavaFrameAnchor, _last_Java_fp); }
+
+public:
 
   void set_last_Java_sp(intptr_t* sp)            { _last_Java_sp = sp; OrderAccess::release(); }
 
-  intptr_t*   last_Java_fp() const               { return _last_Java_fp; }
+  intptr_t*   last_Java_fp(void)                 { return _last_Java_fp; }
 
   void set_last_Java_fp(intptr_t* fp)            { _last_Java_fp = fp; }
 

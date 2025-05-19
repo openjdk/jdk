@@ -71,9 +71,11 @@ public:
 
   static ByteSize last_Java_fp_offset()          { return byte_offset_of(JavaFrameAnchor, _last_Java_fp); }
 
+public:
+
   void set_last_Java_sp(intptr_t* sp)            { _last_Java_sp = sp; }
 
-  intptr_t*   last_Java_fp() const               { return _last_Java_fp; }
+  intptr_t*   last_Java_fp(void)                 { return _last_Java_fp; }
 
   void set_last_Java_fp(intptr_t* fp)            { _last_Java_fp = fp; }
 
