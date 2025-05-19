@@ -1939,7 +1939,6 @@ class MutableBigInteger {
         }
 
         MutableBigInteger r;
-        long shift = 0L;
         if (bitLength <= Long.SIZE) {
             // Initial estimate is the root of the unsigned long value.
             final long x = this.toLong();
@@ -1966,6 +1965,7 @@ class MutableBigInteger {
         } else {
             // Set up the initial estimate of the iteration.
             // Determine a right shift that is a multiple of n into finite double range.
+            long shift;
             double rad;
             if (bitLength > Double.MAX_EXPONENT) {
                 shift = bitLength - Double.MAX_EXPONENT;
@@ -1981,6 +1981,7 @@ class MutableBigInteger {
                     rad /= Double.parseDouble("0x1p" + shiftLack);
                 }
             } else {
+                shift = 0L;
                 rad = this.toBigInteger().doubleValue();
             }
 
