@@ -1879,10 +1879,10 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause,
   } else {
     // Schedule a Full GC.
     VM_G1CollectFull op(counters_before.total_collections(),
-                    counters_before.total_full_collections(),
-                    cause);
+                        counters_before.total_full_collections(),
+                        cause);
     VMThread::execute(&op);
-    return true;
+    return op.prologue_succeeded();
   }
 }
 
