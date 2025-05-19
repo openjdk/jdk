@@ -649,17 +649,19 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     bind(no_reserved_zone_enabling);
   }
 
-  // restore sender esp
-  mov(esp, rscratch2);
   // remove frame anchor
   leave();
+
+  JFR_ONLY(leave_jfr_critical_section();)
+
+  // restore sender esp
+  mov(esp, rscratch2);
+
   // If we're returning to interpreted code we will shortly be
   // adjusting SP to allow some space for ESP.  If we're returning to
   // compiled code the saved sender SP was saved in sender_sp, so this
   // restores it.
   andr(sp, esp, -16);
-
-  JFR_ONLY(leave_jfr_critical_section();)
 }
 
 #if INCLUDE_JFR

@@ -976,11 +976,13 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   }
 
   leave();                           // remove frame anchor
+
+  JFR_ONLY(leave_jfr_critical_section();)
+
   pop(ret_addr);                     // get return address
   mov(rsp, rbx);                     // set sp to sender sp
   pop_cont_fastpath();
 
-  JFR_ONLY(leave_jfr_critical_section();)
 }
 
 #if INCLUDE_JFR

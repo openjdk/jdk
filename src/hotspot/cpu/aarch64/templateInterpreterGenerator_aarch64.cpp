@@ -1639,10 +1639,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // remove frame anchor
   __ leave();
 
+  JFR_ONLY(__ leave_jfr_critical_section();)
+
   // restore sender sp
   __ mov(sp, esp);
-
-  JFR_ONLY(__ leave_jfr_critical_section();)
 
   __ ret(lr);
 

@@ -1193,10 +1193,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                        frame::interpreter_frame_sender_sp_offset *
                        wordSize)); // get sender sp
   __ leave();                                // remove frame anchor
-  __ pop(rdi);                               // get return address
-  __ mov(rsp, t);                            // set sp to sender sp
 
   JFR_ONLY(__ leave_jfr_critical_section();)
+
+  __ pop(rdi);                               // get return address
+  __ mov(rsp, t);                            // set sp to sender sp
 
   __ jmp(rdi);
 
