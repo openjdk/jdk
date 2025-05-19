@@ -406,6 +406,9 @@ void CDSConfig::check_aot_flags() {
   if (FLAG_IS_DEFAULT(AOTCache) && AOTAdapterCaching) {
     log_debug(aot,codecache,init)("AOTCache is not specified - AOTAdapterCaching is ignored");
   }
+  if (FLAG_IS_DEFAULT(AOTCache) && AOTStubCaching) {
+    log_debug(aot,codecache,init)("AOTCache is not specified - AOTStubCaching is ignored");
+  }
 
   if (FLAG_IS_DEFAULT(AOTCache) && FLAG_IS_DEFAULT(AOTConfiguration) && FLAG_IS_DEFAULT(AOTMode)) {
     // AOTCache/AOTConfiguration/AOTMode not used -> using the "classic CDS" workflow.
