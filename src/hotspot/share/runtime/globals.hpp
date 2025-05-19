@@ -2009,6 +2009,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseThreadsLockThrottleLock, true, DIAGNOSTIC,               \
           "Use an extra lock during Thread start and exit to alleviate"     \
           "contention on Threads_lock.")                                    \
+                                                                            \
+  product(bool, AtomicProfileCounters, true, DIAGNOSTIC,                    \
+          "Use atomic updates for profile counters, where possible.")       \
+                                                                            \
 
 // end of RUNTIME_FLAGS
 
