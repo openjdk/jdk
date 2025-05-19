@@ -12854,7 +12854,7 @@ void Assembler::evex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdP
 }
 
 void Assembler::evex_prefix_int8_operand(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc,
-                                         int size, int b1, bool no_flags, bool is_map1) {
+                                         int size, int opcode_byte, bool no_flags, bool is_map1) {
   if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
     if (size == EVEX_64bit) {
       emit_prefix_and_int8(get_prefixq(src2, dst, is_map1), b1);
