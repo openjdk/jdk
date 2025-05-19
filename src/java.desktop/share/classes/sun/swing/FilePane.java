@@ -1234,7 +1234,9 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             }
 
             setText(text);
-            this.putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
+
+            putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
+
             return this;
         }
 
@@ -1630,7 +1632,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     setText(fileName+File.separator);
                 }
             }
-            this.putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
+
+            putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
 
             return this;
         }

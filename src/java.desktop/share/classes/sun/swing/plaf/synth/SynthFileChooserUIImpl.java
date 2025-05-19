@@ -690,6 +690,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
             label.setIcon(ii);
 
             label.putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
+
             return label;
         }
     }
