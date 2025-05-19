@@ -14362,24 +14362,6 @@ instruct reductionI_arith_logic(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX
   ins_pipe(pipe_class_default);
 %}
 
-instruct reductionL_arith_logic(iRegLdst dst, iRegLsrc srcLong, vecX srcVec, vecX tmp) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
-  match(Set dst (AddReductionVL srcLong srcVec));
-  match(Set dst (MulReductionVL srcLong srcVec));
-  match(Set dst (AndReductionV  srcLong srcVec));
-  match(Set dst ( OrReductionV  srcLong srcVec));
-  match(Set dst (XorReductionV  srcLong srcVec));
-  effect(TEMP_DEF dst, TEMP tmp);
-  ins_cost(DEFAULT_COST * 4);
-  format %{ "REDUCEL_ARITH_LOGIC // $dst,$srcLong,$srcVec,$tmp\t// reduce vector long add/mul/and/or/xor" %}
-  size(16);
-  ins_encode %{
-    int opcode = this->ideal_Opcode();
-    __ reduceL(opcode, $dst$$Register, $srcLong$$Register, $srcVec$$VectorSRegister->to_vr(), $tmp$$VectorSRegister->to_vr());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 instruct reductionI_min_max(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX tmp1, vecX tmp2, flagsRegCR0 cr0) %{
   predicate(Matcher::vector_element_basic_type(n->in(2)) == T_INT);
   match(Set dst (MinReductionV srcInt srcVec));
@@ -14392,21 +14374,6 @@ instruct reductionI_min_max(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX tmp
     int opcode = this->ideal_Opcode();
     __ reduceI(opcode, $dst$$Register, $srcInt$$Register, $srcVec$$VectorSRegister->to_vr(),
         $tmp1$$VectorSRegister->to_vr(), $tmp2$$VectorSRegister->to_vr());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct reductionL_min_max(iRegLdst dst, iRegLsrc srcLong, vecX srcVec, vecX tmp, flagsRegCR0 cr0) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
-  match(Set dst (MinReductionV srcLong srcVec));
-  match(Set dst (MaxReductionV srcLong srcVec));
-  effect(TEMP_DEF dst, TEMP tmp, KILL cr0);
-  ins_cost(DEFAULT_COST * 4);
-  format %{ "REDUCEL_MINMAX // $dst,$srcLong,$srcVec,$tmp,cr0\t// reduce vector long min/max" %}
-  size(16);
-  ins_encode %{
-    int opcode = this->ideal_Opcode();
-    __ reduceL(opcode, $dst$$Register, $srcLong$$Register, $srcVec$$VectorSRegister->to_vr(), $tmp$$VectorSRegister->to_vr());
   %}
   ins_pipe(pipe_class_default);
 %}

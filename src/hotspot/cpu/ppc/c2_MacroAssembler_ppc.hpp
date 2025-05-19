@@ -74,6 +74,5 @@
   void count_positives(Register src, Register cnt, Register result, Register tmp1, Register tmp2);
 
   void reduceI(int opcode, Register dst, Register iSrc, VectorRegister vSrc, VectorRegister vTmp1, VectorRegister vTmp2);
-  void reduceL(int opcode, Register dst, Register iSrc, VectorRegister vSrc, VectorRegister vTmp);
 
 #endif // CPU_PPC_C2_MACROASSEMBLER_PPC_HPP
