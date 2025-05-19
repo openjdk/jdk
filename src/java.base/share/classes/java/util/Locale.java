@@ -1826,13 +1826,15 @@ public final class Locale implements Cloneable, Serializable {
      *     loc.getExtension('x'); // returns "urp"
      * }
      *
-     * <li>When the languageTag argument contains an extlang subtag,
-     * the first such subtag is used as the language, and the primary
+     * <li>{@code languageTag} may contain up to three extlang subtags.
+     * For such occurrences, the first extlang subtag is used as the language, and the primary
      * language subtag and other extlang subtags are ignored:
      *
      * {@snippet lang=java :
      *     Locale.forLanguageTag("ar-aao").getLanguage(); // returns "aao"
      *     Locale.forLanguageTag("en-abc-def-us").toString(); // returns "abc_US"
+     *     // returns "yue"; the rest of the tag is discarded
+     *     Locale.forLanguageTag("zh-yue-gan-cmn-czh-CN").toString();
      * }
      *
      * <li>Case is normalized except for variant tags, which are left
@@ -2785,7 +2787,9 @@ public final class Locale implements Cloneable, Serializable {
          * must be well-formed (see {@link Locale}) or an exception is
          * thrown (unlike {@code Locale.forLanguageTag}, which
          * just discards ill-formed and following portions of the
-         * tag).
+         * tag). {@code languageTag} may contain up to three extlang subtags.
+         + For such occurrences, the first extlang subtag is used as the language,
+         * and the primary language subtag and other extlang subtags are ignored.
          *
          * @param languageTag the language tag
          * @return This builder.
