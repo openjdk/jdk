@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,36 @@
 
 package jdk.jfr.event.profiling;
 
+import java.time.Duration;
+
+import jdk.jfr.consumer.RecordingStream;
 import jdk.test.lib.jfr.EventNames;
+import jdk.test.lib.jfr.RecurseThread;
 
-/**
+/*
  * @test
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & os.family == "linux"
  * @library /test/lib
- * @build jdk.jfr.event.profiling.BaseTestFullStackTrace
- * @run main/othervm jdk.jfr.event.profiling.TestFullStackTrace
+ * @modules jdk.jfr/jdk.jfr.internal
+ * @run main jdk.jfr.event.profiling.TestCPUTimeSamplingLongPeriod
  */
-public class TestFullStackTrace {
+public class TestCPUTimeSamplingLongPeriod {
 
-    public static void main(String[] args) throws Throwable {
-        new BaseTestFullStackTrace(EventNames.ExecutionSample, "sampledThread").run();
+    static String sampleEvent = EventNames.CPUTimeSample;
+
+    // The period is set to 1100 ms to provoke the 1000 ms
+    // threshold in the JVM for os::naked_short_sleep().
+    public static void main(String[] args) throws Exception {
+        RecurseThread t = new RecurseThread(50);
+        t.setDaemon(true);
+        try (RecordingStream rs = new RecordingStream()) {
+            rs.enable(sampleEvent).with("throttle", "1100ms");
+            rs.onEvent(sampleEvent, e -> {
+                t.quit();
+                rs.close();
+            });
+            t.start();
+            rs.start();
+        }
     }
-
 }

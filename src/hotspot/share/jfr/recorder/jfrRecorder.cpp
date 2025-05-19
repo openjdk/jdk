@@ -30,6 +30,7 @@
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
@@ -304,6 +305,9 @@ bool JfrRecorder::create_components() {
   if (!create_thread_sampling()) {
     return false;
   }
+  if (!create_cpu_time_thread_sampling()) {
+    return false;
+  }
   if (!create_event_throttler()) {
     return false;
   }
@@ -318,6 +322,7 @@ static JfrStackTraceRepository* _stack_trace_repository;
 static JfrStringPool* _stringpool = nullptr;
 static JfrOSInterface* _os_interface = nullptr;
 static JfrThreadSampling* _thread_sampling = nullptr;
+static JfrCPUTimeThreadSampling* _cpu_time_thread_sampling = nullptr;
 static JfrCheckpointManager* _checkpoint_manager = nullptr;
 
 bool JfrRecorder::create_java_event_writer() {
@@ -390,6 +395,18 @@ bool JfrRecorder::create_thread_sampling() {
   return _thread_sampling != nullptr;
 }
 
+bool JfrRecorder::create_cpu_time_thread_sampling() {
+  assert(_cpu_time_thread_sampling == nullptr, "invariant");
+  _cpu_time_thread_sampling = JfrCPUTimeThreadSampling::create();
+  return _cpu_time_thread_sampling != nullptr;
+}
+
+void JfrRecorder::on_safepoint(JavaThread* jt) {
+  if (_cpu_time_thread_sampling != nullptr) {
+    _cpu_time_thread_sampling->on_safepoint(jt);
+  }
+}
+
 bool JfrRecorder::create_event_throttler() {
   return JfrEventThrottler::create();
 }
@@ -427,6 +444,10 @@ void JfrRecorder::destroy_components() {
   if (_thread_sampling != nullptr) {
     JfrThreadSampling::destroy();
     _thread_sampling = nullptr;
+  }
+  if (_cpu_time_thread_sampling != nullptr) {
+    JfrCPUTimeThreadSampling::destroy();
+    _cpu_time_thread_sampling = nullptr;
   }
   JfrEventThrottler::destroy();
 }

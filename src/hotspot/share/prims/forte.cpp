@@ -25,6 +25,7 @@
 #include "code/debugInfoRec.hpp"
 #include "code/pcDesc.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
@@ -585,6 +586,8 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     trace->num_frames = ticks_thread_exit; // -8
     return;
   }
+
+  NoResourceMark nrm;
 
   if (thread->in_deopt_handler()) {
     // thread is in the deoptimization handler so return no frames

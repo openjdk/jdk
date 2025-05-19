@@ -94,7 +94,7 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
   assert(thread->thread_state() != _thread_in_native, "Must not be");
 
   for (;;) {
-    bool armed = global_poll() || thread->handshake_state()->has_operation();
+    bool armed = global_poll() || thread->handshake_state()->can_run();
     uintptr_t stack_watermark = StackWatermarkSet::lowest_watermark(thread);
     uintptr_t poll_page = armed ? _poll_page_armed_value
                                 : _poll_page_disarmed_value;
@@ -120,7 +120,7 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
     thread->poll_data()->set_polling_page(poll_page);
     thread->poll_data()->set_polling_word(poll_word);
     OrderAccess::fence();
-    if (!armed && (global_poll() || thread->handshake_state()->has_operation())) {
+    if (!armed && (global_poll() || thread->handshake_state()->can_run())) {
       // We disarmed an old safepoint, but a new one is synchronizing.
       // We need to arm the poll for the subsequent safepoint poll.
       continue;
@@ -154,7 +154,7 @@ void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool ch
     // 3) Before the handshake code is run
     StackWatermarkSet::on_safepoint(thread);
 
-    need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self(allow_suspend, check_async_exception);
+    need_rechecking = thread->handshake_state()->can_run() && thread->handshake_state()->process_by_self(allow_suspend, check_async_exception);
   } while (need_rechecking);
 
   update_poll_values(thread);

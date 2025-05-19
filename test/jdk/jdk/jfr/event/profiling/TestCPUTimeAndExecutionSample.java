@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,23 +31,29 @@ import jdk.test.lib.jfr.RecurseThread;
 
 /*
  * @test
- * @requires vm.flagless
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & os.family == "linux"
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- * @run main jdk.jfr.event.profiling.TestSamplingLongPeriod
+ * @run main/timeout=30 jdk.jfr.event.profiling.TestCPUTimeAndExecutionSample
  */
-public class TestSamplingLongPeriod {
+public class TestCPUTimeAndExecutionSample {
 
-    static String sampleEvent = EventNames.ExecutionSample;
+    static String sampleEvent = EventNames.CPUTimeSample;
 
     // The period is set to 1100 ms to provoke the 1000 ms
     // threshold in the JVM for os::naked_short_sleep().
     public static void main(String[] args) throws Exception {
+        run(EventNames.ExecutionSample);
+        run(EventNames.CPUTimeSample);
+        run(EventNames.ExecutionSample);
+        run(EventNames.CPUTimeSample);
+    }
+
+    private static void run(String eventType) {
         RecurseThread t = new RecurseThread(50);
         t.setDaemon(true);
         try (RecordingStream rs = new RecordingStream()) {
-            rs.enable(sampleEvent).withPeriod(Duration.ofMillis(1100));
+            rs.enable(sampleEvent).with("throttle", "1000/s");
             rs.onEvent(sampleEvent, e -> {
                 t.quit();
                 rs.close();
