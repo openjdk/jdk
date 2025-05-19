@@ -26,7 +26,7 @@ import static jdk.vm.ci.common.InitTimer.timer;
 
 import java.util.EnumSet;
 import java.util.Map;
-
+import jdk.internal.util.OperatingSystem;
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64.CPUFeature;
 import jdk.vm.ci.code.Architecture;
@@ -49,34 +49,22 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         // Configure the feature set using the HotSpot flag settings.
         Map<String, Long> constants = config.getStore().getConstants();
         Map<String, String> renaming = Map.of("3DNOW_PREFETCH", "AMD_3DNOW_PREFETCH");
-        assert config.useSSE >= 2 : "minimum config for x64";
         long featuresBitMapAddress = config.vmVersionFeatures + config.vmFeaturesFeaturesOffset;
         EnumSet<CPUFeature> features = HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class,
                                                                                   constants,
                                                                                   featuresBitMapAddress,
                                                                                   config.vmFeaturesFeaturesSize,
                                                                                   renaming);
-        features.add(AMD64.CPUFeature.SSE);
-        features.add(AMD64.CPUFeature.SSE2);
+        assert features.contains(AMD64.CPUFeature.SSE) : "minimum config for x64";
+        assert features.contains(AMD64.CPUFeature.SSE2) : "minimum config for x64";
         return features;
-    }
-
-    private static EnumSet<AMD64.Flag> computeFlags(AMD64HotSpotVMConfig config) {
-        EnumSet<AMD64.Flag> flags = EnumSet.noneOf(AMD64.Flag.class);
-        if (config.useCountLeadingZerosInstruction) {
-            flags.add(AMD64.Flag.UseCountLeadingZerosInstruction);
-        }
-        if (config.useCountTrailingZerosInstruction) {
-            flags.add(AMD64.Flag.UseCountTrailingZerosInstruction);
-        }
-        return flags;
     }
 
     private static TargetDescription createTarget(AMD64HotSpotVMConfig config) {
         final int stackFrameAlignment = 16;
         final int implicitNullCheckLimit = 4096;
         final boolean inlineObjects = true;
-        Architecture arch = new AMD64(computeFeatures(config), computeFlags(config));
+        Architecture arch = new AMD64(computeFeatures(config));
         return new TargetDescription(arch, true, stackFrameAlignment, implicitNullCheckLimit, inlineObjects);
     }
 
@@ -85,7 +73,7 @@ public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
     }
 
     private static RegisterConfig createRegisterConfig(AMD64HotSpotVMConfig config, TargetDescription target) {
-        return new AMD64HotSpotRegisterConfig(target, config.useCompressedOops, config.windowsOs);
+        return new AMD64HotSpotRegisterConfig(target, config.useCompressedOops, OperatingSystem.isWindows());
     }
 
     protected HotSpotCodeCacheProvider createCodeCache(HotSpotJVMCIRuntime runtime, TargetDescription target, RegisterConfig regConfig) {
