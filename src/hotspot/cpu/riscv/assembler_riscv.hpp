@@ -1062,19 +1062,19 @@ protected:
 
  protected:
 
-  void lr_w(Register Rd, Register Rs1, Aqrl memory_order = aqrl) {
+  void lr_w(Register Rd, Register Rs1, Aqrl memory_order = relaxed) {
     amo_base<AMO_LR, AMO_WIDTH_WORD>(Rd, Rs1, 0, aqrl);
   }
 
-  void lr_d(Register Rd, Register Rs1, Aqrl memory_order = aqrl) {
+  void lr_d(Register Rd, Register Rs1, Aqrl memory_order = relaxed) {
     amo_base<AMO_LR, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, 0, aqrl);
   }
 
-  void sc_w(Register Rd, Register Rs2, Register Rs1, Aqrl memory_order = aqrl) {
+  void sc_w(Register Rd, Register Rs2, Register Rs1, Aqrl memory_order = relaxed) {
     amo_base<AMO_SC, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, aqrl);
   }
 
-  void sc_d(Register Rd, Register Rs2, Register Rs1, Aqrl memory_order = aqrl) {
+  void sc_d(Register Rd, Register Rs2, Register Rs1, Aqrl memory_order = relaxed) {
     amo_base<AMO_SC, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, aqrl);
   }
 
