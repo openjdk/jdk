@@ -765,7 +765,9 @@ bool ZPartition::claim_capacity_fast_medium(ZMemoryAllocation* allocation) {
   precond(ZPageSizeMediumEnabled);
 
   // Try to allocate a medium page sized contiguous vmem
-  ZVirtualMemory vmem = _cache.remove_contiguous_power_of_2(ZPageSizeMediumMin, ZPageSizeMediumMax);
+  const size_t min_size = ZPageSizeMediumMin;
+  const size_t max_size = ZStressFastMediumPageAllocation ? min_size : ZPageSizeMediumMax;
+  ZVirtualMemory vmem = _cache.remove_contiguous_power_of_2(min_size, max_size);
 
   if (vmem.is_null()) {
     // Failed to find a contiguous vmem
