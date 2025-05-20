@@ -403,6 +403,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 #endif
   RegionData* candidates = _region_data;
   size_t mixed_garbage = 0;
+  size_t immediate_humongous_waste = 0;
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
     if (!region->is_old()) {
@@ -457,6 +458,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 #endif
         immediate_regions++;
         immediate_garbage += garbage;
+        immediate_humongous_waste += (ShenandoahHeapRegion::region_size_bytes() - garbage);
         size_t region_count = heap->trash_humongous_region_at(region);
         log_debug(gc)("Trashed %zu regions for humongous object.", region_count);
       } else {
@@ -470,16 +472,27 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
       // Count humongous objects made into trash here.
       immediate_regions++;
       immediate_garbage += garbage;
+      immediate_humongous_waste += (ShenandoahHeapRegion::region_size_bytes() - garbage);
     }
   }
 
   // A previous implementation calculated live_bytes as sum of "live data" within this region.  But that
   // overestimates live data because it includes an abundance of floating garbage.  This calculation improves
   // detection of floating garbage and allows the next Old GC to be triggered more quickly when appropriate.
+
+  // live_bytes includes humongous waste, so we must subtract from live_bytes any reclaimed humongous waste
   size_t live_bytes = _old_generation->get_used_bytes_at_start_of_mark();
   live_bytes -= immediate_garbage;
+  live_bytes -= immediate_humongous_waste;
   live_bytes -= mixed_garbage;
-  _old_generation->set_live_bytes_at_last_mark(live_bytes + humongous_waste);
+#define KELVIN_OLD_TRIGGERS
+#ifdef KELVIN_OLD_TRIGGERS
+  log_info(gc)("KELVIN setting live_bytes_at_last_mark to %zu = "
+               "live_bytes_at_start: %zu - immediate_garbage: %zu, immediate_waste: %zu, and mixed_garbage: %zu",
+               live_bytes, _old_generation->get_used_bytes_at_start_of_mark(), immediate_garbage,
+               immediate_humongous_waste, mixed_garbage);
+#endif
+  _old_generation->set_live_bytes_at_last_mark(live_bytes);
 
   // Unlike young, we are more interested in efficiently packing OLD-gen than in reclaiming garbage first.  We sort by live-data.
   // Some regular regions may have been promoted in place with no garbage but also with very little live data.  When we "compact"
@@ -758,7 +771,7 @@ void ShenandoahOldHeuristics::set_trigger_if_old_is_fragmented(size_t first_old_
 }
 
 void ShenandoahOldHeuristics::set_trigger_if_old_is_overgrown() {
-  size_t old_used = _old_generation->used() + _old_generation->get_humongous_waste();
+  size_t old_used = _old_generation->used_regions_size();
   size_t trigger_threshold = _old_generation->usage_trigger_threshold();
   // Detects unsigned arithmetic underflow
   assert(old_used <= _heap->capacity(),
@@ -839,7 +852,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
   if (_growth_trigger) {
     // Growth may be falsely triggered during mixed evacuations, before the mixed-evacuation candidates have been
     // evacuated.  Before acting on a false trigger, we check to confirm the trigger condition is still satisfied.
-    const size_t current_usage = _old_generation->used() + _old_generation->get_humongous_waste();
+    const size_t current_usage = _old_generation->used_including_humongous_waste();
     const size_t trigger_threshold = _old_generation->usage_trigger_threshold();
     const size_t heap_size = heap->capacity();
     const size_t ignore_threshold = (ShenandoahIgnoreOldGrowthBelowPercentage * heap_size) / 100;
@@ -856,6 +869,11 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     } else if (current_usage > trigger_threshold) {
       const size_t live_at_previous_old = _old_generation->get_live_bytes_at_last_mark();
       _old_generation->set_used_bytes_at_start_of_mark(current_usage);
+#define KELVIN_OLD_TRIGGER
+#ifdef KELVIN_OLD_TRIGGER
+      log_info(gc)("KELVIN Triggering old with current_usage: %zu, ignore_threshold: %zu, trigger_threshold: %zu",
+                   current_usage, ignore_threshold, trigger_threshold);
+#endif
       const double percent_growth = percent_of(current_usage - live_at_previous_old, live_at_previous_old);
       log_trigger("Old has overgrown, live at end of previous OLD marking: "
                   "%zu%s, current usage: %zu%s, percent growth: %.1f%%",
@@ -879,34 +897,28 @@ bool ShenandoahOldHeuristics::should_start_gc() {
 }
 
 uintx ShenandoahOldHeuristics::desired_time_slice_ms() {
-  // We increase the desired time slice by 50 ms every 4 cycles, until old is done.  The young heuristic will
+  // We increase the desired time slice by 100 ms every 2 cycles, until old is done.  The young heuristic will
   // limit our granted time slice to 10% of its average cycle time.  There's some tension here.  We don't really
-  // know that old-gen needs higher priority until it has taken inordinantlly long to complete it work.  However,
+  // know that old-gen needs higher priority until it has taken inordinantly long to complete its work.  However,
   // by the time we see that it is requiring higher priority, young collections are probably already feeling duress,
   // so that is not a good time to steal cycles for old collections.  So we need to start out being a bit greedy.
-  unsigned int num_increases = _consecutive_concurrent_old_cycles / 4;
-  return ShenandoahMinimumOldTimeMs + 50 * num_increases;
+  unsigned int num_increases = _consecutive_concurrent_old_cycles / 2;
+  return ShenandoahMinimumOldTimeMs + 100 * num_increases;
 }
 
 uint ShenandoahOldHeuristics::should_surge() {
-  // If it takes more than IdealMaxConcurrentOldCycles to complete old GC, old is being starved. Surge the
-  // concurrent old GC workers.
-  static const uint IdealMaxConcurrentOldCycles = 8;
-  uint candidate_surge;
-  if (_consecutive_concurrent_old_cycles > IdealMaxConcurrentOldCycles) {
-    candidate_surge = (_consecutive_concurrent_old_cycles - IdealMaxConcurrentOldCycles);
-    assert(Max_Surge_Level == 8, "Manually propagate changes to key constants");
-    if (candidate_surge > Max_Surge_Level) {
-      candidate_surge = Max_Surge_Level;
-    }
-    if (ConcGCThreads * (1 + candidate_surge * 0.25) > ParallelGCThreads) {
-      candidate_surge = (uint) (((((double) ParallelGCThreads) / ConcGCThreads) - 1.0) / 0.25);
+  // Start small surge early, while we still have some scheduling slack.  Sometimes, only the first few old-marking
+  // cycles following the old trigger have more than a second of time to run old marking.
+  uint candidate_surge = _consecutive_concurrent_old_cycles + 1;
+  assert(Max_Surge_Level == 8, "Manually propagate changes to key constants");
+  if (candidate_surge > Max_Surge_Level) {
+    candidate_surge = Max_Surge_Level;
+  }
+  if (ConcGCThreads * (1 + candidate_surge * 0.25) > ParallelGCThreads) {
+    candidate_surge = (uint) (((((double) ParallelGCThreads) / ConcGCThreads) - 1.0) / 0.25);
 #ifdef KELVIN_SURGE
-      log_info(gc)("Old::should_surge(), downgraded to: %u", candidate_surge);
+    log_info(gc)("Old::should_surge(), downgraded to: %u", candidate_surge);
 #endif
-    }
-  } else {
-    candidate_surge = 0;
   }
   _surge_level = candidate_surge;
   return candidate_surge;
