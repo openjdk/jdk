@@ -22,11 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.util.zip;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -52,6 +55,8 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * @since 9
  */
 public final class CRC32C implements Checksum {
+
+    private static final JavaNioAccess JAVA_NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     /*
      * This CRC-32C implementation uses the 'slicing-by-8' algorithm described
@@ -176,7 +181,7 @@ public final class CRC32C implements Checksum {
         if (buffer.isDirect()) {
             NIO_ACCESS.acquireSession(buffer);
             try {
-                crc = updateDirectByteBuffer(crc, ((DirectBuffer)buffer).address(),
+                crc = updateDirectByteBuffer(crc, JAVA_NIO_ACCESS.getBufferAddress(buffer),
                         pos, limit);
             } finally {
                 NIO_ACCESS.releaseSession(buffer);

@@ -30,6 +30,8 @@ import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.util.Objects;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.util.Preconditions;
 import sun.nio.ch.DirectBuffer;
@@ -73,6 +75,8 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  */
 
 public class Inflater implements AutoCloseable {
+
+    private static final JavaNioAccess JAVA_NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     private final InflaterZStreamRef zsRef;
     private ByteBuffer input = ZipUtils.defaultBuf;
@@ -243,7 +247,7 @@ public class Inflater implements AutoCloseable {
             if (dictionary.isDirect()) {
                 NIO_ACCESS.acquireSession(dictionary);
                 try {
-                    long address = ((DirectBuffer) dictionary).address();
+                    long address = JAVA_NIO_ACCESS.getBufferAddress(dictionary);
                     setDictionaryBuffer(zsRef.address(), address + position, remaining);
                 } finally {
                     NIO_ACCESS.releaseSession(dictionary);
@@ -366,7 +370,7 @@ public class Inflater implements AutoCloseable {
                         if (input.isDirect()) {
                             NIO_ACCESS.acquireSession(input);
                             try {
-                                long inputAddress = ((DirectBuffer) input).address();
+                                long inputAddress = JAVA_NIO_ACCESS.getBufferAddress(input);
                                 result = inflateBufferBytes(zsRef.address(),
                                     inputAddress + inputPos, inputRem,
                                     output, off, len);
@@ -503,7 +507,7 @@ public class Inflater implements AutoCloseable {
                         if (output.isDirect()) {
                             NIO_ACCESS.acquireSession(output);
                             try {
-                                long outputAddress = ((DirectBuffer) output).address();
+                                long outputAddress = JAVA_NIO_ACCESS.getBufferAddress(output);
                                 result = inflateBytesBuffer(zsRef.address(),
                                     inputArray, inputPos, inputLim - inputPos,
                                     outputAddress + outputPos, outputRem);
@@ -528,11 +532,11 @@ public class Inflater implements AutoCloseable {
                         if (input.isDirect()) {
                             NIO_ACCESS.acquireSession(input);
                             try {
-                                long inputAddress = ((DirectBuffer) input).address();
+                                long inputAddress = JAVA_NIO_ACCESS.getBufferAddress(input);
                                 if (output.isDirect()) {
                                     NIO_ACCESS.acquireSession(output);
                                     try {
-                                        long outputAddress = ((DirectBuffer) output).address();
+                                        long outputAddress = JAVA_NIO_ACCESS.getBufferAddress(output);
                                         result = inflateBufferBuffer(zsRef.address(),
                                             inputAddress + inputPos, inputRem,
                                             outputAddress + outputPos, outputRem);
@@ -555,7 +559,7 @@ public class Inflater implements AutoCloseable {
                             if (output.isDirect()) {
                                 NIO_ACCESS.acquireSession(output);
                                 try {
-                                    long outputAddress = ((DirectBuffer) output).address();
+                                    long outputAddress = JAVA_NIO_ACCESS.getBufferAddress(output);
                                     result = inflateBytesBuffer(zsRef.address(),
                                         inputArray, inputOffset + inputPos, inputRem,
                                         outputAddress + outputPos, outputRem);
