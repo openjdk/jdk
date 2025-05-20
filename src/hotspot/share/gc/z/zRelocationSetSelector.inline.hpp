@@ -27,7 +27,9 @@
 #include "gc/z/zRelocationSetSelector.hpp"
 
 #include "gc/z/zArray.inline.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zPage.inline.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 inline size_t ZRelocationSetSelectorGroupStats::npages_candidates() const {
   return _npages_candidates;
@@ -69,19 +71,48 @@ inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorStats::larg
   return _large[static_cast<uint>(age)];
 }
 
+inline bool ZRelocationSetSelectorGroup::pre_filter_page(const ZPage* page, size_t live_bytes) const {
+  if (page->is_small()) {
+    // Small pages are always the same size, so we can simply compare the
+    // garbage pre-calculated _page_fragmentation_limit.
+    assert(page->size() == ZPageSizeSmall, "Unexpected small page size %zu", page->size());
+
+    const size_t garbage = ZPageSizeSmall - live_bytes;
+
+    return garbage > _page_fragmentation_limit;
+  }
+
+  if (page->is_medium()) {
+    // Medium pages may have different sizes, so we can recalculate the page
+    // fragmentation limit for a specific page by multiplying pre-calculated
+    // _page_fragmentation_limit (calculated using the max page size) by the
+    // fraction the specific page size is of the max page size.
+    // Because the page sizes are always a power of two we can rewrite this
+    // using log2 and bit-shift.
+    const size_t size = page->size();
+    const int shift = ZPageSizeMediumShift - log2i_exact(size);
+    const size_t page_fragmentation_limit = _page_fragmentation_limit >> shift;
+
+    const size_t garbage = size - live_bytes;
+
+    return garbage > page_fragmentation_limit;
+  }
+
+  // Large pages are never relocated
+  return false;
+}
+
 inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
-  const size_t size = page->size();
   const size_t live = page->live_bytes();
-  const size_t garbage = size - live;
 
   // Pre-filter out pages that are guaranteed to not be selected
-  if ((page->is_small() && garbage > _page_fragmentation_limit) ||
-      (page->is_medium() && percent_of(garbage, size) > _fragmentation_limit)) {
+  if (pre_filter_page(page, live)) {
     _live_pages.append(page);
   } else if (page->is_young()) {
     _not_selected_pages.append(page);
   }
 
+  const size_t size = page->size();
   const uint age = static_cast<uint>(page->age());
   _stats[age]._npages_candidates++;
   _stats[age]._total += size;

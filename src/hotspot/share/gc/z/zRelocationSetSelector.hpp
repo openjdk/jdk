@@ -99,6 +99,8 @@ private:
   void semi_sort();
   void select_inner();
 
+  bool pre_filter_page(const ZPage* page, size_t live_bytes) const;
+
 public:
   ZRelocationSetSelectorGroup(const char* name,
                               ZPageType page_type,
