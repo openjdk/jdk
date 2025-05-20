@@ -48,9 +48,8 @@ import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
 import java.io.PrintStream;
+import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 import jdk.jshell.JShellConsole;
 import jdk.jshell.execution.JdiDefaultExecutionControl.JdiStarter.TargetDescription;
 import jdk.jshell.spi.ExecutionControl;
@@ -71,7 +70,7 @@ import jdk.jshell.execution.impl.ConsoleImpl.ConsoleOutputStream;
  */
 public class JdiDefaultExecutionControl extends JdiExecutionControl {
 
-    private static final int SHUTDOWN_TIMEOUT = 1; //1 second
+    private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(1);
     private static final List<String> FORWARD_SYSTEM_PROPERTIES = List.of(
         "stderr.encoding",
         "stdin.encoding",
@@ -287,7 +286,7 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
 
         if (remoteProcess != null) {
             try {
-                remoteProcess.waitFor(SHUTDOWN_TIMEOUT, TimeUnit.SECONDS);
+                remoteProcess.waitFor(SHUTDOWN_TIMEOUT);
             } catch (InterruptedException ex) {
                 debug(ex, "waitFor remote");
             }
