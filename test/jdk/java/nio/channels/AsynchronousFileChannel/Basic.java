@@ -29,6 +29,7 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousFileChannel;
@@ -58,6 +59,7 @@ import static java.nio.file.StandardOpenOption.*;
 
 public class Basic {
 
+    // Must be indeterministic
     private static final Random rand = new Random();
 
     public static void main(String[] args) throws IOException {
@@ -563,15 +565,22 @@ public class Basic {
     static ByteBuffer genBuffer() {
         int size = 1024 + rand.nextInt(16000);
         byte[] buf = new byte[size];
-        boolean useDirect = rand.nextBoolean();
-        if (useDirect) {
-            ByteBuffer bb = ByteBuffer.allocateDirect(buf.length);
-            bb.put(buf);
-            bb.flip();
-            return bb;
-        } else {
-            return ByteBuffer.wrap(buf);
-        }
+        return switch (rand.nextInt(3)) {
+            case 0 -> {
+                ByteBuffer bb = ByteBuffer.allocateDirect(buf.length);
+                bb.put(buf);
+                bb.flip();
+                yield bb;
+            }
+            case 1 -> ByteBuffer.wrap(buf);
+            case 2 -> {
+                ByteBuffer bb = Arena.ofAuto().allocate(buf.length).asByteBuffer();
+                bb.put(buf);
+                bb.flip();
+                yield bb;
+            }
+            default -> throw new InternalError("Should not reach here");
+        };
     }
 
     // writes all remaining bytes in the buffer to the given channel at the
