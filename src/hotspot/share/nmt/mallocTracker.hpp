@@ -211,7 +211,7 @@ public:
   // Total malloc'd memory used by arenas
   size_t total_arena() const;
 
-  void copy_to(MallocMemorySnapshot* s);
+  void copy_to(MallocMemorySnapshot** s);
 
   // Make adjustment by subtracting chunks used by arenas
   // from total chunks to get total free chunk size
@@ -222,7 +222,6 @@ public:
  * This class is for collecting malloc statistics at summary level
  */
 class MallocMemorySummary : AllStatic {
- private:
   // Reserve memory for placement of MallocMemorySnapshot object
   static DeferredStatic<MallocMemorySnapshot> _snapshot;
   static bool _have_limits;
@@ -235,8 +234,8 @@ class MallocMemorySummary : AllStatic {
   // Will return true if the limit was handled, false if it was ignored.
   static bool category_limit_reached(MemTag mem_tag, size_t s, size_t so_far, const malloclimit* limit);
 
- public:
-   static bool initialize();
+public:
+   static void initialize();
 
    static inline void record_malloc(size_t size, MemTag mem_tag) {
      as_snapshot()->by_tag(mem_tag)->record_malloc(size);
@@ -262,7 +261,7 @@ class MallocMemorySummary : AllStatic {
 
    static void snapshot(MallocMemorySnapshot** s) {
      *s = new MallocMemorySnapshot(*as_snapshot());
-     as_snapshot()->copy_to(*s);
+     as_snapshot()->copy_to(s);
      (*s)->make_adjustment();
    }
 
