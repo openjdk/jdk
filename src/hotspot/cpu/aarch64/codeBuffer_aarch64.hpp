@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,6 +34,7 @@ public:
   void flush_bundle(bool start_new_bundle) {}
   static constexpr bool supports_shared_stubs() { return true; }
 
-  void share_trampoline_for(address dest, int caller_offset);
+  void share_rc_trampoline_for(address dest, int caller_offset);
+  void share_sc_trampoline_for(const ciMethod* callee, int caller_offset);
 
 #endif // CPU_AARCH64_CODEBUFFER_AARCH64_HPP

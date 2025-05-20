@@ -891,7 +891,7 @@ static bool is_always_within_branch_range(Address entry) {
 
 // Maybe emit a call via a trampoline. If the code cache is small
 // trampolines won't be emitted.
-address MacroAssembler::trampoline_call(Address entry) {
+address MacroAssembler::trampoline_call(Address entry, ciMethod* callee /* = nullptr */) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
          || entry.rspec().type() == relocInfo::static_call_type
@@ -905,7 +905,10 @@ address MacroAssembler::trampoline_call(Address entry) {
       // code during its branch shortening phase.
       if (entry.rspec().type() == relocInfo::runtime_call_type) {
         assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
-        code()->share_trampoline_for(entry.target(), offset());
+        code()->share_rc_trampoline_for(entry.target(), offset());
+      } else if (entry.rspec().type() == relocInfo::static_call_type && callee != nullptr) {
+        assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
+        code()->share_sc_trampoline_for(callee, offset());
       } else {
         address stub = emit_trampoline_stub(offset(), target);
         if (stub == nullptr) {

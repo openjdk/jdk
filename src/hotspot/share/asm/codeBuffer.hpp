@@ -541,7 +541,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   };
 
   typedef LinkedListImpl<int> Offsets;
-  typedef ResizeableResourceHashtable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
+  typedef ResizeableResourceHashtable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedRCTrampolineRequests;
+  typedef ResizeableResourceHashtable<const ciMethod*, Offsets, AnyObj::C_HEAP, mtCompiler> SharedSCTrampolineRequests;
 
  private:
   enum {
@@ -570,7 +571,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   address      _last_label;     // record last bind label address, it's also the start of current bb.
 
   SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
-  SharedTrampolineRequests*   _shared_trampoline_requests;     // used to collect requests for shared trampolines
+  SharedRCTrampolineRequests*   _shared_rc_trampoline_requests;     // requests for shared trampolines owned by runtime calls
+  SharedSCTrampolineRequests*   _shared_sc_trampoline_requests;     // requests for shared trampolines owned by static calls
   bool         _finalize_stubs; // Indicate if we need to finalize stubs to make CodeBuffer final.
 
   int          _const_section_alignment;
@@ -597,7 +599,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _last_label      = nullptr;
     _finalize_stubs  = false;
     _shared_stub_to_interp_requests = nullptr;
-    _shared_trampoline_requests = nullptr;
+    _shared_rc_trampoline_requests = nullptr;
+    _shared_sc_trampoline_requests = nullptr;
 
     _consts.initialize_outer(this, SECT_CONSTS);
     _insts.initialize_outer(this,  SECT_INSTS);
