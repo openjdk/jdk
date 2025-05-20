@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) override;
     jlong memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap) override;
     jlong memory_soft_limit_in_bytes(julong upper_bound) override;
+    jlong memory_throttle_limit_in_bytes() override;
     jlong memory_max_usage_in_bytes() override;
     jlong rss_usage_in_bytes() override;
     jlong cache_usage_in_bytes() override;
@@ -140,12 +141,41 @@ class CgroupV1CpuController final : public CgroupCpuController {
     }
 };
 
+class CgroupV1CpuacctController final : public CgroupCpuacctController {
+
+  private:
+    CgroupV1Controller _reader;
+    CgroupV1Controller* reader() { return &_reader; }
+  public:
+    jlong cpu_usage_in_micros() override;
+    void set_subsystem_path(const char *cgroup_path) override {
+      reader()->set_subsystem_path(cgroup_path);
+    }
+    bool is_read_only() override {
+      return reader()->is_read_only();
+    }
+    const char* subsystem_path() override {
+      return reader()->subsystem_path();
+    }
+    const char* mount_point() override {
+      return reader()->mount_point();
+    }
+    bool needs_hierarchy_adjustment() override {
+      return reader()->needs_hierarchy_adjustment();
+    }
+    const char* cgroup_path() override { return reader()->cgroup_path(); }
+
+  public:
+    CgroupV1CpuacctController(const CgroupV1Controller& reader) : _reader(reader) {
+    }
+};
+
 class CgroupV1Subsystem: public CgroupSubsystem {
 
   public:
     CgroupV1Subsystem(CgroupV1Controller* cpuset,
                       CgroupV1CpuController* cpu,
-                      CgroupV1Controller* cpuacct,
+                      CgroupV1CpuacctController* cpuacct,
                       CgroupV1Controller* pids,
                       CgroupV1MemoryController* memory);
 
@@ -165,13 +195,14 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     }
     CachingCgroupController<CgroupMemoryController>* memory_controller() { return _memory; }
     CachingCgroupController<CgroupCpuController>* cpu_controller() { return _cpu; }
+    CgroupCpuacctController* cpuacct_controller() { return _cpuacct; }
 
   private:
     /* controllers */
     CachingCgroupController<CgroupMemoryController>* _memory = nullptr;
     CgroupV1Controller* _cpuset = nullptr;
     CachingCgroupController<CgroupCpuController>* _cpu = nullptr;
-    CgroupV1Controller* _cpuacct = nullptr;
+    CgroupV1CpuacctController* _cpuacct = nullptr;
     CgroupV1Controller* _pids = nullptr;
 
 };
