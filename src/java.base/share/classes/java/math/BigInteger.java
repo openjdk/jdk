@@ -840,7 +840,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private static BigInteger smallPrime(int bitLength, int certainty, Random rnd) {
         int magLen = (bitLength + 31) >>> 5;
         int temp[] = new int[magLen];
-        int highBit = 1 << ((bitLength+31) & 0x1f);  // High bit of high int
+        int highBit = 1 << (bitLength - 1);  // High bit of high int
         int highMask = (highBit << 1) - 1;  // Bits to keep in high int
 
         while (true) {
@@ -884,7 +884,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private static BigInteger largePrime(int bitLength, int certainty, Random rnd) {
         BigInteger p;
         p = new BigInteger(bitLength, rnd).setBit(bitLength-1);
-        p.mag[p.mag.length-1] &= 0xfffffffe;
+        p.mag[p.mag.length-1] &= ~1;
 
         // Use a sieve length likely to contain the next prime number
         int searchLen = getPrimeSearchLen(bitLength);
@@ -895,7 +895,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             p = p.add(BigInteger.valueOf(2*searchLen));
             if (p.bitLength() != bitLength)
                 p = new BigInteger(bitLength, rnd).setBit(bitLength-1);
-            p.mag[p.mag.length-1] &= 0xfffffffe;
+            p.mag[p.mag.length-1] &= ~1;
             searchSieve = new BitSieve(p, searchLen);
             candidate = searchSieve.retrieve(p, certainty, rnd);
         }
