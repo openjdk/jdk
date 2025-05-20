@@ -3181,7 +3181,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
 
         // Pre load the window that slides over the exponent
-        int bitpos = 1 << ((ebits-1) & (32-1));
+        int bitpos = 1 << ((ebits-1) & 0x1f);
 
         int buf = 0;
         int elen = exp.length;
@@ -3191,7 +3191,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             bitpos >>>= 1;
             if (bitpos == 0) {
                 eIndex++;
-                bitpos = 1 << (32-1);
+                bitpos = 1 << 0x1f;
                 elen--;
             }
         }
@@ -3225,7 +3225,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 bitpos >>>= 1;
                 if (bitpos == 0) {
                     eIndex++;
-                    bitpos = 1 << (32-1);
+                    bitpos = 1 << 0x1f;
                     elen--;
                 }
             }
@@ -3748,7 +3748,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (n < 0)
             throw new ArithmeticException("Negative bit address");
 
-        return (getInt(n >>> 5) & (1 << (n & 31))) != 0;
+        return (getInt(n >>> 5) & (1 << (n & 0x1f))) != 0;
     }
 
     /**
@@ -3769,7 +3769,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         for (int i=0; i < result.length; i++)
             result[result.length-i-1] = getInt(i);
 
-        result[result.length-intNum-1] |= (1 << (n & 31));
+        result[result.length-intNum-1] |= (1 << (n & 0x1f));
 
         return valueOf(result);
     }
@@ -3793,7 +3793,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         for (int i=0; i < result.length; i++)
             result[result.length-i-1] = getInt(i);
 
-        result[result.length-intNum-1] &= ~(1 << (n & 31));
+        result[result.length-intNum-1] &= ~(1 << (n & 0x1f));
 
         return valueOf(result);
     }
@@ -3817,7 +3817,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         for (int i=0; i < result.length; i++)
             result[result.length-i-1] = getInt(i);
 
-        result[result.length-intNum-1] ^= (1 << (n & 31));
+        result[result.length-intNum-1] ^= (1 << (n & 0x1f));
 
         return valueOf(result);
     }
@@ -4307,10 +4307,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @see    #BigInteger(byte[])
      */
     public byte[] toByteArray() {
-        int byteLen = bitLength()/8 + 1;
-        byte[] byteArray = new byte[byteLen];
+        byte[] byteArray = new byte[bitLength()/8 + 1];
 
-        for (int i=byteLen-1, bytesCopied=4, nextInt=0, intIndex=0; i >= 0; i--) {
+        for (int i=byteArray.length-1, bytesCopied=4, nextInt=0, intIndex=0; i >= 0; i--) {
             if (bytesCopied == 4) {
                 nextInt = getInt(intIndex++);
                 bytesCopied = 1;
@@ -4362,11 +4361,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public long longValue() {
-        long result = 0;
-
-        for (int i=1; i >= 0; i--)
-            result = (result << 32) + (getInt(i) & LONG_MASK);
-        return result;
+        return ((long) getInt(1) << Integer.SIZE) + (getInt(0) & LONG_MASK);
     }
 
     /**
