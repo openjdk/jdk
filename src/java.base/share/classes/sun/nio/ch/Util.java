@@ -340,7 +340,7 @@ public class Util {
      * Frees the memory for the given direct buffer
      */
     private static void free(ByteBuffer buf) {
-        unsafe.freeMemory(NIO_ACCESS.getBufferAddress(buf));
+        unsafe.freeMemory(((DirectBuffer)buf).address());
     }
 
 
@@ -405,7 +405,7 @@ public class Util {
     }
 
     static void erase(ByteBuffer bb) {
-        unsafe.setMemory(NIO_ACCESS.getBufferAddress(bb), bb.capacity(), (byte)0);
+        unsafe.setMemory(((DirectBuffer)bb).address(), bb.capacity(), (byte)0);
     }
 
     static Unsafe unsafe() {

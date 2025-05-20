@@ -1324,15 +1324,13 @@ class SocketChannelImpl
     private int tryRead(byte[] b, int off, int len) throws IOException {
         ByteBuffer dst = Util.getTemporaryDirectBuffer(len);
         assert dst.position() == 0;
-        NIO_ACCESS.acquireSession(dst);
         try {
-            int n = nd.read(fd, NIO_ACCESS.getBufferAddress(dst), len);
+            int n = nd.read(fd, ((DirectBuffer)dst).address(), len);
             if (n > 0) {
                 dst.get(b, off, n);
             }
             return n;
         } finally{
-            NIO_ACCESS.releaseSession(dst);
             Util.offerFirstTemporaryDirectBuffer(dst);
         }
     }
@@ -1430,12 +1428,10 @@ class SocketChannelImpl
     private int tryWrite(byte[] b, int off, int len) throws IOException {
         ByteBuffer src = Util.getTemporaryDirectBuffer(len);
         assert src.position() == 0;
-        NIO_ACCESS.acquireSession(src);
         try {
             src.put(b, off, len);
-            return nd.write(fd, NIO_ACCESS.getBufferAddress(src), len);
+            return nd.write(fd, ((DirectBuffer)src).address(), len);
         } finally {
-            NIO_ACCESS.releaseSession(src);
             Util.offerFirstTemporaryDirectBuffer(src);
         }
     }

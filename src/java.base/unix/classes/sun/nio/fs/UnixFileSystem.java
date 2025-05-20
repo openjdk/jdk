@@ -52,8 +52,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.IOStatus;
 
@@ -67,9 +65,7 @@ import static sun.nio.fs.UnixNativeDispatcher.*;
 abstract class UnixFileSystem
     extends FileSystem
 {
-    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
-
-    // minimum size of a temporary direct buffer
+     // minimum size of a temporary direct buffer
     private static final int MIN_BUFFER_SIZE = 16384;
 
     // whether direct copying is supported on this platform
@@ -666,14 +662,11 @@ abstract class UnixFileSystem
                     ByteBuffer buf =
                         sun.nio.ch.Util.getTemporaryDirectBuffer(bufferSize);
                     try {
-                        NIO_ACCESS.acquireSession(buf);
                         try {
-                            bufferedCopy(fo, fi, NIO_ACCESS.getBufferAddress(buf),
+                            bufferedCopy(fo, fi, ((DirectBuffer)buf).address(),
                                           bufferSize, addressToPollForCancel);
                         } catch (UnixException x) {
                             x.rethrowAsIOException(source, target);
-                        } finally {
-                            NIO_ACCESS.releaseSession(buf);
                         }
                     } finally {
                         sun.nio.ch.Util.releaseTemporaryDirectBuffer(buf);
