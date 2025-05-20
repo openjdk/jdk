@@ -604,7 +604,8 @@ Optimizations</h3>
 <p>One way to improve test coverage of ahead-of-time (AOT) optimizations
 in the JDK is to run existing jtreg test cases in a special "AOT_JDK"
 mode. Example:</p>
-<pre><code>$ make test JTREG=&quot;AOT_JDK=onestep&quot; TEST=open/test/hotspot/jtreg/runtime/invokedynamic</code></pre>
+<pre><code>$ make test JTREG=&quot;AOT_JDK=onestep&quot; \
+    TEST=open/test/hotspot/jtreg/runtime/invokedynamic</code></pre>
 <p>In this testing mode, we first perform an AOT training run (see
 https://openjdk.org/jeps/483) of a special test program (<a
 href="../test/setup_aot/TestSetupAOT.java">test/setup_aot/TestSetupAOT.java</a>)
@@ -624,9 +625,9 @@ href="../test/jdk/ProblemList-AotJdk.txt">test/jdk/ProblemList-AotJdk.txt</a>.</
 <p>Also, test cases that were written specifically to test AOT, such as
 the tests under <a
 href="../test/hotspot/jtreg/runtime/cds/">test/hotspot/jtreg/runtime/cds</a>,
-cannot be execute with the AOT_JDK mode.</p>
-<p>Valid values for <code>AOT_JDK</code> are <code>one_step</code> and
-<code>two_step</code>. These control how the AOT cache is generated. See
+cannot be executed with the AOT_JDK mode.</p>
+<p>Valid values for <code>AOT_JDK</code> are <code>onestep</code> and
+<code>twostep</code>. These control how the AOT cache is generated. See
 https://openjdk.org/jeps/514 for details. All other values are
 ignored.</p>
 <h3 id="testing-with-alternative-security-providers">Testing with
