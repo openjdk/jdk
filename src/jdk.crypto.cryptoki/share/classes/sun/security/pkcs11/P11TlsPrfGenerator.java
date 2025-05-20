@@ -155,9 +155,7 @@ final class P11TlsPrfGenerator extends KeyGeneratorSpi {
                     token.p11.C_SignUpdate(session.id(), 0, seed, 0, seed.length);
                     byte[] out = token.p11.C_SignFinal
                                         (session.id(), spec.getOutputLength());
-                    String keyAlg = spec.getKeyAlg();
-                    return new SecretKeySpec(out,
-                            (keyAlg == null) ? "TlsPrf" : keyAlg);
+                    return new SecretKeySpec(out, spec.getKeyAlg());
                 } catch (PKCS11Exception e) {
                     throw new ProviderException("Could not calculate PRF", e);
                 } finally {
@@ -183,9 +181,7 @@ final class P11TlsPrfGenerator extends KeyGeneratorSpi {
                 token.p11.C_SignUpdate(session.id(), 0, seed, 0, seed.length);
                 byte[] out = token.p11.C_SignFinal
                                     (session.id(), spec.getOutputLength());
-                String keyAlg = spec.getKeyAlg();
-                return new SecretKeySpec(out,
-                        (keyAlg == null) ? "TlsPrf" : keyAlg);
+                return new SecretKeySpec(out, spec.getKeyAlg());
             } catch (PKCS11Exception e) {
                 throw new ProviderException("Could not calculate PRF", e);
             } finally {
@@ -205,9 +201,7 @@ final class P11TlsPrfGenerator extends KeyGeneratorSpi {
             session = token.getOpSession();
             token.p11.C_DeriveKey(session.id(),
                 new CK_MECHANISM(mechanism, params), keyID, null);
-            String keyAlg = spec.getKeyAlg();
-            return new SecretKeySpec(out,
-                    (keyAlg == null) ? "TlsPrf" : keyAlg);
+            return new SecretKeySpec(out, spec.getKeyAlg());
         } catch (PKCS11Exception e) {
             throw new ProviderException("Could not calculate PRF", e);
         } finally {

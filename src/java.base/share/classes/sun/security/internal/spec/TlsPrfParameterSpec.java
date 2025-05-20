@@ -73,7 +73,7 @@ public class TlsPrfParameterSpec implements AlgorithmParameterSpec {
     public TlsPrfParameterSpec(SecretKey secret, String label,
             byte[] seed, int outputLength,
             String prfHashAlg, int prfHashLength, int prfBlockSize) {
-        this(secret, null, label, seed, outputLength, prfHashAlg,
+        this(secret, "TlsPrf", label, seed, outputLength, prfHashAlg,
                 prfHashLength, prfBlockSize);
     }
 
@@ -93,15 +93,20 @@ public class TlsPrfParameterSpec implements AlgorithmParameterSpec {
      * @param prfBlockSize the input block size of the TLS PRF hash algorithm.
      *        Used only for TLS 1.2+.
      *
-     * @throws NullPointerException if label or seed is null
-     * @throws IllegalArgumentException if outputLength is negative
+     * @throws NullPointerException if keyAlg, label or seed is null
+     * @throws IllegalArgumentException if outputLength is negative or
+     *         keyAlg is empty
      */
     public TlsPrfParameterSpec(SecretKey secret, String keyAlg,
             String label, byte[] seed, int outputLength,
             String prfHashAlg, int prfHashLength, int prfBlockSize) {
 
-        if ((label == null) || (seed == null)) {
-            throw new NullPointerException("label and seed must not be null");
+        if ((keyAlg == null) || (label == null) || (seed == null)) {
+            throw new NullPointerException("keyAlg, label or seed" +
+                    "must not be null");
+        }
+        if (keyAlg.isEmpty()) {
+            throw new IllegalArgumentException("keyAlg can not be empty");
         }
         if (outputLength <= 0) {
             throw new IllegalArgumentException("outputLength must be positive");

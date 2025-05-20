@@ -24,7 +24,6 @@
  */
 package sun.security.ssl;
 
-import jdk.internal.access.SharedSecrets;
 import sun.security.provider.X509Factory;
 
 import java.io.IOException;
@@ -49,14 +48,12 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.*;
-import javax.security.auth.DestroyFailedException;
 
 import sun.security.ssl.CipherSuite.HashAlg;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 import static sun.security.ssl.CipherSuite.HashAlg.H_NONE;
 import static sun.security.ssl.ProtocolVersion.*;
 import sun.security.util.KeyUtil;
-
 
 /**
  * Implements the SSL session interface, and exposes the session context
@@ -313,7 +310,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *       < length in bytes> PSK identity
      *   Anonymous
      *     < 1 byte >
-
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
@@ -1491,6 +1487,13 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
         // Calculations are primarily based on protocol version.
         if (protocolVersion.useTLS13PlusSpec()) {
+
+            // Unlikely, but check anyway.
+            if (exporterMasterSecret == null) {
+                throw new RuntimeException(
+                        "Exporter master secret not captured");
+            }
+
             // TLS 1.3+ using HKDF-based calcs.
             //     TLS 1.3 (RFC 8446)
 
@@ -1525,12 +1528,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             if (context.length > 255) {
                 throw new IllegalArgumentException(
                         "context length outside range");
-            }
-
-            // Unlikely, but check anyway.
-            if (exporterMasterSecret == null) {
-                throw new RuntimeException(
-                        "Exporter master secret not captured");
             }
 
             // Do RFC 8446:7.1-7.5 calculations
@@ -1605,6 +1602,12 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 throw new SSLKeyException("Couldn't generate Exporter/HKDF", e);
             }
         } else if (protocolVersion.useTLS10PlusSpec()) {
+
+            // Unlikely, but check if randoms were not captured.
+            if (clientRandom == null || serverRandom == null) {
+                throw new RuntimeException("Random nonces not captured");
+            }
+
             // RFC 7505 using PRF-based calcs.
             //     TLS 1/1.1/1.2 (RFCs 2246/4346/5246) or
             //     DTLS 1.0/1.2 (RFCs 4347/6347)
@@ -1616,7 +1619,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             //   export any key material based on the new master secret for any
             //   subsequent application-level authentication ... it MUST
             //   disable [RFC5705] ...
-
             if (!useExtendedMasterSecret) {
                 throw new SSLKeyException(
                         "Exporters require extended master secrets");
@@ -1627,11 +1629,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             if (label.isEmpty()) {
                 throw new IllegalArgumentException(
                         "label length outside range");
-            }
-
-            // Unlikely, but check if randoms were not captured.
-            if (clientRandom == null || serverRandom == null) {
-                throw new RuntimeException("Random nonces not captured");
             }
 
             // context length must fit in 2 unsigned bytes.

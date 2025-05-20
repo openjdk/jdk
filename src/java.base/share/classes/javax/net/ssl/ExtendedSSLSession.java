@@ -194,7 +194,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *                names.
      * @param label   the label bytes used in the EKM calculation.
      *                {@code label} will be converted to a {@code byte[]}
-     *                before the operation begins
+     *                before the operation begins.
      * @param context the context bytes used in the EKM calculation, or null
      * @param length  the number of bytes of EKM material needed
      *
@@ -213,7 +213,8 @@ public abstract class ExtendedSSLSession implements SSLSession {
      */
     public SecretKey exportKeyingMaterialKey(String keyAlg,
             String label, byte[] context, int length) throws SSLKeyException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(
+                "Underlying provider does not implement the method");
     }
 
     /**
@@ -244,7 +245,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *
      * @param label   the label bytes used in the EKM calculation.
      *                {@code label} will be converted to a {@code byte[]}
-     *                before the operation begins
+     *                before the operation begins.
      * @param context the context bytes used in the EKM calculation, or null
      * @param length  the number of bytes of EKM material needed
      *
@@ -263,6 +264,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      */
     public byte[] exportKeyingMaterialData(
             String label, byte[] context, int length) throws SSLKeyException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(
+                "Underlying provider does not implement the method");
     }
 }

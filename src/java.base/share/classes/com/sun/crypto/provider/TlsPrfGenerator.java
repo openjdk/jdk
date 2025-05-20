@@ -163,9 +163,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
                     spec.getPRFBlockSize()) :
                 doTLS10PRF(secret, labelBytes, spec.getSeed(), n));
             try {
-                String keyAlg = spec.getKeyAlg();
-                return new SecretKeySpec(prfBytes,
-                        keyAlg == null ? "TlsPrf" : keyAlg);
+                return new SecretKeySpec(prfBytes, spec.getKeyAlg());
             } finally {
                 Arrays.fill(prfBytes, (byte)0);
             }
