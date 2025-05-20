@@ -765,7 +765,7 @@ public class TestTemplate {
 
     public static void testRecursion() {
         // Binding allows use of template1 inside template1, via the Binding indirection.
-        var binding1 = new TemplateBinding<Template.OneArgs<Integer>>();
+        var binding1 = new TemplateBinding<Template.OneArg<Integer>>();
 
         var template1 = Template.make("i", (Integer i) -> body(
             "[ #i\n",
@@ -811,7 +811,7 @@ public class TestTemplate {
         ));
 
         // Binding allows use of template2 inside template2, via the Binding indirection.
-        var binding2 = new TemplateBinding<Template.OneArgs<Integer>>();
+        var binding2 = new TemplateBinding<Template.OneArg<Integer>>();
         var template2 = Template.make("i", (Integer i) -> body(
             let("f", fuel()),
 
@@ -858,7 +858,7 @@ public class TestTemplate {
         ));
 
         // Binding allows use of template2 inside template2, via the Binding indirection.
-        var binding2 = new TemplateBinding<Template.OneArgs<Integer>>();
+        var binding2 = new TemplateBinding<Template.OneArg<Integer>>();
         var template2 = Template.make("i", (Integer i) -> body(
             setFuelCost(3.0f),
             let("f", fuel()),

@@ -30,7 +30,7 @@ package compiler.lib.template_framework;
  */
 public sealed abstract class TemplateToken implements Token
                                            permits TemplateToken.ZeroArgs,
-                                                   TemplateToken.OneArgs,
+                                                   TemplateToken.OneArg,
                                                    TemplateToken.TwoArgs,
                                                    TemplateToken.ThreeArgs
 {
@@ -64,11 +64,11 @@ public sealed abstract class TemplateToken implements Token
      *
      * @param <A> The type of the (first) argument.
      */
-    static final class OneArgs<A> extends TemplateToken implements Token {
-        private final Template.OneArgs<A> oneArgs;
+    static final class OneArg<A> extends TemplateToken implements Token {
+        private final Template.OneArg<A> oneArgs;
         private final A a;
 
-        OneArgs(Template.OneArgs<A> oneArgs, A a) {
+        OneArg(Template.OneArg<A> oneArgs, A a) {
             this.oneArgs = oneArgs;
             this.a = a;
         }

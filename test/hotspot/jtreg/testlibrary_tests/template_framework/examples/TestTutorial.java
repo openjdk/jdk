@@ -394,7 +394,7 @@ public class TestTutorial {
     // recursion.
     public static String generateWithRecursionAndBindingsAndFuel() {
         // Binding allows the use of template1 inside of template1, via the binding indirection.
-        var binding1 = new TemplateBinding<Template.OneArgs<Integer>>();
+        var binding1 = new TemplateBinding<Template.OneArg<Integer>>();
         var template1 = Template.make("depth", (Integer depth) -> body(
             let("fuel", fuel()),
             """

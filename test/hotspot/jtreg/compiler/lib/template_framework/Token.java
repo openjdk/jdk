@@ -36,7 +36,7 @@ import java.util.List;
 sealed interface Token permits StringToken,
                                TemplateToken,
                                TemplateToken.ZeroArgs,
-                               TemplateToken.OneArgs,
+                               TemplateToken.OneArg,
                                TemplateToken.TwoArgs,
                                TemplateToken.ThreeArgs,
                                HookSetToken,
