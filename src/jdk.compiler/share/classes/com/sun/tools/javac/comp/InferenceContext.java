@@ -276,23 +276,7 @@ public class InferenceContext {
      * Add custom hook for performing post-inference action
      */
     void addFreeTypeListener(List<Type> types, FreeTypeListener ftl) {
-        List<Type> myFreeVars = freeVarsIn(types);
-        if (parentIC == null) {
-            freeTypeListeners.put(ftl, myFreeVars);
-        } else {
-            InferenceContext icToAddListenerTo = this;
-            InferenceContext currentIC = this;
-            List<Type> varsToAdd = myFreeVars;
-            while (currentIC != null && currentIC.parentIC != null) {
-                List<Type> suppFreeVars = currentIC.parentIC.freeVarsIn(types);
-                if (suppFreeVars.size() > varsToAdd.size()) {
-                    varsToAdd = suppFreeVars;
-                    icToAddListenerTo = currentIC.parentIC;
-                }
-                currentIC = currentIC.parentIC;
-            }
-            icToAddListenerTo.freeTypeListeners.put(ftl, varsToAdd);
-        }
+        freeTypeListeners.put(ftl, freeVarsIn(types));
     }
 
     /**
