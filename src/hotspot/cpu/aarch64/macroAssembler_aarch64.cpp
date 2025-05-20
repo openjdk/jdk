@@ -5349,7 +5349,7 @@ void MacroAssembler::encode_klass_not_null_for_aot(Register dst, Register src) {
   // we have to load the klass base from the AOT constants area but
   // not the shift because it is not allowed to change
   int shift = CompressedKlassPointers::shift();
-  assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressd klass shift!");
+  assert(shift >= 0 && shift <= CompressedKlassPointers::max_shift(), "unexpected compressed klass shift!");
   if (dst != src) {
     // we can load the base into dst, subtract it formthe src and shift down
     lea(dst, ExternalAddress(CompressedKlassPointers::base_addr()));
