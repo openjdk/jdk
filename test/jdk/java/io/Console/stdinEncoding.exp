@@ -27,20 +27,37 @@ eval spawn $java
 
 # Console::readLine()
 send "abc\r"
+expect {
+    "ABC" { send_error "Console::readLine() received\n" }
+    timeout {
+        send_error "Error: Console::readLine() not received\n"
+        exit 1
+    }
+}
 
 # Console::readPassword()
 send "def\r"
+expect {
+    "DEF" { send_error "Console::readPassword() received\n" }
+    timeout {
+        send_error "Error: Console::readPassword() not received\n"
+        exit 1
+    }
+}
 
 # Console::reader()
 send "ghi\r"
-
-# check the output
-expect "ABCDEFGHI" {
-    expect eof
-    send_error "Mocked output received"
-    exit 0
+expect {
+    "GHI" { send_error "Console::reader() received\n" }
+    timeout {
+        send_error "Error: Console::reader() not received\n"
+        exit 1
+    }
 }
 
-# fail
-send_error "Mocked output not received."
-exit 1
+# should receive eof
+send "\r"
+expect eof
+
+# success
+exit 0

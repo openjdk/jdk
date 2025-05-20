@@ -30,15 +30,14 @@ import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @test
  * @bug 8356985
  * @summary Tests if "stdin.encoding" is reflected for reading
  *          the console.
+ * @requires (os.family == "linux" | os.family == "mac")
  * @library /test/lib
  * @build csp/*
  * @run junit StdinEncodingTest
@@ -46,7 +45,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class StdinEncodingTest {
 
     @Test
-    @EnabledOnOs({OS.LINUX, OS.MAC})
     public void testStdinEncoding() throws Throwable {
         // check "expect" command availability
         var expect = Paths.get("/usr/bin/expect");
@@ -65,7 +63,7 @@ public class StdinEncodingTest {
             jdkDir + "/bin/java",
             "--module-path",
             testClasses + "/modules",
-            "-Dstdin.encoding=Mock", // <- gist of this test
+            "-Dstdin.encoding=Uppercasing", // <- gist of this test
             "StdinEncodingTest");
         output.reportDiagnosticSummary();
         var eval = output.getExitValue();
@@ -74,8 +72,8 @@ public class StdinEncodingTest {
 
     public static void main(String... args) throws Throwable {
         // check stdin.encoding
-        if (!"Mock".equals(System.getProperty("stdin.encoding"))) {
-            throw new RuntimeException("Mock charset was not set in stdin.encoding");
+        if (!"Uppercasing".equals(System.getProperty("stdin.encoding"))) {
+            throw new RuntimeException("Uppercasing charset was not set in stdin.encoding");
         }
         var con = System.console();
 
@@ -89,5 +87,8 @@ public class StdinEncodingTest {
         try (var br = new BufferedReader(con.reader())) {
             System.out.print(br.readLine());
         }
+
+        // Wait till the test receives the result
+        con.readLine();
     }
 }

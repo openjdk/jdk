@@ -555,9 +555,9 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     private static final boolean istty = istty();
-    static final Charset STDIN_CHARSET =
+    private static final Charset STDIN_CHARSET =
         Charset.forName(System.getProperty("stdin.encoding"), UTF_8.INSTANCE);
-    static final Charset STDOUT_CHARSET =
+    private static final Charset STDOUT_CHARSET =
         Charset.forName(System.getProperty("stdout.encoding"), UTF_8.INSTANCE);
     private static final Console cons = instantiateConsole();
     static {

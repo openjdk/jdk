@@ -33,26 +33,26 @@ import java.util.Collections;
 import java.util.Iterator;
 
 // A test charset provider that decodes every input byte into its uppercase
-public class MockCharsetProvider extends CharsetProvider {
+public class UppercasingCharsetProvider extends CharsetProvider {
 
     @Override
     public Iterator charsets() {
-        return Collections.singleton(new MockCharsetProvider.MockCharset()).iterator();
+        return Collections.singleton(new UppercasingCharsetProvider.UppercasingCharset()).iterator();
     }
 
     @Override
     public Charset charsetForName(String charsetName) {
-        if (charsetName.equals("Mock")) {
-            return new MockCharsetProvider.MockCharset();
+        if (charsetName.equals("Uppercasing")) {
+            return new UppercasingCharsetProvider.UppercasingCharset();
         } else {
             return null;
         }
     }
 
-    public static class MockCharset extends Charset {
+    public static class UppercasingCharset extends Charset {
 
-        public MockCharset() {
-            super("Mock", null);
+        public UppercasingCharset() {
+            super("Uppercasing", null);
         }
 
         @Override
@@ -62,7 +62,7 @@ public class MockCharsetProvider extends CharsetProvider {
 
         @Override
         public CharsetDecoder newDecoder() {
-            return new MockCharsetDecoder(this, 1, 1);
+            return new UppercasingCharsetDecoder(this, 1, 1);
         }
 
         @Override
@@ -71,18 +71,15 @@ public class MockCharsetProvider extends CharsetProvider {
         }
     }
 
-    private static class MockCharsetDecoder extends CharsetDecoder {
-        public MockCharsetDecoder(Charset cs, float averageCharsPerByte, float maxCharsPerByte) {
+    private static class UppercasingCharsetDecoder extends CharsetDecoder {
+        public UppercasingCharsetDecoder(Charset cs, float averageCharsPerByte, float maxCharsPerByte) {
             super(cs, averageCharsPerByte, maxCharsPerByte);
         }
 
         @Override
         protected CoderResult decodeLoop(ByteBuffer in, CharBuffer out) {
             while (in.remaining() > 0) {
-                char c = (char)in.get();
-                if (c != '\n') {
-                    out.put(Character.toUpperCase(c));
-                }
+                out.put(Character.toUpperCase((char)in.get()));
             }
             return CoderResult.UNDERFLOW;
         }

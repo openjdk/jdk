@@ -22,5 +22,5 @@
  */
 
 module csp {
-    provides java.nio.charset.spi.CharsetProvider with provider.MockCharsetProvider;
+    provides java.nio.charset.spi.CharsetProvider with provider.UppercasingCharsetProvider;
 }
