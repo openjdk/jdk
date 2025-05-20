@@ -248,7 +248,6 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     private int tryRead(FileDescriptor fd, byte[] b, int off, int len)
         throws IOException
     {
-        // The dst can never be backed by a memory segment
         ByteBuffer dst = Util.getTemporaryDirectBuffer(len);
         assert dst.position() == 0;
         NIO_ACCESS.acquireSession(dst);
