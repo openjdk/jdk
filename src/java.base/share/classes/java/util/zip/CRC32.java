@@ -28,9 +28,6 @@ package java.util.zip;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
-import sun.nio.ch.DirectBuffer;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -46,8 +43,6 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * @since 1.1
  */
 public class CRC32 implements Checksum {
-
-    private static final JavaNioAccess JAVA_NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     private int crc;
 
@@ -104,7 +99,7 @@ public class CRC32 implements Checksum {
         if (buffer.isDirect()) {
             NIO_ACCESS.acquireSession(buffer);
             try {
-                crc = updateByteBuffer(crc, JAVA_NIO_ACCESS.getBufferAddress(buffer), pos, rem);
+                crc = updateByteBuffer(crc, NIO_ACCESS.getBufferAddress(buffer), pos, rem);
             } finally {
                 NIO_ACCESS.releaseSession(buffer);
             }

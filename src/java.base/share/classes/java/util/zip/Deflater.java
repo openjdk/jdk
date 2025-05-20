@@ -30,11 +30,8 @@ import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.util.Objects;
 
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.util.Preconditions;
-import sun.nio.ch.DirectBuffer;
 
 import static java.util.zip.ZipUtils.NIO_ACCESS;
 
@@ -75,8 +72,6 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  */
 
 public class Deflater implements AutoCloseable {
-
-    private static final JavaNioAccess JAVA_NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     private final DeflaterZStreamRef zsRef;
     private ByteBuffer input = ZipUtils.defaultBuf;
@@ -326,7 +321,7 @@ public class Deflater implements AutoCloseable {
             if (dictionary.isDirect()) {
                 NIO_ACCESS.acquireSession(dictionary);
                 try {
-                    long address = JAVA_NIO_ACCESS.getBufferAddress(dictionary);
+                    long address = NIO_ACCESS.getBufferAddress(dictionary);
                     setDictionaryBuffer(zsRef.address(), address + position, remaining);
                 } finally {
                     NIO_ACCESS.releaseSession(dictionary);
@@ -581,7 +576,7 @@ public class Deflater implements AutoCloseable {
                 if (input.isDirect()) {
                     NIO_ACCESS.acquireSession(input);
                     try {
-                        long inputAddress = JAVA_NIO_ACCESS.getBufferAddress(input);
+                        long inputAddress = NIO_ACCESS.getBufferAddress(input);
                         result = deflateBufferBytes(zsRef.address(),
                             inputAddress + inputPos, inputRem,
                             output, off, len,
@@ -705,7 +700,7 @@ public class Deflater implements AutoCloseable {
                 if (output.isDirect()) {
                     NIO_ACCESS.acquireSession(output);
                     try {
-                        long outputAddress = JAVA_NIO_ACCESS.getBufferAddress(output);
+                        long outputAddress = NIO_ACCESS.getBufferAddress(output);
                         result = deflateBytesBuffer(zsRef.address(),
                             inputArray, inputPos, inputLim - inputPos,
                             outputAddress + outputPos, outputRem,
@@ -727,11 +722,11 @@ public class Deflater implements AutoCloseable {
                 if (input.isDirect()) {
                     NIO_ACCESS.acquireSession(input);
                     try {
-                        long inputAddress = JAVA_NIO_ACCESS.getBufferAddress(input);
+                        long inputAddress = NIO_ACCESS.getBufferAddress(input);
                         if (output.isDirect()) {
                             NIO_ACCESS.acquireSession(output);
                             try {
-                                long outputAddress = outputPos + JAVA_NIO_ACCESS.getBufferAddress(output);
+                                long outputAddress = outputPos + NIO_ACCESS.getBufferAddress(output);
                                 result = deflateBufferBuffer(zsRef.address(),
                                     inputAddress + inputPos, inputRem,
                                     outputAddress, outputRem,
@@ -756,7 +751,7 @@ public class Deflater implements AutoCloseable {
                     if (output.isDirect()) {
                         NIO_ACCESS.acquireSession(output);
                         try {
-                            long outputAddress = JAVA_NIO_ACCESS.getBufferAddress(output);
+                            long outputAddress = NIO_ACCESS.getBufferAddress(output);
                             result = deflateBytesBuffer(zsRef.address(),
                                 inputArray, inputOffset + inputPos, inputRem,
                                 outputAddress + outputPos, outputRem,
