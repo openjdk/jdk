@@ -1,6 +1,5 @@
 % Explanation of start of release changes
 
-
 ## Overview
 
 The start of release changes, the changes the turn JDK N into JDK
@@ -15,8 +14,6 @@ concepts which separately get incremented at the start of a new release:
 * Highest class file format major version recognized by the platform
 * Highest `-source`/`-target'/`--release` argument recognized by `javac`
 
-
-
 In more detail, updated files include:
 
 * `jcheck/conf`: update meta-data used by jcheck and the Skara tooling
@@ -25,7 +22,7 @@ In more detail, updated files include:
   for the new version
 * `src/java.base/share/classes/java/lang/classfile/ClassFile.java`:
   add a constant for the new class file format version
-* `src/java.base/share/classes/java/lang/reflect/ClassFileFormatVersion.java`: 
+* `src/java.base/share/classes/java/lang/reflect/ClassFileFormatVersion.java`:
    add an `enum` constant for the new class file format version
 * `src/java.compiler/share/classes/javax/lang/model/SourceVersion.java`:
   add an `enum` constant for the new source version
@@ -33,11 +30,11 @@ In more detail, updated files include:
   `@SupportedSourceVersion` annotations to latest value. Note this update
   is done in lieu of introducing another set of visitors for each Java
   SE release.
-* `src/jdk.compiler/share/classes/com/sun/tools/javac/code/Source.java`: 
+* `src/jdk.compiler/share/classes/com/sun/tools/javac/code/Source.java`:
    add an `enum` constant for the new source version internal to `javac`
 * `src/jdk.compiler/share/classes/com/sun/tools/javac/jvm/ClassFile.java`:
    add an `enum` constant for the new class file format version internal to `javac`
-* `src/jdk.compiler/share/classes/com/sun/tools/javac/jvm/Target.java`: 
+* `src/jdk.compiler/share/classes/com/sun/tools/javac/jvm/Target.java`:
    add an `enum` constant for the new target version internal to `javac`
 * `src/jdk.compiler/share/classes/com/sun/tools/javac/processing/PrintingProcessor.java`
    update printing processor to support the new source version
