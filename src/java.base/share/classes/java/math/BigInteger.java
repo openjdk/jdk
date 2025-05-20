@@ -4307,7 +4307,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @see    #BigInteger(byte[])
      */
     public byte[] toByteArray() {
-        byte[] byteArray = new byte[bitLength()/8 + 1];
+        byte[] byteArray = new byte[(bitLength() >>> 3) + 1];
 
         for (int i=byteArray.length-1, bytesCopied=4, nextInt=0, intIndex=0; i >= 0; i--) {
             if (bytesCopied == 4) {
