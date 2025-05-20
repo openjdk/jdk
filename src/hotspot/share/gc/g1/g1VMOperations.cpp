@@ -50,8 +50,8 @@ bool VM_G1CollectFull::skip_operation() const {
 void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
-  _gc_succeeded = g1h->do_full_collection(false /* clear_all_soft_refs */,
-                                          false /* do_maximal_compaction */);
+  g1h->do_full_collection(false /* clear_all_soft_refs */,
+                          false /* do_maximal_compaction */);
 }
 
 VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
@@ -60,8 +60,7 @@ VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
   _transient_failure(false),
   _cycle_already_in_progress(false),
   _whitebox_attached(false),
-  _terminating(false),
-  _gc_succeeded(false)
+  _terminating(false)
 {}
 
 bool VM_G1TryInitiateConcMark::doit_prologue() {
@@ -101,34 +100,31 @@ void VM_G1TryInitiateConcMark::doit() {
     // we've rejected this request.
     _whitebox_attached = true;
   } else {
-    _gc_succeeded = g1h->do_collection_pause_at_safepoint();
-    assert(_gc_succeeded, "No reason to fail");
+    g1h->do_collection_pause_at_safepoint();
   }
 }
 
 VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
                                                      uint           gc_count_before,
                                                      GCCause::Cause gc_cause) :
-  VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
-  _gc_succeeded(false) {}
+  VM_CollectForAllocation(word_size, gc_count_before, gc_cause) {}
 
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
-  _gc_succeeded = g1h->do_collection_pause_at_safepoint();
-  assert(_gc_succeeded, "no reason to fail");
+  g1h->do_collection_pause_at_safepoint(); // always true
 
   if (_word_size > 0) {
     // An allocation had been requested. Do it, eventually trying a stronger
     // kind of GC.
-    _result = g1h->satisfy_failed_allocation(_word_size, &_gc_succeeded);
+    _result = g1h->satisfy_failed_allocation(_word_size);
   } else if (g1h->should_upgrade_to_full_gc()) {
     // There has been a request to perform a GC to free some space. We have no
     // information on how much memory has been asked for. In case there are
     // absolutely no regions left to allocate into, do a full compaction.
-    _gc_succeeded = g1h->upgrade_to_full_collection();
+    g1h->upgrade_to_full_collection();
   }
 }
 
