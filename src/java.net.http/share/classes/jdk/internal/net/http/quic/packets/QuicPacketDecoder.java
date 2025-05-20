@@ -1000,7 +1000,8 @@ public class QuicPacketDecoder {
             if (!context.verifyToken(destinationID, token)) {
                 if (debug.on()) {
                     debug.log("IncomingInitialPacket rejected, invalid token(%s), %s)",
-                            HexFormat.of().formatHex(token), reader);
+                            token == null ? "null" : HexFormat.of().formatHex(token),
+                            reader);
                 }
                 return null;
             }
