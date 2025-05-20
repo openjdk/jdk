@@ -4733,18 +4733,22 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
          * allocate space for one extra output int. */
         for (j=keep; j < a.length && a[j] == 0; j++)
             ;
-        int extraInt = (j == a.length ? 1 : 0);
-        int result[] = new int[a.length - keep + extraInt];
+        int[] result;
+        if (j == a.length) {
+            result = new int[a.length - keep + 1];
+            result[0] = 1;
+        } else { // Exists a non-sign int that is non-zero
+            result = new int[a.length - keep];
 
-        /* Copy one's complement of input into output, leaving extra
-         * int (if it exists) == 0x00 */
-        for (int i = keep; i < a.length; i++)
-            result[i - keep + extraInt] = ~a[i];
+            // Copy two's complement of input into output
+            int i;
+            for (i = a.length - 1; i > keep && a[i] == 0; i--); // Skip trailing zeros
 
-        // Add one to one's complement to generate two's complement
-        for (int i=result.length-1; ++result[i] == 0; i--)
-            ;
-
+            result[i - keep] = -a[i];
+            i--;
+            for (; i >= keep; i--)
+                result[i - keep] = ~a[i];
+        }
         return result;
     }
 
