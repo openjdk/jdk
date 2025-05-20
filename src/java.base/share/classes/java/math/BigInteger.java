@@ -4359,7 +4359,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public long longValue() {
-        return ((long) getInt(1) << Integer.SIZE) + (getInt(0) & LONG_MASK);
+        return ((long) getInt(1) << Integer.SIZE) | (getInt(0) & LONG_MASK);
     }
 
     /**
