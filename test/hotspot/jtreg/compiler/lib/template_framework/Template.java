@@ -184,17 +184,82 @@ import compiler.lib.ir_framework.TestFramework;
  * supposed to terminate once the {@link #fuel} is depleted (i.e. reaches zero).
  *
  * <p>
- * Code generation often involves defining fields and variables, which are then available inside a defined
- * scope, and can be sampled in any nested scope. To allow the use of names for multiple applications (e.g.
- * fields, variables, methods, etc.), we define a {@link Name}, which captures the {@link String} representation
- * to be used in code, as well as its type and if it is mutable. One can add such a {@link Name} to the
- * current code scope with {@link #addName}, and sample from the current or outer scopes with {@link #sampleName}.
- * When generating code, one might want to create {@link Name}s (variables, fields, etc.) in local scope, or
- * in some outer scope with the use of {@link Hook}s.
+ * Code generation can involve keeping track of fields and variables, as well as the scopes in which they
+ * are available, and if they are mutable or immutable. We model fields and variables with {@link DataName}s,
+ * which we can add to the current scope with {@link addDataName}. We can access the {@link DataName}s with
+ * {@link dataNames}. We can filter for {@link DataName}s of specific {@link DataName.Type}s, and then
+ * we can call {@link DataName.View#count}, {@link DataName.View#sample}, {@link DataName.View#toList}, etc.
+ * There are many use-cases for this mechanism, especially facilitating communication between the code
+ * of outer and inner {@link Template}s. Especially for fuzzing, it may be useful to be able to add
+ * fields and variables, and sample them randomly, to create a random data flow graph.
  *
  * <p>
- * More examples for these functionalities can be found in {@link TestTutorial}, {@link TestSimple}, and
- * {@link TestAdvanced}.
+ * Similarly, we may want to model method and class names, and possibly other structural names. We model
+ * these names with {@link StructuralName}, which works analogous to {@link DataName}, except that they
+ * are not concerned about mutability.
+ *
+ * <p>
+ * When working with {@link DataName}s and {@link StructuralName}s, it is important to be aware of the
+ * relevant scopes, as well as the execution order of the {@link Template} lambdas, as well as the evaluation
+ * of the {@link Template#body} tokens. When a {@link Template} is rendered, its lambda is invoke. In the
+ * lambda, we generate the tokens, and create the {@link Template#body}. Once the lambda returns, the
+ * tokens are evaluated one by one. While evaluating the tokens, the Renderer might encounter a nested
+ * {@link TemplateToken}, which in turn triggers the evaluation of that nested {@link Template}, i.e.
+ * the evaluation of its lambda and later the evaluation of its tokens. It is important to keep in mind
+ * that the lambda is always executed first, and the tokens are evaluated afterwards. A method like
+ * {@code dataNames(MUTABLE).exactOf(type).count()} is a method that is executed during the evaluation
+ * of the lambda. But a method like {@link addDataName} returns a token, and does not immediately add
+ * the {@link DataName}. This ensures that the {@link DataName} is only inserted when the tokens are
+ * evaluated, so that it is inserted at the exact scope where we would expect it.
+ *
+ * <p>
+ * Let us look at the following example to better understand the execution order.
+ *
+ * <p>
+ * {@snippet lang=java :
+ * var testTemplate = Template.make(() -> body(
+ *     // The lambda has just been invoked.
+ *     // We count the DataNames and assign the count to the hashtag replacement "c1".
+ *     let("c1", dataNames(MUTABLE).exactOf(someType).count()),
+ *     // We want to define a DataName "v1", and create a token for it.
+ *     addDataName($("v1"), someType, MUTABLE),
+ *     // We count the DataNames again, but the count does NOT change compared to "c1".
+ *     // This is because the token for "v1" is only evaluated later.
+ *     let("c2", dataNames(MUTABLE).exactOf(someType).count()),
+ *     // Create a nested scope.
+ *     METHOD_HOOK.set(
+ *         // We want to define a DataName "v2", which is only valid inside this
+ *         // nested scope.
+ *         addDataName($("v2"), someType, MUTABLE),
+ *         // The count is still not different to "c1".
+ *         let("c3", dataNames(MUTABLE).exactOf(someType).count()),
+ *         // We nest a Template. This creats a TemplateToken, which is later evaluated.
+ *         // By the time the TemplateToken is evaluated, the tokens from above will
+ *         // be already evaluated. Hence, "v1" and "v2" are added by then, and if the
+ *         // "otherTemplate" were to count the DataNames, the count would be increased
+ *         // by 2 compared to "c1".
+ *         otherTemplate.asToken(),
+ *     ),
+ *     // After closing the scope, "v2" is no longer available.
+ *     // The count is still the same as "c1", since "v1" is still only a token.
+ *     let("c4", dataNames(MUTABLE).exactOf(someType).count()),
+ *     // We nest another Template. Again, this creates a TemplateToken, which is only
+ *     // evaluated later. By that time, the token for "v1" is evaluated, and so the
+ *     // nested Template would observe an increment in the count.
+ *     anotherTemplate.asToken(),
+ *     // By this point, all methods are called, and the tokens generated. The
+ *     // The lambda returns the "body", which is all of the tokens that we just
+ *     // generated. After returning from the lambda, the tokens will be evaluated
+ *     // one by one.
+ * ));
+ * }
+
+ * <p>
+ * More examples for these functionalities can be found in {@code TestTutorial.java}, {@code TestSimple.java},
+ * and {@code TestAdvanced.java}, which all produce compilable Java code. Additional examples can be found in
+ * the tests, such as {@code TestTemplate.java} and {@code TestFormat.java}, which do not necessarily generate
+ * valid Java code, but generate deterministic Strings which are easier to verify, and may also serve as a
+ * reference when learning about these functionalities.
  */
 public sealed interface Template permits Template.ZeroArgs,
                                          Template.OneArgs,
@@ -673,38 +738,84 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Add a {@link Name} in the current scope, i.e. the innermost of either
+     * Add a {@link DataName} in the current scope, i.e. the innermost of either
      * {@link Template#body} or {@link Hook#set}.
-     * Note that there can be duplicate definitions, and they simply increase
-     * the {@link #weighNames} weight, and increase the probability of sampling
-     * the name with {@link #sampleName}.
      *
-     * @param name The {@link Name} to be added to the current scope.
+     * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
+     * @param type The type of the {@link DataName}.
+     * @param mutability Indicates if the {@link DataName} is to be mutable or immutable,
+     *                   i.e. if we intend to use the {@link DataName} only for reading
+     *                   or if we also allow it to be mutated.
+     * @param weight The weight of the {@link DataName}, which correlates to the probability
+     *               of this {@link DataName} being chosen when we sample.
      * @return The token that performs the defining action.
      */
-    static Token addName(Name name) {
-        return new AddNameToken(name);
+    static Token addDataName(String name, DataName.Type type, DataName.Mutability mutability, int weight) {
+        if (mutability != DataName.Mutability.MUTABLE &&
+            mutability != DataName.Mutability.IMMUTABLE) {
+            throw new IllegalArgumentException("Unexpected mutability: " + mutability);
+        }
+        boolean mutable = mutability == DataName.Mutability.MUTABLE;
+        return new AddNameToken(new DataName(name, type, mutable, 1));
     }
 
     /**
-     * Weigh the {@link Name}s for the specified {@link Name.Type}.
+     * Add a {@link DataName} in the current scope, i.e. the innermost of either
+     * {@link Template#body} or {@link Hook#set}, with a {@code weight} of 1.
      *
-     * @param type The type of the names to weigh.
-     * @param onlyMutable Determines if we weigh the mutable names or all.
-     * @return The weight of names for the specified parameters.
+     * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
+     * @param type The type of the {@link DataName}.
+     * @param mutability Indicates if the {@link DataName} is to be mutable or immutable,
+     *                   i.e. if we intend to use the {@link DataName} only for reading
+     *                   or if we also allow it to be mutated.
+     * @return The token that performs the defining action.
      */
-    static long weighNames(Name.Type type, boolean onlyMutable) {
-        return Renderer.getCurrent().weighNames(type, onlyMutable);
+    static Token addDataName(String name, DataName.Type type, DataName.Mutability mutability) {
+        return addDataName(name, type, mutability, 1);
     }
 
     /**
-     * Sample a random name for the specified type.
+     * Access the set of {@link DataName}s, for sampling, counting, etc.
      *
-     * @param type The type of the names to sample from.
-     * @param onlyMutable Determines if we sample from the mutable names or all.
-     * @return The sampled name.
+     * @param mutability Indicates if we only sample from mutable, immutable or either {@link DataName}s.
+     * @return A view on the {@link DataName}s, on which we can sample, count, etc.
      */
-    static Name sampleName(Name.Type type, boolean onlyMutable) {
-        return Renderer.getCurrent().sampleName(type, onlyMutable);
+    static DataName.View dataNames(DataName.Mutability mutability) {
+        return new DataName.View(mutability);
+    }
+
+    /**
+     * Add a {@link StructuralName} in the current scope, i.e. the innermost of either
+     * {@link Template#body} or {@link Hook#set}.
+     *
+     * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
+     * @param type The type of the {@link StructuralName}.
+     * @param weight The weight of the {@link StructuralName}, which correlates to the probability
+     *               of this {@link StructuralName} being chosen when we sample.
+     * @return The token that performs the defining action.
+     */
+    static Token addStructuralName(String name, StructuralName.Type type, int weight) {
+        return new AddNameToken(new StructuralName(name, type, 1));
+    }
+
+    /**
+     * Add a {@link StructuralName} in the current scope, i.e. the innermost of either
+     * {@link Template#body} or {@link Hook#set}, with a {@code weight} of 1.
+     *
+     * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
+     * @param type The type of the {@link StructuralName}.
+     * @return The token that performs the defining action.
+     */
+    static Token addStructuralName(String name, StructuralName.Type type) {
+        return addStructuralName(name, type, 1);
+    }
+
+    /**
+     * Access the set of {@link StructuralName}s, for sampling, counting, etc.
+     *
+     * @return A view on the {@link StructuralName}s, on which we can sample, count, etc.
+     */
+    static StructuralName.View structuralNames() {
+        return new StructuralName.View();
     }
 }

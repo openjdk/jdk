@@ -134,12 +134,20 @@ class CodeFrame {
         names.add(name);
     }
 
-    long weighNames(Name.Type type, boolean onlyMutable) {
-        return names.weight(type, onlyMutable);
+    Name sampleName(NameSet.Predicate predicate) {
+        return names.sample(predicate);
     }
 
-    Name sampleName(Name.Type type, boolean onlyMutable) {
-        return names.sample(type, onlyMutable);
+    int countNames(NameSet.Predicate predicate) {
+        return names.count(predicate);
+    }
+
+    boolean hasAnyNames(NameSet.Predicate predicate) {
+        return names.hasAny(predicate);
+    }
+
+    List<Name> listNames(NameSet.Predicate predicate) {
+        return names.toList(predicate);
     }
 
     Code getCode() {

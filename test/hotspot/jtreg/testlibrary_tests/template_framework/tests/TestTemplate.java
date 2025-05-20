@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.HashSet;
 
 import compiler.lib.template_framework.Template;
-import compiler.lib.template_framework.Name;
+import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
 import compiler.lib.template_framework.RendererException;
@@ -48,18 +48,20 @@ import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.fuel;
 import static compiler.lib.template_framework.Template.setFuelCost;
-import static compiler.lib.template_framework.Template.addName;
-import static compiler.lib.template_framework.Template.weighNames;
-import static compiler.lib.template_framework.Template.sampleName;
+import static compiler.lib.template_framework.Template.addDataName;
+import static compiler.lib.template_framework.Template.dataNames;
+import static compiler.lib.template_framework.DataName.Mutability.MUTABLE;
+import static compiler.lib.template_framework.DataName.Mutability.IMMUTABLE;
+import static compiler.lib.template_framework.DataName.Mutability.MUTABLE_OR_IMMUTABLE;
 
 public class TestTemplate {
     interface FailingTest {
         void run();
     }
 
-    private record MyPrimitive(String name) implements Name.Type {
+    private record MyPrimitive(String name) implements DataName.Type {
         @Override
-        public boolean isSubtypeOf(Name.Type other) {
+        public boolean isSubtypeOf(DataName.Type other) {
             return other instanceof MyPrimitive(String n) && n == name();
         }
 
@@ -70,9 +72,9 @@ public class TestTemplate {
     private static final MyPrimitive myLong = new MyPrimitive("long");
 
     // Simulate classes. Subtypes start with the name of the super type.
-    private record MyClass(String name) implements Name.Type {
+    private record MyClass(String name) implements DataName.Type {
         @Override
-        public boolean isSubtypeOf(Name.Type other) {
+        public boolean isSubtypeOf(DataName.Type other) {
             return other instanceof MyClass(String n) && name().startsWith(n);
         }
 
@@ -104,10 +106,10 @@ public class TestTemplate {
         testRecursion();
         testFuel();
         testFuelCustom();
-        testNames();
-        testNames2();
-        testNames3();
-        testNames4();
+        testDataNames();
+        testDataNames2();
+        testDataNames3();
+        testDataNames4();
         testListArgument();
 
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
@@ -115,11 +117,11 @@ public class TestTemplate {
         expectRendererException(() -> let("x","y"),                       "A Template method such as");
         expectRendererException(() -> fuel(),                             "A Template method such as");
         expectRendererException(() -> setFuelCost(1.0f),                  "A Template method such as");
-        expectRendererException(() -> weighNames(myInt, true),            "A Template method such as");
-        expectRendererException(() -> sampleName(myInt, true),            "A Template method such as");
+        expectRendererException(() -> dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).count(),  "A Template method such as");
+        expectRendererException(() -> dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).sample(), "A Template method such as");
         expectRendererException(() -> (new Hook("abc")).isSet(),          "A Template method such as");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
-        expectRendererException(() -> testFailingSample(), "No variable of type 'int'.");
+        expectRendererException(() -> testFailingSample1(),  "No variable: MUTABLE, subtypeOf(int), supertypeOf(int).");
         expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
         expectRendererException(() -> testFailingHashtag2(), "Duplicate hashtag replacement for #a");
         expectRendererException(() -> testFailingHashtag3(), "Duplicate hashtag replacement for #a");
@@ -133,6 +135,8 @@ public class TestTemplate {
         expectIllegalArgumentException(() -> hook1.set(null),         "Unexpected tokens: null");
         expectIllegalArgumentException(() -> hook1.set("x", null),    "Unexpected token: null");
         expectIllegalArgumentException(() -> hook1.set(hook1),        "Unexpected token:");
+        expectIllegalArgumentException(() -> testFailingAddDataName(), "Unexpected mutability: MUTABLE_OR_IMMUTABLE");
+        expectUnsupportedOperationException(() -> testFailingSample2(), "Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
     }
 
     public static void testSingleLine() {
@@ -900,15 +904,21 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testNames() {
+    public static void testDataNames() {
         var hook1 = new Hook("Hook1");
 
         var template1 = Template.make(() -> body(
-            "[", weighNames(myInt, true), "]\n"
+            "[",
+            dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).hasAny(),
+            ", ",
+            dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).count(),
+            ", names: {",
+            String.join(", ", dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).toList().stream().map(DataName::name).toList()),
+            "}]\n"
         ));
 
-        var template2 = Template.make("name", "type", (String name, Name.Type type) -> body(
-            addName(new Name(name, type, true, 1)),
+        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> body(
+            addDataName(name, type, MUTABLE),
             "define #type #name\n",
             template1.asToken()
         ));
@@ -942,70 +952,83 @@ public class TestTemplate {
         String expected =
             """
             {
-            [0L]
+            [false, 0, names: {}]
             define int name_4
-            [1L]
-            [0L]
+            [true, 1, names: {name_4}]
+            [false, 0, names: {}]
             something
             <
             name_4 = 5
             >
             more
-            [1L]
+            [true, 1, names: {name_4}]
             more
             define int name_1
-            [2L]
+            [true, 2, names: {name_4, name_1}]
             more
-            [1L]
-            [0L]
+            [true, 1, names: {name_4}]
+            [false, 0, names: {}]
             }
             """;
         checkEQ(code, expected);
     }
 
-    public static void testNames2() {
+    public static void testDataNames2() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("type", (Name.Type type) -> body(
-            "[#type: ", weighNames(type, true), " and ", weighNames(type, false), "]\n"
+        var template0 = Template.make("type", "mutability", (DataName.Type type, DataName.Mutability mutability) -> body(
+            "  #mutability: [",
+            dataNames(mutability).exactOf(myInt).hasAny(),
+            ", ",
+            dataNames(mutability).exactOf(myInt).count(),
+            ", names: {",
+            String.join(", ", dataNames(mutability).exactOf(myInt).toList().stream().map(DataName::name).toList()),
+            "}]\n"
         ));
 
+        var template1 = Template.make("type", (DataName.Type type) -> body(
+            "[#type:\n",
+            template0.asToken(type, MUTABLE),
+            template0.asToken(type, IMMUTABLE),
+            template0.asToken(type, MUTABLE_OR_IMMUTABLE),
+            "]\n"
+        ));
 
-        var template2 = Template.make("name", "type", (String name, Name.Type type) -> body(
-            addName(new Name(name, type, true, 1)),
+        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> body(
+            addDataName(name, type, MUTABLE),
             "define mutable #type #name\n",
             template1.asToken(type)
         ));
 
-        var template3 = Template.make("name", "type", (String name, Name.Type type) -> body(
-            addName(new Name(name, type, false, 1)),
+        var template3 = Template.make("name", "type", (String name, DataName.Type type) -> body(
+            addDataName(name, type, IMMUTABLE),
             "define immutable #type #name\n",
             template1.asToken(type)
         ));
 
-        var template4 = Template.make("type", (Name.Type type) -> body(
+        var template4 = Template.make("type", (DataName.Type type) -> body(
             "{ $store\n",
             hook1.insert(template2.asToken($("name"), type)),
             "$name = 5\n",
             "} $store\n"
         ));
 
-        var template5 = Template.make("type", (Name.Type type) -> body(
+        var template5 = Template.make("type", (DataName.Type type) -> body(
             "{ $load\n",
             hook1.insert(template3.asToken($("name"), type)),
             "blackhole($name)\n",
             "} $load\n"
         ));
 
-        var template6 = Template.make("type", (Name.Type type) -> body(
-            let("v", sampleName(type, true).name()),
+        var template6 = Template.make("type", (DataName.Type type) -> body(
+            let("v", dataNames(MUTABLE).exactOf(type).sample().name()),
             "{ $sample\n",
             "#v = 7\n",
             "} $sample\n"
         ));
 
-        var template7 = Template.make("type", (Name.Type type) -> body(
-            let("v", sampleName(type, false).name()),
+        var template7 = Template.make("type", (DataName.Type type) -> body(
+            let("v", dataNames(MUTABLE_OR_IMMUTABLE).exactOf(type).sample().name()),
             "{ $sample\n",
             "blackhole(#v)\n",
             "} $sample\n"
@@ -1036,42 +1059,84 @@ public class TestTemplate {
         String expected =
             """
             class X_1 {
-            [int: 0L and 0L]
-            define immutable int name_4
-            [int: 0L and 1L]
-            define mutable int name_9
-            [int: 1L and 2L]
+            [int:
+              MUTABLE: [false, 0, names: {}]
+              IMMUTABLE: [false, 0, names: {}]
+              MUTABLE_OR_IMMUTABLE: [false, 0, names: {}]
+            ]
+            define immutable int name_10
+            [int:
+              MUTABLE: [false, 0, names: {}]
+              IMMUTABLE: [true, 1, names: {name_10}]
+              MUTABLE_OR_IMMUTABLE: [true, 1, names: {name_10}]
+            ]
+            define mutable int name_21
+            [int:
+              MUTABLE: [true, 1, names: {name_21}]
+              IMMUTABLE: [true, 1, names: {name_10}]
+              MUTABLE_OR_IMMUTABLE: [true, 2, names: {name_10, name_21}]
+            ]
             begin body_1
-            [int: 0L and 0L]
+            [int:
+              MUTABLE: [false, 0, names: {}]
+              IMMUTABLE: [false, 0, names: {}]
+              MUTABLE_OR_IMMUTABLE: [false, 0, names: {}]
+            ]
             start with immutable
-            { load_4
-            blackhole(name_4)
-            } load_4
+            { load_10
+            blackhole(name_10)
+            } load_10
             then load from it
-            { sample_7
-            blackhole(name_4)
-            } sample_7
-            [int: 0L and 1L]
+            { sample_16
+            blackhole(name_10)
+            } sample_16
+            [int:
+              MUTABLE: [false, 0, names: {}]
+              IMMUTABLE: [true, 1, names: {name_10}]
+              MUTABLE_OR_IMMUTABLE: [true, 1, names: {name_10}]
+            ]
             now make something mutable
-            { store_9
-            name_9 = 5
-            } store_9
+            { store_21
+            name_21 = 5
+            } store_21
             then store to it
-            { sample_12
-            name_9 = 7
-            } sample_12
-            [int: 1L and 2L]
-            [int: 0L and 0L]
+            { sample_27
+            name_21 = 7
+            } sample_27
+            [int:
+              MUTABLE: [true, 1, names: {name_21}]
+              IMMUTABLE: [true, 1, names: {name_10}]
+              MUTABLE_OR_IMMUTABLE: [true, 2, names: {name_10, name_21}]
+            ]
+            [int:
+              MUTABLE: [false, 0, names: {}]
+              IMMUTABLE: [false, 0, names: {}]
+              MUTABLE_OR_IMMUTABLE: [false, 0, names: {}]
+            ]
             }
             """;
         checkEQ(code, expected);
     }
 
-    public static void testNames3() {
+    public static void testDataNames3() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("type", (Name.Type type) -> body(
-            "[#type: ", weighNames(type, true), " and ", weighNames(type, false), "]\n"
+        var template0 = Template.make("type", "mutability", (DataName.Type type, DataName.Mutability mutability) -> body(
+            "  #mutability: [",
+            dataNames(mutability).exactOf(myInt).hasAny(),
+            ", ",
+            dataNames(mutability).exactOf(myInt).count(),
+            ", names: {",
+            String.join(", ", dataNames(mutability).exactOf(myInt).toList().stream().map(DataName::name).toList()),
+            "}]\n"
+        ));
+
+        var template1 = Template.make("type", (DataName.Type type) -> body(
+            "[#type:\n",
+            template0.asToken(type, MUTABLE),
+            template0.asToken(type, IMMUTABLE),
+            template0.asToken(type, MUTABLE_OR_IMMUTABLE),
+            "]\n"
         ));
 
         var template2 = Template.make(() -> body(
@@ -1080,11 +1145,11 @@ public class TestTemplate {
             hook1.set(
                 "begin $body\n",
                 template1.asToken(myInt),
-                "define mutable\n",
-                addName(new Name($("v1"), myInt, true, 1)),
+                "define mutable $v1\n",
+                addDataName($("v1"), myInt, MUTABLE),
                 template1.asToken(myInt),
-                "define immutable\n",
-                addName(new Name($("v1"), myInt, false, 1)),
+                "define immutable $v2\n",
+                addDataName($("v2"), myInt, IMMUTABLE),
                 template1.asToken(myInt)
             ),
             template1.asToken(myInt),
@@ -1095,34 +1160,76 @@ public class TestTemplate {
         String expected =
             """
             class Y_1 {
-            [int: 0L and 0L]
+            [int:
+              MUTABLE: [false, 0, names: {}]
+              IMMUTABLE: [false, 0, names: {}]
+              MUTABLE_OR_IMMUTABLE: [false, 0, names: {}]
+            ]
             begin body_1
-            [int: 0L and 0L]
-            define mutable
-            [int: 1L and 1L]
-            define immutable
-            [int: 1L and 2L]
-            [int: 0L and 0L]
+            [int:
+              MUTABLE: [false, 0, names: {}]
+              IMMUTABLE: [false, 0, names: {}]
+              MUTABLE_OR_IMMUTABLE: [false, 0, names: {}]
+            ]
+            define mutable v1_1
+            [int:
+              MUTABLE: [true, 1, names: {v1_1}]
+              IMMUTABLE: [false, 0, names: {}]
+              MUTABLE_OR_IMMUTABLE: [true, 1, names: {v1_1}]
+            ]
+            define immutable v2_1
+            [int:
+              MUTABLE: [true, 1, names: {v1_1}]
+              IMMUTABLE: [true, 1, names: {v2_1}]
+              MUTABLE_OR_IMMUTABLE: [true, 2, names: {v1_1, v2_1}]
+            ]
+            [int:
+              MUTABLE: [false, 0, names: {}]
+              IMMUTABLE: [false, 0, names: {}]
+              MUTABLE_OR_IMMUTABLE: [false, 0, names: {}]
+            ]
             }
             """;
         checkEQ(code, expected);
     }
 
-    public static void testNames4() {
+    public static void testDataNames4() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("type", (Name.Type type) -> body(
-            "  [#type: ", weighNames(type, true), " and ", weighNames(type, false), "]\n"
+        var template1 = Template.make("type", (DataName.Type type) -> body(
+            "[#type:\n",
+            "  exact: ",
+            dataNames(MUTABLE).exactOf(type).hasAny(),
+            ", ",
+            dataNames(MUTABLE).exactOf(type).count(),
+            ", {",
+            String.join(", ", dataNames(MUTABLE).exactOf(type).toList().stream().map(DataName::name).toList()),
+            "}\n",
+            "  subtype: ",
+            dataNames(MUTABLE).subtypeOf(type).hasAny(),
+            ", ",
+            dataNames(MUTABLE).subtypeOf(type).count(),
+            ", {",
+            String.join(", ", dataNames(MUTABLE).subtypeOf(type).toList().stream().map(DataName::name).toList()),
+            "}\n",
+            "  supertype: ",
+            dataNames(MUTABLE).supertypeOf(type).hasAny(),
+            ", ",
+            dataNames(MUTABLE).supertypeOf(type).count(),
+            ", {",
+            String.join(", ", dataNames(MUTABLE).supertypeOf(type).toList().stream().map(DataName::name).toList()),
+            "}\n",
+            "]\n"
         ));
 
-        List<Name.Type> types = List.of(myClassA, myClassA1, myClassA2, myClassA11, myClassB);
+        List<DataName.Type> types = List.of(myClassA, myClassA1, myClassA2, myClassA11, myClassB);
         var template2 = Template.make(() -> body(
-            "Weigh Names:\n",
+            "DataNames:\n",
             types.stream().map(t -> template1.asToken(t)).toList()
         ));
 
-        var template3 = Template.make("type", (Name.Type type) -> body(
-            let("name", sampleName(type, true)),
+        var template3 = Template.make("type", (DataName.Type type) -> body(
+            let("name", dataNames(MUTABLE).subtypeOf(type).sample()),
             "Sample #type: #name\n"
         ));
 
@@ -1131,12 +1238,12 @@ public class TestTemplate {
             template2.asToken(),
             hook1.set(
                 "Create name for myClassA11, should be visible for the super classes\n",
-                addName(new Name($("v1"), myClassA11, true, 1)),
+                addDataName($("v1"), myClassA11, MUTABLE),
                 template3.asToken(myClassA11),
                 template3.asToken(myClassA1),
                 template3.asToken(myClassA),
                 "Create name for myClassA, should never be visible for the sub classes\n",
-                addName(new Name($("v2"), myClassA, true, 1)),
+                addDataName($("v2"), myClassA, MUTABLE),
                 template3.asToken(myClassA11),
                 template3.asToken(myClassA1),
                 template2.asToken()
@@ -1149,37 +1256,97 @@ public class TestTemplate {
         String expected =
             """
             class W_1 {
-            Weigh Names:
-              [myClassA: 0L and 0L]
-              [myClassA1: 0L and 0L]
-              [myClassA2: 0L and 0L]
-              [myClassA11: 0L and 0L]
-              [myClassB: 0L and 0L]
+            DataNames:
+            [myClassA:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [myClassA1:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [myClassA2:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [myClassA11:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [myClassB:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
             Create name for myClassA11, should be visible for the super classes
-            Sample myClassA11: Name[name=v1_1, type=myClassA11, mutable=true, weight=1]
-            Sample myClassA1: Name[name=v1_1, type=myClassA11, mutable=true, weight=1]
-            Sample myClassA: Name[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA11: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA1: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
             Create name for myClassA, should never be visible for the sub classes
-            Sample myClassA11: Name[name=v1_1, type=myClassA11, mutable=true, weight=1]
-            Sample myClassA1: Name[name=v1_1, type=myClassA11, mutable=true, weight=1]
-            Weigh Names:
-              [myClassA: 2L and 2L]
-              [myClassA1: 1L and 1L]
-              [myClassA2: 0L and 0L]
-              [myClassA11: 1L and 1L]
-              [myClassB: 0L and 0L]
-            Weigh Names:
-              [myClassA: 0L and 0L]
-              [myClassA1: 0L and 0L]
-              [myClassA2: 0L and 0L]
-              [myClassA11: 0L and 0L]
-              [myClassB: 0L and 0L]
+            Sample myClassA11: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            Sample myClassA1: DataName[name=v1_1, type=myClassA11, mutable=true, weight=1]
+            DataNames:
+            [myClassA:
+              exact: true, 1, {v2_1}
+              subtype: true, 2, {v1_1, v2_1}
+              supertype: true, 1, {v2_1}
+            ]
+            [myClassA1:
+              exact: false, 0, {}
+              subtype: true, 1, {v1_1}
+              supertype: true, 1, {v2_1}
+            ]
+            [myClassA2:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: true, 1, {v2_1}
+            ]
+            [myClassA11:
+              exact: true, 1, {v1_1}
+              subtype: true, 1, {v1_1}
+              supertype: true, 2, {v1_1, v2_1}
+            ]
+            [myClassB:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            DataNames:
+            [myClassA:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [myClassA1:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [myClassA2:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [myClassA11:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [myClassB:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
             }
             """;
         checkEQ(code, expected);
     }
 
-    record MyItem(Name.Type type, String op) {}
+    record MyItem(DataName.Type type, String op) {}
 
     public static void testListArgument() {
         var template1 = Template.make("item", (MyItem item) -> body(
@@ -1253,9 +1420,18 @@ public class TestTemplate {
         String code = template2.render();
     }
 
-    public static void testFailingSample() {
+    public static void testFailingSample1() {
         var template1 = Template.make(() -> body(
-            let("v", sampleName(myInt, true).name()),
+            let("v", dataNames(MUTABLE).exactOf(myInt).sample().name()),
+            "v is #v\n"
+        ));
+
+        String code = template1.render();
+    }
+
+    public static void testFailingSample2() {
+        var template1 = Template.make(() -> body(
+            let("v", dataNames(MUTABLE).sample().name()),
             "v is #v\n"
         ));
 
@@ -1315,10 +1491,17 @@ public class TestTemplate {
         String code = template1.render();
     }
 
+    public static void testFailingAddDataName() {
+        var template1 = Template.make(() -> body(
+            addDataName("name", myInt, MUTABLE_OR_IMMUTABLE)
+        ));
+        String code = template1.render();
+    }
+
     public static void expectRendererException(FailingTest test, String errorPrefix) {
         try {
             test.run();
-            System.out.println("Should have thrown with prefix: " + errorPrefix);
+            System.out.println("Should have thrown RendererException with prefix: " + errorPrefix);
             throw new RuntimeException("Should have thrown!");
         } catch(RendererException e) {
             if (!e.getMessage().startsWith(errorPrefix)) {
@@ -1332,9 +1515,23 @@ public class TestTemplate {
     public static void expectIllegalArgumentException(FailingTest test, String errorPrefix) {
         try {
             test.run();
-            System.out.println("Should have thrown with prefix: " + errorPrefix);
+            System.out.println("Should have thrown IllegalArgumentException with prefix: " + errorPrefix);
             throw new RuntimeException("Should have thrown!");
         } catch(IllegalArgumentException e) {
+            if (!e.getMessage().startsWith(errorPrefix)) {
+                System.out.println("Should have thrown with prefix: " + errorPrefix);
+                System.out.println("got: " + e.getMessage());
+                throw new RuntimeException("Prefix mismatch", e);
+            }
+        }
+    }
+
+    public static void expectUnsupportedOperationException(FailingTest test, String errorPrefix) {
+        try {
+            test.run();
+            System.out.println("Should have thrown UnsupportedOperationException with prefix: " + errorPrefix);
+            throw new RuntimeException("Should have thrown!");
+        } catch(UnsupportedOperationException e) {
             if (!e.getMessage().startsWith(errorPrefix)) {
                 System.out.println("Should have thrown with prefix: " + errorPrefix);
                 System.out.println("got: " + e.getMessage());

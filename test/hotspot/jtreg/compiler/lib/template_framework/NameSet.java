@@ -39,53 +39,66 @@ class NameSet {
     private final NameSet parent;
     private final List<Name> names = new ArrayList<>();
 
+    interface Predicate {
+        boolean check(Name type);
+    }
+
     NameSet(NameSet parent) {
         this.parent = parent;
     }
 
-    private long localWeight(Name.Type type, boolean onlyMutable) {
-        long sum = 0;
-        for (var name : names) {
-            if (name.type().isSubtypeOf(type) && (name.mutable() || !onlyMutable)) {
-                sum += name.weight();
-            }
-        }
-        return sum;
-    }
-
-    public long weight(Name.Type type, boolean onlyMutable) {
-        long w = localWeight(type, onlyMutable);
-        if (parent != null) { w += parent.weight(type, onlyMutable); }
+    private long weight(Predicate predicate) {
+        long w = names.stream().filter(n -> predicate.check(n)).mapToInt(Name::weight).sum();
+        if (parent != null) { w += parent.weight(predicate); }
         return w;
     }
 
+    public int count(Predicate predicate) {
+        int c = (int)names.stream().filter(n -> predicate.check(n)).count();
+        if (parent != null) { c += parent.count(predicate); }
+        return c;
+    }
+
+    public boolean hasAny(Predicate predicate) {
+        return names.stream().anyMatch(n -> predicate.check(n)) ||
+               (parent != null && parent.hasAny(predicate));
+    }
+
+    public List<Name> toList(Predicate predicate) {
+        List<Name> list = (parent != null) ? parent.toList(predicate)
+                                           : new ArrayList<>();
+        list.addAll(names.stream().filter(n -> predicate.check(n)).toList());
+        return list;
+    }
+
     /**
-     * Randomly sample a name from this set or a parent set, restricted to the specified type.
+     * Randomly sample a name from this set or a parent set, restricted to the predicate.
      */
-    public Name sample(Name.Type type, boolean onlyMutable) {
-        long w = weight(type, onlyMutable);
+    public Name sample(Predicate predicate) {
+        long w = weight(predicate);
         if (w <= 0) {
-            throw new RendererException("No variable of type '" + type.toString() + "'.");
+            return null;
         }
 
         long r = RANDOM.nextLong(w);
-        return sample(type, onlyMutable, r);
+        return sample(predicate, r);
     }
 
-    private Name sample(Name.Type type, boolean onlyMutable, long r) {
+    private Name sample(Predicate predicate, long r) {
         for (var name : names) {
-            if (name.type().isSubtypeOf(type) && (name.mutable() || !onlyMutable)) {
+            if (predicate.check(name)) {
                 r -= name.weight();
                 if (r < 0) { return name; }
             }
         }
-        return parent.sample(type, onlyMutable, r);
+        return parent.sample(predicate, r);
     }
 
     /**
      * Add a variable of a specified type to the set.
      */
     public void add(Name name) {
+        // TODO: verification!
         names.add(name);
     }
 }

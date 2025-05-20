@@ -89,7 +89,7 @@ class Renderer {
 
     static Renderer getCurrent() {
         if (renderer == null) {
-            throw new RendererException("A Template method such as '$' or 'let' was called outside a template rendering.");
+            throw new RendererException("A Template method such as '$', 'let', 'sample', 'count' etc. was called outside a template rendering.");
         }
         return renderer;
     }
@@ -151,12 +151,20 @@ class Renderer {
         currentTemplateFrame.setFuelCost(fuelCost);
     }
 
-    long weighNames(Name.Type type, boolean onlyMutable) {
-        return currentCodeFrame.weighNames(type, onlyMutable);
+    Name sampleName(NameSet.Predicate predicate) {
+        return currentCodeFrame.sampleName(predicate);
     }
 
-    Name sampleName(Name.Type type, boolean onlyMutable) {
-        return currentCodeFrame.sampleName(type, onlyMutable);
+    int countNames(NameSet.Predicate predicate) {
+        return currentCodeFrame.countNames(predicate);
+    }
+
+    boolean hasAnyNames(NameSet.Predicate predicate) {
+        return currentCodeFrame.hasAnyNames(predicate);
+    }
+
+    List<Name> listNames(NameSet.Predicate predicate) {
+        return currentCodeFrame.listNames(predicate);
     }
 
     /**
