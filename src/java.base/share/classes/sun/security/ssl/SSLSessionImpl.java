@@ -1675,7 +1675,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             try {
                 @SuppressWarnings("deprecation")
                 TlsPrfParameterSpec spec = new TlsPrfParameterSpec(
-                        masterSecret, keyAlg, label, seed, length,
+                        masterSecret, (keyAlg == null) ? "TlsKey" : keyAlg,
+                        label, seed, length,
                         hashAlg.name, hashAlg.hashLength, hashAlg.blockSize);
                 KeyGenerator kg = KeyGenerator.getInstance(prfAlg);
                 kg.init(spec);

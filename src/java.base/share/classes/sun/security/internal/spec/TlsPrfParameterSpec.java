@@ -102,8 +102,8 @@ public class TlsPrfParameterSpec implements AlgorithmParameterSpec {
             String prfHashAlg, int prfHashLength, int prfBlockSize) {
 
         if ((keyAlg == null) || (label == null) || (seed == null)) {
-            throw new NullPointerException("keyAlg, label or seed" +
-                    "must not be null");
+            throw new NullPointerException(
+                    "keyAlg, label or seed must not be null");
         }
         if (keyAlg.isEmpty()) {
             throw new IllegalArgumentException("keyAlg can not be empty");
