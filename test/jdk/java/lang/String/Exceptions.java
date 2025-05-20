@@ -540,7 +540,7 @@ public class Exceptions {
     }
 
     private static void replaceAllMapped() {
-        System.out.println("replaceAllMapped(String regex,  Function<MatchResult, String> replacer)");
+        System.out.println("replaceAllMapped(String regex, Function<MatchResult, String> replacer)");
         tryCatch("  \".\", null", NullPointerException.class, new Runnable() {
             public void run() {
                 "foo".replaceAllMapped(".", null);
