@@ -58,7 +58,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardProtocolFamily.UNIX;
-import static sun.nio.ch.Util.NIO_ACCESS;
 
 import jdk.internal.event.SocketReadEvent;
 import jdk.internal.event.SocketWriteEvent;
