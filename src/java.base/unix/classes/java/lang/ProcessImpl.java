@@ -82,8 +82,7 @@ final class ProcessImpl extends Process {
     private static enum LaunchMechanism {
         // order IS important!
         FORK,
-        POSIX_SPAWN,
-        VFORK
+        POSIX_SPAWN
     }
 
     /**
@@ -97,19 +96,15 @@ final class ProcessImpl extends Process {
         }
 
         try {
-            // Should be value of a LaunchMechanism enum
-            LaunchMechanism lm = LaunchMechanism.valueOf(s.toUpperCase(Locale.ROOT));
-            switch (OperatingSystem.current()) {
-                case LINUX:
-                    return lm;      // All options are valid for Linux
-                case AIX:
-                case MACOS:
-                    if (lm != LaunchMechanism.VFORK) {
-                        return lm; // All but VFORK are valid
-                    }
-                    break;
-                case WINDOWS:
-                    // fall through to throw to Error
+            // On Posix platforms, chose a launch mechanism (should be value of a LaunchMechanism enum)
+            if (OperatingSystem.current() != OperatingSystem.WINDOWS) {
+                String v = s.toUpperCase(Locale.ROOT);
+                if (v.equals("VFORK")) {
+                    System.err.println("The VFORK launch mechanism has been removed; please either remove the " +
+                            "jdk.lang.Process.launchMechanism property (preferred) or use " +
+                            "-Djdk.lang.Process.launchMechanism=FORK instead.");
+                }
+                return LaunchMechanism.valueOf(v);
             }
         } catch (IllegalArgumentException e) {
         }
@@ -256,7 +251,6 @@ final class ProcessImpl extends Process {
      * <pre>
      *   1 - fork(2) and exec(2)
      *   2 - posix_spawn(3P)
-     *   3 - vfork(2) and exec(2)
      * </pre>
      * @param fds an array of three file descriptors.
      *        Indexes 0, 1, and 2 correspond to standard input,

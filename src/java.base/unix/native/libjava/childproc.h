@@ -77,7 +77,6 @@ extern char **environ;
  */
 #define MODE_FORK 1
 #define MODE_POSIX_SPAWN 2
-#define MODE_VFORK 3
 
 typedef struct _ChildStuff
 {

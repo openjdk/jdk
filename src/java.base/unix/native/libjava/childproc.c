@@ -205,31 +205,6 @@ initVectorFromBlock(const char**vector, const char* block, int count)
 }
 
 /**
- * Exec FILE as a traditional Bourne shell script (i.e. one without #!).
- * If we could do it over again, we would probably not support such an ancient
- * misfeature, but compatibility wins over sanity.  The original support for
- * this was imported accidentally from execvp().
- */
-static void
-execve_as_traditional_shell_script(const char *file,
-                                   const char *argv[],
-                                   const char *const envp[])
-{
-    /* Use the extra word of space provided for us in argv by caller. */
-    const char *argv0 = argv[0];
-    const char *const *end = argv;
-    while (*end != NULL)
-        ++end;
-    memmove(argv+2, argv+1, (end-argv) * sizeof(*end));
-    argv[0] = "/bin/sh";
-    argv[1] = file;
-    execve(argv[0], (char **) argv, (char **) envp);
-    /* Can't even exec /bin/sh?  Big trouble, but let's soldier on... */
-    memmove(argv+1, argv+2, (end-argv) * sizeof(*end));
-    argv[0] = argv0;
-}
-
-/**
  * Like execve(2), except that in case of ENOEXEC, FILE is assumed to
  * be a shell script and the system default shell is invoked to run it.
  */
@@ -238,16 +213,9 @@ execve_with_shell_fallback(int mode, const char *file,
                            const char *argv[],
                            const char *const envp[])
 {
-    if (mode == MODE_VFORK) {
-        /* shared address space; be very careful. */
-        execve(file, (char **) argv, (char **) envp);
-        if (errno == ENOEXEC)
-            execve_as_traditional_shell_script(file, argv, envp);
-    } else {
-        /* unshared address space; we can mutate environ. */
-        environ = (char **) envp;
-        execvp(file, (char **) argv);
-    }
+    /* unshared address space; we can mutate environ. */
+    environ = (char **) envp;
+    execvp(file, (char **) argv);
 }
 
 /**
