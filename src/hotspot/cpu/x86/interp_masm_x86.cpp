@@ -1435,25 +1435,13 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     }
 
     // Record the receiver type.
-    record_klass_in_profile(receiver, mdp);
+    type_profile(receiver, mdp, 0);
     bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_constant(mdp, in_bytes(VirtualCallData::virtual_call_data_size()));
     bind(profile_continue);
   }
-}
-
-void InterpreterMacroAssembler::record_klass_in_profile(Register recv,
-                                                        Register mdp) {
-  assert(ProfileInterpreter, "must be profiling");
-
-  if (TypeProfileWidth == 0) {
-    increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-    return;
-  }
-
-  type_profile(recv, mdp, 0);
 }
 
 void InterpreterMacroAssembler::profile_ret(Register return_bci,
@@ -1528,7 +1516,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass) 
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      record_klass_in_profile(klass, mdp);
+      type_profile(klass, mdp, 0);
     }
     update_mdp_by_constant(mdp, mdp_delta);
 
