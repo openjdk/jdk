@@ -1210,33 +1210,33 @@ C2V_VMENTRY_0(jobject,  getCodeStatusDescription, (JNIEnv *env, jobject, jint st
   JNIHandleMark jni_hm(thread);
   JVMCIObject desc = JVMCIENV->create_string("unknown", JVMCI_CHECK_NULL);
   if (status_reason_code == nmethod::NMethodChangeReason::C1_deoptimize) {
-    desc = JVMCIENV->create_string("c1 deoptimized", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("C1 deoptimized", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::C1_codepatch) {
-    desc = JVMCIENV->create_string("c1 code patch", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("C1 code patch", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::C1_predicate_failed_trap) {
-    desc = JVMCIENV->create_string("c1 predicate failed trap", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("C1 predicate failed trap", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::C1_deoptimize_for_patching) {
-    desc = JVMCIENV->create_string("c1 deoptimize for patching", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("C1 deoptimize for patching", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::CI_replay) {
-    desc = JVMCIENV->create_string("ci replay", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("CI replay", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::marked_for_deoptimization) {
     desc = JVMCIENV->create_string("marked for deoptimization", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::not_used) {
     desc = JVMCIENV->create_string("not used", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::OSR_invalidation_for_compiling_with_C1) {
-    desc = JVMCIENV->create_string("osr invalidation for compiling with c1", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("OSR invalidation for compiling with C1", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::OSR_invalidation_back_branch) {
-    desc = JVMCIENV->create_string("osr invalidation back branch", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("OSR invalidation back branch", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_reprofile) {
-    desc = JVMCIENV->create_string("jvmci reprofile", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("JVMCI reprofile", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_materialize_virtual_object) {
-    desc = JVMCIENV->create_string("jvmci materialize virtual object", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("JVMCI materialize virtual object", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_invalidate_nmethod_mirror) {
-    desc = JVMCIENV->create_string("jvmci invalidate nmethod mirror", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("JVMCI invalidate nmethod mirror", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_register_method) {
-    desc = JVMCIENV->create_string("jvmci register method", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("JVMCI register method", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::OSR_invalidation_of_lower_level) {
-    desc = JVMCIENV->create_string("osr invalidation of lower level", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("OSR invalidation of lower level", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::set_native_function) {
     desc = JVMCIENV->create_string("set native function", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::whitebox_deoptimization) {
@@ -1248,13 +1248,13 @@ C2V_VMENTRY_0(jobject,  getCodeStatusDescription, (JNIEnv *env, jobject, jint st
   } else if (status_reason_code == nmethod::NMethodChangeReason::zombie) {
     desc = JVMCIENV->create_string("zombie", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::gc_unlinking) {
-    desc = JVMCIENV->create_string("gc unlinking", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("GC unlinking", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::gc_unlinking_cold) {
-    desc = JVMCIENV->create_string("gc unlinking cold nmethod", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("GC unlinking cold nmethod", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_new_installation) {
-    desc = JVMCIENV->create_string("jvmci new installation", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("JVMCI new installation", JVMCI_CHECK_NULL);
   } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_replacing_with_new_code) {
-    desc = JVMCIENV->create_string("jvmci replacing with new code", JVMCI_CHECK_NULL);
+    desc = JVMCIENV->create_string("JVMCI replacing with new code", JVMCI_CHECK_NULL);
   }
   return JVMCIENV->get_jobject(desc);
 C2V_END
@@ -2312,9 +2312,6 @@ static jobject read_field_value(Handle obj, long displacement, jchar type_char, 
     if (obj->is_objArray()) {
       if (displacement < arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
         JVMCI_THROW_MSG_NULL(IllegalArgumentException, "reading from array header");
-      }
-      if (displacement + heapOopSize > arrayOopDesc::base_offset_in_bytes(T_OBJECT) + arrayOop(obj())->length() * heapOopSize) {
-        JVMCI_THROW_MSG_NULL(IllegalArgumentException, "reading after last array element");
       }
       if (((displacement - arrayOopDesc::base_offset_in_bytes(T_OBJECT)) % heapOopSize) != 0) {
         JVMCI_THROW_MSG_NULL(IllegalArgumentException, "misaligned object read from array");
