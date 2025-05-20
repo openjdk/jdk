@@ -35,7 +35,8 @@ import java.io.Serial;
  * For example, the following is a window that lays out six buttons
  * into three rows and two columns:
  *
- * <hr><blockquote>
+ * <hr>
+ * {@snippet lang='java':
  * <pre>
  * import java.awt.Button;
  * import java.awt.EventQueue;
@@ -60,7 +61,7 @@ import java.io.Serial;
  *     });
  *   }
  * }
- * </pre></blockquote><hr>
+ * }
  * <p>
  * If the container's {@code ComponentOrientation} property is horizontal
  * and left-to-right, the above example produces the output shown in Figure 1.

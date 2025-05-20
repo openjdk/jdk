@@ -67,7 +67,8 @@ import sun.awt.image.MultiResolutionToolkitImage;
  * <p>
  * Here is an example of using {@code MediaTracker}:
  *
- * <hr><blockquote><pre>{@code
+ * <hr>
+ * {@snippet lang='java':
  * import java.awt.Color;
  * import java.awt.EventQueue;
  * import java.awt.Frame;
@@ -169,7 +170,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  *          }
  *      }
  * }
- * } </pre></blockquote><hr>
+ * }
  *
  * @author      Jim Graham
  * @since       1.0

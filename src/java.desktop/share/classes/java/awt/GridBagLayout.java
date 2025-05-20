@@ -276,7 +276,8 @@ import java.util.Hashtable;
  * <p>
  * Here is the code that implements the example shown above:
  *
- * <hr><blockquote><pre>
+ * <hr>
+ * {@snippet lang='java':
  * import java.awt.Button;
  * import java.awt.EventQueue;
  * import java.awt.Frame;
@@ -336,7 +337,7 @@ import java.util.Hashtable;
  *         });
  *     }
  * }
- * </pre></blockquote><hr>
+ * }
  *
  * @author Doug Stein
  * @author Bill Spitzak (original NeWS &amp; OLIT implementation)

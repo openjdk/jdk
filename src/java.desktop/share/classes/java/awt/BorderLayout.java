@@ -99,7 +99,8 @@ import java.io.Serial;
  * <p>
  * The code for this program is as follows:
  *
- * <hr><blockquote><pre>
+ * <hr>
+ * {@snippet lang='java':
  * import java.awt.BorderLayout;
  * import java.awt.Button;
  * import java.awt.EventQueue;
@@ -122,7 +123,7 @@ import java.io.Serial;
  *     });
  *   }
  * }
- * </pre></blockquote><hr>
+ * }
  *
  * @author      Arthur van Hoff
  * @see         java.awt.Container#add(String, Component)

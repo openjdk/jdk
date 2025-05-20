@@ -60,7 +60,8 @@ import java.io.Serial;
  * <p>
  * Here is the code for this program:
  *
- * <hr><blockquote><pre>
+ * <hr>
+ * {@snippet  lang='java':
  * import java.awt.Button;
  * import java.awt.EventQueue;
  * import java.awt.FlowLayout;
@@ -81,7 +82,7 @@ import java.io.Serial;
  *     });
  *   }
  * }
- * </pre></blockquote><hr>
+ * }
  * <p>
  * A flow layout lets each component assume its natural (preferred) size.
  *
