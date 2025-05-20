@@ -79,16 +79,8 @@ class Direct$Type$Buffer$RW$$BO$
         }
 
         public void run() {
-            try {
-                UNSAFE.freeMemory(address);
-                Bits.unreserveMemory(size, capacity);
-            } catch (Throwable x) {
-                // Long-standing behavior: when deallocation fails, VM exits.
-                if (System.err != null) {
-                    new Error("Cleaner terminated abnormally", x).printStackTrace();
-                }
-                System.exit(1);
-            }
+            UNSAFE.freeMemory(address);
+            Bits.unreserveMemory(size, capacity);
         }
     }
 

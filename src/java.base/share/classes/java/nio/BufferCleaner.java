@@ -52,7 +52,15 @@ class BufferCleaner {
                 // reference processing by BufferCleaner, clear the referent so
                 // reference processing is disabled for this object.
                 clear();
-                action.run();
+                try {
+                    action.run();
+                } catch (Throwable x) {
+                    // Long-standing behavior: when cleaning fails, VM exits.
+                    if (System.err != null) {
+                        new Error("nio Cleaner terminated abnormally", x).printStackTrace();
+                    }
+                    System.exit(1);
+                }
             }
         }
     }
