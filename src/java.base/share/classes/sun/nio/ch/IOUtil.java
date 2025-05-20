@@ -484,7 +484,7 @@ public final class IOUtil {
         NIO_ACCESS.acquireSession(bb);
     }
 
-    private static void releaseScope(ByteBuffer bb) {
+    static void releaseScope(ByteBuffer bb) {
         try {
             NIO_ACCESS.releaseSession(bb);
         } catch (Exception e) {

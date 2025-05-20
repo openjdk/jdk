@@ -43,7 +43,7 @@ import jdk.internal.misc.Unsafe;
 
 public class Util {
 
-    static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // -- Caches --
 
