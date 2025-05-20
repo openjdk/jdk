@@ -245,6 +245,18 @@ static void load4regs(int destRegs[], Register address, int offset,
   }
 }
 
+// For z = montmul(a,b), z will be  between -q and q and congruent
+// to a * b * R^-1 mod q, where R > 2 * q, R is a power of 2,
+// -R/2 * q <= a * b < R/2 * q.
+// (See e.g. Algorithm 3 in https://eprint.iacr.org/2018/039.pdf)
+// For the Java code, we use R = 2^20 and for the intrinsic, R = 2^16.
+// In our computations, b is always c * R mod q, so the montmul() really
+// computes a * c mod q. In the Java code, we use 32-bit numbers for the
+// computations, and we use R = 2^20 because that way the a * b numbers
+// that occur during all computations stay in the required range.
+// For the intrinsics, we use R = 2^16, because this way we can do twice
+// as much work in parallel, the only drawback is that we should do some Barrett
+// reductions in kyberInverseNtt so that the numbers stay in the required range.
 static void montmul(int outputRegs[], int inputRegs1[], int inputRegs2[],
              int scratchRegs1[], int scratchRegs2[], MacroAssembler *_masm) {
    for (int i = 0; i < 4; i++) {
@@ -380,6 +392,7 @@ address generate_kyberNtt_avx512(StubGenerator *stubgen,
 
   load4regs(xmm0_3, coeffs, 0, _masm);
 
+  // Each level represents one iteration of the outer for loop of the Java version.
   // level 0
   montmul(xmm8_11, xmm4_7, xmm20_23, xmm8_11, xmm4_7, _masm);
   load4regs(xmm20_23, zetas, 256, _masm);
@@ -479,6 +492,7 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
   load4regs(xmm0_3, coeffs, 0, _masm);
   load4regs(xmm4_7, coeffs, 256, _masm);
 
+  // Each level represents one iteration of the outer for loop of the Java version.
   // level 0
   load4regs(xmm8_11, zetas, 0, _masm);
   permute(xmm12_15, xmm0246, xmm1357, 16, _masm);
