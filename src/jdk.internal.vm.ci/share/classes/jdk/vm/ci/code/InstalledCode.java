@@ -46,8 +46,8 @@ public class InstalledCode {
 
     protected final String name;
 
-    /*
-     * Identify the reason that caused this a change to this installed code.
+    /**
+     * Identify the reason that caused this installed code to change.
      */
     protected int statusReason;
 
@@ -140,10 +140,10 @@ public class InstalledCode {
     }
 
     /**
-     * Equivalent to calling {@link #invalidate(boolean, int)} with {@code true} and {@code 0x8099} argument.
+     * Equivalent to calling {@link #invalidate(boolean, int)} with {@code true} and {@code -1} argument.
      */
     public void invalidate() {
-        invalidate(true, 0x8099 /* TODO: Fix this constant */);
+        invalidate(true, -1);
     }
 
     /**
