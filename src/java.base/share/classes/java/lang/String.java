@@ -652,6 +652,8 @@ public final class String
         // (2)The defensive copy of the input byte/char[] has a big performance
         // impact, as well as the outgoing result byte/char[]. Need to do the
         // optimization check of (sm==null && classLoader0==null) for both.
+        byte[] val;
+        byte coder;
         CharsetDecoder cd = charset.newDecoder();
         // ArrayDecoder fastpaths
         if (cd instanceof ArrayDecoder ad) {
@@ -665,34 +667,45 @@ public final class String
 
             // fastpath for always Latin1 decodable single byte
             if (COMPACT_STRINGS && ad.isLatin1Decodable()) {
-                byte[] dst = new byte[length];
-                ad.decodeToLatin1(bytes, offset, length, dst);
-                return new String(dst, LATIN1);
+                val = new byte[length];
+                ad.decodeToLatin1(bytes, offset, length, val);
+                coder = LATIN1;
+            } else {
+                int en = scale(length, cd.maxCharsPerByte());
+                cd.onMalformedInput(CodingErrorAction.REPLACE)
+                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
+                char[] ca = new char[en];
+                int clen = ad.decode(bytes, offset, length, ca);
+                if (COMPACT_STRINGS) {
+                    val = StringUTF16.compress(ca, 0, clen);
+                    coder = StringUTF16.coderFromArrayLen(val, clen);
+                } else {
+                    val = StringUTF16.toBytes(ca, 0, clen);
+                    coder = UTF16;
+                }
             }
-
+        } else {
+            // decode using CharsetDecoder
             int en = scale(length, cd.maxCharsPerByte());
             cd.onMalformedInput(CodingErrorAction.REPLACE)
                     .onUnmappableCharacter(CodingErrorAction.REPLACE);
             char[] ca = new char[en];
-            int clen = ad.decode(bytes, offset, length, ca);
-            if (COMPACT_STRINGS) {
-                byte[] val = StringUTF16.compress(ca, 0, clen);;
-                return new String(val, StringUTF16.coderFromArrayLen(val, clen));
+            int caLen;
+            try {
+                caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
+            } catch (CharacterCodingException x) {
+                // Substitution is enabled, so this shouldn't happen
+                throw new Error(x);
             }
-            return new String(StringUTF16.toBytes(ca, 0, clen), UTF16);
+            if (COMPACT_STRINGS) {
+                val = StringUTF16.compress(ca, 0, caLen);
+                coder = StringUTF16.coderFromArrayLen(val, caLen);
+            } else {
+                val = StringUTF16.toBytes(ca, 0, caLen);
+                coder = UTF16;
+            }
         }
-
-        // decode using CharsetDecoder
-        int en = scale(length, cd.maxCharsPerByte());
-        cd.onMalformedInput(CodingErrorAction.REPLACE)
-                .onUnmappableCharacter(CodingErrorAction.REPLACE);
-        char[] ca = new char[en];
-        int caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
-        if (COMPACT_STRINGS) {
-            byte[] val = StringUTF16.compress(ca, 0, caLen);
-            return new String(val, StringUTF16.coderFromArrayLen(val, caLen));
-        }
-        return new String(StringUTF16.toBytes(ca, 0, caLen), UTF16);
+        return new String(val, coder);
     }
 
     /*
@@ -813,7 +826,13 @@ public final class String
         }
         int en = scale(len, cd.maxCharsPerByte());
         char[] ca = new char[en];
-        int caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
+        int caLen;
+        try {
+            caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
+        } catch (CharacterCodingException x) {
+            // throw via IAE
+            throw new IllegalArgumentException(x);
+        }
         if (COMPACT_STRINGS) {
             byte[] val = StringUTF16.compress(ca, 0, caLen);
             byte coder = StringUTF16.coderFromArrayLen(val, caLen);
@@ -1226,21 +1245,17 @@ public final class String
         return dp;
     }
 
-    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length) {
-        try {
-            ByteBuffer bb = ByteBuffer.wrap(src, offset, length);
-            CharBuffer cb = CharBuffer.wrap(dst, 0, dst.length);
-            CoderResult cr = cd.decode(bb, cb, true);
-            if (!cr.isUnderflow())
-                cr.throwException();
-            cr = cd.flush(cb);
-            if (!cr.isUnderflow())
-                cr.throwException();
-            return cb.position();
-        } catch (CharacterCodingException x) {
-            // Substitution is enabled, so this shouldn't happen
-            throw new IllegalArgumentException(x);
-        }
+    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length)
+                                            throws CharacterCodingException {
+        ByteBuffer bb = ByteBuffer.wrap(src, offset, length);
+        CharBuffer cb = CharBuffer.wrap(dst, 0, dst.length);
+        CoderResult cr = cd.decode(bb, cb, true);
+        if (!cr.isUnderflow())
+            cr.throwException();
+        cr = cd.flush(cb);
+        if (!cr.isUnderflow())
+            cr.throwException();
+        return cb.position();
     }
 
     private static int malformed3(byte[] src, int sp) {
