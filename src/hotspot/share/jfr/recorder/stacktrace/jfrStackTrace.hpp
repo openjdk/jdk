@@ -70,8 +70,8 @@ class JfrStackTrace : public JfrCHeapObj {
   int number_of_frames() const;
   bool have_lineno() const { return _lineno; }
   bool full_stacktrace() const { return _reached_root; }
-  bool record_inner(JavaThread* jt, const frame& frame, int skip, int64_t stack_filter_id = -1);
-  bool record(JavaThread* jt, const frame& frame, int skip, int64_t stack_filter_id = -1);
+  bool record_inner(JavaThread* jt, const frame& frame, int skip, bool in_continuation = false, int64_t stack_filter_id = -1);
+  bool record(JavaThread* jt, const frame& frame, int skip, bool in_continatuion = false, int64_t stack_filter_id = -1);
   void record_interpreter_top_frame(const JfrSampleRequest& request);
 
   JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrStackTrace* next);
@@ -85,7 +85,7 @@ class JfrStackTrace : public JfrCHeapObj {
   traceid id() const { return _id; }
 
   bool record(JavaThread* current_thread, int skip, int64_t stack_filter_id);
-  bool record(JavaThread* jt, const frame& frame, const JfrSampleRequest& request);
+  bool record(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request);
   bool should_write() const { return !_written; }
 };
 

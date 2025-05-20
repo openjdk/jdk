@@ -34,7 +34,7 @@ class JfrVframeStream : public vframeStreamCommon {
   void step_to_sender();
   void next_frame();
  public:
-  JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub);
+  JfrVframeStream(JavaThread* jt, const frame& fr, bool in_continuation, bool stop_at_java_call_stub);
   void next_vframe();
 };
 

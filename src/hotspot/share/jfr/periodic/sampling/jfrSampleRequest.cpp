@@ -130,13 +130,13 @@ static inline bool is_continuation_frame(const JfrSampleRequest& request) {
 
 static intptr_t* sender_for_interpreter_frame(JfrSampleRequest& request, JavaThread* jt) {
   update_interpreter_frame_pc(request, jt); // pick up return address
-  if (is_continuation_frame(request)) {
+  if (is_continuation_frame(request) || is_entry_frame(request)) {
     request._sample_pc = nullptr;
     return nullptr;
   }
   update_frame_sender_sp(request, jt);
   intptr_t* fp = nullptr;
-  if (is_interpreter(request) || is_entry_frame(request)) {
+  if (is_interpreter(request)) {
     fp = frame_link(request);
   }
   request._sample_bcp = nullptr;

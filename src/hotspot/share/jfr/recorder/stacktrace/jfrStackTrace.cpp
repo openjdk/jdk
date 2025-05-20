@@ -122,6 +122,13 @@ bool JfrStackTrace::equals(const JfrStackTrace& rhs) const {
   return true;
 }
 
+#ifdef ASSERT
+static inline bool is_in_continuation(const frame& frame, JavaThread* jt) {
+  return JfrThreadLocal::is_vthread(jt) &&
+    (Continuation::is_frame_in_continuation(jt, frame) || Continuation::is_continuation_enterSpecial(frame));
+}
+#endif
+
 static inline bool is_interpreter(const JfrSampleRequest& request) {
   return request._sample_bcp != nullptr;
 }
@@ -144,52 +151,40 @@ void JfrStackTrace::record_interpreter_top_frame(const JfrSampleRequest& request
   _count++;
 }
 
-static inline bool interpreter_top_frame_has_no_sender(const JfrSampleRequest& request, const frame& fr, JavaThread* jt) {
-  if (fr.pc() == nullptr) {
-    return true;
-  }
-  const Method* method = reinterpret_cast<Method*>(request._sample_pc);
-  assert(method != nullptr, "invariant");
-  if (method->intrinsic_id() == vmIntrinsicID::_Continuation_enterSpecial) {
-    assert(JfrThreadLocal::is_vthread(jt), "invariant");
-    const ContinuationEntry* const cont_entry = jt->last_continuation();
-    assert(cont_entry != nullptr, "invariant");
-    return cont_entry->is_virtual_thread();
-  }
-  return false;
-}
-
-bool JfrStackTrace::record(JavaThread* jt, const frame& frame, const JfrSampleRequest& request) {
+bool JfrStackTrace::record(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request) {
   if (is_interpreter(request)) {
     record_interpreter_top_frame(request);
-    if (interpreter_top_frame_has_no_sender(request, frame, jt)) {
+    if (frame.pc() == nullptr) {
+      // No sender frame. Done.
       return true;
     }
   }
-  return record(jt, frame, 0);
+  return record(jt, frame, 0, in_continuation);
 }
 
 bool JfrStackTrace::record(JavaThread* jt, int skip, int64_t stack_filter_id) {
   assert(jt != nullptr, "invariant");
   assert(jt == JavaThread::current(), "invariant");
-  return jt->has_last_Java_frame() ? record(jt, jt->last_frame(), skip, stack_filter_id) : false;
+  const bool in_continuation = JfrThreadLocal::is_vthread(jt);
+  return jt->has_last_Java_frame() ? record(jt, jt->last_frame(), skip, in_continuation, stack_filter_id) : false;
 }
 
-bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip, int64_t stack_filter_id /* -1 */) {
+bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip, bool in_continuation /* false */, int64_t stack_filter_id /* -1 */) {
   // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
   // This is because RegisterMap uses Handles to support continuations.
   ResetNoHandleMark rnhm;
-  return record_inner(jt, frame, skip, stack_filter_id);
+  return record_inner(jt, frame, skip, in_continuation, stack_filter_id);
 }
 
-bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, int skip, int64_t stack_filter_id /* -1 */) {
+bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, int skip, bool in_continuation /* false */, int64_t stack_filter_id /* -1 */) {
   assert(jt != nullptr, "invariant");
   assert(!_lineno, "invariant");
   assert(_frames != nullptr, "invariant");
   assert(_frames->length() == 0 || _frames->length() == 1, "invariant");
+  assert(!in_continuation || is_in_continuation(frame, jt), "invariant");
   Thread* const current_thread = Thread::current();
   HandleMark hm(current_thread); // RegisterMap uses Handles to support continuations.
-  JfrVframeStream vfs(jt, frame, false);
+  JfrVframeStream vfs(jt, frame, in_continuation, false);
   _reached_root = true;
   for (int i = 0; i < skip; ++i) {
     if (vfs.at_end()) {

@@ -237,6 +237,7 @@ class JfrThreadLocal {
   static traceid thread_id(const Thread* t);
   static bool is_vthread(const JavaThread* jt);
   static u2 vthread_epoch(const JavaThread* jt);
+  traceid vthread_id_with_epoch_update(const JavaThread* jt) const;
 
   // Exposed to external code that use a thread id unconditionally.
   // Jfr might not even be running.
