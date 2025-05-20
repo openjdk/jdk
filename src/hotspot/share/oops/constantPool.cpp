@@ -149,7 +149,7 @@ void ConstantPool::release_C_heap_structures() {
 }
 
 void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(ConstantPool): %p", this);
+  log_trace(aot)("Iter(ConstantPool): %p", this);
 
   it->push(&_tags, MetaspaceClosure::_writable);
   it->push(&_cache);
@@ -374,40 +374,6 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   }
   return rr;
 }
-
-void ConstantPool::add_dumped_interned_strings() {
-  InstanceKlass* ik = pool_holder();
-  if (!ik->is_linked()) {
-    // resolved_references() doesn't exist yet, so we have no resolved CONSTANT_String entries. However,
-    // some static final fields may have default values that were initialized when the class was parsed.
-    // We need to enter those into the CDS archive strings table.
-    for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
-      if (fs.access_flags().is_static()) {
-        fieldDescriptor& fd = fs.field_descriptor();
-        if (fd.field_type() == T_OBJECT) {
-          int offset = fd.offset();
-          check_and_add_dumped_interned_string(ik->java_mirror()->obj_field(offset));
-        }
-      }
-    }
-  } else {
-    objArrayOop rr = resolved_references();
-    if (rr != nullptr) {
-      int rr_len = rr->length();
-      for (int i = 0; i < rr_len; i++) {
-        check_and_add_dumped_interned_string(rr->obj_at(i));
-      }
-    }
-  }
-}
-
-void ConstantPool::check_and_add_dumped_interned_string(oop obj) {
-  if (obj != nullptr && java_lang_String::is_instance(obj) &&
-      !ArchiveHeapWriter::is_string_too_large_to_archive(obj)) {
-    HeapShared::add_to_dumped_interned_strings(obj);
-  }
-}
-
 #endif
 
 #if INCLUDE_CDS
@@ -535,7 +501,7 @@ static const char* get_type(Klass* k) {
 
 void ConstantPool::remove_unshareable_entries() {
   ResourceMark rm;
-  log_info(cds, resolve)("Archiving CP entries for %s", pool_holder()->name()->as_C_string());
+  log_info(aot, resolve)("Archiving CP entries for %s", pool_holder()->name()->as_C_string());
   for (int cp_index = 1; cp_index < length(); cp_index++) { // cp_index 0 is unused
     int cp_tag = tag_at(cp_index).value();
     switch (cp_tag) {
@@ -594,7 +560,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
     resolved_klasses()->at_put(resolved_klass_index, nullptr);
   }
 
-  LogStreamHandle(Trace, cds, resolve) log;
+  LogStreamHandle(Trace, aot, resolve) log;
   if (log.is_enabled()) {
     ResourceMark rm;
     log.print("%s klass  CP entry [%3d]: %s %s",

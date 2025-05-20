@@ -301,7 +301,7 @@ public final class EventControl {
     private static Control defineThreshold(PlatformEventType type) {
         String def = type.getAnnotationValue(Threshold.class, ThresholdSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THRESHOLD, Threshold.NAME, def, Collections.emptyList()));
-        return new Control(new ThresholdSetting(type), def);
+        return new Control(new ThresholdSetting(type, def), def);
     }
 
     private static Control defineStackTrace(PlatformEventType type) {
@@ -313,13 +313,13 @@ public final class EventControl {
     private static Control defineCutoff(PlatformEventType type) {
         String def = type.getAnnotationValue(Cutoff.class, CutoffSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_CUTOFF, Cutoff.NAME, def, Collections.emptyList()));
-        return new Control(new CutoffSetting(type), def);
+        return new Control(new CutoffSetting(type, def), def);
     }
 
     private static Control defineThrottle(PlatformEventType type) {
         String def = type.getAnnotationValue(Throttle.class, ThrottleSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THROTTLE, Throttle.NAME, def, Collections.emptyList()));
-        return new Control(new ThrottleSetting(type), def);
+        return new Control(new ThrottleSetting(type, def), def);
     }
 
     private static Control defineLevel(PlatformEventType type) {
@@ -332,7 +332,7 @@ public final class EventControl {
     private static Control definePeriod(PlatformEventType type) {
         String def = type.getAnnotationValue(Period.class, PeriodSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_PERIOD, PeriodSetting.NAME, def, Collections.emptyList()));
-        return new Control(new PeriodSetting(type), def);
+        return new Control(new PeriodSetting(type, def), def);
     }
 
     void disable() {
