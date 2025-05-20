@@ -36,11 +36,14 @@ import jdk.test.lib.Asserts;
  * @test
  * @bug 8356813
  * @summary Test that Value method of ModLNode is working as expected.
+ * @key randomness
  * @library /test/lib /
  * @run driver compiler.c2.gvn.ModLNodeValueTests
  */
 public class ModLNodeValueTests {
-    private static final Generator<Long> G = Generators.G.longs();
+    private static final Generator<Long> LONG_GEN = Generators.G.longs();
+    private static final long POS_LONG = Generators.G.longs().restricted(1L, Long.MAX_VALUE).next();
+    private static final long NEG_LONG = Generators.G.longs().restricted(Long.MIN_VALUE, -1L).next();
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -55,8 +58,8 @@ public class ModLNodeValueTests {
         "modByKnownBoundsLimitedByDividendLower", "modByKnownBoundsLimitedByDividendLowerInRange"
     })
     public void runMethod() {
-        long a = G.next();
-        long b = G.next();
+        long a = LONG_GEN.next();
+        long b = LONG_GEN.next();
 
         long min = Long.MIN_VALUE;
         long max = Long.MAX_VALUE;
@@ -69,10 +72,10 @@ public class ModLNodeValueTests {
 
     @DontCompile
     public void assertResult(long x, long y) {
-        Asserts.assertEQ(x != 0 && 123 % x < 0, nonNegativeDividend(x));
-        Asserts.assertEQ(x != 0 && 123 % x <= 0, nonNegativeDividendInRange(x));
-        Asserts.assertEQ(x != 0 && -123 % x > 0, negativeDividend(x));
-        Asserts.assertEQ(x != 0 && -123 % x >= 0, negativeDividendInRange(x));
+        Asserts.assertEQ(x != 0 && POS_LONG % x < 0, nonNegativeDividend(x));
+        Asserts.assertEQ(x != 0 && POS_LONG % x <= 0, nonNegativeDividendInRange(x));
+        Asserts.assertEQ(x != 0 && NEG_LONG % x > 0, negativeDividend(x));
+        Asserts.assertEQ(x != 0 && NEG_LONG % x >= 0, negativeDividendInRange(x));
         Asserts.assertEQ(x % (((byte) y) + 129L) > 255, modByKnownBoundsUpper(x, y));
         Asserts.assertEQ(x % (((byte) y) + 129L) >= 255, modByKnownBoundsUpperInRange(x, y));
         Asserts.assertEQ(x % (((byte) y) + 129L) < -255, modByKnownBoundsLower(x, y));
@@ -88,7 +91,7 @@ public class ModLNodeValueTests {
     // The sign of the result of % is the same as the sign of the dividend,
     // i.e., posVal % x < 0 => false.
     public boolean nonNegativeDividend(long x) {
-        return x != 0 && 123 % x < 0;
+        return x != 0 && POS_LONG % x < 0;
     }
 
     @Test
@@ -97,7 +100,7 @@ public class ModLNodeValueTests {
     // i.e., posVal % x < 0 => false.
     // This uses <= to verify the % is not optimized away
     public boolean nonNegativeDividendInRange(long x) {
-        return x != 0 && 123 % x <= 0;
+        return x != 0 && POS_LONG % x <= 0;
     }
 
     @Test
@@ -105,7 +108,7 @@ public class ModLNodeValueTests {
     // The sign of the result of % is the same as the sign of the dividend,
     // i.e., negValue % x > 0 => false.
     public boolean negativeDividend(long x) {
-        return x != 0 && -123 % x > 0;
+        return x != 0 && NEG_LONG % x > 0;
     }
 
     @Test
@@ -114,7 +117,7 @@ public class ModLNodeValueTests {
     // i.e., negValue % x > 0 => false.
     // This uses >= to verify the % is not optimized away
     public boolean negativeDividendInRange(long x) {
-        return x != 0 && -123 % x >= 0;
+        return x != 0 && NEG_LONG % x >= 0;
     }
 
     @Test

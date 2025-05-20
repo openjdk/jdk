@@ -36,11 +36,14 @@ import jdk.test.lib.Asserts;
  * @test
  * @bug 8356813
  * @summary Test that Value method of ModINode is working as expected.
+ * @key randomness
  * @library /test/lib /
  * @run driver compiler.c2.gvn.ModINodeValueTests
  */
 public class ModINodeValueTests {
-    private static final Generator<Integer> G = Generators.G.ints();
+    private static final Generator<Integer> INT_GEN = Generators.G.ints();
+    private static final int POS_INT = Generators.G.ints().restricted(1, Integer.MAX_VALUE).next();
+    private static final int NEG_INT = Generators.G.ints().restricted(Integer.MIN_VALUE, -1).next();
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -55,8 +58,8 @@ public class ModINodeValueTests {
         "modByKnownBoundsLimitedByDividendLower", "modByKnownBoundsLimitedByDividendLowerInRange"
     })
     public void runMethod() {
-        int a = G.next();
-        int b = G.next();
+        int a = INT_GEN.next();
+        int b = INT_GEN.next();
 
         int min = Integer.MIN_VALUE;
         int max = Integer.MAX_VALUE;
@@ -69,10 +72,10 @@ public class ModINodeValueTests {
 
     @DontCompile
     public void assertResult(int x, int y) {
-        Asserts.assertEQ(x != 0 && 123 % x < 0, nonNegativeDividend(x));
-        Asserts.assertEQ(x != 0 && 123 % x <= 0, nonNegativeDividendInRange(x));
-        Asserts.assertEQ(x != 0 && -123 % x > 0, negativeDividend(x));
-        Asserts.assertEQ(x != 0 && -123 % x >= 0, negativeDividendInRange(x));
+        Asserts.assertEQ(x != 0 && POS_INT % x < 0, nonNegativeDividend(x));
+        Asserts.assertEQ(x != 0 && POS_INT % x <= 0, nonNegativeDividendInRange(x));
+        Asserts.assertEQ(x != 0 && NEG_INT % x > 0, negativeDividend(x));
+        Asserts.assertEQ(x != 0 && NEG_INT % x >= 0, negativeDividendInRange(x));
         Asserts.assertEQ(x % (((byte) y) + 129) > 255, modByKnownBoundsUpper(x, y));
         Asserts.assertEQ(x % (((byte) y) + 129) >= 255, modByKnownBoundsUpperInRange(x, y));
         Asserts.assertEQ(x % (((byte) y) + 129) < -255, modByKnownBoundsLower(x, y));
@@ -88,7 +91,7 @@ public class ModINodeValueTests {
     // The sign of the result of % is the same as the sign of the dividend,
     // i.e., posVal % x < 0 => false.
     public boolean nonNegativeDividend(int x) {
-        return x != 0 && 123 % x < 0;
+        return x != 0 && POS_INT % x < 0;
     }
 
     @Test
@@ -97,7 +100,7 @@ public class ModINodeValueTests {
     // i.e., posVal % x < 0 => false.
     // This uses <= to verify the % is not optimized away
     public boolean nonNegativeDividendInRange(int x) {
-        return x != 0 && 123 % x <= 0;
+        return x != 0 && POS_INT % x <= 0;
     }
 
     @Test
@@ -105,7 +108,7 @@ public class ModINodeValueTests {
     // The sign of the result of % is the same as the sign of the dividend,
     // i.e., negValue % x > 0 => false.
     public boolean negativeDividend(int x) {
-        return x != 0 && -123 % x > 0;
+        return x != 0 && NEG_INT % x > 0;
     }
 
     @Test
@@ -114,7 +117,7 @@ public class ModINodeValueTests {
     // i.e., negValue % x > 0 => false.
     // This uses >= to verify the % is not optimized away
     public boolean negativeDividendInRange(int x) {
-        return x != 0 && -123 % x >= 0;
+        return x != 0 && NEG_INT % x >= 0;
     }
 
     @Test
