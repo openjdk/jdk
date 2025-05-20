@@ -1834,7 +1834,8 @@ public final class Locale implements Cloneable, Serializable {
      *     Locale.forLanguageTag("ar-aao").getLanguage(); // returns "aao"
      *     Locale.forLanguageTag("en-abc-def-us").toString(); // returns "abc_US"
      *     Locale.forLanguageTag("zh-yue-gan-cmn-czh-CN").toString();
-     *     // returns "yue"; the rest of the tag is considered ill-formed
+     *     // returns "yue"; "czh" exceeds the extlang limit, and subsequent
+     *     // subtags are considered ill-formed
      * }
      *
      * <li>Case is normalized except for variant tags, which are left
