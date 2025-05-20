@@ -95,7 +95,6 @@ void VM_Version::initialize() {
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
-
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
   if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_ERGO(AlignVector, false);
@@ -164,7 +163,9 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64 aes sha%s%s",
+               "ppc64%s%s%s%s",
+               (" sha"),
+               (" aes"),
                (has_darn()    ? " darn"    : ""),
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
