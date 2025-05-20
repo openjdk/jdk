@@ -761,7 +761,7 @@ public sealed interface Template permits Template.ZeroArgs,
             throw new IllegalArgumentException("Unexpected mutability: " + mutability);
         }
         boolean mutable = mutability == DataName.Mutability.MUTABLE;
-        return new AddNameToken(new DataName(name, type, mutable, 1));
+        return new AddNameToken(new DataName(name, type, mutable, weight));
     }
 
     /**
@@ -800,7 +800,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return The token that performs the defining action.
      */
     static Token addStructuralName(String name, StructuralName.Type type, int weight) {
-        return new AddNameToken(new StructuralName(name, type, 1));
+        return new AddNameToken(new StructuralName(name, type, weight));
     }
 
     /**

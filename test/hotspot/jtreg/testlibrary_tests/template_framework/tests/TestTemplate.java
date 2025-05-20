@@ -40,6 +40,7 @@ import java.util.HashSet;
 
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.DataName;
+import compiler.lib.template_framework.StructuralName;
 import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
 import compiler.lib.template_framework.RendererException;
@@ -50,6 +51,8 @@ import static compiler.lib.template_framework.Template.fuel;
 import static compiler.lib.template_framework.Template.setFuelCost;
 import static compiler.lib.template_framework.Template.addDataName;
 import static compiler.lib.template_framework.Template.dataNames;
+import static compiler.lib.template_framework.Template.addStructuralName;
+import static compiler.lib.template_framework.Template.structuralNames;
 import static compiler.lib.template_framework.DataName.Mutability.MUTABLE;
 import static compiler.lib.template_framework.DataName.Mutability.IMMUTABLE;
 import static compiler.lib.template_framework.DataName.Mutability.MUTABLE_OR_IMMUTABLE;
@@ -86,6 +89,22 @@ public class TestTemplate {
     private static final MyClass myClassA2  = new MyClass("myClassA2");
     private static final MyClass myClassA11 = new MyClass("myClassA11");
     private static final MyClass myClassB   = new MyClass("myClassB");
+
+    // Model methods, but only of type "(II)I".
+    // Should you ever work on a test where there are methods with different signatures,
+    // then you would have to very carefully study and design the subtype relation between
+    // methods. You may want to read up about covariance and contravariance. This
+    // example ignores all of that, because we only have "(II)I" methods.
+    private record MyMethodType() implements StructuralName.Type {
+        @Override
+        public boolean isSubtypeOf(StructuralName.Type other) {
+            return other instanceof MyMethodType();
+        }
+
+        @Override
+        public String name() { return "<not used, don't worry>"; }
+    }
+    private static final MyMethodType myMethodType = new MyMethodType();
 
     public static void main(String[] args) {
         testSingleLine();
@@ -135,7 +154,13 @@ public class TestTemplate {
         expectIllegalArgumentException(() -> hook1.anchor(null),      "Unexpected tokens: null");
         expectIllegalArgumentException(() -> hook1.anchor("x", null), "Unexpected token: null");
         expectIllegalArgumentException(() -> hook1.anchor(hook1),     "Unexpected token:");
-        expectIllegalArgumentException(() -> testFailingAddDataName(), "Unexpected mutability: MUTABLE_OR_IMMUTABLE");
+        expectIllegalArgumentException(() -> testFailingAddDataName1(), "Unexpected mutability: MUTABLE_OR_IMMUTABLE");
+        expectIllegalArgumentException(() -> testFailingAddDataName2(), "Unexpected weight: ");
+        expectIllegalArgumentException(() -> testFailingAddDataName3(), "Unexpected weight: ");
+        expectIllegalArgumentException(() -> testFailingAddDataName4(), "Unexpected weight: ");
+        expectIllegalArgumentException(() -> testFailingAddStructuralName1(), "Unexpected weight: ");
+        expectIllegalArgumentException(() -> testFailingAddStructuralName2(), "Unexpected weight: ");
+        expectIllegalArgumentException(() -> testFailingAddStructuralName3(), "Unexpected weight: ");
         expectUnsupportedOperationException(() -> testFailingSample2(), "Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
     }
 
@@ -1491,9 +1516,51 @@ public class TestTemplate {
         String code = template1.render();
     }
 
-    public static void testFailingAddDataName() {
+    public static void testFailingAddDataName1() {
         var template1 = Template.make(() -> body(
             addDataName("name", myInt, MUTABLE_OR_IMMUTABLE)
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingAddDataName2() {
+        var template1 = Template.make(() -> body(
+            addDataName("name", myInt, MUTABLE, 0)
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingAddDataName3() {
+        var template1 = Template.make(() -> body(
+            addDataName("name", myInt, MUTABLE, -1)
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingAddDataName4() {
+        var template1 = Template.make(() -> body(
+            addDataName("name", myInt, MUTABLE, 1001)
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingAddStructuralName1() {
+        var template1 = Template.make(() -> body(
+            addStructuralName("name", myMethodType, 0)
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingAddStructuralName2() {
+        var template1 = Template.make(() -> body(
+            addStructuralName("name", myMethodType, -1)
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingAddStructuralName3() {
+        var template1 = Template.make(() -> body(
+            addStructuralName("name", myMethodType, 1001)
         ));
         String code = template1.render();
     }
