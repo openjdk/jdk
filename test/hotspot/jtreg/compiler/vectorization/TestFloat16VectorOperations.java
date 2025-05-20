@@ -78,7 +78,7 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.ADD_VHF, ">= 1"},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     public void vectorAddFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(add(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i])));
@@ -99,7 +99,7 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.SUB_VHF, ">= 1"},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     public void vectorSubFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(subtract(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i])));
@@ -120,7 +120,7 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.MUL_VHF, ">= 1"},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     public void vectorMulFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(multiply(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i])));
@@ -141,7 +141,7 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.DIV_VHF, ">= 1"},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     public void vectorDivFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(divide(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i])));
@@ -162,7 +162,7 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.MIN_VHF, ">= 1"},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     public void vectorMinFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(min(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i])));
@@ -183,7 +183,7 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.MAX_VHF, ">= 1"},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     public void vectorMaxFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(max(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i])));
@@ -204,7 +204,7 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.SQRT_VHF, ">= 1"},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     public void vectorSqrtFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(sqrt(shortBitsToFloat16(input1[i])));
@@ -225,7 +225,7 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.FMA_VHF, ">= 1"},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     public void vectorFmaFloat16() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i]),
@@ -248,7 +248,7 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.FMA_VHF, " >= 1"},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     public void vectorFmaFloat16ScalarMixedConstants() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(SCALAR_FP16),
@@ -272,7 +272,7 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.FMA_VHF, " >= 1"},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     public void vectorFmaFloat16MixedConstants() {
         short input3 = floatToFloat16(3.0f);
         for (int i = 0; i < LEN; ++i) {
@@ -295,7 +295,7 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.FMA_VHF, " 0 "},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     public void vectorFmaFloat16AllConstants() {
         short input1 = floatToFloat16(1.0f);
         short input2 = floatToFloat16(2.0f);

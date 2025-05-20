@@ -83,6 +83,11 @@ on where and how to check out the source code.
   for the source code, see below for suggestions on how to keep the build
   artifacts on a local disk.
 
+* UTF-8 support is needed to compile the JDK. On Unix systems, this typically
+  means that the `C.UTF-8` or `en_US.UTF-8` locale needs to be available. For
+  Windows users, please see the section on [Locale
+  Requirements](#locale-requirements) below.
+
 * On Windows, extra care must be taken to have a smooth building experience:
 
   * Make sure that all relevant paths have short names. Short names are used by
