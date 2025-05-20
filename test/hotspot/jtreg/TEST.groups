@@ -156,9 +156,9 @@ serviceability_ttf_virtual = \
   -serviceability/jvmti/negative
 
 # tier1_common shouldn't be executed with VM flags, because
-# non_hotspot and gtest ignore them,
+# non_hotspot and gtest ignore them.
 # hotspot_misc should be used for execution of
-# all non-component tests with VM flags
+# all non-component tests with VM flags.
 tier1_common = \
   sanity \
   native_sanity \
