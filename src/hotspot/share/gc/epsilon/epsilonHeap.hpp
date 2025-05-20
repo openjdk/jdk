@@ -131,8 +131,8 @@ public:
   bool can_load_archived_objects() const override { return true; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
 
-  void print_on(outputStream* st) const override;
-  void print_on_error(outputStream* st) const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_gc_on(outputStream* st) const override {}
   void print_tracing_info() const override;
   bool print_location(outputStream* st, void* addr) const override;
 

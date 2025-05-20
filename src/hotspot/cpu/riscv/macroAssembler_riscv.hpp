@@ -657,6 +657,11 @@ class MacroAssembler: public Assembler {
   void cmov_gt(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src);
 
+  void cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
@@ -744,7 +749,7 @@ class MacroAssembler: public Assembler {
     guarantee(rtype == relocInfo::internal_word_type,                       \
               "only internal_word_type relocs make sense here");            \
     relocate(InternalAddress(dest).rspec());                                \
-    IncompressibleRegion ir(this);  /* relocations */
+    IncompressibleScope scope(this);  /* relocations */
 
 #define INSN(NAME)                                                                                       \
   void NAME(Register Rs1, Register Rs2, const address dest) {                                            \
@@ -965,7 +970,7 @@ public:
     guarantee(rtype == relocInfo::internal_word_type,                       \
               "only internal_word_type relocs make sense here");            \
     relocate(InternalAddress(dest).rspec());                                \
-    IncompressibleRegion ir(this);  /* relocations */
+    IncompressibleScope scope(this);  /* relocations */
 
 #define INSN(NAME)                                                                                 \
   void NAME(Register Rd, address dest) {                                                           \

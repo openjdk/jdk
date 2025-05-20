@@ -48,7 +48,8 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.FeaturePropertyBase;
 import jdk.xml.internal.JdkConstants;
-import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.JdkXmlConfig;
+import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.w3c.dom.ls.LSResourceResolver;
@@ -58,7 +59,7 @@ import org.xml.sax.ErrorHandler;
  * <p>An implementation of XMLComponentManager for a schema validator.</p>
  *
  * @author Michael Glavassevich, IBM
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettings implements
         XMLComponentManager {
@@ -298,7 +299,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         if (fInitSecurityManager != null ) {
             fInitSecurityManager.setSecureProcessing(secureProcessing);
         } else {
-            fInitSecurityManager = new XMLSecurityManager(secureProcessing);
+            fInitSecurityManager = JdkXmlConfig.getInstance(false).getXMLSecurityManager(false);
         }
 
         setProperty(SECURITY_MANAGER, fInitSecurityManager);
@@ -353,7 +354,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
      * Set the state of a feature.
      *
      * @param featureId The unique identifier (URI) of the feature.
-     * @param state The requested state of the feature (true or false).
+     * @param value The value of the feature (true or false).
      *
      * @exception XMLConfigurationException If the requested feature is not known.
      */
@@ -361,7 +362,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         if (PARSER_SETTINGS.equals(featureId)) {
             throw new XMLConfigurationException(Status.NOT_SUPPORTED, featureId);
         }
-        else if (value == false && (VALIDATION.equals(featureId) || SCHEMA_VALIDATION.equals(featureId))) {
+        else if (!value && (VALIDATION.equals(featureId) || SCHEMA_VALIDATION.equals(featureId))) {
             throw new XMLConfigurationException(Status.NOT_SUPPORTED, featureId);
         }
         else if (USE_GRAMMAR_POOL_ONLY.equals(featureId) && value != fUseGrammarPoolOnly) {
@@ -452,18 +453,12 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
             fComponents.put(propertyId, value);
             return;
         }
-        //check if the property is managed by security manager
-        if (fInitSecurityManager == null ||
-                !fInitSecurityManager.setLimit(propertyId, JdkProperty.State.APIPROPERTY, value)) {
-            //check if the property is managed by security property manager
-            if (fSecurityPropertyMgr == null ||
-                    !fSecurityPropertyMgr.setValue(propertyId, FeaturePropertyBase.State.APIPROPERTY, value)) {
-                //fall back to the existing property manager
-                if (!fInitProperties.containsKey(propertyId)) {
-                    fInitProperties.put(propertyId, super.getProperty(propertyId));
-                }
-                super.setProperty(propertyId, value);
+        if (!JdkXmlUtils.setProperty(fInitSecurityManager, fSecurityPropertyMgr, propertyId, value)) {
+            //fall back to the existing property manager
+            if (!fInitProperties.containsKey(propertyId)) {
+                fInitProperties.put(propertyId, super.getProperty(propertyId));
             }
+            super.setProperty(propertyId, value);
         }
     }
 

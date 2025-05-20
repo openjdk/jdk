@@ -41,14 +41,6 @@ CLEAN += intrinsic.properties
 EXCLUDE_FILES += \
   $(TOPDIR)/src/java.base/share/classes/jdk/internal/module/ModuleLoaderMap.java
 
-EXCLUDES += java/lang/doc-files \
-    java/lang/classfile/snippet-files \
-    java/lang/classfile/attribute/snippet-files \
-    java/lang/classfile/constantpool/snippet-files \
-    java/lang/foreign/snippet-files \
-    javax/crypto/spec/snippet-files \
-    jdk/internal/classfile/components/snippet-files
-
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
 EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
