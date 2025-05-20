@@ -256,7 +256,7 @@ void MacroAssembler::dec_held_monitor_count(Register tmp) {
 }
 
 int MacroAssembler::align(int modulus, int extra_offset) {
-  CompressibleRegion cr(this);
+  CompressibleScope scope(this);
   intptr_t before = offset();
   while ((offset() + extra_offset) % modulus != 0) { nop(); }
   return (int)(offset() - before);
@@ -417,7 +417,7 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
     set_last_Java_frame(last_java_sp, last_java_fp, target(L), tmp);
   } else {
     L.add_patch_at(code(), locator());
-    IncompressibleRegion ir(this);  // the label address will be patched back.
+    IncompressibleScope scope(this); // the label address will be patched back.
     set_last_Java_frame(last_java_sp, last_java_fp, pc() /* Patched later */, tmp);
   }
 }
@@ -564,7 +564,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     // The length of the instruction sequence emitted should not depend
     // on the address of the char buffer so that the size of mach nodes for
     // scratch emit and normal emit matches.
-    IncompressibleRegion ir(this);  // Fixed length
+    IncompressibleScope scope(this); // Fixed length
     movptr(t0, (address) b);
   }
 
@@ -604,7 +604,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     // The length of the instruction sequence emitted should not depend
     // on the address of the char buffer so that the size of mach nodes for
     // scratch emit and normal emit matches.
-    IncompressibleRegion ir(this);  // Fixed length
+    IncompressibleScope scope(this); // Fixed length
     movptr(t0, (address) b);
   }
 
@@ -775,7 +775,7 @@ void MacroAssembler::unimplemented(const char* what) {
 }
 
 void MacroAssembler::emit_static_call_stub() {
-  IncompressibleRegion ir(this);  // Fixed length: see CompiledDirectCall::to_interp_stub_size().
+  IncompressibleScope scope(this); // Fixed length: see CompiledDirectCall::to_interp_stub_size().
   // CompiledDirectCall::set_to_interpreted knows the
   // exact layout of this stub.
 
@@ -907,7 +907,7 @@ void MacroAssembler::la(Register Rd, const Address &adr) {
 }
 
 void MacroAssembler::la(Register Rd, Label &label) {
-  IncompressibleRegion ir(this);   // the label address may be patched back.
+  IncompressibleScope scope(this); // the label address may be patched back.
   wrap_label(Rd, label, &MacroAssembler::la);
 }
 
@@ -971,7 +971,7 @@ void MacroAssembler::j(const address dest, Register temp) {
   int64_t distance = dest - pc();
 
   // We can't patch C, i.e. if Label wasn't bound we need to patch this jump.
-  IncompressibleRegion ir(this);
+  IncompressibleScope scope(this);
   if (is_simm21(distance) && ((distance % 2) == 0)) {
     Assembler::jal(x0, distance);
   } else {
@@ -4977,7 +4977,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
 
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
-  IncompressibleRegion ir(this);  // relocations
+  IncompressibleScope scope(this); // relocations
   movptr(t0, (address)Universe::non_oop_word(), t1);
   assert_cond(entry != nullptr);
   return reloc_call(Address(entry, rh));
@@ -4990,7 +4990,7 @@ int MacroAssembler::ic_check_size() {
 }
 
 int MacroAssembler::ic_check(int end_alignment) {
-  IncompressibleRegion ir(this);
+  IncompressibleScope scope(this);
   Register receiver = j_rarg0;
   Register data = t0;
 
@@ -5903,17 +5903,19 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
 
   andi(t0, cnt, unroll - 1);
   sub(cnt, cnt, t0);
-  // align 8, so first sd n % 8 = mod, next loop sd 8 * n.
   shadd(base, t0, base, t1, 3);
   la(t1, entry);
-  slli(t0, t0, 2); // sd_inst_nums * 4; t0 is cnt % 8, so t1 = t1 - sd_inst_nums * 4, 4 is sizeof(inst)
+  slli(t0, t0, 2);
   sub(t1, t1, t0);
   jr(t1);
 
   bind(loop);
   addi(base, base, unroll * wordSize);
-  for (int i = -unroll; i < 0; i++) {
-    sd(value, Address(base, i * 8));
+  {
+    IncompressibleScope scope(this); // Fixed length
+    for (int i = -unroll; i < 0; i++) {
+      sd(value, Address(base, i * 8));
+    }
   }
   bind(entry);
   subi(cnt, cnt, unroll);
@@ -6120,10 +6122,14 @@ void MacroAssembler::zero_memory(Register addr, Register len, Register tmp) {
   slli(t0, t0, 2);
   sub(t1, t1, t0);
   jr(t1);
+
   bind(loop);
   sub(len, len, unroll);
-  for (int i = -unroll; i < 0; i++) {
-    sd(zr, Address(tmp, i * wordSize));
+  {
+    IncompressibleScope scope(this); // Fixed length
+    for (int i = -unroll; i < 0; i++) {
+      sd(zr, Address(tmp, i * wordSize));
+    }
   }
   bind(entry);
   add(tmp, tmp, unroll * wordSize);

@@ -25,7 +25,7 @@
  * @test
  * @bug     6410643
  * @summary JSR 199: The method JavaCompilerTool.run fails to handle null arguments
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler

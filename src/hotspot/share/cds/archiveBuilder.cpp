@@ -25,6 +25,7 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
+#include "cds/aotLogging.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.hpp"
@@ -133,7 +134,7 @@ public:
     address old_p = *ptr_loc;
     address new_p = _builder->get_buffered_addr(old_p);
 
-    log_trace(cds)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
+    log_trace(aot)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
                    p2i(ptr_loc), p2i(old_p), p2i(new_p));
 
     ArchivePtrMarker::set_and_mark_pointer(ptr_loc, new_p);
@@ -251,7 +252,7 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   AOTArtifactFinder::initialize();
   AOTArtifactFinder::find_artifacts();
 
-  log_info(cds)("Gathering classes and symbols ... ");
+  aot_log_info(aot)("Gathering classes and symbols ... ");
   GatherKlassesAndSymbols doit(this);
   iterate_roots(&doit);
 #if INCLUDE_CDS_JAVA_HEAP
@@ -281,7 +282,7 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     // TODO: in the future, if we want to produce deterministic contents in the
     // dynamic archive, we might need to sort the symbols alphabetically (also see
     // DynamicArchiveBuilder::sort_methods()).
-    log_info(cds)("Sorting symbols ... ");
+    aot_log_info(aot)("Sorting symbols ... ");
     _symbols->sort(compare_symbols_by_address);
     sort_klasses();
   }
@@ -303,7 +304,7 @@ int ArchiveBuilder::compare_klass_by_name(Klass** a, Klass** b) {
 }
 
 void ArchiveBuilder::sort_klasses() {
-  log_info(cds)("Sorting classes ... ");
+  aot_log_info(aot)("Sorting classes ... ");
   _klasses->sort(compare_klass_by_name);
 }
 
@@ -313,16 +314,16 @@ address ArchiveBuilder::reserve_buffer() {
   ReservedSpace rs = MemoryReserver::reserve(buffer_size,
                                              MetaspaceShared::core_region_alignment(),
                                              os::vm_page_size(),
-                                             mtClassShared);
+                                             mtNone);
   if (!rs.is_reserved()) {
-    log_error(cds)("Failed to reserve %zu bytes of output buffer.", buffer_size);
+    aot_log_error(aot)("Failed to reserve %zu bytes of output buffer.", buffer_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
 
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
   // we are copying the class metadata into the buffer.
   address buffer_bottom = (address)rs.base();
-  log_info(cds)("Reserved output buffer space at " PTR_FORMAT " [%zu bytes]",
+  aot_log_info(aot)("Reserved output buffer space at " PTR_FORMAT " [%zu bytes]",
                 p2i(buffer_bottom), buffer_size);
   _shared_rs = rs;
 
@@ -364,9 +365,9 @@ address ArchiveBuilder::reserve_buffer() {
   if (my_archive_requested_bottom <  _requested_static_archive_bottom ||
       my_archive_requested_top    <= _requested_static_archive_bottom) {
     // Size overflow.
-    log_error(cds)("my_archive_requested_bottom = " INTPTR_FORMAT, p2i(my_archive_requested_bottom));
-    log_error(cds)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
-    log_error(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
+    aot_log_error(aot)("my_archive_requested_bottom = " INTPTR_FORMAT, p2i(my_archive_requested_bottom));
+    aot_log_error(aot)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
+    aot_log_error(aot)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
                    "Please rerun java -Xshare:dump with a lower value", p2i(_requested_static_archive_bottom));
     MetaspaceShared::unrecoverable_writing_error();
   }
@@ -424,7 +425,7 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   SourceObjInfo* p = _src_obj_table.put_if_absent(src_obj, src_info, &created);
   if (created) {
     if (_src_obj_table.maybe_grow()) {
-      log_info(cds, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
+      log_info(aot, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
     }
   }
 
@@ -503,7 +504,7 @@ void ArchiveBuilder::remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure
 
 void ArchiveBuilder::gather_source_objs() {
   ResourceMark rm;
-  log_info(cds)("Gathering all archivable objects ... ");
+  aot_log_info(aot)("Gathering all archivable objects ... ");
   gather_klasses_and_symbols();
   GatherSortedSourceObjs doit(this);
   iterate_sorted_roots(&doit);
@@ -536,7 +537,7 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
              ref->msotype() == MetaspaceObj::MethodCountersType) {
     return set_to_null;
   } else if (ref->msotype() == MetaspaceObj::AdapterHandlerEntryType) {
-    if (AOTCodeCache::is_dumping_adapters()) {
+    if (AOTCodeCache::is_dumping_adapter()) {
       AdapterHandlerEntry* entry = (AdapterHandlerEntry*)ref->obj();
       return AdapterHandlerLibrary::is_abstract_method_adapter(entry) ? set_to_null : make_a_copy;
     } else {
@@ -590,7 +591,7 @@ void ArchiveBuilder::sort_metadata_objs() {
 
 void ArchiveBuilder::dump_rw_metadata() {
   ResourceMark rm;
-  log_info(cds)("Allocating RW objects ... ");
+  aot_log_info(aot)("Allocating RW objects ... ");
   make_shallow_copies(&_rw_region, &_rw_src_objs);
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -605,7 +606,7 @@ void ArchiveBuilder::dump_rw_metadata() {
 
 void ArchiveBuilder::dump_ro_metadata() {
   ResourceMark rm;
-  log_info(cds)("Allocating RO objects ... ");
+  aot_log_info(aot)("Allocating RO objects ... ");
 
   start_dump_region(&_ro_region);
   make_shallow_copies(&_ro_region, &_ro_src_objs);
@@ -626,7 +627,7 @@ void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
   for (int i = 0; i < src_objs->objs()->length(); i++) {
     make_shallow_copy(dump_region, src_objs->objs()->at(i));
   }
-  log_info(cds)("done (%d objects)", src_objs->objs()->length());
+  aot_log_info(aot)("done (%d objects)", src_objs->objs()->length());
 }
 
 void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info) {
@@ -676,7 +677,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     _buffered_to_src_table.put_if_absent((address)dest, src, &created);
     assert(created, "must be");
     if (_buffered_to_src_table.maybe_grow()) {
-      log_info(cds, hashtables)("Expanded _buffered_to_src_table table to %d", _buffered_to_src_table.table_size());
+      log_info(aot, hashtables)("Expanded _buffered_to_src_table table to %d", _buffered_to_src_table.table_size());
     }
   }
 
@@ -686,7 +687,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     ArchivePtrMarker::mark_pointer((address*)dest);
   }
 
-  log_trace(cds)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
+  log_trace(aot)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
   src_info->set_buffered_addr((address)dest);
 
   _alloc_stats.record(src_info->msotype(), int(newtop - oldtop), src_info->read_only());
@@ -752,7 +753,7 @@ void ArchiveBuilder::relocate_embedded_pointers(ArchiveBuilder::SourceObjList* s
 }
 
 void ArchiveBuilder::relocate_metaspaceobj_embedded_pointers() {
-  log_info(cds)("Relocating embedded pointers in core regions ... ");
+  aot_log_info(aot)("Relocating embedded pointers in core regions ... ");
   relocate_embedded_pointers(&_rw_src_objs);
   relocate_embedded_pointers(&_ro_src_objs);
 }
@@ -923,9 +924,9 @@ void ArchiveBuilder::make_klasses_shareable() {
       ik->remove_unshareable_info();
     }
 
-    if (log_is_enabled(Debug, cds, class)) {
+    if (aot_log_is_enabled(Debug, aot, class)) {
       ResourceMark rm;
-      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s%s%s%s%s", i,
+      aot_log_debug(aot, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s%s%s%s%s", i,
                             p2i(to_requested(k)), type, k->external_name(),
                             kind, hidden, old, unlinked, generated, aotlinked_msg, inited_msg);
     }
@@ -934,21 +935,21 @@ void ArchiveBuilder::make_klasses_shareable() {
 #define STATS_FORMAT    "= %5d, aot-linked = %5d, inited = %5d"
 #define STATS_PARAMS(x) num_ ## x, num_ ## x ## _a, num_ ## x ## _i
 
-  log_info(cds)("Number of classes %d", num_instance_klasses + num_obj_array_klasses + num_type_array_klasses);
-  log_info(cds)("    instance classes   " STATS_FORMAT, STATS_PARAMS(instance_klasses));
-  log_info(cds)("      boot             " STATS_FORMAT, STATS_PARAMS(boot_klasses));
-  log_info(cds)("        vm             " STATS_FORMAT, STATS_PARAMS(vm_klasses));
-  log_info(cds)("      platform         " STATS_FORMAT, STATS_PARAMS(platform_klasses));
-  log_info(cds)("      app              " STATS_FORMAT, STATS_PARAMS(app_klasses));
-  log_info(cds)("      unregistered     " STATS_FORMAT, STATS_PARAMS(unregistered_klasses));
-  log_info(cds)("      (enum)           " STATS_FORMAT, STATS_PARAMS(enum_klasses));
-  log_info(cds)("      (hidden)         " STATS_FORMAT, STATS_PARAMS(hidden_klasses));
-  log_info(cds)("      (old)            " STATS_FORMAT, STATS_PARAMS(old_klasses));
-  log_info(cds)("      (unlinked)       = %5d, boot = %d, plat = %d, app = %d, unreg = %d",
+  aot_log_info(aot)("Number of classes %d", num_instance_klasses + num_obj_array_klasses + num_type_array_klasses);
+  aot_log_info(aot)("    instance classes   " STATS_FORMAT, STATS_PARAMS(instance_klasses));
+  aot_log_info(aot)("      boot             " STATS_FORMAT, STATS_PARAMS(boot_klasses));
+  aot_log_info(aot)("        vm             " STATS_FORMAT, STATS_PARAMS(vm_klasses));
+  aot_log_info(aot)("      platform         " STATS_FORMAT, STATS_PARAMS(platform_klasses));
+  aot_log_info(aot)("      app              " STATS_FORMAT, STATS_PARAMS(app_klasses));
+  aot_log_info(aot)("      unregistered     " STATS_FORMAT, STATS_PARAMS(unregistered_klasses));
+  aot_log_info(aot)("      (enum)           " STATS_FORMAT, STATS_PARAMS(enum_klasses));
+  aot_log_info(aot)("      (hidden)         " STATS_FORMAT, STATS_PARAMS(hidden_klasses));
+  aot_log_info(aot)("      (old)            " STATS_FORMAT, STATS_PARAMS(old_klasses));
+  aot_log_info(aot)("      (unlinked)       = %5d, boot = %d, plat = %d, app = %d, unreg = %d",
                 num_unlinked_klasses, boot_unlinked, platform_unlinked, app_unlinked, unreg_unlinked);
-  log_info(cds)("    obj array classes  = %5d", num_obj_array_klasses);
-  log_info(cds)("    type array classes = %5d", num_type_array_klasses);
-  log_info(cds)("               symbols = %5d", _symbols->length());
+  aot_log_info(aot)("    obj array classes  = %5d", num_obj_array_klasses);
+  aot_log_info(aot)("    type array classes = %5d", num_type_array_klasses);
+  aot_log_info(aot)("               symbols = %5d", _symbols->length());
 
 #undef STATS_FORMAT
 #undef STATS_PARAMS
@@ -1050,7 +1051,7 @@ class RelocateBufferToRequested : public BitMapClosure {
     address top = _builder->buffer_top();
     address new_bottom = bottom + _buffer_to_requested_delta;
     address new_top = top + _buffer_to_requested_delta;
-    log_debug(cds)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT "] to "
+    aot_log_debug(aot)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT "] to "
                    "[" INTPTR_FORMAT " - " INTPTR_FORMAT "]",
                    p2i(bottom), p2i(top),
                    p2i(new_bottom), p2i(new_top));
@@ -1154,12 +1155,12 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
   static void log_klass(Klass* k, address runtime_dest, const char* type_name, int bytes, Thread* current) {
     ResourceMark rm(current);
-    log_debug(cds, map)(_LOG_PREFIX " %s",
+    log_debug(aot, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes, k->external_name());
   }
   static void log_method(Method* m, address runtime_dest, const char* type_name, int bytes, Thread* current) {
     ResourceMark rm(current);
-    log_debug(cds, map)(_LOG_PREFIX " %s",
+    log_debug(aot, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes,  m->external_name());
   }
 
@@ -1202,12 +1203,12 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         {
           ResourceMark rm(current);
           Symbol* s = (Symbol*)src;
-          log_debug(cds, map)(_LOG_PREFIX " %s", p2i(runtime_dest), type_name, bytes,
+          log_debug(aot, map)(_LOG_PREFIX " %s", p2i(runtime_dest), type_name, bytes,
                               s->as_quoted_ascii());
         }
         break;
       default:
-        log_debug(cds, map)(_LOG_PREFIX, p2i(runtime_dest), type_name, bytes);
+        log_debug(aot, map)(_LOG_PREFIX, p2i(runtime_dest), type_name, bytes);
         break;
       }
 
@@ -1217,7 +1218,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
     log_as_hex(last_obj_base, last_obj_end, last_obj_base + buffer_to_runtime_delta());
     if (last_obj_end < region_end) {
-      log_debug(cds, map)(PTR_FORMAT ": @@ Misc data %zu bytes",
+      log_debug(aot, map)(PTR_FORMAT ": @@ Misc data %zu bytes",
                           p2i(last_obj_end + buffer_to_runtime_delta()),
                           size_t(region_end - last_obj_end));
       log_as_hex(last_obj_end, region_end, last_obj_end + buffer_to_runtime_delta());
@@ -1241,7 +1242,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     } else {
       top = requested_base + size;
     }
-    log_info(cds, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " %9zu bytes]",
+    log_info(aot, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " %9zu bytes]",
                        name, p2i(base), p2i(top), size);
   }
 
@@ -1252,7 +1253,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     address end = address(r.end());
     log_region("heap", start, end, ArchiveHeapWriter::buffered_addr_to_requested_addr(start));
 
-    LogStreamHandle(Info, cds, map) st;
+    LogStreamHandle(Info, aot, map) st;
 
     HeapRootSegments segments = heap_info->heap_root_segments();
     assert(segments.base_offset() == 0, "Sanity");
@@ -1361,7 +1362,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
   // Print the fields of instanceOops, or the elements of arrayOops
   static void log_oop_details(ArchiveHeapInfo* heap_info, oop source_oop, address buffered_addr) {
-    LogStreamHandle(Trace, cds, map, oops) st;
+    LogStreamHandle(Trace, aot, map, oops) st;
     if (st.is_enabled()) {
       Klass* source_klass = source_oop->klass();
       ArchiveBuilder* builder = ArchiveBuilder::current();
@@ -1429,7 +1430,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   }
 
   static void log_heap_roots() {
-    LogStreamHandle(Trace, cds, map, oops) st;
+    LogStreamHandle(Trace, aot, map, oops) st;
     if (st.is_enabled()) {
       for (int i = 0; i < HeapShared::pending_roots()->length(); i++) {
         st.print("roots[%4d]: ", i);
@@ -1490,7 +1491,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   static void log_as_hex(address base, address top, address requested_base, bool is_heap = false) {
     assert(top >= base, "must be");
 
-    LogStreamHandle(Trace, cds, map) lsh;
+    LogStreamHandle(Trace, aot, map) lsh;
     if (lsh.is_enabled()) {
       int unitsize = sizeof(address);
       if (is_heap && UseCompressedOops) {
@@ -1503,7 +1504,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   }
 
   static void log_header(FileMapInfo* mapinfo) {
-    LogStreamHandle(Info, cds, map) lsh;
+    LogStreamHandle(Info, aot, map) lsh;
     if (lsh.is_enabled()) {
       mapinfo->print(&lsh);
     }
@@ -1513,7 +1514,7 @@ public:
   static void log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
                   ArchiveHeapInfo* heap_info,
                   char* bitmap, size_t bitmap_size_in_bytes) {
-    log_info(cds, map)("%s CDS archive map for %s", CDSConfig::is_dumping_static_archive() ? "Static" : "Dynamic", mapinfo->full_path());
+    log_info(aot, map)("%s CDS archive map for %s", CDSConfig::is_dumping_static_archive() ? "Static" : "Dynamic", mapinfo->full_path());
 
     address header = address(mapinfo->header());
     address header_end = header + mapinfo->header()->header_size();
@@ -1537,7 +1538,7 @@ public:
     }
 #endif
 
-    log_info(cds, map)("[End of CDS archive map]");
+    log_info(aot, map)("[End of CDS archive map]");
   }
 }; // end ArchiveBuilder::CDSMapLogger
 
@@ -1574,12 +1575,12 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
   mapinfo->write_header();
   mapinfo->close();
 
-  if (log_is_enabled(Info, cds)) {
-    log_info(cds)("Full module graph = %s", CDSConfig::is_dumping_full_module_graph() ? "enabled" : "disabled");
+  if (log_is_enabled(Info, aot)) {
+    log_info(aot)("Full module graph = %s", CDSConfig::is_dumping_full_module_graph() ? "enabled" : "disabled");
     print_stats();
   }
 
-  if (log_is_enabled(Info, cds, map)) {
+  if (log_is_enabled(Info, aot, map)) {
     CDSMapLogger::log(this, mapinfo, heap_info,
                       bitmap, bitmap_size_in_bytes);
   }
@@ -1613,12 +1614,12 @@ void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo, ArchiveHeapInfo* h
     print_heap_region_stats(heap_info, total_reserved);
   }
 
-  log_debug(cds)("total   : %9zu [100.0%% of total] out of %9zu bytes [%5.1f%% used]",
+  aot_log_debug(aot)("total   : %9zu [100.0%% of total] out of %9zu bytes [%5.1f%% used]",
                  total_bytes, total_reserved, total_u_perc);
 }
 
 void ArchiveBuilder::print_bitmap_region_stats(size_t size, size_t total_size) {
-  log_debug(cds)("bm space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used]",
+  aot_log_debug(aot)("bm space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used]",
                  size, size/double(total_size)*100.0, size);
 }
 
@@ -1626,7 +1627,7 @@ void ArchiveBuilder::print_heap_region_stats(ArchiveHeapInfo *info, size_t total
   char* start = info->buffer_start();
   size_t size = info->buffer_byte_size();
   char* top = start + size;
-  log_debug(cds)("hp space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used] at " INTPTR_FORMAT,
+  aot_log_debug(aot)("hp space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used] at " INTPTR_FORMAT,
                      size, size/double(total_size)*100.0, size, p2i(start));
 }
 
@@ -1637,6 +1638,6 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
   _rw_region.print_out_of_space_msg(name, needed_bytes);
   _ro_region.print_out_of_space_msg(name, needed_bytes);
 
-  log_error(cds)("Unable to allocate from '%s' region: Please reduce the number of shared classes.", name);
+  log_error(aot)("Unable to allocate from '%s' region: Please reduce the number of shared classes.", name);
   MetaspaceShared::unrecoverable_writing_error();
 }
