@@ -12857,7 +12857,7 @@ void Assembler::evex_prefix_int8_operand(Register dst, Register src1, Address sr
                                          int size, int opcode_byte, bool no_flags, bool is_map1) {
   if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
     if (size == EVEX_64bit) {
-      emit_prefix_and_int8(get_prefixq(src2, dst, is_map1), b1);
+      emit_prefix_and_int8(get_prefixq(src2, dst, is_map1), opcode_byte);
     }
     else {
       // For 32-bit, 16-bit and 8-bit
@@ -12865,14 +12865,14 @@ void Assembler::evex_prefix_int8_operand(Register dst, Register src1, Address sr
         emit_int8(0x66);
       }
       prefix(src2, dst, false, is_map1);
-      emit_int8(b1);
+      emit_int8(opcode_byte);
     }
   } else {
     bool vex_w = (size == EVEX_64bit) ? true : false;
     InstructionAttr attributes(AVX_128bit, vex_w, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
     attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, size);
     evex_prefix_ndd(src2, dst->encoding(), src1->encoding(), pre, opc, &attributes, no_flags);
-    emit_int8(b1);
+    emit_int8(opcode_byte);
   }
   emit_operand(src1, src2, 0);
 }
@@ -12955,11 +12955,8 @@ void Assembler::evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_
 
 void Assembler::evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                               int size, int byte1, bool no_flags, bool is_map1) {
-  bool is_prefixq = (size == EVEX_64bit);
+  bool is_prefixq = (size == EVEX_64bit) ? true : false;
   if (is_demotable(no_flags, dst_enc, nds_enc)) {
-    if (size == EVEX_16bit) {
-      emit_int8(0x66);
-    }
     int encode = is_prefixq ? prefixq_and_encode(src_enc, dst_enc, is_map1) : prefix_and_encode(src_enc, dst_enc, is_map1);
     emit_opcode_prefix_and_encoding((unsigned char)byte1, 0xC0, encode);
   } else {
@@ -12972,7 +12969,7 @@ void Assembler::evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_
 
 void Assembler::evex_opcode_prefix_and_encode_swap(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                                    int size, int byte1, bool no_flags, bool is_map1) {
-  bool is_prefixq = (size == EVEX_64bit);
+  bool is_prefixq = (size == EVEX_64bit) ? true : false;
   if (is_demotable(no_flags, dst_enc, nds_enc)) {
     if (size == EVEX_16bit) {
       emit_int8(0x66);
