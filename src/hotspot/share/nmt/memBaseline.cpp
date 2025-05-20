@@ -106,7 +106,7 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
 void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   {
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
     VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
     MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
   }

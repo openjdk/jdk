@@ -47,7 +47,7 @@ public:
 
     ReservedMemoryRegion rmr_found;
     {
-      MemTracker::NmtVirtualMemoryLocker vml;
+      NmtVirtualMemoryLocker vml;
       rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region(stack_end);
     }
 
@@ -63,7 +63,7 @@ public:
     address stack_top = stack_end + stack_size;
     bool found_stack_top = false;
     {
-      MemTracker::NmtVirtualMemoryLocker vml;
+      NmtVirtualMemoryLocker vml;
       VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr) {
         if (cmr.base() + cmr.size() == stack_top) {
           EXPECT_TRUE(cmr.size() <= stack_size);

@@ -104,13 +104,14 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
                    " diff-committed: %ld"
                    " vms-reserved: %zu"
                    " vms-committed: %zu",
-                   str, NMTUtil::tag_to_name(tag), (long)reserve_delta, (long)commit_delta, reserved, committed);
+                   str, MemTagFactory::human_readable_name_of(tag), (long)reserve_delta, (long)commit_delta, reserved, committed);
 #endif
   };
 
-  for (int i = 0; i < mt_number_of_tags; i++) {
-    reserve_delta = diff.tag[i].reserve;
-    commit_delta = diff.tag[i].commit;
+  int num_tags = MemTagFactory::number_of_tags();
+  for (int i = 0; i < num_tags; i++) {
+    reserve_delta = diff[i].reserve;
+    commit_delta = diff[i].commit;
     tag = NMTUtil::index_to_tag(i);
     reserved = VirtualMemorySummary::as_snapshot()->by_tag(tag)->reserved();
     committed = VirtualMemorySummary::as_snapshot()->by_tag(tag)->committed();
@@ -199,7 +200,7 @@ bool VirtualMemoryTracker::print_containing_region(const void* p, outputStream* 
     return false;
   }
   st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag %s",
-               p2i(p), p2i(rmr.base()), p2i(rmr.end()), NMTUtil::tag_to_enum_name(rmr.mem_tag()));
+               p2i(p), p2i(rmr.base()), p2i(rmr.end()), MemTagFactory::human_readable_name_of(rmr.mem_tag()));
   if (MemTracker::tracking_level() == NMT_detail) {
     rmr.call_stack()->print_on(st);
   }
@@ -301,7 +302,7 @@ public:
   SnapshotThreadStackWalker() {}
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
-    if (MemTracker::NmtVirtualMemoryLocker::is_safe_to_use()) {
+    if (NmtVirtualMemoryLocker::is_safe_to_use()) {
       assert_lock_strong(NmtVirtualMemory_lock);
     }
     if (rgn->mem_tag() == mtThreadStack) {
