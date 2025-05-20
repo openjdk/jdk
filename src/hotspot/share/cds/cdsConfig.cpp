@@ -410,6 +410,9 @@ void CDSConfig::check_aot_flags() {
   if (FLAG_IS_DEFAULT(AOTCache) && AOTAdapterCaching) {
     log_debug(aot,codecache,init)("AOTCache is not specified - AOTAdapterCaching is ignored");
   }
+  if (FLAG_IS_DEFAULT(AOTCache) && AOTStubCaching) {
+    log_debug(aot,codecache,init)("AOTCache is not specified - AOTStubCaching is ignored");
+  }
 
   bool has_cache = !FLAG_IS_DEFAULT(AOTCache);
   bool has_cache_output = !FLAG_IS_DEFAULT(AOTCacheOutput);
