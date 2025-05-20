@@ -4782,17 +4782,17 @@ void MacroAssembler::type_profile(Register recv, Register mdp, int mdp_offset) {
   assert(poly_count_offset << LogBytesPerWord == real_poly_count_offset, "poly counter math");
 #endif
 
-  Register offset = rscratch1;
-  assert_different_registers(mdp, recv, offset);
-
-  Label L_loop, L_loop_nulls, L_found_recv, L_not_null, L_count_update;
-
   // Corner case: no profile table. Increment poly counter and exit.
   if (ReceiverTypeData::row_limit() == 0) {
     if (AtomicProfileCounters) lock();
     addptr(Address(mdp, poly_count_offset, Address::times_ptr), DataLayout::counter_increment);
     return;
   }
+
+  Register offset = rscratch1;
+  assert_different_registers(mdp, recv, offset);
+
+  Label L_loop, L_loop_nulls, L_found_recv, L_not_null, L_count_update;
 
   // Optimistic: search for already set up receiver.
   movptr(offset, base_receiver_offset);
