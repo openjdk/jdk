@@ -832,12 +832,16 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
   Node* shallow = d1 > d2 ? s2 : s1;
   int min_d = MIN2(d1, d2); // prune traversal at min_d
 
+  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  bool with_weak_memory_edges = !_vloop.use_speculative_aliasing_checks();
+
   ResourceMark rm;
   Unique_Node_List worklist;
   worklist.push(deep);
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
     for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
+      if (!with_weak_memory_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (pred == shallow) {
@@ -869,9 +873,14 @@ bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
     worklist.push(n); // start traversal at all nodes in nodes list
     nodes_set.set(_body.bb_idx(n));
   }
+
+  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  bool with_weak_memory_edges = !_vloop.use_speculative_aliasing_checks();
+
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
     for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
+      if (!with_weak_memory_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (nodes_set.test(_body.bb_idx(pred))) {
@@ -1897,6 +1906,7 @@ bool SuperWord::schedule_and_apply() const {
   VTransformTrace trace(_vloop.vtrace(),
                         is_trace_superword_rejections(),
                         is_trace_align_vector(),
+                        _vloop.is_trace_speculative_aliasing_analysis(),
                         _vloop.is_trace_speculative_runtime_checks(),
                         is_trace_superword_info());
 #endif
@@ -1940,7 +1950,8 @@ void VTransform::apply() {
   adjust_pre_loop_limit_to_align_main_loop_vectors();
   C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl());
 
-  apply_speculative_runtime_checks();
+  apply_speculative_alignment_runtime_checks();
+  apply_speculative_aliasing_runtime_checks();
   C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, 4, cl());
 
   apply_vectorization();
@@ -2665,7 +2676,12 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     MemNode* p0 = vtn->nodes().at(0)->as_Mem();
 
     int vw = p0->memory_size() * vtn->nodes().length();
-    if (vw > max_aw) {
+    // Generally, we prefer to align with the largest memory op (load or store).
+    // If there are multiple, then SuperWordAutomaticAlignment determines if we
+    // prefer loads or stores.
+    bool prefer_store = mem_ref != nullptr && SuperWordAutomaticAlignment == 1 && mem_ref->is_Load() && p0->is_Store();
+    bool prefer_load  = mem_ref != nullptr && SuperWordAutomaticAlignment == 2 && mem_ref->is_Store() && p0->is_Load();
+    if (vw > max_aw || (vw == max_aw && (prefer_load || prefer_store))) {
       max_aw = vw;
       mem_ref = p0;
     }
@@ -2692,6 +2708,16 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   determine_mem_ref_and_aw_for_main_loop_alignment();
   const MemNode* align_to_ref = _mem_ref_for_main_loop_alignment;
   const int aw                = _aw_for_main_loop_alignment;
+
+  if (!VLoop::vectors_should_be_aligned() && SuperWordAutomaticAlignment == 0) {
+#ifdef ASSERT
+    if (_trace._align_vector) {
+      tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: disabled.");
+    }
+#endif
+    return;
+  }
+
   assert(align_to_ref != nullptr && aw > 0, "must have alignment reference and aw");
   assert(cl()->is_main_loop(), "can only do alignment for main loop");
 
@@ -2912,6 +2938,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   p.for_each_invar_summand([&] (const MemPointerSummand& s) {
     Node* invar_variable = s.variable();
     jint  invar_scale    = s.scale().value();
+    TRACE_ALIGN_VECTOR_NODE(invar_variable);
     if (igvn().type(invar_variable)->isa_long()) {
       // Computations are done % (vector width/element size) so it's
       // safe to simply convert invar to an int and loose the upper 32
@@ -2921,6 +2948,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       TRACE_ALIGN_VECTOR_NODE(invar_variable);
     }
     Node* invar_scale_con = igvn().intcon(invar_scale);
+    TRACE_ALIGN_VECTOR_NODE(invar_scale_con);
     Node* invar_summand = new MulINode(invar_variable, invar_scale_con);
     phase()->register_new_node(invar_summand, pre_ctrl);
     TRACE_ALIGN_VECTOR_NODE(invar_summand);
