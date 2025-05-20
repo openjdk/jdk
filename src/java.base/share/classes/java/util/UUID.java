@@ -209,7 +209,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         // Scale sub-ms nanoseconds to a 12-bit value
         int nsBits = (int) ((nsTime % 1_000_000) / 1_000_000.0 * 4096);
 
-        // Set version and increased percision time bits
+        // Set version and increased precision time bits
         randomBytes[6] = (byte) (0x70 | ((nsBits >>> 8) & 0x0F));
         randomBytes[7] = (byte) (nsBits & 0xFF);
 
