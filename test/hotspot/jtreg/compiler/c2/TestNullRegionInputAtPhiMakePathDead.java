@@ -36,9 +36,13 @@ public class TestNullRegionInputAtPhiMakePathDead {
 
     public static long vMeth_check_sum = 0;
 
-    public static void vMeth1(int i1) {
-        double d=-42.69476;
-        int i3=-119;
+    public void mainTest() {
+
+        int i19, i20=13736, i21, i24=5;
+        boolean b2=true;
+
+        double d;
+        int i3;
 
         for (d = 5; d < 131; ++d) {
             i3 = 12;
@@ -46,44 +50,21 @@ public class TestNullRegionInputAtPhiMakePathDead {
                 TestNullRegionInputAtPhiMakePathDead.fFld *= -31237;
             }
         }
-    }
-
-    public static double dMeth(long l) {
-        int i7=-76;
-
-        vMeth1(i7);
         TestNullRegionInputAtPhiMakePathDead.fFld %= 16334;
-        return 0;
-    }
-
-    public static void vMeth() {
-        TestNullRegionInputAtPhiMakePathDead.instanceCount = (long)dMeth(TestNullRegionInputAtPhiMakePathDead.instanceCount);
-    }
-
-    public void mainTest(String[] strArr1) {
-
-        int i19=-9, i20=13736, i21=0, i24=5;
-        boolean b2=true;
-
-        vMeth();
+        TestNullRegionInputAtPhiMakePathDead.instanceCount = 0;
         for (i19 = 2; i19 < 281; i19++) {
             try {
                 TestNullRegionInputAtPhiMakePathDead.iFld = (57 % i20);
             } catch (ArithmeticException a_e) {}
             i20 += (((i19 * TestNullRegionInputAtPhiMakePathDead.fFld) + TestNullRegionInputAtPhiMakePathDead.instanceCount) - i19);
-            if (b2) {
-                if (true) {
-                    for (i21 = i19; i21 < 90; i21++) {
-                        if (b2) {
-                        } else if (true) {
-                            switch ((((i21 >>> 1) % 4) * 5) + 115) {
-                            case 129:
-                                if (b2) break;
-                                break;
-                            case 135:
-                                i24 |= i24;
-                            }
-                        }
+            for (i21 = i19; i21 < 90; i21++) {
+                if (b2) {
+                } else {
+                    switch ((((i21 >>> 1) % 4) * 5) + 115) {
+                    case 129:
+                        break;
+                    case 135:
+                        i24 |= i24;
                     }
                 }
             }
@@ -95,7 +76,7 @@ public class TestNullRegionInputAtPhiMakePathDead {
         try {
             TestNullRegionInputAtPhiMakePathDead _instance = new TestNullRegionInputAtPhiMakePathDead();
             for (int i = 0; i < 10; i++ ) {
-                _instance.mainTest(strArr);
+                _instance.mainTest();
             }
          } catch (Exception ex) {
          }
