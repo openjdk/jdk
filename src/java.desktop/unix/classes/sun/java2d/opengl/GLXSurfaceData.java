@@ -113,7 +113,7 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
         }
     }
 
-    public static class GLXWindowSurfaceData extends GLXSurfaceData {
+    public static final class GLXWindowSurfaceData extends GLXSurfaceData {
         protected final int scale;
 
         public GLXWindowSurfaceData(X11ComponentPeer peer,
@@ -165,7 +165,7 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
      * belongs to is showed, it is first copied to the real private
      * FLIP_BACKBUFFER, which is then flipped.
      */
-    public static class GLXVSyncOffScreenSurfaceData extends
+    public static final class GLXVSyncOffScreenSurfaceData extends
         GLXOffScreenSurfaceData
     {
         private GLXOffScreenSurfaceData flipSurface;

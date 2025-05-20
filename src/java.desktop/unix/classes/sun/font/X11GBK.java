@@ -29,7 +29,7 @@ import java.nio.charset.*;
 import sun.nio.cs.*;
 import static sun.nio.cs.CharsetMapping.*;
 
-public class X11GBK extends Charset {
+public final class X11GBK extends Charset {
     public X11GBK () {
         super("X11GBK", null);
     }
@@ -47,7 +47,7 @@ public class X11GBK extends Charset {
         return cs instanceof X11GBK;
     }
 
-    private static class Encoder extends DoubleByte.Encoder {
+    private static final class Encoder extends DoubleByte.Encoder {
 
         private DoubleByte.Encoder enc = (DoubleByte.Encoder)new GBK().newEncoder();
 

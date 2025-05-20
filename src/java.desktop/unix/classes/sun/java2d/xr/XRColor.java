@@ -33,7 +33,7 @@ import java.awt.*;
  * @author Clemens Eisserer
  */
 
-public class XRColor {
+public final class XRColor {
     public static final XRColor FULL_ALPHA = new XRColor(0xffff, 0, 0, 0);
     public static final XRColor NO_ALPHA = new XRColor(0, 0, 0, 0);
 

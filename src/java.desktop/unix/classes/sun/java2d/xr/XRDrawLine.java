@@ -32,7 +32,7 @@
  */
 package sun.java2d.xr;
 
-public class XRDrawLine {
+public final class XRDrawLine {
     static final int BIG_MAX = ((1 << 29) - 1);
     static final int BIG_MIN = (-(1 << 29));
 

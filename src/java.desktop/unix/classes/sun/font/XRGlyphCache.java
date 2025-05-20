@@ -37,7 +37,7 @@ import sun.java2d.xr.*;
  * @author Clemens Eisserer
  */
 
-public class XRGlyphCache implements GlyphDisposedListener {
+public final class XRGlyphCache implements GlyphDisposedListener {
     XRBackend con;
     XRCompositeManager maskBuffer;
     HashMap<MutableInteger, XRGlyphCacheEntry> cacheMap = new HashMap<MutableInteger, XRGlyphCacheEntry>(256);

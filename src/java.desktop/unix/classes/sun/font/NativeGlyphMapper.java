@@ -42,7 +42,7 @@ import java.util.Locale;
  * XMap classes could be merged, however its cleaner to make them separate
  * classes so we can build caches for a particular font.
  */
-public class NativeGlyphMapper extends CharToGlyphMapper {
+public final class NativeGlyphMapper extends CharToGlyphMapper {
 
     NativeFont font;
     XMap xmapper;

@@ -35,7 +35,7 @@ import sun.java2d.loops.CompositeType;
  * The proxy class contains the logic if to replace a SurfaceData with a
  * cached X11 Pixmap and the code to create the accelerated surfaces.
  */
-public class XRSurfaceDataProxy extends SurfaceDataProxy implements Transparency {
+public final class XRSurfaceDataProxy extends SurfaceDataProxy implements Transparency {
 
     public static SurfaceDataProxy createProxy(SurfaceData srcData,
             XRGraphicsConfig dstConfig) {

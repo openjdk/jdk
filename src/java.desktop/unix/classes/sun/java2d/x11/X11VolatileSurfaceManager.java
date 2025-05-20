@@ -44,7 +44,7 @@ import sun.java2d.SurfaceData;
  * (BufImgSurfaceData) that will be used until the accelerated
  * SurfaceData can be restored.
  */
-public class X11VolatileSurfaceManager extends VolatileSurfaceManager {
+public final class X11VolatileSurfaceManager extends VolatileSurfaceManager {
 
     private boolean accelerationEnabled;
 

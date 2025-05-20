@@ -30,7 +30,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
 
-public class X11SunUnicode_0 extends Charset {
+public final class X11SunUnicode_0 extends Charset {
     public X11SunUnicode_0 () {
         super("X11SunUnicode_0", null);
     }
@@ -53,7 +53,7 @@ public class X11SunUnicode_0 extends Charset {
         return cs instanceof X11SunUnicode_0;
     }
 
-    private static class Encoder extends DoubleByteEncoder {
+    private static final class Encoder extends DoubleByteEncoder {
         public Encoder(Charset cs) {
             super(cs, index1, index2);
         }

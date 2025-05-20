@@ -44,7 +44,7 @@ import sun.awt.*;
 import sun.java2d.*;
 import sun.java2d.loops.*;
 
-public class XRMaskFill extends MaskFill {
+public final class XRMaskFill extends MaskFill {
     static void register() {
         GraphicsPrimitive[] primitives = {
                 new XRMaskFill(AnyColor, SrcOver, XRSurfaceData.IntRgbX11),

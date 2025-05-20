@@ -35,7 +35,7 @@ import sun.java2d.SurfaceData;
 /**
  * XRender platform implementation of the VolatileSurfaceManager class.
  */
-public class XRVolatileSurfaceManager extends VolatileSurfaceManager {
+public final class XRVolatileSurfaceManager extends VolatileSurfaceManager {
 
     public XRVolatileSurfaceManager(SunVolatileImage vImg, Object context) {
         super(vImg, context);

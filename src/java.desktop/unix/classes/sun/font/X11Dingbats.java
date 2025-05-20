@@ -29,7 +29,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.*;
 
-public class X11Dingbats extends Charset {
+public final class X11Dingbats extends Charset {
     public X11Dingbats () {
         super("X11Dingbats", null);
     }
@@ -52,7 +52,7 @@ public class X11Dingbats extends Charset {
         return cs instanceof X11Dingbats;
     }
 
-    private static class Encoder extends CharsetEncoder {
+    private static final class Encoder extends CharsetEncoder {
         public Encoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
         }

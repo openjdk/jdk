@@ -30,7 +30,7 @@ import java.util.Objects;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class AttributeClass {
+public final class AttributeClass {
     private String myName;
     private int myType;
     private int nameLen;

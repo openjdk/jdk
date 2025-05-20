@@ -31,7 +31,7 @@ import java.nio.charset.*;
 import sun.nio.cs.*;
 import static sun.nio.cs.CharsetMapping.*;
 
-public class X11KSC5601 extends Charset {
+public final class X11KSC5601 extends Charset {
     public X11KSC5601 () {
         super("X11KSC5601", null);
     }
@@ -49,7 +49,7 @@ public class X11KSC5601 extends Charset {
         return cs instanceof X11KSC5601;
     }
 
-    private static class Encoder extends CharsetEncoder {
+    private static final class Encoder extends CharsetEncoder {
         private DoubleByte.Encoder enc = (DoubleByte.Encoder)new EUC_KR().newEncoder();
 
         public Encoder(Charset cs) {
@@ -103,7 +103,7 @@ public class X11KSC5601 extends Charset {
         }
     }
 
-    private static class Decoder extends  CharsetDecoder {
+    private static final class Decoder extends  CharsetDecoder {
         private DoubleByte.Decoder dec = (DoubleByte.Decoder)new EUC_KR().newDecoder();
 
         public Decoder(Charset cs) {

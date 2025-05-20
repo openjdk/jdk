@@ -29,7 +29,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
 
-public class X11Johab extends Charset {
+public final class X11Johab extends Charset {
     public X11Johab () {
         super("X11Johab", null);
     }
@@ -49,7 +49,7 @@ public class X11Johab extends Charset {
         return cs instanceof X11GB18030_1;
     }
 
-    private static class Encoder extends DoubleByteEncoder {
+    private static final class Encoder extends DoubleByteEncoder {
         public Encoder(Charset cs) {
             super(cs, index1, index2);
         }

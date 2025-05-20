@@ -40,7 +40,7 @@ import static sun.java2d.xr.XRUtils.XDoubleToFixed;
  * @author Clemens Eisserer
  */
 
-public class XRBackendNative implements XRBackend {
+public final class XRBackendNative implements XRBackend {
 
     static {
         initIDs();

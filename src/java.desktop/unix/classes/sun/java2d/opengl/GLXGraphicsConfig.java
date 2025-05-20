@@ -149,7 +149,7 @@ public final class GLXGraphicsConfig
      * This is a small helper class that allows us to execute
      * getGLXConfigInfo() on the queue flushing thread.
      */
-    private static class GLXGetConfigInfo implements Runnable {
+    private static final class GLXGetConfigInfo implements Runnable {
         private int screen;
         private int visual;
         private long cfginfo;
@@ -361,7 +361,7 @@ public final class GLXGraphicsConfig
         }
     }
 
-    private static class GLXBufferCaps extends BufferCapabilities {
+    private static final class GLXBufferCaps extends BufferCapabilities {
         public GLXBufferCaps(boolean dblBuf) {
             super(imageCaps, imageCaps,
                   dblBuf ? FlipContents.UNDEFINED : null);
@@ -376,7 +376,7 @@ public final class GLXGraphicsConfig
         return bufferCaps;
     }
 
-    private static class GLXImageCaps extends ImageCapabilities {
+    private static final class GLXImageCaps extends ImageCapabilities {
         private GLXImageCaps() {
             super(true);
         }

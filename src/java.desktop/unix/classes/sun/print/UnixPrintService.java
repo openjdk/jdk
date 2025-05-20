@@ -74,7 +74,7 @@ import javax.print.attribute.standard.Sides;
 import javax.print.event.PrintServiceAttributeListener;
 
 
-public class UnixPrintService implements PrintService, AttributeUpdater,
+public final class UnixPrintService implements PrintService, AttributeUpdater,
                                          SunPrinterJobService {
 
     /* define doc flavors for text types in the default encoding of

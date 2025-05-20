@@ -35,7 +35,7 @@ import static sun.java2d.xr.MaskTileManager.MASK_SIZE;
  * @author Clemens Eisserer
  */
 
-public class DirtyRegion implements Cloneable {
+public final class DirtyRegion implements Cloneable {
     int x, y, x2, y2;
 
     public DirtyRegion() {

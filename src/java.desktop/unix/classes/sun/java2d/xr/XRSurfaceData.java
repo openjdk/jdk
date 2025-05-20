@@ -549,7 +549,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
         }
     }
 
-    public static class XRWindowSurfaceData extends XRSurfaceData {
+    public static final class XRWindowSurfaceData extends XRSurfaceData {
 
         protected final int scale;
 
@@ -627,7 +627,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
         }
     }
 
-    public static class XRInternalSurfaceData extends XRSurfaceData {
+    public static final class XRInternalSurfaceData extends XRSurfaceData {
         public XRInternalSurfaceData(XRBackend renderQueue, int pictXid) {
           super(renderQueue);
           this.picture = pictXid;
@@ -655,7 +655,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
         }
     }
 
-    public static class XRPixmapSurfaceData extends XRSurfaceData {
+    public static final class XRPixmapSurfaceData extends XRSurfaceData {
         Image offscreenImage;
         int width;
         int height;
@@ -752,7 +752,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
         return xgc;
     }
 
-    public static class LazyPipe extends ValidatePipe {
+    public static final class LazyPipe extends ValidatePipe {
         @Override
         public boolean validate(SunGraphics2D sg2d) {
             XRSurfaceData xsd = (XRSurfaceData) sg2d.surfaceData;

@@ -34,7 +34,7 @@ import sun.awt.image.SunVolatileImage;
 import sun.awt.image.VolatileSurfaceManager;
 import sun.java2d.SurfaceData;
 
-public class XRGraphicsConfig extends X11GraphicsConfig implements
+public final class XRGraphicsConfig extends X11GraphicsConfig implements
         SurfaceManager.ProxiedGraphicsConfig {
     private final SurfaceManager.ProxyCache surfaceDataProxyCache =
             new SurfaceManager.ProxyCache();

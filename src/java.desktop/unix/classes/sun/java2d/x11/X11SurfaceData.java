@@ -839,7 +839,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
 
     private static LazyPipe lazypipe = new LazyPipe();
 
-    public static class LazyPipe extends ValidatePipe {
+    public static final class LazyPipe extends ValidatePipe {
         @Override
         public boolean validate(SunGraphics2D sg2d) {
             X11SurfaceData xsd = (X11SurfaceData) sg2d.surfaceData;

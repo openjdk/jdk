@@ -86,7 +86,7 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 
 
-public class UnixPrintJob implements CancelablePrintJob {
+public final class UnixPrintJob implements CancelablePrintJob {
     private static String debugPrefix = "UnixPrintJob>> ";
 
     private transient ArrayList<PrintJobListener> jobListeners;
@@ -901,7 +901,7 @@ public class UnixPrintJob implements CancelablePrintJob {
     private String mDestination, mOptions="";
     private boolean mNoJobSheet = false;
 
-    private class PrinterOpener {
+    private final class PrinterOpener {
         PrintException pex;
         OutputStream result;
 
@@ -929,7 +929,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
-    private class PrinterSpooler {
+    private final class PrinterSpooler {
         PrintException pex;
 
         private void handleProcessFailure(final Process failedProcess,

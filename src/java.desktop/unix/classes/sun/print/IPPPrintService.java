@@ -106,7 +106,7 @@ import javax.print.event.PrintServiceAttributeListener;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class IPPPrintService implements PrintService, SunPrinterJobService {
+public final class IPPPrintService implements PrintService, SunPrinterJobService {
 
     public static final boolean debugPrint;
     private static final String debugPrefix = "IPPPrintService>> ";
@@ -838,7 +838,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
     //This class is for getting all pre-defined Finishings
     @SuppressWarnings("serial") // JDK implementation class
-    private static class ExtFinishing extends Finishings {
+    private static final class ExtFinishing extends Finishings {
         ExtFinishing(int value) {
             super(100); // 100 to avoid any conflicts with predefined values.
         }

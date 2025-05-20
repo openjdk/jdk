@@ -37,7 +37,7 @@ import java.awt.geom.Rectangle2D;
  * appropriately.
  */
 
-class DelegateStrike extends NativeStrike {
+final class DelegateStrike extends NativeStrike {
 
     private FontStrike delegateStrike;
 

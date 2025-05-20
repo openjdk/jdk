@@ -90,7 +90,7 @@ public class X11TextRenderer extends GlyphListPipe {
         return new Tracer();
     }
 
-    public static class Tracer extends X11TextRenderer {
+    public static final class Tracer extends X11TextRenderer {
         @Override
         void doDrawGlyphList(long dstData, long xgc,
                              Region clip, GlyphList gl)

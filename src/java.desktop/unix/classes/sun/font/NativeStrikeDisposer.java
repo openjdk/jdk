@@ -47,7 +47,7 @@ package sun.font;
  * entries would be removed much more promptly than we need.
  */
 
-class NativeStrikeDisposer extends FontStrikeDisposer {
+final class NativeStrikeDisposer extends FontStrikeDisposer {
 
     long pNativeScalerContext;
 

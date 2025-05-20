@@ -39,7 +39,7 @@ import java.util.Scanner;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
-public class MFontConfiguration extends FontConfiguration {
+public final class MFontConfiguration extends FontConfiguration {
 
     private static FontConfiguration fontConfig = null;
     private static PlatformLogger logger;

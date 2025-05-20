@@ -31,7 +31,7 @@ package sun.java2d.xr;
  * @author Clemens Eisserer
  */
 
-public class MutableInteger {
+public final class MutableInteger {
     private int value;
 
     public MutableInteger(int value) {

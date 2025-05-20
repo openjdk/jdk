@@ -54,7 +54,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * to perform limited operations by using bitmaps from X11 helps here.
  */
 
-public class NativeFont extends PhysicalFont {
+public final class NativeFont extends PhysicalFont {
 
     String encoding;
 

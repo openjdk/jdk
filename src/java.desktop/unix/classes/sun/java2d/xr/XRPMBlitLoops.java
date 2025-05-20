@@ -162,7 +162,7 @@ public final class XRPMBlitLoops {
     }
 }
 
-class XRPMBlit extends Blit {
+final class XRPMBlit extends Blit {
     public XRPMBlit(SurfaceType srcType, SurfaceType dstType) {
         super(srcType, CompositeType.AnyAlpha, dstType);
     }
@@ -186,7 +186,7 @@ class XRPMBlit extends Blit {
     }
 }
 
-class XRPMScaledBlit extends ScaledBlit {
+final class XRPMScaledBlit extends ScaledBlit {
     public XRPMScaledBlit(SurfaceType srcType, SurfaceType dstType) {
         super(srcType, CompositeType.AnyAlpha, dstType);
     }
@@ -231,7 +231,7 @@ class XRPMScaledBlit extends ScaledBlit {
  *
  * @author Clemens Eisserer
  */
-class XRPMTransformedBlit extends TransformBlit {
+final class XRPMTransformedBlit extends TransformBlit {
     final Rectangle compositeBounds = new Rectangle();
     final double[] srcCoords = new double[8];
     final double[] dstCoords = new double[8];
@@ -349,7 +349,7 @@ class XRPMTransformedBlit extends TransformBlit {
     }
 }
 
-class XrSwToPMBlit extends Blit {
+final class XrSwToPMBlit extends Blit {
     Blit pmToSurfaceBlit;
 
     XrSwToPMBlit(SurfaceType srcType, SurfaceType dstType) {
@@ -370,7 +370,7 @@ class XrSwToPMBlit extends Blit {
     }
 }
 
-class XrSwToPMScaledBlit extends ScaledBlit {
+final class XrSwToPMScaledBlit extends ScaledBlit {
     ScaledBlit pmToSurfaceBlit;
 
     XrSwToPMScaledBlit(SurfaceType srcType, SurfaceType dstType) {
@@ -396,7 +396,7 @@ class XrSwToPMScaledBlit extends ScaledBlit {
     }
 }
 
-class XrSwToPMTransformedBlit extends TransformBlit {
+final class XrSwToPMTransformedBlit extends TransformBlit {
     TransformBlit pmToSurfaceBlit;
 
     XrSwToPMTransformedBlit(SurfaceType srcType, SurfaceType dstType) {

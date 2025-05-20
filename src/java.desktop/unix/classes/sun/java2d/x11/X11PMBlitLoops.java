@@ -47,7 +47,7 @@ import java.awt.image.IndexColorModel;
  * this type of Blit will accelerated double-buffer copies between those
  * two surfaces.
 */
-public class X11PMBlitLoops extends Blit {
+public final class X11PMBlitLoops extends Blit {
 
     public static void register()
     {
@@ -181,7 +181,7 @@ public class X11PMBlitLoops extends Blit {
      * the pixel data and then updates the X11 clipping bitmask from
      * the transparent pixels in the source.
      */
-    static class DelegateBlitLoop extends Blit {
+    static final class DelegateBlitLoop extends Blit {
         SurfaceType dstType;
 
         /**

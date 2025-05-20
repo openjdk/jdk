@@ -34,7 +34,7 @@ import java.util.*;
  * @author Clemens Eisserer
  */
 
-public class GrowableByteArray
+public final class GrowableByteArray
 {
 
         byte[] array;

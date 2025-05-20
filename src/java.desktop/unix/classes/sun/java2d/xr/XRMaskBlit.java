@@ -41,7 +41,7 @@ import sun.java2d.pipe.Region;
  *
  * @author Clemens Eisserer
  */
-public class XRMaskBlit extends MaskBlit {
+public final class XRMaskBlit extends MaskBlit {
     static void register() {
         GraphicsPrimitive[] primitives = {
                 new XRMaskBlit(XRSurfaceData.IntArgbPreX11, SrcOver,

@@ -51,7 +51,7 @@ import static sun.java2d.xr.XRUtils.clampToUShort;
  * @author Clemens Eisserer
  */
 
-public class XRRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe {
+public final class XRRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe {
     XRDrawHandler drawHandler;
     MaskTileManager tileManager;
     XRDrawLine lineGen;
@@ -213,7 +213,7 @@ public class XRRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe {
              startAngle, arcAngle, Arc2D.PIE));
     }
 
-    private class XRDrawHandler extends ProcessPath.DrawHandler {
+    private final class XRDrawHandler extends ProcessPath.DrawHandler {
         DirtyRegion region;
 
         XRDrawHandler() {

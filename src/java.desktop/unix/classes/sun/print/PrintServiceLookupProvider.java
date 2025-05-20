@@ -56,7 +56,7 @@ import sun.awt.util.ThreadGroupUtils;
  * Remind: This class uses solaris commands. We also need a linux
  * version
  */
-public class PrintServiceLookupProvider extends PrintServiceLookup
+public final class PrintServiceLookupProvider extends PrintServiceLookup
     implements BackgroundServiceLookup, Runnable {
 
     /* Remind: the current implementation is static, as its assumed
@@ -903,7 +903,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         }
     }
 
-    private class PrinterChangeListener implements Runnable {
+    private final class PrinterChangeListener implements Runnable {
 
         @Override
         public void run() {

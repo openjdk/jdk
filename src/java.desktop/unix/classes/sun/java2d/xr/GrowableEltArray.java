@@ -31,7 +31,7 @@ package sun.java2d.xr;
  *
  * @author Clemens Eisserer
  */
-public class GrowableEltArray extends GrowableIntArray {
+public final class GrowableEltArray extends GrowableIntArray {
     private static final int ELT_SIZE = 4;
     GrowableIntArray glyphs;
 

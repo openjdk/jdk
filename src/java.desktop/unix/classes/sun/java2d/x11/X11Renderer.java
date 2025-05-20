@@ -432,7 +432,7 @@ public class X11Renderer implements
                             int dstx, int dsty,
                             int w, int h);
 
-    public static class X11TracingRenderer extends X11Renderer {
+    public static final class X11TracingRenderer extends X11Renderer {
         @Override
         void XDrawLine(long pXSData, long xgc,
                        int x1, int y1, int x2, int y2)
