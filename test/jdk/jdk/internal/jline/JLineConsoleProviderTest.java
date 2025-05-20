@@ -54,6 +54,11 @@ public class JLineConsoleProviderTest {
         doRunConsoleTest("testCorrectOutputReadPassword", "inp", "%s");
     }
 
+    void testEvenExpansionDisabled() throws Exception {
+        doRunConsoleTest("readAndPrint", "a\\b\n", "'a\\b'\n");
+        doRunConsoleTest("readAndPrint2", "a\n!!\n", "1: 'a'\n2: '!!'\n");
+    }
+
     void doRunConsoleTest(String testName,
                           String input,
                           String expectedOut) throws Exception {
@@ -95,6 +100,12 @@ public class JLineConsoleProviderTest {
                     System.console().readLine("%%s");
                 case "testCorrectOutputReadPassword" ->
                     System.console().readPassword("%%s");
+                case "readAndPrint" ->
+                    System.out.println("'" + System.console().readLine() + "'");
+                case "readAndPrint2" -> {
+                    System.out.println("1: '" +System.console().readLine() + "'");
+                    System.out.println("2: '" + System.console().readLine() + "'");
+                }
                 default -> throw new UnsupportedOperationException(args[0]);
             }
 
