@@ -69,7 +69,7 @@ hotspot_resourcehogs = \
   resourcehogs
 
 # The other tests includes all tests that don't
-# test hotspot itself
+# test hotspot itself.
 non_hotspot_tests = \
   testlibrary_tests \
   sources
