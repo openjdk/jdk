@@ -221,12 +221,7 @@ final class SessionTicketExtension {
                 Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
                 c.init(Cipher.ENCRYPT_MODE, key.key,
                         new GCMParameterSpec(GCM_TAG_LEN, iv));
-                c.updateAAD(new byte[] {
-                        (byte)(key.num >>> 24),
-                        (byte)(key.num >>> 16),
-                        (byte)(key.num >>> 8),
-                        (byte)(key.num)}
-                );
+
                 byte[] data = session.write();
                 if (data.length == 0) {
                     return data;
@@ -236,8 +231,15 @@ final class SessionTicketExtension {
                 byte compressed = 0;
                 if (data.length >= MIN_COMPRESS_SIZE) {
                     data = compress(data);
+                    if (data == null) {
+                        return null;
+                    }
                     compressed = 1;
                 }
+
+                ByteBuffer aad = ByteBuffer.allocate(Integer.BYTES + 1);
+                aad.putInt(key.num).put(compressed);
+                c.updateAAD(aad);
 
                 encrypted = c.doFinal(data);
                 byte[] result = new byte[encrypted.length + Integer.BYTES +
@@ -259,7 +261,7 @@ final class SessionTicketExtension {
             }
         }
 
-        ByteBuffer decrypt(HandshakeContext hc) throws IOException {
+        ByteBuffer decrypt(HandshakeContext hc) {
             int keyID;
             byte[] iv;
             try {
@@ -274,16 +276,14 @@ final class SessionTicketExtension {
                 Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
                 c.init(Cipher.DECRYPT_MODE, key.key,
                         new GCMParameterSpec(GCM_TAG_LEN, iv));
-                c.updateAAD(new byte[] {
-                        (byte)(keyID >>> 24),
-                        (byte)(keyID >>> 16),
-                        (byte)(keyID >>> 8),
-                        (byte)(keyID)}
-                );
 
                 byte compressed = data.get();
-                ByteBuffer out;
-                out = ByteBuffer.allocate(data.remaining() - GCM_TAG_LEN / 8);
+                ByteBuffer aad = ByteBuffer.allocate(Integer.BYTES + 1);
+                aad.putInt(keyID).put(compressed);
+                c.updateAAD(aad);
+
+                ByteBuffer out = ByteBuffer.allocate(
+                        data.remaining() - GCM_TAG_LEN / 8);
                 c.doFinal(data, out);
                 out.flip();
 
@@ -330,19 +330,14 @@ final class SessionTicketExtension {
 
             try (GZIPInputStream gis = new GZIPInputStream(
                     new ByteArrayInputStream(bytes))) {
-                final byte[] tmp = new byte[compressedLen * 3];
-                int count = 0;
-                int b;
-                while ((b = gis.read()) >= 0) {
-                    tmp[count++] = (byte) b;
-                }
+                byte[] out = gis.readAllBytes();
 
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("compressed bytes: " + compressedLen
-                            + "; decompressed bytes: " + count);
+                            + "; decompressed bytes: " + out.length);
                 }
 
-                return ByteBuffer.wrap(Arrays.copyOf(tmp, count));
+                return ByteBuffer.wrap(out);
             } catch (Exception e) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Decompression failure: " + e.getMessage());

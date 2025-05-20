@@ -24,6 +24,9 @@
  */
 package sun.security.ssl;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.zip.Adler32;
 import sun.security.provider.X509Factory;
 
 import java.io.IOException;
@@ -263,13 +266,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *   < 2 bytes per entries > localSupportedSignAlgs
      * select (protocolVersion)
      *   case TLS13Plus:
-     *     < 1 byte > preSharedKey algorithm length
-     *     < length in bytes > preSharedKey algorithm
      *     < 2 bytes > preSharedKey length
      *     < length in bytes > preSharedKey
      *   case non-TLS13Plus:
-     *     < 1 byte > masterSecret algorithm length
-     *     < length in bytes > masterSecret algorithm
      *     < 2 bytes > masterSecretKey length
      *     < length in bytes> masterSecretKey
      *     < 1 byte > useExtendedMasterSecret
@@ -289,9 +288,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * < 1 byte > Number of Peer Certificate entries
      *   < 4 bytes > Peer certificate length
      *   < length in bytes> Peer certificate
-     * < 1 byte > Number of Local Certificate algorithms
+     * < 1 byte > Number of Local Certificate entries
      *   < 1 byte > Local Certificate algorithm length
      *   < length in bytes> Local Certificate algorithm
+     *   < 4 bytes > Certificate checksum
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
@@ -319,12 +319,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
         if (protocolVersion.useTLS13PlusSpec()) {
             // Pre-shared key algorithm
-            b = Record.getBytes8(buf);
+            b = Record.getBytes16(buf);
             if (b.length > 0) {
-                String alg = new String(b);
-                // Pre-shared key
-                b = Record.getBytes16(buf);
-                this.preSharedKey = new SecretKeySpec(b, alg);
+                this.preSharedKey = new SecretKeySpec(b, "TlsMasterSecret");
             } else {
                 this.preSharedKey = null;
             }
@@ -332,12 +329,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             this.useExtendedMasterSecret = false;
         } else {
             // Master secret key algorithm
-            b = Record.getBytes8(buf);
+            b = Record.getBytes16(buf);
             if (b.length > 0) {
-                String alg = new String(b);
-                // Master secret key
-                b = Record.getBytes16(buf);
-                this.masterSecret = new SecretKeySpec(b, alg);
+                this.masterSecret = new SecretKeySpec(b, "TlsMasterSecret");
             } else {
                 this.masterSecret = null;
             }
@@ -406,45 +400,55 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
         }
 
-        // Load local certificates if cert algorithm(s) present.
+        // Restore local certificates if cert algorithm(s) present.
         len = Record.getInt8(buf);
         if (len == 0) {
             this.localCerts = null;
         } else {
             String[] certAlgs = new String[len];
+            Set<Integer> certCheckSums = new HashSet<>(len);
 
             for (int i = 0; len > i; i++) {
                 certAlgs[i] = new String(Record.getBytes8(buf));
+                certCheckSums.add(Record.getInt32(buf));
             }
 
             SSLPossession pos = X509Authentication.createPossession(
                     hc, certAlgs);
+            List<X509Certificate> tmpCerts = new ArrayList<>(len);
 
-            if (pos == null) {
-                throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "No available certificates for algorithms: "
-                                + Arrays.toString(certAlgs));
+            if (pos instanceof X509Possession x509Pos
+                    && x509Pos.popCerts != null
+                    && x509Pos.popCerts.length == len) {
+
+                for (int i = 0; i < x509Pos.popCerts.length; i++) {
+                    try {
+                        byte[] encoded = x509Pos.popCerts[i].getEncoded();
+                        if (certCheckSums.contains(getChecksum(encoded))) {
+                            // Use certs from cache.
+                            tmpCerts.add(
+                                    X509Factory.cachedGetX509Cert(encoded));
+                        } else {
+                            break;
+                        }
+                    } catch (Exception e) {
+                        throw new IOException(e);
+                    }
+                }
             }
 
-            if (!(pos instanceof X509Possession x509Possession)) {
-                throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "No available X.509 certificates for algorithms: "
-                                + Arrays.toString(certAlgs));
-            }
-
-            localCerts = x509Possession.popCerts;
-            if (localCerts == null || localCerts.length == 0) {
-                throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "No available local X.509 certificate");
-            }
-
-            // Use certs from cache.
-            for (int i = 0; i < localCerts.length; i++) {
-                try {
-                    localCerts[i] = X509Factory.cachedGetX509Cert(
-                            localCerts[i].getEncoded());
-                } catch (Exception e) {
-                    throw new IOException(e);
+            if (tmpCerts.size() == len) {
+                this.localCerts = tmpCerts.toArray(new X509Certificate[len]);
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.finest("Restored " + len
+                            + " local certificates from session ticket");
+                }
+            } else {
+                this.localCerts = null;
+                this.invalidated = true;
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.warning("Local certificates can not be restored "
+                            + "from session ticket");
                 }
             }
         }
@@ -496,20 +500,16 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
         if (protocolVersion.useTLS13PlusSpec()) {
             // PSK
-            if (preSharedKey == null ||
-                    preSharedKey.getAlgorithm() == null) {
-                hos.putInt8(0);
+            if (preSharedKey == null) {
+                hos.putInt16(0);
             } else {
-                hos.putBytes8(preSharedKey.getAlgorithm().getBytes());
                 hos.putBytes16(preSharedKey.getEncoded());
             }
         } else {
             // Master Secret
-            if (getMasterSecret() == null ||
-                    getMasterSecret().getAlgorithm() == null) {
-                hos.putInt8(0);
+            if (getMasterSecret() == null) {
+                hos.putInt16(0);
             } else {
-                hos.putBytes8(masterSecret.getAlgorithm().getBytes());
                 hos.putBytes16(masterSecret.getEncoded());
             }
 
@@ -573,7 +573,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             }
         }
 
-        // Local certificates' algorithms.
+        // Local certificates' algorithms and checksums.
         // We don't include the complete local certificates in a session ticket
         // to decrease the size of ClientHello message.
         if (localCerts == null || localCerts.length == 0) {
@@ -582,10 +582,17 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             hos.putInt8(localCerts.length);
             for (X509Certificate c : localCerts) {
                 hos.putBytes8(c.getPublicKey().getAlgorithm().getBytes());
+                hos.putInt32(getChecksum(c.getEncoded()));
             }
         }
 
         return hos.toByteArray();
+    }
+
+    private int getChecksum(byte[] input) {
+        Adler32 adler32 = new Adler32();
+        adler32.update(input);
+        return (int) adler32.getValue();
     }
 
     void setMasterSecret(SecretKey secret) {
