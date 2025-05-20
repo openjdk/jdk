@@ -43,7 +43,6 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * @since 1.1
  */
 public class CRC32 implements Checksum {
-
     private int crc;
 
     /**
