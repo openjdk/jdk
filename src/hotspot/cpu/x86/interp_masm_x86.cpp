@@ -1254,46 +1254,19 @@ void InterpreterMacroAssembler::set_mdp_data_at(Register mdp_in,
 
 
 void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
-                                                      int constant,
-                                                      bool decrement) {
-  // Counter address
-  Address data(mdp_in, constant);
-
-  increment_mdp_data_at(data, decrement);
-}
-
-void InterpreterMacroAssembler::increment_mdp_data_at(Address data,
-                                                      bool decrement) {
+                                                      int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  // %%% this does 64bit counters at best it is wasting space
-  // at worst it is a rare bug when counters overflow
-
-  if (decrement) {
-    // Decrement the register.  Set condition codes.
-    addptr(data, -DataLayout::counter_increment);
-    // If the decrement causes the counter to overflow, stay negative
-    Label L;
-    jcc(Assembler::negative, L);
-    addptr(data, DataLayout::counter_increment);
-    bind(L);
-  } else {
-    assert(DataLayout::counter_increment == 1,
-           "flow-free idiom only works with 1");
-    // Increment the register.  Set carry flag.
-    addptr(data, DataLayout::counter_increment);
-    // If the increment causes the counter to overflow, pull back by 1.
-    sbbptr(data, 0);
-  }
+  Address data(mdp_in, constant);
+  addptr(data, DataLayout::counter_increment);
 }
 
 
 void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
-                                                      Register reg,
-                                                      int constant,
-                                                      bool decrement) {
-  Address data(mdp_in, reg, Address::times_1, constant);
-
-  increment_mdp_data_at(data, decrement);
+                                                      Register index,
+                                                      int constant) {
+  assert(ProfileInterpreter, "must be profiling interpreter");
+  Address data(mdp_in, index, Address::times_1, constant);
+  addptr(data, DataLayout::counter_increment);
 }
 
 void InterpreterMacroAssembler::set_mdp_flag_at(Register mdp_in,

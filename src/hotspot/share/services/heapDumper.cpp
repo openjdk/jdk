@@ -794,14 +794,14 @@ class DumperSupport : AllStatic {
   }
 
   static void report_dormant_archived_object(oop o, oop ref_obj) {
-    if (log_is_enabled(Trace, cds, heap)) {
+    if (log_is_enabled(Trace, aot, heap)) {
       ResourceMark rm;
       if (ref_obj != nullptr) {
-        log_trace(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s) referenced by " INTPTR_FORMAT " (%s)",
+        log_trace(aot, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s) referenced by " INTPTR_FORMAT " (%s)",
                   p2i(o), o->klass()->external_name(),
                   p2i(ref_obj), ref_obj->klass()->external_name());
       } else {
-        log_trace(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)",
+        log_trace(aot, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)",
                   p2i(o), o->klass()->external_name());
       }
     }
@@ -2677,7 +2677,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     event.set_compression(compression);
     event.commit();
   } else {
-    log_debug(cds, heap)("Error %s while dumping heap", error());
+    log_debug(aot, heap)("Error %s while dumping heap", error());
   }
 
   // print message in interactive case
