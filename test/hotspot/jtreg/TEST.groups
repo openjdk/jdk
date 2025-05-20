@@ -62,9 +62,9 @@ hotspot_handshake = \
 hotspot_serviceability = \
   serviceability
 
-# The resourcehogs tests might require a lot of resources  and
-# shouldn't be executed concurrently with ANY other tests
-# So the group shouldn't be part of any other group
+# The resourcehogs tests might require a lot of resources and
+# shouldn't be executed concurrently with ANY other tests.
+# So the group shouldn't be part of any other group.
 hotspot_resourcehogs = \
   resourcehogs
 
