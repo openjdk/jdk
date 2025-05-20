@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToIntBiFunction;
@@ -5670,7 +5671,7 @@ public class Check {
 
     void checkRequiresIdentity(JCTree tree, Lint lint) {
         switch (tree) {
-            case JCClassDecl classDecl : {
+            case JCClassDecl classDecl -> {
                 Type st = types.supertype(classDecl.sym.type);
                 if (st != null &&
                         // no need to recheck j.l.Object, shortcut,
@@ -5685,9 +5686,8 @@ public class Check {
                 for (JCTypeParameter tp : classDecl.typarams) {
                     checkIfIdentityIsExpected(tp.pos(), tp.type, lint);
                 }
-                break;
             }
-            case JCVariableDecl variableDecl : {
+            case JCVariableDecl variableDecl -> {
                 if (variableDecl.vartype != null &&
                         (variableDecl.sym.flags_field & RECORD) == 0 ||
                         (variableDecl.sym.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0) {
@@ -5697,34 +5697,27 @@ public class Check {
                      */
                     checkIfIdentityIsExpected(variableDecl.vartype.pos(), variableDecl.vartype.type, lint);
                 }
-                break;
             }
-            case JCTypeCast typeCast : {
-                checkIfIdentityIsExpected(typeCast.clazz.pos(), typeCast.clazz.type, lint);
-                break;
-            }
-            case JCBindingPattern bindingPattern : {
+            case JCTypeCast typeCast -> checkIfIdentityIsExpected(typeCast.clazz.pos(), typeCast.clazz.type, lint);
+            case JCBindingPattern bindingPattern -> {
                 if (bindingPattern.var.vartype != null) {
                     checkIfIdentityIsExpected(bindingPattern.var.vartype.pos(), bindingPattern.var.vartype.type, lint);
                 }
-                break;
             }
-            case JCMethodDecl methodDecl : {
+            case JCMethodDecl methodDecl -> {
                 for (JCTypeParameter tp : methodDecl.typarams) {
                     checkIfIdentityIsExpected(tp.pos(), tp.type, lint);
                 }
                 if (methodDecl.restype != null && !methodDecl.restype.type.hasTag(VOID)) {
                     checkIfIdentityIsExpected(methodDecl.restype.pos(), methodDecl.restype.type, lint);
                 }
-                break;
             }
-            case JCMemberReference mref : {
+            case JCMemberReference mref -> {
                 checkIfIdentityIsExpected(mref.expr.pos(), mref.target, lint);
                 checkIfTypeParamsRequiresIdentity(mref.sym.getMetadata(), mref.typeargs, lint);
-                break;
             }
             case JCPolyExpression poly
-                when (poly instanceof JCNewClass || poly instanceof JCMethodInvocation) : {
+                when (poly instanceof JCNewClass || poly instanceof JCMethodInvocation) -> {
                 if (poly instanceof JCNewClass newClass) {
                     checkIfIdentityIsExpected(newClass.clazz.pos(), newClass.clazz.type, lint);
                 }
@@ -5756,9 +5749,8 @@ public class Check {
                                 ((JCMethodInvocation)poly).typeargs,
                             lint);
                 }
-                break;
             }
-            default: throw new AssertionError("unexpected tree " + tree);
+            default -> throw new AssertionError("unexpected tree " + tree);
         }
     }
 
@@ -5820,13 +5812,12 @@ public class Check {
             if (t != null && t.tsym != null) {
                 SymbolMetadata sm = t.tsym.getMetadata();
                 if (sm != null && !t.getTypeArguments().isEmpty()) {
-                    for (Attribute.TypeCompound ta: sm.getTypeAttributes().stream()
-                            .filter(ta -> isRequiresIdentityAnnotation(ta.type.tsym)).toList()) {
-                        Type type = t.getTypeArguments().get(ta.position.parameter_index);
-                        if (type != null && type.isValueBased()) {
-                            requiresWarning = true;
-                            return null;
-                        }
+                    if (sm.getTypeAttributes().stream()
+                            .filter(ta -> isRequiresIdentityAnnotation(ta.type.tsym) &&
+                                    t.getTypeArguments().get(ta.position.parameter_index) != null &&
+                                    t.getTypeArguments().get(ta.position.parameter_index).isValueBased()).findAny().isPresent()) {
+                        requiresWarning = true;
+                        return null;
                     }
                 }
             }
@@ -5846,17 +5837,15 @@ public class Check {
                 checkIfIdentityIsExpected(targ.pos(), targ.type, lint);
             }
             if (sm != null)
-                for (Attribute.TypeCompound ta : sm.getTypeAttributes().stream()
-                        .filter(ta -> isRequiresIdentityAnnotation(ta.type.tsym)).toList()) {
-                    Type paramType = typeParamTrees.get(ta.position.parameter_index).type;
-                    if (paramType != null && paramType.isValueBased())
-                        lint.logIfEnabled(
-                                typeParamTrees.get(ta.position.parameter_index).pos(),
-                                CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected
-                        );
-                }
+                sm.getTypeAttributes().stream()
+                        .filter(ta -> isRequiresIdentityAnnotation(ta.type.tsym) &&
+                                typeParamTrees.get(ta.position.parameter_index).type != null &&
+                                typeParamTrees.get(ta.position.parameter_index).type.isValueBased())
+                        .forEach(ta -> lint.logIfEnabled(typeParamTrees.get(ta.position.parameter_index).pos(),
+                                CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected));
         }
     }
+
     private boolean isRequiresIdentityAnnotation(TypeSymbol annoType) {
         return annoType == syms.requiresIdentityType.tsym ||
                annoType.flatName() == syms.requiresIdentityInternalType.tsym.flatName();

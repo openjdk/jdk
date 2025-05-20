@@ -66,6 +66,9 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.stream.Stream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,10 +106,7 @@ import javax.tools.StandardLocation;
 
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Pair;
 import java.nio.file.DirectoryStream;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -346,10 +346,10 @@ public class CreateSymbols {
                                         !allClasses.contains(ann.annotationType.substring(1, ann.annotationType.length() - 1)));
     }
 
-    private ZipEntry createZipEntry(String name, long timestamp) {
+    private ZipEntry createZipEntry(String name, long timeMillisSinceEpoch) {
+        Instant time = Instant.ofEpochMilli(timeMillisSinceEpoch);
         ZipEntry ze = new ZipEntry(name);
-
-        ze.setTime(timestamp);
+        ze.setTimeLocal(LocalDateTime.ofInstant(time, ZoneOffset.UTC));
         return ze;
     }
 

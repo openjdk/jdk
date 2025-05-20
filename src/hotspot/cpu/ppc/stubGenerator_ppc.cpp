@@ -94,10 +94,13 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ function_entry();
 
+    int save_nonvolatile_registers_size = __ save_nonvolatile_registers_size(true, SuperwordUseVSX);
+
     // some sanity checks
+    STATIC_ASSERT(StackAlignmentInBytes == 16);
     assert((sizeof(frame::native_abi_minframe) % 16) == 0,    "unaligned");
     assert((sizeof(frame::native_abi_reg_args) % 16) == 0,    "unaligned");
-    assert((sizeof(frame::spill_nonvolatiles) % 16) == 0,     "unaligned");
+    assert((save_nonvolatile_registers_size % 16) == 0,       "unaligned");
     assert((sizeof(frame::parent_ijava_frame_abi) % 16) == 0, "unaligned");
     assert((sizeof(frame::entry_frame_locals) % 16) == 0,     "unaligned");
 
@@ -106,39 +109,47 @@ class StubGenerator: public StubCodeGenerator {
     Register r_arg_result_type              = R5;
     Register r_arg_method                   = R6;
     Register r_arg_entry                    = R7;
+    Register r_arg_argument_addr            = R8;
+    Register r_arg_argument_count           = R9;
     Register r_arg_thread                   = R10;
 
-    Register r_temp                         = R24;
-    Register r_top_of_arguments_addr        = R25;
-    Register r_entryframe_fp                = R26;
+    Register r_entryframe_fp                = R2; // volatile
+    Register r_argument_size                = R11_scratch1; // volatile
+    Register r_top_of_arguments_addr        = R21_tmp1;
 
     {
       // Stack on entry to call_stub:
       //
       //      F1      [C_FRAME]
       //              ...
-
-      Register r_arg_argument_addr          = R8;
-      Register r_arg_argument_count         = R9;
-      Register r_frame_alignment_in_bytes   = R27;
-      Register r_argument_addr              = R28;
-      Register r_argumentcopy_addr          = R29;
-      Register r_argument_size_in_bytes     = R30;
-      Register r_frame_size                 = R23;
-
+      Register r_frame_size  = R12_scratch2; // volatile
       Label arguments_copied;
 
       // Save LR/CR to caller's C_FRAME.
       __ save_LR_CR(R0);
 
-      // Zero extend arg_argument_count.
-      __ clrldi(r_arg_argument_count, r_arg_argument_count, 32);
-
-      // Save non-volatiles GPRs to ENTRY_FRAME (not yet pushed, but it's safe).
-      __ save_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
-
       // Keep copy of our frame pointer (caller's SP).
       __ mr(r_entryframe_fp, R1_SP);
+
+      // calculate frame size
+      STATIC_ASSERT(Interpreter::logStackElementSize == 3);
+
+      // space for arguments aligned up: ((arg_count + 1) * 8) &~ 15
+      __ addi(r_frame_size, r_arg_argument_count, 1);
+      __ rldicr(r_frame_size, r_frame_size, 3, 63 - 4);
+
+      // this is the pure space for arguments (excluding alignment padding)
+      __ sldi(r_argument_size, r_arg_argument_count, 3);
+
+      __ addi(r_frame_size, r_frame_size,
+              save_nonvolatile_registers_size + frame::entry_frame_locals_size + frame::top_ijava_frame_abi_size);
+
+      // push ENTRY_FRAME
+      __ push_frame(r_frame_size, R0);
+
+      // Save non-volatiles registers to ENTRY_FRAME.
+      __ save_nonvolatile_registers(r_entryframe_fp, -(frame::entry_frame_locals_size + save_nonvolatile_registers_size),
+                                    true, SuperwordUseVSX);
 
       BLOCK_COMMENT("Push ENTRY_FRAME including arguments");
       // Push ENTRY_FRAME including arguments:
@@ -146,53 +157,24 @@ class StubGenerator: public StubCodeGenerator {
       //      F0      [TOP_IJAVA_FRAME_ABI]
       //              alignment (optional)
       //              [outgoing Java arguments]
+      //              [non-volatiles]
       //              [ENTRY_FRAME_LOCALS]
       //      F1      [C_FRAME]
       //              ...
 
-      // calculate frame size
-
-      // unaligned size of arguments
-      __ sldi(r_argument_size_in_bytes,
-                  r_arg_argument_count, Interpreter::logStackElementSize);
-      // arguments alignment (max 1 slot)
-      // FIXME: use round_to() here
-      __ andi_(r_frame_alignment_in_bytes, r_arg_argument_count, 1);
-      __ sldi(r_frame_alignment_in_bytes,
-              r_frame_alignment_in_bytes, Interpreter::logStackElementSize);
-
-      // size = unaligned size of arguments + top abi's size
-      __ addi(r_frame_size, r_argument_size_in_bytes,
-              frame::top_ijava_frame_abi_size);
-      // size += arguments alignment
-      __ add(r_frame_size,
-             r_frame_size, r_frame_alignment_in_bytes);
-      // size += size of call_stub locals
-      __ addi(r_frame_size,
-              r_frame_size, frame::entry_frame_locals_size);
-
-      // push ENTRY_FRAME
-      __ push_frame(r_frame_size, r_temp);
-
       // initialize call_stub locals (step 1)
-      __ std(r_arg_call_wrapper_addr,
-             _entry_frame_locals_neg(call_wrapper_address), r_entryframe_fp);
-      __ std(r_arg_result_addr,
-             _entry_frame_locals_neg(result_address), r_entryframe_fp);
-      __ std(r_arg_result_type,
-             _entry_frame_locals_neg(result_type), r_entryframe_fp);
+      __ std(r_arg_call_wrapper_addr, _entry_frame_locals_neg(call_wrapper_address), r_entryframe_fp);
+      __ std(r_arg_result_addr, _entry_frame_locals_neg(result_address), r_entryframe_fp);
+      __ std(r_arg_result_type, _entry_frame_locals_neg(result_type), r_entryframe_fp);
       // we will save arguments_tos_address later
-
 
       BLOCK_COMMENT("Copy Java arguments");
       // copy Java arguments
 
       // Calculate top_of_arguments_addr which will be R17_tos (not prepushed) later.
-      // FIXME: why not simply use SP+frame::top_ijava_frame_size?
-      __ addi(r_top_of_arguments_addr,
-              R1_SP, frame::top_ijava_frame_abi_size);
-      __ add(r_top_of_arguments_addr,
-             r_top_of_arguments_addr, r_frame_alignment_in_bytes);
+      __ addi(r_top_of_arguments_addr, r_entryframe_fp,
+              -(save_nonvolatile_registers_size + frame::entry_frame_locals_size));
+      __ sub(r_top_of_arguments_addr, r_top_of_arguments_addr, r_argument_size);
 
       // any arguments to copy?
       __ cmpdi(CR0, r_arg_argument_count, 0);
@@ -200,6 +182,8 @@ class StubGenerator: public StubCodeGenerator {
 
       // prepare loop and copy arguments in reverse order
       {
+        Register r_argument_addr     = R22_tmp2;
+        Register r_argumentcopy_addr = R23_tmp3;
         // init CTR with arg_argument_count
         __ mtctr(r_arg_argument_count);
 
@@ -207,8 +191,7 @@ class StubGenerator: public StubCodeGenerator {
         __ mr(r_argumentcopy_addr, r_top_of_arguments_addr);
 
         // let r_argument_addr point to last incoming java argument
-        __ add(r_argument_addr,
-                   r_arg_argument_addr, r_argument_size_in_bytes);
+        __ add(r_argument_addr, r_arg_argument_addr, r_argument_size);
         __ addi(r_argument_addr, r_argument_addr, -BytesPerWord);
 
         // now loop while CTR > 0 and copy arguments
@@ -216,10 +199,10 @@ class StubGenerator: public StubCodeGenerator {
           Label next_argument;
           __ bind(next_argument);
 
-          __ ld(r_temp, 0, r_argument_addr);
+          __ ld(R0, 0, r_argument_addr);
           // argument_addr--;
           __ addi(r_argument_addr, r_argument_addr, -BytesPerWord);
-          __ std(r_temp, 0, r_argumentcopy_addr);
+          __ std(R0, 0, r_argumentcopy_addr);
           // argumentcopy_addr++;
           __ addi(r_argumentcopy_addr, r_argumentcopy_addr, BytesPerWord);
 
@@ -234,11 +217,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       BLOCK_COMMENT("Call frame manager or native entry.");
       // Call frame manager or native entry.
-      Register r_new_arg_entry = R14;
-      assert_different_registers(r_new_arg_entry, r_top_of_arguments_addr,
-                                 r_arg_method, r_arg_thread);
-
-      __ mr(r_new_arg_entry, r_arg_entry);
+      assert_different_registers(r_arg_entry, r_top_of_arguments_addr, r_arg_method, r_arg_thread);
 
       // Register state on entry to frame manager / native entry:
       //
@@ -262,31 +241,32 @@ class StubGenerator: public StubCodeGenerator {
       assert(tos != r_arg_thread && R19_method != r_arg_thread, "trashed r_arg_thread");
 
       // Set R15_prev_state to 0 for simplifying checks in callee.
-      __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
+      __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R0);
       // Stack on entry to frame manager / native entry:
       //
       //      F0      [TOP_IJAVA_FRAME_ABI]
       //              alignment (optional)
       //              [outgoing Java arguments]
+      //              [non-volatiles]
       //              [ENTRY_FRAME_LOCALS]
       //      F1      [C_FRAME]
       //              ...
       //
 
       // global toc register
-      __ load_const_optimized(R29_TOC, MacroAssembler::global_toc(), R11_scratch1);
+      __ load_const_optimized(R29_TOC, MacroAssembler::global_toc(), R0);
       // Remember the senderSP so we interpreter can pop c2i arguments off of the stack
       // when called via a c2i.
 
       // Pass initial_caller_sp to framemanager.
       __ mr(R21_sender_SP, R1_SP);
 
-      // Do a light-weight C-call here, r_new_arg_entry holds the address
+      // Do a light-weight C-call here, r_arg_entry holds the address
       // of the interpreter entry point (frame manager or native entry)
       // and save runtime-value of LR in return_address.
-      assert(r_new_arg_entry != tos && r_new_arg_entry != R19_method && r_new_arg_entry != R16_thread,
-             "trashed r_new_arg_entry");
-      return_address = __ call_stub(r_new_arg_entry);
+      assert(r_arg_entry != tos && r_arg_entry != R19_method && r_arg_entry != R16_thread,
+             "trashed r_arg_entry");
+      return_address = __ call_stub(r_arg_entry);
     }
 
     {
@@ -298,6 +278,7 @@ class StubGenerator: public StubCodeGenerator {
       //
       //      F0      [ABI]
       //              ...
+      //              [non-volatiles]
       //              [ENTRY_FRAME_LOCALS]
       //      F1      [C_FRAME]
       //              ...
@@ -310,39 +291,38 @@ class StubGenerator: public StubCodeGenerator {
       Label ret_is_float;
       Label ret_is_double;
 
-      Register r_entryframe_fp = R30;
-      Register r_lr            = R7_ARG5;
-      Register r_cr            = R8_ARG6;
+      Register r_lr = R11_scratch1;
+      Register r_cr = R12_scratch2;
 
       // Reload some volatile registers which we've spilled before the call
       // to frame manager / native entry.
       // Access all locals via frame pointer, because we know nothing about
       // the topmost frame's size.
-      __ ld(r_entryframe_fp, _abi0(callers_sp), R1_SP);
+      __ ld(r_entryframe_fp, _abi0(callers_sp), R1_SP); // restore after call
       assert_different_registers(r_entryframe_fp, R3_RET, r_arg_result_addr, r_arg_result_type, r_cr, r_lr);
-      __ ld(r_arg_result_addr,
-            _entry_frame_locals_neg(result_address), r_entryframe_fp);
-      __ ld(r_arg_result_type,
-            _entry_frame_locals_neg(result_type), r_entryframe_fp);
+      __ ld(r_arg_result_addr, _entry_frame_locals_neg(result_address), r_entryframe_fp);
+      __ ld(r_arg_result_type, _entry_frame_locals_neg(result_type), r_entryframe_fp);
       __ ld(r_cr, _abi0(cr), r_entryframe_fp);
       __ ld(r_lr, _abi0(lr), r_entryframe_fp);
-
-      // pop frame and restore non-volatiles, LR and CR
-      __ mr(R1_SP, r_entryframe_fp);
-      __ pop_cont_fastpath();
-      __ mtcr(r_cr);
-      __ mtlr(r_lr);
+      __ mtcr(r_cr); // restore CR
+      __ mtlr(r_lr); // restore LR
 
       // Store result depending on type. Everything that is not
       // T_OBJECT, T_LONG, T_FLOAT, or T_DOUBLE is treated as T_INT.
-      __ cmpwi(CR0, r_arg_result_type, T_OBJECT);
-      __ cmpwi(CR1, r_arg_result_type, T_LONG);
-      __ cmpwi(CR5, r_arg_result_type, T_FLOAT);
-      __ cmpwi(CR6, r_arg_result_type, T_DOUBLE);
+      // Using volatile CRs.
+      __ cmpwi(CR1, r_arg_result_type, T_OBJECT);
+      __ cmpwi(CR5, r_arg_result_type, T_LONG);
+      __ cmpwi(CR6, r_arg_result_type, T_FLOAT);
+      __ cmpwi(CR7, r_arg_result_type, T_DOUBLE);
+
+      __ pop_cont_fastpath(); // kills CR0, uses R16_thread
 
       // restore non-volatile registers
-      __ restore_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
+      __ restore_nonvolatile_registers(r_entryframe_fp, -(frame::entry_frame_locals_size + save_nonvolatile_registers_size),
+                                       true, SuperwordUseVSX);
 
+      // pop frame
+      __ mr(R1_SP, r_entryframe_fp);
 
       // Stack on exit from call_stub:
       //
@@ -351,24 +331,18 @@ class StubGenerator: public StubCodeGenerator {
       //
       //  no call_stub frames left.
 
-      // All non-volatiles have been restored at this point!!
-      assert(R3_RET == R3, "R3_RET should be R3");
-
-      __ beq(CR0, ret_is_object);
-      __ beq(CR1, ret_is_long);
-      __ beq(CR5, ret_is_float);
-      __ beq(CR6, ret_is_double);
+      __ beq(CR1, ret_is_object);
+      __ beq(CR5, ret_is_long);
+      __ beq(CR6, ret_is_float);
+      __ beq(CR7, ret_is_double);
 
       // default:
       __ stw(R3_RET, 0, r_arg_result_addr);
       __ blr(); // return to caller
 
       // case T_OBJECT:
-      __ bind(ret_is_object);
-      __ std(R3_RET, 0, r_arg_result_addr);
-      __ blr(); // return to caller
-
       // case T_LONG:
+      __ bind(ret_is_object);
       __ bind(ret_is_long);
       __ std(R3_RET, 0, r_arg_result_addr);
       __ blr(); // return to caller
