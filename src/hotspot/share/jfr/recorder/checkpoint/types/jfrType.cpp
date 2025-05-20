@@ -351,10 +351,15 @@ void CompilerTypeConstant::serialize(JfrCheckpointWriter& writer) {
 }
 
 void NMTTypeConstant::serialize(JfrCheckpointWriter& writer) {
-  writer.write_count(mt_number_of_tags);
-  for (int i = 0; i < mt_number_of_tags; ++i) {
+  size_t num_tags = MemTagFactory::number_of_tags();
+  writer.write_count(num_tags);
+  for (int i = 0; i < num_tags; ++i) {
     writer.write_key(i);
     MemTag mem_tag = NMTUtil::index_to_tag(i);
-    writer.write(NMTUtil::tag_to_name(mem_tag));
+    const char* name = MemTagFactory::human_readable_name_of(mem_tag);
+    if (name == nullptr) {
+      name = MemTagFactory::name_of(mem_tag);
+    }
+    writer.write(name);
   }
 }

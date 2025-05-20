@@ -26,13 +26,16 @@
 #ifndef SHARE_NMT_VMATREE_HPP
 #define SHARE_NMT_VMATREE_HPP
 
+#include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtTreap.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include <cstdint>
+#include <utility>
 
 // A VMATree stores a sequence of points on the natural number line.
 // Each of these points stores information about a state change.
@@ -231,18 +234,35 @@ public:
   };
 
   struct SummaryDiff {
-    SingleDiff tag[mt_number_of_tags];
-    SummaryDiff() {
-      for (int i = 0; i < mt_number_of_tags; i++) {
-        tag[i] = SingleDiff{0, 0};
+    GrowableArrayCHeap<SingleDiff, mtNMT> tag;
+    SummaryDiff()
+    : tag() {
+      int num_tags = MemTagFactory::number_of_tags();
+      tag.at_grow(num_tags-1, {0, 0});
+    }
+
+    SummaryDiff(const SummaryDiff& other) : tag(other.tag.length()) {
+      for (int i = 0; i < other.tag.length(); i++) {
+        tag.at_grow(i, other.tag.at(i));
       }
     }
 
-    void add(SummaryDiff& other) {
-      for (int i = 0; i < mt_number_of_tags; i++) {
-        tag[i].reserve += other.tag[i].reserve;
-        tag[i].commit += other.tag[i].commit;
+    SummaryDiff operator=(const SummaryDiff& other) {
+      for (int i = 0; i < other.tag.length(); i++) {
+        tag.at_grow(i, other.tag.at(i));
       }
+      return *this;
+    }
+
+    void add(SummaryDiff& other) {
+      for (int i = 0; i < other.tag.length(); i++) {
+        tag.at_grow(i, {0, 0}).reserve += other.tag.at(i).reserve;
+        tag.at_grow(i, {0, 0}).commit += other.tag.at(i).commit;
+      }
+    }
+
+    SingleDiff& operator[](int i) {
+      return tag.at_grow(i);
     }
 
 #ifdef ASSERT
@@ -291,11 +311,13 @@ public:
 
  public:
   SummaryDiff reserve_mapping(position from, size size, const RegionData& metadata) {
-    return register_mapping(from, from + size, StateType::Reserved, metadata, false);
+    SummaryDiff diff = register_mapping(from, from + size, StateType::Reserved, metadata, false);
+    return diff;
   }
 
   SummaryDiff commit_mapping(position from, size size, const RegionData& metadata, bool use_tag_inplace = false) {
-    return register_mapping(from, from + size, StateType::Committed, metadata, use_tag_inplace);
+    SummaryDiff diff = register_mapping(from, from + size, StateType::Committed, metadata, use_tag_inplace);
+    return diff;
   }
 
   // Given an interval and a tag, find all reserved and committed ranges at least
@@ -305,11 +327,13 @@ public:
   SummaryDiff set_tag(position from, size size, MemTag tag);
 
   SummaryDiff uncommit_mapping(position from, size size, const RegionData& metadata) {
-    return register_mapping(from, from + size, StateType::Reserved, metadata, true);
+    SummaryDiff diff = register_mapping(from, from + size, StateType::Reserved, metadata, true);
+    return diff;
   }
 
   SummaryDiff release_mapping(position from, position sz) {
-    return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
+    SummaryDiff diff = register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
+    return diff;
   }
 
 public:
