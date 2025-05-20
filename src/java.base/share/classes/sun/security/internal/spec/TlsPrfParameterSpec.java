@@ -122,11 +122,9 @@ public class TlsPrfParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * Returns the key algorithm name to use when generating the SecretKey,
-     * or null if there is no keyAlg.
+     * Returns the key algorithm name to use when generating the SecretKey.
      *
-     * @return the key algorithm name, or null if there is no
-     * secret.
+     * @return the key algorithm name
      */
     public String getKeyAlg() {
         return keyAlg;
