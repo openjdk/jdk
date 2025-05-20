@@ -304,13 +304,18 @@ public class CreateSymbols {
             "Ljdk/internal/ValueBased;";
     private static final String VALUE_BASED_ANNOTATION_INTERNAL =
             "Ljdk/internal/ValueBased+Annotation;";
+    private static final String REQUIRES_IDENTITY_ANNOTATION =
+            "Ljdk/internal/RequiresIdentity;";
+    private static final String REQUIRES_IDENTITY_ANNOTATION_INTERNAL =
+            "Ljdk/internal/RequiresIdentity+Annotation;";
     public static final Set<String> HARDCODED_ANNOTATIONS = new HashSet<>(
             List.of("Ljdk/Profile+Annotation;",
                     "Lsun/Proprietary+Annotation;",
                     PREVIEW_FEATURE_ANNOTATION_OLD,
                     PREVIEW_FEATURE_ANNOTATION_NEW,
                     VALUE_BASED_ANNOTATION,
-                    RESTRICTED_ANNOTATION));
+                    RESTRICTED_ANNOTATION,
+                    REQUIRES_IDENTITY_ANNOTATION));
 
     private void stripNonExistentAnnotations(LoadDescriptions data) {
         Set<String> allClasses = data.classes.name2Class.keySet();
@@ -1019,6 +1024,12 @@ public class CreateSymbols {
             //the non-public ValueBased annotation will not be available in ct.sym,
             //replace with purely synthetic javac-internal annotation:
             annotationType = VALUE_BASED_ANNOTATION_INTERNAL;
+        }
+
+        if (REQUIRES_IDENTITY_ANNOTATION.equals(annotationType)) {
+            //the non-public RequiresIdentity annotation will not be available in ct.sym,
+            //replace with purely synthetic javac-internal annotation:
+            annotationType = REQUIRES_IDENTITY_ANNOTATION_INTERNAL;
         }
 
         if (RESTRICTED_ANNOTATION.equals(annotationType)) {
@@ -2202,6 +2213,7 @@ public class CreateSymbols {
                 chd.permittedSubclasses = a.permittedSubclasses().stream().map(ClassEntry::asInternalName).collect(Collectors.toList());
             }
             case ModuleMainClassAttribute a -> ((ModuleHeaderDescription) feature).moduleMainClass = a.mainClass().asInternalName();
+            case RuntimeVisibleTypeAnnotationsAttribute a -> {/* do nothing for now */}
             default -> throw new IllegalArgumentException("Unhandled attribute: " + attr.attributeName()); // Do nothing
         }
 

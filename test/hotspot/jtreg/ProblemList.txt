@@ -160,6 +160,9 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 #############################################################################
 
+vmTestbase/gc/gctests/FinalizeTest04/FinalizeTest04.java 8284234 generic-all
+vmTestbase/gc/gctests/PhantomReference/phantom001/phantom001.java 8284234 generic-all
+
 vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
