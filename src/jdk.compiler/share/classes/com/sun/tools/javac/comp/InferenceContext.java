@@ -569,8 +569,12 @@ public class InferenceContext {
 
     @Override
     public String toString() {
-        return "Inference vars: " + inferencevars + '\n' +
+        String result = "Inference vars: " + inferencevars + '\n' +
                "Undet vars: " + undetvars + '\n';
+        if (parentIC != null) {
+            result += "\nParent : " + parentIC.toString();
+        }
+        return result;
     }
 
     /* Method Types.capture() generates a new type every time it's applied
