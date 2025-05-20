@@ -75,7 +75,7 @@ public final class Exceptions {
      * Sub-class for any new category that needs to be independently
      * controlled. Consider using a unique value for the
      * SecurityProperties.includedInExceptions(String value) mechanism
-     * Current values defined are "socket", "jar", "userInfo"
+     * Current values defined are "jar", "userInfo"
      * "hostInfo", "hostInfoExclSocket".
      *
      * New code can also piggy back on existing categories
