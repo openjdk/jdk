@@ -261,7 +261,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      */
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
-        throws InterruptedException , NullPointerException {
+        throws InterruptedException {
         Objects.requireNonNull(tasks, "tasks");
         ArrayList<Future<T>> futures = new ArrayList<>(tasks.size());
         try {
