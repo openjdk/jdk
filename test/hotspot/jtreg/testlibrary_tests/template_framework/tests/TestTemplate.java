@@ -90,21 +90,20 @@ public class TestTemplate {
     private static final MyClass myClassA11 = new MyClass("myClassA11");
     private static final MyClass myClassB   = new MyClass("myClassB");
 
-    // Model methods, but only of type "(II)I".
-    // Should you ever work on a test where there are methods with different signatures,
-    // then you would have to very carefully study and design the subtype relation between
-    // methods. You may want to read up about covariance and contravariance. This
-    // example ignores all of that, because we only have "(II)I" methods.
-    private record MyMethodType() implements StructuralName.Type {
+    private record MyStructuralType(String name) implements StructuralName.Type {
         @Override
         public boolean isSubtypeOf(StructuralName.Type other) {
-            return other instanceof MyMethodType();
+            return other instanceof MyStructuralType(String n) && name().startsWith(n);
         }
 
         @Override
-        public String name() { return "<not used, don't worry>"; }
+        public String toString() { return name(); }
     }
-    private static final MyMethodType myMethodType = new MyMethodType();
+    private static final MyStructuralType myStructuralTypeA = new MyStructuralType("StructuralA");
+    private static final MyStructuralType myStructuralTypeA1 = new MyStructuralType("StructuralA1");
+    private static final MyStructuralType myStructuralTypeA2 = new MyStructuralType("StructuralA2");
+    private static final MyStructuralType myStructuralTypeA11 = new MyStructuralType("StructuralA11");
+    private static final MyStructuralType myStructuralTypeB = new MyStructuralType("StructuralB");
 
     public static void main(String[] args) {
         testSingleLine();
@@ -129,6 +128,8 @@ public class TestTemplate {
         testDataNames2();
         testDataNames3();
         testDataNames4();
+        testStructuralNames1();
+        testStructuralNames2();
         testListArgument();
 
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
@@ -1371,6 +1372,259 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
+    public static void testStructuralNames1() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make("type", (StructuralName.Type type) -> body(
+            "[#type:\n",
+            "  exact: ",
+            structuralNames().exactOf(type).hasAny(),
+            ", ",
+            structuralNames().exactOf(type).count(),
+            ", {",
+            String.join(", ", structuralNames().exactOf(type).toList().stream().map(StructuralName::name).toList()),
+            "}\n",
+            "  subtype: ",
+            structuralNames().subtypeOf(type).hasAny(),
+            ", ",
+            structuralNames().subtypeOf(type).count(),
+            ", {",
+            String.join(", ", structuralNames().subtypeOf(type).toList().stream().map(StructuralName::name).toList()),
+            "}\n",
+            "  supertype: ",
+            structuralNames().supertypeOf(type).hasAny(),
+            ", ",
+            structuralNames().supertypeOf(type).count(),
+            ", {",
+            String.join(", ", structuralNames().supertypeOf(type).toList().stream().map(StructuralName::name).toList()),
+            "}\n",
+            "]\n"
+        ));
+
+        List<StructuralName.Type> types = List.of(myStructuralTypeA,
+                                                  myStructuralTypeA1,
+                                                  myStructuralTypeA2,
+                                                  myStructuralTypeA11,
+                                                  myStructuralTypeB);
+        var template2 = Template.make(() -> body(
+            "StructuralNames:\n",
+            types.stream().map(t -> template1.asToken(t)).toList()
+        ));
+
+        var template3 = Template.make("type", (StructuralName.Type type) -> body(
+            let("name", structuralNames().subtypeOf(type).sample()),
+            "Sample #type: #name\n"
+        ));
+
+        var template4 = Template.make(() -> body(
+            "class $Q {\n",
+            template2.asToken(),
+            hook1.anchor(
+                "Create name for myStructuralTypeA11, should be visible for the supertypes\n",
+                addStructuralName($("v1"), myStructuralTypeA11),
+                template3.asToken(myStructuralTypeA11),
+                template3.asToken(myStructuralTypeA1),
+                template3.asToken(myStructuralTypeA),
+                "Create name for myStructuralTypeA, should never be visible for the subtypes\n",
+                addStructuralName($("v2"), myStructuralTypeA),
+                template3.asToken(myStructuralTypeA11),
+                template3.asToken(myStructuralTypeA1),
+                template2.asToken()
+            ),
+            template2.asToken(),
+            "}\n"
+        ));
+
+        String code = template4.render();
+        String expected =
+            """
+            class Q_1 {
+            StructuralNames:
+            [StructuralA:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [StructuralA1:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [StructuralA2:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [StructuralA11:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [StructuralB:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            Create name for myStructuralTypeA11, should be visible for the supertypes
+            Sample StructuralA11: StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA1: StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA: StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Create name for myStructuralTypeA, should never be visible for the subtypes
+            Sample StructuralA11: StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            Sample StructuralA1: StructuralName[name=v1_1, type=StructuralA11, weight=1]
+            StructuralNames:
+            [StructuralA:
+              exact: true, 1, {v2_1}
+              subtype: true, 2, {v1_1, v2_1}
+              supertype: true, 1, {v2_1}
+            ]
+            [StructuralA1:
+              exact: false, 0, {}
+              subtype: true, 1, {v1_1}
+              supertype: true, 1, {v2_1}
+            ]
+            [StructuralA2:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: true, 1, {v2_1}
+            ]
+            [StructuralA11:
+              exact: true, 1, {v1_1}
+              subtype: true, 1, {v1_1}
+              supertype: true, 2, {v1_1, v2_1}
+            ]
+            [StructuralB:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            StructuralNames:
+            [StructuralA:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [StructuralA1:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [StructuralA2:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [StructuralA11:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            [StructuralB:
+              exact: false, 0, {}
+              subtype: false, 0, {}
+              supertype: false, 0, {}
+            ]
+            }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testStructuralNames2() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make("type", (StructuralName.Type type) -> body(
+            "[#type: ",
+            structuralNames().exactOf(type).hasAny(),
+            ", ",
+            structuralNames().exactOf(type).count(),
+            ", names: {",
+            String.join(", ", structuralNames().exactOf(type).toList().stream().map(StructuralName::name).toList()),
+            "}]\n"
+        ));
+
+        var template2 = Template.make("name", "type", (String name, StructuralName.Type type) -> body(
+            addStructuralName(name, type),
+            "define #type #name\n"
+        ));
+
+        var template3 = Template.make("type", (StructuralName.Type type) -> body(
+            "{ $access\n",
+            hook1.insert(template2.asToken($("name"), type)),
+            "$name = 5\n",
+            "} $access\n"
+        ));
+
+        var template4 = Template.make("type", (StructuralName.Type type) -> body(
+            let("v", structuralNames().exactOf(type).sample().name()),
+            "{ $sample\n",
+            "blackhole(#v)\n",
+            "} $sample\n"
+        ));
+
+        var template8 = Template.make(() -> body(
+            "class $X {\n",
+            template1.asToken(myStructuralTypeA),
+            template1.asToken(myStructuralTypeB),
+            hook1.anchor(
+                "begin $body\n",
+                template1.asToken(myStructuralTypeA),
+                template1.asToken(myStructuralTypeB),
+                "start with A\n",
+                template3.asToken(myStructuralTypeA),
+                "then access it\n",
+                template4.asToken(myStructuralTypeA),
+                template1.asToken(myStructuralTypeA),
+                template1.asToken(myStructuralTypeB),
+                "now make a B\n",
+                template3.asToken(myStructuralTypeB),
+                "then access to it\n",
+                template4.asToken(myStructuralTypeB),
+                template1.asToken(myStructuralTypeA),
+                template1.asToken(myStructuralTypeB)
+            ),
+            template1.asToken(myStructuralTypeA),
+            template1.asToken(myStructuralTypeB),
+            "}\n"
+        ));
+
+        String code = template8.render();
+        String expected =
+            """
+            class X_1 {
+            [StructuralA: false, 0, names: {}]
+            [StructuralB: false, 0, names: {}]
+            define StructuralA name_6
+            define StructuralB name_11
+            begin body_1
+            [StructuralA: false, 0, names: {}]
+            [StructuralB: false, 0, names: {}]
+            start with A
+            { access_6
+            name_6 = 5
+            } access_6
+            then access it
+            { sample_8
+            blackhole(name_6)
+            } sample_8
+            [StructuralA: true, 1, names: {name_6}]
+            [StructuralB: false, 0, names: {}]
+            now make a B
+            { access_11
+            name_11 = 5
+            } access_11
+            then access to it
+            { sample_13
+            blackhole(name_11)
+            } sample_13
+            [StructuralA: true, 1, names: {name_6}]
+            [StructuralB: true, 1, names: {name_11}]
+            [StructuralA: false, 0, names: {}]
+            [StructuralB: false, 0, names: {}]
+            }
+            """;
+        checkEQ(code, expected);
+    }
+
     record MyItem(DataName.Type type, String op) {}
 
     public static void testListArgument() {
@@ -1546,21 +1800,21 @@ public class TestTemplate {
 
     public static void testFailingAddStructuralName1() {
         var template1 = Template.make(() -> body(
-            addStructuralName("name", myMethodType, 0)
+            addStructuralName("name", myStructuralTypeA, 0)
         ));
         String code = template1.render();
     }
 
     public static void testFailingAddStructuralName2() {
         var template1 = Template.make(() -> body(
-            addStructuralName("name", myMethodType, -1)
+            addStructuralName("name", myStructuralTypeA, -1)
         ));
         String code = template1.render();
     }
 
     public static void testFailingAddStructuralName3() {
         var template1 = Template.make(() -> body(
-            addStructuralName("name", myMethodType, 1001)
+            addStructuralName("name", myStructuralTypeA, 1001)
         ));
         String code = template1.render();
     }
