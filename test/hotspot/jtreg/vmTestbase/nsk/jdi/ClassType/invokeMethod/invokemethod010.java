@@ -111,36 +111,29 @@ public class invokemethod010 {
             return quitDebuggee();
         }
 
-        // debuggee main class
-        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
-
-        thrRef = debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
-        if (thrRef == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
-                + DEBUGGEE_THRNAME);
-            tot_res = Consts.TEST_FAILED;
-            return quitDebuggee();
-        }
-        thrRef.suspend();
-        while(!thrRef.isSuspended()) {
-            num++;
-            if (num > ATTEMPTS) {
-                log.complain("TEST FAILED: unable to suspend debuggee thread");
-                tot_res = Consts.TEST_FAILED;
-                return quitDebuggee();
-            }
-            log.display("Waiting for debuggee thread suspension ...");
-            try {
-                Thread.currentThread().sleep(TIMEOUT_DELTA);
-            } catch(InterruptedException ie) {
-                ie.printStackTrace();
-                log.complain("TEST FAILED: caught: " + ie);
-                tot_res = Consts.TEST_FAILED;
-                return quitDebuggee();
-            }
-        }
-
         try {
+            // debuggee main class
+            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+            thrRef = debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
+            if (thrRef == null) {
+                log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
+                             + DEBUGGEE_THRNAME);
+                tot_res = Consts.TEST_FAILED;
+                return quitDebuggee();
+            }
+            thrRef.suspend();
+            while(!thrRef.isSuspended()) {
+                num++;
+                if (num > ATTEMPTS) {
+                    log.complain("TEST FAILED: unable to suspend debuggee thread");
+                    tot_res = Consts.TEST_FAILED;
+                    return quitDebuggee();
+                }
+                log.display("Waiting for debuggee thread suspension ...");
+                Thread.currentThread().sleep(TIMEOUT_DELTA);
+            }
+
             // debuggee main class
             ClassType clsType = (ClassType) rType;
 
