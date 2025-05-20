@@ -48,7 +48,7 @@ public class AOTCodeFlags {
         Tester t = new Tester();
         for (int mode = 0; mode < 3; mode++) {
             t.setTestMode(mode);
-            t.run(new String[] {"AOT"});
+            t.run(new String[] {"AOT", "--two-step-training"});
         }
     }
     static class Tester extends CDSAppTester {
