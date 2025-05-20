@@ -1882,7 +1882,7 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause,
                         counters_before.total_full_collections(),
                         cause);
     VMThread::execute(&op);
-    return op.prologue_succeeded();
+    return op.gc_succeeded();
   }
 }
 
