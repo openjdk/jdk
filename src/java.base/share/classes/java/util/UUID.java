@@ -71,8 +71,8 @@ import jdk.internal.util.ByteArrayLittleEndian;
  * Universally Unique IDentifier (UUID) URN Namespace</i></a>, section 4.2
  * &quot;Algorithms for Creating a Time-Based UUID&quot;.
  *
- * @spec https://www.rfc-editor.org/info/rfc4122
- *      RFC 4122: A Universally Unique IDentifier (UUID) URN Namespace
+ * @spec https://www.rfc-editor.org/rfc/rfc9562.html
+ *      RFC 9562 Universally Unique IDentifiers (UUIDs)
  * @since   1.5
  */
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
@@ -191,6 +191,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * remaining bytes with cryptographically strong random data.
      *
      * @return A {@code UUID} generated from the current system time
+     *
+     * @spec RFC 9562
      */
     public static UUID timestampUUID() {
         long msTime = System.currentTimeMillis();
