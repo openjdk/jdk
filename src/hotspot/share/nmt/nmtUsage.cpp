@@ -61,10 +61,10 @@ void NMTUsage::update_malloc_usage() {
   }
 
   size_t total_arena_size = 0;
-  for (int i = 0; i < mt_number_of_tags; i++) {
+  for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
     const MallocMemory* mm = ms->by_tag(mem_tag);
-    _malloc_by_type[i] = mm->malloc_size() + mm->arena_size();
+    _malloc_by_type.at_grow(i) = mm->malloc_size() + mm->arena_size();
     total_arena_size +=  mm->arena_size();
   }
 
@@ -72,11 +72,11 @@ void NMTUsage::update_malloc_usage() {
   _malloc_total = ms->total();
 
   // Adjustment due to mtChunk double counting.
-  _malloc_by_type[NMTUtil::tag_to_index(mtChunk)] -= total_arena_size;
+  _malloc_by_type.at_grow(NMTUtil::tag_to_index(mtChunk)) -= total_arena_size;
   _malloc_total -= total_arena_size;
 
   // Adjust mtNMT to include malloc overhead.
-  _malloc_by_type[NMTUtil::tag_to_index(mtNMT)] += ms->malloc_overhead();
+  _malloc_by_type.at_grow(NMTUtil::tag_to_index(mtNMT)) += ms->malloc_overhead();
 }
 
 void NMTUsage::update_vm_usage() {
@@ -85,22 +85,22 @@ void NMTUsage::update_vm_usage() {
   // Reset total to allow recalculation.
   _vm_total.committed = 0;
   _vm_total.reserved = 0;
-  for (int i = 0; i < mt_number_of_tags; i++) {
+  for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
     const VirtualMemory* vm = vms->by_tag(mem_tag);
 
-    _vm_by_type[i].reserved = vm->reserved();
-    _vm_by_type[i].committed = vm->committed();
+    _vm_by_type.at_grow(i).reserved = vm->reserved();
+    _vm_by_type.at_grow(i).committed = vm->committed();
     _vm_total.reserved += vm->reserved();
     _vm_total.committed += vm->committed();
   }
 
   { // MemoryFileTracker addition
     using MFT = MemoryFileTracker::Instance;
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
     MFT::iterate_summary([&](MemTag tag, const VirtualMemory* vm) {
       int i = NMTUtil::tag_to_index(tag);
-      _vm_by_type[i].committed += vm->committed();
+      _vm_by_type.at_grow(i).committed += vm->committed();
       _vm_total.committed += vm->committed();
     });
   }
@@ -132,10 +132,12 @@ size_t NMTUsage::total_committed() const {
 
 size_t NMTUsage::reserved(MemTag mem_tag) const {
   int index = NMTUtil::tag_to_index(mem_tag);
-  return _malloc_by_type[index] + _vm_by_type[index].reserved;
+  return const_cast<GrowableArrayCHeap<size_t, mtNMT>&>(_malloc_by_type).at_grow(index) +
+         const_cast<GrowableArrayCHeap<NMTUsagePair, mtNMT>&>(_vm_by_type).at_grow(index).reserved;
 }
 
 size_t NMTUsage::committed(MemTag mem_tag) const {
   int index = NMTUtil::tag_to_index(mem_tag);
-  return _malloc_by_type[index] + _vm_by_type[index].committed;
+  return const_cast<GrowableArrayCHeap<size_t, mtNMT>&>(_malloc_by_type).at_grow(index) +
+         const_cast<GrowableArrayCHeap<NMTUsagePair, mtNMT>&>(_vm_by_type).at_grow(index).committed;
 }

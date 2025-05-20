@@ -92,7 +92,7 @@ public:
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -168,7 +168,7 @@ public:
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -258,7 +258,7 @@ public:
     size_t size  = 0x01000000;
 
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -431,7 +431,7 @@ public:
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 

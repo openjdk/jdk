@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 
 struct NMTUsagePair {
   size_t reserved;
@@ -35,16 +36,16 @@ struct NMTUsagePair {
 };
 
 struct NMTUsageOptions {
-  bool update_thread_stacks;
-  bool include_malloc;
-  bool include_vm;
+  bool update_thread_stacks : 1;
+  bool include_malloc : 1;
+  bool include_vm : 1;
 };
 
 class NMTUsage : public CHeapObj<mtNMT> {
 private:
-  size_t _malloc_by_type[mt_number_of_tags];
+  GrowableArrayCHeap<size_t, mtNMT> _malloc_by_type;
   size_t _malloc_total;
-  NMTUsagePair _vm_by_type[mt_number_of_tags];
+  GrowableArrayCHeap<NMTUsagePair, mtNMT> _vm_by_type;
   NMTUsagePair _vm_total;
 
   NMTUsageOptions _usage_options;

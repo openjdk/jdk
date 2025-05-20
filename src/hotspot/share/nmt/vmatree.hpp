@@ -26,6 +26,7 @@
 #ifndef SHARE_NMT_VMATREE_HPP
 #define SHARE_NMT_VMATREE_HPP
 
+#include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtTreap.hpp"
@@ -174,15 +175,20 @@ public:
   };
 
   struct SummaryDiff {
-    SingleDiff tag[mt_number_of_tags];
+    SingleDiff* tag;
     SummaryDiff() {
-      for (int i = 0; i < mt_number_of_tags; i++) {
+      tag = NEW_C_HEAP_ARRAY(SingleDiff, MemTagFactory::number_of_tags(), mtNMT);
+      for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
         tag[i] = SingleDiff{0, 0};
       }
     }
 
+    ~SummaryDiff() {
+      os::free(tag);
+    }
+
     void add(SummaryDiff& other) {
-      for (int i = 0; i < mt_number_of_tags; i++) {
+      for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
         tag[i].reserve += other.tag[i].reserve;
         tag[i].commit += other.tag[i].commit;
       }

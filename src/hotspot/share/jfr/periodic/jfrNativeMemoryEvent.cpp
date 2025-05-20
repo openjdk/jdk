@@ -78,7 +78,7 @@ void JfrNativeMemoryEvent::send_type_events(const Ticks& timestamp) {
 
   NMTUsage* usage = get_usage(timestamp);
 
-  for (int index = 0; index < mt_number_of_tags; index ++) {
+  for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
     MemTag mem_tag = NMTUtil::index_to_tag(index);
     if (mem_tag == mtNone) {
       // Skip mtNone since it is not really used.
