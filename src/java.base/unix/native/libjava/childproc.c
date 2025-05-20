@@ -106,6 +106,7 @@ markDescriptorsCloseOnExec(void)
         if (isAsciiDigit(dirp->d_name[0]) &&
             (fd = strtol(dirp->d_name, NULL, 10)) >= fd_from) {
             if (markCloseOnExec(fd) == -1) {
+                closedir(dp);
                 return -1;
             }
         }
