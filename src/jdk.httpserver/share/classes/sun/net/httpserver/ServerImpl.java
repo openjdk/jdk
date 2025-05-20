@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,20 +226,36 @@ class ServerImpl {
         return finished;
     }
 
+    /**
+     * This method stops the server by adding a stop request event and
+     * waiting for the server until the event is executed or until the maximum delay is triggered.
+     * <p>
+     * This ensures that the server is stopped immediately after all exchanges are complete,
+     * but still stops as soon as maximum delay is reached.
+     *
+     * @param delay maximum delay in stopping the server
+     */
     public void stop (int delay) {
         if (delay < 0) {
             throw new IllegalArgumentException ("negative delay parameter");
         }
+
+        logger.log(Level.TRACE, "stopping");
+        // posting a stop event, which will flip finished flag if it finishes
+        // before the timeout in this method
+        addEvent(new StopRequestedEvent());
+
         terminating = true;
         try { schan.close(); } catch (IOException e) {}
         selector.wakeup();
-        long latest = System.currentTimeMillis() + delay * 1000;
-        while (System.currentTimeMillis() < latest) {
+        long latest = System.nanoTime() + delay * 1000000000L;
+        while (System.nanoTime() < latest) {
             delay();
             if (finished) {
                 break;
             }
         }
+        logger.log(Level.TRACE, "closing connections");
         finished = true;
         selector.wakeup();
         synchronized (allConnections) {
@@ -254,7 +270,10 @@ class ServerImpl {
         if (reqRspTimeoutEnabled) {
             timer1.cancel();
         }
+        logger.log(Level.TRACE, "connections closed");
+
         if (dispatcherThread != null && dispatcherThread != Thread.currentThread()) {
+            logger.log(Level.TRACE, "waiting for dispatcher thread");
             try {
                 dispatcherThread.join();
             } catch (InterruptedException e) {
@@ -262,6 +281,7 @@ class ServerImpl {
                 logger.log (Level.TRACE, "ServerImpl.stop: ", e);
             }
         }
+        logger.log(Level.TRACE, "server stopped");
     }
 
     Dispatcher dispatcher;
@@ -382,8 +402,21 @@ class ServerImpl {
     class Dispatcher implements Runnable {
 
         private void handleEvent (Event r) {
+
+            // Stopping marking the state as finished if stop is requested,
+            // termination is in progress and exchange count is 0
+            if (r instanceof StopRequestedEvent) {
+                logger.log(Level.TRACE, "Stop event requested");
+
+                if (terminating && getExchangeCount() == 0) {
+                    finished = true;
+                }
+                return;
+            }
+
             ExchangeImpl t = r.exchange;
             HttpConnection c = t.getConnection();
+
             try {
                 if (r instanceof WriteFinishedEvent) {
 
@@ -591,18 +624,18 @@ class ServerImpl {
         conn.close();
         allConnections.remove(conn);
         switch (conn.getState()) {
-        case REQUEST:
-            reqConnections.remove(conn);
-            break;
-        case RESPONSE:
-            rspConnections.remove(conn);
-            break;
-        case IDLE:
-            idleConnections.remove(conn);
-            break;
-        case NEWLY_ACCEPTED:
-            newlyAcceptedConnections.remove(conn);
-            break;
+            case REQUEST:
+                reqConnections.remove(conn);
+                break;
+            case RESPONSE:
+                rspConnections.remove(conn);
+                break;
+            case IDLE:
+                idleConnections.remove(conn);
+                break;
+            case NEWLY_ACCEPTED:
+                newlyAcceptedConnections.remove(conn);
+                break;
         }
         assert !reqConnections.remove(conn);
         assert !rspConnections.remove(conn);
@@ -936,6 +969,10 @@ class ServerImpl {
 
     synchronized void startExchange () {
         exchangeCount ++;
+    }
+
+    synchronized int getExchangeCount() {
+        return exchangeCount;
     }
 
     synchronized int endExchange () {
