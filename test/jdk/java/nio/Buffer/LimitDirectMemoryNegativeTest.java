@@ -26,7 +26,6 @@
  * @bug 4627316 6743526
  * @summary Test option to limit direct memory allocation,
  *          various bad values fail to launch the VM
- * @requires (os.arch == "x86_64") | (os.arch == "amd64") | (os.arch == "aarch64")
  * @library /test/lib
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.Asserts
