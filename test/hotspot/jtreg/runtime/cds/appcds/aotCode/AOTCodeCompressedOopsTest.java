@@ -25,10 +25,8 @@
 /**
  * @test
  * @summary Sanity test of AOT Code Cache with compressed oops configurations
- * @requires vm.cds
- * @requires vm.cds.supports.aot.class.linking
+ * @requires vm.cds.supports.aot.code.caching
  * @requires vm.flagless
- * @requires !vm.jvmci.enabled
  * @library /test/lib /test/setup_aot
  * @build AOTCodeCompressedOopsTest JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
