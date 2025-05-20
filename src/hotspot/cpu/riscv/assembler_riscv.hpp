@@ -1070,11 +1070,11 @@ protected:
     amo_base<AMO_LR, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, 0, memory_order);
   }
 
-  void sc_w(Register Rd, Register Rs2, Register Rs1, Aqrl memory_order = aqrl) {
+  void sc_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
     amo_base<AMO_SC, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
   }
 
-  void sc_d(Register Rd, Register Rs2, Register Rs1, Aqrl memory_order = aqrl) {
+  void sc_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
     amo_base<AMO_SC, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 

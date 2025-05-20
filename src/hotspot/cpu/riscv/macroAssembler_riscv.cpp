@@ -3823,11 +3823,11 @@ void MacroAssembler::store_conditional(Register dst,
                                        Assembler::Aqrl release) {
   switch (size) {
     case int64:
-      sc_d(dst, new_val, addr, release);
+      sc_d(dst, addr, new_val, release);
       break;
     case int32:
     case uint32:
-      sc_w(dst, new_val, addr, release);
+      sc_w(dst, addr, new_val, release);
       break;
     default:
       ShouldNotReachHere();
