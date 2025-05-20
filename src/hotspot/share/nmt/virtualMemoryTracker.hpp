@@ -125,7 +125,8 @@ private:
 
   inline size_t total_reserved() const {
     size_t amount = 0;
-    for (int index = 0; index < mt_number_of_tags; index ++) {
+    int num_tags = MemTagFactory::number_of_tags();
+    for (int index = 0; index < num_tags; index++) {
       amount += _virtual_memory[index].reserved();
     }
     return amount;
@@ -133,14 +134,16 @@ private:
 
   inline size_t total_committed() const {
     size_t amount = 0;
-    for (int index = 0; index < mt_number_of_tags; index ++) {
+    int num_tags = MemTagFactory::number_of_tags();
+    for (int index = 0; index < num_tags; index++) {
       amount += _virtual_memory[index].committed();
     }
     return amount;
   }
 
   void copy_to(VirtualMemorySnapshot* s) {
-    for (int index = 0; index < mt_number_of_tags; index ++) {
+    int num_tags = MemTagFactory::number_of_tags();
+    for (int index = 0; index < num_tags; index++) {
       s->_virtual_memory[index] = _virtual_memory[index];
     }
   }
@@ -351,7 +354,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     return *this;
   }
 
-  const char* tag_name() const { return NMTUtil::tag_to_name(_mem_tag); }
+  const char* mem_tag_name() const { return MemTagFactory::name_of(_mem_tag); }
 };
 
 class VirtualMemoryWalker : public StackObj {

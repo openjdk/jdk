@@ -78,7 +78,7 @@ public:
   void iterate_summary(F f) const {
     for (int d = 0; d < _files.length(); d++) {
       const MemoryFile* file = _files.at(d);
-      for (int i = 0; i < mt_number_of_tags; i++) {
+      for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
         f(NMTUtil::index_to_tag(i), file->_summary.by_tag(NMTUtil::index_to_tag(i)));
       }
     }

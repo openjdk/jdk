@@ -88,7 +88,7 @@ TEST_VM(NMTNumbers, totals) {
   void* p[NUM_ALLOCS];
   for (int i = 0; i < NUM_ALLOCS; i ++) {
     // spread over categories
-    int category = i % (mt_number_of_tags - 1);
+    int category = i % (MemTagFactory::number_of_tags() - 1);
     p[i] = NEW_C_HEAP_ARRAY(char, ALLOC_SIZE, (MemTag)category);
   }
 

@@ -103,7 +103,7 @@ public:
 
     // Fetch the added RMR for the space
     RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
 
     ReservedMemoryRegion rmr = rtree->find_reserved_region(addr);
 
@@ -173,7 +173,7 @@ public:
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
 
     RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -262,7 +262,7 @@ public:
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
 
     RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -439,7 +439,7 @@ public:
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
 
     RegionsTree* rtree = VirtualMemoryTracker::Instance::tree();
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
