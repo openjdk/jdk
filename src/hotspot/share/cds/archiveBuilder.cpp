@@ -1155,12 +1155,12 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
   static void log_klass(Klass* k, address runtime_dest, const char* type_name, int bytes, Thread* current) {
     ResourceMark rm(current);
-    log_debug(cds, map)(_LOG_PREFIX " %s",
+    log_debug(aot, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes, k->external_name());
   }
   static void log_method(Method* m, address runtime_dest, const char* type_name, int bytes, Thread* current) {
     ResourceMark rm(current);
-    log_debug(cds, map)(_LOG_PREFIX " %s",
+    log_debug(aot, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes,  m->external_name());
   }
 
@@ -1203,12 +1203,12 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         {
           ResourceMark rm(current);
           Symbol* s = (Symbol*)src;
-          log_debug(cds, map)(_LOG_PREFIX " %s", p2i(runtime_dest), type_name, bytes,
+          log_debug(aot, map)(_LOG_PREFIX " %s", p2i(runtime_dest), type_name, bytes,
                               s->as_quoted_ascii());
         }
         break;
       default:
-        log_debug(cds, map)(_LOG_PREFIX, p2i(runtime_dest), type_name, bytes);
+        log_debug(aot, map)(_LOG_PREFIX, p2i(runtime_dest), type_name, bytes);
         break;
       }
 
@@ -1218,7 +1218,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
     log_as_hex(last_obj_base, last_obj_end, last_obj_base + buffer_to_runtime_delta());
     if (last_obj_end < region_end) {
-      log_debug(cds, map)(PTR_FORMAT ": @@ Misc data %zu bytes",
+      log_debug(aot, map)(PTR_FORMAT ": @@ Misc data %zu bytes",
                           p2i(last_obj_end + buffer_to_runtime_delta()),
                           size_t(region_end - last_obj_end));
       log_as_hex(last_obj_end, region_end, last_obj_end + buffer_to_runtime_delta());
@@ -1242,7 +1242,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     } else {
       top = requested_base + size;
     }
-    log_info(cds, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " %9zu bytes]",
+    log_info(aot, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " %9zu bytes]",
                        name, p2i(base), p2i(top), size);
   }
 
@@ -1253,7 +1253,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     address end = address(r.end());
     log_region("heap", start, end, ArchiveHeapWriter::buffered_addr_to_requested_addr(start));
 
-    LogStreamHandle(Info, cds, map) st;
+    LogStreamHandle(Info, aot, map) st;
 
     HeapRootSegments segments = heap_info->heap_root_segments();
     assert(segments.base_offset() == 0, "Sanity");
@@ -1362,7 +1362,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
   // Print the fields of instanceOops, or the elements of arrayOops
   static void log_oop_details(ArchiveHeapInfo* heap_info, oop source_oop, address buffered_addr) {
-    LogStreamHandle(Trace, cds, map, oops) st;
+    LogStreamHandle(Trace, aot, map, oops) st;
     if (st.is_enabled()) {
       Klass* source_klass = source_oop->klass();
       ArchiveBuilder* builder = ArchiveBuilder::current();
@@ -1430,7 +1430,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   }
 
   static void log_heap_roots() {
-    LogStreamHandle(Trace, cds, map, oops) st;
+    LogStreamHandle(Trace, aot, map, oops) st;
     if (st.is_enabled()) {
       for (int i = 0; i < HeapShared::pending_roots()->length(); i++) {
         st.print("roots[%4d]: ", i);
@@ -1491,7 +1491,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   static void log_as_hex(address base, address top, address requested_base, bool is_heap = false) {
     assert(top >= base, "must be");
 
-    LogStreamHandle(Trace, cds, map) lsh;
+    LogStreamHandle(Trace, aot, map) lsh;
     if (lsh.is_enabled()) {
       int unitsize = sizeof(address);
       if (is_heap && UseCompressedOops) {
@@ -1504,7 +1504,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   }
 
   static void log_header(FileMapInfo* mapinfo) {
-    LogStreamHandle(Info, cds, map) lsh;
+    LogStreamHandle(Info, aot, map) lsh;
     if (lsh.is_enabled()) {
       mapinfo->print(&lsh);
     }
@@ -1514,7 +1514,7 @@ public:
   static void log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
                   ArchiveHeapInfo* heap_info,
                   char* bitmap, size_t bitmap_size_in_bytes) {
-    log_info(cds, map)("%s CDS archive map for %s", CDSConfig::is_dumping_static_archive() ? "Static" : "Dynamic", mapinfo->full_path());
+    log_info(aot, map)("%s CDS archive map for %s", CDSConfig::is_dumping_static_archive() ? "Static" : "Dynamic", mapinfo->full_path());
 
     address header = address(mapinfo->header());
     address header_end = header + mapinfo->header()->header_size();
@@ -1538,7 +1538,7 @@ public:
     }
 #endif
 
-    log_info(cds, map)("[End of CDS archive map]");
+    log_info(aot, map)("[End of CDS archive map]");
   }
 }; // end ArchiveBuilder::CDSMapLogger
 
@@ -1580,7 +1580,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
     print_stats();
   }
 
-  if (log_is_enabled(Info, cds, map)) {
+  if (log_is_enabled(Info, aot, map)) {
     CDSMapLogger::log(this, mapinfo, heap_info,
                       bitmap, bitmap_size_in_bytes);
   }

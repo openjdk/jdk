@@ -1374,7 +1374,7 @@ void Arguments::no_shared_spaces(const char* message) {
     if (CDSConfig::new_aot_flags_used()) {
       log_warning(aot)("Unable to use AOT cache: %s", message);
     } else {
-      log_info(cds)("Unable to use shared archive: %s", message);
+      aot_log_info(aot)("Unable to use shared archive: %s", message);
     }
     UseSharedSpaces = false;
   }
@@ -3616,10 +3616,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     return JNI_ERR;
   }
   if ((CDSConfig::is_using_archive() && xshare_auto_cmd_line) ||
-      log_is_enabled(Info, cds)) {
+      log_is_enabled(Info, cds) || log_is_enabled(Info, aot)) {
     warning("Shared spaces are not supported in this VM");
     UseSharedSpaces = false;
     LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(cds));
+    LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(aot));
   }
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS

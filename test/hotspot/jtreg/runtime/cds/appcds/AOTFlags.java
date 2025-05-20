@@ -283,7 +283,7 @@ public class AOTFlags {
             "-cp", appJar, helloClass);
 
         out = CDSTestUtils.executeAndLog(pb, "neg");
-        out.shouldContain("Not a valid archive (hello.aotconfig)");
+        out.shouldContain("Not a valid shared archive file (hello.aotconfig)");
         out.shouldNotHaveExitValue(0);
 
         //----------------------------------------------------------------------

@@ -208,7 +208,7 @@ void FinalImageRecipes::apply_recipes(TRAPS) {
       log_error(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
       log_error(aot)("Please check if your VM command-line is the same as in the training run");
-      MetaspaceShared::unrecoverable_writing_error("Unexpected exception, use -Xlog:cds,exceptions=trace for detail");
+      MetaspaceShared::unrecoverable_writing_error("Unexpected exception, use -Xlog:aot,exceptions=trace for detail");
     }
   }
 

@@ -41,7 +41,7 @@ public class AddopensOption {
         final String moduleOption = "jdk.httpserver/sun.net.httpserver.simpleserver.Main";
         final String addOpensNio = "java.base/java.nio=ALL-UNNAMED";
         final String addOpensTimeFormat = "java.base/java.time.format=ALL-UNNAMED";
-        final String loggingOption = "-Xlog:aot=debug,cds+module=debug,aot+heap=info,cds=debug,module=trace";
+        final String loggingOption = "-Xlog:aot=debug,aot+module=debug,aot+heap=info,cds=debug,module=trace";
         final String versionPattern = "java.[0-9][0-9].*";
         final String subgraphCannotBeUsed = "subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled";
         final String warningIncubator = "WARNING: Using incubator modules: jdk.incubator.vector";
@@ -66,7 +66,7 @@ public class AddopensOption {
         oa.shouldHaveExitValue(0)
           // version of the jdk.httpserver module, e.g. java 22-ea
           .shouldMatch(versionPattern)
-          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.httpserver");
+          .shouldMatch("aot,module.*Restored from archive: entry.0x.*name jdk.httpserver");
 
         // different --add-opens specified during runtime
         oa = TestCommon.execCommon(
@@ -151,6 +151,6 @@ public class AddopensOption {
             "-m", moduleOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.httpserver");
+          .shouldMatch("aot,module.*Restored from archive: entry.0x.*name jdk.httpserver");
     }
 }

@@ -2898,7 +2898,7 @@ public:
   {}
 
   bool do_entry(AdapterFingerPrint* fp, AdapterHandlerEntry* entry) {
-    LogStreamHandle(Trace, cds) lsh;
+    LogStreamHandle(Trace, aot) lsh;
     if (ArchiveBuilder::current()->has_been_archived((address)entry)) {
       assert(ArchiveBuilder::current()->has_been_archived((address)fp), "must be");
       AdapterFingerPrint* buffered_fp = ArchiveBuilder::current()->get_buffered_addr(fp);
@@ -2912,11 +2912,11 @@ public:
       if (lsh.is_enabled()) {
         address fp_runtime_addr = (address)buffered_fp + ArchiveBuilder::current()->buffer_to_requested_delta();
         address entry_runtime_addr = (address)buffered_entry + ArchiveBuilder::current()->buffer_to_requested_delta();
-        log_trace(cds)("Added fp=%p (%s), entry=%p to the archived adater table", buffered_fp, buffered_fp->as_basic_args_string(), buffered_entry);
+        log_trace(aot)("Added fp=%p (%s), entry=%p to the archived adater table", buffered_fp, buffered_fp->as_basic_args_string(), buffered_entry);
       }
     } else {
       if (lsh.is_enabled()) {
-        log_trace(cds)("Skipping adapter handler %p (fp=%s) as it is not archived", entry, fp->as_basic_args_string());
+        log_trace(aot)("Skipping adapter handler %p (fp=%s) as it is not archived", entry, fp->as_basic_args_string());
       }
     }
     return true;
@@ -2964,7 +2964,7 @@ void AdapterHandlerEntry::link() {
   if (AOTCodeCache::is_using_adapter()) {
     adapter_blob = AdapterHandlerLibrary::link_aot_adapter_handler(this);
     if (adapter_blob == nullptr) {
-      log_warning(cds)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
+      log_warning(aot)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
       generate_code = true;
     }
   } else {
@@ -3052,7 +3052,7 @@ void AdapterHandlerEntry::relocate(address new_base) {
 }
 
 void AdapterHandlerEntry::metaspace_pointers_do(MetaspaceClosure* it) {
-  LogStreamHandle(Trace, cds) lsh;
+  LogStreamHandle(Trace, aot) lsh;
   if (lsh.is_enabled()) {
     lsh.print("Iter(AdapterHandlerEntry): %p(%s)", this, _fingerprint->as_basic_args_string());
     lsh.cr();
