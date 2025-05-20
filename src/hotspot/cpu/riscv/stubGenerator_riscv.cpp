@@ -1660,7 +1660,7 @@ class StubGenerator: public StubCodeGenerator {
     // bump this on entry, not on exit:
     // inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
 
-    Label L_exit1, L_exit2, L_fill_elements, L_loop;
+    Label L_fill_elements;
 
     const Register dest = c_rarg0;
     const Register count = c_rarg1;
@@ -1723,22 +1723,24 @@ class StubGenerator: public StubCodeGenerator {
 
     // Remaining count is less than 8 bytes and address is heapword aligned.
     {
-      Label L_fill_2, L_fill_1;
+      Label L_fill_2, L_fill_1, L_exit;
       __ test_bit(t0, count, 2);
       __ beqz(t0, L_fill_2);
       __ sw(value, Address(dest, 0));
       __ addi(dest, dest, 4);
+
       __ bind(L_fill_2);
       __ test_bit(t0, count, 1);
       __ beqz(t0, L_fill_1);
       __ sh(value, Address(dest, 0));
       __ addi(dest, dest, 2);
+
       __ bind(L_fill_1);
       __ test_bit(t0, count, 0);
-      __ beqz(t0, L_exit1);
+      __ beqz(t0, L_exit);
       __ sb(value, Address(dest, 0));
 
-      __ bind(L_exit1);
+      __ bind(L_exit);
       __ leave();
       __ ret();
     }
@@ -1746,7 +1748,7 @@ class StubGenerator: public StubCodeGenerator {
     // Handle copies less than 8 bytes
     __ bind(L_fill_elements);
     {
-      Label L_fill_2, L_fill_1;
+      Label L_fill_2, L_fill_1, L_exit;
       __ test_bit(t0, count, 2);
       __ beqz(t0, L_fill_2);
       __ sb(value, Address(dest, 0));
@@ -1764,11 +1766,10 @@ class StubGenerator: public StubCodeGenerator {
 
       __ bind(L_fill_1);
       __ test_bit(t0, count, 0);
-      __ beqz(t0, L_exit2);
+      __ beqz(t0, L_exit);
       __ sb(value, Address(dest, 0));
-      __ addi(dest, dest, 1);
 
-      __ bind(L_exit2);
+      __ bind(L_exit);
       __ leave();
       __ ret();
     }
