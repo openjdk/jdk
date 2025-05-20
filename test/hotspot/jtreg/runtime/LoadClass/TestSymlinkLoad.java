@@ -45,11 +45,9 @@ import jdk.test.lib.util.FileUtils;
 public class TestSymlinkLoad {
     public static void main(String args[]) throws Exception {
         Path sourceDir = Paths.get(System.getProperty("test.src"), "test-classes");
-        Path classDir = Paths.get(System.getProperty("test.classes"));
-        Path destDir = classDir;
 
         String subPath = "compiled";
-        destDir = Paths.get(System.getProperty("test.classes"), subPath);
+        Path destDir = Paths.get(System.getProperty("test.classes"), subPath);
 
         CompilerUtils.compile(sourceDir, destDir);
 
