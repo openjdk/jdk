@@ -285,56 +285,56 @@ import java.util.Hashtable;
  *
  * public class GridBagLayoutExample {
  *
- *  static void addButton(String name,
- *                        GridBagLayout gridbag,
- *                        GridBagConstraints c,
- *                        Frame frame) {
- *     Button button = new Button(name);
- *     gridbag.setConstraints(button, c);
- *     frame.add(button);
- *  }
+ *     private static void addButton(String name,
+ *                                   GridBagLayout gridbag,
+ *                                   GridBagConstraints c,
+ *                                   Frame frame) {
+ *         Button button = new Button(name);
+ *         gridbag.setConstraints(button, c);
+ *         frame.add(button);
+ *     }
  *
- *  public static void main(String[] args) throws Exception {
+ *     public static void main(String[] args) throws Exception {
  *
- *    EventQueue.invokeAndWait(() -> {
- *       Frame frame = new Frame("GridBagLayout");
- *       GridBagLayout gridbag = new GridBagLayout();
- *       GridBagConstraints c = new GridBagConstraints();
- *       frame.setLayout(gridbag);
+ *         EventQueue.invokeAndWait(() -> {
+ *             Frame frame = new Frame("GridBagLayout");
+ *             GridBagLayout gridbag = new GridBagLayout();
+ *             GridBagConstraints c = new GridBagConstraints();
+ *             frame.setLayout(gridbag);
  *
- *       c.fill = GridBagConstraints.BOTH;
- *       c.weightx = 1.0;
- *       addButton("Button1", gridbag, c, frame);
- *       addButton("Button2", gridbag, c, frame);
- *       addButton("Button3", gridbag, c, frame);
+ *             c.fill = GridBagConstraints.BOTH;
+ *             c.weightx = 1.0;
+ *             addButton("Button1", gridbag, c, frame);
+ *             addButton("Button2", gridbag, c, frame);
+ *             addButton("Button3", gridbag, c, frame);
  *
- *       c.gridwidth = GridBagConstraints.REMAINDER; //end row
- *       addButton("Button4", gridbag, c, frame);
+ *             c.gridwidth = GridBagConstraints.REMAINDER; //end row
+ *             addButton("Button4", gridbag, c, frame);
  *
- *       c.weightx = 0.0;                //reset to the default
- *       addButton("Button5", gridbag, c, frame); //another row
+ *             c.weightx = 0.0;                //reset to the default
+ *             addButton("Button5", gridbag, c, frame); //another row
  *
- *       c.gridwidth = GridBagConstraints.RELATIVE; //next-to-last in row
- *       addButton("Button6", gridbag, c, frame);
+ *             c.gridwidth = GridBagConstraints.RELATIVE; //next-to-last in row
+ *             addButton("Button6", gridbag, c, frame);
  *
- *       c.gridwidth = GridBagConstraints.REMAINDER; //end row
- *       addButton("Button7", gridbag, c, frame);
+ *             c.gridwidth = GridBagConstraints.REMAINDER; //end row
+ *             addButton("Button7", gridbag, c, frame);
  *
- *       c.gridwidth = 1;                //reset to the default
- *       c.gridheight = 2;
- *       c.weighty = 1.0;
- *       addButton("Button8", gridbag, c, frame);
+ *             c.gridwidth = 1;                //reset to the default
+ *             c.gridheight = 2;
+ *             c.weighty = 1.0;
+ *             addButton("Button8", gridbag, c, frame);
  *
- *       c.weighty = 0.0;                //reset to the default
- *       c.gridwidth = GridBagConstraints.REMAINDER; //end row
- *       c.gridheight = 1;               //reset to the default
- *       addButton("Button9", gridbag, c, frame);
- *       addButton("Button10", gridbag, c, frame);
+ *             c.weighty = 0.0;                //reset to the default
+ *             c.gridwidth = GridBagConstraints.REMAINDER; //end row
+ *             c.gridheight = 1;               //reset to the default
+ *             addButton("Button9", gridbag, c, frame);
+ *             addButton("Button10", gridbag, c, frame);
  *
- *       frame.pack();
- *       frame.setVisible(true);
- *    });
- *  }
+ *             frame.pack();
+ *             frame.setVisible(true);
+ *         });
+ *     }
  * }
  * </pre></blockquote><hr>
  *

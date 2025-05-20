@@ -105,7 +105,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  *          bg = tk.getImage("background.gif");
  *          tracker.addImage(bg, 0);
  *          for (int i = 0; i < 5; i++) {
- *              anim[i] = tk.getImage("anim"+i+".gif");
+ *              anim[i] = tk.getImage("anim" + i + ".gif");
  *              tracker.addImage(anim[i], 1);
  *          }
  *      }
