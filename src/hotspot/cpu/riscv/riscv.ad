@@ -5271,8 +5271,8 @@ instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R1
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                           Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register,
-                           true /* result as bool */);
+               Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register,
+               true /* result as bool */);
   %}
 
   ins_pipe(pipe_slow);
@@ -5689,7 +5689,7 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                            /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6047,7 +6047,7 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                                 /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
+                    /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6173,7 +6173,7 @@ instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                                 /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+                    /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -6221,7 +6221,7 @@ instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
 
   ins_encode %{
     __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                                 /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+                    /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);

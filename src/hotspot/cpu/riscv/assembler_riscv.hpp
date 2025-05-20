@@ -911,187 +911,187 @@ protected:
 
   template <AmoOperationFunct5 funct5, AmoWidthFunct3 width>
   void amo_base(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<funct5, width>(Rd, Rs1, Rs2->raw_encoding(), aqrl);
+    amo_base<funct5, width>(Rd, Rs1, Rs2->raw_encoding(), memory_order);
   }
 
  public:
 
   void amoadd_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_ADD, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_ADD, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoadd_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_ADD, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_ADD, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoadd_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_ADD, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_ADD, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoadd_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_ADD, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_ADD, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoswap_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_SWAP, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_SWAP, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoswap_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_SWAP, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_SWAP, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoswap_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_SWAP, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_SWAP, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoswap_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_SWAP, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_SWAP, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoxor_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_XOR, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_XOR, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoxor_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_XOR, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_XOR, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoxor_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_XOR, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_XOR, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoxor_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_XOR, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_XOR, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoor_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_OR, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_OR, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoor_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_OR, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_OR, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoor_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_OR, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_OR, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoor_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_OR, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_OR, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoand_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_AND, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_AND, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoand_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_AND, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_AND, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoand_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_AND, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_AND, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amoand_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_AND, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_AND, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amomin_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MIN, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MIN, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amomin_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MIN, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MIN, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amomin_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MIN, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MIN, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amomin_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MIN, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MIN, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amominu_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MINU, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MINU, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amominu_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MINU, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MINU, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amominu_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MINU, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MINU, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amominu_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MINU, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MINU, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amomax_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MAX, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MAX, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amomax_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MAX, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MAX, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amomax_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MAX, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MAX, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amomax_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MAX, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MAX, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amomaxu_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MAXU, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MAXU, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amomaxu_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MAXU, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MAXU, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amomaxu_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MAXU, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MAXU, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amomaxu_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_MAXU, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_MAXU, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
  protected:
 
-  void lr_w(Register Rd, Register Rs1, Aqrl memory_order = relaxed) {
-    amo_base<AMO_LR, AMO_WIDTH_WORD>(Rd, Rs1, 0, aqrl);
+  void lr_w(Register Rd, Register Rs1, Aqrl memory_order = aqrl) {
+    amo_base<AMO_LR, AMO_WIDTH_WORD>(Rd, Rs1, 0, memory_order);
   }
 
-  void lr_d(Register Rd, Register Rs1, Aqrl memory_order = relaxed) {
-    amo_base<AMO_LR, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, 0, aqrl);
+  void lr_d(Register Rd, Register Rs1, Aqrl memory_order = aqrl) {
+    amo_base<AMO_LR, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, 0, memory_order);
   }
 
-  void sc_w(Register Rd, Register Rs2, Register Rs1, Aqrl memory_order = relaxed) {
-    amo_base<AMO_SC, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, aqrl);
+  void sc_w(Register Rd, Register Rs2, Register Rs1, Aqrl memory_order = aqrl) {
+    amo_base<AMO_SC, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
   }
 
-  void sc_d(Register Rd, Register Rs2, Register Rs1, Aqrl memory_order = relaxed) {
-    amo_base<AMO_SC, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, aqrl);
+  void sc_d(Register Rd, Register Rs2, Register Rs1, Aqrl memory_order = aqrl) {
+    amo_base<AMO_SC, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amocas_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_CAS, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_CAS, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amocas_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_CAS, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_CAS, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amocas_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_CAS, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_CAS, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
   }
 
   void amocas_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
-    amo_base<AMO_CAS, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, aqrl);
+    amo_base<AMO_CAS, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
   }
 
  public:

@@ -3839,7 +3839,6 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
                                                  enum operand_size size,
                                                  Register shift, Register mask, Register aligned_addr) {
   assert(size == int8 || size == int16, "unsupported operand size");
-  assert(!(UseZacas && UseZabha), "Use amocas");
 
   andi(shift, addr, 3);
   slli(shift, shift, 3);
@@ -3871,6 +3870,7 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
                                           Assembler::Aqrl acquire, Assembler::Aqrl release,
                                           Register result, bool result_as_bool,
                                           Register tmp1, Register tmp2, Register tmp3) {
+  assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
 
   Register scratch0 = t0, aligned_addr = t1;
@@ -3945,6 +3945,7 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
                                                Assembler::Aqrl acquire, Assembler::Aqrl release,
                                                Register result,
                                                Register tmp1, Register tmp2, Register tmp3) {
+  assert(!(UseZacas && UseZabha), "Use amocas");
   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
 
   Register scratch0 = t0, aligned_addr = t1;
