@@ -71,7 +71,7 @@
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #endif
 #if INCLUDE_JFR
-#include "jfr/jfr.hpp"
+#include "jfr/jfr.inline.hpp"
 #endif
 
 #include <type_traits>

@@ -394,6 +394,7 @@ traceid JfrThreadLocal::vthread_id(const Thread* t) {
 }
 
 traceid JfrThreadLocal::vthread_id_with_epoch_update(const JavaThread* jt) const {
+  assert(is_vthread(jt), "invariant");
   const traceid tid = vthread_id(jt);
   assert(tid != 0, "invariant");
   if (!is_vthread_excluded()) {

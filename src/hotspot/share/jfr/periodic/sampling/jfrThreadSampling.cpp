@@ -352,7 +352,7 @@ bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaTh
       ResourceMark rm(sampler_thread);
       JfrStackTrace stacktrace;
       const frame top_frame = jt->last_frame();
-      if (!stacktrace.record_inner(jt, top_frame, 0 /* skip level */)) {
+      if (!stacktrace.record_inner(jt, top_frame, is_in_continuation(top_frame, jt), 0 /* skip level */)) {
         // Unable to record stacktrace. Fail.
         return false;
       }

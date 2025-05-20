@@ -87,7 +87,7 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 #if INCLUDE_JFR
-#include "jfr/jfr.hpp"
+#include "jfr/jfr.inline.hpp"
 #endif
 
 // Shared runtime stub routines reside in their own unique blob with a

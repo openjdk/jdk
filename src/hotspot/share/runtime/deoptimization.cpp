@@ -101,7 +101,7 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/xmlstream.hpp"
 #if INCLUDE_JFR
-#include "jfr/jfr.hpp"
+#include "jfr/jfr.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif

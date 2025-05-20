@@ -77,7 +77,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #if INCLUDE_JFR
-#include "jfr/jfr.hpp"
+#include "jfr/jfr.inline.hpp"
 #endif
 
 // Helper class to access current interpreter state

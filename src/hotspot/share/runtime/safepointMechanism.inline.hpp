@@ -32,7 +32,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #if INCLUDE_JFR
-#include "jfr/jfr.hpp"
+#include "jfr/jfr.inline.hpp"
 #endif
 
 // Caller is responsible for using a memory barrier if needed.

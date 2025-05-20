@@ -122,12 +122,10 @@ bool JfrStackTrace::equals(const JfrStackTrace& rhs) const {
   return true;
 }
 
-#ifdef ASSERT
 static inline bool is_in_continuation(const frame& frame, JavaThread* jt) {
   return JfrThreadLocal::is_vthread(jt) &&
     (Continuation::is_frame_in_continuation(jt, frame) || Continuation::is_continuation_enterSpecial(frame));
 }
-#endif
 
 static inline bool is_interpreter(const JfrSampleRequest& request) {
   return request._sample_bcp != nullptr;
@@ -159,24 +157,27 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, bool in_continuat
       return true;
     }
   }
-  return record(jt, frame, 0, in_continuation);
+  return record(jt, frame, in_continuation, 0);
 }
 
 bool JfrStackTrace::record(JavaThread* jt, int skip, int64_t stack_filter_id) {
   assert(jt != nullptr, "invariant");
   assert(jt == JavaThread::current(), "invariant");
-  const bool in_continuation = JfrThreadLocal::is_vthread(jt);
-  return jt->has_last_Java_frame() ? record(jt, jt->last_frame(), skip, in_continuation, stack_filter_id) : false;
+  if (!jt->has_last_Java_frame()) {
+    return false;
+  }
+  const frame last_frame = jt->last_frame();
+  return record(jt, last_frame, is_in_continuation(last_frame, jt), skip, stack_filter_id);
 }
 
-bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip, bool in_continuation /* false */, int64_t stack_filter_id /* -1 */) {
+bool JfrStackTrace::record(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id /* -1 */) {
   // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
   // This is because RegisterMap uses Handles to support continuations.
   ResetNoHandleMark rnhm;
   return record_inner(jt, frame, skip, in_continuation, stack_filter_id);
 }
 
-bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, int skip, bool in_continuation /* false */, int64_t stack_filter_id /* -1 */) {
+bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id /* -1 */) {
   assert(jt != nullptr, "invariant");
   assert(!_lineno, "invariant");
   assert(_frames != nullptr, "invariant");
@@ -217,7 +218,7 @@ bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, int skip, b
       bci = vfs.bci();
     }
 
-    intptr_t* frame_id = vfs.frame_id();
+    const intptr_t* const frame_id = vfs.frame_id();
     vfs.next_vframe();
     if (type == JfrStackFrame::FRAME_JIT && !vfs.at_end() && frame_id == vfs.frame_id()) {
       // This frame and the caller frame are both the same physical
