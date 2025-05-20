@@ -154,7 +154,9 @@ public class SnippetTaglet extends BaseTaglet {
                             linkTarget = l.target();
                             e = getLinkedElement(element, linkTarget);
                             if (e == null) {
-                                // TODO: diagnostic output
+                                messages.error(utils.getCommentHelper(element).getDocTreePath(tag),
+                                        "doclet.link.see.reference_not_found",
+                                        linkTarget);
                             }
                         }
                         case Style.Markup m -> markupEncountered = true;
