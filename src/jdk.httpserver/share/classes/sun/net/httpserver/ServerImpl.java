@@ -228,7 +228,7 @@ class ServerImpl {
 
     /**
      * This method stops the server by adding a stop request event and
-     * waiting for the server until the event is executed or until the maximum delay is triggered.
+     * waiting for the server until the event is triggered or until the maximum delay is triggered.
      * <p>
      * This ensures that the server is stopped immediately after all exchanges are complete,
      * but still stops as soon as maximum delay is reached.

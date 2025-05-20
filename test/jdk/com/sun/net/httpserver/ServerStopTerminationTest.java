@@ -187,8 +187,9 @@ public class ServerStopTerminationTest {
     @Test
     public void noActiveExchanges() {
         // With no active exchanges, shutdown should complete immediately
-        Duration delayDuration = Duration.ofSeconds(2);
+        final Duration delayDuration = Duration.ofSeconds(1);
         final long elapsed = timeShutdown(delayDuration);
+        log("Shutting down the server with no exchanges");
         if (elapsed >= delayDuration.toNanos()) {
             fail("Expected HttpServer.stop to terminate immediately with no active exchanges");
         }
@@ -200,7 +201,9 @@ public class ServerStopTerminationTest {
     @Test
     public void shouldAllowRepeatedStop() {
         final Duration delayDuration = Duration.ofSeconds(1);
+        log("Shutting down the server the first time");
         timeShutdown(delayDuration);
+        log("Shutting down the server the second time");
         timeShutdown(delayDuration);
     }
 
@@ -256,7 +259,7 @@ public class ServerStopTerminationTest {
     }
 
     /**
-     * this logging method will log the name of the method which called the log
+     * This logging method will log the name of the method which called the log
      * for easier debug
      *
      * @param message message to include in the log
