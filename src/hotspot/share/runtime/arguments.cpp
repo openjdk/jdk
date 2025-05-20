@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotLogging.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoader.hpp"
@@ -1362,7 +1363,7 @@ void Arguments::set_mode_flags(Mode mode) {
 // incompatible command line options were chosen.
 void Arguments::no_shared_spaces(const char* message) {
   if (RequireSharedSpaces) {
-    log_error(cds)("%s is incompatible with other specified options.",
+    aot_log_error(aot)("%s is incompatible with other specified options.",
                    CDSConfig::new_aot_flags_used() ? "AOT cache" : "CDS");
     if (CDSConfig::new_aot_flags_used()) {
       vm_exit_during_initialization("Unable to use AOT cache", message);
@@ -1371,9 +1372,9 @@ void Arguments::no_shared_spaces(const char* message) {
     }
   } else {
     if (CDSConfig::new_aot_flags_used()) {
-      log_warning(cds)("Unable to use AOT cache: %s", message);
+      log_warning(aot)("Unable to use AOT cache: %s", message);
     } else {
-      log_info(cds)("Unable to use shared archive: %s", message);
+      aot_log_info(aot)("Unable to use shared archive: %s", message);
     }
     UseSharedSpaces = false;
   }
@@ -1562,7 +1563,7 @@ void Arguments::set_heap_size() {
       // was not specified.
       if (reasonable_max > max_coop_heap) {
         if (FLAG_IS_ERGO(UseCompressedOops) && override_coop_limit) {
-          log_info(cds)("UseCompressedOops and UseCompressedClassPointers have been disabled due to"
+          aot_log_info(aot)("UseCompressedOops and UseCompressedClassPointers have been disabled due to"
             " max heap %zu > compressed oop heap %zu. "
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
@@ -3615,10 +3616,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     return JNI_ERR;
   }
   if ((CDSConfig::is_using_archive() && xshare_auto_cmd_line) ||
-      log_is_enabled(Info, cds)) {
+      log_is_enabled(Info, cds) || log_is_enabled(Info, aot)) {
     warning("Shared spaces are not supported in this VM");
     UseSharedSpaces = false;
     LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(cds));
+    LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(aot));
   }
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS

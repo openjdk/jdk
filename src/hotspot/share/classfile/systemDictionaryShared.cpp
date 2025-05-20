@@ -24,6 +24,7 @@
 
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotLogging.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -229,7 +230,7 @@ bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClass
 // Returns true so the caller can do:    return warn_excluded(".....");
 bool SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
   ResourceMark rm;
-  log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
+  aot_log_warning(aot)("Skipping %s: %s", k->name()->as_C_string(), reason);
   return true;
 }
 
@@ -273,7 +274,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
         k->set_shared_classpath_index(0);
       } else {
         ResourceMark rm;
-        log_info(cds)("Skipping %s because it is dynamically generated", k->name()->as_C_string());
+        aot_log_info(aot)("Skipping %s because it is dynamically generated", k->name()->as_C_string());
         return true; // exclude without warning
       }
     } else {
@@ -325,14 +326,14 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
 
   if (UnregisteredClasses::check_for_exclusion(k)) {
     ResourceMark rm;
-    log_info(cds)("Skipping %s: used only when dumping CDS archive", k->name()->as_C_string());
+    aot_log_info(aot)("Skipping %s: used only when dumping CDS archive", k->name()->as_C_string());
     return true;
   }
 
   InstanceKlass* super = k->java_super();
   if (super != nullptr && check_for_exclusion(super, nullptr)) {
     ResourceMark rm;
-    log_warning(cds)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
+    aot_log_warning(aot)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
     return true;
   }
 
@@ -342,7 +343,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     InstanceKlass* intf = interfaces->at(i);
     if (check_for_exclusion(intf, nullptr)) {
       ResourceMark rm;
-      log_warning(cds)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
+      aot_log_warning(aot)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
     }
   }
@@ -824,9 +825,9 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
       Symbol* name      = vc->name();
       Symbol* from_name = vc->from_name();
 
-      if (log_is_enabled(Trace, cds, verification)) {
+      if (log_is_enabled(Trace, aot, verification)) {
         ResourceMark rm(THREAD);
-        log_trace(cds, verification)("check_verification_constraint: %s: %s must be subclass of %s [0x%x]",
+        log_trace(aot, verification)("check_verification_constraint: %s: %s must be subclass of %s [0x%x]",
                                      klass->external_name(), from_name->as_klass_external_name(),
                                      name->as_klass_external_name(), record->verifier_constraint_flag(i));
       }
@@ -1042,9 +1043,9 @@ public:
       } else {
         _writer->add(hash, delta);
       }
-      if (log_is_enabled(Trace, cds, hashtables)) {
+      if (log_is_enabled(Trace, aot, hashtables)) {
         ResourceMark rm;
-        log_trace(cds,hashtables)("%s dictionary: %s", (_is_builtin ? "builtin" : "unregistered"), info._klass->external_name());
+        log_trace(aot, hashtables)("%s dictionary: %s", (_is_builtin ? "builtin" : "unregistered"), info._klass->external_name());
       }
 
       // Save this for quick runtime lookup of InstanceKlass* -> RunTimeClassInfo*

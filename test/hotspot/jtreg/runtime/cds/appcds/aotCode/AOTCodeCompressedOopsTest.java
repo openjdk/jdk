@@ -25,10 +25,8 @@
 /**
  * @test
  * @summary Sanity test of AOT Code Cache with compressed oops configurations
- * @requires vm.cds
- * @requires vm.cds.supports.aot.class.linking
+ * @requires vm.cds.supports.aot.code.caching
  * @requires vm.flagless
- * @requires !vm.jvmci.enabled
  * @library /test/lib /test/setup_aot
  * @build AOTCodeCompressedOopsTest JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
@@ -127,7 +125,7 @@ public class AOTCodeCompressedOopsTest {
             case RunMode.ASSEMBLY: {
                     List<String> args = getVMArgsForHeapConfig(zeroBaseInAsmPhase, zeroShiftInAsmPhase);
                     args.addAll(List.of("-XX:+UnlockDiagnosticVMOptions",
-                                        "-Xlog:cds=info",
+                                        "-Xlog:aot=info",
                                         "-Xlog:aot+codecache+init=debug",
                                         "-Xlog:aot+codecache+exit=debug"));
                     return args.toArray(new String[0]);
@@ -135,7 +133,7 @@ public class AOTCodeCompressedOopsTest {
             case RunMode.PRODUCTION: {
                     List<String> args = getVMArgsForHeapConfig(zeroBaseInProdPhase, zeroShiftInProdPhase);
                     args.addAll(List.of("-XX:+UnlockDiagnosticVMOptions",
-                                        "-Xlog:cds=info", // we need this to parse CompressedOops settings
+                                        "-Xlog:aot=info", // we need this to parse CompressedOops settings
                                         "-Xlog:aot+codecache+init=debug",
                                         "-Xlog:aot+codecache+exit=debug"));
                     return args.toArray(new String[0]);
