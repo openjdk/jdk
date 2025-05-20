@@ -123,7 +123,15 @@ public final class QuicServerConnection extends QuicConnectionImpl {
         this.clientSentDestConnId = clientSentDestConnId;
         this.retryData = retryData;
         this.originalServerConnId = retryData == null ? clientSentDestConnId : retryData.originalServerConnId();
-        handshakeFlow().handshakeCF().thenAccept(this::onHandshakeCompletion);
+        handshakeFlow().handshakeCF().thenAccept((hs) -> {
+            try {
+                onHandshakeCompletion(hs);
+            } catch (Exception e) {
+                // TODO: consider if this needs to be propagated somehow. for now just log
+                System.err.println("onHandshakeCompletion() failed: " + e);
+                e.printStackTrace();
+            }
+        });
         assert quicVersion == quicVersion() : "unexpected quic version on" +
                 " server connection, expected " + quicVersion + " but found " + quicVersion();
         getTLSEngine().deriveInitialKeys(quicVersion, clientSentDestConnId.asReadOnlyBuffer());
