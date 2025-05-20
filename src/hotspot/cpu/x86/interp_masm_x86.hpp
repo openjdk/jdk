@@ -212,11 +212,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void verify_method_data_pointer();
 
   void set_mdp_data_at(Register mdp_in, int constant, Register value);
-  void increment_mdp_data_at(Address data, bool decrement = false);
-  void increment_mdp_data_at(Register mdp_in, int constant,
-                             bool decrement = false);
-  void increment_mdp_data_at(Register mdp_in, Register reg, int constant,
-                             bool decrement = false);
+  void increment_mdp_data_at(Register mdp_in, int constant);
+  void increment_mdp_data_at(Register mdp_in, Register index, int constant);
   void increment_mask_and_jump(Address counter_addr, Address mask,
                                Register scratch, Label* where);
   void set_mdp_flag_at(Register mdp_in, int flag_constant);

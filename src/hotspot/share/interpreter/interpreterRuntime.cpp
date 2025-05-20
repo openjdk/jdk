@@ -71,7 +71,6 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.inline.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
@@ -921,7 +920,7 @@ void InterpreterRuntime::cds_resolve_invoke(Bytecodes::Code bytecode, int method
     // Can't link it here since there are no guarantees it'll be prelinked on the next run.
     ResourceMark rm;
     InstanceKlass* resolved_iklass = InstanceKlass::cast(link_info.resolved_klass());
-    log_info(cds, resolve)("Not resolved: class not linked: %s %s %s",
+    log_info(aot, resolve)("Not resolved: class not linked: %s %s %s",
                            resolved_iklass->is_shared() ? "is_shared" : "",
                            resolved_iklass->init_state_name(),
                            resolved_iklass->external_name());

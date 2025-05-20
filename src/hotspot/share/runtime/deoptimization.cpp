@@ -844,13 +844,24 @@ void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_arr
 }
 
 #ifndef PRODUCT
+// Return true if the execution after the provided bytecode continues at the
+// next bytecode in the code. This is not the case for gotos, returns, and
+// throws.
 static bool falls_through(Bytecodes::Code bc) {
   switch (bc) {
-    // List may be incomplete.  Here we really only care about bytecodes where compiled code
-    // can deoptimize.
     case Bytecodes::_goto:
     case Bytecodes::_goto_w:
     case Bytecodes::_athrow:
+    case Bytecodes::_areturn:
+    case Bytecodes::_dreturn:
+    case Bytecodes::_freturn:
+    case Bytecodes::_ireturn:
+    case Bytecodes::_lreturn:
+    case Bytecodes::_jsr:
+    case Bytecodes::_ret:
+    case Bytecodes::_return:
+    case Bytecodes::_lookupswitch:
+    case Bytecodes::_tableswitch:
       return false;
     default:
       return true;
