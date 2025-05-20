@@ -169,7 +169,7 @@ import compiler.lib.ir_framework.TestFramework;
  * Templates, which allows sharing of these identifier names between Templates.
  *
  * <p>
- * A {@link TemplateToken} can not just be used in {@link Template#body}, but it can also be
+ * A {@link TemplateToken} cannot just be used in {@link Template#body}, but it can also be
  * {@link Hook#insert}ed to where a {@link Hook} was {@link Hook#set} earlier (in some outer scope of the code).
  * For example, while generating code in a method, one can reach out to the scope of the class, and insert a
  * new field, or define a utility method.
