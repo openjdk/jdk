@@ -155,7 +155,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      */
     private <T> T doInvokeAny(Collection<? extends Callable<T>> tasks,
                               boolean timed, long nanos)
-        throws InterruptedException, ExecutionException, TimeoutException, NullPointerException {
+        throws InterruptedException, ExecutionException, TimeoutException {
         Objects.requireNonNull(tasks, "tasks");
         int ntasks = tasks.size();
         if (ntasks == 0)
