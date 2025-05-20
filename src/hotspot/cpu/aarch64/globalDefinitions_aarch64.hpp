@@ -26,10 +26,13 @@
 #ifndef CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP
 #define CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP
 
+extern long pthread_jit_write_protect_np_counter;
+
 #define pthread_jit_write_protect_np_wrapper(arg)                       \
 do {                                                                    \
   /* fprintf(stderr, "pthread_jit_write_protect_np(%s)\n", arg == WXWrite ? "WXWrite" : "WXExec"); */ \
   pthread_jit_write_protect_np(arg);                                    \
+  pthread_jit_write_protect_np_counter++;                               \
 } while (0)
 
 const int StackAlignmentInBytes  = 16;

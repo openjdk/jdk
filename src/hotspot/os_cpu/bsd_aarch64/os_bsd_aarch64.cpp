@@ -497,6 +497,13 @@ bool jit_exec_enabled() {
   return _jit_exec_enabled;;
 }
 
+long pthread_jit_write_protect_np_counter;
+
+void poo() __attribute__((constructor));
+void poo() {
+  atexit([]() { printf("pthread_jit_write_protect_np_counter == %ld\n", pthread_jit_write_protect_np_counter); });
+}
+
 void os::current_thread_enable_wx(WXMode mode) {
   bool exec_enabled = mode != WXWrite;
   if (exec_enabled != jit_exec_enabled()) {
