@@ -76,6 +76,7 @@ import jdk.internal.util.ByteArrayLittleEndian;
  * @since   1.5
  */
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
+
     /**
      * Explicit serialVersionUID for interoperability.
      */
@@ -93,6 +94,18 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     private final long leastSigBits;
 
     private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+
+    /**
+     * Record a fixed point in nano-time corresponding to a fix point in System.currentTimeMillis()
+     * and use the delta from the current nano-time as the current nano-time.
+     */
+    private static final long ORIGIN_MS = System.currentTimeMillis();
+
+    private static final long ORIGIN_NS = System.nanoTime();
+
+    private static long monotonicMS() {
+        return ORIGIN_MS + (System.nanoTime() - ORIGIN_NS) / 1_000_000;
+    }
 
     /*
      * The random number generator used by this class to create random
@@ -181,40 +194,64 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     }
 
     /**
-     * Static factory to retrieve a type 7 (time based) {@code UUID} based on
-     * the current timestamp, enhanced with sub-millisecond precision.
+     * Static factory to create a version 7 (Unix epoch time-based) {@code UUID} with the current
+     * Unix timestamp in milliseconds.
      *
-     * The {@code UUID} embeds the current Unix timestamp in milliseconds into
-     * the first 6 bytes, sets the version and variant bits as per RFC 9562,
-     * replaces the first 12 random bits with a value derived from the current
-     * system clock's sub-millisecond precision, and fills the
-     * remaining bytes with cryptographically strong random data.
+     * The {@code UUID} embeds the current Unix Epoch timestamp in milliseconds using
+     * {@link System#currentTimeMillis()} into the first 6 bytes, sets the version and
+     * variant bits as per the specification and fills the remaining bytes with random
+     * data from a cryptographically strong pseudo-random number generator.
      *
-     * @return A {@code UUID} generated from the current system time
+     * @return a {@code UUID} generated with the current Unix timestamp
      *
      * @spec RFC 9562
      */
-    public static UUID timestampUUID() {
-        long msTime = System.currentTimeMillis();
-        long nsTime = System.nanoTime();
+    public static UUID unixEpochTimeMillis() {
+        long timestamp = monotonicMS();
+        return unixEpochTimeMillis(timestamp);
+    }
+
+    /**
+     * Static factory to create a version 7 (time-based) {@code UUID} with a user-supplied
+     * Unix timestamp in milliseconds.
+     *
+     * The {@code UUID} embeds the provided Unix Epoch timestamp in milliseconds into
+     * the first 6 bytes, sets the version and variant bits as per the specification,
+     * and fills the remaining bytes with random data from a cryptographically strong
+     * pseudo-random number generator.
+     *
+     * <p><strong>Note:</strong> The timestamp must be a Unix Epoch timestamp in milliseconds in order
+     * to be compliant with <a href="https://datatracker.ietf.org/doc/html/rfc9562">RFC 9562</a>.
+     *
+     * @param timestamp
+     *        A Unix epoch timestamp in milliseconds which must fit in to 48 bits
+     *
+     * @return a {@code UUID} generated using the provided timestamp
+     *
+     * @throws IllegalArgumentException if the timestamp is negative or exceeds 48 bits
+     *
+     * @spec RFC 9562
+     */
+    public static UUID unixEpochTimeMillis(long timestamp) {
+        if ((timestamp >> 48) != 0) {
+            throw new IllegalArgumentException("Timestamp must be an unsigned 48-bit Unix Epoch time in milliseconds.");
+        }
+
         SecureRandom ng = Holder.numberGenerator;
         byte[] randomBytes = new byte[16];
         ng.nextBytes(randomBytes);
 
-        // Set the first 6 bytes to the ms time
+        // Embed the timestamp into the first 6 bytes
         for (int i = 0; i < 6; i++) {
-            randomBytes[i] = (byte) (msTime >>> (40 - 8 * i));
+            randomBytes[i] = (byte) (timestamp >>> (40 - 8 * i));
         }
 
-        // Scale sub-ms nanoseconds to a 12-bit value
-        int nsBits = (int) ((nsTime % 1_000_000) / 1_000_000.0 * 4096);
+        // Set version to 7
+        randomBytes[6] &= 0x0f;
+        randomBytes[6] |= 0x70;
 
-        // Set version and increased precision time bits
-        randomBytes[6] = (byte) (0x70 | ((nsBits >>> 8) & 0x0F));
-        randomBytes[7] = (byte) (nsBits & 0xFF);
-
-        // Set variant to 2
-        randomBytes[8] &= 0x3F;
+        // Set variant to IETF
+        randomBytes[8] &= 0x3f;
         randomBytes[8] |= (byte) 0x80;
 
         return new UUID(randomBytes);
