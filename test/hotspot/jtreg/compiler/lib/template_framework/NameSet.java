@@ -26,6 +26,7 @@ package compiler.lib.template_framework;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Optional;
 
 import jdk.test.lib.Utils;
 
@@ -37,6 +38,7 @@ class NameSet {
     static final Random RANDOM = Utils.getRandomInstance();
 
     private final NameSet parent;
+    private final List<NameSet> children = new ArrayList<>();
     private final List<Name> names = new ArrayList<>();
 
     interface Predicate {
@@ -45,6 +47,11 @@ class NameSet {
 
     NameSet(NameSet parent) {
         this.parent = parent;
+        if (parent != null) { parent.registerChild(this); }
+    }
+
+    void registerChild(NameSet child) {
+        children.add(child);
     }
 
     private long weight(Predicate predicate) {
@@ -94,11 +101,44 @@ class NameSet {
         return parent.sample(predicate, r);
     }
 
+    private Name findLocal(String name) {
+        Optional<Name> opt = names.stream().filter(n -> n.name().equals(name)).findAny();
+        return opt.orElse(null);
+    }
+
+    private Name findParents(String name) {
+        if (parent == null) { return null; }
+        Name n = parent.findLocal(name);
+        if (n != null) { return n; }
+        return parent.findParents(name);
+    }
+
+    private Name findChildren(String name) {
+        for (NameSet child : children) {
+            Name n1 = child.findLocal(name);
+            if (n1 != null) { return n1; }
+            Name n2 = child.findChildren(name);
+            if (n2 != null) { return n2; }
+        }
+        return null;
+    }
+
+    private Name find(String name) {
+        Name n1 = findLocal(name);
+        if (n1 != null) { return n1; }
+        Name n2 = findParents(name);
+        if (n2 != null) { return n2; }
+        return findChildren(name);
+    }
+
     /**
      * Add a variable of a specified type to the set.
      */
     public void add(Name name) {
-        // TODO: verification!
+        Name other = find(name.name());
+        if (other != null) {
+            throw new RendererException("Duplicate name: " + name + ", previously: " + other);
+        }
         names.add(name);
     }
 }
