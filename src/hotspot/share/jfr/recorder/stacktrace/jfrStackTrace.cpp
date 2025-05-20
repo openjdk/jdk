@@ -174,7 +174,7 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, bool in_continuat
   // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
   // This is because RegisterMap uses Handles to support continuations.
   ResetNoHandleMark rnhm;
-  return record_inner(jt, frame, skip, in_continuation, stack_filter_id);
+  return record_inner(jt, frame, in_continuation, skip, stack_filter_id);
 }
 
 bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id /* -1 */) {
