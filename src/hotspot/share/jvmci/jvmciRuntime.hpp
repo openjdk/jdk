@@ -373,8 +373,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Explicitly initialize HotSpotJVMCIRuntime itself
   void initialize_HotSpotJVMCIRuntime(JVMCI_TRAPS);
 
-  void call_getCompiler(TRAPS);
-
   // Shuts down this runtime by calling HotSpotJVMCIRuntime.shutdown().
   // If this is the last thread attached to this runtime, then
   // `_HotSpotJVMCIRuntime_instance` is set to null and `_init_state`

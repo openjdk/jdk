@@ -743,22 +743,6 @@ JVM_ENTRY_NO_ENV(jlong, JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jint
 JVM_END
 
 
-void JVMCIRuntime::call_getCompiler(TRAPS) {
-  JVMCIENV_FROM_THREAD(THREAD);
-  int init_error = JVMCIENV->init_error();
-  if (init_error != JNI_OK) {
-    if (PrintCompilation) {
-      const char* msg = JVMCIENV->init_error_msg();
-      tty->print_cr("COMPILER INIT ERROR: Error creating or attaching to libjvmci (err: %d, description: %s)",
-        init_error, msg == nullptr ? "unknown" : msg);
-    }
-    return;
-  }
-  JVMCIObject jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_CHECK);
-  initialize(JVMCI_CHECK);
-  JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
-}
-
 void JVMCINMethodData::initialize(int nmethod_mirror_index,
                                   int nmethod_entry_patch_offset,
                                   const char* nmethod_mirror_name,
