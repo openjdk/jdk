@@ -26,9 +26,9 @@ package compiler.lib.template_framework;
 import java.util.List;
 
 /**
- * {@link Hook}s can be {@link #set} for a certain scope in a Template, and all nested
+ * {@link Hook}s can be {@link #anchor}ed for a certain scope in a Template, and all nested
  * Templates in this scope, and then from within this scope, any Template can
- * {@link #insert} code to where the {@link Hook} was {@link #set}. This can be useful to reach
+ * {@link #insert} code to where the {@link Hook} was {@link #anchor}ed. This can be useful to reach
  * "back" or to some outer scope, e.g. while generating code for a method, one can reach out
  * to the class scope to insert fields.
  *
@@ -46,13 +46,13 @@ import java.util.List;
  *     """
  *     public class Test {
  *     """,
- *     // Set the hook here.
- *     myHook.set(
+ *     // Anchor the hook here.
+ *     myHook.anchor(
  *         """
  *         public static void main(String[] args) {
  *         System.out.println("$field: " + $field)
  *         """,
- *         // Reach out to where the hook was set, and insert the code of template1.
+ *         // Reach out to where the hook was anchored, and insert the code of template1.
  *         myHook.insert(template1.asToken($("field"))),
  *         """
  *         }
@@ -68,19 +68,19 @@ import java.util.List;
  */
 public record Hook(String name) {
     /**
-     * Set this {@link Hook} for the scope of the provided {@code 'tokens'}.
+     * Anchor this {@link Hook} for the scope of the provided {@code 'tokens'}.
      * From anywhere inside this scope, even in nested Templates, code can be
-     * {@link #insert}ed back to the location where this {@link Hook} was {@link #set}.
+     * {@link #insert}ed back to the location where this {@link Hook} was {@link #anchor}ed.
      *
      * @param tokens A list of tokens, which have the same restrictions as {@link Template#body}.
-     * @return A {@link Token} that captures the setting of the scope and the list of validated {@link Token}s.
+     * @return A {@link Token} that captures the anchoring of the scope and the list of validated {@link Token}s.
      */
-    public Token set(Object... tokens) {
-        return new HookSetToken(this, Token.parse(tokens));
+    public Token anchor(Object... tokens) {
+        return new HookAnchorToken(this, Token.parse(tokens));
     }
 
     /**
-     * Inserts a {@link TemplateToken} to the innermost location where this {@link Hook} was {@link #set}.
+     * Inserts a {@link TemplateToken} to the innermost location where this {@link Hook} was {@link #anchor}ed.
      * This could be in the same Template, or one nested further out.
      *
      * @param templateToken The Template with applied arguments to be inserted at the {@link Hook}.
@@ -91,11 +91,11 @@ public record Hook(String name) {
     }
 
     /**
-     * Checks if the {@link Hook} was {@link Hook#set} for the current scope or an outer scope.
+     * Checks if the {@link Hook} was {@link Hook#anchor}ed for the current scope or an outer scope.
      *
-     * @return If the {@link Hook} was {@link Hook#set} for the current scope or an outer scope.
+     * @return If the {@link Hook} was {@link Hook#anchor}ed for the current scope or an outer scope.
      */
-    public boolean isSet() {
-        return Renderer.getCurrent().isSet(this);
+    public boolean isAnchored() {
+        return Renderer.getCurrent().isAnchored(this);
     }
 }

@@ -25,4 +25,4 @@ package compiler.lib.template_framework;
 
 import java.util.List;
 
-record HookSetToken(Hook hook, List<Token> tokens) implements Token {}
+record HookAnchorToken(Hook hook, List<Token> tokens) implements Token {}

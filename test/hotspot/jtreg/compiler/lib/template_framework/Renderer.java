@@ -240,7 +240,7 @@ class Renderer {
             case NothingToken() -> {
                 // Nothing.
             }
-            case HookSetToken(Hook hook, List<Token> tokens) -> {
+            case HookAnchorToken(Hook hook, List<Token> tokens) -> {
                 CodeFrame outerCodeFrame = currentCodeFrame;
 
                 // We need a CodeFrame to which the hook can insert code. That way, name
@@ -318,7 +318,7 @@ class Renderer {
         );
     }
 
-    boolean isSet(Hook hook) {
+    boolean isAnchored(Hook hook) {
         return currentCodeFrame.codeFrameForHook(hook) != null;
     }
 

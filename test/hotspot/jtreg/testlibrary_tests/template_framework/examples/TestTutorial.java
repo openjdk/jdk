@@ -286,9 +286,9 @@ public class TestTutorial {
             """,
             // We set a Hook outside the main method, but inside the Class.
             // The Hook is set for the Tokens inside the set braces.
-            // As long as the hook is set, we can insert code into the hook,
+            // As long as the hook is anchored, we can insert code into the hook,
             // here we can define static fields for example.
-            myHook.set(
+            myHook.anchor(
                 """
                 public static void main() {
                 """,
@@ -344,12 +344,12 @@ public class TestTutorial {
             public class InnerTest5 {
             """,
             // Class Hook for fields.
-            Hooks.CLASS_HOOK.set(
+            Hooks.CLASS_HOOK.anchor(
                 """
                 public static void main() {
                 """,
                 // Method Hook for local variables, and earlier computations.
-                Hooks.METHOD_HOOK.set(
+                Hooks.METHOD_HOOK.anchor(
                     """
                     // This is the beginning of the "main" method body.
                     System.out.println("Welcome to main!");
@@ -367,7 +367,7 @@ public class TestTutorial {
                 """,
                 // Have a separate method hook for other, so that it can insert
                 // its own local variables.
-                Hooks.METHOD_HOOK.set(
+                Hooks.METHOD_HOOK.anchor(
                     """
                     System.out.println("Welcome to other!");
                     """,
@@ -657,12 +657,12 @@ public class TestTutorial {
             public class InnerTest8 {
             """,
             // Class Hook for fields.
-            Hooks.CLASS_HOOK.set(
+            Hooks.CLASS_HOOK.anchor(
                 """
                 public static void main() {
                 """,
                 // Method Hook for local variables.
-                Hooks.METHOD_HOOK.set(
+                Hooks.METHOD_HOOK.anchor(
                     """
                     // This is the beginning of the "main" method body.
                     System.out.println("Welcome to main!");
@@ -680,7 +680,7 @@ public class TestTutorial {
                 """,
                 // Have a separate method hook for other, where it could insert
                 // its own local variables (but happens not to).
-                Hooks.METHOD_HOOK.set(
+                Hooks.METHOD_HOOK.anchor(
                     """
                     System.out.println("Welcome to other!");
                     """,
@@ -788,7 +788,7 @@ public class TestTutorial {
                 // addDataName is restricted to the scope of the templateStaticField. But
                 // with the insertion to CLASS_HOOK, the addDataName goes through the scope
                 // of the templateStaticField out to the scope of the CLASS_HOOK.
-                Hooks.CLASS_HOOK.set(
+                Hooks.CLASS_HOOK.anchor(
                     myClassList.stream().map(c ->
                         (Object)Hooks.CLASS_HOOK.insert(templateStaticField.asToken(c, true))
                     ).toList(),
@@ -885,8 +885,8 @@ public class TestTutorial {
             public class InnerTest9 {
                 // Let us define some methods that we can sample from later.
             """,
-            // We must set a CLASS_HOOK here, and insert the method definitions to that hook.
-            Hooks.CLASS_HOOK.set(
+            // We must anchor a CLASS_HOOK here, and insert the method definitions to that hook.
+            Hooks.CLASS_HOOK.anchor(
                 // If we directly nest the templateMethod, then the addStructuralName goes to the nested
                 // scope, and is not available at the class scope, i.e. it is not visible
                 // for sampleStructuralName in outside of the templateMethod.

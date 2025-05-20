@@ -171,7 +171,7 @@ import compiler.lib.ir_framework.TestFramework;
  *
  * <p>
  * A {@link TemplateToken} cannot just be used in {@link Template#body}, but it can also be
- * {@link Hook#insert}ed to where a {@link Hook} was {@link Hook#set} earlier (in some outer scope of the code).
+ * {@link Hook#insert}ed to where a {@link Hook} was {@link Hook#anchor}ed earlier (in some outer scope of the code).
  * For example, while generating code in a method, one can reach out to the scope of the class, and insert a
  * new field, or define a utility method.
  *
@@ -232,7 +232,7 @@ import compiler.lib.ir_framework.TestFramework;
  *     // This is because the token for "v1" is only evaluated later.
  *     let("c2", dataNames(MUTABLE).exactOf(someType).count()),
  *     // Create a nested scope.
- *     METHOD_HOOK.set(
+ *     METHOD_HOOK.anchor(
  *         // We want to define a DataName "v2", which is only valid inside this
  *         // nested scope.
  *         addDataName($("v2"), someType, MUTABLE),
@@ -744,7 +744,7 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Add a {@link DataName} in the current scope, i.e. the innermost of either
-     * {@link Template#body} or {@link Hook#set}.
+     * {@link Template#body} or {@link Hook#anchor}.
      *
      * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link DataName}.
@@ -766,7 +766,7 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Add a {@link DataName} in the current scope, i.e. the innermost of either
-     * {@link Template#body} or {@link Hook#set}, with a {@code weight} of 1.
+     * {@link Template#body} or {@link Hook#anchor}, with a {@code weight} of 1.
      *
      * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link DataName}.
@@ -791,7 +791,7 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Add a {@link StructuralName} in the current scope, i.e. the innermost of either
-     * {@link Template#body} or {@link Hook#set}.
+     * {@link Template#body} or {@link Hook#anchor}.
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link StructuralName}.
@@ -805,7 +805,7 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Add a {@link StructuralName} in the current scope, i.e. the innermost of either
-     * {@link Template#body} or {@link Hook#set}, with a {@code weight} of 1.
+     * {@link Template#body} or {@link Hook#anchor}, with a {@code weight} of 1.
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link StructuralName}.

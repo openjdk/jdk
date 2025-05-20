@@ -39,7 +39,7 @@ sealed interface Token permits StringToken,
                                TemplateToken.OneArg,
                                TemplateToken.TwoArgs,
                                TemplateToken.ThreeArgs,
-                               HookSetToken,
+                               HookAnchorToken,
                                HookInsertToken,
                                AddNameToken,
                                NothingToken

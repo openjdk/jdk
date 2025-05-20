@@ -96,7 +96,7 @@ public class TestTemplate {
         testWithThreeArguments();
         testNested();
         testHookSimple();
-        testHookIsSet();
+        testHookIsAnchored();
         testHookNested();
         testHookWithNestedTemplates();
         testHookRecursion();
@@ -119,7 +119,7 @@ public class TestTemplate {
         expectRendererException(() -> setFuelCost(1.0f),                  "A Template method such as");
         expectRendererException(() -> dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).count(),  "A Template method such as");
         expectRendererException(() -> dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).sample(), "A Template method such as");
-        expectRendererException(() -> (new Hook("abc")).isSet(),          "A Template method such as");
+        expectRendererException(() -> (new Hook("abc")).isAnchored(),     "A Template method such as");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
         expectRendererException(() -> testFailingSample1(),  "No variable: MUTABLE, subtypeOf(int), supertypeOf(int).");
         expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
@@ -132,9 +132,9 @@ public class TestTemplate {
         expectIllegalArgumentException(() -> body("x", null),         "Unexpected token: null");
         expectIllegalArgumentException(() -> body(new Hook("Hook1")), "Unexpected token:");
         Hook hook1 = new Hook("Hook1");
-        expectIllegalArgumentException(() -> hook1.set(null),         "Unexpected tokens: null");
-        expectIllegalArgumentException(() -> hook1.set("x", null),    "Unexpected token: null");
-        expectIllegalArgumentException(() -> hook1.set(hook1),        "Unexpected token:");
+        expectIllegalArgumentException(() -> hook1.anchor(null),      "Unexpected tokens: null");
+        expectIllegalArgumentException(() -> hook1.anchor("x", null), "Unexpected token: null");
+        expectIllegalArgumentException(() -> hook1.anchor(hook1),     "Unexpected token:");
         expectIllegalArgumentException(() -> testFailingAddDataName(), "Unexpected mutability: MUTABLE_OR_IMMUTABLE");
         expectUnsupportedOperationException(() -> testFailingSample2(), "Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
     }
@@ -310,7 +310,7 @@ public class TestTemplate {
 
         var template2 = Template.make(() -> body(
             "{\n",
-            hook1.set(
+            hook1.anchor(
                 "World\n",
                 hook1.insert(template1.asToken())
             ),
@@ -327,17 +327,17 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testHookIsSet() {
+    public static void testHookIsAnchored() {
         var hook1 = new Hook("Hook1");
 
-        var template0 = Template.make(() -> body("isSet: ", hook1.isSet(), "\n"));
+        var template0 = Template.make(() -> body("isSet: ", hook1.isAnchored(), "\n"));
 
         var template1 = Template.make(() -> body("Hello\n", template0.asToken()));
 
         var template2 = Template.make(() -> body(
             "{\n",
             template0.asToken(),
-            hook1.set(
+            hook1.anchor(
                 "World\n",
                 template0.asToken(),
                 hook1.insert(template1.asToken())
@@ -368,25 +368,25 @@ public class TestTemplate {
         // Test nested use of hooks in the same template.
         var template2 = Template.make(() -> body(
             "{\n",
-            hook1.set(), // empty
+            hook1.anchor(), // empty
             "zero\n",
-            hook1.set(
+            hook1.anchor(
                 template1.asToken("one"),
                 template1.asToken("two"),
                 hook1.insert(template1.asToken("intoHook1a")),
                 hook1.insert(template1.asToken("intoHook1b")),
                 template1.asToken("three"),
-                hook1.set(
+                hook1.anchor(
                     template1.asToken("four"),
                     hook1.insert(template1.asToken("intoHook1c")),
                     template1.asToken("five")
                 ),
                 template1.asToken("six"),
-                hook1.set(), // empty
+                hook1.anchor(), // empty
                 template1.asToken("seven"),
                 hook1.insert(template1.asToken("intoHook1d")),
                 template1.asToken("eight"),
-                hook1.set(
+                hook1.anchor(
                     template1.asToken("nine"),
                     hook1.insert(template1.asToken("intoHook1e")),
                     template1.asToken("ten")
@@ -433,12 +433,12 @@ public class TestTemplate {
             hook1.insert(template1.asToken(b + "B")),
             hook2.insert(template1.asToken(b + "C")),
             template1.asToken(b + "D"),
-            hook1.set(
+            hook1.anchor(
                 template1.asToken(b + "E"),
                 hook1.insert(template1.asToken(b + "F")),
                 hook2.insert(template1.asToken(b + "G")),
                 template1.asToken(b + "H"),
-                hook2.set(
+                hook2.anchor(
                     template1.asToken(b + "I"),
                     hook1.insert(template1.asToken(b + "J")),
                     hook2.insert(template1.asToken(b + "K")),
@@ -460,9 +460,9 @@ public class TestTemplate {
         var template3 = Template.make(() -> body(
             "{\n",
             "base-A\n",
-            hook1.set(
+            hook1.anchor(
                 "base-B\n",
-                hook2.set(
+                hook2.anchor(
                     "base-C\n",
                     template2.asToken("sub-"),
                     "base-D\n"
@@ -521,7 +521,7 @@ public class TestTemplate {
             hook1.insert(template1.asToken(b + "B")), // sub-B is rendered before template2.
             template1.asToken(b + "C"),
             "inner-hook-start\n",
-            hook1.set(
+            hook1.anchor(
                 "inner-hook-end\n",
                 template1.asToken(b + "E"),
                 hook1.insert(template1.asToken(b + "E")),
@@ -534,7 +534,7 @@ public class TestTemplate {
         var template3 = Template.make(() -> body(
             "{\n",
             "hook-start\n",
-            hook1.set(
+            hook1.anchor(
                 "hook-end\n",
                 hook1.insert(template2.asToken("sub-")),
                 "base-C\n"
@@ -587,11 +587,11 @@ public class TestTemplate {
             template1.asToken("name"),     // does not capture -> literal "$name"
             template1.asToken("$name"),    // does not capture -> literal "$name"
             template1.asToken($("name")),  // capture replacement name "name_1"
-            hook1.set(
+            hook1.anchor(
                 "$name\n"
             ),
             "break\n",
-            hook1.set(
+            hook1.anchor(
                 "one\n",
                 hook1.insert(template1.asToken($("name"))),
                 "two\n",
@@ -655,7 +655,7 @@ public class TestTemplate {
             template1.asToken("alpha"),
             "break\n",
             "x1 = #x\n",
-            hook1.set(
+            hook1.anchor(
                 "x2 = #x\n", // leaks inside
                 template1.asToken("beta"),
                 let("y", "one"),
@@ -933,7 +933,7 @@ public class TestTemplate {
         var template4 = Template.make(() -> body(
             "{\n",
             template1.asToken(),
-            hook1.set(
+            hook1.anchor(
                 template1.asToken(),
                 "something\n",
                 template3.asToken(),
@@ -1037,7 +1037,7 @@ public class TestTemplate {
         var template8 = Template.make(() -> body(
             "class $X {\n",
             template1.asToken(myInt),
-            hook1.set(
+            hook1.anchor(
                 "begin $body\n",
                 template1.asToken(myInt),
                 "start with immutable\n",
@@ -1142,7 +1142,7 @@ public class TestTemplate {
         var template2 = Template.make(() -> body(
             "class $Y {\n",
             template1.asToken(myInt),
-            hook1.set(
+            hook1.anchor(
                 "begin $body\n",
                 template1.asToken(myInt),
                 "define mutable $v1\n",
@@ -1236,7 +1236,7 @@ public class TestTemplate {
         var template4 = Template.make(() -> body(
             "class $W {\n",
             template2.asToken(),
-            hook1.set(
+            hook1.anchor(
                 "Create name for myClassA11, should be visible for the super classes\n",
                 addDataName($("v1"), myClassA11, MUTABLE),
                 template3.asToken(myClassA11),
