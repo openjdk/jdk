@@ -633,7 +633,7 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
   auto fn_vec_op = [this](int opcode, const VectorRegister &dst, const VectorRegister &a, const VectorRegister &b) {
     switch(opcode) {
       case Op_AddReductionVI:
-        vsumsws(dst, a, b);
+        vadduwm(dst, a, b);
         break;
       case Op_MulReductionVI:
         vmuluwm(dst, a , b);
