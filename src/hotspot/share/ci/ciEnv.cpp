@@ -1177,6 +1177,15 @@ int ciEnv::num_inlined_bytecodes() const {
 // ------------------------------------------------------------------
 // ciEnv::record_failure()
 void ciEnv::record_failure(const char* reason) {
+  // record the bailout for hserr envlog
+  if (reason != nullptr) {
+    if (CompilationLog::log() != nullptr) {
+      CompilerThread* thread = CompilerThread::current();
+      CompileTask* task = thread->task();
+      CompilationLog::log()->log_failure(thread, task, reason, nullptr);
+    }
+  }
+
   if (_failure_reason.get() == nullptr) {
     // Record the first failure reason.
     _failure_reason.set(reason);

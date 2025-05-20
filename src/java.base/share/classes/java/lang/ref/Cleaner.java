@@ -219,7 +219,7 @@ public final class Cleaner {
      * @param action a {@code Runnable} to invoke when the object becomes phantom reachable
      * @return a {@code Cleanable} instance
      */
-    public Cleanable register(Object obj, Runnable action) {
+    public Cleanable register(@jdk.internal.RequiresIdentity Object obj, Runnable action) {
         Objects.requireNonNull(obj, "obj");
         Objects.requireNonNull(action, "action");
         return new CleanerImpl.PhantomCleanableRef(obj, this, action);
