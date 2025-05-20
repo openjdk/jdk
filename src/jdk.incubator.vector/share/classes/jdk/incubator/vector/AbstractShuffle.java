@@ -96,7 +96,6 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
         return this;
     }
 
-
     @Override
     @ForceInline
     @SuppressWarnings("unchecked")

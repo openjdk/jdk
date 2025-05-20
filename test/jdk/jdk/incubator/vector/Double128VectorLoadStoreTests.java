@@ -715,7 +715,7 @@ public class Double128VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
        }
 
        for (int i = 0; i < a.length; i++) {
-          Assert.assertEquals(testPartiallyWrapIndex(SPECIES,a[i]), r[i]);
+          Assert.assertEquals(testPartiallyWrapIndex(SPECIES, a[i]), r[i]);
        }
 
    }
