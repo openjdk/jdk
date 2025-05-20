@@ -1577,14 +1577,6 @@ public class QuicPacketDecoder {
             return readVariableLength();
         }
 
-        public byte[] readToken() {
-            // Get number of bytes needed to store the length of the token
-            // and read it.
-            long tokenLength = readTokenLength();
-            assert tokenLength >= 0 && tokenLength <= Integer.MAX_VALUE : tokenLength;
-            return readToken((int) tokenLength);
-        }
-
         public byte[] readToken(int tokenLength) {
             // Check to ensure that tokenLength is within valid range
             if (tokenLength < 0 || tokenLength > buffer.remaining()) {
