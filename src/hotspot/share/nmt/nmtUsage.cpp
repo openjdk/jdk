@@ -97,7 +97,7 @@ void NMTUsage::update_vm_usage() {
 
   { // MemoryFileTracker addition
     using MFT = MemoryFileTracker::Instance;
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
     MFT::iterate_summary([&](MemTag tag, const VirtualMemory* vm) {
       int i = NMTUtil::tag_to_index(tag);
       _vm_by_type[i].committed += vm->committed();

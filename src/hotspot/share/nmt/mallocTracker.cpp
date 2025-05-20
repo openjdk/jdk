@@ -63,10 +63,11 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
   }
 }
 
-void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
+void MallocMemorySnapshot::copy_to(MallocMemorySnapshot** result) {
   // Use lock to make sure that mtChunks don't get deallocated while the
   // copy is going on, because their size is adjusted using this
   // buffer in make_adjustment().
+  MallocMemorySnapshot* s = new MallocMemorySnapshot(*this);
   ChunkPoolLocker lock;
   s->_all_mallocs = _all_mallocs;
   size_t total_size = 0;
@@ -78,6 +79,7 @@ void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
   }
   // malloc counters may be updated concurrently
   s->_all_mallocs.set_size_and_count(total_size, total_count);
+  *result = s;
 }
 
 // Total malloc'd memory used by arenas

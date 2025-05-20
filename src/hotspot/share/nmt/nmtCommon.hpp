@@ -29,7 +29,9 @@
 
 #include "memory/allStatic.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/memTagFactory.hpp"
 #include "utilities/align.hpp"
+#include "utilities/deferred.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Native memory tracking level
@@ -74,7 +76,13 @@ const int NMT_TrackingStackDepth = 4;
 
 // A few common utilities for native memory tracking
 class NMTUtil : AllStatic {
- public:
+  static Deferred<MemTagFactory> factory;
+public:
+
+  static void initialize() {
+    factory.initialize();
+  }
+
   // Check if index is a valid MemTag enum value (including mtNone)
   static inline bool tag_index_is_valid(int index) {
     return index >= 0 && index < mt_number_of_tags;
