@@ -29,7 +29,9 @@
 
 #include "memory/allStatic.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/memTagFactory.hpp"
 #include "utilities/align.hpp"
+#include "utilities/deferred.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Native memory tracking level
@@ -74,10 +76,10 @@ const int NMT_TrackingStackDepth = 4;
 
 // A few common utilities for native memory tracking
 class NMTUtil : AllStatic {
- public:
+public:
   // Check if index is a valid MemTag enum value (including mtNone)
   static inline bool tag_index_is_valid(int index) {
-    return index >= 0 && index < mt_number_of_tags;
+    return index >= 0 && index < MemTagFactory::number_of_tags();
   }
 
   // Check if tag value is a valid MemTag enum value (including mtNone)
@@ -90,16 +92,6 @@ class NMTUtil : AllStatic {
   static inline int tag_to_index(MemTag mem_tag) {
     assert(tag_is_valid(mem_tag), "Invalid tag (%u)", (unsigned)mem_tag);
     return static_cast<int>(mem_tag);
-  }
-
-  // Map memory tag to human readable name
-  static const char* tag_to_name(MemTag mem_tag) {
-    return _strings[tag_to_index(mem_tag)].human_readable;
-  }
-
-  // Map memory tag to literalized enum name (e.g. "mtTest")
-  static const char* tag_to_enum_name(MemTag mem_tag) {
-    return _strings[tag_to_index(mem_tag)].enum_s;
   }
 
   // Map an index to memory tag
@@ -121,20 +113,8 @@ class NMTUtil : AllStatic {
   // string is not a valid level.
   static NMT_TrackingLevel parse_tracking_level(const char* s);
 
-  // Given a string, return associated mem_tag. mtNone if name is invalid.
-  // String can be either the human readable name or the
-  // stringified enum (with or without leading "mt". In all cases, case is ignored.
-  static MemTag string_to_mem_tag(const char* name);
-
   // Returns textual representation of a tracking level.
   static const char* tracking_level_to_string(NMT_TrackingLevel level);
-
-private:
-  struct S {
-    const char* enum_s; // e.g. "mtNMT"
-    const char* human_readable; // e.g. "Native Memory Tracking"
-  };
-  static S _strings[mt_number_of_tags];
 };
 
 

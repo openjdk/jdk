@@ -22,32 +22,7 @@
  *
  */
 
-#include "nmt/memTag.hpp"
-#include "nmt/mallocTracker.hpp"
-#include "unittest.hpp"
+#include "nmt/nmtLocker.hpp"
 
-class NMTMemTagArrayTest : public testing::Test {
-public:
-  using MTArray = MallocMemorySnapshot::MemTagArray;
-};
-
-TEST_VM_F(NMTMemTagArrayTest, AllocatingTagTest) {
-  { // Allocate tags in order
-    MTArray mta;
-    ASSERT_TRUE(mta.is_valid()) << "must";
-    EXPECT_EQ(0, mta.number_of_tags_allocated());
-    for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
-      mta.at((MemTag)i);
-    }
-    EXPECT_EQ(MemTagFactory::number_of_tags(), mta.number_of_tags_allocated());
-  }
-
-  { // Allocating a tag in the middle also allocates all preceding tags.
-    MTArray mta;
-    ASSERT_TRUE(mta.is_valid()) << "must";
-    EXPECT_EQ(0, (int)mta.number_of_tags_allocated());
-
-    mta.at(mtMetaspace);
-    EXPECT_EQ((int)mtMetaspace + 1, (int)mta.number_of_tags_allocated());
-  }
-}
+bool NmtVirtualMemoryLocker::_safe_to_use;
+bool NmtMemTagLocker::_safe_to_use;
