@@ -640,6 +640,7 @@ public:
 
   Node_List* _safepts;          // List of safepoints in this loop
   Node_List* _required_safept;  // A inner loop cannot delete these safepts;
+  Node_List* _rfs;              // List of reachability fences in this loop
   bool  _allow_optimizations;   // Allow loop optimizations
 
   IdealLoopTree( PhaseIdealLoop* phase, Node *head, Node *tail )
@@ -652,6 +653,7 @@ public:
       _has_range_checks(0), _has_range_checks_computed(0),
       _safepts(nullptr),
       _required_safept(nullptr),
+      _rfs(nullptr),
       _allow_optimizations(true)
   {
     precond(_head != nullptr);
@@ -711,6 +713,9 @@ public:
 
   // Check for Node being a loop-breaking test
   Node *is_loop_exit(Node *iff) const;
+
+  // Return unique loop-exit projection or null if there are multiple exits exist.
+  Node* unique_loop_exit_or_null();
 
   // Remove simplistic dead code from loop body
   void DCE_loop_body();
@@ -1113,6 +1118,17 @@ public:
     lazy_update(old_node, new_node);
   }
 
+  void remove_dead_node(Node* dead) {
+    assert(dead->outcnt() == 0 && !dead->is_top(), "node must be dead");
+    Node* c = get_ctrl(dead);
+    IdealLoopTree* lpt = get_loop(c);
+    _loop_or_ctrl.map(dead->_idx, nullptr); // This node is useless
+    if (!lpt->is_root()) {
+      lpt->_body.yank(dead);
+    }
+    igvn().remove_dead_node(dead);
+  }
+
 private:
 
   // Place 'n' in some loop nest, where 'n' is a CFG node
@@ -1452,7 +1468,20 @@ public:
   void eliminate_useless_zero_trip_guard();
   void eliminate_useless_multiversion_if();
 
- public:
+  // Reachability fence support.
+  bool optimize_reachability_fences();
+  bool eliminate_reachability_fences();
+
+  bool is_redundant_rf(Node* rf, bool cfg_only);
+  bool find_redundant_rfs(Unique_Node_List& redundant_rfs);
+  void insert_rf(Node* ctrl, Node* referent);
+  void replace_rf(Node* old_node, Node* new_node);
+  void remove_rf(Node* rf);
+#ifdef ASSERT
+  bool has_redundant_rfs(Unique_Node_List& ignored_rfs, bool cfg_only);
+#endif // ASSERT
+
+public:
   // Change the control input of expensive nodes to allow commoning by
   // IGVN when it is guaranteed to not result in a more frequent
   // execution of the expensive node. Return true if progress.

@@ -159,7 +159,7 @@ bool Block::is_trivially_unreachable() const {
 
 // Return empty status of a block.  Empty blocks contain only the head, other
 // ideal nodes, and an optional trailing goto.
-int Block::is_Empty() const {
+int Block::is_Empty(Compile* C) const {
 
   // Root or start block is not considered empty
   if (head()->is_Root() || head()->is_Start()) {
@@ -182,9 +182,11 @@ int Block::is_Empty() const {
 
   // Ideal nodes (except BoxLock) are allowable in empty blocks: skip them. Only
   // Mach and BoxLock nodes turn directly into code via emit().
+  // Keep ReachabilityFence info when printing nmethod assembly.
   while ((end_idx > 0) &&
          !get_node(end_idx)->is_Mach() &&
-         !get_node(end_idx)->is_BoxLock()) {
+         !get_node(end_idx)->is_BoxLock() &&
+         !(get_node(end_idx)->is_ReachabilityFence() && C->print_assembly())) {
     end_idx--;
   }
 
@@ -702,7 +704,7 @@ bool PhaseCFG::move_to_next(Block* bx, uint b_index) {
 
 // Move empty and uncommon blocks to the end.
 void PhaseCFG::move_to_end(Block *b, uint i) {
-  int e = b->is_Empty();
+  int e = b->is_Empty(C);
   if (e != Block::not_empty) {
     if (e == Block::empty_with_goto) {
       // Remove the goto, but leave the block.
@@ -774,7 +776,7 @@ void PhaseCFG::remove_empty_blocks() {
   last = number_of_blocks();
   for (uint i = 1; i < last; i++) {
     Block* block = get_block(i);
-    if (block->is_Empty() != Block::not_empty) {
+    if (block->is_Empty(C) != Block::not_empty) {
       move_to_end(block, i);
       last--;
       i--;
@@ -853,7 +855,7 @@ void PhaseCFG::fixup_flow() {
       assert((i+1) == number_of_blocks() || get_block(i + 1)->is_connector(), "All connector blocks should sink to the end");
       continue;
     }
-    assert(block->is_Empty() != Block::completely_empty, "Empty blocks should be connectors");
+    assert(block->is_Empty(C) != Block::completely_empty, "Empty blocks should be connectors");
 
     Block* bnext = (i < number_of_blocks() - 1) ? get_block(i + 1) : nullptr;
     Block* bs0 = block->non_connector_successor(0);

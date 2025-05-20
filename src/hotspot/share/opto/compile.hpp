@@ -105,6 +105,7 @@ enum LoopOptsMode {
   LoopOptsDefault,
   LoopOptsNone,
   LoopOptsMaxUnroll,
+  LoopOptsEliminateRFs,
   LoopOptsShenandoahExpand,
   LoopOptsSkipSplitIf,
   LoopOptsVerify
@@ -376,6 +377,7 @@ class Compile : public Phase {
   // of Template Assertion Predicates themselves.
   GrowableArray<OpaqueTemplateAssertionPredicateNode*>  _template_assertion_predicate_opaques;
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
+  GrowableArray<Node*>  _reachability_fences;   // List of reachability fences
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   GrowableArray<Node*>  _for_merge_stores_igvn; // List of nodes for IGVN merge stores
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
@@ -699,10 +701,12 @@ public:
   int           template_assertion_predicate_count() const { return _template_assertion_predicate_opaques.length(); }
   int           expensive_count()         const { return _expensive_nodes.length(); }
   int           coarsened_count()         const { return _coarsened_locks.length(); }
-
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
 
   Node*         expensive_node(int idx)   const { return _expensive_nodes.at(idx); }
+
+  Node*         reachability_fence(int idx) const { return _reachability_fences.at(idx); }
+  int           reachability_fences_count() const { return _reachability_fences.length(); }
 
   ConnectionGraph* congraph()                   { return _congraph;}
   void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
@@ -723,6 +727,14 @@ public:
   void add_expensive_node(Node* n);
   void remove_expensive_node(Node* n) {
     _expensive_nodes.remove_if_existing(n);
+  }
+
+  void add_reachability_fence(Node *n) {
+    _reachability_fences.append(n);
+  }
+
+  void remove_reachability_fence(Node* n) {
+    _reachability_fences.remove_if_existing(n);
   }
 
   void add_parse_predicate(ParsePredicateNode* n) {
@@ -1274,6 +1286,8 @@ public:
 
   // Definitions of pd methods
   static void pd_compiler2_init();
+
+  void expand_reachability_fences(Unique_Node_List& safepoints);
 
   // Static parse-time type checking logic for gen_subtype_check:
   enum SubTypeCheckResult { SSC_always_false, SSC_always_true, SSC_easy_test, SSC_full_test };

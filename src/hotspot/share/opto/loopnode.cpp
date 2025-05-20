@@ -4338,6 +4338,9 @@ void IdealLoopTree::dump_head() {
   if (_has_call) tty->print(" has_call");
   if (_has_sfpt) tty->print(" has_sfpt");
   if (_rce_candidate) tty->print(" rce");
+  if (_rfs != nullptr && _rfs->size() > 0) {
+    tty->print(" has_rf");
+  }
   if (_safepts != nullptr && _safepts->size() > 0) {
     tty->print(" sfpts={"); _safepts->dump_simple(); tty->print(" }");
   }
@@ -4345,6 +4348,9 @@ void IdealLoopTree::dump_head() {
     tty->print(" req={"); _required_safept->dump_simple(); tty->print(" }");
   }
   if (Verbose) {
+    if (_rfs != nullptr && _rfs->size() > 0) {
+      tty->print(" rfs={"); _rfs->dump_simple(); tty->print(" }");
+    }
     tty->print(" body={"); _body.dump_simple(); tty->print(" }");
   }
   if (_head->is_Loop() && _head->as_Loop()->is_strip_mined()) {
@@ -4590,7 +4596,7 @@ void PhaseIdealLoop::build_and_optimize() {
   bool do_split_ifs = (_mode == LoopOptsDefault);
   bool skip_loop_opts = (_mode == LoopOptsNone);
   bool do_max_unroll = (_mode == LoopOptsMaxUnroll);
-
+  bool optimize_rfs = (_mode == LoopOptsEliminateRFs);
 
   int old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
@@ -4660,8 +4666,9 @@ void PhaseIdealLoop::build_and_optimize() {
   bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !do_max_unroll && !_verify_me &&
           !_verify_only && !bs->is_gc_specific_loop_opts_pass(_mode);
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
+  bool do_reachability_fences = (C->reachability_fences_count() > 0);
   bool strip_mined_loops_expanded = bs->strip_mined_loops_expanded(_mode);
-  if (stop_early && !do_expensive_nodes) {
+  if (stop_early && !do_expensive_nodes && !do_reachability_fences) {
     return;
   }
 
@@ -4767,8 +4774,16 @@ void PhaseIdealLoop::build_and_optimize() {
   eliminate_useless_multiversion_if();
 
   if (stop_early) {
-    assert(do_expensive_nodes, "why are we here?");
-    if (process_expensive_nodes()) {
+    assert(do_expensive_nodes || do_reachability_fences, "why are we here?");
+    if (do_reachability_fences) {
+      bool progress = optimize_reachability_fences();
+      progress |= eliminate_reachability_fences();
+      if (progress) {
+        recompute_dom_depth();
+        DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
+      }
+    }
+    if (do_expensive_nodes && process_expensive_nodes()) {
       // If we made some progress when processing expensive nodes then
       // the IGVN may modify the graph in a way that will allow us to
       // make some more progress: we need to try processing expensive
@@ -4796,6 +4811,11 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 #endif
 
+  if (optimize_reachability_fences()) {
+    recompute_dom_depth();
+    DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
+  }
+
   if (skip_loop_opts) {
     C->restore_major_progress(old_progress);
     return;
@@ -4818,6 +4838,12 @@ void PhaseIdealLoop::build_and_optimize() {
       }
     }
 
+    C->restore_major_progress(old_progress);
+    return;
+  }
+
+  if (optimize_rfs) {
+    eliminate_reachability_fences();
     C->restore_major_progress(old_progress);
     return;
   }
@@ -5697,6 +5723,11 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
         // Record all safepoints in this loop.
         if (innermost->_safepts == nullptr) innermost->_safepts = new Node_List();
         innermost->_safepts->push(n);
+      } else if (n->is_ReachabilityFence()) {
+        if (innermost->_rfs == nullptr) {
+          innermost->_rfs = new Node_List();
+        }
+        innermost->_rfs->push(n);
       }
     }
   }
@@ -6899,7 +6930,7 @@ void LoopTreeIterator::next() {
   assert(!done(), "must not be done.");
   if (_curnt->_child != nullptr) {
     _curnt = _curnt->_child;
-  } else if (_curnt->_next != nullptr) {
+  } else if (_curnt != _root && _curnt->_next != nullptr) {
     _curnt = _curnt->_next;
   } else {
     while (_curnt != _root && _curnt->_next == nullptr) {

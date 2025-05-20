@@ -108,7 +108,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     not_null_block = block->_succs[0];
     null_block     = block->_succs[1];
   }
-  while (null_block->is_Empty() == Block::empty_with_goto) {
+  while (null_block->is_Empty(C) == Block::empty_with_goto) {
     null_block     = null_block->_succs[0];
   }
 

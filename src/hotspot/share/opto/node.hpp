@@ -165,6 +165,7 @@ class Pipeline;
 class PopulateIndexNode;
 class ProjNode;
 class RangeCheckNode;
+class ReachabilityFenceNode;
 class ReductionNode;
 class RegMask;
 class RegionNode;
@@ -693,8 +694,9 @@ public:
         DEFINE_CLASS_ID(NeverBranch, MultiBranch, 2)
       DEFINE_CLASS_ID(Start,       Multi, 2)
       DEFINE_CLASS_ID(MemBar,      Multi, 3)
-        DEFINE_CLASS_ID(Initialize,       MemBar, 0)
-        DEFINE_CLASS_ID(MemBarStoreStore, MemBar, 1)
+        DEFINE_CLASS_ID(Initialize,        MemBar, 0)
+        DEFINE_CLASS_ID(MemBarStoreStore,  MemBar, 1)
+      DEFINE_CLASS_ID(ReachabilityFence, Multi, 4)
 
     DEFINE_CLASS_ID(Mach,  Node, 1)
       DEFINE_CLASS_ID(MachReturn, Mach, 0)
@@ -996,6 +998,7 @@ public:
   DEFINE_CLASS_QUERY(PCTable)
   DEFINE_CLASS_QUERY(Phi)
   DEFINE_CLASS_QUERY(Proj)
+  DEFINE_CLASS_QUERY(ReachabilityFence)
   DEFINE_CLASS_QUERY(Reduction)
   DEFINE_CLASS_QUERY(Region)
   DEFINE_CLASS_QUERY(Root)

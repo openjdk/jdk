@@ -90,6 +90,7 @@ void Phase::print_timers() {
     tty->print_cr ("             Prune Useless:   %7.3f s", timers[_t_vector_pru].seconds());
     tty->print_cr ("         Renumber Live:       %7.3f s", timers[_t_renumberLive].seconds());
     tty->print_cr ("         IdealLoop:           %7.3f s", timers[_t_idealLoop].seconds());
+    tty->print_cr ("           ReachabilityFence: %7.3f s", timers[_t_reachability].seconds());
     tty->print_cr ("           AutoVectorize:     %7.3f s", timers[_t_autoVectorize].seconds());
     tty->print_cr ("         IdealLoop Verify:    %7.3f s", timers[_t_idealLoopVerify].seconds());
     tty->print_cr ("         Cond Const Prop:     %7.3f s", timers[_t_ccp].seconds());

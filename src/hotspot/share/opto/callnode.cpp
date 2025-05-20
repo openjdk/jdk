@@ -943,11 +943,12 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
           for (DUIterator_Fast kmax, k = cn->fast_outs(kmax); k < kmax; k++) {
             cpn = cn->fast_out(k)->as_Proj();
             assert(cpn->is_CatchProj(), "must be a CatchProjNode");
-            if (cpn->_con == CatchProjNode::fall_through_index)
-              projs->fallthrough_catchproj = cpn;
-            else {
-              assert(cpn->_con == CatchProjNode::catch_all_index, "must be correct index.");
-              projs->catchall_catchproj = cpn;
+            switch (cpn->_con) {
+              case CatchProjNode::fall_through_index: projs->fallthrough_catchproj = cpn; break;
+              case CatchProjNode::catch_all_index:    projs->catchall_catchproj    = cpn; break;
+              default: {
+                assert(cpn->_con > 1, ""); // exception table; rethrow case
+              }
             }
           }
         }
@@ -961,8 +962,12 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
       for (DUIterator j = pn->outs(); pn->has_out(j); j++) {
         Node* e = pn->out(j);
         if (e->Opcode() == Op_CreateEx && e->in(0)->is_CatchProj() && e->outcnt() > 0) {
-          assert(projs->exobj == nullptr, "only one");
-          projs->exobj = e;
+          if (e->in(0)->as_CatchProj()->_con == CatchProjNode::catch_all_index) {
+            assert(projs->exobj == nullptr, "only one");
+            projs->exobj = e;
+          } else  {
+            // exception table for rethrow case
+          }
         }
       }
       break;

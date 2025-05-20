@@ -492,6 +492,10 @@ public:
 
   void disconnect_from_root(PhaseIterGVN *igvn);
 
+  // Are we guaranteed that this node is a safepoint?  Not true for leaf calls and
+  // for some macro nodes whose expansion does not have a safepoint on the fast path.
+  virtual bool guaranteed_safepoint()  { return true; }
+
   // Standard Node stuff
   virtual int            Opcode() const;
   virtual bool           pinned() const { return true; }
@@ -711,9 +715,6 @@ public:
   virtual void        calling_convention(BasicType* sig_bt, VMRegPair* parm_regs, uint argcnt) const;
   virtual Node*       match(const ProjNode* proj, const Matcher* m);
   virtual uint        ideal_reg() const { return NotAMachineReg; }
-  // Are we guaranteed that this node is a safepoint?  Not true for leaf calls and
-  // for some macro nodes whose expansion does not have a safepoint on the fast path.
-  virtual bool        guaranteed_safepoint()  { return true; }
   // For macro nodes, the JVMState gets modified during expansion. If calls
   // use MachConstantBase, it gets modified during matching. So when cloning
   // the node the JVMState must be deep cloned. Default is to shallow clone.
