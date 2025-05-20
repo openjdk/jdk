@@ -66,7 +66,6 @@ import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
 import sun.nio.ch.Util;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
-import static sun.nio.ch.Util.NIO_ACCESS;
 import static sun.nio.ch.sctp.ResultContainer.SEND_FAILED;
 import static sun.nio.ch.sctp.ResultContainer.ASSOCIATION_CHANGED;
 import static sun.nio.ch.sctp.ResultContainer.PEER_ADDRESS_CHANGED;
