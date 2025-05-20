@@ -60,7 +60,8 @@ VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
   _transient_failure(false),
   _cycle_already_in_progress(false),
   _whitebox_attached(false),
-  _terminating(false)
+  _terminating(false),
+  _gc_succeeded(false)
 {}
 
 bool VM_G1TryInitiateConcMark::doit_prologue() {
@@ -101,6 +102,7 @@ void VM_G1TryInitiateConcMark::doit() {
     _whitebox_attached = true;
   } else {
     g1h->do_collection_pause_at_safepoint();
+    _gc_succeeded = true;
   }
 }
 
