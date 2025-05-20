@@ -2,8 +2,8 @@
 
 ## Overview
 
-The start of release changes, the changes the turn JDK N into JDK
-(N+1), are primarily small updates to various files along new files to
+The start of release changes, the changes that turn JDK N into JDK
+(N+1), are primarily small updates to various files along with new files to
 store symbol information to allow `javac --release N ...` to run on
 JDK (N+1).
 
