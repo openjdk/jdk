@@ -44,6 +44,7 @@
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.SimpleCDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -122,7 +123,7 @@ public class AOTProfileFlags {
         trainAndRun("TypeProfileArgsLimit", "-XX:TypeProfileArgsLimit=2", "-XX:TypeProfileArgsLimit=3", errorPattern);
         trainAndRun("TypeProfileParamsLimit", "-XX:TypeProfileParmsLimit=2", "-XX:TypeProfileParmsLimit=3", errorPattern);
         trainAndRun("TypeProfileWidth", "-XX:TypeProfileWidth=2", "-XX:TypeProfileWidth=3", errorPattern);
-        if (System.getProperty("jdk.debug") != null) {
+        if (Platform.isDebugBuild()) {
           trainAndRun("ProfileTraps", "-XX:+ProfileTraps", "-XX:-ProfileTraps", errorPattern);
           trainAndRun("TypeProfileCasts", "-XX:+TypeProfileCasts", "-XX:-TypeProfileCasts", errorPattern);
         }
