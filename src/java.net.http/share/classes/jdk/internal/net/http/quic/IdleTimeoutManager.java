@@ -26,6 +26,7 @@ package jdk.internal.net.http.quic;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -37,6 +38,7 @@ import jdk.internal.net.http.common.TimeLine;
 import jdk.internal.net.http.quic.ConnectionTerminator.IdleTerminationApprover;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketNumberSpace;
 import jdk.internal.net.http.quic.streams.QuicConnectionStreams;
+import jdk.internal.net.quic.QuicTLSEngine;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static jdk.internal.net.http.quic.TerminationCause.forSilentTermination;
@@ -64,6 +66,28 @@ public final class IdleTimeoutManager {
     IdleTimeoutManager(final QuicConnectionImpl connection) {
         this.connection = Objects.requireNonNull(connection, "connection");
         this.debug = connection.debug;
+    }
+
+    /**
+     * Starts the idle timeout management for the connection. This should be called
+     * after the handshake is complete for the connection.
+     *
+     * @throw IllegalStateException if handshake hasn't yet completed or if the handshake
+     *                              has failed for the connection
+     */
+    void start() {
+        final CompletableFuture<QuicTLSEngine.HandshakeState> handshakeCF =
+                this.connection.handshakeFlow().handshakeCF();
+        // start idle management only for successfully completed handshake
+        if (!handshakeCF.isDone()) {
+            throw new IllegalStateException("handshake isn't yet complete,"
+                    + " cannot start idle connection management");
+        }
+        if (handshakeCF.isCompletedExceptionally()) {
+            throw new IllegalStateException("cannot start idle connection management for a failed"
+                    + " connection");
+        }
+        startPreIdleTimer();
     }
 
     /**
@@ -100,6 +124,9 @@ public final class IdleTimeoutManager {
             if (debug.on()) {
                 debug.log("registered pre idle timeout event: "
                         + this.preIdleTimeoutEvent + " deadline: " + deadline);
+            }  else {
+                Log.logQuic("{0} registered pre idle timeout event: {1} deadline: {2}",
+                        connection.logTag(), this.preIdleTimeoutEvent, deadline);
             }
         } finally {
             this.timeoutEventLock.unlock();
@@ -202,8 +229,6 @@ public final class IdleTimeoutManager {
             Log.logQuic("{0} idle connection timeout updated to {1} milli seconds",
                     connection.logTag(), newIdleTimeoutMillis);
         }
-        // arm the idle timer
-        startPreIdleTimer();
     }
 
     private TimeLine timeLine() {

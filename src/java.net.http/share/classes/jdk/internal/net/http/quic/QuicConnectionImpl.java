@@ -392,8 +392,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 CLOSED = 512;      // CONNECTION_CLOSE ACK sent or received
         public abstract int state();
         public boolean helloSent() {return isMarked(HISENT);}
-        public boolean handshakeComplete() { return isMarked(HSCOMPLETE);}
-        public boolean handshakeConfirmed() { return isMarked(HSCONFIRMED);}
         public boolean established() { return isMarked(ESTABLISHED);}
         public boolean closing() { return isMarked(CLOSING);}
         public boolean draining() { return isMarked(DRAINING);}
@@ -2918,10 +2916,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             debug.log("Quic handshake successfully completed with %s(%s)",
                     this.negotiatedAlpn, peerAddress());
         }
-        // now that the handshake has completed, configure local endpoint's idle timeout
-        // which will enable the idle timer (if it hasn't been already)
-        final long timeout = this.localTransportParameters.getIntParameter(max_idle_timeout, 0);
-        this.idleTimeoutManager.localIdleTimeout(timeout);
+        // now that the handshake has successfully completed, start the
+        // idle timeout management for this connection
+        this.idleTimeoutManager.start();
         return this.endpoint;
     }
 
@@ -3532,6 +3529,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         localTransportParameters = params;
         oneRttRcvQueue.newLocalParameters(params);
         streams.newLocalTransportParameters(params);
+        final long idleTimeout = params.getIntParameter(max_idle_timeout, 0);
+        this.idleTimeoutManager.localIdleTimeout(idleTimeout);
     }
 
     private List<QuicFrame> ackOrPing(AckFrame ack, boolean sendPing) {
