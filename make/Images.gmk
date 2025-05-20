@@ -162,7 +162,7 @@ define CreateCDSArchive
   endif
 
   ifeq ($(DEBUG_CDS_ARCHIVE), true)
-    $1_$2_CDS_DUMP_FLAGS += -Xlog:cds+map*=trace:file=$$(JDK_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE).cdsmap:none:filesize=0
+    $1_$2_CDS_DUMP_FLAGS += -Xlog:aot+map*=trace:file=$$(JDK_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE).cdsmap:none:filesize=0
   endif
 
   $$(eval $$(call SetupExecute, $1_$2_gen_cds_archive_jdk, \

@@ -42,6 +42,7 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.math.FormattedFPDecimal;
 import jdk.internal.util.DecimalDigits;
 
 /**
@@ -1393,11 +1394,18 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since  1.5
      */
     public static BigDecimal valueOf(double val) {
-        // Reminder: a zero double returns '0.0', so we cannot fastpath
-        // to use the constant ZERO.  This might be important enough to
-        // justify a factory approach, a cache, or a few private
-        // constants, later.
-        return new BigDecimal(Double.toString(val));
+        if (!Double.isFinite(val)) {
+            throw new NumberFormatException("Infinite or NaN");
+        }
+
+        var fmt = FormattedFPDecimal.valueForDoubleToString(Math.abs(val));
+        long s = fmt.getSignificand();
+        if (val < 0) {
+            // Original s is never negative, so no overflow
+            s = -s;
+        }
+
+        return valueOf(s, -fmt.getExp(), fmt.getPrecision());
     }
 
     // Arithmetic Operations
@@ -4142,7 +4150,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             buf[highIntSize] = '.';
             DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
             try {
-                return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+                return JLA.uncheckedNewStringNoRepl(buf, StandardCharsets.ISO_8859_1);
             } catch (CharacterCodingException cce) {
                 throw new AssertionError(cce);
             }

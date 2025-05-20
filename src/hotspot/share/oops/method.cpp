@@ -386,7 +386,7 @@ Symbol* Method::klass_name() const {
 }
 
 void Method::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(Method): %p", this);
+  log_trace(aot)("Iter(Method): %p", this);
 
   if (!method_holder()->is_rewritten()) {
     it->push(&_constMethod, MetaspaceClosure::_writable);
@@ -407,7 +407,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void Method::remove_unshareable_info() {
   unlink_method();
-  if (AOTCodeCache::is_dumping_adapters() && _adapter != nullptr) {
+  if (AOTCodeCache::is_dumping_adapter() && _adapter != nullptr) {
     _adapter->remove_unshareable_info();
   }
   JFR_ONLY(REMOVE_METHOD_ID(this);)
@@ -1146,7 +1146,7 @@ void Method::unlink_code() {
 void Method::unlink_method() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   _code = nullptr;
-  if (!AOTCodeCache::is_dumping_adapters() || AdapterHandlerLibrary::is_abstract_method_adapter(_adapter)) {
+  if (!AOTCodeCache::is_dumping_adapter() || AdapterHandlerLibrary::is_abstract_method_adapter(_adapter)) {
     _adapter = nullptr;
   }
   _i2i_entry = nullptr;
