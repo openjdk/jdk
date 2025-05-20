@@ -1411,7 +1411,7 @@ void Assembler::addl(Register dst, int32_t imm32) {
 }
 
 void Assembler::eaddl(Register dst, Register src, int32_t imm32, bool no_flags) {
-  evex_prefix_arith(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x81, 0xC0, no_flags);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x81, 0xC0, no_flags);
 }
 
 void Assembler::addl(Register dst, Address src) {
@@ -1635,7 +1635,7 @@ void Assembler::andl(Register dst, int32_t imm32) {
 }
 
 void Assembler::eandl(Register dst, Register src, int32_t imm32, bool no_flags) {
-  evex_prefix_arith(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x81, 0xE0, no_flags);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x81, 0xE0, no_flags);
 }
 
 void Assembler::andl(Address dst, Register src) {
@@ -4430,7 +4430,7 @@ void Assembler::orl(Register dst, int32_t imm32) {
 }
 
 void Assembler::eorl(Register dst, Register src, int32_t imm32, bool no_flags) {
-  evex_prefix_arith(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x81, 0xC8, no_flags);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x81, 0xC8, no_flags);
 }
 
 void Assembler::orl(Register dst, Address src) {
@@ -6958,7 +6958,7 @@ void Assembler::subl(Register dst, int32_t imm32) {
 }
 
 void Assembler::esubl(Register dst, Register src, int32_t imm32, bool no_flags) {
-  evex_prefix_arith(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x81, 0xE8, no_flags);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x81, 0xE8, no_flags);
 }
 
 // Force generation of a 4 byte immediate value even if it fits into 8bit
@@ -7284,7 +7284,7 @@ void Assembler::xorl(Register dst, int32_t imm32) {
 }
 
 void Assembler::exorl(Register dst, Register src, int32_t imm32, bool no_flags) {
-  evex_prefix_arith(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x81, 0xF0, no_flags);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x81, 0xF0, no_flags);
 }
 
 void Assembler::xorl(Register dst, Address src) {
@@ -13018,8 +13018,8 @@ int Assembler::evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, 
   return vex_prefix_and_encode(dst_enc, nds_enc, src_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ false, no_flags);
 }
 
-void Assembler::evex_prefix_arith(Register dst, Register nds, int32_t imm32, VexSimdPrefix pre, VexOpcode opc,
-                                  int size, int op1, int op2, bool no_flags) {
+void Assembler::emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register nds, int32_t imm32, VexSimdPrefix pre, VexOpcode opc,
+                                                      int size, int op1, int op2, bool no_flags) {
   int dst_enc = dst->encoding();
   int nds_enc = nds->encoding();
   bool demote = is_demotable(no_flags, dst_enc, nds_enc);
@@ -14524,7 +14524,7 @@ void Assembler::addq(Register dst, int32_t imm32) {
 }
 
 void Assembler::eaddq(Register dst, Register src, int32_t imm32, bool no_flags) {
-  evex_prefix_arith(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x81, 0xC0, no_flags);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x81, 0xC0, no_flags);
 }
 
 void Assembler::addq(Register dst, Address src) {
@@ -14621,7 +14621,7 @@ void Assembler::andq(Register dst, int32_t imm32) {
 }
 
 void Assembler::eandq(Register dst, Register src, int32_t imm32, bool no_flags) {
-  evex_prefix_arith(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x81, 0xE0, no_flags);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x81, 0xE0, no_flags);
 }
 
 void Assembler::andq(Register dst, Address src) {
@@ -15481,7 +15481,7 @@ void Assembler::orq(Register dst, int32_t imm32) {
 }
 
 void Assembler::eorq(Register dst, Register src, int32_t imm32, bool no_flags) {
-  evex_prefix_arith(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x81, 0xC8, no_flags);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x81, 0xC8, no_flags);
 }
 
 void Assembler::orq_imm32(Register dst, int32_t imm32) {
@@ -16161,7 +16161,7 @@ void Assembler::subq(Register dst, int32_t imm32) {
 }
 
 void Assembler::esubq(Register dst, Register src, int32_t imm32, bool no_flags) {
-  evex_prefix_arith(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x81, 0xE8, no_flags);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x81, 0xE8, no_flags);
 }
 
 // Force generation of a 4 byte immediate value even if it fits into 8bit
@@ -16282,7 +16282,7 @@ void Assembler::xorq(Register dst, int32_t imm32) {
 }
 
 void Assembler::exorq(Register dst, Register src, int32_t imm32, bool no_flags) {
-  evex_prefix_arith(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x81, 0xF0, no_flags);
+  emit_eevex_prefix_or_demote_arith_ndd(dst, src, imm32, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x81, 0xF0, no_flags);
 }
 
 void Assembler::xorq(Address dst, int32_t imm32) {
