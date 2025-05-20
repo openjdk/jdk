@@ -652,7 +652,7 @@ public final class String
         // (2)The defensive copy of the input byte/char[] has a big performance
         // impact, as well as the outgoing result byte/char[]. Need to do the
         // optimization check of (sm==null && classLoader0==null) for both.
-        byte[] val;
+        byte[] value;
         byte coder;
         CharsetDecoder cd = charset.newDecoder();
         // ArrayDecoder fastpaths
@@ -660,28 +660,31 @@ public final class String
             // ascii
             if (ad.isASCIICompatible() && !StringCoding.hasNegatives(bytes, offset, length)) {
                 if (COMPACT_STRINGS) {
-                    return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
-                }
-                return new String(StringLatin1.inflate(bytes, offset, length), UTF16);
-            }
-
-            // fastpath for always Latin1 decodable single byte
-            if (COMPACT_STRINGS && ad.isLatin1Decodable()) {
-                val = new byte[length];
-                ad.decodeToLatin1(bytes, offset, length, val);
-                coder = LATIN1;
-            } else {
-                int en = scale(length, cd.maxCharsPerByte());
-                cd.onMalformedInput(CodingErrorAction.REPLACE)
-                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
-                char[] ca = new char[en];
-                int clen = ad.decode(bytes, offset, length, ca);
-                if (COMPACT_STRINGS) {
-                    val = StringUTF16.compress(ca, 0, clen);
-                    coder = StringUTF16.coderFromArrayLen(val, clen);
+                    value = Arrays.copyOfRange(bytes, offset, offset + length);
+                    coder = LATIN1;
                 } else {
-                    val = StringUTF16.toBytes(ca, 0, clen);
+                    value = StringLatin1.inflate(bytes, offset, length);
                     coder = UTF16;
+                }
+            } else {
+                // fastpath for always Latin1 decodable single byte
+                if (COMPACT_STRINGS && ad.isLatin1Decodable()) {
+                    value = new byte[length];
+                    ad.decodeToLatin1(bytes, offset, length, value);
+                    coder = LATIN1;
+                } else {
+                    int en = scale(length, cd.maxCharsPerByte());
+                    cd.onMalformedInput(CodingErrorAction.REPLACE)
+                            .onUnmappableCharacter(CodingErrorAction.REPLACE);
+                    char[] ca = new char[en];
+                    int clen = ad.decode(bytes, offset, length, ca);
+                    if (COMPACT_STRINGS) {
+                        value = StringUTF16.compress(ca, 0, clen);
+                        coder = StringUTF16.coderFromArrayLen(value, clen);
+                    } else {
+                        value = StringUTF16.toBytes(ca, 0, clen);
+                        coder = UTF16;
+                    }
                 }
             }
         } else {
@@ -698,14 +701,14 @@ public final class String
                 throw new Error(x);
             }
             if (COMPACT_STRINGS) {
-                val = StringUTF16.compress(ca, 0, caLen);
-                coder = StringUTF16.coderFromArrayLen(val, caLen);
+                value = StringUTF16.compress(ca, 0, caLen);
+                coder = StringUTF16.coderFromArrayLen(value, caLen);
             } else {
-                val = StringUTF16.toBytes(ca, 0, caLen);
+                value = StringUTF16.toBytes(ca, 0, caLen);
                 coder = UTF16;
             }
         }
-        return new String(val, coder);
+        return new String(value, coder);
     }
 
     /*
