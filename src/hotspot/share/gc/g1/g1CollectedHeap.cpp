@@ -2288,10 +2288,9 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
   VMThread::execute(&op);
 
   HeapWord* result = op.result();
-  bool ret_succeeded = op.gc_succeeded();
-  assert(result == nullptr || ret_succeeded,
+  *succeeded = op.gc_succeeded();
+  assert(result == nullptr || *succeeded,
          "the result should be null if the VM did not succeed");
-  *succeeded = ret_succeeded;
 
   assert_heap_not_locked();
   return result;
