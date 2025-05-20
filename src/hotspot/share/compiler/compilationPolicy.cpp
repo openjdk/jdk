@@ -163,13 +163,6 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS
   }
 }
 
-void CompilationPolicy::flush_replay_training_at_init(TRAPS) {
-   MonitorLocker locker(THREAD, TrainingReplayQueue_lock);
-   while (!_training_replay_queue.is_empty_unlocked()) {
-     locker.wait(); // let the replay training thread drain the queue
-   }
-}
-
 void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, TRAPS) {
   assert(klass->is_initialized(), "");
   if (TrainingData::have_data() && klass->is_shared()) {
@@ -189,7 +182,7 @@ void CompilationPolicyUtils::Queue<InstanceKlass>::print_on(outputStream* st) {
 }
 
 void CompilationPolicy::replay_training_at_init_loop(TRAPS) {
-  while (!CompileBroker::is_compilation_disabled_forever() || AOTVerifyTrainingData) {
+  while (!CompileBroker::is_compilation_disabled_forever()) {
     InstanceKlass* ik = _training_replay_queue.pop(TrainingReplayQueue_lock, THREAD);
     if (ik != nullptr) {
       replay_training_at_init_impl(ik, THREAD);

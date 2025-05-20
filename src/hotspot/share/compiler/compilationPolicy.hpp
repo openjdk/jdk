@@ -351,7 +351,6 @@ class CompilationPolicy : AllStatic {
   // This supports the -Xcomp option.
   static void compile_if_required(const methodHandle& m, TRAPS);
 
-  static void flush_replay_training_at_init(TRAPS);
   static void replay_training_at_init(InstanceKlass* klass, TRAPS);
   static void replay_training_at_init_loop(TRAPS);
 
