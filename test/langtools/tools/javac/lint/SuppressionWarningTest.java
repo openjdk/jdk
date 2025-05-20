@@ -457,7 +457,7 @@ public class SuppressionWarningTest extends TestRunner {
             """
         );
 
-        case SYNCHRONIZATION -> new SuppressTest(category,
+        case IDENTITY -> new SuppressTest(category,
             "compiler.warn.attempt.to.synchronize.on.instance.of.value.based.class",
             null,
             """

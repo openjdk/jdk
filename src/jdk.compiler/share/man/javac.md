@@ -596,6 +596,9 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `finally`: Warns about `finally` clauses that do not terminate normally.
 
+    -   `identity`: Warns about use of a value-based class where an identity
+        class is expected
+
     -   `incubating`: Warns about the use of incubating modules.
 
     -   `lossy-conversions`: Warns about possible lossy conversions
@@ -649,7 +652,9 @@ file system locations may be directories, JAR files or JMOD files.
         don't actually suppress any warnings.
 
     -   `synchronization`: Warns about synchronization attempts on instances
-        of value-based classes.
+        of value-based classes. This key is a deprecated alias for `identity`,
+        which has the same uses and effects. Users are encouraged to use the
+        `identity` category for all future and existing uses of `synchronization`.
 
     -   `text-blocks`: Warns about inconsistent white space characters in text
         block indentation.

@@ -25,11 +25,15 @@
 
 package com.sun.tools.javac.code;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import com.sun.tools.javac.main.Option;
@@ -122,7 +126,7 @@ public class Lint {
     private final Symbol symbol;
 
     // LintCategory lookup by option string
-    private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(40);
+    private static final Map<String, LintCategory> map = new LinkedHashMap<>(40);
 
     // Instantiate the root instance
     @SuppressWarnings("this-escape")
@@ -154,10 +158,10 @@ public class Lint {
 
         // Initialize enabled categories based on "-Xlint" flags
         Options options = Options.instance(context);
-        if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, "all")) {
+        if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_ALL)) {
             // If -Xlint or -Xlint:all is given, enable all categories by default
             values = EnumSet.allOf(LintCategory.class);
-        } else if (options.isSet(Option.XLINT_CUSTOM, "none")) {
+        } else if (options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_NONE)) {
             // if -Xlint:none is given, disable all categories by default
             values = LintCategory.newEmptySet();
         } else {
@@ -178,15 +182,15 @@ public class Lint {
             if (!options.isSet(Option.PREVIEW)) {
                 values.add(LintCategory.PREVIEW);
             }
-            values.add(LintCategory.SYNCHRONIZATION);
+            values.add(LintCategory.IDENTITY);
             values.add(LintCategory.INCUBATING);
         }
 
         // Look for specific overrides
         for (LintCategory lc : LintCategory.values()) {
-            if (options.isSet(Option.XLINT_CUSTOM, lc.option)) {
+            if (options.isExplicitlyEnabled(Option.XLINT, lc)) {
                 values.add(lc);
-            } else if (options.isSet(Option.XLINT_CUSTOM, "-" + lc.option)) {
+            } else if (options.isExplicitlyDisabled(Option.XLINT, lc)) {
                 values.remove(lc);
             }
         }
@@ -269,6 +273,11 @@ public class Lint {
          * Warn about finally clauses that do not terminate normally.
          */
         FINALLY("finally"),
+
+        /**
+         * Warn about uses of @ValueBased classes where an identity class is expected.
+         */
+        IDENTITY("identity", true, true, "synchronization"),
 
         /**
          * Warn about use of incubating modules.
@@ -383,11 +392,6 @@ public class Lint {
         SUPPRESSION("suppression", true, false),
 
         /**
-         * Warn about synchronization attempts on instances of @ValueBased classes.
-         */
-        SYNCHRONIZATION("synchronization"),
-
-        /**
          * Warn about issues relating to use of text blocks
          */
         TEXT_BLOCKS("text-blocks"),
@@ -430,11 +434,15 @@ public class Lint {
             this(option, annotationSuppression, true);
         }
 
-        LintCategory(String option, boolean annotationSuppression, boolean suppressionTracking) {
+        LintCategory(String option, boolean annotationSuppression, boolean suppressionTracking, String... aliases) {
             this.option = option;
             this.annotationSuppression = annotationSuppression;
             this.suppressionTracking = suppressionTracking;
-            map.put(option, this);
+            ArrayList<String> optionList = new ArrayList<>(1 + aliases.length);
+            optionList.add(option);
+            Collections.addAll(optionList, aliases);
+            this.optionList = Collections.unmodifiableList(optionList);
+            this.optionList.forEach(ident -> map.put(ident, this));
         }
 
         /**
@@ -447,12 +455,22 @@ public class Lint {
             return Optional.ofNullable(map.get(option));
         }
 
+        /**
+         * Get all lint category option strings and aliases.
+         */
+        public static Set<String> options() {
+            return Collections.unmodifiableSet(map.keySet());
+        }
+
         public static EnumSet<LintCategory> newEmptySet() {
             return EnumSet.noneOf(LintCategory.class);
         }
 
-        /** Get the string representing this category in @SuppressAnnotations and -Xlint options. */
+        /** Get the "canonical" string representing this category in @SuppressAnnotations and -Xlint options. */
         public final String option;
+
+        /** Get a list containing "option" followed by zero or more aliases. */
+        public final List<String> optionList;
 
         /** Does this category support being suppressed by the {@code @SuppressWarnings} annotation? */
         public final boolean annotationSuppression;

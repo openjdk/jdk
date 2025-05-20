@@ -64,6 +64,9 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.stream.Stream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -101,10 +104,7 @@ import javax.tools.StandardLocation;
 
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Pair;
 import java.nio.file.DirectoryStream;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -304,13 +304,18 @@ public class CreateSymbols {
             "Ljdk/internal/ValueBased;";
     private static final String VALUE_BASED_ANNOTATION_INTERNAL =
             "Ljdk/internal/ValueBased+Annotation;";
+    private static final String REQUIRES_IDENTITY_ANNOTATION =
+            "Ljdk/internal/RequiresIdentity;";
+    private static final String REQUIRES_IDENTITY_ANNOTATION_INTERNAL =
+            "Ljdk/internal/RequiresIdentity+Annotation;";
     public static final Set<String> HARDCODED_ANNOTATIONS = new HashSet<>(
             List.of("Ljdk/Profile+Annotation;",
                     "Lsun/Proprietary+Annotation;",
                     PREVIEW_FEATURE_ANNOTATION_OLD,
                     PREVIEW_FEATURE_ANNOTATION_NEW,
                     VALUE_BASED_ANNOTATION,
-                    RESTRICTED_ANNOTATION));
+                    RESTRICTED_ANNOTATION,
+                    REQUIRES_IDENTITY_ANNOTATION));
 
     private void stripNonExistentAnnotations(LoadDescriptions data) {
         Set<String> allClasses = data.classes.name2Class.keySet();
@@ -339,10 +344,10 @@ public class CreateSymbols {
                                         !allClasses.contains(ann.annotationType.substring(1, ann.annotationType.length() - 1)));
     }
 
-    private ZipEntry createZipEntry(String name, long timestamp) {
+    private ZipEntry createZipEntry(String name, long timeMillisSinceEpoch) {
+        Instant time = Instant.ofEpochMilli(timeMillisSinceEpoch);
         ZipEntry ze = new ZipEntry(name);
-
-        ze.setTime(timestamp);
+        ze.setTimeLocal(LocalDateTime.ofInstant(time, ZoneOffset.UTC));
         return ze;
     }
 
@@ -1019,6 +1024,12 @@ public class CreateSymbols {
             //the non-public ValueBased annotation will not be available in ct.sym,
             //replace with purely synthetic javac-internal annotation:
             annotationType = VALUE_BASED_ANNOTATION_INTERNAL;
+        }
+
+        if (REQUIRES_IDENTITY_ANNOTATION.equals(annotationType)) {
+            //the non-public RequiresIdentity annotation will not be available in ct.sym,
+            //replace with purely synthetic javac-internal annotation:
+            annotationType = REQUIRES_IDENTITY_ANNOTATION_INTERNAL;
         }
 
         if (RESTRICTED_ANNOTATION.equals(annotationType)) {
@@ -2202,6 +2213,7 @@ public class CreateSymbols {
                 chd.permittedSubclasses = a.permittedSubclasses().stream().map(ClassEntry::asInternalName).collect(Collectors.toList());
             }
             case ModuleMainClassAttribute a -> ((ModuleHeaderDescription) feature).moduleMainClass = a.mainClass().asInternalName();
+            case RuntimeVisibleTypeAnnotationsAttribute a -> {/* do nothing for now */}
             default -> throw new IllegalArgumentException("Unhandled attribute: " + attr.attributeName()); // Do nothing
         }
 
