@@ -3306,16 +3306,6 @@ encode %{
     nodes->push(n2);
   %}
 
-  enc_class enc_cmove_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src, cmpOp cmp) %{
-    int cc        = $cmp$$cmpcode;
-    int flags_reg = $crx$$reg;
-    Label done;
-    assert((Assembler::bcondCRbiIs1 & ~Assembler::bcondCRbiIs0) == 8, "check encoding");
-    // Branch if not (cmp crx).
-    __ bc(cc_to_inverse_boint(cc), cc_to_biint(cc, flags_reg), done);
-    __ mr($dst$$Register, $src$$Register);
-    __ bind(done);
-  %}
 
   enc_class enc_cmove_imm(iRegIdst dst, flagsRegSrc crx, immI16 src, cmpOp cmp) %{
     Label done;
