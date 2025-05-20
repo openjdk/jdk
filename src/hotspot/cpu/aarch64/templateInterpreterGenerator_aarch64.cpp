@@ -865,8 +865,9 @@ void TemplateInterpreterGenerator::lock_method() {
 //      rcpool: cp cache
 //      stack_pointer: previous sp
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
-  // Save ConstMethod* in r5 for later use.
-  __ ldr(r5, Address(rmethod, Method::const_offset()));
+  // Save ConstMethod* for later use to avoid loading multiple times
+  Register r5_ConstMethod = r5;
+  __ ldr(r5_ConstMethod, Address(rmethod, Method::const_offset()));
 
   // initialize fixed part of activation frame
   if (native_call) {
@@ -878,8 +879,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ stp(zr, zr, Address(sp, 12 * wordSize));
   } else {
     __ sub(esp, sp, 12 *  wordSize);
-    // r5 is still ConstMethod*
-    __ add(rbcp, r5, in_bytes(ConstMethod::codes_offset())); // get codebase
+    // Use stored ConstMethod* to avoid loading again
+    __ add(rbcp, r5_ConstMethod, in_bytes(ConstMethod::codes_offset())); // get codebase
     __ mov(rscratch1, frame::interpreter_frame_initial_sp_offset);
     __ stp(rscratch1, rbcp, Address(__ pre(sp, -12 * wordSize)));
   }
@@ -899,9 +900,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ stp(rfp, lr, Address(sp, 10 * wordSize));
   __ lea(rfp, Address(sp, 10 * wordSize));
 
-  // Save ConstantPool* in r10 for later use.
-  // r5 is still ConstMethod*
-  __ ldr(r10, Address(r5, ConstMethod::constants_offset()));
+  // Save ConstantPool* in r10 for later use to avoid loading multiple times
+  // Use stored ConstMethod* to avoid loading again
+  __ ldr(r10, Address(r5_ConstMethod, ConstMethod::constants_offset()));
   __ ldr(rcpool, Address(r10, ConstantPool::cache_offset()));
   __ sub(rscratch1, rlocals, rfp);
   __ lsr(rscratch1, rscratch1, Interpreter::logStackElementSize);   // rscratch1 = rlocals - fp();
@@ -919,8 +920,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ ldr(r10, Address(r10, in_bytes(Klass::java_mirror_offset())));
   __ resolve_oop_handle(r10, rscratch1, rscratch2);
   if (! native_call) {
-    // r5 is still ConstMethod*
-    __ ldrh(rscratch1, Address(r5, ConstMethod::max_stack_offset()));
+    // Use stored ConstMethod* to avoid loading again
+    __ ldrh(rscratch1, Address(r5_ConstMethod, ConstMethod::max_stack_offset()));
     __ add(rscratch1, rscratch1, MAX2(3, Method::extra_stack_entries()));
     __ sub(rscratch1, sp, rscratch1, ext::uxtw, 3);
     __ andr(rscratch1, rscratch1, -16);
