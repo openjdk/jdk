@@ -485,7 +485,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   live_bytes -= immediate_garbage;
   live_bytes -= immediate_humongous_waste;
   live_bytes -= mixed_garbage;
-#define KELVIN_OLD_TRIGGERS
+#undef KELVIN_OLD_TRIGGERS
 #ifdef KELVIN_OLD_TRIGGERS
   log_info(gc)("KELVIN setting live_bytes_at_last_mark to %zu = "
                "live_bytes_at_start: %zu - immediate_garbage: %zu, immediate_waste: %zu, and mixed_garbage: %zu",
@@ -869,7 +869,7 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     } else if (current_usage > trigger_threshold) {
       const size_t live_at_previous_old = _old_generation->get_live_bytes_at_last_mark();
       _old_generation->set_used_bytes_at_start_of_mark(current_usage);
-#define KELVIN_OLD_TRIGGER
+#undef KELVIN_OLD_TRIGGER
 #ifdef KELVIN_OLD_TRIGGER
       log_info(gc)("KELVIN Triggering old with current_usage: %zu, ignore_threshold: %zu, trigger_threshold: %zu",
                    current_usage, ignore_threshold, trigger_threshold);
