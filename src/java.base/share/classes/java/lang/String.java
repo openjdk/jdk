@@ -3133,7 +3133,7 @@ public final class String
     /**
      * Replaces each substring of this string that matches the given
      * <a href="../util/regex/Pattern.html#sum">regular expression</a> with the result
-     * of applying the given function to the corresponding match result.
+     * of applying the given function to the match.
      *
      * <p> An invocation of this method of the form
      * <i>str</i>{@code .replaceAllMapped(}<i>regex</i>{@code ,} <i>replacer</i>{@code )}
@@ -3158,7 +3158,8 @@ public final class String
      * @throws  PatternSyntaxException
      *          if the regular expression's syntax is invalid
      * @throws  NullPointerException
-     *          if the replacement function is null
+     *          if the regular expression or the replacement
+     *          function is null
      *
      * @since 25
      */
