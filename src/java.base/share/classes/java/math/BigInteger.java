@@ -4339,9 +4339,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public int intValue() {
-        int result = 0;
-        result = getInt(0);
-        return result;
+        return getInt(0);
     }
 
     /**
@@ -5039,10 +5037,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since  1.8
      */
     public long longValueExact() {
-        if (mag.length <= 2 && bitLength() <= 63)
+        if (mag.length <= 2 && bitLength() < Long.SIZE)
             return longValue();
-        else
-            throw new ArithmeticException("BigInteger out of long range");
+
+        throw new ArithmeticException("BigInteger out of long range");
     }
 
     /**
@@ -5058,10 +5056,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since  1.8
      */
     public int intValueExact() {
-        if (mag.length <= 1 && bitLength() <= 31)
+        if (mag.length <= 1 && bitLength() < Integer.SIZE)
             return intValue();
-        else
-            throw new ArithmeticException("BigInteger out of int range");
+
+        throw new ArithmeticException("BigInteger out of int range");
     }
 
     /**
@@ -5077,11 +5075,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since  1.8
      */
     public short shortValueExact() {
-        if (mag.length <= 1 && bitLength() <= 31) {
-            int value = intValue();
-            if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE)
-                return shortValue();
-        }
+        if (mag.length <= 1 && bitLength() < Short.SIZE)
+            return shortValue();
+
         throw new ArithmeticException("BigInteger out of short range");
     }
 
@@ -5098,11 +5094,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since  1.8
      */
     public byte byteValueExact() {
-        if (mag.length <= 1 && bitLength() <= 31) {
-            int value = intValue();
-            if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE)
-                return byteValue();
-        }
+        if (mag.length <= 1 && bitLength() < Byte.SIZE)
+            return byteValue();
+
         throw new ArithmeticException("BigInteger out of byte range");
     }
 }
