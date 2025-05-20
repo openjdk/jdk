@@ -684,19 +684,30 @@ protected:
     // 0b111 is reserved
   };
 
-  static constexpr uint32_t OP_LOAD_MAJOR = 0b0000011;
+  static constexpr uint8_t OP_LOAD_MAJOR    = 0b0000011;
+  static constexpr uint8_t OP_FP_LOAD_MAJOR = 0b0000111;
 
-  template <LoadWidthFunct3 width>
-  void load_base(Register Rd, Register Rs, const int32_t offset) {
+  template <uint8_t op_major, LoadWidthFunct3 width>
+  void load_base(uint8_t Rd, Register Rs, const int32_t offset) {
     guarantee(is_simm12(offset), "offset is invalid.");
     unsigned insn = 0;
     int32_t val = offset & 0xfff;
-    patch((address)&insn,  6,  0, OP_LOAD_MAJOR);
-    patch_reg((address)&insn,  7, Rd);
+    patch((address)&insn,  6,  0, op_major);
+    patch((address)&insn, 11,  7, Rd);
     patch((address)&insn, 14, 12, width);
     patch_reg((address)&insn, 15, Rs);
     patch((address)&insn, 31, 20, val);
     emit(insn);
+  }
+
+  template <LoadWidthFunct3 width>
+  void load_base(Register Rd, Register Rs, const int32_t offset) {
+    load_base<OP_LOAD_MAJOR, width>(Rd->raw_encoding(), Rs, offset);
+  }
+
+  template <LoadWidthFunct3 width>
+  void load_base(FloatRegister Rd, Register Rs, const int32_t offset) {
+    load_base<OP_FP_LOAD_MAJOR, width>(Rd->raw_encoding(), Rs, offset);
   }
 
  public:
@@ -726,6 +737,18 @@ protected:
   }
 
   void _ld(Register Rd, Register Rs, const int32_t offset) {
+    load_base<LOAD_WIDTH_DOUBLEWORD>(Rd, Rs, offset);
+  }
+
+  void flh(FloatRegister Rd, Register Rs, const int32_t offset) {
+    load_base<LOAD_WIDTH_HALFWORD>(Rd, Rs, offset);
+  }
+
+  void flw(FloatRegister Rd, Register Rs, const int32_t offset) {
+    load_base<LOAD_WIDTH_WORD>(Rd, Rs, offset);
+  }
+
+  void _fld(FloatRegister Rd, Register Rs, const int32_t offset) {
     load_base<LOAD_WIDTH_DOUBLEWORD>(Rd, Rs, offset);
   }
 
@@ -768,8 +791,8 @@ protected:
     // 0b100 to 0b111 are reserved for this opcode
   };
 
-  static constexpr uint32_t OP_STORE_MAJOR    = 0b0100011;
-  static constexpr uint32_t OP_FP_STORE_MAJOR = 0b0100111;
+  static constexpr uint8_t OP_STORE_MAJOR    = 0b0100011;
+  static constexpr uint8_t OP_FP_STORE_MAJOR = 0b0100111;
 
   template <uint8_t op_code, StoreWidthFunct3 width>
   void store_base(uint8_t Rs2, Register Rs1, const int32_t offset) {
@@ -787,30 +810,40 @@ protected:
     emit(insn);
   }
 
+  template <StoreWidthFunct3 width>
+  void store_base(Register Rs2, Register Rs1, const int32_t offset) {
+    store_base<OP_STORE_MAJOR, width>(Rs2->raw_encoding(), Rs1, offset);
+  }
+
+  template <StoreWidthFunct3 width>
+  void store_base(FloatRegister Rs2, Register Rs1, const int32_t offset) {
+    store_base<OP_FP_STORE_MAJOR, width>(Rs2->raw_encoding(), Rs1, offset);
+  }
+
  public:
 
   void _sb(Register Rs2, Register Rs1, const int32_t offset) {
-    store_base<OP_STORE_MAJOR, STORE_WIDTH_BYTE>(Rs2->raw_encoding(), Rs1, offset);
+    store_base<STORE_WIDTH_BYTE>(Rs2, Rs1, offset);
   }
 
   void _sh(Register Rs2, Register Rs1, const int32_t offset) {
-    store_base<OP_STORE_MAJOR, STORE_WIDTH_HALFWORD>(Rs2->raw_encoding(), Rs1, offset);
+    store_base<STORE_WIDTH_HALFWORD>(Rs2, Rs1, offset);
   }
 
   void _sw(Register Rs2, Register Rs1, const int32_t offset) {
-    store_base<OP_STORE_MAJOR, STORE_WIDTH_WORD>(Rs2->raw_encoding(), Rs1, offset);
+    store_base<STORE_WIDTH_WORD>(Rs2, Rs1, offset);
   }
 
   void _sd(Register Rs2, Register Rs1, const int32_t offset) {
-    store_base<OP_STORE_MAJOR, STORE_WIDTH_DOUBLEWORD>(Rs2->raw_encoding(), Rs1, offset);
+    store_base<STORE_WIDTH_DOUBLEWORD>(Rs2, Rs1, offset);
   }
 
   void fsw(FloatRegister Rs2, Register Rs1, const int32_t offset) {
-    store_base<OP_FP_STORE_MAJOR, STORE_WIDTH_WORD>(Rs2->raw_encoding(), Rs1, offset);
+    store_base<STORE_WIDTH_WORD>(Rs2, Rs1, offset);
   }
 
   void _fsd(FloatRegister Rs2, Register Rs1, const int32_t offset) {
-    store_base<OP_FP_STORE_MAJOR, STORE_WIDTH_DOUBLEWORD>(Rs2->raw_encoding(), Rs1, offset);
+    store_base<STORE_WIDTH_DOUBLEWORD>(Rs2, Rs1, offset);
   }
 
 #define INSN(NAME, op, funct3)                                                        \
@@ -1408,29 +1441,6 @@ enum operand_size { int8, int16, int32, uint32, int64 };
   void fmv_x_d(Register Rd, FloatRegister Rs1) {
     fp_base<D_64_dp, 0b11100>(Rd, Rs1, 0b00000, 0b000);
   }
-
- private:
-  static constexpr unsigned int OP_LOAD_FP = 0b0000111;
-
-  template <int8_t FpWidth>
-  void fp_load(FloatRegister Rd, Register Rs, const int32_t offset) {
-    guarantee(is_uimm3(FpWidth), "Rounding mode is out of validity");
-    guarantee(is_simm12(offset), "offset is invalid.");
-    unsigned insn = 0;
-    uint32_t val = offset & 0xfff;
-    patch((address)&insn,   6, 0, OP_LOAD_FP);
-    patch_reg((address)&insn,  7, Rd);
-    patch((address)&insn, 14, 12, FpWidth);
-    patch_reg((address)&insn, 15, Rs);
-    patch((address)&insn, 31, 20, val);
-    emit(insn);
-  }
-
- public:
-
-  void  flh(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b001>(Rd, Rs, offset); }
-  void  flw(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b010>(Rd, Rs, offset); }
-  void _fld(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b011>(Rd, Rs, offset); }
 
  private:
   template <FmtPrecision Fmt, uint8_t OpVal>
@@ -3249,104 +3259,79 @@ public:
 // --------------------------
 // Load/store register
 // --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, Register Rs, const int32_t offset) {                                \
-    /* lw -> c.lwsp/c.lw */                                                                  \
-    if (do_compress()) {                                                                     \
-      if (is_c_lwswsp(Rs, Rd, offset, true)) {                                               \
-        c_lwsp(Rd, offset);                                                                  \
-        return;                                                                              \
-      } else if (is_c_lwsw(Rs, Rd, offset)) {                                                \
-        c_lw(Rd, Rs, offset);                                                                \
-        return;                                                                              \
-      }                                                                                      \
-    }                                                                                        \
-    _lw(Rd, Rs, offset);                                                                     \
+  void lw(Register Rd, Register Rs, const int32_t offset) {
+    /* lw -> c.lwsp/c.lw */
+    if (do_compress()) {
+      if (is_c_lwswsp(Rs, Rd, offset, true)) {
+        c_lwsp(Rd, offset);
+        return;
+      } else if (is_c_lwsw(Rs, Rd, offset)) {
+        c_lw(Rd, Rs, offset);
+        return;
+      }
+    }
+    _lw(Rd, Rs, offset);
   }
-
-  INSN(lw);
-
-#undef INSN
 
 // --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, Register Rs, const int32_t offset) {                                \
-    /* ld -> c.ldsp/c.ld */                                                                  \
-    if (do_compress()) {                                                                     \
-      if (is_c_ldsdsp(Rs, Rd, offset, true)) {                                               \
-        c_ldsp(Rd, offset);                                                                  \
-        return;                                                                              \
-      } else if (is_c_ldsd(Rs, Rd, offset)) {                                                \
-        c_ld(Rd, Rs, offset);                                                                \
-        return;                                                                              \
-      }                                                                                      \
-    }                                                                                        \
-    _ld(Rd, Rs, offset);                                                                     \
+  void ld(Register Rd, Register Rs, const int32_t offset) {
+    /* ld -> c.ldsp/c.ld */
+    if (do_compress()) {
+      if (is_c_ldsdsp(Rs, Rd, offset, true)) {
+        c_ldsp(Rd, offset);
+        return;
+      } else if (is_c_ldsd(Rs, Rd, offset)) {
+        c_ld(Rd, Rs, offset);
+        return;
+      }
+    }
+    _ld(Rd, Rs, offset);
   }
-
-  INSN(ld);
-
-#undef INSN
 
 // --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(FloatRegister Rd, Register Rs, const int32_t offset) {                           \
-    /* fld -> c.fldsp/c.fld */                                                               \
-    if (do_compress()) {                                                                     \
-      if (is_c_fldsdsp(Rs, offset)) {                                                        \
-        c_fldsp(Rd, offset);                                                                 \
-        return;                                                                              \
-      } else if (is_c_fldsd(Rs, Rd, offset)) {                                               \
-        c_fld(Rd, Rs, offset);                                                               \
-        return;                                                                              \
-      }                                                                                      \
-    }                                                                                        \
-    _fld(Rd, Rs, offset);                                                                    \
+  void fld(FloatRegister Rd, Register Rs, const int32_t offset) {
+    /* fld -> c.fldsp/c.fld */
+    if (do_compress()) {
+      if (is_c_fldsdsp(Rs, offset)) {
+        c_fldsp(Rd, offset);
+        return;
+      } else if (is_c_fldsd(Rs, Rd, offset)) {
+        c_fld(Rd, Rs, offset);
+        return;
+      }
+    }
+    _fld(Rd, Rs, offset);
   }
-
-  INSN(fld);
-
-#undef INSN
 
 // --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, Register Rs, const int32_t offset) {                                \
-    /* sd -> c.sdsp/c.sd */                                                                  \
-    if (do_compress()) {                                                                     \
-      if (is_c_ldsdsp(Rs, Rd, offset, false)) {                                              \
-        c_sdsp(Rd, offset);                                                                  \
-        return;                                                                              \
-      } else if (is_c_ldsd(Rs, Rd, offset)) {                                                \
-        c_sd(Rd, Rs, offset);                                                                \
-        return;                                                                              \
-      }                                                                                      \
-    }                                                                                        \
-    _sd(Rd, Rs, offset);                                                                     \
+  void sd(Register Rd, Register Rs, const int32_t offset) {
+    /* sd -> c.sdsp/c.sd */
+    if (do_compress()) {
+      if (is_c_ldsdsp(Rs, Rd, offset, false)) {
+        c_sdsp(Rd, offset);
+        return;
+      } else if (is_c_ldsd(Rs, Rd, offset)) {
+        c_sd(Rd, Rs, offset);
+        return;
+      }
+    }
+    _sd(Rd, Rs, offset);
   }
-
-  INSN(sd);
-
-#undef INSN
 
 // --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, Register Rs, const int32_t offset) {                                \
-    /* sw -> c.swsp/c.sw */                                                                  \
-    if (do_compress()) {                                                                     \
-      if (is_c_lwswsp(Rs, Rd, offset, false)) {                                              \
-        c_swsp(Rd, offset);                                                                  \
-        return;                                                                              \
-      } else if (is_c_lwsw(Rs, Rd, offset)) {                                                \
-        c_sw(Rd, Rs, offset);                                                                \
-        return;                                                                              \
-      }                                                                                      \
-    }                                                                                        \
-    _sw(Rd, Rs, offset);                                                                     \
+  void sw(Register Rd, Register Rs, const int32_t offset) {
+    /* sw -> c.swsp/c.sw */
+    if (do_compress()) {
+      if (is_c_lwswsp(Rs, Rd, offset, false)) {
+        c_swsp(Rd, offset);
+        return;
+      } else if (is_c_lwsw(Rs, Rd, offset)) {
+        c_sw(Rd, Rs, offset);
+        return;
+      }
+    }
+    _sw(Rd, Rs, offset);
   }
-
-  INSN(sw);
-
-#undef INSN
 
 // --------------------------
   void fsd(FloatRegister Rd, Register Rs, const int32_t offset) {
