@@ -409,7 +409,7 @@ public class Log extends AbstractLog {
      */
     public int nwarnings = 0;
 
-    /** Tracks whether any warnings have been encountered per {@link LintCategory}.
+    /** Tracks whether any warnings have been encountered in each {@link LintCategory}.
      */
     public final EnumSet<LintCategory> lintWarnings = LintCategory.newEmptySet();
 

@@ -530,7 +530,8 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                  "", "",
 #endif
                  UseCompressedOops ? ", compressed oops" : "",
-                 UseCompressedClassPointers ? ", compressed class ptrs" : "",
+                 UseCompactObjectHeaders ? ", compact obj headers"
+                                         : (UseCompressedClassPointers ? ", compressed class ptrs" : ""),
                  GCConfig::hs_err_name(),
                  VM_Version::vm_platform_string()
                );
@@ -1200,7 +1201,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
     if (Universe::heap() != nullptr) {
       st->print_cr("Heap:");
-      StreamAutoIndentor indentor(st, 1);
+      StreamIndentor si(st, 1);
       Universe::heap()->print_heap_on(st);
       MetaspaceUtils::print_on(st);
       st->cr();
@@ -1401,7 +1402,7 @@ void VMError::print_vm_info(outputStream* st) {
       GCLogPrecious::print_on_error(st);
 
       st->print_cr("Heap:");
-      StreamAutoIndentor indentor(st, 1);
+      StreamIndentor si(st, 1);
       Universe::heap()->print_heap_on(st);
       MetaspaceUtils::print_on(st);
       st->cr();

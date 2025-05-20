@@ -1725,7 +1725,7 @@ bool MethodData::profile_parameters_for_method(const methodHandle& m) {
 }
 
 void MethodData::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(MethodData): %p", this);
+  log_trace(aot)("Iter(MethodData): %p", this);
   it->push(&_method);
 }
 

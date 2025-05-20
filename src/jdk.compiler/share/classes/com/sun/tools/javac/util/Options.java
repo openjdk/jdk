@@ -172,75 +172,22 @@ public class Options {
     }
 
     /**
-     * Collect the set of {@link LintCategory}s specified by option flag(s) of the form
-     * {@code -Flag} and/or {@code -Flag:[-]key,[-]key,...}, starting with the provided defaults.
+     * Check whether the given lint category is explicitly enabled or disabled.
      *
      * <p>
-     * The set of categories is calculated as folllows. First, an initial set is created:
-     * <ul>
-     *  <li>If the {@code -Flag:all} flag appears, the initial set contains all categories; otherwise,
-     *  <li>If the {@code -Flag:none} flag appears, the initial set is empty; otherwise,
-     *  <li>If {@code defaults} is not null, it is invoked to populate an initial set; otherwise,
-     *  <li>The initial set is empty.
-     * </ul>
-     * Next, for each lint category {@code key}:
-     * <ul>
-     *  <li>If the {@code -Flag:key} flag appears, the category is added to the set; otherwise
-     *  <li>If the {@code -Flag:-key} flag appears, the category is removed to the set
-     * </ul>
-     * Unrecognized {@code key}s are ignored.
+     * If the category is neither enabled nor disabled, return the given default value.
      *
-     * @param option the plain option
-     * @param defaults populates the default set, or null for an empty default set
-     * @return the specified set of categories
-     */
-    public EnumSet<LintCategory> getLintCategories(Option option, Consumer<? super EnumSet<LintCategory>> defaults) {
-
-        // Create the initial set
-        EnumSet<LintCategory> categories;
-        Option customOption = option.getCustom();
-        if (isSet(option) || isSet(customOption, Option.LINT_CUSTOM_ALL)) {
-            categories = EnumSet.allOf(LintCategory.class);
-        } else if (isSet(customOption, Option.LINT_CUSTOM_NONE)) {
-            categories = LintCategory.newEmptySet();
-        } else {
-            categories = EnumSet.noneOf(LintCategory.class);
-            if (defaults != null) {
-                defaults.accept(categories);
-            }
-        }
-
-        // Apply specific overrides
-        for (LintCategory category : LintCategory.values()) {
-            if (isSet(customOption, category.option)) {
-                categories.add(category);
-            } else if (isSet(customOption, "-" + category.option)) {
-                categories.remove(category);
-            }
-        }
-
-        // Done
-        return categories;
-    }
-
-    /**
-     * Apply the logic of {@link #getLintCategories} to a single {@link LintCategory}.
-     *
-     * <p>
-     * This returns true if and only if the specified {@link LintCategory} would be included
-     * in the set returned by {@link #getLintCategories} given the provided given default value.
-     *
-     * @param option the plain option
-     * @param category the {@link LintCategory} in question
+     * @param option the plain (non-custom) option
+     * @param lc the {@link LintCategory} in question
      * @param defaultValue presumed default value
-     * @return true if {@code category} would be included
+     * @return true if {@code lc} would be included
      */
-    public boolean isSet(Option option, LintCategory category, boolean defaultValue) {
+    public boolean isSet(Option option, LintCategory lc, boolean defaultValue) {
         Option customOption = option.getCustom();
-        if (isSet(customOption, category.option)) {
+        if (lc.optionList.stream().anyMatch(alias -> isSet(customOption, alias))) {
             return true;
         }
-        if (isSet(customOption, "-" + category.option)) {
+        if (lc.optionList.stream().anyMatch(alias -> isSet(customOption, "-" + alias))) {
             return false;
         }
         if (isSet(option) || isSet(customOption, Option.LINT_CUSTOM_ALL)) {
@@ -253,15 +200,75 @@ public class Options {
     }
 
     /**
-     * Determine if a specific {@link LintCategory} was explicitly disabled via an option flag
+     * Determine if a specific {@link LintCategory} was explicitly enabled via a custom option flag
+     * of the form {@code -Flag:all} or {@code -Flag:key}.
+     *
+     * @param option the option
+     * @param lc the {@link LintCategory} in question
+     * @return true if {@code lc} has been explicitly enabled
+     */
+    public boolean isExplicitlyEnabled(Option option, LintCategory lc) {
+        return isSet(option, lc, false);
+    }
+
+    /**
+     * Determine if a specific {@link LintCategory} was explicitly disabled via a custom option flag
      * of the form {@code -Flag:none} or {@code -Flag:-key}.
      *
-     * @param category the {@link LintCategory} in question
      * @param option the option
-     * @return true if {@code category} has been explicitly disabled
+     * @param lc the {@link LintCategory} in question
+     * @return true if {@code lc} has been explicitly disabled
      */
-    public boolean isExplicitlyDisabled(Option option, LintCategory category) {
-        return !isSet(option, category, true);
+    public boolean isExplicitlyDisabled(Option option, LintCategory lc) {
+        return !isSet(option, lc, true);
+    }
+
+    /**
+     * Collect the set of {@link LintCategory}s specified by option flag(s) of the form
+     * {@code -Flag} and/or {@code -Flag:[-]key,[-]key,...}.
+     *
+     * <p>
+     * The set of categories is calculated as folllows. First, an initial set is created:
+     * <ul>
+     *  <li>If {@code -Flag} or {@code -Flag:all} appears, the initial set contains all categories; otherwise,
+     *  <li>If {@code -Flag:none} appears, the initial set is empty; otherwise,
+     *  <li>The {@code defaults} parameter is invoked to construct an initial set.
+     * </ul>
+     * Next, for each lint category key {@code key}:
+     * <ul>
+     *  <li>If {@code -Flag:key} flag appears, the corresponding category is added to the set; otherwise
+     *  <li>If {@code -Flag:-key} flag appears, the corresponding category is removed to the set
+     * </ul>
+     * Unrecognized {@code key}s are ignored.
+     *
+     * @param option the plain option
+     * @param defaults populates the default set, or null for an empty default set
+     * @return the specified set of categories
+     */
+    public EnumSet<LintCategory> getLintCategories(Option option, Supplier<? extends EnumSet<LintCategory>> defaults) {
+
+        // Create the initial set
+        EnumSet<LintCategory> categories;
+        Option customOption = option.getCustom();
+        if (isSet(option) || isSet(customOption, Option.LINT_CUSTOM_ALL)) {
+            categories = EnumSet.allOf(LintCategory.class);
+        } else if (isSet(customOption, Option.LINT_CUSTOM_NONE)) {
+            categories = EnumSet.noneOf(LintCategory.class);
+        } else {
+            categories = defaults.get();
+        }
+
+        // Apply specific overrides
+        for (LintCategory category : LintCategory.values()) {
+            if (isExplicitlyEnabled(option, category)) {
+                categories.add(category);
+            } else if (isExplicitlyDisabled(option, category)) {
+                categories.remove(category);
+            }
+        }
+
+        // Done
+        return categories;
     }
 
     public void put(String name, String value) {

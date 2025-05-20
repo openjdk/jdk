@@ -66,6 +66,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
+    @Override
     public void addNotify()
     {
         if (!isDisplayable()) {
@@ -82,6 +83,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
     /*
      * The method shouldn't be called in case of active XEmbed.
      */
+    @Override
     public boolean traverseIn(boolean direction) {
         XEmbeddedFramePeer peer = AWTAccessor.getComponentAccessor()
                                              .getPeer(this);
@@ -95,6 +97,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
         return false;
     }
 
+    @Override
     protected boolean traverseOut(boolean direction) {
         XEmbeddedFramePeer xefp = AWTAccessor.getComponentAccessor()
                                              .getPeer(this);
@@ -110,6 +113,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
     /*
      * The method shouldn't be called in case of active XEmbed.
      */
+    @Override
     public void synthesizeWindowActivation(boolean doActivate) {
         XEmbeddedFramePeer peer = AWTAccessor.getComponentAccessor()
                                              .getPeer(this);
@@ -122,6 +126,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
+    @Override
     public void registerAccelerator(AWTKeyStroke stroke) {
         XEmbeddedFramePeer xefp = AWTAccessor.getComponentAccessor()
                                              .getPeer(this);
@@ -130,6 +135,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
+    @Override
     public void unregisterAccelerator(AWTKeyStroke stroke) {
         XEmbeddedFramePeer xefp = AWTAccessor.getComponentAccessor()
                                              .getPeer(this);

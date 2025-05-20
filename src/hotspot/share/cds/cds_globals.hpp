@@ -64,7 +64,8 @@
           range(2, 246)                                                     \
                                                                             \
   product(bool, AllowArchivingWithJavaAgent, false, DIAGNOSTIC,             \
-          "Allow Java agent to be run with CDS dumping")                    \
+          "Allow Java agent to be run with CDS dumping (not applicable"     \
+          " to AOT")                                                        \
                                                                             \
   develop(ccstr, ArchiveHeapTestClass, nullptr,                             \
           "For JVM internal testing only. The static field named "          \
@@ -112,9 +113,11 @@
           "The configuration file written by -XX:AOTMode=record, and "      \
           "loaded by -XX:AOTMode=create. This file contains profiling data "\
           "for deciding what contents should be added to AOTCache. ")       \
+          constraint(AOTConfigurationConstraintFunc, AtParse)               \
                                                                             \
   product(ccstr, AOTCache, nullptr,                                         \
           "Cache for improving start up and warm up")                       \
+          constraint(AOTCacheConstraintFunc, AtParse)                       \
                                                                             \
   product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
           "AOT-link JVM_CONSTANT_InvokeDynamic entries in cached "          \
@@ -131,6 +134,9 @@
                                                                             \
   product(bool, AOTAdapterCaching, false, DIAGNOSTIC,                       \
           "Enable saving and restoring i2c2i adapters in AOT cache")        \
+                                                                            \
+  product(bool, AOTStubCaching, false, DIAGNOSTIC,                          \
+          "Enable saving and restoring stubs and code blobs in AOT cache")  \
                                                                             \
   product(uint, AOTCodeMaxSize, 10*M, DIAGNOSTIC,                           \
           "Buffer size in bytes for AOT code caching")                      \

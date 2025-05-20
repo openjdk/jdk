@@ -46,6 +46,7 @@ import java.util.StringJoiner;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.lang.model.SourceVersion;
@@ -493,13 +494,10 @@ public enum Option {
                               String.format(LINT_KEY_FORMAT,
                                             LINT_CUSTOM_ALL,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.all")));
-            for (LintCategory lc : LintCategory.values()) {
-                log.printRawLines(WriterKind.STDOUT,
-                                  String.format(LINT_KEY_FORMAT,
-                                                lc.option,
-                                                log.localize(PrefixKind.JAVAC,
-                                                             "opt.Xlint.desc." + lc.option)));
-            }
+            LintCategory.options().forEach(ident -> log.printRawLines(WriterKind.STDOUT,
+                              String.format(LINT_KEY_FORMAT,
+                                            ident,
+                                            log.localize(PrefixKind.JAVAC, "opt.Xlint.desc." + ident))));
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
                                             LINT_CUSTOM_NONE,
@@ -1388,10 +1386,9 @@ public enum Option {
     private static Set<String> getXLintChoices() {
         Set<String> choices = new LinkedHashSet<>();
         choices.add(LINT_CUSTOM_ALL);
-        for (Lint.LintCategory c : Lint.LintCategory.values()) {
-            choices.add(c.option);
-            choices.add("-" + c.option);
-        }
+        Lint.LintCategory.options().stream()
+          .flatMap(ident -> Stream.of(ident, "-" + ident))
+          .forEach(choices::add);
         choices.add(LINT_CUSTOM_NONE);
         return choices;
     }

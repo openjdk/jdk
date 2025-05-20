@@ -25,11 +25,15 @@
 
 package com.sun.tools.javac.code;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import com.sun.tools.javac.main.Option;
@@ -119,7 +123,7 @@ public class Lint {
     private EnumSet<LintCategory> values;
     private EnumSet<LintCategory> suppressedValues;
 
-    private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(20);
+    private static final Map<String, LintCategory> map = new LinkedHashMap<>(40);
 
     @SuppressWarnings("this-escape")
     protected Lint(Context context) {
@@ -144,13 +148,14 @@ public class Lint {
     // Process command line options on demand to allow use of root Lint early during startup
     private void initializeRootIfNeeded() {
         if (values == null) {
-            values = options.getLintCategories(Option.XLINT, this::populateDefaults);
+            values = options.getLintCategories(Option.XLINT, this::getDefaults);
             suppressedValues = LintCategory.newEmptySet();
         }
     }
 
-    private void populateDefaults(EnumSet<LintCategory> values) {
+    private EnumSet<LintCategory> getDefaults() {
         Source source = Source.instance(context);
+        EnumSet<LintCategory> values = LintCategory.newEmptySet();
         if (source.compareTo(Source.JDK9) >= 0) {
             values.add(LintCategory.DEP_ANN);
         }
@@ -164,8 +169,9 @@ public class Lint {
         if (!options.isSet(Option.PREVIEW)) {
             values.add(LintCategory.PREVIEW);
         }
-        values.add(LintCategory.SYNCHRONIZATION);
+        values.add(LintCategory.IDENTITY);
         values.add(LintCategory.INCUBATING);
+        return values;
     }
 
     @Override
@@ -239,6 +245,11 @@ public class Lint {
          * Warn about finally clauses that do not terminate normally.
          */
         FINALLY("finally"),
+
+        /**
+         * Warn about uses of @ValueBased classes where an identity class is expected.
+         */
+        IDENTITY("identity", true, "synchronization"),
 
         /**
          * Warn about use of incubating modules.
@@ -343,11 +354,6 @@ public class Lint {
         STRICTFP("strictfp"),
 
         /**
-         * Warn about synchronization attempts on instances of @ValueBased classes.
-         */
-        SYNCHRONIZATION("synchronization"),
-
-        /**
          * Warn about issues relating to use of text blocks
          *
          * <p>
@@ -389,10 +395,14 @@ public class Lint {
             this(option, true);
         }
 
-        LintCategory(String option, boolean annotationSuppression) {
+        LintCategory(String option, boolean annotationSuppression, String... aliases) {
             this.option = option;
             this.annotationSuppression = annotationSuppression;
-            map.put(option, this);
+            ArrayList<String> optionList = new ArrayList<>(1 + aliases.length);
+            optionList.add(option);
+            Collections.addAll(optionList, aliases);
+            this.optionList = Collections.unmodifiableList(optionList);
+            this.optionList.forEach(ident -> map.put(ident, this));
         }
 
         /**
@@ -405,12 +415,22 @@ public class Lint {
             return Optional.ofNullable(map.get(option));
         }
 
+        /**
+         * Get all lint category option strings and aliases.
+         */
+        public static Set<String> options() {
+            return Collections.unmodifiableSet(map.keySet());
+        }
+
         public static EnumSet<LintCategory> newEmptySet() {
             return EnumSet.noneOf(LintCategory.class);
         }
 
-        /** Get the string representing this category in @SuppressAnnotations and -Xlint options. */
+        /** Get the "canonical" string representing this category in @SuppressAnnotations and -Xlint options. */
         public final String option;
+
+        /** Get a list containing "option" followed by zero or more aliases. */
+        public final List<String> optionList;
 
         /** Does this category support being suppressed by the {@code @SuppressWarnings} annotation? */
         public final boolean annotationSuppression;
@@ -473,20 +493,6 @@ public class Lint {
         if (symbol.isDeprecated() && symbol.isDeprecatableViaAnnotation())
             suppressions.add(LintCategory.DEPRECATION);
         return suppressions;
-    }
-
-    /**
-     * Retrieve the recognized lint categories suppressed by the given @SuppressWarnings annotation.
-     *
-     * @param annotation @SuppressWarnings annotation, or null
-     * @return set of lint categories, possibly empty but never null
-     */
-    private EnumSet<LintCategory> suppressionsFrom(JCAnnotation annotation) {
-        initializeSymbolsIfNeeded();
-        if (annotation == null)
-            return LintCategory.newEmptySet();
-        Assert.check(annotation.attribute.type.tsym == syms.suppressWarningsType.tsym);
-        return suppressionsFrom(Stream.of(annotation).map(anno -> anno.attribute));
     }
 
     // Find the @SuppressWarnings annotation in the given stream and extract the recognized suppressions
