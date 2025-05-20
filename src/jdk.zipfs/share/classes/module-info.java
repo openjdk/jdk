@@ -285,21 +285,21 @@ import java.util.Set;
  *               <em>read-only</em>, and {@link java.nio.file.FileSystem#isReadOnly()
  *               isReadOnly()} will always return {@code true}. Creating a
  *               <em>read-only</em> file system requires the underlying ZIP file to
- *               already exist, and is incompatible with {@code "create"=true}.
+ *               already exist.
  *               Specifying {@code create} as {@code true} and {@code accessMode} as
  *               {@code readOnly} will cause an {@code IllegalArgumentException}
- *               to be thrown when the ZIP filesystem is created.
+ *               to be thrown when creating the ZIP file system.
  *           </li>
  *           <li>
  *               If the value is {@code "readWrite"}, the file system is created
  *               <em>read-write</em>, and {@link java.nio.file.FileSystem#isReadOnly()
  *               isReadOnly()} will always return {@code false}. If a writable file
  *               system cannot be created, an {@code IOException} will be thrown
- *               when the Zip filesystem is created.
+ *               when creating the ZIP file system.
  *           </li>
  *           <li>
  *               Any other values will cause an {@code IllegalArgumentException}
- *               to be thrown when the Zip filesystem is created.
+ *               to be thrown when creating the ZIP file system.
  *           </li>
  *       </ul>
  *       The {@code accessMode} property has no effect on reported POSIX file
