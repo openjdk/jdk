@@ -33,6 +33,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
@@ -46,6 +47,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class TestSplitPaneResetDividerLoc {
 
@@ -55,64 +58,82 @@ public class TestSplitPaneResetDividerLoc {
     private static JDialog dialog;
     private static JFrame frame;
     private static volatile Point point;
+    private static volatile Rectangle size;
     private static volatile int setLoc;
     private static volatile int curLoc;
 
-    public static void main(String[] args) throws Exception {
+     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
-            SwingUtilities.invokeAndWait(TestSplitPaneResetDividerLoc::createAndShowUI);
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported LAF: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException
+                 | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-            Robot robot = new Robot();
-            robot.waitForIdle();
-            robot.delay(1000);
-            SwingUtilities.invokeAndWait(() -> {
-                point = openDialogButton.getLocationOnScreen();
-            });
-            robot.mouseMove(point.x, point.y);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle();
-            robot.delay(1000);
+    public static void main(String[] args) throws Exception {
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            System.out.println("Testing LAF : " + laf.getClassName());
+            try {
+                setLookAndFeel(laf);
+                SwingUtilities.invokeAndWait(TestSplitPaneResetDividerLoc::createAndShowUI);
 
-            SwingUtilities.invokeAndWait(() -> {
-                int divLoc = splitPane.getDividerLocation();
-                splitPane.setDividerLocation(divLoc + 200);
-            });
-            robot.waitForIdle();
-            robot.delay(1000);
-            robot.keyPress(KeyEvent.VK_ESCAPE);
-            robot.keyRelease(KeyEvent.VK_ESCAPE);
+                Robot robot = new Robot();
+                robot.waitForIdle();
+                robot.delay(1000);
+                SwingUtilities.invokeAndWait(() -> {
+                    point = openDialogButton.getLocationOnScreen();
+                    size = openDialogButton.getBounds();
+                });
+                robot.mouseMove(point.x + size.width / 2, point.y + size.height / 2);
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                robot.waitForIdle();
+                robot.delay(1000);
 
-            SwingUtilities.invokeAndWait(() -> {
-                setLoc = splitPane.getDividerLocation();
-                System.out.println(setLoc);
-            });
+                SwingUtilities.invokeAndWait(() -> {
+                    int divLoc = splitPane.getDividerLocation();
+                    splitPane.setDividerLocation(divLoc + 200);
+                });
+                robot.waitForIdle();
+                robot.delay(1000);
+                robot.keyPress(KeyEvent.VK_ESCAPE);
+                robot.keyRelease(KeyEvent.VK_ESCAPE);
 
-            robot.waitForIdle();
-            robot.delay(1000);
-            robot.mouseMove(point.x, point.y);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle();
-            robot.delay(1000);
+                SwingUtilities.invokeAndWait(() -> {
+                    setLoc = splitPane.getDividerLocation();
+                    System.out.println(setLoc);
+                });
 
-            SwingUtilities.invokeAndWait(() -> {
-                curLoc = splitPane.getDividerLocation();
-                System.out.println(curLoc);
-            });
+                robot.waitForIdle();
+                robot.delay(1000);
+                robot.mouseMove(point.x + size.width / 2, point.y + size.height / 2);
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                robot.waitForIdle();
+                robot.delay(1000);
 
-            robot.keyPress(KeyEvent.VK_ESCAPE);
-            robot.keyRelease(KeyEvent.VK_ESCAPE);
+                SwingUtilities.invokeAndWait(() -> {
+                    curLoc = splitPane.getDividerLocation();
+                    System.out.println(curLoc);
+                });
 
-            if (curLoc != setLoc) {
-                throw new RuntimeException("Divider location is preserved");
-            }
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
+                robot.keyPress(KeyEvent.VK_ESCAPE);
+                robot.keyRelease(KeyEvent.VK_ESCAPE);
+
+                if (curLoc != setLoc) {
+                    throw new RuntimeException("Divider location is not preserved");
                 }
-            });
+            } finally {
+                SwingUtilities.invokeAndWait(() -> {
+                    if (frame != null) {
+                        frame.dispose();
+                    }
+                    lazyPanel = null;
+                });
+            }
         }
     }
 
