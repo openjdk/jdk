@@ -72,6 +72,11 @@ import jdk.jshell.execution.impl.ConsoleImpl.ConsoleOutputStream;
 public class JdiDefaultExecutionControl extends JdiExecutionControl {
 
     private static final int SHUTDOWN_TIMEOUT = 1; //1 second
+    private static final List<String> FORWARD_SYSTEM_PROPERTIES = List.of(
+        "stderr.encoding",
+        "stdin.encoding",
+        "stdout.encoding"
+    );
 
     private VirtualMachine vm;
     private Process process;
@@ -105,11 +110,14 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             int port = listener.getLocalPort();
             Optional<JShellConsole> console = env.console();
             String consoleModule = console.isPresent() ? "jdk.jshell" : "java.base";
-            List<String> augmentedremoteVMOptions =
-                    Stream.concat(env.extraRemoteVMOptions().stream(),
-                                  //disable System.console():
-                                  List.of("-Djdk.console=" + consoleModule).stream())
-                          .toList();
+            List<String> augmentedremoteVMOptions = new ArrayList<>();
+
+            FORWARD_SYSTEM_PROPERTIES.forEach(
+                    prop -> augmentedremoteVMOptions.add("-D" + prop + "=" +
+                                                         System.getProperty(prop)));
+            augmentedremoteVMOptions.addAll(env.extraRemoteVMOptions());
+            augmentedremoteVMOptions.add("-Djdk.console=" + consoleModule);
+
             ExecutionEnv augmentedEnv = new ExecutionEnv() {
                 @Override
                 public InputStream userIn() {

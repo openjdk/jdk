@@ -37,6 +37,7 @@ import java.io.PrintStream;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -968,6 +969,9 @@ class ConsoleIOContext extends IOContext {
         }
     }
 
+    private static final Charset stdinCharset =
+            Charset.forName(System.getProperty("stdin.encoding"),
+                            Charset.defaultCharset());
     private String pendingLine;
     private int pendingLinePointer;
     private byte[] pendingBytes;
@@ -990,7 +994,7 @@ class ConsoleIOContext extends IOContext {
                     pendingLinePointer--;
                 }
             }
-            pendingBytes = dataToConvert.toString().getBytes();
+            pendingBytes = dataToConvert.toString().getBytes(stdinCharset);
             pendingBytesPointer = 0;
         }
         return pendingBytes[pendingBytesPointer++];
