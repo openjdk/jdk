@@ -144,6 +144,7 @@ public class X11PMBlitLoops extends Blit {
               dstType);
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy,
@@ -194,6 +195,7 @@ public class X11PMBlitLoops extends Blit {
             this.dstType = delegateDstType;
         }
 
+        @Override
         public void Blit(SurfaceData src, SurfaceData dst,
                          Composite comp, Region clip,
                          int sx, int sy, int dx, int dy, int w, int h)

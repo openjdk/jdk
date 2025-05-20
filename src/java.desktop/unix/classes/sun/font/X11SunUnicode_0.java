@@ -35,6 +35,7 @@ public class X11SunUnicode_0 extends Charset {
         super("X11SunUnicode_0", null);
     }
 
+    @Override
     public CharsetEncoder newEncoder() {
         return new Encoder(this);
     }
@@ -42,10 +43,12 @@ public class X11SunUnicode_0 extends Charset {
     /* Seems like supporting a decoder is required, but we aren't going
      * to be publicly exposing this class, so no need to waste work
      */
+    @Override
     public CharsetDecoder newDecoder() {
         throw new Error("Decoder is not implemented for X11SunUnicode_0 Charset");
     }
 
+    @Override
     public boolean contains(Charset cs) {
         return cs instanceof X11SunUnicode_0;
     }
@@ -145,6 +148,7 @@ public class X11SunUnicode_0 extends Charset {
         };
 
         /* The default implementation creates a decoder and we don't have one */
+        @Override
         public boolean isLegalReplacement(byte[] repl) {
             return true;
         }

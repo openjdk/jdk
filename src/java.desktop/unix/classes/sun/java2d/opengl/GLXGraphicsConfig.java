@@ -157,6 +157,7 @@ public final class GLXGraphicsConfig
             this.screen = screen;
             this.visual = visual;
         }
+        @Override
         public void run() {
             cfginfo = getGLXConfigInfo(screen, visual);
         }
@@ -212,6 +213,7 @@ public final class GLXGraphicsConfig
         }
     }
 
+    @Override
     public String toString() {
         return ("GLXGraphicsConfig[dev="+getDevice()+
                 ",vis=0x"+Integer.toHexString(visual)+
@@ -378,6 +380,7 @@ public final class GLXGraphicsConfig
         private GLXImageCaps() {
             super(true);
         }
+        @Override
         public boolean isTrueVolatile() {
             return true;
         }

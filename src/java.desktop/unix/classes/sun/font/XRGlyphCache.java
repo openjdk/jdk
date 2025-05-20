@@ -66,6 +66,7 @@ public class XRGlyphCache implements GlyphDisposedListener {
         StrikeCache.addGlyphDisposedListener(this);
     }
 
+    @Override
     public void glyphDisposed(ArrayList<Long> glyphPtrList) {
         try {
             SunToolkit.awtLock();

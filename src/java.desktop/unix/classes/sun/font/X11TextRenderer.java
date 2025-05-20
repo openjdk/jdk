@@ -47,6 +47,7 @@ public class X11TextRenderer extends GlyphListPipe {
      * Override super class method to call the AA pipe if
      * AA is specified in the GlyphVector's FontRenderContext
      */
+    @Override
     public void drawGlyphVector(SunGraphics2D sg2d, GlyphVector g,
                                 float x, float y)
     {
@@ -70,6 +71,7 @@ public class X11TextRenderer extends GlyphListPipe {
     native void doDrawGlyphList(long dstData, long xgc,
                                 Region clip, GlyphList gl);
 
+    @Override
     protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl) {
         SunToolkit.awtLock();
         try {
@@ -89,6 +91,7 @@ public class X11TextRenderer extends GlyphListPipe {
     }
 
     public static class Tracer extends X11TextRenderer {
+        @Override
         void doDrawGlyphList(long dstData, long xgc,
                              Region clip, GlyphList gl)
         {

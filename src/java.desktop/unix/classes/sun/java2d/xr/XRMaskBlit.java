@@ -65,6 +65,7 @@ public class XRMaskBlit extends MaskBlit {
             int srcy, int dstx, int dsty, int w, int h, int maskoff,
             int maskscan, int masklen, byte[] mask);
 
+    @Override
     public void MaskBlit(SurfaceData src, SurfaceData dst, Composite comp,
             Region clip, int srcx, int srcy, int dstx, int dsty, int width,
             int height, byte[] mask, int maskoff, int maskscan) {

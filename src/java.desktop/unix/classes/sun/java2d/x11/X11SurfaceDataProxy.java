@@ -120,6 +120,7 @@ public abstract class X11SurfaceDataProxy extends SurfaceDataProxy
             super(x11gc);
         }
 
+        @Override
         public int getTransparency() {
             return Transparency.OPAQUE;
         }
@@ -146,6 +147,7 @@ public abstract class X11SurfaceDataProxy extends SurfaceDataProxy
             super(x11gc);
         }
 
+        @Override
         public int getTransparency() {
             return Transparency.BITMASK;
         }

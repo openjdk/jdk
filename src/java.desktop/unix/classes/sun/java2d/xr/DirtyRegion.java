@@ -116,6 +116,7 @@ public class DirtyRegion implements Cloneable {
         }
     }
 
+    @Override
     public String toString() {
         return this.getClass().getName() +
                 "(x: " + x + ", y:" + y + ", x2:" + x2 + ", y2:" + y2 + ")";

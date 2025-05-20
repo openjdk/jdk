@@ -33,13 +33,16 @@ public class X11GBK extends Charset {
     public X11GBK () {
         super("X11GBK", null);
     }
+    @Override
     public CharsetEncoder newEncoder() {
         return new Encoder(this);
     }
+    @Override
     public CharsetDecoder newDecoder() {
         return new GBK().newDecoder();
     }
 
+    @Override
     public boolean contains(Charset cs) {
         return cs instanceof X11GBK;
     }
@@ -52,11 +55,13 @@ public class X11GBK extends Charset {
             super(cs, (char[])null, (char[])null);
         }
 
+        @Override
         public boolean canEncode(char ch){
             if (ch < 0x80) return false;
             return enc.canEncode(ch);
         }
 
+        @Override
         public int encodeChar(char ch) {
             if (ch < 0x80)
                 return UNMAPPABLE_ENCODING;

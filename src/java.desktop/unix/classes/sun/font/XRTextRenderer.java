@@ -55,6 +55,7 @@ public class XRTextRenderer extends GlyphListPipe {
         eltList = new GrowableEltArray(64);
     }
 
+    @Override
     protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl) {
         if (gl.getNumGlyphs() == 0) {
             return;

@@ -167,6 +167,7 @@ class XRPMBlit extends Blit {
         super(srcType, CompositeType.AnyAlpha, dstType);
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst, Composite comp, Region clip, int sx, int sy, int dx, int dy, int w, int h) {
         try {
             SunToolkit.awtLock();
@@ -190,6 +191,7 @@ class XRPMScaledBlit extends ScaledBlit {
         super(srcType, CompositeType.AnyAlpha, dstType);
     }
 
+    @Override
     @SuppressWarnings("cast")
     public void Scale(SurfaceData src, SurfaceData dst, Composite comp, Region clip, int sx1, int sy1, int sx2, int sy2, double dx1, double dy1,
             double dx2, double dy2) {
@@ -290,6 +292,7 @@ class XRPMTransformedBlit extends TransformBlit {
         compositeBounds.height = (int) (maxY - minY);
     }
 
+    @Override
     public void Transform(SurfaceData src, SurfaceData dst, Composite comp, Region clip, AffineTransform xform,
             int hint, int srcx, int srcy, int dstx, int dsty, int width, int height) {
         try {
@@ -354,6 +357,7 @@ class XrSwToPMBlit extends Blit {
         pmToSurfaceBlit = new XRPMBlit(dstType, dstType);
     }
 
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst, Composite comp, Region clip, int sx, int sy, int dx, int dy, int w, int h) {
         try {
             SunToolkit.awtLock();
@@ -374,6 +378,7 @@ class XrSwToPMScaledBlit extends ScaledBlit {
         pmToSurfaceBlit = new XRPMScaledBlit(dstType, dstType);
     }
 
+    @Override
     public void Scale(SurfaceData src, SurfaceData dst, Composite comp, Region clip, int sx1, int sy1, int sx2, int sy2, double dx1, double dy1,
             double dx2, double dy2) {
         {
@@ -399,6 +404,7 @@ class XrSwToPMTransformedBlit extends TransformBlit {
         pmToSurfaceBlit = new XRPMTransformedBlit(dstType, dstType);
     }
 
+    @Override
     public void Transform(SurfaceData src, SurfaceData dst, Composite comp, Region clip, AffineTransform xform, int hint, int sx, int sy, int dstx,
             int dsty, int w, int h) {
         try {

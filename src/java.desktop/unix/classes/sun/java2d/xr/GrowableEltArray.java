@@ -77,6 +77,7 @@ public class GrowableEltArray extends GrowableIntArray {
         return glyphs;
     }
 
+    @Override
     public void clear() {
         glyphs.clear();
         super.clear();

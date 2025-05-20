@@ -38,10 +38,12 @@ public class MutableInteger {
         this.setValue(value);
     }
 
+    @Override
     public int hashCode() {
         return getValue();
     }
 
+    @Override
     public boolean equals(Object o) {
         return (o instanceof MutableInteger) &&
                (((MutableInteger) o).getValue() == getValue());

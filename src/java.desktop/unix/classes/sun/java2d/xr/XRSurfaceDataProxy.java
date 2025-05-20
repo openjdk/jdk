@@ -81,6 +81,7 @@ public class XRSurfaceDataProxy extends SurfaceDataProxy implements Transparency
         return (bgColor == null || transparency == Transparency.TRANSLUCENT);
     }
 
+    @Override
     public int getTransparency() {
         return transparency;
     }

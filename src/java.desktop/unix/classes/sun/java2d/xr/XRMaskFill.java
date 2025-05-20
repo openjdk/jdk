@@ -93,6 +93,7 @@ public class XRMaskFill extends MaskFill {
     protected native void maskFill(long xsdo, int x, int y, int w, int h,
             int maskoff, int maskscan, int masklen, byte[] mask);
 
+    @Override
     public void MaskFill(SunGraphics2D sg2d, SurfaceData sData, Composite comp,
             final int x, final int y, final int w, final int h,
             final byte[] mask, final int maskoff, final int maskscan) {

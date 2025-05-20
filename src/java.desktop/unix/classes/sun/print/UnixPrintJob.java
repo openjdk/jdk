@@ -132,10 +132,12 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public PrintService getPrintService() {
         return service;
     }
 
+    @Override
     public PrintJobAttributeSet getAttributes() {
         synchronized (this) {
             if (jobAttrSet == null) {
@@ -148,6 +150,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void addPrintJobListener(PrintJobListener listener) {
         synchronized (this) {
             if (listener == null) {
@@ -160,6 +163,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void removePrintJobListener(PrintJobListener listener) {
         synchronized (this) {
             if (listener == null || jobListeners == null ) {
@@ -269,6 +273,7 @@ public class UnixPrintJob implements CancelablePrintJob {
        }
     }
 
+    @Override
     public void addPrintJobAttributeListener(
                                   PrintJobAttributeListener listener,
                                   PrintJobAttributeSet attributes) {
@@ -288,6 +293,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void removePrintJobAttributeListener(
                                         PrintJobAttributeListener listener) {
         synchronized (this) {
@@ -308,6 +314,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void print(Doc doc, PrintRequestAttributeSet attributes)
         throws PrintException {
 
@@ -984,6 +991,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
+    @Override
     public void cancel() throws PrintException {
         synchronized (this) {
             if (!printing) {

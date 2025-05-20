@@ -109,6 +109,7 @@ public class XRColor {
         return xrValue;
     }
 
+    @Override
     public String toString(){
         return "A:"+alpha+"  R:"+red+"  G:"+green+" B:"+blue;
     }

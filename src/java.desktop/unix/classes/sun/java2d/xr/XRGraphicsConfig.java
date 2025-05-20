@@ -44,6 +44,7 @@ public class XRGraphicsConfig extends X11GraphicsConfig implements
         super(device, visualnum, depth, colormap, doubleBuffer);
     }
 
+    @Override
     public SurfaceData createSurfaceData(X11ComponentPeer peer) {
         return XRSurfaceData.createData(peer);
     }

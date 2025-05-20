@@ -266,6 +266,7 @@ public class AttributeClass {
         return Objects.hash(myType, myName, myValue);
     }
 
+    @Override
     public String toString() {
         return myName;
     }
