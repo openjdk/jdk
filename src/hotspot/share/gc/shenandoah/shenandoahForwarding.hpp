@@ -52,6 +52,8 @@ public:
    */
   static inline bool is_forwarded(oop obj);
 
+  static inline oop get_possibly_self_forwardee(oop obj, markWord mark);
+
   /* Tries to atomically update forwardee in $holder object to $update.
    * Assumes $holder points at itself.
    * Asserts $holder is in from-space.

@@ -83,14 +83,17 @@ inline bool ShenandoahForwarding::is_forwarded(oop obj) {
   return obj->mark().is_forwarded();
 }
 
+inline oop ShenandoahForwarding::get_possibly_self_forwardee(oop obj, markWord mark) {
+  if (mark.is_self_forwarded()) {
+    return obj;
+  }
+  return mark.forwardee();
+}
+
 inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   const markWord old_mark = obj->mark();
   if (old_mark.is_forwarded()) {
-    if (old_mark.is_self_forwarded()) {
-      return obj;
-    } else {
-      return old_mark.forwardee();
-    }
+    return get_possibly_self_forwardee(obj, old_mark);
   }
 
   markWord new_mark = markWord::encode_pointer_as_mark(update);
@@ -98,7 +101,7 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   if (prev_mark == old_mark) {
     return update;
   } else {
-    return prev_mark.forwardee();
+    return get_possibly_self_forwardee(obj, prev_mark);
   }
 }
 
@@ -106,27 +109,19 @@ inline oop ShenandoahForwarding::try_forward_to_self(oop obj) {
   markWord old_mark = obj->mark();
   if (old_mark.is_forwarded()) {
     // Check if another thread has already changed the forwarding pointer
-    if (old_mark.is_self_forwarded()) {
-      return obj;
-    } else {
-      return old_mark.forwardee();
-    }
+    return get_possibly_self_forwardee(obj, old_mark);
   }
 
-  uint old_lock_bits = mask_bits(old_mark.value(), markWord::lock_mask_in_place);
   markWord new_mark = old_mark.set_self_forwarded();
-  uint new_lock_bits = mask_bits(new_mark.value(), markWord::lock_mask_in_place);
-  assert(old_lock_bits == new_lock_bits, "Lock bits (%u) changed to (%u) by self forwarding", old_lock_bits, new_lock_bits);
   markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
   if (prev_mark == old_mark) {
-    log_debug(gc)("Set forwarding bit on " PTR_FORMAT ", mark = " PTR_FORMAT, p2i(obj), new_mark.value());
-    assert(obj->is_self_forwarded(), "Why is " PTR_FORMAT " not self forwarded?", p2i(obj));
+    log_debug(gc)("Set self forwarding bit on " PTR_FORMAT ", mark = " PTR_FORMAT, p2i(obj), new_mark.value());
     return obj;
   } else {
-    log_debug(gc)("Did not set forwarding bit on " PTR_FORMAT
+    log_debug(gc)("Did not set self forwarding bit on " PTR_FORMAT
       ", old_mark: " PTR_FORMAT ", new_mark: " PTR_FORMAT ", prev_mark: " PTR_FORMAT,
       p2i(obj), old_mark.value(), new_mark.value(), prev_mark.value());
-    return prev_mark.forwardee();
+    return get_possibly_self_forwardee(obj, prev_mark);
   }
 }
 
