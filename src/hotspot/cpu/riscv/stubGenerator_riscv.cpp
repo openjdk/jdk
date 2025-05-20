@@ -1692,22 +1692,22 @@ class StubGenerator: public StubCodeGenerator {
     // Align source address at 8 bytes address boundary.
     Label L_skip_align1, L_skip_align2, L_skip_align4;
     // One byte misalignment happens.
-    __ test_bit(t0, dest, 0);
-    __ beqz(t0, L_skip_align1);
+    __ test_bit(tmp_reg, dest, 0);
+    __ beqz(tmp_reg, L_skip_align1);
     __ sb(value, Address(dest, 0));
     __ addi(dest, dest, 1);
     __ subi(count, count, 1);
     __ bind(L_skip_align1);
     // Two bytes misalignment happens.
-    __ test_bit(t0, dest, 1);
-    __ beqz(t0, L_skip_align2);
+    __ test_bit(tmp_reg, dest, 1);
+    __ beqz(tmp_reg, L_skip_align2);
     __ sh(value, Address(dest, 0));
     __ addi(dest, dest, 2);
     __ subi(count, count, 2);
     __ bind(L_skip_align2);
     // Four bytes misalignment happens.
-    __ test_bit(t0, dest, 2);
-    __ beqz(t0, L_skip_align4);
+    __ test_bit(tmp_reg, dest, 2);
+    __ beqz(tmp_reg, L_skip_align4);
     __ sw(value, Address(dest, 0));
     __ addi(dest, dest, 4);
     __ subi(count, count, 4);
@@ -1724,20 +1724,20 @@ class StubGenerator: public StubCodeGenerator {
     // Remaining count is less than 8 bytes and address is heapword aligned.
     {
       Label L_fill_2, L_fill_1, L_exit;
-      __ test_bit(t0, count, 2);
-      __ beqz(t0, L_fill_2);
+      __ test_bit(tmp_reg, count, 2);
+      __ beqz(tmp_reg, L_fill_2);
       __ sw(value, Address(dest, 0));
       __ addi(dest, dest, 4);
 
       __ bind(L_fill_2);
-      __ test_bit(t0, count, 1);
-      __ beqz(t0, L_fill_1);
+      __ test_bit(tmp_reg, count, 1);
+      __ beqz(tmp_reg, L_fill_1);
       __ sh(value, Address(dest, 0));
       __ addi(dest, dest, 2);
 
       __ bind(L_fill_1);
-      __ test_bit(t0, count, 0);
-      __ beqz(t0, L_exit);
+      __ test_bit(tmp_reg, count, 0);
+      __ beqz(tmp_reg, L_exit);
       __ sb(value, Address(dest, 0));
 
       __ bind(L_exit);
@@ -1749,8 +1749,8 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_fill_elements);
     {
       Label L_fill_2, L_fill_1, L_exit;
-      __ test_bit(t0, count, 2);
-      __ beqz(t0, L_fill_2);
+      __ test_bit(tmp_reg, count, 2);
+      __ beqz(tmp_reg, L_fill_2);
       __ sb(value, Address(dest, 0));
       __ sb(value, Address(dest, 1));
       __ sb(value, Address(dest, 2));
@@ -1758,15 +1758,15 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(dest, dest, 4);
 
       __ bind(L_fill_2);
-      __ test_bit(t0, count, 1);
-      __ beqz(t0, L_fill_1);
+      __ test_bit(tmp_reg, count, 1);
+      __ beqz(tmp_reg, L_fill_1);
       __ sb(value, Address(dest, 0));
       __ sb(value, Address(dest, 1));
       __ addi(dest, dest, 2);
 
       __ bind(L_fill_1);
-      __ test_bit(t0, count, 0);
-      __ beqz(t0, L_exit);
+      __ test_bit(tmp_reg, count, 0);
+      __ beqz(tmp_reg, L_exit);
       __ sb(value, Address(dest, 0));
 
       __ bind(L_exit);
