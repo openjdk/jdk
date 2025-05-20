@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,40 +53,19 @@ class MenuItemTestHelper {
             }
         }
 
-        Icon myIcon = new Icon() {
-            public void paintIcon(Component c, Graphics g, int x, int y) {
-                Color color = g.getColor();
-                g.setColor(Color.RED);
-                g.fillRect(x, y, 10, 10);
-                g.setColor(color);
-            }
-
-            public int getIconWidth() { return 10; }
-            public int getIconHeight() { return 10; }
-        };
-
-        Icon myIcon2 = new Icon() {
-            public void paintIcon(Component c, Graphics g, int x, int y) {
-                Color color = g.getColor();
-                g.setColor(Color.GREEN);
-                g.fillRect(x, y, 15, 10);
-                g.setColor(color);
-            }
-
-            public int getIconWidth() { return 15; }
-            public int getIconHeight() { return 10; }
-        };
-
+        Icon myIcon = new ColoredIcon(Color.RED,10,10);
+        Icon myIcon2 = new ColoredIcon(Color.GREEN,15,10);
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(createViewMenu(myIcon, myIcon2));
         menuBar.add(createNoNothingMenu());
         menuBar.add(createSomeIconsMenu(myIcon, myIcon2));
 
-        String title = "Menu Item Test " + (isLeft ? "(Left-to-right)" : "(Right-to-left)");
+        String title = (isLeft ? "(Left-to-right)" : "(Right-to-left)") + " - Menu Item Test";
         JFrame frame = new JFrame(title);
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setJMenuBar(menuBar);
-        frame.applyComponentOrientation(isLeft ? ComponentOrientation.LEFT_TO_RIGHT : ComponentOrientation.RIGHT_TO_LEFT);
+        frame.applyComponentOrientation(isLeft
+                ? ComponentOrientation.LEFT_TO_RIGHT
+                : ComponentOrientation.RIGHT_TO_LEFT);
 
         if (applyLookAndFeel) {
             String shortName = lafName.substring(lafName.lastIndexOf('.') + 1);
@@ -108,7 +87,6 @@ class MenuItemTestHelper {
     private static JMenu createViewMenu(Icon myIcon, Icon myIcon2) {
         JMenu menu = new JMenu("View");
         menu.setMnemonic('V');
-
         menu.add(new JMenuItem("Refresh"));
         menu.add(new JMenuItem("Customize..."));
         menu.add(new JCheckBoxMenuItem("Show Toolbar"));
@@ -117,7 +95,7 @@ class MenuItemTestHelper {
         menu.add(new JRadioButtonMenuItem("Icons"));
 
         JRadioButtonMenuItem rm2 = new JRadioButtonMenuItem("And icon.");
-        rm2.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, KeyEvent.SHIFT_MASK));
+        rm2.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, KeyEvent.SHIFT_DOWN_MASK));
         rm2.setIcon(myIcon2);
         menu.add(rm2);
 
@@ -136,20 +114,17 @@ class MenuItemTestHelper {
     }
 
     private static JMenu createNoNothingMenu() {
-        final JMenu menu2 = new JMenu("No nothing");
+        final JMenu noMenu = new JMenu("No nothing");
 
         for (String label : new String[]{"One", "Two", "Threeee"}) {
             JMenuItem item = new JMenuItem(label);
-            item.addActionListener(new AbstractAction() {
-                public void actionPerformed(ActionEvent e) {
-                    int width = menu2.getPopupMenu().getWidth();
-                    PassFailJFrame.log("menu.width = " + width);
-                }
-            });
-            menu2.add(item);
+            item.addActionListener((e) ->
+                    PassFailJFrame.log("menu.width = "
+                            + noMenu.getPopupMenu().getWidth()));
+            noMenu.add(item);
         }
 
-        return menu2;
+        return noMenu;
     }
 
     private static JMenu createSomeIconsMenu(Icon myIcon, Icon myIcon2) {
@@ -168,4 +143,23 @@ class MenuItemTestHelper {
 
         return someIcons;
     }
+
+    private record ColoredIcon(Color color, int width,
+                               int height) implements Icon {
+        @Override
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                Color oldColor = g.getColor();
+                g.setColor(color);
+                g.fillRect(x, y, width, height);
+                g.setColor(oldColor);
+            }
+            @Override
+            public int getIconWidth() {
+                return width;
+            }
+            @Override
+            public int getIconHeight() {
+                return height;
+            }
+        }
 }
