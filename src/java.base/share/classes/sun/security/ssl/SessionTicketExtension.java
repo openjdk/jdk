@@ -314,9 +314,13 @@ final class SessionTicketExtension {
                 }
 
                 return baos.toByteArray();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (Exception e) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("Compression failure: " + e.getMessage());
+                }
             }
+
+            return null;
         }
 
         private static ByteBuffer decompress(ByteBuffer input) {
@@ -324,7 +328,7 @@ final class SessionTicketExtension {
             byte[] bytes = new byte[compressedLen];
             input.get(bytes);
 
-            try (final GZIPInputStream gis = new GZIPInputStream(
+            try (GZIPInputStream gis = new GZIPInputStream(
                     new ByteArrayInputStream(bytes))) {
                 final byte[] tmp = new byte[compressedLen * 3];
                 int count = 0;
@@ -339,9 +343,13 @@ final class SessionTicketExtension {
                 }
 
                 return ByteBuffer.wrap(Arrays.copyOf(tmp, count));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (Exception e) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("Decompression failure: " + e.getMessage());
+                }
             }
+
+            return null;
         }
 
         byte[] getEncoded() {
