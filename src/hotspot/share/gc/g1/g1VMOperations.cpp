@@ -116,7 +116,7 @@ void VM_G1CollectForAllocation::doit() {
 
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
-  g1h->do_collection_pause_at_safepoint(); // always true
+  g1h->do_collection_pause_at_safepoint();
 
   if (_word_size > 0) {
     // An allocation had been requested. Do it, eventually trying a stronger
