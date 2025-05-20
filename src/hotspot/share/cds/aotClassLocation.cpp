@@ -1029,8 +1029,7 @@ bool AOTClassLocationConfig::validate(bool has_aot_linked_classes, bool* has_ext
         MetaspaceShared::unrecoverable_loading_error();
       }
     } else {
-      log_warning(cds)("%s%s", mismatch_msg, hint_msg);
-      MetaspaceShared::report_loading_error(nullptr);
+      MetaspaceShared::report_loading_error("%s%s", mismatch_msg, hint_msg);
     }
   }
   return success;
