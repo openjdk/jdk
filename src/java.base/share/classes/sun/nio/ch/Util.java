@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import jdk.internal.misc.Unsafe;
 
 public class Util {
 
-    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+    static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // -- Caches --
 
@@ -340,7 +340,7 @@ public class Util {
      * Frees the memory for the given direct buffer
      */
     private static void free(ByteBuffer buf) {
-        unsafe.freeMemory(((DirectBuffer)buf).address());
+        unsafe.freeMemory(NIO_ACCESS.getBufferAddress(buf));
     }
 
 
@@ -405,7 +405,7 @@ public class Util {
     }
 
     static void erase(ByteBuffer bb) {
-        unsafe.setMemory(((DirectBuffer)bb).address(), bb.capacity(), (byte)0);
+        unsafe.setMemory(NIO_ACCESS.getBufferAddress(bb), bb.capacity(), (byte)0);
     }
 
     static Unsafe unsafe() {

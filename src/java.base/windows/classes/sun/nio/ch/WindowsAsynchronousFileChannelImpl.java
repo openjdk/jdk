@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.event.FileForceEvent;
 import jdk.internal.invoke.MhUtil;
+
+import static sun.nio.ch.Util.NIO_ACCESS;
 
 /**
  * Windows implementation of AsynchronousFileChannel using overlapped I/O.
@@ -446,13 +448,15 @@ public class WindowsAsynchronousFileChannelImpl
             // Substitute a native buffer if not direct
             if (dst instanceof DirectBuffer) {
                 buf = dst;
-                address = ((DirectBuffer)dst).address() + pos;
+                address = NIO_ACCESS.getBufferAddress(dst) + pos;
             } else {
+                // buf can never be backed by a memory segment
                 buf = Util.getTemporaryDirectBuffer(rem);
-                address = ((DirectBuffer)buf).address();
+                address = NIO_ACCESS.getBufferAddress(buf);
             }
 
             boolean pending = false;
+            NIO_ACCESS.acquireSession(buf);
             try {
                 begin();
 
@@ -477,6 +481,7 @@ public class WindowsAsynchronousFileChannelImpl
                 if (overlapped != 0L)
                     ioCache.remove(overlapped);
             } finally {
+                NIO_ACCESS.releaseSession(buf);
                 if (!pending)
                     // release resources
                     releaseBufferIfSubstituted();
@@ -626,7 +631,7 @@ public class WindowsAsynchronousFileChannelImpl
             // Substitute a native buffer if not direct
             if (src instanceof DirectBuffer) {
                 buf = src;
-                address = ((DirectBuffer)src).address() + pos;
+                address = NIO_ACCESS.getBufferAddress(src) + pos;
             } else {
                 buf = Util.getTemporaryDirectBuffer(rem);
                 buf.put(src);
@@ -634,9 +639,10 @@ public class WindowsAsynchronousFileChannelImpl
                 // temporarily restore position as we don't know how many bytes
                 // will be written
                 src.position(pos);
-                address = ((DirectBuffer)buf).address();
+                address = NIO_ACCESS.getBufferAddress(buf);
             }
 
+            NIO_ACCESS.acquireSession(buf);
             try {
                 begin();
 
@@ -662,6 +668,7 @@ public class WindowsAsynchronousFileChannelImpl
                     ioCache.remove(overlapped);
 
             } finally {
+                NIO_ACCESS.releaseSession(buf);
                 end();
             }
 

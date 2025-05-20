@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,7 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
             return;
         }
 
-        if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
+        if (!(byteBuffer instanceof DirectBuffer)) {
             super.engineUpdate(byteBuffer);
             return;
         }
@@ -289,7 +289,7 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
             }
             NIO_ACCESS.acquireSession(byteBuffer);
             try {
-                token.p11.C_DigestUpdate(session.id(), dByteBuffer.address() + ofs, null, 0, len);
+                token.p11.C_DigestUpdate(session.id(), NIO_ACCESS.getBufferAddress(byteBuffer) + ofs, null, 0, len);
             } finally {
                 NIO_ACCESS.releaseSession(byteBuffer);
             }
