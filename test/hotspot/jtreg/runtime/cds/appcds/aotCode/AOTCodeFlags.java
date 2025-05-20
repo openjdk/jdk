@@ -26,7 +26,11 @@
  * @test
  * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
  * @requires vm.cds.supports.aot.code.caching
- * @requires vm.flagless
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @comment Both C1 and C2 JIT compilers are required because the test verifies
+ *          compiler's runtime blobs generation.
+ * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
+ * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
  * @build AOTCodeFlags JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
