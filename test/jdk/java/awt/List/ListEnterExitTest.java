@@ -40,11 +40,18 @@ import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 public class ListEnterExitTest {
     final List list = new List();
-    final MouseEnterExitListener mouseEnterExitListener = new MouseEnterExitListener();
     Frame frame;
     volatile Point p;
+    private final int X_OFFSET = 30;
+    private final int Y_OFFSET = 40;
+    private final int LATCH_TIMEOUT = 3;
+    private static volatile CountDownLatch mouseEnterLatch = new CountDownLatch(1);
+    private static volatile CountDownLatch mouseExitLatch = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
         ListEnterExitTest test = new ListEnterExitTest();
@@ -61,7 +68,7 @@ public class ListEnterExitTest {
                 list.add("Item 4");
                 list.add("Item 5");
                 list.add("Item 6");
-                list.addMouseListener(mouseEnterExitListener);
+                list.addMouseListener(new MouseEnterExitListener());
                 frame.add(list);
                 frame.setLayout(new FlowLayout());
                 frame.setSize(300, 200);
@@ -70,29 +77,30 @@ public class ListEnterExitTest {
             });
 
             final Robot robot = new Robot();
+            robot.setAutoDelay(100);
             robot.waitForIdle();
             robot.delay(1000);
 
             EventQueue.invokeAndWait(() -> {
                 p = list.getLocationOnScreen();
             });
-            robot.mouseMove(p.x + 30, p.y + 40);
+            robot.mouseMove(p.x + X_OFFSET, p.y + Y_OFFSET);
             robot.waitForIdle();
-            robot.delay(100);
 
-            robot.mouseMove(p.x - 30, p.y + 40);
+            robot.mouseMove(p.x - X_OFFSET, p.y + Y_OFFSET);
             robot.waitForIdle();
-            robot.delay(100);
 
-            robot.mouseMove(p.x + 30, p.y + 40);
+            robot.mouseMove(p.x + X_OFFSET, p.y + Y_OFFSET);
             robot.waitForIdle();
-            robot.delay(100);
 
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            if (!mouseEnterLatch.await(LATCH_TIMEOUT, TimeUnit.SECONDS)) {
+                System.out.println("mouseEnterLatch count is : " + mouseEnterLatch.getCount());
+                throw new RuntimeException("Mouse enter event timeout");
+            }
 
-            synchronized (mouseEnterExitListener) {
-                mouseEnterExitListener.wait(2000);
+            if (!mouseExitLatch.await(LATCH_TIMEOUT, TimeUnit.SECONDS)) {
+                System.out.println("mouseExitLatch count is : " + mouseExitLatch.getCount());
+                throw new RuntimeException("Mouse exit event timeout");
             }
         } finally {
             EventQueue.invokeAndWait(() -> {
@@ -101,37 +109,17 @@ public class ListEnterExitTest {
                 }
             });
         }
-        if (!mouseEnterExitListener.isPassed()) {
-            throw new RuntimeException("Haven't receive mouse enter/exit events");
+    }
+
+    static class MouseEnterExitListener extends MouseAdapter {
+        public void mouseEntered(MouseEvent e) {
+            System.out.println("Mouse Entered Event");
+            mouseEnterLatch.countDown();
         }
 
-    }
-
-}
-
-class MouseEnterExitListener extends MouseAdapter {
-
-    volatile boolean passed_1 = false;
-    volatile boolean passed_2 = false;
-
-    public void mouseEntered(MouseEvent e) {
-        System.out.println("Mouse Entered Event");
-        passed_1 = true;
-    }
-
-    public void mouseExited(MouseEvent e) {
-        System.out.println("Mouse Exited Event");
-        passed_2 = true;
-    }
-
-    public void mousePressed(MouseEvent e) {
-        synchronized (this) {
-            System.out.println("mouse pressed");
-            this.notifyAll();
+        public void mouseExited(MouseEvent e) {
+            System.out.println("Mouse Exited Event");
+            mouseExitLatch.countDown();
         }
-    }
-
-    public boolean isPassed() {
-        return passed_1 & passed_2;
     }
 }
