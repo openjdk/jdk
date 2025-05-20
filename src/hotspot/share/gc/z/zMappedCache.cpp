@@ -601,7 +601,7 @@ void ZMappedCache::print_on(outputStream* st) const {
   }
 
   // Print information on size classes
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
 
   st->print("size classes ");
   st->fill_to(17);

@@ -1060,7 +1060,7 @@ void ZPartition::print_on(outputStream* st) const {
   st->print_cr("used %zuM, capacity %zuM, max capacity %zuM",
                _used / M, _capacity / M, _max_capacity / M);
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
   print_cache_on(st);
 }
 
@@ -1071,7 +1071,7 @@ void ZPartition::print_cache_on(outputStream* st) const {
 void ZPartition::print_cache_extended_on(outputStream* st) const {
   st->print_cr("Partition %u", _numa_id);
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
   _cache.print_extended_on(st);
 }
 
@@ -2315,7 +2315,7 @@ void ZPageAllocator::print_usage_on(outputStream* st) const {
 
   print_total_usage_on(st);
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
   print_partition_usage_on(st);
 
   if (locked) {
@@ -2348,7 +2348,7 @@ void ZPageAllocator::print_partition_usage_on(outputStream* st) const {
 void ZPageAllocator::print_cache_extended_on(outputStream* st) const {
   st->print_cr("ZMappedCache:");
 
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
 
   if (!try_lock_on_error(&_lock)) {
     // We can't print without taking the lock since printing the contents of
