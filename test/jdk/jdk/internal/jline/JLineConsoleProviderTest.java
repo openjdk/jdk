@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8331535 8351435
+ * @bug 8331535 8351435 8347050
  * @summary Verify the jdk.internal.le's console provider works properly.
  * @modules jdk.internal.le
  * @library /test/lib
