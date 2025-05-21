@@ -971,13 +971,6 @@ class ServerImpl {
         logger.log (Level.DEBUG, message);
     }
 
-    void delay () {
-        Thread.yield();
-        try {
-            Thread.sleep (200);
-        } catch (InterruptedException e) {}
-    }
-
     private int exchangeCount = 0;
 
     synchronized void startExchange () {

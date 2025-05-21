@@ -24,6 +24,7 @@
 
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.Utils;
+import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -285,23 +287,29 @@ public class ServerStopTerminationTest {
      * Initiate an exchange asynchronously
      */
     private void startExchange() {
-        final HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://"
-                                + server.getAddress().getAddress().getHostAddress()
-                                + ":" + server.getAddress().getPort() + "/"))
-                // We need to use POST to prevent retries
-                .POST(HttpRequest.BodyPublishers.ofString(""))
-                .build();
+        try {
+            final HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URIBuilder.newBuilder()
+                            .scheme("http")
+                            .loopback()
+                            .port(server.getAddress().getPort())
+                            .build())
+                    // We need to use POST to prevent retries
+                    .POST(HttpRequest.BodyPublishers.ofString(""))
+                    .build();
 
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .whenCompleteAsync((r, t) -> {
-                    System.out.println("request completed (" + r + ", " + t + ")");
-                    // count the latch down to allow the handler to complete
-                    // and the server's dispatcher thread to proceed; The handler
-                    // is called within the dispatcher thread since we haven't
-                    // set any executor on the server side
-                    complete.countDown();
-                });
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                    .whenCompleteAsync((r, t) -> {
+                        System.out.println("request completed (" + r + ", " + t + ")");
+                        // count the latch down to allow the handler to complete
+                        // and the server's dispatcher thread to proceed; The handler
+                        // is called within the dispatcher thread since we haven't
+                        // set any executor on the server side
+                        complete.countDown();
+                    });
+        } catch (final URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
