@@ -435,15 +435,16 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         Path source, dest;
 
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            // firs, is this already a runtime with
-            // <runtime>/Contents/Home - if so we need the Home dir
-            Path original = appLocation;
-            Path home = original.resolve("Contents/Home");
-            source = (Files.exists(home)) ? home : original;
+            source = appLocation;
 
-            // Then we need to put back the <NAME>/Content/Home
+            // We need to copy entire runtime folder as provided to include
+            // .plist and signing files.
             dest = newRoot.resolve(
-                MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params) + "/Contents/Home");
+                MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params));
+            // Add .jdk if needed.
+            if (!dest.getFileName().endsWith(".jdk")) {
+                dest = dest.resolveSibling(dest.getFileName() + ".jdk");
+            }
         } else {
             source = appLocation;
             dest = newRoot.resolve(appLocation.getFileName());

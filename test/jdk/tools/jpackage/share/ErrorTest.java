@@ -28,6 +28,7 @@ import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
 import static jdk.jpackage.test.CannedFormattedString.cannedAbsolutePath;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,6 +41,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import java.io.IOException;
 import jdk.jpackage.internal.util.TokenReplace;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
@@ -87,6 +89,31 @@ public final class ErrorTest {
             appImageCmd.execute();
 
             return appImageCmd.outputBundle().toString();
+        }),
+        INVALID_JDK_BUNDLE(cmd -> {
+            // Missing "Contents/MacOS/libjli.dylib"
+            try {
+                final Path runtimePath = TKit.createTempDirectory("invalidJDKBundle");
+                Files.createDirectories(runtimePath.resolve("Contents/Home"));
+                Files.createFile(runtimePath.resolve("Contents/Info.plist"));
+                return runtimePath.toAbsolutePath().toString();
+            } catch (IOException ex) {
+                TKit.error(ex.getMessage());
+                return null;
+            }
+        }),
+        INVALID_JDK_IMAGE(cmd -> {
+            // Missing ""lib/*/libjli.dylib""
+            try {
+                final Path runtimePath = TKit.createTempDirectory("invalidJDKImage");
+                Files.createDirectories(runtimePath.resolve("jmods"));
+                Files.createDirectories(runtimePath.resolve("lib"));
+                Files.createFile(runtimePath.resolve("lib/src.zip"));
+                return runtimePath.toAbsolutePath().toString();
+            } catch (IOException ex) {
+                TKit.error(ex.getMessage());
+                return null;
+            }
         }),
         ADD_LAUNCHER_PROPERTY_FILE;
 
@@ -603,7 +630,19 @@ public final class ErrorTest {
                 testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.token())
                         .error("ERR_MacAppStoreRuntimeBinExists", JPackageCommand.cannedArgument(cmd -> {
                             return Path.of(cmd.getArgumentValue("--runtime-image")).toAbsolutePath();
-                        }, Token.JAVA_HOME.token()))
+                        }, Token.JAVA_HOME.token())),
+                testSpec().noAppDesc().nativeType()
+                        .addArgs("--runtime-image", Token.INVALID_JDK_BUNDLE.token())
+                        .error("message.runtime-image-invalid", JPackageCommand.cannedArgument(cmd -> {
+                            return Path.of(cmd.getArgumentValue("--runtime-image")).toAbsolutePath();
+                        }, Token.INVALID_JDK_BUNDLE.token()))
+                        .error("message.runtime-image-invalid.advice"),
+                testSpec().noAppDesc().nativeType()
+                        .addArgs("--runtime-image", Token.INVALID_JDK_IMAGE.token())
+                        .error("message.runtime-image-invalid", JPackageCommand.cannedArgument(cmd -> {
+                            return Path.of(cmd.getArgumentValue("--runtime-image")).toAbsolutePath();
+                        }, Token.INVALID_JDK_IMAGE.token()))
+                        .error("message.runtime-image-invalid.advice")
         ).map(TestSpec.Builder::create).toList());
 
         // Test a few app-image options that should not be used when signing external app image
