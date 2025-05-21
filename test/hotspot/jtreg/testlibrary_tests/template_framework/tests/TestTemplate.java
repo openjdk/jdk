@@ -120,6 +120,7 @@ public class TestTemplate {
         testHookRecursion();
         testDollar();
         testLet();
+        testDollarAndHashtagBrackets();
         testSelector();
         testRecursion();
         testFuel();
@@ -144,6 +145,8 @@ public class TestTemplate {
         expectRendererException(() -> testFailingDollarName1(), "Is not a valid '$' name: ''.");
         expectRendererException(() -> testFailingDollarName2(), "Is not a valid '$' name: '#abc'.");
         expectRendererException(() -> testFailingDollarName3(), "Is not a valid '$' name: 'abc#'.");
+        expectRendererException(() -> testFailingDollarName4(), "A '$' name should not be null.");
+        expectRendererException(() -> testFailingLetName1(), "A hashtag replacement should not be null.");
         expectRendererException(() -> testFailingHashtagName1(), "Is not a valid hashtag replacement name: ''.");
         expectRendererException(() -> testFailingHashtagName2(), "Is not a valid hashtag replacement name: 'abc#abc'.");
         expectRendererException(() -> testFailingHashtagName3(), "Is not a valid hashtag replacement name: ''.");
@@ -731,6 +734,31 @@ public class TestTemplate {
             break
             abc = 5 50 150
             }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testDollarAndHashtagBrackets() {
+        var template1 = Template.make(() -> body(
+            let("xyz", "abc"),
+            let("xyz_", "def"),
+            let("xyz_klm", "ghi"),
+            let("klm", "jkl"),
+            """
+            no bracket: #xyz #xyz_klm #xyz_#klm
+            no bracket: $var $var_two $var_$two
+            with bracket: #{xyz} #{xyz_klm} #{xyz}_#{klm}
+            with bracket: ${var} ${var_two} ${var}_${two}
+            """
+        ));
+
+        String code = template1.render();
+        String expected =
+            """
+            no bracket: abc ghi defjkl
+            no bracket: var_1 var_two_1 var__1two_1
+            with bracket: abc ghi abc_jkl
+            with bracket: var_1 var_two_1 var_1_two_1
             """;
         checkEQ(code, expected);
     }
@@ -1773,6 +1801,20 @@ public class TestTemplate {
     public static void testFailingDollarName3() {
         var template1 = Template.make(() -> body(
             let("x", $("abc#")) // "#" character not allowed
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingDollarName4() {
+        var template1 = Template.make(() -> body(
+            let("x", $(null)) // Null input to dollar
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingLetName1() {
+        var template1 = Template.make(() -> body(
+            let(null, $("abc")) // Null input for hashtag name
         ));
         String code = template1.render();
     }

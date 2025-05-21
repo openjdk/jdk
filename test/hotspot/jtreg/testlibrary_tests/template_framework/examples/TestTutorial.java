@@ -145,6 +145,7 @@ public class TestTutorial {
         var templateCompare = Template.make("arg", (Integer arg) -> body(
             "System.out.println(", arg, ");\n",  // capture arg via lambda argument
             "System.out.println(#arg);\n",       // capture arg via hashtag replacement
+            "System.out.println(#{arg});\n",     // capture arg via hashtag replacement with brackets
             // The Template Framework allows two ways of formatting Strings, either
             // by appending to the comma-separated list of Tokens, or by hashtag
             // replacements. Appending as a Token works whenever one has a reference
@@ -261,9 +262,9 @@ public class TestTutorial {
         // Let us define some final static variables of a specific type.
         var template1 = Template.make("type", (String type) -> body(
             // The type (e.g. "int") is lower case, let us create the upper case "INT_CON" from it.
-            let("TYPE_CON", type.toUpperCase() + "_CON"),
+            let("TYPE", type.toUpperCase()),
             """
-            static final #type #TYPE_CON = 42;
+            static final #type #{TYPE}_CON = 42;
             """
         ));
 

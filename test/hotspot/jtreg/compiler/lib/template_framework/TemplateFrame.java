@@ -62,6 +62,9 @@ class TemplateFrame {
     }
 
     public String $(String name) {
+        if (name == null) {
+            throw new RendererException("A '$' name should not be null.");
+        }
         if (!Renderer.isValidName(name)) {
             throw new RendererException("Is not a valid '$' name: '" + name + "'.");
         }
@@ -69,6 +72,9 @@ class TemplateFrame {
     }
 
     void addHashtagReplacement(String key, String value) {
+        if (key == null) {
+            throw new RendererException("A hashtag replacement should not be null.");
+        }
         if (!Renderer.isValidName(key)) {
             throw new RendererException("Is not a valid hashtag replacement name: '" + key + "'.");
         }

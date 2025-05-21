@@ -44,8 +44,34 @@ import java.util.stream.Stream;
  */
 final class Renderer {
     private static final String NAME_CHARACTERS = "[a-zA-Z_][a-zA-Z0-9_]*";
-    private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile("\\$(" + NAME_CHARACTERS + ")");
-    private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#(" + NAME_CHARACTERS + ")");
+    private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile(
+        "\\$" +
+        // After the dollar, we either have "name" or "{name}"
+        "(?:" + // non-capturing group for the OR
+            // capturing group for "name"
+            "(" + NAME_CHARACTERS + ")" +
+        "|" + // OR
+            // We want to trim off the brackets, so have
+            // another non-capturing group.
+            "(?:\\{" +
+                // capturing group for "name" inside of "{name}"
+                "(" + NAME_CHARACTERS + ")" +
+            "\\})" +
+        ")");
+    private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile(
+        "#" +
+        // After the hashtag, we either have "name" or "{name}"
+        "(?:" + // non-capturing group for the OR
+            // capturing group for "name"
+            "(" + NAME_CHARACTERS + ")" +
+        "|" + // OR
+            // We want to trim off the brackets, so have
+            // another non-capturing group.
+            "(?:\\{" +
+                // capturing group for "name" inside of "{name}"
+                "(" + NAME_CHARACTERS + ")" +
+            "\\})" +
+        ")");
     private static final Pattern NAME_CHARACTERS_PATTERN = Pattern.compile("^" + NAME_CHARACTERS + "$");
 
     static boolean isValidName(String name) {
@@ -316,11 +342,17 @@ final class Renderer {
 
     private String templateString(String s) {
         var temp = DOLLAR_NAME_PATTERN.matcher(s).replaceAll(
-            (MatchResult result) -> $(result.group(1))
+            (MatchResult result) -> $(
+                // There are two groups: (1) for "$name" and (2) for "${name}"
+                result.group(1) != null ? result.group(1) : result.group(2)
+            )
         );
         return HASHTAG_REPLACEMENT_PATTERN.matcher(temp).replaceAll(
             // We must escape "$", because it has a special meaning in replaceAll.
-            (MatchResult result) -> getHashtagReplacement(result.group(1)).replace("\\", "\\\\").replace("$", "\\$")
+            (MatchResult result) -> getHashtagReplacement(
+                // There are two groups: (1) for "#name" and (2) for "#{name}"
+                result.group(1) != null ? result.group(1) : result.group(2)
+            ).replace("\\", "\\\\").replace("$", "\\$")
         );
     }
 
