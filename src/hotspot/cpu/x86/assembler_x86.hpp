@@ -772,11 +772,11 @@ private:
   void evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_v, bool evex_r, bool evex_b,
                        bool eevex_x, int nds_enc, VexSimdPrefix pre, VexOpcode opc, bool no_flags = false);
 
-  void evex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
-                       InstructionAttr *attributes, bool no_flags = false);
+  void eevex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
+                        InstructionAttr *attributes, bool no_flags = false);
 
-  void evex_prefix_nf(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
-                      InstructionAttr *attributes, bool no_flags = false);
+  void eevex_prefix_nf(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
+                       InstructionAttr *attributes, bool no_flags = false);
 
   void vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
                   InstructionAttr *attributes, bool nds_is_ndd = false, bool no_flags = false);
@@ -785,10 +785,10 @@ private:
                              VexSimdPrefix pre, VexOpcode opc,
                              InstructionAttr *attributes, bool src_is_gpr = false, bool nds_is_ndd = false, bool no_flags = false);
 
-  int evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                InstructionAttr *attributes, bool no_flags = false);
+  int eevex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                                 InstructionAttr *attributes, bool no_flags = false);
 
-  int emit_eevex(int dst_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false);
+  int emit_eevex_prefix_ndd(int dst_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false);
 
   int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                       InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
