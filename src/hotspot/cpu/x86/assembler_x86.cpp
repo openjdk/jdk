@@ -13004,8 +13004,7 @@ int Assembler::emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, VexSimd
   return vex_prefix_and_encode(0, dst_enc, nds_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
 }
 
-int Assembler::evex_prefix_and_encode_ndd(int dst_enc, VexSimdPrefix pre, VexOpcode opc,
-                                          InstructionAttr *attributes, bool no_flags) {
+int Assembler::emit_eevex(int dst_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags) {
   attributes->set_is_evex_instruction();
   return vex_prefix_and_encode(0, 0, dst_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
 }
@@ -16308,7 +16307,7 @@ void Assembler::esetzucc(Condition cc, Register dst) {
   assert(0 <= cc && cc < 16, "illegal cc");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   // Encoding Format : eevex_prefix (4 bytes) | opcode_cc | modrm
-  int encode =  evex_prefix_and_encode_ndd(dst->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_3C /* MAP4 */, &attributes); // demotion disabled
+  int encode =  emit_eevex(dst->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_3C /* MAP4 */, &attributes); // demotion disabled
   emit_opcode_prefix_and_encoding((0x40 | cc), 0xC0, encode);
 }
 

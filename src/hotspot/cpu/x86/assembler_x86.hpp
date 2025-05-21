@@ -788,8 +788,7 @@ private:
   int evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                 InstructionAttr *attributes, bool no_flags = false);
 
-  int evex_prefix_and_encode_ndd(int dst_enc, VexSimdPrefix pre, VexOpcode opc,
-                                 InstructionAttr *attributes, bool no_flags = false);
+  int emit_eevex(int dst_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false);
 
   int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                       InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
@@ -801,7 +800,7 @@ private:
                                              int size, int op1, int op2, bool no_flags);
 
   void evex_opcode_prefix_and_encode(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc,
-                                     int size, int b1, bool no_flags = false, bool is_map1 = false);
+                                     int size, int opcode_byte, bool no_flags = false, bool is_map1 = false);
 
   void evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                      int size, int byte1, bool no_flags, bool is_map1 = false, bool swap = true);
