@@ -170,6 +170,12 @@ import compiler.lib.ir_framework.TestFramework;
  * Templates, which allows sharing of these identifier names between Templates.
  *
  * <p>
+ * The dollar and hashtag names must have at least one character. The first character must be a letter
+ * or underscore (i.e. {@code a-zA-Z_}), the other characters can also be digits (i.e. {@code a-zA-Z0-9_}).
+ * One can use them with or without curly braces, e.g. {@code #name}, {@code #{name}}, {@code $name}, or
+ * {@code #{name}}.
+ *
+ * <p>
  * A {@link TemplateToken} cannot just be used in {@link Template#body}, but it can also be
  * {@link Hook#insert}ed to where a {@link Hook} was {@link Hook#anchor}ed earlier (in some outer scope of the code).
  * For example, while generating code in a method, one can reach out to the scope of the class, and insert a
