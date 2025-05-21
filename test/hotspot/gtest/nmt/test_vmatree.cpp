@@ -965,16 +965,47 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccountingWhenUseTagInplace) {
   Tree tree;
   VMATree::RegionData rd1(si[0], mtTest);
   VMATree::RegionData rd2(si[1], mtNone);
-  tree.reserve_mapping(0, 100, rd1);
-  VMATree::SummaryDiff diff = tree.commit_mapping(0, 50, rd2, true);
+//            1         2         3         4         5
+//  012345678901234567890123456789012345678901234567890
+//  ..................................................
+// Legend:
+// . - free(released)
+  tree.reserve_mapping(0, 50, rd1);
+//            1         2         3         4         5
+//  012345678901234567890123456789012345678901234567890
+//  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+// Legend:
+// r - reserve
+
+VMATree::SummaryDiff diff = tree.commit_mapping(0, 25, rd2, true);
+//            1         2         3         4         5
+//  012345678901234567890123456789012345678901234567890
+//  CCCCCCCCCCCCCCCCCCCCCCCCCrrrrrrrrrrrrrrrrrrrrrrrrr
+// Legend:
+// r - Test, reserve
+// C - Test, commit
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
-  diff = tree.commit_mapping(60, 10, rd2, true);
+  EXPECT_EQ(25, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+
+  diff = tree.commit_mapping(30, 5, rd2, true);
+//            1         2         3         4         5
+//  012345678901234567890123456789012345678901234567890
+//  CCCCCCCCCCCCCCCCCCCCCCCCCrrrrrCCCCCrrrrrrrrrrrrrrr
+// Legend:
+// r - Test, reserve
+// C - Test, commit
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(10, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
-  diff = tree.uncommit_mapping(0, 50, rd2);
+  EXPECT_EQ(5, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+
+  diff = tree.uncommit_mapping(0, 25, rd2);
+//            1         2         3         4         5
+//  012345678901234567890123456789012345678901234567890
+//  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrCCCCCrrrrrrrrrrrrrrr
+// Legend:
+// r - Test, reserve
+// C - Test, commit
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(-25, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
 }
 
 TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
@@ -1010,6 +1041,15 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   // '-' for call-stack means 'empty'
 
 
+  // How the memory regions are visualized:
+  //            1         2         3         4         5         6         7       |
+  //  0123456789012345678901234567890123456789012345678901234567890123456789        |_> memory address
+  //  aaaaaaBBBBBBBcccccccDDDDDDDeeeeeeeFFFFFFFF...........................         |->some letters showing the state of the memory
+  // Legend:
+  // . - None (free/released)
+  // r - MemTag (reserved)
+  // C - MemTag (committed)
+  // MemTag is Test if omitted.
 
   {// Check committing into a reserved region inherits the call stacks
     Tree tree;
@@ -1018,10 +1058,8 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     // Post:
     //            1         2         3         4         5         6         7
     //  0123456789012345678901234567890123456789012345678901234567890123456789
-    //  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa....................
-    //  Legend:
-    //  a - Test (reserved)
-    //  . - free
+    //  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr....................
+
     // Post: .........0---------50.........
     //        mtNone    mtTest       mtNone
     //        Rl        Rs           Rl
@@ -1035,21 +1073,18 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     check_tree(tree, et1, __LINE__);
 
     tree.commit_mapping(25, 10, call_stack_2, true); // commit at the middle of the region
-    // Pre : .........0------------------------------50.........
     // Post:
     //            1         2         3         4         5         6         7
     //  0123456789012345678901234567890123456789012345678901234567890123456789
-    //  aaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAaaaaaaaaaaaaaaa....................
-    //  Legend:
-    //  a - Test (reserved)
-    //  A - Test (committed)
-    //  . - free
+    //  rrrrrrrrrrrrrrrrrrrrrrrrrCCCCCCCCCCrrrrrrrrrrrrrrr....................
+
+    // Pre : .........0------------------------------50.........
     // Post: .........0---------25*********35--------50.........
     //        mtNone    mtTest       mtTest   mtTest     mtNone
     //        Rl        Rs           C        Rs         Rl
     //        -         si_1         si_1     si_1       -
     //        -         -            si_2     -          -
-    ExpectedTree<4> et2 = {{      0  , 25,      35,    50        },
+    ExpectedTree<4> et2 = {{     0,     25,     35,     50        },
                            {mtNone, mtTest, mtTest, mtTest, mtNone},
                            {Rl    , Rs    , C     , Rs    , Rl    },
                            {-1    , si_1  , si_1  , si_1  , -1    },
@@ -1057,21 +1092,18 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     check_tree(tree, et2, __LINE__);
 
     tree.commit_mapping(0, 20, call_stack_2, true); // commit at the beginning of the region
-    // Pre:  .........0-------------------25********50--------100.........
     // Post:
     //            1         2         3         4         5         6         7
     //  0123456789012345678901234567890123456789012345678901234567890123456789
-    //  AAAAAAAAAAAAAAAAAAAAaaaaaAAAAAAAAAAaaaaaaaaaaaaaaa....................
-    //  Legend:
-    //  a - Test (reserved)
-    //  A - Test (committed)
-    //  . - free
-    // Post: .........0********20---------25********50--------100.........
+    //  CCCCCCCCCCCCCCCCCCCCrrrrrCCCCCCCCCCrrrrrrrrrrrrrrr....................
+
+    // Pre:  .........0-------------------25********35--------50.........
+    // Post: .........0********20---------25********35--------50.........
     //        mtNone    mtTest    mtTest      mtTest   mtTest     mtNone
     //        Rl        C         Rs          C        Rs         Rl
     //        -         si_1      si_1        si_1     si_1       -
     //        -         si_2      -           si_2     -          -
-    ExpectedTree<5> et3 = {{     0,     20,     25,     35,    50        },
+    ExpectedTree<5> et3 = {{     0,     20,     25,     35,    50         },
                            {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
                            {Rl    , C     , Rs    , C     , Rs    , Rl    },
                            {-1    , si_1  , si_1  , si_1  , si_1  , -1    },
@@ -1079,15 +1111,12 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     check_tree(tree, et3, __LINE__);
 
     tree.commit_mapping(40, 10, call_stack_2, true); // commit at the end of the region
-    // Pre:  .........0********20---------25********35------------------50.........
     // Post:
     //            1         2         3         4         5         6         7
     //  0123456789012345678901234567890123456789012345678901234567890123456789
-    //  AAAAAAAAAAAAAAAAAAAAaaaaaAAAAAAAAAAaaaaaAAAAAAAAAA....................
-    //  Legend:
-    //  a - Test (reserved)
-    //  A - Test (committed)
-    //  . - free
+    //  CCCCCCCCCCCCCCCCCCCCrrrrrCCCCCCCCCCrrrrrCCCCCCCCCC....................
+
+    // Pre:  .........0********20---------25********35------------------50.........
     // Post: .........0********20---------25********35--------40********50.........
     //        mtNone    mtTest    mtTest      mtTest   mtTest     mtTest    mtNone
     //        Rl        C         Rs          C        Rs         C         Rl
@@ -1102,28 +1131,41 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   }
   {// committing overlapped regions does not destroy the old call-stacks
     Tree tree;
-    tree.reserve_mapping(0, 100, call_stack_1); // reserving in an empty tree
+    tree.reserve_mapping(0, 50, call_stack_1); // reserving in an empty tree
     // Pre: empty tree.
-    // Post: .........0---------100.........
+    //            1         2         3         4         5
+    //  012345678901234567890123456789012345678901234567890
+    //  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.
+    //  Legend:
+    //  a - Test (reserved)
+    //  . - free
+    // Post: .........0---------50..........
     //        mtNone    mtTest       mtNone
     //        Rl        Rs           Rl
     //        -         si_1         -
     //        -         -            -
-    ExpectedTree<2> et1 = {{      0  , 100        },
+    ExpectedTree<2> et1 = {{      0  , 50         },
                            {mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    },
                            {-1    , -1    , -1    }};
     check_tree(tree, et1, __LINE__);
 
-    tree.commit_mapping(20, 20, call_stack_2, true);
-    // Pre:  .........0----------------------------100.........
-    // Post: .........0---------20********40-------100.........
+    tree.commit_mapping(10, 10, call_stack_2, true);
+    //            1         2         3         4         5
+    //  012345678901234567890123456789012345678901234567890
+    //  aaaaaaaaaaCCCCCCCCCCaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.
+    //  Legend:
+    //  a - Test (reserved)
+    //  C - Test (committed)
+    //  . - free
+    // Pre:  .........0----------------------------50.........
+    // Post: .........0---------10********20-------50.........
     //        mtNone    mtTest     mtTest    mtTest    mtNone
     //        Rl        Rs           C       Rs        Rl
     //        -         si_1         si_1    si_1      -
     //        -         -            si_2     -        -
-    ExpectedTree<4> et2 = {{     0,     20,     40,    100        },
+    ExpectedTree<4> et2 = {{     0,     10,     20,    50         },
                            {mtNone, mtTest, mtTest, mtTest, mtNone},
                            {Rl    , Rs    , C     , Rs    , Rl    },
                            {-1    , si_1  , si_1  , si_1  , -1    },
@@ -1133,14 +1175,21 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     SIndex si_3 = si[2];
     VMATree::RegionData call_stack_3(si_3, mtTest);
     // commit with overlap at the region's start
-    tree.commit_mapping(10, 20, call_stack_3);
-    // Pre:  .........0-------------20**************40-------100.........
-    // Post: .........0---------10********30********40-------100.........
+    tree.commit_mapping(5, 10, call_stack_3);
+    //            1         2         3         4         5
+    //  012345678901234567890123456789012345678901234567890
+    //  aaaaaaaaaaCCCCCCCCCCaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.
+    //  Legend:
+    //  a - Test (reserved)
+    //  C - Test (committed)
+    //  . - free
+    // Pre:  .........0-------------10**************20-------50.........
+    // Post: .........0----------5********15********20-------50.........
     //        mtNone    mtTest     mtTest    mtTest    mtTest    mtNone
     //        Rl        Rs           C       C         Rs        Rl
     //        -         si_1         si_1    si_1      si_1      -
     //        -         -            si_3    si_2        -       -
-    ExpectedTree<5> et3 = {{     0,     10,     30,     40,    100        },
+    ExpectedTree<5> et3 = {{     0,      5,     15,     20,     50        },
                            {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
                            {Rl    , Rs    , C     , C     , Rs    , Rl    },
                            {-1    , si_1  , si_1  , si_1  , si_1  , -1    },
@@ -1150,14 +1199,21 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     SIndex si_4 = si[3];
     VMATree::RegionData call_stack_4(si_4, mtTest);
     // commit with overlap at the region's end
-    tree.commit_mapping(30, 20, call_stack_4);
-    // Pre:  .........0---------10********30**40-------------100.........
-    // Post: .........0---------10********30********50-------100.........
+    tree.commit_mapping(15, 10, call_stack_4);
+    //            1         2         3         4         5
+    //  012345678901234567890123456789012345678901234567890
+    //  aaaaaaaaaaCCCCCCCCCCaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.
+    //  Legend:
+    //  a - Test (reserved)
+    //  C - Test (committed)
+    //  . - free
+    // Pre:  .........0----------5********15**20-------------50.........
+    // Post: .........0----------5********15********25-------50.........
     //        mtNone    mtTest     mtTest    mtTest    mtTest    mtNone
     //        Rl        Rs           C       C         Rs        Rl
     //        -         si_1         si_1    si_1      si_1      -
     //        -         -            si_3    si_4        -       -
-    ExpectedTree<5> et4 = {{     0,     10,     30,     50,    100        },
+    ExpectedTree<5> et4 = {{     0,      5,     15,     25,     50        },
                            {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
                            {Rl    , Rs    , C     , C     , Rs    , Rl    },
                            {-1    , si_1  , si_1  , si_1  , si_1  , -1    },
@@ -1166,38 +1222,38 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   }
   {// uncommit should not store any call-stack
     Tree tree;
-    tree.reserve_mapping(0, 100, call_stack_1);
+    tree.reserve_mapping(0, 50, call_stack_1);
 
-    tree.commit_mapping(20, 20, call_stack_2, true);
+    tree.commit_mapping(10, 10, call_stack_2, true);
 
-    tree.commit_mapping(0, 10, call_stack_2, true);
+    tree.commit_mapping(0, 5, call_stack_2, true);
 
-    tree.uncommit_mapping(0, 5, call_stack_2);
-    // Pre:  .........0*****************10--------20********40-------100.........
+    tree.uncommit_mapping(0, 3, call_stack_2);
+    // Pre:  .........0*****************5--------10********20-------50.........
     //        mtNone         mtTest        mtTest    mtTest    mtTest    mtNone
     //        Rl             C             Rs        C         Rs        Rl
     //        -              si_1          si_1      si_1      si_1      -
     //        -              si_2          -         si_2      -         -
-    // Post: .........0--------5********10--------20********40-------100.........
+    // Post: .........0--------3********5--------10********20-------50.........
     //        mtNone    mtTest   mtTest    mtTest    mtTest    mtTest    mtNone
     //        Rl        Rs       C         Rs        C         Rs        Rl
     //        -         si_1     si_1      si_1      si_1      si_1      -
     //        -         -        si_2      -         si_2      -         -
-    ExpectedTree<6> et1 = {{     0,     5,      10,     20,     40,    100        },
+    ExpectedTree<6> et1 = {{     0,     3,       5,     10,     20,     50        },
                            {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                            {Rl    , Rs    , C     , Rs    , C     , Rs    , Rl    },
                            {-1    , si_1  , si_1  , si_1  , si_1  , si_1  , -1    },
                            {-1    , -1    , si_2  , -1    , si_2  , -1    , -1    }};
     check_tree(tree, et1, __LINE__);
 
-    tree.uncommit_mapping(20, 10, call_stack_2);
-    // Pre:  .........0--------5********10---20*************40-------100.........
-    // Post: .........0--------5********10--------30********40-------100.........
+    tree.uncommit_mapping(5, 10, call_stack_2);
+    // Pre:  .........0--------3********5----10*************20-------50..........
+    // Post: .........0--------3********5---------15********20-------50..........
     //        mtNone    mtTest   mtTest    mtTest    mtTest    mtTest    mtNone
     //        Rl        Rs       C         Rs        C         Rs        Rl
     //        -         si_1     si_1      si_1      si_1      si_1      -
     //        -         -        si_2      -         si_2      -         -
-    ExpectedTree<6> et2 = {{     0,     5,      10,     30,     40,    100        },
+    ExpectedTree<6> et2 = {{     0,      3,      5,     15,     20,     50        },
                            {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                            {Rl    , Rs    , C     , Rs    , C     , Rs    , Rl    },
                            {-1    , si_1  , si_1  , si_1  , si_1  , si_1  , -1    },
