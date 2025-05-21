@@ -220,6 +220,16 @@ class ValidatorTest {
         return invalidEntryNames;
     }
 
+    @Test
+    public void testValidateJar() throws IOException {
+        var zip = Path.of("Regular.jar");
+        writeManifestAsFirstSecondAndFourthEntry(zip, false, false);
+        try {
+            jar("--validate --file " + zip.toString());
+        } catch (IOException e) {
+            fail("Expecting zero exit code");
+        }
+    }
 
     @Test
     public void testValidate() throws IOException {
@@ -227,6 +237,7 @@ class ValidatorTest {
         writeManifestAsFirstSecondAndFourthEntry(zip, true, true);
         try {
             jar("--validate --file " + zip.toString());
+            fail("Expecting non-zero exit code");
         } catch (IOException e) {
             var err = e.getMessage();
             System.out.println(err);
@@ -242,6 +253,7 @@ class ValidatorTest {
         writeManifestAsFirstSecondAndFourthEntry(f, false, true);
         try {
             jar("--validate --file " + f.toString());
+            fail("Expecting non-zero exit code");
         } catch (IOException e) {
             var err = e.getMessage();
             System.out.println(err);
@@ -258,6 +270,7 @@ class ValidatorTest {
         writeManifestAsFirstSecondAndFourthEntry(f, true, false);
         try {
             jar("--validate --file " + f.toString());
+            fail("Expecting non-zero exit code");
         } catch (IOException e) {
             var err = e.getMessage();
             System.out.println(err);
@@ -273,11 +286,11 @@ class ValidatorTest {
         Path f = Path.of("SwappedEntry.jar");
         createMismatchOrderJar(f);
         try {
-            String err = jar("--validate --file " + f.toString());
-            System.out.println(err);
-            assertTrue(err.contains("Warning: Central directory and local file header entries are not in the same order"));
+            jar("--validate --file " + f.toString());
+            fail("Expecting non-zero exit code");
         } catch (IOException e) {
-            fail("Ordering is not guaranteed by specification");
+            var err = e.getMessage();
+            assertTrue(err.contains("Warning: Central directory and local file header entries are not in the same order"));
         }
     }
 
@@ -287,6 +300,7 @@ class ValidatorTest {
         var invalidEntryNames = createInvalidEntryJar(f);
         try {
             jar("--validate --file " + f.toString());
+            fail("Expecting non-zero exit code");
         } catch (IOException e) {
             var err = e.getMessage();
             System.out.println(err);
@@ -316,9 +330,5 @@ class ValidatorTest {
         } finally {
             System.setErr(saveErr);
         }
-    }
-
-    private Stream<Path> mkpath(String... args) {
-        return Arrays.stream(args).map(d -> Path.of(".", d.split("/")));
     }
 }

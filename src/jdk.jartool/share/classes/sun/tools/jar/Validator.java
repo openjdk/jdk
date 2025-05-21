@@ -249,6 +249,7 @@ final class Validator {
                 isValid = false;
             } else if (!outOfOrder && entryInfo.loc().order() != entryInfo.cen().order()) {
                 outOfOrder = true;
+                isValid = false;
                 warn(getMsg("warn.validator.order.mismatch"));
             }
         }
