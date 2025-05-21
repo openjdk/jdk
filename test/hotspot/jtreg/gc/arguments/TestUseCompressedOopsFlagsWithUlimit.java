@@ -57,7 +57,7 @@ public class TestUseCompressedOopsFlagsWithUlimit {
 
     // Avoid issues with libjvmci failing to reserve
     // a large virtual address space for its heap
-    args.add("-Xint"); 
+    args.add("-Xint");
 
     args.add("-version");
 
