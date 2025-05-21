@@ -54,6 +54,7 @@ public class NonJVMVariantLocation {
         System.out.println("============== Cloned JDK at " + java_home_dst);
 
         // Replace "server" with "release" in jvm.cfg.
+        // The jvm.cfg is parsed by the java launcher in java.c.
         String locDir = java_home_dst + File.separator + "lib";
         String jvmCfg = locDir + File.separator + "jvm.cfg";
         String serverDir = "server";
