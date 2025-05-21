@@ -4541,7 +4541,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
-     * Returns the input array stripped of any leading zero bytes.
+     * Returns the input array stripped of any leading zero ints.
      * If the source is trusted the copying may be skipped.
      */
     private static int[] stripLeadingZeroInts(int[] val, boolean trusted) {
