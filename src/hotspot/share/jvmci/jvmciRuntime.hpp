@@ -48,7 +48,16 @@ class JVMCINMethodData : public ResourceObj {
 
   // Is HotSpotNmethod.name non-null? If so, the value is
   // embedded in the end of this object.
-  bool _has_name;
+  union JVMCINMethodProperties {
+    uint8_t value;
+    struct {
+      uint8_t _has_name   : 1,
+              _is_default : 1,
+                          : 6;
+    } bits;
+  };
+
+  JVMCINMethodProperties _properties;
 
   // Index for the HotSpotNmethod mirror in the nmethod's oops table.
   // This is -1 if there is no mirror in the oops table.
@@ -74,6 +83,7 @@ class JVMCINMethodData : public ResourceObj {
   void initialize(int nmethod_mirror_index,
                    int nmethod_entry_patch_offset,
                    const char* nmethod_mirror_name,
+                   bool is_default,
                    FailedSpeculation** failed_speculations);
 
   void* operator new(size_t size, const char* nmethod_mirror_name) {
@@ -86,11 +96,13 @@ public:
   static JVMCINMethodData* create(int nmethod_mirror_index,
                                   int nmethod_entry_patch_offset,
                                   const char* nmethod_mirror_name,
+                                  bool is_default,
                                   FailedSpeculation** failed_speculations) {
     JVMCINMethodData* result = new (nmethod_mirror_name) JVMCINMethodData();
     result->initialize(nmethod_mirror_index,
                        nmethod_entry_patch_offset,
                        nmethod_mirror_name,
+                       is_default,
                        failed_speculations);
     return result;
   }
@@ -115,7 +127,7 @@ public:
   void add_failed_speculation(nmethod* nm, jlong speculation);
 
   // Gets the JVMCI name of the nmethod (which may be null).
-  const char* name() { return _has_name ? (char*)(((address) this) + sizeof(JVMCINMethodData)) : nullptr; }
+  const char* name() { return has_name() ? (char*)(((address) this) + sizeof(JVMCINMethodData)) : nullptr; }
 
   // Clears the HotSpotNmethod.address field in the  mirror. If nm
   // is dead, the HotSpotNmethod.entryPoint field is also cleared.
@@ -129,6 +141,14 @@ public:
 
   int nmethod_entry_patch_offset() {
     return _nmethod_entry_patch_offset;
+  }
+
+  bool has_name() {
+    return _properties.bits._has_name;
+  }
+
+  bool is_default() {
+    return _properties.bits._is_default;
   }
 };
 

@@ -2056,8 +2056,15 @@ bool nmethod::make_not_entrant(const char* reason) {
     }
 
     if (update_recompile_counts()) {
-      // Mark the method as decompiled.
-      inc_decompile_count();
+#if INCLUDE_JVMCI
+      if (jvmci_nmethod_data() != nullptr && !jvmci_nmethod_data()->is_default()) {
+        // Hosted compilations are not subject to the recompilation cutoff
+      } else
+#endif
+      {
+        // Mark the method as decompiled.
+        inc_decompile_count();
+      }
     }
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
