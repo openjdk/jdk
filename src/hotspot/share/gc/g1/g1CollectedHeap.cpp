@@ -786,12 +786,12 @@ void G1CollectedHeap::verify_before_full_collection() {
   _verifier->verify_bitmap_clear(true /* above_tams_only */);
 }
 
-void G1CollectedHeap::prepare_for_mutator_after_full_collection() {
+void G1CollectedHeap::prepare_for_mutator_after_full_collection(size_t allocation_word_size) {
   // Prepare heap for normal collections.
   assert(num_free_regions() == 0, "we should not have added any free regions");
   rebuild_region_sets(false /* free_list_only */);
   abort_refinement();
-  resize_heap_if_necessary();
+  resize_heap_if_necessary(allocation_word_size);
   uncommit_regions_if_necessary();
 
   // Rebuild the code root lists for each region
@@ -841,7 +841,8 @@ void G1CollectedHeap::verify_after_full_collection() {
 }
 
 bool G1CollectedHeap::do_full_collection(bool clear_all_soft_refs,
-                                         bool do_maximal_compaction) {
+                                         bool do_maximal_compaction,
+                                         size_t allocation_word_size) {
   assert_at_safepoint_on_vm_thread();
 
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
@@ -853,7 +854,7 @@ bool G1CollectedHeap::do_full_collection(bool clear_all_soft_refs,
 
   collector.prepare_collection();
   collector.collect();
-  collector.complete_collection();
+  collector.complete_collection(allocation_word_size);
 
   // Full collection was successfully completed.
   return true;
@@ -865,25 +866,27 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
   // out by the GC locker). So, right now, we'll ignore the return value.
 
   do_full_collection(clear_all_soft_refs,
-                     false /* do_maximal_compaction */);
+                     false /* do_maximal_compaction */,
+                     size_t(0) /* allocation_word_size */);
 }
 
 bool G1CollectedHeap::upgrade_to_full_collection() {
   GCCauseSetter compaction(this, GCCause::_g1_compaction_pause);
   log_info(gc, ergo)("Attempting full compaction clearing soft references");
   bool success = do_full_collection(true  /* clear_all_soft_refs */,
-                                    false /* do_maximal_compaction */);
+                                    false /* do_maximal_compaction */,
+                                    size_t(0) /* allocation_word_size */);
   // do_full_collection only fails if blocked by GC locker and that can't
   // be the case here since we only call this when already completed one gc.
   assert(success, "invariant");
   return success;
 }
 
-void G1CollectedHeap::resize_heap_if_necessary() {
+void G1CollectedHeap::resize_heap_if_necessary(size_t allocation_word_size) {
   assert_at_safepoint_on_vm_thread();
 
   bool should_expand;
-  size_t resize_amount = _heap_sizing_policy->full_collection_resize_amount(should_expand);
+  size_t resize_amount = _heap_sizing_policy->full_collection_resize_amount(should_expand, allocation_word_size);
 
   if (resize_amount == 0) {
     return;
@@ -927,8 +930,9 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
     } else {
       log_info(gc, ergo)("Attempting full compaction");
     }
-    *gc_succeeded = do_full_collection(maximal_compaction /* clear_all_soft_refs */ ,
-                                       maximal_compaction /* do_maximal_compaction */);
+    *gc_succeeded = do_full_collection(maximal_compaction /* clear_all_soft_refs */,
+                                       maximal_compaction /* do_maximal_compaction */,
+                                       word_size /* allocation_word_size */);
   }
 
   return nullptr;

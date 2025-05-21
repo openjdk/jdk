@@ -477,10 +477,13 @@ private:
   //   cleared during the GC.
   // - if do_maximal_compaction is true, full gc will do a maximally
   //   compacting collection, leaving no dead wood.
+  // - if allocation_word_size is set, then this allocation size will
+  //    be accounted for in case shrinking of the heap happens.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
   bool do_full_collection(bool clear_all_soft_refs,
-                          bool do_maximal_compaction);
+                          bool do_maximal_compaction,
+                          size_t allocation_word_size);
 
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   void do_full_collection(bool clear_all_soft_refs) override;
@@ -498,7 +501,7 @@ private:
   bool abort_concurrent_cycle();
   void verify_before_full_collection();
   void prepare_heap_for_full_collection();
-  void prepare_for_mutator_after_full_collection();
+  void prepare_for_mutator_after_full_collection(size_t allocation_word_size);
   void abort_refinement();
   void verify_after_full_collection();
   void print_heap_after_full_collection();
@@ -557,7 +560,7 @@ public:
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
 
-  void resize_heap_if_necessary();
+  void resize_heap_if_necessary(size_t allocation_word_size);
 
   // Check if there is memory to uncommit and if so schedule a task to do it.
   void uncommit_regions_if_necessary();
