@@ -861,17 +861,17 @@ void ArchiveBuilder::make_klasses_shareable() {
           // Legacy CDS support for lambda proxies
           CDS_JAVA_HEAP_ONLY(assert(HeapShared::is_lambda_proxy_klass(ik), "sanity");)
         }
-      } else if (ik->is_shared_boot_class()) {
+      } else if (ik->defined_by_boot_loader()) {
         type = "boot";
         ADD_COUNT(num_boot_klasses);
-      } else if (ik->is_shared_platform_class()) {
+      } else if (ik->defined_by_platform_loader()) {
         type = "plat";
         ADD_COUNT(num_platform_klasses);
-      } else if (ik->is_shared_app_class()) {
+      } else if (ik->defined_by_app_loader()) {
         type = "app";
         ADD_COUNT(num_app_klasses);
       } else {
-        assert(ik->is_shared_unregistered_class(), "must be");
+        assert(ik->defined_by_other_loaders(), "must be");
         type = "unreg";
         ADD_COUNT(num_unregistered_klasses);
       }
@@ -883,11 +883,11 @@ void ArchiveBuilder::make_klasses_shareable() {
       if (!ik->is_linked()) {
         num_unlinked_klasses ++;
         unlinked = " unlinked";
-        if (ik->is_shared_boot_class()) {
+        if (ik->defined_by_boot_loader()) {
           boot_unlinked ++;
-        } else if (ik->is_shared_platform_class()) {
+        } else if (ik->defined_by_platform_loader()) {
           platform_unlinked ++;
-        } else if (ik->is_shared_app_class()) {
+        } else if (ik->defined_by_app_loader()) {
           app_unlinked ++;
         } else {
           unreg_unlinked ++;

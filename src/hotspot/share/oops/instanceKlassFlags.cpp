@@ -38,16 +38,16 @@ void InstanceKlassFlags::print_on(outputStream* st) const {
 }
 
 #if INCLUDE_CDS
-void InstanceKlassFlags::set_shared_class_loader_type(s2 loader_type) {
+void InstanceKlassFlags::set_class_loader_type(s2 loader_type) {
   switch (loader_type) {
   case ClassLoader::BOOT_LOADER:
-    _flags |= _misc_is_shared_boot_class;
+    _flags |= _misc_defined_by_boot_loader;
     break;
   case ClassLoader::PLATFORM_LOADER:
-    _flags |= _misc_is_shared_platform_class;
+    _flags |= _misc_defined_by_platform_loader;
     break;
   case ClassLoader::APP_LOADER:
-    _flags |= _misc_is_shared_app_class;
+    _flags |= _misc_defined_by_app_loader;
     break;
   default:
     ShouldNotReachHere();
@@ -57,13 +57,13 @@ void InstanceKlassFlags::set_shared_class_loader_type(s2 loader_type) {
 
 void InstanceKlassFlags::assign_class_loader_type(const ClassLoaderData* cld) {
   if (cld->is_boot_class_loader_data()) {
-    set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
+    set_class_loader_type(ClassLoader::BOOT_LOADER);
   }
   else if (cld->is_platform_class_loader_data()) {
-    set_shared_class_loader_type(ClassLoader::PLATFORM_LOADER);
+    set_class_loader_type(ClassLoader::PLATFORM_LOADER);
   }
   else if (cld->is_system_class_loader_data()) {
-    set_shared_class_loader_type(ClassLoader::APP_LOADER);
+    set_class_loader_type(ClassLoader::APP_LOADER);
   }
 }
 #endif // INCLUDE_CDS

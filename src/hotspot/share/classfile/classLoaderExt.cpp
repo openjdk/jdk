@@ -91,7 +91,7 @@ void ClassLoaderExt::record_result_for_builtin_loader(s2 classpath_index, Instan
 
   AOTClassLocationConfig::dumptime_update_max_used_index(classpath_index);
   result->set_shared_classpath_index(classpath_index);
-  result->set_shared_class_loader_type(classloader_type);
+  result->set_class_loader_type(classloader_type);
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap() && AllowArchivingWithJavaAgent && classloader_type == ClassLoader::BOOT_LOADER &&

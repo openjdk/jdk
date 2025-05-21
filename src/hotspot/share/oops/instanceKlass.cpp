@@ -2734,7 +2734,7 @@ void InstanceKlass::init_shared_package_entry() {
   _package_entry = nullptr;
 #else
   if (CDSConfig::is_dumping_full_module_graph()) {
-    if (is_shared_unregistered_class()) {
+    if (defined_by_other_loaders()) {
       _package_entry = nullptr;
     } else {
       _package_entry = PackageEntry::get_archived_entry(_package_entry);
@@ -2842,12 +2842,12 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
   return true;
 }
 
-int InstanceKlass::shared_class_loader_type() const {
-  if (is_shared_boot_class()) {
+int InstanceKlass::class_loader_type() const {
+  if (defined_by_boot_loader()) {
     return ClassLoader::BOOT_LOADER;
-  } else if (is_shared_platform_class()) {
+  } else if (defined_by_platform_loader()) {
     return ClassLoader::PLATFORM_LOADER;
-  } else if (is_shared_app_class()) {
+  } else if (defined_by_app_loader()) {
     return ClassLoader::APP_LOADER;
   } else {
     return ClassLoader::OTHER;

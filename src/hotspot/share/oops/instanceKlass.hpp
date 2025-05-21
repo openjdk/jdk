@@ -306,12 +306,11 @@ class InstanceKlass: public Klass {
   // Sets finalization state
   static void set_finalization_enabled(bool val) { _finalization_enabled = val; }
 
-  // The three BUILTIN class loader types
-  bool is_shared_boot_class() const { return _misc_flags.is_shared_boot_class(); }
-  bool is_shared_platform_class() const { return _misc_flags.is_shared_platform_class(); }
-  bool is_shared_app_class() const {  return _misc_flags.is_shared_app_class(); }
-  // The UNREGISTERED class loader type
-  bool is_shared_unregistered_class() const { return _misc_flags.is_shared_unregistered_class(); }
+  // Quick checks for the loader that defined this class (without switching on this->class_loader())
+  bool defined_by_boot_loader() const      { return _misc_flags.defined_by_boot_loader(); }
+  bool defined_by_platform_loader() const  { return _misc_flags.defined_by_platform_loader(); }
+  bool defined_by_app_loader() const       { return _misc_flags.defined_by_app_loader(); }
+  bool defined_by_other_loaders() const    { return _misc_flags.defined_by_other_loaders(); }
 
   // Check if the class can be shared in CDS
   bool is_shareable() const;
@@ -321,9 +320,9 @@ class InstanceKlass: public Klass {
   void set_shared_loading_failed() { _misc_flags.set_shared_loading_failed(true); }
 
 #if INCLUDE_CDS
-  int  shared_class_loader_type() const;
-  void set_shared_class_loader_type(s2 loader_type) { _misc_flags.set_shared_class_loader_type(loader_type); }
-  void assign_class_loader_type() { _misc_flags.assign_class_loader_type(_class_loader_data); }
+  int  class_loader_type() const;
+  void set_class_loader_type(s2 loader_type) { _misc_flags.set_class_loader_type(loader_type); }
+  void assign_class_loader_type()            { _misc_flags.assign_class_loader_type(_class_loader_data); }
 #endif
 
   bool has_nonstatic_fields() const        { return _misc_flags.has_nonstatic_fields(); }

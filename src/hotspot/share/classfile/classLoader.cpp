@@ -1195,7 +1195,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     if (loader == nullptr) {
       // JFR classes
       ik->set_shared_classpath_index(0);
-      ik->set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
+      ik->set_class_loader_type(ClassLoader::BOOT_LOADER);
     }
     return;
   }
@@ -1308,7 +1308,7 @@ void ClassLoader::record_hidden_class(InstanceKlass* ik) {
       return;
     }
   }
-  ik->set_shared_class_loader_type(classloader_type);
+  ik->set_class_loader_type(classloader_type);
 
   if (HeapShared::is_lambda_proxy_klass(ik)) {
     InstanceKlass* nest_host = ik->nest_host_not_null();
