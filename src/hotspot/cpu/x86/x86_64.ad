@@ -14725,6 +14725,18 @@ peephole
   peepprocedure (lea_remove_redundant);
 %}
 
+peephole
+%{
+  peepmatch (leaP8Narrow);
+  peepprocedure (lea_remove_redundant);
+%}
+
+peephole
+%{
+  peepmatch (leaP32Narrow);
+  peepprocedure (lea_remove_redundant);
+%}
+
 // These peephole rules matches instructions which set flags and are followed by a testI/L_reg
 // The test instruction is redudanent in case the downstream instuctions (like JCC or CMOV) only use flags that are already set by the previous instruction
 

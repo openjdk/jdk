@@ -26,6 +26,7 @@
 #include "opto/block.hpp"
 #include "opto/machnode.hpp"
 #include "opto/node.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/optoreg.hpp"
 #include "opto/regalloc.hpp"
 #include <cstddef>
@@ -264,60 +265,91 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
   assert(lea_derived_oop->rule() == inst0_rule, "sanity");
   assert(lea_derived_oop->ideal_Opcode() == Op_AddP, "sanity");
 
-  Node* lea_base = lea_derived_oop->in(AddPNode::Base);
-  // Only remove decode if the block order is DecodeN -> MachProj -> LeaPCompressedOopOffset.
-  if (lea_base == nullptr || block_index < 2 || block->get_node(block_index - 2) != lea_base) {
+  MachNode* lea_base = lea_derived_oop->in(AddPNode::Base)->isa_Mach();
+  if (lea_base == nullptr || lea_base->ideal_Opcode() != Op_DecodeN) {
     return false;
   }
 
-  // The lea (lea_derived_oop) and the decode (lea_base) must have the same parent.
-  if (lea_derived_oop->in(AddPNode::Address) != lea_base->in(1)) {
+  // Check that the lea and its base decode are in the same block.
+  if (!block->contains(lea_base)) {
     return false;
   }
 
-  if (lea_base->outcnt() != 2) {
+  bool is_spill = lea_derived_oop->in(AddPNode::Address) != lea_base->in(1) &&
+                  lea_derived_oop->in(AddPNode::Address)->is_SpillCopy() &&
+                  lea_base->in(1)->is_SpillCopy();
+
+  // The lea (lea_derived_oop) and the decode (lea_base) must have the same parent (looking through a spill).
+  if ((!is_spill && lea_derived_oop->in(AddPNode::Address) != lea_base->in(1)) ||
+      (is_spill && lea_derived_oop->in(AddPNode::Address)->in(1) != lea_base->in(1)->in(1))) {
     return false;
   }
+
+  //if (lea_base->outcnt() != 2) {
+  //  return false;
+  //}
 
   // Ensure the decode only has the leaPCompressedOopOffset and a MachProj leaf as children.
-  Node* proj = nullptr;
+  MachProjNode* proj = nullptr;
   for (DUIterator_Fast imax, i = lea_base->fast_outs(imax); i < imax; i++) {
     Node* out = lea_base->fast_out(i);
     if (out == lea_derived_oop) {
       continue;
     }
     if (out->is_MachProj() && out->outcnt() == 0) {
-      proj = out;
+      proj = out->as_MachProj();
       continue;
+    }
+    if (out->is_Mach()) {
+      MachNode* other_lea = out->as_Mach();
+      if ((other_lea->rule() == leaP32Narrow_rule ||
+           other_lea->rule() == leaP8Narrow_rule ||
+           other_lea->rule() == leaPCompressedOopOffset_rule) &&
+          (other_lea->in(AddPNode::Address) == lea_base->in(1) ||
+          (is_spill && other_lea->in(AddPNode::Address)->in(1) == lea_base->in(1)->in(1)))) {
+        continue;
+      }
     }
     // There is other stuff we do not expect...
     return false;
   }
 
-  // Ensure the MachProj is inbetween the decode and the lea in the block order.
-  if (block->get_node(block_index -1) != proj) {
-    tty->print_cr("%s: the MachProj is not in the right place", __FUNCTION__);
+  // Ensure the MachProj is in the same block as the decode and the lea.
+  if (!block->contains(proj)) {
     return false;
   }
 
-  // We now have verified that the decode is redundant.
-  MachNode* decode_to_remove = lea_base->isa_Mach();
-  MachProjNode* proj_to_remove = proj->isa_MachProj();
-  if (decode_to_remove == nullptr || proj_to_remove == nullptr) {
-    return false;
-  }
-
+  // We now have verified that the decode is redundant and can be removed with a peephole.
   // Remove the projection
-  block->remove_node(block_index-1);
-  cfg_->map_node_to_block(decode_to_remove, nullptr);
+  block->find_remove(proj);
+  cfg_->map_node_to_block(proj, nullptr);
+
+  // Rewire the base of all leas currently depending on the decode we are removing.
+  for (DUIterator_Fast imax, i = lea_base->fast_outs(imax); i < imax; i++) {
+    Node* out = lea_base->fast_out(i);
+    if (out->is_Mach() && out->as_Mach()->ideal_Opcode() == Op_AddP) {
+      out->set_req(
+        AddPNode::Base,
+        is_spill ? out->in(AddPNode::Address)->in(1) : out->in(AddPNode::Address)
+      );
+      // This deleted something in the out array, hence adjust i, imax.
+      --i;
+      --imax;
+    }
+  }
+
+  // Remove spill for the decode if possible.
+  if (is_spill && lea_base->in(1)->is_Mach() && lea_base->in(1)->outcnt() == 1 && block->contains(lea_base->in(1))) {
+    MachNode* decode_spill = lea_base->in(1)->as_Mach();
+    decode_spill->set_removed();
+    block->find_remove(decode_spill);
+    cfg_->map_node_to_block(decode_spill, nullptr);
+  }
 
   // Remove the decode
-  decode_to_remove->set_removed();
-  block->remove_node(block_index -2);
-  cfg_->map_node_to_block(proj_to_remove, nullptr);
-
-  // Rewire the base of the lea.
-  lea_derived_oop->set_req(AddPNode::Base, lea_derived_oop->in(AddPNode::Address));
+  lea_base->set_removed();
+  block->find_remove(lea_base);
+  cfg_->map_node_to_block(lea_base, nullptr);
 
   return true;
 }
