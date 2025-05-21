@@ -37,7 +37,7 @@ public class TestIntegerMulRing {
     public static long lFld, lFld2, lFld3, lFld4;
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-SplitIfBlocks");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-SplitIfBlocks");
     }
 
     @Test

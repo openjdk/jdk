@@ -26,7 +26,7 @@
  * @bug 8286125
  * @summary C2: "bad AD file" with PopulateIndex on x86_64
  *
- * @run main/othervm -Xbatch -XX:MaxVectorSize=16 compiler.vectorization.TestReplicateLoopIV
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:MaxVectorSize=16 compiler.vectorization.TestReplicateLoopIV
  */
 
 package compiler.vectorization;

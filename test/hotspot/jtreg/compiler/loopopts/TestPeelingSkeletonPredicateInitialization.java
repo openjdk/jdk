@@ -32,7 +32,8 @@
  *          5. The rangecheck is still before the peeling, and is not copied to the peeled loop. Hence
  *             we do not statically realize that the peeled loop can never be entered.
  *
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM -XX:+StressGCM -XX:+StressCCP -XX:+StressIGVN
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM -XX:+StressGCM -XX:+StressCCP -XX:+StressIGVN
  *                   -Xcomp -XX:-TieredCompilation
  *                   -XX:LoopMaxUnroll=0 -XX:LoopUnrollLimit=0 -XX:-LoopUnswitching
  *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestPeelingSkeletonPredicateInitialization::*

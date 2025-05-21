@@ -26,7 +26,8 @@
  * @key stress randomness
  * @bug 8299975
  * @summary Limit underflow protection CMoveINode in PhaseIdealLoop::do_unroll must also protect type from underflow
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestCMoveLimitType::test*
  *                   -XX:CompileCommand=dontinline,compiler.loopopts.TestCMoveLimitType::dontInline
  *                   -XX:RepeatCompilation=50 -XX:+StressIGVN

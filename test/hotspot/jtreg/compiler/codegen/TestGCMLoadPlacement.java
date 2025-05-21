@@ -27,24 +27,28 @@ package compiler.codegen;
  * @test
  * @bug 8333393
  * @summary Test that loads are not scheduled too late.
- * @run main/othervm -XX:CompileCommand=compileonly,*Test*::test
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:CompileCommand=compileonly,*Test*::test
  *                   -XX:-TieredCompilation -Xbatch
  *                   -XX:PerMethodTrapLimit=0
  *                   -XX:CompileCommand=dontinline,*::dontInline
  *                   compiler.codegen.TestGCMLoadPlacement
- * @run main/othervm -XX:CompileCommand=compileonly,*Test*::test
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:CompileCommand=compileonly,*Test*::test
  *                   -XX:-TieredCompilation -Xbatch
  *                   -XX:PerMethodTrapLimit=0
  *                   -XX:CompileCommand=dontinline,*::dontInline
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+StressGCM -XX:+StressLCM
  *                   compiler.codegen.TestGCMLoadPlacement
- * @run main/othervm -XX:LoopMaxUnroll=0
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:LoopMaxUnroll=0
  *                   -XX:CompileCommand=compileonly,*Test*::test
  *                   -XX:-TieredCompilation -Xbatch
  *                   -XX:PerMethodTrapLimit=0
  *                   compiler.codegen.TestGCMLoadPlacement
- * @run main/othervm -XX:LoopMaxUnroll=0
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:LoopMaxUnroll=0
  *                   -XX:CompileCommand=compileonly,*Test*::test
  *                   -XX:-TieredCompilation -Xbatch
  *                   -XX:PerMethodTrapLimit=0

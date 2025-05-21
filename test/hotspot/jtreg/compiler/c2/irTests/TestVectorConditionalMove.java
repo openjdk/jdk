@@ -44,13 +44,17 @@ public class TestVectorConditionalMove {
 
     public static void main(String[] args) {
         // Cross-product: +-AlignVector and +-UseCompactObjectHeaders
-        TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                                   "-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
                                    "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector");
-        TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                                   "-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
                                    "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector");
-        TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                                   "-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
                                    "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector");
-        TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                                   "-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
                                    "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector");
     }
 

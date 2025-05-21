@@ -26,8 +26,8 @@
  * @bug 8215265
  * @summary C2: range check elimination may allow illegal out of bound access
  *
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:-UseLoopPredicate RangeCheckEliminationScaleNotOne
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:+UseLoopPredicate RangeCheckEliminationScaleNotOne
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:-UseLoopPredicate RangeCheckEliminationScaleNotOne
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:+UseLoopPredicate RangeCheckEliminationScaleNotOne
  *
  */
 

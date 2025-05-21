@@ -27,10 +27,12 @@
  * @summary SIGFPE caused by C2 IdealLoopTree::do_remove_empty_loop
  * @key stress randomness
  *
- * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:-TieredCompilation -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM
  *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestRemoveEmptyCountedLoop::test*
  *                   compiler.loopopts.TestRemoveEmptyCountedLoop
- * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=2160808391
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:-TieredCompilation -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=2160808391
  *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestRemoveEmptyCountedLoop::test*
  *                   compiler.loopopts.TestRemoveEmptyCountedLoop
  */

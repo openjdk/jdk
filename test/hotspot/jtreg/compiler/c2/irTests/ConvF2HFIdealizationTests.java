@@ -48,7 +48,7 @@ public class ConvF2HFIdealizationTests {
         }
     }
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:-UseSuperWord");
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseSuperWord");
     }
 
     @Test

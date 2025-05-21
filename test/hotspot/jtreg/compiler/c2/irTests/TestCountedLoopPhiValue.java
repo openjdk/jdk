@@ -35,7 +35,7 @@ import compiler.lib.ir_framework.*;
 
 public class TestCountedLoopPhiValue {
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:LoopUnrollLimit=0");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=0");
     }
 
     @Test
