@@ -124,10 +124,11 @@ public class TestTemplate {
         testRecursion();
         testFuel();
         testFuelCustom();
-        testDataNames();
+        testDataNames1();
         testDataNames2();
         testDataNames3();
         testDataNames4();
+        testDataNames5();
         testStructuralNames1();
         testStructuralNames2();
         testListArgument();
@@ -163,6 +164,14 @@ public class TestTemplate {
         expectIllegalArgumentException(() -> testFailingAddStructuralName2(), "Unexpected weight: ");
         expectIllegalArgumentException(() -> testFailingAddStructuralName3(), "Unexpected weight: ");
         expectUnsupportedOperationException(() -> testFailingSample2(), "Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
+        expectRendererException(() -> testFailingAddNameDuplication1(), "Duplicate name:");
+        expectRendererException(() -> testFailingAddNameDuplication2(), "Duplicate name:");
+        expectRendererException(() -> testFailingAddNameDuplication3(), "Duplicate name:");
+        expectRendererException(() -> testFailingAddNameDuplication4(), "Duplicate name:");
+        expectRendererException(() -> testFailingAddNameDuplication5(), "Duplicate name:");
+        expectRendererException(() -> testFailingAddNameDuplication6(), "Duplicate name:");
+        expectRendererException(() -> testFailingAddNameDuplication7(), "Duplicate name:");
+        expectRendererException(() -> testFailingAddNameDuplication8(), "Duplicate name:");
     }
 
     public static void testSingleLine() {
@@ -930,7 +939,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testDataNames() {
+    public static void testDataNames1() {
         var hook1 = new Hook("Hook1");
 
         var template1 = Template.make(() -> body(
@@ -1369,6 +1378,64 @@ public class TestTemplate {
             ]
             }
             """;
+        checkEQ(code, expected);
+    }
+
+    // Test duplicate names in safe cases.
+    public static void testDataNames5() {
+        var hook1 = new Hook("Hook1");
+        var hook2 = new Hook("Hook2");
+
+        // It is safe in separate Hook scopes.
+        var template1 = Template.make(() -> body(
+            hook1.anchor(
+                addDataName("name1", myInt, MUTABLE)
+            ),
+            hook1.anchor(
+                addDataName("name1", myInt, MUTABLE)
+            )
+        ));
+
+        // It is safe in separate Template scopes.
+        var template2 = Template.make(() -> body(
+            addDataName("name2", myInt, MUTABLE)
+        ));
+        var template3 = Template.make(() -> body(
+            template2.asToken(),
+            template2.asToken()
+        ));
+
+        var template4 = Template.make(() -> body(
+            // The following is not safe, it would collide
+            // with (1), because it would be inserted to the
+            // hook1.anchor in template5, and hence be available
+            // inside the scope where (1) is available.
+            // See: testFailingAddNameDuplication8
+            // addDataName("name", myInt, MUTABLE),
+            hook2.anchor(
+                // (2) This one is added second. Since it is
+                //     inside the hook2.anchor, it does not go
+                //     out to the hook1.anchor, and is not
+                //     available inside the scope of (1).
+                addDataName("name3", myInt, MUTABLE)
+            )
+        ));
+        var template5 = Template.make(() -> body(
+            hook1.anchor(
+                // (1) this is the first one we add.
+                addDataName("name3", myInt, MUTABLE)
+            )
+        ));
+
+        // Put it all together into a single test.
+        var template6 = Template.make(() -> body(
+            template1.asToken(),
+            template3.asToken(),
+            template5.asToken()
+        ));
+
+        String code = template1.render();
+        String expected = "";
         checkEQ(code, expected);
     }
 
@@ -1817,6 +1884,93 @@ public class TestTemplate {
             addStructuralName("name", myStructuralTypeA, 1001)
         ));
         String code = template1.render();
+    }
+
+    // Duplicate name in the same scope, name identical -> expect RendererException.
+    public static void testFailingAddNameDuplication1() {
+        var template1 = Template.make(() -> body(
+            addDataName("name", myInt, MUTABLE),
+            addDataName("name", myInt, MUTABLE)
+        ));
+        String code = template1.render();
+    }
+
+    // Duplicate name in the same scope, names have different mutability -> expect RendererException.
+    public static void testFailingAddNameDuplication2() {
+        var template1 = Template.make(() -> body(
+            addDataName("name", myInt, MUTABLE),
+            addDataName("name", myInt, IMMUTABLE)
+        ));
+        String code = template1.render();
+    }
+
+    // Duplicate name in the same scope, names have different type -> expect RendererException.
+    public static void testFailingAddNameDuplication3() {
+        var template1 = Template.make(() -> body(
+            addDataName("name", myInt, MUTABLE),
+            addDataName("name", myLong, MUTABLE)
+        ));
+        String code = template1.render();
+    }
+
+    // Duplicate name in the same scope, name identical -> expect RendererException.
+    public static void testFailingAddNameDuplication4() {
+        var template1 = Template.make(() -> body(
+            addStructuralName("name", myStructuralTypeA),
+            addStructuralName("name", myStructuralTypeA)
+        ));
+        String code = template1.render();
+    }
+
+    // Duplicate name in the same scope, names have different type -> expect RendererException.
+    public static void testFailingAddNameDuplication5() {
+        var template1 = Template.make(() -> body(
+            addStructuralName("name", myStructuralTypeA),
+            addStructuralName("name", myStructuralTypeB)
+        ));
+        String code = template1.render();
+    }
+
+    // Duplicate name in inner Template, name identical -> expect RendererException.
+    public static void testFailingAddNameDuplication6() {
+        var template1 = Template.make(() -> body(
+            addDataName("name", myInt, MUTABLE)
+        ));
+        var template2 = Template.make(() -> body(
+            addDataName("name", myInt, MUTABLE),
+            template1.asToken()
+        ));
+        String code = template2.render();
+    }
+
+    // Duplicate name in Hook scope, name identical -> expect RendererException.
+    public static void testFailingAddNameDuplication7() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make(() -> body(
+            addDataName("name", myInt, MUTABLE),
+            hook1.anchor(
+                addDataName("name", myInt, MUTABLE)
+            )
+        ));
+        String code = template1.render();
+    }
+
+    // Duplicate name in Hook.insert, name identical -> expect RendererException.
+    public static void testFailingAddNameDuplication8() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make(() -> body(
+            addDataName("name", myInt, MUTABLE)
+        ));
+
+        var template2 = Template.make(() -> body(
+            hook1.anchor(
+                addDataName("name", myInt, MUTABLE),
+                hook1.insert(template1.asToken())
+            )
+        ));
+        String code = template2.render();
     }
 
     public static void expectRendererException(FailingTest test, String errorPrefix) {
