@@ -38,6 +38,8 @@ import jdk.test.lib.process.ProcessTools;
 
 public class JLineConsoleProviderTest {
 
+    private static final String NL = System.getProperty("line.separator");
+
     public static void main(String... args) throws Throwable {
         for (Method m : JLineConsoleProviderTest.class.getDeclaredMethods()) {
             if (m.getName().startsWith("test")) {
@@ -55,8 +57,9 @@ public class JLineConsoleProviderTest {
     }
 
     void testEvenExpansionDisabled() throws Exception {
-        doRunConsoleTest("readAndPrint", "a\\b\n", "'a\\b'\n");
-        doRunConsoleTest("readAndPrint2", "a\n!!\n", "1: 'a'\n2: '!!'\n");
+        doRunConsoleTest("readAndPrint", "a\\b\n", "'a\\b'" + NL);
+        doRunConsoleTest("readAndPrint2", "a\n!!\n", "1: 'a'" + NL +
+                                                     "2: '!!'" + NL);
     }
 
     void doRunConsoleTest(String testName,
