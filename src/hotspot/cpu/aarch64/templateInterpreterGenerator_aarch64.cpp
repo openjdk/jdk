@@ -865,7 +865,7 @@ void TemplateInterpreterGenerator::lock_method() {
 //      rcpool: cp cache
 //      stack_pointer: previous sp
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
-  // Save ConstMethod* for later use to avoid loading multiple times
+  // Save ConstMethod* in r5_ConstMethod for later use to avoid loading multiple times
   Register r5_ConstMethod = r5;
   __ ldr(r5_ConstMethod, Address(rmethod, Method::const_offset()));
 
@@ -900,10 +900,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ stp(rfp, lr, Address(sp, 10 * wordSize));
   __ lea(rfp, Address(sp, 10 * wordSize));
 
-  // Save ConstantPool* in r10 for later use to avoid loading multiple times
+  // Save ConstantPool* in r11_ConstantPool for later use to avoid loading multiple times
   // Use stored ConstMethod* to avoid loading again
-  __ ldr(r10, Address(r5_ConstMethod, ConstMethod::constants_offset()));
-  __ ldr(rcpool, Address(r10, ConstantPool::cache_offset()));
+  Register r11_ConstantPool = r11;
+  __ ldr(r11_ConstantPool, Address(r5_ConstMethod, ConstMethod::constants_offset()));
+  __ ldr(rcpool, Address(r11_ConstantPool, ConstantPool::cache_offset()));
   __ sub(rscratch1, rlocals, rfp);
   __ lsr(rscratch1, rscratch1, Interpreter::logStackElementSize);   // rscratch1 = rlocals - fp();
   // Store relativized rlocals, see frame::interpreter_frame_locals().
@@ -914,9 +915,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ stp(zr, r19_sender_sp, Address(sp, 8 * wordSize));
 
   // Get mirror
-  // r10 is still ConstantPool*, resolve ConstantPool* -> InstanceKlass* -> Java mirror.
-  // r10 is safe to overwrite as ConstantPool* is no longer needed
-  __ ldr(r10, Address(r10, ConstantPool::pool_holder_offset()));
+  // Use stored ConstantPool* to avoid loading again, resolve ConstantPool* -> InstanceKlass* -> Java mirror.
+  __ ldr(r10, Address(r11_ConstantPool, ConstantPool::pool_holder_offset()));
   __ ldr(r10, Address(r10, in_bytes(Klass::java_mirror_offset())));
   __ resolve_oop_handle(r10, rscratch1, rscratch2);
   if (! native_call) {
