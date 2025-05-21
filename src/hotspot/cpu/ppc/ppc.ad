@@ -14304,6 +14304,7 @@ instruct vmin_reg(vecX dst, vecX src1, vecX src2) %{
 
 instruct vand(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (AndV src1 src2));
+  size(4);
   format %{ "VAND   $dst,$src1,$src2\t// and vectors" %}
   ins_encode %{
     __ vand($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
@@ -14313,6 +14314,7 @@ instruct vand(vecX dst, vecX src1, vecX src2) %{
 
 instruct vor(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (OrV src1 src2));
+  size(4);
   format %{ "VOR   $dst,$src1,$src2\t// or vectors" %}
   ins_encode %{
     __ vor($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
@@ -14322,6 +14324,7 @@ instruct vor(vecX dst, vecX src1, vecX src2) %{
 
 instruct vxor(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (XorV src1 src2));
+  size(4);
   format %{ "VXOR   $dst,$src1,$src2\t// xor vectors" %}
   ins_encode %{
     __ vxor($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
