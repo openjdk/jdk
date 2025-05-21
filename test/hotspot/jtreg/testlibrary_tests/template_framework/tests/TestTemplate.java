@@ -141,6 +141,13 @@ public class TestTemplate {
         expectRendererException(() -> dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).count(),  "A Template method such as");
         expectRendererException(() -> dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).sample(), "A Template method such as");
         expectRendererException(() -> (new Hook("abc")).isAnchored(),     "A Template method such as");
+        expectRendererException(() -> testFailingDollarName1(), "Is not a valid '$' name: ''.");
+        expectRendererException(() -> testFailingDollarName2(), "Is not a valid '$' name: '#abc'.");
+        expectRendererException(() -> testFailingDollarName3(), "Is not a valid '$' name: 'abc#'.");
+        expectRendererException(() -> testFailingHashtagName1(), "Is not a valid hashtag replacement name: ''.");
+        expectRendererException(() -> testFailingHashtagName2(), "Is not a valid hashtag replacement name: 'abc#abc'.");
+        expectRendererException(() -> testFailingHashtagName3(), "Is not a valid hashtag replacement name: ''.");
+        expectRendererException(() -> testFailingHashtagName4(), "Is not a valid hashtag replacement name: 'xyz#xyz'.");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
         expectRendererException(() -> testFailingSample1(),  "No variable: MUTABLE, subtypeOf(int), supertypeOf(int).");
         expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
@@ -1747,6 +1754,57 @@ public class TestTemplate {
         ));
 
         String code = template2.render();
+    }
+
+    public static void testFailingDollarName1() {
+        var template1 = Template.make(() -> body(
+            let("x", $("")) // empty string not allowed
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingDollarName2() {
+        var template1 = Template.make(() -> body(
+            let("x", $("#abc")) // "#" character not allowed
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingDollarName3() {
+        var template1 = Template.make(() -> body(
+            let("x", $("abc#")) // "#" character not allowed
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingHashtagName1() {
+        // Empty Template argument
+        var template1 = Template.make("", (String x) -> body(
+        ));
+        String code = template1.render("abc");
+    }
+
+    public static void testFailingHashtagName2() {
+        // "#" character not allowed in template argument
+        var template1 = Template.make("abc#abc", (String x) -> body(
+        ));
+        String code = template1.render("abc");
+    }
+
+    public static void testFailingHashtagName3() {
+        var template1 = Template.make(() -> body(
+            // Empty let hashtag name not allowed
+            let("", "abc")
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingHashtagName4() {
+        var template1 = Template.make(() -> body(
+        // "#" character not allowed in let hashtag name
+            let("xyz#xyz", "abc")
+        ));
+        String code = template1.render();
     }
 
     public static void testFailingHook() {

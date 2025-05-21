@@ -62,16 +62,25 @@ class TemplateFrame {
     }
 
     public String $(String name) {
+        if (!Renderer.isValidName(name)) {
+            throw new RendererException("Is not a valid '$' name: '" + name + "'.");
+        }
         return name + "_" + id;
     }
 
     void addHashtagReplacement(String key, String value) {
+        if (!Renderer.isValidName(key)) {
+            throw new RendererException("Is not a valid hashtag replacement name: '" + key + "'.");
+        }
         if (hashtagReplacements.putIfAbsent(key, value) != null) {
             throw new RendererException("Duplicate hashtag replacement for #" + key);
         }
     }
 
     String getHashtagReplacement(String key) {
+        if (!Renderer.isValidName(key)) {
+            throw new RendererException("Is not a valid hashtag replacement name: '" + key + "'.");
+        }
         if (hashtagReplacements.containsKey(key)) {
             return hashtagReplacements.get(key);
         }

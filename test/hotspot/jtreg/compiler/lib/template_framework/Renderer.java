@@ -42,9 +42,15 @@ import java.util.stream.Stream;
  * @see TemplateFrame
  * @see CodeFrame
  */
-class Renderer {
-    private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile("\\$([a-zA-Z_][a-zA-Z0-9_]*)");
-    private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#([a-zA-Z_][a-zA-Z0-9_]*)");
+final class Renderer {
+    private static final String NAME_CHARACTERS = "[a-zA-Z_][a-zA-Z0-9_]*";
+    private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile("\\$(" + NAME_CHARACTERS + ")");
+    private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#(" + NAME_CHARACTERS + ")");
+    private static final Pattern NAME_CHARACTERS_PATTERN = Pattern.compile("^" + NAME_CHARACTERS + "$");
+
+    static boolean isValidName(String name) {
+        return NAME_CHARACTERS_PATTERN.matcher(name).find();
+    }
 
     /**
      * There can be at most one Renderer instance at any time.
