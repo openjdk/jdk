@@ -28,9 +28,10 @@
  * @test
  * @bug 8341346
  * @summary Add support for exporting TLS Keying Material
- * @library /javax/net/ssl/templates /test/lib
+ * @library /javax/net/ssl/templates /test/lib /test/jdk/sun/security/pkcs11
  * @build SSLEngineTemplate
  * @run main/othervm ExportKeyingMaterialTests
+ * @run main/othervm ExportKeyingMaterialTests PKCS11
  */
 
 import java.security.Security;
@@ -100,6 +101,11 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
     public static void main(String[] args) throws Exception {
         // Turn off the disabled Algorithms so we can also test SSLv3/TLSv1/etc.
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
+
+        if ((args.length > 0) && (args[0].equals("PKCS11"))) {
+            Security.insertProviderAt(
+                    PKCS11Test.getSunPKCS11(PKCS11Test.getNssConfig()), 1);
+        }
 
         // Exercise all of the triggers which capture data
         // in the various key exchange algorithms.
@@ -355,17 +361,17 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
 
         // Smaller key size
         clientKey = clientSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytes, 1);
+                "TlsExporterKeyingMaterial", "hello", bytes, 5);
         serverKey = serverSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytes, 1);
+                "TlsExporterKeyingMaterial", "hello", bytes, 5);
         assertEquals(clientKey, serverKey,
                 "Key: Smaller key size should be the same");
         log("Key: Smaller key size test passed");
 
         clientBytes = clientSession.exportKeyingMaterialData("hello",
-                bytes, 1);
+                bytes, 5);
         serverBytes = serverSession.exportKeyingMaterialData("hello",
-                bytes, 1);
+                bytes, 5);
         assertEqualsByteArray(clientBytes, serverBytes,
                 "Data: Smaller key size should be the same");
         log("Data: Smaller key size test passed");
