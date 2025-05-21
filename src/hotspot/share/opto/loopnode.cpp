@@ -1182,6 +1182,9 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
 
   loop->compute_trip_count(this, bt);
   // Loop must run for no more than iter_limits as it guarantees no overflow of scale * iv in long range checks.
+  // iters_limit / ABS(stride_con) is the largest trip count for which we know it's correct to not create a loop nest:
+  // it's always benificial to have a single loop rather than a loop nest, so we try to apply this transformation as
+  // often as possible.
   bool known_short_running_loop = head->trip_count() <= iters_limit / ABS(stride_con);
   bool profile_short_running_loop = false;
   if (!known_short_running_loop) {
