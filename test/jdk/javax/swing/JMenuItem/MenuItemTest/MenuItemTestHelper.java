@@ -40,17 +40,15 @@ import javax.swing.UIManager;
 
 class MenuItemTestHelper {
 
-    public static JFrame getMenuItemTestFrame(boolean isLeft, String lafName, int frameY) {
+    public static JFrame getMenuItemTestFrame(boolean isLeft, String lafName) {
         boolean applyLookAndFeel = lafName != null;
-
         if (applyLookAndFeel) {
             try {
                 UIManager.setLookAndFeel(lafName);
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
-
         Icon myIcon = new ColoredIcon(Color.RED, 10, 10);
         Icon myIcon2 = new ColoredIcon(Color.GREEN, 15, 10);
         JMenuBar menuBar = new JMenuBar();
@@ -73,13 +71,11 @@ class MenuItemTestHelper {
         }
 
         frame.setSize(300, 300);
-        frame.setLocation(isLeft ? 0 : 600, frameY);
-        frame.setVisible(true);
         return frame;
     }
 
     public static JFrame getMenuItemTestFrame(boolean isLeft) {
-        return getMenuItemTestFrame(isLeft, null, 20);
+        return getMenuItemTestFrame(isLeft, null);
     }
 
     private static JMenu createViewMenu(Icon myIcon, Icon myIcon2) {

@@ -30,8 +30,8 @@
  * @run main/manual bug4729669
  */
 
-import javax.swing.JFrame;
 import java.util.List;
+import javax.swing.JFrame;
 
 public class bug4729669 {
 
@@ -54,9 +54,7 @@ public class bug4729669 {
 
     private static List<JFrame> createTestUI() {
         JFrame f1 = MenuItemTestHelper.getMenuItemTestFrame(true);
-        f1.setLocation(300, 300);
         JFrame f2 = MenuItemTestHelper.getMenuItemTestFrame(false);
-        f2.setLocation(500, 300);
         return List.of(f1, f2);
     }
 }

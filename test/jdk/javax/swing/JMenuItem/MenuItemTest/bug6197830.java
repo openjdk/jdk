@@ -56,15 +56,13 @@ public class bug6197830 {
 
     private static List<JFrame> createTestUI() {
         JFrame frame1 = MenuItemTestHelper.getMenuItemTestFrame(true,
-                "com.sun.java.swing.plaf.motif.MotifLookAndFeel",
-                20);
+                "com.sun.java.swing.plaf.motif.MotifLookAndFeel");
         JFrame frame2 = MenuItemTestHelper.getMenuItemTestFrame(false,
-                "com.sun.java.swing.plaf.motif.MotifLookAndFeel",
-                20);
+                "com.sun.java.swing.plaf.motif.MotifLookAndFeel");
         JFrame frame3 = MenuItemTestHelper.getMenuItemTestFrame(true,
-                "com.sun.java.swing.plaf.gtk.GTKLookAndFeel", 420);
+                "com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         JFrame frame4 = MenuItemTestHelper.getMenuItemTestFrame(false,
-                "com.sun.java.swing.plaf.gtk.GTKLookAndFeel", 420);
+                "com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         return List.of(frame1, frame2, frame3, frame4);
     }
 }
