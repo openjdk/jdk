@@ -89,6 +89,7 @@
 #ifdef AMD64
 #define SPELL_REG_SP "rsp"
 #define SPELL_REG_FP "rbp"
+#define REG_BCP context_r13
 #else
 #define SPELL_REG_SP "esp"
 #define SPELL_REG_FP "ebp"
@@ -347,6 +348,22 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   // in compiled code, the stack banging is performed just after the return pc
   // has been pushed on the stack
   return frame(fr.sp() + 1, fr.fp(), (address)*(fr.sp()));
+}
+
+#ifdef ASSERT
+static bool is_interpreter(const ucontext_t* uc) {
+  assert(uc != nullptr, "invariant");
+  address pc = os::Posix::ucontext_get_pc(uc);
+  assert(pc != nullptr, "invariant");
+  return Interpreter::contains(pc);
+}
+#endif
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->REG_BCP);
 }
 
 // By default, gcc always save frame pointer (%ebp/%rbp) on stack. It may get

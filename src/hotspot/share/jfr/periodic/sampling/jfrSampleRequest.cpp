@@ -195,7 +195,11 @@ static bool build(JfrSampleRequest& request, intptr_t* fp, JavaThread* jt) {
 
 static bool build_from_ljf(JfrSampleRequest& request,
                            const SuspendedThreadTaskContext& context,
+                           const JfrThreadLocal* tl,
                            JavaThread* jt) {
+  assert(tl != nullptr, "invariant");
+  assert(jt != nullptr, "invariant");
+  assert(jt->jfr_thread_local() == tl, "invariant");
   assert(sp_in_stack(request, jt), "invariant");
   // Last Java frame is available, but might not be walkable, fix it.
   address last_pc = jt->last_Java_pc();
@@ -206,8 +210,48 @@ static bool build_from_ljf(JfrSampleRequest& request,
     }
   }
   assert(last_pc != nullptr, "invariant");
+  if (is_interpreter(last_pc)) {
+    if (tl->in_sampling_critical_section()) {
+      return false;
+    }
+    request._sample_pc = last_pc;
+    request._sample_bcp = jt->frame_anchor()->last_Java_fp();
+    return build_for_interpreter(request, jt);
+  }
   request._sample_pc = last_pc;
-  return build(request, jt->frame_anchor()->last_Java_fp(), jt);
+  return build(request, nullptr, jt);
+}
+
+static bool build_from_context(JfrSampleRequest& request,
+                               const SuspendedThreadTaskContext& context,
+                               const JfrThreadLocal* tl,
+                               JavaThread* jt) {
+  assert(tl != nullptr, "invariant");
+  assert(jt != nullptr, "invariant");
+  assert(jt->jfr_thread_local() == tl, "invariant");
+  assert(!jt->has_last_Java_frame(), "invariant");
+  intptr_t* fp;
+  request._sample_pc = os::fetch_frame_from_context(context.ucontext(), reinterpret_cast<intptr_t**>(&request._sample_sp), &fp);
+  assert(sp_in_stack(request, jt), "invariant");
+  if (is_interpreter(request)) {
+    if (tl->in_sampling_critical_section() || !in_stack(fp, jt)) {
+      return false;
+    }
+    if (frame::is_interpreter_frame_setup_at(fp, request._sample_sp)) {
+      // Set fp as sp for interpreter frames.
+      request._sample_sp = fp;
+      void* bcp = os::fetch_bcp_from_context(context.ucontext());
+      // Setting bcp = 1 marks the sample request to represent a native method.
+      request._sample_bcp = bcp != nullptr ? bcp : reinterpret_cast<void*>(1);
+      return true;
+    }
+    request._sample_bcp = fp;
+    fp = sender_for_interpreter_frame(request, jt);
+    if (request._sample_pc == nullptr || request._sample_sp == nullptr) {
+      return false;
+    }
+  }
+  return build(request, fp, jt);
 }
 
 static inline JfrSampleResult set_request_and_arm_local_poll(JfrSampleRequest& request, JfrThreadLocal* tl, JavaThread* jt) {
@@ -248,20 +292,14 @@ JfrSampleResult JfrSampleRequestBuilder::build_java_sample_request(const Suspend
 
   JfrSampleRequest request;
 
-  if (tl->in_sampling_critical_section()) {
-    return set_biased_java_sample(request, tl, jt);
-  }
-
   // Prioritize the ljf, if one exists.
   request._sample_sp = jt->last_Java_sp();
-
-  if (request._sample_sp == nullptr || !build_from_ljf(request, context, jt)) {
-    intptr_t* fp;
-    request._sample_pc = os::fetch_frame_from_context(context.ucontext(), reinterpret_cast<intptr_t**>(&request._sample_sp), &fp);
-    assert(sp_in_stack(request, jt), "invariant");
-    if (!build(request, fp, jt)) {
-      return set_biased_java_sample(request, tl, jt);
+  if (request._sample_sp != nullptr) {
+    if (build_from_ljf(request, context, tl, jt)) {
+      return set_unbiased_java_sample(request, tl, jt);
     }
+  } else if (build_from_context(request, context, tl, jt)) {
+    return set_unbiased_java_sample(request, tl, jt);
   }
-  return set_unbiased_java_sample(request, tl, jt);
+  return set_biased_java_sample(request, tl, jt);
 }
