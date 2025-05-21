@@ -745,15 +745,7 @@ JVM_END
 
 void JVMCIRuntime::call_getCompiler(TRAPS) {
   JVMCIENV_FROM_THREAD(THREAD);
-  int init_error = JVMCIENV->init_error();
-  if (init_error != JNI_OK) {
-    if (PrintCompilation) {
-      const char* msg = JVMCIENV->init_error_msg();
-      tty->print_cr("COMPILER INIT ERROR: Error creating or attaching to libjvmci (err: %d, description: %s)",
-        init_error, msg == nullptr ? "unknown" : msg);
-    }
-    return;
-  }
+  JVMCIENV->check_init(CHECK);
   JVMCIObject jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_CHECK);
   initialize(JVMCI_CHECK);
   JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
@@ -1608,9 +1600,8 @@ bool JVMCIRuntime::destroy_shared_library_javavm() {
 void JVMCIRuntime::bootstrap_finished(TRAPS) {
   if (_HotSpotJVMCIRuntime_instance.is_non_null()) {
     JVMCIENV_FROM_THREAD(THREAD);
-    if (JVMCIENV->init_error() == JNI_OK) {
-      JVMCIENV->call_HotSpotJVMCIRuntime_bootstrapFinished(_HotSpotJVMCIRuntime_instance, JVMCIENV);
-    }
+    JVMCIENV->check_init(CHECK);
+    JVMCIENV->call_HotSpotJVMCIRuntime_bootstrapFinished(_HotSpotJVMCIRuntime_instance, JVMCIENV);
   }
 }
 
