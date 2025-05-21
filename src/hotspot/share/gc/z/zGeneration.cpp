@@ -948,6 +948,14 @@ void ZGenerationYoung::register_with_remset(ZPage* page) {
   _remembered.register_found_old(page);
 }
 
+ZRemembered* ZGenerationYoung::remembered() {
+  return  &_remembered;
+}
+
+void ZGenerationYoung::remap_current_remset(ZRemsetTableIterator* iter) {
+  _remembered.remap_current(iter);
+}
+
 ZGenerationTracer* ZGenerationYoung::jfr_tracer() {
   return &_jfr_tracer;
 }
@@ -1435,7 +1443,7 @@ typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_none> ZRemapCLDClosure;
 
 class ZRemapYoungRootsTask : public ZTask {
 private:
-  ZGenerationPagesParallelIterator _old_pages_parallel_iterator;
+  ZRemsetTableIterator             _remset_table_iterator;
 
   ZRootsIteratorAllColored         _roots_colored;
   ZRootsIteratorAllUncolored       _roots_uncolored;
@@ -1449,7 +1457,7 @@ private:
 public:
   ZRemapYoungRootsTask(ZPageTable* page_table, ZPageAllocator* page_allocator)
     : ZTask("ZRemapYoungRootsTask"),
-      _old_pages_parallel_iterator(page_table, ZGenerationId::old, page_allocator),
+      _remset_table_iterator(ZGeneration::young()->remembered(), false /* previous */),
       _roots_colored(ZGenerationIdOptional::old),
       _roots_uncolored(ZGenerationIdOptional::old),
       _cl_colored(),
@@ -1472,11 +1480,8 @@ public:
 
     {
       ZStatTimerWorker timer(ZSubPhaseConcurrentRemapRememberedOld);
-      _old_pages_parallel_iterator.do_pages([&](ZPage* page) {
-        // Visit all object fields that potentially pointing into young generation
-        page->oops_do_current_remembered(ZBarrier::load_barrier_on_oop_field);
-        return true;
-      });
+      // Visit all object fields that potentially pointing into young generation
+      ZGeneration::young()->remap_current_remset(&_remset_table_iterator);
     }
   }
 };
