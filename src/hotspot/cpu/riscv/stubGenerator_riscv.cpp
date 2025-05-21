@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2025, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2076,8 +2076,8 @@ class StubGenerator: public StubCodeGenerator {
       switch (t) {
         case T_BYTE:
           // One byte misalignment happens only for byte arrays.
-          __ test_bit(t0, to, 0);
-          __ beqz(t0, L_skip_align1);
+          __ test_bit(tmp_reg, to, 0);
+          __ beqz(tmp_reg, L_skip_align1);
           __ sb(value, Address(to, 0));
           __ addi(to, to, 1);
           __ subiw(count, count, 1);
@@ -2085,8 +2085,8 @@ class StubGenerator: public StubCodeGenerator {
           // Fallthrough
         case T_SHORT:
           // Two bytes misalignment happens only for byte and short (char) arrays.
-          __ test_bit(t0, to, 1);
-          __ beqz(t0, L_skip_align2);
+          __ test_bit(tmp_reg, to, 1);
+          __ beqz(tmp_reg, L_skip_align2);
           __ sh(value, Address(to, 0));
           __ addi(to, to, 2);
           __ subiw(count, count, 2 >> shift);
@@ -2094,8 +2094,8 @@ class StubGenerator: public StubCodeGenerator {
           // Fallthrough
         case T_INT:
           // Align to 8 bytes, we know we are 4 byte aligned to start.
-          __ test_bit(t0, to, 2);
-          __ beqz(t0, L_skip_align4);
+          __ test_bit(tmp_reg, to, 2);
+          __ beqz(tmp_reg, L_skip_align4);
           __ sw(value, Address(to, 0));
           __ addi(to, to, 4);
           __ subiw(count, count, 4 >> shift);
@@ -2121,69 +2121,51 @@ class StubGenerator: public StubCodeGenerator {
       __ fill_words(to, cnt_words, value);
     }
 
-    // Remaining count is less than 8 bytes and address is heapword aligned.
-    Label L_fill_1, L_fill_2, L_exit1;
-    switch (t) {
-      case T_BYTE:
-        __ test_bit(t0, count, 2);
-        __ beqz(t0, L_fill_2);
-        __ sw(value, Address(to, 0));
-        __ addi(to, to, 4);
-        __ bind(L_fill_2);
-        __ test_bit(t0, count, 1);
-        __ beqz(t0, L_fill_1);
-        __ sh(value, Address(to, 0));
-        __ addi(to, to, 2);
-        __ bind(L_fill_1);
-        __ test_bit(t0, count, 0);
-        __ beqz(t0, L_exit1);
-        __ sb(value, Address(to, 0));
-        break;
-      case T_SHORT:
-        __ test_bit(t0, count, 1);
-        __ beqz(t0, L_fill_2);
-        __ sw(value, Address(to, 0));
-        __ addi(to, to, 4);
-        __ bind(L_fill_2);
-        __ test_bit(t0, count, 0);
-        __ beqz(t0, L_exit1);
-        __ sh(value, Address(to, 0));
-        break;
-      case T_INT:
-        __ beqz(count, L_exit1);
-        __ sw(value, Address(to, 0));
-        break;
-      default: ShouldNotReachHere();
-    }
-    __ bind(L_exit1);
-    __ leave();
-    __ ret();
-
     // Handle copies less than 8 bytes.
-    Label L_loop1, L_loop2, L_exit2;
+    // Address may not be heapword aligned.
+    Label L_fill_1, L_fill_2, L_exit;
     __ bind(L_fill_elements);
-    __ beqz(count, L_exit2);
     switch (t) {
       case T_BYTE:
-        __ bind(L_loop1);
+        __ test_bit(tmp_reg, count, 2);
+        __ beqz(tmp_reg, L_fill_2);
         __ sb(value, Address(to, 0));
-        __ addi(to, to, 1);
-        __ subiw(count, count, 1);
-        __ bnez(count, L_loop1);
+        __ sb(value, Address(to, 1));
+        __ sb(value, Address(to, 2));
+        __ sb(value, Address(to, 3));
+        __ addi(to, to, 4);
+
+        __ bind(L_fill_2);
+        __ test_bit(tmp_reg, count, 1);
+        __ beqz(tmp_reg, L_fill_1);
+        __ sb(value, Address(to, 0));
+        __ sb(value, Address(to, 1));
+        __ addi(to, to, 2);
+
+        __ bind(L_fill_1);
+        __ test_bit(tmp_reg, count, 0);
+        __ beqz(tmp_reg, L_exit);
+        __ sb(value, Address(to, 0));
         break;
       case T_SHORT:
-        __ bind(L_loop2);
+        __ test_bit(tmp_reg, count, 1);
+        __ beqz(tmp_reg, L_fill_2);
         __ sh(value, Address(to, 0));
-        __ addi(to, to, 2);
-        __ subiw(count, count, 2 >> shift);
-        __ bnez(count, L_loop2);
+        __ sh(value, Address(to, 2));
+        __ addi(to, to, 4);
+
+        __ bind(L_fill_2);
+        __ test_bit(tmp_reg, count, 0);
+        __ beqz(tmp_reg, L_exit);
+        __ sh(value, Address(to, 0));
         break;
       case T_INT:
+        __ beqz(count, L_exit);
         __ sw(value, Address(to, 0));
         break;
       default: ShouldNotReachHere();
     }
-    __ bind(L_exit2);
+    __ bind(L_exit);
     __ leave();
     __ ret();
 
