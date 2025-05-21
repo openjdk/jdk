@@ -1826,9 +1826,12 @@ public final class Locale implements Cloneable, Serializable {
      *     loc.getExtension('x'); // returns "urp"
      * }
      *
-     * <li>{@code languageTag} may contain up to three extlang subtags.
-     * For such occurrences, the first extlang subtag is used as the language, and the primary
-     * language subtag and other extlang subtags are ignored:
+     * <li> BCP 47 language tags permit up to three extlang subtags. However,
+     * the second and third extlang subtags are always ignored. As such,
+     * the first extlang subtag in {@code languageTag} is used as the language,
+     * and the primary language subtag and other extlang subtags are ignored.
+     * Language tags that exceed three extlang subtags are considered
+     * ill-formed starting at the offending extlang subtag.
      *
      * {@snippet lang=java :
      *     Locale.forLanguageTag("ar-aao").getLanguage(); // returns "aao"
