@@ -160,10 +160,15 @@ class ConsoleIOContext extends IOContext {
             boolean allowExecTerminal = !OSUtils.IS_WINDOWS &&
                                         !OSUtils.IS_LINUX &&
                                         !OSUtils.IS_OSX;
-            terminal = TerminalBuilder.builder().exec(allowExecTerminal).inputStreamWrapper(in -> {
-                input.setInputStream(in);
-                return nonBlockingInput;
-            }).nativeSignals(false).build();
+            terminal = TerminalBuilder.builder()
+                                      .exec(allowExecTerminal)
+                                      .inputStreamWrapper(in -> {
+                                          input.setInputStream(in);
+                                          return nonBlockingInput;
+                                      })
+                                      .nativeSignals(false)
+                                      .encoding(System.getProperty("stdin.encoding"))
+                                      .build();
             useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }
         this.allowIncompleteInputs = allowIncompleteInputs;
