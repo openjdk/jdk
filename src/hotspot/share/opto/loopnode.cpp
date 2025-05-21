@@ -1156,6 +1156,7 @@ public:
     _clone_predicate_to_loop.clone_parse_predicate(parse_predicate, true);
     parse_predicate.kill(_phase->igvn());
   }
+
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
     _clone_predicate_to_loop.clone_template_assertion_predicate(template_assertion_predicate);
     template_assertion_predicate.kill(_phase->igvn());
