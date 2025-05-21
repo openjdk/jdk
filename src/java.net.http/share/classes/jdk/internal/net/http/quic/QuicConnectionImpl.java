@@ -2771,9 +2771,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         assert packetNumber > retransmittedPacketNumber : "packet number: " + packetNumber
                 + " was expected to be greater than packet the packet being retransmitted: "
                 + retransmittedPacketNumber;
+        final boolean pktContainsConnClose = containsConnectionClose(protectionRecord.packet());
         // if the connection isn't open then except for the packet containing a CONNECTION_CLOSE
         // frame, we don't push any other packets.
-        if (!isOpen() && !protectionRecord.packet().containsConnectionClose()) {
+        if (!isOpen() && !pktContainsConnClose) {
             if (debug.on()) {
                 debug.log("connection isn't open - ignoring %s(pn:%s): frames:%s",
                         protectionRecord.packet.packetType(),
@@ -2805,7 +2806,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         }
         // if we are sending a packet containing a CONNECTION_CLOSE frame, then we
         // also switch/remove the current connection instance in the endpoint.
-        if (protectionRecord.packet().containsConnectionClose()) {
+        if (pktContainsConnClose) {
             if (stateHandle.isMarked(QuicConnectionState.DRAINING)) {
                 // a CONNECTION_CLOSE frame is being sent to the peer when the local
                 // connection state is in DRAINING. This implies that the local endpoint
@@ -4404,4 +4405,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return result.toString();
     }
 
+    /**
+     * {@return true if the packet contains a CONNECTION_CLOSE frame, false otherwise}
+     * @param packet the QUIC packet
+     */
+    private static boolean containsConnectionClose(final QuicPacket packet) {
+        for (final QuicFrame frame : packet.frames()) {
+            if (frame instanceof ConnectionCloseFrame) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
