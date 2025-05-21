@@ -313,7 +313,7 @@ public class Pem {
     private static String pemEncoded(String type, String base64) {
         return
             "-----BEGIN " + type + "-----\r\n" +
-            base64 +
+            base64 + (!base64.endsWith("\n") ? "\r\n" : "") +
             "-----END " + type + "-----\r\n";
     }
 
@@ -336,9 +336,6 @@ public class Pem {
      */
     public static String pemEncoded(PEMRecord pem) {
         String p = pem.pem().replaceAll("(.{64})", "$1\r\n");
-        if (!pem.pem().endsWith("\n")) {
-            return pemEncoded(pem.type(), p + "\r\n");
-        }
         return pemEncoded(pem.type(), p);
     }
 }
