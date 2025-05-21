@@ -234,7 +234,7 @@ int FieldInfoReader::search_table_lookup(const Array<u1> *search_table, const Sy
 
     if (mid_name == name && mid_sig == signature) {
       _r.set_position(position);
-      int _next_index = java_fields > UINT8_MAX + 1 ?
+      _next_index = java_fields > UINT8_MAX + 1 ?
         *reinterpret_cast<const u2 *>(ptr + position_width) : ptr[position_width];
       return _next_index;
     }
