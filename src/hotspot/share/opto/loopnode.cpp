@@ -1161,6 +1161,7 @@ public:
     template_assertion_predicate.kill(_phase->igvn());
   }
 };
+
 // If the loop is either statically known to run for a small enough number of iterations or if profile data indicates
 // that, we don't want an outer loop because the overhead of having an outer loop whose backedge is never taken, has a
 // measurable cost. Furthermore, creating the loop nest usually causes one iteration of the loop to be peeled so
