@@ -83,7 +83,7 @@ tier2_part2 = \
 tier2_part3 = \
     :jdk_net
 
-# These sub groups of tier3 allows for running certain tests separately from the
+# These sub groups of tier3 allow for running certain tests separately from the
 # rest. When adding tests to tier3, in most cases they should be added to
 # tier3_part1.
 tier3 = \
