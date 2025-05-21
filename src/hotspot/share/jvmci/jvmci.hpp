@@ -191,8 +191,9 @@ class JVMCI : public AllStatic {
 
   static void initialize_globals();
 
-  // Called to initialize the JVMCI compiler during VM startup.
-  static void initialize_compiler_in_create_vm(TRAPS);
+  // Called to force initialization of the JVMCI compiler
+  // early in VM startup.
+  static void initialize_compiler(TRAPS);
 
   // Ensures the boxing cache classes (e.g., java.lang.Integer.IntegerCache) are initialized.
   static void ensure_box_caches_initialized(TRAPS);

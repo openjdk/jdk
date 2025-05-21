@@ -835,7 +835,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
 #if INCLUDE_JVMCI
   if (force_JVMCI_initialization) {
-    JVMCI::initialize_compiler_in_create_vm(CHECK_JNI_ERR);
+    JVMCI::initialize_compiler(CHECK_JNI_ERR);
   }
 #endif
 

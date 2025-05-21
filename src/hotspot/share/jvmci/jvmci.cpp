@@ -151,7 +151,7 @@ void* JVMCI::get_shared_library(char*& path, bool load) {
   return _shared_library_handle;
 }
 
-void JVMCI::initialize_compiler_in_create_vm(TRAPS) {
+void JVMCI::initialize_compiler(TRAPS) {
   if (JVMCILibDumpJNIConfig) {
     JNIJVMCI::initialize_ids(nullptr);
     ShouldNotReachHere();
@@ -162,24 +162,7 @@ void JVMCI::initialize_compiler_in_create_vm(TRAPS) {
   } else {
       runtime = JVMCI::java_runtime();
   }
-
-  // Enter a JVMCI env, which will load libjvmci if it's in use
-  JVMCIENV_FROM_THREAD(THREAD);
-  int init_error = JVMCIENV->init_error();
-  if (init_error != JNI_OK) {
-    if (PrintCompilation) {
-      const char* msg = JVMCIENV->init_error_msg();
-      tty->print_cr("COMPILER INIT ERROR: Error creating or attaching to libjvmci (err: %d, description: %s)",
-        init_error, msg == nullptr ? "unknown" : msg);
-    }
-    return;
-  }
-
-  // Failures in the calls below will propagate to the caller
-  // and cause VM to exit.
-  JVMCIObject jvmciRuntime = runtime->get_HotSpotJVMCIRuntime(JVMCI_CHECK);
-  runtime->initialize(JVMCI_CHECK);
-  JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
+  runtime->call_getCompiler(CHECK);
 }
 
 void JVMCI::initialize_globals() {
