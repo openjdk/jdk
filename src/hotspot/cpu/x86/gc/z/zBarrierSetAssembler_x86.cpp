@@ -78,15 +78,43 @@ private:
 
   void save() {
     MacroAssembler* masm = _masm;
-    __ push(rax);
-    __ push(rcx);
-    __ push(rdx);
-    __ push(rdi);
-    __ push(rsi);
-    __ push(r8);
-    __ push(r9);
-    __ push(r10);
-    __ push(r11);
+    if (VM_Version::supports_apx_f()) {
+      __ push(rax);
+      __ push(rcx);
+      // Save current stack pointer into rcx
+      __ movptr(rcx, rsp);
+      // Align stack pointer to 16 byte boundary. This is hard constraint
+      // for push2/pop2 with PPX hints.
+      __ andptr(rsp, -StackAlignmentInBytes);
+      // Push original stack pointer along with remaining registers on 16B aligned stack.
+      // Note: For PPX to work properly, a PPX-marked PUSH2 (respectively, POP2) should always
+      // be matched with a PPX-marked POP2 (PUSH2), not with two PPX-marked POPs (PUSHs).
+      __ pushp(rcx);
+      // Restore the original contents of RCX register.
+      __ movptr(rcx, Address(rcx));
+      __ pushp(rdx);
+      __ push2p(rdi, rsi);
+      __ push2p(r8, r9);
+      __ push2p(r10, r11);
+      __ push2p(r16, r17);
+      __ push2p(r18, r19);
+      __ push2p(r20, r21);
+      __ push2p(r22, r23);
+      __ push2p(r24, r25);
+      __ push2p(r26, r27);
+      __ push2p(r28, r29);
+      __ push2p(r30, r31);
+    } else {
+      __ push(rax);
+      __ push(rcx);
+      __ push(rdx);
+      __ push(rdi);
+      __ push(rsi);
+      __ push(r8);
+      __ push(r9);
+      __ push(r10);
+      __ push(r11);
+    }
 
     if (_xmm_spill_size != 0) {
       __ subptr(rsp, _xmm_spill_size);
@@ -139,14 +167,32 @@ private:
       __ addptr(rsp, _xmm_spill_size);
     }
 
-    __ pop(r11);
-    __ pop(r10);
-    __ pop(r9);
-    __ pop(r8);
-    __ pop(rsi);
-    __ pop(rdi);
-    __ pop(rdx);
-    __ pop(rcx);
+    if (VM_Version::supports_apx_f()) {
+      __ pop2p(r31, r30);
+      __ pop2p(r29, r28);
+      __ pop2p(r27, r26);
+      __ pop2p(r25, r24);
+      __ pop2p(r23, r22);
+      __ pop2p(r21, r20);
+      __ pop2p(r19, r18);
+      __ pop2p(r17, r16);
+      __ pop2p(r11, r10);
+      __ pop2p(r9, r8);
+      __ pop2p(rsi, rdi);
+      __ popp(rdx);
+      // Re-instantiate original stack pointer.
+      __ movptr(rsp, Address(rsp));
+      __ pop(rcx);
+    } else {
+      __ pop(r11);
+      __ pop(r10);
+      __ pop(r9);
+      __ pop(r8);
+      __ pop(rsi);
+      __ pop(rdi);
+      __ pop(rdx);
+      __ pop(rcx);
+    }
     if (_result == noreg) {
       __ pop(rax);
     } else if (_result == rax) {
