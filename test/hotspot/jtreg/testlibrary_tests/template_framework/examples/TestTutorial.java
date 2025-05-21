@@ -64,19 +64,19 @@ public class TestTutorial {
         CompileFramework comp = new CompileFramework();
 
         // Add java source files.
-        comp.addJavaSourceCode("p.xyz.InnerTest1",   generateWithListOfTokens());
-        comp.addJavaSourceCode("p.xyz.InnerTest2",   generateWithTemplateArguments());
-        comp.addJavaSourceCode("p.xyz.InnerTest3",   generateWithHashtagAndDollarReplacements());
-        comp.addJavaSourceCode("p.xyz.InnerTest3b",  generateWithHashtagAndDollarReplacements2());
-        comp.addJavaSourceCode("p.xyz.InnerTest4",   generateWithCustomHooks());
-        comp.addJavaSourceCode("p.xyz.InnerTest5",   generateWithLibraryHooks());
-        comp.addJavaSourceCode("p.xyz.InnerTest6",   generateWithRecursionAndBindingsAndFuel());
-        comp.addJavaSourceCode("p.xyz.InnerTest7",   generateWithDataNamesSimple());
-        comp.addJavaSourceCode("p.xyz.InnerTest8",   generateWithDataNamesForFieldsAndVariables());
-        comp.addJavaSourceCode("p.xyz.InnerTest9",   generateWithDataNamesForFuzzing());
-        comp.addJavaSourceCode("p.xyz.InnerTest10",  generateWithStructuralNamesForMethods());
-        comp.addJavaSourceCode("p.xyz.InnerTest11a", generateWithDataNamesAndScopes1());
-        comp.addJavaSourceCode("p.xyz.InnerTest11b", generateWithDataNamesAndScopes2());
+        comp.addJavaSourceCode("p.xyz.InnerTest1",  generateWithListOfTokens());
+        comp.addJavaSourceCode("p.xyz.InnerTest2",  generateWithTemplateArguments());
+        comp.addJavaSourceCode("p.xyz.InnerTest3",  generateWithHashtagAndDollarReplacements());
+        comp.addJavaSourceCode("p.xyz.InnerTest3b", generateWithHashtagAndDollarReplacements2());
+        comp.addJavaSourceCode("p.xyz.InnerTest4",  generateWithCustomHooks());
+        comp.addJavaSourceCode("p.xyz.InnerTest5",  generateWithLibraryHooks());
+        comp.addJavaSourceCode("p.xyz.InnerTest6",  generateWithRecursionAndBindingsAndFuel());
+        comp.addJavaSourceCode("p.xyz.InnerTest7",  generateWithDataNamesSimple());
+        comp.addJavaSourceCode("p.xyz.InnerTest8",  generateWithDataNamesForFieldsAndVariables());
+        comp.addJavaSourceCode("p.xyz.InnerTest9a", generateWithDataNamesAndScopes1());
+        comp.addJavaSourceCode("p.xyz.InnerTest9b", generateWithDataNamesAndScopes2());
+        comp.addJavaSourceCode("p.xyz.InnerTest10", generateWithDataNamesForFuzzing());
+        comp.addJavaSourceCode("p.xyz.InnerTest11", generateWithStructuralNamesForMethods());
 
         // Compile the source files.
         // Hint: if you want to see the generated source code, you can enable
@@ -85,19 +85,19 @@ public class TestTutorial {
         comp.compile();
 
         // Object ret = p.xyz.InnerTest1.main();
-        comp.invoke("p.xyz.InnerTest1",   "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest2",   "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest3",   "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest3b",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest4",   "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest5",   "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest6",   "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest7",   "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest8",   "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest9",   "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest10",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest11a", "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest11b", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest1",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest2",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest3",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest3b", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest4",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest5",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest6",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest7",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest8",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest9a", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest9b", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest10", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest11", "main", new Object[] {});
     }
 
     // This example shows the use of various Tokens.
@@ -745,223 +745,6 @@ public class TestTutorial {
         return templateClass.render();
     }
 
-    // There are two more concepts to understand more deeply with DataNames.
-    //
-    // One is the use of mutable and immutable DataNames.
-    // In some cases, we only want to sample DataNames that are mutable, because
-    // we want to store to a field or variable. We have to make sure that we
-    // do not generate code that tries to store to a final field or variable.
-    // In other cases, we are only want to load, and we do not care if the
-    // fields or variables are final or non-final.
-    //
-    // Another concept is subtyping of DataName Types. With primitive types, this
-    // is irrelevant, but with instances of Objects, this becomes relevant.
-    // We may want to load an object of any field or variable of a certain
-    // class, or any subclass. When a value of a given class, we can only
-    // store it to fields and variables of that class or any superclass.
-    //
-    // Let us look at an example that demonstrates these two concepts.
-    //
-    // First, we define a DataName Type that represents different classes, that
-    // may or may not be in a subtype relation. Subtypes start with the name
-    // of the super type.
-    private record MyClass(String name) implements DataName.Type {
-        @Override
-        public boolean isSubtypeOf(DataName.Type other) {
-            return other instanceof MyClass(String n) && name().startsWith(n);
-        }
-
-        @Override
-        public String toString() { return name(); }
-    }
-    private static final MyClass myClassA   = new MyClass("MyClassA");
-    private static final MyClass myClassA1  = new MyClass("MyClassA1");
-    private static final MyClass myClassA2  = new MyClass("MyClassA2");
-    private static final MyClass myClassA11 = new MyClass("MyClassA11");
-    private static final MyClass myClassB   = new MyClass("MyClassB");
-    private static final List<MyClass> myClassList = List.of(myClassA, myClassA1, myClassA2, myClassA11, myClassB);
-
-    public static String generateWithDataNamesForFuzzing() {
-        var templateStaticField = Template.make("type", "mutable", (DataName.Type type, Boolean mutable) -> body(
-            addDataName($("field"), type, mutable ? MUTABLE : IMMUTABLE),
-            let("isFinal", mutable ? "" : "final"),
-            """
-            public static #isFinal #type $field = new #type();
-            """
-        ));
-
-        var templateLoad = Template.make("type", (DataName.Type type) -> body(
-            // We only load from the field, so we do not need a mutable one,
-            // we can load from final and non-final fields.
-            // We want to find any field of which we can read the value and store
-            // it in our variable v of our given type. Hence, we can take a field
-            // of the given type or any subtype thereof.
-            let("field", dataNames(MUTABLE_OR_IMMUTABLE).subtypeOf(type).sample().name()),
-            """
-            #type $v = #field;
-            System.out.println("#field: " + $v);
-            """
-        ));
-
-        var templateStore = Template.make("type", (DataName.Type type) -> body(
-            // We are storing to a field, so it better be non-final, i.e. mutable.
-            // We want to store a new instance of our given type to a field. This
-            // field must be of the given type or any supertype.
-            let("field", dataNames(MUTABLE).supertypeOf(type).sample().name()),
-            """
-            #field = new #type();
-            """
-        ));
-
-        var templateClass = Template.make(() -> body(
-            """
-            package p.xyz;
-
-            public class InnerTest9 {
-                // First, we define our classes.
-                public static class MyClassA {}
-                public static class MyClassA1 extends MyClassA {}
-                public static class MyClassA2 extends MyClassA {}
-                public static class MyClassA11 extends MyClassA1 {}
-                public static class MyClassB {}
-
-                // Now, we define a list of static fields. Some of them are final, others not.
-                """,
-                // We must create a CLASS_HOOK and insert the fields to it. Otherwise,
-                // addDataName is restricted to the scope of the templateStaticField. But
-                // with the insertion to CLASS_HOOK, the addDataName goes through the scope
-                // of the templateStaticField out to the scope of the CLASS_HOOK.
-                Hooks.CLASS_HOOK.anchor(
-                    myClassList.stream().map(c ->
-                        (Object)Hooks.CLASS_HOOK.insert(templateStaticField.asToken(c, true))
-                    ).toList(),
-                    myClassList.stream().map(c ->
-                        (Object)Hooks.CLASS_HOOK.insert(templateStaticField.asToken(c, false))
-                    ).toList(),
-                    """
-
-                    public static void main() {
-                        // All fields are still in their initial state.
-                        """,
-                        myClassList.stream().map(c -> templateLoad.asToken(c)).toList(),
-                        """
-                        // Now lets mutate some fields.
-                        """,
-                        myClassList.stream().map(c -> templateStore.asToken(c)).toList(),
-                        """
-                        // And now some fields are different than before.
-                        """,
-                        myClassList.stream().map(c -> templateLoad.asToken(c)).toList(),
-                        """
-                    }
-                    """
-                ),
-            """
-            }
-            """
-        ));
-
-        // Render templateClass to String.
-        return templateClass.render();
-
-    }
-
-    // "DataNames" are useful for modeling fields and variables. They hold data,
-    // and we can read and write to them, they may be mutable or immutable.
-    // We now introduce another set of "Names", the "StructuralNames". They are
-    // useful for modeling method names an class names, and possibly more. Anything
-    // that has a fixed name in the Java code, for which mutability is inapplicalbe.
-    // Some use-cases for "StructuralNames":
-    // - Method names. The Type could represent the signature of the static method
-    //                 or the class of the non-static method.
-    // - Class names. Type could represent the signature of the constructor, so
-    //                that we could instantiate random instances.
-    // - try/catch blocks. If a specific Exception is caught in the scope, we could
-    //                     register that Exception, and in the inner scope we can
-    //                     check if there is any "StructuralName" for an Exception
-    //                     and its subtypes - if so, we know the exception would be
-    //                     caught.
-    //
-    // Let us show an examples with Method names. But for simplicity, we assume they
-    // all have the same signature: they take two int arguments and return an int.
-    //
-    // Should you ever work on a test where there are methods with different signatures,
-    // then you would have to very carefully study and design the subtype relation between
-    // methods. You may want to read up about covariance and contravariance. This
-    // example ignores all of that, because we only have "(II)I" methods.
-    private record MyMethodType() implements StructuralName.Type {
-        @Override
-        public boolean isSubtypeOf(StructuralName.Type other) {
-            return other instanceof MyMethodType();
-        }
-
-        @Override
-        public String name() { return "<not used, don't worry>"; }
-    }
-    private static final MyMethodType myMethodType = new MyMethodType();
-
-    public static String generateWithStructuralNamesForMethods() {
-        // Define a method, which takes two ints, returns the result of op.
-        var templateMethod = Template.make("op", (String op) -> body(
-            // Register the method name, so we can later sample.
-            addStructuralName($("methodName"), myMethodType),
-            """
-            public static int $methodName(int a, int b) {
-                return a #op b;
-            }
-            """
-        ));
-
-        var templateSample = Template.make(() -> body(
-            // Sample a random method, and retrieve its name.
-            let("methodName", structuralNames().exactOf(myMethodType).sample().name()),
-            """
-            System.out.println("Calling #methodName with inputs 7 and 11");
-            System.out.println("  result: " + #methodName(7, 11));
-            """
-        ));
-
-        var templateClass = Template.make(() -> body(
-            """
-            package p.xyz;
-
-            public class InnerTest10 {
-                // Let us define some methods that we can sample from later.
-            """,
-            // We must anchor a CLASS_HOOK here, and insert the method definitions to that hook.
-            Hooks.CLASS_HOOK.anchor(
-                // If we directly nest the templateMethod, then the addStructuralName goes to the nested
-                // scope, and is not available at the class scope, i.e. it is not visible
-                // for sampleStructuralName in outside of the templateMethod.
-                // DO NOT DO THIS, the nested addStructuralName will not be visible:
-                "// We cannot sample from the following methods:\n",
-                templateMethod.asToken("+"),
-                templateMethod.asToken("-"),
-                // However, if we insert to the CLASS_HOOK, then the Rendere makes the
-                // scope of the inserted templateMethod transparent, and the addStructuralName
-                // goes out to the scope of the CLASS_HOOK (but no further than that).
-                // RATHER, DO THIS to ensure the addStructuralName is visible:
-                Hooks.CLASS_HOOK.insert(templateMethod.asToken("*")),
-                Hooks.CLASS_HOOK.insert(templateMethod.asToken("|")),
-                Hooks.CLASS_HOOK.insert(templateMethod.asToken("&")),
-                """
-
-                    public static void main() {
-                        // Now, we call some random methods, but only those that were inserted
-                        // to the CLASS_HOOK.
-                        """,
-                        Collections.nCopies(10, templateSample.asToken()),
-                        """
-                    }
-                }
-                """
-            )
-        ));
-
-        // Render templateClass to String.
-        return templateClass.render();
-    }
-
     // Let us have a closer look at how DataNames interact with scopes created by
     // Templates and Hooks. Additionally, we see how the execution order of the
     // lambdas and token evaluation affects the availability of DataNames.
@@ -1026,7 +809,7 @@ public class TestTutorial {
             """
             package p.xyz;
 
-            public class InnerTest11a {
+            public class InnerTest9a {
             """,
             Hooks.CLASS_HOOK.anchor(
             """
@@ -1140,7 +923,7 @@ public class TestTutorial {
             """
             package p.xyz;
 
-            public class InnerTest11b {
+            public class InnerTest9b {
             """,
             Hooks.CLASS_HOOK.anchor(
             """
@@ -1156,6 +939,224 @@ public class TestTutorial {
             """
             }
             """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.render();
+    }
+
+
+    // There are two more concepts to understand more deeply with DataNames.
+    //
+    // One is the use of mutable and immutable DataNames.
+    // In some cases, we only want to sample DataNames that are mutable, because
+    // we want to store to a field or variable. We have to make sure that we
+    // do not generate code that tries to store to a final field or variable.
+    // In other cases, we are only want to load, and we do not care if the
+    // fields or variables are final or non-final.
+    //
+    // Another concept is subtyping of DataName Types. With primitive types, this
+    // is irrelevant, but with instances of Objects, this becomes relevant.
+    // We may want to load an object of any field or variable of a certain
+    // class, or any subclass. When a value of a given class, we can only
+    // store it to fields and variables of that class or any superclass.
+    //
+    // Let us look at an example that demonstrates these two concepts.
+    //
+    // First, we define a DataName Type that represents different classes, that
+    // may or may not be in a subtype relation. Subtypes start with the name
+    // of the super type.
+    private record MyClass(String name) implements DataName.Type {
+        @Override
+        public boolean isSubtypeOf(DataName.Type other) {
+            return other instanceof MyClass(String n) && name().startsWith(n);
+        }
+
+        @Override
+        public String toString() { return name(); }
+    }
+    private static final MyClass myClassA   = new MyClass("MyClassA");
+    private static final MyClass myClassA1  = new MyClass("MyClassA1");
+    private static final MyClass myClassA2  = new MyClass("MyClassA2");
+    private static final MyClass myClassA11 = new MyClass("MyClassA11");
+    private static final MyClass myClassB   = new MyClass("MyClassB");
+    private static final List<MyClass> myClassList = List.of(myClassA, myClassA1, myClassA2, myClassA11, myClassB);
+
+    public static String generateWithDataNamesForFuzzing() {
+        var templateStaticField = Template.make("type", "mutable", (DataName.Type type, Boolean mutable) -> body(
+            addDataName($("field"), type, mutable ? MUTABLE : IMMUTABLE),
+            let("isFinal", mutable ? "" : "final"),
+            """
+            public static #isFinal #type $field = new #type();
+            """
+        ));
+
+        var templateLoad = Template.make("type", (DataName.Type type) -> body(
+            // We only load from the field, so we do not need a mutable one,
+            // we can load from final and non-final fields.
+            // We want to find any field of which we can read the value and store
+            // it in our variable v of our given type. Hence, we can take a field
+            // of the given type or any subtype thereof.
+            let("field", dataNames(MUTABLE_OR_IMMUTABLE).subtypeOf(type).sample().name()),
+            """
+            #type $v = #field;
+            System.out.println("#field: " + $v);
+            """
+        ));
+
+        var templateStore = Template.make("type", (DataName.Type type) -> body(
+            // We are storing to a field, so it better be non-final, i.e. mutable.
+            // We want to store a new instance of our given type to a field. This
+            // field must be of the given type or any supertype.
+            let("field", dataNames(MUTABLE).supertypeOf(type).sample().name()),
+            """
+            #field = new #type();
+            """
+        ));
+
+        var templateClass = Template.make(() -> body(
+            """
+            package p.xyz;
+
+            public class InnerTest10 {
+                // First, we define our classes.
+                public static class MyClassA {}
+                public static class MyClassA1 extends MyClassA {}
+                public static class MyClassA2 extends MyClassA {}
+                public static class MyClassA11 extends MyClassA1 {}
+                public static class MyClassB {}
+
+                // Now, we define a list of static fields. Some of them are final, others not.
+                """,
+                // We must create a CLASS_HOOK and insert the fields to it. Otherwise,
+                // addDataName is restricted to the scope of the templateStaticField. But
+                // with the insertion to CLASS_HOOK, the addDataName goes through the scope
+                // of the templateStaticField out to the scope of the CLASS_HOOK.
+                Hooks.CLASS_HOOK.anchor(
+                    myClassList.stream().map(c ->
+                        (Object)Hooks.CLASS_HOOK.insert(templateStaticField.asToken(c, true))
+                    ).toList(),
+                    myClassList.stream().map(c ->
+                        (Object)Hooks.CLASS_HOOK.insert(templateStaticField.asToken(c, false))
+                    ).toList(),
+                    """
+
+                    public static void main() {
+                        // All fields are still in their initial state.
+                        """,
+                        myClassList.stream().map(c -> templateLoad.asToken(c)).toList(),
+                        """
+                        // Now lets mutate some fields.
+                        """,
+                        myClassList.stream().map(c -> templateStore.asToken(c)).toList(),
+                        """
+                        // And now some fields are different than before.
+                        """,
+                        myClassList.stream().map(c -> templateLoad.asToken(c)).toList(),
+                        """
+                    }
+                    """
+                ),
+            """
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.render();
+
+    }
+
+    // "DataNames" are useful for modeling fields and variables. They hold data,
+    // and we can read and write to them, they may be mutable or immutable.
+    // We now introduce another set of "Names", the "StructuralNames". They are
+    // useful for modeling method names an class names, and possibly more. Anything
+    // that has a fixed name in the Java code, for which mutability is inapplicalbe.
+    // Some use-cases for "StructuralNames":
+    // - Method names. The Type could represent the signature of the static method
+    //                 or the class of the non-static method.
+    // - Class names. Type could represent the signature of the constructor, so
+    //                that we could instantiate random instances.
+    // - try/catch blocks. If a specific Exception is caught in the scope, we could
+    //                     register that Exception, and in the inner scope we can
+    //                     check if there is any "StructuralName" for an Exception
+    //                     and its subtypes - if so, we know the exception would be
+    //                     caught.
+    //
+    // Let us show an examples with Method names. But for simplicity, we assume they
+    // all have the same signature: they take two int arguments and return an int.
+    //
+    // Should you ever work on a test where there are methods with different signatures,
+    // then you would have to very carefully study and design the subtype relation between
+    // methods. You may want to read up about covariance and contravariance. This
+    // example ignores all of that, because we only have "(II)I" methods.
+    private record MyMethodType() implements StructuralName.Type {
+        @Override
+        public boolean isSubtypeOf(StructuralName.Type other) {
+            return other instanceof MyMethodType();
+        }
+
+        @Override
+        public String name() { return "<not used, don't worry>"; }
+    }
+    private static final MyMethodType myMethodType = new MyMethodType();
+
+    public static String generateWithStructuralNamesForMethods() {
+        // Define a method, which takes two ints, returns the result of op.
+        var templateMethod = Template.make("op", (String op) -> body(
+            // Register the method name, so we can later sample.
+            addStructuralName($("methodName"), myMethodType),
+            """
+            public static int $methodName(int a, int b) {
+                return a #op b;
+            }
+            """
+        ));
+
+        var templateSample = Template.make(() -> body(
+            // Sample a random method, and retrieve its name.
+            let("methodName", structuralNames().exactOf(myMethodType).sample().name()),
+            """
+            System.out.println("Calling #methodName with inputs 7 and 11");
+            System.out.println("  result: " + #methodName(7, 11));
+            """
+        ));
+
+        var templateClass = Template.make(() -> body(
+            """
+            package p.xyz;
+
+            public class InnerTest11 {
+                // Let us define some methods that we can sample from later.
+            """,
+            // We must anchor a CLASS_HOOK here, and insert the method definitions to that hook.
+            Hooks.CLASS_HOOK.anchor(
+                // If we directly nest the templateMethod, then the addStructuralName goes to the nested
+                // scope, and is not available at the class scope, i.e. it is not visible
+                // for sampleStructuralName in outside of the templateMethod.
+                // DO NOT DO THIS, the nested addStructuralName will not be visible:
+                "// We cannot sample from the following methods:\n",
+                templateMethod.asToken("+"),
+                templateMethod.asToken("-"),
+                // However, if we insert to the CLASS_HOOK, then the Rendere makes the
+                // scope of the inserted templateMethod transparent, and the addStructuralName
+                // goes out to the scope of the CLASS_HOOK (but no further than that).
+                // RATHER, DO THIS to ensure the addStructuralName is visible:
+                Hooks.CLASS_HOOK.insert(templateMethod.asToken("*")),
+                Hooks.CLASS_HOOK.insert(templateMethod.asToken("|")),
+                Hooks.CLASS_HOOK.insert(templateMethod.asToken("&")),
+                """
+
+                    public static void main() {
+                        // Now, we call some random methods, but only those that were inserted
+                        // to the CLASS_HOOK.
+                        """,
+                        Collections.nCopies(10, templateSample.asToken()),
+                        """
+                    }
+                }
+                """
+            )
         ));
 
         // Render templateClass to String.
