@@ -633,26 +633,19 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
   auto fn_vec_op = [this](int opcode, const VectorRegister &dst, const VectorRegister &a, const VectorRegister &b) {
     switch(opcode) {
       case Op_AddReductionVI:
-        vadduwm(dst, a, b);
-        break;
+        vadduwm(dst, a, b); break;
       case Op_MulReductionVI:
-        vmuluwm(dst, a , b);
-        break;
+        vmuluwm(dst, a , b); break;
       case Op_AndReductionV:
-        vand(dst, a, b);
-        break;
+        vand(dst, a, b); break;
       case Op_OrReductionV:
-        vor(dst, a, b);
-        break;
+        vor(dst, a, b); break;
       case Op_XorReductionV:
-        vxor(dst, a, b);
-        break;
+        vxor(dst, a, b); break;
       case Op_MinReductionV:
-        vminsw(dst, a, b);
-        break;
+        vminsw(dst, a, b); break;
       case Op_MaxReductionV:
-        vmaxsw(dst, a, b);
-        break;
+        vmaxsw(dst, a, b); break;
       default: assert(false, "wrong opcode");
     }
   };
@@ -660,20 +653,15 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
   auto fn_scalar_op = [this](int opcode, const Register &dst, const Register &src) {
     switch (opcode) {
       case Op_AddReductionVI:
-        add(dst, src, dst);
-        break;
+        add(dst, src, dst); break;
       case Op_MulReductionVI:
-        mullw(dst, src, dst);
-        break;
+        mullw(dst, src, dst); break;
       case Op_AndReductionV:
-        andr(dst, src, dst);
-        break;
+        andr(dst, src, dst); break;
       case Op_OrReductionV:
-        orr(dst, src, dst);
-        break;
+        orr(dst, src, dst); break;
       case Op_XorReductionV:
-        xorr(dst, src, dst);
-        break;
+        xorr(dst, src, dst); break;
       case Op_MinReductionV:
         cmpw(CR0, src, dst);
         isel(dst, CR0, Assembler::less, /*invert*/false, src, dst);
