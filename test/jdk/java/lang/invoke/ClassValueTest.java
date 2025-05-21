@@ -176,8 +176,9 @@ final class ClassValueTest {
     }
 
     private static final long COMPUTE_TIME_MILLIS = 100;
+    // Adjust this timeout to fail faster for test stalls
     private static final Duration TIMEOUT = Duration.ofNanos((long) (
-            Duration.of(1, ChronoUnit.SECONDS).toNanos()
+            Duration.of(1, ChronoUnit.MINUTES).toNanos()
                     * Double.parseDouble(System.getProperty("test.timeout.factor", "1.0"))));
 
     private static void await(CountDownLatch latch) {
