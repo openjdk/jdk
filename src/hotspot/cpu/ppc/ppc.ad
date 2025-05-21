@@ -14302,6 +14302,32 @@ instruct vmin_reg(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct vmax_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MaxV src1 src2));
+  format %{ "VMAX  $dst,$src1,$src2\t// vector max" %}
+  size(4);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_INT:
+        __ vmaxsw($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+        break;
+      case T_LONG:
+        __ vmaxsd($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+        break;
+      case T_FLOAT:
+        __ xvmaxsp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+        break;
+      case T_DOUBLE:
+        __ xvmaxdp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct vand(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (AndV src1 src2));
   size(4);
@@ -14363,32 +14389,6 @@ instruct reductionI_min_max(iRegIdst dst, iRegIsrc srcInt, vecX srcVec, vecX tmp
     int opcode = this->ideal_Opcode();
     __ reduceI(opcode, $dst$$Register, $srcInt$$Register, $srcVec$$VectorSRegister->to_vr(),
         $tmp1$$VectorSRegister->to_vr(), $tmp2$$VectorSRegister->to_vr());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct vmax_reg(vecX dst, vecX src1, vecX src2) %{
-  match(Set dst (MaxV src1 src2));
-  format %{ "VMAX  $dst,$src1,$src2\t// vector max" %}
-  size(4);
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    switch (bt) {
-      case T_INT:
-        __ vmaxsw($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
-        break;
-      case T_LONG:
-        __ vmaxsd($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
-        break;
-      case T_FLOAT:
-        __ xvmaxsp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
-        break;
-      case T_DOUBLE:
-        __ xvmaxdp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
   %}
   ins_pipe(pipe_class_default);
 %}
