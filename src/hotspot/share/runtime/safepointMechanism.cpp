@@ -32,7 +32,7 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "utilities/globalDefinitions.hpp"
-#ifdef INCLUDE_JFR
+#if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif
 
