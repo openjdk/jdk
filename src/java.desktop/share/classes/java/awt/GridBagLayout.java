@@ -276,7 +276,6 @@ import java.util.Hashtable;
  * <p>
  * Here is the code that implements the example shown above:
  *
- * <hr>
  * {@snippet lang='java':
  * import java.awt.Button;
  * import java.awt.EventQueue;
@@ -296,7 +295,6 @@ import java.util.Hashtable;
  *     }
  *
  *     public static void main(String[] args) throws Exception {
- *
  *         EventQueue.invokeAndWait(() -> {
  *             Frame frame = new Frame("GridBagLayout");
  *             GridBagLayout gridbag = new GridBagLayout();

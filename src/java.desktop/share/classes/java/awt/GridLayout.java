@@ -35,9 +35,7 @@ import java.io.Serial;
  * For example, the following is a window that lays out six buttons
  * into three rows and two columns:
  *
- * <hr>
  * {@snippet lang='java':
- * <pre>
  * import java.awt.Button;
  * import java.awt.EventQueue;
  * import java.awt.Frame;
@@ -45,21 +43,20 @@ import java.io.Serial;
  *
  * public class GridLayoutExample {
  *
- *   public static void main(String[] args) throws Exception {
- *
- *     EventQueue.invokeAndWait(() -> {
- *        Frame frame = new Frame("GridLayout");
- *        frame.setLayout(new GridLayout(3, 2));
- *        frame.add(new Button("1"));
- *        frame.add(new Button("2"));
- *        frame.add(new Button("3"));
- *        frame.add(new Button("4"));
- *        frame.add(new Button("5"));
- *        frame.add(new Button("6"));
- *        frame.setSize(200, 200);
- *        frame.setVisible(true);
- *     });
- *   }
+ *     public static void main(String[] args) throws Exception {
+ *         EventQueue.invokeAndWait(() -> {
+ *             Frame frame = new Frame("GridLayout");
+ *             frame.setLayout(new GridLayout(3, 2));
+ *             frame.add(new Button("1"));
+ *             frame.add(new Button("2"));
+ *             frame.add(new Button("3"));
+ *             frame.add(new Button("4"));
+ *             frame.add(new Button("5"));
+ *             frame.add(new Button("6"));
+ *             frame.setSize(200, 200);
+ *             frame.setVisible(true);
+ *         });
+ *     }
  * }
  * }
  * <p>

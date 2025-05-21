@@ -56,12 +56,11 @@ import java.io.Serial;
  * <p>
  * <img src="doc-files/FlowLayout-1.png"
  * ALT="Graphic of Layout for Three Buttons"
- * style="margin: 7px 10px;">
+ * >
  * <p>
  * Here is the code for this program:
  *
- * <hr>
- * {@snippet  lang='java':
+ * {@snippet lang='java':
  * import java.awt.Button;
  * import java.awt.EventQueue;
  * import java.awt.FlowLayout;
@@ -69,18 +68,17 @@ import java.io.Serial;
  *
  * public class FlowLayoutExample {
  *
- *   public static void main(String[] args) throws Exception {
- *
- *     EventQueue.invokeAndWait(() -> {
- *        Frame frame = new Frame("FlowLayout");
- *        frame.setLayout(new FlowLayout());
- *        frame.add(new Button("OK"));
- *        frame.add(new Button("Open"));
- *        frame.add(new Button("Close"));
- *        frame.pack();
- *        frame.setVisible(true);
- *     });
- *   }
+ *     public static void main(String[] args) throws Exception {
+ *         EventQueue.invokeAndWait(() -> {
+ *             Frame frame = new Frame("FlowLayout");
+ *             frame.setLayout(new FlowLayout());
+ *             frame.add(new Button("OK"));
+ *             frame.add(new Button("Open"));
+ *             frame.add(new Button("Close"));
+ *             frame.pack();
+ *             frame.setVisible(true);
+ *         });
+ *     }
  * }
  * }
  * <p>

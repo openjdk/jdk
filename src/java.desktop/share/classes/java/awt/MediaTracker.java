@@ -67,7 +67,6 @@ import sun.awt.image.MultiResolutionToolkitImage;
  * <p>
  * Here is an example of using {@code MediaTracker}:
  *
- * <hr>
  * {@snippet lang='java':
  * import java.awt.Color;
  * import java.awt.EventQueue;
@@ -114,7 +113,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  *      public void startAnimation() {
  *          animator = new Thread(this);
  *          animator.start();
- *     }
+ *      }
  *
  *      // Run the animation thread.
  *      // First wait for the background image to fully load

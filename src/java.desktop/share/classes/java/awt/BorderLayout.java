@@ -95,11 +95,10 @@ import java.io.Serial;
  * <img src="doc-files/BorderLayout-1.png" alt="Diagram of a window
  * demonstrating BorderLayout. Each section of the BorderLayout contains a
  * Button corresponding to its position in the layout, one of: North, West,
- * Center, East, or South." style="margin: 7px 10px;">
+ * Center, East, or South.">
  * <p>
  * The code for this program is as follows:
  *
- * <hr>
  * {@snippet lang='java':
  * import java.awt.BorderLayout;
  * import java.awt.Button;
@@ -108,20 +107,19 @@ import java.io.Serial;
  *
  * public class BorderLayoutExample {
  *
- *   public static void main(String[] args) throws Exception {
- *
- *     EventQueue.invokeAndWait(() -> {
- *        Frame frame = new Frame("BorderLayout");
- *        frame.setLayout(new BorderLayout());
- *        frame.add(new Button("North"), BorderLayout.NORTH);
- *        frame.add(new Button("South"), BorderLayout.SOUTH);
- *        frame.add(new Button("East"), BorderLayout.EAST);
- *        frame.add(new Button("West"), BorderLayout.WEST);
- *        frame.add(new Button("Center"), BorderLayout.CENTER);
- *        frame.setSize(300, 300);
- *        frame.setVisible(true);
- *     });
- *   }
+ *     public static void main(String[] args) throws Exception {
+ *         EventQueue.invokeAndWait(() -> {
+ *             Frame frame = new Frame("BorderLayout");
+ *             frame.setLayout(new BorderLayout());
+ *             frame.add(new Button("North"), BorderLayout.NORTH);
+ *             frame.add(new Button("South"), BorderLayout.SOUTH);
+ *             frame.add(new Button("East"), BorderLayout.EAST);
+ *             frame.add(new Button("West"), BorderLayout.WEST);
+ *             frame.add(new Button("Center"), BorderLayout.CENTER);
+ *             frame.setSize(300, 300);
+ *             frame.setVisible(true);
+ *         });
+ *     }
  * }
  * }
  *
