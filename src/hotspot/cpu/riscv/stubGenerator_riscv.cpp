@@ -886,7 +886,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void copy_memory_v(Register s, Register d, Register count, int step) {
     bool is_backward = step < 0;
-    int granularity = uabs(step);
+    int granularity = g_uabs(step);
 
     const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
     assert_different_registers(s, d, cnt, vl, tmp1, tmp2);
@@ -948,7 +948,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     bool is_backwards = step < 0;
-    int granularity = uabs(step);
+    int granularity = g_uabs(step);
 
     const Register src = x30, dst = x31, cnt = x15, tmp3 = x16, tmp4 = x17, tmp5 = x14, tmp6 = x13;
     const Register gct1 = x28, gct2 = x29, gct3 = t2;
@@ -2122,32 +2122,32 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Remaining count is less than 8 bytes and address is heapword aligned.
-    Label L_fill_2, L_fill_4, L_exit1;
+    Label L_fill_1, L_fill_2, L_exit1;
     switch (t) {
       case T_BYTE:
-        __ test_bit(t0, count, 0);
+        __ test_bit(t0, count, 2);
         __ beqz(t0, L_fill_2);
-        __ sb(value, Address(to, 0));
-        __ addi(to, to, 1);
+        __ sw(value, Address(to, 0));
+        __ addi(to, to, 4);
         __ bind(L_fill_2);
         __ test_bit(t0, count, 1);
-        __ beqz(t0, L_fill_4);
+        __ beqz(t0, L_fill_1);
         __ sh(value, Address(to, 0));
         __ addi(to, to, 2);
-        __ bind(L_fill_4);
-        __ test_bit(t0, count, 2);
+        __ bind(L_fill_1);
+        __ test_bit(t0, count, 0);
         __ beqz(t0, L_exit1);
-        __ sw(value, Address(to, 0));
+        __ sb(value, Address(to, 0));
         break;
       case T_SHORT:
-        __ test_bit(t0, count, 0);
-        __ beqz(t0, L_fill_4);
-        __ sh(value, Address(to, 0));
-        __ addi(to, to, 2);
-        __ bind(L_fill_4);
         __ test_bit(t0, count, 1);
-        __ beqz(t0, L_exit1);
+        __ beqz(t0, L_fill_2);
         __ sw(value, Address(to, 0));
+        __ addi(to, to, 4);
+        __ bind(L_fill_2);
+        __ test_bit(t0, count, 0);
+        __ beqz(t0, L_exit1);
+        __ sh(value, Address(to, 0));
         break;
       case T_INT:
         __ beqz(count, L_exit1);

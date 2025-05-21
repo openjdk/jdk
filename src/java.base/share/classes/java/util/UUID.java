@@ -481,7 +481,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         HexDigits.put4(buf, 28, i3 >> 16);
         HexDigits.put4(buf, 32, i3);
         try {
-            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+            return jla.uncheckedNewStringNoRepl(buf, StandardCharsets.ISO_8859_1);
         } catch (CharacterCodingException cce) {
             throw new AssertionError(cce);
         }
