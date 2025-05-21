@@ -110,7 +110,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
                      "%s, Max Old Evacuation: %zu%s, Discretionary additional evacuation: %zu%s, Actual Free: %zu%s.",
                      byte_size_in_proper_unit(max_young_cset), proper_unit_for_byte_size(max_young_cset),
                      byte_size_in_proper_unit(max_old_cset), proper_unit_for_byte_size(max_old_cset),
-		     byte_size_in_proper_unit(shared_reserves), proper_unit_for_byte_size(shared_reserves),
+                     byte_size_in_proper_unit(shared_reserves), proper_unit_for_byte_size(shared_reserves),
                      byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
 
   size_t cur_garbage = cur_young_garbage;

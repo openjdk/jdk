@@ -788,11 +788,11 @@ void ShenandoahRegionPartitions::assert_bounds(bool old_trash_not_in_bounds) {
   assert (beg_off >= _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
           "free empty region (%zd) before the leftmost bound %zd, old_trash_not_in_bounds: %s",
           beg_off, _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-	  old_trash_not_in_bounds? "yes": "no");
+          old_trash_not_in_bounds? "yes": "no");
   assert (end_off <= _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
           "free empty region (%zd) past the rightmost bound %zd, old_trash_not_in_bounds: %s",
           end_off, _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-	  old_trash_not_in_bounds? "yes": "no");
+          old_trash_not_in_bounds? "yes": "no");
 }
 #endif
 
@@ -1102,8 +1102,8 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 #undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
     log_info(gc)("Using new region (%zu) for %s (" PTR_FORMAT "), region affiliation: %s, req affiliation: %s",
-		 r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req),
-		 r->affiliation_name(), req.affiliation_name());
+                 r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req),
+                 r->affiliation_name(), req.affiliation_name());
 #endif
     assert(!r->is_affiliated(), "New region %zu should be unaffiliated", r->index());
 
@@ -1387,10 +1387,10 @@ public:
       r->try_recycle_under_lock();
       assert(!r->is_trash(), "try_recycle_under_lock() should assure that region is recycled");
       if (_old_trash_not_in_bounds &&
-	  r->is_empty() && _partitions->in_free_set(ShenandoahFreeSetPartitionId::OldCollector, r->index())) {
-	// Note: if assertions are not enforced, there's no rush to adjust this interval.  We'll adjust the
-	// interval when we eventually rebuild the free set.
-	_partitions->adjust_interval_for_recycled_old_region_under_lock(r);
+          r->is_empty() && _partitions->in_free_set(ShenandoahFreeSetPartitionId::OldCollector, r->index())) {
+        // Note: if assertions are not enforced, there's no rush to adjust this interval.  We'll adjust the
+        // interval when we eventually rebuild the free set.
+        _partitions->adjust_interval_for_recycled_old_region_under_lock(r);
       }
 #else
       r->try_recycle();
@@ -1889,7 +1889,7 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_cset_regions
   // promotions and evacuations.  The partition between which old memory is reserved for evacuation and
   // which is reserved for promotion is enforced using thread-local variables that prescribe intentions for
   // each PLAB's available memory.
-  
+
   const size_t promoted_reserve = old_generation->get_promoted_reserve();
   const size_t old_evac_reserve = old_generation->get_evacuation_reserve();
   young_reserve_result = young_generation->get_evacuation_reserve();

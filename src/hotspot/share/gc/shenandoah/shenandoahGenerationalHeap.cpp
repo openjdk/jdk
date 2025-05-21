@@ -315,7 +315,6 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       // our branch typically has a much larger remembered set size (i.e. a larger old-gen size).  It seems plausible that
       // the branch is more successful with promoting by shared allocations.  We need to study this further.  May revert
       // this change depending on results of further analysis.
-      
 
       // Reduce, but do not totally eliminate promotion by shared allocation
       static size_t size_threshhold = MIN2(PLAB::max_size(), PLAB::min_size() * 6);
@@ -789,7 +788,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   assert(old_region_deficit == 0 || old_region_surplus == 0, "Only surplus or deficit, never both");
   assert(young_reserve + reserve_for_mixed + reserve_for_promo <= old_available + young_available,
          "Cannot reserve more memory than is available: %zu + %zu + %zu <= %zu + %zu",
-	 young_reserve, reserve_for_mixed, reserve_for_promo, old_available, young_available);
+         young_reserve, reserve_for_mixed, reserve_for_promo, old_available, young_available);
 
   // deficit/surplus adjustments to generation sizes will precede rebuild
   young_generation()->set_evacuation_reserve(young_reserve);
