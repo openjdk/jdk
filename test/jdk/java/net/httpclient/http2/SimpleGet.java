@@ -27,13 +27,11 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm -XX:+CrashOnOutOfMemoryError -Djdk.tracePinnedThreads=full
- *                     SimpleGet
- * @run testng/othervm -XX:+CrashOnOutOfMemoryError -Djdk.tracePinnedThreads=full
+ * @run testng/othervm -XX:+CrashOnOutOfMemoryError SimpleGet
+ * @run testng/othervm -XX:+CrashOnOutOfMemoryError
  *                     -Dsimpleget.repeat=1 -Dsimpleget.chunks=1 -Dsimpleget.requests=1000
  *                     SimpleGet
- * @run testng/othervm -Djdk.tracePinnedThreads=full
- *                     -Dsimpleget.requests=150
+ * @run testng/othervm -Dsimpleget.requests=150
  *                     -Dsimpleget.chunks=16384
  *                     -Djdk.httpclient.redirects.retrylimit=5
  *                     -Djdk.httpclient.HttpClient.log=errors
@@ -48,13 +46,11 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm -XX:+CrashOnOutOfMemoryError -Djdk.tracePinnedThreads=full
- *                     SimpleGet
- * @run testng/othervm -XX:+CrashOnOutOfMemoryError -Djdk.tracePinnedThreads=full
+ * @run testng/othervm -XX:+CrashOnOutOfMemoryError SimpleGet
+ * @run testng/othervm -XX:+CrashOnOutOfMemoryError
  *                     -Dsimpleget.repeat=1 -Dsimpleget.chunks=1 -Dsimpleget.requests=1000
  *                     SimpleGet
- * @run testng/othervm -Djdk.tracePinnedThreads=full
- *                     -Dsimpleget.requests=150
+ * @run testng/othervm -Dsimpleget.requests=150
  *                     -Dsimpleget.chunks=16384
  *                     -Djdk.httpclient.redirects.retrylimit=5
  *                     -Djdk.httpclient.HttpClient.log=errors

@@ -29,7 +29,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError -Djdk.tracePinnedThreads=full
+ * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=90
  *                     -Djdk.httpclient.quic.maxPtoBackoff=10
@@ -52,7 +52,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError -Djdk.tracePinnedThreads=full
+ * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=45
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
@@ -75,7 +75,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError -Djdk.tracePinnedThreads=full
+ * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
  *                     -Djdk.httpclient.quic.idleTimeout=120
  *                     -Djdk.httpclient.keepalive.timeout.h3=120
  *                     -Djdk.test.server.quic.idleTimeout=90
@@ -99,7 +99,6 @@
 // -----------------------------------------------------------------
 // -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
 // -Djdk.httpclient.HttpClient.log=errors,requests,http3,quic
-// -Djdk.tracePinnedThreads=full
 // -Djdk.httpclient.HttpClient.log=requests,errors,quic:retransmit:control,http3
 // -Djdk.httpclient.HttpClient.log=errors,requests,quic:all
 // -Djdk.httpclient.quic.defaultMTU=64000
