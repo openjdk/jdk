@@ -649,6 +649,12 @@ public class IRNode {
         fromAfterCountedLoops(COUNTED_LOOP_MAIN, regex);
     }
 
+    public static final String DECODE_HEAP_OOP_NOT_NULL = PREFIX + "DECODE_HEAP_OOP_NOT_NULL" + POSTFIX;
+    static {
+        String regex = "(decode_heap_oop_not_null ...?,...?)";
+        optoOnly(DECODE_HEAP_OOP_NOT_NULL, regex);
+    }
+
     public static final String DIV = PREFIX + "DIV" + POSTFIX;
     static {
         beforeMatchingNameRegex(DIV, "Div(I|L|F|D)");
@@ -868,6 +874,27 @@ public class IRNode {
     public static final String IS_INFINITE_F = PREFIX + "IS_INFINITE_F" + POSTFIX;
     static {
         beforeMatchingNameRegex(IS_INFINITE_F, "IsInfiniteF");
+    }
+
+    // Only supported on x86.
+    public static final String LEA_P_COMPRESSED_OOP_OFFSET = PREFIX + "LEA_P_COMPRESSED_OOP_OFFSET" + POSTFIX;
+    static {
+        String regex = "(leaq.*# ptr compressedoopoff32)";
+        optoOnly(LEA_P_COMPRESSED_OOP_OFFSET, regex);
+    }
+
+    // Only supported on x86.
+    public static final String LEA_P_8_NARROW = PREFIX + "LEA_P_8_NARROW" + POSTFIX;
+    static {
+        String regex = "(leaq.*# ptr off8narrow)";
+        optoOnly(LEA_P_8_NARROW, regex);
+    }
+
+    // Only supported on x86.
+    public static final String LEA_P_32_NARROW = PREFIX + "LEA_P_32_NARROW" + POSTFIX;
+    static {
+        String regex = "(leaq.*# ptr off32narrow)";
+        optoOnly(LEA_P_32_NARROW, regex);
     }
 
     public static final String LOAD = PREFIX + "LOAD" + POSTFIX;

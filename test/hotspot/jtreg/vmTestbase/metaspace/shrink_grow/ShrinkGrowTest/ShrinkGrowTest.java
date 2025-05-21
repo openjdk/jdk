@@ -230,7 +230,7 @@ public class ShrinkGrowTest {
             URL[] urls = new URL[]{new URL(jarUrl)};
             URLClassLoader cl = new URLClassLoader(urls);
             ShrinkGrowTest.Foo foo = (ShrinkGrowTest.Foo) Proxy.newProxyInstance(cl,
-                    new Class[]{ShrinkGrowTest.Foo.class},
+                    new Class[]{ShrinkGrowTest.StringEqualsHelper.class},
                     new ShrinkGrowTest.FooInvocationHandler(new ShrinkGrowTest.FooBar()));
             loadedClasses.put(jarUrl, foo);
         } catch (java.net.MalformedURLException badThing) {
