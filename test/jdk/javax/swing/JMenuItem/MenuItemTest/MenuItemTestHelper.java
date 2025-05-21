@@ -26,9 +26,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
 import java.awt.Graphics;
-import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
@@ -53,8 +51,8 @@ class MenuItemTestHelper {
             }
         }
 
-        Icon myIcon = new ColoredIcon(Color.RED,10,10);
-        Icon myIcon2 = new ColoredIcon(Color.GREEN,15,10);
+        Icon myIcon = new ColoredIcon(Color.RED, 10, 10);
+        Icon myIcon2 = new ColoredIcon(Color.GREEN, 15, 10);
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(createViewMenu(myIcon, myIcon2));
         menuBar.add(createNoNothingMenu());
@@ -144,22 +142,24 @@ class MenuItemTestHelper {
         return someIcons;
     }
 
-    private record ColoredIcon(Color color, int width,
-                               int height) implements Icon {
+    private record ColoredIcon(Color color, int width, int height)
+            implements Icon {
         @Override
-            public void paintIcon(Component c, Graphics g, int x, int y) {
-                Color oldColor = g.getColor();
-                g.setColor(color);
-                g.fillRect(x, y, width, height);
-                g.setColor(oldColor);
-            }
-            @Override
-            public int getIconWidth() {
-                return width;
-            }
-            @Override
-            public int getIconHeight() {
-                return height;
-            }
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Color oldColor = g.getColor();
+            g.setColor(color);
+            g.fillRect(x, y, width, height);
+            g.setColor(oldColor);
         }
+
+        @Override
+        public int getIconWidth() {
+            return width;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return height;
+        }
+    }
 }

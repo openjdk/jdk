@@ -46,7 +46,7 @@ public class bug4729669 {
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(bug4729669::createTestUI)
-                .position(PassFailJFrame.Position.TOP_LEFT_CORNER)
+                .positionTestUIRightColumn()
                 .logArea()
                 .build()
                 .awaitAndCheck();
