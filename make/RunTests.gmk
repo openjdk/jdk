@@ -583,6 +583,8 @@ define SetMicroValue
   else
     ifneq ($3, )
       $1_$2 := $3
+    else
+      $1_$2 :=
     endif
   endif
 endef
@@ -709,6 +711,8 @@ define SetJtregValue
     else
       ifneq ($3, )
         $1_$2 := $3
+      else
+        $1_$2 :=
       endif
     endif
   endif
@@ -754,7 +758,7 @@ define SetupAOTBody
             cd $$($1_AOT_JDK_OUTPUT_DIR); \
 	    $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
 	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
-	        -Xlog:class+load,cds,cds+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error \
+	        -Xlog:class+load,aot,aot+class=debug:file=$$($1_AOT_JDK_CONF).log -Xlog:cds*=error -Xlog:aot*=error \
 	        -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
 	        TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
 	))
@@ -762,7 +766,7 @@ define SetupAOTBody
 	$$(call LogWarn, AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
 	$$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
 	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
-	        $$($1_VM_OPTIONS) -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log -Xlog:cds*=error \
+	        $$($1_VM_OPTIONS) -Xlog:aot,aot+class=debug:file=$$($1_AOT_JDK_CACHE).log -Xlog:cds*=error -Xlog:aot*=error \
 	        -XX:ExtraSharedClassListFile=$(JDK_UNDER_TEST)/lib/classlist \
 	        -XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
 	))
@@ -869,7 +873,7 @@ define SetupRunJtregTestBody
   # version of the JDK.
   $1_JTREG_BASIC_OPTIONS += -$$($1_JTREG_TEST_MODE) \
       -verbose:$$(JTREG_VERBOSE) -retain:$$(JTREG_RETAIN) \
-      -concurrency:$$($1_JTREG_JOBS) -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR) \
+      -concurrency:$$($1_JTREG_JOBS) \
       -vmoption:-XX:MaxRAMPercentage=$$($1_JTREG_MAX_RAM_PERCENTAGE) \
       -vmoption:-Dtest.boot.jdk="$$(BOOT_JDK)" \
       -vmoption:-Djava.io.tmpdir="$$($1_TEST_TMP_DIR)"
@@ -994,6 +998,7 @@ define SetupRunJtregTestBody
   endif
 
   JTREG_TIMEOUT_FACTOR ?= $$(JTREG_AUTO_TIMEOUT_FACTOR)
+  $1_JTREG_BASIC_OPTIONS += -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR)
 
   clean-outputdirs-$1:
 	$$(call LogWarn, Clean up dirs for $1)
