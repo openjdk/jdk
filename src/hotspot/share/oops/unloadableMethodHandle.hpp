@@ -80,6 +80,7 @@ class UnloadableMethodHandle {
 private:
   enum State {
     EMPTY,
+    PERMANENT,
     WEAK,
     STRONG,
     RELEASED,

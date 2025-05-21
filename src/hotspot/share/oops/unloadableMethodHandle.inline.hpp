@@ -47,7 +47,7 @@ inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) :
     _weak_handle = WeakHandle(Universe::vm_weak(), obj);
     set_state(WEAK);
   } else {
-    set_state(STRONG);
+    set_state(PERMANENT);
   }
   assert(is_safe(), "Should be");
 }
@@ -98,14 +98,18 @@ void UnloadableMethodHandle::release() {
       set_state(RELEASED);
       break;
     }
+    case PERMANENT: {
+      _method = nullptr;
+      set_state(RELEASED);
+      break;
+    }
     case STRONG:
     case WEAK: {
-      // Release only once.
-      // This also coordinates with is_safe check.
+      // Release handles only once.
       SpinLocker locker(this);
-      if (get_state() == STRONG || get_state() == WEAK) {
-        _strong_handle.release(Universe::vm_global());
+      if (get_state() != RELEASED) {
         _weak_handle.release(Universe::vm_weak());
+        _strong_handle.release(Universe::vm_global());
         _method = nullptr;
         set_state(RELEASED);
       }
@@ -115,12 +119,16 @@ void UnloadableMethodHandle::release() {
       ShouldNotReachHere();
   }
 
+  assert(_method == nullptr, "Should be");
+  assert(_weak_handle.is_empty(), "Should be");
+  assert(_strong_handle.is_empty(), "Should be");
   assert(!is_safe(), "Should not be");
 }
 
 bool UnloadableMethodHandle::is_safe() {
   switch (get_state()) {
     case EMPTY:
+    case PERMANENT:
     case STRONG: {
       // Definitely safe.
       return true;
@@ -140,8 +148,8 @@ bool UnloadableMethodHandle::is_safe() {
         return false;
       }
 
-      // Safety 2: Need to take a lock to coordinate with concurrent
-      // release that would change the weak handle state.
+      // Safety 2: Need to take a lock to coordinate with weak handle
+      // modifications at release or make_always_safe.
       SpinLocker locker(this);
       if (get_state() != WEAK) {
         // State changed. Circle back to act accordingly.
@@ -162,6 +170,7 @@ inline void UnloadableMethodHandle::make_always_safe() {
 
   switch (get_state()) {
     case EMPTY:
+    case PERMANENT:
     case STRONG:
     case RELEASED: {
       // No action is needed.
@@ -169,7 +178,6 @@ inline void UnloadableMethodHandle::make_always_safe() {
     }
     case WEAK: {
       // Transition WEAK -> STRONG only once.
-      // Otherwise, this leaks strong handles.
       SpinLocker locker(this);
       if (get_state() == WEAK) {
         oop obj = get_unload_blocker(_method);
