@@ -27,10 +27,11 @@ import java.nio.file.Paths;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import static jdk.test.lib.Utils.*;
 
 /**
  * @test
- * @bug 8264208 8265918
+ * @bug 8264208 8265918 8356985
  * @summary Tests Console.charset() method. "expect" command in Windows/Cygwin
  *          does not work as expected. Ignoring tests on Windows.
  * @requires (os.family == "linux") | (os.family == "mac")
@@ -54,17 +55,14 @@ public class CharsetTest {
             }
 
             // invoking "expect" command
-            var testSrc = System.getProperty("test.src", ".");
-            var testClasses = System.getProperty("test.classes", ".");
-            var jdkDir = System.getProperty("test.jdk");
             OutputAnalyzer output = ProcessTools.executeProcess(
                     "expect",
                     "-n",
-                    testSrc + "/script.exp",
-                    jdkDir + "/bin/java",
+                    TEST_SRC + "/script.exp",
+                    TEST_JDK + "/bin/java",
                     args[0],
                     args[1],
-                    testClasses);
+                    TEST_CLASSES);
             output.reportDiagnosticSummary();
             var eval = output.getExitValue();
             if (eval != 0) {
