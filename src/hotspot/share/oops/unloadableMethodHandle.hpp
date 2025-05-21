@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_UNLOADABLE_METHOD_HANDLE_HPP
 #define SHARE_OOPS_UNLOADABLE_METHOD_HANDLE_HPP
 
+#include "memory/padded.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
 
@@ -84,8 +85,12 @@ private:
     RELEASED,
   } volatile _state;
 
+  // There are lots of writes to this field in common (WEAK) state.
+  // Protect the adjacent fields from false sharing to optimize state queries.
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
   volatile int _spin_lock;
   DEBUG_ONLY(volatile Thread* _spin_lock_owner;)
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, 0);
 
   void spin_lock();
   void spin_unlock();
