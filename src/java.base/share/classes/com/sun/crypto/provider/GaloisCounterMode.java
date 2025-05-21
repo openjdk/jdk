@@ -949,7 +949,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 // NOTE: inPlaceArray does not apply here as direct buffers run
                 // through a byte[] to get to the combined intrinsic
                 if (NIO_ACCESS.getBufferAddress(src) - srcaddr + src.position() >=
-                        NIO_ACCESS.getBufferAddress(dst) - dstaddr + dst.position()) {
+                    NIO_ACCESS.getBufferAddress(dst) - dstaddr + dst.position()) {
                     return dst;
                 }
 
@@ -1603,7 +1603,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                         NIO_ACCESS.acquireSession(dst);
                         try {
                             Unsafe.getUnsafe().setMemory(
-                                    NIO_ACCESS.getBufferAddress(dst),
+                                NIO_ACCESS.getBufferAddress(dst),
                                 len + dst.position(), (byte) 0);
                         } finally {
                             NIO_ACCESS.releaseSession(dst);

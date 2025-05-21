@@ -566,19 +566,13 @@ public class Basic {
         int size = 1024 + rand.nextInt(16000);
         byte[] buf = new byte[size];
         return switch (rand.nextInt(3)) {
-            case 0 -> {
-                ByteBuffer bb = ByteBuffer.allocateDirect(buf.length);
-                bb.put(buf);
-                bb.flip();
-                yield bb;
-            }
+            case 0 -> ByteBuffer.allocateDirect(buf.length)
+                    .put(buf)
+                    .flip();
             case 1 -> ByteBuffer.wrap(buf);
-            case 2 -> {
-                ByteBuffer bb = Arena.ofAuto().allocate(buf.length).asByteBuffer();
-                bb.put(buf);
-                bb.flip();
-                yield bb;
-            }
+            case 2 -> Arena.ofAuto().allocate(buf.length).asByteBuffer()
+                    .put(buf)
+                    .flip();
             default -> throw new InternalError("Should not reach here");
         };
     }
