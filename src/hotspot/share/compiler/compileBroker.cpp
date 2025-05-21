@@ -249,14 +249,14 @@ CompileTaskWrapper::~CompileTaskWrapper() {
     }
     if (free_task) {
       // The task can only be freed once the task lock is released.
-      CompileTask::free(task);
+      delete task;
     }
   } else {
     task->mark_complete();
 
     // By convention, the compiling thread is responsible for
     // recycling a non-blocking CompileTask.
-    CompileTask::free(task);
+    delete task;
   }
 }
 
@@ -381,7 +381,7 @@ void CompileQueue::free_all() {
       // is also certainly unlocked, because, again, there is no waiter.
       // Otherwise, by convention, it's the waiters responsibility to free the task.
       // Put the task back on the freelist.
-      CompileTask::free(current);
+      delete current;
     }
   }
   _first = nullptr;
@@ -1602,8 +1602,7 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
                                                 int                 hot_count,
                                                 CompileTask::CompileReason compile_reason,
                                                 bool                blocking) {
-  CompileTask* new_task = CompileTask::allocate();
-  new_task->initialize(compile_id, method, osr_bci, comp_level,
+  CompileTask* new_task = new CompileTask(compile_id, method, osr_bci, comp_level,
                        hot_count, compile_reason,
                        blocking);
   queue->add(new_task);
@@ -1709,7 +1708,7 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
 
   if (free_task) {
     if (is_compilation_disabled_forever()) {
-      CompileTask::free(task);
+      delete task;
       return;
     }
 
@@ -1721,7 +1720,7 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
     // blocking CompileTask. Since there is only one waiter ever
     // waiting on a CompileTask, we know that no one else will
     // be using this CompileTask; we can free it.
-    CompileTask::free(task);
+    delete task;
   }
 }
 
