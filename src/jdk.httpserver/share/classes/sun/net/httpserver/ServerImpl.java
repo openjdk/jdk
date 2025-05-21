@@ -60,7 +60,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static sun.net.httpserver.Utils.isValidName;
@@ -93,7 +95,7 @@ class ServerImpl {
     private final Set<HttpConnection> rspConnections;
     private List<Event> events;
     private final Object lolock = new Object();
-    private volatile boolean finished = false;
+    private final CountDownLatch finishedLatch = new CountDownLatch(1);
     private volatile boolean terminating = false;
     private boolean bound = false;
     private boolean started = false;
@@ -179,7 +181,7 @@ class ServerImpl {
     }
 
     public void start () {
-        if (!bound || started || finished) {
+        if (!bound || started || isFinishing()) {
             throw new IllegalStateException ("server in wrong state");
         }
         if (executor == null) {
@@ -223,7 +225,7 @@ class ServerImpl {
     }
 
     public final boolean isFinishing() {
-        return finished;
+        return finishedLatch.getCount()==0;
     }
 
     /**
@@ -243,45 +245,50 @@ class ServerImpl {
         logger.log(Level.TRACE, "stopping");
         // posting a stop event, which will flip finished flag if it finishes
         // before the timeout in this method
+        terminating = true;
+
         addEvent(new StopRequestedEvent());
 
-        terminating = true;
         try { schan.close(); } catch (IOException e) {}
         selector.wakeup();
-        long latest = System.nanoTime() + delay * 1000000000L;
-        while (System.nanoTime() < latest) {
-            delay();
-            if (finished) {
-                break;
-            }
-        }
-        logger.log(Level.TRACE, "closing connections");
-        finished = true;
-        selector.wakeup();
-        synchronized (allConnections) {
-            for (HttpConnection c : allConnections) {
-                c.close();
-            }
-        }
-        allConnections.clear();
-        idleConnections.clear();
-        newlyAcceptedConnections.clear();
-        timer.cancel();
-        if (reqRspTimeoutEnabled) {
-            timer1.cancel();
-        }
-        logger.log(Level.TRACE, "connections closed");
 
-        if (dispatcherThread != null && dispatcherThread != Thread.currentThread()) {
-            logger.log(Level.TRACE, "waiting for dispatcher thread");
-            try {
-                dispatcherThread.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.log (Level.TRACE, "ServerImpl.stop: ", e);
+        try {
+            // waiting for the duration of the delay, unless released before
+            finishedLatch.await(delay, TimeUnit.SECONDS);
+
+        } catch (InterruptedException e) {
+            logger.log(Level.TRACE, "Error in awaiting the delay");
+
+        } finally {
+
+            logger.log(Level.TRACE, "closing connections");
+            finishedLatch.countDown();
+            selector.wakeup();
+            synchronized (allConnections) {
+                for (HttpConnection c : allConnections) {
+                    c.close();
+                }
             }
+            allConnections.clear();
+            idleConnections.clear();
+            newlyAcceptedConnections.clear();
+            timer.cancel();
+            if (reqRspTimeoutEnabled) {
+                timer1.cancel();
+            }
+            logger.log(Level.TRACE, "connections closed");
+
+            if (dispatcherThread != null && dispatcherThread != Thread.currentThread()) {
+                logger.log(Level.TRACE, "waiting for dispatcher thread");
+                try {
+                    dispatcherThread.join();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.log(Level.TRACE, "ServerImpl.stop: ", e);
+                }
+            }
+            logger.log(Level.TRACE, "server stopped");
         }
-        logger.log(Level.TRACE, "server stopped");
     }
 
     Dispatcher dispatcher;
@@ -406,10 +413,16 @@ class ServerImpl {
             // Stopping marking the state as finished if stop is requested,
             // termination is in progress and exchange count is 0
             if (r instanceof StopRequestedEvent) {
-                logger.log(Level.TRACE, "Stop event requested");
+                logger.log(Level.TRACE, "Handling Stop Requested Event");
 
-                if (terminating && getExchangeCount() == 0) {
-                    finished = true;
+                // checking if terminating is set to true
+                final boolean terminatingCopy = terminating;
+                assert terminatingCopy;
+
+                if (getExchangeCount() == 0 && reqConnections.isEmpty()) {
+                    finishedLatch.countDown();
+                } else {
+                    logger.log(Level.TRACE, "Some requests are still pending");
                 }
                 return;
             }
@@ -422,8 +435,8 @@ class ServerImpl {
 
                     logger.log(Level.TRACE, "Write Finished");
                     int exchanges = endExchange();
-                    if (terminating && exchanges == 0) {
-                        finished = true;
+                    if (terminating && exchanges == 0 && reqConnections.isEmpty()) {
+                        finishedLatch.countDown();
                     }
                     LeftOverInputStream is = t.getOriginalInputStream();
                     if (!is.isEOF()) {
@@ -473,11 +486,11 @@ class ServerImpl {
         }
 
         public void run() {
-            while (!finished) {
+             while (!isFinishing()) {
                 try {
                     List<Event> list = null;
                     synchronized (lolock) {
-                        if (events.size() > 0) {
+                        if (!events.isEmpty()) {
                             list = events;
                             events = new ArrayList<>();
                         }

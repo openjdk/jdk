@@ -27,7 +27,7 @@ package sun.net.httpserver;
 
 /**
  * Stopping event for the http server.
- * Does not contain ay information about a connection.
+ * The event applies to the whole server and is not tied to any particular exchange.
  */
 class StopRequestedEvent extends Event {
     StopRequestedEvent() {

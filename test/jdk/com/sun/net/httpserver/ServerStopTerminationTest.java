@@ -23,6 +23,7 @@
 
 
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 8304065
  * @summary HttpServer.stop() should terminate immediately if no exchanges are in progress,
  *          else terminate after a timeout
+ * @library /test/lib
  * @run junit/othervm -Djdk.internal.httpclient.debug=err ServerStopTerminationTest
  */
 
@@ -87,7 +89,7 @@ public class ServerStopTerminationTest {
                 complete.await();
                 exchange.sendResponseHeaders(200, 0);
                 exchange.close();
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 throw new IOException(e);
             }
         });
@@ -125,7 +127,7 @@ public class ServerStopTerminationTest {
         log("Complete Exchange triggered");
 
         // Time the shutdown sequence
-        final Duration delayDuration = Duration.ofSeconds(2);
+        final Duration delayDuration = Duration.ofSeconds(Utils.adjustTimeout(5));
         log("Shutdown triggered with the delay of " + delayDuration.getSeconds());
         final long elapsed = timeShutdown(delayDuration);
         log("Shutdown complete");
@@ -157,7 +159,7 @@ public class ServerStopTerminationTest {
 
         // Complete the exchange 10 second into the future.
         // Runs in parallel, so won't block the server stop
-        final Duration exchangeDuration = Duration.ofSeconds(10);
+        final Duration exchangeDuration = Duration.ofSeconds(Utils.adjustTimeout(5));
         completeExchange(exchangeDuration);
         log("Complete Exchange triggered");
 
@@ -181,13 +183,74 @@ public class ServerStopTerminationTest {
     }
 
     /**
+     * Verify that a stop operation with a 1-second delay and a 20-second executor
+     * completes after the delay expires.
+     *
+     * @throws InterruptedException if an unexpected interruption occurs
+     */
+    @Test
+    public void shouldCompeteAfterDelayCustomHandler() throws IOException, InterruptedException {
+
+        // Custom server setup to include the executor
+        log("Changing the server to the server with a custom executor");
+        // Create an HttpServer binding
+        final InetAddress loopbackAddress = InetAddress.getLoopbackAddress();
+        server = HttpServer.create(new InetSocketAddress(loopbackAddress, 0),
+                0,
+                "/", exchange -> {
+                    exchange.sendResponseHeaders(200, 0);
+                    exchange.close();
+                });
+        final Duration executorSleepTime = Duration.ofSeconds(Utils.adjustTimeout(20));
+        server.setExecutor(command -> Thread.ofVirtual().start(() -> {
+            try {
+                // Let the test know the executor was triggered
+                start.countDown();
+                log("Custom executor started, sleeping");
+                // waiting in the executor stage before running the exchange
+                Thread.sleep(executorSleepTime);
+                log("Custom executor sleep complete");
+                command.run();// start the exchange
+
+            } catch (final InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }));
+        // Start server and client
+        server.start();
+        log("Custom setup complete");
+
+        // Initiate an exchange
+        startExchange();
+        // Wait for the server to start the executor
+        start.await();
+        log("Exchange (Executor) started");
+
+        // Time the shutdown sequence
+        final Duration delayDuration = Duration.ofSeconds(1);
+        log("Shutdown triggered with the delay of " + delayDuration.getSeconds());
+        final long elapsed = timeShutdown(delayDuration);
+        log("Shutdown complete");
+
+        // The shutdown should not await the exchange to complete
+        if (elapsed >= executorSleepTime.toNanos()) {
+            fail("HttpServer.stop terminated too late");
+        }
+
+        // The shutdown delay should have expired
+        if (elapsed < delayDuration.toNanos()) {
+            fail("HttpServer.stop terminated before delay");
+        }
+    }
+
+    /**
      * Verify that an HttpServer with no active exchanges terminates
      * before the delay timeout occurs.
      */
     @Test
     public void noActiveExchanges() {
         // With no active exchanges, shutdown should complete immediately
-        final Duration delayDuration = Duration.ofSeconds(1);
+        final Duration delayDuration = Duration.ofSeconds(Utils.adjustTimeout(5));
         final long elapsed = timeShutdown(delayDuration);
         log("Shutting down the server with no exchanges");
         if (elapsed >= delayDuration.toNanos()) {
@@ -235,7 +298,7 @@ public class ServerStopTerminationTest {
                     System.out.println("request completed (" + r + ", " + t + ")");
                     // count the latch down to allow the handler to complete
                     // and the server's dispatcher thread to proceed; The handler
-                    // is called withing the dispatcher thread since we haven't
+                    // is called within the dispatcher thread since we haven't
                     // set any executor on the server side
                     complete.countDown();
                 });
