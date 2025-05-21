@@ -1142,10 +1142,10 @@ class CloneShortLoopPredicatesVisitor : public PredicateVisitor {
   PhaseIdealLoop* const _phase;
 
 public:
-  CloneShortLoopPredicatesVisitor(LoopNode* loop_head,
+  CloneShortLoopPredicatesVisitor(LoopNode* target_loop_head,
                                   const NodeInShortLoopBody& node_in_loop_body,
                                   PhaseIdealLoop* phase)
-    : _clone_predicate_to_loop(loop_head, node_in_loop_body, phase),
+    : _clone_predicate_to_loop(target_loop_head, node_in_loop_body, phase),
       _phase(phase) {
   }
   NONCOPYABLE(CloneShortLoopPredicatesVisitor);
