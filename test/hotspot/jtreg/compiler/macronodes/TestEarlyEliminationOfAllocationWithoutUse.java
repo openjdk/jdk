@@ -25,7 +25,7 @@
  * @test
  * @bug 8327963
  * @summary C2: fix construction of memory graph around Initialize node to prevent incorrect execution if allocation is removed
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestEarlyEliminationOfAllocationWithoutUse
+ * @run main/othervm -XX:-BackgroundCompilation TestEarlyEliminationOfAllocationWithoutUse
  * @run main/othervm TestEarlyEliminationOfAllocationWithoutUse
  */
 
