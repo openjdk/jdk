@@ -66,7 +66,7 @@ inline G1HeapRegion* G1HeapRegionManager::next_region_in_humongous(G1HeapRegion*
   assert(is_available(index), "pre-condition");
   assert(hr->is_humongous(), "next_region_in_humongous should only be called for a humongous region.");
   index++;
-  if (index < reserved_length() && is_available(index) && at(index)->is_continues_humongous()) {
+  if (index < max_reserved_regions() && is_available(index) && at(index)->is_continues_humongous()) {
     return at(index);
   } else {
     return nullptr;

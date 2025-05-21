@@ -359,7 +359,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
       // We managed to find a region by expanding the heap.
       log_debug(gc, ergo, heap)("Heap expansion (humongous allocation request). Allocation request: %zuB",
                                 word_size * HeapWordSize);
-      policy()->record_new_heap_size(num_regions());
+      policy()->record_new_heap_size(active_regions());
     } else {
       // Policy: Potentially trigger a defragmentation GC.
     }
@@ -1031,7 +1031,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
 
   size_t actual_expand_bytes = expanded_by * G1HeapRegion::GrainBytes;
   assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");
-  policy()->record_new_heap_size(num_regions());
+  policy()->record_new_heap_size(active_regions());
 
   return true;
 }
@@ -1040,12 +1040,12 @@ bool G1CollectedHeap::expand_single_region(uint node_index) {
   uint expanded_by = _hrm.expand_on_preferred_node(node_index);
 
   if (expanded_by == 0) {
-    assert(is_maximal_no_gc(), "Should be no regions left, available: %u", _hrm.available());
+    assert(is_maximal_no_gc(), "Should be no regions left, available: %u", _hrm.inactive_regions());
     log_debug(gc, ergo, heap)("Did not expand the heap (heap already fully expanded)");
     return false;
   }
 
-  policy()->record_new_heap_size(num_regions());
+  policy()->record_new_heap_size(active_regions());
   return true;
 }
 
@@ -1061,7 +1061,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
                             shrink_bytes, aligned_shrink_bytes, shrunk_bytes);
   if (num_regions_removed > 0) {
     log_debug(gc, heap)("Uncommittable regions after shrink: %u", num_regions_removed);
-    policy()->record_new_heap_size(num_regions());
+    policy()->record_new_heap_size(active_regions());
   } else {
     log_debug(gc, ergo, heap)("Did not shrink the heap (heap shrinking operation failed)");
   }
@@ -1557,7 +1557,7 @@ void G1CollectedHeap::ref_processing_init() {
 }
 
 size_t G1CollectedHeap::capacity() const {
-  return _hrm.length() * G1HeapRegion::GrainBytes;
+  return _hrm.active_regions() * G1HeapRegion::GrainBytes;
 }
 
 size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
@@ -2217,7 +2217,7 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 
   VirtualSpaceSummary heap_summary = create_heap_space_summary();
   return G1HeapSummary(heap_summary, heap_used, eden_used_bytes, eden_capacity_bytes,
-                       survivor_used_bytes, old_gen_used_bytes, num_regions());
+                       survivor_used_bytes, old_gen_used_bytes, active_regions());
 }
 
 G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {

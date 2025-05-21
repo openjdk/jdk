@@ -1200,7 +1200,7 @@ void G1Policy::update_survivors_policy() {
   // The real maximum survivor size is bounded by the number of regions that can
   // be allocated into.
   _max_survivor_regions = MIN2(desired_max_survivor_regions,
-                               _g1h->num_free_or_available_regions());
+                               _g1h->num_free_or_inactive_regions());
 }
 
 bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) {
@@ -1445,7 +1445,7 @@ uint G1Policy::calc_max_old_cset_length() const {
   // as a percentage of the heap size. I.e., it should bound the
   // number of old regions added to the CSet irrespective of how many
   // of them are available.
-  double result = (double)_g1h->num_regions() * G1OldCSetRegionThresholdPercent / 100;
+  double result = (double)_g1h->active_regions() * G1OldCSetRegionThresholdPercent / 100;
   // Round up to be conservative.
   return (uint)ceil(result);
 }

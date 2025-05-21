@@ -971,7 +971,7 @@ public:
   // But G1CollectedHeap doesn't yet support this.
 
   bool is_maximal_no_gc() const override {
-    return _hrm.available() == 0;
+    return _hrm.inactive_regions() == 0;
   }
 
   // Returns true if an incremental GC should be upgrade to a full gc. This
@@ -981,27 +981,28 @@ public:
   }
 
   // The current number of regions in the heap.
-  uint num_regions() const { return _hrm.length(); }
+  uint active_regions() const { return _hrm.active_regions(); }
 
   // The max number of regions reserved for the heap. Except for static array
   // sizing purposes you probably want to use max_regions().
-  uint max_reserved_regions() const { return _hrm.reserved_length(); }
+  uint max_reserved_regions() const { return _hrm.max_reserved_regions(); }
 
   // Max number of regions that can be committed.
-  uint max_regions() const { return _hrm.max_length(); }
+  uint max_regions() const { return _hrm.max_reserved_regions(); }
 
   // The number of regions that are completely free.
   uint num_free_regions() const { return _hrm.num_free_regions(); }
 
+  // The number of regions that are not completely free.
+  uint num_used_regions() const { return _hrm.num_used_regions(); }
+
   // The number of regions that can be allocated into.
-  uint num_free_or_available_regions() const { return num_free_regions() + _hrm.available(); }
+  uint num_free_or_inactive_regions() const { return _hrm.free_or_inactive_regions(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const {
     return _hrm.get_auxiliary_data_memory_usage();
   }
 
-  // The number of regions that are not completely free.
-  uint num_used_regions() const { return num_regions() - num_free_regions(); }
 
 #ifdef ASSERT
   bool is_on_master_free_list(G1HeapRegion* hr) {

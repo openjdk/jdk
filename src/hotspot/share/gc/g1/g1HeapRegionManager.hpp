@@ -67,7 +67,7 @@ class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
 // * _next_highest_used_hrm_index (not exposed outside this class) is the
 //   highest heap region index +1 for which we have G1HeapRegions.
 // * max_length() returns the maximum number of regions the heap may commit.
-// * reserved_length() returns the maximum number of regions the heap has reserved.
+// * max_reserved_regions() returns the maximum number of regions the heap has reserved.
 //
 
 class G1HeapRegionManager: public CHeapObj<mtGC> {
@@ -221,6 +221,8 @@ public:
     return _free_list.length();
   }
 
+  uint num_used_regions() const { return active_regions() - num_free_regions(); }
+
   uint num_free_regions(uint node_index) const {
     return _free_list.length(node_index);
   }
@@ -229,17 +231,16 @@ public:
     return num_free_regions() * G1HeapRegion::GrainBytes;
   }
 
-  // Return the number of regions available (uncommitted) regions.
-  uint available() const { return max_length() - length(); }
+  // Return the number of regions uncommitted or ready to be uncommitted.
+  uint inactive_regions() const { return max_reserved_regions() - active_regions(); }
 
   // Return the number of regions currently active and available for use.
-  uint length() const { return _committed_map.num_active(); }
+  uint active_regions() const { return _committed_map.num_active(); }
 
   // The number of regions reserved for the heap.
-  uint reserved_length() const { return (uint)_regions.length(); }
+  uint max_reserved_regions() const { return (uint)_regions.length(); }
 
-  // Return maximum number of regions that heap can expand to.
-  uint max_length() const { return reserved_length(); }
+  uint free_or_inactive_regions() const { return num_free_regions() + inactive_regions(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const;
 
