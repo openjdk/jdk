@@ -562,9 +562,6 @@ public class X509Factory extends CertificateFactorySpi {
                 PEMRecord rec;
                 try {
                     rec = Pem.readPEM(is, (c == '-' ? true : false));
-                    if (rec.pem() == null) {
-                        return null;
-                    }
                 } catch (EOFException e) {
                     return null;
                 }

@@ -170,9 +170,6 @@ public final class PEMDecoder {
      */
     private DEREncodable decode(PEMRecord pem) {
         Base64.Decoder decoder = Base64.getMimeDecoder();
-        if (pem.type() == null) {
-            return pem;
-        }
 
         try {
             return switch (pem.type()) {

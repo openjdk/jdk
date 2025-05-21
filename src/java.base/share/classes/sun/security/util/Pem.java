@@ -43,6 +43,7 @@ import java.util.regex.Pattern;
  */
 public class Pem {
     private static final char WS = 0x20;  // Whitespace
+    private static final byte[] CRLF = new byte[] {'\r', '\n'};
 
     // Default algorithm from jdk.epkcs8.defaultAlgorithm in java.security
     public static final String DEFAULT_ALGO;
@@ -235,8 +236,7 @@ public class Pem {
                 case -1 ->
                     throw new EOFException("Incomplete header");
                 case '-' -> hyphen++;
-                case WS, '\t','\r' -> {} // skip whitespace, tab, etc
-                case '\n' -> {}
+                case WS, '\t', '\r', '\n' -> {} // skip whitespace and tab
                 default -> sb.append((char) c);
             }
         } while (hyphen == 0);
@@ -310,11 +310,23 @@ public class Pem {
         return readPEM(is, false);
     }
 
+    private static String pemEncoded(String type, String base64) {
+        return
+            "-----BEGIN " + type + "-----\r\n" +
+            base64 +
+            "-----END " + type + "-----\r\n";
+    }
+
+    /**
+     * Construct a String-based encoding based off the type.  leadingData
+     * is not used with this method.
+     * @return PEM in a string
+     */
     public static String pemEncoded(String type, byte[] der) {
         if (b64Encoder == null) {
-            b64Encoder = Base64.getMimeEncoder(0, new byte[0]);
+            b64Encoder = Base64.getMimeEncoder(64, CRLF);
         }
-        return pemEncoded(new PEMRecord(type, b64Encoder.encodeToString(der)));
+        return pemEncoded(type, b64Encoder.encodeToString(der));
     }
 
     /**
@@ -323,16 +335,10 @@ public class Pem {
      * @return PEM in a string
      */
     public static String pemEncoded(PEMRecord pem) {
-        StringBuilder sb = new StringBuilder(1024);
-        sb.append("-----BEGIN ").append(pem.type()).append("-----");
-        sb.append(System.lineSeparator());
-        sb.append(pem.pem().replaceAll("(.{64})", "$1" +
-            System.lineSeparator()));
-        sb.append(System.lineSeparator());
-        sb.append("-----END ").append(pem.type()).append("-----");
-        sb.append(System.lineSeparator());
-        return sb.toString();
+        String p = pem.pem().replaceAll("(.{64})", "$1\r\n");
+        if (!pem.pem().endsWith("\n")) {
+            return pemEncoded(pem.type(), p + "\r\n");
+        }
+        return pemEncoded(pem.type(), p);
     }
-
-
 }

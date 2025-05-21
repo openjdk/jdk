@@ -320,6 +320,11 @@ class PEMData {
         -----END CERTIFICATE REQUEST-----
         """ + postData, PEMRecord.class);
 
+    final static Pattern CR = Pattern.compile("\r");
+    final static Pattern LF = Pattern.compile("\n");
+    final static Pattern LSDEFAULT = Pattern.compile(System.lineSeparator());
+
+
     public record Entry(String name, String pem, Class clazz, char[] password,
                         byte[] der) {
 
@@ -366,7 +371,8 @@ class PEMData {
 
         Entry makeNoCRLF(String name) {
             return new Entry(name,
-                Pattern.compile(System.lineSeparator()).matcher(pem).replaceAll(""),
+                LF.matcher(CR.matcher(pem).replaceAll("")).
+                    replaceAll(""),
                 clazz, password());
         }
     }
@@ -423,5 +429,48 @@ class PEMData {
 
         failureEntryList.add(new Entry("emptyPEM", "", DEREncodable.class, null));
         failureEntryList.add(new Entry("nullPEM", null, DEREncodable.class, null));
+    }
+
+    static void checkResults(PEMData.Entry entry, String result) {
+        try {
+            checkResults(entry.pem(), result);
+        } catch (AssertionError e) {
+            throw new AssertionError("Encoder PEM mismatch " +
+                entry.name(), e);
+        }
+    }
+
+    static void checkResults(String expected, String result) {
+        // The below matches the \r\n generated PEM with the PEM passed
+        // into the test.
+        String pem = LF.matcher(CR.matcher(expected).replaceAll("")).
+            replaceAll("");
+        result = LF.matcher(CR.matcher(result).replaceAll("")).
+            replaceAll("");
+        try {
+            if (pem.compareTo(result) != 0) {
+                System.out.println("expected:\n" + pem);
+                System.out.println("generated:\n" + result);
+                indexDiff(pem, result);
+            }
+        } catch (AssertionError e) {
+            throw new AssertionError("Encoder PEM mismatch ");
+        }
+    }
+
+    static void indexDiff(String a, String b) {
+        String lenerr = "";
+        int len = a.length();
+        int lenb = b.length();
+        if (len != lenb) {
+            lenerr = ":  Length mismatch: " + len + " vs " + lenb;
+            len = Math.min(len, lenb);
+        }
+        for (int i = 0; i < len; i++) {
+            if (a.charAt(i) != b.charAt(i)) {
+                throw new AssertionError("Char mistmatch, index #" + i +
+                    "  (" + a.charAt(i) + " vs " + b.charAt(i) + ")" + lenerr);
+            }
+        }
     }
 }

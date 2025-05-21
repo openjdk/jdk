@@ -40,15 +40,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.*;
-import java.util.regex.Pattern;
 
 public class PEMEncoderTest {
 
     static Map<String, DEREncodable> keymap;
-    final static Pattern CR = Pattern.compile("\r");
-    final static Pattern LF = Pattern.compile("\n");
-    final static Pattern LSDEFAULT = Pattern.compile(System.lineSeparator());
-
 
     public static void main(String[] args) throws Exception {
         PEMEncoder encoder = PEMEncoder.of();
@@ -90,7 +85,7 @@ public class PEMEncoderTest {
         PEMDecoder d = PEMDecoder.of();
         PEMRecord pemRecord =
             d.decode(PEMData.ed25519ep8.pem(), PEMRecord.class);
-        checkResults(PEMData.ed25519ep8, pemRecord.toString());
+        PEMData.checkResults(PEMData.ed25519ep8, pemRecord.toString());
     }
 
     static Map generateObjKeyMap(List<PEMData.Entry> list) {
@@ -125,7 +120,7 @@ public class PEMEncoderTest {
                 entry.name(), e);
         }
 
-        checkResults(entry, new String(result, StandardCharsets.UTF_8));
+        PEMData.checkResults(entry, new String(result, StandardCharsets.UTF_8));
         System.out.println("PASS: " + entry.name());
     }
 
@@ -139,7 +134,7 @@ public class PEMEncoderTest {
                 entry.name(), e);
         }
 
-        checkResults(entry, result);
+        PEMData.checkResults(entry, result);
         System.out.println("PASS: " + entry.name());
     }
 
@@ -197,44 +192,8 @@ public class PEMEncoderTest {
                 entry.name(), e);
         }
 
-        checkResults(entry, result);
+        PEMData.checkResults(entry, result);
         System.out.println("PASS: " + entry.name());
-    }
-
-    static void checkResults(PEMData.Entry entry, String result) {
-        String pem = new String(entry.pem());
-        // The below matches the \r\n generated PEM with the PEM passed
-        // into the test.
-        pem = CR.matcher(pem).replaceAll("");
-        pem = LF.matcher(pem).replaceAll("");
-        result = LF.matcher(CR.matcher(pem).replaceAll("")).
-            replaceAll("");
-        try {
-            if (pem.compareTo(result) != 0) {
-                System.out.println("expected:\n" + pem);
-                System.out.println("generated:\n" + result);
-                indexDiff(pem, result);
-            }
-        } catch (AssertionError e) {
-            throw new AssertionError("Encoder PEM mismatch " +
-                entry.name(), e);
-        }
-    }
-
-    static void indexDiff(String a, String b) {
-        String lenerr = "";
-        int len = a.length();
-        int lenb = b.length();
-        if (len != lenb) {
-            lenerr = ":  Length mismatch: " + len + " vs " + lenb;
-            len = Math.min(len, lenb);
-        }
-        for (int i = 0; i < len; i++) {
-            if (a.charAt(i) != b.charAt(i)) {
-                throw new AssertionError("Char mistmatch, index #" + i +
-                    "  (" + a.charAt(i) + " vs " + b.charAt(i) + ")" + lenerr);
-            }
-        }
     }
 }
 
