@@ -67,13 +67,14 @@ public class TestTutorial {
         comp.addJavaSourceCode("p.xyz.InnerTest1",  generateWithListOfTokens());
         comp.addJavaSourceCode("p.xyz.InnerTest2",  generateWithTemplateArguments());
         comp.addJavaSourceCode("p.xyz.InnerTest3",  generateWithHashtagAndDollarReplacements());
+        comp.addJavaSourceCode("p.xyz.InnerTest3b", generateWithHashtagAndDollarReplacements2());
         comp.addJavaSourceCode("p.xyz.InnerTest4",  generateWithCustomHooks());
         comp.addJavaSourceCode("p.xyz.InnerTest5",  generateWithLibraryHooks());
         comp.addJavaSourceCode("p.xyz.InnerTest6",  generateWithRecursionAndBindingsAndFuel());
         comp.addJavaSourceCode("p.xyz.InnerTest7",  generateWithDataNamesSimple());
         comp.addJavaSourceCode("p.xyz.InnerTest8",  generateWithDataNamesForFieldsAndVariables());
-        comp.addJavaSourceCode("p.xyz.InnerTest10", generateWithDataNamesForFuzzing());
-        comp.addJavaSourceCode("p.xyz.InnerTest9",  generateWithStructuralNamesForMethods());
+        comp.addJavaSourceCode("p.xyz.InnerTest9", generateWithDataNamesForFuzzing());
+        comp.addJavaSourceCode("p.xyz.InnerTest10",  generateWithStructuralNamesForMethods());
 
         // Compile the source files.
         // Hint: if you want to see the generated source code, you can enable
@@ -85,13 +86,14 @@ public class TestTutorial {
         comp.invoke("p.xyz.InnerTest1",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest2",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest3",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest3b", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest4",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest5",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest6",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest7",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest8",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest9",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest10", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest10",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest9", "main", new Object[] {});
     }
 
     // This example shows the use of various Tokens.
@@ -243,6 +245,42 @@ public class TestTutorial {
                     template2.asToken(5),
                     template4.asToken(),
             """
+                }
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.render();
+    }
+
+    // In some cases, you may want to transform string arguments. You may
+    // be working with types "int" and "long", and want to create names like
+    // "INT_CON" and "LONG_CON".
+    public static String generateWithHashtagAndDollarReplacements2() {
+        // Let us define some final static variables of a specific type.
+        var template1 = Template.make("type", (String type) -> body(
+            // The type (e.g. "int") is lower case, let us create the upper case "INT_CON" from it.
+            let("TYPE_CON", type.toUpperCase() + "_CON"),
+            """
+            static final #type #TYPE_CON = 42;
+            """
+        ));
+
+        // Let's write a simple class to demonstrate that this works, i.e. produces compilable code.
+        var templateClass = Template.make(() -> body(
+            """
+            package p.xyz;
+
+            public class InnerTest3b {
+            """,
+            template1.asToken("int"),
+            template1.asToken("long"),
+            """
+                public static void main() {
+                    if (INT_CON != 42 || LONG_CON != 42) {
+                        throw new RuntimeException("Wrong result!");
+                    }
                 }
             }
             """
@@ -774,7 +812,7 @@ public class TestTutorial {
             """
             package p.xyz;
 
-            public class InnerTest10 {
+            public class InnerTest9 {
                 // First, we define our classes.
                 public static class MyClassA {}
                 public static class MyClassA1 extends MyClassA {}
@@ -882,7 +920,7 @@ public class TestTutorial {
             """
             package p.xyz;
 
-            public class InnerTest9 {
+            public class InnerTest10 {
                 // Let us define some methods that we can sample from later.
             """,
             // We must anchor a CLASS_HOOK here, and insert the method definitions to that hook.
