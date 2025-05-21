@@ -32,7 +32,6 @@ import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -300,18 +299,19 @@ final class SessionTicketExtension {
         }
 
         private static byte[] compress(byte[] input) throws IOException {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            GZIPOutputStream gos = new GZIPOutputStream(baos);
-            final int decompressedLen = input.length;
-            gos.write(input, 0, decompressedLen);
-            gos.finish();
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    GZIPOutputStream gos = new GZIPOutputStream(baos)) {
+                final int decompressedLen = input.length;
+                gos.write(input, 0, decompressedLen);
+                gos.finish();
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.fine("decompressed bytes: " + decompressedLen
-                        + "; compressed bytes: " + baos.size());
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.finest("decompressed bytes: " + decompressedLen
+                            + "; compressed bytes: " + baos.size());
+                }
+
+                return baos.toByteArray();
             }
-
-            return baos.toByteArray();
         }
 
         private static ByteBuffer decompress(ByteBuffer input)
@@ -320,16 +320,17 @@ final class SessionTicketExtension {
             byte[] bytes = new byte[compressedLen];
             input.get(bytes);
 
-            GZIPInputStream gis = new GZIPInputStream(
-                    new ByteArrayInputStream(bytes));
-            byte[] out = gis.readAllBytes();
+            try (GZIPInputStream gis = new GZIPInputStream(
+                    new ByteArrayInputStream(bytes))) {
+                byte[] out = gis.readAllBytes();
 
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.fine("compressed bytes: " + compressedLen
-                        + "; decompressed bytes: " + out.length);
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.finest("compressed bytes: " + compressedLen
+                            + "; decompressed bytes: " + out.length);
+                }
+
+                return ByteBuffer.wrap(out);
             }
-
-            return ByteBuffer.wrap(out);
         }
 
         byte[] getEncoded() {
