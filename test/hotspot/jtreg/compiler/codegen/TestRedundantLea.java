@@ -106,7 +106,6 @@ public class TestRedundantLea {
             }
             case "StoreN" -> {
                 framework = new TestFramework(StoreNTest.class);
-                framework.addFlags("-XX:PrintIdealGraphLevel=2");
                 extraScenarioArgs = new String[] {"-XX:+UseSerialGC", "-XX:+UseParallelGC"};
             }
             default -> {
@@ -292,20 +291,24 @@ class StoreNTest {
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2",
                   IRNode.LEA_P_8_NARROW, "=1",
-                  IRNode.LEA_P_32_NARROW, "=1"},
+                  IRNode.LEA_P_32_NARROW, "=1",
+                  IRNode.MEM2REG_SPILL_COPY, "=3"},
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
     // Test that the peephole worked for leaP(8|32)Narrow
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         counts = {IRNode.LEA_P_8_NARROW, "=1",
-                  IRNode.LEA_P_32_NARROW, "=1"},
+                  IRNode.LEA_P_32_NARROW, "=1",
+                  IRNode.MEM2REG_SPILL_COPY, "=2"},
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2",
-                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2",
+                  IRNode.MEM2REG_SPILL_COPY, "=3"},
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
     // Test that the peephole worked for leaPCompressedOopOffset
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
-        counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2",
+                  IRNode.MEM2REG_SPILL_COPY, "=2"},
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
     public void test() {
         this.helper8bit[OFFSET8BIT_IDX] = new StoreNHelper(CURRENT, OTHER);

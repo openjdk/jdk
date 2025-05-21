@@ -1235,6 +1235,12 @@ public class IRNode {
         beforeMatchingNameRegex(MEMBAR_VOLATILE, "MemBarVolatile");
     }
 
+    public static final String MEM2REG_SPILL_COPY = PREFIX + "MEM2REG_SPILL_COPY" + POSTFIX;
+    static {
+        String regex = "(movl\\s+...?, \\[rsp \\+ .+\\]\\s+# spill)";
+        optoOnly(MEM2REG_SPILL_COPY, regex);
+    }
+
     public static final String MIN = PREFIX + "MIN" + POSTFIX;
     static {
         beforeMatchingNameRegex(MIN, "Min(I|L)");
