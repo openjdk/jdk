@@ -85,6 +85,12 @@ public final class Services {
      */
     public static Map<String, String> getSavedProperties() {
         checkJVMCIEnabled();
+        if (!IS_IN_NATIVE_IMAGE && Services.class.getClassLoader() != null) {
+            // JVMCI is not loaded by the boot class loader so the native methods
+            // called by initProperties will fail to link. This happens when building
+            // libgraal and JVMCI is loaded by the libgraal class loader.
+            return VM.getSavedProperties();
+        }
         if (savedProperties == null) {
             synchronized (Services.class) {
                 if (savedProperties == null) {
