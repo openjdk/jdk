@@ -54,6 +54,7 @@ public class TestUseCompressedOopsFlagsWithUlimit {
     args.add("-XX:MaxRAM=" + maxram);
     args.add("-XX:MaxRAMPercentage=" + maxrampercent);
     args.add("-XX:+PrintFlagsFinal");
+    args.add("-Xint");
     args.add("-version");
 
     // Convert bytes to kbytes for ulimit -v

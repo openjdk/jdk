@@ -85,6 +85,7 @@ public class alloc001 {
                 "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                 "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("alloc001"),
                 "-XX:CompressedClassSpaceSize=64m",
+                "-Xint",
                 Test.class.getName()
         ));
         cmd = escapeCmd(cmd);
