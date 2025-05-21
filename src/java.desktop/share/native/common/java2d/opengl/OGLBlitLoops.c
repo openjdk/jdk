@@ -499,9 +499,9 @@ OGLBlitLoops_IsoBlit(JNIEnv *env,
 
         J2dTraceLn(J2D_TRACE_VERBOSE, "  texture=%d hint=%d", texture, hint);
         J2dTraceLn(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d",
-                    sx1, sy1, sx2, sy2);
+                   sx1, sy1, sx2, sy2);
         J2dTraceLn(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f",
-                    dx1, dy1, dx2, dy2);
+                   dx1, dy1, dx2, dy2);
 
         if (texture) {
             GLint glhint = (hint == OGLSD_XFORM_BILINEAR) ? GL_LINEAR :
@@ -626,11 +626,11 @@ OGLBlitLoops_Blit(JNIEnv *env,
             }
 
             J2dTraceLn(J2D_TRACE_VERBOSE, "  texture=%d srctype=%d hint=%d",
-                        texture, srctype, hint);
+                       texture, srctype, hint);
             J2dTraceLn(J2D_TRACE_VERBOSE, "  sx1=%d sy1=%d sx2=%d sy2=%d",
-                        sx1, sy1, sx2, sy2);
+                       sx1, sy1, sx2, sy2);
             J2dTraceLn(J2D_TRACE_VERBOSE, "  dx1=%f dy1=%f dx2=%f dy2=%f",
-                        dx1, dy1, dx2, dy2);
+                       dx1, dy1, dx2, dy2);
 
             // Note: we will calculate x/y positions in the raster manually
             j2d_glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
@@ -822,9 +822,9 @@ OGLBlitLoops_SurfaceToSwBlit(JNIEnv *env, OGLContext *oglc,
 #endif
 
             J2dTraceLn(J2D_TRACE_VERBOSE, "  sx=%d sy=%d w=%d h=%d",
-                        srcx, srcy, width, height);
+                       srcx, srcy, width, height);
             J2dTraceLn(J2D_TRACE_VERBOSE, "  dx=%d dy=%d",
-                        dstx, dsty);
+                       dstx, dsty);
 
             // this accounts for lower-left origin of the source region
             srcx = srcOps->xOffset + srcx;
@@ -865,9 +865,9 @@ OGLBlitLoops_CopyArea(JNIEnv *env,
     RESET_PREVIOUS_OP();
 
     J2dTraceLn(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d",
-                x, y, width, height);
+               x, y, width, height);
     J2dTraceLn(J2D_TRACE_VERBOSE, "  dx=%d dy=%d",
-                dx, dy);
+               dx, dy);
 
     srcBounds.x1 = x;
     srcBounds.y1 = y;

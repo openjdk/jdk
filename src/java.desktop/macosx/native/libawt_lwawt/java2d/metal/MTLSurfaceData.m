@@ -42,7 +42,9 @@ static jboolean MTLSurfaceData_initTexture(BMTLSDOps *bmtlsdo, jboolean isOpaque
             return JNI_FALSE;
         }
         if (width <= 0 || height <= 0) {
-            J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLSurfaceData_initTexture: texture dimensions is incorrect, w=%d, h=%d", width, height);
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "MTLSurfaceData_initTexture: texture dimensions is incorrect, w=%d, h=%d",
+                          width, height);
             return JNI_FALSE;
         }
 
@@ -62,8 +64,9 @@ static jboolean MTLSurfaceData_initTexture(BMTLSDOps *bmtlsdo, jboolean isOpaque
         width = (width <= MTL_GPU_FAMILY_MAC_TXT_SIZE) ? width : 0;
         height = (height <= MTL_GPU_FAMILY_MAC_TXT_SIZE) ? height : 0;
 
-        J2dTraceLn(J2D_TRACE_VERBOSE, "  desired texture dimensions: w=%d h=%d max=%d",
-                width, height, MTL_GPU_FAMILY_MAC_TXT_SIZE);
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "  desired texture dimensions: w=%d h=%d max=%d",
+                   width, height, MTL_GPU_FAMILY_MAC_TXT_SIZE);
 
         // if either dimension is 0, we cannot allocate a texture with the
         // requested dimensions
@@ -93,7 +96,9 @@ static jboolean MTLSurfaceData_initTexture(BMTLSDOps *bmtlsdo, jboolean isOpaque
         bmtlsdo->height = height;
         bmtlsdo->drawableType = rtt ? MTLSD_RT_TEXTURE : MTLSD_TEXTURE;
 
-        J2dTraceLn(J2D_TRACE_VERBOSE, "MTLSurfaceData_initTexture: w=%d h=%d bp=%p [tex=%p] opaque=%d rtt=%d", width, height, bmtlsdo, bmtlsdo->pTexture, isOpaque, rtt);
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "MTLSurfaceData_initTexture: w=%d h=%d bp=%p [tex=%p] opaque=%d rtt=%d",
+                   width, height, bmtlsdo, bmtlsdo->pTexture, isOpaque, rtt);
         return JNI_TRUE;
     }
 }
@@ -167,7 +172,8 @@ MTLSD_SetNativeDimensions(JNIEnv *env, BMTLSDOps *mtlsdo,
 void
 MTLSD_Delete(JNIEnv *env, BMTLSDOps *bmtlsdo)
 {
-    J2dTraceLn(J2D_TRACE_VERBOSE, "MTLSD_Delete: type=%d %p [tex=%p]", bmtlsdo->drawableType, bmtlsdo, bmtlsdo->pTexture);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "MTLSD_Delete: type=%d %p [tex=%p]",
+               bmtlsdo->drawableType, bmtlsdo, bmtlsdo->pTexture);
     if (bmtlsdo->drawableType == MTLSD_WINDOW) {
         bmtlsdo->drawableType = MTLSD_UNDEFINED;
     } else if (
@@ -275,7 +281,8 @@ MTLSD_InitMTLWindow(JNIEnv *env, BMTLSDOps *bmtlsdo)
             bmtlsdo->height = surfaceBounds.size.height;
     JNI_COCOA_EXIT(env);
 
-    J2dTraceLn(J2D_TRACE_VERBOSE, "  created window: w=%d h=%d", bmtlsdo->width, bmtlsdo->height);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  created window: w=%d h=%d",
+               bmtlsdo->width, bmtlsdo->height);
     return JNI_TRUE;
 }
 

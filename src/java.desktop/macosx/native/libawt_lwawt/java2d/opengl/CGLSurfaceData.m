@@ -199,7 +199,8 @@ OGLSD_MakeOGLContextCurrent(JNIEnv *env, OGLSDOps *srcOps, OGLSDOps *dstOps)
 
     CGLSDOps *dstCGLOps = (CGLSDOps *)dstOps->privOps;
 
-    J2dTraceLn(J2D_TRACE_VERBOSE, "  src: %d %p dst: %d %p", srcOps->drawableType, srcOps, dstOps->drawableType, dstOps);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  src: %d %p dst: %d %p",
+               srcOps->drawableType, srcOps, dstOps->drawableType, dstOps);
 
     OGLContext *oglc = dstCGLOps->configInfo->context;
     if (oglc == NULL) {

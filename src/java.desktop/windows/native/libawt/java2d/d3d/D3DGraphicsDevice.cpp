@@ -319,16 +319,16 @@ Java_sun_java2d_d3d_D3DGraphicsDevice_configDisplayModeNative
         }
     } else {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
-                       "D3DGD_configDisplayModeNative: unsupported depth: %d",
-                       bitDepth);
+                      "D3DGD_configDisplayModeNative: unsupported depth: %d",
+                      bitDepth);
         return;
     }
 
     J2dTraceLn(J2D_TRACE_VERBOSE, "  changing to dm: %dx%dx%d@%d",
-                newParams.BackBufferWidth, newParams.BackBufferHeight,
-                bitDepth, refreshRate);
+               newParams.BackBufferWidth, newParams.BackBufferHeight,
+               bitDepth, refreshRate);
     J2dTraceLn(J2D_TRACE_VERBOSE, "  selected backbuffer format: %d",
-                newParams.BackBufferFormat);
+               newParams.BackBufferFormat);
 
     res = pCtx->ConfigureContext(&newParams);
     if (SUCCEEDED(res)) {
@@ -371,8 +371,8 @@ Java_sun_java2d_d3d_D3DGraphicsDevice_getCurrentDisplayModeNative
             case D3DFMT_X1R5G5B5: bitDepth = 16; break;
         }
         J2dTraceLn(J2D_TRACE_VERBOSE,
-                    "  current dm: %dx%dx%d@%d",
-                    mode.Width, mode.Height, bitDepth, mode.RefreshRate);
+                   "  current dm: %dx%dx%d@%d",
+                   mode.Width, mode.Height, bitDepth, mode.RefreshRate);
         ret = CreateDisplayMode(env, mode.Width, mode.Height, bitDepth,
                                 mode.RefreshRate);
     }
@@ -419,7 +419,7 @@ Java_sun_java2d_d3d_D3DGraphicsDevice_enumDisplayModesNative
                     case D3DFMT_X1R5G5B5: bitDepth = 16; break;
                 }
                 J2dTraceLn(J2D_TRACE_VERBOSE, "  found dm: %dx%dx%d@%d",
-                            mode.Width, mode.Height, bitDepth,mode.RefreshRate);
+                           mode.Width, mode.Height, bitDepth,mode.RefreshRate);
                 addDisplayMode(env, arrayList, mode.Width, mode.Height,
                                bitDepth, mode.RefreshRate);
             }

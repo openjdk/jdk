@@ -97,7 +97,7 @@ GLXGC_InitGLX()
     // server does not support GLX 1.3, then we will find that out later
     // when we attempt to create a GLXFBConfig)
     J2dRlsTraceLn(J2D_TRACE_INFO,
-                   "GLXGC_InitGLX: client GLX version=%s", version);
+                  "GLXGC_InitGLX: client GLX version=%s", version);
     if (!((version[0] == '1' && version[2] >= '3') || (version[0] > '1'))) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
                       "GLXGC_InitGLX: invalid GLX version; 1.3 is required");
@@ -225,7 +225,7 @@ GLXGC_InitFBConfig(JNIEnv *env, jint screennum, VisualID visualid)
     int minDepthPlusStencil = 512;
 
     J2dRlsTraceLn(J2D_TRACE_INFO, "GLXGC_InitFBConfig: scn=%d vis=0x%x",
-                   screennum, visualid);
+                  screennum, visualid);
 
     // find all fbconfigs for this screen with the provided attributes
     fbconfigs = j2d_glXChooseFBConfig(awt_display, screennum,
@@ -276,8 +276,8 @@ GLXGC_InitFBConfig(JNIEnv *env, jint screennum, VisualID visualid)
                                      GLX_ALPHA_SIZE, &alpha);
 
             J2dRlsTrace(J2D_TRACE_VERBOSE,
-                "[V]     id=0x%x db=%d alpha=%d depth=%d stencil=%d valid=",
-                         fbvisualid, db, alpha, depth, stencil);
+                        "[V]     id=0x%x db=%d alpha=%d depth=%d stencil=%d valid=",
+                        fbvisualid, db, alpha, depth, stencil);
 
             if ((dtype & GLX_WINDOW_BIT) &&
                 (dtype & GLX_PBUFFER_BIT) &&
@@ -363,8 +363,8 @@ GLXGC_FindBestVisual(JNIEnv *env, jint screen)
     XFree(xvi);
 
     J2dRlsTraceLn(J2D_TRACE_INFO,
-        "GLXGC_FindBestVisual: chose 0x%x as the best visual for screen %d",
-                   visualid, screen);
+                  "GLXGC_FindBestVisual: chose 0x%x as the best visual for screen %d",
+                  visualid, screen);
 
     return visualid;
 }
@@ -511,8 +511,8 @@ Java_sun_java2d_opengl_GLXGraphicsConfig_getGLXConfigInfo(JNIEnv *env,
     j2d_glXMakeContextCurrent(awt_display, None, None, NULL);
 
     J2dRlsTraceLn(J2D_TRACE_INFO,
-        "GLXGraphicsConfig_getGLXConfigInfo: OpenGL version=%s",
-                   (versionstr == NULL) ? "null" : (char *)versionstr);
+                  "GLXGraphicsConfig_getGLXConfigInfo: OpenGL version=%s",
+                  (versionstr == NULL) ? "null" : (char *)versionstr);
 
     if (!OGLContext_IsVersionSupported(versionstr)) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,

@@ -213,8 +213,8 @@ OGLSD_MakeOGLContextCurrent(JNIEnv *env, OGLSDOps *srcOps, OGLSDOps *dstOps)
     J2dTraceLn(J2D_TRACE_INFO, "OGLSD_MakeOGLContextCurrent");
 
     J2dTraceLn(J2D_TRACE_VERBOSE, "  src: %d %p dst: %d %p",
-                srcOps->drawableType, srcOps,
-                dstOps->drawableType, dstOps);
+               srcOps->drawableType, srcOps,
+               dstOps->drawableType, dstOps);
 
     oglc = dstWGLOps->configInfo->context;
     if (oglc == NULL) {
@@ -355,7 +355,7 @@ OGLSD_InitOGLWindow(JNIEnv *env, OGLSDOps *oglsdo)
     wglsdo->pbufferDC = 0;
 
     J2dTraceLn(J2D_TRACE_VERBOSE, "  created window: w=%d h=%d",
-                oglsdo->width, oglsdo->height);
+               oglsdo->width, oglsdo->height);
 
     return JNI_TRUE;
 }

@@ -88,10 +88,10 @@ OGLContext_SetViewport(OGLSDOps *srcOps, OGLSDOps *dstOps)
     jint height = dstOps->height;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLContext_SetViewport: w=%d h=%d read=%s draw=%s",
-                width, height,
-                OGLC_ACTIVE_BUFFER_NAME(srcOps->activeBuffer),
-                OGLC_ACTIVE_BUFFER_NAME(dstOps->activeBuffer));
+               "OGLContext_SetViewport: w=%d h=%d read=%s draw=%s",
+               width, height,
+               OGLC_ACTIVE_BUFFER_NAME(srcOps->activeBuffer),
+               OGLC_ACTIVE_BUFFER_NAME(dstOps->activeBuffer));
 
     // set the viewport and projection matrix
     j2d_glViewport(dstOps->xOffset, dstOps->yOffset,
@@ -163,7 +163,7 @@ OGLContext_SetSurfaces(JNIEnv *env, jlong pSrc, jlong pDst)
     }
 
     J2dTraceLn(J2D_TRACE_VERBOSE, "  srctype=%d dsttype=%d",
-                srcOps->drawableType, dstOps->drawableType);
+               srcOps->drawableType, dstOps->drawableType);
 
     if (dstOps->drawableType == OGLSD_TEXTURE) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
@@ -231,8 +231,8 @@ OGLContext_SetRectClip(OGLContext *oglc, OGLSDOps *dstOps,
     jint height = y2 - y1;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLContext_SetRectClip: x=%d y=%d w=%d h=%d",
-                x1, y1, width, height);
+               "OGLContext_SetRectClip: x=%d y=%d w=%d h=%d",
+               x1, y1, width, height);
 
     RETURN_IF_NULL(dstOps);
     RETURN_IF_NULL(oglc);
@@ -378,7 +378,7 @@ OGLContext_SetAlphaComposite(OGLContext *oglc,
                              jint rule, jfloat extraAlpha, jint flags)
 {
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLContext_SetAlphaComposite: flags=%d", flags);
+               "OGLContext_SetAlphaComposite: flags=%d", flags);
 
     RETURN_IF_NULL(oglc);
     CHECK_PREVIOUS_OP(OGL_STATE_CHANGE);
@@ -399,11 +399,11 @@ OGLContext_SetAlphaComposite(OGLContext *oglc,
         (flags & OGLC_SRC_IS_OPAQUE))
     {
         J2dTraceLn(J2D_TRACE_VERBOSE,
-                    "  disabling alpha comp: rule=%d ea=1.0 src=opq", rule);
+                   "  disabling alpha comp: rule=%d ea=1.0 src=opq", rule);
         j2d_glDisable(GL_BLEND);
     } else {
         J2dTraceLn(J2D_TRACE_VERBOSE,
-                    "  enabling alpha comp: rule=%d ea=%f", rule, extraAlpha);
+                   "  enabling alpha comp: rule=%d ea=%f", rule, extraAlpha);
         j2d_glEnable(GL_BLEND);
         j2d_glBlendFunc(StdBlendRules[rule].src, StdBlendRules[rule].dst);
     }
@@ -422,7 +422,7 @@ void
 OGLContext_SetXorComposite(OGLContext *oglc, jint xorPixel)
 {
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLContext_SetXorComposite: xorPixel=%08x", xorPixel);
+               "OGLContext_SetXorComposite: xorPixel=%08x", xorPixel);
 
     RETURN_IF_NULL(oglc);
     CHECK_PREVIOUS_OP(OGL_STATE_CHANGE);
@@ -498,11 +498,11 @@ OGLContext_SetTransform(OGLContext *oglc,
     oglc->xformMatrix[13] = m12;
 
     J2dTraceLn(J2D_TRACE_VERBOSE, "  [%lf %lf %lf]",
-                oglc->xformMatrix[0], oglc->xformMatrix[4],
-                oglc->xformMatrix[12]);
+               oglc->xformMatrix[0], oglc->xformMatrix[4],
+               oglc->xformMatrix[12]);
     J2dTraceLn(J2D_TRACE_VERBOSE, "  [%lf %lf %lf]",
-                oglc->xformMatrix[1], oglc->xformMatrix[5],
-                oglc->xformMatrix[13]);
+               oglc->xformMatrix[1], oglc->xformMatrix[5],
+               oglc->xformMatrix[13]);
 
     j2d_glMatrixMode(GL_MODELVIEW);
     j2d_glLoadMatrixd(oglc->xformMatrix);
@@ -635,8 +635,8 @@ OGLContext_IsExtensionAvailable(const char *extString, char *extName)
     }
 
     J2dRlsTraceLn(J2D_TRACE_INFO,
-                   "OGLContext_IsExtensionAvailable: %s=%s",
-                   extName, ret ? "true" : "false");
+                  "OGLContext_IsExtensionAvailable: %s=%s",
+                  extName, ret ? "true" : "false");
 
     return ret;
 }
@@ -752,8 +752,8 @@ OGLContext_IsLCDShaderSupportAvailable(JNIEnv *env,
     j2d_glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS_ARB, &maxTexUnits);
     if (maxTexUnits < 2) {
         J2dRlsTraceLn(J2D_TRACE_INFO,
-            "OGLContext_IsLCDShaderSupportAvailable: not enough tex units (%d)",
-            maxTexUnits);
+                      "OGLContext_IsLCDShaderSupportAvailable: not enough tex units (%d)",
+                      maxTexUnits);
     }
 
     J2dRlsTraceLn(J2D_TRACE_INFO,
@@ -982,8 +982,8 @@ OGLContext_CreateFragmentProgram(const char *fragmentShaderSource)
         char infoLog[1024];
         j2d_glGetInfoLogARB(fragmentShader, 1024, NULL, infoLog);
         J2dRlsTraceLn(J2D_TRACE_WARNING,
-            "OGLContext_CreateFragmentProgram: compiler msg (%d):\n%s",
-            infoLogLength, infoLog);
+                      "OGLContext_CreateFragmentProgram: compiler msg (%d):\n%s",
+                      infoLogLength, infoLog);
     }
 
     if (!success) {
@@ -1014,8 +1014,8 @@ OGLContext_CreateFragmentProgram(const char *fragmentShaderSource)
         char infoLog[1024];
         j2d_glGetInfoLogARB(fragmentProgram, 1024, NULL, infoLog);
         J2dRlsTraceLn(J2D_TRACE_WARNING,
-            "OGLContext_CreateFragmentProgram: linker msg (%d):\n%s",
-            infoLogLength, infoLog);
+                      "OGLContext_CreateFragmentProgram: linker msg (%d):\n%s",
+                      infoLogLength, infoLog);
     }
 
     if (!success) {

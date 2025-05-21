@@ -251,7 +251,8 @@ extern void initSamplers(id<MTLDevice> device);
         return NULL;
     }
 
-    J2dTraceLn(J2D_TRACE_VERBOSE, "MTLContext_SetSurfaces: bsrc=%p (tex=%p type=%d), bdst=%p (tex=%p type=%d)",
+    J2dTraceLn(J2D_TRACE_VERBOSE,
+               "MTLContext_SetSurfaces: bsrc=%p (tex=%p type=%d), bdst=%p (tex=%p type=%d)",
                srcOps, srcOps->pTexture, srcOps->drawableType,
                dstOps, dstOps->pTexture, dstOps->drawableType);
 
@@ -318,7 +319,9 @@ extern void initSamplers(id<MTLDevice> device);
 
 - (void)setAlphaCompositeRule:(jint)rule extraAlpha:(jfloat)extraAlpha
                         flags:(jint)flags {
-    J2dTraceLn(J2D_TRACE_INFO, "MTLContext_SetAlphaComposite: rule=%d, extraAlpha=%1.2f, flags=%d", rule, extraAlpha, flags);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLContext_SetAlphaComposite: rule=%d, extraAlpha=%1.2f, flags=%d",
+               rule, extraAlpha, flags);
 
     [_composite setRule:rule extraAlpha:extraAlpha];
 }
@@ -359,7 +362,10 @@ extern void initSamplers(id<MTLDevice> device);
 }
 
 - (void)setColorPaint:(int)pixel {
-    J2dTraceLn(J2D_TRACE_INFO, "MTLContext.setColorPaint: pixel=%08x [r=%d g=%d b=%d a=%d]", pixel, (pixel >> 16) & (0xFF), (pixel >> 8) & 0xFF, (pixel) & 0xFF, (pixel >> 24) & 0xFF);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLContext.setColorPaint: pixel=%08x [r=%d g=%d b=%d a=%d]",
+               pixel, (pixel >> 16) & (0xFF), (pixel >> 8) & 0xFF,
+               (pixel) & 0xFF, (pixel >> 24) & 0xFF);
     self.paint = [[[MTLColorPaint alloc] initWithColor:pixel] autorelease];
 }
 

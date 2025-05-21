@@ -136,8 +136,8 @@ OGLBufImgOps_CreateConvolveProgram(jint flags)
     char finalSource[2000];
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLBufImgOps_CreateConvolveProgram: flags=%d",
-                flags);
+               "OGLBufImgOps_CreateConvolveProgram: flags=%d",
+               flags);
 
     if (IS_SET(CONVOLVE_EDGE_ZERO_FILL)) {
         // EDGE_ZERO_FILL: fill in zero at the edges
@@ -190,8 +190,8 @@ OGLBufImgOps_EnableConvolveOp(OGLContext *oglc, jlong pSrcOps,
     jint flags = 0;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLBufImgOps_EnableConvolveOp: kernelW=%d kernelH=%d",
-                kernelWidth, kernelHeight);
+               "OGLBufImgOps_EnableConvolveOp: kernelW=%d kernelH=%d",
+               kernelWidth, kernelHeight);
 
     RETURN_IF_NULL(oglc);
     RETURN_IF_NULL(srcOps);
@@ -351,8 +351,8 @@ OGLBufImgOps_CreateRescaleProgram(jint flags)
     char finalSource[2000];
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLBufImgOps_CreateRescaleProgram: flags=%d",
-                flags);
+               "OGLBufImgOps_CreateRescaleProgram: flags=%d",
+               flags);
 
     if (IS_SET(RESCALE_NON_PREMULT)) {
         preRescale  = "srcColor.rgb /= srcColor.a;";
@@ -573,8 +573,8 @@ OGLBufImgOps_CreateLookupProgram(jint flags)
     char finalSource[2000];
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLBufImgOps_CreateLookupProgram: flags=%d",
-                flags);
+               "OGLBufImgOps_CreateLookupProgram: flags=%d",
+               flags);
 
     if (IS_SET(LOOKUP_USE_SRC_ALPHA)) {
         // when numComps is 1 or 3, the alpha is not looked up in the table;
@@ -633,8 +633,8 @@ OGLBufImgOps_EnableLookupOp(OGLContext *oglc, jlong pSrcOps,
     jint flags = 0;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLBufImgOps_EnableLookupOp: short=%d num=%d len=%d off=%d",
-                shortData, numBands, bandLength, offset);
+               "OGLBufImgOps_EnableLookupOp: short=%d num=%d len=%d off=%d",
+               shortData, numBands, bandLength, offset);
 
     for (i = 0; i < 4; i++) {
         bands[i] = NULL;

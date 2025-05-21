@@ -76,8 +76,8 @@ do {                      \
  */
 #define ACT_IF_NULL(ACTION, value)         \
     if ((value) == NULL) {                 \
-        J2dTraceLn(J2D_TRACE_ERROR,       \
-                    "%s is null in %s:%d", #value, __FILE__, __LINE__); \
+        J2dTraceLn(J2D_TRACE_ERROR,        \
+                   "%s is null in %s:%d", #value, __FILE__, __LINE__); \
         ACTION;                            \
     } else do { } while (0)
 #define RETURN_IF_NULL(value)   ACT_IF_NULL(return, value)

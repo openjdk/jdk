@@ -275,9 +275,9 @@ Java_sun_java2d_loops_DrawParallelogram_DrawParallelogram
 #ifdef DEBUG
                 if ((numactive & 1) != 0) {
                     J2dTraceLn(J2D_TRACE_ERROR,
-                                "DrawParallelogram: "
-                                "ODD NUMBER OF PGRAM EDGES (%d)!!",
-                                numactive);
+                               "DrawParallelogram: "
+                               "ODD NUMBER OF PGRAM EDGES (%d)!!",
+                               numactive);
                 }
 #endif
                 for (cur = 0; cur < numactive; cur += 2) {

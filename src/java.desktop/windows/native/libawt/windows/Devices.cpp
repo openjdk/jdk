@@ -99,13 +99,17 @@ static BOOL IsValidMonitor(HMONITOR hMon)
     memset((void*)(&mieInfo), 0, sizeof(MONITORINFOEX));
     mieInfo.cbSize = sizeof(MONITORINFOEX);
     if (!::GetMonitorInfo(hMon, (LPMONITORINFOEX)(&mieInfo))) {
-        J2dTraceLn(J2D_TRACE_INFO, "Devices::IsValidMonitor: GetMonitorInfo failed for monitor with handle %p", hMon);
+        J2dTraceLn(J2D_TRACE_INFO,
+                   "Devices::IsValidMonitor: GetMonitorInfo failed for monitor with handle %p",
+                   hMon);
         return FALSE;
     }
 
     HDC hDC = CreateDC(mieInfo.szDevice, NULL, NULL, NULL);
     if (NULL == hDC) {
-        J2dTraceLn(J2D_TRACE_INFO, "Devices::IsValidMonitor: CreateDC failed for monitor with handle %p, device: %S", hMon, mieInfo.szDevice);
+        J2dTraceLn(J2D_TRACE_INFO,
+                   "Devices::IsValidMonitor: CreateDC failed for monitor with handle %p, device: %S",
+                   hMon, mieInfo.szDevice);
         return FALSE;
     }
 
@@ -248,7 +252,7 @@ BOOL Devices::UpdateInstance(JNIEnv *env)
             for (int i = newNumScreens; i < oldNumScreens; i++) {
                 // removed device, needs to be invalidated
                 J2dTraceLn(J2D_TRACE_WARNING,
-                            "Devices::UpdateInstance: device removed: %d", i);
+                           "Devices::UpdateInstance: device removed: %d", i);
                 oldDevices->GetDevice(i)->Invalidate(env);
             }
             // Now that we have a new array in place, remove this (possibly the
@@ -320,8 +324,8 @@ AwtWin32GraphicsDevice *Devices::GetDeviceReference(int index,
                                                     BOOL adjust)
 {
     J2dTraceLn(J2D_TRACE_INFO,
-                "Devices::GetDeviceReference index=%d adjust?=%d",
-                index, adjust);
+               "Devices::GetDeviceReference index=%d adjust?=%d",
+               index, adjust);
 
     AwtWin32GraphicsDevice * ret = GetDevice(index, adjust);
     if (ret != NULL) {
@@ -340,18 +344,18 @@ AwtWin32GraphicsDevice *Devices::GetDeviceReference(int index,
 AwtWin32GraphicsDevice *Devices::GetDevice(int index, BOOL adjust)
 {
     J2dTraceLn(J2D_TRACE_INFO,
-                "Devices::GetDevice index=%d adjust?=%d",
-                index, adjust);
+               "Devices::GetDevice index=%d adjust?=%d",
+               index, adjust);
     if (index < 0 || index >= numDevices) {
         if (!adjust) {
             J2dTraceLn(J2D_TRACE_WARNING,
-                        "Devices::GetDevice: "\
-                        "incorrect index %d, returning NULL.", index);
+                       "Devices::GetDevice: "\
+                       "incorrect index %d, returning NULL.", index);
             return NULL;
         }
         J2dTraceLn(J2D_TRACE_WARNING,
-                    "Devices::GetDevice: "\
-                    "adjusted index %d to 0.", index);
+                   "Devices::GetDevice: "\
+                   "adjusted index %d to 0.", index);
         index = 0;
     }
     return devices[index];
@@ -408,8 +412,8 @@ int Devices::Release()
         return refs;
     } else if (refs < 0) {
         J2dTraceLn(J2D_TRACE_ERROR,
-                    "Devices::Release: Negative ref count! refCount=%d",
-                    refs);
+                   "Devices::Release: Negative ref count! refCount=%d",
+                   refs);
     }
 
     return refs;

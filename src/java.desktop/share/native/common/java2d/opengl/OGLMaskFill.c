@@ -96,7 +96,7 @@ OGLMaskFill_MaskFill(OGLContext *oglc,
 
     J2dTraceLn(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d", x, y, w, h);
     J2dTraceLn(J2D_TRACE_VERBOSE, "  maskoff=%d maskscan=%d",
-                maskoff, maskscan);
+               maskoff, maskscan);
 
     {
         jint tw, th, x0;

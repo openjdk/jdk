@@ -270,7 +270,7 @@ MTLGlyphCache_AddCellInfo(GlyphInfo *glyph, MTLCacheCellInfo *cellInfo)
     // assert (glyph != NULL && cellInfo != NULL)
     J2dTraceLn(J2D_TRACE_INFO, "MTLGlyphCache_AddCellInfo");
     J2dTraceLn(J2D_TRACE_VERBOSE, "  glyph 0x%x: adding cell 0x%x to the list",
-                glyph, cellInfo);
+               glyph, cellInfo);
 
     cellInfo->glyphInfo = glyph;
     cellInfo->nextGCI = glyph->cellInfo;
@@ -306,8 +306,8 @@ MTLGlyphCache_RemoveCellInfo(GlyphInfo *glyph, MTLCacheCellInfo *cellInfo)
         currCellInfo = currCellInfo->nextGCI;
     } while (currCellInfo != NULL);
     J2dTraceLn(J2D_TRACE_WARNING, "MTLGlyphCache_RemoveCellInfo: "\
-                "no cell 0x%x in glyph 0x%x's cell list",
-                cellInfo, glyph);
+               "no cell 0x%x in glyph 0x%x's cell list",
+               cellInfo, glyph);
 }
 
 /**
@@ -351,14 +351,14 @@ MTLGlyphCache_GetCellInfoForCache(GlyphInfo *glyph, MTLGlyphCacheInfo *cache)
         do {
             if (cellInfo->cacheInfo == cache) {
                 J2dTraceLn(J2D_TRACE_VERBOSE2,
-                            "  glyph 0x%x: found cell 0x%x for cache 0x%x",
-                            glyph, cellInfo, cache);
+                           "  glyph 0x%x: found cell 0x%x for cache 0x%x",
+                           glyph, cellInfo, cache);
                 return cellInfo;
             }
             cellInfo = cellInfo->nextGCI;
         } while (cellInfo != NULL);
     }
     J2dTraceLn(J2D_TRACE_VERBOSE2, "  glyph 0x%x: no cell for cache 0x%x",
-                glyph, cache);
+               glyph, cache);
     return NULL;
 }

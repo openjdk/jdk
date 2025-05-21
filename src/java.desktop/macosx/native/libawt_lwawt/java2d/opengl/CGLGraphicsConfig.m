@@ -235,8 +235,8 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
         }
 
         J2dRlsTraceLn(J2D_TRACE_INFO,
-                       "CGLGraphicsConfig_getCGLConfigInfo: db=%d",
-                       (caps & CAPS_DOUBLEBUFFERED) != 0);
+                      "CGLGraphicsConfig_getCGLConfigInfo: db=%d",
+                      (caps & CAPS_DOUBLEBUFFERED) != 0);
 
         // remove before shipping (?)
 #if 1

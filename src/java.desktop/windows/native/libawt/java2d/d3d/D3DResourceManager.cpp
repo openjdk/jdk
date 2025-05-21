@@ -91,8 +91,8 @@ D3DResource::SetSDOps(D3DSDOps *pOps)
         // something's wrong, we're overwriting
         // a non-null field (setting it to null is allowed)
         J2dTraceLn(J2D_TRACE_WARNING,
-                    "D3DResource::SetSDOps: overwriting "\
-                    "this->pOps=0x%x with pOps=0x%x", this->pOps, pOps);
+                   "D3DResource::SetSDOps: overwriting "\
+                   "this->pOps=0x%x with pOps=0x%x", this->pOps, pOps);
     }
     this->pOps = pOps;
 }
@@ -262,7 +262,7 @@ D3DResourceManager::CreateTexture(UINT width, UINT height,
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DRM::CreateTexture");
     J2dTraceLn(J2D_TRACE_VERBOSE, "  w=%d h=%d isRTT=%d isOpaque=%d",
-                width, height, isRTT, isOpaque);
+               width, height, isRTT, isOpaque);
 
     if (ppTextureResource == NULL || pCtx == NULL ||
         (pd3dDevice = pCtx->Get3DDevice()) == NULL)
@@ -343,7 +343,7 @@ HRESULT D3DResourceManager::CreateRTSurface(UINT width, UINT height,
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DRM::CreateRTSurface");
     J2dTraceLn(J2D_TRACE_VERBOSE, "  w=%d h=%d isOpaque=%d",
-                width, height, isOpaque);
+               width, height, isOpaque);
 
     if (pCtx == NULL || ppSurfaceResource == NULL ||
         (pd3dDevice = pCtx->Get3DDevice()) == NULL)
@@ -437,7 +437,7 @@ D3DResourceManager::CreateSwapChain(HWND hWnd, UINT numBuffers,
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DRM::CreateSwapChain");
     J2dTraceLn(J2D_TRACE_VERBOSE, "  w=%d h=%d hwnd=%x numBuffers=%d",
-                width, height, hWnd, numBuffers);
+               width, height, hWnd, numBuffers);
 
     if (pCtx == NULL || ppSwapChainResource == NULL ||
         (pd3dDevice = pCtx->Get3DDevice()) == NULL)

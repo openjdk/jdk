@@ -143,8 +143,8 @@ OGLSD_InitTextureObject(OGLSDOps *oglsdo,
     GLint texMax;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLSD_InitTextureObject: w=%d h=%d opq=%d nonpow2=%d",
-                width, height, isOpaque, texNonPow2);
+               "OGLSD_InitTextureObject: w=%d h=%d opq=%d nonpow2=%d",
+               width, height, isOpaque, texNonPow2);
 
     if (oglsdo == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
@@ -176,8 +176,8 @@ OGLSD_InitTextureObject(OGLSDOps *oglsdo,
     }
 
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  desired texture dimensions: w=%d h=%d max=%d",
-                texWidth, texHeight, texMax);
+               "  desired texture dimensions: w=%d h=%d max=%d",
+               texWidth, texHeight, texMax);
 
     // if either dimension is 0, we cannot allocate a texture with the
     // requested dimensions
@@ -200,9 +200,8 @@ OGLSD_InitTextureObject(OGLSDOps *oglsdo,
     // if the requested dimensions and proxy dimensions don't match,
     // we shouldn't attempt to create the texture
     if ((realWidth != texWidth) || (realHeight != texHeight)) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-            "OGLSD_InitTextureObject: actual (w=%d h=%d) != requested",
-                       realWidth, realHeight);
+        J2dRlsTraceLn(J2D_TRACE_ERROR, "OGLSD_InitTextureObject: "\
+                      "actual (w=%d h=%d) != requested", realWidth, realHeight);
         return JNI_FALSE;
     }
 
@@ -228,7 +227,7 @@ OGLSD_InitTextureObject(OGLSDOps *oglsdo,
     OGLSD_RESET_TEXTURE_WRAP(texTarget);
 
     J2dTraceLn(J2D_TRACE_VERBOSE, "  created texture: w=%d h=%d id=%d",
-                width, height, texID);
+               width, height, texID);
 
     return JNI_TRUE;
 }
@@ -247,7 +246,7 @@ Java_sun_java2d_opengl_OGLSurfaceData_initTexture
     OGLSDOps *oglsdo = (OGLSDOps *)jlong_to_ptr(pData);
 
     J2dTraceLn(J2D_TRACE_INFO, "OGLSurfaceData_initTexture: w=%d h=%d",
-                width, height);
+               width, height);
 
     if (oglsdo == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
@@ -307,7 +306,7 @@ OGLSD_InitFBObject(GLuint *fbobjectID, GLuint *depthID,
     int i;
 
     J2dTraceLn(J2D_TRACE_INFO, "OGLSD_InitFBObject: w=%d h=%d texid=%d",
-                textureWidth, textureHeight, textureID);
+               textureWidth, textureHeight, textureID);
 
     // initialize framebuffer object
     j2d_glGenFramebuffersEXT(1, &fboTmpID);
@@ -334,9 +333,9 @@ OGLSD_InitFBObject(GLuint *fbobjectID, GLuint *depthID,
         // creation of depth buffer could potentially fail, so check for error
         error = j2d_glGetError();
         if (error != GL_NO_ERROR) {
-            J2dTraceLn(J2D_TRACE_VERBOSE,
-                "OGLSD_InitFBObject: could not create depth buffer: depth=%d error=%x",
-                           depthSize, error);
+            J2dTraceLn(J2D_TRACE_VERBOSE, "OGLSD_InitFBObject: "\
+                       "could not create depth buffer: depth=%d error=%x",
+                       depthSize, error);
             j2d_glDeleteRenderbuffersEXT(1, &depthTmpID);
             continue;
         }
@@ -352,14 +351,14 @@ OGLSD_InitFBObject(GLuint *fbobjectID, GLuint *depthID,
         if (status == GL_FRAMEBUFFER_COMPLETE_EXT) {
             // we found a valid format, so break out of the loop
             J2dTraceLn(J2D_TRACE_VERBOSE,
-                        "  framebuffer is complete: depth=%d", depthSize);
+                       "  framebuffer is complete: depth=%d", depthSize);
             foundDepth = JNI_TRUE;
             break;
         } else {
             // this depth format didn't work, so delete and try another format
             J2dTraceLn(J2D_TRACE_VERBOSE,
-                        "  framebuffer is incomplete: depth=%d status=%x",
-                        depthSize, status);
+                       "  framebuffer is incomplete: depth=%d status=%x",
+                       depthSize, status);
             j2d_glDeleteRenderbuffersEXT(1, &depthTmpID);
         }
     }
@@ -399,8 +398,8 @@ Java_sun_java2d_opengl_OGLSurfaceData_initFBObject
     GLuint fbobjectID, depthID;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLSurfaceData_initFBObject: w=%d h=%d",
-                width, height);
+               "OGLSurfaceData_initFBObject: w=%d h=%d",
+               width, height);
 
     if (oglsdo == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
@@ -556,7 +555,7 @@ void
 OGLSD_Delete(JNIEnv *env, OGLSDOps *oglsdo)
 {
     J2dTraceLn(J2D_TRACE_INFO, "OGLSD_Delete: type=%d",
-                oglsdo->drawableType);
+               oglsdo->drawableType);
 
     if (oglsdo->drawableType == OGLSD_TEXTURE) {
         if (oglsdo->textureID != 0) {

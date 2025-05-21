@@ -112,8 +112,8 @@ BOOL DWMIsCompositionEnabled() {
             J2dTraceLn(J2D_TRACE_VERBOSE, " composition enabled: %d",bRes);
         } else {
             J2dTraceLn(J2D_TRACE_ERROR,
-                    "IsDWMCompositionEnabled: error %x when detecting"\
-                    "if composition is enabled", res);
+                       "IsDWMCompositionEnabled: error %x when detecting"\
+                       "if composition is enabled", res);
         }
     } catch (const DllUtil::Exception &) {
         J2dTraceLn(J2D_TRACE_ERROR,

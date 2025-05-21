@@ -212,8 +212,8 @@ D3DShaderGen_GenerateConvolveShader(int flags)
     char finalSource[2000];
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "D3DShaderGen_GenerateConvolveShader: flags=%d",
-                flags);
+               "D3DShaderGen_GenerateConvolveShader: flags=%d",
+               flags);
 
     if (IS_SET(CONVOLVE_EDGE_ZERO_FILL)) {
         // EDGE_ZERO_FILL: fill in zero at the edges
@@ -273,8 +273,8 @@ D3DShaderGen_GenerateRescaleShader(int flags)
     char finalSource[2000];
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "D3DShaderGen_GenerateRescaleShader: flags=%d",
-                flags);
+               "D3DShaderGen_GenerateRescaleShader: flags=%d",
+               flags);
 
     if (IS_SET(RESCALE_NON_PREMULT)) {
         preRescale  = "srcColor.rgb /= srcColor.a;";
@@ -338,8 +338,8 @@ D3DShaderGen_GenerateLookupShader(int flags)
     char finalSource[2000];
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "D3DShaderGen_GenerateLookupShader: flags=%d",
-                flags);
+               "D3DShaderGen_GenerateLookupShader: flags=%d",
+               flags);
 
     if (IS_SET(LOOKUP_USE_SRC_ALPHA)) {
         // when numComps is 1 or 3, the alpha is not looked up in the table;
@@ -427,8 +427,8 @@ D3DShaderGen_GenerateBasicGradShader(int flags)
     char finalSource[3000];
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "D3DShaderGen_GenerateBasicGradShader",
-                flags);
+               "D3DShaderGen_GenerateBasicGradShader",
+               flags);
 
     if (IS_SET(BASIC_GRAD_IS_CYCLIC)) {
         cycleCode =
@@ -689,8 +689,8 @@ D3DShaderGen_GenerateLinearGradShader(int flags)
     char *distCode;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "D3DShaderGen_GenerateLinearGradShader",
-                flags);
+               "D3DShaderGen_GenerateLinearGradShader",
+               flags);
 
     /*
      * To simplify the code and to make it easier to upload a number of
@@ -720,8 +720,8 @@ D3DShaderGen_GenerateRadialGradShader(int flags)
     char *distCode;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "D3DShaderGen_GenerateRadialGradShader",
-                flags);
+               "D3DShaderGen_GenerateRadialGradShader",
+               flags);
 
     /*
      * To simplify the code and to make it easier to upload a number of

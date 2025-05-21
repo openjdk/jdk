@@ -104,7 +104,7 @@ HRESULT D3DMaskCache::AddMaskQuad(int srcx, int srcy,
     float dx1, dy1, dx2, dy2;
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DVertexCacher::AddMaskQuad: %d",
-                maskCacheIndex);
+               maskCacheIndex);
 
     if (maskCacheIndex >= D3D_MASK_CACHE_MAX_INDEX ||
         pCtx->pVCacher->GetFreeVertices() < 6)

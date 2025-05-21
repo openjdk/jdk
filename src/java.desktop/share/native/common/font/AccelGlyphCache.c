@@ -320,7 +320,7 @@ AccelGlyphCache_AddCellInfo(GlyphInfo *glyph, CacheCellInfo *cellInfo)
     // assert (glyph != NULL && cellInfo != NULL)
     J2dTraceLn(J2D_TRACE_INFO, "AccelGlyphCache_AddCellInfo");
     J2dTraceLn(J2D_TRACE_VERBOSE, "  glyph 0x%x: adding cell 0x%x to the list",
-                glyph, cellInfo);
+               glyph, cellInfo);
 
     cellInfo->glyphInfo = glyph;
     cellInfo->nextGCI = glyph->cellInfo;
@@ -341,7 +341,7 @@ AccelGlyphCache_RemoveCellInfo(GlyphInfo *glyph, CacheCellInfo *cellInfo)
     do {
         if (currCellInfo == cellInfo) {
             J2dTraceLn(J2D_TRACE_VERBOSE,
-                        "  glyph 0x%x: removing cell 0x%x from glyph's list",
+                       "  glyph 0x%x: removing cell 0x%x from glyph's list",
                         glyph, currCellInfo);
             if (prevInfo == NULL) { // it's the head, chop-chop
                 glyph->cellInfo = currCellInfo->nextGCI;
@@ -356,8 +356,8 @@ AccelGlyphCache_RemoveCellInfo(GlyphInfo *glyph, CacheCellInfo *cellInfo)
         currCellInfo = currCellInfo->nextGCI;
     } while (currCellInfo != NULL);
     J2dTraceLn(J2D_TRACE_WARNING, "AccelGlyphCache_RemoveCellInfo: "\
-                "no cell 0x%x in glyph 0x%x's cell list",
-                cellInfo, glyph);
+               "no cell 0x%x in glyph 0x%x's cell list",
+               cellInfo, glyph);
 }
 
 /**
@@ -401,15 +401,15 @@ AccelGlyphCache_GetCellInfoForCache(GlyphInfo *glyph, GlyphCacheInfo *cache)
         do {
             if (cellInfo->cacheInfo == cache) {
                 J2dTraceLn(J2D_TRACE_VERBOSE2,
-                            "  glyph 0x%x: found cell 0x%x for cache 0x%x",
-                            glyph, cellInfo, cache);
+                           "  glyph 0x%x: found cell 0x%x for cache 0x%x",
+                           glyph, cellInfo, cache);
                 return cellInfo;
             }
             cellInfo = cellInfo->nextGCI;
         } while (cellInfo != NULL);
     }
     J2dTraceLn(J2D_TRACE_VERBOSE2, "  glyph 0x%x: no cell for cache 0x%x",
-                glyph, cache);
+               glyph, cache);
     return NULL;
 }
 

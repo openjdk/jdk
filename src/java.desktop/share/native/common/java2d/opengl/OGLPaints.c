@@ -124,8 +124,8 @@ OGLPaints_SetColor(OGLContext *oglc, jint pixel)
         a = (jubyte)(pixel >> 24);
 
         J2dTraceLn(J2D_TRACE_VERBOSE,
-                    "  updating color: r=%02x g=%02x b=%02x a=%02x",
-                    r, g, b, a);
+                   "  updating color: r=%02x g=%02x b=%02x a=%02x",
+                   r, g, b, a);
     } else {
         pixel ^= oglc->xorPixel;
 
@@ -135,8 +135,8 @@ OGLPaints_SetColor(OGLContext *oglc, jint pixel)
         a = 0xff;
 
         J2dTraceLn(J2D_TRACE_VERBOSE,
-                    "  updating xor color: r=%02x g=%02x b=%02x xorpixel=%08x",
-                    r, g, b, oglc->xorPixel);
+                   "  updating xor color: r=%02x g=%02x b=%02x xorpixel=%08x",
+                   r, g, b, oglc->xorPixel);
     }
 
     j2d_glColor4ub(r, g, b, a);
@@ -705,8 +705,8 @@ OGLPaints_CreateLinearGradProgram(jint flags)
     char *distCode;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLPaints_CreateLinearGradProgram",
-                flags);
+               "OGLPaints_CreateLinearGradProgram",
+               flags);
 
     /*
      * To simplify the code and to make it easier to upload a number of
@@ -809,8 +809,8 @@ OGLPaints_CreateRadialGradProgram(jint flags)
     char *distCode;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLPaints_CreateRadialGradProgram",
-                flags);
+               "OGLPaints_CreateRadialGradProgram",
+               flags);
 
     /*
      * To simplify the code and to make it easier to upload a number of

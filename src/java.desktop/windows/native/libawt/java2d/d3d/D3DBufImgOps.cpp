@@ -57,8 +57,8 @@ D3DBufImgOps_EnableConvolveOp(D3DContext *d3dc, jlong pSrcOps,
     jint flags = 0;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "D3DBufImgOps_EnableConvolveOp: kernelW=%d kernelH=%d",
-                kernelWidth, kernelHeight);
+               "D3DBufImgOps_EnableConvolveOp: kernelW=%d kernelH=%d",
+               kernelWidth, kernelHeight);
 
     RETURN_STATUS_IF_NULL(d3dc, E_FAIL);
     RETURN_STATUS_IF_NULL(srcOps, E_FAIL);
@@ -205,8 +205,8 @@ D3DBufImgOps_EnableLookupOp(D3DContext *d3dc,
         bands[i] = NULL;
     }
     J2dTraceLn(J2D_TRACE_INFO,
-                "D3DBufImgOps_EnableLookupOp: short=%d num=%d len=%d off=%d",
-                shortData, numBands, bandLength, offset);
+               "D3DBufImgOps_EnableLookupOp: short=%d num=%d len=%d off=%d",
+               shortData, numBands, bandLength, offset);
 
     RETURN_STATUS_IF_NULL(d3dc, E_FAIL);
 

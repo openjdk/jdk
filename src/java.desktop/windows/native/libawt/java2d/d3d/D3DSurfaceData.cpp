@@ -249,7 +249,7 @@ JNICALL Java_sun_java2d_d3d_D3DSurfaceData_initTexture
                       &format, 0/*usage*/, &d3dsdo->pResource);
     if (SUCCEEDED(res)) {
         J2dTraceLn(J2D_TRACE_VERBOSE,
-                    "  created texture pResource=%x", d3dsdo->pResource);
+                   "  created texture pResource=%x", d3dsdo->pResource);
         d3dsdo->pResource->SetSDOps(d3dsdo);
     } else {
         D3DRQ_MarkLostIfNeeded(res, d3dsdo);
@@ -294,7 +294,7 @@ Java_sun_java2d_d3d_D3DSurfaceData_initRTSurface
                             &format, &d3dsdo->pResource);
     if (SUCCEEDED(res)) {
         J2dTraceLn(J2D_TRACE_VERBOSE, "  created RT surface pResource=0x%x",
-                    d3dsdo->pResource);
+                   d3dsdo->pResource);
         d3dsdo->pResource->SetSDOps(d3dsdo);
     } else {
         D3DRQ_MarkLostIfNeeded(res, d3dsdo);
@@ -391,7 +391,7 @@ JNICALL Java_sun_java2d_d3d_D3DSurfaceData_initFlipBackbuffer
                         &d3dsdo->pResource);
     if (SUCCEEDED(res)) {
         J2dTraceLn(J2D_TRACE_VERBOSE, "  created swap chain pResource=0x%x",
-                    d3dsdo->pResource);
+                   d3dsdo->pResource);
         d3dsdo->pResource->SetSDOps(d3dsdo);
     } else {
         D3DRQ_MarkLostIfNeeded(res, d3dsdo);

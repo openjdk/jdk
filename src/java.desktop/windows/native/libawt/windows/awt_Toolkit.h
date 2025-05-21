@@ -123,22 +123,22 @@ class CriticalSection {
 
 #define CRITICAL_SECTION_ENTER(cs) { \
     J2dTraceLn(J2D_TRACE_VERBOSE2, \
-                "CS.Wait:  tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
-                GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
+               "CS.Wait:  tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
+               GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
     (cs).Enter(); \
     J2dTraceLn(J2D_TRACE_VERBOSE2, \
-                "CS.Enter: tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
-                GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
+               "CS.Enter: tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
+               GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
 }
 
 #define CRITICAL_SECTION_LEAVE(cs) { \
     J2dTraceLn(J2D_TRACE_VERBOSE2, \
-                "CS.Leave: tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
-                GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
+               "CS.Leave: tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
+               GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
     (cs).Leave(); \
     J2dTraceLn(J2D_TRACE_VERBOSE2, \
-                "CS.Left:  tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
-                GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
+               "CS.Left:  tid, cs, file, line = 0x%x, 0x%x, %s, %d", \
+               GetCurrentThreadId(), &(cs), __FILE__, __LINE__); \
 }
 
 // Redefine WinAPI values related to touch input, if OS < Windows 7.

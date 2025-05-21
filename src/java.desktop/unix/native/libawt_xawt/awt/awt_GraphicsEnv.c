@@ -898,8 +898,8 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
         if (shminfo.shmid < 0) {
             AWT_UNLOCK();
             J2dRlsTraceLn(J2D_TRACE_ERROR,
-                           "TryInitMITShm: shmget has failed: %s",
-                           strerror(errno));
+                          "TryInitMITShm: shmget has failed: %s",
+                          strerror(errno));
             return;
         }
         shminfo.shmaddr = (char *) shmat(shminfo.shmid, 0, 0);
@@ -907,8 +907,8 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
             shmctl(shminfo.shmid, IPC_RMID, 0);
             AWT_UNLOCK();
             J2dRlsTraceLn(J2D_TRACE_ERROR,
-                           "TryInitMITShm: shmat has failed: %s",
-                           strerror(errno));
+                          "TryInitMITShm: shmat has failed: %s",
+                          strerror(errno));
             return;
         }
         shminfo.readOnly = True;
@@ -1526,7 +1526,7 @@ static XRRFreeCrtcInfoType               awt_XRRFreeCrtcInfo;
         awt_##f = (f##Type)dlsym(pLibRandR, #f); \
         if (awt_##f == NULL) { \
             J2dRlsTraceLn(J2D_TRACE_ERROR, \
-                           "X11GD_InitXrandrFuncs: Could not load %s", #f); \
+                          "X11GD_InitXrandrFuncs: Could not load %s", #f); \
             dlclose(pLibRandR); \
             return JNI_FALSE; \
         } \
@@ -1565,8 +1565,8 @@ X11GD_InitXrandrFuncs(JNIEnv *env)
          */
         if (!(rr_maj_ver > 1 || (rr_maj_ver == 1 && rr_min_ver >= 2))) {
             J2dRlsTraceLn(J2D_TRACE_INFO, "X11GD_InitXrandrFuncs: Can't use Xrandr. "
-                           "Xinerama is active and Xrandr version is %d.%d",
-                           rr_maj_ver, rr_min_ver);
+                          "Xinerama is active and Xrandr version is %d.%d",
+                          rr_maj_ver, rr_min_ver);
             dlclose(pLibRandR);
             return JNI_FALSE;
         }

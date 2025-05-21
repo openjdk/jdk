@@ -74,7 +74,7 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
     unsigned char *b, *end;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLRenderQueue_flushBuffer: limit=%d", limit);
+               "OGLRenderQueue_flushBuffer: limit=%d", limit);
 
     b = (unsigned char *)jlong_to_ptr(buf);
     if (b == NULL) {
@@ -90,8 +90,8 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
         jint opcode = NEXT_INT(b);
 
         J2dTraceLn(J2D_TRACE_VERBOSE,
-                    "OGLRenderQueue_flushBuffer: opcode=%d, rem=%d",
-                    opcode, (end-b));
+                   "OGLRenderQueue_flushBuffer: opcode=%d, rem=%d",
+                   opcode, (end-b));
 
         switch (opcode) {
 
@@ -668,7 +668,8 @@ Java_sun_java2d_opengl_OGLRenderQueue_flushBuffer
 
         default:
             J2dRlsTraceLn(J2D_TRACE_ERROR,
-                "OGLRenderQueue_flushBuffer: invalid opcode=%d", opcode);
+                          "OGLRenderQueue_flushBuffer: invalid opcode=%d",
+                          opcode);
             if (oglc != NULL) {
                 RESET_PREVIOUS_OP();
             }
@@ -757,7 +758,7 @@ OGLRenderQueue_CheckPreviousOp(jint op)
     }
 
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "OGLRenderQueue_CheckPreviousOp: new op=%d", op);
+               "OGLRenderQueue_CheckPreviousOp: new op=%d", op);
 
     switch (previousOp) {
     case GL_TEXTURE_2D:

@@ -844,7 +844,7 @@ int AwtWin32GraphicsDevice::GetGrayness(int deviceIndex)
 
 HDC AwtWin32GraphicsDevice::GetDCFromScreen(int screen) {
     J2dTraceLn(J2D_TRACE_INFO,
-                "AwtWin32GraphicsDevice::GetDCFromScreen screen=%d", screen);
+               "AwtWin32GraphicsDevice::GetDCFromScreen screen=%d", screen);
     Devices::InstanceAccess devices;
     AwtWin32GraphicsDevice *dev = devices->GetDevice(screen);
     return MakeDCFromMonitor(dev->GetMonitor());
@@ -855,8 +855,8 @@ HDC AwtWin32GraphicsDevice::GetDCFromScreen(int screen) {
  */
 BOOL AwtWin32GraphicsDevice::AreSameMonitors(HMONITOR mon1, HMONITOR mon2) {
     J2dTraceLn(J2D_TRACE_INFO,
-                "AwtWin32GraphicsDevice::AreSameMonitors mhnd1=%x mhnd2=%x",
-                mon1, mon2);
+               "AwtWin32GraphicsDevice::AreSameMonitors mhnd1=%x mhnd2=%x",
+               mon1, mon2);
     DASSERT(mon1 != NULL);
     DASSERT(mon2 != NULL);
 
@@ -886,7 +886,7 @@ BOOL AwtWin32GraphicsDevice::AreSameMonitors(HMONITOR mon1, HMONITOR mon2) {
 
 int AwtWin32GraphicsDevice::GetScreenFromHMONITOR(HMONITOR mon) {
     J2dTraceLn(J2D_TRACE_INFO,
-                "AwtWin32GraphicsDevice::GetScreenFromHMONITOR mhnd=%x", mon);
+               "AwtWin32GraphicsDevice::GetScreenFromHMONITOR mhnd=%x", mon);
 
     DASSERT(mon != NULL);
     JNIEnv *env = (JNIEnv*) JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -904,8 +904,8 @@ int AwtWin32GraphicsDevice::GetScreenFromHMONITOR(HMONITOR mon) {
     }
 
     J2dTraceLn(J2D_TRACE_WARNING,
-                "AwtWin32GraphicsDevice::GetScreenFromHMONITOR(): "\
-                "couldn't find screen for HMONITOR %x, returning default", mon);
+               "AwtWin32GraphicsDevice::GetScreenFromHMONITOR(): "\
+               "couldn't find screen for HMONITOR %x, returning default", mon);
     return AwtWin32GraphicsDevice::GetDefaultDeviceIndex();
 }
 
@@ -1120,8 +1120,8 @@ Java_sun_awt_Win32GraphicsDevice_enterFullScreenExclusive(
                         SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOSIZE))
     {
         J2dTraceLn(J2D_TRACE_ERROR,
-                    "Error %d setting topmost attribute to fs window",
-                    ::GetLastError());
+                   "Error %d setting topmost attribute to fs window",
+                   ::GetLastError());
     }
 
     CATCH_BAD_ALLOC;
@@ -1155,8 +1155,8 @@ Java_sun_awt_Win32GraphicsDevice_exitFullScreenExclusive(
                         SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOSIZE))
     {
         J2dTraceLn(J2D_TRACE_ERROR,
-                    "Error %d unsetting topmost attribute to fs window",
-                    ::GetLastError());
+                   "Error %d unsetting topmost attribute to fs window",
+                   ::GetLastError());
     }
 
     // We should restore alwaysOnTop state as it's anyway dropped here

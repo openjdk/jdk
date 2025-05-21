@@ -63,7 +63,9 @@ void MTLRenderer_DrawLine(MTLContext *mtlc, BMTLSDOps * dstOps, jint x1, jint y1
         return;
     }
 
-    J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawLine (x1=%d y1=%d x2=%d y2=%d), dst tex=%p", x1, y1, x2, y2, dstOps->pTexture);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_DrawLine (x1=%d y1=%d x2=%d y2=%d), dst tex=%p",
+               x1, y1, x2, y2, dstOps->pTexture);
 
     id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
     if (mtlEncoder == nil)
@@ -160,7 +162,9 @@ void MTLRenderer_DrawRect(MTLContext *mtlc, BMTLSDOps * dstOps, jint x, jint y, 
     }
 
     id<MTLTexture> dest = dstOps->pTexture;
-    J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawRect (x=%d y=%d w=%d h=%d), dst tex=%p", x, y, w, h, dest);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_DrawRect (x=%d y=%d w=%d h=%d), dst tex=%p",
+               x, y, w, h, dest);
 
     // TODO: use DrawParallelogram(x, y, w, h, lw=1, lh=1)
     id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
@@ -209,7 +213,9 @@ void MTLRenderer_DrawPoly(MTLContext *mtlc, BMTLSDOps * dstOps,
         return;
     }
 
-    J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: %d points, transX=%d, transY=%d, dst tex=%p", nPoints, transX, transY, dstOps->pTexture);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_DrawPoly: %d points, transX=%d, transY=%d, dst tex=%p",
+               nPoints, transX, transY, dstOps->pTexture);
 
     __block struct {
         struct Vertex verts[POLYLINE_BUF_SIZE];
@@ -229,20 +235,23 @@ void MTLRenderer_DrawPoly(MTLContext *mtlc, BMTLSDOps * dstOps,
         __block int chunkSize = isLastChunk ? nPoints : POLYLINE_BUF_SIZE;
 
         fillVertex(pointsChunk.verts, prevX + transX + 0.5f, prevY + transY + 0.5f);
-        J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: Point - (%1.2f, %1.2f)", prevX + transX + 0.5f, prevY + transY + 0.5f);
+        J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: Point - (%1.2f, %1.2f)",
+                   prevX + transX + 0.5f, prevY + transY + 0.5f);
 
         for (int i = 1; i < chunkSize; i++) {
             prevX = *(xPoints++);
             prevY = *(yPoints++);
             fillVertex(pointsChunk.verts + i, prevX + transX + 0.5f, prevY + transY + 0.5f);
-            J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: Point - (%1.2f, %1.2f)", prevX + transX + 0.5f,prevY + transY + 0.5f);
+            J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: Point - (%1.2f, %1.2f)",
+                       prevX + transX + 0.5f,prevY + transY + 0.5f);
         }
 
         bool drawCloseSegment = false;
         if (isClosed && isLastChunk) {
             if (chunkSize + 2 <= POLYLINE_BUF_SIZE) {
                 fillVertex(pointsChunk.verts + chunkSize, firstX + transX + 0.5f, firstY + transY + 0.5f);
-                J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: Point - (%1.2f, %1.2f)",firstX + transX + 0.5f, firstY + transY + 0.5f);
+                J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: Point - (%1.2f, %1.2f)",
+                           firstX + transX + 0.5f, firstY + transY + 0.5f);
 
                 ++chunkSize;
             } else
@@ -263,8 +272,12 @@ void MTLRenderer_DrawPoly(MTLContext *mtlc, BMTLSDOps * dstOps,
                     {{firstX + transX + 0.5f, firstY + transY + 0.5f}}
             };
 
-            J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: last segment Point1 - (%1.2f, %1.2f)",prevX + transX + 0.5f, prevY + transY + 0.5f);
-            J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawPoly: last segment Point2 - (%1.2f, %1.2f)",firstX + transX + 0.5f, firstY + transY + 0.5f);
+            J2dTraceLn(J2D_TRACE_INFO,
+                       "MTLRenderer_DrawPoly: last segment Point1 - (%1.2f, %1.2f)",
+                       prevX + transX + 0.5f, prevY + transY + 0.5f);
+            J2dTraceLn(J2D_TRACE_INFO,
+                       "MTLRenderer_DrawPoly: last segment Point2 - (%1.2f, %1.2f)",
+                       firstX + transX + 0.5f, firstY + transY + 0.5f);
 
             [mtlEncoder setVertexBytes:vertices length:sizeof(vertices) atIndex:MeshVertexBuffer];
             [mtlEncoder drawPrimitives:MTLPrimitiveTypeLine vertexStart:0 vertexCount:2];
@@ -324,7 +337,9 @@ MTLRenderer_DrawScanlines(MTLContext *mtlc, BMTLSDOps * dstOps,
                           jint scanlineCount, jint *scanlines)
 {
 
-    J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_DrawScanlines (scanlineCount=%d), dst tex=%p", scanlineCount, dstOps->pTexture);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_DrawScanlines (scanlineCount=%d), dst tex=%p",
+               scanlineCount, dstOps->pTexture);
     if (mtlc == NULL || dstOps == NULL || dstOps->pTexture == NULL) {
             J2dTraceLn(J2D_TRACE_ERROR, "MTLRenderer_DrawScanlines: dest is null");
             return;
@@ -400,7 +415,8 @@ MTLRenderer_DrawScanlines(MTLContext *mtlc, BMTLSDOps * dstOps,
                 remainingScanlineCount -= remainingScanlineCount;
             }
             J2dTraceLn(J2D_TRACE_INFO,
-                "MTLRenderer_DrawScanlines: Remaining vertex size %d", remainingScanlineCount);
+                       "MTLRenderer_DrawScanlines: Remaining vertex size %d",
+                       remainingScanlineCount);
         } while (remainingScanlineCount != 0);
     }
 }
@@ -424,7 +440,8 @@ MTLRenderer_FillRect(MTLContext *mtlc, BMTLSDOps * dstOps, jint x, jint y, jint 
 
 
     id<MTLTexture> dest = dstOps->pTexture;
-    J2dTraceLn(J2D_TRACE_INFO, "MTLRenderer_FillRect (x=%d y=%d w=%d h=%d), dst tex=%p", x, y, w, h, dest);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLRenderer_FillRect (x=%d y=%d w=%d h=%d), dst tex=%p", x, y, w, h, dest);
 
     // Encode render command.
     id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
@@ -545,13 +562,13 @@ MTLRenderer_FillParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
 
     id<MTLTexture> dest = dstOps->pTexture;
     J2dTraceLn(J2D_TRACE_INFO,
-                "MTLRenderer_FillParallelogram"
-                "(x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f dst tex=%p)",
-                fx11, fy11,
-                dx21, dy21,
-                dx12, dy12, dest);
+               "MTLRenderer_FillParallelogram"
+               "(x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f dst tex=%p)",
+               fx11, fy11,
+               dx21, dy21,
+               dx12, dy12, dest);
 
     struct Vertex verts[QUAD_VERTEX_COUNT] = {
             { {fx11, fy11}},
@@ -590,13 +607,13 @@ MTLRenderer_DrawParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
     jfloat oy11 = fy11 - (ldy21 + ldy12) / 2.0f;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "MTLRenderer_DrawParallelogram"
-                "(x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f lwr2=%6.2f)",
-                fx11, fy11,
-                dx21, dy21, lwr21,
-                dx12, dy12, lwr12);
+               "MTLRenderer_DrawParallelogram"
+               "(x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f lwr2=%6.2f)",
+               fx11, fy11,
+               dx21, dy21, lwr21,
+               dx12, dy12, lwr12);
 
 
     // Only need to generate 4 quads if the interior still
@@ -791,13 +808,13 @@ MTLRenderer_FillAAParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
     jfloat ou11, ov11, ou12, ov12, ou21, ov21, ou22, ov22;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "MTLRenderer_FillAAParallelogram "
-                "(x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f)",
-                fx11, fy11,
-                dx21, dy21,
-                dx12, dy12);
+               "MTLRenderer_FillAAParallelogram "
+               "(x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f)",
+               fx11, fy11,
+               dx21, dy21,
+               dx12, dy12);
 
     RETURN_IF_NULL(mtlc);
     RETURN_IF_NULL(dstOps);
@@ -908,13 +925,13 @@ MTLRenderer_DrawAAParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
     jfloat ifx11, ify11, idx21, idy21, idx12, idy12;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "MTLRenderer_DrawAAParallelogram "
-                "(x=%6.2f y=%6.2f "
-                "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
-                "dx2=%6.2f dy2=%6.2f lwr2=%6.2f)",
-                fx11, fy11,
-                dx21, dy21, lwr21,
-                dx12, dy12, lwr12);
+               "MTLRenderer_DrawAAParallelogram "
+               "(x=%6.2f y=%6.2f "
+               "dx1=%6.2f dy1=%6.2f lwr1=%6.2f "
+               "dx2=%6.2f dy2=%6.2f lwr2=%6.2f)",
+               fx11, fy11,
+               dx21, dy21, lwr21,
+               dx12, dy12, lwr12);
 
     RETURN_IF_NULL(mtlc);
     RETURN_IF_NULL(dstOps);

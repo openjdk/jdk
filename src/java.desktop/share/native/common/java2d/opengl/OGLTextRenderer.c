@@ -348,7 +348,7 @@ OGLTR_UpdateLCDTextContrast(jint contrast)
     GLint loc;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLTR_UpdateLCDTextContrast: contrast=%d", contrast);
+               "OGLTR_UpdateLCDTextContrast: contrast=%d", contrast);
 
     loc = j2d_glGetUniformLocationARB(lcdTextProgram, "gamma");
     j2d_glUniform3fARB(loc, g, g, g);
@@ -377,7 +377,7 @@ OGLTR_UpdateLCDTextColor(jint contrast)
     GLint loc;
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "OGLTR_UpdateLCDTextColor: contrast=%d", contrast);
+               "OGLTR_UpdateLCDTextColor: contrast=%d", contrast);
 
     /*
      * Note: Ideally we would update the "src_adj" uniform parameter only

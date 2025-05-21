@@ -535,8 +535,8 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
                IPC_CREAT|mitShmPermissionMask);
     if (shminfo->shmid < 0) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
-                       "X11SD_SetupSharedSegment shmget has failed: %s",
-                       strerror(errno));
+                      "X11SD_SetupSharedSegment shmget has failed: %s",
+                      strerror(errno));
         free((void *)shminfo);
         XDestroyImage(img);
         return NULL;
@@ -546,8 +546,8 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
     if (shminfo->shmaddr == ((char *) -1)) {
         shmctl(shminfo->shmid, IPC_RMID, 0);
         J2dRlsTraceLn(J2D_TRACE_ERROR,
-                       "X11SD_SetupSharedSegment shmat has failed: %s",
-                       strerror(errno));
+                      "X11SD_SetupSharedSegment shmat has failed: %s",
+                      strerror(errno));
         free((void *)shminfo);
         XDestroyImage(img);
         return NULL;
@@ -568,8 +568,8 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
 
     if (isXShmAttachFailed() == JNI_TRUE) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
-                       "X11SD_SetupSharedSegment XShmAttach has failed: %s",
-                       strerror(errno));
+                      "X11SD_SetupSharedSegment XShmAttach has failed: %s",
+                      strerror(errno));
         shmdt(shminfo->shmaddr);
         free((void *)shminfo);
         XDestroyImage(img);

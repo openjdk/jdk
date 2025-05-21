@@ -133,8 +133,8 @@ Java_sun_java2d_windows_GDIRenderer_doDrawLine
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIRenderer_doDrawLine");
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  color=0x%x x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
-                color, x1, y1, x2, y2);
+               "  color=0x%x x1=%-4d y1=%-4d x2=%-4d y2=%-4d",
+               color, x1, y1, x2, y2);
     GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
@@ -180,8 +180,8 @@ Java_sun_java2d_windows_GDIRenderer_doDrawRect
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIRenderer_doDrawRect");
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
-                color, x, y, w, h);
+               "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
+               color, x, y, w, h);
     if (w < 0 || h < 0) {
         return;
     }
@@ -225,10 +225,10 @@ Java_sun_java2d_windows_GDIRenderer_doDrawRoundRect
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIRenderer_doDrawRoundRect");
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
-                color, x, y, w, h);
+               "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
+               color, x, y, w, h);
     J2dTraceLn(J2D_TRACE_VERBOSE, "  arcW=%-4d arcH=%-4d",
-                arcW, arcH);
+               arcW, arcH);
     if (w < 2 || h < 2 || arcW <= 0 || arcH <= 0) {
         // Fix for 4524760 - drawRoundRect0 test case fails on Windows 98
         // Thin round rects degenerate into regular rectangles
@@ -269,8 +269,8 @@ Java_sun_java2d_windows_GDIRenderer_doDrawOval
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIRenderer_doDrawOval");
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
-                color, x, y, w, h);
+               "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
+               color, x, y, w, h);
     if (w < 2 || h < 2) {
         // Thin enough ovals have no room for curvature.  Defer to
         // the DrawRect method which handles degenerate sizes better.
@@ -308,11 +308,11 @@ Java_sun_java2d_windows_GDIRenderer_doDrawArc
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIRenderer_doDrawArc");
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
-                color, x, y, w, h);
+               "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
+               color, x, y, w, h);
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  angleStart=%-4d angleExtent=%-4d",
-                angleStart, angleExtent);
+               "  angleStart=%-4d angleExtent=%-4d",
+               angleStart, angleExtent);
     if (w < 0 || h < 0 || angleExtent == 0) {
         return;
     }
@@ -365,9 +365,9 @@ Java_sun_java2d_windows_GDIRenderer_doDrawPoly
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIRenderer_doDrawPoly");
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  color=0x%x transx=%-4d transy=%-4d "\
-                "npoints=%-4d isclosed=%-4d",
-                color, transx, transy, npoints, isclosed);
+               "  color=0x%x transx=%-4d transy=%-4d "\
+               "npoints=%-4d isclosed=%-4d",
+               color, transx, transy, npoints, isclosed);
     if (JNU_IsNull(env, xpointsarray) || JNU_IsNull(env, ypointsarray)) {
         JNU_ThrowNullPointerException(env, "coordinate array");
         return;
@@ -435,8 +435,8 @@ Java_sun_java2d_windows_GDIRenderer_doFillRect
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIRenderer_doFillRect");
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
-                color, x, y, w, h);
+               "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
+               color, x, y, w, h);
     if (w <= 0 || h <= 0) {
         return;
     }
@@ -468,10 +468,10 @@ Java_sun_java2d_windows_GDIRenderer_doFillRoundRect
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIRenderer_doFillRoundRect");
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
-                color, x, y, w, h);
+               "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
+               color, x, y, w, h);
     J2dTraceLn(J2D_TRACE_VERBOSE, "  arcW=%-4d arcH=%-4d",
-                arcW, arcH);
+               arcW, arcH);
     if (w < 2 || h < 2 || arcW <= 0 || arcH <= 0) {
         // Fix related to 4524760 - drawRoundRect0 fails on Windows 98
         // Thin round rects have no room for curvature.  Also, if
@@ -511,8 +511,8 @@ Java_sun_java2d_windows_GDIRenderer_doFillOval
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIRenderer_doFillOval");
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
-                color, x, y, w, h);
+               "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
+               color, x, y, w, h);
     if (w < 3 || h < 3) {
         // Fix for 4411814 - small ovals do not draw anything
         // (related to 4205762 on Solaris platform)
@@ -579,11 +579,11 @@ Java_sun_java2d_windows_GDIRenderer_doFillArc
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIRenderer_doFillArc");
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
-                color, x, y, w, h);
+               "  color=0x%x x=%-4d y=%-4d w=%-4d h=%-4d",
+               color, x, y, w, h);
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  angleStart=%-4d angleExtent=%-4d",
-                angleStart, angleExtent);
+               "  angleStart=%-4d angleExtent=%-4d",
+               angleStart, angleExtent);
     if (w <= 0 || h <= 0 || angleExtent == 0) {
         return;
     }
@@ -640,8 +640,8 @@ Java_sun_java2d_windows_GDIRenderer_doFillPoly
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIRenderer_doFillPoly");
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  color=0x%x transx=%-4d transy=%-4d npoints=%-4d",
-                color, transx, transy, npoints);
+               "  color=0x%x transx=%-4d transy=%-4d npoints=%-4d",
+               color, transx, transy, npoints);
     if (JNU_IsNull(env, xpointsarray) || JNU_IsNull(env, ypointsarray)) {
         JNU_ThrowNullPointerException(env, "coordinate array");
         return;
@@ -711,8 +711,8 @@ Java_sun_java2d_windows_GDIRenderer_doShape
 {
     J2dTraceLn(J2D_TRACE_INFO, "GDIRenderer_doShape");
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "  color=0x%x transx=%-4d transy=%-4d isfill=%-4d",
-                color, transX, transY, isfill);
+               "  color=0x%x transx=%-4d transy=%-4d isfill=%-4d",
+               color, transX, transY, isfill);
     GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, sData);
     if (wsdo == NULL) {
         return;
@@ -893,7 +893,7 @@ Java_sun_java2d_windows_GDIRenderer_devCopyArea
     GDIWinSDOps *wsdo = GDIWindowSurfaceData_GetOps(env, wsd);
     J2dTraceLn(J2D_TRACE_INFO, "GDIWindowSurfaceData_devCopyArea");
     J2dTraceLn(J2D_TRACE_VERBOSE, "   srcx=%-4d srcy=%-4d dx=%-4d dy=%-4d",
-                srcx, srcy, dx, dy);
+               srcx, srcy, dx, dy);
     J2dTraceLn(J2D_TRACE_VERBOSE, "     w=%-4d h=%-4d", width, height);
     if (wsdo == NULL) {
         return;

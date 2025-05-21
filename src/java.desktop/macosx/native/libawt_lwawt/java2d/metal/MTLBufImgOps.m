@@ -82,7 +82,9 @@
                                        device:(id<MTLDevice>)device {
     self = [super init];
     if (self) {
-        J2dTraceLn(J2D_TRACE_INFO,"Created MTLConvolveOp: kernelW=%d kernelH=%d", kernelWidth, kernelHeight);
+        J2dTraceLn(J2D_TRACE_INFO,
+                   "Created MTLConvolveOp: kernelW=%d kernelH=%d",
+                   kernelWidth, kernelHeight);
         _isEdgeZeroFill = edgeZeroFill;
 
         _kernelSize = kernelWidth * kernelHeight;
@@ -142,8 +144,9 @@
                                    device:(id<MTLDevice>)device {
     self = [super init];
     if (self) {
-        J2dTraceLn(J2D_TRACE_INFO,"Created MTLLookupOp: short=%d num=%d len=%d off=%d",
-                    shortData, numBands, bandLength, offset);
+        J2dTraceLn(J2D_TRACE_INFO
+                   "Created MTLLookupOp: short=%d num=%d len=%d off=%d",
+                   shortData, numBands, bandLength, offset);
 
         _isUseSrcAlpha = numBands != 4;
         _isNonPremult = nonPremult;

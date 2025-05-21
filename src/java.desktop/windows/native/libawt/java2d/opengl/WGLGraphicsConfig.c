@@ -245,9 +245,9 @@ WGLGC_GetPixelFormatForDC(HDC hdc)
         db      = attrVals[2];
         alpha   = attrVals[3];
 
-        J2dRlsTrace(J2D_TRACE_VERBOSE,
-            "[V]     pixfmt=%d db=%d alpha=%d depth=%d stencil=%d valid=",
-                     pixfmt, db, alpha, depth, stencil);
+        J2dRlsTrace(J2D_TRACE_VERBOSE, "[V]     "\
+                    "pixfmt=%d db=%d alpha=%d depth=%d stencil=%d valid=",
+                    pixfmt, db, alpha, depth, stencil);
 
         if ((depth + stencil) < minDepthPlusStencil) {
             J2dRlsTrace(J2D_TRACE_VERBOSE, "true\n");
@@ -264,9 +264,8 @@ WGLGC_GetPixelFormatForDC(HDC hdc)
         return 0;
     }
 
-    J2dRlsTraceLn(J2D_TRACE_INFO,
-        "WGLGC_GetPixelFormatForDC: chose %d as the best pixel format",
-                   chosenPixFmt);
+    J2dRlsTraceLn(J2D_TRACE_INFO, "WGLGC_GetPixelFormatForDC: "\
+                  "chose %d as the best pixel format", chosenPixFmt);
 
     return chosenPixFmt;
 }
@@ -596,8 +595,8 @@ Java_sun_java2d_opengl_WGLGraphicsConfig_getWGLConfigInfo(JNIEnv *env,
     OGLContext_GetExtensionInfo(env, &caps);
 
     J2dRlsTraceLn(J2D_TRACE_INFO,
-        "WGLGraphicsConfig_getWGLConfigInfo: OpenGL version=%s",
-                   (versionstr == NULL) ? "null" : (char *)versionstr);
+                  "WGLGraphicsConfig_getWGLConfigInfo: OpenGL version=%s",
+                  (versionstr == NULL) ? "null" : (char *)versionstr);
 
     if (!OGLContext_IsVersionSupported(versionstr)) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,

@@ -134,7 +134,7 @@ D3DTR_UpdateLCDTextColor(D3DContext *d3dc, jint contrast)
     jfloat clr[4];
 
     J2dTraceLn(J2D_TRACE_INFO,
-                "D3DTR_UpdateLCDTextColor: contrast=%d", contrast);
+               "D3DTR_UpdateLCDTextColor: contrast=%d", contrast);
 
     /*
      * Note: Ideally we would update the "srcAdj" uniform parameter only

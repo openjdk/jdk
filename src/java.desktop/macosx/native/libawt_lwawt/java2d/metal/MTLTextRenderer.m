@@ -490,7 +490,9 @@ MTLTR_DrawGrayscaleGlyphNoCache(MTLContext *mtlc,
         for (sx = 0; sx < w; sx += tw, x += tw) {
             sw = ((sx + tw) > w) ? (w - sx) : tw;
 
-            J2dTraceLn(J2D_TRACE_INFO, "sx = %d sy = %d x = %d y = %d sw = %d sh = %d w = %d", sx, sy, x, y, sw, sh, w);
+            J2dTraceLn(J2D_TRACE_INFO,
+                       "sx = %d sy = %d x = %d y = %d sw = %d sh = %d w = %d",
+                       sx, sy, x, y, sw, sh, w);
             MTLVertexCache_AddMaskQuad(mtlc,
                                        sx, sy, x, y, sw, sh,
                                        w, ginfo->image,
@@ -515,7 +517,9 @@ MTLTR_DrawLCDGlyphNoCache(MTLContext *mtlc, BMTLSDOps *dstOps,
     id<MTLTexture> blitTexture = nil;
 
     J2dTraceLn(J2D_TRACE_INFO, "MTLTR_DrawLCDGlyphNoCache x %d, y%d", x, y);
-    J2dTraceLn(J2D_TRACE_INFO, "MTLTR_DrawLCDGlyphNoCache rowBytesOffset=%d, rgbOrder=%d, contrast=%d", rowBytesOffset, rgbOrder, contrast);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLTR_DrawLCDGlyphNoCache rowBytesOffset=%d, rgbOrder=%d, contrast=%d",
+               rowBytesOffset, rgbOrder, contrast);
 
 
     id<MTLRenderCommandEncoder> encoder = nil;
@@ -578,7 +582,9 @@ MTLTR_DrawLCDGlyphNoCache(MTLContext *mtlc, BMTLSDOps *dstOps,
     tx2 = 1.0f;
     ty2 = 1.0f;
 
-    J2dTraceLn(J2D_TRACE_INFO, "MTLTR_DrawLCDGlyphNoCache : dstOps->width = %d, dstOps->height = %d", dstOps->width, dstOps->height);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "MTLTR_DrawLCDGlyphNoCache : dstOps->width = %d, dstOps->height = %d",
+               dstOps->width, dstOps->height);
 
     LCD_ADD_TRIANGLES(tx1, ty1, tx2, ty2, x, y, x+w, y+h);
 

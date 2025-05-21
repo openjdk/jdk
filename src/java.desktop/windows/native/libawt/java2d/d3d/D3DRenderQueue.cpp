@@ -68,7 +68,7 @@ D3DRQ_SwapBuffers(D3DPipelineManager *pMgr, D3DSDOps *d3dsdo,
 
     J2dTraceLn(J2D_TRACE_INFO, "D3DRQ_SwapBuffers");
     J2dTraceLn(J2D_TRACE_VERBOSE, "  x1=%d y1=%d x2=%d y2=%d",
-                x1, y1, x2, y2);
+               x1, y1, x2, y2);
 
     RETURN_STATUS_IF_NULL(d3dsdo, E_FAIL);
     RETURN_STATUS_IF_NULL(d3dsdo->pResource, E_FAIL);
@@ -107,9 +107,9 @@ D3DRQ_SwapBuffers(D3DPipelineManager *pMgr, D3DSDOps *d3dsdo,
         int wh = r.bottom - r.top;
         if (ww != params.BackBufferWidth || wh != params.BackBufferHeight) {
             J2dTraceLn(J2D_TRACE_WARNING,
-                "D3DRQ_SwapBuffers: surface/window dimensions mismatch: "\
-                "win: w=%d h=%d, bb: w=%d h=%d",
-                ww, wh, params.BackBufferWidth, params.BackBufferHeight);
+                       "D3DRQ_SwapBuffers: surface/window dimensions mismatch: "\
+                       "win: w=%d h=%d, bb: w=%d h=%d",
+                       ww, wh, params.BackBufferWidth, params.BackBufferHeight);
 
             return S_OK;
         }
@@ -840,7 +840,7 @@ void D3DRQ_FlushBuffer(void *pParam)
 
         default:
             J2dRlsTraceLn(J2D_TRACE_ERROR,
-                "D3DRQ_flushBuffer: invalid opcode=%d", opcode);
+                          "D3DRQ_flushBuffer: invalid opcode=%d", opcode);
             return;
         }
         // we may mark the surface lost repeatedly but that won't do much harm

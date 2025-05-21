@@ -734,10 +734,10 @@ HRESULT D3DVertexCacher::Render(int actionType)
         UINT currentVertex = firstPendingVertex;
         UINT batchSize;
         J2dTraceLn(J2D_TRACE_VERBOSE,
-                    "D3DVC::Render Starting flushing of %d vertices "\
-                    "in %d batches",
-                    pendingVertices,
-                    (currentBatch - firstPendingBatch + 1));
+                   "D3DVC::Render Starting flushing of %d vertices "\
+                   "in %d batches",
+                   pendingVertices,
+                   (currentBatch - firstPendingBatch + 1));
 
 
         for (UINT b = firstPendingBatch; b <= currentBatch; b++) {
@@ -786,19 +786,19 @@ HRESULT D3DVertexCacher::EnsureCapacity(D3DPRIMITIVETYPE newPType, UINT vNum)
         // render whatever we have in the buffer and start
         // from the beginning of the vertex buffer
         J2dTraceLn(J2D_TRACE_VERBOSE,
-                    "D3DVC::EnsureCapacity exceeded capacity. "\
-                    "current v: %d, requested vertices: %d\n",
-                    firstUnusedVertex, vNum);
+                   "D3DVC::EnsureCapacity exceeded capacity. "\
+                   "current v: %d, requested vertices: %d\n",
+                   firstUnusedVertex, vNum);
         if (FAILED(res = Render(RESET_ACTION))) {
             return res;
         }
     }
 
     J2dTraceLn(J2D_TRACE_VERBOSE,
-                "D3DVC::EnsureCapacity current batch: %d "\
-                " batch.type=%d newType=%d vNum=%d firstUnusedV=%d",
-                currentBatch, batches[currentBatch].pType, newPType, vNum,
-                firstUnusedVertex);
+               "D3DVC::EnsureCapacity current batch: %d "\
+               " batch.type=%d newType=%d vNum=%d firstUnusedV=%d",
+               currentBatch, batches[currentBatch].pType, newPType, vNum,
+               firstUnusedVertex);
     // there should not be multiple linestrips in a batch,
     // or they will be counted as a single line strip
     if (batches[currentBatch].pType != newPType ||

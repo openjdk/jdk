@@ -96,7 +96,8 @@ MTLVertexCache_FlushVertexCache(MTLContext *mtlc)
 
         [encoder setFragmentTexture:maskCacheTex.texture atIndex: 0];
         J2dTraceLn(J2D_TRACE_INFO,
-            "MTLVertexCache_FlushVertexCache : encode %d characters", (vertexCacheIndex / 6));
+                   "MTLVertexCache_FlushVertexCache : encode %d characters",
+                   (vertexCacheIndex / 6));
         [encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:vertexCacheIndex];
     }
     vertexCacheIndex = 0;
@@ -120,7 +121,8 @@ MTLVertexCache_FlushGlyphVertexCache()
         id<MTLTexture> glyphCacheTex = MTLTR_GetGlyphCacheTexture();
         [encoder setFragmentTexture:glyphCacheTex atIndex: 0];
         J2dTraceLn(J2D_TRACE_INFO,
-            "MTLVertexCache_FlushGlyphVertexCache : encode %d characters", (vertexCacheIndex / 6));
+                   "MTLVertexCache_FlushGlyphVertexCache : encode %d characters",
+                   (vertexCacheIndex / 6));
         [encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:vertexCacheIndex];
     }
     vertexCacheIndex = 0;
@@ -229,7 +231,8 @@ MTLVertexCache_AddMaskQuad(MTLContext *mtlc,
     if ((maskCacheIndex >= MTLVC_MASK_CACHE_MAX_INDEX) ||
          ((vertexCacheIndex + VERTS_FOR_A_QUAD) >= MTLVC_MAX_INDEX))
     {
-        J2dTraceLn(J2D_TRACE_INFO, "maskCacheIndex = %d, vertexCacheIndex = %d", maskCacheIndex, vertexCacheIndex);
+        J2dTraceLn(J2D_TRACE_INFO, "maskCacheIndex = %d, vertexCacheIndex = %d",
+                   maskCacheIndex, vertexCacheIndex);
         MTLVertexCache_FlushVertexCache(mtlc);
         MTLVertexCache_EnableMaskCache(mtlc, dstOps);
         maskCacheIndex = 0;
@@ -240,8 +243,9 @@ MTLVertexCache_AddMaskQuad(MTLContext *mtlc,
                     (maskCacheIndex % MTLVC_MASK_CACHE_WIDTH_IN_TILES);
         jint texy = MTLVC_MASK_CACHE_TILE_HEIGHT *
                     (maskCacheIndex / MTLVC_MASK_CACHE_WIDTH_IN_TILES);
-        J2dTraceLn(J2D_TRACE_INFO, "texx = %d texy = %d width = %d height = %d maskscan = %d", texx, texy, width,
-                    height, maskscan);
+        J2dTraceLn(J2D_TRACE_INFO,
+                   "texx = %d texy = %d width = %d height = %d maskscan = %d",
+                   texx, texy, width, height, maskscan);
         NSUInteger bytesPerRow = 1 * width;
         NSUInteger slice = bytesPerRow * srcy + srcx;
         MTLRegion region = {
@@ -301,7 +305,9 @@ MTLVertexCache_AddMaskQuad(MTLContext *mtlc,
     dx2 = dx1 + width;
     dy2 = dy1 + height;
 
-    J2dTraceLn(J2D_TRACE_INFO, "tx1 = %f ty1 = %f tx2 = %f ty2 = %f dx1 = %f dy1 = %f dx2 = %f dy2 = %f", tx1, ty1, tx2, ty2, dx1, dy1, dx2, dy2);
+    J2dTraceLn(J2D_TRACE_INFO,
+               "tx1 = %f ty1 = %f tx2 = %f ty2 = %f dx1 = %f dy1 = %f dx2 = %f dy2 = %f",
+               tx1, ty1, tx2, ty2, dx1, dy1, dx2, dy2);
     MTLVC_ADD_TRIANGLES(tx1, ty1, tx2, ty2,
                         dx1, dy1, dx2, dy2);
 }
@@ -317,7 +323,8 @@ MTLVertexCache_AddGlyphQuad(MTLContext *mtlc,
     // so need to check space for VERTS_FOR_A_QUAD elements
     if ((vertexCacheIndex + VERTS_FOR_A_QUAD) >= MTLVC_MAX_INDEX)
     {
-        J2dTraceLn(J2D_TRACE_INFO, "maskCacheIndex = %d, vertexCacheIndex = %d", maskCacheIndex, vertexCacheIndex);
+        J2dTraceLn(J2D_TRACE_INFO, "maskCacheIndex = %d, vertexCacheIndex = %d",
+                   maskCacheIndex, vertexCacheIndex);
         MTLVertexCache_FlushGlyphVertexCache();
     }
 

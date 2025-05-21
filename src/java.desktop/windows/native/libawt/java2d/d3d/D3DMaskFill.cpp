@@ -56,7 +56,7 @@ D3DMaskFill_MaskFill(D3DContext *d3dc,
 
     J2dTraceLn(J2D_TRACE_VERBOSE, "  x=%d y=%d w=%d h=%d", x, y, w, h);
     J2dTraceLn(J2D_TRACE_VERBOSE, "  maskoff=%d maskscan=%d",
-                maskoff, maskscan);
+               maskoff, maskscan);
 
     {
         D3DMaskCache *maskCache = d3dc->GetMaskCache();
