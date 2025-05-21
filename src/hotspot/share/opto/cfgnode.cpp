@@ -2095,6 +2095,17 @@ bool PhiNode::is_split_through_mergemem_terminating() const {
   return true;
 }
 
+// Is one of the inputs a Cast that has not been processed by igvn yet?
+bool PhiNode::wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const {
+  for (uint i = 1, cnt = req(); i < cnt; ++i) {
+    Node* n = in(i);
+    if (n != nullptr && n->is_ConstraintCast() && igvn->_worklist.member(n)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Must preserve
 // the CFG, but we can still strip out dead paths.
@@ -2153,13 +2164,12 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // If there is a chance that the region can be optimized out do
       // not add a cast node that we can't remove yet.
       !wait_for_region_igvn(phase)) {
+    // If one of the inputs is a cast that has yet to be processed by igvn, delay processing of this node to give the
+    // inputs a chance to optimize and possibly end up with identical inputs.
     PhaseIterGVN* igvn = phase->is_IterGVN();
-    for (uint i = 1, cnt = req(); i < cnt; ++i) {
-      Node* n = in(i);
-      if (n != nullptr && n->is_ConstraintCast() && igvn->_worklist.member(n)) {
-        igvn->_worklist.push(this);
-        return nullptr;
-      }
+    if (wait_for_cast_input_igvn(igvn)) {
+      igvn->_worklist.push(this);
+      return nullptr;
     }
     uncasted = true;
     uin = unique_input(phase, true);
