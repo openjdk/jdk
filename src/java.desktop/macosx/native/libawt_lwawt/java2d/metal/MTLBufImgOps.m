@@ -144,7 +144,7 @@
                                    device:(id<MTLDevice>)device {
     self = [super init];
     if (self) {
-        J2dTraceLn(J2D_TRACE_INFO
+        J2dTraceLn(J2D_TRACE_INFO,
                    "Created MTLLookupOp: short=%d num=%d len=%d off=%d",
                    shortData, numBands, bandLength, offset);
 
