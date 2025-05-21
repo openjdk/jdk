@@ -31,6 +31,26 @@ import java.lang.ref.ReferenceQueue;
 import java.util.Objects;
 import sun.nio.Cleaner;
 
+/**
+ * BufferCleaner supports PhantomReference-based management of native memory
+ * referred to by Direct-XXX-Buffers. Unreferenced DBBs may be garbage
+ * collected, deactivating the associated PRefs and making them available for
+ * cleanup here.
+ *
+ * There is a configured limit to the amount of memory that may be allocated
+ * by DBBs. When that limit is reached, the allocator may invoke the garbage
+ * collector directly to attempt to trigger cleaning here, hopefully
+ * permitting the allocation to complete. Only if that doesn't free sufficient
+ * memory does the allocation fail.  See java.nio.Bits::reserveMemory() for
+ * details.
+ *
+ * One of the requirements for that approach is having a way to determine that
+ * deactivated cleaners have been cleaned. java.lang.ref.Cleaner doesn't
+ * provide such a mechanism, and adding such a mechanism to that class to
+ * satisfy this unique requirement was deemed undesirable. Instead, this class
+ * uses the underlying primitives (PhantomReferences, ReferenceQueues) to
+ * provide the functionality needed for DBB management.
+ */
 class BufferCleaner {
     private static final class PhantomCleaner
         extends PhantomReference<Object>
