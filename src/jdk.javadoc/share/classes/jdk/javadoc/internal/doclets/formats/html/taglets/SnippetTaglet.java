@@ -136,7 +136,7 @@ public class SnippetTaglet extends BaseTaglet {
             if (styles.isEmpty()) {
                 code.add(text);
             } else {
-                Element e = null;
+                Element ref = null;
                 String linkTarget = null;
                 boolean markupEncountered = false;
                 Set<String> classes = new HashSet<>();
@@ -152,8 +152,8 @@ public class SnippetTaglet extends BaseTaglet {
                                         content.asCharSequence().toString().trim());
                             }
                             linkTarget = l.target();
-                            e = getLinkedElement(element, linkTarget);
-                            if (e == null) {
+                            ref = getLinkedElement(element, linkTarget);
+                            if (ref == null) {
                                 messages.error(utils.getCommentHelper(element).getDocTreePath(tag),
                                         "doclet.link.see.reference_not_found",
                                         linkTarget);
@@ -166,7 +166,6 @@ public class SnippetTaglet extends BaseTaglet {
                 if (markupEncountered) {
                     return;
                 } else if (linkTarget != null) {
-                    assert e != null;
                     //disable preview tagging inside the snippets:
                     Utils.PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
                     try {
@@ -174,10 +173,10 @@ public class SnippetTaglet extends BaseTaglet {
                         c = lt.linkSeeReferenceOutput(element,
                                 null,
                                 linkTarget,
-                                e,
+                                ref,
                                 false, // TODO: for now
                                 Text.of(sequence.toString()),
-                                (key, args) -> { /* TODO: report diagnostic */ },
+                                (key, args) -> { /* Error has already been reported above */ },
                                 tagletWriter);
                     } finally {
                         utils.setPreviewFlagProvider(prevPreviewProvider);
