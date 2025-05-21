@@ -3307,15 +3307,6 @@ encode %{
   %}
 
 
-  enc_class enc_cmove_imm(iRegIdst dst, flagsRegSrc crx, immI16 src, cmpOp cmp) %{
-    Label done;
-    assert((Assembler::bcondCRbiIs1 & ~Assembler::bcondCRbiIs0) == 8, "check encoding");
-    // Branch if not (cmp crx).
-    __ bc(cc_to_inverse_boint($cmp$$cmpcode), cc_to_biint($cmp$$cmpcode, $crx$$reg), done);
-    __ li($dst$$Register, $src$$constant);
-    __ bind(done);
-  %}
-
   // This enc_class is needed so that scheduler gets proper
   // input mapping for latency computation.
   enc_class enc_andc(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
@@ -7409,20 +7400,6 @@ instruct cmovI_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) 
   ins_pipe(pipe_class_default);
 %}
 
-
-instruct cmovI_imm(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, immI16 src) %{
-  match(Set dst (CMoveI (Binary cmp crx) (Binary dst src)));
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler
-  size(8);
-  ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
-  ins_pipe(pipe_class_default);
-%}
-
 // Cmove using isel.
 instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) %{
   match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
@@ -7437,20 +7414,6 @@ instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) 
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
   %}
-  ins_pipe(pipe_class_default);
-%}
-
-
-instruct cmovL_imm(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, immL16 src) %{
-  match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
 
@@ -7471,21 +7434,6 @@ instruct cmovN_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) 
   ins_pipe(pipe_class_default);
 %}
 
-
-
-instruct cmovN_imm(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, immN_0 src) %{
-  match(Set dst (CMoveN (Binary cmp crx) (Binary dst src)));
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
-  ins_pipe(pipe_class_default);
-%}
-
 // Cmove using isel.
 instruct cmovP_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegPsrc src) %{
   match(Set dst (CMoveP (Binary cmp crx) (Binary dst src)));
@@ -7500,20 +7448,6 @@ instruct cmovP_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegPsrc src) 
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
   %}
-  ins_pipe(pipe_class_default);
-%}
-
-
-instruct cmovP_imm(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, immP_0 src) %{
-  match(Set dst (CMoveP (Binary cmp crx) (Binary dst src)));
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
 
@@ -7583,7 +7517,6 @@ instruct compareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
   ins_pipe(pipe_class_default);
 %}
 
-
 instruct compareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapS mem_ptr (Binary src1 src2)));
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
@@ -7601,7 +7534,6 @@ instruct compareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
   %}
   ins_pipe(pipe_class_default);
 %}
-
 
 instruct compareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapI mem_ptr (Binary src1 src2)));
@@ -7693,7 +7625,6 @@ instruct weakCompareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-
 instruct weakCompareAndSwapB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapB mem_ptr (Binary src1 src2)));
   predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) );
@@ -7707,7 +7638,6 @@ instruct weakCompareAndSwapB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   %}
   ins_pipe(pipe_class_default);
 %}
-
 
 instruct weakCompareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapS mem_ptr (Binary src1 src2)));
@@ -7723,7 +7653,6 @@ instruct weakCompareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-
 instruct weakCompareAndSwapS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapS mem_ptr (Binary src1 src2)));
   predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
@@ -7737,7 +7666,6 @@ instruct weakCompareAndSwapS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   %}
   ins_pipe(pipe_class_default);
 %}
-
 
 instruct weakCompareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapI mem_ptr (Binary src1 src2)));
@@ -7876,7 +7804,6 @@ instruct compareAndExchangeB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-
 instruct compareAndExchangeB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeB mem_ptr (Binary src1 src2)));
   predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
@@ -7912,7 +7839,6 @@ instruct compareAndExchangeS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-
 instruct compareAndExchangeS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeS mem_ptr (Binary src1 src2)));
   predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
@@ -7932,7 +7858,6 @@ instruct compareAndExchangeS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   %}
   ins_pipe(pipe_class_default);
 %}
-
 
 instruct compareAndExchangeI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeI mem_ptr (Binary src1 src2)));
@@ -8089,7 +8014,6 @@ instruct getAndAddB(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr
   %}
   ins_pipe(pipe_class_default);
 %}
-
 
 instruct getAndAddS(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndAddS mem_ptr src));
