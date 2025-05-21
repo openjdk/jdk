@@ -73,7 +73,9 @@ public class FakeCodeLocation {
         @Override
         public String[] vmArgs(RunMode runMode) {
             String[] args = new String[] {
+                "-Xlog:aot",
                 "-Xlog:cds",
+                "-Xlog:aot+class=debug",
                 "-Xlog:cds+class=debug",
                 "-Xlog:class+load",
             };
@@ -94,9 +96,9 @@ public class FakeCodeLocation {
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (isDumping(runMode)) {
-                out.shouldMatch("cds,class.* FakeCodeLocationApp");
-                out.shouldNotMatch("cds,class.* ClassNotInJar1");
-                out.shouldNotMatch("cds,class.* ClassNotInJar2");
+                out.shouldMatch(",class.* FakeCodeLocationApp");
+                out.shouldNotMatch(",class.* ClassNotInJar1");
+                out.shouldNotMatch(",class.* ClassNotInJar2");
             }
 
             if (runMode.isProductionRun()) {
