@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class invokemethod003t {
+    static Thread testThread = null;
+
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);
     }
@@ -46,7 +48,8 @@ public class invokemethod003t {
         IOPipe pipe = argHandler.createDebugeeIOPipe();
         invokemethod003tDummyClass invokemethod003tdummyCls = new invokemethod003tDummyClass();
 
-        Thread.currentThread().setName(invokemethod003.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(invokemethod003.DEBUGGEE_THRNAME);
 
         pipe.println(invokemethod003.COMMAND_READY);
         String cmd = pipe.readln();

@@ -1860,30 +1860,6 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
   }
 }
 
-bool G1CollectedHeap::try_collect_fullgc(GCCause::Cause cause,
-                                         const G1GCCounters& counters_before) {
-  assert_heap_not_locked();
-
-  while(true) {
-    VM_G1CollectFull op(counters_before.total_collections(),
-                        counters_before.total_full_collections(),
-                        cause);
-    VMThread::execute(&op);
-
-    // Request is trivially finished.
-    if (!GCCause::is_explicit_full_gc(cause) || op.gc_succeeded()) {
-      return op.gc_succeeded();
-    }
-
-    {
-      MutexLocker ml(Heap_lock);
-      if (counters_before.total_full_collections() != total_full_collections()) {
-        return true;
-      }
-    }
-  }
-}
-
 bool G1CollectedHeap::try_collect(GCCause::Cause cause,
                                   const G1GCCounters& counters_before) {
   if (should_do_concurrent_full_gc(cause)) {
@@ -1902,7 +1878,11 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause,
     return op.gc_succeeded();
   } else {
     // Schedule a Full GC.
-    return try_collect_fullgc(cause, counters_before);
+    VM_G1CollectFull op(counters_before.total_collections(),
+                        counters_before.total_full_collections(),
+                        cause);
+    VMThread::execute(&op);
+    return op.gc_succeeded();
   }
 }
 
