@@ -25,28 +25,31 @@
  * @test
  * @bug 8356995
  * @summary Comparator min/max method tests
- * @run testng MinMaxTest
+ * @run junit MinMaxTest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Comparator;
-import static org.testng.Assert.*;
 
-@Test(groups = "unit")
+import static org.junit.jupiter.api.Assertions.*;
+
 public class MinMaxTest {
+  @Test
   public void testMin() {
     Comparator<String> c = Comparator.naturalOrder();
-    assertEquals(c.min("a", "b"), "a");
-    assertEquals(c.min("b", "a"), "a");
+    assertEquals("a", c.min("a", "b"));
+    assertEquals("a", c.min("b", "a"));
   }
 
+  @Test
   public void testMax() {
     Comparator<String> c = Comparator.naturalOrder();
-    assertEquals(c.max("a", "b"), "b");
-    assertEquals(c.max("b", "a"), "b");
+    assertEquals("b", c.max("a", "b"));
+    assertEquals("b", c.max("b", "a"));
   }
 
+  @Test
   public void testThrowsNPE() {
     Comparator<String> c = Comparator.naturalOrder();
     assertThrows(NullPointerException.class, () -> c.min(null, "a"));
@@ -55,6 +58,7 @@ public class MinMaxTest {
     assertThrows(NullPointerException.class, () -> c.max("a", null));
   }
 
+  @Test
   public void testThrowsCCE() {
     @SuppressWarnings("unchecked")
     Comparator<Object> c = (Comparator<Object>) (Comparator<?>)Comparator.naturalOrder();
@@ -64,11 +68,12 @@ public class MinMaxTest {
     assertThrows(ClassCastException.class, () -> c.max("a", 1));
   }
 
-  public void testEqualReturnFirstOrLast() {
+  @Test
+  public void testEqualReturnFirst() {
     Comparator<Object> allEqual = (_, _) -> 0;
     Object o1 = new Object();
     Object o2 = new Object();
-    assertSame(allEqual.min(o1, o2), o1);
-    assertSame(allEqual.max(o1, o2), o2);
+    assertSame(o1, allEqual.min(o1, o2));
+    assertSame(o1, allEqual.max(o1, o2));
   }
 }

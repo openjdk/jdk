@@ -191,7 +191,7 @@ public interface Comparator<T> {
     /**
      * Returns the greater of two values according to this comparator.
      * If the arguments are equal with respect to this comparator,
-     * the {@code b} argument is returned.
+     * the {@code a} argument is returned.
      *
      * @param   a   an argument.
      * @param   b   another argument.
@@ -203,7 +203,7 @@ public interface Comparator<T> {
      * @since 25
      */
     default T max(T a, T b) {
-        return compare(a, b) > 0 ? a : b;
+        return compare(a, b) >= 0 ? a : b;
     }
 
     /**
@@ -221,7 +221,7 @@ public interface Comparator<T> {
      * @since 25
      */
     default T min(T a, T b) {
-        return compare(a, b) > 0 ? b : a;
+        return compare(a, b) <= 0 ? a : b;
     }
 
     /**
