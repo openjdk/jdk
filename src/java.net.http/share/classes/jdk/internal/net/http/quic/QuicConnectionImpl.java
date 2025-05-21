@@ -2522,12 +2522,18 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 // ignore the packet
                 return;
             }
-            initialToken = rt.retryToken();
-            final QuicConnectionId retryConnId = rt.sourceId();
-            this.peerConnIdManager.retryConnId(retryConnId);
-            quicTLSEngine.deriveInitialKeys(originalVersion, retryConnId.asReadOnlyBuffer());
-            this.packetSpace(PacketNumberSpace.INITIAL).retry();
-            handshakeFlow.localInitial.replayData();
+            ReentrantLock tl = packetSpaces.initial.getTransmitLock();
+            tl.lock();
+            try {
+                initialToken = rt.retryToken();
+                final QuicConnectionId retryConnId = rt.sourceId();
+                this.peerConnIdManager.retryConnId(retryConnId);
+                quicTLSEngine.deriveInitialKeys(originalVersion, retryConnId.asReadOnlyBuffer());
+                this.packetSpace(PacketNumberSpace.INITIAL).retry();
+                handshakeFlow.localInitial.replayData();
+            } finally {
+                tl.unlock();
+            }
             packetSpaces.initial.runTransmitter();
         } catch (Throwable t) {
             terminator.terminate(TerminationCause.forException(t));
@@ -2661,15 +2667,21 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             }
             // a different version than the current client chosen version has been negotiated,
             // switch the client connection to use this negotiated version
-            if (switchVersion(negotiatedVersion)) {
-                final ByteBuffer quicInitialParameters = buildInitialParameters();
-                quicTLSEngine.setLocalQuicTransportParameters(quicInitialParameters);
-                quicTLSEngine.restartHandshake();
-                handshakeFlow.localInitial.reset();
-                continueHandshake();
-                packetSpaces.initial.runTransmitter();
-                this.versionCompatible = true;
-                processedVersionsPacket = true;
+            ReentrantLock tl = packetSpaces.initial.getTransmitLock();
+            tl.lock();
+            try {
+                if (switchVersion(negotiatedVersion)) {
+                    final ByteBuffer quicInitialParameters = buildInitialParameters();
+                    quicTLSEngine.setLocalQuicTransportParameters(quicInitialParameters);
+                    quicTLSEngine.restartHandshake();
+                    handshakeFlow.localInitial.reset();
+                    continueHandshake();
+                    packetSpaces.initial.runTransmitter();
+                    this.versionCompatible = true;
+                    processedVersionsPacket = true;
+                }
+            } finally {
+                tl.unlock();
             }
         } catch (Throwable t) {
             if (debug.on()) {

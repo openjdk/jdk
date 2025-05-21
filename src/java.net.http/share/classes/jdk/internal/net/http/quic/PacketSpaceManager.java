@@ -199,6 +199,8 @@ public sealed class PacketSpaceManager implements PacketSpace
     // due. This task will move packets from the pendingAcknowledgement queue
     // into the triggeredForRetransmission queue (and pendingRetransmission queue)
     private final PacketTransmissionTask packetTransmissionTask;
+    // Used to synchronize transmission with handshake restarts
+    private final ReentrantLock transmitLock = new ReentrantLock();
     private volatile boolean fastRetransmitDone;
     private volatile boolean fastRetransmit;
 
@@ -355,6 +357,7 @@ public sealed class PacketSpaceManager implements PacketSpace
          * #runTransmitter()}
          */
         private void handleLoop() {
+            transmitLock.lock();
             try {
                 handleLoop0();
             } catch (Throwable t) {
@@ -365,6 +368,8 @@ public sealed class PacketSpaceManager implements PacketSpace
                 } else if (debug.on()) {
                     debug.log("handleLoop failed", t);
                 }
+            } finally {
+                transmitLock.unlock();
             }
         }
 
@@ -1009,6 +1014,11 @@ public sealed class PacketSpaceManager implements PacketSpace
             debug.log("retry received - clearing pending acks");
         }
         clearAll();
+    }
+
+    @Override
+    public ReentrantLock getTransmitLock() {
+        return transmitLock;
     }
 
     // adds the PingRequest to the pendingPingRequests queue so

@@ -25,6 +25,7 @@
 package jdk.internal.net.http.quic.packets;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.ReentrantLock;
 
 import jdk.internal.net.http.quic.QuicConnectionImpl;
 import jdk.internal.net.http.quic.frames.AckFrame;
@@ -119,6 +120,12 @@ public sealed interface PacketSpace permits PacketSpaceManager {
      */
     void retry();
 
+    /**
+     * {@return a lock used by the transmission task}.
+     * Used to ensure that the transmission task does not observe partial changes
+     * during processing of incoming Versions and Retry packets.
+     */
+    ReentrantLock getTransmitLock();
     /**
      * Called when a packet is received. Causes the next ack frame to be
      * updated. If a packet contains an {@link AckFrame}, the caller is
