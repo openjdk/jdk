@@ -225,8 +225,8 @@ import java.util.Set;
  *           </li>
  *           <li>
  *               If the value is not {@code "STORED"} or {@code "DEFLATED"}, an
- *               {@code IllegalArgumentException} will be thrown when the Zip
- *               filesystem is created.
+ *               {@code IllegalArgumentException} will be thrown when creating the
+ *               ZIP file system.
  *           </li>
  *       </ul>
  *   </td>
@@ -260,8 +260,8 @@ import java.util.Set;
  *           <li>
  *               If the value does not represent a valid
  *               {@linkplain Runtime.Version Java SE Platform version number},
- *               an {@code IllegalArgumentException} will be thrown when the Zip
- *               filesystem is created.
+ *               an {@code IllegalArgumentException} will be thrown when creating
+ *               the ZIP file system.
  *           </li>
  *       </ul>
  *   </td>
