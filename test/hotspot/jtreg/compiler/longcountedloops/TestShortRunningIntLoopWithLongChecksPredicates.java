@@ -35,7 +35,7 @@ import java.util.Objects;
 // int RC is first eliminated by predication which causes Assertion
 // Predicates to be added. Then the loop is transformed to make it
 // possible to optimize long RC. Finally unrolling happen which
-// require the assert predicate to have been properly copied when the
+// require the Assert Predicates to have been properly copied when the
 // loop was transformed for the long range check.
 public class TestShortRunningIntLoopWithLongChecksPredicates {
     private static volatile int volatileField;
