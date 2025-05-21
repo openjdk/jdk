@@ -30,32 +30,33 @@ import java.lang.annotation.*;
 /**
  * The {@code @IntrinsicCandidate} indicates that an annotated method is
  * recognized by {@code vmIntrinsics.hpp} for special treatment by the HotSpot
- * VM, unlike the other methods.  The HotSpot VM checks, when loading a class,
- * the consistency of recognized methods and {@code @IntrinsicCandidate}
- * annotations, unless the {@code CheckIntrinsics} VM flag is disabled.
+ * VM.  When a class is loading, the HotSpot VM checks the consistency of
+ * recognized methods and {@code @IntrinsicCandidate} annotations, unless the
+ * {@code CheckIntrinsics} VM flag is disabled.
  *
  * <h2 id="intrinsification">Intrinsification</h2>
- * The most frequently special treatment is intrinsification, which replaces a
- * candidate method's body, bytecode or native, with handwritten platform
- * assembly and/or compiler IR.  (See {@code LibraryCallKit::try_to_inline} in
- * {@code library_call.cpp} for logic that checks if an intrinsic is available
- * and applicable at a given call site.)  Many Java library methods have
- * properties that cannot be deduced by the compiler for optimization, or can
- * utilize specific hardware instructions not modeled by the compiler IR, making
- * intrinsics necessary.
+ * Most frequently, the special treatment of an intrinsic is
+ * <em>intrinsification</em>, which replaces a candidate method's body, bytecode
+ * or native, with handwritten platform assembly and/or compiler IR.  (See
+ * {@code LibraryCallKit::try_to_inline} in {@code library_call.cpp} for logic
+ * that checks if an intrinsic is available and applicable at a given call site.)
+ * Many Java library methods have properties that cannot be deduced by the
+ * compiler for optimization, or can utilize specific hardware instructions not
+ * modeled by the compiler IR, making intrinsics necessary.
  * <p>
- * Intrinsification may never happen, or happen at any moment during execution.
- * For example, the bytecodes of a candidate method may be executed by lower
+ * During execution, intrinsification may happen and may be rolled back at any
+ * moment; this loading and unloading process may happen zero to many times.
+ * For example, the bytecode of a candidate method may be executed by lower
  * compilation tiers of VM execution, while higher compilation tiers may replace
- * the bytecodes with specialized assembly code and/or compiler IR.  Therefore,
+ * the bytecode with specialized assembly code and/or compiler IR.  Therefore,
  * intrinsic implementors must ensure that non-bytecode execution has the same
  * results as execution of the actual Java code in all application contexts
- * (given the assumptions on the arguments hold).
+ * (given that the assumptions on the arguments hold).
  * <p>
  * A candidate method should contain a minimal piece of Java code that should be
  * replaced by an intrinsic wholesale.  The backing intrinsic is (in the common
- * case) <strong>unsafe</strong> - they do not perform checks, but have
- * assumptions on their arguments that can ensure type safety.  These
+ * case) <strong>unsafe</strong> - it may not perform checks, but instead makes
+ * assumptions on its arguments that type safety is ensured by callers.  These
  * assumptions must be clearly documented on the candidate methods, and the
  * callers are fully responsible for preventing any kind of type safety
  * violation.  As long as these assumptions hold, readers can simply refer to
@@ -64,7 +65,7 @@ import java.lang.annotation.*;
  * Examples of type safety violations include: dereferencing a null pointer;
  * accessing a field or method on an object which does not possess that field or
  * method; accessing an element of an array not actually present in the array;
- * and manipulating managed references in a way that prevents the GC from
+ * and manipulating object references in a way that prevents the GC from
  * managing them.
  * </blockquote>
  * <p id="validation">
@@ -88,6 +89,16 @@ import java.lang.annotation.*;
  * intrinsic.)  For example, the documentation can simply say that the result is
  * undefined if a race happens.  However, race conditions must not lead to
  * program failures or type safety breaches, as listed above.
+ * <p>
+ * Reasoning about such race conditions is difficult, but it is a necessary
+ * skill when working with intrinsics that can observe racing shared variables.
+ * One example of a tolerable race is a repeated read of a shared reference.
+ * This only works if the algorithm takes no action based on the first read,
+ * other than deciding to perform the second read; it must "forget what it saw"
+ * in the first read.  This is why the array-mismatch intrinsics can sometimes
+ * report a tentative search hit (maybe using vectorized code), which can then
+ * be confirmed (by scalar code) as the caller makes a fresh and independent
+ * observation.
  * </blockquote>
  *
  * @since 16
