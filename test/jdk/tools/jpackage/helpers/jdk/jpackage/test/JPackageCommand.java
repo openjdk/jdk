@@ -54,8 +54,6 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.Arguments;
-import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
@@ -226,54 +224,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String version() {
-        if (isRuntime()) {
-            String appVersion = getArgumentValue("--app-image");
-            if (appVersion != null) {
-                return appVersion;
-            } else {
-                Path runtimePath = Path.of(getArgumentValue("--runtime-image"));
-                Path releasePath = null;
-                // Try special case for macOS first. "Contents/Home/release"
-                if (TKit.isOSX()) {
-                    releasePath = runtimePath.resolve("Contents/Home/release");
-                    if (!Files.exists(releasePath)) {
-                        releasePath = null;
-                    }
-                }
-
-                // Try root for all platforms including macOS.
-                if (releasePath == null) {
-                    releasePath = runtimePath.resolve("release");
-                    if (!Files.exists(releasePath)) {
-                        releasePath = null;
-                    }
-                }
-
-                String releaseVersion = null;
-                if (releasePath != null) {
-                    try {
-                        releaseVersion = IOUtils.getPropertyFromFile(releasePath, "JAVA_VERSION");
-                        releaseVersion = Arguments.unquoteIfNeeded(releaseVersion);
-                    } catch (IOException ex) {
-                        TKit.error(String.format(
-                            "Failed to read property file at %s: %s",
-                            releasePath, ex));
-                    }
-                }
-
-                if (releaseVersion == null) {
-                    if (appVersion == null) {
-                        return "1.0";
-                    } else {
-                        return appVersion;
-                    }
-                } else {
-                    return releaseVersion;
-                }
-            }
-        } else {
-            return getArgumentValue("--app-version", () -> "1.0");
-        }
+        return getArgumentValue("--app-version", () -> "1.0");
     }
 
     public String name() {
