@@ -21,12 +21,13 @@
  * questions.
  */
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-
 import java.io.BufferedReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import static jdk.test.lib.Utils.*;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @test
  * @bug 8356985
  * @summary Tests if "stdin.encoding" is reflected for reading
- *          the console.
+ *          the console. "expect" command in Windows/Cygwin does
+ *          not work as expected. Ignoring tests on Windows.
  * @requires (os.family == "linux" | os.family == "mac")
  * @library /test/lib
  * @build csp/*
@@ -48,21 +50,17 @@ public class StdinEncodingTest {
     public void testStdinEncoding() throws Throwable {
         // check "expect" command availability
         var expect = Paths.get("/usr/bin/expect");
-        if (!Files.exists(expect) || !Files.isExecutable(expect)) {
-            Assumptions.abort("'" + expect + "' not found");
-        }
+        Assumptions.assumeTrue(Files.exists(expect) && Files.isExecutable(expect),
+            "'" + expect + "' not found");
 
         // invoking "expect" command
-        var testSrc = System.getProperty("test.src", ".");
-        var testClasses = System.getProperty("test.classes", ".");
-        var jdkDir = System.getProperty("test.jdk");
         OutputAnalyzer output = ProcessTools.executeProcess(
             "expect",
             "-n",
-            testSrc + "/stdinEncoding.exp",
-            jdkDir + "/bin/java",
+            TEST_SRC + "/stdinEncoding.exp",
+            TEST_JDK + "/bin/java",
             "--module-path",
-            testClasses + "/modules",
+            TEST_CLASSES + "/modules",
             "-Dstdin.encoding=Uppercasing", // <- gist of this test
             "StdinEncodingTest");
         output.reportDiagnosticSummary();

@@ -523,6 +523,10 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * which defaults to the one based on {@link System##stdout.encoding stdout.encoding}.
      * It may not necessarily be the same as the default charset returned from
      * {@link java.nio.charset.Charset#defaultCharset() Charset.defaultCharset()}.
+     * If {@link System##stdin.encoding stdin.encoding} differs from
+     * {@link System##stdout.encoding stdout.encoding}, read operations use the
+     * {@code Charset} designated by {@code stdin.encoding}, instead of the returned
+     * {@code Charset}.
      *
      * @return a {@link java.nio.charset.Charset Charset} object used for the
      *          {@code Console}
