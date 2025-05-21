@@ -26,10 +26,7 @@
  * @summary JVM should be able to handle loading class via symlink on windows
  * @requires vm.flagless
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- *          jdk.jartool/sun.tools.jar
- * @run driver TestSymlinkLoad
+ * @run testng/othervm TestSymlinkLoad
  */
 
 import java.io.File;
@@ -41,9 +38,13 @@ import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
+import org.testng.SkipException;
+import org.testng.annotations.Test;
 
 public class TestSymlinkLoad {
-    public static void main(String args[]) throws Exception {
+
+    @Test
+    public void testSymlinkClassLoading() throws Exception {
         Path sourceDir = Paths.get(System.getProperty("test.src"), "test-classes");
 
         String subPath = "compiled";
@@ -90,7 +91,12 @@ public class TestSymlinkLoad {
         if (Files.exists(link)) {
             Files.delete(link);
         }
-        Files.createSymbolicLink(link, target);
+        try {
+            Files.createSymbolicLink(link, target);
+        } catch (UnsupportedOperationException uoe) {
+            throw new SkipException("Symbolic link creation not supported.", uoe);
+        } catch (IOException ioe) {
+            throw new SkipException("Probably insufficient privileges to create symbolic links (Windows)", ioe);
+        }
     }
-
 }

@@ -4638,9 +4638,7 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
     return nullptr;
   }
 
-  // One does not need extra character in the end, from documentation:
-  // "If the function fails because lpszFilePath is too small to hold the string plus the terminating null character,
-  // the return value is the required buffer size, in TCHARs. This value INCLUDES the size of the terminating null character."
+  // Returned value includes the terminating null character.
   const size_t target_path_size = ::GetFinalPathNameByHandleW(hFile, nullptr, 0,
                                                               FILE_NAME_NORMALIZED);
   if (target_path_size == 0) {
@@ -4651,10 +4649,7 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
 
   WCHAR* path_to_target = NEW_C_HEAP_ARRAY(WCHAR, target_path_size, mtInternal);
 
-  // Here is a tricky call of the same method. From documentation:
-  // "If the function succeeds, the return value is the length of the string received by lpszFilePath,
-  // in TCHARs.This value DOES NOT INCLUDE the size of the terminating null character."
-  // So the return value is ONE LESS than target_path_size if everything is ok
+  // The returned size is the length excluding the terminating null character.
   const size_t res = ::GetFinalPathNameByHandleW(hFile, path_to_target, static_cast<DWORD>(target_path_size),
                                                  FILE_NAME_NORMALIZED);
   if (res != target_path_size - 1) {
@@ -4669,7 +4664,6 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
     return nullptr;
   }
 
-  path_to_target[target_path_size - 1] = '\0';
   return path_to_target;
 }
 
