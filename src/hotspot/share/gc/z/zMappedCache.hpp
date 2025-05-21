@@ -27,10 +27,10 @@
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zArray.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zIntrusiveRBTree.hpp"
 #include "gc/z/zList.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/rbTree.hpp"
 
 class ZMappedCacheEntry;
 class ZVirtualMemory;
@@ -40,18 +40,48 @@ class ZMappedCache {
 
 private:
   struct EntryCompare {
-    int operator()(ZIntrusiveRBTreeNode* a, ZIntrusiveRBTreeNode* b);
-    int operator()(zoffset key, ZIntrusiveRBTreeNode* node);
+    static int cmp(zoffset a, const IntrusiveRBNode* b);
+    static int cmp(const IntrusiveRBNode*  a, const IntrusiveRBNode* b);
   };
 
   struct ZSizeClassListNode {
     ZListNode<ZSizeClassListNode> _node;
   };
 
-  using Tree              = ZIntrusiveRBTree<zoffset, EntryCompare>;
-  using TreeNode          = ZIntrusiveRBTreeNode;
+  using TreeImpl          = IntrusiveRBTree<zoffset, EntryCompare>;
+  using TreeCursor        = TreeImpl::Cursor;
+  using TreeNode          = IntrusiveRBNode;
   using SizeClassList     = ZList<ZSizeClassListNode>;
   using SizeClassListNode = ZSizeClassListNode;
+
+  class Tree : private TreeImpl {
+  private:
+    TreeNode* _left_most;
+    TreeNode* _right_most;
+
+    void verify() const;
+    void verify_left_most() const;
+    void verify_right_most() const;
+
+  public:
+    Tree();
+
+    void insert(TreeNode* node, const TreeCursor& cursor);
+    void remove(TreeNode* node);
+    void replace(TreeNode* old_node, TreeNode* new_node, const TreeCursor& cursor);
+
+    size_t size_atomic() const;
+    using TreeImpl::size;
+
+    using TreeImpl::cursor;
+    using TreeImpl::next;
+
+    const TreeNode* left_most() const;
+    TreeNode* left_most();
+
+    const TreeNode* right_most() const;
+    TreeNode* right_most();
+  };
 
   // Maintain size class lists from 4MB to 16GB
   static constexpr int MaxLongArraySizeClassShift = 3 /* 8 byte */ + 31 /* max length */;
@@ -60,7 +90,6 @@ private:
   static constexpr int NumSizeClasses = MaxSizeClassShift - MinSizeClassShift + 1;
 
   Tree          _tree;
-  size_t        _entry_count;
   SizeClassList _size_class_lists[NumSizeClasses];
   size_t        _size;
   size_t        _min;
@@ -68,10 +97,10 @@ private:
   static int size_class_index(size_t size);
   static int guaranteed_size_class_index(size_t size);
 
-  void tree_insert(const Tree::FindCursor& cursor, const ZVirtualMemory& vmem);
-  void tree_remove(const Tree::FindCursor& cursor, const ZVirtualMemory& vmem);
-  void tree_replace(const Tree::FindCursor& cursor, const ZVirtualMemory& vmem);
-  void tree_update(ZMappedCacheEntry* entry, const ZVirtualMemory& vmem);
+  void cache_insert(const TreeCursor& cursor, const ZVirtualMemory& vmem);
+  void cache_remove(const TreeCursor& cursor, const ZVirtualMemory& vmem);
+  void cache_replace(const TreeCursor& cursor, const ZVirtualMemory& vmem);
+  void cache_update(ZMappedCacheEntry* entry, const ZVirtualMemory& vmem);
 
   enum class RemovalStrategy {
     LowestAddress,
