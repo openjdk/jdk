@@ -57,11 +57,22 @@ import static compiler.lib.template_framework.DataName.Mutability.MUTABLE;
 import static compiler.lib.template_framework.DataName.Mutability.IMMUTABLE;
 import static compiler.lib.template_framework.DataName.Mutability.MUTABLE_OR_IMMUTABLE;
 
+/**
+ * The tests in this file are mostly there to ensure that the Template Rendering
+ * works correctly, and not that we produce compilable Java code. Rather, we
+ * produce deterministic output, and compare it to the expected String.
+ * Still, this file may be helpful for learning more about how Templates
+ * work and can be used.
+ *
+ * We assume that you have already studied {@code TestTutorial.java}.
+ */
 public class TestTemplate {
+    // Interface for failing tests.
     interface FailingTest {
         void run();
     }
 
+    // Define a simple type to model primitive types.
     private record MyPrimitive(String name) implements DataName.Type {
         @Override
         public boolean isSubtypeOf(DataName.Type other) {
@@ -90,6 +101,7 @@ public class TestTemplate {
     private static final MyClass myClassA11 = new MyClass("myClassA11");
     private static final MyClass myClassB   = new MyClass("myClassB");
 
+    // Simulate some structural types.
     private record MyStructuralType(String name) implements StructuralName.Type {
         @Override
         public boolean isSubtypeOf(StructuralName.Type other) {
@@ -106,6 +118,7 @@ public class TestTemplate {
     private static final MyStructuralType myStructuralTypeB = new MyStructuralType("StructuralB");
 
     public static void main(String[] args) {
+        // The follwing tests all pass, i.e. have no errors during rendering.
         testSingleLine();
         testMultiLine();
         testBodyTokens();
@@ -134,6 +147,7 @@ public class TestTemplate {
         testStructuralNames2();
         testListArgument();
 
+        // The following tests should all fail, with an expected exception and message.
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
         expectRendererException(() -> $("name"),                          "A Template method such as");
         expectRendererException(() -> let("x","y"),                       "A Template method such as");
@@ -357,6 +371,8 @@ public class TestTemplate {
             "{\n",
             hook1.anchor(
                 "World\n",
+                // Note: "Hello" from the template below will be inserted
+                // above "World" above.
                 hook1.insert(template1.asToken())
             ),
             "}"
@@ -375,7 +391,7 @@ public class TestTemplate {
     public static void testHookIsAnchored() {
         var hook1 = new Hook("Hook1");
 
-        var template0 = Template.make(() -> body("isSet: ", hook1.isAnchored(), "\n"));
+        var template0 = Template.make(() -> body("isAnchored: ", hook1.isAnchored(), "\n"));
 
         var template1 = Template.make(() -> body("Hello\n", template0.asToken()));
 
@@ -395,12 +411,12 @@ public class TestTemplate {
         String expected =
             """
             {
-            isSet: false
+            isAnchored: false
             Hello
-            isSet: true
+            isAnchored: true
             World
-            isSet: true
-            isSet: false
+            isAnchored: true
+            isAnchored: false
             }""";
         checkEQ(code, expected);
     }
@@ -1858,7 +1874,7 @@ public class TestTemplate {
 
         var template2 = Template.make(() -> body(
             "beta\n",
-            // Use hook without hook1.set
+            // Use hook without hook1.anchor
             hook1.insert(template1.asToken()),
             "gamma\n"
         ));
@@ -1868,6 +1884,7 @@ public class TestTemplate {
 
     public static void testFailingSample1() {
         var template1 = Template.make(() -> body(
+            // No variable added yet.
             let("v", dataNames(MUTABLE).exactOf(myInt).sample().name()),
             "v is #v\n"
         ));
@@ -1877,6 +1894,7 @@ public class TestTemplate {
 
     public static void testFailingSample2() {
         var template1 = Template.make(() -> body(
+            // no type restriction
             let("v", dataNames(MUTABLE).sample().name()),
             "v is #v\n"
         ));
@@ -1885,6 +1903,7 @@ public class TestTemplate {
     }
 
     public static void testFailingHashtag1() {
+        // Duplicate hashtag definition from arguments.
         var template1 = Template.make("a", "a", (String _, String _) -> body(
             "nothing\n"
         ));
@@ -1894,6 +1913,7 @@ public class TestTemplate {
 
     public static void testFailingHashtag2() {
         var template1 = Template.make("a", (String _) -> body(
+            // Duplicate hashtag name
             let("a", "x"),
             "nothing\n"
         ));
@@ -1904,6 +1924,7 @@ public class TestTemplate {
     public static void testFailingHashtag3() {
         var template1 = Template.make(() -> body(
             let("a", "x"),
+            // Duplicate hashtag name
             let("a", "y"),
             "nothing\n"
         ));
@@ -1913,6 +1934,7 @@ public class TestTemplate {
 
     public static void testFailingHashtag4() {
         var template1 = Template.make(() -> body(
+            // Missing hashtag name definition
             "#a\n"
         ));
 
@@ -1925,6 +1947,7 @@ public class TestTemplate {
             "nothing\n"
         ));
         binding.bind(template1);
+        // Duplicate bind
         binding.bind(template1);
     }
 
@@ -1932,13 +1955,16 @@ public class TestTemplate {
         var binding = new TemplateBinding<Template.ZeroArgs>();
         var template1 = Template.make(() -> body(
             "nothing\n",
+            // binding was never bound.
             binding.get()
         ));
+        // Should have bound the binding here.
         String code = template1.render();
     }
 
     public static void testFailingAddDataName1() {
         var template1 = Template.make(() -> body(
+            // Must pick either MUTABLE or IMMUTABLE.
             addDataName("name", myInt, MUTABLE_OR_IMMUTABLE)
         ));
         String code = template1.render();
@@ -1946,6 +1972,7 @@ public class TestTemplate {
 
     public static void testFailingAddDataName2() {
         var template1 = Template.make(() -> body(
+            // weight out of bounds [0..1000]
             addDataName("name", myInt, MUTABLE, 0)
         ));
         String code = template1.render();
@@ -1953,6 +1980,7 @@ public class TestTemplate {
 
     public static void testFailingAddDataName3() {
         var template1 = Template.make(() -> body(
+            // weight out of bounds [0..1000]
             addDataName("name", myInt, MUTABLE, -1)
         ));
         String code = template1.render();
@@ -1960,6 +1988,7 @@ public class TestTemplate {
 
     public static void testFailingAddDataName4() {
         var template1 = Template.make(() -> body(
+            // weight out of bounds [0..1000]
             addDataName("name", myInt, MUTABLE, 1001)
         ));
         String code = template1.render();
@@ -1967,6 +1996,7 @@ public class TestTemplate {
 
     public static void testFailingAddStructuralName1() {
         var template1 = Template.make(() -> body(
+            // weight out of bounds [0..1000]
             addStructuralName("name", myStructuralTypeA, 0)
         ));
         String code = template1.render();
@@ -1974,6 +2004,7 @@ public class TestTemplate {
 
     public static void testFailingAddStructuralName2() {
         var template1 = Template.make(() -> body(
+            // weight out of bounds [0..1000]
             addStructuralName("name", myStructuralTypeA, -1)
         ));
         String code = template1.render();
@@ -1981,6 +2012,7 @@ public class TestTemplate {
 
     public static void testFailingAddStructuralName3() {
         var template1 = Template.make(() -> body(
+            // weight out of bounds [0..1000]
             addStructuralName("name", myStructuralTypeA, 1001)
         ));
         String code = template1.render();
