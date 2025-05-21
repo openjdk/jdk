@@ -250,11 +250,11 @@ private:
   HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
 
   // Frequently updated fields
-  HeapWord* _top;
+  HeapWord* volatile _top;
 
-  size_t _tlab_allocs;
-  size_t _gclab_allocs;
-  size_t _plab_allocs;
+  size_t volatile _tlab_allocs;
+  size_t volatile _gclab_allocs;
+  size_t volatile _plab_allocs;
 
   volatile size_t _live_data;
   volatile size_t _critical_pins;
@@ -366,6 +366,9 @@ public:
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
+  // Atomic allocation using CAS, return nullptr if full or no enough space for the req
+  inline HeapWord* allocate_atomic(size_t word_size, const ShenandoahAllocRequest &req);
+
   inline void clear_live_data();
   void set_live_data(size_t s);
 
@@ -425,8 +428,12 @@ public:
   // Find humongous start region that this region belongs to
   ShenandoahHeapRegion* humongous_start_region() const;
 
-  HeapWord* top() const         { return _top;     }
-  void set_top(HeapWord* v)     { _top = v;        }
+  HeapWord* top() const {
+    return Atomic::load(&_top);
+  }
+  void set_top(HeapWord* v) {
+    Atomic::store(&_top, v);
+  }
 
   HeapWord* new_top() const     { return _new_top; }
   void set_new_top(HeapWord* v) { _new_top = v;    }

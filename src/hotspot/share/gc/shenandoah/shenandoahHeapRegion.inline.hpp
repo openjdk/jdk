@@ -109,6 +109,27 @@ HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocReque
   }
 }
 
+HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAllocRequest& req) {
+  assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
+  assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
+  assert(this->is_regular(), "must be a regular region");
+
+  for (;;) {
+    HeapWord* obj = top();
+    if (pointer_delta(end(), obj) >= size) {
+      HeapWord* new_top = obj + size;
+      if (Atomic::cmpxchg(&_top, obj, new_top) == obj) {
+        adjust_alloc_metadata(req.type(), size);
+        assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
+        assert(is_object_aligned(obj),     "obj is not aligned: "       PTR_FORMAT, p2i(obj));
+        return obj;
+      }
+    } else {
+      return nullptr;
+    }
+  }
+}
+
 inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::Type type, size_t size) {
   switch (type) {
     case ShenandoahAllocRequest::_alloc_shared:
@@ -116,13 +137,13 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::
       // Counted implicitly by tlab/gclab allocs
       break;
     case ShenandoahAllocRequest::_alloc_tlab:
-      _tlab_allocs += size;
+      Atomic::add(&_tlab_allocs, size);
       break;
     case ShenandoahAllocRequest::_alloc_gclab:
-      _gclab_allocs += size;
+      Atomic::add(&_gclab_allocs, size);
       break;
     case ShenandoahAllocRequest::_alloc_plab:
-      _plab_allocs += size;
+      Atomic::add(&_plab_allocs, size);
       break;
     default:
       ShouldNotReachHere();

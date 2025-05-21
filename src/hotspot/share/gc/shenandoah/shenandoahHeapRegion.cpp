@@ -370,25 +370,25 @@ void ShenandoahHeapRegion::make_committed_bypass() {
 }
 
 void ShenandoahHeapRegion::reset_alloc_metadata() {
-  _tlab_allocs = 0;
-  _gclab_allocs = 0;
-  _plab_allocs = 0;
+  Atomic::store(&_tlab_allocs, 0);
+  Atomic::store(&_gclab_allocs, 0);
+  Atomic::store(&_plab_allocs, 0);
 }
 
 size_t ShenandoahHeapRegion::get_shared_allocs() const {
-  return used() - (_tlab_allocs + _gclab_allocs + _plab_allocs) * HeapWordSize;
+  return used() - (Atomic::load(&_tlab_allocs) + Atomic::load(&_gclab_allocs) + Atomic::load(&_plab_allocs)) * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_tlab_allocs() const {
-  return _tlab_allocs * HeapWordSize;
+  return Atomic::load(&_tlab_allocs) * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_gclab_allocs() const {
-  return _gclab_allocs * HeapWordSize;
+  return Atomic::load(&_gclab_allocs) * HeapWordSize;
 }
 
 size_t ShenandoahHeapRegion::get_plab_allocs() const {
-  return _plab_allocs * HeapWordSize;
+  return Atomic::load(&_plab_allocs) * HeapWordSize;
 }
 
 void ShenandoahHeapRegion::set_live_data(size_t s) {
