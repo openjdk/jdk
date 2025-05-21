@@ -169,7 +169,7 @@ void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, co
   }
 }
 
-void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
+void javaVFrame::print_lock_info_on(outputStream* st, bool is_virtual, int frame_count) {
   Thread* current = Thread::current();
   ResourceMark rm(current);
   HandleMark hm(current);
@@ -204,8 +204,9 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       oop obj = thread()->current_park_blocker();
       Klass* k = obj->klass();
       st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(obj), k->external_name());
-    }
-    else if (thread()->osthread()->get_state() == OBJECT_WAIT) {
+    } else if (thread()->osthread()->get_state() == OBJECT_WAIT &&
+        // If this is a carrier thread with mounted virtual thread this is reported for the virtual thread.
+        (is_virtual || !thread()->is_vthread_mounted())) {
       // We are waiting on an Object monitor but Object.wait() isn't the
       // top-frame, so we should be waiting on a Class initialization monitor.
       InstanceKlass* k = thread()->class_to_be_initialized();
