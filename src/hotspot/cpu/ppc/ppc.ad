@@ -2468,6 +2468,10 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     case Op_MinReductionV:
     case Op_MaxReductionV:
       return bt == T_INT;
+    // MaxV, MinV need types >= word.
+    case Op_MaxV:
+    case Op_MinV:
+      return !is_subword_type(bt);
   }
   return true; // Per default match rules are supported.
 }
