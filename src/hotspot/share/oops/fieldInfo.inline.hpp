@@ -111,11 +111,6 @@ inline FieldInfoReader::FieldInfoReader(const Array<u1>* fi)
 inline void FieldInfoReader::read_field_counts(int *java_fields, int *injected_fields) {
   *java_fields = _r.next_uint();
   *injected_fields = _r.next_uint();
-  if (*java_fields > FieldInfoStream::SORTED_FIELD_TABLE_THRESHOLD) {
-    uint32_t sorted_table_offset = *reinterpret_cast<const uint32_t *>(_r.array() + _r.position());
-    _r.set_limit(sorted_table_offset);
-    _r.set_position(_r.position() + sizeof(uint32_t));
-  }
 }
 
 inline void FieldInfoReader::read_field_info(FieldInfo& fi) {

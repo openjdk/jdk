@@ -123,6 +123,7 @@ class ClassFileParser {
   const InstanceKlass* _super_klass;
   ConstantPool* _cp;
   Array<u1>* _fieldinfo_stream;
+  Array<u1>* _fieldinfo_search_table;
   Array<FieldStatus>* _fields_status;
   Array<Method*>* _methods;
   Array<u2>* _inner_classes;

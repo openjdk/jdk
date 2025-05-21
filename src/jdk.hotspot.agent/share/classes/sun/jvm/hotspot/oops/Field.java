@@ -32,8 +32,6 @@ import sun.jvm.hotspot.utilities.*;
 
 // Super class for all fields in an object
 public class Field {
-  private static final int SORTED_FIELD_TABLE_THRESHOLD =
-    VM.getVM().getTypeDataBase().lookupIntConstant("FieldInfoStream::SORTED_FIELD_TABLE_THRESHOLD");
 
   Field(FieldIdentifier id, long offset, boolean isVMField) {
     this.offset    = offset;
@@ -113,11 +111,6 @@ public class Field {
     int numJavaFields = crs.readInt();     // read num_java_fields
     int numInjectedFields = crs.readInt(); // read num_injected_fields;
     int numFields = numJavaFields + numInjectedFields;
-    // Sorted fields table is generated only for classes with > 16 (non-injected) fields
-    if (numJavaFields > SORTED_FIELD_TABLE_THRESHOLD) {
-      // Sorted field table offset offset (is not variable-size encoded)
-      crs.skipBytes(4);
-    }
     Field[] fields = new Field[numFields];
     for (int i = 0; i < numFields; i++) {
       FieldInfoValues values = readFieldInfoValues(crs);

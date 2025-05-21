@@ -63,10 +63,6 @@ public class CompressedStream {
     this.position = position;
   }
 
-  public void skipBytes(int bytes) {
-    this.position += bytes;
-  }
-
   public int encodeSign(int value) {
     return Unsigned5.encodeSign(value);
   }

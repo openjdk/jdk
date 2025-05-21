@@ -63,7 +63,11 @@ class FieldStreamBase : public StackObj {
     int java_fields_count;
     int injected_fields_count;
     _reader.read_field_counts(&java_fields_count, &injected_fields_count);
-    assert( _limit <= java_fields_count + injected_fields_count, "Safety check");
+    if (_limit < _index) {
+      _limit = java_fields_count + injected_fields_count;
+    } else {
+      assert( _limit <= java_fields_count + injected_fields_count, "Safety check");
+    }
     if (_limit != 0) {
       _reader.read_field_info(_fi_buf);
     }
@@ -140,8 +144,11 @@ class FieldStreamBase : public StackObj {
 
 // Iterate over only the Java fields
 class JavaFieldStream : public FieldStreamBase {
+ private:
+  Array<u1> *_search_table;
  public:
-  JavaFieldStream(const InstanceKlass* k): FieldStreamBase(k->fieldinfo_stream(), k->constants(), 0, k->java_fields_count()) {}
+  JavaFieldStream(const InstanceKlass* k): FieldStreamBase(k->fieldinfo_stream(), k->constants(), 0, k->java_fields_count()),
+    _search_table(k->fieldinfo_search_table()) {}
 
   u2 name_index() const {
     assert(!field()->field_flags().is_injected(), "regular only");

@@ -686,6 +686,11 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_fieldinfo_stream(nullptr);
 
+  if (fieldinfo_search_table() != nullptr && !fieldinfo_search_table()->is_shared()) {
+    MetadataFactory::free_array<u1>(loader_data, fieldinfo_search_table());
+  }
+  set_fieldinfo_search_table(nullptr);
+
   if (fields_status() != nullptr && !fields_status()->is_shared()) {
     MetadataFactory::free_array<FieldStatus>(loader_data, fields_status());
   }
@@ -2602,6 +2607,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 
   it->push(&_fieldinfo_stream);
+  it->push(&_fieldinfo_search_table);
   // _fields_status might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
   it->push(&_fields_status, MetaspaceClosure::_writable);
 

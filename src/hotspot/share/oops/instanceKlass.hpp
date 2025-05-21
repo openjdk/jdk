@@ -276,6 +276,7 @@ class InstanceKlass: public Klass {
 
   // Fields information is stored in an UNSIGNED5 encoded stream (see fieldInfo.hpp)
   Array<u1>*          _fieldinfo_stream;
+  Array<u1>*          _fieldinfo_search_table;
   Array<FieldStatus>* _fields_status;
 
   // embedded Java vtable follows here
@@ -403,6 +404,9 @@ class InstanceKlass: public Klass {
 
   Array<u1>* fieldinfo_stream() const { return _fieldinfo_stream; }
   void set_fieldinfo_stream(Array<u1>* fis) { _fieldinfo_stream = fis; }
+
+  Array<u1>* fieldinfo_search_table() const { return _fieldinfo_search_table; }
+  void set_fieldinfo_search_table(Array<u1> *table) { _fieldinfo_search_table = table; }
 
   Array<FieldStatus>* fields_status() const {return _fields_status; }
   void set_fields_status(Array<FieldStatus>* array) { _fields_status = array; }

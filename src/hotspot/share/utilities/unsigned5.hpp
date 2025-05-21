@@ -392,9 +392,6 @@ class UNSIGNED5 : AllStatic {
       _position += encoded_length(value);
       _count++;
     }
-    void accept_bytes(OFF bytes) {
-      _position += bytes;
-    }
     OFF position() { return _position; }
     int count() { return _count; }
   };

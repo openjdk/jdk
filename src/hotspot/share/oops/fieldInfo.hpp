@@ -238,7 +238,7 @@ public:
   int next_index() const { return _next_index; }
   void read_field_info(FieldInfo& fi);
 
-  int sorted_table_lookup(const Symbol *name, const Symbol *signature, ConstantPool *cp, int java_fields);
+  int search_table_lookup(const Array<u1> *search_table, const Symbol *name, const Symbol *signature, ConstantPool *cp, int java_fields);
 
   // skip a whole field record, both required and optional bits
   FieldInfoReader&  skip_field_info();
@@ -254,8 +254,7 @@ public:
 // The format of the stream, after decompression, is a series of
 // integers organized like this:
 //
-//   FieldInfoStream := j=num_java_fields k=num_injected_fields SortedFieldTable_offset(0/4 bytes) Field[j+k] SortedFieldRecord[j] End
-//   SortedFieldRecord := stream_position(2-3 bytes) field_index(1-2 bytes)
+//   FieldInfoStream := j=num_java_fields k=num_injected_fields Field[j+k] End
 //   Field := name sig offset access flags Optionals(flags)
 //   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
 //                   gsig?[i&is_generic]     // signature attr
@@ -270,16 +269,15 @@ class FieldInfoStream : AllStatic {
 
  public:
   // Don't generate the table for small classes at all.
-  static const int SORTED_FIELD_TABLE_THRESHOLD = 16;
+  static const int SEARCH_TABLE_THRESHOLD = 16;
 
   static int num_java_fields(const Array<u1>* fis);
   static int num_injected_java_fields(const Array<u1>* fis);
   static int num_total_fields(const Array<u1>* fis);
 
-  static int compare_symbols(const Symbol *s1, const Symbol *s2);
-
-  static Array<u1>* create_FieldInfoStream(ConstantPool* constants, GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
-                                                          ClassLoaderData* loader_data, TRAPS);
+  static Array<u1>* create_FieldInfoStream(GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
+                                           ClassLoaderData* loader_data, TRAPS);
+  static Array<u1>* create_search_table(ConstantPool* cp, const Array<u1>* fis, ClassLoaderData* loader_data, TRAPS);
   static GrowableArray<FieldInfo>* create_FieldInfoArray(const Array<u1>* fis, int* java_fields_count, int* injected_fields_count);
   static void print_from_fieldinfo_stream(Array<u1>* fis, outputStream* os, ConstantPool* cp);
 };

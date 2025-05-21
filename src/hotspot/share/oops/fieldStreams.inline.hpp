@@ -33,13 +33,9 @@
 FieldStreamBase::FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants, int start, int limit) :
          _fieldinfo_stream(fieldinfo_stream),
          _reader(FieldInfoReader(_fieldinfo_stream)),
-         _constants(constantPoolHandle(Thread::current(), constants)), _index(start) {
-  _index = start;
-  if (limit < start) {
-    _limit = FieldInfoStream::num_total_fields(_fieldinfo_stream);
-  } else {
-    _limit = limit;
-  }
+         _constants(constantPoolHandle(Thread::current(), constants)),
+         _index(start),
+         _limit(limit) {
   initialize();
 }
 
@@ -48,7 +44,7 @@ FieldStreamBase::FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool
         _reader(FieldInfoReader(_fieldinfo_stream)),
         _constants(constantPoolHandle(Thread::current(), constants)),
         _index(0),
-        _limit(FieldInfoStream::num_total_fields(_fieldinfo_stream)) {
+        _limit(-1) {
   initialize();
 }
 
@@ -57,14 +53,14 @@ FieldStreamBase::FieldStreamBase(InstanceKlass* klass) :
          _reader(FieldInfoReader(_fieldinfo_stream)),
          _constants(constantPoolHandle(Thread::current(), klass->constants())),
          _index(0),
-         _limit(FieldInfoStream::num_total_fields(_fieldinfo_stream)) {
+         _limit(-1) {
   assert(klass == field_holder(), "");
   initialize();
 }
 
 inline bool JavaFieldStream::lookup(const Symbol *name, const Symbol *signature) {
-  if (_limit > FieldInfoStream::SORTED_FIELD_TABLE_THRESHOLD) {
-    int index = _reader.sorted_table_lookup(name, signature, _constants(), _limit);
+  if (_search_table != nullptr) {
+    int index = _reader.search_table_lookup(_search_table, name, signature, _constants(), _limit);
     if (index >= 0) {
       assert(index < _limit, "must be");
       _index = index;

@@ -3555,9 +3555,14 @@ void VM_RedefineClasses::set_new_constant_pool(
   if (update_required) {
     Array<u1>* old_stream = scratch_class->fieldinfo_stream();
     assert(fields->length() == (java_fields + injected_fields), "Must be");
-    Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(cp, fields, java_fields, injected_fields, scratch_class->class_loader_data(), CHECK);
+    Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(fields, java_fields, injected_fields, scratch_class->class_loader_data(), CHECK);
     scratch_class->set_fieldinfo_stream(new_fis);
     MetadataFactory::free_array<u1>(scratch_class->class_loader_data(), old_stream);
+
+    Array<u1>* old_table = scratch_class->fieldinfo_search_table();
+    Array<u1>* search_table = FieldInfoStream::create_search_table(scratch_class->constants(), new_fis, scratch_class->class_loader_data(), CHECK);
+    scratch_class->set_fieldinfo_search_table(search_table);
+    MetadataFactory::free_array<u1>(scratch_class->class_loader_data(), old_table);
   }
 
   // Update constant pool indices in the inner classes info to use
