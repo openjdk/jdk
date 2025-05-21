@@ -437,10 +437,10 @@ public abstract class Reader implements Readable, Closeable {
      * be promptly closed if an I/O error occurs.
      *
      * @apiNote
-     * This method is intended for simple cases where it is convenient
-     * to read all remaining characters in a single operation. It is not
-     * intended for reading a large number of characters, for example,
-     * greater than {@code 1G}.
+     * This method is intended for simple cases where it is appropriate and
+     * convenient to read the entire input into a list of lines. It is not
+     * suitable for reading input from an unknown origin, as this may result
+     * in the allocation of an arbitrary amount of memory.
      *
      * @return     the remaining characters as lines of text stored in an
      *             unmodifiable {@code List} of {@code String}s in the order
@@ -482,9 +482,9 @@ public abstract class Reader implements Readable, Closeable {
      *
      * @apiNote
      * This method is intended for simple cases where it is appropriate and
-     * convenient to read all remaining characters into a {@code String}. It
-     * is not intended for reading a large number of characters, for example,
-     * greater than {@code 1G}.
+     * convenient to read the entire input into a {@code String}. It is not
+     * suitable for reading input from an unknown origin, as this may result
+     * in the allocation of an arbitrary amount of memory.
      *
      * @return     a {@code String} containing all remaining characters
      *
