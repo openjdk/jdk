@@ -29,19 +29,30 @@ package jdk.test.lib.containers.docker;
 
 import jdk.test.lib.Container;
 import jdk.test.lib.process.OutputAnalyzer;
+import jtreg.SkippedException;
 
 public class ContainerRuntimeVersionTestUtils implements Comparable<ContainerRuntimeVersionTestUtils> {
     private final int major;
     private final int minor;
     private final int micro;
-    private static final ContainerRuntimeVersionTestUtils DEFAULT = new ContainerRuntimeVersionTestUtils(0, 0, 0);
-    public static final ContainerRuntimeVersionTestUtils DOCKER_VERSION_20_10_0 = new ContainerRuntimeVersionTestUtils(20, 10, 0);
-    public static final ContainerRuntimeVersionTestUtils PODMAN_VERSION_1_5_0 = new ContainerRuntimeVersionTestUtils(1, 5, 0);
+    private static final boolean IS_DOCKER = Container.ENGINE_COMMAND.contains("docker");
+    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
+    public static final ContainerRuntimeVersionTestUtils DOCKER_MINIMAL_SUPPORTED_VERSION_CGROUPNS = new ContainerRuntimeVersionTestUtils(20, 10, 0);
+    public static final ContainerRuntimeVersionTestUtils PODMAN_MINIMAL_SUPPORTED_VERSION_CGROUPNS = new ContainerRuntimeVersionTestUtils(1, 5, 0);
 
     private ContainerRuntimeVersionTestUtils(int major, int minor, int micro) {
         this.major = major;
         this.minor = minor;
         this.micro = micro;
+    }
+
+    public static void checkContainerVersionSupported() {
+        if (IS_DOCKER && ContainerRuntimeVersionTestUtils.DOCKER_MINIMAL_SUPPORTED_VERSION_CGROUPNS.compareTo(ContainerRuntimeVersionTestUtils.getContainerRuntimeVersion()) > 0) {
+            throw new SkippedException("Docker version too old for this test. Expected >= 20.10.0");
+        }
+        if (IS_PODMAN && ContainerRuntimeVersionTestUtils.PODMAN_MINIMAL_SUPPORTED_VERSION_CGROUPNS.compareTo(ContainerRuntimeVersionTestUtils.getContainerRuntimeVersion()) > 0) {
+            throw new SkippedException("Podman version too old for this test. Expected >= 1.5.0");
+        }
     }
 
     @Override
@@ -50,21 +61,17 @@ public class ContainerRuntimeVersionTestUtils implements Comparable<ContainerRun
             return 1;
         } else if (this.major < other.major) {
             return -1;
-        } else { // equal major
-            if (this.minor > other.minor) {
-                return 1;
-            } else if (this.minor < other.minor) {
-                return -1;
-            } else { // equal majors and minors
-                if (this.micro > other.micro) {
-                    return 1;
-                } else if (this.micro < other.micro) {
-                    return -1;
-                } else {
-                    // equal majors, minors, micro
-                    return 0;
-                }
-            }
+        } else if (this.minor > other.minor) {
+            return 1;
+        } else if (this.minor < other.minor) {
+            return -1;
+        } else if (this.micro > other.micro) {
+            return 1;
+        } else if (this.micro < other.micro) {
+            return -1;
+        } else {
+            // equal majors, minors, micro
+            return 0;
         }
     }
 
@@ -77,10 +84,10 @@ public class ContainerRuntimeVersionTestUtils implements Comparable<ContainerRun
                     Integer.parseInt(numbers[1]),
                     Integer.parseInt(numbers[2]));
         } catch (Exception e) {
-            System.out.println("Failed to parse container runtime version: " + version);
-            return DEFAULT;
+            throw new RuntimeException("Failed to parse container runtime version: " + version);
         }
     }
+
     public static String getContainerRuntimeVersionStr() {
         try {
             ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "--version");
@@ -90,8 +97,7 @@ public class ContainerRuntimeVersionTestUtils implements Comparable<ContainerRun
             System.out.println(Container.ENGINE_COMMAND + " --version returning: " + result);
             return result;
         } catch (Exception e) {
-            System.out.println(Container.ENGINE_COMMAND + " --version command failed. Returning null");
-            return null;
+            throw new RuntimeException(Container.ENGINE_COMMAND + " --version command failed.");
         }
     }
 
