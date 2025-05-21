@@ -531,7 +531,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @see Long#reverseBytes(long)
      */
     private static long hex8(long i) {
-        // Expand each 4-bit group into 8 bits, spreading them out in the long value: 0xAABBCCDD -> 0x0A0B0C0D0A0B0C0D
+        // Expand each 4-bit group into 8 bits, spreading them out in the long value: 0xAABBCCDD -> 0xA0A0B0B0C0C0D0D
         i = Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL);
 
         /*
