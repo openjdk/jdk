@@ -77,7 +77,7 @@ void ZRelocationSetSelectorGroup::semi_sort() {
   // Semi-sort live pages by number of live bytes in ascending order
 
   // Partition slots/fingers
-  int partitions[NumPartitions] = { /* zero initialize */ };
+  int partitions[NPartitions] = { /* zero initialize */ };
 
   // Calculate partition slots
   ZArrayIterator<ZPage*> iter1(&_live_pages);
@@ -88,7 +88,7 @@ void ZRelocationSetSelectorGroup::semi_sort() {
 
   // Calculate partition fingers
   int finger = 0;
-  for (size_t i = 0; i < NumPartitions; i++) {
+  for (size_t i = 0; i < NPartitions; i++) {
     const int slots = partitions[i];
     partitions[i] = finger;
     finger += slots;
