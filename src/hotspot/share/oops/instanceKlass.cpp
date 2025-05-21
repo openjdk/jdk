@@ -2842,17 +2842,6 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
   return true;
 }
 
-int InstanceKlass::class_loader_type() const {
-  if (defined_by_boot_loader()) {
-    return ClassLoader::BOOT_LOADER;
-  } else if (defined_by_platform_loader()) {
-    return ClassLoader::PLATFORM_LOADER;
-  } else if (defined_by_app_loader()) {
-    return ClassLoader::APP_LOADER;
-  } else {
-    return ClassLoader::OTHER;
-  }
-}
 #endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI

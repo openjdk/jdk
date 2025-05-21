@@ -834,10 +834,6 @@ void ArchiveBuilder::make_klasses_shareable() {
       bool aotlinked = AOTClassLinker::is_candidate(src_ik);
       inited = ik->has_aot_initialized_mirror();
       ADD_COUNT(num_instance_klasses);
-      if (CDSConfig::is_dumping_dynamic_archive()) {
-        // For static dump, class loader type are already set.
-        ik->assign_class_loader_type();
-      }
       if (ik->is_hidden()) {
         ADD_COUNT(num_hidden_klasses);
         hidden = " hidden";

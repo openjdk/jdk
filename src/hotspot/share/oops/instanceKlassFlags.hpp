@@ -76,7 +76,7 @@ class InstanceKlassFlags {
   };
 #undef IK_STATUS_ENUM_NAME
 
-  u2 loader_type_bits() const {
+  u2 builtin_loader_type_bits() const {
     return _misc_defined_by_boot_loader|_misc_defined_by_platform_loader|_misc_defined_by_app_loader;
   }
 
@@ -101,11 +101,10 @@ class InstanceKlassFlags {
 #undef IK_FLAGS_GET_SET
 
   bool defined_by_other_loaders() const {
-    return (_flags & loader_type_bits()) == 0;
+    return (_flags & builtin_loader_type_bits()) == 0;
   }
 
-  void set_class_loader_type(s2 loader_type);
-  void assign_class_loader_type(const ClassLoaderData* cld);
+  void set_class_loader_type(const ClassLoaderData* cld);
 
   void assert_is_safe(bool set) NOT_DEBUG_RETURN;
 

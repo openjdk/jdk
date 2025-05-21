@@ -311,6 +311,7 @@ class InstanceKlass: public Klass {
   bool defined_by_platform_loader() const  { return _misc_flags.defined_by_platform_loader(); }
   bool defined_by_app_loader() const       { return _misc_flags.defined_by_app_loader(); }
   bool defined_by_other_loaders() const    { return _misc_flags.defined_by_other_loaders(); }
+  void set_class_loader_type()             { _misc_flags.set_class_loader_type(_class_loader_data); }
 
   // Check if the class can be shared in CDS
   bool is_shareable() const;
@@ -318,12 +319,6 @@ class InstanceKlass: public Klass {
   bool shared_loading_failed() const { return _misc_flags.shared_loading_failed(); }
 
   void set_shared_loading_failed() { _misc_flags.set_shared_loading_failed(true); }
-
-#if INCLUDE_CDS
-  int  class_loader_type() const;
-  void set_class_loader_type(s2 loader_type) { _misc_flags.set_class_loader_type(loader_type); }
-  void assign_class_loader_type()            { _misc_flags.assign_class_loader_type(_class_loader_data); }
-#endif
 
   bool has_nonstatic_fields() const        { return _misc_flags.has_nonstatic_fields(); }
   void set_has_nonstatic_fields(bool b)    { _misc_flags.set_has_nonstatic_fields(b); }
