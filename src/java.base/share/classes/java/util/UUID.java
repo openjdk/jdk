@@ -526,8 +526,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *
      * @example
      * <pre>
-     * Input:  0x0123456789ABCDEF
-     * Output: 0x3031323334353637 ('0','1','2','3','4','5','6','7' in ASCII)
+     * Input:  0xABCDEF01
+     * Output: 3130666564636261 ('1','0','f','e','d','c','b','a' in ASCII)
      * </pre>
      *
      * @see Long#reverseBytes(long)
