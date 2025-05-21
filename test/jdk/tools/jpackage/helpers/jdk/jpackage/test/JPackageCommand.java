@@ -251,8 +251,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
                 String releaseVersion = null;
                 if (releasePath != null) {
-                    releaseVersion = IOUtils.getPropertyFromFile(releasePath, "JAVA_VERSION");
-                    releaseVersion = Arguments.unquoteIfNeeded(releaseVersion);
+                    try {
+                        releaseVersion = IOUtils.getPropertyFromFile(releasePath, "JAVA_VERSION");
+                        releaseVersion = Arguments.unquoteIfNeeded(releaseVersion);
+                    } catch (IOException ex) {
+                        TKit.error(String.format(
+                            "Failed to read property file at %s: %s",
+                            releasePath, ex));
+                    }
                 }
 
                 if (releaseVersion == null) {
@@ -999,9 +1005,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         RESOURCE_DIR(new Builder("--resource-dir").create()),
         MAC_DMG_CONTENT(new Builder("--mac-dmg-content").multiple().create()),
         RUNTIME_IMAGE(new Builder("--runtime-image").enable(cmd -> {
-            // External runtime image should be R/O unless it is on macOS.
-            // On macOS it will be signed ad-hoc or with real certificate.
-            return !TKit.isOSX();
+            // External runtime image should be R/O unless it is runtime installer
+            // on macOS. On macOS runtime image will be signed ad-hoc or with
+            // real certificate when creating runtime installers.
+            return !(cmd.isRuntime() && TKit.isOSX());
         }).create());
 
         ReadOnlyPathAssert(Function<JPackageCommand, List<Path>> getPaths) {

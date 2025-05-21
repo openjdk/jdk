@@ -517,7 +517,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
         createResource(TEMPLATE_RUNTIMEIMAGE_INFO_PLIST, params)
                 .setPublicName("RuntimeImage-Info.plist")
-                .setCategory(I18N.getString("resource.runtime-image-info-plist"))
+                .setCategory(I18N.getString("resource.runtime-bundle-info-plist"))
                 .setSubstitutionData(data)
                 .saveToFile(file);
     }

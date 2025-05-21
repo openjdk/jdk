@@ -634,8 +634,12 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
 
             String releaseVersion = null;
             if (releasePath != null) {
-                releaseVersion = IOUtils.getPropertyFromFile(releasePath, "JAVA_VERSION");
-                releaseVersion = Arguments.unquoteIfNeeded(releaseVersion);
+                try {
+                    releaseVersion = IOUtils.getPropertyFromFile(releasePath, "JAVA_VERSION");
+                    releaseVersion = Arguments.unquoteIfNeeded(releaseVersion);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
 
             return releaseVersion == null ? appVersion : releaseVersion;

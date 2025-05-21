@@ -242,13 +242,12 @@ public final class IOUtils {
         return map;
     }
 
-    public static String getPropertyFromFile(Path filename, String name) {
+    public static String getPropertyFromFile(Path filename, String name)
+            throws IOException {
         // load properties file
         Properties properties = new Properties();
         try (Reader reader = Files.newBufferedReader(filename)) {
             properties.load(reader);
-        } catch (IOException e) {
-            Log.error("Exception: " + e.getMessage());
         }
 
         return properties.getProperty(name);
