@@ -111,7 +111,7 @@ public class ClassFileLoadHookTest {
             // the static archive was not created with aot-linked classes.
             out.shouldHaveExitValue(0);
         } else {
-            out.shouldContain("CDS archive has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
+            out.shouldContain("shared archive file has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
             out.shouldNotHaveExitValue(0);
         }
     }
