@@ -1,6 +1,6 @@
 ## Highlight.js v11.11.1
 
-### Highlight.js license
+### Highlight.js License
 ```
 BSD 3-Clause License
 
