@@ -46,6 +46,7 @@ public class ListEnterExitTest {
     final List list = new List();
     Frame frame;
     volatile Point p;
+
     private static final int X_OFFSET = 30;
     private static final int Y_OFFSET = 40;
     private static final int LATCH_TIMEOUT = 3;
@@ -110,11 +111,13 @@ public class ListEnterExitTest {
     }
 
     private class MouseEnterExitListener extends MouseAdapter {
+        @Override
         public void mouseEntered(MouseEvent e) {
             System.out.println("Mouse Entered Event");
             mouseEnterLatch.countDown();
         }
 
+        @Override
         public void mouseExited(MouseEvent e) {
             System.out.println("Mouse Exited Event");
             mouseExitLatch.countDown();
