@@ -36,7 +36,7 @@ PrintMetaspaceInfoKlassClosure::PrintMetaspaceInfoKlassClosure(outputStream* out
 
 void PrintMetaspaceInfoKlassClosure::do_klass(Klass* k) {
   _cnt++;
-  _out->cr_indent();
+  _out->cr();
   _out->print("%4zu: ", _cnt);
 
   // Print a 's' for shared classes

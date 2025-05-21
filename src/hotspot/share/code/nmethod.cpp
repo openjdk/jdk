@@ -28,6 +28,7 @@
 #include "code/dependencies.hpp"
 #include "code/nativeInst.hpp"
 #include "code/nmethod.inline.hpp"
+#include "code/relocInfo.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilationLog.hpp"
@@ -112,7 +113,7 @@
 // Cast from int value to narrow type
 #define CHECKED_CAST(result, T, thing)      \
   result = static_cast<T>(thing); \
-  assert(static_cast<int>(result) == thing, "failed: %d != %d", static_cast<int>(result), thing);
+  guarantee(static_cast<int>(result) == thing, "failed: %d != %d", static_cast<int>(result), thing);
 
 //---------------------------------------------------------------------------------
 // NMethod statistics
@@ -1122,7 +1123,7 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
 
   if (nm != nullptr) {
     // verify nmethod
-    debug_only(nm->verify();) // might block
+    DEBUG_ONLY(nm->verify();) // might block
 
     nm->log_new_nmethod();
   }
@@ -1269,7 +1270,7 @@ void nmethod::post_init() {
   finalize_relocations();
 
   Universe::heap()->register_nmethod(this);
-  debug_only(Universe::heap()->verify_nmethod(this));
+  DEBUG_ONLY(Universe::heap()->verify_nmethod(this));
 
   CodeCache::commit(this);
 }
@@ -1296,7 +1297,7 @@ nmethod::nmethod(
   _native_basic_lock_sp_offset(basic_lock_sp_offset)
 {
   {
-    debug_only(NoSafepointVerifier nsv;)
+    DEBUG_ONLY(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults(code_buffer, offsets);
@@ -1323,8 +1324,9 @@ nmethod::nmethod(
     _unwind_handler_offset   = 0;
 
     CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
-    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
-    JVMCI_ONLY( _jvmci_data_size = 0; )
+    uint16_t metadata_size;
+    CHECKED_CAST(metadata_size, uint16_t, align_up(code_buffer->total_metadata_size(), wordSize));
+    JVMCI_ONLY( _metadata_size = metadata_size; )
     assert(_mutable_data_size == _relocation_size + metadata_size,
            "wrong mutable data size: %d != %d + %d",
            _mutable_data_size, _relocation_size, metadata_size);
@@ -1437,7 +1439,7 @@ nmethod::nmethod(
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
-    debug_only(NoSafepointVerifier nsv;)
+    DEBUG_ONLY(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults(code_buffer, offsets);
@@ -1497,9 +1499,10 @@ nmethod::nmethod(
     }
 
     CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
-    uint16_t metadata_size = (uint16_t)align_up(code_buffer->total_metadata_size(), wordSize);
-    JVMCI_ONLY(CHECKED_CAST(_jvmci_data_size, uint16_t, align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize)));
-    int jvmci_data_size = 0 JVMCI_ONLY(+ _jvmci_data_size);
+    uint16_t metadata_size;
+    CHECKED_CAST(metadata_size, uint16_t, align_up(code_buffer->total_metadata_size(), wordSize));
+    JVMCI_ONLY( _metadata_size = metadata_size; )
+    int jvmci_data_size = 0 JVMCI_ONLY( + align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize));
     assert(_mutable_data_size == _relocation_size + metadata_size + jvmci_data_size,
            "wrong mutable data size: %d != %d + %d + %d",
            _mutable_data_size, _relocation_size, metadata_size, jvmci_data_size);
@@ -1646,6 +1649,10 @@ void nmethod::maybe_print_nmethod(const DirectiveSet* directive) {
 }
 
 void nmethod::print_nmethod(bool printmethod) {
+  // Enter a critical section to prevent a race with deopts that patch code and updates the relocation info.
+  // Unfortunately, we have to lock the NMethodState_lock before the tty lock due to the deadlock rules and
+  // cannot lock in a more finely grained manner.
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   ttyLocker ttyl;  // keep the following output all in one block
   if (xtty != nullptr) {
     xtty->begin_head("print_nmethod");
@@ -2035,6 +2042,17 @@ bool nmethod::make_not_entrant(const char* reason) {
       // cache call.
       NativeJump::patch_verified_entry(entry_point(), verified_entry_point(),
                                        SharedRuntime::get_handle_wrong_method_stub());
+
+      // Update the relocation info for the patched entry.
+      // First, get the old relocation info...
+      RelocIterator iter(this, verified_entry_point(), verified_entry_point() + 8);
+      if (iter.next() && iter.addr() == verified_entry_point()) {
+        Relocation* old_reloc = iter.reloc();
+        // ...then reset the iterator to update it.
+        RelocIterator iter(this, verified_entry_point(), verified_entry_point() + 8);
+        relocInfo::change_reloc_info_for_address(&iter, verified_entry_point(), old_reloc->type(),
+                                                 relocInfo::relocType::runtime_call_type);
+      }
     }
 
     if (update_recompile_counts()) {
@@ -2802,7 +2820,7 @@ PcDesc* PcDescContainer::find_pc_desc_internal(address pc, bool approximate, add
   }
 
   // Take giant steps at first (4096, then 256, then 16, then 1)
-  const int LOG2_RADIX = 4 /*smaller steps in debug mode:*/ debug_only(-1);
+  const int LOG2_RADIX = 4 /*smaller steps in debug mode:*/ DEBUG_ONLY(-1);
   const int RADIX = (1 << LOG2_RADIX);
   for (int step = (1 << (LOG2_RADIX*3)); step > 1; step >>= LOG2_RADIX) {
     while ((mid = lower + step) < upper) {
@@ -3243,7 +3261,7 @@ void nmethod::print_relocations() {
   ResourceMark m;       // in case methods get printed via the debugger
   tty->print_cr("relocations:");
   RelocIterator iter(this);
-  iter.print();
+  iter.print_on(tty);
 }
 #endif
 

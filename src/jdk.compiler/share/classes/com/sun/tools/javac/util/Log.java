@@ -26,12 +26,14 @@
 package com.sun.tools.javac.util;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Queue;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -83,26 +85,26 @@ public class Log extends AbstractLog {
     /**
      * DiagnosticHandler's provide the initial handling for diagnostics.
      * When a diagnostic handler is created and has been initialized, it
-     * should install itself as the current diagnostic handler. When a
+     * will install itself as the current diagnostic handler. When a
      * client has finished using a handler, the client should call
      * {@code log.removeDiagnosticHandler();}
      *
      * Note that javax.tools.DiagnosticListener (if set) is called later in the
      * diagnostic pipeline.
      */
-    public abstract static class DiagnosticHandler {
+    public abstract class DiagnosticHandler {
         /**
          * The previously installed diagnostic handler.
          */
-        protected DiagnosticHandler prev;
+        protected final DiagnosticHandler prev;
 
         /**
          * Install this diagnostic handler as the current one,
          * recording the previous one.
          */
-        protected void install(Log log) {
-            prev = log.diagnosticHandler;
-            log.diagnosticHandler = this;
+        protected DiagnosticHandler() {
+            prev = diagnosticHandler;
+            diagnosticHandler = this;
         }
 
         /**
@@ -114,11 +116,7 @@ public class Log extends AbstractLog {
     /**
      * A DiagnosticHandler that discards all diagnostics.
      */
-    public static class DiscardDiagnosticHandler extends DiagnosticHandler {
-        @SuppressWarnings("this-escape")
-        public DiscardDiagnosticHandler(Log log) {
-            install(log);
-        }
+    public class DiscardDiagnosticHandler extends DiagnosticHandler {
 
         @Override
         public void report(JCDiagnostic diag) { }
@@ -131,39 +129,38 @@ public class Log extends AbstractLog {
      * with reportAllDiagnostics(), it will be reported to the previously
      * active diagnostic handler.
      */
-    public static class DeferredDiagnosticHandler extends DiagnosticHandler {
-        private Queue<JCDiagnostic> deferred = new ListBuffer<>();
+    public class DeferredDiagnosticHandler extends DiagnosticHandler {
+        private List<JCDiagnostic> deferred = new ArrayList<>();
         private final Predicate<JCDiagnostic> filter;
         private final boolean passOnNonDeferrable;
 
-        public DeferredDiagnosticHandler(Log log) {
-            this(log, null);
+        public DeferredDiagnosticHandler() {
+            this(null);
         }
 
-        public DeferredDiagnosticHandler(Log log, Predicate<JCDiagnostic> filter) {
-            this(log, filter, true);
+        public DeferredDiagnosticHandler(Predicate<JCDiagnostic> filter) {
+            this(filter, true);
         }
 
-        @SuppressWarnings("this-escape")
-        public DeferredDiagnosticHandler(Log log, Predicate<JCDiagnostic> filter, boolean passOnNonDeferrable) {
-            this.filter = filter;
+        public DeferredDiagnosticHandler(Predicate<JCDiagnostic> filter, boolean passOnNonDeferrable) {
+            this.filter = Optional.ofNullable(filter).orElse(d -> true);
             this.passOnNonDeferrable = passOnNonDeferrable;
-            install(log);
+        }
+
+        private boolean deferrable(JCDiagnostic diag) {
+            return !(diag.isFlagSet(DiagnosticFlag.NON_DEFERRABLE) && passOnNonDeferrable) && filter.test(diag);
         }
 
         @Override
         public void report(JCDiagnostic diag) {
-            boolean deferrable = !passOnNonDeferrable ||
-                                 !diag.isFlagSet(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE);
-            if (deferrable &&
-                (filter == null || filter.test(diag))) {
+            if (deferrable(diag)) {
                 deferred.add(diag);
             } else {
                 prev.report(diag);
             }
         }
 
-        public Queue<JCDiagnostic> getDiagnostics() {
+        public List<JCDiagnostic> getDiagnostics() {
             return deferred;
         }
 
@@ -174,22 +171,18 @@ public class Log extends AbstractLog {
 
         /** Report selected deferred diagnostics. */
         public void reportDeferredDiagnostics(Predicate<JCDiagnostic> accepter) {
-            JCDiagnostic d;
-            while ((d = deferred.poll()) != null) {
-                if (accepter.test(d))
-                    prev.report(d);
-            }
+
+            // Flush matching reports to the previous handler
+            deferred.stream()
+              .filter(accepter)
+              .forEach(prev::report);
             deferred = null; // prevent accidental ongoing use
         }
 
-        /** Report selected deferred diagnostics. */
+        /** Report all deferred diagnostics in the specified order. */
         public void reportDeferredDiagnostics(Comparator<JCDiagnostic> order) {
-            JCDiagnostic[] diags = deferred.toArray(s -> new JCDiagnostic[s]);
-            Arrays.sort(diags, order);
-            for (JCDiagnostic d : diags) {
-                prev.report(d);
-            }
-            deferred = null; // prevent accidental ongoing use
+            deferred.sort(order);   // ok to sort in place: reportDeferredDiagnostics() is going to discard it
+            reportDeferredDiagnostics();
         }
     }
 
@@ -367,7 +360,7 @@ public class Log extends AbstractLog {
         private void initOptions(Options options) {
             this.dumpOnError = options.isSet(DOE);
             this.promptOnError = options.isSet(PROMPT);
-            this.emitWarnings = options.isUnset(XLINT_CUSTOM, "none");
+            this.emitWarnings = options.isUnset(NOWARN);
             this.suppressNotes = options.isSet("suppressNotes");
             this.MaxErrors = getIntOption(options, XMAXERRS, getDefaultMaxErrors());
             this.MaxWarnings = getIntOption(options, XMAXWARNS, getDefaultMaxWarnings());
@@ -483,6 +476,7 @@ public class Log extends AbstractLog {
      */
     public void popDiagnosticHandler(DiagnosticHandler h) {
         Assert.check(diagnosticHandler == h);
+        Assert.check(h.prev != null);
         diagnosticHandler = h.prev;
     }
 
@@ -688,6 +682,20 @@ public class Log extends AbstractLog {
     public void report(JCDiagnostic diagnostic) {
         diagnosticHandler.report(diagnostic);
      }
+
+    /**
+     * Reset the state of this instance.
+     */
+    public void clear() {
+        recorded.clear();
+        sourceMap.clear();
+        nerrors = 0;
+        nwarnings = 0;
+        nsuppressederrors = 0;
+        nsuppressedwarns = 0;
+        while (diagnosticHandler.prev != null)
+            popDiagnosticHandler(diagnosticHandler);
+    }
 
     /**
      * Common diagnostic handling.

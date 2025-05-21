@@ -103,6 +103,7 @@ public class FcFontManager extends SunFontManager {
 
     native String getFontPathNative(boolean noType1Fonts, boolean isX11GE);
 
+    @Override
     protected synchronized String getFontPath(boolean noType1Fonts) {
         return getFontPathNative(noType1Fonts, false);
     }

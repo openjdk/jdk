@@ -31,6 +31,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/compiledIC.hpp"
 #include "code/scopeDesc.hpp"
@@ -198,6 +199,13 @@ class C1StubIdStubAssemblerCodeGenClosure: public StubAssemblerCodeGenClosure {
 };
 
 CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, C1StubId id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure* cl) {
+  if ((int)id >= 0) {
+    CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C1Blob, (uint)id, name, 0, nullptr);
+    if (blob != nullptr) {
+      return blob;
+    }
+  }
+
   ResourceMark rm;
   // create code buffer for code storage
   CodeBuffer code(buffer_blob);
@@ -231,6 +239,9 @@ CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, C1StubId id, const ch
                                                  oop_maps,
                                                  must_gc_arguments,
                                                  false /* alloc_fail_is_fatal */ );
+  if (blob != nullptr && (int)id >= 0) {
+    AOTCodeCache::store_code_blob(*blob, AOTCodeEntry::C1Blob, (uint)id, name, 0, nullptr);
+  }
   return blob;
 }
 
@@ -265,7 +276,13 @@ bool Runtime1::initialize(BufferBlob* blob) {
   initialize_pd();
   // generate stubs
   int limit = (int)C1StubId::NUM_STUBIDS;
-  for (int id = 0; id < limit; id++) {
+  for (int id = 0; id <= (int)C1StubId::forward_exception_id; id++) {
+    if (!generate_blob_for(blob, (C1StubId) id)) {
+      return false;
+    }
+  }
+  AOTCodeCache::init_early_c1_table();
+  for (int id = (int)C1StubId::forward_exception_id+1; id < limit; id++) {
     if (!generate_blob_for(blob, (C1StubId) id)) {
       return false;
     }
@@ -370,7 +387,7 @@ JRT_ENTRY(void, Runtime1::new_instance(JavaThread* current, Klass* klass))
   h->initialize(CHECK);
   // allocate instance and return via TLS
   oop obj = h->allocate_instance(CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 
@@ -386,7 +403,7 @@ JRT_ENTRY(void, Runtime1::new_type_array(JavaThread* current, Klass* klass, jint
   assert(klass->is_klass(), "not a class");
   BasicType elt_type = TypeArrayKlass::cast(klass)->element_type();
   oop obj = oopFactory::new_typeArray(elt_type, length, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
   // This is pretty rare but this runtime patch is stressful to deoptimization
   // if we deoptimize here so force a deopt to stress the path.
   if (DeoptimizeALot) {
@@ -409,7 +426,7 @@ JRT_ENTRY(void, Runtime1::new_object_array(JavaThread* current, Klass* array_kla
   Handle holder(current, array_klass->klass_holder()); // keep the klass alive
   Klass* elem_klass = ObjArrayKlass::cast(array_klass)->element_klass();
   objArrayOop obj = oopFactory::new_objArray(elem_klass, length, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
   // This is pretty rare but this runtime patch is stressful to deoptimization
   // if we deoptimize here so force a deopt to stress the path.
   if (DeoptimizeALot) {
@@ -428,7 +445,7 @@ JRT_ENTRY(void, Runtime1::new_multi_array(JavaThread* current, Klass* klass, int
   assert(rank >= 1, "rank must be nonzero");
   Handle holder(current, klass->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(klass)->multi_allocate(rank, dims, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 
@@ -642,7 +659,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     }
   }
 
-  current->set_vm_result(exception());
+  current->set_vm_result_oop(exception());
   // Set flag if return address is a method handle call site.
   current->set_is_method_handle_return(nm->is_method_handle_return(pc));
 
@@ -1363,7 +1380,7 @@ int Runtime1::move_klass_patching(JavaThread* current) {
 //
 // NOTE: we are still in Java
 //
-  debug_only(NoHandleMark nhm;)
+  DEBUG_ONLY(NoHandleMark nhm;)
   {
     // Enter VM mode
     ResetNoHandleMark rnhm;
@@ -1380,7 +1397,7 @@ int Runtime1::move_mirror_patching(JavaThread* current) {
 //
 // NOTE: we are still in Java
 //
-  debug_only(NoHandleMark nhm;)
+  DEBUG_ONLY(NoHandleMark nhm;)
   {
     // Enter VM mode
     ResetNoHandleMark rnhm;
@@ -1397,7 +1414,7 @@ int Runtime1::move_appendix_patching(JavaThread* current) {
 //
 // NOTE: we are still in Java
 //
-  debug_only(NoHandleMark nhm;)
+  DEBUG_ONLY(NoHandleMark nhm;)
   {
     // Enter VM mode
     ResetNoHandleMark rnhm;

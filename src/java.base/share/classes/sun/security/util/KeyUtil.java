@@ -36,6 +36,9 @@ import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
+import jdk.internal.access.SharedSecrets;
 
 import sun.security.jca.JCAUtil;
 
@@ -320,19 +323,31 @@ public final class KeyUtil {
             tmp = encoded;
         }
 
+        // At this point tmp.length is 48
         int encodedVersion =
                 ((tmp[0] & 0xFF) << 8) | (tmp[1] & 0xFF);
-        int check1 = 0;
-        int check2 = 0;
-        int check3 = 0;
-        if (clientVersion != encodedVersion) check1 = 1;
-        if (clientVersion > 0x0301) check2 = 1;
-        if (serverVersion != encodedVersion) check3 = 1;
-        if ((check1 & (check2 | check3)) == 1) {
-            return replacer;
-        } else {
-            return tmp;
+
+        // The following code is a time-constant version of
+        // if ((clientVersion != encodedVersion) ||
+        //    ((clientVersion > 0x301) && (serverVersion != encodedVersion))) {
+        //        return replacer;
+        // } else { return tmp; }
+        int check1 = (clientVersion - encodedVersion) |
+                (encodedVersion - clientVersion);
+        int check2 = 0x0301 - clientVersion;
+        int check3 = (serverVersion - encodedVersion) |
+                (encodedVersion - serverVersion);
+
+        check1 = (check1 & (check2 | check3)) >> 24;
+
+        // Now check1 is either 0 or -1
+        check2 = ~check1;
+
+        for (int i = 0; i < 48; i++) {
+            tmp[i] = (byte) ((tmp[i] & check2) | (replacer[i] & check1));
         }
+
+        return tmp;
     }
 
     /**
@@ -444,6 +459,24 @@ public final class KeyUtil {
     public static boolean isSupportedKeyAgreementOutputAlgorithm(String alg) {
         return alg.equalsIgnoreCase("TlsPremasterSecret")
                 || alg.equalsIgnoreCase("Generic");
+    }
+
+    // destroy secret keys in a best-effort way
+    public static void destroySecretKeys(SecretKey... keys) {
+        for (SecretKey k : keys) {
+            if (k != null) {
+                if (k instanceof SecretKeySpec sk) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(sk);
+                } else {
+                    try {
+                        k.destroy();
+                    } catch (DestroyFailedException e) {
+                        // swallow
+                    }
+                }
+            }
+        }
     }
 }
 

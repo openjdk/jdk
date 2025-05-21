@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdi.EventRequestManager.createStepRequest;
 
+import com.sun.jdi.ReferenceType;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.request.StepRequest;
@@ -104,35 +105,24 @@ public class crstepreq001 {
             return quitDebuggee(FAILED);
         }
 
-        try {
-            threads = vm.allThreads();
-        } catch (Exception e) {
-            log.complain("TEST FAILURE: allThreads: " + e);
-            return quitDebuggee(FAILED);
-        }
-        Iterator iter = threads.iterator();
-        while (iter.hasNext()) {
-            thR = (ThreadReference) iter.next();
-            if (thR.name().equals(DEBUGGEE_THRD)) {
-                log.display("\nCreating StepRequest for the debuggee's thread \""
+        ReferenceType debuggeeClass = debuggee.classByName(DEBUGGEE_CLASS);
+        thR = debuggee.threadByFieldNameOrThrow(debuggeeClass, "debuggeeThread", DEBUGGEE_THRD);
+        log.display("\nCreating StepRequest for the debuggee's thread \""
                     + thR.name() + "\"");
-                try {
-                    StepRequest sReq = erManager.createStepRequest(thR,
-                        RESTRICTIONS[0][0],RESTRICTIONS[0][1]);
-                    sReq.enable();
-                    enabledStepRequests.add(sReq);
-                } catch (DuplicateRequestException e) {
-                    log.complain("TEST FAILURE: createStepRequest: caught " + e);
-                    return quitDebuggee(FAILED);
-                } catch (ObjectCollectedException e) {
-                    log.complain("TEST FAILURE: createStepRequest: caught " + e);
-                    return quitDebuggee(FAILED);
-                } catch (VMMismatchException e) {
-                    log.complain("TEST FAILURE: createStepRequest: caught " + e);
-                    return quitDebuggee(FAILED);
-                }
-                break;
-            }
+        try {
+            StepRequest sReq =
+                erManager.createStepRequest(thR, RESTRICTIONS[0][0],RESTRICTIONS[0][1]);
+            sReq.enable();
+            enabledStepRequests.add(sReq);
+        } catch (DuplicateRequestException e) {
+            log.complain("TEST FAILURE: createStepRequest: caught " + e);
+            return quitDebuggee(FAILED);
+        } catch (ObjectCollectedException e) {
+            log.complain("TEST FAILURE: createStepRequest: caught " + e);
+            return quitDebuggee(FAILED);
+        } catch (VMMismatchException e) {
+            log.complain("TEST FAILURE: createStepRequest: caught " + e);
+            return quitDebuggee(FAILED);
         }
 
 // Check that createStepRequest() throws DuplicateRequestException
