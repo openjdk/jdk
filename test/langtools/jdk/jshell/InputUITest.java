@@ -35,7 +35,7 @@
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build Compiler UITesting
  * @compile InputUITest.java
- * @run testng -Dstderr.encoding=UTF-8 -Dstdin.encoding=UTF-8 -Dstdout.encoding=UTF-8 InputUITest
+ * @run testng/othervm -Dstderr.encoding=UTF-8 -Dstdin.encoding=UTF-8 -Dstdout.encoding=UTF-8 InputUITest
  */
 
 import java.util.function.Function;
