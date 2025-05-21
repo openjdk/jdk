@@ -38,7 +38,7 @@ import javax.swing.JRadioButtonMenuItem;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 
-class MenuItemTestHelper {
+final class MenuItemTestHelper {
 
     public static JFrame getMenuItemTestFrame(boolean isLeft, String lafName) {
         boolean applyLookAndFeel = lafName != null;
