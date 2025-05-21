@@ -2448,6 +2448,8 @@ class Assembler : public AbstractAssembler {
   inline void xvrdpic(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpim(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpip(  VectorSRegister d, VectorSRegister b);
+
+  // The following functions do not match exactly the Java.math semantics.
   inline void xvminsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvmindp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvmaxsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);

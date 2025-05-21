@@ -2468,10 +2468,10 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     case Op_MinReductionV:
     case Op_MaxReductionV:
       return bt == T_INT;
-    // MaxV, MinV need types >= word.
+    // MaxV, MinV need types == INT || LONG.
     case Op_MaxV:
     case Op_MinV:
-      return !is_subword_type(bt);
+      return bt == T_INT || bt == T_LONG;
   }
   return true; // Per default match rules are supported.
 }
@@ -14293,12 +14293,6 @@ instruct vmin_reg(vecX dst, vecX src1, vecX src2) %{
       case T_LONG:
         __ vminsd($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
         break;
-      case T_FLOAT:
-        __ xvminsp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
-        break;
-      case T_DOUBLE:
-        __ xvmindp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
-        break;
       default:
         ShouldNotReachHere();
     }
@@ -14318,12 +14312,6 @@ instruct vmax_reg(vecX dst, vecX src1, vecX src2) %{
         break;
       case T_LONG:
         __ vmaxsd($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
-        break;
-      case T_FLOAT:
-        __ xvmaxsp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
-        break;
-      case T_DOUBLE:
-        __ xvmaxdp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
         break;
       default:
         ShouldNotReachHere();
