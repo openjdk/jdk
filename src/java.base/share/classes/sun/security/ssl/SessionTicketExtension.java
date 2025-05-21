@@ -231,9 +231,6 @@ final class SessionTicketExtension {
                 byte compressed = 0;
                 if (data.length >= MIN_COMPRESS_SIZE) {
                     data = compress(data);
-                    if (data == null) {
-                        return null;
-                    }
                     compressed = 1;
                 }
 
@@ -298,53 +295,41 @@ final class SessionTicketExtension {
                     SSLLogger.fine("Decryption failed." + e.getMessage());
                 }
             }
+
             return null;
         }
 
-        private static byte[] compress(byte[] input) {
-            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    GZIPOutputStream gos = new GZIPOutputStream(baos)) {
-                final int decompressedLen = input.length;
-                gos.write(input, 0, decompressedLen);
-                gos.finish();
+        private static byte[] compress(byte[] input) throws IOException {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            GZIPOutputStream gos = new GZIPOutputStream(baos);
+            final int decompressedLen = input.length;
+            gos.write(input, 0, decompressedLen);
+            gos.finish();
 
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("decompressed bytes: " + decompressedLen
-                            + "; compressed bytes: " + baos.size());
-                }
-
-                return baos.toByteArray();
-            } catch (Exception e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Compression failure: " + e.getMessage());
-                }
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine("decompressed bytes: " + decompressedLen
+                        + "; compressed bytes: " + baos.size());
             }
 
-            return null;
+            return baos.toByteArray();
         }
 
-        private static ByteBuffer decompress(ByteBuffer input) {
+        private static ByteBuffer decompress(ByteBuffer input)
+                throws IOException {
             final int compressedLen = input.remaining();
             byte[] bytes = new byte[compressedLen];
             input.get(bytes);
 
-            try (GZIPInputStream gis = new GZIPInputStream(
-                    new ByteArrayInputStream(bytes))) {
-                byte[] out = gis.readAllBytes();
+            GZIPInputStream gis = new GZIPInputStream(
+                    new ByteArrayInputStream(bytes));
+            byte[] out = gis.readAllBytes();
 
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("compressed bytes: " + compressedLen
-                            + "; decompressed bytes: " + out.length);
-                }
-
-                return ByteBuffer.wrap(out);
-            } catch (Exception e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Decompression failure: " + e.getMessage());
-                }
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine("compressed bytes: " + compressedLen
+                        + "; decompressed bytes: " + out.length);
             }
 
-            return null;
+            return ByteBuffer.wrap(out);
         }
 
         byte[] getEncoded() {
