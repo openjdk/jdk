@@ -641,8 +641,7 @@ const char* Modules::ArchivedProperty::get_numbered_property_as_sorted_string() 
     if (prop_value == nullptr) {
       break;
     }
-    char* p = resource_allocate_bytes(strlen(prop_value) + 1);
-    strcpy(p, prop_value);
+    char* p = ResourceArea::strdup(prop_value);
     while (*p == ',') p++; // skip leading commas
     while (*p) {
       char* next = strchr(p, ',');
