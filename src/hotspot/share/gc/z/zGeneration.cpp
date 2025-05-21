@@ -949,7 +949,7 @@ void ZGenerationYoung::register_with_remset(ZPage* page) {
 }
 
 ZRemembered* ZGenerationYoung::remembered() {
-  return  &_remembered;
+  return &_remembered;
 }
 
 void ZGenerationYoung::remap_current_remset(ZRemsetTableIterator* iter) {

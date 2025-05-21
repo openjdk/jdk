@@ -402,7 +402,7 @@ ZRemsetTableIterator::ZRemsetTableIterator(ZRemembered* remembered, bool previou
     _claimed(0) {}
 
   // This iterator uses the "found old" optimization.
-bool ZRemsetTableIterator::next(ZRemsetTableEntry* entry_addr)  {
+bool ZRemsetTableIterator::next(ZRemsetTableEntry* entry_addr) {
   BitMap::idx_t prev = Atomic::load(&_claimed);
 
   for (;;) {
@@ -472,7 +472,7 @@ public:
     : ZRestartableTask("ZRememberedScanMarkFollowTask"),
       _remembered(remembered),
       _mark(mark),
-      _remset_table_iterator(remembered, true /* previous */)  {
+      _remset_table_iterator(remembered, true /* previous */) {
     _mark->prepare_work();
     _remembered->_page_allocator->enable_safe_destroy();
   }
