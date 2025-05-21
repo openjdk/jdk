@@ -12940,21 +12940,21 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
 }
 
 void Assembler::emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
-                                     int size, int byte1, bool no_flags, bool is_map1) {
+                                     int size, int opcode_byte, bool no_flags, bool is_map1) {
   bool is_prefixq = (size == EVEX_64bit) ? true : false;
   if (is_demotable(no_flags, dst_enc, nds_enc)) {
     int encode = is_prefixq ? prefixq_and_encode(src_enc, dst_enc, is_map1) : prefix_and_encode(src_enc, dst_enc, is_map1);
-    emit_opcode_prefix_and_encoding((unsigned char)(byte1 | 0x80), 0xC0, encode, imm8);
+    emit_opcode_prefix_and_encoding((unsigned char)(opcode_byte | 0x80), 0xC0, encode, imm8);
   } else {
     InstructionAttr attributes(AVX_128bit, is_prefixq, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
     attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, size);
     int encode = emit_eevex_prefix_or_demote_ndd(src_enc, dst_enc, nds_enc, pre, opc, &attributes, no_flags);
-    emit_int24(byte1, (0xC0 | encode), imm8);
+    emit_int24(opcode_byte, (0xC0 | encode), imm8);
   }
 }
 
 void Assembler::emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                     int size, int byte1, bool no_flags, bool is_map1, bool swap) {
+                                     int size, int opcode_byte, bool no_flags, bool is_map1, bool swap) {
   int encode;
   bool is_prefixq = (size == EVEX_64bit) ? true : false;
   if (is_demotable(no_flags, dst_enc, nds_enc)) {
@@ -12968,7 +12968,7 @@ void Assembler::emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexS
     else {
       encode = is_prefixq ? prefixq_and_encode(src_enc, dst_enc, is_map1) : prefix_and_encode(src_enc, dst_enc, is_map1);
     }
-    emit_opcode_prefix_and_encoding((unsigned char)byte1, 0xC0, encode);
+    emit_opcode_prefix_and_encoding((unsigned char)opcode_byte, 0xC0, encode);
   } else {
     InstructionAttr attributes(AVX_128bit, is_prefixq, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
     attributes.set_is_evex_instruction();
@@ -12978,7 +12978,7 @@ void Assembler::emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexS
     else {
       encode = vex_prefix_and_encode(src_enc, dst_enc, nds_enc, pre, opc, &attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
     }
-    emit_int16(byte1, (0xC0 | encode));
+    emit_int16(opcode_byte, (0xC0 | encode));
   }
 }
 

@@ -803,10 +803,10 @@ private:
                             int size, int opcode_byte, bool no_flags = false, bool is_map1 = false);
 
   void emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                            int size, int byte1, bool no_flags, bool is_map1 = false, bool swap = false);
+                            int size, int opcode_byte, bool no_flags, bool is_map1 = false, bool swap = false);
 
   void emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
-                            int size, int byte1, bool no_flags, bool is_map1 = false);
+                            int size, int opcode_byte, bool no_flags, bool is_map1 = false);
 
   void simd_prefix(XMMRegister xreg, XMMRegister nds, Address adr, VexSimdPrefix pre,
                    VexOpcode opc, InstructionAttr *attributes);
