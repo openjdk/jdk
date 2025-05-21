@@ -30,6 +30,7 @@
 #import "MTLSurfaceData.h"
 #import "JNIUtilities.h"
 #define KEEP_ALIVE_INC 4
+#define CV_DISPLAYLINK_FAIL_DELAY 1.0
 
 @implementation MTLLayer
 
@@ -44,11 +45,28 @@
 @synthesize nextDrawableCount;
 @synthesize displayLink;
 @synthesize displayLinkCount;
+@synthesize displayLinkFailCount;
 
 - (void) createDisplayLink {
-    CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-    CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
-    self.displayLinkCount = 0;
+    CVReturn r = CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
+    if (r != kCVReturnSuccess) {
+        if (self.displayLinkFailCount == 5) {
+            // We have tried for 5 seconds to create CVDisplayLink
+            J2dTraceLn(J2D_TRACE_ERROR,
+                "MTLLayer.createDisplayLink --- unable to create CVDisplayLink.");
+            self.displayLinkFailCount = 0;
+            return;
+        }
+        self.displayLinkFailCount++;
+        [self performSelector:@selector(createDisplayLink)
+                   withObject:nil
+                   afterDelay:CV_DISPLAYLINK_FAIL_DELAY];
+        return;
+    } else {
+        CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
+        self.displayLinkCount = 0;
+        self.displayLinkFailCount = 0;
+    }
 }
 
 - (id) initWithJavaLayer:(jobject)layer
