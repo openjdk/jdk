@@ -82,12 +82,12 @@ ParsePredicateNode* ParsePredicate::init_parse_predicate(const Node* parse_predi
   return nullptr;
 }
 
-ParsePredicate ParsePredicate::clone_to_unswitched_loop(Node* new_control, const bool is_false_path_loop,
+ParsePredicate ParsePredicate::clone_to_loop(Node* new_control, const bool rewire_uncommon_proj_phi_inputs,
                                                         PhaseIdealLoop* phase) const {
   ParsePredicateSuccessProj* success_proj = phase->create_new_if_for_predicate(_success_proj, new_control,
                                                                                _parse_predicate_node->deopt_reason(),
-                                                                               Op_ParsePredicate, is_false_path_loop);
-  NOT_PRODUCT(trace_cloned_parse_predicate(is_false_path_loop, success_proj));
+                                                                               Op_ParsePredicate, rewire_uncommon_proj_phi_inputs);
+  NOT_PRODUCT(trace_cloned_parse_predicate(rewire_uncommon_proj_phi_inputs, success_proj));
   return ParsePredicate(success_proj, _parse_predicate_node->deopt_reason());
 }
 

@@ -328,7 +328,7 @@ class ParsePredicate : public Predicate {
     return _success_proj;
   }
 
-  ParsePredicate clone_to_unswitched_loop(Node* new_control, bool is_false_path_loop,
+  ParsePredicate clone_to_loop(Node* new_control, bool rewire_uncommon_proj_phi_inputs,
                                           PhaseIdealLoop* phase) const;
 
   void kill(PhaseIterGVN& igvn) const;
@@ -1174,9 +1174,9 @@ public:
   ClonePredicateToTargetLoop(LoopNode* target_loop_head, const NodeInLoopBody& node_in_loop_body, PhaseIdealLoop* phase);
 
   // Clones the provided Parse Predicate to the head of the current predicate chain at the target loop.
-  void clone_parse_predicate(const ParsePredicate& parse_predicate, bool is_false_path_loop) {
-    ParsePredicate cloned_parse_predicate = parse_predicate.clone_to_unswitched_loop(_old_target_loop_entry,
-                                                                                     is_false_path_loop, _phase);
+  void clone_parse_predicate(const ParsePredicate& parse_predicate, bool rewire_uncommon_proj_phi_inputs) {
+    ParsePredicate cloned_parse_predicate = parse_predicate.clone_to_loop(_old_target_loop_entry,
+                                                                          rewire_uncommon_proj_phi_inputs, _phase);
     _target_loop_predicate_chain.insert_predicate(cloned_parse_predicate);
   }
 

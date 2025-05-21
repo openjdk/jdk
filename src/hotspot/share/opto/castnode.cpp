@@ -31,8 +31,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
-#include "castnode.hpp"
-#include "loopnode.hpp"
+#include "opto/loopnode.hpp"
 #include "utilities/checkedCast.hpp"
 
 //=============================================================================
@@ -358,7 +357,7 @@ bool CastLLNode::cmp_used_at_inner_loop_exit_test(Node* cmp) {
 
 // Find if this is a cast node added by PhaseIdealLoop::create_loop_nest() to narrow the number of iterations of the
 // inner loop
-bool CastLLNode::used_at_inner_loop_exit_test() {
+bool CastLLNode::used_at_inner_loop_exit_test() const {
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     Node* convl2i = fast_out(i);
     if (convl2i->Opcode() == Op_ConvL2I) {

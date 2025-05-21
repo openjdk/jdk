@@ -1137,6 +1137,7 @@ public:
   }
 };
 
+// Make a copy of Parse/Template Assertion predicates below existing predicates at the loop passed as argument
 class CloneShortLoopPredicatesVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_loop;
   PhaseIdealLoop* const _phase;
