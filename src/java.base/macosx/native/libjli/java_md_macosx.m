@@ -672,10 +672,22 @@ void* SplashProcAddress(const char* name) {
     }
 }
 
+static void os_set_native_thread_name(const char *name) {
+  if (& pthread_setname_np) {
+    char buf [16]; // according to glibc manpage, 16 chars incl. '/0'
+    snprintf(buf, sizeof(buf), "%s", name);
+    buf[sizeof(buf) - 1] = '\0';
+    const int rc = pthread_setname_np(buf);
+    // ERANGE should not happen; all other errors should just be ignored.
+    assert(rc != ERANGE);
+  }
+}
+
 /*
  * Signature adapter for pthread_create().
  */
 static void* ThreadJavaMain(void* args) {
+  os_set_native_thread_name("JavaMain");
     return (void*)(intptr_t)JavaMain(args);
 }
 

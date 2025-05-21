@@ -499,9 +499,22 @@ bool jit_exec_enabled() {
 
 long pthread_jit_write_protect_np_counter;
 
+bool aph_do_trace;
+FILE *aph_do_trace_file;
+
 void poo() __attribute__((constructor));
 void poo() {
-  atexit([]() { printf("pthread_jit_write_protect_np_counter == %ld\n", pthread_jit_write_protect_np_counter); });
+  atexit([]() {
+    fclose(aph_do_trace_file);
+    printf("pthread_jit_write_protect_np_counter == %ld\n", pthread_jit_write_protect_np_counter); });
+  aph_do_trace = getenv("APH_DO_TRACE");
+  if (aph_do_trace) {
+    errno = 0;
+    aph_do_trace_file = fopen("/Users/aph/aph_trace", "w+");
+    if (errno) {
+      perror("fopen failed\n");
+    }
+  }
 }
 
 void os::current_thread_enable_wx(WXMode mode) {

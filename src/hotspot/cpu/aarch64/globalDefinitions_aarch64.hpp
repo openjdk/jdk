@@ -26,11 +26,45 @@
 #ifndef CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP
 #define CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP
 
-extern long pthread_jit_write_protect_np_counter;
+#include <execinfo.h>
 
+extern bool aph_do_trace;
+extern long pthread_jit_write_protect_np_counter;
+extern FILE *aph_do_trace_file;
+
+#define BT_BUF_SIZE 10
 #define pthread_jit_write_protect_np_wrapper(arg)                       \
 do {                                                                    \
-  /* fprintf(stderr, "pthread_jit_write_protect_np(%s)\n", arg == WXWrite ? "WXWrite" : "WXExec"); */ \
+  if (aph_do_trace) {                                                   \
+    char name[16];                                                      \
+    auto self = pthread_self();                                         \
+    pthread_getname_np(self, name, sizeof name - 1);                    \
+    fprintf(aph_do_trace_file, "\"%s\": pthread_jit_write_protect_np(%s)\n", name, \
+            arg == WXWrite ? "WXWrite" : "WXExec");                     \
+    {                                                                   \
+      int nptrs;                                                        \
+      void *buffer[BT_BUF_SIZE];                                        \
+      char **strings;                                                   \
+                                                                        \
+      nptrs = backtrace(buffer, BT_BUF_SIZE);                           \
+      fprintf(aph_do_trace_file, "backtrace() returned %d addresses\n", nptrs); \
+                                                                        \
+      /* The call backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO)    \
+         would produce similar output to the following: */              \
+                                                                        \
+      strings = backtrace_symbols(buffer, nptrs);                       \
+      if (strings == NULL) {                                            \
+        perror("backtrace_symbols");                                    \
+        os::exit(EXIT_FAILURE);                                         \
+      }                                                                 \
+                                                                        \
+      for (int j = nptrs - 1; j >= 0; j--)                              \
+        fprintf(aph_do_trace_file, "%s\n", strings[j]);                 \
+                                                                        \
+      /* permit_forbidden_function::free(strings); */                   \
+    }                                                                   \
+  }                                                                     \
+                                                                        \
   pthread_jit_write_protect_np(arg);                                    \
   pthread_jit_write_protect_np_counter++;                               \
 } while (0)

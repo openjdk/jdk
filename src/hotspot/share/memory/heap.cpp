@@ -163,6 +163,7 @@ void CodeHeap::mark_segmap_as_used(size_t beg, size_t end, bool is_FreeBlock_joi
 
 void CodeHeap::invalidate(size_t beg, size_t end, size_t hdr_size) {
 #ifndef PRODUCT
+  Thread::current()->maybe_enable_write();
   // Fill the given range with some bad value.
   // length is expected to be in segment_size units.
   // This prevents inadvertent execution of code leftover from previous use.

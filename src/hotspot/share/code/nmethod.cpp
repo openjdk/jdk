@@ -500,6 +500,7 @@ ExceptionCache* nmethod::exception_cache_acquire() const {
 }
 
 void nmethod::add_exception_cache_entry(ExceptionCache* new_entry) {
+  Thread::current()->maybe_enable_write();
   assert(ExceptionCache_lock->owned_by_self(),"Must hold the ExceptionCache_lock");
   assert(new_entry != nullptr,"Must be non null");
   assert(new_entry->next() == nullptr, "Must be null");
@@ -1931,7 +1932,8 @@ void nmethod::verify_clean_inline_caches() {
 }
 
 void nmethod::mark_as_maybe_on_stack() {
-  Atomic::store(&_gc_epoch, CodeCache::gc_epoch());
+  Thread::current()->maybe_enable_write();
+ Atomic::store(&_gc_epoch, CodeCache::gc_epoch());
 }
 
 bool nmethod::is_maybe_on_stack() {

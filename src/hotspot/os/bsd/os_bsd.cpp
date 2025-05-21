@@ -2214,7 +2214,7 @@ uint os::processor_id() {
 }
 
 void os::set_native_thread_name(const char *name) {
-#if defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5
+#if true || defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5
   // This is only supported in Snow Leopard and beyond
   if (name != nullptr) {
     // Add a "Java: " prefix to the name
