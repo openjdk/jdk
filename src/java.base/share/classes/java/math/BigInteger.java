@@ -4547,7 +4547,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private static int[] stripLeadingZeroInts(int[] val, boolean trusted) {
         int keep;
 
-        // Find first nonzero byte
+        // Find first nonzero int
         for (keep = 0; keep < val.length && val[keep] == 0; keep++)
             ;
         return trusted && keep == 0 ? val : Arrays.copyOfRange(val, keep, val.length);
