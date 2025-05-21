@@ -221,7 +221,7 @@ MTLVertexCache_AddMaskQuad(MTLContext *mtlc,
     jfloat dx1, dy1, dx2, dy2;
 
     J2dTraceLn(J2D_TRACE_INFO, "MTLVertexCache_AddMaskQuad: %d",
-                maskCacheIndex);
+               maskCacheIndex);
 
     // MTLVC_ADD_TRIANGLES at the end of this function
     // will place VERTS_FOR_A_QUAD vertexes to the vertex cache

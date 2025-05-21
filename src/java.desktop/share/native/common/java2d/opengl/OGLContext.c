@@ -752,8 +752,8 @@ OGLContext_IsLCDShaderSupportAvailable(JNIEnv *env,
     j2d_glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS_ARB, &maxTexUnits);
     if (maxTexUnits < 2) {
         J2dRlsTraceLn(J2D_TRACE_INFO,
-          "OGLContext_IsLCDShaderSupportAvailable: not enough tex units (%d)",
-          maxTexUnits);
+            "OGLContext_IsLCDShaderSupportAvailable: not enough tex units (%d)",
+            maxTexUnits);
     }
 
     J2dRlsTraceLn(J2D_TRACE_INFO,
@@ -983,7 +983,7 @@ OGLContext_CreateFragmentProgram(const char *fragmentShaderSource)
         j2d_glGetInfoLogARB(fragmentShader, 1024, NULL, infoLog);
         J2dRlsTraceLn(J2D_TRACE_WARNING,
             "OGLContext_CreateFragmentProgram: compiler msg (%d):\n%s",
-                       infoLogLength, infoLog);
+            infoLogLength, infoLog);
     }
 
     if (!success) {
@@ -1015,7 +1015,7 @@ OGLContext_CreateFragmentProgram(const char *fragmentShaderSource)
         j2d_glGetInfoLogARB(fragmentProgram, 1024, NULL, infoLog);
         J2dRlsTraceLn(J2D_TRACE_WARNING,
             "OGLContext_CreateFragmentProgram: linker msg (%d):\n%s",
-                       infoLogLength, infoLog);
+            infoLogLength, infoLog);
     }
 
     if (!success) {

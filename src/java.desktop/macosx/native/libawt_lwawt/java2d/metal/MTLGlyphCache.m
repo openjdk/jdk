@@ -291,8 +291,8 @@ MTLGlyphCache_RemoveCellInfo(GlyphInfo *glyph, MTLCacheCellInfo *cellInfo)
     do {
         if (currCellInfo == cellInfo) {
             J2dTraceLn(J2D_TRACE_VERBOSE,
-                        "  glyph 0x%x: removing cell 0x%x from glyph's list",
-                        glyph, currCellInfo);
+                       "  glyph 0x%x: removing cell 0x%x from glyph's list",
+                       glyph, currCellInfo);
             if (prevInfo == NULL) { // it's the head, chop-chop
                 glyph->cellInfo = currCellInfo->nextGCI;
             } else {

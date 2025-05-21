@@ -183,7 +183,7 @@ replaceTextureRegion(MTLContext *mtlc, id<MTLTexture> dest, const SurfaceDataRas
 
     @autoreleasepool {
         J2dTraceLn(J2D_TRACE_VERBOSE, "replaceTextureRegion src (dw, dh) : [%d, %d] dest (dx1, dy1) =[%d, %d]",
-                    dw, dh, dx1, dy1);
+                   dw, dh, dx1, dy1);
         id<MTLBuffer> buff = [[mtlc.device newBufferWithLength:(sw * sh * srcInfo->pixelStride) options:MTLResourceStorageModeManaged] autorelease];
 
         // copy src pixels inside src bounds to buff

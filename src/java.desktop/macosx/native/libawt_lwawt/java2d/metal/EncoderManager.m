@@ -362,8 +362,8 @@ const SurfaceRasterFlags defaultRasterFlags = { JNI_FALSE, JNI_TRUE };
   if (_encoder != nil) {
     if (_destination != dest || renderOptions->isAA != _encoderStates.aa) {
       J2dTraceLn(J2D_TRACE_VERBOSE,
-                  "end common encoder because of dest change: %p -> %p",
-                  _destination, dest);
+                 "end common encoder because of dest change: %p -> %p",
+                 _destination, dest);
       needEnd = JNI_TRUE;
     } else if ((_useStencil == NO) != ([_mtlc.clip isShape] == NO)) {
       // 1. When mode changes RECT -> SHAPE we must recreate encoder with
@@ -375,8 +375,8 @@ const SurfaceRasterFlags defaultRasterFlags = { JNI_FALSE, JNI_TRUE };
       // setDepthStencilState:nil] causes crash, so we have to recreate encoder
       // in such case
       J2dTraceLn(J2D_TRACE_VERBOSE,
-                  "end common encoder because toggle stencil: %d -> %d",
-                  (int)_useStencil, (int)[_mtlc.clip isShape]);
+                 "end common encoder because toggle stencil: %d -> %d",
+                 (int)_useStencil, (int)[_mtlc.clip isShape]);
       needEnd = JNI_TRUE;
     }
   }

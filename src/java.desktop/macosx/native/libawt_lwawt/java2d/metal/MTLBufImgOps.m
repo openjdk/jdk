@@ -47,7 +47,7 @@
 - (id)init:(jboolean)isNonPremult factors:(unsigned char *)factors offsets:(unsigned char *)offsets {
     self = [super init];
     if (self) {
-        J2dTraceLn(J2D_TRACE_INFO,"Created MTLRescaleOp: isNonPremult=%d", isNonPremult);
+        J2dTraceLn(J2D_TRACE_INFO, "Created MTLRescaleOp: isNonPremult=%d", isNonPremult);
 
         _isNonPremult = isNonPremult;
         _normScaleFactors[0] = NEXT_FLOAT(factors);

@@ -82,7 +82,7 @@ enum {
 #define ACT_IF_NULL(ACTION, value)         \
     if ((value) == NULL) {                 \
         J2dTraceLn(J2D_TRACE_ERROR,        \
-                    "%s is null", #value); \
+                   "%s is null", #value);  \
         ACTION;                            \
     } else do { } while (0)
 #define RETURN_IF_NULL(value)   ACT_IF_NULL(return, value)
@@ -91,7 +91,7 @@ enum {
 #define ACT_IF_TRUE(ACTION, value)         \
     if ((value)) {                         \
         J2dTraceLn(J2D_TRACE_ERROR,        \
-                    "%s is false", #value);\
+                   "%s is false", #value); \
         ACTION;                            \
     } else do { } while (0)
 

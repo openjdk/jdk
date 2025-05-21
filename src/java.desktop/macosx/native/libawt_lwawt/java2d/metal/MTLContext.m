@@ -251,7 +251,9 @@ extern void initSamplers(id<MTLDevice> device);
         return NULL;
     }
 
-    J2dTraceLn(J2D_TRACE_VERBOSE, "MTLContext_SetSurfaces: bsrc=%p (tex=%p type=%d), bdst=%p (tex=%p type=%d)", srcOps, srcOps->pTexture, srcOps->drawableType, dstOps, dstOps->pTexture, dstOps->drawableType);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "MTLContext_SetSurfaces: bsrc=%p (tex=%p type=%d), bdst=%p (tex=%p type=%d)",
+               srcOps, srcOps->pTexture, srcOps->drawableType,
+               dstOps, dstOps->pTexture, dstOps->drawableType);
 
     if (dstOps->drawableType == MTLSD_TEXTURE) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
