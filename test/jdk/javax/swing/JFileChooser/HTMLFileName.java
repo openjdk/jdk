@@ -21,45 +21,74 @@
  * questions.
  */
 
+import java.io.File;
+import java.util.List;
 import javax.swing.Icon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.filechooser.FileSystemView;
-import java.io.File;
-import java.util.List;
 
 /*
- * @test
+ * @test id=metal
  * @bug 8139228
  * @summary JFileChooser should not render Directory names in HTML format
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual HTMLFileName
+ * @run main/manual HTMLFileName metal
+ */
+
+/*
+ * @test id=system
+ * @bug 8139228
+ * @summary JFileChooser should not render Directory names in HTML format
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual HTMLFileName system
  */
 
 public class HTMLFileName {
+    private static final String INSTRUCTIONS = """
+            1. FileChooser shows up a virtual directory and file with name
+               "<html><h1 color=#ff00ff><font face="Comic Sans MS">Swing Rocks!".
+            2. On "HTML disabled" frame :
+                  a. Verify that the folder and file name must be plain text.
+                  b. If the name in file pane window and also in directory
+                     ComboBox remains in plain text, then test passes.
+                     If it appears to be in HTML format with Pink color,
+                     then test fails.
+                     (Verify for all Look and Feel).
+            3. On "HTML enabled" frame :
+                  a. Verify that the folder and file name remains in HTML
+                     format with name "Testing Name" pink in color.
+                  b. If the name in file pane window and also in directory
+                     ComboBox remains in HTML format string, then test passes.
+                     If it appears to be in plain text, then test fails.
+                     (Verify for all Look and Feel).
+            """;
 
     public static void main(String[] args) throws Exception {
-        String INSTRUCTIONS = """
-                1. FileChooser shows up a virtual directory and file with name
-                   "<html><h1 color=#ff00ff><font face="Comic Sans MS">Testing Name".
-                2. On "HTML disabled" frame :
-                      a. Verify that the folder and file name must be plain text.
-                      b. If the name in file pane window and also in directory
-                         ComboBox remains in plain text, then test PASS.
-                         If it appears to be in HTML format with Pink color,
-                         then test FAILS.
-                         (Verify for all Look and Feel).
-                3. On "HTML enabled" frame :
-                      a. Verify that the folder and file name remains in HTML
-                         format with name "Testing Name" pink in color.
-                      b. If the name in file pane window and also in directory
-                         ComboBox remains in HTML format string, then test PASS.
-                         If it appears to be in plain text, then test FAILS.
-                         (Verify for all Look and Feel).
-                 """;
+        if (args.length < 1) {
+            throw new IllegalArgumentException("Look-and-Feel keyword is required");
+        }
 
+        final String lafClassName;
+        switch (args[0]) {
+            case "metal" -> lafClassName = UIManager.getCrossPlatformLookAndFeelClassName();
+            case "system" -> lafClassName = UIManager.getSystemLookAndFeelClassName();
+            default -> throw new IllegalArgumentException("Unsupported Look-and-Feel keyword: " + args[0]);
+        }
 
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                UIManager.setLookAndFeel(lafClassName);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        System.out.println("Test for LookAndFeel " + lafClassName);
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .columns(45)
@@ -67,18 +96,18 @@ public class HTMLFileName {
                 .positionTestUIBottomRowCentered()
                 .build()
                 .awaitAndCheck();
+        System.out.println("Test passed for LookAndFeel " + lafClassName);
     }
 
     private static List<JFrame> initialize() {
         return List.of(createFileChooser(true), createFileChooser(false));
     }
 
-    private static JFrame createFileChooser(boolean html_enabled) {
-        JFileChooser jfc;
-        String frameTitle = (html_enabled) ? "HTML enabled" : "HTML disabled";
-        JFrame frame = new JFrame(frameTitle);
-        jfc = new JFileChooser(new VirtualFileSystemView());
-        jfc.putClientProperty("html.disable", html_enabled);
+    private static JFrame createFileChooser(boolean htmlEnabled) {
+        JFileChooser jfc = new JFileChooser(new VirtualFileSystemView());
+        jfc.putClientProperty("html.disable", htmlEnabled);
+        jfc.setControlButtonsAreShown(false);
+        JFrame frame = new JFrame((htmlEnabled) ? "HTML enabled" : "HTML disabled");
         frame.add(jfc);
         frame.pack();
         return frame;
@@ -93,7 +122,8 @@ public class HTMLFileName {
         @Override
         public File[] getRoots() {
             return new File[]{
-                    new File("/", "<html><h1 color=#ff00ff><font face=\"Comic Sans MS\">SWING ROCKS!!!111"),
+                    new File("/", "<html><h1 color=#ff00ff><font " +
+                            "face=\"Comic Sans MS\">Swing Rocks!!!!111"),
                     new File("/", "virtualFile2.txt"),
                     new File("/", "virtualFolder")
             };
@@ -113,7 +143,8 @@ public class HTMLFileName {
         public File[] getFiles(File dir, boolean useFileHiding) {
             // Simulate a virtual folder structure
             return new File[]{
-                    new File("/", "<html><h1 color=#ff00ff><font face=\"Comic Sans MS\">SWING ROCKS!!!111"),
+                    new File("/", "<html><h1 color=#ff00ff><font " +
+                            "face=\"Comic Sans MS\">Swing Rocks!"),
                     new File(dir, "virtualFile2.txt"),
                     new File(dir, "virtualFolder")
             };
