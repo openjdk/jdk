@@ -3307,6 +3307,14 @@ encode %{
   %}
 
 
+  enc_class enc_cmove_imm(iRegIdst dst, flagsRegSrc crx, immI16 src, cmpOp cmp) %{
+    Label done;
+    assert((Assembler::bcondCRbiIs1 & ~Assembler::bcondCRbiIs0) == 8, "check encoding");
+    // Branch if not (cmp crx).
+    __ bc(cc_to_inverse_boint($cmp$$cmpcode), cc_to_biint($cmp$$cmpcode, $crx$$reg), done);
+    __ li($dst$$Register, $src$$constant);
+    __ bind(done);
+  %}
 
   // This enc_class is needed so that scheduler gets proper
   // input mapping for latency computation.
@@ -7402,6 +7410,18 @@ instruct cmovI_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) 
 %}
 
 
+instruct cmovI_imm(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, immI16 src) %{
+  match(Set dst (CMoveI (Binary cmp crx) (Binary dst src)));
+  ins_cost(DEFAULT_COST+BRANCH_COST);
+
+  ins_variable_size_depending_on_alignment(true);
+
+  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
+  // Worst case is branch + move + stop, no stop without scheduler
+  size(8);
+  ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
+  ins_pipe(pipe_class_default);
+%}
 
 // Cmove using isel.
 instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) %{
@@ -7421,6 +7441,18 @@ instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) 
 %}
 
 
+instruct cmovL_imm(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, immL16 src) %{
+  match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
+  ins_cost(DEFAULT_COST+BRANCH_COST);
+
+  ins_variable_size_depending_on_alignment(true);
+
+  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
+  // Worst case is branch + move + stop, no stop without scheduler.
+  size(8);
+  ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
+  ins_pipe(pipe_class_default);
+%}
 
 // Cmove using isel.
 instruct cmovN_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) %{
@@ -7441,6 +7473,18 @@ instruct cmovN_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) 
 
 
 
+instruct cmovN_imm(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, immN_0 src) %{
+  match(Set dst (CMoveN (Binary cmp crx) (Binary dst src)));
+  ins_cost(DEFAULT_COST+BRANCH_COST);
+
+  ins_variable_size_depending_on_alignment(true);
+
+  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
+  // Worst case is branch + move + stop, no stop without scheduler.
+  size(8);
+  ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
+  ins_pipe(pipe_class_default);
+%}
 
 // Cmove using isel.
 instruct cmovP_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegPsrc src) %{
@@ -7460,6 +7504,18 @@ instruct cmovP_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegPsrc src) 
 %}
 
 
+instruct cmovP_imm(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, immP_0 src) %{
+  match(Set dst (CMoveP (Binary cmp crx) (Binary dst src)));
+  ins_cost(DEFAULT_COST+BRANCH_COST);
+
+  ins_variable_size_depending_on_alignment(true);
+
+  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
+  // Worst case is branch + move + stop, no stop without scheduler.
+  size(8);
+  ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
+  ins_pipe(pipe_class_default);
+%}
 
 instruct cmovF_reg(cmpOp cmp, flagsRegSrc crx, regF dst, regF src) %{
   match(Set dst (CMoveF (Binary cmp crx) (Binary dst src)));
