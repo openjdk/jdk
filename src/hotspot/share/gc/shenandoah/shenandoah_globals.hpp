@@ -54,7 +54,7 @@
           "relatively small.")                                              \
           range(0.0,100.0)                                                  \
                                                                             \
-  product(double, ShenandoahMinOldGenGrowthHeapPercent, 5, EXPERIMENTAL,    \
+  product(double, ShenandoahMinOldGenGrowthHeapPercent, 4, EXPERIMENTAL,    \
           "(Generational mode only) If the usage within old generation "    \
           "has grown by at least this percent of the total heap size "      \
           "larger than the live memory at the start of the previous "       \

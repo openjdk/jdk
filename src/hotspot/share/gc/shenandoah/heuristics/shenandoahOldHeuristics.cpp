@@ -897,13 +897,14 @@ bool ShenandoahOldHeuristics::should_start_gc() {
 }
 
 uintx ShenandoahOldHeuristics::desired_time_slice_ms() {
-  // We increase the desired time slice by 100 ms every 2 cycles, until old is done.  The young heuristic will
+  // We increase the desired time slice by 150 ms every cycle until old is done.  The young heuristic will
   // limit our granted time slice to 10% of its average cycle time.  There's some tension here.  We don't really
   // know that old-gen needs higher priority until it has taken inordinantly long to complete its work.  However,
-  // by the time we see that it is requiring higher priority, young collections are probably already feeling duress,
-  // so that is not a good time to steal cycles for old collections.  So we need to start out being a bit greedy.
-  unsigned int num_increases = _consecutive_concurrent_old_cycles / 2;
-  return ShenandoahMinimumOldTimeMs + 100 * num_increases;
+  // by the time we see that it is requiring higher priority, young collections are likely to be operating under
+  // duress, with back-to-back triggers and no slack for scheduling old.  We want to steal the old-marking time
+  // while there's still a bit of scheduling slack, so we are aggressive in our requests for old time slices.
+  unsigned int num_increases = _consecutive_concurrent_old_cycles;
+  return ShenandoahMinimumOldTimeMs + 150 * num_increases;
 }
 
 uint ShenandoahOldHeuristics::should_surge() {

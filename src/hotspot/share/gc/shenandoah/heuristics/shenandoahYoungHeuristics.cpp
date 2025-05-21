@@ -443,6 +443,11 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
 	       mixed_candidate_live_words);
 #endif
 
+  size_t anticipated_mark_words = get_young_live_words_after_most_recent_mark();
+  size_t proposed_promo_reserve = (size_t) (promo_potential_words / ShenandoahPromoEvacWaste);
+  set_anticipated_mark_words(anticipated_mark_words);
+  set_anticipated_pip_words(pip_potential_words);
+
   for (uint planned_mixed_collection_count = 1; planned_mixed_collection_count <= 32; planned_mixed_collection_count *= 2) {
     assert(mixed_candidate_live_words > 0, "This loop is for mixed evacuations only");
 
@@ -450,7 +455,6 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
     size_t proposed_old_evac_budget = mixed_candidate_live_words / planned_mixed_collection_count;
     size_t proposed_old_garbage = mixed_candidate_garbage_words / planned_mixed_collection_count;
     size_t proposed_old_evac_reserve = (size_t) (proposed_old_evac_budget * ShenandoahOldEvacWaste);
-    size_t proposed_promo_reserve = (size_t) (promo_potential_words / ShenandoahPromoEvacWaste);
     size_t proposed_total_reserve = proposed_young_evac_reserve + proposed_old_evac_reserve + proposed_promo_reserve;
 
 #ifdef KELVIN_RATIO
@@ -472,7 +476,6 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
       //   mark each referenced old object.  During the bootstrap cycle, we do not scan marked objects that reside
       //   in old-gen memory.  That is done during subsequent concurrent mark cycles.  Current implementation assumes
       //   the difference between mark times for normal and bootstrap GC cycles is negligible.
-      size_t anticipated_mark_words = get_young_live_words_after_most_recent_mark();
       size_t anticipated_evac_words;
       size_t anticipated_update_words;
 
@@ -487,9 +490,7 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
       log_info(gc)("Exploring plan for %u mixed evacuation, anticipated_mark_words: %zu",
                    planned_mixed_collection_count, anticipated_mark_words);
 #endif
-      set_anticipated_mark_words(anticipated_mark_words);
       set_anticipated_evac_words(anticipated_evac_words);
-      set_anticipated_pip_words(pip_potential_words);
       set_anticipated_update_words(anticipated_update_words);
 
       // predict_gc_time is often way too conservative because the anticipated_evac_words and anticipated update words
@@ -530,19 +531,39 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
     }
     // Try again with a less aggressive planned_mixed_collection_count
   }
+  // We cannot confidently plan the progress of mixed evacuations.  Reserve resources to allow some progress and then
+  // re-evaluate at end of next cycle.
 
-  // Not enough available memory to make meaningful progress on mixed evacuations.  Focus on young for this cycle
+  // proposed_young_evac_reserve and proposed_young_evac_budget are computed at top of this function.
 
-  // TODO: When this happens, maybe we should shrink our list of candidates by 12.5% or so, improving the likelihood that
-  // our next attempt to schedule mixed evacs will be successful. Note that the first regions in the set of candidates
-  // generally provide the largest amount of reclaimed garbage.  If we prune the set of old candidate regions, we'll need
-  // to make sure the regions expelled from this candidate set are coalesced and filled before we start another old-mark
-  // effort.  If we do this, we'll have to mark old again pretty soon, but maybe this will allow more garbage to accumulate
-  // in regions before the next old-mark runs, so the next time we visit these same candidate regions, we will be able to
-  // reclaim their garbage with less total effort.
+  size_t proposed_total_reserve = intended_young_reserve_words + allocation_runway_words - minimum_runway_words;
+  size_t proposed_old_reserve = proposed_total_reserve - proposed_young_evac_reserve;
+  size_t proposed_old_evac_reserve;
+  if (proposed_promo_reserve > proposed_old_reserve) {
+    proposed_promo_reserve = proposed_old_reserve;
+    proposed_old_evac_reserve = 0;
+  } else {
+    proposed_old_evac_reserve = proposed_old_reserve - proposed_promo_reserve;
+  }
+  size_t proposed_old_evac_budget = (size_t) (proposed_old_evac_reserve / ShenandoahOldEvacWaste);
+  size_t anticipated_evac_words = proposed_old_evac_budget + proposed_young_evac_budget;
 
-  log_info(gc)("Adjusting ShenandoahOldEvacRatioPercent to 0 under duress (requiring more than 32 mixed evacs), deferring mixed evacuations");
-  set_anticipated_mark_words(0);
+  // Conservatively estimate that all of the old garbage reclaimed in next mixed evacuation cycle has to be updated
+  size_t proposed_old_garbage = 0;
+  size_t old_2b_updated = old_gen->used_including_humongous_waste() - (proposed_old_evac_budget + proposed_old_garbage);
+  size_t young_2b_updated = get_young_live_words_not_in_most_recent_cset();
+  size_t anticipated_update_words = old_2b_updated + young_2b_updated;
+
+  set_anticipated_evac_words(anticipated_evac_words);
+  set_anticipated_update_words(anticipated_update_words);
+
+  ShenandoahOldEvacRatioPercent = (100 * proposed_old_evac_reserve) / proposed_total_reserve;
+  if (ShenandoahOldEvacRatioPercent > 100) {
+    ShenandoahOldEvacRatioPercent = 100;
+  }
+
+  log_info(gc)("Adjusting ShenandoahOldEvacRatioPercent to %zu under duress (requiring more than 32 mixed evacs)",
+               ShenandoahOldEvacRatioPercent);
   ShenandoahOldEvacRatioPercent = 0;
 }
 
