@@ -4721,7 +4721,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * returns the minimal (no leading zero ints) unsigned whose value is -a.
      */
     private static int[] makePositive(int[] a) {
-        int keep, j;
+        int keep, i;
 
         // Find first non-sign (0xffffffff) int of input
         for (keep=0; keep < a.length && a[keep] == -1; keep++)
@@ -4729,17 +4729,18 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         /* Allocate output array.  If all non-sign ints are 0x00, we must
          * allocate space for one extra output int. */
-        for (j = a.length - 1; j >= keep && a[j] == 0; j--) // Skip trailing zeros
+        for (i = a.length - 1; i >= keep && a[i] == 0; i--) // Skip trailing zeros
             ;
         int[] result;
-        if (j < keep) {
+        if (i < keep) {
             result = new int[a.length - keep + 1];
             result[0] = 1;
         } else { // Exists a non-sign int that is non-zero
             result = new int[a.length - keep];
             // Copy two's complement of input into output
-            result[j - keep] = -a[j];
-            for (int i = j - 1; i >= keep; i--)
+            result[i - keep] = -a[i];
+            i--;
+            for (; i >= keep; i--)
                 result[i - keep] = ~a[i];
         }
         return result;
