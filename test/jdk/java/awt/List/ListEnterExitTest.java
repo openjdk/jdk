@@ -36,7 +36,6 @@ import java.awt.List;
 import java.awt.Point;
 import java.awt.Robot;
 
-import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -47,11 +46,12 @@ public class ListEnterExitTest {
     final List list = new List();
     Frame frame;
     volatile Point p;
-    private final int X_OFFSET = 30;
-    private final int Y_OFFSET = 40;
-    private final int LATCH_TIMEOUT = 3;
-    private static volatile CountDownLatch mouseEnterLatch = new CountDownLatch(1);
-    private static volatile CountDownLatch mouseExitLatch = new CountDownLatch(1);
+    private static final int X_OFFSET = 30;
+    private static final int Y_OFFSET = 40;
+    private static final int LATCH_TIMEOUT = 3;
+
+    private final CountDownLatch mouseEnterLatch = new CountDownLatch(1);
+    private final CountDownLatch mouseExitLatch = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
         ListEnterExitTest test = new ListEnterExitTest();
@@ -94,12 +94,10 @@ public class ListEnterExitTest {
             robot.waitForIdle();
 
             if (!mouseEnterLatch.await(LATCH_TIMEOUT, TimeUnit.SECONDS)) {
-                System.out.println("mouseEnterLatch count is : " + mouseEnterLatch.getCount());
                 throw new RuntimeException("Mouse enter event timeout");
             }
 
             if (!mouseExitLatch.await(LATCH_TIMEOUT, TimeUnit.SECONDS)) {
-                System.out.println("mouseExitLatch count is : " + mouseExitLatch.getCount());
                 throw new RuntimeException("Mouse exit event timeout");
             }
         } finally {
@@ -111,7 +109,7 @@ public class ListEnterExitTest {
         }
     }
 
-    static class MouseEnterExitListener extends MouseAdapter {
+    private class MouseEnterExitListener extends MouseAdapter {
         public void mouseEntered(MouseEvent e) {
             System.out.println("Mouse Entered Event");
             mouseEnterLatch.countDown();
