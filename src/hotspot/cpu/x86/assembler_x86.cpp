@@ -6806,7 +6806,7 @@ void Assembler::shldl(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshldl(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-  evex_opcode_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0xA4, no_flags, true /* is_map1 */);
+  emit_eevex_or_demote(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x24, no_flags, true /* is_map1 */);
 }
 
 void Assembler::shrdl(Register dst, Register src) {
@@ -6824,7 +6824,7 @@ void Assembler::shrdl(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshrdl(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-  evex_opcode_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0xAC, no_flags, true /* is_map1 */);
+  emit_eevex_or_demote(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_32bit, 0x2C, no_flags, true /* is_map1 */);
 }
 
 void Assembler::shldq(Register dst, Register src, int8_t imm8) {
@@ -6833,7 +6833,7 @@ void Assembler::shldq(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshldq(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-  evex_opcode_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0xA4, no_flags, true /* is_map1 */);
+  emit_eevex_or_demote(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x24, no_flags, true /* is_map1 */);
 }
 
 void Assembler::shrdq(Register dst, Register src, int8_t imm8) {
@@ -6842,7 +6842,7 @@ void Assembler::shrdq(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshrdq(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-  evex_opcode_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0xAC, no_flags, true /* is_map1 */);
+  emit_eevex_or_demote(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, VEX_OPCODE_0F_3C /* MAP4 */, EVEX_64bit, 0x2C, no_flags, true /* is_map1 */);
 }
 
 // copies a single word from [esi] to [edi]
@@ -12939,17 +12939,17 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
   return (((dst_enc & 7) << 3) | (src_enc & 7));
 }
 
-void Assembler::evex_opcode_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
-                                              int size, int byte1, bool no_flags, bool is_map1) {
+void Assembler::emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
+                                     int size, int byte1, bool no_flags, bool is_map1) {
   bool is_prefixq = (size == EVEX_64bit) ? true : false;
   if (is_demotable(no_flags, dst_enc, nds_enc)) {
     int encode = is_prefixq ? prefixq_and_encode(src_enc, dst_enc, is_map1) : prefix_and_encode(src_enc, dst_enc, is_map1);
-    emit_opcode_prefix_and_encoding((unsigned char)byte1, 0xC0, encode, imm8);
+    emit_opcode_prefix_and_encoding((unsigned char)(byte1 | 0x80), 0xC0, encode, imm8);
   } else {
     InstructionAttr attributes(AVX_128bit, is_prefixq, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
     attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, size);
     int encode = emit_eevex_prefix_or_demote_ndd(src_enc, dst_enc, nds_enc, pre, opc, &attributes, no_flags);
-    emit_int24(byte1 & ~0x80, (0xC0 | encode), imm8);
+    emit_int24(byte1, (0xC0 | encode), imm8);
   }
 }
 
