@@ -65,7 +65,6 @@ CompileTask* CompileTask::allocate() {
 void CompileTask::free(CompileTask* task) {
   MutexLocker locker(CompileTaskAlloc_lock);
   if (!task->is_free()) {
-    assert(!task->lock()->is_locked(), "Should not be locked when freed");
     if ((task->_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_method_holder))) {
       JNIHandles::destroy_weak_global(task->_method_holder);
     } else {
@@ -90,8 +89,6 @@ void CompileTask::initialize(int compile_id,
                              int hot_count,
                              CompileTask::CompileReason compile_reason,
                              bool is_blocking) {
-  assert(!_lock->is_locked(), "bad locking");
-
   Thread* thread = Thread::current();
   _compile_id = compile_id;
   _method = method();
