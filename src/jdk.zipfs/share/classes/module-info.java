@@ -286,9 +286,10 @@ import java.util.Set;
  *               isReadOnly()} will always return {@code true}. Creating a
  *               <em>read-only</em> file system requires the underlying ZIP file to
  *               already exist.
- *               Specifying {@code create} as {@code true} and {@code accessMode} as
- *               {@code readOnly} will cause an {@code IllegalArgumentException}
- *               to be thrown when creating the ZIP file system.
+ *               Specifying the {@code create} property as {@code true} with the
+ *               {@code accessMode} as {@code readOnly} will cause an {@code
+ *               IllegalArgumentException} to be thrown when creating the ZIP file
+ *               system.
  *           </li>
  *           <li>
  *               If the value is {@code "readWrite"}, the file system is created
