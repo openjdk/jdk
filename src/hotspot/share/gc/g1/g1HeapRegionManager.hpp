@@ -221,7 +221,7 @@ public:
     return _free_list.length();
   }
 
-  uint num_used_regions() const { return active_regions() - num_free_regions(); }
+  uint num_used_regions() const { return committed_regions() - num_free_regions(); }
 
   uint num_free_regions(uint node_index) const {
     return _free_list.length(node_index);
@@ -232,10 +232,10 @@ public:
   }
 
   // Return the number of regions uncommitted or ready to be uncommitted.
-  uint inactive_regions() const { return max_reserved_regions() - active_regions(); }
+  uint inactive_regions() const { return max_reserved_regions() - committed_regions(); }
 
   // Return the number of regions currently active and available for use.
-  uint active_regions() const { return _committed_map.num_active(); }
+  uint committed_regions() const { return _committed_map.num_active(); }
 
   // The number of regions reserved for the heap.
   uint max_reserved_regions() const { return (uint)_regions.length(); }

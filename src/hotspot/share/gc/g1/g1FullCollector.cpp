@@ -83,7 +83,7 @@ uint G1FullCollector::calc_active_workers() {
 
   // Consider G1HeapWastePercent to decide max number of workers. Each worker
   // will in average cause half a region waste.
-  uint max_wasted_regions_allowed = ((heap->active_regions() * G1HeapWastePercent) / 100);
+  uint max_wasted_regions_allowed = ((heap->committed_regions() * G1HeapWastePercent) / 100);
   uint waste_worker_count = MAX2((max_wasted_regions_allowed * 2) , 1u);
   uint heap_waste_worker_limit = MIN2(waste_worker_count, max_worker_count);
 

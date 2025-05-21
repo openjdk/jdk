@@ -242,7 +242,7 @@ void G1HeapRegionManager::reactivate_regions(uint start, uint num_regions) {
 
 void G1HeapRegionManager::deactivate_regions(uint start, uint num_regions) {
   assert(num_regions > 0, "Need to specify at least one region to uncommit, tried to uncommit zero regions at %u", start);
-  assert(active_regions() >= num_regions, "pre-condition");
+  assert(committed_regions() >= num_regions, "pre-condition");
 
   // Reset NUMA index to and print state change.
   uint end = start + num_regions;
@@ -581,10 +581,10 @@ void G1HeapRegionManager::par_iterate(G1HeapRegionClosure* blk, G1HeapRegionClai
 }
 
 uint G1HeapRegionManager::shrink_by(uint num_regions_to_remove) {
-  assert(active_regions() > 0, "the region sequence should not be empty");
-  assert(active_regions() <= _next_highest_used_hrm_index, "invariant");
+  assert(committed_regions() > 0, "the region sequence should not be empty");
+  assert(committed_regions() <= _next_highest_used_hrm_index, "invariant");
   assert(_next_highest_used_hrm_index > 0, "we should have at least one region committed");
-  assert(num_regions_to_remove < active_regions(), "We should never remove all regions");
+  assert(num_regions_to_remove < committed_regions(), "We should never remove all regions");
 
   if (num_regions_to_remove == 0) {
     return 0;
@@ -657,15 +657,15 @@ uint G1HeapRegionManager::find_empty_from_idx_reverse(uint start_idx, uint* res_
 }
 
 void G1HeapRegionManager::verify() {
-  guarantee(active_regions() <= _next_highest_used_hrm_index,
+  guarantee(committed_regions() <= _next_highest_used_hrm_index,
             "invariant: _length: %u _next_highest_used_hrm_index: %u",
-            active_regions(), _next_highest_used_hrm_index);
+            committed_regions(), _next_highest_used_hrm_index);
   guarantee(_next_highest_used_hrm_index <= max_reserved_regions(),
             "invariant: _next_highest_used_hrm_index: %u _max_length: %u",
             _next_highest_used_hrm_index, max_reserved_regions());
-  guarantee(active_regions() <= max_reserved_regions(),
+  guarantee(committed_regions() <= max_reserved_regions(),
             "invariant: committed regions: %u max_regions: %u",
-            active_regions(), max_reserved_regions());
+            committed_regions(), max_reserved_regions());
 
   bool prev_committed = true;
   uint num_committed = 0;
@@ -696,7 +696,7 @@ void G1HeapRegionManager::verify() {
     guarantee(_regions.get_by_index(i) == nullptr, "invariant i: %u", i);
   }
 
-  guarantee(num_committed == active_regions(), "Found %u committed regions, but should be %u", num_committed, active_regions());
+  guarantee(num_committed == committed_regions(), "Found %u committed regions, but should be %u", num_committed, committed_regions());
   _free_list.verify();
 }
 

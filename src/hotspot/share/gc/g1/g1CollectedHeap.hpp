@@ -981,7 +981,7 @@ public:
   }
 
   // The current number of regions in the heap.
-  uint active_regions() const { return _hrm.active_regions(); }
+  uint committed_regions() const { return _hrm.committed_regions(); }
 
   // The max number of regions reserved for the heap. Except for static array
   // sizing purposes you probably want to use max_regions().
