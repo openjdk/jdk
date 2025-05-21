@@ -145,7 +145,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  *      }
  *
  *      // The background image fills the frame so we
- *      // don't need to clear the applet on repaints.
+ *      // don't need to clear the component background on repaints.
  *      // Just call the paint method.
  *      public void update(Graphics g) {
  *          paint(g);
