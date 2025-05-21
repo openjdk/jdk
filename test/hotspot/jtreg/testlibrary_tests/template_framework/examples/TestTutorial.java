@@ -64,17 +64,19 @@ public class TestTutorial {
         CompileFramework comp = new CompileFramework();
 
         // Add java source files.
-        comp.addJavaSourceCode("p.xyz.InnerTest1",  generateWithListOfTokens());
-        comp.addJavaSourceCode("p.xyz.InnerTest2",  generateWithTemplateArguments());
-        comp.addJavaSourceCode("p.xyz.InnerTest3",  generateWithHashtagAndDollarReplacements());
-        comp.addJavaSourceCode("p.xyz.InnerTest3b", generateWithHashtagAndDollarReplacements2());
-        comp.addJavaSourceCode("p.xyz.InnerTest4",  generateWithCustomHooks());
-        comp.addJavaSourceCode("p.xyz.InnerTest5",  generateWithLibraryHooks());
-        comp.addJavaSourceCode("p.xyz.InnerTest6",  generateWithRecursionAndBindingsAndFuel());
-        comp.addJavaSourceCode("p.xyz.InnerTest7",  generateWithDataNamesSimple());
-        comp.addJavaSourceCode("p.xyz.InnerTest8",  generateWithDataNamesForFieldsAndVariables());
-        comp.addJavaSourceCode("p.xyz.InnerTest9", generateWithDataNamesForFuzzing());
+        comp.addJavaSourceCode("p.xyz.InnerTest1",   generateWithListOfTokens());
+        comp.addJavaSourceCode("p.xyz.InnerTest2",   generateWithTemplateArguments());
+        comp.addJavaSourceCode("p.xyz.InnerTest3",   generateWithHashtagAndDollarReplacements());
+        comp.addJavaSourceCode("p.xyz.InnerTest3b",  generateWithHashtagAndDollarReplacements2());
+        comp.addJavaSourceCode("p.xyz.InnerTest4",   generateWithCustomHooks());
+        comp.addJavaSourceCode("p.xyz.InnerTest5",   generateWithLibraryHooks());
+        comp.addJavaSourceCode("p.xyz.InnerTest6",   generateWithRecursionAndBindingsAndFuel());
+        comp.addJavaSourceCode("p.xyz.InnerTest7",   generateWithDataNamesSimple());
+        comp.addJavaSourceCode("p.xyz.InnerTest8",   generateWithDataNamesForFieldsAndVariables());
+        comp.addJavaSourceCode("p.xyz.InnerTest9",   generateWithDataNamesForFuzzing());
         comp.addJavaSourceCode("p.xyz.InnerTest10",  generateWithStructuralNamesForMethods());
+        comp.addJavaSourceCode("p.xyz.InnerTest11a", generateWithDataNamesAndScopes1());
+        comp.addJavaSourceCode("p.xyz.InnerTest11b", generateWithDataNamesAndScopes2());
 
         // Compile the source files.
         // Hint: if you want to see the generated source code, you can enable
@@ -83,17 +85,19 @@ public class TestTutorial {
         comp.compile();
 
         // Object ret = p.xyz.InnerTest1.main();
-        comp.invoke("p.xyz.InnerTest1",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest2",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest3",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest3b", "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest4",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest5",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest6",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest7",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest8",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest1",   "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest2",   "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest3",   "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest3b",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest4",   "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest5",   "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest6",   "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest7",   "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest8",   "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest9",   "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest10",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest9", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest11a", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest11b", "main", new Object[] {});
     }
 
     // This example shows the use of various Tokens.
@@ -958,4 +962,203 @@ public class TestTutorial {
         return templateClass.render();
     }
 
+    // Let us have a closer look at how DataNames interact with scopes created by
+    // Templates and Hooks. Additionally, we see how the execution order of the
+    // lambdas and token evaluation affects the availability of DataNames.
+    //
+    // We inject the results directly into verification inside the code, so it
+    // is relatively simple to see what the expected results are.
+    //
+    // For simplicity, we define a simple "list" function. It collects all
+    // field and variable names, and immediately returns the comma separated
+    // list of the names. We can use that to visualize the available names
+    // at any point.
+    public static String listNames() {
+        return "{" + String.join(", ", dataNames(MUTABLE).exactOf(myInt).toList()
+                                       .stream().map(DataName::name).toList()) + "}";
+    }
+
+    // Even simpler: count the available variable and return the count immediately.
+    public static int countNames() {
+        return dataNames(MUTABLE).exactOf(myInt).count();
+    }
+
+    // Having defined these helper methods, let us start with the first example.
+    // You should start reading this example bottum-up, starting at
+    // templateClass, then going to templateMain and last to templateInnner.
+    public static String generateWithDataNamesAndScopes1() {
+
+        var templateInner = Template.make(() -> body(
+            // We just got called from the templateMain. All tokens from there
+            // are already evaluated, so "v1" is now available:
+            let("l1", listNames()),
+            """
+            if (!"{v1}".equals("#l1")) { throw new RuntimeException("l1 should have been '{v1}' but was '#l1'"); }
+            """
+        ));
+
+        var templateMain = Template.make(() -> body(
+            // So far, no names were defined. We expect "c1" to be zero.
+            let("c1", countNames()),
+            """
+            if (#c1 != 0) { throw new RuntimeException("c1 was not zero but #c1"); }
+            """,
+            // We now add a local variable "v1" to the scope of this templateMain.
+            // This only generates a token, and does not immediately add the name.
+            // The name is only added once we evaluate the tokens, and arrive at
+            // this particular token.
+            addDataName("v1", myInt, MUTABLE),
+            // We count again with "c2". The variable "v1" is at this point still
+            // in token form, hence it is not yet made available while executing
+            // the template lambda of templateMain.
+            let("c2", countNames()),
+            """
+            if (#c2 != 0) { throw new RuntimeException("c2 was not zero but #c2"); }
+            """,
+            // But now we call an inner Template. This is added as a TemplateToken.
+            // This means it is not evaluated immediately, but only once we evaluate
+            // the tokens. By that time, all tokens from above are already evaluated
+            // and we see that "v1" is available.
+            templateInner.asToken()
+        ));
+
+        var templateClass = Template.make(() -> body(
+            """
+            package p.xyz;
+
+            public class InnerTest11a {
+            """,
+            Hooks.CLASS_HOOK.anchor(
+            """
+                public static void main() {
+            """,
+                Hooks.METHOD_HOOK.anchor(
+                    templateMain.asToken()
+                ),
+            """
+                }
+            """
+            ),
+            """
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.render();
+    }
+
+    // Now that we understand this simple example, we go to a more complicated one
+    // where we use Hook.insert. Just as above, you should read this example
+    // bottom-up, starting at templateClass.
+    public static String generateWithDataNamesAndScopes2() {
+
+        var templateFields = Template.make(() -> body(
+            // We were just called from templateMain. But the code is not
+            // generated into the main scope, rather into the class scope
+            // out in templateClass.
+            // Let us now add a field "f1".
+            addDataName("f1", myInt, MUTABLE),
+            // And let's also generate the code for it.
+            """
+            public static int f1 = 42;
+            """,
+            // But why is this DataName now availabe inside the scope of
+            // templateInner? Does that not mean that "f1" escapes this
+            // templateFields here? Yes it does!
+            // For normal template nesting, the names do not escape the
+            // scope of the nested template. But this here is no normal
+            // template nesting, rather it is an insertion into a Hook,
+            // and we treat those differently. We make the scope of the
+            // inserted templateFields transparent, so that any added
+            // DataNames are added to the scope of the Hook we just
+            // inserted into, i.e. the CLASS_HOOK. This is very important,
+            // if we did not make that scope transparent, we could not
+            // add any DataNames to the class scope any more, and we could
+            // not add any fields that would be available in the class
+            // scope.
+            Hooks.METHOD_HOOK.anchor(
+                // We now create a separate scope. This one is not the
+                // template scope from above, and it is not transparent.
+                // Hence, "f2" will not be available outside of this
+                // scope.
+                addDataName("f2", myInt, MUTABLE),
+                // And let's also generate the code for it.
+                """
+                public static int f2 = 666;
+                """
+                // Similarly, if we called any nested Template here,
+                // and added DataNames inside, this would happen inside
+                // nested scopes that are not transparent. If one wanted
+                // to add names to the CLASS_HOOK from there, one would
+                // have to do another Hook.insert, and make sure that
+                // the names are added from the outermost scope of that
+                // inserted Template, because only that outermost scope
+                // is transparent to the CLASS_HOOK.
+            )
+        ));
+
+        var templateInner = Template.make(() -> body(
+            // We just got called from the templateMain. All tokens from there
+            // are already evaluated, so there should be some fields available.
+            // We can see field "f1".
+            let("l1", listNames()),
+            """
+            if (!"{f1}".equals("#l1")) { throw new RuntimeException("l1 should have been '{f1}' but was '#l1'"); }
+            """
+            // Now go and have a look at templateFields, to understand how that
+            // field was added, and why not any others.
+        ));
+
+        var templateMain = Template.make(() -> body(
+            // So far, no names were defined. We expect "c1" to be zero.
+            let("c1", countNames()),
+            """
+            if (#c1 != 0) { throw new RuntimeException("c1 was not zero but #c1"); }
+            """,
+            // We would now like to add some fields to the class scope, out in the
+            // templateClass. This creates a token, which is only evaluated after
+            // the completion of the templateMain lambda. Before you go and look
+            // at templateFields, just assume that it does add some fields, and
+            // continue reading in templateMain.
+            Hooks.CLASS_HOOK.insert(templateFields.asToken()),
+            // We count again with "c2". The fields we wanted to add above are not
+            // yet available, because the token is not yet evaluated. Hence, we
+            // still only count zero names.
+            let("c2", countNames()),
+            """
+            if (#c2 != 0) { throw new RuntimeException("c2 was not zero but #c2"); }
+            """,
+            // Now we call an inner Template. This also creates a token, and so it
+            // is not evaluated immediately. And by the time this token is evaluated
+            // the tokens from above are already evaluated, and so the fields should
+            // be available. Go have a look at templateInner now.
+            templateInner.asToken()
+        ));
+
+        var templateClass = Template.make(() -> body(
+            """
+            package p.xyz;
+
+            public class InnerTest11b {
+            """,
+            Hooks.CLASS_HOOK.anchor(
+            """
+                public static void main() {
+            """,
+                Hooks.METHOD_HOOK.anchor(
+                    templateMain.asToken()
+                ),
+            """
+                }
+            """
+            ),
+            """
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.render();
+    }
 }
