@@ -1697,6 +1697,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sb(value, Address(dest, 0));
     __ addi(dest, dest, 1);
     __ subi(count, count, 1);
+
     __ bind(L_skip_align1);
     // Two bytes misalignment happens.
     __ test_bit(tmp_reg, dest, 1);
@@ -1704,6 +1705,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sh(value, Address(dest, 0));
     __ addi(dest, dest, 2);
     __ subi(count, count, 2);
+
     __ bind(L_skip_align2);
     // Four bytes misalignment happens.
     __ test_bit(tmp_reg, dest, 2);
