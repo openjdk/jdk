@@ -197,7 +197,7 @@ public interface Comparator<T> {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b} according to this comparator.
      * @throws  ClassCastException if the collection contains elements that are
-     *          not <i>mutually comparable</i> (for example, strings and
+     *          not <em>mutually comparable</em> (for example, strings and
      *          integers).
      *
      * @since 25
@@ -215,7 +215,7 @@ public interface Comparator<T> {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b} according to this comparator.
      * @throws  ClassCastException if the collection contains elements that are
-     *          not <i>mutually comparable</i> (for example, strings and
+     *          not <em>mutually comparable</em> (for example, strings and
      *          integers).
      *
      * @since 25
