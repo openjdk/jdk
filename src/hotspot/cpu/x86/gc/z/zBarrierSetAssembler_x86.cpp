@@ -79,8 +79,10 @@ private:
   void save() {
     MacroAssembler* masm = _masm;
     if (VM_Version::supports_apx_f()) {
-      __ push(rax);
-      __ push(rcx);
+      if (_result != rax) {
+        __ pushp(rax);
+      }
+      __ pushp(rcx);
       // Save current stack pointer into rcx
       __ movptr(rcx, rsp);
       // Align stack pointer to 16 byte boundary. This is hard constraint
@@ -105,7 +107,9 @@ private:
       __ push2p(r28, r29);
       __ push2p(r30, r31);
     } else {
-      __ push(rax);
+      if (_result != rax) {
+        __ push(rax);
+      }
       __ push(rcx);
       __ push(rdx);
       __ push(rdi);
@@ -182,7 +186,13 @@ private:
       __ popp(rdx);
       // Re-instantiate original stack pointer.
       __ movptr(rsp, Address(rsp));
-      __ pop(rcx);
+      __ popp(rcx);
+      if (_result == noreg) {
+        __ popp(rax);
+      } else if (_result != rax) {
+        __ movptr(_result, rax);
+        __ popp(rax);
+      }
     } else {
       __ pop(r11);
       __ pop(r10);
@@ -192,14 +202,12 @@ private:
       __ pop(rdi);
       __ pop(rdx);
       __ pop(rcx);
-    }
-    if (_result == noreg) {
-      __ pop(rax);
-    } else if (_result == rax) {
-      __ addptr(rsp, wordSize);
-    } else {
-      __ movptr(_result, rax);
-      __ pop(rax);
+      if (_result == noreg) {
+        __ pop(rax);
+      } else if (_result != rax) {
+        __ movptr(_result, rax);
+        __ pop(rax);
+      }
     }
   }
 
