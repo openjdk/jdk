@@ -65,7 +65,12 @@ public final class TimeSource implements TimeLine {
         }
 
         Deadline instant(long nanos) {
-            long delay = delay(nanos);
+            return instant(nanos, nanos - firstNanos);
+        }
+
+        Deadline instant(long nanos, long delay) {
+            assert firstNanos + delay == nanos :
+                    "%d + %d != %d".formatted(firstNanos, delay, nanos);
             Instant now = first.plusNanos(delay);
             if (!isInWindow(delay)) {
                 // Shifts the time reference (firstNanos) to
@@ -94,7 +99,7 @@ public final class TimeSource implements TimeLine {
         long delay = source.delay(nanos);
         // use localSource if possible to avoid a volatile read
         if (source.isInWindow(delay)) {
-            return source.instant(nanos);
+            return source.instant(nanos, delay);
         } else {
             // will cause the time reference to shift forward,
             // at the cost of a volatile write + a volatile read
