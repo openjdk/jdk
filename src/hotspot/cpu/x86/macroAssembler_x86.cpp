@@ -5480,10 +5480,10 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
       }
     } else {
       if (CompressedKlassPointers::base() != nullptr) {
-        const uint64_t base_right_shifted =
-            (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
+        const intptr_t base_right_shifted =
+            (intptr_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
         // Uses 32-bit mov if base is small enough
-        movptr(dst, (intptr_t)CompressedKlassPointers::base());
+        movptr(dst, base_right_shifted);
       } else {
         xorq(dst, dst);
       }
