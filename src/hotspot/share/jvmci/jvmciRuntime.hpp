@@ -46,12 +46,13 @@ class MetadataHandles;
 class JVMCINMethodData : public ResourceObj {
   friend class JVMCIVMStructs;
 
-  // Is HotSpotNmethod.name non-null? If so, the value is
-  // embedded in the end of this object.
   union JVMCINMethodProperties {
     uint8_t value;
     struct {
+      // Is HotSpotNmethod.name non-null? If so, the value is
+      // embedded in the end of this object.
       uint8_t _has_name   : 1,
+      // Is HotSpotNmethod default, i.e., compilation scheduled by CompileBroker?
               _is_default : 1,
                           : 6;
     } bits;

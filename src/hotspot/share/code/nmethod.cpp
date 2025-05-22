@@ -2058,7 +2058,8 @@ bool nmethod::make_not_entrant(const char* reason) {
     if (update_recompile_counts()) {
 #if INCLUDE_JVMCI
       if (jvmci_nmethod_data() != nullptr && !jvmci_nmethod_data()->is_default()) {
-        // Hosted compilations are not subject to the recompilation cutoff
+        // Non-default (i.e., non-CompileBroker) compilations are
+        // not subject to the recompilation cutoff
       } else
 #endif
       {
