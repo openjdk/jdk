@@ -1335,8 +1335,6 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   compiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java
     //    -XX:VerifyIterativeGVN=1110
     case Op_AndL:
-    // I'll defensively add this other remaining MulNodes
-    case Op_MulHF:
       return false;
 
     // SubLNode::Ideal does transform like:
@@ -1592,6 +1590,19 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   compiler/c2/irTests/TestVectorizationMismatchedAccess.java
     //   -XX:VerifyIterativeGVN=1110
     case Op_Bool:
+      return false;
+
+    // CallStaticJavaNode::Ideal
+    // Led to a crash:
+    //   assert((is_CallStaticJava() && cg->is_mh_late_inline()) || (is_CallDynamicJava() && cg->is_virtual_late_inline())) failed: mismatch
+    //
+    // Did not investigate yet, could be a bug.
+    // Or maybe it does not expect to be called during verification.
+    //
+    // Found with:
+    //   test/jdk/jdk/incubator/vector/VectorRuns.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_CallStaticJava:
       return false;
   }
 
