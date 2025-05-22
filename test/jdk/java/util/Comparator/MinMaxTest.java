@@ -36,21 +36,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class MinMaxTest {
   @Test
-  public void testMin() {
+  void testMin() {
     Comparator<String> c = Comparator.naturalOrder();
     assertEquals("a", c.min("a", "b"));
     assertEquals("a", c.min("b", "a"));
   }
 
   @Test
-  public void testMax() {
+  void testMax() {
     Comparator<String> c = Comparator.naturalOrder();
     assertEquals("b", c.max("a", "b"));
     assertEquals("b", c.max("b", "a"));
   }
 
   @Test
-  public void testThrowsNPE() {
+  void testThrowsNPE() {
     Comparator<String> c = Comparator.naturalOrder();
     assertThrows(NullPointerException.class, () -> c.min(null, "a"));
     assertThrows(NullPointerException.class, () -> c.min("a", null));
@@ -59,7 +59,7 @@ public class MinMaxTest {
   }
 
   @Test
-  public void testThrowsCCE() {
+  void testThrowsCCE() {
     @SuppressWarnings("unchecked")
     Comparator<Object> c = (Comparator<Object>) (Comparator<?>)Comparator.naturalOrder();
     assertThrows(ClassCastException.class, () -> c.min(1, "a"));
@@ -69,7 +69,7 @@ public class MinMaxTest {
   }
 
   @Test
-  public void testEqualReturnFirst() {
+  void testEqualReturnFirst() {
     Comparator<Object> allEqual = (_, _) -> 0;
     Object o1 = new Object();
     Object o2 = new Object();
