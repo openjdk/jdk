@@ -406,28 +406,36 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             this.localCerts = null;
         } else {
             String[] certAlgs = new String[len];
-            Set<Integer> certCheckSums = new HashSet<>(len);
+            int[] certCheckSums = new int[len];
 
             for (int i = 0; len > i; i++) {
                 certAlgs[i] = new String(Record.getBytes8(buf));
-                certCheckSums.add(Record.getInt32(buf));
+                certCheckSums[i] = Record.getInt32(buf);
             }
 
             SSLPossession pos = X509Authentication.createPossession(
                     hc, certAlgs);
-            List<X509Certificate> tmpCerts = new ArrayList<>(len);
+            boolean same = false;
 
             if (pos instanceof X509Possession x509Pos
                     && x509Pos.popCerts != null
-                    && x509Pos.popCerts.length >= len) {
-
+                    && x509Pos.popCerts.length == len) {
+                // Make sure we got the exact same cert chain.
                 for (int i = 0; i < x509Pos.popCerts.length; i++) {
                     try {
                         byte[] encoded = x509Pos.popCerts[i].getEncoded();
-                        if (certCheckSums.contains(getChecksum(encoded))) {
+                        String popAlg = x509Pos.popCerts[i]
+                                .getPublicKey().getAlgorithm();
+
+                        if (certCheckSums[i] == getChecksum(encoded)
+                                && certAlgs[i].equals(popAlg)) {
                             // Use certs from cache.
-                            tmpCerts.add(
-                                    X509Factory.cachedGetX509Cert(encoded));
+                            x509Pos.popCerts[i] =
+                                    X509Factory.cachedGetX509Cert(encoded);
+                            same = true;
+                        } else {
+                            same = false;
+                            break;
                         }
                     } catch (Exception e) {
                         throw new IOException(e);
@@ -435,8 +443,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 }
             }
 
-            if (tmpCerts.size() == len) {
-                this.localCerts = tmpCerts.toArray(new X509Certificate[len]);
+            if (same) {
+                this.localCerts = ((X509Possession) pos).popCerts;
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,session")) {
                     SSLLogger.fine("Restored " + len
                             + " local certificates from session ticket"
