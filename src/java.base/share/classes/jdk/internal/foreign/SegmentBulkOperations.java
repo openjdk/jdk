@@ -51,8 +51,7 @@ public final class SegmentBulkOperations {
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
     private static final long LONG_MASK = ~7L; // The last three bits are zero
 
-    // All the threshold values below MUST be a power of two and should preferably be
-    // greater or equal to 2^3.
+    // All the threshold values below MUST be a power of two and greater or equal to 2^3.
     private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", 5);
     private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 6);
     private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
@@ -88,28 +87,44 @@ public final class SegmentBulkOperations {
         switch (64 - Long.numberOfLeadingZeros(len)) {
             case 0 -> dst.sessionImpl().checkValidState(); // Implicit state check
             case 1 -> SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), value);
-            case 2 -> {
-                SCOPED_MEMORY_ACCESS.putShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), (short) longValue, !Architecture.isLittleEndian());
-                SCOPED_MEMORY_ACCESS.putShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + len - Short.BYTES, (short) longValue, !Architecture.isLittleEndian());
-            }
-            case 3 -> {
-                SCOPED_MEMORY_ACCESS.putIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), (int) longValue, !Architecture.isLittleEndian());
-                SCOPED_MEMORY_ACCESS.putIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + len - Integer.BYTES, (int) longValue, !Architecture.isLittleEndian());
-            }
-            default -> {
-                if (len < NATIVE_THRESHOLD_FILL) {
-                    final int limit = (int) (len & (NATIVE_THRESHOLD_FILL - 8));
-                    for (int offset = 0; offset < limit; offset += Long.BYTES) {
-                        SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, longValue, !Architecture.isLittleEndian());
-                    }
-                    SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + len - Long.BYTES, longValue, !Architecture.isLittleEndian());
-                } else {
-                    // Handle larger segments via native calls
-                    SCOPED_MEMORY_ACCESS.setMemory(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), len, value);
-                }
-            }
+            case 2 -> fill2(dst, len, (short) longValue);
+            case 3 -> fill3(dst, len, (int) longValue);
+            case 4 -> fill4(dst, len, longValue);
+            default -> fill5AndUpwards(dst, len, longValue);
         }
         return dst;
+    }
+
+    @ForceInline
+    private static void fill2(AbstractMemorySegmentImpl dst, long len, short value) {
+        SCOPED_MEMORY_ACCESS.putShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), value, !Architecture.isLittleEndian());
+        SCOPED_MEMORY_ACCESS.putShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + len - Short.BYTES, value, !Architecture.isLittleEndian());
+    }
+
+    @ForceInline
+    private static void fill3(AbstractMemorySegmentImpl dst, long len, int value) {
+        SCOPED_MEMORY_ACCESS.putIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), value, !Architecture.isLittleEndian());
+        SCOPED_MEMORY_ACCESS.putIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + len - Integer.BYTES, value, !Architecture.isLittleEndian());
+    }
+
+    @ForceInline
+    private static void fill4(AbstractMemorySegmentImpl dst, long len, long value) {
+        SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), value, !Architecture.isLittleEndian());
+        SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + len - Long.BYTES, value, !Architecture.isLittleEndian());
+    }
+
+    @ForceInline
+    private static void fill5AndUpwards(AbstractMemorySegmentImpl dst, long len, long value) {
+        if (len < NATIVE_THRESHOLD_FILL) {
+            final int limit = (int) (len & (NATIVE_THRESHOLD_FILL - 8));
+            for (int offset = 0; offset < limit; offset += Long.BYTES) {
+                SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, value, !Architecture.isLittleEndian());
+            }
+            SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + len - Long.BYTES, value, !Architecture.isLittleEndian());
+        } else {
+            // Handle larger segments via native calls
+            SCOPED_MEMORY_ACCESS.setMemory(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), len, (byte) value);
+        }
     }
 
     @ForceInline
