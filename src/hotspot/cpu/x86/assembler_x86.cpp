@@ -12963,8 +12963,7 @@ void Assembler::emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexS
 
     if (swap) {
       encode = is_prefixq ? prefixq_and_encode(dst_enc, src_enc, is_map1) : prefix_and_encode(dst_enc, src_enc, is_map1);
-    }
-    else {
+    } else {
       encode = is_prefixq ? prefixq_and_encode(src_enc, dst_enc, is_map1) : prefix_and_encode(src_enc, dst_enc, is_map1);
     }
     emit_opcode_prefix_and_encoding((unsigned char)opcode_byte, 0xC0, encode);
