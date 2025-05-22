@@ -42,7 +42,7 @@ const size_t      ZVirtualToPhysicalRatio       = 16; // 16:1
 const size_t      ZMaxVirtualReservations       = 100; // Each reservation at least 1% of total
 
 // Page size shifts
-const size_t      ZPageSizeSmallShift           = ZGranuleSizeShift;
+const int         ZPageSizeSmallShift           = (int)ZGranuleSizeShift;
 extern int        ZPageSizeMediumMaxShift;
 
 // Page sizes
