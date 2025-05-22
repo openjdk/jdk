@@ -65,7 +65,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  *        DigestEchoServer HttpSlowServerTest
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run main/othervm -Dtest.requiresHost=true
- *                   -Djdk.httpclient.HttpClient.log=headers
+ *                   -Djdk.httpclient.HttpClient.log=errors,headers,quic:hs
  *                   -Djdk.internal.httpclient.debug=false
  *                   -Djdk.httpclient.quic.maxInitialTimeout=60
  *                   HttpSlowServerTest

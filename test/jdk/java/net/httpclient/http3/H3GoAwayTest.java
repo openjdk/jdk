@@ -59,7 +59,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *          the client correctly handles it and retries unprocessed requests
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run junit H3GoAwayTest
+ * @run junit/othervm
+ *            -Djdk.httpclient.HttpClient.log=errors,headers,quic:hs,http3
+ *            H3GoAwayTest
  */
 public class H3GoAwayTest {
 
