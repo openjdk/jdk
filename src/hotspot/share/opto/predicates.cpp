@@ -87,7 +87,6 @@ ParsePredicate ParsePredicate::clone_to_loop(Node* new_control, const bool rewir
   ParsePredicateSuccessProj* success_proj = phase->create_new_if_for_predicate(_success_proj, new_control,
                                                                                _parse_predicate_node->deopt_reason(),
                                                                                Op_ParsePredicate, rewire_uncommon_proj_phi_inputs);
-  NOT_PRODUCT(trace_cloned_parse_predicate(rewire_uncommon_proj_phi_inputs, success_proj));
   return ParsePredicate(success_proj, _parse_predicate_node->deopt_reason());
 }
 
@@ -97,11 +96,10 @@ void ParsePredicate::kill(PhaseIterGVN& igvn) const {
 }
 
 #ifndef PRODUCT
-void ParsePredicate::trace_cloned_parse_predicate(const bool is_false_path_loop,
-                                                  const ParsePredicateSuccessProj* success_proj) {
-  if (TraceLoopPredicate) {
+void ParsePredicate::trace_cloned_parse_predicate(const bool is_false_path_loop) const {
+  if (TraceLoopUnswitching) {
     tty->print("Parse Predicate cloned to %s path loop: ", is_false_path_loop ? "false" : "true");
-    success_proj->in(0)->dump();
+    head()->dump();
   }
 }
 #endif // NOT PRODUCT
@@ -1111,9 +1109,16 @@ void CloneUnswitchedLoopPredicatesVisitor::visit(const ParsePredicate& parse_pre
   if (_is_counted_loop && deopt_reason == Deoptimization::Reason_loop_limit_check) {
     return;
   }
-  _clone_predicate_to_true_path_loop.clone_parse_predicate(parse_predicate, false);
-  _clone_predicate_to_false_path_loop.clone_parse_predicate(parse_predicate, true);
+  clone_parse_predicate(parse_predicate, false);
+  clone_parse_predicate(parse_predicate, true);
   parse_predicate.kill(_phase->igvn());
+}
+
+void CloneUnswitchedLoopPredicatesVisitor::clone_parse_predicate(const ParsePredicate& parse_predicate,
+                                                                 const bool is_false_path_loop) {
+  ClonePredicateToTargetLoop& clone_predicate_to_loop = is_false_path_loop ? _clone_predicate_to_false_path_loop : _clone_predicate_to_true_path_loop;
+  const ParsePredicate cloned_parse_predicate = clone_predicate_to_loop.clone_parse_predicate(parse_predicate, is_false_path_loop);
+  NOT_PRODUCT(cloned_parse_predicate.trace_cloned_parse_predicate(is_false_path_loop);)
 }
 
 // Clone the Template Assertion Predicate, which is currently found before the newly added unswitched loop selector,

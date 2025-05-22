@@ -296,8 +296,6 @@ class ParsePredicate : public Predicate {
   }
 
   static ParsePredicateNode* init_parse_predicate(const Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason);
-  NOT_PRODUCT(static void trace_cloned_parse_predicate(bool is_false_path_loop,
-                                                       const ParsePredicateSuccessProj* success_proj);)
 
  public:
   ParsePredicate(Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason)
@@ -328,8 +326,8 @@ class ParsePredicate : public Predicate {
     return _success_proj;
   }
 
-  ParsePredicate clone_to_loop(Node* new_control, bool rewire_uncommon_proj_phi_inputs,
-                                          PhaseIdealLoop* phase) const;
+  ParsePredicate clone_to_loop(Node* new_control, bool rewire_uncommon_proj_phi_inputs, PhaseIdealLoop* phase) const;
+  NOT_PRODUCT(void trace_cloned_parse_predicate(bool is_false_path_loop) const;)
 
   void kill(PhaseIterGVN& igvn) const;
 };
@@ -1174,10 +1172,11 @@ public:
   ClonePredicateToTargetLoop(LoopNode* target_loop_head, const NodeInLoopBody& node_in_loop_body, PhaseIdealLoop* phase);
 
   // Clones the provided Parse Predicate to the head of the current predicate chain at the target loop.
-  void clone_parse_predicate(const ParsePredicate& parse_predicate, bool rewire_uncommon_proj_phi_inputs) {
+  ParsePredicate clone_parse_predicate(const ParsePredicate& parse_predicate, bool rewire_uncommon_proj_phi_inputs) {
     ParsePredicate cloned_parse_predicate = parse_predicate.clone_to_loop(_old_target_loop_entry,
                                                                           rewire_uncommon_proj_phi_inputs, _phase);
     _target_loop_predicate_chain.insert_predicate(cloned_parse_predicate);
+    return cloned_parse_predicate;
   }
 
   void clone_template_assertion_predicate(const TemplateAssertionPredicate& template_assertion_predicate);
@@ -1205,6 +1204,9 @@ class CloneUnswitchedLoopPredicatesVisitor : public PredicateVisitor {
   using PredicateVisitor::visit;
 
   void visit(const ParsePredicate& parse_predicate) override;
+
+  void clone_parse_predicate(const ParsePredicate &parse_predicate,
+                             bool is_false_path_loop);
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
 };
 
