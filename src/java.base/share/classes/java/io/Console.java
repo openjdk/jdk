@@ -59,11 +59,12 @@ import sun.nio.cs.UTF_8;
  * on the objects returned by {@link #reader()} and {@link #writer()} may
  * block in multithreaded scenarios.
  * <p>
- * Read and write operations use the {@code Charset} returned by the
- * {@link #charset()} method, unless {@link System##stdin.encoding
- * stdin.encoding} differs from {@link System##stdout.encoding
- * stdout.encoding}, in which case read operations use the {@code Charset}
- * designated by {@code stdin.encoding}.
+ * Read and write operations use the {@code Charset}s specified by
+ * {@link System##stdin.encoding stdin.encoding} and {@link
+ * System##stdout.encoding stdout.encoding}, respectively. The
+ * {@code Charset} used for write operations can also be retrieved using
+ * the {@link #charset()} method. Since {@code Console} is intended for
+ * interactive use on a terminal, these charsets are typically the same.
  * <p>
  * Operations that format strings are locale sensitive, using either the
  * specified {@code Locale}, or the
@@ -515,21 +516,15 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * Returns the {@link java.nio.charset.Charset Charset} object used for
-     * the {@code Console}.
+     * {@return the {@link java.nio.charset.Charset Charset} object used for
+     * the write operations on this {@code Console}}
      * <p>
-     * The returned charset is used for interpreting the input and output source
-     * (e.g., keyboard and/or display) specified by the host environment or user,
-     * which defaults to the one based on {@link System##stdout.encoding stdout.encoding}.
-     * It may not necessarily be the same as the default charset returned from
+     * The returned charset is used for encoding the data that is sent to
+     * the output (e.g., display), specified by the host environment or user.
+     * It defaults to the one based on {@link System##stdout.encoding stdout.encoding},
+     * and may not necessarily be the same as the default charset returned from
      * {@link java.nio.charset.Charset#defaultCharset() Charset.defaultCharset()}.
-     * If {@link System##stdin.encoding stdin.encoding} differs from
-     * {@link System##stdout.encoding stdout.encoding}, read operations use the
-     * {@code Charset} designated by {@code stdin.encoding}, instead of the returned
-     * {@code Charset}.
      *
-     * @return a {@link java.nio.charset.Charset Charset} object used for the
-     *          {@code Console}
      * @since 17
      */
     public Charset charset() {
