@@ -154,18 +154,22 @@ public class TestRedundantLea {
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_8_NARROW, "=1"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
     // Test that the peephole worked for leaP(8|32)Narrow
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         counts = {IRNode.LEA_P_8_NARROW, "=1"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=1"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
     // Test that the peephole worked for leaPCompressedOopOffset
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=1"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
     public void testGetAndSet() {
         obj.getAndSet(CURRENT);
@@ -186,18 +190,22 @@ class StringEqualsTest {
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3",
                   IRNode.LEA_P_8_NARROW, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
     // Test that the peephole worked for leaP(8|32)Narrow
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_8_NARROW, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
     // Test that the peephole worked for leaPCompressedOopOffset
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
     @Arguments(setup = "setup")
     public boolean test(String str) {
@@ -236,18 +244,22 @@ class StringInflateTest {
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=5",
                   IRNode.LEA_P_8_NARROW, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
     // Test that the peephole worked for leaP(8|32)Narrow
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3",
                   IRNode.LEA_P_8_NARROW, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=5",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
     // Test that the peephole worked for leaPCompressedOopOffset
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
     @Arguments(setup = "setup")
     public static Name test(Name n1, Name n2) {
@@ -269,18 +281,22 @@ class RegexFindTest {
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3",
                   IRNode.LEA_P_8_NARROW, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824", "UseAVX", "=3"})
     // Test that the peephole worked for leaP(8|32)Narrow
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_8_NARROW, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824", "UseAVX", "=3"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824", "UseAVX", "=3"})
     // Test that the peephole worked for leaPCompressedOopOffset
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824", "UseAVX", "=3"})
     @Arguments(setup = "setup")
     public boolean test(Matcher m) {
@@ -311,23 +327,27 @@ class StoreNTest {
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2",
                   IRNode.LEA_P_8_NARROW, "=1",
                   IRNode.LEA_P_32_NARROW, "=1",
-                  IRNode.MEM2REG_SPILL_COPY, "=3"},
+                  IRNode.MEM_TO_REG_SPILL_COPY, "=4"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
     // Test that the peephole worked for leaP(8|32)Narrow
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         counts = {IRNode.LEA_P_8_NARROW, "=1",
                   IRNode.LEA_P_32_NARROW, "=1",
-                  IRNode.MEM2REG_SPILL_COPY, "=2"},
+                  IRNode.MEM_TO_REG_SPILL_COPY, "=3"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2",
-                  IRNode.MEM2REG_SPILL_COPY, "=3"},
+                  IRNode.MEM_TO_REG_SPILL_COPY, "=4"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
     // Test that the peephole worked for leaPCompressedOopOffset
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2",
-                  IRNode.MEM2REG_SPILL_COPY, "=2"},
+                  IRNode.MEM_TO_REG_SPILL_COPY, "=3"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
     public void testRemoveSpill() {
         this.classArr8bit[OFFSET8BIT_IDX] = new StoreNHelper(CURRENT, OTHER);
@@ -341,16 +361,20 @@ class StoreNTest {
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_8_NARROW, "=1",
                   IRNode.LEA_P_32_NARROW, "=1"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_8_NARROW, "=1",
                   IRNode.LEA_P_32_NARROW, "=1"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
     public void testPhiSpill() {
         this.classArr8bit[OFFSET8BIT_IDX] = new StoreNHelper(CURRENT, OTHER);
@@ -362,19 +386,23 @@ class StoreNTest {
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2",
                   IRNode.LEA_P_8_NARROW, "=1",
                   IRNode.LEA_P_32_NARROW, "=1"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
     // Test that the peephole worked for leaP(8|32)Narrow
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         counts = {IRNode.LEA_P_8_NARROW, "=1",
                   IRNode.LEA_P_32_NARROW, "=1"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
     // Test that the peephole worked for leaPCompressedOopOffset
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
     public void testNoAlloc() {
         this.objArr8bit[OFFSET8BIT_IDX] = CURRENT;
@@ -386,19 +414,23 @@ class StoreNTest {
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_8_NARROW, "=1",
                   IRNode.LEA_P_32_NARROW, "=1"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
     // Test that the peephole worked for leaP(8|32)Narrow
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         counts = {IRNode.LEA_P_8_NARROW, "=1",
                   IRNode.LEA_P_32_NARROW, "=1"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
     // Test that the peephole worked for leaPCompressedOopOffset
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
     public void testNoAllocSameArray() {
         this.objArr8bit[OFFSET8BIT_IDX] = CURRENT;

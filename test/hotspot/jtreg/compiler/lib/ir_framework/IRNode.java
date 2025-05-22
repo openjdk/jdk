@@ -651,8 +651,7 @@ public class IRNode {
 
     public static final String DECODE_HEAP_OOP_NOT_NULL = PREFIX + "DECODE_HEAP_OOP_NOT_NULL" + POSTFIX;
     static {
-        String regex = "(decode_heap_oop_not_null ...?,...?)";
-        optoOnly(DECODE_HEAP_OOP_NOT_NULL, regex);
+        machOnly(DECODE_HEAP_OOP_NOT_NULL, "decodeHeapOop_not_null");
     }
 
     public static final String DIV = PREFIX + "DIV" + POSTFIX;
@@ -879,22 +878,19 @@ public class IRNode {
     // Only supported on x86.
     public static final String LEA_P_COMPRESSED_OOP_OFFSET = PREFIX + "LEA_P_COMPRESSED_OOP_OFFSET" + POSTFIX;
     static {
-        String regex = "(leaq.*# ptr compressedoopoff32)";
-        optoOnly(LEA_P_COMPRESSED_OOP_OFFSET, regex);
+        machOnly(LEA_P_COMPRESSED_OOP_OFFSET, "leaPCompressedOopOffset");
     }
 
     // Only supported on x86.
     public static final String LEA_P_8_NARROW = PREFIX + "LEA_P_8_NARROW" + POSTFIX;
     static {
-        String regex = "(leaq.*# ptr off8narrow)";
-        optoOnly(LEA_P_8_NARROW, regex);
+        machOnly(LEA_P_8_NARROW, "leaP8Narrow");
     }
 
     // Only supported on x86.
     public static final String LEA_P_32_NARROW = PREFIX + "LEA_P_32_NARROW" + POSTFIX;
     static {
-        String regex = "(leaq.*# ptr off32narrow)";
-        optoOnly(LEA_P_32_NARROW, regex);
+        machOnly(LEA_P_32_NARROW, "leaP32Narrow");
     }
 
     public static final String LOAD = PREFIX + "LOAD" + POSTFIX;
@@ -1235,10 +1231,9 @@ public class IRNode {
         beforeMatchingNameRegex(MEMBAR_VOLATILE, "MemBarVolatile");
     }
 
-    public static final String MEM2REG_SPILL_COPY = PREFIX + "MEM2REG_SPILL_COPY" + POSTFIX;
+    public static final String MEM_TO_REG_SPILL_COPY = PREFIX + "MEM_TO_REG_SPILL_COPY" + POSTFIX;
     static {
-        String regex = "(movl\\s+...?, \\[rsp \\+ .+\\]\\s+# spill)";
-        optoOnly(MEM2REG_SPILL_COPY, regex);
+        machOnly(MEM_TO_REG_SPILL_COPY, "MemToRegSpillCopy");
     }
 
     public static final String MIN = PREFIX + "MIN" + POSTFIX;
