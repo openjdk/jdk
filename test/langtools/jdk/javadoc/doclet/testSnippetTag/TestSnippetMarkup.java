@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666 8281969 8319339
+ * @bug 8266666 8281969 8319339 8338833
  * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -204,6 +204,50 @@ public class TestSnippetMarkup extends SnippetTester {
                 )
         );
         testPositive(base, testCases);
+    }
+
+    /*
+     * Make sure an error is generated for links with invalid reference.
+     */
+    @Test
+    public void testLinkReferenceNotFound(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+
+        new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void inline() { }")
+                                .setComments("""
+                                    First sentence.
+                                    {@snippet :
+                                        First line  // @link substring="First" target="String"
+                                        Second line // @link substring="Second" target="StringReader"
+                                    }
+                                """))
+                .write(srcDir);
+
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+
+        checkExit(Exit.ERROR);
+        checkOutput(Output.OUT, false,
+                """
+                        error: reference not found: String
+                        """);
+        checkOutput(Output.OUT, true,
+                """
+                        A.java:5: error: reference not found: StringReader
+                        """);
+        checkOutput("pkg/A.html", true,
+                """
+                        <details class="invalid-tag">
+                        <summary>invalid reference</summary>
+                        <pre><code>Second</code></pre>
+                        </details>""");
+        checkNoCrashes();
     }
 
     @Test
