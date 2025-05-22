@@ -81,7 +81,7 @@ public final class SegmentBulkOperations {
         final long len = dst.length;
         /* The multiplication below is equivalent to:
              long u = Byte.toUnsignedLong(value);
-             long value = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u; */
+             long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u; */
         final long longValue = 0x01010101_01010101L * Byte.toUnsignedLong(value);
 
         // Switch on log2(len) = 64 - Long.numberOfLeadingZeros(len)
