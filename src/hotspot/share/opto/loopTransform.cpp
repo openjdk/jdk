@@ -1907,6 +1907,9 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
         "odd trip count for maximally unroll");
     // Don't need to adjust limit for maximally unroll since trip count is even.
   } else if (loop_head->has_exact_trip_count() && init->is_Con()) {
+    // We should not be here if we have old_trip_count == max_juint
+    // it would make trip_count == 2^31 which causes overflow and the situation is overall weird
+    assert(old_trip_count < max_juint, "sanity");
     // Loop's limit is constant. Loop's init could be constant when pre-loop
     // become peeled iteration.
     jlong init_con = init->get_int();
@@ -1920,7 +1923,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     int stride_m    = new_stride_con - (stride_con > 0 ? 1 : -1);
     jlong trip_count = (limit_con - init_con + stride_m)/new_stride_con;
     // New trip count should satisfy next conditions.
-    assert(trip_count > 0 && (julong)trip_count <= (julong)1 << (sizeof(juint)*BitsPerByte-1), "sanity");
+    assert(trip_count > 0 && (julong)trip_count <= (julong)max_juint/2, "sanity");
     uint new_trip_count = (uint)trip_count;
     adjust_min_trip = (old_trip_count != new_trip_count*2);
   }
