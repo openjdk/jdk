@@ -1604,6 +1604,16 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   -XX:VerifyIterativeGVN=1110
     case Op_CallStaticJava:
       return false;
+
+    // LShiftLNode::Ideal
+    // Looks at pattern: "(x + x) << c0", converts it to "x << (c0 + 1)"
+    // Probably a notification issue.
+    //
+    // Found with:
+    //   compiler/conversions/TestMoveConvI2LOrCastIIThruAddIs.java
+    //   -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    case Op_LShiftL:
+      return false;
   }
 
   if (n->is_Load()) {
