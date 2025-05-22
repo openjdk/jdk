@@ -246,18 +246,29 @@ public:
 #endif
   };
 
+  enum Operation {Release, Reserve, Commit, Uncommit, Invalid};
   struct RequestInfo {
     position A, B;
-    StateType op;
+    StateType _op;
     MemTag tag;
     SIndex callstack;
     bool use_tag_inplace;
+    Operation op() const {
+      return
+            _op == StateType::Released                      ? Operation::Release  :
+            _op == StateType::Reserved && !use_tag_inplace  ? Operation::Reserve  :
+            _op == StateType::Committed                     ? Operation::Commit   :
+            _op == StateType::Reserved &&  use_tag_inplace  ? Operation::Uncommit :
+             Operation::Invalid; // should not reach here
+    }
+
     int op_to_index() const {
       return
-            op == StateType::Released ? 0 :
-            op == StateType::Reserved && !use_tag_inplace ? 1 :
-            op == StateType::Committed ? 2 :
-            op == StateType::Reserved && use_tag_inplace ? 3 : -1;
+            _op == StateType::Released                      ? 0 :
+            _op == StateType::Reserved && !use_tag_inplace  ? 1 :
+            _op == StateType::Committed                     ? 2 :
+            _op == StateType::Reserved &&  use_tag_inplace  ? 3 :
+             -1;
     }
   };
 

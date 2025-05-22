@@ -232,25 +232,29 @@ public:
     for (int i = 0; i < N; i++) {
       st.in.set_type(et.states[i]);
       st.in.set_tag(et.tags[i]);
-      if (et.res_si[i] >= 0)
+      if (et.res_si[i] >= 0) {
         st.in.set_reserve_stack(et.res_si[i]);
-      else
+      } else {
         st.in.set_reserve_stack(ES);
-      if (et.com_si[i] >= 0)
+      }
+      if (et.com_si[i] >= 0) {
         st.in.set_commit_stack(et.com_si[i]);
-      else
+      } else {
         st.in.set_commit_stack(ES);
+      }
 
       st.out.set_type(et.states[i+1]);
       st.out.set_tag(et.tags[i+1]);
-      if (et.res_si[i+1] >= 0)
+      if (et.res_si[i+1] >= 0) {
         st.out.set_reserve_stack(et.res_si[i+1]);
-      else
+      } else {
         st.out.set_reserve_stack(ES);
-      if (et.com_si[i+1] >= 0)
+      }
+      if (et.com_si[i+1] >= 0) {
         st.out.set_commit_stack(et.com_si[i+1]);
-      else
+      } else {
         st.out.set_commit_stack(ES);
+      }
       tree.tree().upsert((VMATree::position)et.nodes[i], st);
     }
 }
@@ -298,7 +302,6 @@ public:
         EXPECT_FALSE(r.end->val().in.has_committed_stack()) << for_this_node;
       }
     }
-    print_tree(et, line_no);
   }
 
   template<int N>

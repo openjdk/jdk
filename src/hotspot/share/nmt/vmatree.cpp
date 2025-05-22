@@ -31,8 +31,8 @@
 
 // Semantics
 // This tree is used to store and track the state of virtual memory regions.
-// The nodes in the tree are key-value pairs where key is the memory address and the value is the State of the memory regions.
-// State of a region describes whether the region is released, reserved or committed, which MemTag it has and where in
+// The nodes in the tree are key-value pairs where the key is the memory address and the value is the State of the memory regions.
+// The State of a region describes whether the region is released, reserved or committed, which MemTag it has and where in
 // Hotspot (using call-stacks) it is reserved or committed.
 // Each node holds the State of the regions to its left and right. Each memory region is described by two
 // memory addresses for its start and end.
@@ -40,8 +40,7 @@
 // with the keys 0xA000 (node A) and 0xB000 (node B) in the tree. The value of the key-value pairs of node A and
 // node B describe the region's State, using right of A and left of B (<--left--A--right-->.....<--left--B--right-->...).
 //
-// Virtual memory can be reserved, committed, uncommitted and released. During these operations, the tree should handle the
-// changes needed for the affected regions in the tree. For each operation a request
+// Virtual memory can be reserved, committed, uncommitted and released. For each operation a request
 // (<from-address, to-address, operation, tag, call-stack, which-tag-to-use >) is sent to the tree to handle.
 //
 // The expected changes are described here for each operation:
@@ -91,6 +90,8 @@ VMATree::SIndex VMATree::get_new_reserve_callstack(const SIndex es, const StateT
   const SIndex ES = NativeCallStackStorage::invalid; // Empty Stack
   const SIndex rq = req.callstack;
   const int op = req.op_to_index();
+  const Operation oper = req.op();
+  assert(oper != Operation::Invalid && op >= 0 && op < 4, "should be");
   assert(op >= 0 && op < 4, "should be");
                             // existing state
   SIndex result[4][3] = {// Rl  Rs   C
@@ -99,7 +100,8 @@ VMATree::SIndex VMATree::get_new_reserve_callstack(const SIndex es, const StateT
                            {es, es, es},   // op == Commit
                            {es, es, es}    // op == Uncommit
                            };
-  if (op == 2 && ex == StateType::Released) {
+  // When committing a Released region, the reserve-call-stack of the region should also be as what is in the request
+  if (oper == Operation::Commit && ex == StateType::Released) {
     return rq;
   } else {
     return result[op][state_to_index(ex)];
@@ -109,8 +111,9 @@ VMATree::SIndex VMATree::get_new_reserve_callstack(const SIndex es, const StateT
 VMATree::SIndex VMATree::get_new_commit_callstack(const SIndex es, const StateType ex, const RequestInfo& req) const {
   const SIndex ES = NativeCallStackStorage::invalid; // Empty Stack
   const SIndex rq = req.callstack;
-  const int op = req.op_to_index();
-  assert(op >= 0 && op < 4, "should be");
+  const int op_index = req.op_to_index();
+  const Operation op = req.op();
+  assert(op != Operation::Invalid && op_index >= 0 && op_index < 4, "should be");
                          // existing state
   SIndex result[4][3] = {// Rl  Rs   C
                            {ES, ES, ES},   // op == Release
@@ -118,7 +121,7 @@ VMATree::SIndex VMATree::get_new_commit_callstack(const SIndex es, const StateTy
                            {rq, rq, rq},   // op == Commit
                            {ES, ES, ES}    // op == Uncommit
                         };
-  return result[op][state_to_index(ex)];
+  return result[op_index][state_to_index(ex)];
 }
 
 VMATree::StateType VMATree::get_new_state(const StateType ex, const RequestInfo& req) const {
@@ -138,13 +141,15 @@ VMATree::StateType VMATree::get_new_state(const StateType ex, const RequestInfo&
 }
 
 MemTag VMATree::get_new_tag(const MemTag ex, const RequestInfo& req) const {
-  switch(req.op) {
-    case StateType::Released:
+  switch(req.op()) {
+    case Operation::Release:
       return mtNone;
-    case StateType::Reserved:
+    case Operation::Reserve:
+      return req.tag;
+    case Operation::Commit:
       return req.use_tag_inplace ? ex : req.tag;
-    case StateType::Committed:
-      return req.use_tag_inplace ? ex : req.tag;
+    case Operation::Uncommit:
+      return ex;
     default:
       break;
   }
@@ -152,27 +157,28 @@ MemTag VMATree::get_new_tag(const MemTag ex, const RequestInfo& req) const {
 }
 
 void VMATree::compute_summary_diff(const SingleDiff::delta region_size,
-                                   const MemTag t1,
+                                   const MemTag current_tag,
                                    const StateType& ex,
                                    const RequestInfo& req,
-                                   const MemTag t2,
+                                   const MemTag operation_tag,
                                    SummaryDiff& diff) const {
   const StateType Rl = StateType::Released;
   const StateType Rs = StateType::Reserved;
   const StateType C = StateType::Committed;
   const int op = req.op_to_index();
-  assert(op >= 0 && op < 4, "should be");
+  const Operation oper =  req.op();
+  assert(oper != Operation::Invalid && op >= 0 && op < 4, "should be");
 
   SingleDiff::delta a = region_size;
   // A region with size `a` has a state as <column> and an operation is requested as in <row>
-  // The region has tag `t1` and the operation has tag `t2`.
-  // For each state, we decide how much to be added/subtracted from t1 to t2. Two tables for reserve and commit.
-  // Each pair of <x,y> in the table means add `x` to t1 and add `y` to t2. There are 3 pairs in each row for 3 states.
+  // The region has tag `current_tag` and the operation has tag `operation_tag`.
+  // For each state, we decide how much to be added/subtracted from current_tag to operation_tag. Two tables for reserve and commit.
+  // Each pair of <x,y> in the table means add `x` to current_tag and add `y` to operation_tag. There are 3 pairs in each row for 3 states.
   // For example, `reserve[1][4,5]` says `-a,a` means:
-  //    - we are reserving with t2 a region which is already commited with t1
-  //    - since we are reserving, then `a` will be added to t2. (`y` is `a`)
-  //    - since we uncommitting (by reserving) then `a` is to be subtracted from t1. (`x` is `-a`).
-  //    - amount of uncommitted size is in table `commit[1][4,5]` which is `-a,0` that means subtract `a` from t1.
+  //    - we are reserving with operation_tag a region which is already commited with current_tag
+  //    - since we are reserving, then `a` will be added to operation_tag. (`y` is `a`)
+  //    - since we uncommitting (by reserving) then `a` is to be subtracted from current_tag. (`x` is `-a`).
+  //    - amount of uncommitted size is in table `commit[1][4,5]` which is `-a,0` that means subtract `a` from current_tag.
                                        // existing state
   SingleDiff::delta reserve[4][3*2] = {// Rl    Rs     C
                                          {0,0, -a,0, -a,0 },   // op == Release
@@ -186,8 +192,8 @@ void VMATree::compute_summary_diff(const SingleDiff::delta region_size,
                                         {0,a,  0,a, -a,a },    // op == Commit
                                         {0,0,  0,0, -a,0 }     // op == Uncommit
                                      };
-  SingleDiff& from_rescom = diff.tag[NMTUtil::tag_to_index(t1)];
-  SingleDiff&   to_rescom = diff.tag[NMTUtil::tag_to_index(t2)];
+  SingleDiff& from_rescom = diff.tag[NMTUtil::tag_to_index(current_tag)];
+  SingleDiff&   to_rescom = diff.tag[NMTUtil::tag_to_index(operation_tag)];
   int st = state_to_index(ex);
   from_rescom.reserve += reserve[op][st * 2    ];
     to_rescom.reserve += reserve[op][st * 2 + 1];
@@ -199,12 +205,12 @@ void VMATree::compute_summary_diff(const SingleDiff::delta region_size,
 // If n1 is noop, it can be removed because its left region (n1->val().in) is already decided and its right state (n1->val().out) is decided here.
 // The state of right of n2 (n2->val().out) cannot be decided here yet.
 void VMATree::update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req, SummaryDiff& diff) {
+  assert(n1 != nullptr,"sanity");
+  assert(n2 != nullptr,"sanity");
   //.........n1......n2......
   //          ^------^
   //             |
   IntervalState exSt = n1->val().out; // existing state info
-  assert(n1 != nullptr,"sanity");
-  assert(n2 != nullptr,"sanity");
 
 
   StateType existing_state              = exSt.type();
@@ -367,16 +373,13 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
   bool Y_eq_W = Y_exists && W_exists && W->key() == Y->key();
   int row = -1;
 #ifdef ASSERT
-  auto print_case = [&](int a = 1) {
-    tty->print(" req: %4d---%4d", (int)_A, (int)_B);
-    tty->print(" row: %2d", row);
-    if (a) {
-      tty->print(" X: %4ld", X_exists ? (long)X->key() : -1);
-      tty->print(" Y: %4ld", Y_exists ? (long)Y->key() : -1);
-      tty->print(" W: %4ld", W_exists ? (long)W->key() : -1);
-      tty->print(" U: %4ld", U_exists ? (long)U->key() : -1);
-    }
-    tty->print_cr("");
+  auto print_case = [&]() {
+    log_trace(vmatree)(" req: %4d---%4d", (int)_A, (int)_B);
+    log_trace(vmatree)(" row: %2d", row);
+    log_trace(vmatree)(" X: %4ld", X_exists ? (long)X->key() : -1);
+    log_trace(vmatree)(" Y: %4ld", Y_exists ? (long)Y->key() : -1);
+    log_trace(vmatree)(" W: %4ld", W_exists ? (long)W->key() : -1);
+    log_trace(vmatree)(" U: %4ld", U_exists ? (long)U->key() : -1);
   };
 #endif
   // Order of the nodes if they exist are as: X <= A < Y <= W <= B < U
@@ -636,7 +639,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
       ShouldNotReachHere();
   }
 
-  // ************************************************************************************ Remove the 'noop' nodes that found inside the loop
+  // Remove the 'noop' nodes that found inside the loop
   while(to_be_removed.length() != 0) {
     _tree.remove(to_be_removed.pop());
   }
