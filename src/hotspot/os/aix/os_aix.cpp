@@ -58,7 +58,6 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -760,10 +759,23 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   pthread_t tid = 0;
 
   if (ret == 0) {
-    int limit = 3;
-    do {
+    int trials_remaining = 4;
+    useconds_t next_delay = 1000;
+    while (true) {
       ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
-    } while (ret == EAGAIN && limit-- > 0);
+
+      if (ret != EAGAIN) {
+        break;
+      }
+
+      if (--trials_remaining <= 0) {
+        break;
+      }
+
+      log_debug(os, thread)("Failed to start native thread (%s), retrying after %dus.", os::errno_name(ret), next_delay);
+      ::usleep(next_delay);
+      next_delay *= 2;
+    }
   }
 
   if (ret == 0) {

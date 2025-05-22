@@ -47,7 +47,7 @@ public final class StableUtil {
                                             int length) {
         final StringJoiner sj = new StringJoiner(", ", "[", "]");
         for (int i = 0; i < length; i++) {
-            final Object value = delegates[i + offset].wrappedContentAcquire();
+            final Object value = delegates[i + offset].wrappedContentsAcquire();
             if (value == self) {
                 sj.add("(this " + selfName + ")");
             } else {
@@ -63,10 +63,10 @@ public final class StableUtil {
                                                boolean curly) {
         final StringJoiner sj = new StringJoiner(", ", curly ? "{" : "[", curly ? "}" : "]");
         for (var e : delegates) {
-            final Object value = e.getValue().wrappedContentAcquire();
+            final Object value = e.getValue().wrappedContentsAcquire();
             final String valueString;
             if (value == self) {
-                valueString = ("(this ") + selfName + ")";
+                valueString = "(this " + selfName + ")";
             } else {
                 valueString = StableValueImpl.renderWrapped(value);
             }

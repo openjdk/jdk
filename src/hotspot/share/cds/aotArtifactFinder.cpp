@@ -22,9 +22,10 @@
  *
  */
 
-#include "cds/aotClassLinker.hpp"
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotClassLinker.hpp"
+#include "cds/aotLogging.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/heapShared.hpp"
@@ -97,7 +98,7 @@ void AOTArtifactFinder::find_artifacts() {
         oop orig_mirror = Universe::java_mirror(bt);
         oop scratch_mirror = HeapShared::scratch_java_mirror(bt);
         HeapShared::scan_java_mirror(orig_mirror);
-        log_trace(cds, heap, mirror)(
+        log_trace(aot, heap, mirror)(
             "Archived %s mirror object from " PTR_FORMAT,
             type2name(bt), p2i(scratch_mirror));
         Universe::set_archived_basic_type_mirror_index(bt, HeapShared::append_root(scratch_mirror));
@@ -155,9 +156,9 @@ void AOTArtifactFinder::find_artifacts() {
     if (!info.is_excluded() && _seen_classes->get(k) == nullptr) {
       info.set_excluded();
       info.set_has_checked_exclusion();
-      if (log_is_enabled(Debug, cds)) {
+      if (aot_log_is_enabled(Debug, aot)) {
         ResourceMark rm;
-        log_debug(cds)("Skipping %s: %s class", k->name()->as_C_string(),
+        aot_log_debug(aot)("Skipping %s: %s class", k->name()->as_C_string(),
                       k->is_hidden() ? "Unreferenced hidden" : "AOT tooling");
       }
     }
@@ -239,7 +240,7 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
       add_cached_instance_class(intf);
     }
 
-    if (CDSConfig::is_dumping_final_static_archive() && ik->is_shared_unregistered_class()) {
+    if (CDSConfig::is_dumping_final_static_archive() && ik->defined_by_other_loaders()) {
       // The following are not appliable to unregistered classes
       return;
     }
