@@ -75,6 +75,8 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -86,12 +88,14 @@ public class CookieHeaderTest implements HttpServerAdapters {
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
     DummyServer httpDummyServer;
     DummyServer httpsDummyServer;
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String http3URI;
     String httpDummy;
     String httpsDummy;
 
@@ -115,6 +119,7 @@ public class CookieHeaderTest implements HttpServerAdapters {
                 { httpsDummy, HTTP_1_1 },
                 { httpURI, HttpClient.Version.HTTP_2  },
                 { httpsURI, HttpClient.Version.HTTP_2  },
+                { http3URI, HttpClient.Version.HTTP_3 },
                 { httpDummy, HttpClient.Version.HTTP_2 },
                 { httpsDummy, HttpClient.Version.HTTP_2 },
                 { http2URI, null  },
@@ -130,7 +135,7 @@ public class CookieHeaderTest implements HttpServerAdapters {
         ConcurrentHashMap<String, List<String>> cookieHeaders
                 = new ConcurrentHashMap<>();
         CookieHandler cookieManager = new TestCookieHandler(cookieHeaders);
-        HttpClient client = HttpClient.newBuilder()
+        HttpClient client = newClientBuilderForH3()
                 .followRedirects(Redirect.ALWAYS)
                 .cookieHandler(cookieManager)
                 .sslContext(sslContext)
@@ -150,6 +155,9 @@ public class CookieHeaderTest implements HttpServerAdapters {
         if (version != null) {
             requestBuilder.version(version);
         }
+        if (version == HTTP_3) {
+            requestBuilder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
+        }
         HttpRequest request = requestBuilder.build();
         out.println("Initial request: " + request.uri());
 
@@ -157,7 +165,8 @@ public class CookieHeaderTest implements HttpServerAdapters {
             out.println("iteration: " + i);
             HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
 
-            out.println("  Got response: " + response);
+            out.println("  Got response: " + response + ", config=" + request.getOption(H3_DISCOVERY)
+                    + ", version=" + response.version());
             out.println("  Got body Path: " + response.body());
 
             assertEquals(response.statusCode(), 200);
@@ -166,10 +175,16 @@ public class CookieHeaderTest implements HttpServerAdapters {
                     cookies.stream()
                             .filter(s -> !s.startsWith("LOC"))
                             .collect(Collectors.toList()));
+            if (version == HTTP_3 && i > 0) {
+                assertEquals(response.version(), HTTP_3);
+            }
             requestBuilder = HttpRequest.newBuilder(uri)
                     .header("X-uuid", "uuid-" + requestCounter.incrementAndGet());
             if (version != null) {
                 requestBuilder.version(version);
+            }
+            if (version == HTTP_3) {
+                requestBuilder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
             }
             request = requestBuilder.build();
         }
@@ -196,6 +211,9 @@ public class CookieHeaderTest implements HttpServerAdapters {
         https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(new CookieValidationHandler(), "/https2/cookie/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/cookie/retry";
+        http3TestServer = HttpTestServer.create(HTTP_3, sslContext);
+        http3TestServer.addHandler(new CookieValidationHandler(), "/http3/cookie/");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/cookie/retry";
 
 
         // DummyServer
@@ -209,6 +227,7 @@ public class CookieHeaderTest implements HttpServerAdapters {
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
         httpDummyServer.start();
         httpsDummyServer.start();
     }
