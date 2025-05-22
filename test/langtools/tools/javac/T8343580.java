@@ -35,8 +35,27 @@ class T8343580 {
       }
    }
 
-   static class Usage<T, G extends Getters<T>> {
+   static class Usage1<T, G extends Getters<T>> {
       public T test(G.Getter getter) {
+         return getter.get();
+      }
+   }
+
+   static class Usage2<T, U extends Getters<T>, G extends U> {
+      public T test(G.Getter getter) {
+         return getter.get();
+      }
+   }
+
+   static class Usage3<T, U extends T, G extends Getters<T>> {
+      public T test(G.Getter getter) {
+         return getter.get();
+      }
+   }
+
+   class G2<K> extends Getters<K> {}
+   static class Usage4<M, L extends G2<M>> {
+      M test(L.Getter getter) {
          return getter.get();
       }
    }
