@@ -256,6 +256,13 @@ void StringConcat::eliminate_unneeded_control() {
       assert(n->req() == 3 && n->in(2)->in(0) == iff, "not a diamond");
       assert(iff->is_If(), "no if for the diamond");
       Node* bol = iff->in(1);
+      if (bol->is_Con()) {
+        // A BoolNode shared by two diamond Region/If sub-graphs
+        // was replaced by a constant zero in a previous call to this method.
+        // Do nothing as the transformation in the previous call ensures both are folded away.
+        assert(bol == _stringopts->gvn()->intcon(0), "set below.");
+        continue;
+      }
       assert(bol->is_Bool(), "unexpected if shape");
       Node* cmp = bol->in(1);
       assert(cmp->is_Cmp(), "unexpected if shape");
