@@ -482,7 +482,7 @@ public class TestTutorial {
     // add some fields and registers in one Template, and later on, in another Template, we
     // can access these fields and registers again with "dataNames()".
     //
-    // Here a few use-cases:
+    // Here are a few use-cases:
     // - You are writing some inner Template, and would like to access a random field or
     //   variable from an outer Template. Luckily, the outer Templates have added their
     //   fields and variables, and you can now access them with "dataNames()". You can
@@ -490,8 +490,8 @@ public class TestTutorial {
     // - You are writing some outer Template, and would like to generate a variable that
     //   an inner Template could read from or even write to. You can "addDataName" the
     //   variable, and the inner Template can then find that variable in "dataNames()".
-    //   If the inner Template wants to find a random field or varialbe, it may sample
-    //   from "dataNodes()", and with some probability, it would sample the your variable.
+    //   If the inner Template wants to find a random field or variable, it may sample
+    //   from "dataNodes()", and with some probability, it would sample your variable.
     //
     // A "DataName" captures the name of the field or variable in a String. It also
     // stores the type of the field or variable, as well as its "mutability", i.e.
@@ -548,7 +548,7 @@ public class TestTutorial {
             package p.xyz;
 
             public class InnerTest7 {
-                // Let us define a some fields.
+                // Let us define some fields.
                 public static int $f1 = 0;
                 public static int $f2 = 0;
                 public static int $f3 = 0;
@@ -761,7 +761,7 @@ public class TestTutorial {
                                        .stream().map(DataName::name).toList()) + "}";
     }
 
-    // Even simpler: count the available variable and return the count immediately.
+    // Even simpler: count the available variables and return the count immediately.
     public static int countNames() {
         return dataNames(MUTABLE).exactOf(myInt).count();
     }
@@ -952,13 +952,13 @@ public class TestTutorial {
     // In some cases, we only want to sample DataNames that are mutable, because
     // we want to store to a field or variable. We have to make sure that we
     // do not generate code that tries to store to a final field or variable.
-    // In other cases, we are only want to load, and we do not care if the
+    // In other cases, we only want to load, and we do not care if the
     // fields or variables are final or non-final.
     //
     // Another concept is subtyping of DataName Types. With primitive types, this
     // is irrelevant, but with instances of Objects, this becomes relevant.
     // We may want to load an object of any field or variable of a certain
-    // class, or any subclass. When a value of a given class, we can only
+    // class, or any subclass. When a value is of a given class, we can only
     // store it to fields and variables of that class or any superclass.
     //
     // Let us look at an example that demonstrates these two concepts.
@@ -994,7 +994,7 @@ public class TestTutorial {
         var templateLoad = Template.make("type", (DataName.Type type) -> body(
             // We only load from the field, so we do not need a mutable one,
             // we can load from final and non-final fields.
-            // We want to find any field of which we can read the value and store
+            // We want to find any field from which we can read the value and store
             // it in our variable v of our given type. Hence, we can take a field
             // of the given type or any subtype thereof.
             let("field", dataNames(MUTABLE_OR_IMMUTABLE).subtypeOf(type).sample().name()),
@@ -1046,7 +1046,7 @@ public class TestTutorial {
                         """,
                         myClassList.stream().map(c -> templateLoad.asToken(c)).toList(),
                         """
-                        // Now lets mutate some fields.
+                        // Now let us mutate some fields.
                         """,
                         myClassList.stream().map(c -> templateStore.asToken(c)).toList(),
                         """
@@ -1071,7 +1071,7 @@ public class TestTutorial {
     // and we can read and write to them, they may be mutable or immutable.
     // We now introduce another set of "Names", the "StructuralNames". They are
     // useful for modeling method names an class names, and possibly more. Anything
-    // that has a fixed name in the Java code, for which mutability is inapplicalbe.
+    // that has a fixed name in the Java code, for which mutability is inapplicable.
     // Some use-cases for "StructuralNames":
     // - Method names. The Type could represent the signature of the static method
     //                 or the class of the non-static method.
@@ -1083,7 +1083,7 @@ public class TestTutorial {
     //                     and its subtypes - if so, we know the exception would be
     //                     caught.
     //
-    // Let us show an examples with Method names. But for simplicity, we assume they
+    // Let us show an example with Method names. But for simplicity, we assume they
     // all have the same signature: they take two int arguments and return an int.
     //
     // Should you ever work on a test where there are methods with different signatures,
@@ -1133,12 +1133,12 @@ public class TestTutorial {
             Hooks.CLASS_HOOK.anchor(
                 // If we directly nest the templateMethod, then the addStructuralName goes to the nested
                 // scope, and is not available at the class scope, i.e. it is not visible
-                // for sampleStructuralName in outside of the templateMethod.
+                // for sampleStructuralName outside of the templateMethod.
                 // DO NOT DO THIS, the nested addStructuralName will not be visible:
                 "// We cannot sample from the following methods:\n",
                 templateMethod.asToken("+"),
                 templateMethod.asToken("-"),
-                // However, if we insert to the CLASS_HOOK, then the Rendere makes the
+                // However, if we insert to the CLASS_HOOK, then the Renderer makes the
                 // scope of the inserted templateMethod transparent, and the addStructuralName
                 // goes out to the scope of the CLASS_HOOK (but no further than that).
                 // RATHER, DO THIS to ensure the addStructuralName is visible:

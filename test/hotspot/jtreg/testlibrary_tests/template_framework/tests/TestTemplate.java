@@ -118,7 +118,7 @@ public class TestTemplate {
     private static final MyStructuralType myStructuralTypeB = new MyStructuralType("StructuralB");
 
     public static void main(String[] args) {
-        // The follwing tests all pass, i.e. have no errors during rendering.
+        // The following tests all pass, i.e. have no errors during rendering.
         testSingleLine();
         testMultiLine();
         testBodyTokens();
