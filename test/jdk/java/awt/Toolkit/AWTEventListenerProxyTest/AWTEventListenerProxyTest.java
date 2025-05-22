@@ -173,9 +173,9 @@ public class AWTEventListenerProxyTest {
     }
 
     private static void verify(Toolkit tk, int expected) {
-        AWTEventListener[] array1 = tk.getAWTEventListeners();
-        if (array1 == null || array1.length != expected) {
-            System.out.println("[Simple add/get test failed!!]");
+        AWTEventListener[] array = tk.getAWTEventListeners();
+        if (array == null || array.length != expected) {
+            System.out.println("[Simple test failed!!]");
             throw new RuntimeException(
                     "Test failed didn't return " + expected + "-sized array");
         }
