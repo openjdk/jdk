@@ -279,23 +279,23 @@ class RegexFindTest {
 
     @Test
     // Negative test
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3",
-                  IRNode.LEA_P_8_NARROW, "=2"},
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=7",
+                  IRNode.LEA_P_8_NARROW, "=1"},
         phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824", "UseAVX", "=3"})
     // Test that the peephole worked for leaP(8|32)Narrow
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
-                  IRNode.LEA_P_8_NARROW, "=2"},
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=6",
+                  IRNode.LEA_P_8_NARROW, "=1"},
         phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824", "UseAVX", "=3"})
     // Negative test
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3",
-                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=9",
+                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=1"},
         phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824", "UseAVX", "=3"})
     // Test that the peephole worked for leaPCompressedOopOffset
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
-                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=8",
+                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=1"},
         phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824", "UseAVX", "=3"})
     @Arguments(setup = "setup")
