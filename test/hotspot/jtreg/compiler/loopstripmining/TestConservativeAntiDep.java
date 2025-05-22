@@ -26,7 +26,7 @@
  * @bug 8231550
  * @summary C2: ShouldNotReachHere() in verify_strip_mined_scheduling
  *
- * @run main/othervm -XX:-BackgroundCompilation -XX:LoopMaxUnroll=0 TestConservativeAntiDep
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-BackgroundCompilation -XX:LoopMaxUnroll=0 TestConservativeAntiDep
  *
  */
 

@@ -25,7 +25,7 @@
  * @test
  * @bug 8283408
  * @summary Fill a byte array with Java Unsafe API
- * @run main/othervm -XX:+OptimizeFill compiler.loopopts.FillArrayWithUnsafe
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+OptimizeFill compiler.loopopts.FillArrayWithUnsafe
  */
 
 package compiler.loopopts;

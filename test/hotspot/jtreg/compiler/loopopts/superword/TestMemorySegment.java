@@ -173,7 +173,7 @@ public class TestMemorySegment {
         TestFramework framework = new TestFramework(TestMemorySegmentImpl.class);
         framework.addFlags("-DmemorySegmentProviderNameForTestVM=" + args[0]);
         if (args.length > 1 && args[1].equals("AlignVector")) {
-            framework.addFlags("-XX:+AlignVector");
+            framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector");
         }
         framework.setDefaultWarmup(100);
         framework.start();
