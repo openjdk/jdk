@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,11 @@ class DerivedOopClosure : public Closure {
 class KlassClosure : public Closure {
  public:
   virtual void do_klass(Klass* k) = 0;
+};
+
+class ConstKlassClosure : public Closure {
+ public:
+  virtual void do_klass(const Klass* k) = 0;
 };
 
 class CLDClosure : public Closure {

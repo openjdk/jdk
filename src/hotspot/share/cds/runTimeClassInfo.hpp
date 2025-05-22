@@ -37,6 +37,7 @@
 #include "utilities/growableArray.hpp"
 
 class DumpTimeClassInfo;
+class KlassClosure;
 class Method;
 class Symbol;
 
@@ -266,10 +267,18 @@ public:
        const RunTimeClassInfo* value, Symbol* key, int len_unused) {
     return (value->klass()->name() == key);
   }
+
+  // Iterate over the klass and all its array classes, in order of dimension
+  void iterate_klasses(ConstKlassClosure* c) const;
 };
 
 class RunTimeSharedDictionary : public OffsetCompactHashtable<
   Symbol*,
   const RunTimeClassInfo*,
-  RunTimeClassInfo::EQUALS> {};
+  RunTimeClassInfo::EQUALS>
+{
+public:
+  // Iterate over all classes in this dictionary.
+  void iterate_klasses(ConstKlassClosure* cl) const;
+};
 #endif // SHARE_CDS_RUNTIMECLASSINFO_HPP
