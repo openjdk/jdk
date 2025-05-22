@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,50 +21,33 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8022548
- * @summary test that a parser can use DTDConfiguration
- * @modules java.xml/com.sun.org.apache.xerces.internal.impl
- *          java.xml/com.sun.org.apache.xerces.internal.parsers
- *          java.xml/com.sun.org.apache.xerces.internal.util
- *          java.xml/com.sun.org.apache.xerces.internal.xni.parser
- * @run main XOMParserTest
- */
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.parsers.*;
 import java.io.*;
 import javax.xml.transform.*;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 
 /**
- * <p>Test {@link javax.xml.transform.Transformer} for JDK-8022548: SPECJVM2008
- * has errors introduced in 7u40-b34
- *
- * Test XOM is supported after jaxp 1.5 </p>
- *
- * @author Joe Wang <huizhe.wang@oracle.com>
- *
+ * @test
+ * @bug 8022548
+ * @modules java.xml/com.sun.org.apache.xerces.internal.impl
+ *          java.xml/com.sun.org.apache.xerces.internal.parsers
+ *          java.xml/com.sun.org.apache.xerces.internal.util
+ *          java.xml/com.sun.org.apache.xerces.internal.xni.parser
+ * @summary tests that a parser can use DTDConfiguration; XOM is supported after jaxp 1.5.
+ * @run testng XOMParserTest
  */
-public class XOMParserTest extends TestBase {
-
-    public XOMParserTest(String name) {
-        super(name);
-    }
-
+public class XOMParserTest {
     /**
-     * @param args the command line arguments
+     * Verifies that a parser can use DTDConfiguration.
+     * @throws Exception if the test fails
      */
-    public static void main(String[] args) {
-        XOMParserTest test = new XOMParserTest("XOM parser test");
-        test.setUp();
-        test.testTransform();
-        test.tearDown();
-    }
-
-    public final void testTransform() {
+    @Test
+    public final void testTransform() throws Exception {
+        String filePath = System.getProperty("test.src");
         String inFilename = filePath + "/JDK8022548.xml";
         String xslFilename = filePath + "/JDK8022548.xsl";
         String outFilename = "JDK8022548.out";
@@ -96,22 +79,15 @@ public class XOMParserTest extends TestBase {
              */
             String canonicalizedFileName = outFilename + ".canonicalized";
             canonicalize(outFilename, canonicalizedFileName);
-        } catch (Exception e) {
-            // unexpected failure
-            fail(e.getMessage());
         }
     }
 
-    public void canonicalize(String inName, String outName) {
+    public void canonicalize(String inName, String outName) throws Exception {
         try (//FileOutputStream outStream = new FileOutputStream(outName);
                 FileInputStream inputStream = new FileInputStream(inName);) {
             JDK15XML1_0Parser parser = new JDK15XML1_0Parser();
             parser.parse(new InputSource(inputStream));
-            success("test passed");
-        } catch (Exception e) {
-            fail(e.getMessage());
         }
-
     }
 
     class JDK15XML1_0Parser extends SAXParser {

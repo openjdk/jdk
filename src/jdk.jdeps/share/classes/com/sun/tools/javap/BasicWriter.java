@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,13 @@
 package com.sun.tools.javap;
 
 import java.io.PrintWriter;
+import java.lang.classfile.AccessFlags;
+import java.lang.reflect.AccessFlag;
+import java.lang.reflect.ClassFileFormatVersion;
+import java.lang.reflect.Modifier;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /*
@@ -38,12 +45,27 @@ import java.util.function.Supplier;
  *  deletion without notice.</b>
  */
 public class BasicWriter {
+
     protected BasicWriter(Context context) {
         lineWriter = LineWriter.instance(context);
         out = context.get(PrintWriter.class);
         messages = context.get(Messages.class);
         if (messages == null)
             throw new AssertionError();
+    }
+
+    protected Set<AccessFlag> flagsReportUnknown(AccessFlags flags, ClassFileFormatVersion cffv) {
+        return maskToAccessFlagsReportUnknown(flags.flagsMask(), flags.location(), cffv);
+    }
+
+    protected Set<AccessFlag> maskToAccessFlagsReportUnknown(int mask, AccessFlag.Location location, ClassFileFormatVersion cffv) {
+        try {
+            return AccessFlag.maskToAccessFlags(mask, location, cffv);
+        } catch (IllegalArgumentException ex) {
+            mask &= location.flagsMask(cffv);
+            report("Access Flags: " + ex.getMessage());
+            return AccessFlag.maskToAccessFlags(mask, location, cffv);
+        }
     }
 
     protected void print(String s) {

@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +156,9 @@ class MacroAssembler: public Assembler {
   unsigned int mul_reg64_const16(Register rval, Register work, int cval);
 
   // Generic operation r1 := r2 + imm.
-  void add2reg(Register r1, int64_t imm, Register r2 = noreg);
+  void add2reg   (Register r1, int64_t imm, Register r2 = noreg);
+  void add2reg_32(Register r1, int64_t imm, Register r2 = noreg);
+
   // Generic operation r := b + x + d.
   void add2reg_with_index(Register r, int64_t d, Register x, Register b = noreg);
 
@@ -196,6 +199,7 @@ class MacroAssembler: public Assembler {
 
   // Test a bit in memory. Result is reflected in CC.
   void testbit(const Address &a, unsigned int bit);
+  void testbit_ushort(const Address &a, unsigned int bit);
   // Test a bit in a register. Result is reflected in CC.
   void testbit(Register r, unsigned int bitPos);
 
@@ -693,7 +697,7 @@ class MacroAssembler: public Assembler {
                                      Label*   L_success,
                                      Label*   L_failure,
                                      Label*   L_slow_path,
-                                     RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
+                                     Register super_check_offset = noreg);
 
   // The rest of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.
@@ -705,7 +709,69 @@ class MacroAssembler: public Assembler {
                                      Register Rarray_ptr, // tmp
                                      Register Rlength,    // tmp
                                      Label* L_success,
-                                     Label* L_failure);
+                                     Label* L_failure,
+                                     bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp_reg,
+                                            Register temp2_reg,
+                                            Label* L_success,
+                                            Label* L_failure,
+                                            bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp_reg,
+                                           Register temp2_reg,
+                                           Register temp3_reg,
+                                           Register temp4_reg,
+                                           Register result_reg,
+                                           Label* L_success,
+                                           Label* L_failure,
+                                           bool set_cond_codes = false);
+
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
+  void repne_scan(Register r_addr, Register r_value, Register r_count, Register r_scratch);
+
+  // Secondary subtype checking
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register r_super_klass,
+                                         Register temp1,
+                                         Register temp2,
+                                         Register temp3,
+                                         Register temp4,
+                                         Register result);
+
+  void lookup_secondary_supers_table_const(Register r_sub_klass,
+                                           Register r_super_klass,
+                                           Register r_temp1,
+                                           Register r_temp2,
+                                           Register r_temp3,
+                                           Register r_temp4,
+                                           Register r_result,
+                                           u1 super_klass_slot);
+
+  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                               Register r_array_base,
+                                               Register r_array_index,
+                                               Register r_bitmap,
+                                               Register r_temp,
+                                               Register r_result,
+                                               bool is_stub);
+
+  void verify_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register r_result /* expected */,
+                                     Register r_temp1,
+                                     Register r_temp2,
+                                     Register r_temp3);
 
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
@@ -726,10 +792,13 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2);
   void compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2);
-  void lightweight_lock(Register obj, Register hdr, Register tmp, Label& slow);
-  void lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow);
+  void lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Label& slow);
+  void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Label& slow);
+  void compiler_fast_lock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2);
+  void compiler_fast_unlock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
+  void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
 
   // Support for last Java frame (but use call_VM instead where possible).
  private:
@@ -747,8 +816,8 @@ class MacroAssembler: public Assembler {
   void set_thread_state(JavaThreadState new_state);
 
   // Read vm result from thread.
-  void get_vm_result  (Register oop_result);
-  void get_vm_result_2(Register result);
+  void get_vm_result_oop  (Register oop_result);
+  void get_vm_result_metadata(Register result);
 
   // Vm result is currently getting hijacked to for oop preservation.
   void set_vm_result(Register oop_result);
@@ -774,6 +843,13 @@ class MacroAssembler: public Assembler {
   void load_klass(Register klass, Register src_oop);
   void store_klass(Register klass, Register dst_oop, Register ck = noreg); // Klass will get compressed if ck not provided.
   void store_klass_gap(Register s, Register dst_oop);
+  void load_narrow_klass_compact(Register dst, Register src);
+  // Compares the Klass pointer of an object to a given Klass (which might be narrow,
+  // depending on UseCompressedClassPointers).
+  void cmp_klass(Register klass, Register obj, Register tmp);
+  // Compares the Klass pointer of two objects obj1 and obj2. Result is in the condition flags.
+  // Uses tmp1 and tmp2 as temporary registers.
+  void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
 
   // This function calculates the size of the code generated by
   //   decode_klass_not_null(register dst)
@@ -791,7 +867,6 @@ class MacroAssembler: public Assembler {
   void compare_klass_ptr(Register Rop1, int64_t disp, Register Rbase, bool maybenull);
 
   // Access heap oop, handle encoding and GC barriers.
- private:
   void access_store_at(BasicType type, DecoratorSet decorators,
                        const Address& addr, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
@@ -1021,24 +1096,21 @@ class MacroAssembler: public Assembler {
                        Register z,
                        Register tmp1, Register tmp2,
                        Register tmp3, Register tmp4, Register tmp5);
-};
 
-/**
- * class SkipIfEqual:
- *
- * Instantiating this class will result in assembly code being output that will
- * jump around any code emitted between the creation of the instance and it's
- * automatic destruction at the end of a scope block, depending on the value of
- * the flag passed to the constructor, which will be checked at run-time.
- */
-class SkipIfEqual {
- private:
-  MacroAssembler* _masm;
-  Label _label;
+  // These generate optimized code for all supported s390 implementations, and are preferred for most uses.
+  void pop_count_int(Register dst, Register src, Register tmp);
+  void pop_count_long(Register dst, Register src, Register tmp);
 
- public:
-  SkipIfEqual(MacroAssembler*, const bool* flag_addr, bool value, Register _rscratch);
-  ~SkipIfEqual();
+  // For legacy (pre-z15) use, but will work on all supported s390 implementations.
+  void pop_count_int_without_ext3(Register dst, Register src, Register tmp);
+  void pop_count_long_without_ext3(Register dst, Register src, Register tmp);
+
+  // Only for use on z15 or later s390 implementations.
+  void pop_count_int_with_ext3(Register dst, Register src);
+  void pop_count_long_with_ext3(Register dst, Register src);
+
+  void load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc);
+  void load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc);
 };
 
 #ifdef ASSERT

@@ -361,7 +361,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     /**
      * Get the type metadata of the given kind associated with this type (if any).
      */
-    @SuppressWarnings("unchecked")
     public <M extends TypeMetadata> M getMetadata(Class<M> metadataClass) {
         return getMetadata(metadataClass, Function.identity(), null);
     }
@@ -500,7 +499,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             if (prefix) {
                 sb.append(" ");
             }
-            sb.append(getAnnotationMirrors());
+            sb.append(getAnnotationMirrors().toString(" "));
             sb.append(" ");
         }
     }
@@ -600,7 +599,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     public Type              getUpperBound()     { return null; }
     public Type              getLowerBound()     { return null; }
 
-    /** Navigation methods, these will work for classes, type variables,
+    /* Navigation methods, these will work for classes, type variables,
      *  foralls, but will return null for arrays and methods.
      */
 
@@ -664,6 +663,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
 
     public boolean isFinal() {
         return (tsym.flags() & FINAL) != 0;
+    }
+
+    public boolean isValueBased() {
+        return tsym != null && (tsym.flags_field & VALUE_BASED) != 0;
     }
 
     /**
@@ -1120,6 +1123,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
                         s += String.valueOf(sym.hashCode());
                     return s;
                 } else if (longform) {
+                    sym.apiComplete();
                     return sym.getQualifiedName().toString();
                 } else {
                     return sym.name.toString();
@@ -2132,7 +2136,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             addBound(ib, bound, types, false);
         }
 
-        @SuppressWarnings("fallthrough")
         private void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
             if (kind == Kind.CAPTURED && !update) {
                 //Captured inference variables bounds must not be updated during incorporation,
@@ -2337,7 +2340,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             this.originalType = (originalType == null ? noType : originalType);
         }
 
-        private ErrorType(Type originalType, TypeSymbol tsym,
+        public ErrorType(Type originalType, TypeSymbol tsym,
                           List<TypeMetadata> metadata) {
             super(noType, List.nil(), null, metadata);
             this.tsym = tsym;
@@ -2392,10 +2395,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         public boolean isCompound()              { return false; }
         public boolean isInterface()             { return false; }
 
-        public List<Type> allparams()            { return List.nil(); }
-        @DefinedBy(Api.LANGUAGE_MODEL)
-        public List<Type> getTypeArguments()     { return List.nil(); }
-
         @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.ERROR;
@@ -2408,30 +2407,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitError(this, p);
-        }
-    }
-
-    public static class UnknownType extends Type {
-
-        public UnknownType() {
-            // Unknown is a synthesized internal type, so it cannot be
-            // annotated.
-            super(null, List.nil());
-        }
-
-        @Override
-        public TypeTag getTag() {
-            return UNKNOWN;
-        }
-
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public <R, P> R accept(TypeVisitor<R, P> v, P p) {
-            return v.visitUnknown(this, p);
-        }
-
-        @Override
-        public boolean isPartial() {
-            return true;
         }
     }
 

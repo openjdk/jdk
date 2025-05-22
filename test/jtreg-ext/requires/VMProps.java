@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.CABI;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.test.whitebox.code.Compiler;
 import jdk.test.whitebox.cpuinfo.CPUInfo;
 import jdk.test.whitebox.gc.GC;
@@ -66,6 +67,9 @@ import jdk.test.lib.Container;
 public class VMProps implements Callable<Map<String, String>> {
     // value known to jtreg as an indicator of error state
     private static final String ERROR_STATE = "__ERROR__";
+
+    private static final String GC_PREFIX = "-XX:+Use";
+    private static final String GC_SUFFIX = "GC";
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
@@ -119,22 +123,27 @@ public class VMProps implements Callable<Map<String, String>> {
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
+        map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
+        map.put("vm.cds.supports.aot.code.caching", this::vmCDSSupportsAOTCodeCaching);
         map.put("vm.cds.write.archived.java.heap", this::vmCDSCanWriteArchivedJavaHeap);
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
         // jdk.hasLibgraal is true if the libgraal shared library file is present
         map.put("jdk.hasLibgraal", this::hasLibgraal);
-        // vm.libgraal.enabled is true if libgraal is used as JIT
-        map.put("vm.libgraal.enabled", this::isLibgraalEnabled);
+        map.put("java.enablePreview", this::isPreviewEnabled);
+        map.put("vm.libgraal.jit", this::isLibgraalJIT);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
-        map.put("docker.support", this::dockerSupport);
+        map.put("container.support", this::containerSupport);
+        map.put("systemd.support", this::systemdSupport);
         map.put("vm.musl", this::isMusl);
         map.put("release.implementor", this::implementor);
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
+        map.put("jlink.packagedModules", this::packagedModules);
+        map.put("jdk.static", this::isStatic);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -320,17 +329,6 @@ public class VMProps implements Callable<Map<String, String>> {
         for (GC gc: GC.values()) {
             map.put("vm.gc." + gc.name(), () -> "" + vmGCProperty.test(gc));
         }
-
-        // Special handling for ZGC modes
-        var vmGCZ = vmGCProperty.test(GC.Z);
-        var genZ = WB.getBooleanVMFlag("ZGenerational");
-        var genZIsDefault = WB.isDefaultVMFlag("ZGenerational");
-        // vm.gc.ZGenerational=true means:
-        //    vm.gc.Z is true and ZGenerational is either explicitly true, or default
-        map.put("vm.gc.ZGenerational", () -> "" + (vmGCZ && (genZ || genZIsDefault)));
-        // vm.gc.ZSinglegen=true means:
-        //    vm.gc.Z is true and ZGenerational is either explicitly false, or default
-        map.put("vm.gc.ZSinglegen", () -> "" + (vmGCZ && (!genZ || genZIsDefault)));
     }
 
     /**
@@ -348,8 +346,6 @@ public class VMProps implements Callable<Map<String, String>> {
             return;
         }
 
-        String GC_PREFIX  = "-XX:+Use";
-        String GC_SUFFIX  = "GC";
         String jtropts = System.getProperty("test.cds.runtime.options");
         if (jtropts != null) {
             for (String opt : jtropts.split(",")) {
@@ -383,10 +379,11 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "CriticalJNINatives");
         vmOptFinalFlag(map, "EnableJVMCI");
         vmOptFinalFlag(map, "EliminateAllocations");
+        vmOptFinalFlag(map, "UnlockExperimentalVMOptions");
         vmOptFinalFlag(map, "UseCompressedOops");
+        vmOptFinalFlag(map, "UseLargePages");
+        vmOptFinalFlag(map, "UseTransparentHugePages");
         vmOptFinalFlag(map, "UseVectorizedMismatchIntrinsic");
-        vmOptFinalFlag(map, "UseVtableBasedCHA");
-        vmOptFinalFlag(map, "ZGenerational");
     }
 
     /**
@@ -419,13 +416,15 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return true if compiler in use supports RTM and false otherwise.
+     * @return "true" if compiler in use supports RTM and "false" otherwise.
+     * Note: Lightweight locking does not support RTM (for now).
      */
     protected String vmRTMCompiler() {
         boolean isRTMCompiler = false;
 
         if (Compiler.isC2Enabled() &&
-            (Platform.isX86() || Platform.isX64() || Platform.isPPC())) {
+            (Platform.isX86() || Platform.isX64() || Platform.isPPC()) &&
+            is_LM_LIGHTWEIGHT().equals("false")) {
             isRTMCompiler = true;
         }
         return "" + isRTMCompiler;
@@ -457,10 +456,60 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return true if this VM can write Java heap objects into the CDS archive
+     * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
+     *         with the current set of jtreg VM options. For example, false will be returned
+     *         if -XX:-UseCompressedClassPointers is specified,
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
-        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive());
+        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive()
+                     && isCDSRuntimeOptionsCompatible());
+    }
+
+    /**
+     * @return true if this VM can support the -XX:AOTClassLinking option
+     */
+    protected String vmCDSSupportsAOTClassLinking() {
+      // Currently, the VM supports AOTClassLinking as long as it's able to write archived java heap.
+      return vmCDSCanWriteArchivedJavaHeap();
+    }
+
+    /**
+     * @return true if this VM can support the AOT Code Caching
+     */
+    protected String vmCDSSupportsAOTCodeCaching() {
+      if ("true".equals(vmCDSSupportsAOTClassLinking()) &&
+          !"zero".equals(vmFlavor()) &&
+          "false".equals(vmJvmciEnabled()) &&
+          (Platform.isX64() || Platform.isAArch64())) {
+        return "true";
+      } else {
+        return "false";
+      }
+    }
+
+    /**
+     * @return true if the VM options specified via the "test.cds.runtime.options"
+     * property is compatible with writing Java heap objects into the CDS archive
+     */
+    protected boolean isCDSRuntimeOptionsCompatible() {
+        String jtropts = System.getProperty("test.cds.runtime.options");
+        if (jtropts == null) {
+            return true;
+        }
+        String CCP_DISABLED = "-XX:-UseCompressedClassPointers";
+        String G1GC_ENABLED = "-XX:+UseG1GC";
+        String PARALLELGC_ENABLED = "-XX:+UseParallelGC";
+        String SERIALGC_ENABLED = "-XX:+UseSerialGC";
+        for (String opt : jtropts.split(",")) {
+            if (opt.equals(CCP_DISABLED)) {
+                return false;
+            }
+            if (opt.startsWith(GC_PREFIX) && opt.endsWith(GC_SUFFIX) &&
+                !opt.equals(G1GC_ENABLED) && !opt.equals(PARALLELGC_ENABLED) && !opt.equals(SERIALGC_ENABLED)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -479,6 +528,34 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmPageSize() {
         return "" + WB.getVMPageSize();
+    }
+
+    /**
+     * @return LockingMode.
+     */
+    protected String vmLockingMode() {
+        return "" + WB.getIntVMFlag("LockingMode");
+    }
+
+    /**
+     * @return "true" if LockingMode == 0 (LM_MONITOR)
+     */
+    protected String is_LM_MONITOR() {
+        return "" + vmLockingMode().equals("0");
+    }
+
+    /**
+     * @return "true" if LockingMode == 1 (LM_LEGACY)
+     */
+    protected String is_LM_LEGACY() {
+        return "" + vmLockingMode().equals("1");
+    }
+
+    /**
+     * @return "true" if LockingMode == 2 (LM_LIGHTWEIGHT)
+     */
+    protected String is_LM_LIGHTWEIGHT() {
+        return "" + vmLockingMode().equals("2");
     }
 
     /**
@@ -504,8 +581,8 @@ public class VMProps implements Callable<Map<String, String>> {
      *
      * @return true if libgraal is used as JIT compiler.
      */
-    protected String isLibgraalEnabled() {
-        return "" + Compiler.isLibgraalEnabled();
+    protected String isLibgraalJIT() {
+        return "" + Compiler.isLibgraalJIT();
     }
 
     /**
@@ -526,17 +603,20 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + Compiler.isC2Enabled();
     }
 
+    protected String isPreviewEnabled() {
+        return "" + PreviewFeatures.isEnabled();
+    }
     /**
-     * A simple check for docker support
+     * A simple check for container support
      *
-     * @return true if docker is supported in a given environment
+     * @return true if container is supported in a given environment
      */
-    protected String dockerSupport() {
-        log("Entering dockerSupport()");
+    protected String containerSupport() {
+        log("Entering containerSupport()");
 
         boolean isSupported = false;
         if (Platform.isLinux()) {
-           // currently docker testing is only supported for Linux,
+           // currently container testing is only supported for Linux,
            // on certain platforms
 
            String arch = System.getProperty("os.arch");
@@ -552,17 +632,38 @@ public class VMProps implements Callable<Map<String, String>> {
            }
         }
 
-        log("dockerSupport(): platform check: isSupported = " + isSupported);
+        log("containerSupport(): platform check: isSupported = " + isSupported);
 
         if (isSupported) {
            try {
-              isSupported = checkDockerSupport();
+              isSupported = checkProgramSupport("checkContainerSupport()", Container.ENGINE_COMMAND);
            } catch (Exception e) {
               isSupported = false;
            }
          }
 
-        log("dockerSupport(): returning isSupported = " + isSupported);
+        log("containerSupport(): returning isSupported = " + isSupported);
+        return "" + isSupported;
+    }
+
+    /**
+     * A simple check for systemd support
+     *
+     * @return true if systemd is supported in a given environment
+     */
+    protected String systemdSupport() {
+        log("Entering systemdSupport()");
+
+        boolean isSupported = Platform.isLinux();
+        if (isSupported) {
+           try {
+              isSupported = checkProgramSupport("checkSystemdSupport()", "systemd-run");
+           } catch (Exception e) {
+              isSupported = false;
+           }
+         }
+
+        log("systemdSupport(): returning isSupported = " + isSupported);
         return "" + isSupported;
     }
 
@@ -600,17 +701,17 @@ public class VMProps implements Callable<Map<String, String>> {
                 });
     }
 
-    private boolean checkDockerSupport() throws IOException, InterruptedException {
-        log("checkDockerSupport(): entering");
-        ProcessBuilder pb = new ProcessBuilder("which", Container.ENGINE_COMMAND);
+    private boolean checkProgramSupport(String logString, String cmd) throws IOException, InterruptedException {
+        log(logString + ": entering");
+        ProcessBuilder pb = new ProcessBuilder("which", cmd);
         Map<String, String> logFileNames =
-            redirectOutputToLogFile("checkDockerSupport(): which " + Container.ENGINE_COMMAND,
-                                                      pb, "which-container");
+            redirectOutputToLogFile(logString + ": which " + cmd,
+                                                      pb, "which-cmd");
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);
         int exitValue = p.exitValue();
 
-        log(String.format("checkDockerSupport(): exitValue = %s, pid = %s", exitValue, p.pid()));
+        log(String.format("%s: exitValue = %s, pid = %s", logString, exitValue, p.pid()));
         if (exitValue != 0) {
             printLogfileContent(logFileNames);
         }
@@ -648,18 +749,34 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + "true".equalsIgnoreCase(isEnabled);
     }
 
+    private String packagedModules() {
+        // Some jlink tests require packaged modules being present (jmods).
+        // For a runtime linkable image build packaged modules aren't present
+        try {
+            Path jmodsDir = Path.of(System.getProperty("java.home"), "jmods");
+            if (jmodsDir.toFile().exists()) {
+                return Boolean.TRUE.toString();
+            } else {
+                return Boolean.FALSE.toString();
+            }
+        } catch (Throwable t) {
+            return Boolean.FALSE.toString();
+        }
+    }
+
     /**
      * Checks if we are in <i>almost</i> out-of-box configuration, i.e. the flags
      * which JVM is started with don't affect its behavior "significantly".
      * {@code TEST_VM_FLAGLESS} enviroment variable can be used to force this
-     * method to return true and allow any flags.
+     * method to return true or false and allow or reject any flags.
      *
      * @return true if there are no JVM flags
      */
     private String isFlagless() {
         boolean result = true;
-        if (System.getenv("TEST_VM_FLAGLESS") != null) {
-            return "" + result;
+        String flagless = System.getenv("TEST_VM_FLAGLESS");
+        if (flagless != null) {
+            return "" + "true".equalsIgnoreCase(flagless);
         }
 
         List<String> allFlags = allFlags().toList();
@@ -722,6 +839,10 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     private String jdkForeignLinker() {
         return String.valueOf(CABI.current());
+    }
+
+    private String isStatic() {
+        return Boolean.toString(WB.isStatic());
     }
 
     /**

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,18 +23,17 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
 #include "code/dependencyContext.hpp"
-#include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
+#include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
+#include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
@@ -50,7 +50,7 @@ private:
 
 public:
   ShenandoahIsUnloadingOopClosure() :
-    _marking_context(ShenandoahHeap::heap()->complete_marking_context()),
+    _marking_context(ShenandoahHeap::heap()->global_generation()->complete_marking_context()),
     _is_unloading(false) {
   }
 
@@ -77,8 +77,7 @@ public:
 
 class ShenandoahIsUnloadingBehaviour : public IsUnloadingBehaviour {
 public:
-  virtual bool has_dead_oop(CompiledMethod* method) const {
-    nmethod* const nm = method->as_nmethod();
+  virtual bool has_dead_oop(nmethod* nm) const {
     assert(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress(), "Only for this phase");
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
     ShenandoahReentrantLocker locker(data->lock());
@@ -90,28 +89,25 @@ public:
 
 class ShenandoahCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
-  virtual bool lock(CompiledMethod* method) {
-    nmethod* const nm = method->as_nmethod();
-    ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
+  virtual bool lock(nmethod* nm) {
+    ShenandoahReentrantLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->lock();
     return true;
   }
 
-  virtual void unlock(CompiledMethod* method) {
-    nmethod* const nm = method->as_nmethod();
-    ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
+  virtual void unlock(nmethod* nm) {
+    ShenandoahReentrantLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->unlock();
   }
 
-  virtual bool is_safe(CompiledMethod* method) {
-    if (SafepointSynchronize::is_at_safepoint() || method->is_unloading()) {
+  virtual bool is_safe(nmethod* nm) {
+    if (SafepointSynchronize::is_at_safepoint() || nm->is_unloading()) {
       return true;
     }
 
-    nmethod* const nm = method->as_nmethod();
-    ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
+    ShenandoahReentrantLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     return lock->owned_by_self();
   }
@@ -141,7 +137,7 @@ void ShenandoahUnload::unload() {
 
   ClassUnloadingContext ctx(heap->workers()->active_workers(),
                             true /* unregister_nmethods_during_purge */,
-                            true /* lock_codeblob_free_separately */);
+                            true /* lock_nmethod_free_separately */);
 
   // Unlink stale metadata and nmethods
   {
@@ -171,7 +167,7 @@ void ShenandoahUnload::unload() {
   // Make sure stale metadata and nmethods are no longer observable
   {
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_rendezvous);
-    heap->rendezvous_threads();
+    heap->rendezvous_threads("Shenandoah Class Unloading");
   }
 
   // Purge stale metadata and nmethods that were unlinked

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.util.Random;
 import jdk.internal.math.FloatConsts;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+
+import static java.lang.Double.*;
 
 /**
  * The class {@code Math} contains methods for performing basic
@@ -118,8 +120,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * implementation condition than required for most of the methods in
  * question that are also included in this class.
  *
- * @see <a href="https://standards.ieee.org/ieee/754/6210/">
- *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ * @spec https://standards.ieee.org/ieee/754/6210/
+ *       IEEE Standard for Floating-Point Arithmetic
  *
  * @since   1.0
  */
@@ -212,7 +214,7 @@ public final class Math {
      * <li>If the argument is zero, then the result is a zero with the
      * same sign as the argument.</ul>
      *
-     * <p>The computed result must be within 1 ulp of the exact result.
+     * <p>The computed result must be within 1.25 ulps of the exact result.
      * Results must be semi-monotonic.
      *
      * @param   a   an angle, in radians.
@@ -225,7 +227,7 @@ public final class Math {
 
     /**
      * Returns the arc sine of a value; the returned angle is in the
-     * range -<i>pi</i>/2 through <i>pi</i>/2.  Special cases:
+     * range &minus;<i>pi</i>/2 through <i>pi</i>/2.  Special cases:
      * <ul><li>If the argument is NaN or its absolute value is greater
      * than 1, then the result is NaN.
      * <li>If the argument is zero, then the result is a zero with the
@@ -261,7 +263,7 @@ public final class Math {
 
     /**
      * Returns the arc tangent of a value; the returned angle is in the
-     * range -<i>pi</i>/2 through <i>pi</i>/2.  Special cases:
+     * range &minus;<i>pi</i>/2 through <i>pi</i>/2.  Special cases:
      * <ul><li>If the argument is NaN, then the result is NaN.
      * <li>If the argument is zero, then the result is a zero with the
      * same sign as the argument.
@@ -553,7 +555,7 @@ public final class Math {
      * coordinates ({@code x},&nbsp;{@code y}) to polar
      * coordinates (r,&nbsp;<i>theta</i>).
      * This method computes the phase <i>theta</i> by computing an arc tangent
-     * of {@code y/x} in the range of -<i>pi</i> to <i>pi</i>. Special
+     * of {@code y/x} in the range of &minus;<i>pi</i> to <i>pi</i>. Special
      * cases:
      * <ul><li>If either argument is NaN, then the result is NaN.
      * <li>If the first argument is positive zero and the second argument
@@ -2031,6 +2033,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
+    @IntrinsicCandidate
     public static long max(long a, long b) {
         return (a >= b) ? a : b;
     }
@@ -2126,6 +2129,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b}.
      */
+    @IntrinsicCandidate
     public static long min(long a, long b) {
         return (a <= b) ? a : b;
     }
@@ -2645,7 +2649,7 @@ public final class Math {
     /**
      * Returns the hyperbolic sine of a {@code double} value.
      * The hyperbolic sine of <i>x</i> is defined to be
-     * (<i>e<sup>x</sup>&nbsp;-&nbsp;e<sup>-x</sup></i>)/2
+     * (<i>e<sup>x</sup>&nbsp;&minus;&nbsp;e<sup>&minus;x</sup></i>)/2
      * where <i>e</i> is {@linkplain Math#E Euler's number}.
      *
      * <p>Special cases:
@@ -2674,7 +2678,7 @@ public final class Math {
     /**
      * Returns the hyperbolic cosine of a {@code double} value.
      * The hyperbolic cosine of <i>x</i> is defined to be
-     * (<i>e<sup>x</sup>&nbsp;+&nbsp;e<sup>-x</sup></i>)/2
+     * (<i>e<sup>x</sup>&nbsp;+&nbsp;e<sup>&minus;x</sup></i>)/2
      * where <i>e</i> is {@linkplain Math#E Euler's number}.
      *
      * <p>Special cases:
@@ -2702,7 +2706,7 @@ public final class Math {
     /**
      * Returns the hyperbolic tangent of a {@code double} value.
      * The hyperbolic tangent of <i>x</i> is defined to be
-     * (<i>e<sup>x</sup>&nbsp;-&nbsp;e<sup>-x</sup></i>)/(<i>e<sup>x</sup>&nbsp;+&nbsp;e<sup>-x</sup></i>),
+     * (<i>e<sup>x</sup>&nbsp;&minus;&nbsp;e<sup>&minus;x</sup></i>)/(<i>e<sup>x</sup>&nbsp;+&nbsp;e<sup>&minus;x</sup></i>),
      * in other words, {@linkplain Math#sinh
      * sinh(<i>x</i>)}/{@linkplain Math#cosh cosh(<i>x</i>)}.  Note
      * that the absolute value of the exact tanh is always less than
@@ -2735,6 +2739,7 @@ public final class Math {
      * @return  The hyperbolic tangent of {@code x}.
      * @since 1.5
      */
+    @IntrinsicCandidate
     public static double tanh(double x) {
         return StrictMath.tanh(x);
     }
@@ -2770,7 +2775,7 @@ public final class Math {
     }
 
     /**
-     * Returns <i>e</i><sup>x</sup>&nbsp;-1.  Note that for values of
+     * Returns <i>e</i><sup>x</sup>&nbsp;&minus;1.  Note that for values of
      * <i>x</i> near 0, the exact sum of
      * {@code expm1(x)}&nbsp;+&nbsp;1 is much closer to the true
      * result of <i>e</i><sup>x</sup> than {@code exp(x)}.
@@ -2799,7 +2804,7 @@ public final class Math {
      * returned.
      *
      * @param   x   the exponent to raise <i>e</i> to in the computation of
-     *              <i>e</i><sup>{@code x}</sup>&nbsp;-1.
+     *              <i>e</i><sup>{@code x}</sup>&nbsp;&minus;1.
      * @return  the value <i>e</i><sup>{@code x}</sup>&nbsp;-&nbsp;1.
      * @since 1.5
      */
@@ -3283,6 +3288,9 @@ public final class Math {
         }
     }
 
+    private static final double F_UP = 0x1p1023;  // normal, exact, 2^DoubleConsts.EXP_BIAS
+    private static final double F_DOWN = 0x1p-1023;  // subnormal, exact, 2^-DoubleConsts.EXP_BIAS
+
     /**
      * Returns {@code d} &times; 2<sup>{@code scaleFactor}</sup>
      * rounded as if performed by a single correctly rounded
@@ -3314,60 +3322,25 @@ public final class Math {
      * @since 1.6
      */
     public static double scalb(double d, int scaleFactor) {
-        /*
-         * When scaling up, it does not matter what order the
-         * multiply-store operations are done; the result will be
-         * finite or overflow regardless of the operation ordering.
-         * However, to get the correct result when scaling down, a
-         * particular ordering must be used.
-         *
-         * When scaling down, the multiply-store operations are
-         * sequenced so that it is not possible for two consecutive
-         * multiply-stores to return subnormal results.  If one
-         * multiply-store result is subnormal, the next multiply will
-         * round it away to zero.  This is done by first multiplying
-         * by 2 ^ (scaleFactor % n) and then multiplying several
-         * times by 2^n as needed where n is the exponent of number
-         * that is a convenient power of two.  In this way, at most one
-         * real rounding error occurs.
-         */
-
-        // magnitude of a power of two so large that scaling a finite
-        // nonzero value by it would be guaranteed to over or
-        // underflow; due to rounding, scaling down takes an
-        // additional power of two which is reflected here
-        final int MAX_SCALE = Double.MAX_EXPONENT + -Double.MIN_EXPONENT +
-                              DoubleConsts.SIGNIFICAND_WIDTH + 1;
-        int exp_adjust = 0;
-        int scale_increment = 0;
-        double exp_delta = Double.NaN;
-
-        // Make sure scaling factor is in a reasonable range
-
-        if(scaleFactor < 0) {
-            scaleFactor = Math.max(scaleFactor, -MAX_SCALE);
-            scale_increment = -512;
-            exp_delta = 0x1p-512;
+        if (scaleFactor > -DoubleConsts.EXP_BIAS) {
+            if (scaleFactor <= DoubleConsts.EXP_BIAS) {
+                return d * primPowerOfTwoD(scaleFactor);
+            }
+            if (scaleFactor <= 2 * DoubleConsts.EXP_BIAS) {
+                return d * primPowerOfTwoD(scaleFactor - DoubleConsts.EXP_BIAS) * F_UP;
+            }
+            if (scaleFactor < 2 * DoubleConsts.EXP_BIAS + PRECISION - 1) {
+                return d * primPowerOfTwoD(scaleFactor - 2 * DoubleConsts.EXP_BIAS) * F_UP * F_UP;
+            }
+            return d * F_UP * F_UP * F_UP;
         }
-        else {
-            scaleFactor = Math.min(scaleFactor, MAX_SCALE);
-            scale_increment = 512;
-            exp_delta = 0x1p512;
+        if (scaleFactor > -2 * DoubleConsts.EXP_BIAS) {
+            return d * primPowerOfTwoD(scaleFactor + DoubleConsts.EXP_BIAS) * F_DOWN;
         }
-
-        // Calculate (scaleFactor % +/-512), 512 = 2^9, using
-        // technique from "Hacker's Delight" section 10-2.
-        int t = (scaleFactor >> 9-1) >>> 32 - 9;
-        exp_adjust = ((scaleFactor + t) & (512 -1)) - t;
-
-        d *= powerOfTwoD(exp_adjust);
-        scaleFactor -= exp_adjust;
-
-        while(scaleFactor != 0) {
-            d *= exp_delta;
-            scaleFactor -= scale_increment;
+        if (scaleFactor > -2 * DoubleConsts.EXP_BIAS - PRECISION) {
+            return d * primPowerOfTwoD(scaleFactor + 2 * DoubleConsts.EXP_BIAS) * F_DOWN * F_DOWN;
         }
-        return d;
+        return d * MIN_VALUE * MIN_VALUE;
     }
 
     /**
@@ -3426,9 +3399,15 @@ public final class Math {
      */
     static double powerOfTwoD(int n) {
         assert(n >= Double.MIN_EXPONENT && n <= Double.MAX_EXPONENT);
-        return Double.longBitsToDouble((((long)n + (long)DoubleConsts.EXP_BIAS) <<
-                                        (DoubleConsts.SIGNIFICAND_WIDTH-1))
-                                       & DoubleConsts.EXP_BIT_MASK);
+        return primPowerOfTwoD(n);
+    }
+
+    /**
+     * Returns a floating-point power of two in the normal range.
+     * No checks are performed on the argument.
+     */
+    private static double primPowerOfTwoD(int n) {
+        return longBitsToDouble((long) (n + DoubleConsts.EXP_BIAS) << PRECISION - 1);
     }
 
     /**
@@ -3440,4 +3419,229 @@ public final class Math {
                                      (FloatConsts.SIGNIFICAND_WIDTH-1))
                                     & FloatConsts.EXP_BIT_MASK);
     }
+
+    /**
+     * Returns the product of the unsigned arguments,
+     * throwing an exception if the result overflows an unsigned {@code int}.
+     *
+     * @param x the first unsigned value
+     * @param y the second unsigned value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an unsigned int
+     * @since 25
+     */
+    public static int unsignedMultiplyExact(int x, int y) {
+        long r = (x & 0xFFFF_FFFFL) * (y & 0xFFFF_FFFFL);
+        if (r >>> 32 != 0) {
+            throw new ArithmeticException("unsigned integer overflow");
+        }
+        return (int)r;
+    }
+
+    /**
+     * Returns the product of the unsigned arguments,
+     * throwing an exception if the result overflows an unsigned {@code long}.
+     *
+     * @param x the first unsigned value
+     * @param y the second unsigned value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an unsigned long
+     * @since 25
+     */
+    public static long unsignedMultiplyExact(long x, int y) {
+        return unsignedMultiplyExact(x, y & 0xFFFF_FFFFL);
+    }
+
+    /**
+     * Returns the product of the unsigned arguments,
+     * throwing an exception if the result overflows an unsigned {@code long}.
+     *
+     * @param x the first unsigned value
+     * @param y the second unsigned value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an unsigned long
+     * @since 25
+     */
+    public static long unsignedMultiplyExact(long x, long y) {
+        long l = x * y;
+        long h = unsignedMultiplyHigh(x, y);
+        if (h == 0) {
+            return l;
+        }
+        throw new ArithmeticException("unsigned long overflow");
+    }
+
+    /**
+     * Returns {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows an {@code int}.
+     * When {@code n} is 0, the returned value is 1.
+     *
+     * @param x the base.
+     * @param n the exponent.
+     * @return {@code x} raised to the power of {@code n}.
+     * @throws ArithmeticException when {@code n} is negative,
+     *      or when the result overflows an int.
+     * @since 25
+     */
+    public static int powExact(int x, int n) {
+        /* See the comment in unsignedPowExact(long,int) for the details. */
+        if (n < 0) {
+            throw new ArithmeticException("negative exponent");
+        }
+        if (n == 0) {
+            return 1;
+        }
+        if (x == 0 || x == 1) {
+            return x;
+        }
+        if (x == -1) {
+            return (n & 0b1) == 0 ? 1 : -1;
+        }
+
+        int p = 1;
+        while (n > 1) {
+            if ((n & 0b1) != 0) {
+                p *= x;
+            }
+            x = multiplyExact(x, x);
+            n >>>= 1;
+        }
+        return multiplyExact(p, x);
+    }
+
+    /**
+     * Returns unsigned {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows an unsigned {@code int}.
+     * When {@code n} is 0, the returned value is 1.
+     *
+     * @param x the unsigned base.
+     * @param n the exponent.
+     * @return {@code x} raised to the power of {@code n}.
+     * @throws ArithmeticException when {@code n} is negative,
+     *      or when the result overflows an unsigned int.
+     * @since 25
+     */
+    public static int unsignedPowExact(int x, int n) {
+        /* See the comment in unsignedPowExact(long,int) for the details. */
+        if (n < 0) {
+            throw new ArithmeticException("negative exponent");
+        }
+        if (n == 0) {
+            return 1;
+        }
+        if (x == 0 || x == 1) {
+            return x;
+        }
+
+        int p = 1;
+        while (n > 1) {
+            if ((n & 0b1) != 0) {
+                p *= x;
+            }
+            x = unsignedMultiplyExact(x, x);
+            n >>>= 1;
+        }
+        return unsignedMultiplyExact(p, x);
+    }
+
+    /**
+     * Returns {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows a {@code long}.
+     * When {@code n} is 0, the returned value is 1.
+     *
+     * @param x the base.
+     * @param n the exponent.
+     * @return {@code x} raised to the power of {@code n}.
+     * @throws ArithmeticException when {@code n} is negative,
+     *      or when the result overflows a long.
+     * @since 25
+     */
+    public static long powExact(long x, int n) {
+        /* See the comment in unsignedPowExact(long,int) for the details. */
+        if (n < 0) {
+            throw new ArithmeticException("negative exponent");
+        }
+        if (n == 0) {
+            return 1;
+        }
+        if (x == 0 || x == 1) {
+            return x;
+        }
+        if (x == -1) {
+            return (n & 0b1) != 0 ? -1 : 1;
+        }
+
+        long p = 1;
+        while (n > 1) {
+            if ((n & 0b1) != 0) {
+                p *= x;
+            }
+            x = multiplyExact(x, x);
+            n >>>= 1;
+        }
+        return multiplyExact(p, x);
+    }
+
+    /**
+     * Returns unsigned {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows an unsigned {@code long}.
+     * When {@code n} is 0, the returned value is 1.
+     *
+     * @param x the unsigned base.
+     * @param n the exponent.
+     * @return {@code x} raised to the power of {@code n}.
+     * @throws ArithmeticException when {@code n} is negative,
+     *      or when the result overflows an unsigned long.
+     * @since 25
+     */
+    public static long unsignedPowExact(long x, int n) {
+        if (n < 0) {
+            throw new ArithmeticException("negative exponent");
+        }
+        if (n == 0) {
+            return 1;
+        }
+        /*
+         * To keep the code as simple as possible, there are intentionally
+         * no fast paths, except for |x| <= 1.
+         * The reason is that the number of loop iterations below can be kept
+         * very small when |x| > 1, but not necessarily when |x| <= 1.
+         */
+        if (x == 0 || x == 1) {
+            return x;
+        }
+
+        /*
+         * Let x0 and n0 > 0 be the entry values of x and n, resp.
+         * The useful loop invariants are:
+         *      p * x^n = x0^n0
+         *      |p| < |x|
+         *
+         * Since |x0| >= 2 here, and since |x0|^(2^6) >= 2^Long.SIZE, the squaring
+         * of x in the loop overflows at latest during the 6th iteration,
+         * so by then the method throws.
+         * Thus, the loop executes at most 5 successful iterations, and fails
+         * not later than at the 6th.
+         *
+         * But n is right-shifted at each iteration.
+         * If the method returns, there are thus floor(log2(n0)) iterations.
+         */
+        long p = 1;
+        while (n > 1) {
+            if ((n & 0b1) != 0) {
+                /*
+                 * The invariant |p| < |x| holds, so we have |p*x| < |x*x|.
+                 * That is, if p*x overflows, so does x*x below, which is
+                 * always executed.
+                 * In other words, a plain * can be used here, since we are
+                 * piggybacking on the squaring of x to throw.
+                 */
+                p *= x;
+            }
+            x = unsignedMultiplyExact(x, x);
+            n >>>= 1;
+        }
+        return unsignedMultiplyExact(p, x);
+    }
+
 }

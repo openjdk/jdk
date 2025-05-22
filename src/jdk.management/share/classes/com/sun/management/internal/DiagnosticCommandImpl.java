@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.management.internal;
 import com.sun.management.DiagnosticCommandMBean;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.security.Permission;
 import java.util.*;
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -104,58 +103,15 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
         String name;
         String cmd;
         DiagnosticCommandInfo info;
-        Permission permission;
 
         Wrapper(String name, String cmd, DiagnosticCommandInfo info)
                 throws InstantiationException {
             this.name = name;
             this.cmd = cmd;
             this.info = info;
-            this.permission = null;
-            Exception cause = null;
-            if (info.getPermissionClass() != null) {
-                try {
-                    Class<?> c = Class.forName(info.getPermissionClass());
-                    if (info.getPermissionAction() == null) {
-                        try {
-                            Constructor<?> constructor = c.getConstructor(String.class);
-                            permission = (Permission) constructor.newInstance(info.getPermissionName());
-
-                        } catch (InstantiationException | IllegalAccessException
-                                | IllegalArgumentException | InvocationTargetException
-                                | NoSuchMethodException | SecurityException ex) {
-                            cause = ex;
-                        }
-                    }
-                    if (permission == null) {
-                        try {
-                            Constructor<?> constructor = c.getConstructor(String.class, String.class);
-                            permission = (Permission) constructor.newInstance(
-                                    info.getPermissionName(),
-                                    info.getPermissionAction());
-                        } catch (InstantiationException | IllegalAccessException
-                                | IllegalArgumentException | InvocationTargetException
-                                | NoSuchMethodException | SecurityException ex) {
-                            cause = ex;
-                        }
-                    }
-                } catch (ClassNotFoundException ex) { }
-                if (permission == null) {
-                    InstantiationException iex =
-                            new InstantiationException("Unable to instantiate required permission");
-                    iex.initCause(cause);
-                }
-            }
         }
 
         public String execute(String[] args) {
-            if (permission != null) {
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
-                    sm.checkPermission(permission);
-                }
-            }
             if(args == null) {
                 return executeDiagnosticCommand(cmd);
             } else {
@@ -304,9 +260,6 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
         map.put("dcmd.name", w.info.getName());
         map.put("dcmd.description", w.info.getDescription());
         map.put("dcmd.vmImpact", w.info.getImpact());
-        map.put("dcmd.permissionClass", w.info.getPermissionClass());
-        map.put("dcmd.permissionName", w.info.getPermissionName());
-        map.put("dcmd.permissionAction", w.info.getPermissionAction());
         map.put("dcmd.enabled", w.info.isEnabled());
         StringBuilder sb = new StringBuilder();
         sb.append("help ");
@@ -317,7 +270,7 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
             for (DiagnosticCommandArgumentInfo arginfo : w.info.getArgumentsInfo()) {
                 HashMap<String, Object> argmap = new HashMap<>();
                 argmap.put("dcmd.arg.name", arginfo.getName());
-                argmap.put("dcmd.arg.type", arginfo.getType());
+                argmap.put("dcmd.arg.type", sanitiseType(arginfo.getType()));
                 argmap.put("dcmd.arg.description", arginfo.getDescription());
                 argmap.put("dcmd.arg.isMandatory", arginfo.isMandatory());
                 argmap.put("dcmd.arg.isMultiple", arginfo.isMultiple());
@@ -333,6 +286,22 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
             map.put("dcmd.arguments", new ImmutableDescriptor(allargmap));
         }
         return new ImmutableDescriptor(map);
+    }
+
+    // Type names that will be published in dcmd.arg.type:
+    private static final String [] publicTypes = new String [] { "INT", "STRING", "BOOLEAN", "STRING SET", "MEMORY SIZE", "NANOTIME" };
+
+    private static final String sanitiseType(String typeName) {
+        // For any typeName not in the set to be made public, return "STRING".
+        if (typeName == null) {
+            return null;
+        }
+        for (String t : publicTypes) {
+            if (typeName.equals(t)) {
+                return t;
+            }
+        }
+        return "STRING";
     }
 
     private static final String notifName =

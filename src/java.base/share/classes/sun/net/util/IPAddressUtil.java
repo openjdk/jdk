@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package sun.net.util;
 
-import sun.security.action.GetPropertyAction;
-
 import java.io.UncheckedIOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -35,9 +33,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URL;
 import java.nio.CharBuffer;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -396,25 +391,23 @@ public class IPAddressUtil {
         }
     }
 
-    @SuppressWarnings("removal")
     private static InetAddress findScopedAddress(InetAddress address) {
-        PrivilegedExceptionAction<List<InetAddress>> pa = () -> NetworkInterface.networkInterfaces()
-                .flatMap(NetworkInterface::inetAddresses)
-                .filter(a -> (a instanceof Inet6Address)
-                        && address.equals(a)
-                        && ((Inet6Address) a).getScopeId() != 0)
-                .toList();
-        List<InetAddress> result;
         try {
-            result = AccessController.doPrivileged(pa);
+            List<InetAddress> result = NetworkInterface.networkInterfaces()
+                    .flatMap(NetworkInterface::inetAddresses)
+                    .filter(a -> (a instanceof Inet6Address)
+                            && address.equals(a)
+                            && ((Inet6Address) a).getScopeId() != 0)
+                    .toList();
+
             var sz = result.size();
             if (sz == 0)
                 return null;
             if (sz > 1)
                 throw new UncheckedIOException(new SocketException(
-                    "Duplicate link local addresses: must specify scope-id"));
+                        "Duplicate link local addresses: must specify scope-id"));
             return result.get(0);
-        } catch (PrivilegedActionException pae) {
+        } catch (SocketException socketException) {
             return null;
         }
     }
@@ -666,40 +659,81 @@ public class IPAddressUtil {
      * {@code false} otherwise.
      */
     public static boolean isBsdParsableV4(String input) {
+        return parseBsdLiteralV4(input) != null;
+    }
+
+    /**
+     * Parse String as IPv4 address literal by following
+     * POSIX-style formatting rules.
+     *
+     * @param input a String representing an IPv4 address in POSIX format
+     * @return a byte array representing the IPv4 numeric address
+     * if input string is a parsable POSIX formatted IPv4 address literal,
+     * {@code null} otherwise.
+     */
+    public static byte[] parseBsdLiteralV4(String input) {
+
+        byte[] res = new byte[]{0,0,0,0};
+
+        int len = input.length();
+        if (len == 0) {
+            return null;
+        }
         char firstSymbol = input.charAt(0);
         // Check if first digit is not a decimal digit
         if (parseAsciiDigit(firstSymbol, DECIMAL) == -1) {
-            return false;
+            return null;
         }
 
         // Last character is dot OR is not a supported digit: [0-9,A-F,a-f]
-        char lastSymbol = input.charAt(input.length() - 1);
+        char lastSymbol = input.charAt(len - 1);
         if (lastSymbol == '.' || parseAsciiHexDigit(lastSymbol) == -1) {
-            return false;
+            return null;
         }
 
         // Parse IP address fields
         CharBuffer charBuffer = CharBuffer.wrap(input);
         int fieldNumber = 0;
+        long fieldValue = -1L;
         while (charBuffer.hasRemaining()) {
-            long fieldValue = -1L;
+            fieldValue = -1L;
             // Try to parse fields in all supported radixes
             for (int radix : SUPPORTED_RADIXES) {
                 fieldValue = parseV4FieldBsd(radix, charBuffer, fieldNumber);
                 if (fieldValue >= 0) {
+                    if (fieldValue < 256) {
+                        // Store the parsed field in the byte buffer.
+                        // If the field value is greater than 255, it can only be the last field.
+                        // If it is not the last one, parseV4FieldBsd enforces this limit
+                        // and returns TERMINAL_PARSE_ERROR.
+                        res[fieldNumber] = (byte) fieldValue;
+                    }
                     fieldNumber++;
                     break;
                 } else if (fieldValue == TERMINAL_PARSE_ERROR) {
-                    return false;
+                    return null;
                 }
             }
             // If field can't be parsed as one of supported radixes stop
             // parsing
             if (fieldValue < 0) {
-                return false;
+                return null;
             }
         }
-        return true;
+        // The last field value must be non-negative
+        if (fieldValue < 0) {
+            return null;
+        }
+        // If the last fieldValue is greater than 255 (fieldNumber < 4),
+        // it is written to the last (4 - (fieldNumber - 1)) octets
+        // in the network order
+        if (fieldNumber < 4) {
+            for (int i = 3; i >= fieldNumber - 1; --i) {
+                res[i] = (byte) (fieldValue & 255);
+                fieldValue >>= 8;
+            }
+        }
+        return res;
     }
 
     /**
@@ -886,8 +920,8 @@ public class IPAddressUtil {
     private static final long TERMINAL_PARSE_ERROR = -2L;
 
     private static final String ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP = "jdk.net.allowAmbiguousIPAddressLiterals";
-    private static final boolean ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP_VALUE = Boolean.valueOf(
-            GetPropertyAction.privilegedGetProperty(ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP, "false"));
+    private static final boolean ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP_VALUE =
+            Boolean.getBoolean(ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP);
     private static class MASKS {
         private static final String DELAY_URL_PARSING_SP = "jdk.net.url.delayParsing";
         private static final boolean DELAY_URL_PARSING_SP_VALUE;
@@ -898,8 +932,7 @@ public class IPAddressUtil {
         static final long L_SCOPE_MASK;
         static final long H_SCOPE_MASK;
         static {
-            var value = GetPropertyAction.privilegedGetProperty(
-                    DELAY_URL_PARSING_SP, "false");
+            var value = System.getProperty(DELAY_URL_PARSING_SP, "false");
             DELAY_URL_PARSING_SP_VALUE = value.isEmpty()
                     || Boolean.parseBoolean(value);
             if (DELAY_URL_PARSING_SP_VALUE) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,25 @@
 
 package com.sun.tools.javac.launcher;
 
+import com.sun.source.tree.ClassTree;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.resources.LauncherProperties.Errors;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.module.InvalidModuleDescriptorException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.lang.model.SourceVersion;
 
 /**
  * Describes a launch-able Java compilation unit.
@@ -46,30 +53,46 @@ import java.util.TreeSet;
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</strong></p>
  */
-public record ProgramDescriptor(ProgramFileObject fileObject, Optional<String> packageName, Path sourceRootPath) {
+public record ProgramDescriptor(
+        ProgramFileObject fileObject,
+        Optional<String> packageName,
+        List<String> qualifiedTypeNames,
+        Path sourceRootPath) {
     static ProgramDescriptor of(ProgramFileObject fileObject) throws Fault {
         var file = fileObject.getFile();
+        var packageName = ""; // empty string will be converted into an empty optional
+        var packageNameAndDot = ""; // empty string or packageName + '.'
+        var qualifiedTypeNames = new ArrayList<String>();
         try {
             var compiler = JavacTool.create();
             var standardFileManager = compiler.getStandardFileManager(null, null, null);
             var units = List.of(fileObject);
             var task = compiler.getTask(null, standardFileManager, diagnostic -> {}, null, null, units);
-            for (var tree : task.parse()) {
-                var packageTree = tree.getPackage();
-                if (packageTree != null) {
-                    var packageName = packageTree.getPackageName().toString();
-                    var root = computeSourceRootPath(file, packageName);
-                    return new ProgramDescriptor(fileObject, Optional.of(packageName), root);
+            var tree = task.parse().iterator().next(); // single compilation unit
+            var packageTree = tree.getPackage();
+            if (packageTree != null) {
+                packageName = packageTree.getPackageName().toString();
+                packageNameAndDot = packageName + '.';
+            }
+            for (var type : tree.getTypeDecls()) {
+                if (type instanceof ClassTree classType) {
+                    qualifiedTypeNames.add(packageNameAndDot + classType.getSimpleName());
                 }
             }
         } catch (IOException ignore) {
             // fall through to let actual compilation determine the error message
         }
-        var root = computeSourceRootPath(file, "");
-        return new ProgramDescriptor(fileObject, Optional.empty(), root);
+        if (qualifiedTypeNames.isEmpty()) {
+            throw new Fault(Errors.NoClass);
+        }
+        return new ProgramDescriptor(
+                fileObject,
+                packageName.isEmpty() ? Optional.empty() : Optional.of(packageName),
+                List.copyOf(qualifiedTypeNames),
+                computeSourceRootPath(file, packageName));
     }
 
-    public static Path computeSourceRootPath(Path program, String packageName) {
+    public static Path computeSourceRootPath(Path program, String packageName) throws Fault {
         var absolute = program.normalize().toAbsolutePath();
         var absoluteRoot = absolute.getRoot();
         assert absoluteRoot != null;
@@ -95,25 +118,62 @@ public record ProgramDescriptor(ProgramFileObject fileObject, Optional<String> p
     }
 
     public Set<String> computePackageNames() {
-        try (var stream = Files.find(sourceRootPath, 99, (path, attr) -> attr.isDirectory())) {
-            var names = new TreeSet<String>();
-            stream.filter(ProgramDescriptor::containsAtLeastOneRegularFile)
-                  .map(sourceRootPath::relativize)
-                  .map(Path::toString)
-                  .filter(string -> !string.isEmpty())
-                  .map(string -> string.replace(File.separatorChar, '.'))
-                  .forEach(names::add);
-            return names;
-        } catch (IOException exception) {
-            throw new UncheckedIOException(exception);
+        return explodedPackages(sourceRootPath);
+    }
+
+    // -- exploded directories --> based on jdk.internal.module.ModulePath
+
+    private static Set<String> explodedPackages(Path dir) {
+        String separator = dir.getFileSystem().getSeparator();
+        try (Stream<Path> stream = Files.find(dir, Integer.MAX_VALUE,
+                (path, attrs) -> attrs.isRegularFile() && !isHidden(path))) {
+            return stream.map(dir::relativize)
+                    .map(path -> toPackageName(path, separator))
+                    .flatMap(Optional::stream)
+                    .collect(Collectors.toSet());
+        } catch (IOException x) {
+            throw new UncheckedIOException(x);
         }
     }
 
-    private static boolean containsAtLeastOneRegularFile(Path directory) {
-        try (var stream = Files.newDirectoryStream(directory, Files::isRegularFile)) {
-            return stream.iterator().hasNext();
-        } catch (IOException exception) {
-            throw new UncheckedIOException(exception);
+    /**
+     * Maps the relative path of an entry in an exploded module to a package
+     * name.
+     *
+     * @throws InvalidModuleDescriptorException if the name is a class file in
+     *         the top-level directory (and it's not module-info.class)
+     */
+    private static Optional<String> toPackageName(Path file, String separator) {
+        assert file.getRoot() == null;
+
+        Path parent = file.getParent();
+        if (parent == null) {
+            String name = file.toString();
+            if (name.endsWith(".class") && !name.equals("module-info.class")) {
+                String msg = name + " found in top-level directory"
+                        + " (unnamed package not allowed in module)";
+                throw new InvalidModuleDescriptorException(msg);
+            }
+            return Optional.empty();
+        }
+
+        String pn = parent.toString().replace(separator, ".");
+        if (SourceVersion.isName(pn)) {
+            return Optional.of(pn);
+        } else {
+            // not a valid package name
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Returns true if the given file exists and is a hidden file
+     */
+    private static boolean isHidden(Path file) {
+        try {
+            return Files.isHidden(file);
+        } catch (IOException ioe) {
+            return false;
         }
     }
 }

@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -273,7 +273,9 @@ void Klass::explore_interfaces(JNIEnv* env) {
   if (super_klass != nullptr) {
     // Add all interfaces implemented by super_klass first.
     interface_count = super_klass->interface_count;
-    memcpy(interfaces, super_klass->interfaces, sizeof(Klass*) * super_klass->interface_count);
+    if (super_klass->interfaces != nullptr) {
+      memcpy(interfaces, super_klass->interfaces, sizeof(Klass*) * super_klass->interface_count);
+    }
   }
 
   // Interfaces implemented by the klass.

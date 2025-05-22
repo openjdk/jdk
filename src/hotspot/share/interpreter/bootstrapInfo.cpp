@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -74,7 +73,7 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
     Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
     return true;
   } else if (indy_entry->resolution_failed()) {
-    int encoded_index = ResolutionErrorTable::encode_indy_index(ConstantPool::encode_invokedynamic_index(_indy_index));
+    int encoded_index = ResolutionErrorTable::encode_indy_index(_indy_index);
     ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false); // Doesn't necessarily need to be resolved yet
     return true;
   } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,11 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
@@ -42,6 +45,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ModuleElement;
@@ -275,9 +280,8 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.createIndex()) {
-            if (!options.noExternalSpecsPage()){
-                writerFactory.newExternalSpecsWriter().buildPage();
-            }
+            writerFactory.newExternalSpecsWriter().buildPage();
+            writerFactory.newSearchTagsWriter().buildPage();
             writerFactory.newSystemPropertiesWriter().buildPage();
 
             configuration.indexBuilder.addElements();
@@ -303,20 +307,32 @@ public class HtmlDoclet extends AbstractDoclet {
             w.buildPage();
         }
 
+        if (!options.noFonts()) {
+            copyFontResources();
+        }
+
+        var syntaxHighlight = options.syntaxHighlight();
+        if (syntaxHighlight) {
+            copyResource(DocPaths.HIGHLIGHT_CSS, DocPaths.RESOURCE_FILES.resolve(DocPaths.HIGHLIGHT_CSS), true);
+            copyResource(DocPaths.HIGHLIGHT_JS, DocPaths.SCRIPT_FILES.resolve(DocPaths.HIGHLIGHT_JS), true);
+        }
+
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
-        if (options.stylesheetFile().length() == 0) {
+        if (options.stylesheetFile().isEmpty()) {
             copyResource(DocPaths.STYLESHEET, DocPaths.RESOURCE_FILES.resolve(DocPaths.STYLESHEET), true);
         }
         copyResource(DocPaths.SCRIPT_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS), true);
+        copyResource(DocPaths.LEFT_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LEFT_SVG), true);
+        copyResource(DocPaths.RIGHT_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.RIGHT_SVG), true);
         copyResource(DocPaths.CLIPBOARD_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.CLIPBOARD_SVG), true);
         copyResource(DocPaths.LINK_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LINK_SVG), true);
 
         if (options.createIndex()) {
             copyResource(DocPaths.SEARCH_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_JS), true);
             copyResource(DocPaths.SEARCH_PAGE_JS, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_PAGE_JS), true);
-            copyResource(DocPaths.GLASS_IMG, DocPaths.RESOURCE_FILES.resolve(DocPaths.GLASS_IMG), false);
-            copyResource(DocPaths.X_IMG, DocPaths.RESOURCE_FILES.resolve(DocPaths.X_IMG), false);
+            copyResource(DocPaths.GLASS_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.GLASS_SVG), false);
+            copyResource(DocPaths.X_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.X_SVG), false);
             // No newline replacement for JQuery files
             copyResource(DocPaths.JQUERY_DIR.resolve(DocPaths.JQUERY_JS),
                     DocPaths.SCRIPT_FILES.resolve(DocPaths.JQUERY_JS), false);
@@ -326,6 +342,10 @@ public class HtmlDoclet extends AbstractDoclet {
                     DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS), false);        }
 
         copyLegalFiles(options.createIndex());
+        // Print a notice if the documentation contains diagnostic markers
+        if (messages.containsDiagnosticMarkers()) {
+            messages.notice("doclet.contains.diagnostic.markers");
+        }
     }
 
     @Override
@@ -395,7 +415,7 @@ public class HtmlDoclet extends AbstractDoclet {
     protected void generateClassFiles(SortedSet<TypeElement> typeElems, ClassTree classTree)
             throws DocletException {
         for (TypeElement te : typeElems) {
-            if (utils.hasHiddenTag(te) ||
+            if (utils.isHidden(te) ||
                     !(configuration.isGeneratedDoc(te) && utils.isIncluded(te))) {
                 continue;
             }
@@ -450,6 +470,31 @@ public class HtmlDoclet extends AbstractDoclet {
             f.copyResource(resourcePath, resourceURL, configuration.docResources);
         } else {
             f.copyResource(resourcePath, resourceURL, replaceNewLine);
+        }
+    }
+
+    private void copyFontResources() throws DocletException {
+        DocPath cssPath = DocPaths.FONTS.resolve(DocPaths.DEJAVU_CSS);
+        copyResource(cssPath, DocPaths.RESOURCE_FILES.resolve(cssPath), true);
+
+        try {
+            // Extract font file names from CSS file
+            URL cssURL = HtmlConfiguration.class.getResource(DocPaths.RESOURCES.resolve(cssPath).getPath());
+            Pattern pattern = Pattern.compile("DejaVu[-\\w]+\\.\\w+");
+
+            try (InputStream in = cssURL.openStream();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    Matcher m = pattern.matcher(line);
+                    if (m.find()) {
+                        DocPath fontPath = DocPaths.FONTS.resolve(m.group());
+                        copyResource(fontPath, DocPaths.RESOURCE_FILES.resolve(fontPath), false);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new ResourceIOException(cssPath, e);
         }
     }
 

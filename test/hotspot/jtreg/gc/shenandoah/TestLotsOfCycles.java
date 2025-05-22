@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +73,16 @@
  */
 
 /*
+ * @test id=generational
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -Dtarget=10000
+ *      TestLotsOfCycles
+ */
+
+/*
  * @test id=static
  * @requires vm.gc.Shenandoah
  *
@@ -89,38 +100,6 @@
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
  *      -Dtarget=1000
  *     TestLotsOfCycles
- */
-
-/*
- * @test id=iu-aggressive
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahOOMDuringEvacALot
- *      -Dtarget=1000
- *      TestLotsOfCycles
- *
- * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahAllocFailureALot
- *      -Dtarget=1000
- *      TestLotsOfCycles
- *
- * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -Dtarget=1000
- *      TestLotsOfCycles
- */
-
-/*
- * @test id=iu
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      -Dtarget=10000
- *      TestLotsOfCycles
  */
 
 public class TestLotsOfCycles {

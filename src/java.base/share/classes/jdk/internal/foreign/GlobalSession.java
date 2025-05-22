@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,8 @@
 
 package jdk.internal.foreign;
 
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.ForceInline;
-import sun.nio.ch.DirectBuffer;
 
-import java.nio.Buffer;
 import java.util.Objects;
 
 /**
@@ -42,17 +38,13 @@ non-sealed class GlobalSession extends MemorySessionImpl {
 
     public GlobalSession() {
         super(null, null);
+        this.state = NONCLOSEABLE;
     }
 
     @Override
     @ForceInline
     public void release0() {
         // do nothing
-    }
-
-    @Override
-    public boolean isCloseable() {
-        return false;
     }
 
     @Override

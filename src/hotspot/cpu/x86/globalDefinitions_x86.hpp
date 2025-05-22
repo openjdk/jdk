@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,20 +42,11 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define DEFAULT_CACHE_LINE_SIZE 64
 
 // The default padding size for data structures to avoid false sharing.
-#ifdef _LP64
 // The common wisdom is that adjacent cache line prefetchers on some hardware
 // may pull two cache lines on access, so we have to pessimistically assume twice
 // the cache line size for padding. TODO: Check if this is still true for modern
 // hardware. If not, DEFAULT_CACHE_LINE_SIZE might as well suffice.
 #define DEFAULT_PADDING_SIZE (DEFAULT_CACHE_LINE_SIZE*2)
-#else
-#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
-#endif
-
-#if defined(COMPILER2)
-// Include Restricted Transactional Memory lock eliding optimization
-#define INCLUDE_RTM_OPT 1
-#endif
 
 #if defined(LINUX) || defined(__APPLE__)
 #define SUPPORT_RESERVED_STACK_AREA

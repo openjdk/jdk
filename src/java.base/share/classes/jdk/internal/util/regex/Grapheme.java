@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@ public final class Grapheme {
      * <p>
      * See Unicode Standard Annex #29 Unicode Text Segmentation for the specification
      * for the extended grapheme cluster boundary rules. The following implementation
-     * is based on the annex for Unicode version 15.1.
+     * is based on the annex for Unicode version 16.0.
      *
-     * @spec http://www.unicode.org/reports/tr29/tr29-43.html
+     * @spec http://www.unicode.org/reports/tr29/tr29-45.html
      * @param src the {@code CharSequence} to be scanned
      * @param off offset to start looking for the next boundary in the src
      * @param limit limit offset in the src (exclusive)
@@ -267,7 +267,10 @@ public final class Grapheme {
             if (cp >= 0xA960 && cp <= 0xA97C)
                 return L;
             //  hangul jamo_extended B
-            if (cp >= 0xD7B0 && cp <= 0xD7C6)
+            //  Kirat Rai vowel sign
+            if (cp >= 0xD7B0 && cp <= 0xD7C6 ||
+                cp == 0x16D63 ||
+                cp >= 0x16D67 && cp <= 0x16D6A)
                 return V;
             if (cp >= 0xD7CB && cp <= 0xD7FB)
                 return T;
@@ -277,6 +280,7 @@ public final class Grapheme {
                 case 0x0D4E:
                 case 0x111C2:
                 case 0x111C3:
+                case 0x113D1:
                 case 0x1193F:
                 case 0x11941:
                 case 0x11A3A:

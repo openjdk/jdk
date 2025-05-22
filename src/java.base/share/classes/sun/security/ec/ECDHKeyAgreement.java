@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,10 @@ import sun.security.ec.point.Point;
 import sun.security.util.ArrayUtil;
 import sun.security.util.CurveDB;
 import sun.security.util.ECUtil;
+import sun.security.util.KeyUtil;
 import sun.security.util.NamedCurve;
 import sun.security.util.math.IntegerFieldModuloP;
+import sun.security.util.math.IntegerMontgomeryFieldModuloP;
 import sun.security.util.math.MutableIntegerModuloP;
 import sun.security.util.math.SmallValue;
 
@@ -253,11 +255,11 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         if (algorithm == null) {
             throw new NoSuchAlgorithmException("Algorithm must not be null");
         }
-        if (!(algorithm.equals("TlsPremasterSecret"))) {
-            throw new NoSuchAlgorithmException
-                ("Only supported for algorithm TlsPremasterSecret");
+        if (!KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm)) {
+            throw new NoSuchAlgorithmException(
+                    "Unsupported secret key algorithm: " + algorithm);
         }
-        return new SecretKeySpec(engineGenerateSecret(), "TlsPremasterSecret");
+        return new SecretKeySpec(engineGenerateSecret(), algorithm);
     }
 
     private static
@@ -265,6 +267,11 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         ECPublicKey pubKey) throws InvalidKeyException {
 
         IntegerFieldModuloP field = ops.getField();
+        if (field instanceof IntegerMontgomeryFieldModuloP) {
+            // No point of doing a single SmallValue operation in Montgomery domain
+            field = ((IntegerMontgomeryFieldModuloP)field).residueField();
+        }
+
         // convert s array into field element and multiply by the cofactor
         MutableIntegerModuloP scalar = field.getElement(priv.getS()).mutable();
         SmallValue cofactor =

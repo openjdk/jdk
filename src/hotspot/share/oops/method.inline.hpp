@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@
 #include "oops/method.hpp"
 
 #include "classfile/vmIntrinsics.hpp"
+#include "code/nmethod.inline.hpp"
 #include "oops/methodCounters.hpp"
+#include "oops/methodData.inline.hpp"
 #include "runtime/atomic.hpp"
 
 inline address Method::from_compiled_entry() const {
@@ -39,7 +41,7 @@ inline address Method::from_interpreted_entry() const {
   return Atomic::load_acquire(&_from_interpreted_entry);
 }
 
-inline CompiledMethod* Method::code() const {
+inline nmethod* Method::code() const {
   assert( check_code(), "" );
   return Atomic::load_acquire(&_code);
 }
@@ -186,6 +188,43 @@ inline void Method::set_rate(float rate) {
   if (mcs != nullptr) {
     mcs->set_rate(rate);
   }
+}
+
+inline int Method::invocation_count() const {
+  MethodCounters* mcs = method_counters();
+  MethodData* mdo = method_data();
+  if (((mcs != nullptr) ? mcs->invocation_counter()->carry() : false) ||
+      ((mdo != nullptr) ? mdo->invocation_counter()->carry() : false)) {
+    return InvocationCounter::count_limit;
+  } else {
+    return ((mcs != nullptr) ? mcs->invocation_counter()->count() : 0) +
+           ((mdo != nullptr) ? mdo->invocation_counter()->count() : 0);
+  }
+}
+
+inline int Method::backedge_count() const {
+  MethodCounters* mcs = method_counters();
+  MethodData* mdo = method_data();
+  if (((mcs != nullptr) ? mcs->backedge_counter()->carry() : false) ||
+      ((mdo != nullptr) ? mdo->backedge_counter()->carry() : false)) {
+    return InvocationCounter::count_limit;
+  } else {
+    return ((mcs != nullptr) ? mcs->backedge_counter()->count() : 0) +
+           ((mdo != nullptr) ? mdo->backedge_counter()->count() : 0);
+  }
+}
+
+inline int Method::highest_comp_level() const {
+  const MethodCounters* mcs = method_counters();
+  if (mcs != nullptr) {
+    return mcs->highest_comp_level();
+  } else {
+    return CompLevel_none;
+  }
+}
+
+inline int Method::interpreter_invocation_count() const {
+  return invocation_count();
 }
 
 #endif // SHARE_OOPS_METHOD_INLINE_HPP

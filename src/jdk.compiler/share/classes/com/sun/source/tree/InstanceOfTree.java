@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,11 @@ package com.sun.source.tree;
  * For example:
  * <pre>
  *   <em>expression</em> instanceof <em>type</em>
+ *
+ *   <em>expression</em> instanceof <em>pattern</em>
  * </pre>
  *
- * @jls 15.20.2 Type Comparison Operator instanceof
+ * @jls 15.20.2 The instanceof Operator
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons
@@ -48,29 +50,50 @@ public interface InstanceOfTree extends ExpressionTree {
     ExpressionTree getExpression();
 
     /**
-     * Returns the type for which to check.
-     * @return the type
+     * Returns the type for which to check, or {@code null} if this {@code instanceof}
+     * uses a pattern other the {@link BindingPatternTree}.
+     *
+     * <p>For {@code instanceof} without a pattern, i.e. in the following form:
+     * <pre>
+     *   <em>expression</em> instanceof <em>type</em>
+     * </pre>
+     * returns the type.
+     *
+     * <p>For {@code instanceof} with a {@link BindingPatternTree}, i.e. in the following form:
+     * <pre>
+     *   <em>expression</em> instanceof <em>type</em> <em>variable_name</em>
+     * </pre>
+     * returns the type.
+     *
+     * <p>For instanceof with a pattern, i.e. in the following form:
+     * <pre>
+     *   <em>expression</em> instanceof <em>pattern</em>
+     * </pre>
+     * returns {@code null}.
+     *
+     * @return the type or {@code null} if this {@code instanceof} uses a pattern other than
+     *         the {@linkplain BindingPatternTree}
      * @see #getPattern()
      */
     Tree getType();
 
     /**
-     * Returns the tested pattern, or null if this instanceof does not use
+     * Returns the tested pattern, or {@code null} if this {@code instanceof} does not use
      * a pattern.
      *
      * <p>For instanceof with a pattern, i.e. in the following form:
      * <pre>
-     *   <em>expression</em> instanceof <em>type</em> <em>variable name</em>
+     *   <em>expression</em> instanceof <em>pattern</em>
      * </pre>
      * returns the pattern.
      *
-     * <p>For instanceof without a pattern, i.e. in the following form:
+     * <p>For {@code instanceof} without a pattern, i.e. in the following form:
      * <pre>
      *   <em>expression</em> instanceof <em>type</em>
      * </pre>
-     * returns null.
+     * returns {@code null}.
      *
-     * @return the tested pattern, or null if this instanceof does not use a pattern
+     * @return the tested pattern, or {@code null} if this {@code instanceof} does not use a pattern
      * @since 16
      */
     PatternTree getPattern();

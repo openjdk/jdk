@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ Java_gc_gctests_nativeGC02_nativeGC02_nativeMethod02
 
         clss = env->GetObjectClass(obj);
         fid = env->GetFieldID(clss, "cl", "Lnsk/share/gc/CircularLinkedList;");
-        if (fid == 0) {
+        if (fid == nullptr) {
                 printf("could not locate field - cl\n");
                 return -1;
         }
@@ -53,7 +53,7 @@ Java_gc_gctests_nativeGC02_nativeGC02_nativeMethod02
 
         cls = env->GetObjectClass(obj);
         mid = env->GetMethodID(cls, "callbackGC", "()V");
-        if (mid == 0) {
+        if (mid == nullptr) {
                 printf("couldnt locate method callbackGC()\n");
                 return -1;
         }
@@ -66,7 +66,7 @@ Java_gc_gctests_nativeGC02_nativeGC02_nativeMethod02
 
         clss = env->GetObjectClass(linked_list);
         mid2 = env->GetMethodID(clss, "getLength", "(Lnsk/share/gc/CircularLinkedList;)I");
-        if (mid2 == 0) {
+        if (mid2 == nullptr) {
                 printf("couldnt locate method getLength(CircularLinkedList)\n");
                 return -1;
         }

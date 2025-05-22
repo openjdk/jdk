@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,10 @@ package java.lang.runtime;
 
 import java.lang.Enum.EnumDesc;
 import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
-import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -43,19 +44,29 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
+
 import jdk.internal.access.SharedSecrets;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.classfile.instruction.SwitchCase;
+
+import jdk.internal.classfile.impl.DirectCodeBuilder;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.ConstantUtils;
+import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.vm.annotation.Stable;
 
+import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
+import static jdk.internal.constant.ConstantUtils.classDesc;
+import static jdk.internal.constant.ConstantUtils.referenceClassDesc;
+
 import sun.invoke.util.Wrapper;
 
 /**
@@ -66,7 +77,7 @@ import sun.invoke.util.Wrapper;
  *
  * @since 21
  */
-public class SwitchBootstraps {
+public final class SwitchBootstraps {
 
     private SwitchBootstraps() {}
 
@@ -74,32 +85,48 @@ public class SwitchBootstraps {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final boolean previewEnabled = PreviewFeatures.isEnabled();
 
-    private static final MethodHandle NULL_CHECK;
-    private static final MethodHandle IS_ZERO;
-    private static final MethodHandle CHECK_INDEX;
-    private static final MethodHandle MAPPED_ENUM_LOOKUP;
+    private static final ClassDesc CD_BiPredicate = ClassOrInterfaceDescImpl.ofValidated("Ljava/util/function/BiPredicate;");
+    private static final ClassDesc CD_Objects = ClassOrInterfaceDescImpl.ofValidated("Ljava/util/Objects;");
 
-    private static final MethodTypeDesc TYPES_SWITCH_DESCRIPTOR =
-            MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;ILjava/util/function/BiPredicate;Ljava/util/List;)I");
+    private static final MethodTypeDesc CHECK_INDEX_DESCRIPTOR =
+            MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_int);
+    private static final MethodTypeDesc MTD_TYPE_SWITCH = MethodTypeDescImpl.ofValidated(CD_int,
+            CD_Object,
+            CD_int);
+    private static final MethodTypeDesc MTD_TYPE_SWITCH_EXTRA = MethodTypeDescImpl.ofValidated(CD_int,
+            CD_Object,
+            CD_int,
+            CD_BiPredicate,
+            CD_List);
+    private static final MethodType MT_TYPE_SWITCH_EXTRA = MethodType.methodType(int.class,
+            Object.class,
+            int.class,
+            BiPredicate.class,
+            List.class);
+    private static final MethodType MT_TYPE_SWITCH = MethodType.methodType(int.class,
+            Object.class,
+            int.class);
+    private static final List<StackMapFrameInfo.VerificationTypeInfo> TYPE_SWITCH_LOCALS = List.of(
+            StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_Object), StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER
+    );
+    private static final List<StackMapFrameInfo.VerificationTypeInfo> TYPE_SWITCH_EXTRA_LOCALS = List.of(
+            StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_Object), StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER,
+            StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_BiPredicate), StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_List)
+    );
 
-    private static final Map<TypePairs, String> typePairToName;
+    private static class StaticHolders {
+        private static final MethodHandle MAPPED_ENUM_SWITCH;
 
-    static {
-        try {
-            NULL_CHECK = LOOKUP.findStatic(Objects.class, "isNull",
-                                           MethodType.methodType(boolean.class, Object.class));
-            IS_ZERO = LOOKUP.findStatic(SwitchBootstraps.class, "isZero",
-                                           MethodType.methodType(boolean.class, int.class));
-            CHECK_INDEX = LOOKUP.findStatic(Objects.class, "checkIndex",
-                                           MethodType.methodType(int.class, int.class, int.class));
-            MAPPED_ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumLookup",
-                                                   MethodType.methodType(int.class, Enum.class, MethodHandles.Lookup.class,
-                                                                         Class.class, EnumDesc[].class, EnumMap.class));
+        static {
+            try {
+                MAPPED_ENUM_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumSwitch",
+                                                       MethodType.methodType(int.class, Enum.class, int.class, MethodHandles.Lookup.class,
+                                                                             Class.class, EnumDesc[].class, MappedEnumCache.class));
+            }
+            catch (ReflectiveOperationException e) {
+                throw new ExceptionInInitializerError(e);
+            }
         }
-        catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-        typePairToName = TypePairs.initialize();
     }
 
     /**
@@ -166,14 +193,13 @@ public class SwitchBootstraps {
             || (!invocationType.returnType().equals(int.class))
             || !invocationType.parameterType(1).equals(int.class))
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
-        requireNonNull(labels);
 
-        Stream.of(labels).forEach(l -> verifyLabel(l, selectorType));
+        for (Object l : labels) { // implicit null-check
+            verifyLabel(l, selectorType);
+        }
 
         MethodHandle target = generateTypeSwitch(lookup, selectorType, labels);
-
-        target = withIndexCheck(target, labels.length);
-
+        target = target.asType(invocationType);
         return new ConstantCallSite(target);
     }
 
@@ -197,10 +223,6 @@ public class SwitchBootstraps {
             labelClass != EnumDesc.class) {
             throw new IllegalArgumentException("label with illegal type found: " + label.getClass());
         }
-    }
-
-    private static boolean isZero(int value) {
-        return value == 0;
     }
 
     /**
@@ -269,34 +291,35 @@ public class SwitchBootstraps {
             || !invocationType.parameterType(0).isEnum()
             || !invocationType.parameterType(1).equals(int.class))
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
-        requireNonNull(labels);
 
-        labels = labels.clone();
+        labels = labels.clone(); // implicit null check
 
         Class<?> enumClass = invocationType.parameterType(0);
-        labels = Stream.of(labels).map(l -> convertEnumConstants(lookup, enumClass, l)).toArray();
+        boolean constantsOnly = true;
+        int len = labels.length;
+
+        for (int i = 0; i < len; i++) {
+            Object convertedLabel =
+                    convertEnumConstants(lookup, enumClass, labels[i]);
+            labels[i] = convertedLabel;
+            if (constantsOnly)
+                constantsOnly = convertedLabel instanceof EnumDesc;
+        }
 
         MethodHandle target;
-        boolean constantsOnly = Stream.of(labels).allMatch(l -> enumClass.isAssignableFrom(EnumDesc.class));
 
         if (labels.length > 0 && constantsOnly) {
             //If all labels are enum constants, construct an optimized handle for repeat index 0:
             //if (selector == null) return -1
             //else if (idx == 0) return mappingArray[selector.ordinal()]; //mapping array created lazily
             //else return "typeSwitch(labels)"
-            MethodHandle body =
-                    MethodHandles.guardWithTest(MethodHandles.dropArguments(NULL_CHECK, 0, int.class),
-                                                MethodHandles.dropArguments(MethodHandles.constant(int.class, -1), 0, int.class, Object.class),
-                                                MethodHandles.guardWithTest(MethodHandles.dropArguments(IS_ZERO, 1, Object.class),
-                                                                            generateTypeSwitch(lookup, invocationType.parameterType(0), labels),
-                                                                            MethodHandles.insertArguments(MAPPED_ENUM_LOOKUP, 1, lookup, enumClass, labels, new EnumMap())));
-            target = MethodHandles.permuteArguments(body, MethodType.methodType(int.class, Object.class, int.class), 1, 0);
+            EnumDesc<?>[] enumDescLabels =
+                    Arrays.copyOf(labels, labels.length, EnumDesc[].class);
+            target = MethodHandles.insertArguments(StaticHolders.MAPPED_ENUM_SWITCH, 2, lookup, enumClass, enumDescLabels, new MappedEnumCache());
         } else {
             target = generateTypeSwitch(lookup, invocationType.parameterType(0), labels);
         }
-
         target = target.asType(invocationType);
-        target = withIndexCheck(target, labels.length);
 
         return new ConstantCallSite(target);
     }
@@ -313,39 +336,70 @@ public class SwitchBootstraps {
             }
             return label;
         } else if (labelClass == String.class) {
-            return EnumDesc.of(enumClassTemplate.describeConstable().orElseThrow(), (String) label);
+            return EnumDesc.of(referenceClassDesc(enumClassTemplate), (String) label);
         } else {
             throw new IllegalArgumentException("label with illegal type found: " + labelClass +
                                                ", expected label of type either String or Class");
         }
     }
 
-    private static <T extends Enum<T>> int mappedEnumLookup(T value, MethodHandles.Lookup lookup, Class<T> enumClass, EnumDesc<?>[] labels, EnumMap enumMap) {
-        if (enumMap.map == null) {
-            T[] constants = SharedSecrets.getJavaLangAccess().getEnumConstantsShared(enumClass);
-            int[] map = new int[constants.length];
-            int ordinal = 0;
+    private static <T extends Enum<T>> int mappedEnumSwitch(T value, int restartIndex, MethodHandles.Lookup lookup, Class<T> enumClass, EnumDesc<?>[] labels, MappedEnumCache enumCache) throws Throwable {
+        if (value == null) {
+            return -1;
+        }
 
-            for (T constant : constants) {
-                map[ordinal] = labels.length;
+        if (restartIndex != 0) {
+            MethodHandle generatedSwitch = enumCache.generatedSwitch;
+            if (generatedSwitch == null) {
+                synchronized (enumCache) {
+                    generatedSwitch = enumCache.generatedSwitch;
 
-                for (int i = 0; i < labels.length; i++) {
-                    if (Objects.equals(labels[i].constantName(), constant.name())) {
-                        map[ordinal] = i;
-                        break;
+                    if (generatedSwitch == null) {
+                        generatedSwitch =
+                                generateTypeSwitch(lookup, enumClass, labels)
+                                        .asType(MethodType.methodType(int.class,
+                                                                      Enum.class,
+                                                                      int.class));
+                        enumCache.generatedSwitch = generatedSwitch;
                     }
                 }
+            }
 
-                ordinal++;
+            return (int) generatedSwitch.invokeExact(value, restartIndex);
+        }
+
+        int[] constantsMap = enumCache.constantsMap;
+
+        if (constantsMap == null) {
+            synchronized (enumCache) {
+                constantsMap = enumCache.constantsMap;
+
+                if (constantsMap == null) {
+                    T[] constants = SharedSecrets.getJavaLangAccess()
+                                                 .getEnumConstantsShared(enumClass);
+                    constantsMap = new int[constants.length];
+                    int ordinal = 0;
+
+                    for (T constant : constants) {
+                        constantsMap[ordinal] = labels.length;
+
+                        for (int i = 0; i < labels.length; i++) {
+                            if (Objects.equals(labels[i].constantName(),
+                                               constant.name())) {
+                                constantsMap[ordinal] = i;
+                                break;
+                            }
+                        }
+
+                        ordinal++;
+                    }
+
+                    enumCache.constantsMap = constantsMap;
+                }
             }
         }
-        return enumMap.map[value.ordinal()];
-    }
 
-    private static MethodHandle withIndexCheck(MethodHandle target, int labelsCount) {
-        MethodHandle checkIndex = MethodHandles.insertArguments(CHECK_INDEX, 1, labelsCount + 1);
-
-        return MethodHandles.filterArguments(target, 1, checkIndex);
+        return constantsMap[value.ordinal()];
     }
 
     private static final class ResolvedEnumLabels implements BiPredicate<Integer, Object> {
@@ -353,7 +407,7 @@ public class SwitchBootstraps {
         private final MethodHandles.Lookup lookup;
         private final EnumDesc<?>[] enumDescs;
         @Stable
-        private Object[] resolvedEnum;
+        private final Object[] resolvedEnum;
 
         public ResolvedEnumLabels(MethodHandles.Lookup lookup, EnumDesc<?>[] enumDescs) {
             this.lookup = lookup;
@@ -390,11 +444,40 @@ public class SwitchBootstraps {
         }
     }
 
-    private static final class EnumMap {
+    private static final class MappedEnumCache {
         @Stable
-        public int[] map;
+        public int[] constantsMap;
+        @Stable
+        public MethodHandle generatedSwitch;
     }
 
+    /**
+     * Check if the labelConstants can be converted statically to bytecode, or
+     * whether we'll need to compute and pass in extra information at the call site.
+     */
+    private static boolean needsExtraInfo(Class<?> selectorType, Object[] labelConstants) {
+        for (int idx = labelConstants.length - 1; idx >= 0; idx--) {
+            Object currentLabel = labelConstants[idx];
+            if (currentLabel instanceof Class<?> classLabel) {
+                // No extra info needed for exact matches or primitives
+                if (unconditionalExactnessCheck(selectorType, classLabel) || classLabel.isPrimitive()) {
+                    continue;
+                }
+                // Hidden classes - or arrays thereof - can't be nominally
+                // represented. Passed in as arguments.
+                while (classLabel.isArray()) {
+                    classLabel = classLabel.getComponentType();
+                }
+                if (classLabel.isHidden()) {
+                    return true;
+                }
+            } else if (currentLabel instanceof EnumDesc<?>) {
+                // EnumDescs labels needs late binding
+                return true;
+            }
+        }
+        return false;
+    }
     /*
      * Construct test chains for labels inside switch, to handle switch repeats:
      * switch (idx) {
@@ -409,210 +492,228 @@ public class SwitchBootstraps {
         int ENUM_CACHE          = 2;
         int EXTRA_CLASS_LABELS  = 3;
 
+        var locals = enumDescs == null && extraClassLabels == null ? TYPE_SWITCH_LOCALS : TYPE_SWITCH_EXTRA_LOCALS;
+
         return cb -> {
-            cb.aload(SELECTOR_OBJ);
+            // Objects.checkIndex(RESTART_IDX, labelConstants + 1)
+            var stackMapFrames = new ArrayList<StackMapFrameInfo>(labelConstants.length * 2);
+            cb.iload(RESTART_IDX)
+              .loadConstant(labelConstants.length + 1)
+              .invokestatic(CD_Objects, "checkIndex", CHECK_INDEX_DESCRIPTOR)
+              .pop()
+              .aload(SELECTOR_OBJ);
             Label nonNullLabel = cb.newLabel();
-            cb.if_nonnull(nonNullLabel);
-            cb.iconst_m1();
-            cb.ireturn();
-            cb.labelBinding(nonNullLabel);
+            cb.ifnonnull(nonNullLabel)
+              .iconst_m1()
+              .ireturn()
+              .labelBinding(nonNullLabel);
+            stackMapFrames.add(StackMapFrameInfo.of(nonNullLabel, locals, List.of()));
             if (labelConstants.length == 0) {
-                cb.constantInstruction(0)
-                        .ireturn();
+                cb.loadConstant(0)
+                  .ireturn()
+                  .with(StackMapTableAttribute.of(stackMapFrames));
+                DirectCodeBuilder.withMaxs(cb, 2, locals.size()); // checkIndex uses 2
                 return;
             }
             cb.iload(RESTART_IDX);
             Label dflt = cb.newLabel();
-            record Element(Label target, Label next, Object caseLabel) { }
-            List<Element> cases = new ArrayList<>();
-            List<SwitchCase> switchCases = new ArrayList<>();
+            Label[] caseTargets = new Label[labelConstants.length];
+            Label[] caseNext = new Label[labelConstants.length];
+            Object[] caseLabels = new Object[labelConstants.length];
+            SwitchCase[] switchCases = new SwitchCase[labelConstants.length];
             Object lastLabel = null;
             for (int idx = labelConstants.length - 1; idx >= 0; idx--) {
                 Object currentLabel = labelConstants[idx];
                 Label target = cb.newLabel();
+                stackMapFrames.add(StackMapFrameInfo.of(target, locals, List.of()));
                 Label next;
                 if (lastLabel == null) {
                     next = dflt;
                 } else if (lastLabel.equals(currentLabel)) {
-                    next = cases.getLast().next();
+                    next = caseNext[idx + 1];
                 } else {
-                    next = cases.getLast().target();
+                    next = caseTargets[idx + 1];
                 }
                 lastLabel = currentLabel;
-                cases.add(new Element(target, next, currentLabel));
-                switchCases.add(SwitchCase.of(idx, target));
+                caseTargets[idx] = target;
+                caseNext[idx] = next;
+                caseLabels[idx] = currentLabel;
+                switchCases[idx] = SwitchCase.of(idx, target);
             }
-            cases = cases.reversed();
-            switchCases = switchCases.reversed();
-            cb.tableswitch(0, labelConstants.length - 1, dflt, switchCases);
-            for (int idx = 0; idx < cases.size(); idx++) {
-                Element element = cases.get(idx);
-                Label next = element.next();
-                cb.labelBinding(element.target());
-                if (element.caseLabel() instanceof Class<?> classLabel) {
+            cb.tableswitch(0, labelConstants.length - 1, dflt, Arrays.asList(switchCases));
+            for (int idx = 0; idx < labelConstants.length; idx++) {
+                Label next = caseNext[idx];
+                Object caseLabel = caseLabels[idx];
+                cb.labelBinding(caseTargets[idx]);
+                if (caseLabel instanceof Class<?> classLabel) {
                     if (unconditionalExactnessCheck(selectorType, classLabel)) {
                         //nothing - unconditionally use this case
                     } else if (classLabel.isPrimitive()) {
                         if (!selectorType.isPrimitive() && !Wrapper.isWrapperNumericOrBooleanType(selectorType)) {
                             // Object o = ...
                             // o instanceof Wrapped(float)
-                            cb.aload(SELECTOR_OBJ);
-                            cb.instanceof_(Wrapper.forBasicType(classLabel)
-                                    .wrapperType()
-                                    .describeConstable()
-                                    .orElseThrow());
-                            cb.ifeq(next);
+                            cb.aload(SELECTOR_OBJ)
+                              .instanceOf(Wrapper.forBasicType(classLabel).wrapperClassDescriptor())
+                              .ifeq(next);
                         } else if (!unconditionalExactnessCheck(Wrapper.asPrimitiveType(selectorType), classLabel)) {
                             // Integer i = ... or int i = ...
                             // o instanceof float
-                            Label notNumber = cb.newLabel();
-                            cb.aload(SELECTOR_OBJ);
-                            cb.instanceof_(ConstantDescs.CD_Number);
-                            if (selectorType == long.class || selectorType == float.class || selectorType == double.class) {
+                            Label notNumber = cb.newLabel(); // this label may end up unbound
+                            cb.aload(SELECTOR_OBJ)
+                              .instanceOf(CD_Number);
+                            if (selectorType == long.class || selectorType == float.class || selectorType == double.class ||
+                                selectorType == Long.class || selectorType == Float.class || selectorType == Double.class) {
                                 cb.ifeq(next);
                             } else {
                                 cb.ifeq(notNumber);
                             }
-                            cb.aload(SELECTOR_OBJ);
-                            cb.checkcast(ConstantDescs.CD_Number);
-                            if (selectorType == long.class) {
-                                cb.invokevirtual(ConstantDescs.CD_Number,
+                            cb.aload(SELECTOR_OBJ)
+                              .checkcast(CD_Number);
+                            if (selectorType == long.class || selectorType == Long.class) {
+                                cb.invokevirtual(CD_Number,
                                         "longValue",
-                                        MethodTypeDesc.of(ConstantDescs.CD_long));
-                            } else if (selectorType == float.class) {
-                                cb.invokevirtual(ConstantDescs.CD_Number,
+                                        MethodTypeDesc.of(CD_long));
+                            } else if (selectorType == float.class || selectorType == Float.class) {
+                                cb.invokevirtual(CD_Number,
                                         "floatValue",
-                                        MethodTypeDesc.of(ConstantDescs.CD_float));
-                            } else if (selectorType == double.class) {
-                                cb.invokevirtual(ConstantDescs.CD_Number,
+                                        MethodTypeDesc.of(CD_float));
+                            } else if (selectorType == double.class || selectorType == Double.class) {
+                                cb.invokevirtual(CD_Number,
                                         "doubleValue",
-                                        MethodTypeDesc.of(ConstantDescs.CD_double));
+                                        MethodTypeDesc.of(CD_double));
                             } else {
                                 Label compare = cb.newLabel();
-                                cb.invokevirtual(ConstantDescs.CD_Number,
+                                cb.invokevirtual(CD_Number,
                                         "intValue",
-                                        MethodTypeDesc.of(ConstantDescs.CD_int));
-                                cb.goto_(compare);
-                                cb.labelBinding(notNumber);
-                                cb.aload(SELECTOR_OBJ);
-                                cb.instanceof_(ConstantDescs.CD_Character);
-                                cb.ifeq(next);
-                                cb.aload(SELECTOR_OBJ);
-                                cb.checkcast(ConstantDescs.CD_Character);
-                                cb.invokevirtual(ConstantDescs.CD_Character,
+                                        MethodTypeDesc.of(CD_int))
+                                  .goto_(compare)
+                                  .labelBinding(notNumber);
+                                stackMapFrames.add(StackMapFrameInfo.of(notNumber, locals, List.of()));
+                                cb.aload(SELECTOR_OBJ)
+                                  .instanceOf(CD_Character)
+                                  .ifeq(next)
+                                  .aload(SELECTOR_OBJ)
+                                  .checkcast(CD_Character)
+                                  .invokevirtual(CD_Character,
                                         "charValue",
-                                        MethodTypeDesc.of(ConstantDescs.CD_char));
-                                cb.labelBinding(compare);
+                                        MethodTypeDesc.of(CD_char))
+                                  .labelBinding(compare);
+                                stackMapFrames.add(StackMapFrameInfo.of(compare, locals, List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER)));
                             }
 
                             TypePairs typePair = TypePairs.of(Wrapper.asPrimitiveType(selectorType), classLabel);
-                            String methodName = typePairToName.get(typePair);
-                            cb.invokestatic(ExactConversionsSupport.class.describeConstable().orElseThrow(),
+                            String methodName = TypePairs.typePairToName.get(typePair);
+                            cb.invokestatic(ConstantUtils.referenceClassDesc(ExactConversionsSupport.class),
                                     methodName,
-                                    MethodTypeDesc.of(ConstantDescs.CD_boolean, typePair.from.describeConstable().orElseThrow()));
-                            cb.ifeq(next);
+                                    MethodTypeDesc.of(CD_boolean, classDesc(typePair.from)))
+                              .ifeq(next);
                         }
                     } else {
                         Optional<ClassDesc> classLabelConstableOpt = classLabel.describeConstable();
                         if (classLabelConstableOpt.isPresent()) {
-                            cb.aload(SELECTOR_OBJ);
-                            cb.instanceof_(classLabelConstableOpt.orElseThrow());
-                            cb.ifeq(next);
+                            cb.aload(SELECTOR_OBJ)
+                              .instanceOf(classLabelConstableOpt.orElseThrow())
+                              .ifeq(next);
                         } else {
-                            cb.aload(EXTRA_CLASS_LABELS);
-                            cb.constantInstruction(extraClassLabels.size());
-                            cb.invokeinterface(ConstantDescs.CD_List,
+                            cb.aload(EXTRA_CLASS_LABELS)
+                              .loadConstant(extraClassLabels.size())
+                              .invokeinterface(CD_List,
                                     "get",
-                                    MethodTypeDesc.of(ConstantDescs.CD_Object,
-                                            ConstantDescs.CD_int));
-                            cb.checkcast(ConstantDescs.CD_Class);
-                            cb.aload(SELECTOR_OBJ);
-                            cb.invokevirtual(ConstantDescs.CD_Class,
+                                    MethodTypeDesc.of(CD_Object,
+                                            CD_int))
+                              .checkcast(CD_Class)
+                              .aload(SELECTOR_OBJ)
+                              .invokevirtual(CD_Class,
                                     "isInstance",
-                                    MethodTypeDesc.of(ConstantDescs.CD_boolean,
-                                            ConstantDescs.CD_Object));
-                            cb.ifeq(next);
+                                    MethodTypeDesc.of(CD_boolean,
+                                            CD_Object))
+                              .ifeq(next);
                             extraClassLabels.add(classLabel);
                         }
                     }
-                } else if (element.caseLabel() instanceof EnumDesc<?> enumLabel) {
+                } else if (caseLabel instanceof EnumDesc<?> enumLabel) {
                     int enumIdx = enumDescs.size();
                     enumDescs.add(enumLabel);
-                    cb.aload(ENUM_CACHE);
-                    cb.constantInstruction(enumIdx);
-                    cb.invokestatic(ConstantDescs.CD_Integer,
+                    cb.aload(ENUM_CACHE)
+                      .loadConstant(enumIdx)
+                      .invokestatic(CD_Integer,
                             "valueOf",
-                            MethodTypeDesc.of(ConstantDescs.CD_Integer,
-                                    ConstantDescs.CD_int));
-                    cb.aload(SELECTOR_OBJ);
-                    cb.invokeinterface(BiPredicate.class.describeConstable().orElseThrow(),
+                            MethodTypeDesc.of(CD_Integer,
+                                    CD_int))
+                      .aload(SELECTOR_OBJ)
+                      .invokeinterface(CD_BiPredicate,
                             "test",
-                            MethodTypeDesc.of(ConstantDescs.CD_boolean,
-                                    ConstantDescs.CD_Object,
-                                    ConstantDescs.CD_Object));
-                    cb.ifeq(next);
-                } else if (element.caseLabel() instanceof String stringLabel) {
-                    cb.ldc(stringLabel);
-                    cb.aload(SELECTOR_OBJ);
-                    cb.invokevirtual(ConstantDescs.CD_Object,
+                            MethodTypeDesc.of(CD_boolean,
+                                    CD_Object,
+                                    CD_Object))
+                      .ifeq(next);
+                } else if (caseLabel instanceof String stringLabel) {
+                    cb.ldc(stringLabel)
+                      .aload(SELECTOR_OBJ)
+                      .invokevirtual(CD_Object,
                             "equals",
-                            MethodTypeDesc.of(ConstantDescs.CD_boolean,
-                                    ConstantDescs.CD_Object));
-                    cb.ifeq(next);
-                } else if (element.caseLabel() instanceof Integer integerLabel) {
+                            MethodTypeDesc.of(CD_boolean,
+                                    CD_Object))
+                      .ifeq(next);
+                } else if (caseLabel instanceof Integer integerLabel) {
                     Label compare = cb.newLabel();
                     Label notNumber = cb.newLabel();
-                    cb.aload(SELECTOR_OBJ);
-                    cb.instanceof_(ConstantDescs.CD_Number);
-                    cb.ifeq(notNumber);
-                    cb.aload(SELECTOR_OBJ);
-                    cb.checkcast(ConstantDescs.CD_Number);
-                    cb.invokevirtual(ConstantDescs.CD_Number,
+                    cb.aload(SELECTOR_OBJ)
+                      .instanceOf(CD_Number)
+                      .ifeq(notNumber)
+                      .aload(SELECTOR_OBJ)
+                      .checkcast(CD_Number)
+                      .invokevirtual(CD_Number,
                             "intValue",
-                            MethodTypeDesc.of(ConstantDescs.CD_int));
-                    cb.goto_(compare);
-                    cb.labelBinding(notNumber);
-                    cb.aload(SELECTOR_OBJ);
-                    cb.instanceof_(ConstantDescs.CD_Character);
-                    cb.ifeq(next);
-                    cb.aload(SELECTOR_OBJ);
-                    cb.checkcast(ConstantDescs.CD_Character);
-                    cb.invokevirtual(ConstantDescs.CD_Character,
+                            MethodTypeDesc.of(CD_int))
+                      .goto_(compare)
+                      .labelBinding(notNumber);
+                    stackMapFrames.add(StackMapFrameInfo.of(notNumber, locals, List.of()));
+                    cb.aload(SELECTOR_OBJ)
+                      .instanceOf(CD_Character)
+                      .ifeq(next)
+                      .aload(SELECTOR_OBJ)
+                      .checkcast(CD_Character)
+                      .invokevirtual(CD_Character,
                             "charValue",
-                            MethodTypeDesc.of(ConstantDescs.CD_char));
-                    cb.labelBinding(compare);
-
-                    cb.ldc(integerLabel);
-                    cb.if_icmpne(next);
-                } else if ((element.caseLabel() instanceof Long ||
-                        element.caseLabel() instanceof Float ||
-                        element.caseLabel() instanceof Double ||
-                        element.caseLabel() instanceof Boolean)) {
-                    if (element.caseLabel() instanceof Boolean c) {
-                        cb.constantInstruction(c ? 1 : 0);
+                            MethodTypeDesc.of(CD_char))
+                      .labelBinding(compare);
+                    stackMapFrames.add(StackMapFrameInfo.of(compare, locals, List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER)));
+                    cb.loadConstant(integerLabel)
+                      .if_icmpne(next);
+                } else if ((caseLabel instanceof Long ||
+                        caseLabel instanceof Float ||
+                        caseLabel instanceof Double ||
+                        caseLabel instanceof Boolean)) {
+                    if (caseLabel instanceof Boolean c) {
+                        cb.loadConstant(c ? 1 : 0);
                     } else {
-                        cb.constantInstruction((ConstantDesc) element.caseLabel());
+                        cb.loadConstant((ConstantDesc) caseLabel);
                     }
-                    cb.invokestatic(element.caseLabel().getClass().describeConstable().orElseThrow(),
+                    var caseLabelWrapper = Wrapper.forWrapperType(caseLabel.getClass());
+                    cb.invokestatic(caseLabelWrapper.wrapperClassDescriptor(),
                             "valueOf",
-                            MethodTypeDesc.of(element.caseLabel().getClass().describeConstable().orElseThrow(),
-                                    Wrapper.asPrimitiveType(element.caseLabel().getClass()).describeConstable().orElseThrow()));
-                    cb.aload(SELECTOR_OBJ);
-                    cb.invokevirtual(ConstantDescs.CD_Object,
+                            MethodTypeDesc.of(caseLabelWrapper.wrapperClassDescriptor(),
+                                    caseLabelWrapper.basicClassDescriptor()))
+                      .aload(SELECTOR_OBJ)
+                      .invokevirtual(CD_Object,
                             "equals",
-                            MethodTypeDesc.of(ConstantDescs.CD_boolean,
-                                    ConstantDescs.CD_Object));
-                    cb.ifeq(next);
+                            MethodTypeDesc.of(CD_boolean,
+                                    CD_Object))
+                      .ifeq(next);
                 } else {
                     throw new InternalError("Unsupported label type: " +
-                            element.caseLabel().getClass());
+                            caseLabel.getClass());
                 }
-                cb.constantInstruction(idx);
-                cb.ireturn();
+                cb.loadConstant(idx)
+                  .ireturn();
             }
-            cb.labelBinding(dflt);
-            cb.constantInstruction(cases.size());
-            cb.ireturn();
+            stackMapFrames.add(StackMapFrameInfo.of(dflt, locals, List.of()));
+            cb.labelBinding(dflt)
+              .loadConstant(labelConstants.length)
+              .ireturn()
+              .with(StackMapTableAttribute.of(stackMapFrames));
+            DirectCodeBuilder.withMaxs(cb, 3, locals.size()); // enum labels use 3 stack, others use 2
         };
     }
 
@@ -620,14 +721,15 @@ public class SwitchBootstraps {
      * Construct the method handle that represents the method int typeSwitch(Object, int, BiPredicate, List)
      */
     private static MethodHandle generateTypeSwitch(MethodHandles.Lookup caller, Class<?> selectorType, Object[] labelConstants) {
-        List<EnumDesc<?>> enumDescs = new ArrayList<>();
-        List<Class<?>> extraClassLabels = new ArrayList<>();
+        boolean addExtraInfo = needsExtraInfo(selectorType, labelConstants);
+        List<EnumDesc<?>> enumDescs = addExtraInfo ? new ArrayList<>() : null;
+        List<Class<?>> extraClassLabels = addExtraInfo ? new ArrayList<>() : null;
 
-        byte[] classBytes = ClassFile.of().build(ClassDesc.of(typeSwitchClassName(caller.lookupClass())),
+        byte[] classBytes = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS).build(ConstantUtils.binaryNameToDesc(typeSwitchClassName(caller.lookupClass())),
                 clb -> {
                     clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                        .withMethodBody("typeSwitch",
-                                       TYPES_SWITCH_DESCRIPTOR,
+                                       addExtraInfo ? MTD_TYPE_SWITCH_EXTRA : MTD_TYPE_SWITCH,
                                        ClassFile.ACC_FINAL | ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
                                        generateTypeSwitchSkeleton(selectorType, labelConstants, enumDescs, extraClassLabels));
         });
@@ -638,17 +740,11 @@ public class SwitchBootstraps {
             lookup = caller.defineHiddenClass(classBytes, true, NESTMATE, STRONG);
             MethodHandle typeSwitch = lookup.findStatic(lookup.lookupClass(),
                                                         "typeSwitch",
-                                                        MethodType.methodType(int.class,
-                                                                              Object.class,
-                                                                              int.class,
-                                                                              BiPredicate.class,
-                                                                              List.class));
-            typeSwitch = MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(EnumDesc[]::new)),
-                                                       List.copyOf(extraClassLabels));
-            typeSwitch = MethodHandles.explicitCastArguments(typeSwitch,
-                                                             MethodType.methodType(int.class,
-                                                                                   selectorType,
-                                                                                   int.class));
+                                                        addExtraInfo ? MT_TYPE_SWITCH_EXTRA : MT_TYPE_SWITCH);
+            if (addExtraInfo) {
+                typeSwitch = MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(new EnumDesc<?>[0])),
+                        List.copyOf(extraClassLabels));
+            }
             return typeSwitch;
         } catch (Throwable t) {
             throw new IllegalArgumentException(t);
@@ -683,11 +779,25 @@ public class SwitchBootstraps {
 
     // TypePairs should be in sync with the corresponding record in Lower
     record TypePairs(Class<?> from, Class<?> to) {
+
+        private static final Map<TypePairs, String> typePairToName = initialize();
+
         public static TypePairs of(Class<?> from,  Class<?> to) {
             if (from == byte.class || from == short.class || from == char.class) {
                 from = int.class;
             }
             return new TypePairs(from, to);
+        }
+
+        public int hashCode() {
+            return 31 * from.hashCode() + to.hashCode();
+        }
+
+        public boolean equals(Object other) {
+            if (other instanceof TypePairs otherPair) {
+                return otherPair.from == from && otherPair.to == to;
+            }
+            return false;
         }
 
         public static Map<TypePairs, String> initialize() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -32,18 +31,48 @@
 #include "nmt/memTracker.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/trimNativeHeap.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+
+// One global static mutex for chunk pools.
+// It is used very early in the vm initialization, in allocation
+// code and other areas.  For many calls, the current thread has not
+// been created so we cannot use Mutex.
+static PlatformMutex* GlobalChunkPoolMutex = nullptr;
+
+void Arena::initialize_chunk_pool() {
+  GlobalChunkPoolMutex = new PlatformMutex();
+}
+
+ChunkPoolLocker::ChunkPoolLocker() {
+  assert(GlobalChunkPoolMutex != nullptr, "must be initialized");
+  GlobalChunkPoolMutex->lock();
+};
+
+ChunkPoolLocker::~ChunkPoolLocker() {
+  GlobalChunkPoolMutex->unlock();
+};
 
 // Pre-defined default chunk sizes must be arena-aligned, see Chunk::operator new()
 STATIC_ASSERT(is_aligned((int)Chunk::tiny_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::init_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
-STATIC_ASSERT(is_aligned((int)Chunk::non_pool_size, ARENA_AMALLOC_ALIGNMENT));
+
+
+const char* Arena::tag_name[] = {
+#define ARENA_TAG_STRING(name, desc) XSTR(name),
+  DO_ARENA_TAG(ARENA_TAG_STRING)
+#undef ARENA_TAG_STRING
+};
+
+const char* Arena::tag_desc[] = {
+#define ARENA_TAG_DESC(name, desc) XSTR(desc),
+  DO_ARENA_TAG(ARENA_TAG_DESC)
+#undef ARENA_TAG_DESC
+};
 
 // MT-safe pool of same-sized chunks to reduce malloc/free thrashing
 // NB: not using Mutex because pools are used before Threads are initialized
@@ -57,7 +86,7 @@ class ChunkPool {
 
   // Returns null if pool is empty.
   Chunk* take_from_pool() {
-    ThreadCritical tc;
+    ChunkPoolLocker lock;
     Chunk* c = _first;
     if (_first != nullptr) {
       _first = _first->next();
@@ -66,16 +95,16 @@ class ChunkPool {
   }
   void return_to_pool(Chunk* chunk) {
     assert(chunk->length() == _size, "wrong pool for this chunk");
-    ThreadCritical tc;
+    ChunkPoolLocker lock;
     chunk->set_next(_first);
     _first = chunk;
   }
 
   // Clear this pool of all contained chunks
   void prune() {
-    // Free all chunks while in ThreadCritical lock
+    // Free all chunks with ChunkPoolLocker lock
     // so NMT adjustment is stable.
-    ThreadCritical tc;
+    ChunkPoolLocker lock;
     Chunk* cur = _first;
     Chunk* next = nullptr;
     while (cur != nullptr) {
@@ -107,11 +136,19 @@ public:
   }
 
   // Returns an initialized and null-terminated Chunk of requested size
-  static Chunk* allocate_chunk(size_t length, AllocFailType alloc_failmode);
+  static Chunk* allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode);
   static void deallocate_chunk(Chunk* p);
 };
 
-Chunk* ChunkPool::allocate_chunk(size_t length, AllocFailType alloc_failmode) {
+static bool on_compiler_thread() {
+#if defined(COMPILER1) || defined(COMPILER2)
+  return Thread::current_or_null() != nullptr &&
+         Thread::current()->is_Compiler_thread();
+#endif // COMPILER1 || COMPILER2
+  return false;
+}
+
+Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode) {
   // - requested_size = sizeof(Chunk)
   // - length = payload size
   // We must ensure that the boundaries of the payload (C and D) are aligned to 64-bit:
@@ -130,8 +167,7 @@ Chunk* ChunkPool::allocate_chunk(size_t length, AllocFailType alloc_failmode) {
   // - the payload size (length) must be aligned to 64-bit, which takes care of 64-bit
   //   aligning (D)
 
-  assert(is_aligned(length, ARENA_AMALLOC_ALIGNMENT), "chunk payload length misaligned: "
-         SIZE_FORMAT ".", length);
+  assert(is_aligned(length, ARENA_AMALLOC_ALIGNMENT), "chunk payload length misaligned: %zu.", length);
   // Try to reuse a freed chunk from the pool
   ChunkPool* pool = ChunkPool::get_pool_for_size(length);
   Chunk* chunk = nullptr;
@@ -154,16 +190,34 @@ Chunk* ChunkPool::allocate_chunk(size_t length, AllocFailType alloc_failmode) {
   ::new(chunk) Chunk(length);
   // We rely on arena alignment <= malloc alignment.
   assert(is_aligned(chunk, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
+
+  if (CompilationMemoryStatistic::enabled() && on_compiler_thread()) {
+    uint64_t stamp = 0;
+    CompilationMemoryStatistic::on_arena_chunk_allocation(chunk->length(), (int)arena->get_tag(), &stamp);
+    chunk->set_stamp(stamp);
+  } else {
+    chunk->set_stamp(0);
+  }
+
   return chunk;
 }
 
 void ChunkPool::deallocate_chunk(Chunk* c) {
+
+  // Inform compilation memstat
+  if (CompilationMemoryStatistic::enabled() && c->stamp() != 0) {
+    assert(on_compiler_thread(), "we stamped this chunk");
+    CompilationMemoryStatistic::on_arena_chunk_deallocation(c->length(), c->stamp());
+    c->set_stamp(0);
+  }
+
   // If this is a standard-sized chunk, return it to its pool; otherwise free it.
   ChunkPool* pool = ChunkPool::get_pool_for_size(c->length());
   if (pool != nullptr) {
     pool->return_to_pool(c);
   } else {
-    ThreadCritical tc;  // Free chunks under TC lock so that NMT adjustment is stable.
+    // Free chunks under a lock so that NMT adjustment is stable.
+    ChunkPoolLocker lock;
     os::free(c);
   }
 }
@@ -190,8 +244,8 @@ void Arena::start_chunk_pool_cleaner_task() {
   cleaner->enroll();
 }
 
-Chunk::Chunk(size_t length) : _len(length) {
-  _next = nullptr;         // Chain on the linked list
+Chunk::Chunk(size_t length) :
+    _next(nullptr), _len(length), _stamp(0) {
 }
 
 void Chunk::chop(Chunk* k) {
@@ -210,28 +264,24 @@ void Chunk::next_chop(Chunk* k) {
   k->_next = nullptr;
 }
 
-Arena::Arena(MEMFLAGS flag, Tag tag, size_t init_size) : _flags(flag), _tag(tag), _size_in_bytes(0)  {
+Arena::Arena(MemTag mem_tag, Tag tag, size_t init_size) :
+  _mem_tag(mem_tag), _tag(tag),
+  _size_in_bytes(0),
+  _first(nullptr), _chunk(nullptr),
+  _hwm(nullptr), _max(nullptr)
+{
   init_size = ARENA_ALIGN(init_size);
-  _chunk = ChunkPool::allocate_chunk(init_size, AllocFailStrategy::EXIT_OOM);
+  _chunk = ChunkPool::allocate_chunk(this, init_size, AllocFailStrategy::EXIT_OOM);
   _first = _chunk;
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
-  MemTracker::record_new_arena(flag);
+  MemTracker::record_new_arena(mem_tag);
   set_size_in_bytes(init_size);
-}
-
-Arena::Arena(MEMFLAGS flag, Tag tag) : _flags(flag), _tag(tag), _size_in_bytes(0) {
-  _chunk = ChunkPool::allocate_chunk(Chunk::init_size, AllocFailStrategy::EXIT_OOM);
-  _first = _chunk;
-  _hwm = _chunk->bottom();      // Save the cached hwm, max
-  _max = _chunk->top();
-  MemTracker::record_new_arena(flag);
-  set_size_in_bytes(Chunk::init_size);
 }
 
 Arena::~Arena() {
   destruct_contents();
-  MemTracker::record_arena_free(_flags);
+  MemTracker::record_arena_free(_mem_tag);
 }
 
 // Destroy this arenas contents and reset to empty
@@ -251,13 +301,7 @@ void Arena::set_size_in_bytes(size_t size) {
   if (_size_in_bytes != size) {
     ssize_t delta = size - size_in_bytes();
     _size_in_bytes = size;
-    MemTracker::record_arena_size_change(delta, _flags);
-    if (CompilationMemoryStatistic::enabled() && _flags == mtCompiler) {
-      Thread* const t = Thread::current();
-      if (t != nullptr && t->is_Compiler_thread()) {
-        CompilationMemoryStatistic::on_arena_change(delta, this);
-      }
-    }
+    MemTracker::record_arena_size_change(delta, _mem_tag);
   }
 }
 
@@ -278,12 +322,12 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   // (Note: all chunk sizes have to be 64-bit aligned)
   size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
 
-  if (MemTracker::check_exceeds_limit(x, _flags)) {
+  if (MemTracker::check_exceeds_limit(x, _mem_tag)) {
     return nullptr;
   }
 
   Chunk* k = _chunk;            // Get filled-up chunk address
-  _chunk = ChunkPool::allocate_chunk(len, alloc_failmode);
+  _chunk = ChunkPool::allocate_chunk(this, len, alloc_failmode);
 
   if (_chunk == nullptr) {
     _chunk = k;                 // restore the previous value of _chunk
@@ -303,8 +347,6 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   return result;
 }
 
-
-
 // Reallocate storage in Arena.
 void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFailType alloc_failmode) {
   if (new_size == 0) {
@@ -316,21 +358,21 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFail
     return Amalloc(new_size, alloc_failmode); // as with realloc(3), a null old ptr is equivalent to malloc(3)
   }
   char *c_old = (char*)old_ptr; // Handy name
-  // Stupid fast special case
-  if( new_size <= old_size ) {  // Shrink in-place
-    if( c_old+old_size == _hwm) // Attempt to free the excess bytes
-      _hwm = c_old+new_size;    // Adjust hwm
-    return c_old;
-  }
 
-  // make sure that new_size is legal
+  // Make sure that new_size is legal
   size_t corrected_new_size = ARENA_ALIGN(new_size);
 
-  // See if we can resize in-place
-  if( (c_old+old_size == _hwm) &&       // Adjusting recent thing
-      (c_old+corrected_new_size <= _max) ) {      // Still fits where it sits
-    _hwm = c_old+corrected_new_size;      // Adjust hwm
-    return c_old;               // Return old pointer
+  // Reallocating the latest allocation?
+  if (c_old + old_size == _hwm) {
+    assert(_chunk->bottom() <= c_old, "invariant");
+
+    // Reallocate in place if it fits. Also handles shrinking
+    if (pointer_delta(_max, c_old, 1) >= corrected_new_size) {
+      _hwm = c_old + corrected_new_size;
+      return c_old;
+    }
+  } else if (new_size <= old_size) { // Shrink in place
+    return c_old;
   }
 
   // Oops, got to relocate guts

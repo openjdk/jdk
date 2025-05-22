@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,12 @@ import java.awt.peer.*;
 import java.io.*;
 import java.util.Locale;
 import java.util.Arrays;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
 
-class XFileDialogPeer extends XDialogPeer
+final class XFileDialogPeer extends XDialogPeer
         implements FileDialogPeer, ActionListener, ItemListener,
                    KeyEventDispatcher, XChoicePeerListener {
 
@@ -139,7 +137,7 @@ class XFileDialogPeer extends XDialogPeer
         this.target = target;
     }
 
-    @SuppressWarnings({"removal","deprecation"})
+    @SuppressWarnings("deprecation")
     private void init(FileDialog target) {
         fileDialog = target; //new Dialog(target, target.getTitle(), false);
         this.title = target.getTitle();
@@ -151,12 +149,7 @@ class XFileDialogPeer extends XDialogPeer
         savedDir = target.getDirectory();
         // Shouldn't save 'user.dir' to 'savedDir'
         // since getDirectory() will be incorrect after handleCancel
-        userDir = AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                public String run() {
-                    return System.getProperty("user.dir");
-                }
-            });
+        userDir = System.getProperty("user.dir");
 
         installStrings();
         gbl = new GridBagLayout();
@@ -204,7 +197,6 @@ class XFileDialogPeer extends XDialogPeer
         // After showing we should display 'user.dir' as current directory
         // if user didn't set directory programmatically
         pathField = new TextField(savedDir != null ? savedDir : userDir);
-        @SuppressWarnings("serial") // Anonymous class
         Choice tmp = new Choice() {
                 public Dimension getPreferredSize() {
                     return new Dimension(PATH_CHOICE_WIDTH, pathField.getPreferredSize().height);
@@ -321,9 +313,11 @@ class XFileDialogPeer extends XDialogPeer
 
     }
 
+    @Override
     public void updateMinimumSize() {
     }
 
+    @Override
     public void updateIconImages() {
         if (winAttr.icons == null){
             winAttr.iconsInherited = false;
@@ -552,6 +546,7 @@ class XFileDialogPeer extends XDialogPeer
      * @see java.awt.event.ItemEvent
      * ItemEvent.ITEM_STATE_CHANGED
      */
+    @Override
     public void itemStateChanged(ItemEvent itemEvent){
         if (itemEvent.getID() != ItemEvent.ITEM_STATE_CHANGED ||
             itemEvent.getStateChange() == ItemEvent.DESELECTED) {
@@ -611,6 +606,7 @@ class XFileDialogPeer extends XDialogPeer
         return parent;
     }
 
+    @Override
     public void actionPerformed( ActionEvent actionEvent ) {
         String actionCommand = actionEvent.getActionCommand();
         Object source = actionEvent.getSource();
@@ -647,6 +643,7 @@ class XFileDialogPeer extends XDialogPeer
         }
     }
 
+    @Override
     public boolean dispatchKeyEvent(KeyEvent keyEvent) {
         int id = keyEvent.getID();
         int keyCode = keyEvent.getKeyCode();
@@ -681,6 +678,7 @@ class XFileDialogPeer extends XDialogPeer
     /**
      * set the file
      */
+    @Override
     public void setFile(String file) {
 
         if (file == null) {
@@ -714,6 +712,7 @@ class XFileDialogPeer extends XDialogPeer
      * since 'setDirectory' will be ignored
      * We can't update savedDir here now since it used very often
      */
+    @Override
     public void setDirectory(String dir) {
 
         if (dir == null) {
@@ -771,11 +770,13 @@ class XFileDialogPeer extends XDialogPeer
      * set filenameFilter
      *
      */
+    @Override
     public void setFilenameFilter(FilenameFilter filter) {
         this.filter = filter;
     }
 
 
+    @Override
     public void dispose() {
         FileDialog fd = (FileDialog)fileDialog;
         if (fd != null) {
@@ -785,7 +786,7 @@ class XFileDialogPeer extends XDialogPeer
     }
 
     // 03/02/2005 b5097243 Pressing 'ESC' on a file dlg does not dispose the dlg on Xtoolkit
-    @SuppressWarnings("deprecation")
+    @Override
     public void setVisible(boolean b){
         if (fileDialog == null) {
             init(target);
@@ -832,6 +833,7 @@ class XFileDialogPeer extends XDialogPeer
      * Refresh the unfurled choice at the time of the opening choice according to the text of the path field
      * See 6240074 for more information
      */
+    @Override
     public void unfurledChoiceOpening(ListHelper choiceHelper){
 
         // When the unfurled choice is opening the first time, we need only to add elements, otherwise we've got exception
@@ -852,6 +854,7 @@ class XFileDialogPeer extends XDialogPeer
      * Refresh the file dialog at the time of the closing choice according to the selected item of the choice
      * See 6240074 for more information
      */
+    @Override
     public void unfurledChoiceClosing(){
           // This is the exactly same code as invoking later at the time of the itemStateChanged
           // Here is we restore Windows behaviour: change current directory if user press 'ESC'
@@ -861,7 +864,7 @@ class XFileDialogPeer extends XDialogPeer
 }
 
 @SuppressWarnings("serial") // JDK-implementation class
-class Separator extends Canvas {
+final class Separator extends Canvas {
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
     int orientation;
@@ -878,6 +881,7 @@ class Separator extends Canvas {
         }
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public void paint(Graphics g) {
         int x1, y1, x2, y2;
@@ -912,7 +916,7 @@ class Separator extends Canvas {
  * are displayed in the dialog. This filter is generally specified as a regular
  * expression. The class is used to implement Motif-like filtering.
  */
-class FileDialogFilter implements FilenameFilter {
+final class FileDialogFilter implements FilenameFilter {
 
     String filter;
 
@@ -923,6 +927,7 @@ class FileDialogFilter implements FilenameFilter {
     /*
      * Tells whether or not the specified file should be included in a file list
      */
+    @Override
     public boolean accept(File dir, String fileName) {
 
         File f = new File(dir, fileName);

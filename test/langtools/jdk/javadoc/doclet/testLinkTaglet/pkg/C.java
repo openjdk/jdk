@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ package pkg;
  * Qualified Link: {@link #method(pkg.C.InnerC, pkg.C.InnerC2)}.<br/>
  * Unqualified Link: {@link #method(C.InnerC, C.InnerC2)}.<br/>
  * Unqualified Link: {@link #method(InnerC, InnerC2)}.<br/>
+ * Link w/o Signature: {@link #method}.<br/>
  * Package Link: {@link pkg}.<br/>
  *
  *

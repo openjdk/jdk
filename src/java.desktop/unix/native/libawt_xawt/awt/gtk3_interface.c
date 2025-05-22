@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,6 +285,9 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         fp_g_main_context_iteration =
             dl_symbol("g_main_context_iteration");
+        fp_g_main_context_default = dl_symbol("g_main_context_default");
+        fp_g_main_context_is_owner = dl_symbol("g_main_context_is_owner");
+
 
         fp_g_value_init = dl_symbol("g_value_init");
         fp_g_type_is_a = dl_symbol("g_type_is_a");
@@ -556,6 +559,7 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
         fp_g_signal_connect_data = dl_symbol("g_signal_connect_data");
         fp_gtk_widget_show = dl_symbol("gtk_widget_show");
         fp_gtk_main = dl_symbol("gtk_main");
+        fp_gtk_main_level = dl_symbol("gtk_main_level");
 
         fp_g_path_get_dirname = dl_symbol("g_path_get_dirname");
 
@@ -613,11 +617,14 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         glib_version_2_68 = !fp_glib_check_version(2, 68, 0);
         if (glib_version_2_68) {
+            // those function are called only by Screencast / Remote desktop
             fp_g_string_replace = dl_symbol("g_string_replace"); //since: 2.68
             fp_g_uuid_string_is_valid = //since: 2.52
                     dl_symbol("g_uuid_string_is_valid");
+            fp_g_variant_print = dl_symbol("g_variant_print"); // since 2.24
         }
         fp_g_string_printf = dl_symbol("g_string_printf");
+        fp_g_strconcat = dl_symbol("g_strconcat");
 
         fp_g_error_free = dl_symbol("g_error_free");
         fp_g_unix_fd_list_get = dl_symbol("g_unix_fd_list_get");
@@ -3098,6 +3105,7 @@ static void gtk3_init(GtkApi* gtk) {
     gtk->g_variant_new_string = fp_g_variant_new_string;
     gtk->g_variant_new_boolean = fp_g_variant_new_boolean;
     gtk->g_variant_new_uint32 = fp_g_variant_new_uint32;
+    gtk->g_variant_print = fp_g_variant_print;
 
     gtk->g_variant_get = fp_g_variant_get;
     gtk->g_variant_get_string = fp_g_variant_get_string;
@@ -3122,9 +3130,12 @@ static void gtk3_init(GtkApi* gtk) {
     gtk->g_string_free = fp_g_string_free;
     gtk->g_string_replace = fp_g_string_replace;
     gtk->g_string_printf = fp_g_string_printf;
+    gtk->g_strconcat = fp_g_strconcat;
     gtk->g_uuid_string_is_valid = fp_g_uuid_string_is_valid;
 
     gtk->g_main_context_iteration = fp_g_main_context_iteration;
+    gtk->g_main_context_default = fp_g_main_context_default;
+    gtk->g_main_context_is_owner = fp_g_main_context_is_owner;
     gtk->g_error_free = fp_g_error_free;
     gtk->g_unix_fd_list_get = fp_g_unix_fd_list_get;
 

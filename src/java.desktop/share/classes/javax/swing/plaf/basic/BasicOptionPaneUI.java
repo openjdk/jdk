@@ -39,10 +39,6 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Locale;
-import java.security.AccessController;
-
-import sun.security.action.GetPropertyAction;
-
 
 /**
  * Provides the basic look and feel for a <code>JOptionPane</code>.
@@ -482,7 +478,6 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                 if (nl >= 0) {
                     // break up newlines
                     if (nl == 0) {
-                        @SuppressWarnings("serial") // anonymous class
                                 JPanel breakPanel = new JPanel() {
                             public Dimension getPreferredSize() {
                                 Font f = getFont();

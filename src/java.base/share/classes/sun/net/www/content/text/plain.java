@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 1996, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,15 @@
  * questions.
  */
 
-/**
- * Plain text file handler.
- * @author  Steven B. Byrne
- */
 package sun.net.www.content.text;
 import java.net.*;
 import java.io.InputStream;
 import java.io.IOException;
 
+/**
+ * Plain text file handler.
+ * @author  Steven B. Byrne
+ */
 public class plain extends ContentHandler {
     /**
      * Returns a PlainTextInputStream object from which data

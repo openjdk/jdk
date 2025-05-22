@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,13 +23,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 
 size_t HeapAlignment = 0;
@@ -38,10 +38,6 @@ size_t SpaceAlignment = 0;
 void GCArguments::initialize() {
   if (FullGCALot && FLAG_IS_DEFAULT(MarkSweepAlwaysCompactCount)) {
     MarkSweepAlwaysCompactCount = 1;  // Move objects every gc.
-  }
-
-  if (!UseParallelGC && FLAG_IS_DEFAULT(ScavengeBeforeFullGC)) {
-    FLAG_SET_DEFAULT(ScavengeBeforeFullGC, false);
   }
 
   if (GCTimeLimit == 100) {
@@ -102,7 +98,7 @@ void GCArguments::assert_size_info() {
 #endif // ASSERT
 
 void GCArguments::initialize_size_info() {
-  log_debug(gc, heap)("Minimum heap " SIZE_FORMAT "  Initial heap " SIZE_FORMAT "  Maximum heap " SIZE_FORMAT,
+  log_debug(gc, heap)("Minimum heap %zu  Initial heap %zu  Maximum heap %zu",
                       MinHeapSize, InitialHeapSize, MaxHeapSize);
 
   DEBUG_ONLY(assert_size_info();)
@@ -112,10 +108,10 @@ void GCArguments::initialize_heap_flags_and_sizes() {
   assert(SpaceAlignment != 0, "Space alignment not set up properly");
   assert(HeapAlignment != 0, "Heap alignment not set up properly");
   assert(HeapAlignment >= SpaceAlignment,
-         "HeapAlignment: " SIZE_FORMAT " less than SpaceAlignment: " SIZE_FORMAT,
+         "HeapAlignment: %zu less than SpaceAlignment: %zu",
          HeapAlignment, SpaceAlignment);
   assert(HeapAlignment % SpaceAlignment == 0,
-         "HeapAlignment: " SIZE_FORMAT " not aligned by SpaceAlignment: " SIZE_FORMAT,
+         "HeapAlignment: %zu not aligned by SpaceAlignment: %zu",
          HeapAlignment, SpaceAlignment);
 
   if (FLAG_IS_CMDLINE(MaxHeapSize)) {
@@ -169,6 +165,13 @@ void GCArguments::initialize_heap_flags_and_sizes() {
   }
 
   FLAG_SET_ERGO(MinHeapDeltaBytes, align_up(MinHeapDeltaBytes, SpaceAlignment));
+
+  if (checked_cast<uint>(ObjectAlignmentInBytes) > GCCardSizeInBytes) {
+    err_msg message("ObjectAlignmentInBytes %u is larger than GCCardSizeInBytes %u",
+                    ObjectAlignmentInBytes, GCCardSizeInBytes);
+    vm_exit_during_initialization("Invalid combination of GCCardSizeInBytes and ObjectAlignmentInBytes",
+                                  message);
+  }
 
   DEBUG_ONLY(assert_flags();)
 }

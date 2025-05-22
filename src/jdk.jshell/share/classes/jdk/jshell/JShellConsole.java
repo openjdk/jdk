@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.IOError;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * An interface providing functionality for {@link java.io.Console} in the user's snippet.

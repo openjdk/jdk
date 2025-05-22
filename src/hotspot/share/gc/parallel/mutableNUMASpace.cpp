@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/mutableNUMASpace.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -79,25 +78,11 @@ void MutableNUMASpace::mangle_unused_area() {
   // This method should do nothing.
   // It can be called on a numa space during a full compaction.
 }
-void MutableNUMASpace::mangle_unused_area_complete() {
-  // This method should do nothing.
-  // It can be called on a numa space during a full compaction.
-}
+
 void MutableNUMASpace::mangle_region(MemRegion mr) {
   // This method should do nothing because numa spaces are not mangled.
 }
-void MutableNUMASpace::set_top_for_allocations(HeapWord* v) {
-  assert(false, "Do not mangle MutableNUMASpace's");
-}
-void MutableNUMASpace::set_top_for_allocations() {
-  // This method should do nothing.
-}
-void MutableNUMASpace::check_mangled_unused_area(HeapWord* limit) {
-  // This method should do nothing.
-}
-void MutableNUMASpace::check_mangled_unused_area_complete() {
-  // This method should do nothing.
-}
+
 #endif  // NOT_PRODUCT
 
 // There may be unallocated holes in the middle chunks
@@ -113,7 +98,7 @@ void MutableNUMASpace::ensure_parsability() {
         while (words_left_to_fill > 0) {
           size_t words_to_fill = MIN2(words_left_to_fill, CollectedHeap::filler_array_max_size());
           assert(words_to_fill >= CollectedHeap::min_fill_size(),
-                 "Remaining size (" SIZE_FORMAT ") is too small to fill (based on " SIZE_FORMAT " and " SIZE_FORMAT ")",
+                 "Remaining size (%zu) is too small to fill (based on %zu and %zu)",
                  words_to_fill, words_left_to_fill, CollectedHeap::filler_array_max_size());
           CollectedHeap::fill_with_object(cur_top, words_to_fill);
           cur_top += words_to_fill;
@@ -227,7 +212,7 @@ void MutableNUMASpace::bias_region(MemRegion mr, uint lgrp_id) {
     // Then we uncommit the pages in the range.
     // The alignment_hint argument must be less than or equal to the small page
     // size if not using large pages or else this function does nothing.
-    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), os_align);
+    os::disclaim_memory((char*)aligned_region.start(), aligned_region.byte_size());
     // And make them local/first-touch biased.
     os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size(), checked_cast<int>(lgrp_id));
   }
@@ -623,18 +608,21 @@ void MutableNUMASpace::print_short_on(outputStream* st) const {
   st->print(")");
 }
 
-void MutableNUMASpace::print_on(outputStream* st) const {
-  MutableSpace::print_on(st);
+void MutableNUMASpace::print_on(outputStream* st, const char* prefix) const {
+  MutableSpace::print_on(st, prefix);
+
+  StreamIndentor si(st, 1);
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
-    st->print("    lgrp %u", ls->lgrp_id());
-    ls->space()->print_on(st);
+    FormatBuffer<128> lgrp_message("lgrp %u ", ls->lgrp_id());
+    ls->space()->print_on(st, lgrp_message);
     if (NUMAStats) {
+      StreamIndentor si2(st, 1);
       for (int i = 0; i < lgrp_spaces()->length(); i++) {
         lgrp_spaces()->at(i)->accumulate_statistics(page_size());
       }
-      st->print("    local/remote/unbiased/uncommitted: " SIZE_FORMAT "K/"
-                SIZE_FORMAT "K/" SIZE_FORMAT "K/" SIZE_FORMAT "K\n",
+      st->print("local/remote/unbiased/uncommitted: %zuK/"
+                "%zuK/%zuK/%zuK\n",
                 ls->space_stats()->_local_space / K,
                 ls->space_stats()->_remote_space / K,
                 ls->space_stats()->_unbiased_space / K,

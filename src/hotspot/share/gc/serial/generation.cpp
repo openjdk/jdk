@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/serialHeap.hpp"
@@ -30,8 +29,8 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/space.inline.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/space.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -57,37 +56,4 @@ Generation::Generation(ReservedSpace rs, size_t initial_size) :
 
 size_t Generation::max_capacity() const {
   return reserved().byte_size();
-}
-
-void Generation::print() const { print_on(tty); }
-
-void Generation::print_on(outputStream* st)  const {
-  st->print(" %-20s", name());
-  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
-             capacity()/K, used()/K);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-              p2i(_virtual_space.low_boundary()),
-              p2i(_virtual_space.high()),
-              p2i(_virtual_space.high_boundary()));
-}
-
-void Generation::print_summary_info_on(outputStream* st) {
-  StatRecord* sr = stat_record();
-  double time = sr->accumulated_time.seconds();
-  st->print_cr("Accumulated %s generation GC time %3.7f secs, "
-               "%u GC's, avg GC time %3.7f",
-               SerialHeap::heap()->is_young_gen(this) ? "young" : "old" ,
-               time,
-               sr->invocations,
-               sr->invocations > 0 ? time / sr->invocations : 0.0);
-}
-
-size_t Generation::max_contiguous_available() const {
-  // The largest number of contiguous free words in this or any higher generation.
-  size_t avail = contiguous_available();
-  size_t old_avail = 0;
-  if (SerialHeap::heap()->is_young_gen(this)) {
-    old_avail = SerialHeap::heap()->old_gen()->contiguous_available();
-  }
-  return MAX2(avail, old_avail);
 }

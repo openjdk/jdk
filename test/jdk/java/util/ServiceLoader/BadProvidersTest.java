@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @library /test/lib
  * @modules jdk.compiler
- * @enablePreview
  * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm BadProvidersTest
  * @summary Basic test of ServiceLoader with bad provider and bad provider

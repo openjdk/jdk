@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,70 +24,112 @@
 # questions.
 #
 
-# Create a bundle in the current directory, containing what's needed to run
-# the 'autoconf' program by the OpenJDK build.
+# Create a bundle in OpenJDK build folder, containing what's needed to run
+# the 'autoconf' program by the OpenJDK build. To override TARGET_PLATFORM
+# just set the variable before running this script.
+
+# This script fetches sources from network so make sure your proxy is setup appropriately.
+
+# colored print to highlight some of the logs
+function print_log()
+{
+  Color_Cyan='\033[1;36m'   # Cyan
+  Color_Off='\033[0m'       # Reset color
+  printf "${Color_Cyan}> $1${Color_Off}\n"
+}
+
 
 # Autoconf depends on m4, so download and build that first.
 AUTOCONF_VERSION=2.69
 M4_VERSION=1.4.18
 
 PACKAGE_VERSION=1.0.1
-TARGET_PLATFORM=linux_x86
+case `uname -s` in
+    Darwin)
+        os=macosx
+        ;;
+    Linux)
+        os=linux
+        ;;
+    CYGWIN*)
+        os=cygwin
+        ;;
+esac
+case `uname -m` in
+    arm64|aarch64)
+        arch=aarch64
+        ;;
+    amd64|x86_64|x64)
+        arch=x64
+        ;;
+esac
+TARGET_PLATFORM=${TARGET_PLATFORM:="${os}_${arch}"}
+
 MODULE_NAME=autoconf-$TARGET_PLATFORM-$AUTOCONF_VERSION+$PACKAGE_VERSION
 BUNDLE_NAME=$MODULE_NAME.tar.gz
 
-TMPDIR=`mktemp -d -t autoconfbundle-XXXX`
-trap "rm -rf \"$TMPDIR\"" EXIT
+SCRIPT_DIR="$(cd "$(dirname $0)" > /dev/null && pwd)"
+BASEDIR="$(cd "$SCRIPT_DIR/../.."  > /dev/null && pwd)"
+OUTPUT_ROOT="$BASEDIR/build/autoconf"
 
-ORIG_DIR=`pwd`
-cd $TMPDIR
-OUTPUT_DIR=$TMPDIR/$MODULE_NAME
-mkdir -p $OUTPUT_DIR/usr
+IMAGE_DIR=$OUTPUT_ROOT/$MODULE_NAME
+mkdir -p $IMAGE_DIR/usr
+cd $OUTPUT_ROOT
 
 # Download and build m4
 
 if test "x$TARGET_PLATFORM" = xcygwin_x64; then
   # On cygwin 64-bit, just copy the cygwin .exe file
-  mkdir -p $OUTPUT_DIR/usr/bin
-  cp /usr/bin/m4 $OUTPUT_DIR/usr/bin
+  mkdir -p $IMAGE_DIR/usr/bin
+  cp /usr/bin/m4 $IMAGE_DIR/usr/bin
 elif test "x$TARGET_PLATFORM" = xcygwin_x86; then
   # On cygwin 32-bit, just copy the cygwin .exe file
-  mkdir -p $OUTPUT_DIR/usr/bin
-  cp /usr/bin/m4 $OUTPUT_DIR/usr/bin
+  mkdir -p $IMAGE_DIR/usr/bin
+  cp /usr/bin/m4 $IMAGE_DIR/usr/bin
 elif test "x$TARGET_PLATFORM" = xlinux_x64; then
   M4_VERSION=1.4.13-5
-  wget http://yum.oracle.com/repo/OracleLinux/OL6/latest/x86_64/getPackage/m4-$M4_VERSION.el6.x86_64.rpm
-  cd $OUTPUT_DIR
-  rpm2cpio ../m4-$M4_VERSION.el6.x86_64.rpm | cpio -d -i
+  wget https://yum.oracle.com/repo/OracleLinux/OL6/latest/x86_64/getPackage/m4-$M4_VERSION.el6.x86_64.rpm
+  cd $IMAGE_DIR
+  rpm2cpio $OUTPUT_ROOT/m4-$M4_VERSION.el6.x86_64.rpm | cpio -d -i
 elif test "x$TARGET_PLATFORM" = xlinux_x86; then
   M4_VERSION=1.4.13-5
   wget http://yum.oracle.com/repo/OracleLinux/OL6/latest/i386/getPackage/m4-$M4_VERSION.el6.i686.rpm
-  cd $OUTPUT_DIR
-  rpm2cpio ../m4-$M4_VERSION.el6.i686.rpm | cpio -d -i
+  cd $IMAGE_DIR
+  rpm2cpio $OUTPUT_ROOT/m4-$M4_VERSION.el6.i686.rpm | cpio -d -i
 else
+  print_log "m4: download"
   wget https://ftp.gnu.org/gnu/m4/m4-$M4_VERSION.tar.gz
-  tar xzf m4-$M4_VERSION.tar.gz
+  tar -xzf m4-$M4_VERSION.tar.gz
   cd m4-$M4_VERSION
-  ./configure --prefix=$OUTPUT_DIR/usr
+  print_log "m4: configure"
+  ./configure --prefix=$IMAGE_DIR/usr CFLAGS="-w -Wno-everything"
+  print_log "m4: make"
   make
+  print_log "m4: make install"
   make install
   cd ..
 fi
 
 # Download and build autoconf
 
+print_log "autoconf: download"
 wget https://ftp.gnu.org/gnu/autoconf/autoconf-$AUTOCONF_VERSION.tar.gz
-tar xzf autoconf-$AUTOCONF_VERSION.tar.gz
+tar -xzf autoconf-$AUTOCONF_VERSION.tar.gz
 cd autoconf-$AUTOCONF_VERSION
-./configure --prefix=$OUTPUT_DIR/usr M4=$OUTPUT_DIR/usr/bin/m4
+print_log "autoconf: configure"
+./configure --prefix=$IMAGE_DIR/usr M4=$IMAGE_DIR/usr/bin/m4
+print_log "autoconf: make"
 make
+print_log "autoconf: make install"
 make install
 cd ..
 
-perl -pi -e "s!$OUTPUT_DIR/!./!" $OUTPUT_DIR/usr/bin/auto* $OUTPUT_DIR/usr/share/autoconf/autom4te.cfg
-cp $OUTPUT_DIR/usr/share/autoconf/autom4te.cfg $OUTPUT_DIR/autom4te.cfg
+# The resulting scripts from installation folder use absolute paths to reference other files within installation folder
+print_log "replace absolue paths from installation files with a relative ."
+perl -pi -e "s!$IMAGE_DIR/!./!" $IMAGE_DIR/usr/bin/auto* $IMAGE_DIR/usr/share/autoconf/autom4te.cfg
 
-cat > $OUTPUT_DIR/autoconf << EOF
+print_log "creating $IMAGE_DIR/autoconf wrapper script"
+cat > $IMAGE_DIR/autoconf << EOF
 #!/bin/bash
 # Get an absolute path to this script
 this_script_dir=\`dirname \$0\`
@@ -100,17 +142,13 @@ export AUTOHEADER="\$this_script_dir/usr/bin/autoheader"
 export AC_MACRODIR="\$this_script_dir/usr/share/autoconf"
 export autom4te_perllibdir="\$this_script_dir/usr/share/autoconf"
 
-autom4te_cfg=\$this_script_dir/usr/share/autoconf/autom4te.cfg
-cp \$this_script_dir/autom4te.cfg \$autom4te_cfg
+PREPEND_INCLUDE="--prepend-include \$this_script_dir/usr/share/autoconf"
 
-echo 'begin-language: "M4sugar"' >> \$autom4te_cfg
-echo "args: --prepend-include '"\$this_script_dir/usr/share/autoconf"'" >> \$autom4te_cfg
-echo 'end-language: "M4sugar"' >> \$autom4te_cfg
-
-exec \$this_script_dir/usr/bin/autoconf "\$@"
+exec \$this_script_dir/usr/bin/autoconf \$PREPEND_INCLUDE "\$@"
 EOF
-chmod +x $OUTPUT_DIR/autoconf
-cd $OUTPUT_DIR
-tar -cvzf ../$BUNDLE_NAME *
-cd ..
-cp $BUNDLE_NAME "$ORIG_DIR"
+
+chmod +x $IMAGE_DIR/autoconf
+
+print_log "archiving $IMAGE_DIR directory as $OUTPUT_ROOT/$BUNDLE_NAME"
+cd $IMAGE_DIR
+tar -cvzf $OUTPUT_ROOT/$BUNDLE_NAME *

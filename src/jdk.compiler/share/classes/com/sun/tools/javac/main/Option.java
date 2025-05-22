@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.StringJoiner;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.lang.model.SourceVersion;
@@ -146,13 +147,7 @@ public enum Option {
         }
     },
 
-    // -nowarn is retained for command-line backward compatibility
-    NOWARN("-nowarn", "opt.nowarn", STANDARD, BASIC) {
-        @Override
-        public void process(OptionHelper helper, String option) {
-            helper.put("-Xlint:none", option);
-        }
-    },
+    NOWARN("-nowarn", "opt.nowarn", STANDARD, BASIC),
 
     VERBOSE("-verbose", "opt.verbose", STANDARD, BASIC),
 
@@ -381,6 +376,8 @@ public enum Option {
 
     PREVIEW("--enable-preview", "opt.preview", STANDARD, BASIC),
 
+    DISABLE_LINE_DOC_COMMENTS("--disable-line-doc-comments", "opt.lineDocComments", EXTENDED, BASIC),
+
     PROFILE("-profile", "opt.arg.profile", "opt.profile", STANDARD, BASIC) {
         @Override
         public void process(OptionHelper helper, String option, String operand) throws InvalidValueException {
@@ -495,18 +492,15 @@ public enum Option {
             log.printRawLines(WriterKind.STDOUT, log.localize(PrefixKind.JAVAC, "opt.help.lint.header"));
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
-                                            "all",
+                                            LINT_CUSTOM_ALL,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.all")));
-            for (LintCategory lc : LintCategory.values()) {
-                log.printRawLines(WriterKind.STDOUT,
-                                  String.format(LINT_KEY_FORMAT,
-                                                lc.option,
-                                                log.localize(PrefixKind.JAVAC,
-                                                             "opt.Xlint.desc." + lc.option)));
-            }
+            LintCategory.options().forEach(ident -> log.printRawLines(WriterKind.STDOUT,
+                              String.format(LINT_KEY_FORMAT,
+                                            ident,
+                                            log.localize(PrefixKind.JAVAC, "opt.Xlint.desc." + ident))));
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
-                                            "none",
+                                            LINT_CUSTOM_NONE,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.none")));
             super.process(helper, option);
         }
@@ -840,6 +834,16 @@ public enum Option {
     };
 
     /**
+     * Special lint category key meaning "all lint categories".
+     */
+    public static final String LINT_CUSTOM_ALL = "all";
+
+    /**
+     * Special lint category key meaning "no lint categories".
+     */
+    public static final String LINT_CUSTOM_NONE = "none";
+
+    /**
      * This exception is thrown when an invalid value is given for an option.
      * The detail string gives a detailed, localized message, suitable for use
      * in error messages reported to the user.
@@ -1085,6 +1089,17 @@ public enum Option {
         return kind;
     }
 
+    /**
+     * If this option is named {@code FOO}, obtain the option named {@code FOO_CUSTOM}.
+     *
+     * @param option regular option
+     * @return corresponding custom option
+     * @throws IllegalArgumentException if no such option exists
+     */
+    public Option getCustom() {
+        return Option.valueOf(name() + "_CUSTOM");
+    }
+
     public boolean isInBasicOptionGroup() {
         return group == BASIC;
     }
@@ -1153,6 +1168,7 @@ public enum Option {
      * @implNote The return value is the opposite of that used by {@link #process}.
      */
     public void handleOption(OptionHelper helper, String arg, Iterator<String> rest) throws InvalidValueException {
+        helper.initialize();
         if (hasArg()) {
             String option;
             String operand;
@@ -1206,6 +1222,7 @@ public enum Option {
      * @throws InvalidValueException if an error occurred
      */
     public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+        helper.initialize();
         if (choices != null) {
             if (choiceKind == ChoiceKind.ONEOF) {
                 // some clients like to see just one of option+choice set
@@ -1366,12 +1383,11 @@ public enum Option {
 
     private static Set<String> getXLintChoices() {
         Set<String> choices = new LinkedHashSet<>();
-        choices.add("all");
-        for (Lint.LintCategory c : Lint.LintCategory.values()) {
-            choices.add(c.option);
-            choices.add("-" + c.option);
-        }
-        choices.add("none");
+        choices.add(LINT_CUSTOM_ALL);
+        Lint.LintCategory.options().stream()
+          .flatMap(ident -> Stream.of(ident, "-" + ident))
+          .forEach(choices::add);
+        choices.add(LINT_CUSTOM_NONE);
         return choices;
     }
 

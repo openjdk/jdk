@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -48,7 +48,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Cyrl" draft="provisional">روسی</script>
 			<script type="Hans" draft="provisional">هان (ساده کرتگێن)</script>
 			<script type="Hant" draft="provisional">هان (اسلیگێن)</script>
-			<script type="Latn" draft="provisional">لاتین</script>
+			<script type="Latn">لاتینی</script>
 			<script type="Zxxx" draft="provisional">نبشته نبوتگێن سیاهگ</script>
 			<script type="Zzzz" draft="provisional">کۆڈ نبوتگێن سیاهگ</script>
 		</scripts>
@@ -252,6 +252,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<pattern draft="provisional">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{1} - {0}</intervalFormatFallback>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -373,6 +380,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="provisional">رۆنندی یورپئے گرماگی ساهت</daylight>
 				</long>
 			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>گرین‌وِچ مین ٹائم</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic draft="provisional">هئواییئے ساهت</generic>
@@ -426,23 +438,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="provisional">لۆرڈ هئو اُسترالیائے گرماگی ساهت</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="provisional">ماکواریئے گیشّتگێن ساهت</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="provisional">مَگَدَنئے ساهت</generic>
 					<standard draft="provisional">مَگَدَنئے گیشّتگێن ساهت</standard>
 					<daylight draft="provisional">مَگَدَنئے گرماگی ساهت</daylight>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="provisional">شمالی مِکسیکۆئے ساهت</generic>
-					<standard draft="provisional">شمالی مِکسیکۆئے گیشّتگێن ساهت</standard>
-					<daylight draft="provisional">شمالی مِکسیکۆئے گرماگی ساهت</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

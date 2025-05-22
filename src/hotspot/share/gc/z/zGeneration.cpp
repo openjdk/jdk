@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -52,6 +51,7 @@
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
@@ -131,10 +131,6 @@ ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocato
     _stat_relocation(),
     _gc_timer(nullptr) {}
 
-bool ZGeneration::is_initialized() const {
-  return _mark.is_initialized();
-}
-
 ZWorkers* ZGeneration::workers() {
   return &_workers;
 }
@@ -151,8 +147,8 @@ void ZGeneration::threads_do(ThreadClosure* tc) const {
   _workers.threads_do(tc);
 }
 
-void ZGeneration::mark_flush_and_free(Thread* thread) {
-  _mark.flush_and_free(thread);
+void ZGeneration::mark_flush(Thread* thread) {
+  _mark.flush(thread);
 }
 
 void ZGeneration::mark_free() {
@@ -164,7 +160,7 @@ void ZGeneration::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
   // the page allocator lock, and trying to satisfy stalled allocations
   // too frequently.
   if (selector->should_free_empty_pages(bulk)) {
-    const size_t freed = ZHeap::heap()->free_empty_pages(selector->empty_pages());
+    const size_t freed = ZHeap::heap()->free_empty_pages(_id, selector->empty_pages());
     increase_freed(freed);
     selector->clear_empty_pages();
   }
@@ -186,25 +182,14 @@ static double fragmentation_limit(ZGenerationId generation) {
   }
 }
 
-void ZGeneration::select_relocation_set(ZGenerationId generation, bool promote_all) {
+void ZGeneration::select_relocation_set(bool promote_all) {
   // Register relocatable pages with selector
-  ZRelocationSetSelector selector(fragmentation_limit(generation));
+  ZRelocationSetSelector selector(fragmentation_limit(_id));
   {
     ZGenerationPagesIterator pt_iter(_page_table, _id, _page_allocator);
     for (ZPage* page; pt_iter.next(&page);) {
       if (!page->is_relocatable()) {
         // Not relocatable, don't register
-        // Note that the seqnum can change under our feet here as the page
-        // can be concurrently freed and recycled by a concurrent generation
-        // collection. However this property is stable across such transitions.
-        // If it was not relocatable before recycling, then it won't be
-        // relocatable after it gets recycled either, as the seqnum atomically
-        // becomes allocating for the given generation. The opposite property
-        // also holds: if the page is relocatable, then it can't have been
-        // concurrently freed; if it was re-allocated it would not be
-        // relocatable, and if it was not re-allocated we know that it was
-        // allocated earlier than mark start of the current generation
-        // collection.
         continue;
       }
 
@@ -217,15 +202,14 @@ void ZGeneration::select_relocation_set(ZGenerationId generation, bool promote_a
 
         // Reclaim empty pages in bulk
 
-        // An active iterator blocks immediate recycle and delete of pages.
-        // The intent it to allow the code that iterates over the pages to
-        // safely read the properties of the pages without them being changed
-        // by another thread. However, this function both iterates over the
-        // pages AND frees/recycles them. We "yield" the iterator, so that we
-        // can perform immediate recycling (as long as no other thread is
-        // iterating over the pages). The contract is that the pages that are
-        // about to be freed are "owned" by this thread, and no other thread
-        // will change their states.
+        // An active iterator blocks immediate deletion of pages. The intent is
+        // to allow the code that iterates over pages to safely read properties
+        // of the pages without them being freed/deleted. However, this
+        // function both iterates over the pages AND frees them. We "yield" the
+        // iterator, so that we can perform immediate deletion (as long as no
+        // other thread is iterating over the pages). The contract is that the
+        // pages that are about to be freed are "owned" by this thread, and no
+        // other thread will change their states.
         pt_iter.yield([&]() {
           free_empty_pages(&selector, 64 /* bulk */);
         });
@@ -242,7 +226,7 @@ void ZGeneration::select_relocation_set(ZGenerationId generation, bool promote_a
   // Selecting tenuring threshold must be done after select
   // which produces the liveness data, but before install,
   // which consumes the tenuring threshold.
-  if (generation == ZGenerationId::young) {
+  if (is_young()) {
     ZGeneration::young()->select_tenuring_threshold(selector.stats(), promote_all);
   }
 
@@ -295,10 +279,9 @@ void ZGeneration::reset_statistics() {
   _freed = 0;
   _promoted = 0;
   _compacted = 0;
-  _page_allocator->reset_statistics(_id);
 }
 
-ssize_t ZGeneration::freed() const {
+size_t ZGeneration::freed() const {
   return _freed;
 }
 
@@ -360,7 +343,7 @@ void ZGeneration::log_phase_switch(Phase from, Phase to) {
     index += 1;
   }
 
-  assert(index < ARRAY_SIZE(str), "OOB: " SIZE_FORMAT " < " SIZE_FORMAT, index, ARRAY_SIZE(str));
+  assert(index < ARRAY_SIZE(str), "OOB: %zu < %zu", index, ARRAY_SIZE(str));
 
   Events::log_zgc_phase_switch("%-21s %4u", str[index], seqnum());
 }
@@ -438,7 +421,7 @@ public:
   virtual void doit() {
     // Setup GC id and active marker
     GCIdMark gc_id_mark(_gc_id);
-    IsGCActiveMark gc_active_mark;
+    IsSTWGCActiveMark gc_active_mark;
 
     // Verify before operation
     ZVerify::before_zoperation();
@@ -447,11 +430,15 @@ public:
     _success = do_operation();
 
     // Update statistics
-    ZStatSample(ZSamplerJavaThreads, Threads::number_of_threads());
+    ZStatSample(ZSamplerJavaThreads, (uint64_t)Threads::number_of_threads());
   }
 
   virtual void doit_epilogue() {
     Heap_lock->unlock();
+
+    // GC thread root traversal likely used OopMapCache a lot, which
+    // might have created lots of old entries. Trigger the cleanup now.
+    OopMapCache::try_trigger_cleanup();
   }
 
   bool success() const {
@@ -791,8 +778,8 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   // if the GC is finding it hard to keep up with the allocation rate.
   const double tenuring_threshold_raw = young_life_decay_factor * young_log_residency;
 
-  log_trace(gc, reloc)("Young Allocated: " SIZE_FORMAT "M", young_allocated / M);
-  log_trace(gc, reloc)("Young Garbage: " SIZE_FORMAT "M", young_garbage / M);
+  log_trace(gc, reloc)("Young Allocated: %zuM", young_allocated / M);
+  log_trace(gc, reloc)("Young Garbage: %zuM", young_garbage / M);
   log_debug(gc, reloc)("Allocated To Garbage: %.1f", allocated_garbage_ratio);
   log_trace(gc, reloc)("Young Log: %.1f", young_log);
   log_trace(gc, reloc)("Young Residency Reciprocal: %.1f", young_residency_reciprocal);
@@ -811,7 +798,7 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
 void ZGenerationYoung::concurrent_select_relocation_set() {
   ZStatTimerYoung timer(ZPhaseConcurrentSelectRelocationSetYoung);
   const bool promote_all = type() == ZYoungType::major_full_preclean;
-  select_relocation_set(_id, promote_all);
+  select_relocation_set(promote_all);
 }
 
 class VM_ZRelocateStartYoung : public VM_ZYoungOperation {
@@ -850,6 +837,9 @@ void ZGenerationYoung::mark_start() {
   // Change good colors
   flip_mark_start();
 
+  // Reset TLAB usage
+  ZHeap::heap()->reset_tlab_used();
+
   // Retire allocating pages
   ZAllocator::eden()->retire_pages();
   for (ZPageAge i = ZPageAge::survivor1; i <= ZPageAge::survivor14; i = static_cast<ZPageAge>(static_cast<uint>(i) + 1)) {
@@ -872,7 +862,7 @@ void ZGenerationYoung::mark_start() {
   _remembered.flip();
 
   // Update statistics
-  stat_heap()->at_mark_start(_page_allocator->stats(this));
+  stat_heap()->at_mark_start(_page_allocator->update_and_stats(this));
 }
 
 void ZGenerationYoung::mark_roots() {
@@ -934,7 +924,7 @@ void ZGenerationYoung::flip_promote(ZPage* from_page, ZPage* to_page) {
   _page_table->replace(from_page, to_page);
 
   // Update statistics
-  _page_allocator->promote_used(from_page->size());
+  _page_allocator->promote_used(from_page, to_page);
   increase_freed(from_page->size());
   increase_promoted(from_page->live_bytes());
 }
@@ -943,7 +933,7 @@ void ZGenerationYoung::in_place_relocate_promote(ZPage* from_page, ZPage* to_pag
   _page_table->replace(from_page, to_page);
 
   // Update statistics
-  _page_allocator->promote_used(from_page->size());
+  _page_allocator->promote_used(from_page, to_page);
 }
 
 void ZGenerationYoung::register_flip_promoted(const ZArray<ZPage*>& pages) {
@@ -1153,7 +1143,7 @@ void ZGenerationOld::pause_verify() {
 
 void ZGenerationOld::concurrent_select_relocation_set() {
   ZStatTimerOld timer(ZPhaseConcurrentSelectRelocationSetOld);
-  select_relocation_set(_id, false /* promote_all */);
+  select_relocation_set(false /* promote_all */);
 }
 
 class VM_ZRelocateStartOld : public VM_ZOperation {
@@ -1221,7 +1211,7 @@ void ZGenerationOld::mark_start() {
   _mark.start();
 
   // Update statistics
-  stat_heap()->at_mark_start(_page_allocator->stats(this));
+  stat_heap()->at_mark_start(_page_allocator->update_and_stats(this));
 
   // Note that we start a marking cycle.
   // Unlike other GCs, the color switch implicitly changes the nmethods
@@ -1281,6 +1271,10 @@ void ZGenerationOld::set_soft_reference_policy(bool clear) {
   _reference_processor.set_soft_reference_policy(clear);
 }
 
+bool ZGenerationOld::uses_clear_all_soft_reference_policy() const {
+  return _reference_processor.uses_clear_all_soft_reference_policy();
+}
+
 class ZRendezvousHandshakeClosure : public HandshakeClosure {
 public:
   ZRendezvousHandshakeClosure()
@@ -1323,7 +1317,7 @@ void ZGenerationOld::process_non_strong_references() {
 
   ClassUnloadingContext ctx(_workers.active_workers(),
                             true /* unregister_nmethods_during_purge */,
-                            true /* lock_codeblob_free_separately */);
+                            true /* lock_nmethod_free_separately */);
 
   // Unlink stale metadata and nmethods
   _unload.unlink();

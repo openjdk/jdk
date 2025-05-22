@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
@@ -33,6 +32,7 @@
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -46,6 +46,107 @@
 
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
+// jdk.internal.util.ArraysSupport.vectorizedHashCode
+address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register result,
+                                           FloatRegister vdata0, FloatRegister vdata1,
+                                           FloatRegister vdata2, FloatRegister vdata3,
+                                           FloatRegister vmul0, FloatRegister vmul1,
+                                           FloatRegister vmul2, FloatRegister vmul3,
+                                           FloatRegister vpow, FloatRegister vpowm,
+                                           BasicType eltype) {
+  ARRAYS_HASHCODE_REGISTERS;
+
+  Register tmp1 = rscratch1, tmp2 = rscratch2;
+
+  Label TAIL, STUB_SWITCH, STUB_SWITCH_OUT, LOOP, BR_BASE, LARGE, DONE;
+
+  // Vectorization factor. Number of array elements loaded to one SIMD&FP registers by the stubs. We
+  // use 8H load arrangements for chars and shorts and 8B for booleans and bytes. It's possible to
+  // use 4H for chars and shorts instead, but using 8H gives better performance.
+  const size_t vf = eltype == T_BOOLEAN || eltype == T_BYTE ? 8
+                    : eltype == T_CHAR || eltype == T_SHORT ? 8
+                    : eltype == T_INT                       ? 4
+                                                            : 0;
+  guarantee(vf, "unsupported eltype");
+
+  // Unroll factor for the scalar loop below. The value is chosen based on performance analysis.
+  const size_t unroll_factor = 4;
+
+  switch (eltype) {
+  case T_BOOLEAN:
+    BLOCK_COMMENT("arrays_hashcode(unsigned byte) {");
+    break;
+  case T_CHAR:
+    BLOCK_COMMENT("arrays_hashcode(char) {");
+    break;
+  case T_BYTE:
+    BLOCK_COMMENT("arrays_hashcode(byte) {");
+    break;
+  case T_SHORT:
+    BLOCK_COMMENT("arrays_hashcode(short) {");
+    break;
+  case T_INT:
+    BLOCK_COMMENT("arrays_hashcode(int) {");
+    break;
+  default:
+    ShouldNotReachHere();
+  }
+
+  // large_arrays_hashcode(T_INT) performs worse than the scalar loop below when the Neon loop
+  // implemented by the stub executes just once. Call the stub only if at least two iterations will
+  // be executed.
+  const size_t large_threshold = eltype == T_INT ? vf * 2 : vf;
+  cmpw(cnt, large_threshold);
+  br(Assembler::HS, LARGE);
+
+  bind(TAIL);
+
+  // The andr performs cnt % uf where uf = unroll_factor. The subtract shifted by 3 offsets past
+  // uf - (cnt % uf) pairs of load + madd insns i.e. it only executes cnt % uf load + madd pairs.
+  // Iteration eats up the remainder, uf elements at a time.
+  assert(is_power_of_2(unroll_factor), "can't use this value to calculate the jump target PC");
+  andr(tmp2, cnt, unroll_factor - 1);
+  adr(tmp1, BR_BASE);
+  // For Cortex-A53 offset is 4 because 2 nops are generated.
+  sub(tmp1, tmp1, tmp2, ext::sxtw, VM_Version::supports_a53mac() ? 4 : 3);
+  movw(tmp2, 0x1f);
+  br(tmp1);
+
+  bind(LOOP);
+  for (size_t i = 0; i < unroll_factor; ++i) {
+    load(tmp1, Address(post(ary, type2aelembytes(eltype))), eltype);
+    maddw(result, result, tmp2, tmp1);
+    // maddw generates an extra nop for Cortex-A53 (see maddw definition in macroAssembler).
+    // Generate 2nd nop to have 4 instructions per iteration.
+    if (VM_Version::supports_a53mac()) {
+      nop();
+    }
+  }
+  bind(BR_BASE);
+  subsw(cnt, cnt, unroll_factor);
+  br(Assembler::HS, LOOP);
+
+  b(DONE);
+
+  bind(LARGE);
+
+  RuntimeAddress stub = RuntimeAddress(StubRoutines::aarch64::large_arrays_hashcode(eltype));
+  assert(stub.target() != nullptr, "array_hashcode stub has not been generated");
+  address tpc = trampoline_call(stub);
+  if (tpc == nullptr) {
+    DEBUG_ONLY(reset_labels(TAIL, BR_BASE));
+    postcond(pc() == badAddress);
+    return nullptr;
+  }
+
+  bind(DONE);
+
+  BLOCK_COMMENT("} // arrays_hashcode");
+
+  postcond(pc() != badAddress);
+  return pc();
+}
+
 void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register tmpReg,
                                   Register tmp2Reg, Register tmp3Reg) {
   Register oop = objectReg;
@@ -57,15 +158,15 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   Label count, no_count;
 
   assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_lock_lightweight");
-  assert_different_registers(oop, box, tmp, disp_hdr);
+  assert_different_registers(oop, box, tmp, disp_hdr, rscratch2);
 
   // Load markWord from object into displaced_header.
   ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, oop);
-    ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
-    tstw(tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
+    ldrb(tmp, Address(tmp, Klass::misc_flags_offset()));
+    tst(tmp, KlassFlags::_misc_is_value_based_class);
     br(Assembler::NE, cont);
   }
 
@@ -110,12 +211,10 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   // Handle existing monitor.
   bind(object_has_monitor);
 
-  // The object's monitor m is unlocked iff m->owner == nullptr,
-  // otherwise m->owner may contain a thread or a stack address.
-  //
-  // Try to CAS m->owner from null to current thread.
+  // Try to CAS owner (no owner => current thread's _monitor_owner_id).
+  ldr(rscratch2, Address(rthread, JavaThread::monitor_owner_id_offset()));
   add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset())-markWord::monitor_value));
-  cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
+  cmpxchg(tmp, zr, rscratch2, Assembler::xword, /*acquire*/ true,
           /*release*/ true, /*weak*/ false, tmp3Reg); // Sets flags for result
 
   // Store a non-null value into the box to avoid looking like a re-entrant
@@ -127,7 +226,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
 
   br(Assembler::EQ, cont); // CAS success means locking succeeded
 
-  cmp(tmp3Reg, rthread);
+  cmp(tmp3Reg, rscratch2);
   br(Assembler::NE, cont); // Check for recursive locking
 
   // Recursive lock case
@@ -140,7 +239,9 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   br(Assembler::NE, no_count);
 
   bind(count);
-  increment(Address(rthread, JavaThread::held_monitor_count_offset()));
+  if (LockingMode == LM_LEGACY) {
+    inc_held_monitor_count(rscratch1);
+  }
 
   bind(no_count);
 }
@@ -150,10 +251,12 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   Register oop = objectReg;
   Register box = boxReg;
   Register disp_hdr = tmpReg;
+  Register owner_addr = tmpReg;
   Register tmp = tmp2Reg;
   Label cont;
   Label object_has_monitor;
   Label count, no_count;
+  Label unlocked;
 
   assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_unlock_lightweight");
   assert_different_registers(oop, box, tmp, disp_hdr);
@@ -204,14 +307,38 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   b(cont);
 
   bind(notRecursive);
-  ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset()));
-  ldr(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset()));
-  orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if both are 0.
-  cmp(rscratch1, zr); // Sets flags for result
-  cbnz(rscratch1, cont);
-  // need a release store here
-  lea(tmp, Address(tmp, ObjectMonitor::owner_offset()));
-  stlr(zr, tmp); // set unowned
+
+  // Compute owner address.
+  lea(owner_addr, Address(tmp, ObjectMonitor::owner_offset()));
+
+  // Set owner to null.
+  // Release to satisfy the JMM
+  stlr(zr, owner_addr);
+  // We need a full fence after clearing owner to avoid stranding.
+  // StoreLoad achieves this.
+  membar(StoreLoad);
+
+  // Check if the entry_list is empty.
+  ldr(rscratch1, Address(tmp, ObjectMonitor::entry_list_offset()));
+  cmp(rscratch1, zr);
+  br(Assembler::EQ, cont);     // If so we are done.
+
+  // Check if there is a successor.
+  ldr(rscratch1, Address(tmp, ObjectMonitor::succ_offset()));
+  cmp(rscratch1, zr);
+  br(Assembler::NE, unlocked); // If so we are done.
+
+  // Save the monitor pointer in the current thread, so we can try to
+  // reacquire the lock in SharedRuntime::monitor_exit_helper().
+  str(tmp, Address(rthread, JavaThread::unlocked_inflated_monitor_offset()));
+
+  cmp(zr, rthread); // Set Flag to NE => slow path
+  b(cont);
+
+  bind(unlocked);
+  cmp(zr, zr); // Set Flag to EQ => fast path
+
+  // Intentional fall-through
 
   bind(cont);
   // flag == EQ indicates success
@@ -219,15 +346,17 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   br(Assembler::NE, no_count);
 
   bind(count);
-  decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
+  if (LockingMode == LM_LEGACY) {
+    dec_held_monitor_count(rscratch1);
+  }
 
   bind(no_count);
 }
 
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register t1,
+void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register t1,
                                               Register t2, Register t3) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-  assert_different_registers(obj, t1, t2, t3);
+  assert_different_registers(obj, box, t1, t2, t3, rscratch2);
 
   // Handle inflated monitor.
   Label inflated;
@@ -236,14 +365,20 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register t1,
   // Finish fast lock unsuccessfully. MUST branch to with flag == NE
   Label slow_path;
 
+  if (UseObjectMonitorTable) {
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
+    str(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+  }
+
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(t1, obj);
-    ldrw(t1, Address(t1, Klass::access_flags_offset()));
-    tstw(t1, JVM_ACC_IS_VALUE_BASED_CLASS);
+    ldrb(t1, Address(t1, Klass::misc_flags_offset()));
+    tst(t1, KlassFlags::_misc_is_value_based_class);
     br(Assembler::NE, slow_path);
   }
 
   const Register t1_mark = t1;
+  const Register t3_t = t3;
 
   { // Lightweight locking
 
@@ -251,7 +386,6 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register t1,
     Label push;
 
     const Register t2_top = t2;
-    const Register t3_t = t3;
 
     // Check if lock-stack is full.
     ldrw(t2_top, Address(rthread, JavaThread::lock_stack_top_offset()));
@@ -289,30 +423,75 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register t1,
   { // Handle inflated monitor.
     bind(inflated);
 
-    // mark contains the tagged ObjectMonitor*.
-    const Register t1_tagged_monitor = t1_mark;
-    const uintptr_t monitor_tag = markWord::monitor_value;
+    const Register t1_monitor = t1;
+
+    if (!UseObjectMonitorTable) {
+      assert(t1_monitor == t1_mark, "should be the same here");
+    } else {
+      Label monitor_found;
+
+      // Load cache address
+      lea(t3_t, Address(rthread, JavaThread::om_cache_oops_offset()));
+
+      const int num_unrolled = 2;
+      for (int i = 0; i < num_unrolled; i++) {
+        ldr(t1, Address(t3_t));
+        cmp(obj, t1);
+        br(Assembler::EQ, monitor_found);
+        increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
+      }
+
+      Label loop;
+
+      // Search for obj in cache.
+      bind(loop);
+
+      // Check for match.
+      ldr(t1, Address(t3_t));
+      cmp(obj, t1);
+      br(Assembler::EQ, monitor_found);
+
+      // Search until null encountered, guaranteed _null_sentinel at end.
+      increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
+      cbnz(t1, loop);
+      // Cache Miss, NE set from cmp above, cbnz does not set flags
+      b(slow_path);
+
+      bind(monitor_found);
+      ldr(t1_monitor, Address(t3_t, OMCache::oop_to_monitor_difference()));
+    }
+
     const Register t2_owner_addr = t2;
     const Register t3_owner = t3;
+    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
+    const Address owner_address(t1_monitor, ObjectMonitor::owner_offset() - monitor_tag);
+    const Address recursions_address(t1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
+
+    Label monitor_locked;
 
     // Compute owner address.
-    lea(t2_owner_addr, Address(t1_tagged_monitor, (in_bytes(ObjectMonitor::owner_offset()) - monitor_tag)));
+    lea(t2_owner_addr, owner_address);
 
-    // CAS owner (null => current thread).
-    cmpxchg(t2_owner_addr, zr, rthread, Assembler::xword, /*acquire*/ true,
+    // Try to CAS owner (no owner => current thread's _monitor_owner_id).
+    ldr(rscratch2, Address(rthread, JavaThread::monitor_owner_id_offset()));
+    cmpxchg(t2_owner_addr, zr, rscratch2, Assembler::xword, /*acquire*/ true,
             /*release*/ false, /*weak*/ false, t3_owner);
-    br(Assembler::EQ, locked);
+    br(Assembler::EQ, monitor_locked);
 
     // Check if recursive.
-    cmp(t3_owner, rthread);
+    cmp(t3_owner, rscratch2);
     br(Assembler::NE, slow_path);
 
     // Recursive.
-    increment(Address(t1_tagged_monitor, in_bytes(ObjectMonitor::recursions_offset()) - monitor_tag), 1);
+    increment(recursions_address, 1);
+
+    bind(monitor_locked);
+    if (UseObjectMonitorTable) {
+      str(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    }
   }
 
   bind(locked);
-  increment(Address(rthread, JavaThread::held_monitor_count_offset()));
 
 #ifdef ASSERT
   // Check that locked label is reached with Flags == EQ.
@@ -331,13 +510,13 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register t1,
   // C2 uses the value of Flags (NE vs EQ) to determine the continuation.
 }
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Register t2,
-                                                Register t3) {
+void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Register t1,
+                                                Register t2, Register t3) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-  assert_different_registers(obj, t1, t2, t3);
+  assert_different_registers(obj, box, t1, t2, t3);
 
   // Handle inflated monitor.
-  Label inflated, inflated_load_monitor;
+  Label inflated, inflated_load_mark;
   // Finish fast unlock successfully. MUST branch to with flag == EQ
   Label unlocked;
   // Finish fast unlock unsuccessfully. MUST branch to with flag == NE
@@ -349,13 +528,15 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
 
   { // Lightweight unlock
 
+    Label push_and_slow_path;
+
     // Check if obj is top of lock-stack.
     ldrw(t2_top, Address(rthread, JavaThread::lock_stack_top_offset()));
     subw(t2_top, t2_top, oopSize);
     ldr(t3_t, Address(rthread, t2_top));
     cmp(obj, t3_t);
     // Top of lock stack was not obj. Must be monitor.
-    br(Assembler::NE, inflated_load_monitor);
+    br(Assembler::NE, inflated_load_mark);
 
     // Pop lock-stack.
     DEBUG_ONLY(str(zr, Address(rthread, t2_top));)
@@ -372,7 +553,10 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
     ldr(t1_mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
     // Check header for monitor (0b10).
-    tbnz(t1_mark, exact_log2(markWord::monitor_value), inflated);
+    // Because we got here by popping (meaning we pushed in locked)
+    // there will be no monitor in the box. So we need to push back the obj
+    // so that the runtime can fix any potential anonymous owner.
+    tbnz(t1_mark, exact_log2(markWord::monitor_value), UseObjectMonitorTable ? push_and_slow_path : inflated);
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
@@ -381,6 +565,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
             /*acquire*/ false, /*release*/ true, /*weak*/ false, noreg);
     br(Assembler::EQ, unlocked);
 
+    bind(push_and_slow_path);
     // Compare and exchange failed.
     // Restore lock-stack and handle the unlock in runtime.
     DEBUG_ONLY(str(obj, Address(rthread, t2_top));)
@@ -391,7 +576,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
 
 
   { // Handle inflated monitor.
-    bind(inflated_load_monitor);
+    bind(inflated_load_mark);
     ldr(t1_mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 #ifdef ASSERT
     tbnz(t1_mark, exact_log2(markWord::monitor_value), inflated);
@@ -412,12 +597,19 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
     bind(check_done);
 #endif
 
-    // mark contains the tagged ObjectMonitor*.
-    const Register t1_monitor = t1_mark;
-    const uintptr_t monitor_tag = markWord::monitor_value;
+    const Register t1_monitor = t1;
 
-    // Untag the monitor.
-    sub(t1_monitor, t1_mark, monitor_tag);
+    if (!UseObjectMonitorTable) {
+      assert(t1_monitor == t1_mark, "should be the same here");
+
+      // Untag the monitor.
+      add(t1_monitor, t1_mark, -(int)markWord::monitor_value);
+    } else {
+      ldr(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+      // null check with Flags == NE, no valid pointer below alignof(ObjectMonitor*)
+      cmp(t1_monitor, checked_cast<uint8_t>(alignof(ObjectMonitor*)));
+      br(Assembler::LO, slow_path);
+    }
 
     const Register t2_recursions = t2;
     Label not_recursive;
@@ -435,33 +627,38 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
 
     bind(not_recursive);
 
-    Label release;
     const Register t2_owner_addr = t2;
 
     // Compute owner address.
     lea(t2_owner_addr, Address(t1_monitor, ObjectMonitor::owner_offset()));
 
-    // Check if the entry lists are empty.
-    ldr(rscratch1, Address(t1_monitor, ObjectMonitor::EntryList_offset()));
-    ldr(t3_t, Address(t1_monitor, ObjectMonitor::cxq_offset()));
-    orr(rscratch1, rscratch1, t3_t);
-    cmp(rscratch1, zr);
-    br(Assembler::EQ, release);
-
-    // The owner may be anonymous and we removed the last obj entry in
-    // the lock-stack. This loses the information about the owner.
-    // Write the thread to the owner field so the runtime knows the owner.
-    str(rthread, Address(t2_owner_addr));
-    b(slow_path);
-
-    bind(release);
     // Set owner to null.
     // Release to satisfy the JMM
     stlr(zr, t2_owner_addr);
+    // We need a full fence after clearing owner to avoid stranding.
+    // StoreLoad achieves this.
+    membar(StoreLoad);
+
+    // Check if the entry_list is empty.
+    ldr(rscratch1, Address(t1_monitor, ObjectMonitor::entry_list_offset()));
+    cmp(rscratch1, zr);
+    br(Assembler::EQ, unlocked);  // If so we are done.
+
+    // Check if there is a successor.
+    ldr(rscratch1, Address(t1_monitor, ObjectMonitor::succ_offset()));
+    cmp(rscratch1, zr);
+    br(Assembler::NE, unlocked);  // If so we are done.
+
+    // Save the monitor pointer in the current thread, so we can try to
+    // reacquire the lock in SharedRuntime::monitor_exit_helper().
+    str(t1_monitor, Address(rthread, JavaThread::unlocked_inflated_monitor_offset()));
+
+    cmp(zr, rthread); // Set Flag to NE => slow path
+    b(slow_path);
   }
 
   bind(unlocked);
-  decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
+  cmp(zr, zr); // Set Flags to EQ => fast path
 
 #ifdef ASSERT
   // Check that unlocked label is reached with Flags == EQ.
@@ -1154,7 +1351,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
 
   BLOCK_COMMENT("string_compare {");
 
-  // Bizzarely, the counts are passed in bytes, regardless of whether they
+  // Bizarrely, the counts are passed in bytes, regardless of whether they
   // are L or U strings, however the result is always in characters.
   if (!str1_isL) asrw(cnt1, cnt1, 1);
   if (!str2_isL) asrw(cnt2, cnt2, 1);
@@ -2354,6 +2551,64 @@ void C2_MacroAssembler::neon_reverse_bytes(FloatRegister dst, FloatRegister src,
   }
 }
 
+// VectorRearrange implementation for short/int/float/long/double types with NEON
+// instructions. For VectorRearrange short/int/float, we use NEON tbl instruction.
+// But since it supports bytes table only, we need to lookup 2/4 bytes as a group.
+// For VectorRearrange long/double, we compare the shuffle input with iota indices,
+// and use bsl to implement the operation.
+void C2_MacroAssembler::neon_rearrange_hsd(FloatRegister dst, FloatRegister src,
+                                           FloatRegister shuffle, FloatRegister tmp,
+                                           BasicType bt, bool isQ) {
+  assert_different_registers(dst, src, shuffle, tmp);
+  SIMD_Arrangement size1 = isQ ? T16B : T8B;
+  SIMD_Arrangement size2 = esize2arrangement((uint)type2aelembytes(bt), isQ);
+
+  // Here is an example that rearranges a NEON vector with 4 ints:
+  // Rearrange V1 int[a0, a1, a2, a3] to V2 int[a2, a3, a0, a1]
+  //   1. We assume the shuffle input is Vi int[2, 3, 0, 1].
+  //   2. Multiply Vi int[2, 3, 0, 1] with constant int vector
+  //      [0x04040404, 0x04040404, 0x04040404, 0x04040404], and get
+  //      tbl base Vm int[0x08080808, 0x0c0c0c0c, 0x00000000, 0x04040404].
+  //   3. Add Vm with constant int[0x03020100, 0x03020100, 0x03020100, 0x03020100],
+  //      and get tbl index Vm int[0x0b0a0908, 0x0f0e0d0c, 0x03020100, 0x07060504]
+  //   4. Use Vm as index register, and use V1 as table register.
+  //      Then get V2 as the result by tbl NEON instructions.
+  switch (bt) {
+    case T_SHORT:
+      mov(tmp, size1, 0x02);
+      mulv(dst, size2, shuffle, tmp);
+      mov(tmp, size2, 0x0100);
+      addv(dst, size1, dst, tmp);
+      tbl(dst, size1, src, 1, dst);
+      break;
+    case T_INT:
+    case T_FLOAT:
+      mov(tmp, size1, 0x04);
+      mulv(dst, size2, shuffle, tmp);
+      mov(tmp, size2, 0x03020100);
+      addv(dst, size1, dst, tmp);
+      tbl(dst, size1, src, 1, dst);
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      // Load the iota indices for Long type. The indices are ordered by
+      // type B/S/I/L/F/D, and the offset between two types is 16; Hence
+      // the offset for L is 48.
+      lea(rscratch1,
+          ExternalAddress(StubRoutines::aarch64::vector_iota_indices() + 48));
+      ldrq(tmp, rscratch1);
+      // Check whether the input "shuffle" is the same with iota indices.
+      // Return "src" if true, otherwise swap the two elements of "src".
+      cm(EQ, dst, size2, shuffle, tmp);
+      ext(tmp, size1, src, src, 8);
+      bsl(dst, size1, src, tmp);
+      break;
+    default:
+      assert(false, "unsupported element type");
+      ShouldNotReachHere();
+  }
+}
+
 // Extract a scalar element from an sve vector at position 'idx'.
 // The input elements in src are expected to be of integral type.
 void C2_MacroAssembler::sve_extract_integral(Register dst, BasicType bt, FloatRegister src,
@@ -2493,4 +2748,108 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
     }
   }
   return MacroAssembler::in_scratch_emit_size();
+}
+
+static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
+  fatal("Invalid CastII, idx: %u, val: %d, lo: %d, hi: %d", idx, val, lo, hi);
+}
+
+void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register rval, Register rtmp) {
+  assert(!t->empty() && !t->singleton(), "%s", Type::str(t));
+  if (t == TypeInt::INT) {
+    return;
+  }
+  BLOCK_COMMENT("verify_int_in_range {");
+  Label L_success, L_failure;
+
+  jint lo = t->_lo;
+  jint hi = t->_hi;
+
+  if (lo != min_jint && hi != max_jint) {
+    subsw(rtmp, rval, lo);
+    br(Assembler::LT, L_failure);
+    subsw(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else if (lo != min_jint) {
+    subsw(rtmp, rval, lo);
+    br(Assembler::GE, L_success);
+  } else if (hi != max_jint) {
+    subsw(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else {
+    ShouldNotReachHere();
+  }
+
+  bind(L_failure);
+  movw(c_rarg0, idx);
+  mov(c_rarg1, rval);
+  movw(c_rarg2, lo);
+  movw(c_rarg3, hi);
+  reconstruct_frame_pointer(rtmp);
+  rt_call(CAST_FROM_FN_PTR(address, abort_verify_int_in_range), rtmp);
+  hlt(0);
+
+  bind(L_success);
+  BLOCK_COMMENT("} verify_int_in_range");
+}
+
+static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
+  fatal("Invalid CastLL, idx: %u, val: " JLONG_FORMAT ", lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, val, lo, hi);
+}
+
+void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Register rval, Register rtmp) {
+  assert(!t->empty() && !t->singleton(), "%s", Type::str(t));
+  if (t == TypeLong::LONG) {
+    return;
+  }
+  BLOCK_COMMENT("verify_long_in_range {");
+  Label L_success, L_failure;
+
+  jlong lo = t->_lo;
+  jlong hi = t->_hi;
+
+  if (lo != min_jlong && hi != max_jlong) {
+    subs(rtmp, rval, lo);
+    br(Assembler::LT, L_failure);
+    subs(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else if (lo != min_jlong) {
+    subs(rtmp, rval, lo);
+    br(Assembler::GE, L_success);
+  } else if (hi != max_jlong) {
+    subs(rtmp, rval, hi);
+    br(Assembler::LE, L_success);
+  } else {
+    ShouldNotReachHere();
+  }
+
+  bind(L_failure);
+  movw(c_rarg0, idx);
+  mov(c_rarg1, rval);
+  mov(c_rarg2, lo);
+  mov(c_rarg3, hi);
+  reconstruct_frame_pointer(rtmp);
+  rt_call(CAST_FROM_FN_PTR(address, abort_verify_long_in_range), rtmp);
+  hlt(0);
+
+  bind(L_success);
+  BLOCK_COMMENT("} verify_long_in_range");
+}
+
+void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
+  const int framesize = Compile::current()->output()->frame_size_in_bytes();
+  if (PreserveFramePointer) {
+    // frame pointer is valid
+#ifdef ASSERT
+    // Verify frame pointer value in rfp.
+    add(rtmp, sp, framesize - 2 * wordSize);
+    Label L_success;
+    cmp(rfp, rtmp);
+    br(Assembler::EQ, L_success);
+    stop("frame pointer mismatch");
+    bind(L_success);
+#endif // ASSERT
+  } else {
+    add(rfp, sp, framesize - 2 * wordSize);
+  }
 }

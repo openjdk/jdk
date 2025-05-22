@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #ifdef _LP64
 
 #include "oops/compressedKlass.hpp"
@@ -35,16 +33,15 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
 
   char* result = nullptr;
 
-  // Optimize for unscaled encoding; failing that, for zero-based encoding:
-  if (optimize_for_zero_base) {
-    result = reserve_address_space_for_unscaled_encoding(size, aslr);
-    if (result == nullptr) {
-      result = reserve_address_space_for_zerobased_encoding(size, aslr);
-    }
-  } else {
-    // If we cannot use zero-based encoding (when CDS is enabled), optimizing for an
-    // encoding base < 4GB can still make sense since such a base allows for shorter imm32 moves
-    result = reserve_address_space_X(0, nth_bit(32), size, Metaspace::reserve_alignment(), aslr);
+  // We always attempt to reserve < 4GB:
+  // - without CDS, this means we can use zero-based encoding
+  // - even with CDS (which disallows zero-based encoding), this allows us to use shorter imm32 movs when loading the base
+  result = reserve_address_space_X(0, nth_bit(32), size, Metaspace::reserve_alignment(), aslr);
+
+  if (result == 0 && optimize_for_zero_base) {
+    // Failing that, if we are running without CDS, attempt to allocate below 32G. This allows us to use zero-based encoding
+    // with a non-zero shift.
+    result = reserve_address_space_for_zerobased_encoding(size, aslr);
   }
 
   return result;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #ifndef _WINDOWS
 #include "alloca.h"
 #endif
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/nativeInst.hpp"
@@ -52,6 +52,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
@@ -70,31 +71,20 @@
 
 #define __ masm->
 
+#ifdef PRODUCT
+#define BLOCK_COMMENT(str) /* nothing */
+#else
+#define BLOCK_COMMENT(str) __ block_comment(str)
+#endif // PRODUCT
+
 const int StackAlignmentInSlots = StackAlignmentInBytes / VMRegImpl::stack_slot_size;
-
-class SimpleRuntimeFrame {
-
-  public:
-
-  // Most of the runtime stubs have this simple frame layout.
-  // This class exists to make the layout shared in one place.
-  // Offsets are for compiler stack slots, which are jints.
-  enum layout {
-    // The frame sender code expects that rbp will be in the "natural" place and
-    // will override any oopMap setting for it. We must therefore force the layout
-    // so that it agrees with the frame sender code.
-    rbp_off = frame::arg_reg_save_area_bytes/BytesPerInt,
-    rbp_off2,
-    return_off, return_off2,
-    framesize
-  };
-};
 
 class RegisterSaver {
   // Capture info about frame layout.  Layout offsets are in jint
   // units because compiler frame slots are jints.
 #define XSAVE_AREA_BEGIN 160
 #define XSAVE_AREA_YMM_BEGIN 576
+#define XSAVE_AREA_EGPRS 960
 #define XSAVE_AREA_OPMASK_BEGIN 1088
 #define XSAVE_AREA_ZMM_BEGIN 1152
 #define XSAVE_AREA_UPPERBANK 1664
@@ -104,16 +94,32 @@ class RegisterSaver {
 #define DEF_OPMASK_OFFS(regnum)    opmask ## regnum ## _off = opmask_off + (regnum)*8/BytesPerInt,     opmask ## regnum ## H_off
 #define DEF_ZMM_UPPER_OFFS(regnum) zmm ## regnum ## _off = zmm_upper_off + (regnum-16)*64/BytesPerInt, zmm ## regnum ## H_off
   enum layout {
-    fpu_state_off = frame::arg_reg_save_area_bytes/BytesPerInt, // fxsave save area
-    xmm_off       = fpu_state_off + XSAVE_AREA_BEGIN/BytesPerInt,            // offset in fxsave save area
+    fpu_state_off = frame::arg_reg_save_area_bytes/BytesPerInt,    // fxsave save area
+    xmm_off       = fpu_state_off + XSAVE_AREA_BEGIN/BytesPerInt,  // offset in fxsave save area
     DEF_XMM_OFFS(0),
     DEF_XMM_OFFS(1),
     // 2..15 are implied in range usage
     ymm_off = xmm_off + (XSAVE_AREA_YMM_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
     DEF_YMM_OFFS(0),
     DEF_YMM_OFFS(1),
-    // 2..15 are implied in range usage
-    opmask_off         = xmm_off + (XSAVE_AREA_OPMASK_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
+    r16_off = xmm_off + (XSAVE_AREA_EGPRS - XSAVE_AREA_BEGIN)/BytesPerInt,
+    r16H_off,
+    r17_off, r17H_off,
+    r18_off, r18H_off,
+    r19_off, r19H_off,
+    r20_off, r20H_off,
+    r21_off, r21H_off,
+    r22_off, r22H_off,
+    r23_off, r23H_off,
+    r24_off, r24H_off,
+    r25_off, r25H_off,
+    r26_off, r26H_off,
+    r27_off, r27H_off,
+    r28_off, r28H_off,
+    r29_off, r29H_off,
+    r30_off, r30H_off,
+    r31_off, r31H_off,
+    opmask_off   = xmm_off + (XSAVE_AREA_OPMASK_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
     DEF_OPMASK_OFFS(0),
     DEF_OPMASK_OFFS(1),
     // 2..7 are implied in range usage
@@ -164,6 +170,7 @@ class RegisterSaver {
   static int rax_offset_in_bytes(void)    { return BytesPerInt * rax_off; }
   static int rdx_offset_in_bytes(void)    { return BytesPerInt * rdx_off; }
   static int rbx_offset_in_bytes(void)    { return BytesPerInt * rbx_off; }
+  static int r15_offset_in_bytes(void)    { return BytesPerInt * r15_off; }
   static int xmm0_offset_in_bytes(void)   { return BytesPerInt * xmm0_off; }
   static int return_offset_in_bytes(void) { return BytesPerInt * return_off; }
 
@@ -199,7 +206,13 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   // to be under the return like a normal enter.
 
   __ enter();          // rsp becomes 16-byte aligned here
-  __ push_CPU_state(); // Push a multiple of 16 bytes
+  __ pushf();
+  // Make sure rsp stays 16-byte aligned
+  __ subq(rsp, 8);
+  // Push CPU state in multiple of 16 bytes
+  __ save_legacy_gprs();
+  __ push_FPU_state();
+
 
   // push cpu state handles this on EVEX enabled targets
   if (save_wide_vectors) {
@@ -247,6 +260,17 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 #endif
     }
   }
+
+#if COMPILER2_OR_JVMCI
+  if (UseAPX) {
+      int base_addr = XSAVE_AREA_EGPRS;
+      off = 0;
+      for (int n = 16; n < Register::number_of_registers; n++) {
+        __ movq(Address(rsp, base_addr+(off++*8)), as_Register(n));
+      }
+  }
+#endif
+
   __ vzeroupper();
   if (frame::arg_reg_save_area_bytes != 0) {
     // Allocate argument register save area
@@ -279,6 +303,25 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   map->set_callee_saved(STACK_OFFSET( r13_off ), r13->as_VMReg());
   map->set_callee_saved(STACK_OFFSET( r14_off ), r14->as_VMReg());
   map->set_callee_saved(STACK_OFFSET( r15_off ), r15->as_VMReg());
+
+  if (UseAPX) {
+    map->set_callee_saved(STACK_OFFSET( r16_off ), r16->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r17_off ), r17->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r18_off ), r18->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r19_off ), r19->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r20_off ), r20->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r21_off ), r21->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r22_off ), r22->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r23_off ), r23->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r24_off ), r24->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r25_off ), r25->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r26_off ), r26->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r27_off ), r27->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r28_off ), r28->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r29_off ), r29->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r30_off ), r30->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET( r31_off ), r31->as_VMReg());
+  }
   // For both AVX and EVEX we will use the legacy FXSAVE area for xmm0..xmm15,
   // on EVEX enabled targets, we get it included in the xsave area
   off = xmm0_off;
@@ -339,6 +382,24 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     map->set_callee_saved(STACK_OFFSET( r13H_off ), r13->as_VMReg()->next());
     map->set_callee_saved(STACK_OFFSET( r14H_off ), r14->as_VMReg()->next());
     map->set_callee_saved(STACK_OFFSET( r15H_off ), r15->as_VMReg()->next());
+    if (UseAPX) {
+      map->set_callee_saved(STACK_OFFSET( r16H_off ), r16->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r17H_off ), r17->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r18H_off ), r18->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r19H_off ), r19->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r20H_off ), r20->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r21H_off ), r21->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r22H_off ), r22->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r23H_off ), r23->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r24H_off ), r24->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r25H_off ), r25->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r26H_off ), r26->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r27H_off ), r27->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r28H_off ), r28->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r29H_off ), r29->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r30H_off ), r30->as_VMReg()->next());
+      map->set_callee_saved(STACK_OFFSET( r31H_off ), r31->as_VMReg()->next());
+    }
     // For both AVX and EVEX we will use the legacy FXSAVE area for xmm0..xmm15,
     // on EVEX enabled targets, we get it included in the xsave area
     off = xmm0H_off;
@@ -428,8 +489,21 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_wi
     }
   }
 
+#if COMPILER2_OR_JVMCI
+  if (UseAPX) {
+    int base_addr = XSAVE_AREA_EGPRS;
+    int off = 0;
+    for (int n = 16; n < Register::number_of_registers; n++) {
+      __ movq(as_Register(n), Address(rsp, base_addr+(off++*8)));
+    }
+  }
+#endif
+
   // Recover CPU state
-  __ pop_CPU_state();
+  __ pop_FPU_state();
+  __ restore_legacy_gprs();
+  __ addq(rsp, 8);
+  __ popf();
   // Get the rbp described implicitly by the calling convention (no oopMap)
   __ pop(rbp);
 }
@@ -602,7 +676,6 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   __ bind(L);
 }
 
-
 static void gen_c2i_adapter(MacroAssembler *masm,
                             int total_args_passed,
                             int comp_args_on_stack,
@@ -753,19 +826,6 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   __ jmp(rcx);
 }
 
-static void range_check(MacroAssembler* masm, Register pc_reg, Register temp_reg,
-                        address code_start, address code_end,
-                        Label& L_ok) {
-  Label L_fail;
-  __ lea(temp_reg, ExternalAddress(code_start));
-  __ cmpptr(pc_reg, temp_reg);
-  __ jcc(Assembler::belowEqual, L_fail);
-  __ lea(temp_reg, ExternalAddress(code_end));
-  __ cmpptr(pc_reg, temp_reg);
-  __ jcc(Assembler::below, L_ok);
-  __ bind(L_fail);
-}
-
 void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
                                     int total_args_passed,
                                     int comp_args_on_stack,
@@ -797,41 +857,6 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // clean up the stack pointer changes performed by the two adapters.
   // If this happens, control eventually transfers back to the compiled
   // caller, but with an uncorrected stack, causing delayed havoc.
-
-  if (VerifyAdapterCalls &&
-      (Interpreter::code() != nullptr || StubRoutines::final_stubs_code() != nullptr)) {
-    // So, let's test for cascading c2i/i2c adapters right now.
-    //  assert(Interpreter::contains($return_addr) ||
-    //         StubRoutines::contains($return_addr),
-    //         "i2c adapter must return to an interpreter frame");
-    __ block_comment("verify_i2c { ");
-    // Pick up the return address
-    __ movptr(rax, Address(rsp, 0));
-    Label L_ok;
-    if (Interpreter::code() != nullptr) {
-      range_check(masm, rax, r11,
-                  Interpreter::code()->code_start(),
-                  Interpreter::code()->code_end(),
-                  L_ok);
-    }
-    if (StubRoutines::initial_stubs_code() != nullptr) {
-      range_check(masm, rax, r11,
-                  StubRoutines::initial_stubs_code()->code_begin(),
-                  StubRoutines::initial_stubs_code()->code_end(),
-                  L_ok);
-    }
-    if (StubRoutines::final_stubs_code() != nullptr) {
-      range_check(masm, rax, r11,
-                  StubRoutines::final_stubs_code()->code_begin(),
-                  StubRoutines::final_stubs_code()->code_end(),
-                  L_ok);
-    }
-    const char* msg = "i2c adapter must return to an interpreter frame";
-    __ block_comment(msg);
-    __ stop(msg);
-    __ bind(L_ok);
-    __ block_comment("} verify_i2ce ");
-  }
 
   // Must preserve original SP for loading incoming arguments because
   // we need to align the outgoing SP for compiled code.
@@ -977,12 +1002,12 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
 }
 
 // ---------------------------------------------------------------
-AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
-                                                            int total_args_passed,
-                                                            int comp_args_on_stack,
-                                                            const BasicType *sig_bt,
-                                                            const VMRegPair *regs,
-                                                            AdapterFingerPrint* fingerprint) {
+void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
+                                            int total_args_passed,
+                                            int comp_args_on_stack,
+                                            const BasicType *sig_bt,
+                                            const VMRegPair *regs,
+                                            AdapterHandlerEntry* handler) {
   address i2c_entry = __ pc();
 
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
@@ -1024,14 +1049,14 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
     { // Bypass the barrier for non-static methods
       Register flags = rscratch1;
-      __ movl(flags, Address(method, Method::access_flags_offset()));
+      __ load_unsigned_short(flags, Address(method, Method::access_flags_offset()));
       __ testl(flags, JVM_ACC_STATIC);
       __ jcc(Assembler::zero, L_skip_barrier); // non-static
     }
 
     Register klass = rscratch1;
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, r15_thread, &L_skip_barrier /*L_fast_path*/);
+    __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
 
     __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
 
@@ -1044,7 +1069,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
-  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  return;
 }
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
@@ -1346,7 +1372,7 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 // Kills:
 //   rbx
 //
-void static continuation_enter_cleanup(MacroAssembler* masm) {
+static void continuation_enter_cleanup(MacroAssembler* masm) {
 #ifdef ASSERT
   Label L_good_sp;
   __ cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
@@ -1354,9 +1380,48 @@ void static continuation_enter_cleanup(MacroAssembler* masm) {
   __ stop("Incorrect rsp at continuation_enter_cleanup");
   __ bind(L_good_sp);
 #endif
-
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
+
+  if (CheckJNICalls) {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
+    __ jcc(Assembler::equal, L_skip_vthread_code);
+
+    // If the held monitor count is > 0 and this vthread is terminating then
+    // it failed to release a JNI monitor. So we issue the same log message
+    // that JavaThread::exit does.
+    __ cmpptr(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+    __ jcc(Assembler::equal, L_skip_vthread_code);
+
+    // rax may hold an exception oop, save it before the call
+    __ push(rax);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
+    __ pop(rax);
+
+    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
+    // on termination. The held count is implicitly zeroed below when we restore from
+    // the parent held count (which has to be zero).
+    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+
+    __ bind(L_skip_vthread_code);
+  }
+#ifdef ASSERT
+  else {
+    // Check if this is a virtual thread continuation
+    Label L_skip_vthread_code;
+    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
+    __ jcc(Assembler::equal, L_skip_vthread_code);
+
+    // See comment just above. If not checking JNI calls the JNI count is only
+    // needed for assertion checking.
+    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
+
+    __ bind(L_skip_vthread_code);
+  }
+#endif
+
   __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
   __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
 
@@ -1441,8 +1506,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     // Make sure the call is patchable
     __ align(BytesPerWord, __ offset() + NativeCall::displacement_offset);
     // Emit stub for static call
-    CodeBuffer* cbuf = masm->code_section()->outer();
-    address stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, __ pc());
+    address stub = CompiledDirectCall::emit_to_interp_stub(masm, __ pc());
     if (stub == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
@@ -1478,8 +1542,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ align(BytesPerWord, __ offset() + NativeCall::displacement_offset);
 
   // Emit stub for static call
-  CodeBuffer* cbuf = masm->code_section()->outer();
-  address stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, __ pc());
+  address stub = CompiledDirectCall::emit_to_interp_stub(masm, __ pc());
   if (stub == nullptr) {
     fatal("CodeCache is full at gen_continuation_enter");
   }
@@ -1499,6 +1562,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ bind(L_thaw);
 
+  ContinuationEntry::_thaw_call_pc_offset = __ pc() - start;
   __ call(RuntimeAddress(StubRoutines::cont_thaw()));
 
   ContinuationEntry::_return_pc_offset = __ pc() - start;
@@ -1508,7 +1572,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   // --- Normal exit (resolve/thawing)
 
   __ bind(L_exit);
-
+  ContinuationEntry::_cleanup_offset = __ pc() - start;
   continuation_enter_cleanup(masm);
   __ pop(rbp);
   __ ret(0);
@@ -1599,6 +1663,10 @@ static void gen_continuation_yield(MacroAssembler* masm,
 
   __ leave();
   __ ret(0);
+}
+
+void SharedRuntime::continuation_enter_cleanup(MacroAssembler* masm) {
+  ::continuation_enter_cleanup(masm);
 }
 
 static void gen_special_dispatch(MacroAssembler* masm,
@@ -1784,7 +1852,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair* out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
-  BasicType* in_elem_bt = nullptr;
 
   int argc = 0;
   out_sig_bt[argc++] = T_ADDRESS;
@@ -1889,7 +1956,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     Label L_skip_barrier;
     Register klass = r10;
     __ mov_metadata(klass, method->method_holder()); // InstanceKlass*
-    __ clinit_barrier(klass, r15_thread, &L_skip_barrier /*L_fast_path*/);
+    __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
 
     __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
 
@@ -1921,13 +1988,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;
-
-    if (UseRTMLocking) {
-      // Abort RTM transaction before calling JNI
-      // because critical section will be large and will be
-      // aborted anyway. Also nmethod could be deoptimized.
-      __ xabort(0);
-    }
 
 #ifdef ASSERT
   __ check_stack_alignment(rsp, "improperly aligned stack");
@@ -1989,15 +2049,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // For JNI natives the incoming and outgoing registers are offset upwards.
   GrowableArray<int> arg_order(2 * total_in_args);
 
-  VMRegPair tmp_vmreg;
-  tmp_vmreg.set2(rbx->as_VMReg());
-
   for (int i = total_in_args - 1, c_arg = total_c_args - 1; i >= 0; i--, c_arg--) {
     arg_order.push(i);
     arg_order.push(c_arg);
   }
 
-  int temploc = -1;
   for (int ai = 0; ai < arg_order.length(); ai += 2) {
     int i = arg_order.at(ai);
     int c_arg = arg_order.at(ai + 1);
@@ -2076,17 +2132,21 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // points into the right code segment. It does not have to be the correct return pc.
   // We use the same pc/oopMap repeatedly when we call out
 
-  intptr_t the_pc = (intptr_t) __ pc();
-  oop_maps->add_gc_map(the_pc - start, map);
+  Label native_return;
+  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+    // For convenience we use the pc we want to resume to in case of preemption on Object.wait.
+    __ set_last_Java_frame(rsp, noreg, native_return, rscratch1);
+  } else {
+    intptr_t the_pc = (intptr_t) __ pc();
+    oop_maps->add_gc_map(the_pc - start, map);
 
-  __ set_last_Java_frame(rsp, noreg, (address)the_pc, rscratch1);
-
+    __ set_last_Java_frame(rsp, noreg, __ pc(), rscratch1);
+  }
 
   // We have all of the arguments setup at this point. We must not touch any register
   // argument registers at this point (what if we save/restore them there are no oop?
 
-  {
-    SkipIfEqual skip(masm, &DTraceMethodProbes, false, rscratch1);
+  if (DTraceMethodProbes) {
     // protect the args we've loaded
     save_args(masm, total_c_args, c_arg, out_regs);
     __ mov_metadata(c_rarg1, method());
@@ -2168,12 +2228,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // Save the test result, for recursive case, the result is zero
       __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
       __ jcc(Assembler::notEqual, slow_path_lock);
+
+      __ bind(count_mon);
+      __ inc_held_monitor_count();
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ lightweight_lock(obj_reg, swap_reg, r15_thread, rscratch1, slow_path_lock);
+      __ lightweight_lock(lock_reg, obj_reg, swap_reg, rscratch1, slow_path_lock);
     }
-    __ bind(count_mon);
-    __ inc_held_monitor_count();
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -2211,8 +2272,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   default       : ShouldNotReachHere();
   }
 
-  Label after_transition;
-
   // Switch thread to "native transition" state before reading the synchronization state.
   // This additional state is necessary because reading and testing the synchronization
   // state is not atomic w.r.t. GC, as this scenario demonstrates:
@@ -2234,7 +2293,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     Label Continue;
     Label slow_path;
 
-    __ safepoint_poll(slow_path, r15_thread, true /* at_return */, false /* in_nmethod */);
+    __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
 
     __ cmpl(Address(r15_thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::equal, Continue);
@@ -2262,7 +2321,20 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // change thread state
   __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_Java);
-  __ bind(after_transition);
+
+  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+    // Check preemption for Object.wait()
+    __ movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
+    __ cmpptr(rscratch1, NULL_WORD);
+    __ jccb(Assembler::equal, native_return);
+    __ movptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
+    __ jmp(rscratch1);
+    __ bind(native_return);
+
+    intptr_t the_pc = (intptr_t) __ pc();
+    oop_maps->add_gc_map(the_pc - start, map);
+  }
+
 
   Label reguard;
   Label reguard_done;
@@ -2312,8 +2384,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ dec_held_monitor_count();
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ lightweight_unlock(obj_reg, swap_reg, r15_thread, lock_reg, slow_path_unlock);
-      __ dec_held_monitor_count();
+      __ lightweight_unlock(obj_reg, swap_reg, lock_reg, slow_path_unlock);
     }
 
     // slow path re-enters here
@@ -2324,8 +2395,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     __ bind(fast_done);
   }
-  {
-    SkipIfEqual skip(masm, &DTraceMethodProbes, false, rscratch1);
+  if (DTraceMethodProbes) {
     save_native_result(masm, ret_type, stack_slots);
     __ mov_metadata(c_rarg1, method());
     __ call_VM_leaf(
@@ -2339,7 +2409,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Unbox oop result, e.g. JNIHandles::resolve value.
   if (is_reference_type(ret_type)) {
     __ resolve_jobject(rax /* value */,
-                       r15_thread /* thread */,
                        rcx /* tmp */);
   }
 
@@ -2388,8 +2457,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ mov(c_rarg1, lock_reg);
     __ mov(c_rarg2, r15_thread);
 
-    // Not a leaf but we have last_Java_frame setup as we want
+    // Not a leaf but we have last_Java_frame setup as we want.
+    // We don't want to unmount in case of contention since that would complicate preserving
+    // the arguments that had already been marshalled into the native convention. So we force
+    // the freeze slow path to find this native wrapper frame (see recurse_freeze_native_frame())
+    // and pin the vthread. Otherwise the fast path won't find it since we don't walk the stack.
+    __ push_cont_fastpath();
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C), 3);
+    __ pop_cont_fastpath();
     restore_args(masm, total_c_args, c_arg, out_regs);
 
 #ifdef ASSERT
@@ -2504,6 +2579,10 @@ uint SharedRuntime::in_preserve_stack_slots() {
   return 4 + 2 * VerifyStackAtCalls;
 }
 
+VMReg SharedRuntime::thread_register() {
+  return r15_thread->as_VMReg();
+}
+
 //------------------------------generate_deopt_blob----------------------------
 void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code
@@ -2513,12 +2592,22 @@ void SharedRuntime::generate_deopt_blob() {
   if (UseAVX > 2) {
     pad += 1024;
   }
+  if (UseAPX) {
+    pad += 1024;
+  }
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
     pad += 512; // Increase the buffer size when compiling for JVMCI
   }
 #endif
-  CodeBuffer buffer("deopt_blob", 2560+pad, 1024);
+  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, (uint)SharedStubId::deopt_id, name);
+  if (blob != nullptr) {
+    _deopt_blob = blob->as_deoptimization_blob();
+    return;
+  }
+
+  CodeBuffer buffer(name, 2560+pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words;
   OopMap* map = nullptr;
@@ -2568,7 +2657,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   int reexecute_offset = __ pc() - start;
 #if INCLUDE_JVMCI && !defined(COMPILER1)
-  if (EnableJVMCI && UseJVMCICompiler) {
+  if (UseJVMCICompiler) {
     // JVMCI does not use this kind of deoptimization
     __ should_not_reach_here();
   }
@@ -2869,218 +2958,38 @@ void SharedRuntime::generate_deopt_blob() {
     _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
   }
 #endif
+
+  AOTCodeCache::store_code_blob(*_deopt_blob, AOTCodeEntry::SharedBlob, (uint)SharedStubId::deopt_id, name);
 }
-
-#ifdef COMPILER2
-//------------------------------generate_uncommon_trap_blob--------------------
-void SharedRuntime::generate_uncommon_trap_blob() {
-  // Allocate space for the code
-  ResourceMark rm;
-  // Setup code generation tools
-  CodeBuffer buffer("uncommon_trap_blob", 2048, 1024);
-  MacroAssembler* masm = new MacroAssembler(&buffer);
-
-  assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
-
-  address start = __ pc();
-
-  if (UseRTMLocking) {
-    // Abort RTM transaction before possible nmethod deoptimization.
-    __ xabort(0);
-  }
-
-  // Push self-frame.  We get here with a return address on the
-  // stack, so rsp is 8-byte aligned until we allocate our frame.
-  __ subptr(rsp, SimpleRuntimeFrame::return_off << LogBytesPerInt); // Epilog!
-
-  // No callee saved registers. rbp is assumed implicitly saved
-  __ movptr(Address(rsp, SimpleRuntimeFrame::rbp_off << LogBytesPerInt), rbp);
-
-  // compiler left unloaded_class_index in j_rarg0 move to where the
-  // runtime expects it.
-  __ movl(c_rarg1, j_rarg0);
-
-  __ set_last_Java_frame(noreg, noreg, nullptr, rscratch1);
-
-  // Call C code.  Need thread but NOT official VM entry
-  // crud.  We cannot block on this call, no GC can happen.  Call should
-  // capture callee-saved registers as well as return values.
-  // Thread is in rdi already.
-  //
-  // UnrollBlock* uncommon_trap(JavaThread* thread, jint unloaded_class_index);
-
-  __ mov(c_rarg0, r15_thread);
-  __ movl(c_rarg2, Deoptimization::Unpack_uncommon_trap);
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap)));
-
-  // Set an oopmap for the call site
-  OopMapSet* oop_maps = new OopMapSet();
-  OopMap* map = new OopMap(SimpleRuntimeFrame::framesize, 0);
-
-  // location of rbp is known implicitly by the frame sender code
-
-  oop_maps->add_gc_map(__ pc() - start, map);
-
-  __ reset_last_Java_frame(false);
-
-  // Load UnrollBlock* into rdi
-  __ mov(rdi, rax);
-
-#ifdef ASSERT
-  { Label L;
-    __ cmpptr(Address(rdi, Deoptimization::UnrollBlock::unpack_kind_offset()),
-              Deoptimization::Unpack_uncommon_trap);
-    __ jcc(Assembler::equal, L);
-    __ stop("SharedRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
-    __ bind(L);
-  }
-#endif
-
-  // Pop all the frames we must move/replace.
-  //
-  // Frame picture (youngest to oldest)
-  // 1: self-frame (no frame link)
-  // 2: deopting frame  (no frame link)
-  // 3: caller of deopting frame (could be compiled/interpreted).
-
-  // Pop self-frame.  We have no frame, and must rely only on rax and rsp.
-  __ addptr(rsp, (SimpleRuntimeFrame::framesize - 2) << LogBytesPerInt); // Epilog!
-
-  // Pop deoptimized frame (int)
-  __ movl(rcx, Address(rdi,
-                       Deoptimization::UnrollBlock::
-                       size_of_deoptimized_frame_offset()));
-  __ addptr(rsp, rcx);
-
-  // rsp should be pointing at the return address to the caller (3)
-
-  // Pick up the initial fp we should save
-  // restore rbp before stack bang because if stack overflow is thrown it needs to be pushed (and preserved)
-  __ movptr(rbp, Address(rdi, Deoptimization::UnrollBlock::initial_info_offset()));
-
-#ifdef ASSERT
-  // Compilers generate code that bang the stack by as much as the
-  // interpreter would need. So this stack banging should never
-  // trigger a fault. Verify that it does not on non product builds.
-  __ movl(rbx, Address(rdi ,Deoptimization::UnrollBlock::total_frame_sizes_offset()));
-  __ bang_stack_size(rbx, rcx);
-#endif
-
-  // Load address of array of frame pcs into rcx (address*)
-  __ movptr(rcx, Address(rdi, Deoptimization::UnrollBlock::frame_pcs_offset()));
-
-  // Trash the return pc
-  __ addptr(rsp, wordSize);
-
-  // Load address of array of frame sizes into rsi (intptr_t*)
-  __ movptr(rsi, Address(rdi, Deoptimization::UnrollBlock:: frame_sizes_offset()));
-
-  // Counter
-  __ movl(rdx, Address(rdi, Deoptimization::UnrollBlock:: number_of_frames_offset())); // (int)
-
-  // Now adjust the caller's stack to make up for the extra locals but
-  // record the original sp so that we can save it in the skeletal
-  // interpreter frame and the stack walking of interpreter_sender
-  // will get the unextended sp value and not the "real" sp value.
-
-  const Register sender_sp = r8;
-
-  __ mov(sender_sp, rsp);
-  __ movl(rbx, Address(rdi, Deoptimization::UnrollBlock:: caller_adjustment_offset())); // (int)
-  __ subptr(rsp, rbx);
-
-  // Push interpreter frames in a loop
-  Label loop;
-  __ bind(loop);
-  __ movptr(rbx, Address(rsi, 0)); // Load frame size
-  __ subptr(rbx, 2 * wordSize);    // We'll push pc and rbp by hand
-  __ pushptr(Address(rcx, 0));     // Save return address
-  __ enter();                      // Save old & set new rbp
-  __ subptr(rsp, rbx);             // Prolog
-  __ movptr(Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize),
-            sender_sp);            // Make it walkable
-  // This value is corrected by layout_activation_impl
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
-  __ mov(sender_sp, rsp);          // Pass sender_sp to next frame
-  __ addptr(rsi, wordSize);        // Bump array pointer (sizes)
-  __ addptr(rcx, wordSize);        // Bump array pointer (pcs)
-  __ decrementl(rdx);              // Decrement counter
-  __ jcc(Assembler::notZero, loop);
-  __ pushptr(Address(rcx, 0));     // Save final return address
-
-  // Re-push self-frame
-  __ enter();                 // Save old & set new rbp
-  __ subptr(rsp, (SimpleRuntimeFrame::framesize - 4) << LogBytesPerInt);
-                              // Prolog
-
-  // Use rbp because the frames look interpreted now
-  // Save "the_pc" since it cannot easily be retrieved using the last_java_SP after we aligned SP.
-  // Don't need the precise return PC here, just precise enough to point into this code blob.
-  address the_pc = __ pc();
-  __ set_last_Java_frame(noreg, rbp, the_pc, rscratch1);
-
-  // Call C code.  Need thread but NOT official VM entry
-  // crud.  We cannot block on this call, no GC can happen.  Call should
-  // restore return values to their stack-slots with the new SP.
-  // Thread is in rdi already.
-  //
-  // BasicType unpack_frames(JavaThread* thread, int exec_mode);
-
-  __ andptr(rsp, -(StackAlignmentInBytes)); // Align SP as required by ABI
-  __ mov(c_rarg0, r15_thread);
-  __ movl(c_rarg1, Deoptimization::Unpack_uncommon_trap);
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames)));
-
-  // Set an oopmap for the call site
-  // Use the same PC we used for the last java frame
-  oop_maps->add_gc_map(the_pc - start, new OopMap(SimpleRuntimeFrame::framesize, 0));
-
-  // Clear fp AND pc
-  __ reset_last_Java_frame(true);
-
-  // Pop self-frame.
-  __ leave();                 // Epilog
-
-  // Jump to interpreter
-  __ ret(0);
-
-  // Make sure all code is generated
-  masm->flush();
-
-  _uncommon_trap_blob =  UncommonTrapBlob::create(&buffer, oop_maps,
-                                                 SimpleRuntimeFrame::framesize >> 1);
-}
-#endif // COMPILER2
 
 //------------------------------generate_handler_blob------
 //
 // Generate a special Compile2Runtime blob that saves all registers,
 // and setup oopmap.
 //
-SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_type) {
+SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
   assert(StubRoutines::forward_exception_entry() != nullptr,
          "must be generated before");
+  assert(is_polling_page_id(id), "expected a polling page stub id");
+
+  // Allocate space for the code.  Setup code generation tools.
+  const char* name = SharedRuntime::stub_name(id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, (uint)id, name);
+  if (blob != nullptr) {
+    return blob->as_safepoint_blob();
+  }
 
   ResourceMark rm;
   OopMapSet *oop_maps = new OopMapSet();
   OopMap* map;
-
-  // Allocate space for the code.  Setup code generation tools.
-  CodeBuffer buffer("handler_blob", 2048, 1024);
+  CodeBuffer buffer(name, 2548, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   address start   = __ pc();
   address call_pc = nullptr;
   int frame_size_in_words;
-  bool cause_return = (poll_type == POLL_AT_RETURN);
-  bool save_wide_vectors = (poll_type == POLL_AT_VECTOR_LOOP);
-
-  if (UseRTMLocking) {
-    // Abort RTM transaction before calling runtime
-    // because critical section will be large and will be
-    // aborted anyway. Also nmethod could be deoptimized.
-    __ xabort(0);
-  }
+  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
+  bool save_wide_vectors = (id == SharedStubId::polling_page_vectors_safepoint_handler_id);
 
   // Make room for return address (or push it again)
   if (!cause_return) {
@@ -3139,11 +3048,11 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   Label bail;
 #endif
   if (!cause_return) {
-    Label no_prefix, not_special;
+    Label no_prefix, not_special, check_rex_prefix;
 
     // If our stashed return pc was modified by the runtime we avoid touching it
     __ cmpptr(rbx, Address(rbp, wordSize));
-    __ jccb(Assembler::notEqual, no_adjust);
+    __ jcc(Assembler::notEqual, no_adjust);
 
     // Skip over the poll instruction.
     // See NativeInstruction::is_safepoint_poll()
@@ -3166,9 +3075,29 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
     //   41 85 04 24    test   %eax,(%r12)
     //      85 45 00    test   %eax,0x0(%rbp)
     //   41 85 45 00    test   %eax,0x0(%r13)
+    //
+    // Notes:
+    //  Format of legacy MAP0 test instruction:-
+    //  [REX/REX2] [OPCODE] [ModRM] [SIB] [DISP] [IMM32]
+    //  o  For safepoint polling instruction "test %eax,(%rax)", encoding of first register
+    //     operand and base register of memory operand is b/w [0-8), hence we do not require
+    //     additional REX prefix where REX.B bit stores MSB bit of register encoding, which
+    //     is why two bytes encoding is sufficient here.
+    //  o  For safepoint polling instruction like "test %eax,(%r8)", register encoding of BASE
+    //     register of memory operand is 1000, thus we need additional REX prefix in this case,
+    //     there by adding additional byte to instruction encoding.
+    //  o  In case BASE register is one of the 32 extended GPR registers available only on targets
+    //     supporting Intel APX extension, then we need to emit two bytes REX2 prefix to hold
+    //     most significant two bits of 5 bit register encoding.
 
+    if (VM_Version::supports_apx_f()) {
+      __ cmpb(Address(rbx, 0), Assembler::REX2);
+      __ jccb(Assembler::notEqual, check_rex_prefix);
+      __ addptr(rbx, 2);
+      __ bind(check_rex_prefix);
+    }
     __ cmpb(Address(rbx, 0), NativeTstRegMem::instruction_rex_b_prefix);
-    __ jcc(Assembler::notEqual, no_prefix);
+    __ jccb(Assembler::notEqual, no_prefix);
     __ addptr(rbx, 1);
     __ bind(no_prefix);
 #ifdef ASSERT
@@ -3181,7 +3110,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
     __ andptr(rcx, 0x07); // looking for 0x04 .. 0x05
     __ subptr(rcx, 4);    // looking for 0x00 .. 0x01
     __ cmpptr(rcx, 1);
-    __ jcc(Assembler::above, not_special);
+    __ jccb(Assembler::above, not_special);
     __ addptr(rbx, 1);
     __ bind(not_special);
 #ifdef ASSERT
@@ -3212,7 +3141,10 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   masm->flush();
 
   // Fill-out other meta info
-  return SafepointBlob::create(&buffer, oop_maps, frame_size_in_words);
+  SafepointBlob* sp_blob = SafepointBlob::create(&buffer, oop_maps, frame_size_in_words);
+
+  AOTCodeCache::store_code_blob(*sp_blob, AOTCodeEntry::SharedBlob, (uint)id, name);
+  return sp_blob;
 }
 
 //
@@ -3223,13 +3155,19 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
   assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
+  assert(is_resolve_id(id), "expected a resolve stub id");
+
+  const char* name = SharedRuntime::stub_name(id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, (uint)id, name);
+  if (blob != nullptr) {
+    return blob->as_runtime_stub();
+  }
 
   // allocate space for the code
   ResourceMark rm;
-
-  CodeBuffer buffer(name, 1200, 512);
+  CodeBuffer buffer(name, 1552, 512);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   int frame_size_in_words;
@@ -3267,7 +3205,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ jcc(Assembler::notEqual, pending);
 
   // get the returned Method*
-  __ get_vm_result_2(rbx, r15_thread);
+  __ get_vm_result_metadata(rbx);
   __ movptr(Address(rsp, RegisterSaver::rbx_offset_in_bytes()), rbx);
 
   __ movptr(Address(rsp, RegisterSaver::rax_offset_in_bytes()), rax);
@@ -3286,7 +3224,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
   // exception pending => remove activation and forward to exception handler
 
-  __ movptr(Address(r15_thread, JavaThread::vm_result_offset()), NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::vm_result_oop_offset()), NULL_WORD);
 
   __ movptr(rax, Address(r15_thread, Thread::pending_exception_offset()));
   __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
@@ -3297,7 +3235,116 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
   // return the  blob
   // frame_size_words or bytes??
-  return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
+  RuntimeStub* rs_blob = RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
+
+  AOTCodeCache::store_code_blob(*rs_blob, AOTCodeEntry::SharedBlob, (uint)id, name);
+  return rs_blob;
+}
+
+// Continuation point for throwing of implicit exceptions that are
+// not handled in the current activation. Fabricates an exception
+// oop and initiates normal exception dispatching in this
+// frame. Since we need to preserve callee-saved values (currently
+// only for C2, but done for C1 as well) we need a callee-saved oop
+// map and therefore have to make these stubs into RuntimeStubs
+// rather than BufferBlobs.  If the compiler needs all registers to
+// be preserved between the fault point and the exception handler
+// then it must assume responsibility for that in
+// AbstractCompiler::continuation_for_implicit_null_exception or
+// continuation_for_implicit_division_by_zero_exception. All other
+// implicit exceptions (e.g., NullPointerException or
+// AbstractMethodError on entry) are either at call sites or
+// otherwise assume that stack unwinding will be initiated, so
+// caller saved registers were assumed volatile in the compiler.
+RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+  assert(is_throw_id(id), "expected a throw stub id");
+
+  const char* name = SharedRuntime::stub_name(id);
+
+  // Information about frame layout at time of blocking runtime call.
+  // Note that we only have to preserve callee-saved registers since
+  // the compilers are responsible for supplying a continuation point
+  // if they expect all registers to be preserved.
+  enum layout {
+    rbp_off = frame::arg_reg_save_area_bytes/BytesPerInt,
+    rbp_off2,
+    return_off,
+    return_off2,
+    framesize // inclusive of return address
+  };
+
+  int insts_size = 512;
+  int locs_size  = 64;
+
+  const char* timer_msg = "SharedRuntime generate_throw_exception";
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, (uint)id, name);
+  if (blob != nullptr) {
+    return blob->as_runtime_stub();
+  }
+
+  ResourceMark rm;
+  CodeBuffer code(name, insts_size, locs_size);
+  OopMapSet* oop_maps  = new OopMapSet();
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  address start = __ pc();
+
+  // This is an inlined and slightly modified version of call_VM
+  // which has the ability to fetch the return PC out of
+  // thread-local storage and also sets up last_Java_sp slightly
+  // differently than the real call_VM
+
+  __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+  assert(is_even(framesize/2), "sp not 16-byte aligned");
+
+  // return address and rbp are already in place
+  __ subptr(rsp, (framesize-4) << LogBytesPerInt); // prolog
+
+  int frame_complete = __ pc() - start;
+
+  // Set up last_Java_sp and last_Java_fp
+  address the_pc = __ pc();
+  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch1);
+  __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
+
+  // Call runtime
+  __ movptr(c_rarg0, r15_thread);
+  BLOCK_COMMENT("call runtime_entry");
+  __ call(RuntimeAddress(runtime_entry));
+
+  // Generate oop map
+  OopMap* map = new OopMap(framesize, 0);
+
+  oop_maps->add_gc_map(the_pc - start, map);
+
+  __ reset_last_Java_frame(true);
+
+  __ leave(); // required for proper stackwalking of RuntimeStub frame
+
+  // check for pending exceptions
+#ifdef ASSERT
+  Label L;
+  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
+  __ jcc(Assembler::notEqual, L);
+  __ should_not_reach_here();
+  __ bind(L);
+#endif // ASSERT
+  __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+
+
+  // codeBlob framesize is in words (not VMRegImpl::slot_size)
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub(name,
+                                  &code,
+                                  frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps, false);
+  AOTCodeCache::store_code_blob(*stub, AOTCodeEntry::SharedBlob, (uint)id, name);
+
+  return stub;
 }
 
 //------------------------------Montgomery multiplication------------------------
@@ -3565,137 +3612,96 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
   reverse_words(m, (julong *)m_ints, longwords);
 }
 
-#ifdef COMPILER2
-// This is here instead of runtime_x86_64.cpp because it uses SimpleRuntimeFrame
-//
-//------------------------------generate_exception_blob---------------------------
-// creates exception blob at the end
-// Using exception blob, this code is jumped from a compiled method.
-// (see emit_exception_handler in x86_64.ad file)
-//
-// Given an exception pc at a call we call into the runtime for the
-// handler in this method. This handler might merely restore state
-// (i.e. callee save registers) unwind the frame and jump to the
-// exception handler for the nmethod if there is no Java level handler
-// for the nmethod.
-//
-// This code is entered with a jmp.
-//
-// Arguments:
-//   rax: exception oop
-//   rdx: exception pc
-//
-// Results:
-//   rax: exception oop
-//   rdx: exception pc in caller or ???
-//   destination: exception handler of caller
-//
-// Note: the exception pc MUST be at a call (precise debug information)
-//       Registers rax, rdx, rcx, rsi, rdi, r8-r11 are not callee saved.
-//
+#if INCLUDE_JFR
 
-void OptoRuntime::generate_exception_blob() {
-  assert(!OptoRuntime::is_callee_saved_register(RDX_num), "");
-  assert(!OptoRuntime::is_callee_saved_register(RAX_num), "");
-  assert(!OptoRuntime::is_callee_saved_register(RCX_num), "");
+// For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+// It returns a jobject handle to the event writer.
+// The handle is dereferenced and the return value is the event writer oop.
+RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
+  enum layout {
+    rbp_off,
+    rbpH_off,
+    return_off,
+    return_off2,
+    framesize // inclusive of return address
+  };
 
-  assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
-
-  // Allocate space for the code
-  ResourceMark rm;
-  // Setup code generation tools
-  CodeBuffer buffer("exception_blob", 2048, 1024);
-  MacroAssembler* masm = new MacroAssembler(&buffer);
-
-
+  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
+  CodeBuffer code(name, 1024, 64);
+  MacroAssembler* masm = new MacroAssembler(&code);
   address start = __ pc();
 
-  // Exception pc is 'return address' for stack walker
-  __ push(rdx);
-  __ subptr(rsp, SimpleRuntimeFrame::return_off << LogBytesPerInt); // Prolog
-
-  // Save callee-saved registers.  See x86_64.ad.
-
-  // rbp is an implicitly saved callee saved register (i.e., the calling
-  // convention will save/restore it in the prolog/epilog). Other than that
-  // there are no callee save registers now that adapter frames are gone.
-
-  __ movptr(Address(rsp, SimpleRuntimeFrame::rbp_off << LogBytesPerInt), rbp);
-
-  // Store exception in Thread object. We cannot pass any arguments to the
-  // handle_exception call, since we do not want to make any assumption
-  // about the size of the frame where the exception happened in.
-  // c_rarg0 is either rdi (Linux) or rcx (Windows).
-  __ movptr(Address(r15_thread, JavaThread::exception_oop_offset()),rax);
-  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), rdx);
-
-  // This call does all the hard work.  It checks if an exception handler
-  // exists in the method.
-  // If so, it returns the handler address.
-  // If not, it prepares for stack-unwinding, restoring the callee-save
-  // registers of the frame being removed.
-  //
-  // address OptoRuntime::handle_exception_C(JavaThread* thread)
-
-  // At a method handle call, the stack may not be properly aligned
-  // when returning with an exception.
+  __ enter();
   address the_pc = __ pc();
-  __ set_last_Java_frame(noreg, noreg, the_pc, rscratch1);
-  __ mov(c_rarg0, r15_thread);
-  __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C)));
 
-  // Set an oopmap for the call site.  This oopmap will only be used if we
-  // are unwinding the stack.  Hence, all locations will be dead.
-  // Callee-saved registers will be the same as the frame above (i.e.,
-  // handle_exception_stub), since they were restored when we got the
-  // exception.
+  int frame_complete = the_pc - start;
+
+  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch1);
+  __ movptr(c_rarg0, r15_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
+  __ reset_last_Java_frame(true);
+
+  // rax is jobject handle result, unpack and process it through a barrier.
+  __ resolve_global_jobject(rax, c_rarg0);
+
+  __ leave();
+  __ ret(0);
 
   OopMapSet* oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(framesize, 1);
+  oop_maps->add_gc_map(frame_complete, map);
 
-  oop_maps->add_gc_map(the_pc - start, new OopMap(SimpleRuntimeFrame::framesize, 0));
-
-  __ reset_last_Java_frame(false);
-
-  // Restore callee-saved registers
-
-  // rbp is an implicitly saved callee-saved register (i.e., the calling
-  // convention will save restore it in prolog/epilog) Other than that
-  // there are no callee save registers now that adapter frames are gone.
-
-  __ movptr(rbp, Address(rsp, SimpleRuntimeFrame::rbp_off << LogBytesPerInt));
-
-  __ addptr(rsp, SimpleRuntimeFrame::return_off << LogBytesPerInt); // Epilog
-  __ pop(rdx);                  // No need for exception pc anymore
-
-  // rax: exception handler
-
-  // We have a handler in rax (could be deopt blob).
-  __ mov(r8, rax);
-
-  // Get the exception oop
-  __ movptr(rax, Address(r15_thread, JavaThread::exception_oop_offset()));
-  // Get the exception pc in case we are deoptimized
-  __ movptr(rdx, Address(r15_thread, JavaThread::exception_pc_offset()));
-#ifdef ASSERT
-  __ movptr(Address(r15_thread, JavaThread::exception_handler_pc_offset()), NULL_WORD);
-  __ movptr(Address(r15_thread, JavaThread::exception_pc_offset()), NULL_WORD);
-#endif
-  // Clear the exception oop so GC no longer processes it as a root.
-  __ movptr(Address(r15_thread, JavaThread::exception_oop_offset()), NULL_WORD);
-
-  // rax: exception oop
-  // r8:  exception handler
-  // rdx: exception pc
-  // Jump to handler
-
-  __ jmp(r8);
-
-  // Make sure all code is generated
-  masm->flush();
-
-  // Set exception blob
-  _exception_blob =  ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub(name,
+                                  &code,
+                                  frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps,
+                                  false);
+  return stub;
 }
-#endif // COMPILER2
+
+// For c2: call to return a leased buffer.
+RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
+  enum layout {
+    rbp_off,
+    rbpH_off,
+    return_off,
+    return_off2,
+    framesize // inclusive of return address
+  };
+
+  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
+  CodeBuffer code(name, 1024, 64);
+  MacroAssembler* masm = new MacroAssembler(&code);
+  address start = __ pc();
+
+  __ enter();
+  address the_pc = __ pc();
+
+  int frame_complete = the_pc - start;
+
+  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch2);
+  __ movptr(c_rarg0, r15_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
+  __ reset_last_Java_frame(true);
+
+  __ leave();
+  __ ret(0);
+
+  OopMapSet* oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(framesize, 1);
+  oop_maps->add_gc_map(frame_complete, map);
+
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub(name,
+                                  &code,
+                                  frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps,
+                                  false);
+  return stub;
+}
+
+#endif // INCLUDE_JFR
 

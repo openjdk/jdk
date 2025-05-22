@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,25 +27,26 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Factory for navigation bar.
@@ -68,7 +69,6 @@ public class Navigation {
     private final PageMode documentedPage;
     private Content userHeader;
     private final String rowListTitle;
-    private List<Content> subNavLinks = List.of();
 
     public enum PageMode {
         ALL_CLASSES,
@@ -86,8 +86,9 @@ public class Navigation {
         PACKAGE,
         PREVIEW,
         RESTRICTED,
-        SERIALIZED_FORM,
         SEARCH,
+        SEARCH_TAGS,
+        SERIALIZED_FORM,
         SYSTEM_PROPERTIES,
         TREE,
         USE
@@ -117,11 +118,6 @@ public class Navigation {
 
     public Navigation setUserHeader(Content userHeader) {
         this.userHeader = userHeader;
-        return this;
-    }
-
-    public Navigation setSubNavLinks(List<Content> subNavLinks) {
-        this.subNavLinks = subNavLinks;
         return this;
     }
 
@@ -278,6 +274,7 @@ public class Navigation {
             case CONSTANT_VALUES:
             case EXTERNAL_SPECS:
             case RESTRICTED:
+            case SEARCH_TAGS:
             case SERIALIZED_FORM:
             case SYSTEM_PROPERTIES:
                 addOverviewLink(target);
@@ -320,26 +317,6 @@ public class Navigation {
         }
     }
 
-    /**
-     * Adds the navigation Type detail link.
-     *
-     * @param kind the kind of member being documented
-     * @param link true if the members are listed and need to be linked
-     * @param listContents the list of contents to which the detail will be added.
-     */
-    protected void addTypeDetailLink(VisibleMemberTable.Kind kind, boolean link, List<Content> listContents) {
-        addContentToList(listContents, switch (kind) {
-            case CONSTRUCTORS -> links.createLinkOrLabel(HtmlIds.CONSTRUCTOR_DETAIL, contents.navConstructor, link);
-            case ENUM_CONSTANTS -> links.createLinkOrLabel(HtmlIds.ENUM_CONSTANT_DETAIL, contents.navEnum, link);
-            case FIELDS -> links.createLinkOrLabel(HtmlIds.FIELD_DETAIL, contents.navField, link);
-            case METHODS -> links.createLinkOrLabel(HtmlIds.METHOD_DETAIL, contents.navMethod, link);
-            case PROPERTIES -> links.createLinkOrLabel(HtmlIds.PROPERTY_DETAIL, contents.navProperty, link);
-            case ANNOTATION_TYPE_MEMBER -> links.createLinkOrLabel(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL,
-                    contents.navAnnotationTypeMember, link);
-            default -> Text.EMPTY;
-        });
-    }
-
     private void addContentToList(List<Content> listContents, Content source) {
         listContents.add(HtmlTree.LI(source));
     }
@@ -350,7 +327,7 @@ public class Navigation {
 
     private void addActivePageLink(Content target, Content label, boolean display) {
         if (display) {
-            target.add(HtmlTree.LI(HtmlStyle.navBarCell1Rev, label));
+            target.add(HtmlTree.LI(HtmlStyles.navBarCell1Rev, label));
         }
     }
 
@@ -397,6 +374,46 @@ public class Navigation {
         }
     }
 
+    /**
+     * Adds breadcrumb navigation links for {@code element} and its containing elements
+     * to {@code contents}. Only module, package and type elements are supported in
+     * breadcrumb navigation.
+     *
+     * @param elem a module, package or type element
+     * @param contents the list to which links are added
+     * @param selected {@code true} if elem is the current page element
+     */
+    protected void addBreadcrumbLinks(Element elem, List<Content> contents, boolean selected) {
+        if (elem == null) {
+            return;
+        } else if (elem.getKind() != ElementKind.MODULE) {
+            addBreadcrumbLinks(elem.getEnclosingElement(), contents, false);
+        } else if (!configuration.showModules) {
+            return;
+        }
+        var docPaths = configuration.docPaths;
+        HtmlTree link = switch (elem) {
+            case ModuleElement mdle -> links.createLink(pathToRoot.resolve(
+                    docPaths.moduleSummary(mdle)),
+                    Text.of(mdle.getQualifiedName()));
+            case PackageElement pkg -> links.createLink(pathToRoot.resolve(
+                    docPaths.forPackage(pkg).resolve(DocPaths.PACKAGE_SUMMARY)),
+                    pkg.isUnnamed()
+                            ? configuration.contents.defaultPackageLabel
+                            : Text.of(pkg.getQualifiedName()));
+            // Breadcrumb navigation displays nested classes as separate links.
+            // Enclosing classes may be undocumented, in which case we just display the class name.
+            case TypeElement type -> (configuration.isGeneratedDoc(type) && !configuration.utils.isHidden(type))
+                    ? links.createLink(pathToRoot.resolve(
+                            docPaths.forClass(type)), type.getSimpleName().toString())
+                    : HtmlTree.SPAN(Text.of(type.getSimpleName().toString()));
+            default -> throw new IllegalArgumentException(Objects.toString(elem));
+        };
+        if (selected) {
+            link.setStyle(HtmlStyles.currentSelection);
+        }
+        contents.add(link);
+    }
 
     private void addPageElementLink(Content list) {
         Content link = switch (element) {
@@ -481,10 +498,10 @@ public class Navigation {
                 .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder"))
                 .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.search_in_documentation"))
                 .put(HtmlAttr.AUTOCOMPLETE, "off")
-                .put(HtmlAttr.AUTOCAPITALIZE, "off");
+                .put(HtmlAttr.SPELLCHECK, "false");
         var inputReset = HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlIds.RESET_SEARCH)
                 .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset"));
-        var searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch)
+        var searchDiv = HtmlTree.DIV(HtmlStyles.navListSearch)
                 .add(inputText)
                 .add(inputReset);
         target.add(searchDiv);
@@ -501,49 +518,52 @@ public class Navigation {
         }
         var navigationBar = HtmlTree.NAV();
 
-        var navContent = new HtmlTree(TagName.DIV);
+        var navContent = HtmlTree.DIV(HtmlStyles.navContent);
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         navigationBar.add(MarkerComments.START_OF_TOP_NAVBAR);
         // The mobile menu button uses three empty spans to produce its animated icon
-        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyle.navBarToggleIcon).add(Entity.NO_BREAK_SPACE);
-        navContent.setStyle(HtmlStyle.navContent).add(HtmlTree.DIV(HtmlStyle.navMenuButton,
-                        new HtmlTree(TagName.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
+        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyles.navBarToggleIcon).add(Entity.NO_BREAK_SPACE);
+        navContent.add(HtmlTree.DIV(HtmlStyles.navMenuButton,
+                        HtmlTree.BUTTON(HtmlIds.NAVBAR_TOGGLE_BUTTON)
                                 .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.NAVBAR_TOP.name())
                                 .put(HtmlAttr.ARIA_EXPANDED, String.valueOf(false))
                                 .put(HtmlAttr.ARIA_LABEL, toggleNavLinks)
                                 .add(iconSpan)
                                 .add(iconSpan)
                                 .add(iconSpan)))
-                .add(HtmlTree.DIV(HtmlStyle.skipNav,
+                .add(HtmlTree.DIV(HtmlStyles.skipNav,
                         links.createLink(HtmlIds.SKIP_NAVBAR_TOP, skipNavLinks,
                                 skipNavLinks.toString())));
         Content aboutContent = userHeader;
 
-        var navList = new HtmlTree(TagName.UL)
-                .setId(HtmlIds.NAVBAR_TOP_FIRSTROW)
-                .setStyle(HtmlStyle.navList)
+        var navList = HtmlTree.UL(HtmlIds.NAVBAR_TOP_FIRSTROW, HtmlStyles.navList)
                 .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
         navContent.add(navList);
-        var aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, aboutContent);
+        var aboutDiv = HtmlTree.DIV(HtmlStyles.aboutLanguage, aboutContent);
         navContent.add(aboutDiv);
-        navigationBar.add(HtmlTree.DIV(HtmlStyle.topNav, navContent).setId(HtmlIds.NAVBAR_TOP));
+        navigationBar.add(HtmlTree.DIV(HtmlStyles.topNav, navContent).setId(HtmlIds.NAVBAR_TOP));
 
-        var subNavContent = HtmlTree.DIV(HtmlStyle.navContent);
-
+        var subNavContent = HtmlTree.DIV(HtmlStyles.navContent);
+        List<Content> subNavLinks = new ArrayList<>();
+        switch (documentedPage) {
+            case MODULE, PACKAGE, CLASS, USE, DOC_FILE, TREE -> {
+                addBreadcrumbLinks(element, subNavLinks, true);
+            }
+        }
         // Add the breadcrumb navigation links if present.
-        var breadcrumbNav = HtmlTree.OL(HtmlStyle.subNavList);
+        var breadcrumbNav = HtmlTree.OL(HtmlStyles.subNavList);
         breadcrumbNav.addAll(subNavLinks, HtmlTree::LI);
         subNavContent.addUnchecked(breadcrumbNav);
 
         if (options.createIndex() && documentedPage != PageMode.SEARCH) {
             addSearch(subNavContent);
         }
-        navigationBar.add(HtmlTree.DIV(HtmlStyle.subNav, subNavContent));
+        navigationBar.add(HtmlTree.DIV(HtmlStyles.subNav, subNavContent));
 
         navigationBar.add(MarkerComments.END_OF_TOP_NAVBAR);
-        navigationBar.add(HtmlTree.SPAN(HtmlStyle.skipNav)
+        navigationBar.add(HtmlTree.SPAN(HtmlStyles.skipNav)
                 .addUnchecked(Text.EMPTY)
                 .setId(HtmlIds.SKIP_NAVBAR_TOP));
 

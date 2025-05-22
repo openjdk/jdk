@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,12 @@
 #include "utilities/tableStatistics.hpp"
 
 class CompactHashtableWriter;
-class DumpedInternedStrings;
 class JavaThread;
 class SerializeClosure;
 
 class StringTableConfig;
 
 class StringTable : AllStatic {
-  friend class VMStructs;
   friend class StringTableConfig;
 
   static volatile bool _has_work;
@@ -56,6 +54,18 @@ class StringTable : AllStatic {
   static double get_load_factor();
   static double get_dead_factor(size_t num_dead);
 
+public:
+  typedef struct StringWrapperInternal StringWrapper;
+
+  // Unnamed int needed to fit CompactHashtable's equals type signature
+  static bool wrapped_string_equals(oop java_string, const StringWrapper& wrapped_str, int = 0);
+
+private:
+  static const char* get_symbol_utf8(const StringWrapper& symbol_str);
+  static unsigned int hash_wrapped_string(const StringWrapper& wrapped_str);
+  static const jchar* to_unicode(const StringWrapper& wrapped_str, int &len, TRAPS);
+  static Handle handle_from_wrapped_string(const StringWrapper& wrapped_str, TRAPS);
+
   // GC support
 
   // Callback for GC to notify of changes that might require cleaning or resize.
@@ -65,13 +75,11 @@ class StringTable : AllStatic {
   static void item_added();
   static void item_removed();
 
-  static oop intern(Handle string_or_null_h, const jchar* name, int len, TRAPS);
-  static oop do_intern(Handle string_or_null, const jchar* name, int len, uintx hash, TRAPS);
-  static oop do_lookup(const jchar* name, int len, uintx hash);
+  static oop intern(const StringWrapper& name, TRAPS);
+  static oop do_intern(const StringWrapper& name, uintx hash, TRAPS);
+  static oop do_lookup(const StringWrapper& name, uintx hash);
 
   static void print_table_statistics(outputStream* st);
-
-  static bool do_rehash();
 
  public:
   static size_t table_size();
@@ -89,21 +97,16 @@ class StringTable : AllStatic {
   // Interning
   static oop intern(Symbol* symbol, TRAPS);
   static oop intern(oop string, TRAPS);
-  static oop intern(const char *utf8_string, TRAPS);
+  static oop intern(const char* utf8_string, TRAPS);
 
   // Rehash the string table if it gets out of balance
 private:
   static bool should_grow();
-
+  static bool maybe_rehash_table();
 public:
-  static bool rehash_table_expects_safepoint_rehashing();
   static void rehash_table();
   static bool needs_rehashing() { return _needs_rehashing; }
-  static inline void update_needs_rehash(bool rehash) {
-    if (rehash) {
-      _needs_rehashing = true;
-    }
-  }
+  static inline void update_needs_rehash(bool rehash);
 
   // Sharing
 #if INCLUDE_CDS_JAVA_HEAP
@@ -138,12 +141,13 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  private:
-  static oop lookup_shared(const jchar* name, int len, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static oop lookup_shared(const StringWrapper& name, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
  public:
   static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static size_t shared_entry_count() NOT_CDS_JAVA_HEAP_RETURN_(0);
   static void allocate_shared_strings_array(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static oop init_shared_table(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static oop init_shared_strings_array() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static void write_shared_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void set_shared_strings_array_index(int root_index) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.WinMsiPackage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -36,13 +37,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import jdk.jpackage.internal.IOUtils.XmlConsumer;
-import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import jdk.jpackage.internal.WixAppImageFragmentBuilder.ShortcutsFolder;
+import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.resources.ResourceLocator;
+import jdk.jpackage.internal.util.XmlConsumer;
 
 /**
  * Creates UI WiX fragment.
@@ -50,31 +50,26 @@ import jdk.jpackage.internal.WixAppImageFragmentBuilder.ShortcutsFolder;
 final class WixUiFragmentBuilder extends WixFragmentBuilder {
 
     @Override
-    void initFromParams(Map<String, ? super Object> params) {
-        super.initFromParams(params);
+    void initFromParams(BuildEnv env, WinMsiPackage pkg) {
+        super.initFromParams(env, pkg);
 
-        String licenseFile = LICENSE_FILE.fetchFrom(params);
-        withLicenseDlg = licenseFile != null;
+        withLicenseDlg = pkg.licenseFile().isPresent();
         if (withLicenseDlg) {
-            Path licenseFileName = IOUtils.getFileName(Path.of(licenseFile));
+            Path licenseFileName = pkg.licenseFile().orElseThrow().getFileName();
             Path destFile = getConfigRoot().resolve(licenseFileName);
             setWixVariable("JpLicenseRtf", destFile.toAbsolutePath().toString());
         }
 
-        withInstallDirChooserDlg = INSTALLDIR_CHOOSER.fetchFrom(params);
+        withInstallDirChooserDlg = pkg.withInstallDirChooser();
 
-        List<ShortcutsFolder> shortcutFolders = Stream.of(
-                ShortcutsFolder.values()).filter(shortcutFolder -> {
-            return shortcutFolder.requested(params)
-                    && SHORTCUT_PROMPT.fetchFrom(params);
-        }).toList();
+        final var shortcutFolders = ShortcutsFolder.getForPackage(pkg);
 
-        withShortcutPromptDlg = !shortcutFolders.isEmpty();
+        withShortcutPromptDlg = !shortcutFolders.isEmpty() && pkg.withShortcutPrompt();
 
         customDialogs = new ArrayList<>();
 
         if (withShortcutPromptDlg) {
-            CustomDialog dialog = new CustomDialog(params, I18N.getString(
+            CustomDialog dialog = new CustomDialog(env::createResource, I18N.getString(
                     "resource.shortcutpromptdlg-wix-file"),
                     "ShortcutPromptDlg.wxs");
             for (var shortcutFolder : shortcutFolders) {
@@ -85,7 +80,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         }
 
         if (withInstallDirChooserDlg) {
-            CustomDialog dialog = new CustomDialog(params, I18N.getString(
+            CustomDialog dialog = new CustomDialog(env::createResource, I18N.getString(
                     "resource.installdirnotemptydlg-wix-file"),
                     "InstallDirNotEmptyDlg.wxs");
             List<Dialog> dialogIds = getUI().dialogIdsSupplier.apply(this);
@@ -96,11 +91,17 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
     }
 
     @Override
-    void configureWixPipeline(WixPipeline wixPipeline) {
+    void configureWixPipeline(WixPipeline.Builder wixPipeline) {
         super.configureWixPipeline(wixPipeline);
 
         if (withShortcutPromptDlg || withInstallDirChooserDlg || withLicenseDlg) {
-            wixPipeline.addLightOptions("-ext", "WixUIExtension");
+            final String extName;
+            switch (getWixType()) {
+                case Wix3 -> extName = "WixUIExtension";
+                case Wix4 -> extName = "WixToolset.UI.wixext";
+                default -> throw new IllegalArgumentException();
+            }
+            wixPipeline.addLightOptions("-ext", extName);
         }
 
         // Only needed if we using CA dll, so Wix can find it
@@ -120,7 +121,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
 
         if (withCustomActionsDll) {
             String fname = "wixhelper.dll"; // CA dll
-            try (InputStream is = OverridableResource.readDefault(fname)) {
+            try (InputStream is = ResourceLocator.class.getResourceAsStream(fname)) {
                 Files.copy(is, getConfigRoot().resolve(fname));
             }
         }
@@ -148,15 +149,14 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
             xml.writeEndElement(); // WixVariable
         }
 
-        xml.writeStartElement("UI");
-        xml.writeAttribute("Id", "JpUI");
-
         var ui = getUI();
         if (ui != null) {
-            ui.write(this, xml);
+            ui.write(getWixType(), this, xml);
+        } else {
+            xml.writeStartElement("UI");
+            xml.writeAttribute("Id", "JpUI");
+            xml.writeEndElement();
         }
-
-        xml.writeEndElement(); // UI
     }
 
     private UI getUI() {
@@ -187,12 +187,43 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
             this.dialogPairsSupplier = dialogPairsSupplier;
         }
 
-        void write(WixUiFragmentBuilder outer, XMLStreamWriter xml) throws
-                XMLStreamException, IOException {
-            xml.writeStartElement("UIRef");
-            xml.writeAttribute("Id", wixUIRef);
-            xml.writeEndElement(); // UIRef
+        void write(WixToolsetType wixType, WixUiFragmentBuilder outer, XMLStreamWriter xml) throws XMLStreamException, IOException {
+            switch (wixType) {
+                case Wix3 -> {}
+                case Wix4 -> {
+                    // https://wixtoolset.org/docs/fourthree/faqs/#converting-custom-wixui-dialog-sets
+                    xml.writeProcessingInstruction("foreach WIXUIARCH in X86;X64;A64");
+                    writeWix4UIRef(xml, wixUIRef, "JpUIInternal_$(WIXUIARCH)");
+                    xml.writeProcessingInstruction("endforeach");
 
+                    writeWix4UIRef(xml, "JpUIInternal", "JpUI");
+                }
+                default -> {
+                    throw new IllegalArgumentException();
+                }
+            }
+
+            xml.writeStartElement("UI");
+            switch (wixType) {
+                case Wix3 -> {
+                    xml.writeAttribute("Id", "JpUI");
+                    xml.writeStartElement("UIRef");
+                    xml.writeAttribute("Id", wixUIRef);
+                    xml.writeEndElement(); // UIRef
+                }
+                case Wix4 -> {
+                    xml.writeAttribute("Id", "JpUIInternal");
+                }
+                default -> {
+                    throw new IllegalArgumentException();
+                }
+            }
+            writeContents(wixType, outer, xml);
+            xml.writeEndElement(); // UI
+        }
+
+        private void writeContents(WixToolsetType wixType, WixUiFragmentBuilder outer,
+                XMLStreamWriter xml) throws XMLStreamException, IOException {
             if (dialogIdsSupplier != null) {
                 List<Dialog> dialogIds = dialogIdsSupplier.apply(outer);
                 Map<DialogPair, List<Publish>> dialogPairs = dialogPairsSupplier.get();
@@ -210,12 +241,23 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
                     DialogPair pair = new DialogPair(firstId, secondId);
                     for (var curPair : List.of(pair, pair.flip())) {
                         for (var publish : dialogPairs.get(curPair)) {
-                            writePublishDialogPair(xml, publish, curPair);
+                            writePublishDialogPair(wixType, xml, publish, curPair);
                         }
                     }
                     firstId = secondId;
                 }
             }
+        }
+
+        private static void writeWix4UIRef(XMLStreamWriter xml, String uiRef, String id) throws XMLStreamException, IOException {
+            // https://wixtoolset.org/docs/fourthree/faqs/#referencing-the-standard-wixui-dialog-sets
+            xml.writeStartElement("UI");
+            xml.writeAttribute("Id", id);
+            xml.writeStartElement("ui:WixUI");
+            xml.writeAttribute("Id", uiRef);
+            xml.writeNamespace("ui", "http://wixtoolset.org/schemas/v4/wxs/ui");
+            xml.writeEndElement(); // UIRef
+            xml.writeEndElement(); // UI
         }
 
         private final String wixUIRef;
@@ -441,9 +483,8 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         return new PublishBuilder(publish);
     }
 
-    private static void writePublishDialogPair(XMLStreamWriter xml,
-            Publish publish, DialogPair dialogPair) throws IOException,
-            XMLStreamException {
+    private static void writePublishDialogPair(WixToolsetType wixType, XMLStreamWriter xml,
+            Publish publish, DialogPair dialogPair) throws IOException, XMLStreamException {
         xml.writeStartElement("Publish");
         xml.writeAttribute("Dialog", dialogPair.firstId);
         xml.writeAttribute("Control", publish.control);
@@ -452,23 +493,26 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         if (publish.order != 0) {
             xml.writeAttribute("Order", String.valueOf(publish.order));
         }
-        xml.writeCharacters(publish.condition);
+        switch (wixType) {
+            case Wix3 -> xml.writeCharacters(publish.condition);
+            case Wix4 -> xml.writeAttribute("Condition", publish.condition);
+            default -> throw new IllegalArgumentException();
+        }
         xml.writeEndElement();
     }
 
     private final class CustomDialog {
 
-        CustomDialog(Map<String, ? super Object> params, String category,
+        CustomDialog(Function<String, OverridableResource> createResource, String category,
                 String wxsFileName) {
             this.wxsFileName = wxsFileName;
             this.wixVariables = new WixVariables();
 
-            addResource(
-                    createResource(wxsFileName, params).setCategory(category),
-                    wxsFileName);
+            addResource(createResource.apply(wxsFileName).setCategory(category).setPublicName(
+                    wxsFileName), wxsFileName);
         }
 
-        void addToWixPipeline(WixPipeline wixPipeline) {
+        void addToWixPipeline(WixPipeline.Builder wixPipeline) {
             wixPipeline.addSource(getConfigRoot().toAbsolutePath().resolve(
                     wxsFileName), wixVariables.getValues());
         }
@@ -482,20 +526,4 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
     private boolean withLicenseDlg;
     private boolean withCustomActionsDll = true;
     private List<CustomDialog> customDialogs;
-
-    private static final BundlerParamInfo<Boolean> INSTALLDIR_CHOOSER
-            = new StandardBundlerParam<>(
-                    Arguments.CLIOptions.WIN_DIR_CHOOSER.getId(),
-                    Boolean.class,
-                    params -> false,
-                    (s, p) -> Boolean.valueOf(s)
-            );
-
-    private static final StandardBundlerParam<Boolean> SHORTCUT_PROMPT
-            = new StandardBundlerParam<>(
-                    Arguments.CLIOptions.WIN_SHORTCUT_PROMPT.getId(),
-                    Boolean.class,
-                    params -> false,
-                    (s, p) -> Boolean.valueOf(s)
-            );
 }

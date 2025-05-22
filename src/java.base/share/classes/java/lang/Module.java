@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,7 @@ import java.lang.reflect.AccessFlag;
 import java.lang.reflect.AnnotatedElement;
 import java.net.URI;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.security.CodeSource;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,18 +53,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attribute;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassTransform;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
@@ -73,7 +69,6 @@ import jdk.internal.module.Resources;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.Stable;
-import sun.security.util.SecurityConstants;
 
 /**
  * Represents a run-time module, either {@link #isNamed() named} or unnamed.
@@ -143,10 +138,6 @@ public final class Module implements AnnotatedElement {
         String loc = Objects.toString(uri, null);
         Object[] packages = descriptor.packages().toArray();
         defineModule0(this, isOpen, vs, loc, packages);
-        if (loader == null || loader == ClassLoaders.platformClassLoader()) {
-            // boot/builtin modules are always native
-            implAddEnableNativeAccess();
-        }
     }
 
 
@@ -201,22 +192,9 @@ public final class Module implements AnnotatedElement {
     /**
      * Returns the {@code ClassLoader} for this module.
      *
-     * <p> If there is a security manager then its {@code checkPermission}
-     * method if first called with a {@code RuntimePermission("getClassLoader")}
-     * permission to check that the caller is allowed to get access to the
-     * class loader. </p>
-     *
      * @return The class loader for this module
-     *
-     * @throws SecurityException
-     *         If denied by the security manager
      */
     public ClassLoader getClassLoader() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
-        }
         return loader;
     }
 
@@ -269,7 +247,7 @@ public final class Module implements AnnotatedElement {
 
     /**
      * Returns {@code true} if this module can access
-     * <a href="foreign/package-summary.html#restricted"><em>restricted</em></a> methods.
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/RestrictedMethods.html#restricted"><em>restricted</em></a> methods.
      *
      * @return {@code true} if this module can access <em>restricted</em> methods.
      * @since 22
@@ -308,26 +286,46 @@ public final class Module implements AnnotatedElement {
     }
 
     // This is invoked from Reflection.ensureNativeAccess
-    void ensureNativeAccess(Class<?> owner, String methodName, Class<?> currentClass) {
+    void ensureNativeAccess(Class<?> owner, String methodName, Class<?> currentClass, boolean jni) {
         // The target module whose enableNativeAccess flag is ensured
         Module target = moduleForNativeAccess();
-        if (!EnableNativeAccess.isNativeAccessEnabled(target)) {
-            if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
-                throw new IllegalCallerException("Illegal native access from: " + this);
+        ModuleBootstrap.IllegalNativeAccess illegalNativeAccess = ModuleBootstrap.illegalNativeAccess();
+        if (illegalNativeAccess != ModuleBootstrap.IllegalNativeAccess.ALLOW &&
+                !EnableNativeAccess.isNativeAccessEnabled(target)) {
+            String mod = isNamed() ? "module " + getName() : "an unnamed module";
+            if (currentClass != null) {
+                // try to extract location of the current class (e.g. jar or folder)
+                CodeSource cs = currentClass.getProtectionDomain().getCodeSource();
+                if (cs != null) {
+                    URL url = cs.getLocation();
+                    if (url != null) {
+                        mod += " (" + url + ")";
+                    }
+                }
             }
-            if (EnableNativeAccess.trySetEnableNativeAccess(target)) {
+            if (illegalNativeAccess == ModuleBootstrap.IllegalNativeAccess.DENY) {
+                throw new IllegalCallerException("Illegal native access from " + mod);
+            } else if (EnableNativeAccess.trySetEnableNativeAccess(target)) {
                 // warn and set flag, so that only one warning is reported per module
                 String cls = owner.getName();
                 String mtd = cls + "::" + methodName;
-                String mod = isNamed() ? "module " + getName() : "an unnamed module";
                 String modflag = isNamed() ? getName() : "ALL-UNNAMED";
                 String caller = currentClass != null ? currentClass.getName() : "code";
-                System.err.printf("""
-                        WARNING: A restricted method in %s has been called
-                        WARNING: %s has been called by %s in %s
-                        WARNING: Use --enable-native-access=%s to avoid a warning for callers in this module
-                        WARNING: Restricted methods will be blocked in a future release unless native access is enabled
-                        %n""", cls, mtd, caller, mod, modflag);
+                if (jni) {
+                    VM.initialErr().printf("""
+                            WARNING: A native method in %s has been bound
+                            WARNING: %s is declared in %s
+                            WARNING: Use --enable-native-access=%s to avoid a warning for native methods declared in this module
+                            WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+                            %n""", cls, mtd, mod, modflag);
+                } else {
+                    VM.initialErr().printf("""
+                            WARNING: A restricted method in %s has been called
+                            WARNING: %s has been called by %s in %s
+                            WARNING: Use --enable-native-access=%s to avoid a warning for callers in this module
+                            WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+                            %n""", cls, mtd, caller, mod, modflag);
+                }
             }
         }
     }
@@ -689,7 +687,6 @@ public final class Module implements AnnotatedElement {
         return implIsExportedOrOpen(pn, EVERYONE_MODULE, /*open*/true);
     }
 
-
     /**
      * Returns {@code true} if this module exports or opens the given package
      * to the given module. If the other module is {@code EVERYONE_MODULE} then
@@ -708,12 +705,12 @@ public final class Module implements AnnotatedElement {
         if (descriptor.isOpen() || descriptor.isAutomatic())
             return descriptor.packages().contains(pn);
 
-        // exported/opened via module declaration/descriptor
-        if (isStaticallyExportedOrOpen(pn, other, open))
+        // exported/opened via module declaration/descriptor or CLI options
+        if (isExplicitlyExportedOrOpened(pn, other, open))
             return true;
 
         // exported via addExports/addOpens
-        if (isReflectivelyExportedOrOpen(pn, other, open))
+        if (isReflectivelyExportedOrOpened(pn, other, open))
             return true;
 
         // not exported or open to other
@@ -724,7 +721,7 @@ public final class Module implements AnnotatedElement {
      * Returns {@code true} if this module exports or opens a package to
      * the given module via its module declaration or CLI options.
      */
-    private boolean isStaticallyExportedOrOpen(String pn, Module other, boolean open) {
+    private boolean isExplicitlyExportedOrOpened(String pn, Module other, boolean open) {
         // test if package is open to everyone or <other>
         Map<String, Set<Module>> openPackages = this.openPackages;
         if (openPackages != null && allows(openPackages.get(pn), other)) {
@@ -765,7 +762,7 @@ public final class Module implements AnnotatedElement {
      * Returns {@code true} if this module reflectively exports or opens the
      * given package to the given module.
      */
-    private boolean isReflectivelyExportedOrOpen(String pn, Module other, boolean open) {
+    private boolean isReflectivelyExportedOrOpened(String pn, Module other, boolean open) {
         // exported or open to all modules
         Map<String, Boolean> exports = ReflectionData.exports.get(this, EVERYONE_MODULE);
         if (exports != null) {
@@ -810,7 +807,7 @@ public final class Module implements AnnotatedElement {
      * given package to the given module.
      */
     boolean isReflectivelyExported(String pn, Module other) {
-        return isReflectivelyExportedOrOpen(pn, other, false);
+        return isReflectivelyExportedOrOpened(pn, other, false);
     }
 
     /**
@@ -818,7 +815,7 @@ public final class Module implements AnnotatedElement {
      * given package to the given module.
      */
     boolean isReflectivelyOpened(String pn, Module other) {
-        return isReflectivelyExportedOrOpen(pn, other, true);
+        return isReflectivelyExportedOrOpened(pn, other, true);
     }
 
 
@@ -1034,50 +1031,38 @@ public final class Module implements AnnotatedElement {
             }
         }
 
-        // add package name to exports if absent
-        Map<String, Boolean> map = ReflectionData.exports
-            .computeIfAbsent(this, other,
-                             (m1, m2) -> new ConcurrentHashMap<>());
-        if (open) {
-            map.put(pn, Boolean.TRUE);  // may need to promote from FALSE to TRUE
-        } else {
-            map.putIfAbsent(pn, Boolean.FALSE);
-        }
-    }
-
-    /**
-     * Updates a module to open all packages in the given sets to all unnamed
-     * modules.
-     *
-     * @apiNote Used during startup to open packages for illegal access.
-     */
-    void implAddOpensToAllUnnamed(Set<String> concealedPkgs, Set<String> exportedPkgs) {
-        if (jdk.internal.misc.VM.isModuleSystemInited()) {
-            throw new IllegalStateException("Module system already initialized");
-        }
-
-        // replace this module's openPackages map with a new map that opens
-        // the packages to all unnamed modules.
-        Map<String, Set<Module>> openPackages = this.openPackages;
-        if (openPackages == null) {
-            openPackages = HashMap.newHashMap(concealedPkgs.size() + exportedPkgs.size());
-        } else {
-            openPackages = new HashMap<>(openPackages);
-        }
-        implAddOpensToAllUnnamed(concealedPkgs, openPackages);
-        implAddOpensToAllUnnamed(exportedPkgs, openPackages);
-        this.openPackages = openPackages;
-    }
-
-    private void implAddOpensToAllUnnamed(Set<String> pkgs, Map<String, Set<Module>> openPackages) {
-        for (String pn : pkgs) {
-            Set<Module> prev = openPackages.putIfAbsent(pn, ALL_UNNAMED_MODULE_SET);
-            if (prev != null) {
-                prev.add(ALL_UNNAMED_MODULE);
+        if (VM.isBooted()) {
+            // add package name to ReflectionData.exports if absent
+            Map<String, Boolean> map = ReflectionData.exports
+                .computeIfAbsent(this, other,
+                                 (m1, m2) -> new ConcurrentHashMap<>());
+            if (open) {
+                map.put(pn, Boolean.TRUE);  // may need to promote from FALSE to TRUE
+            } else {
+                map.putIfAbsent(pn, Boolean.FALSE);
             }
-
-            // update VM to export the package
-            addExportsToAllUnnamed0(this, pn);
+        } else {
+            // export/open packages during startup (--add-exports and --add-opens)
+            Map<String, Set<Module>> packageToTargets = (open) ? openPackages : exportedPackages;
+            if (packageToTargets != null) {
+                // copy existing map
+                packageToTargets = new HashMap<>(packageToTargets);
+                packageToTargets.compute(pn, (_, values) -> {
+                    var targets = new HashSet<Module>();
+                    if (values != null) {
+                        targets.addAll(values);
+                    }
+                    targets.add(other);
+                    return targets;
+                });
+            } else {
+                packageToTargets = Map.of(pn, Set.of(other));
+            }
+            if (open) {
+                this.openPackages = packageToTargets;
+            } else {
+                this.exportedPackages = packageToTargets;
+            }
         }
     }
 
@@ -1553,7 +1538,6 @@ public final class Module implements AnnotatedElement {
     // cached class file with annotations
     private volatile Class<?> moduleInfoClass;
 
-    @SuppressWarnings("removal")
     private Class<?> moduleInfoClass() {
         Class<?> clazz = this.moduleInfoClass;
         if (clazz != null)
@@ -1563,8 +1547,7 @@ public final class Module implements AnnotatedElement {
             clazz = this.moduleInfoClass;
             if (clazz == null) {
                 if (isNamed()) {
-                    PrivilegedAction<Class<?>> pa = this::loadModuleInfoClass;
-                    clazz = AccessController.doPrivileged(pa);
+                    clazz = loadModuleInfoClass();
                 }
                 if (clazz == null) {
                     class DummyModuleInfo { }
@@ -1592,7 +1575,7 @@ public final class Module implements AnnotatedElement {
     private Class<?> loadModuleInfoClass(InputStream in) throws IOException {
         final String MODULE_INFO = "module-info";
         var cc = ClassFile.of(ClassFile.ConstantPoolSharingOption.NEW_POOL);
-        byte[] bytes = cc.transform(cc.parse(in.readAllBytes()), (clb, cle) -> {
+        byte[] bytes = cc.transformClass(cc.parse(in.readAllBytes()), (clb, cle) -> {
             switch (cle) {
                 case AccessFlags af -> clb.withFlags(AccessFlag.INTERFACE,
                         AccessFlag.ABSTRACT, AccessFlag.SYNTHETIC);
@@ -1678,9 +1661,8 @@ public final class Module implements AnnotatedElement {
      * with the name "{@code META-INF/MANIFEST.MF}" is never encapsulated
      * because "{@code META-INF}" is not a legal package name. </p>
      *
-     * <p> This method returns {@code null} if the resource is not in this
-     * module, the resource is encapsulated and cannot be located by the caller,
-     * or access to the resource is denied by the security manager. </p>
+     * <p> This method returns {@code null} if the resource is not in this module
+     * or the resource is encapsulated and cannot be located by the caller. </p>
      *
      * @param  name
      *         The resource name

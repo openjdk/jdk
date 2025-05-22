@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8246774
  * @summary Basic tests for prohibited magic serialPersistentFields
  * @library /test/lib
- * @enablePreview
  * @run testng SerialPersistentFieldsTest
  */
 
@@ -231,7 +230,7 @@ public class SerialPersistentFieldsTest {
                                             ObjectStreamField[] spf) {
         var cf = ClassFile.of();
         var model = cf.parse(classBytes);
-        return cf.transform(model, new SerialPersistentFieldsVisitor(model.thisClass().asSymbol(), spf));
+        return cf.transformClass(model, new SerialPersistentFieldsVisitor(model.thisClass().asSymbol(), spf));
     }
 
     /** A visitor that adds a serialPersistentFields field, and assigns it in clinit. */
@@ -270,13 +269,13 @@ public class SerialPersistentFieldsTest {
                     cob.bipush(i);
                     cob.new_(CD_ObjectStreamField);
                     cob.dup();
-                    cob.constantInstruction(osf.getName());
+                    cob.loadConstant(osf.getName());
                     if (osf.isPrimitive()) {
-                        cob.constantInstruction(DynamicConstantDesc.ofNamed(
+                        cob.loadConstant(DynamicConstantDesc.ofNamed(
                                 ConstantDescs.BSM_PRIMITIVE_CLASS, String.valueOf(osf.getTypeCode()), CD_Class));
                     } else {
                         // Currently Classfile API cannot encode primitive classdescs as condy
-                        cob.constantInstruction(osf.getType().describeConstable().orElseThrow());
+                        cob.loadConstant(osf.getType().describeConstable().orElseThrow());
                     }
                     cob.invokespecial(CD_ObjectStreamField, INIT_NAME, MethodTypeDesc.of(CD_void, CD_String, CD_Class));
                     cob.aastore();

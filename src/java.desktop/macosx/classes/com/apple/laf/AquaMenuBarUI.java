@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.MenuBar;
-import java.security.AccessController;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -38,18 +37,13 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicMenuBarUI;
 
 import sun.lwawt.macosx.LWCToolkit;
-import sun.security.action.GetBooleanAction;
 
 // MenuBar implementation for Mac L&F
-@SuppressWarnings("removal")
+@SuppressWarnings("restricted")
 public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvider {
 
     static {
-        java.security.AccessController.doPrivileged(
-                (java.security.PrivilegedAction<Void>) () -> {
-            System.loadLibrary("osxui");
-            return null;
-        });
+        System.loadLibrary("osxui");
     }
 
     // Utilities
@@ -151,7 +145,6 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
     public static boolean getScreenMenuBarProperty() {
         // Do not allow AWT to set the screen menu bar if it's embedded in another UI toolkit
         if (LWCToolkit.isEmbedded()) return false;
-        return AccessController.doPrivileged(new GetBooleanAction(
-                AquaLookAndFeel.sPropertyPrefix + "useScreenMenuBar"));
+        return Boolean.getBoolean(AquaLookAndFeel.sPropertyPrefix + "useScreenMenuBar");
     }
 }

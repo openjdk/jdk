@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-// no precompiled headers
 #include "asm/assembler.inline.hpp"
 #include "atomic_bsd_zero.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -225,10 +224,6 @@ void os::current_stack_base_and_size(address* base, size_t* size) {
 // helper functions for fatal error handler
 
 void os::print_context(outputStream* st, const void* context) {
-  ShouldNotCallThis();
-}
-
-void os::print_tos_pc(outputStream *st, const void *context) {
   ShouldNotCallThis();
 }
 

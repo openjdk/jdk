@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,10 @@ public class setvalue005 {
     private int tot_res = Consts.TEST_PASSED;
 
     public static void main (String argv[]) {
-        System.exit(run(argv,System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {
@@ -106,9 +109,11 @@ public class setvalue005 {
             return quitDebuggee();
         }
 
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
-            log.complain("TEST FAILURE: Method Debugee.threadByName() returned null for debuggee thread "
+        ReferenceType debuggeeClass = debuggee.classByName(DEBUGGEE_CLASS); // debuggee main class
+
+        thrRef = debuggee.threadByFieldName(debuggeeClass, "testThread", DEBUGGEE_THRNAME);
+        if (thrRef == null) {
+            log.complain("TEST FAILURE: Method Debugee.threadByFieldName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;
             return quitDebuggee();

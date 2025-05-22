@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary Test the Signature.update(ByteBuffer) method
  * @author Andreas Sterbenz
  * @key randomness
+ * @run main ByteBuffers DSA 512
+ * @run main ByteBuffers SHA256withDSA 2048
  */
 
 import java.util.*;
@@ -37,17 +39,21 @@ import java.security.*;
 public class ByteBuffers {
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider("SUN");
+        Provider p = Security.getProvider(
+                            System.getProperty("test.provider.name", "SUN"));
         Random random = new Random();
         int n = 10 * 1024;
         byte[] t = new byte[n];
         random.nextBytes(t);
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", p);
-        kpg.initialize(512);
+        String kpgAlgorithm = "DSA";
+        int keySize = Integer.parseInt(args[1]);
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
+        kpg.initialize(keySize);
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("DSA", p);
+        String signAlgo = args[0];
+        Signature sig = Signature.getInstance(signAlgo, p);
         sig.initSign(kp.getPrivate());
         sig.update(t);
         byte[] signature = sig.sign();

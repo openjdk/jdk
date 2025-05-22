@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_CodeStubs.hpp"
@@ -135,7 +134,7 @@ static jlong as_long(LIR_Opr data) {
 Address LIR_Assembler::as_Address(LIR_Address* addr, Register tmp) {
   if (addr->base()->is_illegal()) {
     assert(addr->index()->is_illegal(), "must be illegal too");
-    __ movptr(tmp, addr->disp());
+    __ movptr(tmp, (address)addr->disp());
     return Address(tmp, 0);
   }
 
@@ -305,7 +304,7 @@ int LIR_Assembler::emit_exception_handler() {
   __ verify_not_null_oop(x10);
 
   // search an exception handler (x10: exception oop, x13: throwing pc)
-  __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_from_callee_id)));
+  __ far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::handle_exception_from_callee_id)));
   __ should_not_reach_here();
   guarantee(code_offset() - offset <= exception_handler_size(), "overflow");
   __ end_a_stub();
@@ -361,7 +360,7 @@ int LIR_Assembler::emit_unwind_handler() {
   // remove the activation and dispatch to the unwind handler
   __ block_comment("remove_frame and dispatch to the unwind handler");
   __ remove_frame(initial_frame_size_in_bytes());
-  __ far_jump(RuntimeAddress(Runtime1::entry_for(Runtime1::unwind_exception_id)));
+  __ far_jump(RuntimeAddress(Runtime1::entry_for(C1StubId::unwind_exception_id)));
 
   // Emit the slow path assembly
   if (stub != nullptr) {
@@ -426,6 +425,8 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
   assert(dest->is_register(), "should not call otherwise");
   LIR_Const* c = src->as_constant_ptr();
   address const_addr = nullptr;
+  jfloat fconst;
+  jdouble dconst;
 
   switch (c->type()) {
     case T_INT:
@@ -461,15 +462,25 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
       break;
 
     case T_FLOAT:
-      const_addr = float_constant(c->as_jfloat());
-      assert(const_addr != nullptr, "must create float constant in the constant table");
-      __ flw(dest->as_float_reg(), InternalAddress(const_addr));
+      fconst = c->as_jfloat();
+      if (MacroAssembler::can_fp_imm_load(fconst)) {
+        __ fli_s(dest->as_float_reg(), fconst);
+      } else {
+        const_addr = float_constant(fconst);
+        assert(const_addr != nullptr, "must create float constant in the constant table");
+        __ flw(dest->as_float_reg(), InternalAddress(const_addr));
+      }
       break;
 
     case T_DOUBLE:
-      const_addr = double_constant(c->as_jdouble());
-      assert(const_addr != nullptr, "must create double constant in the constant table");
-      __ fld(dest->as_double_reg(), InternalAddress(const_addr));
+      dconst = c->as_jdouble();
+      if (MacroAssembler::can_dp_imm_load(dconst)) {
+        __ fli_d(dest->as_double_reg(), dconst);
+      } else {
+        const_addr = double_constant(c->as_jdouble());
+        assert(const_addr != nullptr, "must create double constant in the constant table");
+        __ fld(dest->as_double_reg(), InternalAddress(const_addr));
+      }
       break;
 
     default:
@@ -487,12 +498,12 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
         __ sd(zr, frame_map()->address_for_slot(dest->single_stack_ix()));
       } else {
         const2reg(src, FrameMap::t1_opr, lir_patch_none, nullptr);
-        reg2stack(FrameMap::t1_opr, dest, c->type(), false);
+        reg2stack(FrameMap::t1_opr, dest, c->type());
       }
       break;
     case T_ADDRESS:   // fall through
       const2reg(src, FrameMap::t1_opr, lir_patch_none, nullptr);
-      reg2stack(FrameMap::t1_opr, dest, c->type(), false);
+      reg2stack(FrameMap::t1_opr, dest, c->type());
     case T_INT:       // fall through
     case T_FLOAT:
       if (c->as_jint_bits() == 0) {
@@ -542,7 +553,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
       insn = &MacroAssembler::sw; break;
     case T_OBJECT:    // fall through
     case T_ARRAY:
-      assert(c->as_jobject() == 0, "should be");
+      assert(c->as_jobject() == nullptr, "should be");
       if (UseCompressedOops && !wide) {
         insn = &MacroAssembler::sw;
       } else {
@@ -609,7 +620,7 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   }
 }
 
-void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool pop_fpu_stack) {
+void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   precond(src->is_register() && dest->is_stack());
 
   uint const c_sz32 = sizeof(uint32_t);
@@ -642,7 +653,7 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool po
   }
 }
 
-void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide) {
+void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
   LIR_Address* to_addr = dest->as_address_ptr();
   // t0 was used as tmp reg in as_Address, so we use t1 as compressed_src
   Register compressed_src = t1;
@@ -761,7 +772,7 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   }
 
   stack2reg(src, temp, src->type());
-  reg2stack(temp, dest, dest->type(), false);
+  reg2stack(temp, dest, dest->type());
 }
 
 void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
@@ -838,10 +849,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       __ decode_heap_oop(dest->as_register());
     }
 
-    if (!(UseZGC && !ZGenerational)) {
-      // Load barrier has not yet been applied, so ZGC can't verify the oop here
-      __ verify_oop(dest->as_register());
-    }
+    __ verify_oop(dest->as_register());
   }
 }
 
@@ -873,6 +881,7 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
   }
 }
 
+// Consider using cmov (Zicond)
 void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type,
                           LIR_Opr cmp_opr1, LIR_Opr cmp_opr2) {
   Label label;
@@ -882,12 +891,10 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
 
   Label done;
   move_op(opr2, result, type, lir_patch_none, nullptr,
-          false,   // pop_fpu_stack
           false);  // wide
   __ j(done);
   __ bind(label);
   move_op(opr1, result, type, lir_patch_none, nullptr,
-          false,   // pop_fpu_stack
           false);  // wide
   __ bind(done);
 }
@@ -954,15 +961,15 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_d2f:
       __ fcvt_s_d(dest->as_float_reg(), src->as_double_reg()); break;
     case Bytecodes::_i2c:
-      __ zero_extend(dest->as_register(), src->as_register(), 16); break;
+      __ zext(dest->as_register(), src->as_register(), 16); break;
     case Bytecodes::_i2l:
-      __ sign_extend(dest->as_register_lo(), src->as_register(), 32); break;
+      __ sext(dest->as_register_lo(), src->as_register(), 32); break;
     case Bytecodes::_i2s:
-      __ sign_extend(dest->as_register(), src->as_register(), 16); break;
+      __ sext(dest->as_register(), src->as_register(), 16); break;
     case Bytecodes::_i2b:
-      __ sign_extend(dest->as_register(), src->as_register(), 8); break;
+      __ sext(dest->as_register(), src->as_register(), 8); break;
     case Bytecodes::_l2i:
-      __ sign_extend(dest->as_register(), src->as_register_lo(), 32); break;
+      __ sext(dest->as_register(), src->as_register_lo(), 32); break;
     case Bytecodes::_d2l:
       __ fcvt_l_d_safe(dest->as_register_lo(), src->as_double_reg()); break;
     case Bytecodes::_f2i:
@@ -980,6 +987,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
     __ lbu(t0, Address(op->klass()->as_register(),
                        InstanceKlass::init_state_offset()));
+    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
     __ mv(t1, (u1)InstanceKlass::fully_initialized);
     add_debug_info_for_null_check_here(op->stub()->info());
     __ bne(t0, t1, *op->stub()->entry(), /* is_far */ true);
@@ -1020,10 +1028,11 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       len,
                       tmp1,
                       tmp2,
-                      arrayOopDesc::header_size(op->type()),
+                      arrayOopDesc::base_offset_in_bytes(op->type()),
                       array_element_size(op->type()),
                       op->klass()->as_register(),
-                      *op->stub()->entry());
+                      *op->stub()->entry(),
+                      op->zero_array());
   }
   __ bind(*op->stub()->continuation());
 }
@@ -1084,10 +1093,10 @@ void LIR_Assembler::typecheck_helper_slowcheck(ciKlass *k, Register obj, Registe
       // check for self
       __ beq(klass_RInfo, k_RInfo, *success_target);
 
-      __ addi(sp, sp, -2 * wordSize); // 2: store k_RInfo and klass_RInfo
+      __ subi(sp, sp, 2 * wordSize); // 2: store k_RInfo and klass_RInfo
       __ sd(k_RInfo, Address(sp, 0));             // sub klass
       __ sd(klass_RInfo, Address(sp, wordSize));  // super klass
-      __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+      __ far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
       // load result to k_RInfo
       __ ld(k_RInfo, Address(sp, 0));
       __ addi(sp, sp, 2 * wordSize); // 2: pop out k_RInfo and klass_RInfo
@@ -1099,10 +1108,10 @@ void LIR_Assembler::typecheck_helper_slowcheck(ciKlass *k, Register obj, Registe
     // perform the fast part of the checking logic
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, nullptr);
     // call out-of-line instance of __ check_klass_subtytpe_slow_path(...)
-    __ addi(sp, sp, -2 * wordSize); // 2: store k_RInfo and klass_RInfo
+    __ subi(sp, sp, 2 * wordSize); // 2: store k_RInfo and klass_RInfo
     __ sd(klass_RInfo, Address(sp, wordSize));  // sub klass
     __ sd(k_RInfo, Address(sp, 0));             // super klass
-    __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+    __ far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
     // load result to k_RInfo
     __ ld(k_RInfo, Address(sp, 0));
     __ addi(sp, sp, 2 * wordSize); // 2: pop out k_RInfo and klass_RInfo
@@ -1288,7 +1297,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       int right_const = right->as_jint();
       if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
-        __ sign_extend(Rdst, Rdst, 32);
+        __ sext(Rdst, Rdst, 32);
      } else {
         __ mv(t0, right_const);
         logic_op_reg32(Rdst, Rleft, t0, code);
@@ -1345,9 +1354,9 @@ void LIR_Assembler::align_call(LIR_Code code) {
 }
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
-  address call = __ trampoline_call(Address(op->addr(), rtype));
+  address call = __ reloc_call(Address(op->addr(), rtype));
   if (call == nullptr) {
-    bailout("trampoline stub overflow");
+    bailout("reloc call address stub overflow");
     return;
   }
   add_call_info(code_offset(), op->info());
@@ -1357,7 +1366,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   address call = __ ic_call(op->addr());
   if (call == nullptr) {
-    bailout("trampoline stub overflow");
+    bailout("reloc call address stub overflow");
     return;
   }
   add_call_info(code_offset(), op->info());
@@ -1390,7 +1399,7 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   // exception object is not added to oop map by LinearScan
   // (LinearScan assumes that no oops are in fixed registers)
   info->add_register_oop(exceptionOop);
-  Runtime1::StubID unwind_id;
+  C1StubId unwind_id;
 
   // get current pc information
   // pc is only needed if the method has an exception handler, the unwind code does not need it.
@@ -1403,19 +1412,15 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   }
   int pc_for_athrow_offset = __ offset();
   InternalAddress pc_for_athrow(__ pc());
-  __ relocate(pc_for_athrow.rspec(), [&] {
-    int32_t offset;
-    __ la(exceptionPC->as_register(), pc_for_athrow.target(), offset);
-    __ addi(exceptionPC->as_register(), exceptionPC->as_register(), offset);
-  });
+  __ la(exceptionPC->as_register(), pc_for_athrow);
   add_call_info(pc_for_athrow_offset, info); // for exception handler
 
   __ verify_not_null_oop(x10);
   // search an exception handler (x10: exception oop, x13: throwing pc)
   if (compilation()->has_fpu_code()) {
-    unwind_id = Runtime1::handle_exception_id;
+    unwind_id = C1StubId::handle_exception_id;
   } else {
-    unwind_id = Runtime1::handle_exception_nofpu_id;
+    unwind_id = C1StubId::handle_exception_nofpu_id;
   }
   __ far_call(RuntimeAddress(Runtime1::entry_for(unwind_id)));
   __ nop();
@@ -1523,12 +1528,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
     add_debug_info_for_null_check_here(info);
   }
 
-  if (UseCompressedClassPointers) {
-    __ lwu(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-    __ decode_klass_not_null(result);
-  } else {
-    __ ld(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-  }
+  __ load_klass(result, obj);
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
@@ -1606,7 +1606,22 @@ void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   __ la(dst->as_register(), frame_map()->address_for_monitor_lock(monitor_no));
 }
 
-void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) { Unimplemented(); }
+void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
+  assert(op->crc()->is_single_cpu(),  "crc must be register");
+  assert(op->val()->is_single_cpu(),  "byte value must be register");
+  assert(op->result_opr()->is_single_cpu(), "result must be register");
+  Register crc = op->crc()->as_register();
+  Register val = op->val()->as_register();
+  Register res = op->result_opr()->as_register();
+
+  assert_different_registers(val, crc, res);
+  __ la(res, ExternalAddress(StubRoutines::crc_table_addr()));
+
+  __ notr(crc, crc); // ~crc
+  __ zext(crc, crc, 32);
+  __ update_byte_crc32(crc, val, res);
+  __ notr(res, crc); // ~crc
+}
 
 void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
                                    Register tmp, Label &next, Label &none,
@@ -1841,17 +1856,7 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
 void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
   assert(!tmp->is_valid(), "don't need temporary");
 
-  CodeBlob *cb = CodeCache::find_blob(dest);
-  if (cb != nullptr) {
-    __ far_call(RuntimeAddress(dest));
-  } else {
-    RuntimeAddress target(dest);
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ movptr(t0, target.target(), offset);
-      __ jalr(x1, t0, offset);
-    });
-  }
+  __ rt_call(dest);
 
   if (info != nullptr) {
     add_call_info_here(info);
@@ -1861,7 +1866,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
   if (dest->is_address() || src->is_address()) {
-    move_op(src, dest, type, lir_patch_none, info, /* pop_fpu_stack */ false, /* wide */ false);
+    move_op(src, dest, type, lir_patch_none, info, /* wide */ false);
   } else {
     ShouldNotReachHere();
   }
@@ -2048,16 +2053,16 @@ void LIR_Assembler::deoptimize_trap(CodeEmitInfo *info) {
 
   switch (patching_id(info)) {
     case PatchingStub::access_field_id:
-      target = Runtime1::entry_for(Runtime1::access_field_patching_id);
+      target = Runtime1::entry_for(C1StubId::access_field_patching_id);
       break;
     case PatchingStub::load_klass_id:
-      target = Runtime1::entry_for(Runtime1::load_klass_patching_id);
+      target = Runtime1::entry_for(C1StubId::load_klass_patching_id);
       break;
     case PatchingStub::load_mirror_id:
-      target = Runtime1::entry_for(Runtime1::load_mirror_patching_id);
+      target = Runtime1::entry_for(C1StubId::load_mirror_patching_id);
       break;
     case PatchingStub::load_appendix_id:
-      target = Runtime1::entry_for(Runtime1::load_appendix_patching_id);
+      target = Runtime1::entry_for(C1StubId::load_appendix_patching_id);
       break;
     default: ShouldNotReachHere();
   }
@@ -2143,10 +2148,10 @@ void LIR_Assembler::lir_store_slowcheck(Register k_RInfo, Register klass_RInfo, 
   // perform the fast part of the checking logic
   __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, nullptr);
   // call out-of-line instance of __ check_klass_subtype_slow_path(...)
-  __ addi(sp, sp, -2 * wordSize); // 2: store k_RInfo and klass_RInfo
+  __ subi(sp, sp, 2 * wordSize); // 2: store k_RInfo and klass_RInfo
   __ sd(klass_RInfo, Address(sp, wordSize));  // sub klass
   __ sd(k_RInfo, Address(sp, 0));             // super klass
-  __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+  __ far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
   // load result to k_RInfo
   __ ld(k_RInfo, Address(sp, 0));
   __ addi(sp, sp, 2 * wordSize); // 2: pop out k_RInfo and klass_RInfo

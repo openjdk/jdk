@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspaceClosure.hpp"
 
 void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {
@@ -92,7 +91,7 @@ bool UniqueMetaspaceClosure::do_ref(MetaspaceClosure::Ref* ref, bool read_only) 
     return false; // Already visited: no need to iterate embedded pointers.
   } else {
     if (_has_been_visited.maybe_grow()) {
-      log_info(cds, hashtables)("Expanded _has_been_visited table to %d", _has_been_visited.table_size());
+      log_info(aot, hashtables)("Expanded _has_been_visited table to %d", _has_been_visited.table_size());
     }
     return do_unique_ref(ref, read_only);
   }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,50 @@
 # questions.
 #
 
-include LibCommon.gmk
-
 ################################################################################
 
-ifeq ($(call isTargetOs, linux windows)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2), true+true+true)
-  $(eval $(call SetupJdkLibrary, BUILD_LIBJSVML, \
-      NAME := jsvml, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_windows := -defaultlib:msvcrt, \
-  ))
+include LibCommon.gmk
 
-  TARGETS += $(BUILD_LIBJSVML)
+ifeq ($(INCLUDE_COMPILER2), true)
+
+  ##############################################################################
+  ## Build libjsvml
+  ##############################################################################
+
+  ifeq ($(call isTargetOs, linux windows)+$(call isTargetCpu, x86_64), true+true)
+    $(eval $(call SetupJdkLibrary, BUILD_LIBJSVML, \
+        NAME := jsvml, \
+        LDFLAGS_windows := -defaultlib:msvcrt, \
+    ))
+
+    TARGETS += $(BUILD_LIBJSVML)
+  endif
+
+  ##############################################################################
+  ## Build libsleef
+  ##############################################################################
+
+  ifeq ($(call isTargetOs, linux macosx)+$(call isTargetCpu, aarch64 riscv64), true+true)
+    ifeq ($(call isTargetCpu, riscv64), true)
+      LIBSLEEF_CFLAGS := -march=rv64gcv
+    endif
+
+    $(eval $(call SetupJdkLibrary, BUILD_LIBSLEEF, \
+        NAME := sleef, \
+        OPTIMIZATION := HIGH, \
+        SRC := libsleef/lib, \
+        EXTRA_SRC := libsleef/generated, \
+        DISABLED_WARNINGS_gcc := unused-function sign-compare \
+            tautological-compare ignored-qualifiers, \
+        DISABLED_WARNINGS_clang := unused-function sign-compare \
+            tautological-compare ignored-qualifiers, \
+        CFLAGS := $(LIBSLEEF_CFLAGS), \
+        vector_math_sve.c_CFLAGS := $(SVE_CFLAGS), \
+    ))
+
+    TARGETS += $(BUILD_LIBSLEEF)
+  endif
+
 endif
 
 ################################################################################

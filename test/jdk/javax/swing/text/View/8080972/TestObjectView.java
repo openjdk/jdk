@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,15 +35,12 @@ import javax.swing.text.html.ObjectView;
  * @bug 8080972 8169887
  * @summary Audit Core Reflection in module java.desktop for places that will
  *          require changes to work with modules
- * @author Alexander Scherbatiy
- * @run main/othervm -Djava.security.manager=allow TestObjectView
+ * @run main TestObjectView
  */
 
 public class TestObjectView {
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(TestObjectView::testObjectView);
-        System.setSecurityManager(new SecurityManager());
         SwingUtilities.invokeAndWait(TestObjectView::testObjectView);
     }
 

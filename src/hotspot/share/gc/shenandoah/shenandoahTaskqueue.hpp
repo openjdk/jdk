@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +26,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
-#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
@@ -36,11 +37,11 @@
 
 class ShenandoahHeap;
 
-template<class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
-class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, F, N>
+template<class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
+class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, MT, N>
 {
 public:
-  typedef OverflowTaskQueue<E, F, N> taskqueue_t;
+  typedef OverflowTaskQueue<E, MT, N> taskqueue_t;
 
   BufferedOverflowTaskQueue() : _buf_empty(true) {};
 
@@ -301,21 +302,21 @@ public:
 typedef BufferedOverflowTaskQueue<ShenandoahMarkTask, mtGC> ShenandoahBufferedOverflowTaskQueue;
 typedef Padded<ShenandoahBufferedOverflowTaskQueue> ShenandoahObjToScanQueue;
 
-template <class T, MEMFLAGS F>
-class ParallelClaimableQueueSet: public GenericTaskQueueSet<T, F> {
+template <class T, MemTag MT>
+class ParallelClaimableQueueSet: public GenericTaskQueueSet<T, MT> {
 private:
   shenandoah_padding(0);
   volatile jint     _claimed_index;
   shenandoah_padding(1);
 
-  debug_only(uint   _reserved;  )
+  DEBUG_ONLY(uint   _reserved;  )
 
 public:
-  using GenericTaskQueueSet<T, F>::size;
+  using GenericTaskQueueSet<T, MT>::size;
 
 public:
-  ParallelClaimableQueueSet(int n) : GenericTaskQueueSet<T, F>(n), _claimed_index(0) {
-    debug_only(_reserved = 0; )
+  ParallelClaimableQueueSet(int n) : GenericTaskQueueSet<T, MT>(n), _claimed_index(0) {
+    DEBUG_ONLY(_reserved = 0; )
   }
 
   void clear_claimed() { _claimed_index = 0; }
@@ -325,15 +326,15 @@ public:
   void reserve(uint n) {
     assert(n <= size(), "Sanity");
     _claimed_index = (jint)n;
-    debug_only(_reserved = n;)
+    DEBUG_ONLY(_reserved = n;)
   }
 
-  debug_only(uint get_reserved() const { return (uint)_reserved; })
+  DEBUG_ONLY(uint get_reserved() const { return (uint)_reserved; })
 };
 
-template <class T, MEMFLAGS F>
-T* ParallelClaimableQueueSet<T, F>::claim_next() {
-  jint size = (jint)GenericTaskQueueSet<T, F>::size();
+template <class T, MemTag MT>
+T* ParallelClaimableQueueSet<T, MT>::claim_next() {
+  jint size = (jint)GenericTaskQueueSet<T, MT>::size();
 
   if (_claimed_index >= size) {
     return nullptr;
@@ -342,7 +343,7 @@ T* ParallelClaimableQueueSet<T, F>::claim_next() {
   jint index = Atomic::add(&_claimed_index, 1, memory_order_relaxed);
 
   if (index <= size) {
-    return GenericTaskQueueSet<T, F>::queue((uint)index - 1);
+    return GenericTaskQueueSet<T, MT>::queue((uint)index - 1);
   } else {
     return nullptr;
   }
@@ -354,12 +355,6 @@ public:
 
   bool is_empty();
   void clear();
-
-#if TASKQUEUE_STATS
-  static void print_taskqueue_stats_hdr(outputStream* const st);
-  void print_taskqueue_stats() const;
-  void reset_taskqueue_stats();
-#endif // TASKQUEUE_STATS
 };
 
 class ShenandoahTerminatorTerminator : public TerminatorTerminator {

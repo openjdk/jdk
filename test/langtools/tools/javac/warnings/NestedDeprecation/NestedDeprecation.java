@@ -1,4 +1,4 @@
-/**
+/*
  * @test  /nodynamiccopyright/
  * @bug 6598104 8032211
  * @build p.Dep1 p.Dep2

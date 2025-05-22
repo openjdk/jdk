@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public final class CatalogManager {
      * those referenced by the {@code nextCatalog} elements in the main catalog.
      * <p>
      * As specified in
-     * <a href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html#s.res.fail">
+     * <a href="https://groups.oasis-open.org/higherlogic/ws/public/download/14810/xml-catalogs.pdf">
      * XML Catalogs, OASIS Standard V1.1</a>, if a catalog entry is invalid, it
      * is ignored. In case all entries are invalid, the resulting Catalog object
      * will contain no Catalog elements. Any matching operation using the Catalog
@@ -65,7 +65,6 @@ public final class CatalogManager {
      * @throws IllegalArgumentException if either the URIs are not absolute
      * or do not have a URL protocol handler for the URI scheme
      * @throws CatalogException If an error occurs while parsing the catalog
-     * @throws SecurityException if access to the resource is denied by the security manager
      */
     public static Catalog catalog(CatalogFeatures features, URI... uris) {
         Util.validateUrisSyntax(uris);
@@ -127,7 +126,7 @@ public final class CatalogManager {
      * those referenced by the {@code nextCatalog} elements in the main catalog.
      * <p>
      * As specified in
-     * <a href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html#s.res.fail">
+     * <a href="https://groups.oasis-open.org/higherlogic/ws/public/download/14810/xml-catalogs.pdf">
      * XML Catalogs, OASIS Standard V1.1</a>, if a catalog entry is invalid, it
      * is ignored. In case all entries are invalid, the resulting CatalogResolver
      * object will contain no valid catalog. Any resolution operation using the
@@ -141,7 +140,6 @@ public final class CatalogManager {
      * @throws IllegalArgumentException if either the URIs are not absolute
      * or do not have a URL protocol handler for the URI scheme
      * @throws CatalogException If an error occurs while parsing the catalog
-     * @throws SecurityException if access to the resource is denied by the security manager
      */
     public static CatalogResolver catalogResolver(CatalogFeatures features, URI... uris) {
         Catalog catalog = catalog(features, uris);

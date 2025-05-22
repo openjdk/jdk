@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,18 +39,15 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 6457662
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6457662
  * @run testng/othervm validation.Bug6457662
  * @summary Test a Validator checks sequence maxOccurs correctly when it validates document repeatedly.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6457662 {
 
     public static final String xml = "<ACL xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>" + "<Tokens access=\"full\">" + "<Token>CheetahTech</Token>"

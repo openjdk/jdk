@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,12 +25,38 @@
 #ifndef SHARE_OPTO_VECTORIZATION_HPP
 #define SHARE_OPTO_VECTORIZATION_HPP
 
-#include "opto/node.hpp"
+#include "opto/matcher.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/mempointer.hpp"
+#include "utilities/pair.hpp"
 
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
+
+class VPointer;
+
+class VStatus : public StackObj {
+private:
+  const char* _failure_reason;
+
+  VStatus(const char* failure_reason) : _failure_reason(failure_reason) {}
+
+public:
+  static VStatus make_success() { return VStatus(nullptr); }
+
+  static VStatus make_failure(const char* failure_reason) {
+    assert(failure_reason != nullptr, "must have reason");
+    return VStatus(failure_reason);
+  }
+
+  bool is_success() const { return _failure_reason == nullptr; }
+
+  const char* failure_reason() const {
+    assert(!is_success(), "only failures have reason");
+    return _failure_reason;
+  }
+};
 
 #ifndef PRODUCT
 // Access to TraceAutoVectorization tags
@@ -59,9 +85,17 @@ private:
   PhiNode* _iv;
   CountedLoopEndNode* _pre_loop_end; // cache access to pre-loop for main loops only
 
-  NOT_PRODUCT(VTrace _vtrace;)
+  // We can add speculative runtime-checks if we have one of these:
+  //  - Auto Vectorization Parse Predicate:
+  //      pass all checks or trap -> recompile without this predicate.
+  //  - Multiversioning fast-loop projection:
+  //      pass all checks or go to slow-path-loop, where we have no speculative assumptions.
+  ParsePredicateSuccessProj* _auto_vectorization_parse_predicate_proj;
+  IfTrueNode* _multiversioning_fast_proj;
 
-  static constexpr char const* SUCCESS                    = "success";
+  NOT_PRODUCT(VTrace _vtrace;)
+  NOT_PRODUCT(TraceMemPointer _mptrace;)
+
   static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
   static constexpr char const* FAILURE_UNROLL_ONLY        = "loop only wants to be unrolled";
   static constexpr char const* FAILURE_VECTOR_WIDTH       = "vector_width must be power of 2";
@@ -77,7 +111,21 @@ public:
     _allow_cfg (allow_cfg),
     _cl        (nullptr),
     _cl_exit   (nullptr),
-    _iv        (nullptr) {}
+    _iv        (nullptr),
+    _pre_loop_end (nullptr),
+    _auto_vectorization_parse_predicate_proj(nullptr),
+    _multiversioning_fast_proj(nullptr)
+#ifndef PRODUCT
+    COMMA
+    _mptrace(TraceMemPointer(
+      _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_PARSING),
+      _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ALIASING),
+      _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ADJACENCY),
+      _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_OVERLAP)
+    ))
+#endif
+    {}
+
   NONCOPYABLE(VLoop);
 
   IdealLoopTree* lpt()        const { return _lpt; };
@@ -100,19 +148,60 @@ public:
     return head;
   };
 
+  ParsePredicateSuccessProj* auto_vectorization_parse_predicate_proj() const {
+    return _auto_vectorization_parse_predicate_proj;
+  }
+
+  IfTrueNode* multiversioning_fast_proj() const {
+    return _multiversioning_fast_proj;
+  }
+
+  bool are_speculative_checks_possible() const {
+    return _auto_vectorization_parse_predicate_proj != nullptr ||
+           _multiversioning_fast_proj != nullptr;
+  }
+
   // Estimate maximum size for data structures, to avoid repeated reallocation
   int estimated_body_length() const { return lpt()->_body.size(); };
   int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
 
+  // Should we align vector memory references on this platform?
+  static bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
+
 #ifndef PRODUCT
-  const VTrace& vtrace()      const { return _vtrace; }
+  const VTrace& vtrace()           const { return _vtrace; }
+  const TraceMemPointer& mptrace() const { return _mptrace; }
 
   bool is_trace_preconditions() const {
-    return vtrace().is_trace(TraceAutoVectorizationTag::PRECONDITIONS);
+    return _vtrace.is_trace(TraceAutoVectorizationTag::PRECONDITIONS);
   }
 
-  bool is_trace_pointer_analysis() const {
-    return vtrace().is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
+  bool is_trace_loop_analyzer() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::LOOP_ANALYZER);
+  }
+
+  bool is_trace_memory_slices() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::MEMORY_SLICES);
+  }
+
+  bool is_trace_body() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::BODY);
+  }
+
+  bool is_trace_vector_element_type() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::TYPES);
+  }
+
+  bool is_trace_dependency_graph() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::DEPENDENCY_GRAPH);
+  }
+
+  bool is_trace_vpointers() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
+  }
+
+  bool is_trace_speculative_runtime_checks() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SPECULATIVE_RUNTIME_CHECKS);
   }
 #endif
 
@@ -123,12 +212,33 @@ public:
     return n != nullptr && n->outcnt() > 0 && ctrl == _cl;
   }
 
+  // Some nodes must be pre-loop invariant, so that they can be used for conditions
+  // before or inside the pre-loop. For example, alignment of main-loop vector
+  // memops must be achieved in the pre-loop, via the exit check in the pre-loop.
+  bool is_pre_loop_invariant(Node* n) const {
+    // Must be in the main-loop, otherwise we can't access the pre-loop.
+    // This fails during SuperWord::unrolling_analysis, but that is ok.
+    if (!cl()->is_main_loop()) {
+      return false;
+    }
+
+    Node* ctrl = phase()->get_ctrl(n);
+
+    // Quick test: is it in the main-loop?
+    if (lpt()->is_member(phase()->get_loop(ctrl))) {
+      return false;
+    }
+
+    // Is it before the pre-loop?
+    return phase()->is_dominator(ctrl, pre_loop_head());
+  }
+
   // Check if the loop passes some basic preconditions for vectorization.
   // Return indicates if analysis succeeded.
   bool check_preconditions();
 
 private:
-  const char* check_preconditions_helper();
+  VStatus check_preconditions_helper();
 };
 
 // Optimization to keep allocation of large arrays in AutoVectorization low.
@@ -146,7 +256,7 @@ private:
 
 public:
   VSharedData() :
-    _arena(mtCompiler),
+    _arena(mtCompiler, Arena::Tag::tag_superword),
     _node_idx_to_loop_body_idx(&_arena, estimated_node_count(), 0, 0)
   {
   }
@@ -166,249 +276,754 @@ private:
   }
 };
 
-// A vectorization pointer (VPointer) has information about an address for
-// dependence checking and vector alignment. It's usually bound to a memory
-// operation in a counted loop for vectorizable analysis.
-class VPointer : public ArenaObj {
- protected:
-  const MemNode*  _mem;      // My memory reference node
-  const VLoop&    _vloop;
+// Submodule of VLoopAnalyzer.
+// Identify and mark all reductions in the loop.
+class VLoopReductions : public StackObj {
+private:
+  typedef const Pair<const Node*, int> PathEnd;
 
-  Node* _base;               // null if unsafe nonheap reference
-  Node* _adr;                // address pointer
-  int   _scale;              // multiplier for iv (in bytes), 0 if no loop iv
-  int   _offset;             // constant offset (in bytes)
+  const VLoop& _vloop;
+  VectorSet _loop_reductions;
 
-  Node* _invar;              // invariant offset (in bytes), null if none
-#ifdef ASSERT
-  Node* _debug_invar;
-  bool  _debug_negate_invar; // if true then use: (0 - _invar)
-  Node* _debug_invar_scale;  // multiplier for invariant
-#endif
+public:
+  VLoopReductions(Arena* arena, const VLoop& vloop) :
+    _vloop(vloop),
+    _loop_reductions(arena){};
 
-  Node_Stack* _nstack;       // stack used to record a vpointer trace of variants
-  bool        _analyze_only; // Used in loop unrolling only for vpointer trace
-  uint        _stack_idx;    // Used in loop unrolling only for vpointer trace
+  NONCOPYABLE(VLoopReductions);
 
-  const VLoop&    vloop() const { return _vloop; }
-  PhaseIdealLoop* phase() const { return vloop().phase(); }
-  IdealLoopTree*  lpt() const   { return vloop().lpt(); }
-  PhiNode*        iv() const    { return vloop().iv(); }
-
-  bool is_loop_member(Node* n) const;
-  bool invariant(Node* n) const;
-
-  // Match: k*iv + offset
-  bool scaled_iv_plus_offset(Node* n);
-  // Match: k*iv where k is a constant that's not zero
-  bool scaled_iv(Node* n);
-  // Match: offset is (k [+/- invariant])
-  bool offset_plus_k(Node* n, bool negate = false);
-
- public:
-  enum CMP {
-    Less          = 1,
-    Greater       = 2,
-    Equal         = 4,
-    NotEqual      = (Less | Greater),
-    NotComparable = (Less | Greater | Equal)
-  };
-
-  VPointer(const MemNode* mem, const VLoop& vloop) :
-    VPointer(mem, vloop, nullptr, false) {}
-  VPointer(const MemNode* mem, const VLoop& vloop, Node_Stack* nstack) :
-    VPointer(mem, vloop, nstack, true) {}
- private:
-  VPointer(const MemNode* mem, const VLoop& vloop,
-           Node_Stack* nstack, bool analyze_only);
-  // Following is used to create a temporary object during
-  // the pattern match of an address expression.
-  VPointer(VPointer* p);
-  NONCOPYABLE(VPointer);
-
- public:
-  bool valid()             const { return _adr != nullptr; }
-  bool has_iv()            const { return _scale != 0; }
-
-  Node* base()             const { return _base; }
-  Node* adr()              const { return _adr; }
-  const MemNode* mem()     const { return _mem; }
-  int   scale_in_bytes()   const { return _scale; }
-  Node* invar()            const { return _invar; }
-  int   offset_in_bytes()  const { return _offset; }
-  int   memory_size()      const { return _mem->memory_size(); }
-  Node_Stack* node_stack() const { return _nstack; }
-
-  // Biggest detectable factor of the invariant.
-  int   invar_factor() const;
-
-  // Comparable?
-  bool invar_equals(VPointer& q) {
-    assert(_debug_invar == NodeSentinel || q._debug_invar == NodeSentinel ||
-           (_invar == q._invar) == (_debug_invar == q._debug_invar &&
-                                    _debug_invar_scale == q._debug_invar_scale &&
-                                    _debug_negate_invar == q._debug_negate_invar), "");
-    return _invar == q._invar;
-  }
-
-  int cmp(VPointer& q) {
-    if (valid() && q.valid() &&
-        (_adr == q._adr || (_base == _adr && q._base == q._adr)) &&
-        _scale == q._scale   && invar_equals(q)) {
-      bool overlap = q._offset <   _offset +   memory_size() &&
-                       _offset < q._offset + q.memory_size();
-      return overlap ? Equal : (_offset < q._offset ? Less : Greater);
-    } else {
-      return NotComparable;
+private:
+  // Search for a path P = (n_1, n_2, ..., n_k) such that:
+  // - original_input(n_i, input) = n_i+1 for all 1 <= i < k,
+  // - path(n) for all n in P,
+  // - k <= max, and
+  // - there exists a node e such that original_input(n_k, input) = e and end(e).
+  // Return <e, k>, if P is found, or <nullptr, -1> otherwise.
+  // Note that original_input(n, i) has the same behavior as n->in(i) except
+  // that it commutes the inputs of binary nodes whose edges have been swapped.
+  template <typename NodePredicate1, typename NodePredicate2>
+  static PathEnd find_in_path(const Node* n1, uint input, int max,
+                              NodePredicate1 path, NodePredicate2 end) {
+    const PathEnd no_path(nullptr, -1);
+    const Node* current = n1;
+    int k = 0;
+    for (int i = 0; i <= max; i++) {
+      if (current == nullptr) {
+        return no_path;
+      }
+      if (end(current)) {
+        return PathEnd(current, k);
+      }
+      if (!path(current)) {
+        return no_path;
+      }
+      current = original_input(current, input);
+      k++;
     }
+    return no_path;
   }
 
-  bool overlap_possible_with_any_in(Node_List* p) {
-    for (uint k = 0; k < p->size(); k++) {
-      MemNode* mem = p->at(k)->as_Mem();
-      VPointer p_mem(mem, vloop());
-      // Only if we know that we have Less or Greater can we
-      // be sure that there can never be an overlap between
-      // the two memory regions.
-      if (!not_equal(p_mem)) {
-        return true;
+public:
+  // Find and mark reductions in a loop. Running mark_reductions() is similar to
+  // querying is_reduction(n) for every node in the loop, but stricter in
+  // that it assumes counted loops and requires that reduction nodes are not
+  // used within the loop except by their reduction cycle predecessors.
+  void mark_reductions();
+
+  // Whether n is a reduction operator and part of a reduction cycle.
+  // This function can be used for individual queries outside auto-vectorization,
+  // e.g. to inform matching in target-specific code. Otherwise, the
+  // almost-equivalent but faster mark_reductions() is preferable.
+  static bool is_reduction(const Node* n);
+
+  // Whether n is marked as a reduction node.
+  bool is_marked_reduction(const Node* n) const { return _loop_reductions.test(n->_idx); }
+
+  bool is_marked_reduction_loop() const { return !_loop_reductions.is_empty(); }
+
+  // Are s1 and s2 reductions with a data path between them?
+  bool is_marked_reduction_pair(const Node* s1, const Node* s2) const;
+
+private:
+  // Whether n is a standard reduction operator.
+  static bool is_reduction_operator(const Node* n);
+
+  // Whether n is part of a reduction cycle via the 'input' edge index. To bound
+  // the search, constrain the size of reduction cycles to LoopMaxUnroll.
+  static bool in_reduction_cycle(const Node* n, uint input);
+
+  // Reference to the i'th input node of n, commuting the inputs of binary nodes
+  // whose edges have been swapped. Assumes n is a commutative operation.
+  static Node* original_input(const Node* n, uint i);
+};
+
+// Submodule of VLoopAnalyzer.
+// Find the memory slices in the loop.
+class VLoopMemorySlices : public StackObj {
+private:
+  const VLoop& _vloop;
+
+  GrowableArray<PhiNode*> _heads;
+  GrowableArray<MemNode*> _tails;
+
+public:
+  VLoopMemorySlices(Arena* arena, const VLoop& vloop) :
+    _vloop(vloop),
+    _heads(arena, 8, 0, nullptr),
+    _tails(arena, 8, 0, nullptr) {};
+  NONCOPYABLE(VLoopMemorySlices);
+
+  void find_memory_slices();
+
+  const GrowableArray<PhiNode*>& heads() const { return _heads; }
+  const GrowableArray<MemNode*>& tails() const { return _tails; }
+
+  // Get all memory nodes of a slice, in reverse order
+  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
+
+  bool same_memory_slice(MemNode* m1, MemNode* m2) const;
+
+#ifndef PRODUCT
+  void print() const;
+#endif
+};
+
+// Submodule of VLoopAnalyzer.
+// Finds all nodes in the body, and creates a mapping node->_idx to a body_idx.
+// This mapping is used so that subsequent datastructures sizes only grow with
+// the body size, and not the number of all nodes in the compilation.
+class VLoopBody : public StackObj {
+private:
+  static constexpr char const* FAILURE_NODE_NOT_ALLOWED = "encontered unhandled node";
+  static constexpr char const* FAILURE_UNEXPECTED_CTRL  = "data node in loop has no input in loop";
+
+  const VLoop& _vloop;
+
+  // Mapping body_idx -> Node*
+  GrowableArray<Node*> _body;
+
+  // Mapping node->_idx -> body_idx
+  // Can be very large, and thus lives in VSharedData
+  GrowableArray<int>& _body_idx;
+
+public:
+  VLoopBody(Arena* arena, const VLoop& vloop, VSharedData& vshared) :
+    _vloop(vloop),
+    _body(arena, vloop.estimated_body_length(), 0, nullptr),
+    _body_idx(vshared.node_idx_to_loop_body_idx()) {}
+
+  NONCOPYABLE(VLoopBody);
+
+  VStatus construct();
+  const GrowableArray<Node*>& body() const { return _body; }
+  NOT_PRODUCT( void print() const; )
+
+  int bb_idx(const Node* n) const {
+    assert(_vloop.in_bb(n), "must be in basic block");
+    return _body_idx.at(n->_idx);
+  }
+
+  template<typename Callback>
+  void for_each_mem(Callback callback) const {
+    for (int i = 0; i < _body.length(); i++) {
+      MemNode* mem = _body.at(i)->isa_Mem();
+      if (mem != nullptr && _vloop.in_bb(mem)) {
+        callback(mem, i);
       }
     }
+  }
+
+private:
+  void set_bb_idx(Node* n, int i) {
+    _body_idx.at_put_grow(n->_idx, i);
+  }
+};
+
+// Submodule of VLoopAnalyzer.
+// Compute the vector element type for every node in the loop body.
+// We need to do this to be able to vectorize the narrower integer
+// types (byte, char, short). In the C2 IR, their operations are
+// done with full int type with 4 byte precision (e.g. AddI, MulI).
+// Example:  char a,b,c;  a = (char)(b + c);
+// However, if we can prove the upper bits are only truncated,
+// and the lower bits for the narrower type computed correctly, we
+// can compute the operations in the narrower type directly (e.g we
+// perform the AddI or MulI with 1 or 2 bytes). This allows us to
+// fit more operations in a vector, and can remove the otherwise
+// required conversion (int <-> narrower type).
+// We compute the types backwards (use-to-def): If all use nodes
+// only require the lower bits, then the def node can do the operation
+// with only the lower bits, and we propagate the narrower type to it.
+class VLoopTypes : public StackObj {
+private:
+  const VLoop&     _vloop;
+  const VLoopBody& _body;
+
+  // bb_idx -> vector element type
+  GrowableArray<const Type*> _velt_type;
+
+public:
+  VLoopTypes(Arena* arena,
+             const VLoop& vloop,
+             const VLoopBody& body) :
+    _vloop(vloop),
+    _body(body),
+    _velt_type(arena, vloop.estimated_body_length(), 0, nullptr) {}
+  NONCOPYABLE(VLoopTypes);
+
+  void compute_vector_element_type();
+  NOT_PRODUCT( void print() const; )
+
+  const Type* velt_type(const Node* n) const {
+    assert(_vloop.in_bb(n), "only call on nodes in loop");
+    const Type* t = _velt_type.at(_body.bb_idx(n));
+    assert(t != nullptr, "must have type");
+    return t;
+  }
+
+  BasicType velt_basic_type(const Node* n) const {
+    return velt_type(n)->array_element_basic_type();
+  }
+
+  int data_size(const Node* s) const {
+    int bsize = type2aelembytes(velt_basic_type(s));
+    assert(bsize != 0, "valid size");
+    return bsize;
+  }
+
+  bool same_velt_type(Node* n1, Node* n2) const {
+    const Type* vt1 = velt_type(n1);
+    const Type* vt2 = velt_type(n2);
+    if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
+      // Compare vectors element sizes for integer types.
+      return data_size(n1) == data_size(n2);
+    }
+    return vt1 == vt2;
+  }
+
+  int vector_width(const Node* n) const {
+    BasicType bt = velt_basic_type(n);
+    return MIN2(ABS(_vloop.iv_stride()), Matcher::max_vector_size(bt));
+  }
+
+  int vector_width_in_bytes(const Node* n) const {
+    BasicType bt = velt_basic_type(n);
+    return vector_width(n) * type2aelembytes(bt);
+  }
+
+private:
+  void set_velt_type(Node* n, const Type* t) {
+    assert(t != nullptr, "cannot set nullptr");
+    assert(_vloop.in_bb(n), "only call on nodes in loop");
+    _velt_type.at_put(_body.bb_idx(n), t);
+  }
+
+  // Smallest type containing range of values
+  const Type* container_type(Node* n) const;
+};
+
+// Submodule of VLoopAnalyzer.
+// We compute and cache the VPointer for every load and store.
+class VLoopVPointers : public StackObj {
+private:
+  Arena*                   _arena;
+  const VLoop&             _vloop;
+  const VLoopBody&         _body;
+
+  // Array of cached pointers
+  VPointer* _vpointers;
+  int _vpointers_length;
+
+  // Map bb_idx -> index in _vpointers. -1 if not mapped.
+  GrowableArray<int> _bb_idx_to_vpointer;
+
+public:
+  VLoopVPointers(Arena* arena,
+                 const VLoop& vloop,
+                 const VLoopBody& body) :
+    _arena(arena),
+    _vloop(vloop),
+    _body(body),
+    _vpointers(nullptr),
+    _bb_idx_to_vpointer(arena,
+                        vloop.estimated_body_length(),
+                        vloop.estimated_body_length(),
+                        -1) {}
+  NONCOPYABLE(VLoopVPointers);
+
+  void compute_vpointers();
+  const VPointer& vpointer(const MemNode* mem) const;
+  NOT_PRODUCT( void print() const; )
+
+private:
+  void count_vpointers();
+  void allocate_vpointers_array();
+  void compute_and_cache_vpointers();
+};
+
+// Submodule of VLoopAnalyzer.
+// The dependency graph is used to determine if nodes are independent, and can thus potentially
+// be executed in parallel. That is a prerequisite for packing nodes into vector operations.
+// The dependency graph is a combination:
+//  - Data-dependencies: they can directly be taken from the C2 node inputs.
+//  - Memory-dependencies: the edges in the C2 memory-slice are too restrictive: for example all
+//                         stores are serialized, even if their memory does not overlap. Thus,
+//                         we refine the memory-dependencies (see construct method).
+class VLoopDependencyGraph : public StackObj {
+private:
+  class DependencyNode;
+
+  Arena*                   _arena;
+  const VLoop&             _vloop;
+  const VLoopBody&         _body;
+  const VLoopMemorySlices& _memory_slices;
+  const VLoopVPointers&    _vpointers;
+
+  // bb_idx -> DependenceNode*
+  GrowableArray<DependencyNode*> _dependency_nodes;
+
+  // Node depth in DAG: bb_idx -> depth
+  GrowableArray<int> _depths;
+
+public:
+  VLoopDependencyGraph(Arena* arena,
+                       const VLoop& vloop,
+                       const VLoopBody& body,
+                       const VLoopMemorySlices& memory_slices,
+                       const VLoopVPointers& pointers) :
+    _arena(arena),
+    _vloop(vloop),
+    _body(body),
+    _memory_slices(memory_slices),
+    _vpointers(pointers),
+    _dependency_nodes(arena,
+                      vloop.estimated_body_length(),
+                      vloop.estimated_body_length(),
+                      nullptr),
+    _depths(arena,
+            vloop.estimated_body_length(),
+            vloop.estimated_body_length(),
+            0) {}
+  NONCOPYABLE(VLoopDependencyGraph);
+
+  void construct();
+  bool independent(Node* s1, Node* s2) const;
+  bool mutually_independent(const Node_List* nodes) const;
+
+private:
+  void add_node(MemNode* n, GrowableArray<int>& memory_pred_edges);
+  int depth(const Node* n) const { return _depths.at(_body.bb_idx(n)); }
+  void set_depth(const Node* n, int d) { _depths.at_put(_body.bb_idx(n), d); }
+  int find_max_pred_depth(const Node* n) const;
+  void compute_depth();
+  NOT_PRODUCT( void print() const; )
+
+  const DependencyNode* dependency_node(const Node* n) const {
+    return _dependency_nodes.at(_body.bb_idx(n));
+  }
+
+  class DependencyNode : public ArenaObj {
+  private:
+    MemNode* _node; // Corresponding ideal node
+    const uint _memory_pred_edges_length;
+    int* _memory_pred_edges; // memory pred-edges, mapping to bb_idx
+  public:
+    DependencyNode(MemNode* n, GrowableArray<int>& memory_pred_edges, Arena* arena);
+    NONCOPYABLE(DependencyNode);
+    uint memory_pred_edges_length() const { return _memory_pred_edges_length; }
+
+    int memory_pred_edge(uint i) const {
+      assert(i < _memory_pred_edges_length, "bounds check");
+      return _memory_pred_edges[i];
+    }
+  };
+
+public:
+  // Iterator for dependency graph predecessors of a node.
+  class PredsIterator : public StackObj {
+  private:
+    const VLoopDependencyGraph& _dependency_graph;
+
+    const Node* _node;
+    const DependencyNode* _dependency_node;
+
+    Node* _current;
+    bool _is_current_memory_edge;
+
+    // Iterate in node->in(i)
+    int _next_pred;
+    int _end_pred;
+
+    // Iterate in dependency_node->memory_pred_edge(i)
+    int _next_memory_pred;
+    int _end_memory_pred;
+  public:
+    PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);
+    NONCOPYABLE(PredsIterator);
+    void next();
+    bool done() const { return _current == nullptr; }
+    Node* current() const {
+      assert(!done(), "not done yet");
+      return _current;
+    }
+    bool is_current_memory_edge() const {
+      assert(!done(), "not done yet");
+      return _is_current_memory_edge;
+    }
+  };
+};
+
+// Analyze the loop in preparation for auto-vectorization. This class is
+// deliberately structured into many submodules, which are as independent
+// as possible, though some submodules do require other submodules.
+class VLoopAnalyzer : StackObj {
+private:
+  static constexpr char const* FAILURE_NO_MAX_UNROLL         = "slp max unroll analysis required";
+  static constexpr char const* FAILURE_NO_REDUCTION_OR_STORE = "no reduction and no store in loop";
+
+  const VLoop&         _vloop;
+
+  // Arena for all submodules
+  Arena                _arena;
+
+  // If all submodules are setup successfully, we set this flag at the
+  // end of the constructor
+  bool                 _success;
+
+  // Submodules
+  VLoopReductions      _reductions;
+  VLoopMemorySlices    _memory_slices;
+  VLoopBody            _body;
+  VLoopTypes           _types;
+  VLoopVPointers       _vpointers;
+  VLoopDependencyGraph _dependency_graph;
+
+public:
+  VLoopAnalyzer(const VLoop& vloop, VSharedData& vshared) :
+    _vloop(vloop),
+    _arena(mtCompiler, Arena::Tag::tag_superword),
+    _success(false),
+    _reductions      (&_arena, vloop),
+    _memory_slices   (&_arena, vloop),
+    _body            (&_arena, vloop, vshared),
+    _types           (&_arena, vloop, _body),
+    _vpointers       (&_arena, vloop, _body),
+    _dependency_graph(&_arena, vloop, _body, _memory_slices, _vpointers)
+  {
+    _success = setup_submodules();
+  }
+  NONCOPYABLE(VLoopAnalyzer);
+
+  bool success() const { return _success; }
+
+  // Read-only accessors for submodules
+  const VLoop& vloop()                           const { return _vloop; }
+  const VLoopReductions& reductions()            const { return _reductions; }
+  const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
+  const VLoopBody& body()                        const { return _body; }
+  const VLoopTypes& types()                      const { return _types; }
+  const VLoopVPointers& vpointers()              const { return _vpointers; }
+  const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
+
+private:
+  bool setup_submodules();
+  VStatus setup_submodules_helper();
+};
+
+// Reminder: MemPointer have the form:
+//
+//   pointer = SUM(summands) + con
+//
+// Where every summand in summands has the form:
+//
+//   summand = scale * variable
+//
+// The VPointer wraps a MemPointer for the use in loops. A "valid" VPointer has
+// the form:
+//
+//   pointer = base + invar + iv_summand + con
+// with
+//   invar = SUM(invar_summands)
+//   iv_summand = iv_scale * iv
+//
+// Where:
+//   - base: is the known base of the MemPointer.
+//       on-heap (object base) or off-heap (native base address)
+//   - iv and iv_scale: i.e. the iv_summand = iv * iv_scale.
+//       If we find a summand where the variable is the iv, we set iv_scale to the
+//       corresponding scale. If there is no such summand, then we know that the
+//       pointer does not depend on the iv, since otherwise there would have to be
+//       a summand where its variable is main-loop variant. Note: MemPointer already
+//       ensures that there is at most one summand per variable, so there is at
+//       most one summand with iv.
+//   - invar_summands: all other summands except base and iv_summand.
+//       All variables must be pre-loop invariant. This is important when we need
+//       to memory align a pointer using the pre-loop limit.
+//
+// These are examples where a VPointer becomes "invalid":
+//    - If the MemPointer does not have the required form for VPointer,
+//      i.e. if one of these conditions is not met (see init_is_valid):
+//      - Base must be known.
+//      - All summands except the iv-summand must be pre-loop invariant.
+//      - Some restrictions on iv_scale and iv_stride, to avoid overflow in
+//        alignment computations.
+//    - If the new con computed in make_with_iv_offset overflows.
+//
+// If a VPointer is marked "invalid", it always returns conservative answers to
+// aliasing queries, which means that we do not optimize in these cases.
+// For example:
+//    - is_adjacent_to_and_before: returning true would allow optimizations such as
+//                                 packing into vectors. So for "invalid" VPointers,
+//                                 we always return false (i.e. unknown).
+//    - never_overlaps_with: returning true would allow optimizations such as
+//                           swapping the order of memops. So for "invalid" VPointers,
+//                           we always return false (i.e. unknown).
+//
+class VPointer : public ArenaObj {
+private:
+  const VLoop& _vloop;
+  const MemPointer _mem_pointer;
+
+  // Derived, for quicker use.
+  const jint  _iv_scale;
+
+  const bool _is_valid;
+
+  VPointer(const VLoop& vloop,
+           const MemPointer& mem_pointer,
+           const bool must_be_invalid = false) :
+    _vloop(vloop),
+    _mem_pointer(mem_pointer),
+    _iv_scale(init_iv_scale()),
+    _is_valid(!must_be_invalid && init_is_valid()) {}
+
+  VPointer make_invalid() const {
+    return VPointer(_vloop, mem_pointer(), true /* must be invalid*/);
+  }
+
+public:
+  VPointer(const MemNode* mem,
+           const VLoop& vloop,
+           MemPointerParserCallback& callback = MemPointerParserCallback::empty()) :
+    VPointer(vloop,
+             MemPointer(mem,
+                        callback
+                        NOT_PRODUCT(COMMA vloop.mptrace())))
+  {
+#ifndef PRODUCT
+    if (vloop.mptrace().is_trace_parsing()) {
+      tty->print_cr("VPointer::VPointer:");
+      tty->print("mem: "); mem->dump();
+      print_on(tty);
+    }
+#endif
+  }
+
+  VPointer make_with_size(const jint new_size) const {
+    const VPointer p(_vloop, mem_pointer().make_with_size(new_size));
+#ifndef PRODUCT
+    if (_vloop.mptrace().is_trace_parsing()) {
+      tty->print_cr("VPointer::make_with_size:");
+      tty->print("  old: "); print_on(tty);
+      tty->print("  new: "); p.print_on(tty);
+    }
+#endif
+    return p;
+  }
+
+  // old_pointer = base + invar + iv_scale *  iv              + con
+  // new_pointer = base + invar + iv_scale * (iv + iv_offset) + con
+  //             = base + invar + iv_scale * iv               + (con + iv_scale * iv_offset)
+  VPointer make_with_iv_offset(const jint iv_offset) const {
+    NoOverflowInt new_con = NoOverflowInt(con()) + NoOverflowInt(iv_scale()) * NoOverflowInt(iv_offset);
+    if (new_con.is_NaN()) {
+#ifndef PRODUCT
+      if (_vloop.mptrace().is_trace_parsing()) {
+        tty->print_cr("VPointer::make_with_iv_offset:");
+        tty->print("  old: "); print_on(tty);
+        tty->print_cr("  new con overflow (iv_offset: %d) -> invalid VPointer.", iv_offset);
+      }
+#endif
+      return make_invalid();
+    }
+    const VPointer p(_vloop, mem_pointer().make_with_con(new_con));
+#ifndef PRODUCT
+    if (_vloop.mptrace().is_trace_parsing()) {
+      tty->print_cr("VPointer::make_with_iv_offset:");
+      tty->print("  old: "); print_on(tty);
+      tty->print("  new: "); p.print_on(tty);
+    }
+#endif
+    return p;
+  }
+
+  // Accessors
+  bool is_valid()                 const { return _is_valid; }
+  const MemPointer& mem_pointer() const { assert(_is_valid, "must be valid"); return _mem_pointer; }
+  jint size()                     const { assert(_is_valid, "must be valid"); return mem_pointer().size(); }
+  jint iv_scale()                 const { assert(_is_valid, "must be valid"); return _iv_scale; }
+  jint con()                      const { return mem_pointer().con().value(); }
+
+  template<typename Callback>
+  void for_each_invar_summand(Callback callback) const {
+    mem_pointer().for_each_non_empty_summand([&] (const MemPointerSummand& s) {
+      Node* variable = s.variable();
+      if (variable != mem_pointer().base().object_or_native() &&
+          _vloop.is_pre_loop_invariant(variable)) {
+        callback(s);
+      }
+    });
+  }
+
+  // Greatest common factor among the scales of the invar_summands.
+  // Out of simplicity, we only factor out positive powers-of-2,
+  // between (inclusive) 1 and ObjectAlignmentInBytes. If the invar
+  // is empty, i.e. there is no summand in invar_summands, we return 0.
+  jint compute_invar_factor() const {
+    jint factor = ObjectAlignmentInBytes;
+    int invar_count = 0;
+    for_each_invar_summand([&] (const MemPointerSummand& s) {
+      invar_count++;
+      while (!s.scale().is_multiple_of(NoOverflowInt(factor))) {
+        factor = factor / 2;
+      }
+    });
+    return invar_count > 0 ? factor : 0;
+  }
+
+  bool has_invar_summands() const {
+    int invar_count = 0;
+    for_each_invar_summand([&] (const MemPointerSummand& s) {
+      invar_count++;
+    });
+    return invar_count > 0;
+  }
+
+  // If we have the same invar_summands, and the same iv summand with the same iv_scale,
+  // then all summands except the base must be the same.
+  bool has_same_invar_summands_and_iv_scale_as(const VPointer& other) const {
+    return mem_pointer().has_same_non_base_summands_as(other.mem_pointer());
+  }
+
+
+  // Delegate to MemPointer::is_adjacent_to_and_before, but guard for invalid cases
+  // where we must return a conservative answer: unknown adjacency, return false.
+  bool is_adjacent_to_and_before(const VPointer& other) const {
+    if (!is_valid() || !other.is_valid()) {
+#ifndef PRODUCT
+      if (_vloop.mptrace().is_trace_overlap()) {
+        tty->print_cr("VPointer::is_adjacent_to_and_before: invalid VPointer, adjacency unknown.");
+      }
+#endif
+      return false;
+    }
+    return mem_pointer().is_adjacent_to_and_before(other.mem_pointer());
+  }
+
+  // Delegate to MemPointer::never_overlaps_with, but guard for invalid cases
+  // where we must return a conservative answer: unknown overlap, return false.
+  bool never_overlaps_with(const VPointer& other) const {
+    if (!is_valid() || !other.is_valid()) {
+#ifndef PRODUCT
+      if (_vloop.mptrace().is_trace_overlap()) {
+        tty->print_cr("VPointer::never_overlaps_with: invalid VPointer, overlap unknown.");
+      }
+#endif
+      return false;
+    }
+    return mem_pointer().never_overlaps_with(other.mem_pointer());
+  }
+
+  NOT_PRODUCT( void print_on(outputStream* st, bool end_with_cr = true) const; )
+
+private:
+  jint init_iv_scale() const {
+    for (uint i = 0; i < MemPointer::SUMMANDS_SIZE; i++) {
+      const MemPointerSummand& summand = _mem_pointer.summands_at(i);
+      Node* variable = summand.variable();
+      if (variable == _vloop.iv()) {
+        return summand.scale().value();
+      }
+    }
+    // No summand with variable == iv.
+    return 0;
+  }
+
+  // Check the conditions for a "valid" VPointer.
+  bool init_is_valid() const {
+    return init_is_base_known() &&
+           init_are_non_iv_summands_pre_loop_invariant() &&
+           init_are_scale_and_stride_not_too_large();
+  }
+
+  // VPointer needs to know if it is native (off-heap) or object (on-heap).
+  // We may, for example, have failed to fully decompose the MemPointer,
+  // possibly because such a decomposition is not considered safe.
+  bool init_is_base_known() const {
+    if (_mem_pointer.base().is_known()) { return true; }
+
+#ifndef PRODUCT
+    if (_vloop.mptrace().is_trace_parsing()) {
+      tty->print_cr("VPointer::init_is_valid: base not known.");
+    }
+#endif
     return false;
   }
 
-  bool not_equal(VPointer& q)     { return not_equal(cmp(q)); }
-  bool equal(VPointer& q)         { return equal(cmp(q)); }
-  bool comparable(VPointer& q)    { return comparable(cmp(q)); }
-  static bool not_equal(int cmp)  { return cmp <= NotEqual; }
-  static bool equal(int cmp)      { return cmp == Equal; }
-  static bool comparable(int cmp) { return cmp < NotComparable; }
-
-  void print();
-
+  // All summands, except the iv-summand, must be pre-loop invariant. This is necessary
+  // so that we can use the variables in checks inside or before the pre-loop, e.g. for
+  // alignment.
+  bool init_are_non_iv_summands_pre_loop_invariant() const {
+    for (uint i = 0; i < MemPointer::SUMMANDS_SIZE; i++) {
+      const MemPointerSummand& summand = _mem_pointer.summands_at(i);
+      Node* variable = summand.variable();
+      if (variable != nullptr && variable != _vloop.iv() && !_vloop.is_pre_loop_invariant(variable)) {
 #ifndef PRODUCT
-  class Tracer {
-    friend class VPointer;
-    bool _is_trace_alignment;
-    static int _depth;
-    int _depth_save;
-    void print_depth() const;
-    int  depth() const    { return _depth; }
-    void set_depth(int d) { _depth = d; }
-    void inc_depth()      { _depth++; }
-    void dec_depth()      { if (_depth > 0) _depth--; }
-    void store_depth()    { _depth_save = _depth; }
-    void restore_depth()  { _depth = _depth_save; }
-
-    class Depth {
-      friend class VPointer;
-      Depth()      { ++_depth; }
-      Depth(int x) { _depth = 0; }
-      ~Depth()     { if (_depth > 0) --_depth; }
-    };
-    Tracer(bool is_trace_alignment) : _is_trace_alignment(is_trace_alignment) {}
-
-    // tracing functions
-    void ctor_1(const Node* mem);
-    void ctor_2(Node* adr);
-    void ctor_3(Node* adr, int i);
-    void ctor_4(Node* adr, int i);
-    void ctor_5(Node* adr, Node* base,  int i);
-    void ctor_6(const Node* mem);
-
-    void scaled_iv_plus_offset_1(Node* n);
-    void scaled_iv_plus_offset_2(Node* n);
-    void scaled_iv_plus_offset_3(Node* n);
-    void scaled_iv_plus_offset_4(Node* n);
-    void scaled_iv_plus_offset_5(Node* n);
-    void scaled_iv_plus_offset_6(Node* n);
-    void scaled_iv_plus_offset_7(Node* n);
-    void scaled_iv_plus_offset_8(Node* n);
-
-    void scaled_iv_1(Node* n);
-    void scaled_iv_2(Node* n, int scale);
-    void scaled_iv_3(Node* n, int scale);
-    void scaled_iv_4(Node* n, int scale);
-    void scaled_iv_5(Node* n, int scale);
-    void scaled_iv_6(Node* n, int scale);
-    void scaled_iv_7(Node* n);
-    void scaled_iv_8(Node* n, VPointer* tmp);
-    void scaled_iv_9(Node* n, int _scale, int _offset, Node* _invar);
-    void scaled_iv_10(Node* n);
-
-    void offset_plus_k_1(Node* n);
-    void offset_plus_k_2(Node* n, int _offset);
-    void offset_plus_k_3(Node* n, int _offset);
-    void offset_plus_k_4(Node* n);
-    void offset_plus_k_5(Node* n, Node* _invar);
-    void offset_plus_k_6(Node* n, Node* _invar, bool _negate_invar, int _offset);
-    void offset_plus_k_7(Node* n, Node* _invar, bool _negate_invar, int _offset);
-    void offset_plus_k_8(Node* n, Node* _invar, bool _negate_invar, int _offset);
-    void offset_plus_k_9(Node* n, Node* _invar, bool _negate_invar, int _offset);
-    void offset_plus_k_10(Node* n, Node* _invar, bool _negate_invar, int _offset);
-    void offset_plus_k_11(Node* n);
-  } _tracer; // Tracer
+        if (_vloop.mptrace().is_trace_parsing()) {
+          tty->print("VPointer::init_is_valid: summand is not pre-loop invariant: ");
+          summand.print_on(tty);
+          tty->cr();
+        }
 #endif
-
-  Node* maybe_negate_invar(bool negate, Node* invar);
-
-  void maybe_add_to_invar(Node* new_invar, bool negate);
-
-  Node* register_if_new(Node* n) const;
-};
-
-
-// Vector element size statistics for loop vectorization with vector masks
-class VectorElementSizeStats {
- private:
-  static const int NO_SIZE = -1;
-  static const int MIXED_SIZE = -2;
-  int* _stats;
-
- public:
-  VectorElementSizeStats(Arena* a) : _stats(NEW_ARENA_ARRAY(a, int, 4)) {
-    clear();
-  }
-
-  void clear() { memset(_stats, 0, sizeof(int) * 4); }
-
-  void record_size(int size) {
-    assert(1 <= size && size <= 8 && is_power_of_2(size), "Illegal size");
-    _stats[exact_log2(size)]++;
-  }
-
-  int count_size(int size) {
-    assert(1 <= size && size <= 8 && is_power_of_2(size), "Illegal size");
-    return _stats[exact_log2(size)];
-  }
-
-  int smallest_size() {
-    for (int i = 0; i <= 3; i++) {
-      if (_stats[i] > 0) return (1 << i);
+        return false;
+      }
     }
-    return NO_SIZE;
+    return true;
   }
 
-  int largest_size() {
-    for (int i = 3; i >= 0; i--) {
-      if (_stats[i] > 0) return (1 << i);
+  // In the pointer analysis, and especially the AlignVector analysis, we assume that
+  // stride and scale are not too large. For example, we multiply "iv_scale * iv_stride",
+  // and assume that this does not overflow the int range. We also take "abs(iv_scale)"
+  // and "abs(iv_stride)", which would overflow for min_int = -(2^31). Still, we want
+  // to at least allow small and moderately large stride and scale. Therefore, we
+  // allow values up to 2^30, which is only a factor 2 smaller than the max/min int.
+  // Normal performance relevant code will have much lower values. And the restriction
+  // allows us to keep the rest of the autovectorization code much simpler, since we
+  // do not have to deal with overflows.
+  bool init_are_scale_and_stride_not_too_large() const {
+    jlong long_iv_scale  = _iv_scale;
+    jlong long_iv_stride = _vloop.iv_stride();
+    jlong max_val = 1 << 30;
+    if (abs(long_iv_scale) >= max_val ||
+        abs(long_iv_stride) >= max_val ||
+        abs(long_iv_scale * long_iv_stride) >= max_val) {
+#ifndef PRODUCT
+      if (_vloop.mptrace().is_trace_parsing()) {
+        tty->print_cr("VPointer::init_is_valid: scale or stride too large.");
+      }
+#endif
+      return false;
     }
-    return NO_SIZE;
-  }
-
-  int unique_size() {
-    int small = smallest_size();
-    int large = largest_size();
-    return (small == large) ? small : MIXED_SIZE;
+    return true;
   }
 };
 
 // When alignment is required, we must adjust the pre-loop iteration count pre_iter,
 // such that the address is aligned for any main_iter >= 0:
 //
-//   adr = base + offset + invar + scale * init
-//                               + scale * pre_stride * pre_iter
-//                               + scale * main_stride * main_iter
+//   adr = base + invar + iv_scale * init                      + con
+//                      + iv_scale * pre_stride * pre_iter
+//                      + iv_scale * main_stride * main_iter
 //
 // The AlignmentSolver generates solutions of the following forms:
 //   1. Empty:       No pre_iter guarantees alignment.
@@ -417,9 +1032,9 @@ class VectorElementSizeStats {
 //
 // The Constrained solution is of the following form:
 //
-//   pre_iter = m * q + r                                    (for any integer m)
-//                   [- invar / (scale * pre_stride)  ]      (if there is an invariant)
-//                   [- init / pre_stride             ]      (if init is variable)
+//   pre_iter = m * q + r                                       (for any integer m)
+//                   [- invar / (iv_scale * pre_stride)  ]      (if there is an invariant)
+//                   [- init / pre_stride                ]      (if init is variable)
 //
 // The solution is periodic with periodicity q, which is guaranteed to be a power of 2.
 // This periodic solution is "rotated" by three alignment terms: one for constants (r),
@@ -445,7 +1060,7 @@ public:
 
   // Implemented by each subclass
   virtual const AlignmentSolution* filter(const AlignmentSolution* other) const = 0;
-  virtual void print() const = 0;
+  NOT_PRODUCT( virtual void print() const = 0; )
 
   // Compute modulo and ensure that we get a positive remainder
   static int mod(int i, int q) {
@@ -479,9 +1094,11 @@ public:
     return new EmptyAlignmentSolution("empty solution input to filter");
   }
 
+#ifndef PRODUCT
   virtual void print() const override final {
     tty->print_cr("empty solution: %s", reason());
   };
+#endif
 };
 
 class TrivialAlignmentSolution : public AlignmentSolution {
@@ -502,9 +1119,11 @@ public:
     return other;
   }
 
+#ifndef PRODUCT
   virtual void print() const override final {
     tty->print_cr("pre_iter >= 0 (trivial)");
   };
+#endif
 };
 
 class ConstrainedAlignmentSolution : public AlignmentSolution {
@@ -512,19 +1131,18 @@ private:
   const MemNode* _mem_ref;
   const int _q;
   const int _r;
-  const Node* _invar;
-  const int _scale;
+  // Use VPointer for invar and iv_scale
+  const VPointer& _vpointer;
 public:
   ConstrainedAlignmentSolution(const MemNode* mem_ref,
                                const int q,
                                const int r,
-                               const Node* invar,
-                               int scale) :
+                               const VPointer& vpointer) :
       _mem_ref(mem_ref),
       _q(q),
       _r(r),
-      _invar(invar),
-      _scale(scale) {
+      _vpointer(vpointer)
+  {
     assert(q > 1 && is_power_of_2(q), "q must be power of 2");
     assert(0 <= r && r < q, "r must be in modulo space of q");
     assert(_mem_ref != nullptr, "must have mem_ref");
@@ -535,6 +1153,7 @@ public:
   virtual bool is_constrained() const override final { return true; }
 
   const MemNode* mem_ref() const        { return _mem_ref; }
+  const VPointer& vpointer() const { return _vpointer; }
 
   virtual const ConstrainedAlignmentSolution* as_constrained() const override final { return this; }
 
@@ -558,12 +1177,12 @@ public:
     // for any integers m1 and m2:
     //
     //   pre_iter = m1 * q1 + r1
-    //                     [- invar1 / (scale1 * pre_stride)  ]
-    //                     [- init / pre_stride               ]
+    //                     [- invar1 / (iv_scale1 * pre_stride)  ]
+    //                     [- init / pre_stride                  ]
     //
     //   pre_iter = m2 * q2 + r2
-    //                     [- invar2 / (scale2 * pre_stride)  ]
-    //                     [- init / pre_stride               ]
+    //                     [- invar2 / (iv_scale2 * pre_stride)  ]
+    //                     [- init / pre_stride                  ]
     //
     // Note: pre_stride and init are identical for all mem_refs in the loop.
     //
@@ -572,13 +1191,15 @@ public:
     //
     // The invar alignment term is identical if either:
     //   - both mem_refs have no invariant.
-    //   - both mem_refs have the same invariant and the same scale.
+    //   - both mem_refs have the same invariant and the same iv_scale.
     //
-    if (s1->_invar != s2->_invar) {
-      return new EmptyAlignmentSolution("invar not identical");
-    }
-    if (s1->_invar != nullptr && s1->_scale != s2->_scale) {
-      return new EmptyAlignmentSolution("has invar with different scale");
+    // Use VPointer to do checks on invar and iv_scale:
+    const VPointer& p1 = s1->vpointer();
+    const VPointer& p2 = s2->vpointer();
+    bool both_no_invar = !p1.has_invar_summands() &&
+                         !p2.has_invar_summands();
+    if(!both_no_invar && !p1.has_same_invar_summands_and_iv_scale_as(p2)) {
+      return new EmptyAlignmentSolution("invar alignment term not identical");
     }
 
     // Now, we have reduced the problem to:
@@ -617,13 +1238,24 @@ public:
     return s2; // return the subset
   }
 
+#ifndef PRODUCT
   virtual void print() const override final {
     tty->print("m * q(%d) + r(%d)", _q, _r);
-    if (_invar != nullptr) {
-      tty->print(" - invar[%d] / (scale(%d) * pre_stride)", _invar->_idx, _scale);
+    if (_vpointer.has_invar_summands()) {
+      tty->print(" - invar(");
+      int count = 0;
+      _vpointer.for_each_invar_summand([&] (const MemPointerSummand& s) {
+        if (count > 0) {
+          tty->print(" + ");
+        }
+        s.print_on(tty);
+        count++;
+      });
+      tty->print(") / (iv_scale(%d) * pre_stride)", _vpointer.iv_scale());
     }
     tty->print_cr(" [- init / pre_stride], mem_ref[%d]", mem_ref()->_idx);
   };
+#endif
 };
 
 // When strict alignment is required (e.g. -XX:+AlignVector), then we must ensure
@@ -638,8 +1270,8 @@ public:
 //
 // pre-loop:
 //   iv = init + i * pre_stride
-//   adr = base + offset + invar + scale * iv
-//   adr = base + offset + invar + scale * (init + i * pre_stride)
+//   adr = base + invar + iv_scale * iv                      + con
+//   adr = base + invar + iv_scale * (init + i * pre_stride) + con
 //   iv += pre_stride
 //   i++
 //
@@ -653,7 +1285,7 @@ public:
 //   i = pre_iter + main_iter * unroll_factor
 //   iv = init + i * pre_stride = init + pre_iter * pre_stride + main_iter * unroll_factor * pre_stride
 //                              = init + pre_iter * pre_stride + main_iter * main_stride
-//   adr = base + offset + invar + scale * iv // must be aligned
+//   adr = base + invar + iv_scale * iv + con // must be aligned
 //   iv += main_stride
 //   i  += unroll_factor
 //   main_iter++
@@ -665,15 +1297,15 @@ public:
 // a compatible solutions.
 class AlignmentSolver {
 private:
+  const VPointer& _vpointer;
+
   const MemNode* _mem_ref;       // first element
-  const uint     _vector_length; // number of elements in vector
-  const int      _element_size;
   const int      _vector_width;  // in bytes
 
   // All vector loads and stores need to be memory aligned. The alignment width (aw) in
   // principle is the vector_width. But when vector_width > ObjectAlignmentInBytes this is
   // too strict, since any memory object is only guaranteed to be ObjectAlignmentInBytes
-  // aligned. For example, the relative offset between two arrays is only guaranteed to
+  // aligned. For example, the relative distance between two arrays is only guaranteed to
   // be divisible by ObjectAlignmentInBytes.
   const int      _aw;
 
@@ -683,7 +1315,7 @@ private:
   //
   // The Simple form of the address is disassembled by VPointer into:
   //
-  //   adr = base + offset + invar + scale * iv
+  //   adr = base + invar + iv_scale * iv + con
   //
   // Where the iv can be written as:
   //
@@ -692,14 +1324,17 @@ private:
   // pre_iter:    number of pre-loop iterations (adjustable via pre-loop limit)
   // main_iter:   number of main-loop iterations (main_iter >= 0)
   //
-  const Node*    _base;           // base of address (e.g. Java array object, aw-aligned)
-  const int      _offset;
-  const Node*    _invar;
-  const int      _invar_factor;   // known constant factor of invar
-  const int      _scale;
   const Node*    _init_node;      // value of iv before pre-loop
   const int      _pre_stride;     // address increment per pre-loop iteration
   const int      _main_stride;    // address increment per main-loop iteration
+
+  // For native bases, we have no alignment guarantee. This means we cannot in
+  // general guarantee alignment statically. But we can check alignment with a
+  // speculative runtime check, see VTransform::apply_speculative_runtime_checks.
+  // For this, we need find the Predicate for auto vectorization checks, or else
+  // we need to find the multiversion_if. If we cannot find either, then we
+  // cannot make any speculative runtime checks.
+  const bool     _are_speculative_checks_possible;
 
   DEBUG_ONLY( const bool _is_trace; );
 
@@ -709,31 +1344,23 @@ private:
   }
 
 public:
-  AlignmentSolver(const MemNode* mem_ref,
+  AlignmentSolver(const VPointer& vpointer,
+                  const MemNode* mem_ref,
                   const uint vector_length,
-                  const Node* base,
-                  const int offset,
-                  const Node* invar,
-                  const int invar_factor,
-                  const int scale,
                   const Node* init_node,
                   const int pre_stride,
-                  const int main_stride
+                  const int main_stride,
+                  const bool are_speculative_checks_possible
                   DEBUG_ONLY( COMMA const bool is_trace)
                   ) :
+      _vpointer(          vpointer),
       _mem_ref(           mem_ref_not_null(mem_ref)),
-      _vector_length(     vector_length),
-      _element_size(      _mem_ref->memory_size()),
-      _vector_width(      _vector_length * _element_size),
+      _vector_width(      vector_length * vpointer.size()),
       _aw(                MIN2(_vector_width, ObjectAlignmentInBytes)),
-      _base(              base),
-      _offset(            offset),
-      _invar(             invar),
-      _invar_factor(      invar_factor),
-      _scale(             scale),
       _init_node(         init_node),
       _pre_stride(        pre_stride),
-      _main_stride(       main_stride)
+      _main_stride(       main_stride),
+      _are_speculative_checks_possible(are_speculative_checks_possible)
       DEBUG_ONLY( COMMA _is_trace(is_trace) )
   {
     assert(_mem_ref != nullptr &&
@@ -744,6 +1371,9 @@ public:
   AlignmentSolution* solve() const;
 
 private:
+  MemPointer::Base base() const { return _vpointer.mem_pointer().base();}
+  jint iv_scale() const { return _vpointer.iv_scale(); }
+
   class EQ4 {
    private:
     const int _C_const;

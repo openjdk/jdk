@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import com.sun.source.doctree.SystemPropertyTree;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.Content;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlTree;
 
 /**
  * A taglet that represents the {@code @systemProperty} tag.
@@ -62,7 +62,6 @@ public class SystemPropertyTaglet extends BaseTaglet {
      */
     private Content systemPropertyTagOutput(Element element, SystemPropertyTree tag) {
         String tagText = tag.getPropertyName().toString();
-        return HtmlTree.CODE(tagletWriter.createAnchorAndSearchIndex(element, tagText,
-                resources.getText("doclet.System_Property"), tag));
+        return HtmlTree.CODE(tagletWriter.createAnchorAndSearchIndex(element, tagText, "", tag));
     }
 }

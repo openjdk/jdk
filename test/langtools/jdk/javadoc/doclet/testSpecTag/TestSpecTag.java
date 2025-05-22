@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6251738 8226279 8297802 8296546 8305407
+ * @bug 6251738 8226279 8297802 8305407
  * @summary JDK-8226279 javadoc should support a new at-spec tag
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -132,11 +132,10 @@ public class TestSpecTag extends JavadocTester {
                     <div class="sub-nav">
                     <div class="nav-content">
                     <ol class="sub-nav-list"></ol>
-                    <div class="nav-list-search">
-                    <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
-                    earch in documentation" autocomplete="off" autocapitalize="off">
-                    <input type="reset" id="reset-search" disabled value="Reset">
-                    </div>
+                    <div class="nav-list-search"><input type="text" id="search-input" disabled place\
+                    holder="Search documentation (type /)" aria-label="Search in documentation" auto\
+                    complete="off" spellcheck="false"><input type="reset" id="reset-search" disabled\
+                     value="Reset"></div>
                     </div>
                     </div>
                     <!-- ========= END OF TOP NAVBAR ========= -->
@@ -509,20 +508,6 @@ public class TestSpecTag extends JavadocTester {
                            ^
                     """
                     .replace("#FILE#", src.resolve("p").resolve("C.java").toString()));
-    }
-
-    @Test
-    public void testSuppressSpecPage(Path base) throws IOException {
-        Path src = base.resolve("src");
-        tb.writeJavaFiles(src, "package p; /** @spec http://example.com label */ public class C { }");
-
-        javadoc("-d", base.resolve("out").toString(),
-                "--source-path", src.toString(),
-                "--no-external-specs-page",
-                "p");
-        checkExit(Exit.OK);
-
-        checkFiles(false, "external-specs.html");
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,6 @@ public class PrincipalName implements Cloneable {
      * TGS Name
      */
     public static final String TGS_DEFAULT_SRV_NAME = "krbtgt";
-    public static final int TGS_DEFAULT_NT = KRB_NT_SRV_INST;
 
     public static final char NAME_COMPONENT_SEPARATOR = '/';
     public static final char NAME_REALM_SEPARATOR = '@';
@@ -107,7 +106,12 @@ public class PrincipalName implements Cloneable {
 
     public static final String NAME_COMPONENT_SEPARATOR_STR = "/";
     public static final String NAME_REALM_SEPARATOR_STR = "@";
-    public static final String REALM_COMPONENT_SEPARATOR_STR = ".";
+
+    private static final boolean NAME_CASE_SENSITIVE_IN_MATCH
+            = "true".equalsIgnoreCase(
+                    SecurityProperties.getOverridableProperty(
+                            "jdk.security.krb5.name.case.sensitive"));
+
 
     // Instance fields.
 
@@ -129,12 +133,6 @@ public class PrincipalName implements Cloneable {
     private final Realm nameRealm;      // not null
 
 
-    /**
-     * When constructing a PrincipalName, whether the realm is included in
-     * the input, or deduced from default realm or domain-realm mapping.
-     */
-    private final boolean realmDeduced;
-
     // cached default salt, not used in clone
     private transient String salt = null;
 
@@ -155,7 +153,6 @@ public class PrincipalName implements Cloneable {
         this.nameType = nameType;
         this.nameStrings = nameStrings.clone();
         this.nameRealm = nameRealm;
-        this.realmDeduced = false;
     }
 
     // Warning: called by NativeCreds.c
@@ -245,7 +242,6 @@ public class PrincipalName implements Cloneable {
         if (realm == null) {
             throw new IllegalArgumentException("Null realm not allowed");
         }
-        realmDeduced = false;
         nameRealm = realm;
         DerValue der;
         if (encoding == null) {
@@ -399,9 +395,6 @@ public class PrincipalName implements Cloneable {
             realm = Realm.parseRealmAtSeparator(name);
         }
 
-        // No realm info from parameter and string, must deduce later
-        realmDeduced = realm == null;
-
         switch (type) {
         case KRB_NT_SRV_HST:
             if (nameParts.length >= 2) {
@@ -431,8 +424,8 @@ public class PrincipalName implements Cloneable {
                                 hostName.toLowerCase(Locale.ENGLISH) + ".")) {
                             hostName = canonicalized;
                         }
-                    } catch (UnknownHostException | SecurityException e) {
-                        // not canonicalized or no permission to do so, use old
+                    } catch (UnknownHostException e) {
+                        // not canonicalized, use old
                     }
                     if (hostName.endsWith(".")) {
                         hostName = hostName.substring(0, hostName.length() - 1);
@@ -607,33 +600,47 @@ public class PrincipalName implements Cloneable {
 
 
     /**
-     * Checks if two <code>PrincipalName</code> objects have identical values in their corresponding data fields.
+     * Checks if two <code>PrincipalName</code> objects have identical values
+     * in their corresponding data fields.
+     * <p>
+     * If {@systemProperty jdk.security.krb5.name.case.sensitive} is set to true,
+     * the name comparison is case-sensitive. Otherwise, it's case-insensitive.
+     * <p>
+     * It is used in {@link sun.security.krb5.internal.ccache.FileCredentialsCache}
+     * and {@link sun.security.krb5.internal.ktab.KeyTab} to retrieve ccache
+     * or keytab entry for a principal.
      *
      * @param pname the other <code>PrincipalName</code> object.
      * @return true if two have identical values, otherwise, return false.
      */
-    // It is used in <code>sun.security.krb5.internal.ccache</code> package.
     public boolean match(PrincipalName pname) {
-        boolean matched = true;
-        //name type is just a hint, no two names can be the same ignoring name type.
-        // if (this.nameType != pname.nameType) {
-        //      matched = false;
-        // }
-        if ((this.nameRealm != null) && (pname.nameRealm != null)) {
+        // No need to check name type. It's just a hint, no two names can be
+        // the same ignoring name type.
+        if (NAME_CASE_SENSITIVE_IN_MATCH) {
+            if (!(this.nameRealm.toString().equals(pname.nameRealm.toString()))) {
+                return false;
+            }
+        } else {
             if (!(this.nameRealm.toString().equalsIgnoreCase(pname.nameRealm.toString()))) {
-                matched = false;
+                return false;
             }
         }
         if (this.nameStrings.length != pname.nameStrings.length) {
-            matched = false;
+            return false;
         } else {
             for (int i = 0; i < this.nameStrings.length; i++) {
-                if (!(this.nameStrings[i].equalsIgnoreCase(pname.nameStrings[i]))) {
-                    matched = false;
+                if (NAME_CASE_SENSITIVE_IN_MATCH) {
+                    if (!(this.nameStrings[i].equals(pname.nameStrings[i]))) {
+                        return false;
+                    }
+                } else {
+                    if (!(this.nameStrings[i].equalsIgnoreCase(pname.nameStrings[i]))) {
+                        return false;
+                    }
                 }
             }
         }
-        return matched;
+        return true;
     }
 
     /**
@@ -705,9 +712,5 @@ public class PrincipalName implements Cloneable {
         } catch (KrbException e) {
         }
         return result;
-    }
-
-    public boolean isRealmDeduced() {
-        return realmDeduced;
     }
 }

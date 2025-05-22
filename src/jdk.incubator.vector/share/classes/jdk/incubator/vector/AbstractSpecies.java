@@ -48,6 +48,8 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     @Stable
     final Class<? extends AbstractMask<E>> maskType;
     @Stable
+    final Class<? extends AbstractShuffle<E>> shuffleType;
+    @Stable
     final Function<Object, ? extends AbstractVector<E>> vectorFactory;
 
     @Stable
@@ -61,11 +63,13 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
                     LaneType laneType,
                     Class<? extends AbstractVector<E>> vectorType,
                     Class<? extends AbstractMask<E>> maskType,
+                    Class<? extends AbstractShuffle<E>> shuffleType,
                     Function<Object, ? extends AbstractVector<E>> vectorFactory) {
         this.vectorShape = vectorShape;
         this.laneType = laneType;
         this.vectorType = vectorType;
         this.maskType = maskType;
+        this.shuffleType = shuffleType;
         this.vectorFactory = vectorFactory;
 
         // derived values:
@@ -160,6 +164,11 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     @ForceInline
     public final Class<? extends AbstractMask<E>> maskType() {
         return maskType;
+    }
+
+    @ForceInline
+    final Class<? extends AbstractShuffle<E>> shuffleType() {
+        return shuffleType;
     }
 
     @Override

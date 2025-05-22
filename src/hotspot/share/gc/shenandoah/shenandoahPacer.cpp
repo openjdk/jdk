@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -62,9 +62,11 @@ void ShenandoahPacer::setup_for_mark() {
 
   size_t live = update_and_get_progress_history();
   size_t free = _heap->free_set()->available();
+  assert(free != ShenandoahFreeSet::FreeSetUnderConstruction, "Avoid this race");
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
+  taxable = MAX2<size_t>(1, taxable);
 
   double tax = 1.0 * live / taxable; // base tax for available free space
   tax *= 1;                          // mark can succeed with immediate garbage, claim all available space
@@ -72,8 +74,8 @@ void ShenandoahPacer::setup_for_mark() {
 
   restart_with(non_taxable, tax);
 
-  log_info(gc, ergo)("Pacer for Mark. Expected Live: " SIZE_FORMAT "%s, Free: " SIZE_FORMAT "%s, "
-                     "Non-Taxable: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+  log_info(gc, ergo)("Pacer for Mark. Expected Live: %zu%s, Free: %zu%s, "
+                     "Non-Taxable: %zu%s, Alloc Tax Rate: %.1fx",
                      byte_size_in_proper_unit(live),        proper_unit_for_byte_size(live),
                      byte_size_in_proper_unit(free),        proper_unit_for_byte_size(free),
                      byte_size_in_proper_unit(non_taxable), proper_unit_for_byte_size(non_taxable),
@@ -85,9 +87,11 @@ void ShenandoahPacer::setup_for_evac() {
 
   size_t used = _heap->collection_set()->used();
   size_t free = _heap->free_set()->available();
+  assert(free != ShenandoahFreeSet::FreeSetUnderConstruction, "Avoid this race");
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
+  taxable = MAX2<size_t>(1, taxable);
 
   double tax = 1.0 * used / taxable; // base tax for available free space
   tax *= 2;                          // evac is followed by update-refs, claim 1/2 of remaining free
@@ -96,22 +100,24 @@ void ShenandoahPacer::setup_for_evac() {
 
   restart_with(non_taxable, tax);
 
-  log_info(gc, ergo)("Pacer for Evacuation. Used CSet: " SIZE_FORMAT "%s, Free: " SIZE_FORMAT "%s, "
-                     "Non-Taxable: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+  log_info(gc, ergo)("Pacer for Evacuation. Used CSet: %zu%s, Free: %zu%s, "
+                     "Non-Taxable: %zu%s, Alloc Tax Rate: %.1fx",
                      byte_size_in_proper_unit(used),        proper_unit_for_byte_size(used),
                      byte_size_in_proper_unit(free),        proper_unit_for_byte_size(free),
                      byte_size_in_proper_unit(non_taxable), proper_unit_for_byte_size(non_taxable),
                      tax);
 }
 
-void ShenandoahPacer::setup_for_updaterefs() {
+void ShenandoahPacer::setup_for_update_refs() {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
 
   size_t used = _heap->used();
   size_t free = _heap->free_set()->available();
+  assert(free != ShenandoahFreeSet::FreeSetUnderConstruction, "Avoid this race");
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
+  taxable = MAX2<size_t>(1, taxable);
 
   double tax = 1.0 * used / taxable; // base tax for available free space
   tax *= 1;                          // update-refs is the last phase, claim the remaining free
@@ -120,8 +126,8 @@ void ShenandoahPacer::setup_for_updaterefs() {
 
   restart_with(non_taxable, tax);
 
-  log_info(gc, ergo)("Pacer for Update Refs. Used: " SIZE_FORMAT "%s, Free: " SIZE_FORMAT "%s, "
-                     "Non-Taxable: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+  log_info(gc, ergo)("Pacer for Update Refs. Used: %zu%s, Free: %zu%s, "
+                     "Non-Taxable: %zu%s, Alloc Tax Rate: %.1fx",
                      byte_size_in_proper_unit(used),        proper_unit_for_byte_size(used),
                      byte_size_in_proper_unit(free),        proper_unit_for_byte_size(free),
                      byte_size_in_proper_unit(non_taxable), proper_unit_for_byte_size(non_taxable),
@@ -145,7 +151,7 @@ void ShenandoahPacer::setup_for_idle() {
 
   restart_with(initial, tax);
 
-  log_info(gc, ergo)("Pacer for Idle. Initial: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+  log_info(gc, ergo)("Pacer for Idle. Initial: %zu%s, Alloc Tax Rate: %.1fx",
                      byte_size_in_proper_unit(initial), proper_unit_for_byte_size(initial),
                      tax);
 }
@@ -161,7 +167,7 @@ void ShenandoahPacer::setup_for_reset() {
   size_t initial = _heap->max_capacity();
   restart_with(initial, 1.0);
 
-  log_info(gc, ergo)("Pacer for Reset. Non-Taxable: " SIZE_FORMAT "%s",
+  log_info(gc, ergo)("Pacer for Reset. Non-Taxable: %zu%s",
                      byte_size_in_proper_unit(initial), proper_unit_for_byte_size(initial));
 }
 
@@ -189,7 +195,8 @@ void ShenandoahPacer::restart_with(size_t non_taxable_bytes, double tax_rate) {
   _need_notify_waiters.try_set();
 }
 
-bool ShenandoahPacer::claim_for_alloc(size_t words, bool force) {
+template<bool FORCE>
+bool ShenandoahPacer::claim_for_alloc(size_t words) {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
 
   intptr_t tax = MAX2<intptr_t>(1, words * Atomic::load(&_tax_rate));
@@ -198,7 +205,7 @@ bool ShenandoahPacer::claim_for_alloc(size_t words, bool force) {
   intptr_t new_val = 0;
   do {
     cur = Atomic::load(&_budget);
-    if (cur < tax && !force) {
+    if (cur < tax && !FORCE) {
       // Progress depleted, alas.
       return false;
     }
@@ -206,6 +213,9 @@ bool ShenandoahPacer::claim_for_alloc(size_t words, bool force) {
   } while (Atomic::cmpxchg(&_budget, cur, new_val, memory_order_relaxed) != cur);
   return true;
 }
+
+template bool ShenandoahPacer::claim_for_alloc<true>(size_t words);
+template bool ShenandoahPacer::claim_for_alloc<false>(size_t words);
 
 void ShenandoahPacer::unpace_for_alloc(intptr_t epoch, size_t words) {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
@@ -227,17 +237,10 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
 
   // Fast path: try to allocate right away
-  bool claimed = claim_for_alloc(words, false);
+  bool claimed = claim_for_alloc<false>(words);
   if (claimed) {
     return;
   }
-
-  // Forcefully claim the budget: it may go negative at this point, and
-  // GC should replenish for this and subsequent allocations. After this claim,
-  // we would wait a bit until our claim is matched by additional progress,
-  // or the time budget depletes.
-  claimed = claim_for_alloc(words, true);
-  assert(claimed, "Should always succeed");
 
   // Threads that are attaching should not block at all: they are not
   // fully initialized yet. Blocking them would be awkward.
@@ -249,32 +252,25 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   JavaThread* current = JavaThread::current();
   if (current->is_attaching_via_jni() ||
       !current->is_active_Java_thread()) {
+    claim_for_alloc<true>(words);
     return;
   }
 
-  double start = os::elapsedTime();
-
-  size_t max_ms = ShenandoahPacingMaxDelay;
-  size_t total_ms = 0;
-
-  while (true) {
+  jlong const start_time = os::javaTimeNanos();
+  jlong const deadline = start_time + (ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC);
+  while (!claimed && os::javaTimeNanos() < deadline) {
     // We could instead assist GC, but this would suffice for now.
-    size_t cur_ms = (max_ms > total_ms) ? (max_ms - total_ms) : 1;
-    wait(cur_ms);
-
-    double end = os::elapsedTime();
-    total_ms = (size_t)((end - start) * 1000);
-
-    if (total_ms > max_ms || Atomic::load(&_budget) >= 0) {
-      // Exiting if either:
-      //  a) Spent local time budget to wait for enough GC progress.
-      //     Breaking out and allocating anyway, which may mean we outpace GC,
-      //     and start Degenerated GC cycle.
-      //  b) The budget had been replenished, which means our claim is satisfied.
-      ShenandoahThreadLocalData::add_paced_time(JavaThread::current(), end - start);
-      break;
-    }
+    wait(1);
+    claimed = claim_for_alloc<false>(words);
   }
+  if (!claimed) {
+    // Spent local time budget to wait for enough GC progress.
+    // Force allocating anyway, which may mean we outpace GC,
+    // and start Degenerated GC cycle.
+    claimed = claim_for_alloc<true>(words);
+    assert(claimed, "Should always succeed");
+  }
+  ShenandoahThreadLocalData::add_paced_time(current, (double)(os::javaTimeNanos() - start_time) / NANOSECS_PER_SEC);
 }
 
 void ShenandoahPacer::wait(size_t time_ms) {
@@ -283,7 +279,7 @@ void ShenandoahPacer::wait(size_t time_ms) {
   assert(time_ms > 0, "Should not call this with zero argument, as it would stall until notify");
   assert(time_ms <= LONG_MAX, "Sanity");
   MonitorLocker locker(_wait_monitor);
-  _wait_monitor->wait((long)time_ms);
+  _wait_monitor->wait(time_ms);
 }
 
 void ShenandoahPacer::notify_waiters() {

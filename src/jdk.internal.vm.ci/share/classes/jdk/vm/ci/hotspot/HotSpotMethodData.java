@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.util.Arrays;
 
-import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaMethodProfile;
@@ -144,7 +143,7 @@ final class HotSpotMethodData implements MetaspaceObject {
         /**
          * Singleton instance lazily initialized via double-checked locking.
          */
-        @NativeImageReinitialize private static volatile VMState instance;
+        private static volatile VMState instance;
 
         static VMState instance() {
             VMState result = instance;
@@ -318,7 +317,7 @@ final class HotSpotMethodData implements MetaspaceObject {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        String nl = String.format("%n");
+        String nl = System.lineSeparator();
         String nlIndent = String.format("%n%38s", "");
         sb.append("Raw method data for ");
         sb.append(method.format("%H.%n(%p)"));

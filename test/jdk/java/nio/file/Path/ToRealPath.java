@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 
 import jdk.test.lib.Platform;
 
@@ -51,6 +53,7 @@ public class ToRealPath {
     static final Path SUBDIR;
     static final Path FILE;
     static final Path LINK;
+    static final Set<Path> extraDeletions;
 
     static {
         try {
@@ -58,13 +61,14 @@ public class ToRealPath {
             SUBDIR = Files.createDirectory(DIR.resolve("subdir"));
             FILE = Files.createFile(DIR.resolve("foo"));
             LINK = DIR.resolve("link");
-            SUPPORTS_LINKS = TestUtil.supportsLinks(DIR);
+            SUPPORTS_LINKS = TestUtil.supportsSymbolicLinks(DIR);
+            extraDeletions = new HashSet<Path>();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     };
 
-    public boolean supportsLinks() {
+    public boolean supportsSymbolicLinks() {
         return SUPPORTS_LINKS;
     }
 
@@ -87,7 +91,7 @@ public class ToRealPath {
                      () -> doesNotExist.toRealPath(NOFOLLOW_LINKS));
     }
 
-    @EnabledIf("supportsLinks")
+    @EnabledIf("supportsSymbolicLinks")
     @Test
     public void shouldResolveLinks() throws IOException {
         Path resolvedFile = FILE;
@@ -110,7 +114,7 @@ public class ToRealPath {
     }
 
     @Test
-    @EnabledIf("supportsLinks")
+    @EnabledIf("supportsSymbolicLinks")
     public void shouldNotResolveLinks() throws IOException {
         Files.createSymbolicLink(LINK, FILE.toAbsolutePath());
         assertEquals(LINK.toRealPath(NOFOLLOW_LINKS).getFileName(),
@@ -143,7 +147,7 @@ public class ToRealPath {
     }
 
     @Test
-    @EnabledIf("supportsLinks")
+    @EnabledIf("supportsSymbolicLinks")
     public void noCollapseDots1() throws IOException {
         Path subPath = DIR.resolve(Path.of("dir", "subdir"));
         Path sub = Files.createDirectories(subPath);
@@ -154,8 +158,15 @@ public class ToRealPath {
         System.out.println("p: " + p);
         Path path = LINK.resolve(p);
         System.out.println("path:      " + path);
+        if (Platform.isWindows() && Files.notExists(path)) {
+            Files.createFile(path);
+            extraDeletions.add(path);
+        }
         System.out.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
-        assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
+        if (Platform.isWindows())
+            assertTrue(Files.isSameFile(path.toRealPath(NOFOLLOW_LINKS), path));
+        else
+            assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
 
         Files.delete(sub);
         Files.delete(sub.getParent());
@@ -163,7 +174,7 @@ public class ToRealPath {
     }
 
     @Test
-    @EnabledIf("supportsLinks")
+    @EnabledIf("supportsSymbolicLinks")
     public void noCollapseDots2() throws IOException {
         Path subPath = DIR.resolve(Path.of("dir", "subdir"));
         Path sub = Files.createDirectories(subPath);
@@ -177,8 +188,15 @@ public class ToRealPath {
         Path p = Path.of("aaa", "..", "..", "bbb", "..", "..", "out.txt");
         Path path = DIR.resolve(p);
         System.out.println("path:      " + path);
+        if (Platform.isWindows() && Files.notExists(path)) {
+            Files.createFile(path);
+            extraDeletions.add(path);
+        }
         System.out.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
-        assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
+        if (Platform.isWindows())
+            assertTrue(Files.isSameFile(path.toRealPath(NOFOLLOW_LINKS), path));
+        else
+            assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
         System.out.println(path.toRealPath());
 
         Files.delete(sub);
@@ -235,5 +253,7 @@ public class ToRealPath {
         Files.delete(FILE);
         Files.delete(SUBDIR);
         Files.delete(DIR);
+        for (Path p : extraDeletions)
+            Files.deleteIfExists(p);
     }
 }

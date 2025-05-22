@@ -32,11 +32,12 @@
 <ul>
 <li><a href="#introduction" id="toc-introduction">Introduction</a>
 <ul>
+<li><a href="#changing-this-document"
+id="toc-changing-this-document">Changing this Document</a></li>
 <li><a href="#why-care-about-style" id="toc-why-care-about-style">Why
 Care About Style?</a></li>
-<li><a href="#counterexamples-and-updates"
-id="toc-counterexamples-and-updates">Counterexamples and
-Updates</a></li>
+<li><a href="#counterexamples"
+id="toc-counterexamples">Counterexamples</a></li>
 </ul></li>
 <li><a href="#structure-and-formatting"
 id="toc-structure-and-formatting">Structure and Formatting</a>
@@ -99,6 +100,21 @@ writing HotSpot code. Following these will help new code fit in with
 existing HotSpot code, making it easier to read and maintain. Failure to
 follow these guidelines may lead to discussion during code reviews, if
 not outright rejection of a change.</p>
+<h3 id="changing-this-document">Changing this Document</h3>
+<p>Proposed changes should be discussed on the <a
+href="mailto:hotspot-dev@openjdk.org">HotSpot Developers</a> mailing
+list. Changes are likely to be cautious and incremental, since HotSpot
+coders have been using these guidelines for years.</p>
+<p>Substantive changes are approved by <a
+href="https://www.rfc-editor.org/rfc/rfc7282.html">rough consensus</a>
+of the <a href="https://openjdk.org/census#hotspot">HotSpot Group</a>
+Members. The Group Lead determines whether consensus has been
+reached.</p>
+<p>Editorial changes (changes that only affect the description of
+HotSpot style, not its substance) do not require the full consensus
+gathering process. The normal HotSpot pull request process may be used
+for editorial changes, with the additional requirement that the
+requisite reviewers are also HotSpot Group Members.</p>
 <h3 id="why-care-about-style">Why Care About Style?</h3>
 <p>Some programmers seem to have lexers and even C preprocessors
 installed directly behind their eyeballs. The rest of us require code
@@ -124,7 +140,7 @@ conforms locally to its own peculiar conventions, it is not worth
 reformatting the whole thing. Also consider separating changes that make
 extensive stylistic updates from those which make functional
 changes.</p>
-<h3 id="counterexamples-and-updates">Counterexamples and Updates</h3>
+<h3 id="counterexamples">Counterexamples</h3>
 <p>Many of the guidelines mentioned here have (sometimes widespread)
 counterexamples in the HotSpot code base. Finding a counterexample is
 not sufficient justification for new code to follow the counterexample
@@ -137,20 +153,6 @@ bring it up for discussion and possible change. The architectural rule,
 of course, is "When in Rome do as the Romans". Sometimes in the suburbs
 of Rome the rules are a little different; these differences can be
 pointed out here.</p>
-<p>Proposed changes should be discussed on the <a
-href="mailto:hotspot-dev@openjdk.org">HotSpot Developers</a> mailing
-list. Changes are likely to be cautious and incremental, since HotSpot
-coders have been using these guidelines for years.</p>
-<p>Substantive changes are approved by <a
-href="https://www.rfc-editor.org/rfc/rfc7282.html">rough consensus</a>
-of the <a href="https://openjdk.org/census#hotspot">HotSpot Group</a>
-Members. The Group Lead determines whether consensus has been
-reached.</p>
-<p>Editorial changes (changes that only affect the description of
-HotSpot style, not its substance) do not require the full consensus
-gathering process. The normal HotSpot pull request process may be used
-for editorial changes, with the additional requirement that the
-requisite reviewers are also HotSpot Group Members.</p>
 <h2 id="structure-and-formatting">Structure and Formatting</h2>
 <h3 id="factoring-and-class-design">Factoring and Class Design</h3>
 <ul>
@@ -207,23 +209,38 @@ the simple "getter".</p></li>
 <ul>
 <li><p>All source files must have a globally unique basename. The build
 system depends on this uniqueness.</p></li>
+<li><p>Keep the include lines within a section alphabetically sorted by
+their lowercase value. If an include must be out of order for
+correctness, suffix with it a comment such as
+<code>// do not reorder</code>. Source code processing tools can also
+use this hint.</p></li>
+<li><p>Put conditional inclusions (<code>#if ...</code>) at the end of
+the section of HotSpot include lines. This also applies to
+macro-expanded includes of platform dependent files.</p></li>
+<li><p>Put system includes in a section after the HotSpot include lines
+with a blank line separating the two sections.</p></li>
 <li><p>Do not put non-trivial function implementations in .hpp files. If
 the implementation depends on other .hpp files, put it in a .cpp or a
 .inline.hpp file.</p></li>
 <li><p>.inline.hpp files should only be included in .cpp or .inline.hpp
 files.</p></li>
 <li><p>All .inline.hpp files should include their corresponding .hpp
-file as the first include line. Declarations needed by other files
-should be put in the .hpp file, and not in the .inline.hpp file. This
-rule exists to resolve problems with circular dependencies between
-.inline.hpp files.</p></li>
-<li><p>All .cpp files include precompiled.hpp as the first include
-line.</p></li>
-<li><p>precompiled.hpp is just a build time optimization, so don't rely
-on it to resolve include problems.</p></li>
-<li><p>Keep the include lines alphabetically sorted.</p></li>
-<li><p>Put conditional inclusions (<code>#if ...</code>) at the end of
-the include list.</p></li>
+file as the first include line with a blank line separating it from the
+rest of the include lines. Declarations needed by other files should be
+put in the .hpp file, and not in the .inline.hpp file. This rule exists
+to resolve problems with circular dependencies between .inline.hpp
+files.</p></li>
+<li><p>Do not include a .hpp file if the corresponding .inline.hpp file
+is included.</p></li>
+<li><p>Use include guards for .hpp and .inline.hpp files. The name of
+the defined guard should be derived from the full search path of the
+file relative to the hotspot source directory. The guard should be all
+upper case with all paths separators and periods replaced by
+underscores.</p></li>
+<li><p>Some build configurations use precompiled headers to speed up the
+build times. The precompiled headers are included in the precompiled.hpp
+file. Note that precompiled.hpp is just a build time optimization, so
+don't rely on it to resolve include problems.</p></li>
 </ul>
 <h3 id="jtreg-tests">JTReg Tests</h3>
 <ul>
@@ -748,12 +765,15 @@ cases where dynamic initialization or destruction are essential. See <a
 href="https://bugs.openjdk.org/browse/JDK-8282469">JDK-8282469</a> for
 further discussion.</p>
 <h3 id="nullptr">nullptr</h3>
-<p>Prefer <code>nullptr</code> (<a
+<p>Use <code>nullptr</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf">n2431</a>)
-to <code>NULL</code>. Don't use (constexpr or literal) 0 for
-pointers.</p>
-<p>For historical reasons there are widespread uses of both
-<code>NULL</code> and of integer 0 as a pointer value.</p>
+rather than <code>NULL</code>. See the paper for reasons to avoid
+<code>NULL</code>.</p>
+<p>Don't use (constant expression or literal) 0 for pointers. Note that
+C++14 removed non-literal 0 constants from <em>null pointer
+constants</em>, though some compilers continue to treat them as such.
+For historical reasons there may be lingering uses of 0 as a
+pointer.</p>
 <h3 id="atomic">&lt;atomic&gt;</h3>
 <p>Do not use facilities provided by the <code>&lt;atomic&gt;</code>
 header (<a

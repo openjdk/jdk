@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameters;
 import java.util.List;
+import static jdk.jpackage.test.WindowsHelper.WixType.WIX3;
+import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutput;
 
 /**
  * Test --resource-dir option. The test should set --resource-dir to point to
@@ -40,11 +42,10 @@ import java.util.List;
 /*
  * @test
  * @summary jpackage with --resource-dir
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile WinResourceTest.java
+ * @compile -Xlint:all -Werror WinResourceTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinResourceTest
  */
@@ -84,12 +85,19 @@ public class WinResourceTest {
         .addBundleVerifier((cmd, result) -> {
             // Assert jpackage picked custom main.wxs and failed as expected by
             // examining its output
+            final String expectedWixErrorMsg;
+            if (getWixTypeFromVerboseJPackageOutput(result) == WIX3) {
+                expectedWixErrorMsg = "error CNDL0104 : Not a valid source file";
+            } else {
+                expectedWixErrorMsg = "error WIX0104: Not a valid source file";
+            }
+
             TKit.assertTextStream(expectedLogMessage)
                     .predicate(String::startsWith)
                     .apply(JPackageCommand.stripTimestamps(
-                            result.getOutput().stream()));
-            TKit.assertTextStream("error CNDL0104 : Not a valid source file")
-                    .apply(result.getOutput().stream());
+                            result.getOutput().stream()).iterator());
+            TKit.assertTextStream(expectedWixErrorMsg)
+                    .apply(result.getOutput());
         })
         .setExpectedExitCode(1)
         .run();

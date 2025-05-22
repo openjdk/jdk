@@ -27,7 +27,7 @@
 #include <string.h>
 
 #include "ExceptionCheckingJniEnv.hpp"
-#include "nsk_tools.h"
+#include "nsk_tools.hpp"
 
 namespace {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_C1_C1_GRAPHBUILDER_HPP
 #define SHARE_C1_C1_GRAPHBUILDER_HPP
 
-#include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
+#include "c1/c1_IR.hpp"
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciMethodData.hpp"
@@ -266,7 +266,6 @@ class GraphBuilder {
   void monitorexit(Value x, int bci);
   void new_multi_array(int dimensions);
   void throw_op(int bci);
-  Value round_fp(Value fp_value);
 
   // stack/code manipulation helpers
   Instruction* append_with_bci(Instruction* instr, int bci);
@@ -379,6 +378,7 @@ class GraphBuilder {
   void append_unsafe_CAS(ciMethod* callee);
   void append_unsafe_get_and_set(ciMethod* callee, bool is_add);
   void append_char_access(ciMethod* callee, bool is_store);
+  void append_alloc_array_copy(ciMethod* callee);
 
   void print_inlining(ciMethod* callee, const char* msg, bool success = true);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ import java.util.ListIterator;
 
 import sun.awt.windows.WToolkit;
 import sun.java2d.SunGraphicsEnvironment;
-import sun.java2d.SurfaceManagerFactory;
-import sun.java2d.WindowsSurfaceManagerFactory;
 import sun.java2d.d3d.D3DGraphicsDevice;
 import sun.java2d.windows.WindowsFlags;
 
@@ -60,10 +58,8 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
         WToolkit.loadLibraries();
         // setup flags before initializing native layer
         WindowsFlags.initFlags();
-        initDisplayWrapper();
 
-        // Install correct surface manager factory.
-        SurfaceManagerFactory.setInstance(new WindowsSurfaceManagerFactory());
+        initDisplay();
 
         double sx = -1;
         double sy = -1;
@@ -82,26 +78,20 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
     }
 
     /**
-     * Initializes native components of the graphics environment.  This
+     * Initializes native components of the graphics environment. This
      * includes everything from the native GraphicsDevice elements to
      * the DirectX rendering layer.
      */
     private static native void initDisplay();
 
-    private static boolean displayInitialized;      // = false;
-    public static void initDisplayWrapper() {
-        if (!displayInitialized) {
-            displayInitialized = true;
-            initDisplay();
-        }
-    }
-
     public Win32GraphicsEnvironment() {
     }
 
+    @Override
     protected native int getNumScreens();
     private native int getDefaultScreen();
 
+    @Override
     public GraphicsDevice getDefaultScreenDevice() {
         GraphicsDevice[] screens = getScreenDevices();
         if (screens.length == 0) {
@@ -214,6 +204,7 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
  * ----END DISPLAY CHANGE SUPPORT----
  */
 
+    @Override
     protected GraphicsDevice makeScreenDevice(int screennum) {
         GraphicsDevice device = null;
         if (WindowsFlags.isD3DEnabled()) {
@@ -225,6 +216,7 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
         return device;
     }
 
+    @Override
     public boolean isDisplayLocal() {
         return true;
     }

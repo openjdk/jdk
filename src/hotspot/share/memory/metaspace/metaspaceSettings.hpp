@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,6 @@ class Settings : public AllStatic {
   // the requested size, we attempt to double the chunk size in place...
   static const bool _enlarge_chunks_in_place = true;
 
-  // If true, metablock allocations are guarded and periodically checked.
-  DEBUG_ONLY(static bool _use_allocation_guard;)
-
 public:
 
   static size_t commit_granule_bytes()                        { return _commit_granule_bytes; }
@@ -66,7 +63,6 @@ public:
   static size_t virtual_space_node_default_word_size()        { return _virtual_space_node_default_word_size; }
   static size_t virtual_space_node_reserve_alignment_words()  { return _virtual_space_node_reserve_alignment_words; }
   static bool enlarge_chunks_in_place()                       { return _enlarge_chunks_in_place; }
-  static bool use_allocation_guard()                          { return DEBUG_ONLY(_use_allocation_guard) NOT_DEBUG(false); }
 
   static void ergo_initialize();
 

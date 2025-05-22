@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -39,10 +38,13 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/utf8.hpp"
+
+// Limit exception message components to 64K (the same max as Symbols)
+#define MAX_LEN 65535
 
 // Implementation of ThreadShadow
 void check_ThreadShadow() {
@@ -111,15 +113,14 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
   }
 #endif // ASSERT
 
-  if (!thread->can_call_java()) {
+  if (h_exception.is_null() && !thread->can_call_java()) {
     ResourceMark rm(thread);
-    const char* exc_value = h_exception.not_null() ? h_exception->print_value_string() :
-                      h_name != nullptr ? h_name->as_C_string() :
-                      "null";
-    log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%s%s%s> (" PTR_FORMAT ") \n"
+    const char* exc_value = h_name != nullptr ? h_name->as_C_string() : "null";
+    log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
                         "at [%s, line %d]\nfor thread " PTR_FORMAT ",\n"
                         "throwing pre-allocated exception: %s",
-                        exc_value, message ? ": " : "", message ? message : "",
+                        MAX_LEN, exc_value, message ? ": " : "",
+                        MAX_LEN, message ? message : "",
                         p2i(h_exception()), file, line, p2i(thread),
                         Universe::vm_exception()->print_value_string());
     // We do not care what kind of exception we get for a thread which
@@ -145,10 +146,11 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
 
   // tracing (do this up front - so it works during boot strapping)
   // Note, the print_value_string() argument is not called unless logging is enabled!
-  log_info(exceptions)("Exception <%s%s%s> (" PTR_FORMAT ") \n"
+  log_info(exceptions)("Exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
                        "thrown [%s, line %d]\nfor thread " PTR_FORMAT,
-                       h_exception->print_value_string(),
-                       message ? ": " : "", message ? message : "",
+                       MAX_LEN, h_exception->print_value_string(),
+                       message ? ": " : "",
+                       MAX_LEN, message ? message : "",
                        p2i(h_exception()), file, line, p2i(thread));
 
   // for AbortVMOnException flag
@@ -179,35 +181,35 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
   thread->set_pending_exception(h_exception(), file, line);
 
   // vm log
-  Events::log_exception(thread, h_exception, message, file, line);
+  Events::log_exception(thread, h_exception, message, file, line, MAX_LEN);
 }
 
 
 void Exceptions::_throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message,
-                            Handle h_loader, Handle h_protection_domain) {
+                            Handle h_loader) {
   // Check for special boot-strapping/compiler-thread handling
   if (special_exception(thread, file, line, Handle(), name, message)) return;
   // Create and throw exception
   Handle h_cause(thread, nullptr);
-  Handle h_exception = new_exception(thread, name, message, h_cause, h_loader, h_protection_domain);
+  Handle h_exception = new_exception(thread, name, message, h_cause, h_loader);
   _throw(thread, file, line, h_exception, message);
 }
 
 void Exceptions::_throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause,
-                                  Handle h_loader, Handle h_protection_domain) {
+                                  Handle h_loader) {
   // Check for special boot-strapping/compiler-thread handling
   if (special_exception(thread, file, line, Handle(), name, message)) return;
   // Create and throw exception and init cause
-  Handle h_exception = new_exception(thread, name, message, h_cause, h_loader, h_protection_domain);
+  Handle h_exception = new_exception(thread, name, message, h_cause, h_loader);
   _throw(thread, file, line, h_exception, message);
 }
 
 void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause,
-                              Handle h_loader, Handle h_protection_domain) {
+                              Handle h_loader) {
   // Check for special boot-strapping/compiler-thread handling
-  if (special_exception(thread, file, line, h_cause)) return;
+  if (special_exception(thread, file, line, Handle(), name)) return;
   // Create and throw exception
-  Handle h_exception = new_exception(thread, name, h_cause, h_loader, h_protection_domain);
+  Handle h_exception = new_exception(thread, name, h_cause, h_loader);
   _throw(thread, file, line, h_exception, nullptr);
 }
 
@@ -225,13 +227,13 @@ void Exceptions::_throw_args(JavaThread* thread, const char* file, int line, Sym
 // Methods for default parameters.
 // NOTE: These must be here (and not in the header file) because of include circularities.
 void Exceptions::_throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause) {
-  _throw_msg_cause(thread, file, line, name, message, h_cause, Handle(thread, nullptr), Handle(thread, nullptr));
+  _throw_msg_cause(thread, file, line, name, message, h_cause, Handle());
 }
 void Exceptions::_throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message) {
-  _throw_msg(thread, file, line, name, message, Handle(thread, nullptr), Handle(thread, nullptr));
+  _throw_msg(thread, file, line, name, message, Handle());
 }
 void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause) {
-  _throw_cause(thread, file, line, name, h_cause, Handle(thread, nullptr), Handle(thread, nullptr));
+  _throw_cause(thread, file, line, name, h_cause, Handle());
 }
 
 
@@ -254,13 +256,42 @@ void Exceptions::throw_stack_overflow_exception(JavaThread* THREAD, const char* 
   _throw(THREAD, file, line, exception);
 }
 
+// All callers are expected to have ensured that the incoming expanded format string
+// will be within reasonable limits - specifically we will never hit the INT_MAX limit
+// of os::vsnprintf when it tries to report how big a buffer is needed. Even so we
+// further limit the formatted output to 1024 characters.
 void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* h_name, const char* format, ...) {
   const int max_msg_size = 1024;
   va_list ap;
   va_start(ap, format);
   char msg[max_msg_size];
-  os::vsnprintf(msg, max_msg_size, format, ap);
+  int ret = os::vsnprintf(msg, max_msg_size, format, ap);
   va_end(ap);
+
+  // If ret == -1 then either there was a format conversion error, or the required buffer size
+  // exceeds INT_MAX and so couldn't be returned (undocumented behaviour of vsnprintf). Depending
+  // on the platform the buffer may be filled to its capacity (Linux), filled to the conversion
+  // that encountered the overflow (macOS), or is empty (Windows), so it is possible we
+  // have a truncated UTF-8 sequence. Similarly, if the buffer was too small and ret >= max_msg_size
+  // we may also have a truncated UTF-8 sequence. In such cases we need to fix the buffer so the UTF-8
+  // sequence is valid.
+  assert(ret != -1, "Caller should have ensured the incoming format string is size limited!");
+  if (ret == -1 || ret >= max_msg_size) {
+    int len = (int) strlen(msg);
+    if (len > 0) {
+      // Truncation will only happen if the buffer was filled by vsnprintf,
+      // otherwise vsnprintf already terminated filling it at a well-defined point.
+      // But as this is not a clearly specified area we will perform our own UTF8
+      // truncation anyway - though for those well-defined termination points it
+      // will be a no-op.
+      UTF8::truncate_to_legal_utf8((unsigned char*)msg, len + 1);
+    }
+  }
+  // UTF8::is_legal_utf8 should actually be called is_legal_utf8_class_name as the final
+  // parameter controls a check for a specific character appearing in the "name", which is only
+  // allowed for classfile versions <= 47. We pass `true` so that we allow such strings as this code
+  // know nothing about the actual string content.
+  assert(UTF8::is_legal_utf8((const unsigned char*)msg, strlen(msg), true), "must be");
   _throw_msg(thread, file, line, h_name, msg);
 }
 
@@ -269,7 +300,7 @@ void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* 
 // and returns a Handle
 Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  Symbol* signature, JavaCallArguments *args,
-                                 Handle h_loader, Handle h_protection_domain) {
+                                 Handle h_loader) {
   assert(Universe::is_fully_initialized(),
     "cannot be called during initialization");
   assert(!thread->has_pending_exception(), "already has exception");
@@ -277,7 +308,7 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
   Handle h_exception;
 
   // Resolve exception klass, and check for pending exception below.
-  Klass* klass = SystemDictionary::resolve_or_fail(name, h_loader, h_protection_domain, true, thread);
+  Klass* klass = SystemDictionary::resolve_or_fail(name, h_loader, true, thread);
 
   if (!thread->has_pending_exception()) {
     assert(klass != nullptr, "klass must exist");
@@ -301,8 +332,8 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
 Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  Symbol* signature, JavaCallArguments *args,
                                  Handle h_cause,
-                                 Handle h_loader, Handle h_protection_domain) {
-  Handle h_exception = new_exception(thread, name, signature, args, h_loader, h_protection_domain);
+                                 Handle h_loader) {
+  Handle h_exception = new_exception(thread, name, signature, args, h_loader);
 
   // Future: object initializer should take a cause argument
   if (h_cause.not_null()) {
@@ -331,7 +362,7 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
 // creating a new exception
 Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  Handle h_cause,
-                                 Handle h_loader, Handle h_protection_domain,
+                                 Handle h_loader,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
   JavaCallArguments args;
   Symbol* signature = nullptr;
@@ -341,14 +372,14 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
     signature = vmSymbols::throwable_void_signature();
     args.push_oop(h_cause);
   }
-  return new_exception(thread, name, signature, &args, h_loader, h_protection_domain);
+  return new_exception(thread, name, signature, &args, h_loader);
 }
 
 // Convenience method. Calls either the <init>() or <init>(String) method when
 // creating a new exception
 Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  const char* message, Handle h_cause,
-                                 Handle h_loader, Handle h_protection_domain,
+                                 Handle h_loader,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
   JavaCallArguments args;
   Symbol* signature = nullptr;
@@ -385,11 +416,10 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
     args.push_oop(msg);
     signature = vmSymbols::string_void_signature();
   }
-  return new_exception(thread, name, signature, &args, h_cause, h_loader, h_protection_domain);
+  return new_exception(thread, name, signature, &args, h_cause, h_loader);
 }
 
-// Another convenience method that creates handles for null class loaders and
-// protection domains and null causes.
+// Another convenience method that creates handles for null class loaders and null causes.
 // If the last parameter 'to_utf8_mode' is safe_to_utf8,
 // it means we can safely ignore the encoding scheme of the message string and
 // convert it directly to a java UTF8 string. Otherwise, we need to take the
@@ -400,11 +430,10 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  const char* message,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
 
-  Handle       h_loader(thread, nullptr);
-  Handle       h_prot(thread, nullptr);
-  Handle       h_cause(thread, nullptr);
+  Handle h_loader;
+  Handle h_cause;
   return Exceptions::new_exception(thread, name, message, h_cause, h_loader,
-                                   h_prot, to_utf8_safe);
+                                   to_utf8_safe);
 }
 
 // invokedynamic uses wrap_dynamic_exception for:
@@ -510,6 +539,7 @@ inline void ExceptionMark::check_no_pending_exception() {
   if (_thread->has_pending_exception()) {
     oop exception = _thread->pending_exception();
     _thread->clear_pending_exception(); // Needed to avoid infinite recursion
+    ResourceMark rm;
     exception->print();
     fatal("ExceptionMark constructor expects no pending exceptions");
   }
@@ -521,6 +551,7 @@ ExceptionMark::~ExceptionMark() {
     Handle exception(_thread, _thread->pending_exception());
     _thread->clear_pending_exception(); // Needed to avoid infinite recursion
     if (is_init_completed()) {
+      ResourceMark rm;
       exception->print();
       fatal("ExceptionMark destructor expects no pending exceptions");
     } else {
@@ -566,15 +597,15 @@ void Exceptions::debug_check_abort_helper(Handle exception, const char* message)
 // for logging exceptions
 void Exceptions::log_exception(Handle exception, const char* message) {
   ResourceMark rm;
-  Symbol* detail_message = java_lang_Throwable::detail_message(exception());
+  const char* detail_message = java_lang_Throwable::message_as_utf8(exception());
   if (detail_message != nullptr) {
-    log_info(exceptions)("Exception <%s: %s>\n thrown in %s",
-                         exception->print_value_string(),
-                         detail_message->as_C_string(),
-                         message);
+    log_info(exceptions)("Exception <%.*s: %.*s>\n thrown in %.*s",
+                         MAX_LEN, exception->print_value_string(),
+                         MAX_LEN, detail_message,
+                         MAX_LEN, message);
   } else {
-    log_info(exceptions)("Exception <%s>\n thrown in %s",
-                         exception->print_value_string(),
-                         message);
+    log_info(exceptions)("Exception <%.*s>\n thrown in %.*s",
+                         MAX_LEN, exception->print_value_string(),
+                         MAX_LEN, message);
   }
 }

@@ -137,11 +137,6 @@ typedef struct {
 
 static DeferredEventModeList deferredEventModes;
 
-#ifdef DEBUG
-static void dumpThreadList(ThreadList *list);
-static void dumpThread(ThreadNode *node);
-#endif
-
 /* Get the state of the thread direct from JVMTI */
 static jvmtiError
 threadState(jthread thread, jint *pstate)
@@ -642,26 +637,31 @@ getLocks(void)
      * thread) needs to be grabbed here. This allows thread control
      * code to safely suspend and resume the application threads
      * while ensuring they don't hold a critical lock.
+     *
+     * stepControl_beginStep() grabs the eventHandler lock and stepControl lock
+     * before eventually ending up here, so we need to maintain that order here.
+     * Similarly, invoker_completeInvokeRequest() grabs the eventHandler lock
+     * and invoker lock.
      */
-
+    callback_lock();
     eventHandler_lock();
+    stepControl_lock();
     invoker_lock();
     eventHelper_lock();
-    stepControl_lock();
-    commonRef_lock();
     debugMonitorEnter(threadLock);
-
+    commonRef_lock();
 }
 
 static void
 releaseLocks(void)
 {
-    debugMonitorExit(threadLock);
     commonRef_unlock();
-    stepControl_unlock();
+    debugMonitorExit(threadLock);
     eventHelper_unlock();
     invoker_unlock();
+    stepControl_unlock();
     eventHandler_unlock();
+    callback_unlock();
 }
 
 void
@@ -1549,7 +1549,7 @@ threadControl_resumeAll(void)
              * resume any vthread with a suspendCount == 1, and we want to ignore
              * vthreads with a suspendCount > 0. Therefore we don't want
              * ResumeAllVirtualThreads resuming these vthreads. We must first
-             * build a list of them to pass to as the exclude list.
+             * build a list of them to pass as the exclude list.
              */
             enumerateOverThreadList(env, &runningVThreads, excludeCountHelper,
                                     &excludeCnt);
@@ -2117,65 +2117,82 @@ threadControl_onEventHandlerEntry(jbyte sessionID, EventInfo *evinfo, jobject cu
 }
 
 static void
-doPendingTasks(JNIEnv *env, ThreadNode *node)
+doPendingTasks(JNIEnv *env, jthread thread, int pendingInterrupt, jobject pendingStop)
 {
     /*
-     * Take care of any pending interrupts/stops, and clear out
-     * info on pending interrupts/stops.
+     * Take care of any pending interrupts/stops.
      */
-    if (node->pendingInterrupt) {
+    if (pendingInterrupt) {
         JVMTI_FUNC_PTR(gdata->jvmti,InterruptThread)
-                        (gdata->jvmti, node->thread);
+                        (gdata->jvmti, thread);
         /*
          * TO DO: Log error
          */
-        node->pendingInterrupt = JNI_FALSE;
     }
 
-    if (node->pendingStop != NULL) {
+    if (pendingStop != NULL) {
         JVMTI_FUNC_PTR(gdata->jvmti,StopThread)
-                        (gdata->jvmti, node->thread, node->pendingStop);
+                        (gdata->jvmti, thread, pendingStop);
         /*
          * TO DO: Log error
          */
-        tossGlobalRef(env, &(node->pendingStop));
     }
 }
 
 void
 threadControl_onEventHandlerExit(EventIndex ei, jthread thread,
-                                 struct bag *eventBag)
+                                 struct bag *eventBag, jobject currentException)
 {
     ThreadNode *node;
+    JNIEnv *env = getEnv();
 
     log_debugee_location("threadControl_onEventHandlerExit()", thread, NULL, 0);
 
     if (ei == EI_THREAD_END) {
-        eventHandler_lock(); /* for proper lock order */
-    }
-    debugMonitorEnter(threadLock);
-
-    node = findRunningThread(thread);
-    if (node == NULL) {
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,"thread list corrupted");
-    } else {
-        JNIEnv *env;
-
-        env = getEnv();
-        if (ei == EI_THREAD_END) {
-            removeThread(env, node);
-            node = NULL;   /* has been freed */
-        } else {
-            /* No point in doing this if the thread is about to die.*/
-            doPendingTasks(env, node);
-            node->eventBag = eventBag;
-            node->current_ei = 0;
+        eventHandler_lock(); /* for proper lock order - see removeThread() call below */
+        debugMonitorEnter(threadLock);
+        node = findRunningThread(thread);
+        if (node == NULL) {
+           EXIT_ERROR(AGENT_ERROR_NULL_POINTER,"thread list corrupted");
         }
-    }
-
-    debugMonitorExit(threadLock);
-    if (ei == EI_THREAD_END) {
+        removeThread(env, node); // Grabs handlerLock, thus the reason for first grabbing it above.
+        node = NULL; // We exiting the threadLock. No longer safe to access.
+        debugMonitorExit(threadLock);
         eventHandler_unlock();
+    } else {
+        debugMonitorEnter(threadLock);
+        node = findRunningThread(thread);
+        if (node == NULL) {
+            EXIT_ERROR(AGENT_ERROR_NULL_POINTER,"thread list corrupted");
+        }
+        /* No need to do the following if the thread is about to die.*/
+        int pendingInterrupt = node->pendingInterrupt;
+        jobject pendingStop = node->pendingStop;
+        jthread thread = node->thread;
+        node->pendingInterrupt = JNI_FALSE;
+        node->pendingStop = NULL;
+        node->eventBag = eventBag;
+        node->current_ei = 0;
+        node = NULL; // We exiting the threadLock. No longer safe to access.
+        // doPendingTasks() may do an upcall to java, and we don't want to hold any
+        // locks when doing that. Thus we got all our node updates done first
+        // and can now exit the threadLock.
+        debugMonitorExit(threadLock);
+        if (currentException != NULL) {
+            // We need to rethrow the exception that was current when we received the
+            // JVMTI event. If there is a pending async exception, StopThread will be
+            // called from doPendingTasks() immediately below. Depending on the VM
+            // implementation and state, the async exception might immediately overwrite
+            // the currentException, or it might be delayed until later.
+            //
+            // Note in order the keep the JNI Checker happy, we had to delay doing this
+            // until now. Otherwise there are complaints when JNI IsVirtualThread is called.
+            JNI_FUNC_PTR(env,Throw)(env, currentException);
+        }
+        doPendingTasks(env, thread, pendingInterrupt, pendingStop);
+        if (pendingStop != NULL) {
+          tossGlobalRef(env, &pendingStop);
+        }
     }
 }
 
@@ -2219,29 +2236,9 @@ threadControl_applicationThreadStatus(jthread thread,
 jvmtiError
 threadControl_interrupt(jthread thread)
 {
-    ThreadNode *node;
-    jvmtiError  error;
-
-    error = JVMTI_ERROR_NONE;
-
     log_debugee_location("threadControl_interrupt()", thread, NULL, 0);
 
-    debugMonitorEnter(threadLock);
-
-    node = findThread(&runningThreads, thread);
-    if ((node == NULL) || !HANDLING_EVENT(node)) {
-        error = JVMTI_FUNC_PTR(gdata->jvmti,InterruptThread)
-                        (gdata->jvmti, thread);
-    } else {
-        /*
-         * Hold any interrupts until after the event is processed.
-         */
-        node->pendingInterrupt = JNI_TRUE;
-    }
-
-    debugMonitorExit(threadLock);
-
-    return error;
+    return JVMTI_FUNC_PTR(gdata->jvmti,InterruptThread)(gdata->jvmti, thread);
 }
 
 void
@@ -2308,26 +2305,20 @@ threadControl_saveCLEInfo(JNIEnv *env, jthread thread, EventIndex ei,
     debugMonitorExit(threadLock);
 }
 
+/*
+ * Support for getting an interrupt in an application thread while doing
+ * a debugMonitorWait().
+ */
 void
 threadControl_setPendingInterrupt(jthread thread)
 {
     ThreadNode *node;
 
-    /*
-     * vmTestbase/nsk/jdb/kill/kill001/kill001.java seems to be the only code
-     * that triggers this function. Is uses ThreadReference.Stop.
-     *
-     * Since ThreadReference.Stop is not supported for vthreads, we should never
-     * get here with a vthread.
-     */
-    JDI_ASSERT(!isVThread(thread));
-
     debugMonitorEnter(threadLock);
 
-    node = findThread(&runningThreads, thread);
-    if (node != NULL) {
-        node->pendingInterrupt = JNI_TRUE;
-    }
+    node = findRunningThread(thread);
+    JDI_ASSERT(node != NULL);
+    node->pendingInterrupt = JNI_TRUE;
 
     debugMonitorExit(threadLock);
 }
@@ -2512,23 +2503,13 @@ threadControl_setEventMode(jvmtiEventMode mode, EventIndex ei, jthread thread)
 }
 
 /*
- * Returns the current thread, if the thread has generated at least
- * one event, and has not generated a thread end event.
+ * Returns the current thread.
  */
 jthread
 threadControl_currentThread(void)
 {
-    jthread thread;
-
-    debugMonitorEnter(threadLock);
-    {
-        ThreadNode *node;
-
-        node = findThread(&runningThreads, NULL);
-        thread = (node == NULL) ? NULL : node->thread;
-    }
-    debugMonitorExit(threadLock);
-
+    jthread thread = NULL;
+    jvmtiError error = JVMTI_FUNC_PTR(gdata->jvmti,GetCurrentThread)(gdata->jvmti, &thread);
     return thread;
 }
 
@@ -2586,13 +2567,15 @@ threadControl_allVThreads(jint *numVThreads)
     return vthreads;
 }
 
-/***** debugging *****/
+/***** APIs for debugging the debug agent *****/
 
-#ifdef DEBUG
+static void dumpThreadList(ThreadList *list);
+static void dumpThread(ThreadNode *node);
 
 void
 threadControl_dumpAllThreads()
 {
+    tty_message("suspendAllCount: %d", suspendAllCount);
     tty_message("Dumping runningThreads:");
     dumpThreadList(&runningThreads);
     tty_message("\nDumping runningVThreads:");
@@ -2670,11 +2653,10 @@ dumpThread(ThreadNode *node) {
     tty_message("\tthreadState: 0x%x", getThreadState(node));
     tty_message("\ttoBeResumed: %d", node->toBeResumed);
     tty_message("\tis_vthread: %d", node->is_vthread);
+    tty_message("\tpendingInterrupt: %d", node->pendingInterrupt);
     tty_message("\tcurrentInvoke.pending: %d", node->currentInvoke.pending);
     tty_message("\tcurrentInvoke.started: %d", node->currentInvoke.started);
     tty_message("\tcurrentInvoke.available: %d", node->currentInvoke.available);
     tty_message("\tobjID: %d", commonRef_refToID(getEnv(), node->thread));
 #endif
 }
-
-#endif /* DEBUG */

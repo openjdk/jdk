@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static compiler.lib.ir_framework.shared.TestFrameworkSocket.PRINT_TIMES_TAG;
+
 /**
  * This class' main method is called from {@link TestFramework} and represents the so-called "test VM". The class is
  * the heart of the framework and is responsible for executing all the specified tests in the test class. It uses the
@@ -73,6 +75,7 @@ public class TestVM {
      */
     public static final int WARMUP_ITERATIONS = Integer.parseInt(System.getProperty("Warmup", "2000"));
 
+    private static final boolean ALLOW_METHOD_NOT_COMPILABLE = Boolean.getBoolean("AllowNotCompilable");
     private static final boolean TIERED_COMPILATION = (Boolean)WHITE_BOX.getVMFlag("TieredCompilation");
     private static final CompLevel TIERED_COMPILATION_STOP_AT_LEVEL;
     private static final boolean CLIENT_VM = Platform.isClient();
@@ -577,8 +580,9 @@ public class TestVM {
         if (EXCLUDE_RANDOM) {
             compLevel = compLevel.excludeCompilationRandomly(m);
         }
+        boolean allowNotCompilable = testAnno.allowNotCompilable() || ALLOW_METHOD_NOT_COMPILABLE;
         ArgumentsProvider argumentsProvider = ArgumentsProviderBuilder.build(m, setupMethodMap);
-        DeclaredTest test = new DeclaredTest(m, argumentsProvider, compLevel, warmupIterations);
+        DeclaredTest test = new DeclaredTest(m, argumentsProvider, compLevel, warmupIterations, allowNotCompilable);
         declaredTests.put(m, test);
         testMethodMap.put(m.getName(), m);
     }
@@ -883,9 +887,10 @@ public class TestVM {
 
         // Print execution times
         if (VERBOSE || PRINT_TIMES) {
-            System.out.println(System.lineSeparator() + System.lineSeparator() + "Test execution times:");
+            TestFrameworkSocket.write("Test execution times:", PRINT_TIMES_TAG, true);
             for (Map.Entry<Long, String> entry : durations.entrySet()) {
-                System.out.format("%-10s%15d ns%n", entry.getValue() + ":", entry.getKey());
+                TestFrameworkSocket.write(String.format("%-25s%15d ns%n", entry.getValue() + ":", entry.getKey()),
+                        PRINT_TIMES_TAG, true);
             }
         }
 

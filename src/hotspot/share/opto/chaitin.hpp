@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ class PhaseChaitin;
 //------------------------------LRG--------------------------------------------
 // Live-RanGe structure.
 class LRG : public ResourceObj {
-  friend class VMStructs;
 public:
   static const uint AllStack_size = 0xFFFFF; // This mask size is used to tell that the mask of this LRG supports stack positions
   enum { SPILL_REG=29999 };     // Register number of a spilled LRG
@@ -83,11 +82,11 @@ public:
   // set makes it not valid.
   void set_degree( uint degree ) {
     _eff_degree = degree;
-    debug_only(_degree_valid = 1;)
+    DEBUG_ONLY(_degree_valid = 1;)
     assert(!_mask.is_AllStack() || (_mask.is_AllStack() && lo_degree()), "_eff_degree can't be bigger than AllStack_size - _num_regs if the mask supports stack registers");
   }
   // Made a change that hammered degree
-  void invalid_degree() { debug_only(_degree_valid=0;) }
+  void invalid_degree() { DEBUG_ONLY(_degree_valid=0;) }
   // Incrementally modify degree.  If it was correct, it should remain correct
   void inc_degree( uint mod ) {
     _eff_degree += mod;
@@ -129,15 +128,15 @@ public:
   // count of bits in the current mask.
   int get_invalid_mask_size() const { return _mask_size; }
   const RegMask &mask() const { return _mask; }
-  void set_mask( const RegMask &rm ) { _mask = rm; debug_only(_msize_valid=0;)}
-  void AND( const RegMask &rm ) { _mask.AND(rm); debug_only(_msize_valid=0;)}
-  void SUBTRACT( const RegMask &rm ) { _mask.SUBTRACT(rm); debug_only(_msize_valid=0;)}
-  void Clear()   { _mask.Clear()  ; debug_only(_msize_valid=1); _mask_size = 0; }
-  void Set_All() { _mask.Set_All(); debug_only(_msize_valid=1); _mask_size = RegMask::CHUNK_SIZE; }
+  void set_mask( const RegMask &rm ) { _mask = rm; DEBUG_ONLY(_msize_valid=0;)}
+  void AND( const RegMask &rm ) { _mask.AND(rm); DEBUG_ONLY(_msize_valid=0;)}
+  void SUBTRACT( const RegMask &rm ) { _mask.SUBTRACT(rm); DEBUG_ONLY(_msize_valid=0;)}
+  void Clear()   { _mask.Clear()  ; DEBUG_ONLY(_msize_valid=1); _mask_size = 0; }
+  void Set_All() { _mask.Set_All(); DEBUG_ONLY(_msize_valid=1); _mask_size = RegMask::CHUNK_SIZE; }
 
-  void Insert( OptoReg::Name reg ) { _mask.Insert(reg);  debug_only(_msize_valid=0;) }
-  void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  debug_only(_msize_valid=0;) }
-  void clear_to_sets()  { _mask.clear_to_sets(_num_regs); debug_only(_msize_valid=0;) }
+  void Insert( OptoReg::Name reg ) { _mask.Insert(reg);  DEBUG_ONLY(_msize_valid=0;) }
+  void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  DEBUG_ONLY(_msize_valid=0;) }
+  void clear_to_sets()  { _mask.clear_to_sets(_num_regs); DEBUG_ONLY(_msize_valid=0;) }
 
 private:
   // Number of registers this live range uses when it colors
@@ -236,7 +235,6 @@ public:
 // abstract!  It needs abstraction so I can fiddle with the implementation to
 // get even more speed.
 class PhaseIFG : public Phase {
-  friend class VMStructs;
   // Current implementation: a triangular adjacency list.
 
   // Array of adjacency-lists, indexed by live-range number
@@ -292,7 +290,7 @@ public:
 #endif
 
   //--------------- Live Range Accessors
-  LRG &lrgs(uint idx) const { assert(idx < _maxlrg, "oob"); return _lrgs[idx]; }
+  LRG &lrgs(uint idx) const { assert(idx < _maxlrg, "oob: index %u not smaller than %u", idx, _maxlrg); return _lrgs[idx]; }
 
   // Compute and set effective degree.  Might be folded into SquareUp().
   void Compute_Effective_Degree();
@@ -417,7 +415,6 @@ public:
 //------------------------------Chaitin----------------------------------------
 // Briggs-Chaitin style allocation, mostly.
 class PhaseChaitin : public PhaseRegAlloc {
-  friend class VMStructs;
 
   int _trip_cnt;
   int _alternate;

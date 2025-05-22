@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,22 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This is the top-level entry point for our native compilation and linking.
-# It contains the SetupNativeCompilation function, but is supported by helper
-# functions in the make/common/native directory.
+# It contains the SetupNativeCompilation macro, but is supported by helper
+# macros in the make/common/native directory.
 ################################################################################
 
-ifndef _NATIVE_COMPILATION_GMK
-_NATIVE_COMPILATION_GMK := 1
-
-ifeq ($(_MAKEBASE_GMK), )
-  $(error You must include MakeBase.gmk prior to including NativeCompilation.gmk)
-endif
-
+include MakeIO.gmk
 include native/CompileFile.gmk
 include native/DebugSymbols.gmk
 include native/Flags.gmk
 include native/Link.gmk
+include native/LinkMicrosoft.gmk
 include native/Paths.gmk
-include native/ToolchainDefinitions.gmk
 
 ################################################################################
 # Setup make rules for creating a native binary (a shared library or an
@@ -54,7 +51,8 @@ include native/ToolchainDefinitions.gmk
 #   NAME The base name for the resulting binary, excluding decorations (like *.exe)
 #   TYPE Type of binary (EXECUTABLE, LIBRARY or STATIC_LIBRARY). Default is LIBRARY.
 #   SUFFIX Override the default suffix for the output file
-#   TOOLCHAIN Name of toolchain setup to use. Defaults to TOOLCHAIN_DEFAULT.
+#   TARGET_TYPE The type to target, BUILD or TARGET. Defaults to TARGET.
+#   LINK_TYPE The language to use for the linker, C or C++. Defaults to C.
 #   SRC one or more directory roots to scan for C/C++ files.
 #   CFLAGS the compiler flags to be used, used both for C and C++.
 #   CXXFLAGS the compiler flags to be used for c++, if set overrides CFLAGS.
@@ -72,7 +70,6 @@ include native/ToolchainDefinitions.gmk
 #       used both for C and C++.
 #   LIBS_<toolchain>_<OS> the libraries to link to for the specified target
 #       OS and toolchain, used both for C and C++.
-#   ARFLAGS the archiver flags to be used
 #   OBJECT_DIR the directory where we store the object files
 #   OUTPUT_DIR the directory where the resulting binary is put
 #   SYMBOLS_DIR the directory where the debug symbols are put, defaults to OUTPUT_DIR
@@ -84,14 +81,22 @@ include native/ToolchainDefinitions.gmk
 #   EXTRA_FILES List of extra files not in any of the SRC dirs
 #   EXTRA_OBJECT_FILES List of extra object files to include when linking
 #   EXTRA_DEPS List of extra dependencies to be added to each compiled file
+#   EXTRA_LINK_DEPS List of extra dependencies to be added to the link stage
 #   VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
 #   RCFLAGS flags for RC.
 #   EMBED_MANIFEST if true, embed manifest on Windows.
-#   MAPFILE mapfile
-#   USE_MAPFILE_FOR_SYMBOLS if true and this is a STATIC_BUILD, just copy the
-#       mapfile for the output symbols file
-#   CC the compiler to use, default is $(CC)
-#   LD the linker to use, default is $(LD)
+#   CC the C compiler to use
+#   CXX the C++ compiler to use
+#   LD the Linker to use
+#   AR the static linker to use
+#   LIB the Windows lib tool to use for creating static libraries
+#   AS the assembler to use
+#   MT the Windows MT tool to use
+#   RC the Windows RC tool to use
+#   OBJCOPY the objcopy tool for debug symbol handling
+#   STRIP the tool to use for stripping debug symbols
+#   SYSROOT_CFLAGS the compiler flags for using the specific sysroot
+#   SYSROOT_LDFLAGS the linker flags for using the specific sysroot
 #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST, HIGHEST_JVM, SIZE
 #   DISABLED_WARNINGS_<toolchain> Disable the given warnings for the specified toolchain
 #   DISABLED_WARNINGS_<toolchain>_<OS> Disable the given warnings for the specified
@@ -129,23 +134,25 @@ include native/ToolchainDefinitions.gmk
 #
 SetupNativeCompilation = $(NamedParamsMacroTemplate)
 define SetupNativeCompilationBody
-  # Setup variables for the rest of the function to work with
-  $$(eval $$(call SetupBasicVariables1,$1))
-  $$(eval $$(call SetupDebugSymbols,$1))
-  $$(eval $$(call SetupBasicVariables2,$1))
-  $$(eval $$(call VerifyArguments,$1))
-  $$(eval $$(call SetupBasicVariables3,$1))
+  # When reading this code, note that macros named Setup<Foo> are just setting
+  # variables, and macros called Create<Foo> are setting up rules to create
+  # files. Macros starting with any other verb are more complicated, and can do
+  # all of the above, and also call directly to the shell.
 
-  # Need to make sure TARGET is first on list
-  $1 := $$($1_TARGET)
+  ###
+  ### Prepare for compilation and linking
+  ###
+
+  $$(eval $$(call VerifyArguments,$1))
+
+  # Setup variables for the rest of this macro to work with
+  $$(eval $$(call SetupBasicVariables,$1))
 
   # Setup the toolchain to be used
   $$(eval $$(call SetupToolchain,$1))
 
-  # Figure out all source files to compile
-  $$(eval $$(call LocateSourceFiles,$1))
-
-  # ... and what the output object files will be
+  # Find all source files to compile and determine the output object file names
+  $$(eval $$(call SetupSourceFiles,$1))
   $$(eval $$(call SetupOutputFiles,$1))
 
   # Setup CFLAGS/CXXFLAGS based on warnings, optimizations, extra flags etc.
@@ -154,19 +161,28 @@ define SetupNativeCompilationBody
   # Machinery needed for the build to function properly
   $$(eval $$(call SetupBuildSystemSupport,$1))
 
+  $$(eval $$(call RemoveSuperfluousOutputFiles,$1))
+
+  # Need to make sure TARGET is first on list before starting to create files
+  $1 := $$($1_TARGET)
+
+  # Have make print information about the library when we start compiling
+  $$(eval $$(call PrintStartInfo,$1))
+
+  ###
+  ### Compile all native source code files
+  ###
+
   # Create a PCH, if requested
   $$(eval $$(call CreatePrecompiledHeader,$1))
 
-  # Now call SetupCompileNativeFile for each source file we are going to compile.
+  # Now call CreateCompiledNativeFile for each source file we are going to compile.
   $$(foreach file, $$($1_SRCS), \
-      $$(eval $$(call SetupCompileNativeFile,$1_$$(notdir $$(file)),\
+      $$(eval $$(call CreateCompiledNativeFile,$1_$$(notdir $$(file)), \
           FILE := $$(file), \
           BASE := $1, \
       )) \
   )
-
-  # Have make print information about the library when we start compiling
-  $$(eval $$(call PrintInfo,$1))
 
   ifeq ($(call isTargetOs, windows), true)
     # On windows we need to create a resource file
@@ -178,47 +194,68 @@ define SetupNativeCompilationBody
   $$(eval $$(call CreateDependencyFile,$1))
   $$(eval $$(call ImportDependencyFile,$1))
 
-  # Prepare for linking
-  $$(eval $$(call SetupLinkerFlags,$1))
-
-  $$(eval $$(call SetupMapfile,$1))
+  ###
+  ### Link the object files into a native output library/executable
+  ###
 
   # Handle native debug symbols
   $$(eval $$(call CreateDebugSymbols,$1))
 
-  $$(eval $$(call SetupStrip,$1))
+  # Prepare for linking
+  $$(eval $$(call SetupLinkerFlags,$1))
+  ifneq ($(TOOLCHAIN_TYPE), microsoft)
+    $$(eval $$(call SetupLinking,$1))
+  endif
 
   $$(eval $$(call SetupObjectFileList,$1))
 
   # Link the individually compiled files into a single unit
-  $$(eval $$(call CreateLinkedResult,$1))
+  ifneq ($(TOOLCHAIN_TYPE), microsoft)
+    $$(eval $$(call CreateLinkedResult,$1))
+  else
+    $$(eval $$(call CreateLinkedResultMicrosoft,$1))
+  endif
 
   ifeq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
     # Override all targets (this is a hack)
-    $1 := $$($1_ALL_OBJS_JSON)
+    $1 := $$($1_ALL_OBJS_JSON) $$($1_LDFLAGS_FILE)
+    TARGETS := $(filter $(MAKESUPPORT_OUTPUTDIR)/compile-commands/%, $(TARGETS))
   endif
 endef
 
 ################################################################################
-# Setup basic variables, part 1
-define SetupBasicVariables1
-  # If type is unspecified, default to LIBRARY
-  ifeq ($$($1_TYPE), )
-    $1_TYPE := LIBRARY
+# Verify that user passed arguments are valid
+define VerifyArguments
+  ifeq ($$($1_NAME), )
+    $$(error NAME must not be empty in $1)
   endif
-
-  # If we're doing a static build and producing a library
-  # force it to be a static library and remove the -l libraries
-  ifeq ($(STATIC_BUILD), true)
-    ifeq ($$($1_TYPE), LIBRARY)
-      $1_TYPE := STATIC_LIBRARY
+  ifneq ($$($1_NAME), $(basename $$($1_NAME)))
+    $$(error NAME must not contain any directory path in $1)
+  endif
+  ifneq ($(findstring $$($1_SUFFIX), $$($1_NAME)), )
+    $$(error NAME should be specified without suffix: $$($1_SUFFIX) in $1)
+  endif
+  ifneq ($(findstring $$($1_PREFIX), $$($1_NAME)), )
+    $$(error NAME should be specified without prefix: $$($1_PREFIX) in $1)
+  endif
+  ifeq ($$($1_OUTPUT_DIR), )
+    $$(error OUTPUT_DIR is missing in $1)
+  endif
+  ifneq ($$($1_MANIFEST), )
+    ifeq ($$($1_MANIFEST_VERSION), )
+      $$(error If MANIFEST is provided, then MANIFEST_VERSION is required in $1)
     endif
   endif
 endef
 
 ################################################################################
-# Setup basic variables, part 2
-define SetupBasicVariables2
+# Setup basic variables
+define SetupBasicVariables
+  # If type is unspecified, default to LIBRARY
+  ifeq ($$($1_TYPE), )
+    $1_TYPE := LIBRARY
+  endif
+
   # STATIC_LIBS is set from Main.gmk when building static versions of certain
   # native libraries.
   ifeq ($(STATIC_LIBS), true)
@@ -247,44 +284,55 @@ define SetupBasicVariables2
       endif
     endif
   endif
+
+  $1_BASENAME := $$($1_PREFIX)$$($1_NAME)$$($1_SUFFIX)
+  $1_TARGET := $$($1_OUTPUT_DIR)/$$($1_BASENAME)
+  $1_NOSUFFIX := $$($1_PREFIX)$$($1_NAME)
+  $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
+  $1_UNIQUE_NAME = $$($1_TYPE)_$$(subst /,_,$$(patsubst $$(OUTPUTDIR)/%/,%,$$(dir $$($1_OBJECT_DIR))))_$$($1_NOSUFFIX)
 endef
 
 ################################################################################
-# Verify that user passed arguments are valid
-define VerifyArguments
-  ifneq ($$($1_NAME), $(basename $$($1_NAME)))
-    $$(error NAME must not contain any directory path in $1)
-  endif
-  ifneq ($(findstring $$($1_SUFFIX), $$($1_NAME)), )
-    $$(error NAME should be specified without suffix: $$($1_SUFFIX) in $1)
-  endif
-  ifneq ($(findstring $$($1_PREFIX), $$($1_NAME)), )
-    $$(error NAME should be specified without prefix: $$($1_PREFIX) in $1)
-  endif
-  ifeq ($$($1_OUTPUT_DIR), )
-    $$(error OUTPUT_DIR is missing in $1)
-  endif
-  ifneq ($$($1_MANIFEST), )
-    ifeq ($$($1_MANIFEST_VERSION), )
-      $$(error If MANIFEST is provided, then MANIFEST_VERSION is required in $1)
+# Setup the toolchain variables
+define SetupToolchain
+  ifeq ($$($1_TARGET_TYPE), BUILD)
+    $$(call SetIfEmpty, $1_CC, $$(BUILD_CC))
+    $$(call SetIfEmpty, $1_CXX, $$(BUILD_CXX))
+    $$(call SetIfEmpty, $1_AR, $$(BUILD_AR))
+    $$(call SetIfEmpty, $1_LIB, $$(BUILD_LIB))
+    $$(call SetIfEmpty, $1_AS, $$(BUILD_AS))
+    $$(call SetIfEmpty, $1_OBJCOPY, $$(BUILD_OBJCOPY))
+    $$(call SetIfEmpty, $1_STRIP, $$(BUILD_STRIP))
+    $$(call SetIfEmpty, $1_SYSROOT_CFLAGS, $$(BUILD_SYSROOT_CFLAGS))
+    $$(call SetIfEmpty, $1_SYSROOT_LDFLAGS, $$(BUILD_SYSROOT_LDFLAGS))
+    ifeq ($$($1_LINK_TYPE), C++)
+      $$(call SetIfEmpty, $1_LD, $$(BUILD_LDCXX))
+    else
+      $$(call SetIfEmpty, $1_LD, $$(BUILD_LD))
+    endif
+  else
+    $$(call SetIfEmpty, $1_CC, $$(CC))
+    $$(call SetIfEmpty, $1_CXX, $$(CXX))
+    $$(call SetIfEmpty, $1_AR, $$(AR))
+    $$(call SetIfEmpty, $1_LIB, $$(LIB))
+    $$(call SetIfEmpty, $1_AS, $$(AS))
+    $$(call SetIfEmpty, $1_MT, $$(MT))
+    $$(call SetIfEmpty, $1_RC, $$(RC))
+    $$(call SetIfEmpty, $1_OBJCOPY, $$(OBJCOPY))
+    $$(call SetIfEmpty, $1_STRIP, $$(STRIP))
+    $$(call SetIfEmpty, $1_SYSROOT_CFLAGS, $$(SYSROOT_CFLAGS))
+    $$(call SetIfEmpty, $1_SYSROOT_LDFLAGS, $$(SYSROOT_LDFLAGS))
+    ifeq ($$($1_LINK_TYPE), C++)
+      $$(call SetIfEmpty, $1_LD, $$(LDCXX))
+    else
+      $$(call SetIfEmpty, $1_LD, $$(LD))
     endif
   endif
 endef
 
 ################################################################################
-# Setup basic variables, part 3
-define SetupBasicVariables3
-  $1_BASENAME := $$($1_PREFIX)$$($1_NAME)$$($1_SUFFIX)
-  $1_TARGET := $$($1_OUTPUT_DIR)/$$($1_BASENAME)
-  $1_NOSUFFIX := $$($1_PREFIX)$$($1_NAME)
-  $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
-endef
-
-################################################################################
 # Setup machinery needed by the build system
 define SetupBuildSystemSupport
-  $1_BUILD_INFO := $$($1_OBJECT_DIR)/_build-info.marker
-
   # Track variable changes for all variables that affect the compilation command
   # lines for all object files in this setup. This includes at least all the
   # variables used in the call to add_native_source below.
@@ -297,13 +345,15 @@ endef
 
 ################################################################################
 # Have make print information about the library when we start compiling
-define PrintInfo
+define PrintStartInfo
   # Setup rule for printing progress info when compiling source files.
   # This is a rough heuristic and may not always print accurate information.
   # The $1_BUILD_INFO and $1_BUILD_INFO_DEPS variables are used in
   # TestFilesCompilation.gmk.
   $$(call SetIfEmpty, $1_BUILD_INFO_LOG_MACRO, LogWarn)
   $1_BUILD_INFO_DEPS := $$($1_SRCS) $$($1_COMPILE_VARDEPS_FILE)
+  $1_BUILD_INFO := $$($1_OBJECT_DIR)/_build-info.marker
+
   $$($1_BUILD_INFO): $$($1_BUILD_INFO_DEPS)
         ifeq ($$(wildcard $$($1_TARGET)), )
 	  $$(call $$($1_BUILD_INFO_LOG_MACRO), \
@@ -356,4 +406,7 @@ define ImportDependencyFile
   endif
 endef
 
-endif # _NATIVE_COMPILATION_GMK
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

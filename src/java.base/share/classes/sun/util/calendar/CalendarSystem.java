@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public abstract sealed class CalendarSystem permits AbstractCalendar {
 
-    /////////////////////// Calendar Factory Methods /////////////////////////
+    //--------------------- Calendar Factory Methods -------------------------
 
     private static volatile boolean initialized;
 
@@ -173,7 +173,7 @@ public abstract sealed class CalendarSystem permits AbstractCalendar {
         return (cs == null) ? cal : cs;
     }
 
-    //////////////////////////////// Calendar API //////////////////////////////////
+    //------------------------------ Calendar API ----------------------------------
 
     /**
      * Returns the name of this calendar system.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ private:
   static void log_unregister(const nmethod* nm);
   static void log_purge(const nmethod* nm);
 
+  static oop oop_load(const nmethod* nm, int index, bool keep_alive);
+
 public:
   static void register_nmethod(nmethod* nm);
   static void unregister_nmethod(nmethod* nm);
@@ -63,12 +65,15 @@ public:
   static void nmethods_do(bool secondary, NMethodClosure* cl);
 
   static ZReentrantLock* lock_for_nmethod(nmethod* nm);
+  static ZReentrantLock* ic_lock_for_nmethod(nmethod* nm);
 
   static void unlink(ZWorkers* workers, bool unloading_occurred);
   static void purge();
 
   static uintptr_t color(nmethod* nm);
-  static oop load_oop(oop* p, DecoratorSet decorators);
+
+  static oop oop_load_no_keepalive(const nmethod* nm, int index);
+  static oop oop_load_phantom(const nmethod* nm, int index);
 };
 
 #endif // SHARE_GC_Z_ZNMETHOD_HPP

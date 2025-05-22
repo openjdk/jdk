@@ -26,7 +26,6 @@
  * @bug JDK-8310130
  * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
  *          Here a case with partial vectorization of the reduction.
- * @requires vm.bits == "64"
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestUnorderedReductionPartialVectorization
  */
@@ -40,7 +39,10 @@ public class TestUnorderedReductionPartialVectorization {
     static final int ITER  = 10;
 
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector");
+        TestFramework.runWithFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector");
+        TestFramework.runWithFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector");
+        TestFramework.runWithFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector");
     }
 
     @Run(test = {"test1"})
@@ -62,7 +64,9 @@ public class TestUnorderedReductionPartialVectorization {
     @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.VECTOR_CAST_I2L, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.OR_REDUCTION_V,                                                 "> 0",},
-        applyIfCPUFeatureOr = {"avx2", "true"})
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
     static long test1(int[] data, long sum) {
         for (int i = 0; i < data.length; i+=2) {
             // Mixing int and long ops means we only end up allowing half of the int
@@ -88,6 +92,11 @@ public class TestUnorderedReductionPartialVectorization {
             // no vectorization. We now ensure there are again 2 packs per operation with a 2x hand unroll.
             int v2 = data[i + 1];
             sum |= v2;
+
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 8*i  ->  always             adr = base + 12 + 8*i  ->  never
+            // -> vectorize                                  -> no vectorization
         }
         return sum;
     }

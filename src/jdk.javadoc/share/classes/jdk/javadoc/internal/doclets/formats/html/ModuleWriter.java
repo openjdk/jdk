@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,18 +41,23 @@ import javax.lang.model.util.ElementFilter;
 
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
+import java.util.function.Predicate;
+
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.RawHtml;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Class to generate file for each module contents in the right-hand frame. This will list all the
@@ -191,8 +196,8 @@ public class ModuleWriter extends HtmlDocletWriter {
      */
     protected void buildContent() {
         Content moduleContent = getContentHeader();
-        moduleContent.add(new HtmlTree(TagName.HR));
-        Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+        moduleContent.add(HtmlTree.HR());
+        Content div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
         addModuleSignature(div);
         buildModuleDescription(div);
         moduleContent.add(div);
@@ -251,33 +256,26 @@ public class ModuleWriter extends HtmlDocletWriter {
      *                      be added
      */
     protected void buildModuleDescription(Content moduleContent) {
-        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.navDescription);
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.navDescription,
+                TableOfContents.Level.FIRST);
         if (!options.noComment()) {
-            tableOfContents.pushNestedList();
             addModuleDescription(moduleContent);
-            tableOfContents.popNestedList();
         }
     }
 
     protected Content getModuleHeader(String heading) {
         HtmlTree body = getBody(getWindowTitle(mdle.getQualifiedName().toString()));
-        var div = HtmlTree.DIV(HtmlStyle.header);
+        var div = HtmlTree.DIV(HtmlStyles.header);
         Content moduleHead = new ContentBuilder();
         moduleHead.add(mdle.isOpen() && (configuration.docEnv.getModuleMode() == ModuleMode.ALL)
                 ? contents.openModuleLabel : contents.moduleLabel);
         moduleHead.add(" ").add(heading);
         var tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, moduleHead);
+                HtmlStyles.title, moduleHead);
         div.add(tHeading);
         bodyContents.setHeader(getHeader(PageMode.MODULE, mdle))
                 .addMainContent(div);
         return body;
-    }
-
-    @Override
-    protected Navigation getNavBar(PageMode pageMode, Element element) {
-        return super.getNavBar(pageMode, element)
-                .setSubNavLinks(List.of(getBreadcrumbLink(mdle, true)));
     }
 
     protected Content getContentHeader() {
@@ -285,11 +283,11 @@ public class ModuleWriter extends HtmlDocletWriter {
     }
 
     protected Content getSummariesList() {
-        return HtmlTree.UL(HtmlStyle.summaryList);
+        return HtmlTree.UL(HtmlStyles.summaryList);
     }
 
     protected Content getSummary(Content source) {
-        return HtmlTree.SECTION(HtmlStyle.summary, source);
+        return HtmlTree.SECTION(HtmlStyles.summary, source);
     }
 
     /**
@@ -508,10 +506,10 @@ public class ModuleWriter extends HtmlDocletWriter {
      * @return a content object
      */
     private Table<?> getTable2(Content caption, TableHeader tableHeader) {
-        return new Table<Void>(HtmlStyle.detailsTable)
+        return new Table<Void>(HtmlStyles.detailsTable)
                 .setCaption(caption)
                 .setHeader(tableHeader)
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast);
     }
 
     /**
@@ -522,19 +520,19 @@ public class ModuleWriter extends HtmlDocletWriter {
      * @return a content object
      */
     private Table<?> getTable3(Content caption, TableHeader tableHeader) {
-        return new Table<Void>(HtmlStyle.detailsTable)
+        return new Table<Void>(HtmlStyles.detailsTable)
                 .setCaption(caption)
                 .setHeader(tableHeader)
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colSecond, HtmlStyles.colLast);
     }
 
     protected void addModulesSummary(Content summariesList) {
         if (display(requires) || display(indirectModules)) {
-            tableOfContents.addLink(HtmlIds.MODULES, contents.navModules);
+            tableOfContents.addLink(HtmlIds.MODULES, contents.navModules, TableOfContents.Level.FIRST);
             TableHeader requiresTableHeader =
                     new TableHeader(contents.modifierLabel, contents.moduleLabel,
                             contents.descriptionLabel);
-            var section = HtmlTree.SECTION(HtmlStyle.modulesSummary)
+            var section = HtmlTree.SECTION(HtmlStyles.modulesSummary)
                     .setId(HtmlIds.MODULES);
             addSummaryHeader(MarkerComments.START_OF_MODULES_SUMMARY, contents.navModules, section);
             if (display(requires)) {
@@ -575,8 +573,8 @@ public class ModuleWriter extends HtmlDocletWriter {
     protected void addPackagesSummary(Content summariesList) {
         if (display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages)) {
-            tableOfContents.addLink(HtmlIds.PACKAGES, contents.navPackages);
-            var section = HtmlTree.SECTION(HtmlStyle.packagesSummary)
+            tableOfContents.addLink(HtmlIds.PACKAGES, contents.navPackages, TableOfContents.Level.FIRST);
+            var section = HtmlTree.SECTION(HtmlStyles.packagesSummary)
                     .setId(HtmlIds.PACKAGES);
             addSummaryHeader(MarkerComments.START_OF_PACKAGES_SUMMARY, contents.navPackages, section);
             if (display(packages)) {
@@ -585,15 +583,53 @@ public class ModuleWriter extends HtmlDocletWriter {
             TableHeader indirectPackagesHeader =
                     new TableHeader(contents.fromLabel, contents.packagesLabel);
             if (display(indirectPackages)) {
-                String aepText = resources.getText("doclet.Indirect_Exports_Summary");
-                var aepTable = getTable2(Text.of(aepText), indirectPackagesHeader);
-                addIndirectPackages(aepTable, indirectPackages);
-                section.add(aepTable);
+                ModuleElement javaBase = this.utils.elementUtils.getModuleElement("java.base");
+                boolean hasRequiresTransitiveJavaBase =
+                        ElementFilter.requiresIn(mdle.getDirectives())
+                                     .stream()
+                                     .anyMatch(rd -> rd.isTransitive() &&
+                                                     javaBase.equals(rd.getDependency()));
+                if (hasRequiresTransitiveJavaBase) {
+                    String aepText = resources.getText("doclet.Indirect_Exports_Summary");
+                    var aepTable = getTable2(Text.of(aepText), indirectPackagesHeader);
+                    addIndirectPackages(aepTable, indirectPackages,
+                                        m -> !m.equals(javaBase));
+                    section.add(aepTable);
+                    //add the preview box:
+                    section.add(HtmlTree.BR());
+                    section.add(HtmlTree.BR());
+                    HtmlId previewRequiresTransitiveId = HtmlId.of("preview-requires-transitive-java.base");
+                    var previewDiv = HtmlTree.DIV(HtmlStyles.previewBlock);
+                    previewDiv.setId(previewRequiresTransitiveId);
+
+                    Content note =
+                            RawHtml.of(resources.getText("doclet.PreviewJavaSERequiresTransitiveJavaBase"));
+
+                    previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment, note));
+                    section.add(previewDiv);
+
+                    //add the Indirect Exports
+                    String aepPreviewText = resources.getText("doclet.Indirect_Exports_Summary");
+                    ContentBuilder tableCaption = new ContentBuilder(
+                            Text.of(aepPreviewText),
+                            HtmlTree.SUP(HtmlStyles.previewMark,
+                                    links.createLink(previewRequiresTransitiveId,
+                                            contents.previewMark)));
+                    var aepPreviewTable = getTable2(tableCaption, indirectPackagesHeader);
+                    addIndirectPackages(aepPreviewTable, indirectPackages,
+                                        m -> m.equals(javaBase));
+                    section.add(aepPreviewTable);
+                } else {
+                    String aepText = resources.getText("doclet.Indirect_Exports_Summary");
+                    var aepTable = getTable2(Text.of(aepText), indirectPackagesHeader);
+                    addIndirectPackages(aepTable, indirectPackages, _ -> true);
+                    section.add(aepTable);
+                }
             }
             if (display(indirectOpenPackages)) {
                 String aopText = resources.getText("doclet.Indirect_Opens_Summary");
                 var aopTable = getTable2(Text.of(aopText), indirectPackagesHeader);
-                addIndirectPackages(aopTable, indirectOpenPackages);
+                addIndirectPackages(aopTable, indirectOpenPackages, _ -> true);
                 section.add(aopTable);
             }
             summariesList.add(HtmlTree.LI(section));
@@ -606,7 +642,7 @@ public class ModuleWriter extends HtmlDocletWriter {
      * @param li the tree to which the summary will be added
      */
     public void addPackageSummary(HtmlTree li) {
-        var table = new Table<PackageElement>(HtmlStyle.summaryTable)
+        var table = new Table<PackageElement>(HtmlStyles.summaryTable)
                 .setId(HtmlIds.PACKAGE_SUMMARY_TABLE)
                 .setDefaultTab(contents.getContent("doclet.All_Packages"))
                 .addTab(contents.getContent("doclet.Exported_Packages_Summary"), this::isExported)
@@ -642,20 +678,20 @@ public class ModuleWriter extends HtmlDocletWriter {
         List<Content> colHeaders = new ArrayList<>();
         List<HtmlStyle> colStyles = new ArrayList<>();
         colHeaders.add(contents.packageLabel);
-        colStyles.add(HtmlStyle.colFirst);
+        colStyles.add(HtmlStyles.colFirst);
 
         if (showExportedTo) {
             colHeaders.add(contents.exportedTo);
-            colStyles.add(HtmlStyle.colSecond);
+            colStyles.add(HtmlStyles.colSecond);
         }
 
         if (showOpenedTo) {
             colHeaders.add(contents.openedTo);
-            colStyles.add(HtmlStyle.colSecond);
+            colStyles.add(HtmlStyles.colSecond);
         }
 
         colHeaders.add(contents.descriptionLabel);
-        colStyles.add(HtmlStyle.colLast);
+        colStyles.add(HtmlStyles.colLast);
 
         table.setHeader(new TableHeader(colHeaders).styles(colStyles))
                 .setColumnStyles(colStyles);
@@ -724,9 +760,14 @@ public class ModuleWriter extends HtmlDocletWriter {
      * @param table the table to which the content rows will be added
      * @param ip indirect packages to be added
      */
-    public void addIndirectPackages(Table<?> table, Map<ModuleElement, SortedSet<PackageElement>> ip) {
+    public void addIndirectPackages(Table<?> table,
+                                    Map<ModuleElement, SortedSet<PackageElement>> ip,
+                                    Predicate<ModuleElement> acceptModule) {
         for (Map.Entry<ModuleElement, SortedSet<PackageElement>> entry : ip.entrySet()) {
             ModuleElement m = entry.getKey();
+            if (!acceptModule.test(m)) {
+                continue;
+            }
             SortedSet<PackageElement> pkgList = entry.getValue();
             Content moduleLinkContent = getModuleLink(m, Text.of(m.getQualifiedName()));
             Content list = new ContentBuilder();
@@ -746,8 +787,8 @@ public class ModuleWriter extends HtmlDocletWriter {
         boolean haveProvides = displayServices(provides.keySet(), providesTrees);
 
         if (haveProvides || haveUses) {
-            tableOfContents.addLink(HtmlIds.SERVICES, contents.navServices);
-            var section = HtmlTree.SECTION(HtmlStyle.servicesSummary)
+            tableOfContents.addLink(HtmlIds.SERVICES, contents.navServices, TableOfContents.Level.FIRST);
+            var section = HtmlTree.SECTION(HtmlStyles.servicesSummary)
                     .setId(HtmlIds.SERVICES);
             addSummaryHeader(MarkerComments.START_OF_SERVICES_SUMMARY, contents.navServices, section);
             TableHeader usesProvidesTableHeader =
@@ -789,7 +830,7 @@ public class ModuleWriter extends HtmlDocletWriter {
             if (display(usesTrees)) {
                 description = usesTrees.get(t);
                 if (description != null && !description.isEmpty()) {
-                    summary.add(HtmlTree.DIV(HtmlStyle.block, description));
+                    summary.add(HtmlTree.DIV(HtmlStyles.block, description));
                 } else {
                     addSummaryComment(t, summary);
                 }
@@ -819,7 +860,7 @@ public class ModuleWriter extends HtmlDocletWriter {
             if (display(providesTrees)) {
                 description = providesTrees.get(srv);
                 if (description != null && !description.isEmpty()) {
-                    desc.add(HtmlTree.DIV(HtmlStyle.block, description));
+                    desc.add(HtmlTree.DIV(HtmlStyles.block, description));
                 } else {
                     addSummaryComment(srv, desc);
                 }
@@ -828,9 +869,9 @@ public class ModuleWriter extends HtmlDocletWriter {
             }
             // Only display the implementation details in the "all" mode.
             if (moduleMode == ModuleMode.ALL && !implSet.isEmpty()) {
-                desc.add(new HtmlTree(TagName.BR));
+                desc.add(HtmlTree.BR());
                 desc.add("(");
-                var implSpan = HtmlTree.SPAN(HtmlStyle.implementationLabel, contents.implementation);
+                var implSpan = HtmlTree.SPAN(HtmlStyles.implementationLabel, contents.implementation);
                 desc.add(implSpan);
                 desc.add(Entity.NO_BREAK_SPACE);
                 String sep = "";
@@ -854,8 +895,8 @@ public class ModuleWriter extends HtmlDocletWriter {
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(mdle);
         if (utils.isDeprecated(mdle)) {
             CommentHelper ch = utils.getCommentHelper(mdle);
-            var deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
-            var deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(mdle));
+            var deprDiv = HtmlTree.DIV(HtmlStyles.deprecationBlock);
+            var deprPhrase = HtmlTree.SPAN(HtmlStyles.deprecatedLabel, getDeprecatedPhrase(mdle));
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {
                 List<? extends DocTree> commentTags = ch.getDescription(deprs.get(0));
@@ -870,7 +911,7 @@ public class ModuleWriter extends HtmlDocletWriter {
     protected void addModuleDescription(Content moduleContent) {
         addPreviewInfo(mdle, moduleContent);
         if (!utils.getFullBody(mdle).isEmpty()) {
-            var tree = HtmlTree.SECTION(HtmlStyle.moduleDescription)
+            var tree = HtmlTree.SECTION(HtmlStyles.moduleDescription)
                     .setId(HtmlIds.MODULE_DESCRIPTION);
             addDeprecationInfo(tree);
             tree.add(MarkerComments.START_OF_MODULE_DESCRIPTION);
@@ -908,8 +949,8 @@ public class ModuleWriter extends HtmlDocletWriter {
     public void addPackageDeprecationInfo(Content li, PackageElement pkg) {
         if (utils.isDeprecated(pkg)) {
             List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(pkg);
-            var deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
-            var deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(pkg));
+            var deprDiv = HtmlTree.DIV(HtmlStyles.deprecationBlock);
+            var deprPhrase = HtmlTree.SPAN(HtmlStyles.deprecatedLabel, getDeprecatedPhrase(pkg));
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {
                 CommentHelper ch = utils.getCommentHelper(pkg);

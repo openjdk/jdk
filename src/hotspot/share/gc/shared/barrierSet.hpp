@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,6 @@ public:
 
   virtual void make_parsable(JavaThread* thread) {}
 
-public:
   // Print a description of the memory for the barrier set
   virtual void print_on(outputStream* st) const = 0;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,7 @@ import java.util.Arrays;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.nio.cs.Surrogate;
-import sun.nio.cs.ArrayDecoder;
-import sun.nio.cs.ArrayEncoder;
+
 import static sun.nio.cs.CharsetMapping.*;
 
 /*
@@ -170,7 +168,7 @@ public class DoubleByte {
 
             try {
                 if (isASCIICompatible) {
-                    int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                    int n = JLA.uncheckedDecodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
                     dp += n;
                     sp += n;
                 }
@@ -402,7 +400,7 @@ public class DoubleByte {
                         else
                             currentState = SBCS;
                     } else {
-                        char c = UNMAPPABLE_DECODING;
+                        char c;
                         if (currentState == SBCS) {
                             c = b2cSB[b1];
                             if (c == UNMAPPABLE_DECODING)
@@ -452,7 +450,7 @@ public class DoubleByte {
                     else
                         currentState = SBCS;
                 } else {
-                    char c =  UNMAPPABLE_DECODING;
+                    char c;
                     if (currentState == SBCS) {
                         c = b2cSB[b1];
                         if (c == UNMAPPABLE_DECODING)
@@ -503,8 +501,8 @@ public class DoubleByte {
     // The only thing we need to "override" is to check SS2/SS3 and
     // return "malformed" if found
     public static class Decoder_EUC_SIM extends Decoder {
-        private final int SS2 =  0x8E;
-        private final int SS3 =  0x8F;
+        private static final int SS2 = 0x8E;
+        private static final int SS3 = 0x8F;
 
         public Decoder_EUC_SIM(Charset cs,
                                char[][] b2c, char[] b2cSB, int b2Min, int b2Max,
@@ -556,7 +554,7 @@ public class DoubleByte {
     public static class Encoder extends CharsetEncoder
                                 implements ArrayEncoder
     {
-        protected final int MAX_SINGLEBYTE = 0xff;
+        protected static final int MAX_SINGLEBYTE = 0xff;
         private final char[] c2b;
         private final char[] c2bIndex;
         protected Surrogate.Parser sgp;
@@ -602,7 +600,7 @@ public class DoubleByte {
 
             try {
                 if (isASCIICompatible) {
-                    int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                    int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
                     sp += n;
                     dp += n;
                 }
@@ -659,7 +657,7 @@ public class DoubleByte {
                         dst.put((byte)(bb));
                     } else {
                         if (dst.remaining() < 1)
-                        return CoderResult.OVERFLOW;
+                            return CoderResult.OVERFLOW;
                         dst.put((byte)bb);
                     }
                     mark++;
@@ -688,7 +686,7 @@ public class DoubleByte {
             int dp = 0;
             int sl = sp + len;
             if (isASCIICompatible) {
-                int n = JLA.encodeASCII(src, sp, dst, dp, len);
+                int n = JLA.uncheckedEncodeASCII(src, sp, dst, dp, len);
                 sp += n;
                 dp += n;
             }

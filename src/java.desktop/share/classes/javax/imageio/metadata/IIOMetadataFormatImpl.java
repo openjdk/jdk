@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,10 +378,10 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
      * Adds an existing element to the list of legal children for a
      * given parent node type.
      *
-     * @param parentName the name of the element that will be the
-     * new parent of the element.
      * @param elementName the name of the element to be added as a
      * child.
+     * @param parentName the name of the element that will be the
+     * new parent of the element.
      *
      * @throws IllegalArgumentException if {@code elementName}
      * is {@code null}, or is not a legal element name for this

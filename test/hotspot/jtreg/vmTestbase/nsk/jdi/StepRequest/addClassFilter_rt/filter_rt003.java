@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,10 @@ import java.io.*;
 public class filter_rt003 extends TestDebuggerType1 {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -121,8 +124,8 @@ public class filter_rt003 extends TestDebuggerType1 {
                 testClassReference11 = (ReferenceType)debuggee.classByName(testedClassName11);
                 testClassReference21 = (ReferenceType)debuggee.classByName(testedClassName21);
 
-                thread1 = debuggee.threadByName(threadName1);
-                thread2 = debuggee.threadByName(threadName2);
+                thread1 = debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName1);
+                thread2 = debuggee.threadByFieldNameOrThrow(debuggeeClass, threadName2);
 
                 eventRequest1 = setting21StepRequest(thread1, testClassReference11,
                                              EventRequest.SUSPEND_ALL, property1);

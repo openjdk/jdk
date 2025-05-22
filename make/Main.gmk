@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,44 +24,35 @@
 #
 
 ################################################################################
-# This is the main makefile containing most actual top level targets. It needs
-# to be called with a SPEC file defined.
+# This is the main makefile containing most actual top level targets.
 ################################################################################
 
-# Declare default target
-default:
+# Declare ALL_TARGETS as an immediate variable. This variable is a list of all
+# valid top level targets. It's used to declare them all as PHONY and to
+# generate the -only targets.
 
-ifeq ($(wildcard $(SPEC)),)
-  $(error Main.gmk needs SPEC set to a proper spec.gmk)
-endif
+ALL_TARGETS :=
 
-# Now load the spec
-include $(SPEC)
+DEFAULT_TARGET := default-target
 
-# Load the vital tools for all the makefiles.
-include $(TOPDIR)/make/common/MakeBase.gmk
-include $(TOPDIR)/make/common/Modules.gmk
-include $(TOPDIR)/make/common/FindTests.gmk
+include MakeFileStart.gmk
+
+################################################################################
 
 include $(TOPDIR)/make/MainSupport.gmk
+
+include FindTests.gmk
+include Modules.gmk
 
 # Are we requested to ignore dependencies?
 ifneq ($(findstring -only, $(MAKECMDGOALS)), )
   DEPS := none
 endif
 
-# Declare ALL_TARGETS as an immediate variable. This variable is a list of all
-# valid top level targets. It's used to declare them all as PHONY and to
-# generate the -only targets.
-ALL_TARGETS :=
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Main.gmk))
 
 # All modules for the current target platform.
 ALL_MODULES := $(call FindAllModules)
 
-################################################################################
 ################################################################################
 #
 # Recipes for all targets. Only recipes, dependencies are declared later.
@@ -94,14 +85,6 @@ $(eval $(call SetupTarget, buildtools-modules, \
 
 $(eval $(call SetupTarget, buildtools-hotspot, \
     MAKEFILE := CompileToolsHotspot, \
-))
-
-################################################################################
-# Special targets for certain modules
-
-$(eval $(call SetupTarget, generate-exported-symbols, \
-    MAKEFILE := BuildStatic, \
-    DEPS := java.base-libs jdk.jdwp.agent-libs, \
 ))
 
 ################################################################################
@@ -268,42 +251,34 @@ $(eval $(call SetupTarget, hotspot-ide-project, \
 
 $(eval $(call SetupTarget, eclipse-java-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make WORKSPACE=java SHARED=false, \
+    ARGS := --always-make WORKSPACE=java, \
 ))
 
 $(eval $(call SetupTarget, eclipse-hotspot-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make WORKSPACE=hotspot SHARED=false, \
+    ARGS := --always-make WORKSPACE=hotspot, \
 ))
 
 $(eval $(call SetupTarget, eclipse-native-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make WORKSPACE=native SHARED=false, \
+    ARGS := --always-make WORKSPACE=native, \
 ))
 
 $(eval $(call SetupTarget, eclipse-mixed-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make SHARED=false, \
+    ARGS := --always-make, \
 ))
 
-$(eval $(call SetupTarget, eclipse-shared-java-env, \
-    MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make WORKSPACE=java SHARED=true, \
+$(eval $(call SetupTarget, hotspot-xcode-project, \
+    MAKEFILE := ide/xcode/hotspot/CreateXcodeProject, \
+    TARGET := build, \
+    DEPS := hotspot compile-commands-hotspot jdk-image, \
 ))
 
-$(eval $(call SetupTarget, eclipse-shared-hotspot-env, \
-    MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make WORKSPACE=hotspot SHARED=true, \
-))
-
-$(eval $(call SetupTarget, eclipse-shared-native-env, \
-    MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make WORKSPACE=native SHARED=true, \
-))
-
-$(eval $(call SetupTarget, eclipse-shared-mixed-env, \
-    MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make SHARED=true, \
+$(eval $(call SetupTarget, open-hotspot-xcode-project, \
+    MAKEFILE := ide/xcode/hotspot/CreateXcodeProject, \
+    TARGET := open, \
+    DEPS := hotspot-xcode-project, \
 ))
 
 ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
@@ -370,6 +345,14 @@ $(eval $(call SetupTarget, vscode-project-ccls, \
     MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject, \
     ARGS := VSCODE_INDEXER=ccls, \
     DEPS := compile-commands, \
+))
+
+################################################################################
+# IDEA IntelliJ projects
+
+$(eval $(call SetupTarget, idea-gen-config, \
+    MAKEFILE := ide/idea/jdk/IdeaGenConfig, \
+    ARGS := IDEA_OUTPUT="$(IDEA_OUTPUT)" MODULES="$(MODULES)", \
 ))
 
 ################################################################################
@@ -468,6 +451,18 @@ $(eval $(call SetupTarget, legacy-jre-image, \
 $(eval $(call SetupTarget, symbols-image, \
     MAKEFILE := Images, \
     TARGET := symbols, \
+))
+
+$(eval $(call SetupTarget, static-launcher, \
+    MAKEFILE := StaticLibs, \
+    TARGET := static-launcher, \
+    DEPS := hotspot-static-libs static-libs, \
+))
+
+$(eval $(call SetupTarget, static-jdk-image, \
+    MAKEFILE := StaticLibs, \
+    TARGET := static-jdk-image, \
+    DEPS := static-exploded-image jdk-image, \
 ))
 
 $(eval $(call SetupTarget, static-libs-image, \
@@ -582,6 +577,10 @@ $(eval $(call SetupTarget, docs-specs-zip, \
 
 $(eval $(call SetupTarget, update-build-docs, \
     MAKEFILE := UpdateBuildDocs, \
+))
+
+$(eval $(call SetupTarget, update-sleef-source, \
+    MAKEFILE := UpdateSleefSource, \
 ))
 
 $(eval $(call SetupTarget, update-x11wrappers, \
@@ -754,6 +753,17 @@ $(eval $(call SetupTarget, test-image-lib, \
     DEPS := build-test-lib, \
 ))
 
+$(eval $(call SetupTarget, build-test-setup-aot, \
+    MAKEFILE := test/BuildTestSetupAOT, \
+    DEPS := interim-langtools exploded-image, \
+))
+
+$(eval $(call SetupTarget, test-image-setup-aot, \
+    MAKEFILE := test/BuildTestSetupAOT, \
+    TARGET := images, \
+    DEPS :=  build-test-setup-aot, \
+))
+
 ifeq ($(BUILD_FAILURE_HANDLER), true)
   # Builds the failure handler jtreg extension
   $(eval $(call SetupTarget, build-test-failure-handler, \
@@ -797,13 +807,13 @@ $(eval $(call SetupTarget, build-microbenchmark, \
 $(eval $(call SetupTarget, test, \
     MAKEFILE := RunTests, \
     ARGS := TEST="$(TEST)", \
-    DEPS := jdk-image test-image, \
+    DEPS := jdk-image test-image $(TEST_DEPS), \
 ))
 
 $(eval $(call SetupTarget, exploded-test, \
     MAKEFILE := RunTests, \
     ARGS := TEST="$(TEST)" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR), \
-    DEPS := exploded-image test-image, \
+    DEPS := exploded-image test-image $(TEST_DEPS), \
 ))
 
 ifeq ($(JCOV_ENABLED), true)
@@ -863,6 +873,12 @@ $(eval $(call SetupTarget, static-libs-graal-bundles, \
     MAKEFILE := Bundles, \
     TARGET := static-libs-graal-bundles, \
     DEPS := static-libs-graal-image, \
+))
+
+$(eval $(call SetupTarget, static-jdk-bundles, \
+    MAKEFILE := Bundles, \
+    TARGET := static-jdk-bundles, \
+    DEPS := static-jdk-image, \
 ))
 
 ifeq ($(JCOV_ENABLED), true)
@@ -925,10 +941,6 @@ else
 
   $(LAUNCHER_TARGETS): java.base-libs
 
-  ifeq ($(STATIC_BUILD), true)
-    $(LAUNCHER_TARGETS): generate-exported-symbols
-  endif
-
   # Declare dependency from <module>-java to <module>-gensrc
   $(foreach m, $(GENSRC_MODULES), $(eval $m-java: $m-gensrc))
 
@@ -949,6 +961,11 @@ else
 
   ifeq ($(ENABLE_HSDIS_BUNDLING), true)
     java.base-copy: build-hsdis
+  endif
+
+  # On Windows, we need to copy tzmappings generated by gensrc
+  ifeq ($(call isTargetOs, windows), true)
+    java.base-copy: java.base-gensrc
   endif
 
   # jdk.accessibility depends on java.desktop
@@ -1097,9 +1114,9 @@ else
 
   symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
-  static-libs-image: hotspot-static-libs $(STATIC_LIBS_TARGETS)
+  static-libs-image: hotspot-static-libs static-libs
 
-  static-libs-graal-image: $(STATIC_LIBS_TARGETS)
+  static-libs-graal-image: static-libs
 
   bootcycle-images: jdk-image
 
@@ -1121,8 +1138,8 @@ else
   test-make-compile-commands: compile-commands
 
   # Declare dependency for all generated test targets
-  $(foreach t, $(filter-out test-make%, $(ALL_TEST_TARGETS)), $(eval $t: jdk-image test-image))
-  $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image))
+  $(foreach t, $(filter-out test-make%, $(ALL_TEST_TARGETS)), $(eval $t: jdk-image test-image $(TEST_DEPS)))
+  $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image $(TEST_DEPS)))
 
   interim-image: $(INTERIM_JMOD_TARGETS)
 
@@ -1265,6 +1282,8 @@ ifeq ($(call isTargetOs, macosx), true)
   legacy-images: mac-legacy-jre-bundle
 endif
 
+static-exploded-image: static-launcher exploded-image
+
 # These targets build the various documentation images
 docs-jdk-image: docs-jdk
 docs-javase-image: docs-javase
@@ -1279,7 +1298,8 @@ all-docs-bundles: docs-jdk-bundles docs-javase-bundles docs-reference-bundles
 # This target builds the test image
 test-image: prepare-test-image test-image-jdk-jtreg-native \
     test-image-demos-jdk test-image-libtest-jtreg-native \
-    test-image-lib test-image-lib-native
+    test-image-lib test-image-lib-native \
+    test-image-setup-aot
 
 ifneq ($(JVM_TEST_IMAGE_TARGETS), )
   # If JVM_TEST_IMAGE_TARGETS is externally defined, use it instead of the
@@ -1307,7 +1327,7 @@ endif
 ################################################################################
 
 # all-images builds all our deliverables as images.
-all-images: product-images test-image all-docs-images
+all-images: product-images static-jdk-image test-image all-docs-images
 
 # all-bundles packages all our deliverables as tar.gz bundles.
 all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles
@@ -1320,7 +1340,7 @@ ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-static-libs \
     create-buildjdk docs-jdk-api docs-javase-api docs-reference-api docs-jdk \
     docs-javase docs-reference docs-javadoc mac-bundles product-images legacy-images \
     docs-image docs-javase-image docs-reference-image all-docs-images \
-    docs-bundles all-docs-bundles test-image all-images \
+    docs-bundles all-docs-bundles test-image all-images static-exploded-image \
     all-bundles
 
 ################################################################################
@@ -1328,7 +1348,7 @@ ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-static-libs \
 # Traditional targets typically run by users.
 # These can be considered aliases for the targets now named by a more
 # "modern" naming scheme.
-default: $(DEFAULT_MAKE_TARGET)
+default-target: $(DEFAULT_MAKE_TARGET)
 jdk: exploded-image
 images: product-images
 docs: docs-image
@@ -1355,11 +1375,14 @@ test-hotspot-jtreg-native: test-hotspot_native_sanity
 test-hotspot-gtest: exploded-test-gtest
 test-jdk-jtreg-native: test-jdk_native_sanity
 
+# Set dependencies for doc tests
+$(eval $(call AddTestDependency, docs_all, docs-jdk))
+test-docs: test-docs_all
+
 ALL_TARGETS += $(RUN_TEST_TARGETS) run-test exploded-run-test check \
     test-hotspot-jtreg test-hotspot-jtreg-native test-hotspot-gtest \
-    test-jdk-jtreg-native
+    test-jdk-jtreg-native test-docs
 
-################################################################################
 ################################################################################
 #
 # Clean targets
@@ -1429,7 +1452,7 @@ dist-clean: clean
 	($(CD) $(OUTPUTDIR) && \
 	    $(RM) -r *spec.gmk $(CONFIGURESUPPORT_OUTPUTDIR) Makefile compare.sh ide \
 	    configure.log* build.log*)
-	$(if $(filter $(CONF_NAME),$(notdir $(OUTPUTDIR))), \
+	$(if $(filter $(CONF_NAME), $(notdir $(OUTPUTDIR))), \
 	  if test "x`$(LS) $(OUTPUTDIR)`" != x; then \
 	    $(ECHO) "Warning: Not removing non-empty configuration directory for '$(CONF_NAME)'" ; \
 	  else \
@@ -1465,13 +1488,12 @@ print-tests:
 
 create-main-targets-include:
 	  $(call LogInfo, Generating main target list)
+	  $(call MakeDir, $(MAKESUPPORT_OUTPUTDIR))
 	  @$(ECHO) ALL_MAIN_TARGETS := $(sort $(ALL_TARGETS)) > \
 	      $(MAKESUPPORT_OUTPUTDIR)/main-targets.gmk
-
-################################################################################
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Main-post.gmk))
 
 .PHONY: $(ALL_TARGETS)
 
 FRC: # Force target
+
+include MakeFileEnd.gmk

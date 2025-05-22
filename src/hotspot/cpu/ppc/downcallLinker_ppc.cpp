@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
@@ -78,7 +77,6 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     stub->print_on(&ls);
   }
@@ -175,7 +173,6 @@ void DowncallLinker::StubGenerator::generate() {
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     arg_shuffle.print_on(&ls);
   }
@@ -187,7 +184,7 @@ void DowncallLinker::StubGenerator::generate() {
   _oop_maps  = _needs_transition ? new OopMapSet() : nullptr;
   address start = __ pc();
 
-  __ save_LR_CR(tmp); // Save in old frame.
+  __ save_LR(tmp); // Save in old frame.
   __ mr(callerSP, R1_SP); // preset (used to access caller frame argument slots)
   __ push_frame(allocated_frame_size, tmp);
 
@@ -283,8 +280,8 @@ void DowncallLinker::StubGenerator::generate() {
     __ safepoint_poll(L_safepoint_poll_slow_path, tmp, true /* at_return */, false /* in_nmethod */);
 
     __ lwz(tmp, in_bytes(JavaThread::suspend_flags_offset()), R16_thread);
-    __ cmpwi(CCR0, tmp, 0);
-    __ bne(CCR0, L_safepoint_poll_slow_path);
+    __ cmpwi(CR0, tmp, 0);
+    __ bne(CR0, L_safepoint_poll_slow_path);
     __ bind(L_after_safepoint_poll);
 
     // change thread state
@@ -294,15 +291,15 @@ void DowncallLinker::StubGenerator::generate() {
 
     __ block_comment("reguard stack check");
     __ lwz(tmp, in_bytes(JavaThread::stack_guard_state_offset()), R16_thread);
-    __ cmpwi(CCR0, tmp, StackOverflow::stack_guard_yellow_reserved_disabled);
-    __ beq(CCR0, L_reguard);
+    __ cmpwi(CR0, tmp, StackOverflow::stack_guard_yellow_reserved_disabled);
+    __ beq(CR0, L_reguard);
     __ bind(L_after_reguard);
 
     __ reset_last_Java_frame();
   }
 
   __ pop_frame();
-  __ restore_LR_CR(tmp);
+  __ restore_LR(tmp);
   __ blr();
 
   //////////////////////////////////////////////////////////////////////////////

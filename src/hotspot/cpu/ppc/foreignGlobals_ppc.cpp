@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2023, SAP SE. All rights reserved.
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -35,16 +34,6 @@
 #include "utilities/formatBuffer.hpp"
 
 #define __ masm->
-
-bool ABIDescriptor::is_volatile_reg(Register reg) const {
-  return _integer_argument_registers.contains(reg)
-    || _integer_additional_volatile_registers.contains(reg);
-}
-
-bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
-    return _float_argument_registers.contains(reg)
-        || _float_additional_volatile_registers.contains(reg);
-}
 
 bool ForeignGlobals::is_foreign_linker_supported() {
   return true;
@@ -62,10 +51,6 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   objArrayOop outputStorage = jdk_internal_foreign_abi_ABIDescriptor::outputStorage(abi_oop);
   parse_register_array(outputStorage, StorageType::INTEGER, abi._integer_return_registers, as_Register);
   parse_register_array(outputStorage, StorageType::FLOAT, abi._float_return_registers, as_FloatRegister);
-
-  objArrayOop volatileStorage = jdk_internal_foreign_abi_ABIDescriptor::volatileStorage(abi_oop);
-  parse_register_array(volatileStorage, StorageType::INTEGER, abi._integer_additional_volatile_registers, as_Register);
-  parse_register_array(volatileStorage, StorageType::FLOAT, abi._float_additional_volatile_registers, as_FloatRegister);
 
   abi._stack_alignment_bytes = jdk_internal_foreign_abi_ABIDescriptor::stackAlignment(abi_oop);
   abi._shadow_space_bytes = jdk_internal_foreign_abi_ABIDescriptor::shadowSpace(abi_oop);

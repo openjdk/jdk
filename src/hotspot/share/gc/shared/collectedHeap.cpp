@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/vmClasses.hpp"
@@ -30,22 +29,22 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gcWhen.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memAllocator.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
-#include "memory/resourceArea.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -59,6 +58,7 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#include "utilities/ostream.hpp"
 
 class ClassLoaderData;
 
@@ -111,7 +111,12 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
                  heap->total_collections(),
                  heap->total_full_collections());
 
-  heap->print_on(&st);
+  {
+    StreamIndentor si(&st, 1);
+    heap->print_heap_on(&st);
+    MetaspaceUtils::print_on(&st);
+  }
+
   st.print_cr("}");
 }
 
@@ -163,8 +168,10 @@ void CollectedHeap::print_heap_before_gc() {
   if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("Heap before GC invocations=%u (full %u):", total_collections(), total_full_collections());
-    ResourceMark rm;
-    print_on(&ls);
+
+    StreamIndentor si(&ls, 1);
+    print_heap_on(&ls);
+    MetaspaceUtils::print_on(&ls);
   }
 
   if (_gc_heap_log != nullptr) {
@@ -177,8 +184,10 @@ void CollectedHeap::print_heap_after_gc() {
   if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("Heap after GC invocations=%u (full %u):", total_collections(), total_full_collections());
-    ResourceMark rm;
-    print_on(&ls);
+
+    StreamIndentor si(&ls, 1);
+    print_heap_on(&ls);
+    MetaspaceUtils::print_on(&ls);
   }
 
   if (_gc_heap_log != nullptr) {
@@ -186,17 +195,9 @@ void CollectedHeap::print_heap_after_gc() {
   }
 }
 
-void CollectedHeap::print() const { print_on(tty); }
-
-void CollectedHeap::print_on_error(outputStream* st) const {
-  st->print_cr("Heap:");
-  print_extended_on(st);
-  st->cr();
-
-  BarrierSet* bs = BarrierSet::barrier_set();
-  if (bs != nullptr) {
-    bs->print_on(st);
-  }
+void CollectedHeap::print() const {
+  print_heap_on(tty);
+  print_gc_on(tty);
 }
 
 void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
@@ -220,6 +221,26 @@ bool CollectedHeap::supports_concurrent_gc_breakpoints() const {
   return false;
 }
 
+static bool klass_is_sane(oop object) {
+  if (UseCompactObjectHeaders) {
+    // With compact headers, we can't safely access the Klass* when
+    // the object has been forwarded, because non-full-GC-forwarding
+    // temporarily overwrites the mark-word, and thus the Klass*, with
+    // the forwarding pointer, and here we have no way to make a
+    // distinction between Full-GC and regular GC forwarding.
+    markWord mark = object->mark();
+    if (mark.is_forwarded()) {
+      // We can't access the Klass*. We optimistically assume that
+      // it is ok. This happens very rarely.
+      return true;
+    }
+
+    return Metaspace::contains(mark.klass_without_asserts());
+  }
+
+  return Metaspace::contains(object->klass_without_asserts());
+}
+
 bool CollectedHeap::is_oop(oop object) const {
   if (!is_object_aligned(object)) {
     return false;
@@ -229,7 +250,7 @@ bool CollectedHeap::is_oop(oop object) const {
     return false;
   }
 
-  if (!Metaspace::contains(object->klass_raw())) {
+  if (!klass_is_sane(object)) {
     return false;
   }
 
@@ -243,7 +264,7 @@ CollectedHeap::CollectedHeap() :
   _capacity_at_last_gc(0),
   _used_at_last_gc(0),
   _soft_ref_policy(),
-  _is_gc_active(false),
+  _is_stw_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
   _total_full_collections(0),
@@ -330,36 +351,10 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
       return result;
     }
 
-    if (GCLocker::is_active_and_needs_gc()) {
-      // If the GCLocker is active, just expand and allocate.
-      // If that does not succeed, wait if this thread is not
-      // in a critical section itself.
-      result = loader_data->metaspace_non_null()->expand_and_allocate(word_size, mdtype);
-      if (result != nullptr) {
-        return result;
-      }
-      JavaThread* jthr = JavaThread::current();
-      if (!jthr->in_critical()) {
-        // Wait for JNI critical section to be exited
-        GCLocker::stall_until_clear();
-        // The GC invoked by the last thread leaving the critical
-        // section will be a young collection and a full collection
-        // is (currently) needed for unloading classes so continue
-        // to the next iteration to get a full GC.
-        continue;
-      } else {
-        if (CheckJNICalls) {
-          fatal("Possible deadlock due to allocating while"
-                " in jni critical section");
-        }
-        return nullptr;
-      }
-    }
-
     {  // Need lock to get self consistent gc_count's
       MutexLocker ml(Heap_lock);
-      gc_count      = Universe::heap()->total_collections();
-      full_gc_count = Universe::heap()->total_full_collections();
+      gc_count      = total_collections();
+      full_gc_count = total_full_collections();
     }
 
     // Generate a VM operation
@@ -369,13 +364,8 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
                                        gc_count,
                                        full_gc_count,
                                        GCCause::_metadata_GC_threshold);
-    VMThread::execute(&op);
 
-    // If GC was locked out, try again. Check before checking success because the
-    // prologue could have succeeded and the GC still have been locked out.
-    if (op.gc_locked()) {
-      continue;
-    }
+    VMThread::execute(&op);
 
     if (op.prologue_succeeded()) {
       return op.result();
@@ -384,7 +374,7 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
     if ((QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
       log_warning(gc, ergo)("satisfy_failed_metadata_allocation() retries %d times,"
-                            " size=" SIZE_FORMAT, loop_count, word_size);
+                            " size=%zu", loop_count, word_size);
     }
   } while (true);  // Until a GC is done
 }
@@ -402,6 +392,13 @@ void CollectedHeap::set_gc_cause(GCCause::Cause v) {
   _gc_cause = v;
 }
 
+// Returns the header size in words aligned to the requirements of the
+// array object type.
+static int int_array_header_size() {
+  size_t typesize_in_bytes = arrayOopDesc::header_size_in_bytes();
+  return (int)align_up(typesize_in_bytes, HeapWordSize)/HeapWordSize;
+}
+
 size_t CollectedHeap::max_tlab_size() const {
   // TLABs can't be bigger than we can fill with a int[Integer.MAX_VALUE].
   // This restriction could be removed by enabling filling with multiple arrays.
@@ -411,14 +408,14 @@ size_t CollectedHeap::max_tlab_size() const {
   // We actually lose a little by dividing first,
   // but that just makes the TLAB  somewhat smaller than the biggest array,
   // which is fine, since we'll be able to fill that.
-  size_t max_int_size = typeArrayOopDesc::header_size(T_INT) +
+  size_t max_int_size = int_array_header_size() +
               sizeof(jint) *
               ((juint) max_jint / (size_t) HeapWordSize);
   return align_down(max_int_size, MinObjAlignment);
 }
 
 size_t CollectedHeap::filler_array_hdr_size() {
-  return align_object_offset(arrayOopDesc::header_size(T_INT)); // align to Long
+  return align_object_offset(int_array_header_size()); // align to Long
 }
 
 size_t CollectedHeap::filler_array_min_size() {
@@ -453,9 +450,9 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
 
   const size_t payload_size = words - filler_array_hdr_size();
   const size_t len = payload_size * HeapWordSize / sizeof(jint);
-  assert((int)len >= 0, "size too large " SIZE_FORMAT " becomes %d", words, (int)len);
+  assert((int)len >= 0, "size too large %zu becomes %d", words, (int)len);
 
-  ObjArrayAllocator allocator(Universe::fillerArrayKlassObj(), words, (int)len, /* do_zero */ false);
+  ObjArrayAllocator allocator(Universe::fillerArrayKlass(), words, (int)len, /* do_zero */ false);
   allocator.initialize(start);
   if (CDSConfig::is_dumping_heap()) {
     // This array is written into the CDS archive. Make sure it
@@ -511,13 +508,6 @@ void CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool 
   CollectedHeap::fill_with_object(start, end, zap);
 }
 
-HeapWord* CollectedHeap::allocate_new_tlab(size_t min_size,
-                                           size_t requested_size,
-                                           size_t* actual_size) {
-  guarantee(false, "thread-local allocation buffers not supported");
-  return nullptr;
-}
-
 void CollectedHeap::ensure_parsability(bool retire_tlabs) {
   assert(SafepointSynchronize::is_at_safepoint() || !is_init_completed(),
          "Should only be called at a safepoint or at start-up");
@@ -571,7 +561,6 @@ void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
   LogTarget(Trace, gc, classhisto) lt;
   if (lt.is_enabled()) {
     GCTraceTime(Trace, gc, classhisto) tm(before ? "Class Histogram (before full gc)" : "Class Histogram (after full gc)", timer);
-    ResourceMark rm;
     LogStream ls(lt);
     VM_GC_HeapInspection inspector(&ls, false /* ! full gc */);
     inspector.doit();

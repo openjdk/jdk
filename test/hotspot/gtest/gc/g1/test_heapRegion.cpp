@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,10 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/vmOperations.hpp"
@@ -72,7 +71,7 @@ void VM_HeapRegionApplyToMarkedObjectsTest::doit() {
   G1CollectedHeap* heap = G1CollectedHeap::heap();
 
   // Using region 0 for testing.
-  HeapRegion* region = heap->heap_region_containing(heap->bottom_addr_for_region(0));
+  G1HeapRegion* region = heap->heap_region_containing(heap->bottom_addr_for_region(0));
 
   // Mark some "oops" in the bitmap.
   G1CMBitMap* bitmap = heap->concurrent_mark()->mark_bitmap();
@@ -88,7 +87,7 @@ void VM_HeapRegionApplyToMarkedObjectsTest::doit() {
 
   // When top is equal to bottom the closure should not be
   // applied to any object because apply_to_marked_objects
-  // will stop at HeapRegion::scan_limit which is equal to top.
+  // will stop at G1HeapRegion::scan_limit which is equal to top.
   region->set_top(region->bottom());
   region->apply_to_marked_objects(bitmap, &cl);
   EXPECT_EQ(0, cl.count());
@@ -122,7 +121,7 @@ void VM_HeapRegionApplyToMarkedObjectsTest::doit() {
   region->set_top(old_top);
 }
 
-TEST_VM(HeapRegion, apply_to_marked_object) {
+TEST_OTHER_VM(G1HeapRegion, apply_to_marked_object) {
   if (!UseG1GC) {
     return;
   }

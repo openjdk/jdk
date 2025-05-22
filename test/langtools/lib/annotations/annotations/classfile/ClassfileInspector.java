@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -603,7 +603,7 @@ public class ClassfileInspector {
         }
 
         public boolean checkMatch(TypeAnnotation anno) {
-            boolean matches = checkMatch((Annotation) anno);
+            boolean matches = checkMatch(anno.annotation());
             int boundIdx = Integer.MIN_VALUE, paraIdx = Integer.MIN_VALUE, tIdx = Integer.MIN_VALUE, exIdx = Integer.MIN_VALUE;
             switch (anno.targetInfo()) {
                 case TypeAnnotation.TypeParameterBoundTarget binfo -> {
@@ -1197,8 +1197,8 @@ public class ClassfileInspector {
         switch (attr) {
             case RuntimeVisibleTypeAnnotationsAttribute rvattr -> {
                 if (expected.matchVisibility(true)) {
-                    for(Annotation anno : rvattr.annotations()) {
-                        expected.matchAnnotation(anno);
+                    for(var anno : rvattr.annotations()) {
+                        expected.matchAnnotation(anno.annotation());
                     }
                 }
             }

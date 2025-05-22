@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,8 @@ package sun.awt;
 import java.io.File;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
-public class PlatformGraphicsInfo {
+public final class PlatformGraphicsInfo {
 
     public static GraphicsEnvironment createGE() {
         return new X11GraphicsEnvironment();
@@ -47,14 +45,10 @@ public class PlatformGraphicsInfo {
       * headless mode, in the case the application did not specify
       * a value for the java.awt.headless system property.
       */
-    @SuppressWarnings("removal")
     public static boolean getDefaultHeadlessProperty() {
-        boolean noDisplay =
-            AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> {
+        final String display = System.getenv("DISPLAY");
+        boolean noDisplay = (display == null || display.trim().isEmpty());
 
-               final String display = System.getenv("DISPLAY");
-               return display == null || display.trim().isEmpty();
-            });
         if (noDisplay) {
             return true;
         }
@@ -67,18 +61,16 @@ public class PlatformGraphicsInfo {
          * code is also set up as headless from the start - it is not so easy
          * to try headful and then unwind that and then retry as headless.
          */
-        boolean headless =
-            AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> {
-                String[] libDirs = System.getProperty("sun.boot.library.path", "").split(":");
-                for (String libDir : libDirs) {
-                    File headlessLib = new File(libDir, "libawt_headless.so");
-                    File xawtLib = new File(libDir, "libawt_xawt.so");
-                    if (headlessLib.exists() && !xawtLib.exists()) {
-                        return true;
-                    }
-                }
-                return false;
-            });
+        boolean headless = false;
+        String[] libDirs = System.getProperty("sun.boot.library.path", "").split(":");
+        for (String libDir : libDirs) {
+            File headlessLib = new File(libDir, "libawt_headless.so");
+            File xawtLib = new File(libDir, "libawt_xawt.so");
+            if (headlessLib.exists() && !xawtLib.exists()) {
+                headless = true;
+                break;
+            }
+        }
         return headless;
     }
 

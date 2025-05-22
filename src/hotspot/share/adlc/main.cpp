@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,9 @@ int main(int argc, char *argv[])
   // Verify that the results of the parse are consistent
   AD.verify();
 
+  // Check defined operands are used
+  AD.check_usage();
+
   // Prepare to generate the result files:
   AD.generateMatchLists();
   AD.identify_unique_operands();
@@ -207,7 +210,6 @@ int main(int argc, char *argv[])
   AD.addIncludeGuardStart(AD._HPP_file, "GENERATED_ADFILES_AD_HPP");        // .hpp
   AD.addIncludeGuardStart(AD._VM_file, "GENERATED_ADFILES_ADGLOBALS_HPP");  // .hpp
   // Add includes
-  AD.addInclude(AD._CPP_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_file, "adfiles", get_basename(AD._VM_file._name));
   AD.addInclude(AD._CPP_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_file, "memory/allocation.inline.hpp");
@@ -242,26 +244,18 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._HPP_file, "opto/regalloc.hpp");
   AD.addInclude(AD._HPP_file, "opto/subnode.hpp");
   AD.addInclude(AD._HPP_file, "opto/vectornode.hpp");
-  AD.addInclude(AD._CPP_CLONE_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_CLONE_file, "adfiles", get_basename(AD._HPP_file._name));
-  AD.addInclude(AD._CPP_EXPAND_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_EXPAND_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_EXPAND_file, "oops/compressedOops.hpp");
-  AD.addInclude(AD._CPP_FORMAT_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_FORMAT_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_FORMAT_file, "compiler/oopMap.hpp");
-  AD.addInclude(AD._CPP_GEN_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_GEN_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_GEN_file, "opto/cfgnode.hpp");
   AD.addInclude(AD._CPP_GEN_file, "opto/locknode.hpp");
   AD.addInclude(AD._CPP_GEN_file, "opto/rootnode.hpp");
-  AD.addInclude(AD._CPP_MISC_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_MISC_file, "adfiles", get_basename(AD._HPP_file._name));
-  AD.addInclude(AD._CPP_PEEPHOLE_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_PEEPHOLE_file, "adfiles", get_basename(AD._HPP_file._name));
-  AD.addInclude(AD._CPP_PIPELINE_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_PIPELINE_file, "adfiles", get_basename(AD._HPP_file._name));
-  AD.addInclude(AD._DFA_file, "precompiled.hpp");
   AD.addInclude(AD._DFA_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._DFA_file, "oops/compressedOops.hpp");
   AD.addInclude(AD._DFA_file, "opto/cfgnode.hpp");  // Use PROB_MAX in predicate.
@@ -488,8 +482,6 @@ int get_legal_text(FileBuff &fbuf, char **legal_text)
   return (int) (legal_end - legal_start);
 }
 
-#if !defined(_WIN32) || defined(_WIN64)
 void *operator new( size_t size, int, const char *, int ) throw() {
   return ::operator new( size );
 }
-#endif

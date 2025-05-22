@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,18 @@
 
 package com.sun.tools.javap;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import java.util.Locale;
-import java.util.stream.Collectors;
+import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.constantpool.*;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.MethodModel;
+import java.lang.classfile.Opcode;
 import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.instruction.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 /*
  *  Write the contents of a Code attribute.
@@ -70,13 +70,11 @@ public class CodeWriter extends BasicWriter {
     }
 
     void write(CodeAttribute attr) {
-        println("Code:");
-        indent(+1);
-        writeVerboseHeader(attr);
-        writeInstrs(attr);
-        writeExceptionTable(attr);
-        attrWriter.write(attr.attributes(), attr);
-        indent(-1);
+        writeInternal(attr, false);
+    }
+
+    void writeMinimal(CodeAttribute attr) {
+        writeInternal(attr, true);
     }
 
     public void writeVerboseHeader(CodeAttribute attr) {
@@ -92,20 +90,22 @@ public class CodeWriter extends BasicWriter {
     public void writeInstrs(CodeAttribute attr) {
         List<InstructionDetailWriter> detailWriters = getDetailWriters(attr);
 
-        int pc = 0;
+        int[] pcState = {0};
         try {
-            for (var coe: attr) {
+            attr.forEach(coe -> {
                 if (coe instanceof Instruction instr) {
-                    for (InstructionDetailWriter w: detailWriters)
+                    int pc = pcState[0];
+                    for (InstructionDetailWriter w : detailWriters)
                         w.writeDetails(pc, instr);
                     writeInstr(pc, instr, attr);
-                    pc += instr.sizeInBytes();
+                    pcState[0] = pc + instr.sizeInBytes();
                 }
-            }
+            });
         } catch (IllegalArgumentException e) {
-            report("error at or after byte " + pc);
+            report("error at or after address " + pcState[0] + ": " + e.getMessage());
         }
 
+        int pc = pcState[0];
         for (InstructionDetailWriter w: detailWriters)
             w.flush(pc);
     }
@@ -155,7 +155,7 @@ public class CodeWriter extends BasicWriter {
                 case NewObjectInstruction instr ->
                     printConstantPoolRef(instr.className());
                 case NewPrimitiveArrayInstruction instr ->
-                    print(" " + instr.typeKind().typeName());
+                    print(" " + instr.typeKind().upperBound().displayName());
                 case NewReferenceArrayInstruction instr ->
                     printConstantPoolRef(instr.componentType());
                 case TableSwitchInstruction instr -> {
@@ -255,6 +255,39 @@ public class CodeWriter extends BasicWriter {
         }
 
         return detailWriters;
+    }
+
+    private void writeInternal(CodeAttribute attr, boolean minimal) {
+        println("Code:");
+        indent(+1);
+        if (minimal) {
+            writeMinimalMode(attr);
+        } else {
+            writeVerboseMode(attr);
+        }
+        indent(-1);
+    }
+
+    private void writeMinimalMode(CodeAttribute attr) {
+        writeInstrs(attr);
+        writeExceptionTable(attr);
+        if (options.showLineAndLocalVariableTables) {
+            writeLineAndLocalVariableTables(attr);
+        }
+    }
+
+    private void writeVerboseMode(CodeAttribute attr) {
+        writeVerboseHeader(attr);
+        writeInstrs(attr);
+        writeExceptionTable(attr);
+        attrWriter.write(attr.attributes(), attr, classWriter.cffv());
+    }
+
+    private void writeLineAndLocalVariableTables(CodeAttribute attr) {
+        attr.findAttribute(Attributes.lineNumberTable())
+            .ifPresent(a -> attrWriter.write(a, attr, classWriter.cffv()));
+        attr.findAttribute(Attributes.localVariableTable())
+            .ifPresent(a -> attrWriter.write(a, attr, classWriter.cffv()));
     }
 
     private AttributeWriter attrWriter;

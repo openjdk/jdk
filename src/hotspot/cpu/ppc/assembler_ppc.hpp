@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,18 +39,10 @@ class Address {
   intptr_t _disp;         // Displacement.
 
  public:
-  Address(Register b, Register i, address d = 0)
-    : _base(b), _index(i), _disp((intptr_t)d) {
-    assert(i == noreg || d == 0, "can't have both");
-  }
-
-  Address(Register b, address d = 0)
-    : _base(b), _index(noreg), _disp((intptr_t)d) {}
-
   Address(Register b, ByteSize d)
     : _base(b), _index(noreg), _disp((intptr_t)d) {}
 
-  Address(Register b, intptr_t d)
+  Address(Register b, intptr_t d = 0)
     : _base(b), _index(noreg), _disp(d) {}
 
   Address(Register b, RegisterOrConstant roc)
@@ -302,6 +294,8 @@ class Assembler : public AbstractAssembler {
     CLRRWI_OPCODE = RLWINM_OPCODE,
     CLRLWI_OPCODE = RLWINM_OPCODE,
 
+    RLWNM_OPCODE  = (23u << OPCODE_SHIFT),
+
     RLWIMI_OPCODE = (20u << OPCODE_SHIFT),
 
     SLW_OPCODE    = (31u << OPCODE_SHIFT |  24u << 1),
@@ -350,6 +344,7 @@ class Assembler : public AbstractAssembler {
 
     SETBC_OPCODE  = (31u << OPCODE_SHIFT | 384u << 1),
     SETNBC_OPCODE = (31u << OPCODE_SHIFT | 448u << 1),
+    SETBCR_OPCODE = (31u << OPCODE_SHIFT | 416u << 1),
 
     // condition register logic instructions
     CRAND_OPCODE  = (19u << OPCODE_SHIFT | 257u << 1),
@@ -431,6 +426,9 @@ class Assembler : public AbstractAssembler {
     RLDIC_OPCODE  = (30u << OPCODE_SHIFT |   2u << XO_27_29_SHIFT), // MD-FORM
     RLDIMI_OPCODE = (30u << OPCODE_SHIFT |   3u << XO_27_29_SHIFT), // MD-FORM
 
+    RLDCL_OPCODE  = (30u << OPCODE_SHIFT |   8u << 1),
+    RLDCR_OPCODE  = (30u << OPCODE_SHIFT |   9u << 1),
+
     SRADI_OPCODE  = (31u << OPCODE_SHIFT | 413u << XO_21_29_SHIFT), // XS-FORM
 
     SLD_OPCODE    = (31u << OPCODE_SHIFT |  27u << 1),              // X-FORM
@@ -505,12 +503,17 @@ class Assembler : public AbstractAssembler {
     LFSU_OPCODE    = (49u << OPCODE_SHIFT |   00u << 1),
     LFSX_OPCODE    = (31u << OPCODE_SHIFT |  535u << 1),
 
+    LFIWAX_OPCODE  = (31u << OPCODE_SHIFT |  855u << 1),
+    LFIWZX_OPCODE  = (31u << OPCODE_SHIFT |  887u << 1),
+
     STFD_OPCODE    = (54u << OPCODE_SHIFT |   00u << 1),
     STFDU_OPCODE   = (55u << OPCODE_SHIFT |   00u << 1),
     STFDX_OPCODE   = (31u << OPCODE_SHIFT |  727u << 1),
     STFS_OPCODE    = (52u << OPCODE_SHIFT |   00u << 1),
     STFSU_OPCODE   = (53u << OPCODE_SHIFT |   00u << 1),
     STFSX_OPCODE   = (31u << OPCODE_SHIFT |  663u << 1),
+
+    STFIWX_OPCODE  = (31u << OPCODE_SHIFT |  983u << 1),
 
     FSQRT_OPCODE   = (63u << OPCODE_SHIFT |   22u << 1),            // A-FORM
     FSQRTS_OPCODE  = (59u << OPCODE_SHIFT |   22u << 1),            // A-FORM
@@ -532,8 +535,12 @@ class Assembler : public AbstractAssembler {
 
     // Vector-Scalar (VSX) instruction support.
     LXV_OPCODE     = (61u << OPCODE_SHIFT |    1u     ),
-    LXVL_OPCODE    = (31u << OPCODE_SHIFT |  269u << 1),
     STXV_OPCODE    = (61u << OPCODE_SHIFT |    5u     ),
+    LXVX_OPCODE    = (31u << OPCODE_SHIFT | 4u << 7 | 12u << 1),
+    STXVX_OPCODE   = (31u << OPCODE_SHIFT |  396u << 1),
+    LXVP_OPCODE    = ( 6u << OPCODE_SHIFT             ),
+    STXVP_OPCODE   = ( 6u << OPCODE_SHIFT |    1u     ),
+    LXVL_OPCODE    = (31u << OPCODE_SHIFT |  269u << 1),
     STXVL_OPCODE   = (31u << OPCODE_SHIFT |  397u << 1),
     LXVD2X_OPCODE  = (31u << OPCODE_SHIFT |  844u << 1),
     STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
@@ -541,6 +548,7 @@ class Assembler : public AbstractAssembler {
     MTVSRDD_OPCODE = (31u << OPCODE_SHIFT |  435u << 1),
     MTVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  243u << 1),
     MFVSRD_OPCODE  = (31u << OPCODE_SHIFT |   51u << 1),
+    MFVSRLD_OPCODE = (31u << OPCODE_SHIFT |  307u << 1),
     MTVSRWA_OPCODE = (31u << OPCODE_SHIFT |  211u << 1),
     MFVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  115u << 1),
     XXPERMDI_OPCODE= (60u << OPCODE_SHIFT |   10u << 3),
@@ -554,6 +562,10 @@ class Assembler : public AbstractAssembler {
     XVDIVSP_OPCODE = (60u << OPCODE_SHIFT |   88u << 3),
     XXBRD_OPCODE   = (60u << OPCODE_SHIFT |  475u << 2 | 23u << 16), // XX2-FORM
     XXBRW_OPCODE   = (60u << OPCODE_SHIFT |  475u << 2 | 15u << 16), // XX2-FORM
+    XVCVHPSP_OPCODE= (60u << OPCODE_SHIFT |  475u << 2 | 24u << 16), // XX2-FORM
+    XVCVSPHP_OPCODE= (60u << OPCODE_SHIFT |  475u << 2 | 25u << 16), // XX2-FORM
+    XSCVHPDP_OPCODE= (60u << OPCODE_SHIFT |  347u << 2 | 16u << 16), // XX2-FORM
+    XSCVDPHP_OPCODE= (60u << OPCODE_SHIFT |  347u << 2 | 17u << 16), // XX2-FORM
     XXPERM_OPCODE  = (60u << OPCODE_SHIFT |   26u << 3),
     XXSEL_OPCODE   = (60u << OPCODE_SHIFT |    3u << 4),
     XXSPLTIB_OPCODE= (60u << OPCODE_SHIFT |  360u << 1),
@@ -729,6 +741,14 @@ class Assembler : public AbstractAssembler {
     VPOPCNTH_OPCODE= (4u  << OPCODE_SHIFT | 1859u     ),
     VPOPCNTW_OPCODE= (4u  << OPCODE_SHIFT | 1923u     ),
     VPOPCNTD_OPCODE= (4u  << OPCODE_SHIFT | 1987u     ),
+    VCLZB_OPCODE   = (4u  << OPCODE_SHIFT | 1794u     ),
+    VCLZH_OPCODE   = (4u  << OPCODE_SHIFT | 1858u     ),
+    VCLZW_OPCODE   = (4u  << OPCODE_SHIFT | 1922u     ),
+    VCLZD_OPCODE   = (4u  << OPCODE_SHIFT | 1986u     ),
+    VCTZB_OPCODE   = (4u  << OPCODE_SHIFT | 28u << 16 | 1538u),
+    VCTZH_OPCODE   = (4u  << OPCODE_SHIFT | 29u << 16 | 1538u),
+    VCTZW_OPCODE   = (4u  << OPCODE_SHIFT | 30u << 16 | 1538u),
+    VCTZD_OPCODE   = (4u  << OPCODE_SHIFT | 31u << 16 | 1538u),
 
     // Vector Floating-Point
     // not implemented yet
@@ -1227,6 +1247,11 @@ class Assembler : public AbstractAssembler {
   static int vsdm(      int         x)  { return  opp_u_field(x,            23, 22); }
   static int vsrs_dq(   int         x)  { return  opp_u_field(x & 0x1F,     10,  6) | opp_u_field((x & 0x20) >> 5, 28, 28); }
   static int vsrt_dq(   int         x)  { return  vsrs_dq(x); }
+  static int vsrtp(     int         x)  {
+    assert((x & 1) == 0, "must be even");
+    return opp_u_field((x & 0x1F) >> 1, 9, 6) | opp_u_field((x & 0x20) >> 5, 10, 10);
+  }
+  static int vsrsp(     int         x)  { return  vsrtp(x); }
 
   static int vsra(   VectorSRegister r)  { return  vsra(r->encoding());}
   static int vsrb(   VectorSRegister r)  { return  vsrb(r->encoding());}
@@ -1235,6 +1260,8 @@ class Assembler : public AbstractAssembler {
   static int vsrt(   VectorSRegister r)  { return  vsrt(r->encoding());}
   static int vsrs_dq(VectorSRegister r)  { return  vsrs_dq(r->encoding());}
   static int vsrt_dq(VectorSRegister r)  { return  vsrt_dq(r->encoding());}
+  static int vsrtp(  VectorSRegister r)  { return  vsrtp(r->encoding());}
+  static int vsrsp(  VectorSRegister r)  { return  vsrsp(r->encoding());}
 
   static int vsplt_uim( int        x)  { return  opp_u_field(x,             15, 12); } // for vsplt* instructions
   static int vsplti_sim(int        x)  { return  opp_u_field(x,             15, 11); } // for vsplti* instructions
@@ -1694,6 +1721,14 @@ class Assembler : public AbstractAssembler {
   inline void insrdi(  Register a, Register s, int n,   int b);
   inline void insrwi(  Register a, Register s, int n,   int b);
 
+  // Rotate variable
+  inline void rlwnm( Register a, Register s, Register b, int mb, int me);
+  inline void rlwnm_(Register a, Register s, Register b, int mb, int me);
+  inline void rldcl( Register a, Register s, Register b, int mb);
+  inline void rldcl_(Register a, Register s, Register b, int mb);
+  inline void rldcr( Register a, Register s, Register b, int me);
+  inline void rldcr_(Register a, Register s, Register b, int me);
+
   // PPC 1, section 3.3.2 Fixed-Point Load Instructions
   // 4 bytes
   inline void lwzx( Register d, Register s1, Register s2);
@@ -1780,6 +1815,8 @@ class Assembler : public AbstractAssembler {
   inline void setbc( Register d, ConditionRegister cr, Condition cc);
   inline void setnbc(Register d, int biint);
   inline void setnbc(Register d, ConditionRegister cr, Condition cc);
+  inline void setbcr(Register d, int biint);
+  inline void setbcr(Register d, ConditionRegister cr, Condition cc);
 
   // Special purpose registers
   // Exception Register
@@ -1813,6 +1850,7 @@ class Assembler : public AbstractAssembler {
                          relocInfo::relocType rt = relocInfo::none);
 
   // helper function for b, bcxx
+  inline bool is_branch(address a);
   inline bool is_within_range_of_b(address a, address pc);
   inline bool is_within_range_of_bcxx(address a, address pc);
 
@@ -2072,6 +2110,9 @@ class Assembler : public AbstractAssembler {
   inline void lfdu( FloatRegister d, int si16,   Register a);
   inline void lfdx( FloatRegister d, Register a, Register b);
 
+  inline void lfiwax(FloatRegister d, Register a, Register b);
+  inline void lfiwzx(FloatRegister d, Register a, Register b);
+
   // PPC 1, section 4.6.3 Floating-Point Store Instructions
   inline void stfs(  FloatRegister s, int si16,   Register a);
   inline void stfsu( FloatRegister s, int si16,   Register a);
@@ -2079,6 +2120,8 @@ class Assembler : public AbstractAssembler {
   inline void stfd(  FloatRegister s, int si16,   Register a);
   inline void stfdu( FloatRegister s, int si16,   Register a);
   inline void stfdx( FloatRegister s, Register a, Register b);
+
+  inline void stfiwx(FloatRegister s, Register a, Register b);
 
   // PPC 1, section 4.6.4 Floating-Point Move Instructions
   inline void fmr(  FloatRegister d, FloatRegister b);
@@ -2311,19 +2354,37 @@ class Assembler : public AbstractAssembler {
   inline void vpopcnth( VectorRegister d, VectorRegister b);
   inline void vpopcntw( VectorRegister d, VectorRegister b);
   inline void vpopcntd( VectorRegister d, VectorRegister b);
+  inline void vclzb(    VectorRegister d, VectorRegister b);
+  inline void vclzh(    VectorRegister d, VectorRegister b);
+  inline void vclzw(    VectorRegister d, VectorRegister b);
+  inline void vclzd(    VectorRegister d, VectorRegister b);
+  inline void vctzb(    VectorRegister d, VectorRegister b);
+  inline void vctzh(    VectorRegister d, VectorRegister b);
+  inline void vctzw(    VectorRegister d, VectorRegister b);
+  inline void vctzd(    VectorRegister d, VectorRegister b);
   // Vector Floating-Point not implemented yet
   inline void mtvscr(   VectorRegister b);
   inline void mfvscr(   VectorRegister d);
 
   // Vector-Scalar (VSX) instructions.
-  inline void lxv(      VectorSRegister d, int si16, Register a);
-  inline void stxv(     VectorSRegister d, int si16, Register a);
-  inline void lxvl(     VectorSRegister d, Register a, Register b);
-  inline void stxvl(    VectorSRegister d, Register a, Register b);
+  // Power8
   inline void lxvd2x(   VectorSRegister d, Register a);
   inline void lxvd2x(   VectorSRegister d, Register a, Register b);
   inline void stxvd2x(  VectorSRegister d, Register a);
   inline void stxvd2x(  VectorSRegister d, Register a, Register b);
+
+  // Power9
+  inline void lxv(      VectorSRegister d, int si16, Register a);
+  inline void stxv(     VectorSRegister d, int si16, Register a);
+  inline void lxvx(     VectorSRegister d, Register a, Register b);
+  inline void stxvx(    VectorSRegister d, Register a, Register b);
+  inline void lxvl(     VectorSRegister d, Register a, Register b);
+  inline void stxvl(    VectorSRegister d, Register a, Register b);
+
+  // Power10
+  inline void lxvp(     VectorSRegister d, int si16, Register a);
+  inline void stxvp(    VectorSRegister d, int si16, Register a);
+
   inline void mtvrwz(   VectorRegister  d, Register a);
   inline void mfvrwz(   Register        a, VectorRegister d);
   inline void mtvrd(    VectorRegister  d, Register a);
@@ -2335,6 +2396,7 @@ class Assembler : public AbstractAssembler {
   inline void xxmrglw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void mtvsrd(   VectorSRegister d, Register a);
   inline void mfvsrd(   Register        d, VectorSRegister a);
+  inline void mfvsrld(  Register        d, VectorSRegister a); // Requires Power9.
   inline void mtvsrdd(  VectorSRegister d, Register a, Register b);
   inline void mtvsrwz(  VectorSRegister d, Register a);
   inline void mfvsrwz(  Register        d, VectorSRegister a);
@@ -2344,6 +2406,10 @@ class Assembler : public AbstractAssembler {
   inline void xxleqv(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxbrd(    VectorSRegister d, VectorSRegister b);
   inline void xxbrw(    VectorSRegister d, VectorSRegister b);
+  inline void xvcvhpsp( VectorSRegister d, VectorSRegister b);
+  inline void xvcvsphp( VectorSRegister d, VectorSRegister b);
+  inline void xscvhpdp( VectorSRegister d, VectorSRegister b);
+  inline void xscvdphp( VectorSRegister d, VectorSRegister b);
   inline void xxland(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxsel(    VectorSRegister d, VectorSRegister a, VectorSRegister b, VectorSRegister c);
   inline void xxspltib( VectorSRegister d, int ui8);
@@ -2435,6 +2501,9 @@ class Assembler : public AbstractAssembler {
   inline void std(  Register d, int si16);
   inline void stdbrx( Register d, Register s2);
 
+  inline void lxvx( VectorSRegister d, Register b);
+  inline void stxvx(VectorSRegister d, Register b);
+
   // PPC 2, section 3.2.1 Instruction Cache Instructions
   inline void icbi(    Register s2);
   // PPC 2, section 3.2.2 Data Cache Instructions
@@ -2470,10 +2539,13 @@ class Assembler : public AbstractAssembler {
   inline void lfsx(  FloatRegister d, Register b);
   inline void lfd(   FloatRegister d, int si16);
   inline void lfdx(  FloatRegister d, Register b);
+  inline void lfiwax(FloatRegister d, Register b);
+  inline void lfiwzx(FloatRegister d, Register b);
   inline void stfs(  FloatRegister s, int si16);
   inline void stfsx( FloatRegister s, Register b);
   inline void stfd(  FloatRegister s, int si16);
   inline void stfdx( FloatRegister s, Register b);
+  inline void stfiwx(FloatRegister s, Register b);
   inline void lvebx( VectorRegister d, Register s2);
   inline void lvehx( VectorRegister d, Register s2);
   inline void lvewx( VectorRegister d, Register s2);
@@ -2499,21 +2571,36 @@ class Assembler : public AbstractAssembler {
   // load the constant are emitted beforehand. Store instructions need a
   // tmp reg if the constant is not encodable as immediate.
   // Size unpredictable.
-  void ld(  Register d, RegisterOrConstant roc, Register s1 = noreg);
-  void lwa( Register d, RegisterOrConstant roc, Register s1 = noreg);
-  void lwz( Register d, RegisterOrConstant roc, Register s1 = noreg);
-  void lha( Register d, RegisterOrConstant roc, Register s1 = noreg);
-  void lhz( Register d, RegisterOrConstant roc, Register s1 = noreg);
-  void lbz( Register d, RegisterOrConstant roc, Register s1 = noreg);
-  void std( Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
-  void stw( Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
-  void sth( Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
-  void stb( Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
-  void add( Register d, RegisterOrConstant roc, Register s1);
-  void subf(Register d, RegisterOrConstant roc, Register s1);
-  void cmpd(ConditionRegister d, RegisterOrConstant roc, Register s1);
+  void ld( Register d, RegisterOrConstant roc, Register s1 = noreg);
+  void lwa(Register d, RegisterOrConstant roc, Register s1 = noreg);
+  void lwz(Register d, RegisterOrConstant roc, Register s1 = noreg);
+  void lha(Register d, RegisterOrConstant roc, Register s1 = noreg);
+  void lhz(Register d, RegisterOrConstant roc, Register s1 = noreg);
+  void lbz(Register d, RegisterOrConstant roc, Register s1 = noreg);
+  void std(Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
+  void stw(Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
+  void sth(Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
+  void stb(Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
+  void add(Register d, Register s, RegisterOrConstant roc);
+  void add(Register d, RegisterOrConstant roc, Register s) { add(d, s, roc); }
+  void sub(Register d, Register s, RegisterOrConstant roc);
+  void xorr(Register d, Register s, RegisterOrConstant roc);
+  void xorr(Register d, RegisterOrConstant roc, Register s) { xorr(d, s, roc); }
+  void cmpw(ConditionRegister d, Register s, RegisterOrConstant roc);
+  void cmpd(ConditionRegister d, Register s, RegisterOrConstant roc);
   // Load pointer d from s1+roc.
   void ld_ptr(Register d, RegisterOrConstant roc, Register s1 = noreg) { ld(d, roc, s1); }
+
+  void ld( Register d, Address &a);
+  void lwa(Register d, Address &a);
+  void lwz(Register d, Address &a);
+  void lha(Register d, Address &a);
+  void lhz(Register d, Address &a);
+  void lbz(Register d, Address &a);
+  void std(Register d, Address &a, Register tmp = noreg);
+  void stw(Register d, Address &a, Register tmp = noreg);
+  void sth(Register d, Address &a, Register tmp = noreg);
+  void stb(Register d, Address &a, Register tmp = noreg);
 
   // Emit several instructions to load a 64 bit constant. This issues a fixed
   // instruction pattern so that the constant can be patched later on.

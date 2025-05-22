@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ final class PendingFuture<V,A> implements Future<V> {
      * Sets the result, or a no-op if the result or exception is already set.
      */
     void setFailure(Throwable x) {
-        if (!(x instanceof IOException) && !(x instanceof SecurityException))
+        if (!(x instanceof IOException))
             x = new IOException(x);
         synchronized (this) {
             if (haveResult)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
@@ -91,11 +90,24 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(in(IfTrue))    == Type::TOP) {
     return nullptr;
   }
+  Node* progress = TypeNode::Ideal(phase, can_reshape);
+  if (progress != nullptr) {
+    return progress;
+  }
+
+  // Check for Min/Max patterns. This is called before constants are pushed to the right input, as that transform can
+  // make BoolTests non-canonical.
+  Node* minmax = Ideal_minmax(phase, this);
+  if (minmax != nullptr) {
+    return minmax;
+  }
+
   // Canonicalize the node by moving constants to the right input.
   if (in(Condition)->is_Bool() && phase->type(in(IfFalse))->singleton() && !phase->type(in(IfTrue))->singleton()) {
     BoolNode* b = in(Condition)->as_Bool()->negate(phase);
-    return make(in(Control), phase->transform(b), in(IfTrue), in(IfFalse), _type);
+    return make(phase->transform(b), in(IfTrue), in(IfFalse), _type);
   }
+
   return nullptr;
 }
 
@@ -163,6 +175,13 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
   if (phase->type(in(IfTrue)) == Type::TOP || phase->type(in(IfFalse)) == Type::TOP) {
     return Type::TOP;
   }
+  if (phase->type(in(Condition)) == TypeInt::ZERO) {
+    return phase->type(in(IfFalse))->filter(_type); // Always pick left (false) input
+  }
+  if (phase->type(in(Condition)) == TypeInt::ONE) {
+    return phase->type(in(IfTrue))->filter(_type);  // Always pick right (true) input
+  }
+
   const Type* t = phase->type(in(IfFalse))->meet_speculative(phase->type(in(IfTrue)));
   return t->filter(_type);
 }
@@ -170,18 +189,91 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
 //------------------------------make-------------------------------------------
 // Make a correctly-flavored CMove.  Since _type is directly determined
 // from the inputs we do not need to specify it here.
-CMoveNode *CMoveNode::make(Node *c, Node *bol, Node *left, Node *right, const Type *t) {
-  switch( t->basic_type() ) {
-    case T_INT:     return new CMoveINode( bol, left, right, t->is_int() );
-    case T_FLOAT:   return new CMoveFNode( bol, left, right, t );
-    case T_DOUBLE:  return new CMoveDNode( bol, left, right, t );
-    case T_LONG:    return new CMoveLNode( bol, left, right, t->is_long() );
-    case T_OBJECT:  return new CMovePNode( c, bol, left, right, t->is_oopptr() );
-    case T_ADDRESS: return new CMovePNode( c, bol, left, right, t->is_ptr() );
-    case T_NARROWOOP: return new CMoveNNode( c, bol, left, right, t );
+CMoveNode* CMoveNode::make(Node* bol, Node* left, Node* right, const Type* t) {
+  switch (t->basic_type()) {
+    case T_INT:     return new CMoveINode(bol, left, right, t->is_int());
+    case T_FLOAT:   return new CMoveFNode(bol, left, right, t);
+    case T_DOUBLE:  return new CMoveDNode(bol, left, right, t);
+    case T_LONG:    return new CMoveLNode(bol, left, right, t->is_long());
+    case T_OBJECT:  return new CMovePNode(bol, left, right, t->is_oopptr());
+    case T_ADDRESS: return new CMovePNode(bol, left, right, t->is_ptr());
+    case T_NARROWOOP: return new CMoveNNode(bol, left, right, t);
     default:
-    ShouldNotReachHere();
+      ShouldNotReachHere();
+      return nullptr;
+  }
+}
+
+bool CMoveNode::supported(const Type* t) {
+  switch (t->basic_type()) {
+    case T_INT:     return Matcher::match_rule_supported(Op_CMoveI);
+    case T_FLOAT:   return Matcher::match_rule_supported(Op_CMoveF);
+    case T_DOUBLE:  return Matcher::match_rule_supported(Op_CMoveD);
+    case T_LONG:    return Matcher::match_rule_supported(Op_CMoveL);
+    case T_OBJECT:  return Matcher::match_rule_supported(Op_CMoveP);
+    case T_ADDRESS: return Matcher::match_rule_supported(Op_CMoveP);
+    case T_NARROWOOP: return Matcher::match_rule_supported(Op_CMoveN);
+    default:
+      ShouldNotReachHere();
+      return false;
+  }
+}
+
+// Try to identify min/max patterns in CMoves
+Node* CMoveNode::Ideal_minmax(PhaseGVN* phase, CMoveNode* cmove) {
+  // Only create MinL/MaxL if we are allowed to create macro nodes.
+  if (!phase->C->allow_macro_nodes()) {
     return nullptr;
+  }
+
+  // The BoolNode may have been idealized into a constant. If that's the case, then Identity should take care of it instead.
+  BoolNode* bol = cmove->in(CMoveNode::Condition)->isa_Bool();
+  if (bol == nullptr) {
+    return nullptr;
+  }
+
+  Node* cmp = bol->in(1);
+  int cmove_op = cmove->Opcode();
+  int cmp_op = cmp->Opcode();
+
+  // Ensure comparison is an integral type, and that the cmove is of the same type.
+  if (!((cmp_op == Op_CmpI && cmove_op == Op_CMoveI) || (cmp_op == Op_CmpL && cmove_op == Op_CMoveL))) {
+    return nullptr;
+  }
+
+  // Only accept canonicalized le and lt comparisons
+  int test = bol->_test._test;
+  if (test != BoolTest::le && test != BoolTest::lt) {
+    return nullptr;
+  }
+
+  // The values being compared
+  Node* cmp_l = cmp->in(1);
+  Node* cmp_r = cmp->in(2);
+
+  // The values being selected
+  Node* cmove_l = cmove->in(CMoveNode::IfTrue);
+  Node* cmove_r = cmove->in(CMoveNode::IfFalse);
+
+  // For this transformation to be valid, the values being compared must be the same as the values being selected.
+  // We accept two different forms, "a < b ? a : b" and "a < b ? b : a". For the first form, the lhs and rhs of the
+  // comparison and cmove are the same, resulting in a minimum. For the second form, the lhs and rhs of both are flipped,
+  // resulting in a maximum. If neither form is found, bail out.
+
+  bool is_max;
+  if (cmp_l == cmove_l && cmp_r == cmove_r) {
+    is_max = false;
+  } else if (cmp_l == cmove_r && cmp_r == cmove_l) {
+    is_max = true;
+  } else {
+    return nullptr;
+  }
+
+  // Create the Min/Max node based on the type and kind
+  if (cmp_op == Op_CmpL) {
+    return MaxNode::build_min_max_long(phase, cmp_l, cmp_r, is_max);
+  } else {
+    return MaxNode::build_min_max_int(cmp_l, cmp_r, is_max);
   }
 }
 
@@ -204,7 +296,7 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( in(Condition)->is_Bool() ) {
       BoolNode* b  = in(Condition)->as_Bool();
       BoolNode* b2 = b->negate(phase);
-      return make(in(Control), phase->transform(b2), in(IfTrue), in(IfFalse), _type);
+      return make(phase->transform(b2), in(IfTrue), in(IfFalse), _type);
     }
   }
 

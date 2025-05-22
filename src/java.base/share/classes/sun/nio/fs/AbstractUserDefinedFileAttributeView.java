@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package sun.nio.fs;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -38,22 +38,6 @@ abstract class AbstractUserDefinedFileAttributeView
     implements UserDefinedFileAttributeView, DynamicFileAttributeView
 {
     protected AbstractUserDefinedFileAttributeView() { }
-
-    protected void checkAccess(String file,
-                               boolean checkRead,
-                               boolean checkWrite)
-    {
-        assert checkRead || checkWrite;
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            if (checkRead)
-                sm.checkRead(file);
-            if (checkWrite)
-                sm.checkWrite(file);
-            sm.checkPermission(new RuntimePermission("accessUserDefinedAttributes"));
-        }
-    }
 
     @Override
     public final String name() {

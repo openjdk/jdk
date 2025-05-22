@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,15 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This file contains functionality related to compiling a single native source
 # file (C, C++ or Objective-C) into an object file. It also harbours related
 # functionality for generating PCH (precompiled headers) and Windows resource
 # files.
+################################################################################
 
 ################################################################################
 # Creates a recipe that creates a compile_commands.json fragment. Remove any
@@ -41,10 +45,10 @@
 define WriteCompileCommandsFragment
   $(call LogInfo, Creating compile commands fragment for $(notdir $3))
   $(call MakeDir, $(dir $1))
-  $(call WriteFile,{ \
+  $(call WriteFile, { \
       "directory": "$(strip $(call FixPath, $2))"$(COMMA) \
       "file": "$(strip $(call FixPath, $3))"$(COMMA) \
-      "command": "$(strip $(subst $(DQUOTE),\$(DQUOTE),$(subst \,\\,\
+      "command": "$(strip $(subst $(DQUOTE),\$(DQUOTE),$(subst \,\\, \
         $(subst $(FIXPATH),,$(call FixPath, $4)))))" \
     }$(COMMA), \
     $1)
@@ -100,8 +104,8 @@ DEPENDENCY_TARGET_SED_PATTERN := \
 #   FILE - The full path of the source file to compiler
 #   BASE - The name of the rule for the entire binary to build ($1)
 #
-SetupCompileNativeFile = $(NamedParamsMacroTemplate)
-define SetupCompileNativeFileBody
+CreateCompiledNativeFile = $(NamedParamsMacroTemplate)
+define CreateCompiledNativeFileBody
   $1_FILENAME := $$(notdir $$($1_FILE))
 
   # The target file to be generated.
@@ -120,7 +124,7 @@ define SetupCompileNativeFileBody
     # This is the definite source file to use for $1_FILENAME.
     $1_SRC_FILE := $$($1_FILE)
 
-    $$(eval $$(call SetupCompileFileFlags,$1))
+    $$(eval $$(call SetupCompileFileFlags,$1,$$($1_BASE)))
 
     ifneq ($$(filter %.c, $$($1_FILENAME)), )
       # Compile as a C file
@@ -250,14 +254,16 @@ define CreatePrecompiledHeader
         $1_GENERATED_PCH_SRC := $$($1_OBJECT_DIR)/$1_pch.cpp
         $1_GENERATED_PCH_OBJ := $$($1_OBJECT_DIR)/$1_pch$(OBJ_SUFFIX)
 
-        $$(eval $$(call SetupCompileNativeFile, $1_$$(notdir $$($1_GENERATED_PCH_SRC)), \
+        $$(eval $$(call CreateCompiledNativeFile, $1_$$(notdir $$($1_GENERATED_PCH_SRC)), \
             FILE := $$($1_GENERATED_PCH_SRC), \
             BASE := $1, \
-            EXTRA_CXXFLAGS := -Fp$$($1_PCH_FILE) -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
+            EXTRA_CXXFLAGS := -I$$(dir $$($1_PRECOMPILED_HEADER)) -Fp$$($1_PCH_FILE) \
+                -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
         ))
 
         $1_USE_PCH_FLAGS := \
-            -Fp$$($1_PCH_FILE) -Yu$$(notdir $$($1_PRECOMPILED_HEADER))
+            -FI$$(notdir $$($1_PRECOMPILED_HEADER)) -Fp$$($1_PCH_FILE) \
+            -Yu$$(notdir $$($1_PRECOMPILED_HEADER))
 
         $$($1_ALL_OBJS): $$($1_GENERATED_PCH_OBJ)
 
@@ -271,7 +277,8 @@ define CreatePrecompiledHeader
       else ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
         ifeq ($(TOOLCHAIN_TYPE), gcc)
           $1_PCH_FILE := $$($1_OBJECT_DIR)/precompiled/$$(notdir $$($1_PRECOMPILED_HEADER)).gch
-          $1_USE_PCH_FLAGS := -I$$($1_OBJECT_DIR)/precompiled
+          $1_USE_PCH_FLAGS := -I$$($1_OBJECT_DIR)/precompiled \
+              -include $$(notdir $$($1_PRECOMPILED_HEADER))
         else ifeq ($(TOOLCHAIN_TYPE), clang)
           $1_PCH_FILE := $$($1_OBJECT_DIR)/precompiled/$$(notdir $$($1_PRECOMPILED_HEADER)).pch
           $1_USE_PCH_FLAGS := -include-pch $$($1_PCH_FILE)
@@ -344,8 +351,13 @@ define CreateWindowsResourceFile
 		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEPS_FILE) ; \
 		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEPS_FILE)$(OBJ_SUFFIX).log \
 		    >> $$($1_RES_DEPS_FILE) ; \
-		$(ECHO) >> $$($1_RES_DEPS_FILE) ;\
+		$(ECHO) >> $$($1_RES_DEPS_FILE) ; \
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEPS_FILE) \
 		    > $$($1_RES_DEPS_TARGETS_FILE)
   endif
 endef
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

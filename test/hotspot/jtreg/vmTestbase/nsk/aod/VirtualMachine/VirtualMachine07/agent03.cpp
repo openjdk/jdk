@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <jni.h>
-#include <aod.h>
+#include <aod.hpp>
 
 extern "C" {
 

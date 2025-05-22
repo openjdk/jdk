@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4358979
  * @summary Tests StrokeBorder encoding
- * @run main/othervm -Djava.security.manager=allow javax_swing_border_StrokeBorder
+ * @run main/othervm javax_swing_border_StrokeBorder
  * @author Sergey Malenkov
  */
 
@@ -35,7 +35,7 @@ import javax.swing.border.StrokeBorder;
 
 public final class javax_swing_border_StrokeBorder extends AbstractTest<StrokeBorder> {
     public static void main(String[] args) {
-        new javax_swing_border_StrokeBorder().test(true);
+        new javax_swing_border_StrokeBorder().test();
     }
 
     protected StrokeBorder getObject() {

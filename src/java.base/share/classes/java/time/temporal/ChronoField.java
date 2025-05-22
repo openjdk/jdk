@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -586,8 +586,11 @@ public enum ChronoField implements TemporalField {
      * <p>
      * This field is strictly defined to have the same meaning in all calendar systems.
      * This is necessary to ensure interoperation between calendars.
+     * <p>
+     * Range of InstantSeconds is between {@link Instant#MIN} and {@link Instant#MAX}
+     * {@linkplain Instant#getEpochSecond() epoch second}, both inclusive.
      */
-    INSTANT_SECONDS("InstantSeconds", SECONDS, FOREVER, ValueRange.of(Long.MIN_VALUE, Long.MAX_VALUE)),
+    INSTANT_SECONDS("InstantSeconds", SECONDS, FOREVER, ValueRange.of(Instant.MIN.getEpochSecond(), Instant.MAX.getEpochSecond())),
     /**
      * The offset from UTC/Greenwich.
      * <p>

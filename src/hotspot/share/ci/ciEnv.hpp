@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "code/debugInfoRec.hpp"
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
+#include "compiler/cHeapStringHolder.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerThread.hpp"
 #include "oops/methodData.hpp"
@@ -57,7 +58,7 @@ private:
   OopRecorder*     _oop_recorder;
   DebugInformationRecorder* _debug_info;
   Dependencies*    _dependencies;
-  const char*      _failure_reason;
+  CHeapStringHolder _failure_reason;
   bool             _inc_decompile_count_on_failure;
   int              _compilable;
   bool             _break_at_compile;
@@ -92,10 +93,6 @@ private:
   static ciSymbol*        _unloaded_cisymbol;
   static ciInstanceKlass* _unloaded_ciinstance_klass;
   static ciObjArrayKlass* _unloaded_ciobjarrayklass;
-
-  static jobject _ArrayIndexOutOfBoundsException_handle;
-  static jobject _ArrayStoreException_handle;
-  static jobject _ClassCastException_handle;
 
   ciInstance* _NullPointerException_instance;
   ciInstance* _ArithmeticException_instance;
@@ -229,8 +226,6 @@ private:
 
   ciMethod* get_method_from_handle(Method* method);
 
-  ciInstance* get_or_create_exception(jobject& handle, Symbol* name);
-
   // Get a ciMethod representing either an unfound method or
   // a method with an unloaded holder.  Ensures uniqueness of
   // the result.
@@ -319,10 +314,10 @@ public:
 
   // This is true if the compilation is not going to produce code.
   // (It is reasonable to retry failed compilations.)
-  bool failing() const { return _failure_reason != nullptr; }
+  bool failing() const { return _failure_reason.get() != nullptr; }
 
   // Reason this compilation is failing, such as "too many basic blocks".
-  const char* failure_reason() const { return _failure_reason; }
+  const char* failure_reason() const { return _failure_reason.get(); }
 
   // Return state of appropriate compatibility
   int compilable() { return _compilable; }
@@ -382,8 +377,8 @@ public:
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
                        bool                      has_monitors,
-                       int                       immediate_oops_patched,
-                       RTMState                  rtm_state = NoRTM);
+                       bool                      has_scoped_access,
+                       int                       immediate_oops_patched);
 
   // Access to certain well known ciObjects.
 #define VM_CLASS_FUNC(name, ignore_s) \
@@ -401,11 +396,18 @@ public:
     assert(_ArithmeticException_instance != nullptr, "initialization problem");
     return _ArithmeticException_instance;
   }
-
-  // Lazy constructors:
-  ciInstance* ArrayIndexOutOfBoundsException_instance();
-  ciInstance* ArrayStoreException_instance();
-  ciInstance* ClassCastException_instance();
+  ciInstance* ArrayIndexOutOfBoundsException_instance() {
+    assert(_ArrayIndexOutOfBoundsException_instance != nullptr, "initialization problem");
+    return _ArrayIndexOutOfBoundsException_instance;
+  }
+  ciInstance* ArrayStoreException_instance() {
+    assert(_ArrayStoreException_instance != nullptr, "initialization problem");
+    return _ArrayStoreException_instance;
+  }
+  ciInstance* ClassCastException_instance() {
+    assert(_ClassCastException_instance != nullptr, "initialization problem");
+    return _ClassCastException_instance;
+  }
 
   ciInstance* the_null_string();
   ciInstance* the_min_jint_string();

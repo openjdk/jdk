@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,14 +136,6 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
     @Override
     public AlgorithmParameterSpec getParams() {
         return keyParams;
-    }
-
-    // return a string representation of this key for debugging
-    @Override
-    public String toString() {
-        return "Sun " + type.keyAlgo + " private key, " + n.bitLength()
-               + " bits" + "\n  params: " + keyParams + "\n  modulus: " + n
-               + "\n  private exponent: " + d;
     }
 
     /**

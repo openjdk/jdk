@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -51,7 +51,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT_UNALIGNED;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(3)
+@Fork(value = 3, jvmArgs = { "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED" })
 public class BulkOps {
 
     static final Unsafe unsafe = Utils.unsafe;
@@ -69,7 +69,7 @@ public class BulkOps {
 
     final int[] ints = new int[ELEM_SIZE];
     final MemorySegment bytesSegment = MemorySegment.ofArray(ints);
-    final int UNSAFE_INT_OFFSET = unsafe.arrayBaseOffset(int[].class);
+    final long UNSAFE_INT_OFFSET = unsafe.arrayBaseOffset(int[].class);
 
     // large(ish) segments/buffers with same content, 0, for mismatch, non-multiple-of-8 sized
     static final int SIZE_WITH_TAIL = (1024 * 1024) + 7;

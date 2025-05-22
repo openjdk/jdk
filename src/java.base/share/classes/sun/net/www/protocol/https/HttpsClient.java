@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.PrintStream;
 import java.io.BufferedOutputStream;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.URL;
@@ -48,7 +47,6 @@ import javax.net.ssl.*;
 import sun.net.www.http.HttpClient;
 import sun.net.www.protocol.http.AuthCacheImpl;
 import sun.net.www.protocol.http.HttpURLConnection;
-import sun.security.action.*;
 
 import sun.security.util.HostnameChecker;
 import sun.security.ssl.SSLSocketImpl;
@@ -138,10 +136,8 @@ final class HttpsClient extends HttpClient
         //
         // If ciphers are assigned, sort them into an array.
         //
-        String ciphers [];
-        String cipherString =
-                GetPropertyAction.privilegedGetProperty("https.cipherSuites");
-
+        String[] ciphers;
+        String cipherString = System.getProperty("https.cipherSuites");
         if (cipherString == null || cipherString.isEmpty()) {
             ciphers = null;
         } else {
@@ -162,10 +158,8 @@ final class HttpsClient extends HttpClient
         //
         // If protocols are assigned, sort them into an array.
         //
-        String protocols [];
-        String protocolString =
-                GetPropertyAction.privilegedGetProperty("https.protocols");
-
+        String[] protocols;
+        String protocolString = System.getProperty("https.protocols");
         if (protocolString == null || protocolString.isEmpty()) {
             protocols = null;
         } else {
@@ -183,64 +177,11 @@ final class HttpsClient extends HttpClient
         return protocols;
     }
 
-    private String getUserAgent() {
-        String userAgent =
-                GetPropertyAction.privilegedGetProperty("https.agent");
-        if (userAgent == null || userAgent.isEmpty()) {
-            userAgent = "JSSE";
-        }
-        return userAgent;
-    }
-
     // CONSTRUCTOR, FACTORY
 
-
     /**
-     * Create an HTTPS client URL.  Traffic will be tunneled through any
-     * intermediate nodes rather than proxied, so that confidentiality
-     * of data exchanged can be preserved.  However, note that all the
-     * anonymous SSL flavors are subject to "person-in-the-middle"
-     * attacks against confidentiality.  If you enable use of those
-     * flavors, you may be giving up the protection you get through
-     * SSL tunneling.
-     *
-     * Use New to get new HttpsClient. This constructor is meant to be
-     * used only by New method. New properly checks for URL spoofing.
-     *
-     * @param url https URL with which a connection must be established
-     */
-    private HttpsClient(SSLSocketFactory sf, URL url)
-    throws IOException
-    {
-        // HttpClient-level proxying is always disabled,
-        // because we override doConnect to do tunneling instead.
-        this(sf, url, (String)null, -1);
-    }
-
-    /**
-     *  Create an HTTPS client URL.  Traffic will be tunneled through
-     * the specified proxy server.
-     */
-    HttpsClient(SSLSocketFactory sf, URL url, String proxyHost, int proxyPort)
-        throws IOException {
-        this(sf, url, proxyHost, proxyPort, -1);
-    }
-
-    /**
-     *  Create an HTTPS client URL.  Traffic will be tunneled through
+     * Create an HTTPS client URL. Traffic will be tunneled through
      * the specified proxy server, with a connect timeout
-     */
-    HttpsClient(SSLSocketFactory sf, URL url, String proxyHost, int proxyPort,
-                int connectTimeout)
-        throws IOException {
-        this(sf, url,
-             (proxyHost == null? null:
-                HttpClient.newHttpProxy(proxyHost, proxyPort, "https")),
-                connectTimeout);
-    }
-
-    /**
-     *  Same as previous constructor except using a Proxy
      */
     HttpsClient(SSLSocketFactory sf, URL url, Proxy proxy,
                 int connectTimeout)
@@ -267,37 +208,6 @@ final class HttpsClient extends HttpClient
 
     // This code largely ripped off from HttpClient.New, and
     // it uses the same keepalive cache.
-
-    static HttpClient New(SSLSocketFactory sf, URL url, HostnameVerifier hv,
-                          HttpURLConnection httpuc)
-            throws IOException {
-        return HttpsClient.New(sf, url, hv, true, httpuc);
-    }
-
-    /** See HttpClient for the model for this method. */
-    static HttpClient New(SSLSocketFactory sf, URL url,
-            HostnameVerifier hv, boolean useCache,
-            HttpURLConnection httpuc) throws IOException {
-        return HttpsClient.New(sf, url, hv, (String)null, -1, useCache, httpuc);
-    }
-
-    /**
-     * Get a HTTPS client to the URL.  Traffic will be tunneled through
-     * the specified proxy server.
-     */
-    static HttpClient New(SSLSocketFactory sf, URL url, HostnameVerifier hv,
-                           String proxyHost, int proxyPort,
-                           HttpURLConnection httpuc) throws IOException {
-        return HttpsClient.New(sf, url, hv, proxyHost, proxyPort, true, httpuc);
-    }
-
-    static HttpClient New(SSLSocketFactory sf, URL url, HostnameVerifier hv,
-                           String proxyHost, int proxyPort, boolean useCache,
-                           HttpURLConnection httpuc)
-        throws IOException {
-        return HttpsClient.New(sf, url, hv, proxyHost, proxyPort, useCache, -1,
-                               httpuc);
-    }
 
     static HttpClient New(SSLSocketFactory sf, URL url, HostnameVerifier hv,
                           String proxyHost, int proxyPort, boolean useCache,
@@ -379,15 +289,6 @@ final class HttpsClient extends HttpClient
                 ret.authcache = httpuc.getAuthCache();
             }
         } else {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                if (ret.proxy == Proxy.NO_PROXY || ret.proxy == null) {
-                    security.checkConnect(InetAddress.getByName(url.getHost()).getHostAddress(), url.getPort());
-                } else {
-                    security.checkConnect(url.getHost(), url.getPort());
-                }
-            }
             ret.url = url;
         }
         ret.setHostnameVerifier(hv);
@@ -395,22 +296,17 @@ final class HttpsClient extends HttpClient
         return ret;
     }
 
-    // METHODS
-    void setHostnameVerifier(HostnameVerifier hv) {
+    private void setHostnameVerifier(HostnameVerifier hv) {
         this.hv = hv;
     }
 
-    void setSSLSocketFactory(SSLSocketFactory sf) {
+    private void setSSLSocketFactory(SSLSocketFactory sf) {
         sslSocketFactory = sf;
-    }
-
-    SSLSocketFactory getSSLSocketFactory() {
-        return sslSocketFactory;
     }
 
     /**
      * The following method, createSocket, is defined in NetworkClient
-     * and overridden here so that the socket facroty is used to create
+     * and overridden here so that the socket factory is used to create
      * new sockets.
      */
     @Override

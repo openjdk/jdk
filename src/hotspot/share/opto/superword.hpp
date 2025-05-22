@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #define SHARE_OPTO_SUPERWORD_HPP
 
 #include "opto/vectorization.hpp"
+#include "opto/vtransform.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/pair.hpp"
 
 //
 //                  S U P E R W O R D   T R A N S F O R M
@@ -56,175 +56,365 @@
 // first statement is considered the left element, and the
 // second statement is considered the right element.
 
-class VPointer;
+// The PairSet is a set of pairs. These are later combined to packs,
+// and stored in the PackSet.
+class PairSet : public StackObj {
+private:
+  const VLoop& _vloop;
+  const VLoopBody& _body;
 
-// ========================= Dependence Graph =====================
+  // Doubly-linked pairs. If not linked: -1
+  GrowableArray<int> _left_to_right; // bb_idx -> bb_idx
+  GrowableArray<int> _right_to_left; // bb_idx -> bb_idx
+  // Example:
+  //
+  //   Pairs: (n1, n2) and (n2, n3)
+  //   bb_idx(n1) = 1
+  //   bb_idx(n2) = 3
+  //   bb_idx(n3) = 5
+  //
+  //   index / bb_idx:   0   1   2   3   4   5   6
+  //
+  //   left_to_right:  |   | 3 |   | 5 |   |   |   |
+  //                         n1----->
+  //                                 n2----->
+  //
+  //   right_to_left:  |   |   |   | 1 |   | 3 |   |
+  //                          <------n2
+  //                                  <------n3
+  //
+  //   Nodes with bb_idx 0, 2, 4, and 6 are in no pair, they are thus neither left nor right elements,
+  //   and hence have no entries in the mapping.
+  //
+  //   Nodes with bb_idx 1 and 3 (n1 and n2) are both a left element in some pair. Therefore, they both
+  //   have an entry in the left_to_right mapping. This mapping indicates which right element they are
+  //   paired with, namely the nodes with bb_idx 3 and 5 (n2 and n3), respectively.
+  //
+  //   Nodes with bb_idx 3 and 5 (n2 and n4) are both a right element in some pair. Therefore, they both
+  //   have an entry in the right_to_left mapping. This mapping indicates which left element they are
+  //   paired with, namely the nodes with bb_idx 1 and 3 (n1 and n2), respectively.
+  //
+  //   Node n1 with bb_idx 1 is not a right element in any pair, thus its right_to_left is empty.
+  //
+  //   Node n2 with bb_idx 3 is both a left element of pair (n2, n3), and a right element of pair (n1, n2).
+  //   Thus it has entries in both left_to_right (mapping n2->n3) and right_to_left (mapping n2->n1).
+  //
+  //   Node n3 with bb_idx 5 is not a left element in any pair, thus its left_to_right is empty.
 
-class DepMem;
+  // List of all left elements bb_idx, in the order of pair addition.
+  GrowableArray<int> _lefts_in_insertion_order;
 
-//------------------------------DepEdge---------------------------
-// An edge in the dependence graph.  The edges incident to a dependence
-// node are threaded through _next_in for incoming edges and _next_out
-// for outgoing edges.
-class DepEdge : public ArenaObj {
- protected:
-  DepMem* _pred;
-  DepMem* _succ;
-  DepEdge* _next_in;   // list of in edges, null terminated
-  DepEdge* _next_out;  // list of out edges, null terminated
+public:
+  // Initialize empty, i.e. all not linked (-1).
+  PairSet(Arena* arena, const VLoopAnalyzer& vloop_analyzer) :
+    _vloop(vloop_analyzer.vloop()),
+    _body(vloop_analyzer.body()),
+    _left_to_right(arena, _body.body().length(), _body.body().length(), -1),
+    _right_to_left(arena, _body.body().length(), _body.body().length(), -1),
+    _lefts_in_insertion_order(arena, 8, 0, 0) {}
 
- public:
-  DepEdge(DepMem* pred, DepMem* succ, DepEdge* next_in, DepEdge* next_out) :
-    _pred(pred), _succ(succ), _next_in(next_in), _next_out(next_out) {}
+  const VLoopBody& body() const { return _body; }
 
-  DepEdge* next_in()  { return _next_in; }
-  DepEdge* next_out() { return _next_out; }
-  DepMem*  pred()     { return _pred; }
-  DepMem*  succ()     { return _succ; }
+  bool is_empty() const { return _lefts_in_insertion_order.is_empty(); }
 
-  void print();
-};
+  bool is_left(int i)  const { return _left_to_right.at(i) != -1; }
+  bool is_right(int i) const { return _right_to_left.at(i) != -1; }
+  bool is_left(const Node* n)  const { return _vloop.in_bb(n) && is_left( _body.bb_idx(n)); }
+  bool is_right(const Node* n) const { return _vloop.in_bb(n) && is_right(_body.bb_idx(n)); }
 
-//------------------------------DepMem---------------------------
-// A node in the dependence graph.  _in_head starts the threaded list of
-// incoming edges, and _out_head starts the list of outgoing edges.
-class DepMem : public ArenaObj {
- protected:
-  Node*    _node;     // Corresponding ideal node
-  DepEdge* _in_head;  // Head of list of in edges, null terminated
-  DepEdge* _out_head; // Head of list of out edges, null terminated
+  bool is_pair(const Node* n1, const Node* n2) const { return is_left(n1) && get_right_for(n1) == n2; }
 
- public:
-  DepMem(Node* node) : _node(node), _in_head(nullptr), _out_head(nullptr) {}
+  bool is_left_in_a_left_most_pair(int i)   const { return is_left(i) && !is_right(i); }
+  bool is_right_in_a_right_most_pair(int i) const { return !is_left(i) && is_right(i); }
+  bool is_left_in_a_left_most_pair(const Node* n)   const { return is_left_in_a_left_most_pair( _body.bb_idx(n)); }
+  bool is_right_in_a_right_most_pair(const Node* n) const { return is_right_in_a_right_most_pair(_body.bb_idx(n)); }
 
-  Node*    node()                { return _node;     }
-  DepEdge* in_head()             { return _in_head;  }
-  DepEdge* out_head()            { return _out_head; }
-  void set_in_head(DepEdge* hd)  { _in_head = hd;    }
-  void set_out_head(DepEdge* hd) { _out_head = hd;   }
+  int get_right_for(int i) const { return _left_to_right.at(i); }
+  Node* get_right_for(const Node* n) const { return _body.body().at(get_right_for(_body.bb_idx(n))); }
+  Node* get_right_or_null_for(const Node* n) const { return is_left(n) ? get_right_for(n) : nullptr; }
 
-  int in_cnt();  // Incoming edge count
-  int out_cnt(); // Outgoing edge count
+  // To access elements in insertion order:
+  int length() const { return _lefts_in_insertion_order.length(); }
+  Node* left_at_in_insertion_order(int i)  const { return _body.body().at(_lefts_in_insertion_order.at(i)); }
+  Node* right_at_in_insertion_order(int i) const { return _body.body().at(get_right_for(_lefts_in_insertion_order.at(i))); }
 
-  void print();
-};
-
-//------------------------------DepGraph---------------------------
-class DepGraph {
- protected:
-  Arena* _arena;
-  GrowableArray<DepMem*> _map;
-  DepMem* _root;
-  DepMem* _tail;
-
- public:
-  DepGraph(Arena* a) : _arena(a), _map(a, 8,  0, nullptr) {
-    _root = new (_arena) DepMem(nullptr);
-    _tail = new (_arena) DepMem(nullptr);
+  void add_pair(Node* n1, Node* n2) {
+    assert(n1 != nullptr && n2 != nullptr && n1 != n2, "no nullptr, and different nodes");
+    assert(!is_left(n1) && !is_right(n2), "cannot be left twice, or right twice");
+    int bb_idx_1 = _body.bb_idx(n1);
+    int bb_idx_2 = _body.bb_idx(n2);
+    _left_to_right.at_put(bb_idx_1, bb_idx_2);
+    _right_to_left.at_put(bb_idx_2, bb_idx_1);
+    _lefts_in_insertion_order.append(bb_idx_1);
+    assert(is_left(n1) && is_right(n2), "must be set now");
   }
 
-  DepMem* root() { return _root; }
-  DepMem* tail() { return _tail; }
-
-  // Return dependence node corresponding to an ideal node
-  DepMem* dep(Node* node) const { return _map.at(node->_idx); }
-
-  // Make a new dependence graph node for an ideal node.
-  DepMem* make_node(Node* node);
-
-  // Make a new dependence graph edge dprec->dsucc
-  DepEdge* make_edge(DepMem* dpred, DepMem* dsucc);
-
-  DepEdge* make_edge(Node* pred,   Node* succ)   { return make_edge(dep(pred), dep(succ)); }
-  DepEdge* make_edge(DepMem* pred, Node* succ)   { return make_edge(pred,      dep(succ)); }
-  DepEdge* make_edge(Node* pred,   DepMem* succ) { return make_edge(dep(pred), succ);      }
-
-  void print(Node* n)   { dep(n)->print(); }
-  void print(DepMem* d) { d->print(); }
+  NOT_PRODUCT(void print() const;)
 };
 
-//------------------------------DepPreds---------------------------
-// Iterator over predecessors in the dependence graph and
-// non-memory-graph inputs of ideal nodes.
-class DepPreds : public StackObj {
+// Iterate over the PairSet, pair-chain by pair-chain.
+// A pair-chain starts with a "left-most" pair (n1, n2), where n1 is never a right-element
+// in any pair. We walk a chain: (n2, n3), (n3, n4) ... until we hit a "right-most" pair
+// where the right-element is never a left-element of any pair.
+// These pair-chains will later be combined into packs by combine_pairs_to_longer_packs.
+class PairSetIterator : public StackObj {
 private:
-  Node*    _n;
-  int      _next_idx, _end_idx;
-  DepEdge* _dep_next;
-  Node*    _current;
-  bool     _done;
+  const PairSet& _pairset;
+  const VLoopBody& _body;
+
+  int _chain_start_bb_idx; // bb_idx of left-element in the left-most pair.
+  int _current_bb_idx;     // bb_idx of left-element of the current pair.
+  const int _end_bb_idx;
 
 public:
-  DepPreds(Node* n, const DepGraph& dg);
-  Node* current() { return _current; }
-  bool  done()    { return _done; }
-  void  next();
+  PairSetIterator(const PairSet& pairset) :
+    _pairset(pairset),
+    _body(pairset.body()),
+    _chain_start_bb_idx(-1),
+    _current_bb_idx(-1),
+    _end_bb_idx(_body.body().length())
+  {
+    next_chain();
+  }
+
+  bool done() const {
+    return _chain_start_bb_idx >= _end_bb_idx;
+  }
+
+  Node* left() const {
+    return _body.body().at(_current_bb_idx);
+  }
+
+  Node* right() const {
+    int bb_idx_2 = _pairset.get_right_for(_current_bb_idx);
+    return _body.body().at(bb_idx_2);
+  }
+
+  // Try to keep walking on the current pair-chain, else find a new pair-chain.
+  void next() {
+    assert(_pairset.is_left(_current_bb_idx), "current was valid");
+    _current_bb_idx = _pairset.get_right_for(_current_bb_idx);
+    if (!_pairset.is_left(_current_bb_idx)) {
+      next_chain();
+    }
+  }
+
+private:
+  void next_chain() {
+    do {
+      _chain_start_bb_idx++;
+    } while (!done() && !_pairset.is_left_in_a_left_most_pair(_chain_start_bb_idx));
+    _current_bb_idx = _chain_start_bb_idx;
+  }
 };
 
-//------------------------------DepSuccs---------------------------
-// Iterator over successors in the dependence graph and
-// non-memory-graph outputs of ideal nodes.
-class DepSuccs : public StackObj {
+class SplitTask {
 private:
-  Node*    _n;
-  int      _next_idx, _end_idx;
-  DepEdge* _dep_next;
-  Node*    _current;
-  bool     _done;
+  enum Kind {
+    // The lambda method for split_packs can return one of these tasks:
+    Unchanged, // The pack is left in the packset, unchanged.
+    Rejected,  // The pack is removed from the packset.
+    Split,     // Split away split_size nodes from the end of the pack.
+  };
+  const Kind _kind;
+  const uint _split_size;
+  const char* _message;
+
+  SplitTask(const Kind kind, const uint split_size, const char* message) :
+      _kind(kind), _split_size(split_size), _message(message)
+  {
+    assert(message != nullptr, "must have message");
+    assert(_kind != Unchanged || split_size == 0, "unchanged task conditions");
+    assert(_kind != Rejected  || split_size == 0, "reject task conditions");
+    assert(_kind != Split     || split_size != 0, "split task conditions");
+  }
 
 public:
-  DepSuccs(Node* n, DepGraph& dg);
-  Node* current() { return _current; }
-  bool  done()    { return _done; }
-  void  next();
+  static SplitTask make_split(const uint split_size, const char* message) {
+    return SplitTask(Split, split_size, message);
+  }
+
+  static SplitTask make_unchanged() {
+    return SplitTask(Unchanged, 0, "unchanged");
+  }
+
+  static SplitTask make_rejected(const char* message) {
+    return SplitTask(Rejected, 0, message);
+  }
+
+  bool is_unchanged() const { return _kind == Unchanged; }
+  bool is_rejected() const { return _kind == Rejected; }
+  bool is_split() const { return _kind == Split; }
+  const char* message() const { return _message; }
+
+  uint split_size() const {
+    assert(is_split(), "only split tasks have split_size");
+    return _split_size;
+  }
 };
 
+class SplitStatus {
+private:
+  enum Kind {
+    // After split_pack, we have:                              first_pack   second_pack
+    Unchanged, // The pack is left in the pack, unchanged.     old_pack     nullptr
+    Rejected,  // The pack is removed from the packset.        nullptr      nullptr
+    Modified,  // The pack had some nodes removed.             old_pack     nullptr
+    Split,     // The pack was split into two packs.           pack1        pack2
+  };
+  Kind _kind;
+  Node_List* _first_pack;
+  Node_List* _second_pack;
 
-// ========================= SuperWord =====================
+  SplitStatus(Kind kind, Node_List* first_pack, Node_List* second_pack) :
+    _kind(kind), _first_pack(first_pack), _second_pack(second_pack)
+  {
+    assert(_kind != Unchanged || (first_pack != nullptr && second_pack == nullptr), "unchanged status conditions");
+    assert(_kind != Rejected  || (first_pack == nullptr && second_pack == nullptr), "rejected status conditions");
+    assert(_kind != Modified  || (first_pack != nullptr && second_pack == nullptr), "modified status conditions");
+    assert(_kind != Split     || (first_pack != nullptr && second_pack != nullptr), "split status conditions");
+  }
 
-// -----------------------------SWNodeInfo---------------------------------
-// Per node info needed by SuperWord
-class SWNodeInfo {
- public:
-  int         _alignment; // memory alignment for a node
-  int         _depth;     // Max expression (DAG) depth from block start
-  const Type* _velt_type; // vector element type
-  Node_List*  _my_pack;   // pack containing this node
+public:
+  static SplitStatus make_unchanged(Node_List* old_pack) {
+    return SplitStatus(Unchanged, old_pack, nullptr);
+  }
 
-  SWNodeInfo() : _alignment(-1), _depth(0), _velt_type(nullptr), _my_pack(nullptr) {}
-  static const SWNodeInfo initial;
+  static SplitStatus make_rejected() {
+    return SplitStatus(Rejected, nullptr, nullptr);
+  }
+
+  static SplitStatus make_modified(Node_List* first_pack) {
+    return SplitStatus(Modified, first_pack, nullptr);
+  }
+
+  static SplitStatus make_split(Node_List* first_pack, Node_List* second_pack) {
+    return SplitStatus(Split, first_pack, second_pack);
+  }
+
+  bool is_unchanged() const { return _kind == Unchanged; }
+  Node_List* first_pack() const { return _first_pack; }
+  Node_List* second_pack() const { return _second_pack; }
+};
+
+class PackSet : public StackObj {
+private:
+  const VLoop& _vloop;
+  const VLoopBody& _body;
+
+  // Set of all packs:
+  GrowableArray<Node_List*> _packs;
+
+  // Mapping from nodes to their pack: bb_idx -> pack
+  GrowableArray<Node_List*> _node_to_pack;
+
+  NOT_PRODUCT(const bool _trace_packset;)
+  NOT_PRODUCT(const bool _trace_rejections;)
+
+public:
+  // Initialize empty, i.e. no packs, and unmapped (nullptr).
+  PackSet(Arena* arena, const VLoopAnalyzer& vloop_analyzer
+          NOT_PRODUCT(COMMA bool trace_packset COMMA bool trace_rejections)
+          ) :
+    _vloop(vloop_analyzer.vloop()),
+    _body(vloop_analyzer.body()),
+    _packs(arena, 8, 0, nullptr),
+    _node_to_pack(arena, _body.body().length(), _body.body().length(), nullptr)
+    NOT_PRODUCT(COMMA _trace_packset(trace_packset))
+    NOT_PRODUCT(COMMA _trace_rejections(trace_rejections))
+    {}
+
+  // Accessors to iterate over packs.
+  int length() const { return _packs.length(); }
+  bool is_empty() const { return _packs.is_empty(); }
+  Node_List* at(int i) const { return _packs.at(i); }
+
+private:
+  void map_node_in_pack(const Node* n, Node_List* new_pack) {
+    assert(get_pack(n) == nullptr, "was previously unmapped");
+    _node_to_pack.at_put(_body.bb_idx(n), new_pack);
+  }
+
+  void remap_node_in_pack(const Node* n, Node_List* new_pack) {
+    assert(get_pack(n) != nullptr && new_pack != nullptr && get_pack(n) != new_pack, "was previously mapped");
+    _node_to_pack.at_put(_body.bb_idx(n), new_pack);
+  }
+
+  void unmap_node_in_pack(const Node* n) {
+    assert(get_pack(n) != nullptr, "was previously mapped");
+    _node_to_pack.at_put(_body.bb_idx(n), nullptr);
+  }
+
+  void unmap_all_nodes_in_pack(Node_List* old_pack) {
+    for (uint i = 0; i < old_pack->size(); i++) {
+      unmap_node_in_pack(old_pack->at(i));
+    }
+  }
+public:
+  Node_List* get_pack(const Node* n) const { return !_vloop.in_bb(n) ? nullptr : _node_to_pack.at(_body.bb_idx(n)); }
+
+  void add_pack(Node_List* pack) {
+    _packs.append(pack);
+    for (uint i = 0; i < pack->size(); i++) {
+      Node* n = pack->at(i);
+      map_node_in_pack(n, pack);
+    }
+  }
+
+  Node_List* strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const;
+  bool is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const;
+  Node* same_inputs_at_index_or_null(const Node_List* pack, const int index) const;
+  VTransformBoolTest get_bool_test(const Node_List* bool_pack) const;
+
+  Node_List* pack_input_at_index_or_null(const Node_List* pack, const int index) const {
+    return strided_pack_input_at_index_or_null(pack, index, 1, 0);
+  }
+
+private:
+  SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
+public:
+  template <typename SplitStrategy>
+  void split_packs(const char* split_name, SplitStrategy strategy);
+
+  template <typename FilterPredicate>
+  void filter_packs(const char* filter_name,
+                    const char* rejection_message,
+                    FilterPredicate filter);
+
+  void clear() { _packs.clear(); }
+
+private:
+  NOT_PRODUCT(bool is_trace_superword_packset() const { return _trace_packset; })
+  NOT_PRODUCT(bool is_trace_superword_rejections() const { return _trace_rejections; })
+public:
+  DEBUG_ONLY(void verify() const;)
+  NOT_PRODUCT(void print() const;)
+  NOT_PRODUCT(static void print_pack(Node_List* pack);)
 };
 
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
  private:
-  const VLoop& _vloop;
+  const VLoopAnalyzer& _vloop_analyzer;
+  const VLoop&         _vloop;
 
   // Arena for small data structures. Large data structures are allocated in
   // VSharedData, and reused over many AutoVectorizations.
   Arena _arena;
 
-  enum consts { top_align = -1, bottom_align = -666 };
-
-  GrowableArray<Node_List*> _packset;    // Packs for the current block
-
-  GrowableArray<int> &_bb_idx;           // Map from Node _idx to index within block
-
-  GrowableArray<Node*> _block;           // Nodes in current block
-  GrowableArray<PhiNode*> _mem_slice_head; // Memory slice head nodes
-  GrowableArray<MemNode*> _mem_slice_tail; // Memory slice tail nodes
-  GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
-  MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
 
-  DepGraph _dg; // Dependence graph
+  PairSet _pairset;
+  PackSet _packset;
 
-  // Scratch pads
-  GrowableArray<Node*> _nlist; // List of nodes
+  // Memory reference, and the alignment width (aw) for which we align the main-loop,
+  // by adjusting the pre-loop limit.
+  MemNode const* _mem_ref_for_main_loop_alignment;
+  int _aw_for_main_loop_alignment;
 
  public:
-  SuperWord(const VLoop &vloop, VSharedData &vshared);
+  SuperWord(const VLoopAnalyzer &vloop_analyzer);
 
   // Attempt to run the SuperWord algorithm on the loop. Return true if we succeed.
   bool transform_loop();
@@ -232,91 +422,130 @@ class SuperWord : public ResourceObj {
   // Decide if loop can eventually be vectorized, and what unrolling factor is required.
   static void unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor);
 
-  // VLoop Accessors
-  const VLoop& vloop()        const { return _vloop; }
-  PhaseIdealLoop* phase()     const { return vloop().phase(); }
-  PhaseIterGVN& igvn()        const { return vloop().phase()->igvn(); }
-  IdealLoopTree* lpt()        const { return vloop().lpt(); }
-  CountedLoopNode* cl()       const { return vloop().cl(); }
-  PhiNode* iv()               const { return vloop().iv(); }
+  // VLoop accessors
+  PhaseIdealLoop* phase()     const { return _vloop.phase(); }
+  PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
+  IdealLoopTree* lpt()        const { return _vloop.lpt(); }
+  CountedLoopNode* cl()       const { return _vloop.cl(); }
+  PhiNode* iv()               const { return _vloop.iv(); }
   int iv_stride()             const { return cl()->stride_con(); }
-  bool in_bb(const Node* n)   const { return vloop().in_bb(n); }
+  bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
+
+  // VLoopReductions accessors
+  bool is_marked_reduction(const Node* n) const {
+    return _vloop_analyzer.reductions().is_marked_reduction(n);
+  }
+
+  bool reduction(const Node* n1, const Node* n2) const {
+    return _vloop_analyzer.reductions().is_marked_reduction_pair(n1, n2);
+  }
+
+  // VLoopMemorySlices accessors
+  bool same_memory_slice(MemNode* n1, MemNode* n2) const {
+    return _vloop_analyzer.memory_slices().same_memory_slice(n1, n2);
+  }
+
+  // VLoopBody accessors
+  const GrowableArray<Node*>& body() const {
+    return _vloop_analyzer.body().body();
+  }
+
+  int bb_idx(const Node* n) const     {
+    return _vloop_analyzer.body().bb_idx(n);
+  }
+
+  template<typename Callback>
+  void for_each_mem(Callback callback) const {
+    return _vloop_analyzer.body().for_each_mem(callback);
+  }
+
+  // VLoopTypes accessors
+  const Type* velt_type(Node* n) const {
+    return _vloop_analyzer.types().velt_type(n);
+  }
+
+  BasicType velt_basic_type(Node* n) const {
+    return _vloop_analyzer.types().velt_basic_type(n);
+  }
+
+  bool same_velt_type(Node* n1, Node* n2) const {
+    return _vloop_analyzer.types().same_velt_type(n1, n2);
+  }
+
+  int data_size(const Node* n) const {
+    return _vloop_analyzer.types().data_size(n);
+  }
+
+  int vector_width(Node* n) const {
+    return _vloop_analyzer.types().vector_width(n);
+  }
+
+  int vector_width_in_bytes(const Node* n) const {
+    return _vloop_analyzer.types().vector_width_in_bytes(n);
+  }
+
+  // VLoopDependencyGraph accessors
+  const VLoopDependencyGraph& dependency_graph() const {
+    return _vloop_analyzer.dependency_graph();
+  }
+
+  bool independent(Node* n1, Node* n2) const {
+    return _vloop_analyzer.dependency_graph().independent(n1, n2);
+  }
+
+  bool mutually_independent(const Node_List* nodes) const {
+    return _vloop_analyzer.dependency_graph().mutually_independent(nodes);
+  }
+
+  // VLoopVPointer accessors
+  const VPointer& vpointer(const MemNode* mem) const {
+    return _vloop_analyzer.vpointers().vpointer(mem);
+  }
 
 #ifndef PRODUCT
   // TraceAutoVectorization and TraceSuperWord
-  bool is_trace_superword_vector_element_type() const {
-    // Too verbose for TraceSuperWord
-    return vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_TYPES);
-  }
-
-  bool is_trace_superword_alignment() const {
-    // Too verbose for TraceSuperWord
-    return vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
-  }
-
-  bool is_trace_superword_memory_slices() const {
-    return TraceSuperWord ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES);
-  }
-
-  bool is_trace_superword_dependence_graph() const {
-    return TraceSuperWord ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH);
-  }
-
   bool is_trace_superword_adjacent_memops() const {
     return TraceSuperWord ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
   }
 
   bool is_trace_superword_rejections() const {
     return TraceSuperWord ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
   }
 
   bool is_trace_superword_packset() const {
     return TraceSuperWord ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET);
   }
 
   bool is_trace_superword_info() const {
     return TraceSuperWord ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO);
-  }
-
-  bool is_trace_superword_verbose() const {
-    // Too verbose for TraceSuperWord
-    return vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO);
   }
 
   bool is_trace_superword_any() const {
     return TraceSuperWord ||
            is_trace_align_vector() ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_TYPES) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO) ||
-           vloop().vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
 
   bool is_trace_align_vector() const {
-    return vloop().vtrace().is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
-           is_trace_superword_verbose();
+    return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
 #endif
 
   bool     do_vector_loop()        { return _do_vector_loop; }
 
-  const GrowableArray<Node_List*>& packset() const { return _packset; }
-  const GrowableArray<Node*>&      block()   const { return _block; }
-  const DepGraph&                  dg()      const { return _dg; }
+  const PackSet& packset() const { return _packset; }
+  Node_List* get_pack(const Node* n) const { return _packset.get_pack(n); }
+
  private:
-  VectorSet      _loop_reductions; // Reduction nodes in the current loop
-  bool           _race_possible;   // In cases where SDMU is true
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
@@ -324,244 +553,109 @@ class SuperWord : public ResourceObj {
   // Accessors
   Arena* arena()                   { return &_arena; }
 
-  int vector_width(const Node* n) const {
-    BasicType bt = velt_basic_type(n);
-    return MIN2(ABS(iv_stride()), Matcher::max_vector_size(bt));
-  }
-  int vector_width_in_bytes(const Node* n) const {
-    BasicType bt = velt_basic_type(n);
-    return vector_width(n)*type2aelembytes(bt);
-  }
-  int get_vw_bytes_special(MemNode* s);
-  const MemNode* align_to_ref() const { return _align_to_ref; }
-  void set_align_to_ref(const MemNode* m) { _align_to_ref = m; }
-
-  // block accessors
- public:
-  int  bb_idx(const Node* n) const { assert(in_bb(n), "must be"); return _bb_idx.at(n->_idx); }
- private:
-  void set_bb_idx(Node* n, int i)  { _bb_idx.at_put_grow(n->_idx, i); }
-
-  // Ensure node_info contains element "i"
-  void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
-
-  // should we align vector memory references on this platform?
-  bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
-
-  // memory alignment for a node
-  int alignment(Node* n)                     { return _node_info.adr_at(bb_idx(n))->_alignment; }
-  void set_alignment(Node* n, int a)         { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
-
-  // Max expression (DAG) depth from beginning of the block for each node
-  int depth(Node* n) const                   { return _node_info.adr_at(bb_idx(n))->_depth; }
-  void set_depth(Node* n, int d)             { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_depth = d; }
-
-  // vector element type
-  const Type* velt_type(const Node* n) const { return _node_info.adr_at(bb_idx(n))->_velt_type; }
-  BasicType velt_basic_type(const Node* n) const { return velt_type(n)->array_element_basic_type(); }
-  void set_velt_type(Node* n, const Type* t) { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_velt_type = t; }
-  bool same_velt_type(Node* n1, Node* n2);
-  bool same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const;
-
-  // my_pack
- public:
-  Node_List* my_pack(Node* n)                 { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
- private:
-  void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
-  // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
-  static bool requires_long_to_int_conversion(int opc);
-  // For pack p, are all idx operands the same?
-  bool same_inputs(const Node_List* p, int idx);
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
 
-  // methods
-
-  typedef const Pair<const Node*, int> PathEnd;
-
-  // Search for a path P = (n_1, n_2, ..., n_k) such that:
-  // - original_input(n_i, input) = n_i+1 for all 1 <= i < k,
-  // - path(n) for all n in P,
-  // - k <= max, and
-  // - there exists a node e such that original_input(n_k, input) = e and end(e).
-  // Return <e, k>, if P is found, or <nullptr, -1> otherwise.
-  // Note that original_input(n, i) has the same behavior as n->in(i) except
-  // that it commutes the inputs of binary nodes whose edges have been swapped.
-  template <typename NodePredicate1, typename NodePredicate2>
-  static PathEnd find_in_path(const Node *n1, uint input, int max,
-                              NodePredicate1 path, NodePredicate2 end) {
-    const PathEnd no_path(nullptr, -1);
-    const Node* current = n1;
-    int k = 0;
-    for (int i = 0; i <= max; i++) {
-      if (current == nullptr) {
-        return no_path;
-      }
-      if (end(current)) {
-        return PathEnd(current, k);
-      }
-      if (!path(current)) {
-        return no_path;
-      }
-      current = original_input(current, input);
-      k++;
-    }
-    return no_path;
-  }
-
-public:
-  // Whether n is a reduction operator and part of a reduction cycle.
-  // This function can be used for individual queries outside the SLP analysis,
-  // e.g. to inform matching in target-specific code. Otherwise, the
-  // almost-equivalent but faster SuperWord::mark_reductions() is preferable.
-  static bool is_reduction(const Node* n);
-  // Whether n is marked as a reduction node.
-  bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
-  // Whether the current loop has any reduction node.
-  bool is_marked_reduction_loop() { return !_loop_reductions.is_empty(); }
 private:
-  // Whether n is a standard reduction operator.
-  static bool is_reduction_operator(const Node* n);
-  // Whether n is part of a reduction cycle via the 'input' edge index. To bound
-  // the search, constrain the size of reduction cycles to LoopMaxUnroll.
-  static bool in_reduction_cycle(const Node* n, uint input);
-  // Reference to the i'th input node of n, commuting the inputs of binary nodes
-  // whose edges have been swapped. Assumes n is a commutative operation.
-  static Node* original_input(const Node* n, uint i);
-  // Find and mark reductions in a loop. Running mark_reductions() is similar to
-  // querying is_reduction(n) for every n in the SuperWord loop, but stricter in
-  // that it assumes counted loops and requires that reduction nodes are not
-  // used within the loop except by their reduction cycle predecessors.
-  void mark_reductions();
-  // Extract the superword level parallelism
   bool SLP_extract();
-  // Find the adjacent memory references and create pack pairs for them.
-  void find_adjacent_refs();
-  // Find a memory reference to align the loop induction variable to.
-  MemNode* find_align_to_ref(Node_List &memops, int &idx);
-  // Calculate loop's iv adjustment for this memory ops.
-  int get_iv_adjustment(MemNode* mem);
-  // Construct dependency graph.
-  void dependence_graph();
 
-  // Analyze the memory slices
-  void find_memory_slices();
-  NOT_PRODUCT( void print_memory_slices(); )
-  // Return a memory slice (node list) in predecessor order starting at "start"
-  void mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &preds);
+  // Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
+  class MemOp : public StackObj {
+  private:
+    MemNode* _mem;
+    const VPointer* _vpointer;
+    int _original_index;
 
-  // Can s1 and s2 be in a pack with s1 immediately preceding s2 and  s1 aligned at "align"
-  bool stmts_can_pack(Node* s1, Node* s2, int align);
-  // Does s exist in a pack at position pos?
-  bool exists_at(Node* s, uint pos);
+  public:
+    // Empty, for GrowableArray
+    MemOp() :
+      _mem(nullptr),
+      _vpointer(nullptr),
+      _original_index(-1) {}
+    MemOp(MemNode* mem, const VPointer* vpointer, int original_index) :
+      _mem(mem),
+      _vpointer(vpointer),
+      _original_index(original_index) {}
+
+    MemNode* mem() const { return _mem; }
+    const VPointer& vpointer() const { return *_vpointer; }
+    int original_index() const { return _original_index; }
+
+    static int cmp_by_group(MemOp* a, MemOp* b);
+    static int cmp_by_group_and_con_and_original_index(MemOp* a, MemOp* b);
+
+    // We use two comparisons, because a subtraction could underflow.
+    template <typename T>
+    static int cmp_code(T a, T b) {
+      if (a < b) { return -1; }
+      if (a > b) { return  1; }
+      return 0;
+    }
+  };
+  void create_adjacent_memop_pairs();
+  void collect_valid_memops(GrowableArray<MemOp>& memops) const;
+  void create_adjacent_memop_pairs_in_all_groups(const GrowableArray<MemOp>& memops);
+  static int find_group_end(const GrowableArray<MemOp>& memops, int group_start);
+  void create_adjacent_memop_pairs_in_one_group(const GrowableArray<MemOp>& memops, const int group_start, int group_end);
+
+  // Various methods to check if we can pack two nodes.
+  bool can_pack_into_pair(Node* s1, Node* s2);
   // Is s1 immediately before s2 in memory?
-  bool are_adjacent_refs(Node* s1, Node* s2);
+  bool are_adjacent_refs(Node* s1, Node* s2) const;
   // Are s1 and s2 similar?
   bool isomorphic(Node* s1, Node* s2);
-  // Is there no data path from s1 to s2 or s2 to s1?
-  bool independent(Node* s1, Node* s2);
-  // Are all nodes in nodes list mutually independent?
-  bool mutually_independent(const Node_List* nodes) const;
+  // Do we have pattern n1 = (iv + c) and n2 = (iv + c + 1)?
+  bool is_populate_index(const Node* n1, const Node* n2) const;
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
-  // Is there a data path between s1 and s2 and both are reductions?
-  bool reduction(Node* s1, Node* s2);
-  void set_alignment(Node* s1, Node* s2, int align);
-  int data_size(Node* s);
-  // Extend packset by following use->def and def->use links from pack members.
-  void extend_packset_with_more_pairs_by_following_use_and_def();
-  int adjust_alignment_for_type_conversion(Node* s, Node* t, int align);
-  // Extend the packset by visiting operand definitions of nodes in pack p
-  bool follow_use_defs(Node_List* p);
-  // Extend the packset by visiting uses of nodes in pack p
-  bool follow_def_uses(Node_List* p);
-  // For extended packsets, ordinally arrange uses packset by major component
-  void order_def_uses(Node_List* p);
-  // Estimate the savings from executing s1 and s2 as a pack
-  int est_savings(Node* s1, Node* s2);
-  int adjacent_profit(Node* s1, Node* s2);
-  int pack_cost(int ct);
-  int unpack_cost(int ct);
 
-  // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
+  void extend_pairset_with_more_pairs_by_following_use_and_def();
+  bool extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2);
+  bool extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2);
+  void order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node* def2);
+  enum PairOrderStatus { Ordered, Unordered, Unknown };
+  PairOrderStatus order_inputs_of_uses_to_match_def_pair(Node* def1, Node* def2, Node* use1, Node* use2);
+  int estimate_cost_savings_when_packing_as_pair(const Node* s1, const Node* s2) const;
+
   void combine_pairs_to_longer_packs();
 
-  void split_packs_longer_than_max_vector_size();
+  void split_packs_at_use_def_boundaries();
+  void split_packs_only_implemented_with_smaller_size();
+  void split_packs_to_break_mutual_dependence();
 
-  // Filter out packs with various filter predicates
-  template <typename FilterPredicate>
-  void filter_packs(const char* filter_name,
-                    const char* error_message,
-                    FilterPredicate filter);
   void filter_packs_for_power_of_2_size();
   void filter_packs_for_mutual_independence();
-  // Ensure all packs are aligned, if AlignVector is on.
   void filter_packs_for_alignment();
-  // Find the set of alignment solutions for load/store pack.
   const AlignmentSolution* pack_alignment_solution(const Node_List* pack);
-  // Compress packset, such that it has no nullptr entries.
-  void compress_packset();
-  // Construct the map from nodes to packs.
-  void construct_my_pack_map();
-  // Remove packs that are not implemented.
   void filter_packs_for_implemented();
-  // Remove packs that are not profitable.
   void filter_packs_for_profitable();
-  // Verify that for every pack, all nodes are mutually independent.
-  // Also verify that packset and my_pack are consistent.
-  DEBUG_ONLY(void verify_packs();)
-  // Adjust the memory graph for the packed operations
-  void schedule();
-  // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
-  void schedule_reorder_memops(Node_List &memops_schedule);
 
-  // Convert packs into vector node operations
-  bool output();
-  // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
-  Node* vector_opd(Node_List* p, int opd_idx);
-  // Can code be generated for pack p?
-  bool implemented(const Node_List* p);
+  DEBUG_ONLY(void verify_packs() const;)
+
+  // Can code be generated for the pack, restricted to size nodes?
+  bool implemented(const Node_List* pack, const uint size) const;
+  // Find the maximal implemented size smaller or equal to the packs size
+  uint max_implemented_size(const Node_List* pack);
+
   // For pack p, are all operands and all uses (with in the block) vector?
-  bool profitable(const Node_List* p);
+  bool profitable(const Node_List* p) const;
+
   // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
   DEBUG_ONLY(void verify_no_extract();)
+
+  // Check if n_super's pack uses are a superset of n_sub's pack uses.
+  bool has_use_pack_superset(const Node* n1, const Node* n2) const;
+  // Find a boundary in the pack, where left and right have different pack uses and defs.
+  uint find_use_def_boundary(const Node_List* pack) const;
+
   // Is use->in(u_idx) a vector use?
-  bool is_vector_use(Node* use, int u_idx);
-  // Construct reverse postorder list of block members
-  bool construct_bb();
-  // Initialize per node info
-  void initialize_node_info();
-  // Compute max depth for expressions from beginning of block
-  void compute_max_depth();
-  // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
-  BasicType longer_type_for_conversion(Node* n);
-  // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
-  int max_vector_size_in_def_use_chain(Node* n);
-  // Compute necessary vector element type for expressions
-  void compute_vector_element_type();
-  // Are s1 and s2 in a pack pair and ordered as s1,s2?
-  bool in_packset(Node* s1, Node* s2);
-  // Remove the pack at position pos in the packset
-  void remove_pack_at(int pos);
-  static LoadNode::ControlDependency control_dependency(Node_List* p);
-  // Alignment within a vector memory reference
-  int memory_alignment(MemNode* s, int iv_adjust);
-  // Smallest type containing range of values
-  const Type* container_type(Node* n);
-  // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
-  void adjust_pre_loop_limit_to_align_main_loop_vectors();
-  // Is the use of d1 in u1 at the same operand position as d2 in u2?
-  bool opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2);
+  bool is_vector_use(Node* use, int u_idx) const;
 
-  // print methods
-  void print_packset();
-  void print_pack(Node_List* p);
-  void print_bb();
-  void print_stmt(Node* s);
+  bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
 
-  void packset_sort(int n);
+  bool schedule_and_apply() const;
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP

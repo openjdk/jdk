@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,9 +312,6 @@ public class GenerateCurrencyData {
             checkCurrencyCode(newCurrency);
             String timeString = currencyInfo.substring(4, length - 4);
             long time = format.parse(timeString).getTime();
-            if (Math.abs(time - System.currentTimeMillis()) > ((long) 10) * 365 * 24 * 60 * 60 * 1000) {
-                throw new RuntimeException("time is more than 10 years from present: " + time);
-            }
             specialCaseCutOverTimes[specialCaseCount] = time;
             specialCaseOldCurrencies[specialCaseCount] = oldCurrency;
             specialCaseOldCurrenciesDefaultFractionDigits[specialCaseCount] = getDefaultFractionDigits(oldCurrency);

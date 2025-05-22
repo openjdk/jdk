@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "utilities/debug.hpp"
@@ -128,7 +127,7 @@ void InUseChunkStats::print_on(outputStream* st, size_t scale) const {
 void InUseChunkStats::verify() const {
   assert(_word_size >= _committed_words &&
       _committed_words == _used_words + _free_words + _waste_words,
-         "Sanity: cap " SIZE_FORMAT ", committed " SIZE_FORMAT ", used " SIZE_FORMAT ", free " SIZE_FORMAT ", waste " SIZE_FORMAT ".",
+         "Sanity: cap %zu, committed %zu, used %zu, free %zu, waste %zu.",
          _word_size, _committed_words, _used_words, _free_words, _waste_words);
 }
 #endif
@@ -151,14 +150,14 @@ InUseChunkStats ArenaStats::totals() const {
 }
 
 void ArenaStats::print_on(outputStream* st, size_t scale,  bool detailed) const {
-  streamIndentor sti(st);
   if (detailed) {
-    st->cr_indent();
+    StreamIndentor si(st, 2);
+    st->cr();
     st->print("Usage by chunk level:");
     {
-      streamIndentor sti2(st);
+      StreamIndentor si2(st, 2);
       for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
-        st->cr_indent();
+        st->cr();
         chunklevel::print_chunk_size(st, l);
         st->print(" chunks: ");
         if (_stats[l]._num == 0) {
@@ -168,34 +167,30 @@ void ArenaStats::print_on(outputStream* st, size_t scale,  bool detailed) const 
         }
       }
 
-      st->cr_indent();
+      st->cr();
       st->print("%15s: ", "-total-");
       totals().print_on(st, scale);
     }
     if (_free_blocks_num > 0) {
-      st->cr_indent();
-      st->print("deallocated: " UINTX_FORMAT " blocks with ", _free_blocks_num);
+      st->cr();
+      st->print("deallocated: %zu blocks with ", _free_blocks_num);
       print_scaled_words(st, _free_blocks_word_size, scale);
     }
   } else {
     totals().print_on(st, scale);
     st->print(", ");
-    st->print("deallocated: " UINTX_FORMAT " blocks with ", _free_blocks_num);
+    st->print("deallocated: %zu blocks with ", _free_blocks_num);
     print_scaled_words(st, _free_blocks_word_size, scale);
   }
 }
 
 #ifdef ASSERT
-
 void ArenaStats::verify() const {
   size_t total_used = 0;
   for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
     _stats[l].verify();
     total_used += _stats[l]._used_words;
   }
-  // Deallocated allocations still count as used
-  assert(total_used >= _free_blocks_word_size,
-         "Sanity");
 }
 #endif
 
@@ -208,8 +203,8 @@ ArenaStats ClmsStats::totals() const {
 }
 
 void ClmsStats::print_on(outputStream* st, size_t scale, bool detailed) const {
-  streamIndentor sti(st);
-  st->cr_indent();
+  StreamIndentor si(st, 2);
+  st->cr();
   if (Metaspace::using_class_space()) {
     st->print("Non-Class: ");
   }
@@ -218,13 +213,13 @@ void ClmsStats::print_on(outputStream* st, size_t scale, bool detailed) const {
     st->cr();
   }
   if (Metaspace::using_class_space()) {
-    st->cr_indent();
+    st->cr();
     st->print("    Class: ");
     _arena_stats_class.print_on(st, scale, detailed);
     if (detailed) {
       st->cr();
     }
-    st->cr_indent();
+    st->cr();
     st->print("     Both: ");
     totals().print_on(st, scale, detailed);
     if (detailed) {

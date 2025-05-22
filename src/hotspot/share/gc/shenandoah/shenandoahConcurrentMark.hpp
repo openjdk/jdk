@@ -25,25 +25,30 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_HPP
 
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMark.hpp"
 
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahConcurrentMarkingTask;
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahFinalMarkingTask;
+class ShenandoahGeneration;
 
 class ShenandoahConcurrentMark: public ShenandoahMark {
-  friend class ShenandoahConcurrentMarkingTask;
-  friend class ShenandoahFinalMarkingTask;
+  template <ShenandoahGenerationType GENERATION> friend class ShenandoahConcurrentMarkingTask;
+  template <ShenandoahGenerationType GENERATION> friend class ShenandoahFinalMarkingTask;
 
 public:
-  ShenandoahConcurrentMark();
+  ShenandoahConcurrentMark(ShenandoahGeneration* generation);
+
   // Concurrent mark roots
   void mark_concurrent_roots();
+
   // Concurrent mark
   void concurrent_mark();
+
   // Finish mark at a safepoint
   void finish_mark();
-
-  static void cancel();
 
 private:
   void finish_mark_work();

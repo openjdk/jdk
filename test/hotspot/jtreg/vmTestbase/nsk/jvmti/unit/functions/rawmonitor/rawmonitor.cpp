@@ -1,5 +1,4 @@
 /*
-s
  * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,7 +46,7 @@ s
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
+#include "agent_common.hpp"
 
 extern "C" {
 

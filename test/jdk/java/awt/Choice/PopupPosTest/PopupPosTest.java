@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,18 @@
   @run main PopupPosTest
 */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Choice;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
 
 public class PopupPosTest {
 
@@ -66,6 +76,7 @@ class TestFrame extends Frame implements ItemListener {
             robot = new Robot();
             robot.setAutoDelay(50);
             robot.waitForIdle();
+            robot.delay(500);
             // fix for 6175418. When we take "choice.getHeight()/2"
             // divider 2 is not sufficiently big to hit into the
             // small box Choice. We should use bigger divider to get
@@ -108,9 +119,9 @@ class TestFrame extends Frame implements ItemListener {
     public void mouseMoveAndPressOnChoice(int x, int y){
         openChoice();
         robot.mouseMove(x, y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(30);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
         //should close choice after each test stage
         closeChoice();
@@ -121,9 +132,9 @@ class TestFrame extends Frame implements ItemListener {
         Point pt = choice.getLocationOnScreen();
         robot.mouseMove(pt.x + choice.getWidth() - choice.getHeight()/4,
                         pt.y + choice.getHeight()/2);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(30);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
     }
     public void closeChoice(){

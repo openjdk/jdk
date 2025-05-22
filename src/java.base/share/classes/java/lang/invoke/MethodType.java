@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,15 @@ package java.lang.invoke;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
 import java.lang.constant.MethodTypeDesc;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Supplier;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Stream;
 
 import jdk.internal.util.ReferencedKeySet;
 import jdk.internal.util.ReferenceKey;
@@ -50,7 +44,6 @@ import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
-import sun.security.util.SecurityConstants;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
@@ -231,7 +224,7 @@ class MethodType
     }
 
     static final ReferencedKeySet<MethodType> internTable =
-        ReferencedKeySet.create(false, true, new Supplier<>() {
+        ReferencedKeySet.create(false, new Supplier<>() {
             @Override
             public Map<ReferenceKey<MethodType>, ReferenceKey<MethodType>> get() {
                 return new ConcurrentHashMap<>(512);
@@ -416,6 +409,7 @@ class MethodType
         mt.form = MethodTypeForm.findForm(mt);
         return internTable.intern(mt);
     }
+
     private static final @Stable MethodType[] objectOnlyTypes = new MethodType[20];
 
     /**
@@ -1133,7 +1127,7 @@ class MethodType
         }
     }
 
-    /// Queries which have to do with the bytecode architecture
+    //--- Queries which have to do with the bytecode architecture
 
     /** Reports the number of JVM stack slots required to invoke a method
      * of this type.  Note that (for historical reasons) the JVM requires
@@ -1178,21 +1172,11 @@ class MethodType
      * @throws NullPointerException if the string is {@code null}
      * @throws IllegalArgumentException if the string is not a method descriptor
      * @throws TypeNotPresentException if a named type cannot be found
-     * @throws SecurityException if the security manager is present and
-     *         {@code loader} is {@code null} and the caller does not have the
-     *         {@link RuntimePermission}{@code ("getClassLoader")}
      * @jvms 4.3.3 Method Descriptors
      */
     public static MethodType fromMethodDescriptorString(String descriptor, ClassLoader loader)
         throws IllegalArgumentException, TypeNotPresentException
     {
-        if (loader == null) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
-            }
-        }
         return fromDescriptor(descriptor,
                               (loader == null) ? ClassLoader.getSystemClassLoader() : loader);
     }
@@ -1291,18 +1275,24 @@ class MethodType
      */
     @Override
     public Optional<MethodTypeDesc> describeConstable() {
-        try {
-            return Optional.of(MethodTypeDesc.of(returnType().describeConstable().orElseThrow(),
-                                                 Stream.of(parameterArray())
-                                                      .map(p -> p.describeConstable().orElseThrow())
-                                                      .toArray(ClassDesc[]::new)));
-        }
-        catch (NoSuchElementException e) {
+        var retDesc = returnType().describeConstable();
+        if (retDesc.isEmpty())
             return Optional.empty();
+
+        if (parameterCount() == 0)
+            return Optional.of(MethodTypeDesc.of(retDesc.get()));
+
+        var params = new ClassDesc[parameterCount()];
+        for (int i = 0; i < params.length; i++) {
+            var paramDesc = parameterType(i).describeConstable();
+            if (paramDesc.isEmpty())
+                return Optional.empty();
+            params[i] = paramDesc.get();
         }
+        return Optional.of(MethodTypeDesc.of(retDesc.get(), params));
     }
 
-    /// Serialization.
+    //--- Serialization.
 
     /**
      * There are no serializable fields for {@code MethodType}.
@@ -1390,5 +1380,11 @@ s.writeObject(this.parameterArray());
         MethodType mt = ((MethodType[])wrapAlt)[0];
         wrapAlt = null;
         return mt;
+    }
+
+    // This is called from C code, at the very end of Java code execution
+    // during the AOT cache assembly phase.
+    private static void assemblySetup() {
+        internTable.prepareForAOTCache();
     }
 }

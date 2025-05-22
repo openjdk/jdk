@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,8 +152,8 @@ public enum KnownOIDs {
     SHA3_256("2.16.840.1.101.3.4.2.8", "SHA3-256"),
     SHA3_384("2.16.840.1.101.3.4.2.9", "SHA3-384"),
     SHA3_512("2.16.840.1.101.3.4.2.10", "SHA3-512"),
-    SHAKE128("2.16.840.1.101.3.4.2.11"),
-    SHAKE256("2.16.840.1.101.3.4.2.12"),
+    SHAKE128_256("2.16.840.1.101.3.4.2.11", "SHAKE128-256", "SHAKE128"),
+    SHAKE256_512("2.16.840.1.101.3.4.2.12", "SHAKE256-512", "SHAKE256"),
     HmacSHA3_224("2.16.840.1.101.3.4.2.13", "HmacSHA3-224"),
     HmacSHA3_256("2.16.840.1.101.3.4.2.14", "HmacSHA3-256"),
     HmacSHA3_384("2.16.840.1.101.3.4.2.15", "HmacSHA3-384"),
@@ -178,6 +178,14 @@ public enum KnownOIDs {
     SHA3_256withRSA("2.16.840.1.101.3.4.3.14", "SHA3-256withRSA"),
     SHA3_384withRSA("2.16.840.1.101.3.4.3.15", "SHA3-384withRSA"),
     SHA3_512withRSA("2.16.840.1.101.3.4.3.16", "SHA3-512withRSA"),
+    ML_DSA_44("2.16.840.1.101.3.4.3.17", "ML-DSA-44"),
+    ML_DSA_65("2.16.840.1.101.3.4.3.18", "ML-DSA-65"),
+    ML_DSA_87("2.16.840.1.101.3.4.3.19", "ML-DSA-87"),
+
+    // kems 2.16.840.1.101.3.4.4.*
+    ML_KEM_512("2.16.840.1.101.3.4.4.1", "ML-KEM-512"),
+    ML_KEM_768("2.16.840.1.101.3.4.4.2", "ML-KEM-768"),
+    ML_KEM_1024("2.16.840.1.101.3.4.4.3", "ML-KEM-1024"),
 
     // RSASecurity
     // PKCS1 1.2.840.113549.1.1.*

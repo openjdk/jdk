@@ -29,7 +29,6 @@ import jdk.jfr.Category;
 import jdk.jfr.Label;
 import jdk.jfr.DataAmount;
 import jdk.jfr.Name;
-import jdk.jfr.StackTrace;
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
 import jdk.jfr.internal.RemoveFields;

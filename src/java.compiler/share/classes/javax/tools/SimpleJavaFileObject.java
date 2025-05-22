@@ -223,4 +223,48 @@ public class SimpleJavaFileObject implements JavaFileObject {
     public String toString() {
         return getClass().getName() + "[" + toUri() + "]";
     }
+
+    /**
+     * Creates a {@link JavaFileObject} which represents the given source content.
+     *
+     * <p>The provided {@code uri} will be returned from {@link #toUri()}.
+     * The provided {@code content} will be returned from {@link #getCharContent(boolean)}.
+     * The {@link #getKind()} method will return {@link Kind#SOURCE}.
+     *
+     * <p>All other methods will behave as described in the documentation in this class,
+     * as if the constructor is called with {@code uri} and {@code Kind.SOURCE}.
+     *
+     * <p>This method can be, for example, used to compile an in-memory String
+     * to a set of classfile in a target directory:
+     * {@snippet lang="java":
+     *      var code = """
+     *                 public class CompiledCode {}
+     *                 """;
+     *      var compiler = ToolProvider.getSystemJavaCompiler();
+     *      var targetDirectory = "...";
+     *      var task = compiler.getTask(null,
+     *                                  null,
+     *                                  null,
+     *                                  List.of("-d", targetDirectory),
+     *                                  null,
+     *                                  List.of(SimpleJavaFileObject.forSource(URI.create("CompiledCode.java"), code)));
+     *      if (!task.call()) {
+     *          throw new IllegalStateException("Compilation failed!");
+     *      }
+     * }
+     *
+     * @param uri that should be used for the resulting {@code JavaFileObject}
+     * @param content the content of the {@code JavaFileObject}
+     * @return a {@code JavaFileObject} representing the given source content.
+     * @since 23
+     */
+    public static JavaFileObject forSource(URI uri, String content) {
+        return new SimpleJavaFileObject(uri, Kind.SOURCE) {
+            @Override
+            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+                return content;
+            }
+        };
+    }
+
 }

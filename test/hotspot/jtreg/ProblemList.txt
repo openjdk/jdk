@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,38 +43,41 @@
 
 # :hotspot_compiler
 
-compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
-compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
+compiler/runtime/Test8168712.java#with-dtrace 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
+compiler/runtime/Test8168712.java#without-dtrace 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 compiler/loopopts/TestUnreachableInnerLoop.java 8288981 linux-s390x
-
-compiler/rtm/locking/TestRTMAbortRatio.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMAbortThreshold.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMAfterNonRTMDeopt.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMDeoptOnHighAbortRatio.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMDeoptOnLowAbortRatio.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMLockingCalculationDelay.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMLockingThreshold.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMSpinLoopCount.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestUseRTMDeopt.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263 generic-x64,generic-i586
-compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64,generic-i586
 
 compiler/c2/Test8004741.java 8235801 generic-all
 compiler/c2/irTests/TestDuplicateBackedge.java 8318904 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
-compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897 aix-ppc64,linux-ppc64le
-compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
+compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897,8348519 aix-ppc64,linux-ppc64le,linux-s390x
+compiler/vectorapi/VectorRebracket128Test.java 8330538 generic-all
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/DataPatchTest.java 8331704 linux-riscv64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/MaxOopMapStackOffsetTest.java 8331704 linux-riscv64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/NativeCallTest.java 8331704 linux-riscv64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/SimpleDebugInfoTest.java 8331704 linux-riscv64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/SimpleCodeInstallationTest.java 8331704 linux-riscv64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/VirtualObjectDebugInfoTest.java 8331704 linux-riscv64
 
 compiler/floatingpoint/TestSubnormalFloat.java 8317810 generic-i586
 compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
+
+compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
+
+compiler/interpreter/Test6833129.java 8335266 generic-i586
+
+compiler/ciReplay/TestInliningProtectionDomain.java 8349191 generic-all
+compiler/ciReplay/TestIncrementalInlining.java 8349191 generic-all
+
+compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
 #############################################################################
 
@@ -84,20 +87,25 @@ gc/epsilon/TestMemoryMXBeans.java 8206434 generic-all
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
-gc/parallel/TestAlwaysPreTouchBehavior.java 8325218 linux-all
 gc/TestAllocHumongousFragment.java#adaptive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#aggressive 8298781 generic-all
-gc/TestAllocHumongousFragment.java#iu-aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
-gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
+gc/TestAlwaysPreTouchBehavior.java#ParallelCollector 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#SerialCollector 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#Shenandoah 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#G1 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#Z 8334513 generic-all
+gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
+gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
+gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
 
 #############################################################################
 
 # :hotspot_runtime
 
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
-runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
+runtime/Monitor/SyncOnValueBasedClassTest.java 8340995 linux-s390x
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
@@ -105,23 +113,16 @@ runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
-runtime/CompressedOops/CompressedClassPointers.java 8322943 aix-ppc64
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
-runtime/ErrorHandling/TestDwarf.java#checkDecoder 8305489 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
-runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
-runtime/os/TestTransparentHugePageUsage.java 8324776 linux-all
-runtime/Thread/TestAlwaysPreTouchStacks.java 8324781 linux-all
-
-applications/jcstress/accessAtomic.java 8325984 generic-all
-applications/jcstress/acqrel.java 8325984 generic-all
-applications/jcstress/atomicity.java 8325984 generic-all
-applications/jcstress/coherence.java 8325984 generic-all
+runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
 
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
 containers/docker/TestMemoryAwareness.java 8303470 linux-all
+containers/docker/TestJFREvents.java 8327723 linux-x64
+containers/docker/TestJcmdWithSideCar.java 8341518 linux-x64
 
 #############################################################################
 
@@ -131,18 +132,18 @@ serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 macosx-x64,mac
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
+serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest.java 8318090,8318729 generic-all
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
-serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64,aix-ppc64
+serviceability/jvmti/vthread/CarrierThreadEventNotification/CarrierThreadEventNotification.java 8333681 generic-all
+serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
 
-serviceability/sa/ClhsdbCDSCore.java 8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core 8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8267433 macosx-x64
-serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
-serviceability/sa/ClhsdbPstack.java#core 8267433 macosx-x64
-serviceability/sa/TestJmapCore.java 8267433 macosx-x64
-serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
-
-serviceability/attach/ConcAttachTest.java 8290043 linux-all
+serviceability/sa/ClhsdbCDSCore.java              8318754 macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#xcomp-core    8318754 macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8318754 macosx-aarch64
+serviceability/sa/ClhsdbPmap.java#core            8318754 macosx-aarch64
+serviceability/sa/ClhsdbPstack.java#core          8318754 macosx-aarch64
+serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
+serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 
@@ -159,6 +160,9 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 #############################################################################
 
+vmTestbase/gc/gctests/FinalizeTest04/FinalizeTest04.java 8284234 generic-all
+vmTestbase/gc/gctests/PhantomReference/phantom001/phantom001.java 8284234 generic-all
+
 vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
@@ -168,8 +172,6 @@ vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 gener
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
 
-vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
-
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all
 
@@ -178,7 +180,7 @@ vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8257761 ge
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2none_a/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all
-vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8325905 generic-all
+vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8324756 generic-all
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
@@ -36,9 +35,9 @@
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
-#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -149,7 +148,7 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   }
   _serial_compaction_point.set_preserved_stack(_preserved_marks_set.get(0));
   _humongous_compaction_point.set_preserved_stack(_preserved_marks_set.get(0));
-  _region_attr_table.initialize(heap->reserved(), HeapRegion::GrainBytes);
+  _region_attr_table.initialize(heap->reserved(), G1HeapRegion::GrainBytes);
 }
 
 G1FullCollector::~G1FullCollector() {
@@ -164,13 +163,13 @@ G1FullCollector::~G1FullCollector() {
   FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
 }
 
-class PrepareRegionsClosure : public HeapRegionClosure {
+class PrepareRegionsClosure : public G1HeapRegionClosure {
   G1FullCollector* _collector;
 
 public:
   PrepareRegionsClosure(G1FullCollector* collector) : _collector(collector) { }
 
-  bool do_heap_region(HeapRegion* hr) {
+  bool do_heap_region(G1HeapRegion* hr) {
     hr->prepare_for_full_gc();
     G1CollectedHeap::heap()->prepare_region_for_full_compaction(hr);
     _collector->before_marking_update_attribute_table(hr);
@@ -229,7 +228,7 @@ void G1FullCollector::collect() {
   G1CollectedHeap::finish_codecache_marking_cycle();
 }
 
-void G1FullCollector::complete_collection() {
+void G1FullCollector::complete_collection(size_t allocation_word_size) {
   // Restore all marks.
   restore_marks();
 
@@ -243,9 +242,11 @@ void G1FullCollector::complete_collection() {
   // Prepare the bitmap for the next (potentially concurrent) marking.
   _heap->concurrent_mark()->clear_bitmap(_heap->workers());
 
-  _heap->prepare_for_mutator_after_full_collection();
+  _heap->prepare_for_mutator_after_full_collection(allocation_word_size);
 
   _heap->resize_all_tlabs();
+
+  _heap->young_regions_cset_group()->clear();
 
   _heap->policy()->record_full_collection_end();
   _heap->gc_epilogue(true);
@@ -255,7 +256,7 @@ void G1FullCollector::complete_collection() {
   _heap->print_heap_after_full_collection();
 }
 
-void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
+void G1FullCollector::before_marking_update_attribute_table(G1HeapRegion* hr) {
   if (hr->is_free()) {
     _region_attr_table.set_free(hr->hrm_index());
   } else if (hr->is_humongous() || hr->has_pinned_objects()) {
@@ -310,6 +311,13 @@ void G1FullCollector::phase1_mark_live_objects() {
     assert(marker(0)->oop_stack()->is_empty(), "Should be no oops on the stack");
 
     reference_processor()->set_active_mt_degree(old_active_mt_degree);
+  }
+
+  {
+    GCTraceTime(Debug, gc, phases) debug("Phase 1: Flush Mark Stats Cache", scope()->timer());
+    for (uint i = 0; i < workers(); i++) {
+      marker(i)->flush_mark_stats_cache();
+    }
   }
 
   // Weak oops cleanup.
@@ -412,7 +420,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
   assert(!serial_cp->is_initialized(), "sanity!");
 
-  HeapRegion* start_hr = _heap->region_at(start_serial);
+  G1HeapRegion* start_hr = _heap->region_at(start_serial);
   serial_cp->add(start_hr);
   serial_cp->initialize(start_hr);
 
@@ -421,7 +429,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
 
   for (uint i = start_serial + 1; i < _heap->max_reserved_regions(); i++) {
     if (is_compaction_target(i)) {
-      HeapRegion* current = _heap->region_at(i);
+      G1HeapRegion* current = _heap->region_at(i);
       set_compaction_top(current, current->bottom());
       serial_cp->add(current);
       current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
@@ -442,7 +450,7 @@ void G1FullCollector::phase2d_prepare_humongous_compaction() {
   G1FullGCCompactionPoint* humongous_cp = humongous_compaction_point();
 
   while (region_index < max_reserved_regions) {
-    HeapRegion* hr = _heap->region_at_or_null(region_index);
+    G1HeapRegion* hr = _heap->region_at_or_null(region_index);
 
     if (hr == nullptr) {
       region_index++;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/compile.hpp"
@@ -44,6 +43,9 @@ uint ConNode::hash() const {
 
 //------------------------------make-------------------------------------------
 ConNode *ConNode::make(const Type *t) {
+  if (t->isa_half_float_constant()) {
+    return new ConHNode( t->is_half_float_constant() );
+  }
   switch( t->basic_type() ) {
   case T_INT:         return new ConINode( t->is_int() );
   case T_LONG:        return new ConLNode( t->is_long() );

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1240,7 +1240,6 @@ public class AquaFileChooserUI extends FileChooserUI {
         return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
 
-    @SuppressWarnings("serial") // anonymous class
     protected ListCellRenderer<File> createDirectoryComboBoxRenderer(final JFileChooser fc) {
         return new AquaComboBoxRendererInternal<File>(directoryComboBox) {
             public Component getListCellRendererComponent(final JList<? extends File> list,
@@ -1356,7 +1355,6 @@ public class AquaFileChooserUI extends FileChooserUI {
     //
     // Renderer for Types ComboBox
     //
-    @SuppressWarnings("serial") // anonymous class
     protected ListCellRenderer<FileFilter> createFilterComboBoxRenderer() {
         return new AquaComboBoxRendererInternal<FileFilter>(filterComboBox) {
             public Component getListCellRendererComponent(final JList<? extends FileFilter> list,
@@ -1611,7 +1609,6 @@ public class AquaFileChooserUI extends FileChooserUI {
 
         tPanel.add(labelArea);
         // separator line
-        @SuppressWarnings("serial") // anonymous class
         final JSeparator sep = new JSeparator(){
             public Dimension getPreferredSize() {
                 return new Dimension(((JComponent)getParent()).getWidth(), 3);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,6 @@ public class StrCodingBenchmarkDB extends StrCodingBenchmark {
         final int maxchar    = Integer.getInteger("maxchar", 128);
         final String regex = System.getProperty("filter");
         final Pattern filter = (regex == null) ? null : Pattern.compile(regex);
-        final boolean useSecurityManager = Boolean.getBoolean("SecurityManager");
-        if (useSecurityManager)
-            System.setSecurityManager(new PermissiveSecurityManger());
         final Random rnd = new Random();
 
         String[] csns = new String[] {

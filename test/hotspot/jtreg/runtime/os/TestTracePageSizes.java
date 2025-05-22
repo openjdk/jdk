@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
+ * @requires os.arch != "ppc64le"
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log TestTracePageSizes
  */
 
@@ -51,6 +53,8 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
+ * @requires os.arch != "ppc64le"
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache -XX:+UseLargePages TestTracePageSizes
@@ -63,6 +67,8 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
+ * @requires os.arch != "ppc64le"
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @requires vm.gc.G1
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseG1GC TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseG1GC -XX:+UseLargePages TestTracePageSizes
@@ -75,6 +81,8 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
+ * @requires os.arch != "ppc64le"
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @requires vm.gc.Parallel
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseParallelGC TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseParallelGC -XX:+UseLargePages TestTracePageSizes
@@ -87,6 +95,8 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
+ * @requires os.arch != "ppc64le"
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @requires vm.gc.Serial
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseSerialGC TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseSerialGC -XX:+UseLargePages TestTracePageSizes
@@ -259,12 +269,6 @@ public class TestTracePageSizes {
         if (Platform.getOsVersionMajor() < 3 ||
             (Platform.getOsVersionMajor() == 3 && Platform.getOsVersionMinor() < 8)) {
             throw new SkippedException("Kernel older than 3.8 - skipping this test.");
-        }
-
-        // For similar reasons, we skip the test on ppc platforms, since there the smaps
-        //  format may follow a different logic.
-        if (Platform.isPPC()) {
-            throw new SkippedException("PPC - skipping this test.");
         }
 
         // Parse /proc/self/smaps to compare with values logged in the VM.

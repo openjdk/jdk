@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
 import java.io.Serializable;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PermissionCollection;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.ProtectionDomain;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.time.Instant;
@@ -282,7 +276,9 @@ import sun.util.spi.CalendarProvider;
  * {@code DAY_OF_MONTH} to 30, the closest possible value. Although
  * it is a smaller field, {@code DAY_OF_WEEK} is not adjusted by
  * rule 2, since it is expected to change when the month changes in a
- * {@code GregorianCalendar}.</p>
+ * {@code GregorianCalendar}. In leap years, the adjustment accounts
+ * for the leap day in February to ensure the day of month is valid
+ * for the year.</p>
  *
  * <p><strong>{@code roll(f, delta)}</strong> adds
  * {@code delta} to field {@code f} without changing larger
@@ -3562,25 +3558,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         }
     }
 
-    @SuppressWarnings("removal")
-    private static class CalendarAccessControlContext {
-        private static final AccessControlContext INSTANCE;
-        static {
-            RuntimePermission perm = new RuntimePermission("accessClassInPackage.sun.util.calendar");
-            PermissionCollection perms = perm.newPermissionCollection();
-            perms.add(perm);
-            INSTANCE = new AccessControlContext(new ProtectionDomain[] {
-                                                    new ProtectionDomain(null, perms)
-                                                });
-        }
-        private CalendarAccessControlContext() {
-        }
-    }
-
     /**
      * Reconstitutes this object from a stream (i.e., deserialize it).
      */
-    @SuppressWarnings("removal")
     @java.io.Serial
     private void readObject(ObjectInputStream stream)
          throws IOException, ClassNotFoundException
@@ -3615,16 +3595,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         // If there's a ZoneInfo object, use it for zone.
         ZoneInfo zi = null;
         try {
-            zi = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<>() {
-                        @Override
-                        public ZoneInfo run() throws Exception {
-                            return (ZoneInfo) input.readObject();
-                        }
-                    },
-                    CalendarAccessControlContext.INSTANCE);
-        } catch (PrivilegedActionException pae) {
-            Exception e = pae.getException();
+            zi = (ZoneInfo) input.readObject();
+        } catch (Exception e) {
             if (!(e instanceof OptionalDataException)) {
                 if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;

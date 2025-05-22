@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,19 @@
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                 -XX:LockingMode=0
  *                 -XX:GuaranteedAsyncDeflationInterval=1000
+ *
+ * @bug 8341819
+ * @comment Regression test for re-locking racing with deflation with LM_LIGHTWEIGHT.
+ * @run driver EATests
+ *                 -XX:+UnlockDiagnosticVMOptions
+ *                 -Xms256m -Xmx256m
+ *                 -Xbootclasspath/a:.
+ *                 -XX:CompileCommand=dontinline,*::dontinline_*
+ *                 -XX:+WhiteBoxAPI
+ *                 -Xbatch
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=2
+ *                 -XX:GuaranteedAsyncDeflationInterval=1
  */
 
 /**
@@ -288,7 +301,9 @@ class EATestsTarget {
 
         // Relocking test cases
         new EARelockingSimpleTarget()                                                       .run();
+        new EARelockingWithManyLightweightLocksTarget()                                     .run();
         new EARelockingSimpleWithAccessInOtherThreadTarget()                                .run();
+        new EARelockingSimpleWithAccessInOtherThread_02_DynamicCall_Target()                .run();
         new EARelockingRecursiveTarget()                                                    .run();
         new EARelockingNestedInflatedTarget()                                               .run();
         new EARelockingNestedInflated_02Target()                                            .run();
@@ -412,7 +427,9 @@ public class EATests extends TestScaffold {
 
         // Relocking test cases
         new EARelockingSimple()                                                       .run(this);
+        new EARelockingWithManyLightweightLocks()                                     .run(this);
         new EARelockingSimpleWithAccessInOtherThread()                                .run(this);
+        new EARelockingSimpleWithAccessInOtherThread_02_DynamicCall()                 .run(this);
         new EARelockingRecursive()                                                    .run(this);
         new EARelockingNestedInflated()                                               .run(this);
         new EARelockingNestedInflated_02()                                            .run(this);
@@ -1285,7 +1302,7 @@ class EAMaterializeLocalAtObjectReturnTarget extends EATestCaseBaseTarget {
 /////////////////////////////////////////////////////////////////////////////
 
 // Test if an eliminated object can be reallocated *just* before a call returns an object.
-// (See CompiledMethod::is_at_poll_return())
+// (See nmethod::is_at_poll_return())
 // Details: the callee method has just one safepoint poll at the return. The other safepoint
 // is at the end of an iteration of the endless loop. We can detect if we suspended the target
 // there because the local xy is out of scope there.
@@ -1795,6 +1812,85 @@ class EARelockingSimpleTarget extends EATestCaseBaseTarget {
 
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Like {@link EARelockingSimple}. The difference is that there are many
+ * lightweight locked objects when the relocking is done. With
+ * <code>-XX:LockingMode=2</code> the lock stack of the thread will be full
+ * because of this.
+ */
+
+class EARelockingWithManyLightweightLocks extends EATestCaseBaseDebugger {
+
+    public void runTestCase() throws Exception {
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        printStack(bpe.thread());
+        @SuppressWarnings("unused")
+        ObjectReference o = getLocalRef(bpe.thread().frame(1), XYVAL_NAME, "l1");
+    }
+}
+
+class EARelockingWithManyLightweightLocksTarget extends EATestCaseBaseTarget {
+
+    static class Lock {
+    }
+
+    public static Lock L0, L1, L2, L3, L4, L5, L6, L7, L8, L9;
+
+    void allocateLocks() {
+        L0 = new Lock();
+        L1 = new Lock();
+        L2 = new Lock();
+        L3 = new Lock();
+        L4 = new Lock();
+        L5 = new Lock();
+        L6 = new Lock();
+        L7 = new Lock();
+        L8 = new Lock();
+        L9 = new Lock();
+    }
+
+    @Override
+    public void setUp() {
+        super.setUp();
+        allocateLocks();
+    }
+
+    @Override
+    public void warmupDone() {
+        super.warmupDone();
+        allocateLocks();    // get rid of already inflated ones
+    }
+
+    public void dontinline_testMethod() {
+        XYVal l1 = new XYVal(4, 2);
+        synchronized(L0) {
+            synchronized(L1) {
+                synchronized(L2) {
+                    synchronized(L3) {
+                        synchronized(L4) {
+                            synchronized(L5) {
+                                synchronized(L6) {
+                                    synchronized(L7) {
+                                        synchronized(L8) {
+                                            synchronized(L9) {
+                                                synchronized (l1) {
+                                                    dontinline_brkpt();
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 // The debugger reads and publishes an object with eliminated locking to an instance field.
 // A 2nd thread in the debuggee finds it there and changes its state using a synchronized method.
 // Without eager relocking the accesses are unsynchronized which can be observed.
@@ -1840,6 +1936,95 @@ class EARelockingSimpleWithAccessInOtherThreadTarget extends EATestCaseBaseTarge
             dontinline_brkpt();  // Debugger publishes l1 to sharedCounter.
             iResult = l1.inc();  // Changes by the 2nd thread will be observed if l1
                                  // was not relocked before passing it to the debugger.
+        }
+    }
+
+    @Override
+    public int getExpectedIResult() {
+        return 1;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+// The debugger reads and publishes an object with eliminated locking to an instance field.
+// A 2nd thread in the debuggee finds it there and changes its state using a synchronized method.
+// Without eager relocking the accesses are unsynchronized which can be observed.
+// This is a variant of EARelockingSimpleWithAccessInOtherThread with a dynamic call (not devirtualized).
+class EARelockingSimpleWithAccessInOtherThread_02_DynamicCall extends EATestCaseBaseDebugger {
+
+    public void runTestCase() throws Exception {
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        printStack(bpe.thread());
+        String l1ClassName = EARelockingSimpleWithAccessInOtherThread_02_DynamicCall_Target.SyncCounter.class.getName();
+        ObjectReference ctr = getLocalRef(bpe.thread().frame(2), l1ClassName, "l1");
+        setField(testCase, "sharedCounter", ctr);
+        terminateEndlessLoop();
+    }
+}
+
+class EARelockingSimpleWithAccessInOtherThread_02_DynamicCall_Target extends EATestCaseBaseTarget {
+
+    public static final BrkPtDispatchA[] disp =
+        {new BrkPtDispatchA(), new BrkPtDispatchB(), new BrkPtDispatchC(), new BrkPtDispatchD()};
+
+    public static class BrkPtDispatchA {
+        public EATestCaseBaseTarget testCase;
+        public void dontinline_brkpt() { testCase.dontinline_brkpt(); }
+    }
+
+    public static class BrkPtDispatchB extends BrkPtDispatchA {
+        @Override
+        public void dontinline_brkpt() { testCase.dontinline_brkpt(); }
+    }
+
+    public static class BrkPtDispatchC extends BrkPtDispatchA {
+        @Override
+        public void dontinline_brkpt() { testCase.dontinline_brkpt(); }
+    }
+
+    public static class BrkPtDispatchD extends BrkPtDispatchA {
+        @Override
+        public void dontinline_brkpt() {
+            testCase.dontinline_brkpt();
+        }
+    }
+
+    public static class SyncCounter {
+        private int val;
+        public synchronized int inc() { return val++; }
+    }
+
+    public volatile SyncCounter sharedCounter;
+
+    @Override
+    public void setUp() {
+        super.setUp();
+        testMethodDepth = 2;
+        for (BrkPtDispatchA d : disp) {
+            d.testCase = this;
+        }
+        doLoop = true;
+        new Thread(() -> {
+                while (doLoop) {
+                    SyncCounter ctr = sharedCounter;
+                    if (ctr != null) {
+                        ctr.inc();
+                    }
+                }
+            }).start();
+    }
+
+    public int dispCount;
+    public void dontinline_testMethod() {
+        SyncCounter l1 = new SyncCounter();
+        synchronized (l1) {      // Eliminated locking
+            l1.inc();
+            // Use different types for the subsequent call to prevent devirtualization.
+            BrkPtDispatchA d = disp[(dispCount++) & 3];
+            d.dontinline_brkpt();  // Dynamic call. Debugger publishes l1 to sharedCounter.
+            iResult = l1.inc();    // Changes by the 2nd thread will be observed if l1
+                                   // was not relocked before passing it to the debugger.
         }
     }
 

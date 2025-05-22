@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,14 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Comment;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 
 /**
@@ -90,22 +91,21 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
             addAnnotationDetailsMarker(target);
             Content annotationDetailsHeader = getAnnotationDetailsHeader();
             Content memberList = getMemberList();
-            writer.tableOfContents.addLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL, contents.annotationTypeDetailsLabel);
-            writer.tableOfContents.pushNestedList();
+            writer.tableOfContents.addLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL,
+                    contents.annotationTypeDetailsLabel, TableOfContents.Level.FIRST);
 
             for (Element member : members) {
                 currentMember = member;
                 Content annotationContent = getAnnotationHeaderContent(currentMember);
-                Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                Content div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
                 buildAnnotationTypeMemberChildren(div);
                 annotationContent.add(div);
                 memberList.add(writer.getMemberListItem(annotationContent));
-                writer.tableOfContents.addLink(htmlIds.forMember(typeElement, (ExecutableElement) member),
-                        Text.of(name(member)));
+                writer.tableOfContents.addLink(htmlIds.forMember((ExecutableElement) member).getFirst(),
+                        Text.of(name(member)), TableOfContents.Level.SECOND);
             }
             Content annotationDetails = getAnnotationDetails(annotationDetailsHeader, memberList);
             target.add(annotationDetails);
-            writer.tableOfContents.popNestedList();
         }
     }
 
@@ -181,7 +181,7 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
 
     @Override
     public void buildSummary(Content summariesList, Content content) {
-        writer.addSummary(HtmlStyle.memberSummary,
+        writer.addSummary(HtmlStyles.memberSummary,
                 switch (kind) {
                     case ANNOTATION_TYPE_MEMBER_REQUIRED -> HtmlIds.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY;
                     case ANNOTATION_TYPE_MEMBER_OPTIONAL -> HtmlIds.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY;
@@ -209,8 +209,8 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(member)));
         content.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, content)
-                .setId(htmlIds.forMember(typeElement, (ExecutableElement) member));
+        return HtmlTree.SECTION(HtmlStyles.detail, content)
+                .setId(htmlIds.forMember((ExecutableElement) member).getFirst());
     }
 
     protected Content getSignature(Element member) {
@@ -238,7 +238,7 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
 
     protected Content getAnnotationDetails(Content annotationDetailsHeader, Content annotationDetails) {
         Content c = new ContentBuilder(annotationDetailsHeader, annotationDetails);
-        return getMember(HtmlTree.SECTION(HtmlStyle.memberDetails, c));
+        return getMember(HtmlTree.SECTION(HtmlStyles.memberDetails, c));
     }
 
     @Override
@@ -278,10 +278,10 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
 
     @Override
     protected Table<Element> createSummaryTable() {
-        return new Table<Element>(HtmlStyle.summaryTable)
+        return new Table<Element>(HtmlStyles.summaryTable)
                 .setCaption(getCaption())
                 .setHeader(getSummaryTableHeader(typeElement))
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colSecond, HtmlStyles.colLast);
     }
 
     @Override
@@ -292,7 +292,7 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
     protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element member,
                                   Content content) {
         Content memberLink = writer.getDocLink(context, utils.getEnclosingTypeElement(member), member,
-                name(member), HtmlStyle.memberNameLink);
+                name(member), HtmlStyles.memberNameLink);
         var code = HtmlTree.CODE(memberLink);
         content.add(code);
     }
@@ -331,7 +331,7 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
             ExecutableElement ee = (ExecutableElement) member;
             AnnotationValue value = ee.getDefaultValue();
             if (value != null) {
-                var dl = HtmlTree.DL(HtmlStyle.notes);
+                var dl = HtmlTree.DL(HtmlStyles.notes);
                 dl.add(HtmlTree.DT(contents.default_));
                 dl.add(HtmlTree.DD(HtmlTree.CODE(Text.of(value.toString()))));
                 annotationContent.add(dl);

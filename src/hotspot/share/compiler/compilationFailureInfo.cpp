@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #if defined(COMPILER1) || defined(COMPILER2)
 
 #ifdef COMPILER1
@@ -35,18 +33,23 @@
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compileTask.hpp"
 #ifdef COMPILER2
-#include "opto/node.hpp"
 #include "opto/compile.hpp"
+#include "opto/node.hpp"
 #endif
 #include "runtime/os.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/nativeCallStack.hpp"
+#include "utilities/ostream.hpp"
+
+int CompilationFailureInfo::current_compile_id_or_0() {
+  ciEnv* env = ciEnv::current();
+  return (env != nullptr) ? env->compile_id() : 0;
+}
 
 CompilationFailureInfo::CompilationFailureInfo(const char* failure_reason) :
   _stack(2),
   _failure_reason(os::strdup(failure_reason)),
   _elapsed_seconds(os::elapsedTime()),
-  _compile_id(ciEnv::current()->task()->compile_id())
+  _compile_id(current_compile_id_or_0())
 {}
 
 CompilationFailureInfo::~CompilationFailureInfo() {

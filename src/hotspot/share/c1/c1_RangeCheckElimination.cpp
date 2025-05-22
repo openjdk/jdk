@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "c1/c1_ValueStack.hpp"
-#include "c1/c1_RangeCheckElimination.hpp"
 #include "c1/c1_IR.hpp"
-#include "c1/c1_Canonicalizer.hpp"
-#include "c1/c1_ValueMap.hpp"
+#include "c1/c1_RangeCheckElimination.hpp"
+#include "c1/c1_ValueStack.hpp"
 #include "ci/ciMethodData.hpp"
 #include "runtime/deoptimization.hpp"
-#ifdef ASSERT
 #include "utilities/bitMap.inline.hpp"
-#endif
 
 // Macros for the Trace and the Assertion flag
 #ifdef ASSERT
@@ -483,14 +478,14 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
 
           if (c) {
             jint value = c->type()->as_IntConstant()->value();
-            if (value != min_jint) {
-              if (ao->op() == Bytecodes::_isub) {
-                value = -value;
-              }
+            if (ao->op() == Bytecodes::_iadd) {
               base = java_add(base, value);
-              last_integer = base;
-              last_instruction = other;
+            } else {
+              assert(ao->op() == Bytecodes::_isub, "unexpected bytecode");
+              base = java_subtract(base, value);
             }
+            last_integer = base;
+            last_instruction = other;
             index = other;
           } else {
             break;

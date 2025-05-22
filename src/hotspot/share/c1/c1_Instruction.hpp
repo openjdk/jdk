@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,6 @@ class         LookupSwitch;
 class       Return;
 class       Throw;
 class       Base;
-class   RoundFP;
 class   UnsafeOp;
 class     UnsafeGet;
 class     UnsafePut;
@@ -187,7 +186,6 @@ class InstructionVisitor: public StackObj {
   virtual void do_Base           (Base*            x) = 0;
   virtual void do_OsrEntry       (OsrEntry*        x) = 0;
   virtual void do_ExceptionObject(ExceptionObject* x) = 0;
-  virtual void do_RoundFP        (RoundFP*         x) = 0;
   virtual void do_UnsafeGet      (UnsafeGet*       x) = 0;
   virtual void do_UnsafePut      (UnsafePut*       x) = 0;
   virtual void do_UnsafeGetAndSet(UnsafeGetAndSet* x) = 0;
@@ -281,11 +279,11 @@ class Instruction: public CompilationResourceObj {
 #endif
   int          _use_count;                       // the number of instructions referring to this value (w/o prev/next); only roots can have use count = 0 or > 1
   int          _pin_state;                       // set of PinReason describing the reason for pinning
+  unsigned int _flags;                           // Flag bits
   ValueType*   _type;                            // the instruction value type
   Instruction* _next;                            // the next instruction if any (null for BlockEnd instructions)
   Instruction* _subst;                           // the substitution instruction if any
   LIR_Opr      _operand;                         // LIR specific information
-  unsigned int _flags;                           // Flag bits
 
   ValueStack*  _state_before;                    // Copy of state with input operands still on stack (or null)
   ValueStack*  _exception_state;                 // Copy of state for exception handling
@@ -346,11 +344,8 @@ class Instruction: public CompilationResourceObj {
     NeedsNullCheckFlag = 0,
     CanTrapFlag,
     DirectCompareFlag,
-    IsEliminatedFlag,
     IsSafepointFlag,
     IsStaticFlag,
-    NeedsStoreCheckFlag,
-    NeedsWriteBarrierFlag,
     PreservesStateFlag,
     TargetIsFinalFlag,
     TargetIsLoadedFlag,
@@ -361,9 +356,9 @@ class Instruction: public CompilationResourceObj {
     ProfileMDOFlag,
     IsLinkedInBlockFlag,
     NeedsRangeCheckFlag,
-    InWorkListFlag,
     DeoptimizeOnException,
     KillsMemoryFlag,
+    OmitChecksFlag,
     InstructionLastFlag
   };
 
@@ -402,11 +397,11 @@ class Instruction: public CompilationResourceObj {
 #endif
     _use_count(0)
   , _pin_state(0)
+  , _flags(0)
   , _type(type)
   , _next(nullptr)
   , _subst(nullptr)
   , _operand(LIR_OprFact::illegalOpr)
-  , _flags(0)
   , _state_before(state_before)
   , _exception_handlers(nullptr)
   , _block(nullptr)
@@ -559,7 +554,6 @@ class Instruction: public CompilationResourceObj {
   virtual Return*           as_Return()          { return nullptr; }
   virtual Throw*            as_Throw()           { return nullptr; }
   virtual Base*             as_Base()            { return nullptr; }
-  virtual RoundFP*          as_RoundFP()         { return nullptr; }
   virtual ExceptionObject*  as_ExceptionObject() { return nullptr; }
   virtual UnsafeOp*         as_UnsafeOp()        { return nullptr; }
   virtual ProfileInvoke*    as_ProfileInvoke()   { return nullptr; }
@@ -839,14 +833,12 @@ LEAF(StoreField, AccessField)
   : AccessField(obj, offset, field, is_static, state_before, needs_patching)
   , _value(value)
   {
-    set_flag(NeedsWriteBarrierFlag, as_ValueType(field_type())->is_object());
     ASSERT_VALUES
     pin();
   }
 
   // accessors
   Value value() const                            { return _value; }
-  bool needs_write_barrier() const               { return check_flag(NeedsWriteBarrierFlag); }
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { AccessField::input_values_do(f); f->visit(&_value); }
@@ -973,16 +965,12 @@ LEAF(StoreIndexed, AccessIndexed)
   : AccessIndexed(array, index, length, elt_type, state_before, mismatched)
   , _value(value), _profiled_method(nullptr), _profiled_bci(0), _check_boolean(check_boolean)
   {
-    set_flag(NeedsWriteBarrierFlag, (as_ValueType(elt_type)->is_object()));
-    set_flag(NeedsStoreCheckFlag, (as_ValueType(elt_type)->is_object()));
     ASSERT_VALUES
     pin();
   }
 
   // accessors
   Value value() const                            { return _value; }
-  bool needs_write_barrier() const               { return check_flag(NeedsWriteBarrierFlag); }
-  bool needs_store_check() const                 { return check_flag(NeedsStoreCheckFlag); }
   bool check_boolean() const                     { return _check_boolean; }
   // Helpers for MethodData* profiling
   void set_should_profile(bool value)                { set_flag(ProfileMDOFlag, value); }
@@ -1327,16 +1315,19 @@ BASE(NewArray, StateSplit)
 LEAF(NewTypeArray, NewArray)
  private:
   BasicType _elt_type;
+  bool _zero_array;
 
  public:
   // creation
-  NewTypeArray(Value length, BasicType elt_type, ValueStack* state_before)
+  NewTypeArray(Value length, BasicType elt_type, ValueStack* state_before, bool zero_array)
   : NewArray(length, state_before)
   , _elt_type(elt_type)
+  , _zero_array(zero_array)
   {}
 
   // accessors
   BasicType elt_type() const                     { return _elt_type; }
+  bool zero_array()    const                     { return _zero_array; }
   ciType* exact_type() const;
 };
 
@@ -1514,9 +1505,9 @@ LEAF(MonitorExit, AccessMonitor)
 LEAF(Intrinsic, StateSplit)
  private:
   vmIntrinsics::ID _id;
+  ArgsNonNullState _nonnull_state;
   Values*          _args;
   Value            _recv;
-  ArgsNonNullState _nonnull_state;
 
  public:
   // preserves_state can be set to true for Intrinsics
@@ -1616,7 +1607,6 @@ LEAF(BlockBegin, StateSplit)
   ResourceBitMap _live_kill;                     // set of registers defined in this block
 
   ResourceBitMap _fpu_register_usage;
-  intArray*      _fpu_stack_state;               // For x86 FPU code generation with UseLinearScan
   int            _first_lir_instruction_id;      // ID of first LIR instruction in this block
   int            _last_lir_instruction_id;       // ID of last LIR instruction in this block
 
@@ -1663,7 +1653,6 @@ LEAF(BlockBegin, StateSplit)
   , _live_gen()
   , _live_kill()
   , _fpu_register_usage()
-  , _fpu_stack_state(nullptr)
   , _first_lir_instruction_id(-1)
   , _last_lir_instruction_id(-1)
   {
@@ -1691,7 +1680,6 @@ LEAF(BlockBegin, StateSplit)
   ResourceBitMap& live_gen()                     { return _live_gen;       }
   ResourceBitMap& live_kill()                    { return _live_kill;      }
   ResourceBitMap& fpu_register_usage()           { return _fpu_register_usage; }
-  intArray* fpu_stack_state() const              { return _fpu_stack_state;    }
   int first_lir_instruction_id() const           { return _first_lir_instruction_id; }
   int last_lir_instruction_id() const            { return _last_lir_instruction_id; }
   int total_preds() const                        { return _total_preds; }
@@ -1714,7 +1702,6 @@ LEAF(BlockBegin, StateSplit)
   void set_live_gen (const ResourceBitMap& map)  { _live_gen = map;  }
   void set_live_kill(const ResourceBitMap& map)  { _live_kill = map; }
   void set_fpu_register_usage(const ResourceBitMap& map) { _fpu_register_usage = map; }
-  void set_fpu_stack_state(intArray* state)      { _fpu_stack_state = state;  }
   void set_first_lir_instruction_id(int id)      { _first_lir_instruction_id = id;  }
   void set_last_lir_instruction_id(int id)       { _last_lir_instruction_id = id;  }
   void increment_total_preds(int n = 1)          { _total_preds += n; }
@@ -2148,30 +2135,6 @@ LEAF(ExceptionObject, Instruction)
 };
 
 
-// Models needed rounding for floating-point values on Intel.
-// Currently only used to represent rounding of double-precision
-// values stored into local variables, but could be used to model
-// intermediate rounding of single-precision values as well.
-LEAF(RoundFP, Instruction)
- private:
-  Value _input;             // floating-point value to be rounded
-
- public:
-  RoundFP(Value input)
-  : Instruction(input->type()) // Note: should not be used for constants
-  , _input(input)
-  {
-    ASSERT_VALUES
-  }
-
-  // accessors
-  Value input() const                            { return _input; }
-
-  // generic
-  virtual void input_values_do(ValueVisitor* f)   { f->visit(&_input); }
-};
-
-
 BASE(UnsafeOp, Instruction)
  private:
   Value _object;                                 // Object to be fetched from or mutated
@@ -2423,15 +2386,11 @@ LEAF(MemBar, Instruction)
 class BlockPair: public CompilationResourceObj {
  private:
   BlockBegin* _from;
-  BlockBegin* _to;
+  int _index; // sux index of 'to' block
  public:
-  BlockPair(BlockBegin* from, BlockBegin* to): _from(from), _to(to) {}
+  BlockPair(BlockBegin* from, int index): _from(from), _index(index) {}
   BlockBegin* from() const { return _from; }
-  BlockBegin* to() const   { return _to;   }
-  bool is_same(BlockBegin* from, BlockBegin* to) const { return  _from == from && _to == to; }
-  bool is_same(BlockPair* p) const { return  _from == p->from() && _to == p->to(); }
-  void set_to(BlockBegin* b)   { _to = b; }
-  void set_from(BlockBegin* b) { _from = b; }
+  int index() const        { return _index; }
 };
 
 typedef GrowableArray<BlockPair*> BlockPairList;

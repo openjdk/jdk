@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,19 @@
 
 package jdk.internal.util;
 
-import java.lang.invoke.MethodHandle;
-
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
 
 /**
- * Digits class for hexadecimal digits.
+ * Digits provides a fast methodology for converting integers and longs to
+ * hexadecimal digits ASCII strings.
  *
  * @since 21
  */
-public final class HexDigits implements Digits {
+public final class HexDigits {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     /**
      * Each element of the array represents the ascii encoded
      * hex relative to its index, for example:<p>
@@ -64,11 +67,6 @@ public final class HexDigits implements Digits {
      */
     @Stable
     private static final short[] DIGITS;
-
-    /**
-     * Singleton instance of HexDigits.
-     */
-    public static final Digits INSTANCE = new HexDigits();
 
     static {
         short[] digits = new short[16 * 16];
@@ -116,48 +114,83 @@ public final class HexDigits implements Digits {
     }
 
     /**
-     * Return a little-endian packed integer for the 4 ASCII bytes for an input unsigned 2-byte integer.
-     * {@code b0} is the most significant byte and {@code b1} is the least significant byte.
-     * The integer is passed byte-wise to allow reordering of execution.
+     * Insert the unsigned 2-byte integer into the buffer as 4 hexadecimal digit ASCII bytes,
+     * only least significant 16 bits of {@code value} are used.
+     * @param buffer byte buffer to copy into
+     * @param index insert point
+     * @param value to convert
      */
-    public static int packDigits(int b0, int b1) {
-        return DIGITS[b0 & 0xff] | (DIGITS[b1 & 0xff] << 16);
+    public static void put4(byte[] buffer, int index, int value) {
+        // Prepare an int value so C2 generates a 4-byte write instead of two 2-byte writes
+        int v = (DIGITS[value & 0xff] << 16) | DIGITS[(value >> 8) & 0xff];
+        buffer[index]     = (byte)  v;
+        buffer[index + 1] = (byte) (v >> 8);
+        buffer[index + 2] = (byte) (v >> 16);
+        buffer[index + 3] = (byte) (v >> 24);
     }
 
     /**
-     * Return a little-endian packed long for the 8 ASCII bytes for an input unsigned 4-byte integer.
-     * {@code b0} is the most significant byte and {@code b3} is the least significant byte.
-     * The integer is passed byte-wise to allow reordering of execution.
+     * Insert digits for long value in buffer from high index to low index.
+     *
+     * @param value      value to convert
+     * @param index      insert point + 1
+     * @param buffer     byte buffer to copy into
+     *
+     * @return the last index used
      */
-    public static long packDigits(int b0, int b1, int b2, int b3) {
-        return DIGITS[b0 & 0xff]
-                | (DIGITS[b1 & 0xff] << 16)
-                | (((long) DIGITS[b2 & 0xff]) << 32)
-                | (((long) DIGITS[b3 & 0xff]) << 48);
-    }
-
-    @Override
-    public int digits(long value, byte[] buffer, int index,
-                      MethodHandle putCharMH) throws Throwable {
+    public static int getCharsLatin1(long value, int index, byte[] buffer) {
         while ((value & ~0xFF) != 0) {
-            int digits = DIGITS[(int) (value & 0xFF)];
+            short pair = DIGITS[((int) value) & 0xFF];
+            buffer[--index] = (byte)(pair >> 8);
+            buffer[--index] = (byte)(pair);
             value >>>= 8;
-            putCharMH.invokeExact(buffer, --index, digits >> 8);
-            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
         }
 
         int digits = DIGITS[(int) (value & 0xFF)];
-        putCharMH.invokeExact(buffer, --index, digits >> 8);
+        buffer[--index] = (byte) (digits >> 8);
 
         if (0xF < value) {
-            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
+            buffer[--index] = (byte) (digits & 0xFF);
         }
 
         return index;
     }
 
-    @Override
-    public int size(long value) {
+    /**
+     * Insert digits for long value in buffer from high index to low index.
+     *
+     * @param value      value to convert
+     * @param index      insert point + 1
+     * @param buffer     byte buffer to copy into
+     *
+     * @return the last index used
+     */
+    public static int getCharsUTF16(long value, int index, byte[] buffer) {
+        while ((value & ~0xFF) != 0) {
+            int pair = (int) DIGITS[((int) value) & 0xFF];
+            JLA.uncheckedPutCharUTF16(buffer, --index, pair >> 8);
+            JLA.uncheckedPutCharUTF16(buffer, --index, pair & 0xFF);
+            value >>>= 8;
+        }
+
+        int digits = DIGITS[(int) (value & 0xFF)];
+        JLA.uncheckedPutCharUTF16(buffer, --index, (byte) (digits >> 8));
+
+        if (0xF < value) {
+            JLA.uncheckedPutCharUTF16(buffer, --index, (byte) (digits & 0xFF));
+        }
+
+        return index;
+    }
+
+    /**
+     * Calculate the number of digits required to represent the long.
+     *
+     * @param value value to convert
+     *
+     * @return number of digits
+     */
+    public static int stringSize(long value) {
         return value == 0 ? 1 :
                 67 - Long.numberOfLeadingZeros(value) >> 2;
     }

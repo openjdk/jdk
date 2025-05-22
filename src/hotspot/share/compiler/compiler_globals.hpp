@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@
                        develop_pd,                                          \
                        product,                                             \
                        product_pd,                                          \
-                       notproduct,                                          \
                        range,                                               \
                        constraint)                                          \
                                                                             \
@@ -95,11 +94,11 @@
   product(bool, CICompilerCountPerCPU, false,                               \
           "1 compiler thread for log(N CPUs)")                              \
                                                                             \
-  notproduct(intx, CICrashAt, -1,                                           \
+  develop(intx, CICrashAt, -1,                                              \
           "id of compilation to trigger assert in compiler thread for "     \
           "the purpose of testing, e.g. generation of replay data")         \
                                                                             \
-  notproduct(bool, CIObjectFactoryVerify, false,                            \
+  develop(bool, CIObjectFactoryVerify, false,                               \
           "enable potentially expensive verification in ciObjectFactory")   \
                                                                             \
   develop(intx, CIStart, 0,                                                 \

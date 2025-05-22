@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -64,24 +65,40 @@ import java.util.Objects;
  * new shared secret and key encapsulation message.
  * <p>
  *
- * Example:
+ * Example operation using a fictitious {@code KEM} algorithm {@code ABC}:
  * {@snippet lang = java:
- *    // Receiver side
- *    var kpg = KeyPairGenerator.getInstance("X25519");
- *    var kp = kpg.generateKeyPair();
+ *     // Receiver side
+ *     KeyPairGenerator g = KeyPairGenerator.getInstance("ABC");
+ *     KeyPair kp = g.generateKeyPair();
+ *     publishKey(kp.getPublic());
  *
- *    // Sender side
- *    var kem1 = KEM.getInstance("DHKEM");
- *    var sender = kem1.newEncapsulator(kp.getPublic());
- *    var encapsulated = sender.encapsulate();
- *    var k1 = encapsulated.key();
+ *     // Sender side
+ *     KEM senderKEM = KEM.getInstance("ABC");
+ *     PublicKey receiverPublicKey = retrieveKey();
+ *     ABCKEMParameterSpec senderSpec = new ABCKEMParameterSpec(args);
+ *     KEM.Encapsulator e = senderKEM.newEncapsulator(
+ *             receiverPublicKey, senderSpec, null);
+ *     KEM.Encapsulated enc = e.encapsulate();
+ *     SecretKey senderSecret = enc.key();
  *
- *    // Receiver side
- *    var kem2 = KEM.getInstance("DHKEM");
- *    var receiver = kem2.newDecapsulator(kp.getPrivate());
- *    var k2 = receiver.decapsulate(encapsulated.encapsulation());
+ *     sendBytes(enc.encapsulation());
+ *     sendBytes(enc.params());
  *
- *    assert Arrays.equals(k1.getEncoded(), k2.getEncoded());
+ *     // Receiver side
+ *     byte[] ciphertext = receiveBytes();
+ *     byte[] params = receiveBytes();
+ *
+ *     KEM receiverKEM = KEM.getInstance("ABC");
+ *     AlgorithmParameters algParams =
+ *             AlgorithmParameters.getInstance("ABC");
+ *     algParams.init(params);
+ *     ABCKEMParameterSpec receiverSpec =
+ *             algParams.getParameterSpec(ABCKEMParameterSpec.class);
+ *     KEM.Decapsulator d =
+ *             receiverKEM.newDecapsulator(kp.getPrivate(), receiverSpec);
+ *     SecretKey receiverSecret = d.decapsulate(ciphertext);
+ *
+ *     // senderSecret and receiverSecret should now be equal.
  * }
  *
  * @since 21
@@ -221,7 +238,13 @@ public final class KEM {
          *          to be returned, inclusive
          * @param to the final index of the shared secret byte array
          *          to be returned, exclusive
-         * @param algorithm the algorithm name for the secret key that is returned
+         * @param algorithm the algorithm name for the secret key that is returned.
+         *          See the SecretKey Algorithms section in the
+         *          <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+         *          Java Security Standard Algorithm Names Specification</a>
+         *          for information about standard secret key algorithm names.
+         *          Specify "Generic" if the output will be used as the input keying
+         *          material of a key derivation function (KDF).
          * @return a {@link Encapsulated} object containing a portion of
          *          the shared secret, key encapsulation message, and optional
          *          parameters. The portion of the shared secret is a
@@ -236,6 +259,7 @@ public final class KEM {
          * @throws UnsupportedOperationException if the combination of
          *          {@code from}, {@code to}, and {@code algorithm}
          *          is not supported by the encapsulator
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          */
         public Encapsulated encapsulate(int from, int to, String algorithm) {
             return e.engineEncapsulate(from, to, algorithm);
@@ -344,7 +368,13 @@ public final class KEM {
          *          to be returned, inclusive
          * @param to the final index of the shared secret byte array
          *          to be returned, exclusive
-         * @param algorithm the algorithm name for the secret key that is returned
+         * @param algorithm the algorithm name for the secret key that is returned.
+         *          See the SecretKey Algorithms section in the
+         *          <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+         *          Java Security Standard Algorithm Names Specification</a>
+         *          for information about standard secret key algorithm names.
+         *          Specify "Generic" if the output will be used as the input keying
+         *          material of a key derivation function (KDF).
          * @return a portion of the shared secret as a {@code SecretKey}
          *          containing the bytes of the secret ranging from {@code from}
          *          to {@code to}, exclusive, and an algorithm name as specified.
@@ -360,6 +390,7 @@ public final class KEM {
          * @throws UnsupportedOperationException if the combination of
          *          {@code from}, {@code to}, and {@code algorithm}
          *          is not supported by the decapsulator
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          */
         public SecretKey decapsulate(byte[] encapsulation,
                 int from, int to, String algorithm)
@@ -530,6 +561,7 @@ public final class KEM {
      *          "{@docRoot}/../specs/security/standard-names.html#kem-algorithms">
      *          Java Security Standard Algorithm Names Specification</a>
      *          for information about standard KEM algorithm names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KEM} object
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
      *         {@code KEM} implementation for the specified algorithm
@@ -537,11 +569,12 @@ public final class KEM {
      */
     public static KEM getInstance(String algorithm)
             throws NoSuchAlgorithmException {
-        List<Provider.Service> list = GetInstance.getServices(
+        Iterator<Provider.Service> t = GetInstance.getServices(
                 "KEM",
                 Objects.requireNonNull(algorithm, "null algorithm name"));
         List<Provider.Service> allowed = new ArrayList<>();
-        for (Provider.Service s : list) {
+        while (t.hasNext()) {
+            Provider.Service s = t.next();
             if (!JceSecurity.canUseProvider(s.getProvider())) {
                 continue;
             }
@@ -566,6 +599,7 @@ public final class KEM {
      *          for information about standard KEM algorithm names.
      * @param provider the provider. If {@code null}, this method is equivalent
      *                 to {@link #getInstance(String)}.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KEM} object
      * @throws NoSuchAlgorithmException if a {@code provider} is specified and
      *          it does not support the specified KEM algorithm,
@@ -597,6 +631,7 @@ public final class KEM {
      *          for information about standard KEM algorithm names.
      * @param provider the provider. If {@code null}, this method is equivalent
      *                 to {@link #getInstance(String)}.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KEM} object
      * @throws NoSuchAlgorithmException if a {@code provider} is specified and
      *          it does not support the specified KEM algorithm,

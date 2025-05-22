@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+    <xs:annotation>
+        <xs:documentation>
+      This is the XML Schema Scripting module for XHTML
+      $Id: xhtml-script-1.xsd,v 1.5 2006/09/11 08:50:41 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+    </xs:annotation>
+    <xs:annotation>
+        <xs:documentation>
+      Scripting
+      
+        * script, noscript
+      
+      This module declares element types and attributes used to provide
+      support for executable scripts as well as an alternate content
+      container where scripts are not supported.
+    </xs:documentation>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_scriptmodule"/>
+    </xs:annotation>
+  <xs:import namespace="http://www.w3.org/XML/1998/namespace"
+             schemaLocation="http://www.w3.org/2001/xml.xsd">
+        <xs:annotation>
+            <xs:documentation>
+          This import brings in the XML namespace attributes 
+          The module itself does not provide the schemaLocation
+          and expects the driver schema to provide the 
+          actual SchemaLocation.
+        </xs:documentation>
+        </xs:annotation>
+    </xs:import>
+    <xs:attributeGroup name="xhtml.script.attlist">
+        <xs:attributeGroup ref="xhtml.id"/>
+        <xs:attribute name="charset" type="xh11d:Charset"/>
+        <xs:attribute name="type" type="xh11d:ContentType" use="required"/>
+        <xs:attribute name="src" type="xh11d:URI"/>
+        <xs:attribute name="defer">
+            <xs:simpleType>
+                <xs:restriction base="xs:NMTOKEN">
+                    <xs:enumeration value="defer"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.script.content">
+        <xs:sequence/>
+    </xs:group>
+    <xs:complexType name="xhtml.script.type" mixed="true">
+        <xs:group ref="xhtml.script.content"/>
+        <xs:attributeGroup ref="xhtml.script.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.noscript.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.noscript.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Block.mix" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.noscript.type">
+        <xs:group ref="xhtml.noscript.content"/>
+        <xs:attributeGroup ref="xhtml.noscript.attlist"/>
+    </xs:complexType>
+</xs:schema>

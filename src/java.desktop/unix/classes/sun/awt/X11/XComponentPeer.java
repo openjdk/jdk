@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,10 +123,12 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     }
 
 
+    @Override
     void preInit(XCreateWindowParams params) {
         super.preInit(params);
         boundsOperation = DEFAULT_OPERATION;
     }
+    @Override
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
 
@@ -152,6 +154,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return true;
     }
 
+    @Override
     public void reparent(ContainerPeer newNativeParent) {
         XComponentPeer newPeer = (XComponentPeer)newNativeParent;
         XToolkit.awtLock();
@@ -164,11 +167,12 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
             XToolkit.awtUnlock();
         }
     }
+    @Override
     public boolean isReparentSupported() {
         return System.getProperty("sun.awt.X11.XComponentPeer.reparentNotSupported", "false").equals("false");
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
     public boolean isObscured() {
         Container container  = (target instanceof Container) ?
             (Container)target : target.getParent();
@@ -193,6 +197,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return true;
     }
 
+    @Override
     public boolean canDetermineObscurity() {
         return true;
     }
@@ -234,6 +239,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         bHasFocus = false;
     }
 
+    @Override
     public boolean isFocusable() {
         /* should be implemented by other sub-classes */
         return false;
@@ -244,7 +250,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     }
 
     // TODO: consider moving it to KeyboardFocusManagerPeerImpl
-    @SuppressWarnings("deprecation")
+    @Override
     public final boolean requestFocus(Component lightweightChild, boolean temporary,
                                       boolean focusedWindowChangeAllowed, long time,
                                       FocusEvent.Cause cause)
@@ -344,6 +350,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
 
 
+    @Override
     public void setVisible(boolean b) {
         xSetVisible(b);
     }
@@ -355,6 +362,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     /**
      * @see java.awt.peer.ComponentPeer
      */
+    @Override
     public void setEnabled(final boolean value) {
         if (enableLog.isLoggable(PlatformLogger.Level.FINE)) {
             enableLog.fine("{0}ing {1}", (value ? "Enabl" : "Disabl"), this);
@@ -402,9 +410,11 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         target.paint(g);
     }
 
+    @Override
     public Graphics getGraphics() {
         return getGraphics(surfaceData, getPeerForeground(), getPeerBackground(), getPeerFont());
     }
+    @Override
     public void print(Graphics g) {
         // clear rect here to emulate X clears rect before Expose
         g.setColor(target.getBackground());
@@ -416,6 +426,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         target.print(g);
     }
 
+    @Override
     public void setBounds(int x, int y, int width, int height, int op) {
         this.x = x;
         this.y = y;
@@ -426,10 +437,12 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         layout();
     }
 
+    @Override
     public void reshape(int x, int y, int width, int height) {
         setBounds(x, y, width, height, SET_BOUNDS);
     }
 
+    @Override
     public void coalescePaintEvent(PaintEvent e) {
         Rectangle r = e.getUpdateRect();
         if (!(e instanceof IgnorePaintEvent)) {
@@ -518,6 +531,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
     }
 
+    @Override
     @SuppressWarnings("fallthrough")
     public void handleEvent(java.awt.AWTEvent e) {
         if ((e instanceof InputEvent) && !((InputEvent)e).isConsumed() && target.isEnabled())  {
@@ -569,14 +583,17 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     }
 
+    @Override
     public Dimension getMinimumSize() {
         return target.getSize();
     }
 
+    @Override
     public Dimension getPreferredSize() {
         return getMinimumSize();
     }
 
+    @Override
     public void layout() {}
 
     void updateMotifColors(Color bg) {
@@ -646,6 +663,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
      * @see       Toolkit#getFontMetrics(Font)
      * @since     1.0
      */
+    @Override
     public FontMetrics getFontMetrics(Font font) {
         if (fontLog.isLoggable(PlatformLogger.Level.FINE)) {
             fontLog.fine("Getting font metrics for " + font);
@@ -674,6 +692,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return font;
     }
 
+    @Override
     public void updateCursorImmediately() {
         XGlobalCursorManager.getCursorManager().updateCursorImmediately();
     }
@@ -710,10 +729,12 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
     }
 
+    @Override
     public Image createImage(int width, int height) {
         return graphicsConfig.createAcceleratedImage(target, width, height);
     }
 
+    @Override
     public VolatileImage createVolatileImage(int width, int height) {
         return new SunVolatileImage(target, width, height);
     }
@@ -734,6 +755,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return paintPending && isLayouting;
     }
 
+    @Override
     public boolean handlesWheelScrolling() {
         return false;
     }
@@ -755,6 +777,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         isLayouting = false;
     }
 
+    @Override
     public Color getWinBackground() {
         return getPeerBackground();
     }
@@ -1104,6 +1127,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     private BufferCapabilities backBufferCaps;
 
+    @Override
     public void createBuffers(int numBuffers, BufferCapabilities caps)
       throws AWTException
     {
@@ -1122,6 +1146,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return backBufferCaps;
     }
 
+    @Override
     public void flip(int x1, int y1, int x2, int y2,
                      BufferCapabilities.FlipContents flipAction)
     {
@@ -1135,6 +1160,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
                             x1, y1, x2, y2, flipAction);
     }
 
+    @Override
     public Image getBackBuffer() {
         if (buffersLog.isLoggable(PlatformLogger.Level.FINE)) {
             buffersLog.fine("getBackBuffer()");
@@ -1145,6 +1171,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return xBackBuffer;
     }
 
+    @Override
     public void destroyBuffers() {
         if (buffersLog.isLoggable(PlatformLogger.Level.FINE)) {
             buffersLog.fine("destroyBuffers()");
@@ -1180,6 +1207,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
      * Currently if target component is disabled the following event will be disabled on window:
      * ButtonPress, ButtonRelease, KeyPress, KeyRelease, EnterNotify, LeaveNotify, MotionNotify
      */
+    @Override
     protected boolean isEventDisabled(XEvent e) {
         if (enableLog.isLoggable(PlatformLogger.Level.FINEST)) {
             enableLog.finest("Component is {1}, checking for disabled event {0}", e, (isEnabled()?"enabled":"disable"));
@@ -1251,6 +1279,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
      * Lowers this component at the bottom of the above HW peer. If the above parameter
      * is null then the method places this component at the top of the Z-order.
      */
+    @Override
     public void setZOrder(ComponentPeer above) {
         long aboveWindow = (above != null) ? ((XComponentPeer)above).getWindow() : 0;
 
@@ -1282,6 +1311,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     /****** DropTargetPeer implementation ********************/
 
+    @Override
     public void addDropTarget(DropTarget dt) {
         Component comp = target;
         while(!(comp == null || comp instanceof Window)) {
@@ -1296,6 +1326,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
     }
 
+    @Override
     public void removeDropTarget(DropTarget dt) {
         Component comp = target;
         while(!(comp == null || comp instanceof Window)) {
@@ -1315,6 +1346,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
      * Applies the shape to the X-window.
      * @since 1.7
      */
+    @Override
     public void applyShape(Region shape) {
         if (XlibUtil.isShapingSupported()) {
             if (shapeLog.isLoggable(PlatformLogger.Level.FINER)) {
@@ -1359,6 +1391,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
     }
 
+    @Override
     public boolean updateGraphicsData(GraphicsConfiguration gc) {
         int oldVisual = -1, newVisual = -1;
 

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Science Association http://ukij.org
@@ -1150,6 +1150,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 		<exemplarCharacters draft="contributed">[{ئا} {ئه} {ئو} {ئۇ} {ئۆ} {ئۈ} {ئې} {ئى} ا ە ب پ ت ج چ خ د ر ز ژ س ش غ ف ق ك گ ڭ ل م ن ھ و ۇ ۆ ۈ ۋ ې ى ي]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200E\u200F ئ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[{ئا} {ئه} {ئو} {ئۇ} {ئۆ} {ئۈ} {ئې} {ئى} ا ە ب پ ت ج چ خ د ر ز ژ س ش غ ف ق ك گ ڭ ل م ن ھ و ۇ ۆ ۈ ۋ ې ى ي]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ‹ › « » ( ) \[ \] \{ \}]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart draft="contributed">»</quotationStart>
@@ -2186,13 +2187,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<daylight draft="contributed">جۇڭگو يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic draft="contributed">چويبالسان ۋاقتى</generic>
-					<standard draft="contributed">چويبالسان ئۆلچەملىك ۋاقتى</standard>
-					<daylight draft="contributed">چويبالسان يازلىق ۋاقتى</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard draft="contributed">روژدېستۋو ئارىلى ۋاقتى</standard>
@@ -2496,11 +2490,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<daylight draft="contributed">ئاۋمېن يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="contributed">ماككۇۋارى ئاراللىرى ۋاقتى</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="contributed">ماگادان ۋاقتى</generic>
@@ -2538,13 +2527,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<metazone type="Mawson">
 				<long>
 					<standard draft="contributed">ماۋسون ۋاقتى</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="contributed">مېكسىكا غەربىي شىمالىي قىسىم ۋاقتى</generic>
-					<standard draft="contributed">مېكسىكا غەربىي شىمالىي قىسىم ئۆلچەملىك ۋاقتى</standard>
-					<daylight draft="contributed">مېكسىكا غەربىي شىمالىي قىسىم يازلىق ۋاقتى</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

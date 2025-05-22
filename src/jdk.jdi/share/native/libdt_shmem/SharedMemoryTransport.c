@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ void
 throwException(JNIEnv *env, char *exceptionClassName, char *message)
 {
     jclass excClass = (*env)->FindClass(env, exceptionClassName);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return;
     }
     (*env)->ThrowNew(env, excClass, message);
@@ -109,7 +109,7 @@ JNIEXPORT jlong JNICALL Java_com_sun_tools_jdi_SharedMemoryTransportService_atta
     const char *addrChars;
 
     addrChars = (*env)->GetStringUTFChars(env, address, NULL);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return CONNECTION_TO_ID(connection);
     } else if (addrChars == NULL) {
         throwException(env, "java/lang/InternalError", "GetStringUTFChars failed");
@@ -143,7 +143,7 @@ JNIEXPORT jstring JNICALL Java_com_sun_tools_jdi_SharedMemoryTransportService_na
         throwShmemException(env, "shmemBase_name failed", rc);
     } else {
         nameString = (*env)->NewStringUTF(env, namePtr);
-        if ((nameString == NULL) && !(*env)->ExceptionOccurred(env)) {
+        if ((nameString == NULL) && !(*env)->ExceptionCheck(env)) {
             throwException(env, "java/lang/InternalError", "Unable to create string");
         }
     }
@@ -190,7 +190,7 @@ JNIEXPORT jlong JNICALL Java_com_sun_tools_jdi_SharedMemoryTransportService_star
 
     if (address != NULL) {
         addrChars = (*env)->GetStringUTFChars(env, address, NULL);
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             return TRANSPORT_TO_ID(transport);
         } else if (addrChars == NULL) {
             throwException(env, "java/lang/InternalError", "GetStringUTFChars failed");

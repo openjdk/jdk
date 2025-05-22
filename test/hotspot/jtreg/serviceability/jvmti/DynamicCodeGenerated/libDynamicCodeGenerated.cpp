@@ -23,7 +23,7 @@
 
 #include <string.h>
 #include <jvmti.h>
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 static jvmtiEnv* jvmti = nullptr;
 

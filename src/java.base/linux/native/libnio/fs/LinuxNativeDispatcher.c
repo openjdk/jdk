@@ -50,12 +50,6 @@ typedef ssize_t copy_file_range_func(int, loff_t*, int, loff_t*, size_t,
                                      unsigned int);
 static copy_file_range_func* my_copy_file_range_func = NULL;
 
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
 static void throwUnixException(JNIEnv* env, int errnum) {
     jobject x = JNU_NewObjectByName(env, "sun/nio/fs/UnixException",
         "(I)V", errnum);
@@ -217,7 +211,7 @@ Java_sun_nio_fs_LinuxNativeDispatcher_directCopy0
     }
 
     do {
-        RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
+        RESTARTABLE(sendfile(dst, src, NULL, count), bytes_sent);
         if (bytes_sent < 0) {
             if (errno == EAGAIN)
                 return IOS_UNAVAILABLE;

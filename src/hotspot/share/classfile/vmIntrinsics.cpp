@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,43 +22,44 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "jvm_constants.h"
 #include "jvm_io.h"
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/tribool.hpp"
-#include "utilities/xmlstream.hpp"
 
 // These are flag-matching functions:
-inline bool match_F_R(jshort flags) {
+inline bool match_F_R(u2 flags) {
   const int req = 0;
   const int neg = JVM_ACC_STATIC | JVM_ACC_SYNCHRONIZED | JVM_ACC_NATIVE;
   return (flags & (req | neg)) == req;
 }
 
-inline bool match_F_Y(jshort flags) {
+inline bool match_F_Y(u2 flags) {
   const int req = JVM_ACC_SYNCHRONIZED;
   const int neg = JVM_ACC_STATIC | JVM_ACC_NATIVE;
   return (flags & (req | neg)) == req;
 }
 
-inline bool match_F_RN(jshort flags) {
+inline bool match_F_RN(u2 flags) {
   const int req = JVM_ACC_NATIVE;
   const int neg = JVM_ACC_STATIC | JVM_ACC_SYNCHRONIZED;
   return (flags & (req | neg)) == req;
 }
 
-inline bool match_F_S(jshort flags) {
+inline bool match_F_S(u2 flags) {
   const int req = JVM_ACC_STATIC;
   const int neg = JVM_ACC_SYNCHRONIZED | JVM_ACC_NATIVE;
   return (flags & (req | neg)) == req;
 }
 
-inline bool match_F_SN(jshort flags) {
+inline bool match_F_SN(u2 flags) {
   const int req = JVM_ACC_STATIC | JVM_ACC_NATIVE;
   const int neg = JVM_ACC_SYNCHRONIZED;
   return (flags & (req | neg)) == req;
@@ -90,6 +91,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dexp:
@@ -141,6 +143,7 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dexp:
@@ -242,6 +245,8 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_Reference_get:
     case vmIntrinsics::_Continuation_doYield:
     case vmIntrinsics::_Continuation_enterSpecial:
+    case vmIntrinsics::_Continuation_pin:
+    case vmIntrinsics::_Continuation_unpin:
       break;
     default:
       return true;
@@ -251,10 +256,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_isAssignableFrom:
-  case vmIntrinsics::_getModifiers:
-  case vmIntrinsics::_isInterface:
-  case vmIntrinsics::_isArray:
-  case vmIntrinsics::_isPrimitive:
   case vmIntrinsics::_isHidden:
   case vmIntrinsics::_getSuperclass:
   case vmIntrinsics::_Class_cast:
@@ -286,6 +287,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dpow:
@@ -473,6 +475,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_sha5_implCompress:
     if (!UseSHA512Intrinsics) return true;
     break;
+  case vmIntrinsics::_double_keccak:
   case vmIntrinsics::_sha3_implCompress:
     if (!UseSHA3Intrinsics) return true;
     break;
@@ -485,12 +488,32 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_chacha20Block:
     if (!UseChaCha20Intrinsics) return true;
     break;
+  case vmIntrinsics::_kyberNtt:
+  case vmIntrinsics::_kyberInverseNtt:
+  case vmIntrinsics::_kyberNttMult:
+  case vmIntrinsics::_kyberAddPoly_2:
+  case vmIntrinsics::_kyberAddPoly_3:
+  case vmIntrinsics::_kyber12To16:
+  case vmIntrinsics::_kyberBarrettReduce:
+    if (!UseKyberIntrinsics) return true;
+    break;
+  case vmIntrinsics::_dilithiumAlmostNtt:
+  case vmIntrinsics::_dilithiumAlmostInverseNtt:
+  case vmIntrinsics::_dilithiumNttMult:
+  case vmIntrinsics::_dilithiumMontMulByConstant:
+  case vmIntrinsics::_dilithiumDecomposePoly:
+    if (!UseDilithiumIntrinsics) return true;
+    break;
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
     if (!UseBASE64Intrinsics) return true;
     break;
   case vmIntrinsics::_poly1305_processBlocks:
     if (!UsePoly1305Intrinsics) return true;
+    break;
+  case vmIntrinsics::_intpoly_montgomeryMult_P256:
+  case vmIntrinsics::_intpoly_assign:
+    if (!UseIntPolyIntrinsics) return true;
     break;
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
@@ -505,6 +528,9 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_copyMemory:
     if (!InlineArrayCopy || !InlineUnsafeOps) return true;
+    break;
+  case vmIntrinsics::_setMemory:
+    if (!InlineUnsafeOps) return true;
     break;
 #ifdef COMPILER2
   case vmIntrinsics::_clone:
@@ -697,7 +723,7 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
 vmIntrinsics::ID vmIntrinsics::find_id_impl(vmSymbolID holder,
                                             vmSymbolID name,
                                             vmSymbolID sig,
-                                            jshort flags) {
+                                            u2 flags) {
   assert((int)vmSymbolID::SID_LIMIT <= (1<<vmSymbols::log2_SID_LIMIT), "must fit");
 
   // Let the C compiler build the decision tree.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,6 @@ class CipherHelper {
     private static final int HMAC_CHECKSUM_SIZE = 8;
     // key usage for MIC tokens used by MS
     private static final int KG_USAGE_SIGN_MS = 15;
-
-    // debug flag
-    private static final boolean DEBUG = Krb5Util.DEBUG;
 
     /**
      * A zero initial vector to be used for checksum calculation and for

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,29 +118,29 @@ public final class ZoneRules implements Serializable {
     private static final int LAST_CACHED_YEAR = 2100;
 
     /**
-     * The transitions between standard offsets (epoch seconds), sorted.
+     * @serial The transitions between standard offsets (epoch seconds), sorted.
      */
     private final long[] standardTransitions;
     /**
-     * The standard offsets.
+     * @serial The standard offsets.
      */
     private final ZoneOffset[] standardOffsets;
     /**
-     * The transitions between instants (epoch seconds), sorted.
+     * @serial The transitions between instants (epoch seconds), sorted.
      */
     private final long[] savingsInstantTransitions;
     /**
-     * The transitions between local date-times, sorted.
+     * @serial The transitions between local date-times, sorted.
      * This is a paired array, where the first entry is the start of the transition
      * and the second entry is the end of the transition.
      */
     private final LocalDateTime[] savingsLocalTransitions;
     /**
-     * The wall offsets.
+     * @serial The wall offsets.
      */
     private final ZoneOffset[] wallOffsets;
     /**
-     * The last rule.
+     * @serial The last rule.
      */
     private final ZoneOffsetTransitionRule[] lastRules;
     /**

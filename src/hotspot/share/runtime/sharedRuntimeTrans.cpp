@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jni.h"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "sanitizers/ub.hpp"
+
+#include <limits>
 
 // This file contains copies of the fdlibm routines used by
 // StrictMath. It turns out that it is almost always required to use
@@ -39,7 +41,7 @@
 // Enabling optimizations in this file causes incorrect code to be
 // generated; can not figure out how to turn down optimization for one
 // file in the IDE on Windows
-#ifdef WIN32
+#ifdef _WINDOWS
 # pragma warning( disable: 4748 ) // /GS can not protect parameters and local variables from local buffer overrun because optimizations are disabled in function
 # pragma optimize ( "", off )
 #endif
@@ -115,14 +117,16 @@ static double __ieee754_log(double x) {
   int k,hx,i,j;
   unsigned lx;
 
+  static_assert(std::numeric_limits<double>::is_iec559, "IEEE 754 required");
+
   hx = high(x);               /* high word of x */
   lx = low(x);                /* low  word of x */
 
   k=0;
   if (hx < 0x00100000) {                   /* x < 2**-1022  */
     if (((hx&0x7fffffff)|lx)==0)
-      return -two54/zero;             /* log(+-0)=-inf */
-    if (hx<0) return (x-x)/zero;   /* log(-#) = NaN */
+      return -std::numeric_limits<double>::infinity();             /* log(+-0)=-inf */
+    if (hx<0) return std::numeric_limits<double>::quiet_NaN();   /* log(-#) = NaN */
     k -= 54; x *= two54; /* subnormal number, scale up x */
     hx = high(x);             /* high word of x */
   }
@@ -209,14 +213,16 @@ static double __ieee754_log10(double x) {
   int i,k,hx;
   unsigned lx;
 
+  static_assert(std::numeric_limits<double>::is_iec559, "IEEE 754 required");
+
   hx = high(x);       /* high word of x */
   lx = low(x);        /* low word of x */
 
   k=0;
   if (hx < 0x00100000) {                  /* x < 2**-1022  */
     if (((hx&0x7fffffff)|lx)==0)
-      return -two54/zero;             /* log(+-0)=-inf */
-    if (hx<0) return (x-x)/zero;        /* log(-#) = NaN */
+      return -std::numeric_limits<double>::infinity();             /* log(+-0)=-inf */
+    if (hx<0) return std::numeric_limits<double>::quiet_NaN(); /* log(-#) = NaN */
     k -= 54; x *= two54; /* subnormal number, scale up x */
     hx = high(x);                /* high word of x */
   }
@@ -440,12 +446,15 @@ bp[] = {1.0, 1.5,},
         ivln2_h  =  1.44269502162933349609e+00, /* 0x3FF71547, 0x60000000 =24b 1/ln2*/
         ivln2_l  =  1.92596299112661746887e-08; /* 0x3E54AE0B, 0xF85DDF44 =1/ln2 tail*/
 
+ATTRIBUTE_NO_UBSAN
 static double __ieee754_pow(double x, double y) {
   double z,ax,z_h,z_l,p_h,p_l;
   double y1,t1,t2,r,s,t,u,v,w;
   int i0,i1,i,j,k,yisint,n;
   int hx,hy,ix,iy;
   unsigned lx,ly;
+
+  static_assert(std::numeric_limits<double>::is_iec559, "IEEE 754 required");
 
   i0 = ((*(int*)&one)>>29)^1; i1=1-i0;
   hx = high(x); lx = low(x);
@@ -505,14 +514,16 @@ static double __ieee754_pow(double x, double y) {
   if(lx==0) {
     if(ix==0x7ff00000||ix==0||ix==0x3ff00000){
       z = ax;                   /*x is +-0,+-inf,+-1*/
-      if(hy<0) z = one/z;       /* z = (1/|x|) */
+      if(hy<0) {
+        if (ix == 0) {
+          z = std::numeric_limits<double>::infinity();
+        } else {
+          z = one/z;       /* z = (1/|x|) */
+        }
+      }
       if(hx<0) {
         if(((ix-0x3ff00000)|yisint)==0) {
-#ifdef CAN_USE_NAN_DEFINE
-          z = NAN;
-#else
-          z = (z-z)/(z-z); /* (-1)**non-int is NaN */
-#endif
+          z = std::numeric_limits<double>::quiet_NaN();
         } else if(yisint==1)
           z = -1.0*z;           /* (x<0)**odd = -(|x|**odd) */
       }
@@ -523,12 +534,9 @@ static double __ieee754_pow(double x, double y) {
   n = (hx>>31)+1;
 
   /* (x<0)**(non-int) is NaN */
-  if((n|yisint)==0)
-#ifdef CAN_USE_NAN_DEFINE
-    return NAN;
-#else
-    return (x-x)/(x-x);
-#endif
+  if((n|yisint)==0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
 
   s = one; /* s (sign of result -ve**odd) = -1 else = 1 */
   if((n|(yisint-1))==0) s = -one;/* (-ve)**(odd int) */
@@ -659,6 +667,6 @@ JRT_LEAF(jdouble, SharedRuntime::dpow(jdouble x, jdouble y))
   return __ieee754_pow(x, y);
 JRT_END
 
-#ifdef WIN32
+#ifdef _WINDOWS
 # pragma optimize ( "", on )
 #endif

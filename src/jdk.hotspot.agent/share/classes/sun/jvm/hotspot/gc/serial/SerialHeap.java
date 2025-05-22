@@ -46,8 +46,6 @@ public class SerialHeap extends CollectedHeap {
   private static AddressField youngGenField;
   private static AddressField oldGenField;
 
-  private static GenerationFactory genFactory;
-
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -61,8 +59,6 @@ public class SerialHeap extends CollectedHeap {
 
     youngGenField = type.getAddressField("_young_gen");
     oldGenField = type.getAddressField("_old_gen");
-
-    genFactory = new GenerationFactory();
   }
 
   public DefNewGeneration youngGen() {
@@ -99,11 +95,11 @@ public class SerialHeap extends CollectedHeap {
   public void printOn(PrintStream tty) {
     tty.println("SerialHeap:");
 
-    tty.println("Young Generation - Invocations: " + youngGen().invocations());
+    tty.println("Young Generation: ");
     youngGen().printOn(tty);
     tty.println();
 
-    tty.println("Old Generation - Invocations: " + oldGen().invocations());
+    tty.println("Old Generation: ");
     oldGen().printOn(tty);
     tty.println();
   }

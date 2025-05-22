@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,13 @@
  * questions.
  */
 
-#include "precompiled.hpp"
+#include "gc/shared/gcArguments.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeuristics.hpp"
-#include "gc/shared/gcArguments.hpp"
+#include "gc/z/zUtils.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
@@ -38,6 +38,8 @@ void ZArguments::initialize_alignments() {
 }
 
 void ZArguments::initialize_heap_flags_and_sizes() {
+  GCArguments::initialize_heap_flags_and_sizes();
+
   if (!FLAG_IS_CMDLINE(MaxHeapSize) &&
       !FLAG_IS_CMDLINE(MaxRAMPercentage) &&
       !FLAG_IS_CMDLINE(SoftMaxHeapSize)) {
@@ -117,18 +119,21 @@ void ZArguments::select_max_gc_threads() {
 }
 
 void ZArguments::initialize() {
-  // Check mark stack size
-  const size_t mark_stack_space_limit = ZAddressSpaceLimit::mark_stack();
-  if (ZMarkStackSpaceLimit > mark_stack_space_limit) {
-    if (!FLAG_IS_DEFAULT(ZMarkStackSpaceLimit)) {
-      vm_exit_during_initialization("ZMarkStackSpaceLimit too large for limited address space");
-    }
-    FLAG_SET_DEFAULT(ZMarkStackSpaceLimit, mark_stack_space_limit);
-  }
+  GCArguments::initialize();
 
-  // Enable NUMA by default
-  if (FLAG_IS_DEFAULT(UseNUMA)) {
-    FLAG_SET_DEFAULT(UseNUMA, true);
+  // NUMA settings
+  if (FLAG_IS_DEFAULT(ZFakeNUMA)) {
+    // Enable NUMA by default
+    if (FLAG_IS_DEFAULT(UseNUMA)) {
+      FLAG_SET_DEFAULT(UseNUMA, true);
+    }
+  } else {
+    if (UseNUMA) {
+      if (!FLAG_IS_DEFAULT(UseNUMA)) {
+        warning("ZFakeNUMA is enabled; turning off UseNUMA");
+      }
+      FLAG_SET_ERGO(UseNUMA, false);
+    }
   }
 
   select_max_gc_threads();
@@ -138,15 +143,16 @@ void ZArguments::initialize() {
     FLAG_SET_ERGO_IF_DEFAULT(ZCollectionIntervalMajor, ZCollectionInterval);
   }
 
-  if (FLAG_IS_DEFAULT(ZFragmentationLimit)) {
-    FLAG_SET_DEFAULT(ZFragmentationLimit, 5.0);
+  // Set an initial TLAB size to avoid depending on the current capacity
+  if (FLAG_IS_DEFAULT(TLABSize)) {
+    FLAG_SET_DEFAULT(TLABSize, 256*K);
   }
 
   // Set medium page size here because MaxTenuringThreshold may use it.
   ZHeuristics::set_medium_page_size();
 
   if (!FLAG_IS_DEFAULT(ZTenuringThreshold) && ZTenuringThreshold != -1) {
-    FLAG_SET_ERGO_IF_DEFAULT(MaxTenuringThreshold, ZTenuringThreshold);
+    FLAG_SET_ERGO_IF_DEFAULT(MaxTenuringThreshold, (uint)ZTenuringThreshold);
     if (MaxTenuringThreshold == 0) {
       FLAG_SET_ERGO_IF_DEFAULT(AlwaysTenure, true);
     }
@@ -176,7 +182,7 @@ void ZArguments::initialize() {
   // Large page size must match granule size
   if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != ZGranuleSize) {
     vm_exit_during_initialization(err_msg("Incompatible -XX:LargePageSizeInBytes, only "
-                                          SIZE_FORMAT "M large pages are supported by ZGC",
+                                          "%zuM large pages are supported by ZGC",
                                           ZGranuleSize / M));
   }
 
@@ -220,14 +226,32 @@ void ZArguments::initialize() {
 #endif
 }
 
+size_t ZArguments::conservative_max_heap_alignment() {
+  return 0;
+}
+
 size_t ZArguments::heap_virtual_to_physical_ratio() {
   return ZVirtualToPhysicalRatio;
 }
 
 CollectedHeap* ZArguments::create_heap() {
-  return new ZCollectedHeap();
+  // ZCollectedHeap has an alignment greater than or equal to ZCacheLineSize,
+  // which may be larger than std::max_align_t. Instead of using operator new,
+  // align the storage manually and construct the ZCollectedHeap using operator
+  // placement new.
+
+  static_assert(alignof(ZCollectedHeap) >= ZCacheLineSize,
+                "ZCollectedHeap is no longer ZCacheLineSize aligned");
+
+  // Allocate aligned storage for ZCollectedHeap
+  const size_t alignment = alignof(ZCollectedHeap);
+  const size_t size = sizeof(ZCollectedHeap);
+  void* const addr = reinterpret_cast<void*>(ZUtils::alloc_aligned_unfreeable(alignment, size));
+
+  // Construct ZCollectedHeap in the aligned storage
+  return ::new (addr) ZCollectedHeap();
 }
 
-bool ZArguments::is_supported() {
+bool ZArguments::is_supported() const {
   return is_os_supported();
 }

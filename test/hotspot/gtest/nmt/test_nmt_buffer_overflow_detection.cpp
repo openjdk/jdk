@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,16 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
+#include "sanitizers/address.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
 #include "testutils.hpp"
+
+#if !INCLUDE_ASAN
 
 // This prefix shows up on any c heap corruption NMT detects. If unsure which assert will
 // come, just use this one.
@@ -161,3 +163,5 @@ TEST_VM(NMT, test_realloc) {
     }
   }
 }
+
+#endif // !INCLUDE_ASAN

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.runtime.win32_x86.Win32X86JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.win32_amd64.Win32AMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.win32_aarch64.Win32AARCH64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_x86.LinuxX86JavaThreadPDAccess;
@@ -73,7 +72,6 @@ class ThreadsList extends VMObject {
 }
 
 public class Threads {
-    private static JavaThreadFactory threadFactory;
     private static AddressField      threadListField;
     private static VirtualConstructor virtualConstructor;
     private static JavaThreadPDAccess access;
@@ -91,16 +89,13 @@ public class Threads {
         Type type = db.lookupType("ThreadsSMRSupport");
         threadListField = type.getAddressField("_java_thread_list");
 
-        // Instantiate appropriate platform-specific JavaThreadFactory
         String os  = VM.getVM().getOS();
         String cpu = VM.getVM().getCPU();
 
         access = null;
         // FIXME: find the platform specific PD class by reflection?
         if (os.equals("win32")) {
-            if (cpu.equals("x86")) {
-                access =  new Win32X86JavaThreadPDAccess();
-            } else if (cpu.equals("amd64")) {
+            if (cpu.equals("amd64")) {
                 access =  new Win32AMD64JavaThreadPDAccess();
             } else if (cpu.equals("aarch64")) {
                 access =  new Win32AARCH64JavaThreadPDAccess();
@@ -147,35 +142,36 @@ public class Threads {
         }
 
         virtualConstructor = new VirtualConstructor(db);
-        // Add mappings for all known thread types
+
+        /*
+         * Add mappings for JavaThread types
+         */
+
         virtualConstructor.addMapping("JavaThread", JavaThread.class);
+
         if (!VM.getVM().isCore()) {
             virtualConstructor.addMapping("CompilerThread", CompilerThread.class);
         }
-        virtualConstructor.addMapping("JvmtiAgentThread", JvmtiAgentThread.class);
-        virtualConstructor.addMapping("ServiceThread", ServiceThread.class);
-        virtualConstructor.addMapping("MonitorDeflationThread", MonitorDeflationThread.class);
-        virtualConstructor.addMapping("NotificationThread", NotificationThread.class);
-        virtualConstructor.addMapping("StringDedupThread", StringDedupThread.class);
-        virtualConstructor.addMapping("AttachListenerThread", AttachListenerThread.class);
+
+        // These are all the visible JavaThread subclasses that execute java code.
+        virtualConstructor.addMapping("JvmtiAgentThread", JavaThread.class);
+        virtualConstructor.addMapping("NotificationThread", JavaThread.class);
+        virtualConstructor.addMapping("AttachListenerThread", JavaThread.class);
+
+        // These are all the hidden JavaThread subclasses that don't execute java code.
+        virtualConstructor.addMapping("StringDedupThread", HiddenJavaThread.class);
+        virtualConstructor.addMapping("ServiceThread", HiddenJavaThread.class);
+        virtualConstructor.addMapping("MonitorDeflationThread", HiddenJavaThread.class);
+        // Only add DeoptimizeObjectsALotThread if it is actually present in the type database.
+        if (db.lookupType("DeoptimizeObjectsALotThread", false) != null) {
+            virtualConstructor.addMapping("DeoptimizeObjectsALotThread", HiddenJavaThread.class);
+        }
     }
 
     public Threads() {
         _list = VMObjectFactory.newObject(ThreadsList.class, threadListField.getValue());
     }
 
-    /** NOTE: this returns objects of type JavaThread, CompilerThread,
-      JvmtiAgentThread, NotificationThread, MonitorDeflationThread,
-      StringDedupThread, AttachListenerThread and ServiceThread.
-      The latter seven subclasses of the former. Most operations
-      (fetching the top frame, etc.) are only allowed to be performed on
-      a "pure" JavaThread. For this reason, {@link
-      sun.jvm.hotspot.runtime.JavaThread#isJavaThread} has been
-      changed from the definition in the VM (which returns true for
-      all of these thread types) to return true for JavaThreads and
-      false for the seven subclasses. FIXME: should reconsider the
-      inheritance hierarchy; see {@link
-      sun.jvm.hotspot.runtime.JavaThread#isJavaThread}. */
     public JavaThread getJavaThreadAt(int i) {
         if (i < _list.length()) {
             return createJavaThreadWrapper(_list.getJavaThreadAddressAt(i));
@@ -198,7 +194,7 @@ public class Threads {
         } catch (Exception e) {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
             " (expected type JavaThread, CompilerThread, MonitorDeflationThread, AttachListenerThread," +
-            " StringDedupThread, NotificationThread, ServiceThread or JvmtiAgentThread)", e);
+            " DeoptimizeObjectsALotThread, StringDedupThread, NotificationThread, ServiceThread or JvmtiAgentThread)", e);
         }
     }
 
@@ -212,28 +208,20 @@ public class Threads {
         }
     }
 
-    // refer to Threads::owning_thread_from_monitor_owner
-    public JavaThread owningThreadFromMonitor(Address o) {
-        assert(VM.getVM().getCommandLineFlag("LockingMode").getInt() != LockingMode.getLightweight());
+    private JavaThread owningThreadFromMonitor(Address o) {
         if (o == null) return null;
         for (int i = 0; i < getNumberOfThreads(); i++) {
             JavaThread thread = getJavaThreadAt(i);
-            if (o.equals(thread.threadObjectAddress())) {
+            if (o.equals(thread.getMonitorOwnerID())) {
                 return thread;
             }
-        }
-
-        for (int i = 0; i < getNumberOfThreads(); i++) {
-            JavaThread thread = getJavaThreadAt(i);
-            if (thread.isLockOwned(o))
-                return thread;
         }
         return null;
     }
 
     public JavaThread owningThreadFromMonitor(ObjectMonitor monitor) {
-        if (VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLightweight()) {
-            if (monitor.isOwnedAnonymous()) {
+        if (monitor.isOwnedAnonymous()) {
+            if (VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLightweight()) {
                 OopHandle object = monitor.object();
                 for (int i = 0; i < getNumberOfThreads(); i++) {
                     JavaThread thread = getJavaThreadAt(i);
@@ -246,11 +234,16 @@ public class Threads {
                 System.out.println("Warning: We failed to find a thread that owns an anonymous lock. This is likely");
                 System.out.println("due to the JVM currently running a GC. Locking information may not be accurate.");
                 return null;
+            } else {
+                assert(VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLegacy());
+                Address o = (Address)monitor.stackLocker();
+                for (int i = 0; i < getNumberOfThreads(); i++) {
+                    JavaThread thread = getJavaThreadAt(i);
+                    if (thread.isLockOwned(o))
+                        return thread;
+                }
+                return null;
             }
-            // Owner can only be threads at this point.
-            Address o = monitor.owner();
-            if (o == null) return null;
-            return new JavaThread(o);
         } else {
             return owningThreadFromMonitor(monitor.owner());
         }
@@ -262,7 +255,7 @@ public class Threads {
         List<JavaThread> pendingThreads = new ArrayList<>();
         for (int i = 0; i < getNumberOfThreads(); i++) {
             JavaThread thread = getJavaThreadAt(i);
-            if (thread.isCompilerThread() || thread.isCodeCacheSweeperThread()) {
+            if (thread.isHiddenFromExternalView()) {
                 continue;
             }
             ObjectMonitor pending = thread.getCurrentPendingMonitor();

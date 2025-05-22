@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #include "jfr/utilities/jfrTime.hpp"
@@ -91,8 +90,8 @@ void NativeLibraryUnloadEvent::set_result(bool result) {
 }
 
 static void set_additional_data(EventNativeLibraryLoad& event, const NativeLibraryLoadEvent& helper) {
-  event.set_fpEnvCorrectionAttempt(helper.get_fp_env_correction_attempt());
-  event.set_fpEnvCorrectionSuccess(helper.get_fp_env_correction_success());
+  event.set_fpuCorrectionAttempt(helper.get_fp_env_correction_attempt());
+  event.set_fpuCorrectionSuccess(helper.get_fp_env_correction_success());
 }
 
 static void set_additional_data(EventNativeLibraryUnload& event, const NativeLibraryUnloadEvent& helper) {
@@ -117,6 +116,7 @@ static void commit(const HelperType& helper) {
     JavaThread* jt = JavaThread::cast(thread);
     if (jt->thread_state() == _thread_in_native) {
       // For a JavaThread to take a JFR stacktrace, it must be in _thread_in_vm. Can safepoint here.
+      MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
       ThreadInVMfromNative transition(jt);
       event.commit();
       return;

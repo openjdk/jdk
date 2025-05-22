@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,12 @@ class ZReferenceProcessor : public ReferenceDiscoverer {
   friend class ZReferenceProcessorTask;
 
 private:
-  static const size_t reference_type_count = REF_PHANTOM + 1;
-  typedef size_t Counters[reference_type_count];
+  static const size_t ReferenceTypeCount = REF_PHANTOM + 1;
+  typedef size_t Counters[ReferenceTypeCount];
 
   ZWorkers* const      _workers;
   ReferencePolicy*     _soft_reference_policy;
-  bool                 _clear_all_soft_refs;
+  bool                 _uses_clear_all_soft_reference_policy;
   ZPerWorker<Counters> _encountered_count;
   ZPerWorker<Counters> _discovered_count;
   ZPerWorker<Counters> _enqueued_count;
@@ -69,7 +69,9 @@ private:
 public:
   ZReferenceProcessor(ZWorkers* workers);
 
-  void set_soft_reference_policy(bool clear);
+  void set_soft_reference_policy(bool clear_all_soft_references);
+  bool uses_clear_all_soft_reference_policy() const;
+
   void reset_statistics();
 
   virtual bool discover_reference(oop reference, ReferenceType type);

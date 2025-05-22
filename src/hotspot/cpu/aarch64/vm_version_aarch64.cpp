@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "pauth_aarch64.hpp"
+#include "register_aarch64.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
@@ -44,6 +44,7 @@ int VM_Version::_zva_length;
 int VM_Version::_dcache_line_size;
 int VM_Version::_icache_line_size;
 int VM_Version::_initial_sve_vector_length;
+int VM_Version::_max_supported_sve_vector_length;
 bool VM_Version::_rop_protection;
 uintptr_t VM_Version::_pac_mask;
 
@@ -156,6 +157,13 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
       FLAG_SET_DEFAULT(OnSpinWaitInstCount, 2);
     }
+    if (FLAG_IS_DEFAULT(CodeEntryAlignment) &&
+        (_model == CPU_MODEL_AMPERE_1A || _model == CPU_MODEL_AMPERE_1B)) {
+      FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
+    }
+    if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
+      FLAG_SET_DEFAULT(AlwaysMergeDMB, false);
+    }
   }
 
   // ThunderX
@@ -230,9 +238,12 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
       FLAG_SET_DEFAULT(OnSpinWaitInstCount, 1);
     }
+    if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
+      FLAG_SET_DEFAULT(AlwaysMergeDMB, false);
+    }
   }
 
-  if (_cpu == CPU_ARM) {
+  if (_features & (CPU_FP | CPU_ASIMD)) {
     if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
     }
@@ -253,6 +264,9 @@ void VM_Version::initialize() {
   if (_cpu == CPU_ARM && (model_is(0xd40) || model_is(0xd4f))) {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
+    }
+    if (FLAG_IS_DEFAULT(CodeEntryAlignment)) {
+      FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
     }
   }
 
@@ -403,6 +417,28 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
+  if (_features & CPU_ASIMD) {
+      if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          UseKyberIntrinsics = true;
+      }
+  } else if (UseKyberIntrinsics) {
+      if (!FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          warning("Kyber intrinsics require ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
+  }
+
+  if (_features & CPU_ASIMD) {
+      if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+          UseDilithiumIntrinsics = true;
+      }
+  } else if (UseDilithiumIntrinsics) {
+      if (!FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+          warning("Dilithium intrinsics require ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseDilithiumIntrinsics, false);
+  }
+
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
     UseBASE64Intrinsics = true;
   }
@@ -436,7 +472,19 @@ void VM_Version::initialize() {
   }
 
   if (UseSVE > 0) {
-    _initial_sve_vector_length = get_current_sve_vector_length();
+    int vl = get_current_sve_vector_length();
+    if (vl < 0) {
+      warning("Unable to get SVE vector length on this system. "
+              "Disabling SVE. Specify -XX:UseSVE=0 to shun this warning.");
+      FLAG_SET_DEFAULT(UseSVE, 0);
+    } else if ((vl == 0) || ((vl % FloatRegister::sve_vl_min) != 0) || !is_power_of_2(vl)) {
+      warning("Detected SVE vector length (%d) should be a power of two and a multiple of %d. "
+              "Disabling SVE. Specify -XX:UseSVE=0 to shun this warning.",
+              vl, FloatRegister::sve_vl_min);
+      FLAG_SET_DEFAULT(UseSVE, 0);
+    } else {
+      _initial_sve_vector_length = vl;
+    }
   }
 
   // This machine allows unaligned memory accesses
@@ -504,30 +552,37 @@ void VM_Version::initialize() {
   if (UseSVE > 0) {
     if (FLAG_IS_DEFAULT(MaxVectorSize)) {
       MaxVectorSize = _initial_sve_vector_length;
-    } else if (MaxVectorSize < 16) {
-      warning("SVE does not support vector length less than 16 bytes. Disabling SVE.");
+    } else if (MaxVectorSize < FloatRegister::sve_vl_min) {
+      warning("SVE does not support vector length less than %d bytes. Disabling SVE.",
+              FloatRegister::sve_vl_min);
       UseSVE = 0;
-    } else if ((MaxVectorSize % 16) == 0 && is_power_of_2(MaxVectorSize)) {
-      int new_vl = set_and_get_current_sve_vector_length(MaxVectorSize);
-      _initial_sve_vector_length = new_vl;
-      // Update MaxVectorSize to the largest supported value.
-      if (new_vl < 0) {
-        vm_exit_during_initialization(
-          err_msg("Current system does not support SVE vector length for MaxVectorSize: %d",
-                  (int)MaxVectorSize));
-      } else if (new_vl != MaxVectorSize) {
-        warning("Current system only supports max SVE vector length %d. Set MaxVectorSize to %d",
-                new_vl, new_vl);
-      }
-      MaxVectorSize = new_vl;
-    } else {
+    } else if (!((MaxVectorSize % FloatRegister::sve_vl_min) == 0 && is_power_of_2(MaxVectorSize))) {
       vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
+    }
+
+    if (UseSVE > 0) {
+      // Acquire the largest supported vector length of this machine
+      _max_supported_sve_vector_length = set_and_get_current_sve_vector_length(FloatRegister::sve_vl_max);
+
+      if (MaxVectorSize != _max_supported_sve_vector_length) {
+        int new_vl = set_and_get_current_sve_vector_length(MaxVectorSize);
+        if (new_vl < 0) {
+          vm_exit_during_initialization(
+            err_msg("Current system does not support SVE vector length for MaxVectorSize: %d",
+                    (int)MaxVectorSize));
+        } else if (new_vl != MaxVectorSize) {
+          warning("Current system only supports max SVE vector length %d. Set MaxVectorSize to %d",
+                  new_vl, new_vl);
+        }
+        MaxVectorSize = new_vl;
+      }
+      _initial_sve_vector_length = MaxVectorSize;
     }
   }
 
   if (UseSVE == 0) {  // NEON
     int min_vector_size = 8;
-    int max_vector_size = 16;
+    int max_vector_size = FloatRegister::neon_vl;
     if (!FLAG_IS_DEFAULT(MaxVectorSize)) {
       if (!is_power_of_2(MaxVectorSize)) {
         vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
@@ -539,11 +594,11 @@ void VM_Version::initialize() {
         FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
       }
     } else {
-      FLAG_SET_DEFAULT(MaxVectorSize, 16);
+      FLAG_SET_DEFAULT(MaxVectorSize, FloatRegister::neon_vl);
     }
   }
 
-  int inline_size = (UseSVE > 0 && MaxVectorSize >= 16) ? MaxVectorSize : 0;
+  int inline_size = (UseSVE > 0 && MaxVectorSize >= FloatRegister::sve_vl_min) ? MaxVectorSize : 0;
   if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
     FLAG_SET_DEFAULT(ArrayOperationPartialInlineSize, inline_size);
   } else if (ArrayOperationPartialInlineSize != 0 && ArrayOperationPartialInlineSize != inline_size) {
@@ -561,6 +616,10 @@ void VM_Version::initialize() {
 
   if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
     FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
   }
 #endif
 
@@ -583,6 +642,7 @@ void VM_Version::initialize() {
   if (_model2) {
     os::snprintf_checked(buf + buf_used_len, sizeof(buf) - buf_used_len, "(0x%03x)", _model2);
   }
+  size_t features_offset = strnlen(buf, sizeof(buf));
 #define ADD_FEATURE_IF_SUPPORTED(id, name, bit)                 \
   do {                                                          \
     if (VM_Version::supports_##name()) strcat(buf, ", " #name); \
@@ -590,7 +650,11 @@ void VM_Version::initialize() {
   CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
 #undef ADD_FEATURE_IF_SUPPORTED
 
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
+
+  _features_string = extract_features_string(_cpu_info_string,
+                                             strnlen(_cpu_info_string, sizeof(buf)),
+                                             features_offset);
 }
 
 #if defined(LINUX)
@@ -603,12 +667,12 @@ static bool check_info_file(const char* fpath,
     return false;
   }
   while (fgets(line, sizeof(line), fp) != nullptr) {
-    if (strcasestr(line, virt1) != 0) {
+    if (strcasestr(line, virt1) != nullptr) {
       Abstract_VM_Version::_detected_virtualization = vt1;
       fclose(fp);
       return true;
     }
-    if (virt2 != nullptr && strcasestr(line, virt2) != 0) {
+    if (virt2 != nullptr && strcasestr(line, virt2) != nullptr) {
       Abstract_VM_Version::_detected_virtualization = vt2;
       fclose(fp);
       return true;
@@ -657,7 +721,7 @@ void VM_Version::initialize_cpu_information(void) {
   int desc_len = snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 ");
   get_compatible_board(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len);
   desc_len = (int)strlen(_cpu_desc);
-  snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _features_string);
+  snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _cpu_info_string);
 
   _initialized = true;
 }

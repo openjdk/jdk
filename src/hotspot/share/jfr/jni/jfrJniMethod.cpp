@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
@@ -30,6 +29,7 @@
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/repository/jfrChunk.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
@@ -104,7 +104,9 @@ NO_TRANSITION_END
 NO_TRANSITION(void, jfr_set_enabled(JNIEnv* env, jclass jvm, jlong event_type_id, jboolean enabled))
   JfrEventSetting::set_enabled(event_type_id, JNI_TRUE == enabled);
   if (EventOldObjectSample::eventId == event_type_id) {
-    ThreadInVMfromNative transition(JavaThread::thread_from_jni_environment(env));
+    JavaThread* thread = JavaThread::thread_from_jni_environment(env);
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));
+    ThreadInVMfromNative transition(thread);
     if (JNI_TRUE == enabled) {
       LeakProfiler::start(JfrOptionSet::old_object_queue_size());
     } else {
@@ -166,7 +168,7 @@ NO_TRANSITION(jboolean, jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_ty
   return JNI_TRUE;
 NO_TRANSITION_END
 
-NO_TRANSITION(void, jfr_set_miscellaneous(JNIEnv* env, jobject jvm, jlong event_type_id, jlong value))
+NO_TRANSITION(void, jfr_set_miscellaneous(JNIEnv* env, jclass jvm, jlong event_type_id, jlong value))
   JfrEventSetting::set_miscellaneous(event_type_id, value);
   const JfrEventId typed_event_id = (JfrEventId)event_type_id;
   if (EventDeprecatedInvocation::eventId == typed_event_id) {
@@ -298,13 +300,13 @@ JVM_ENTRY_NO_ENV(jobject, jfr_new_event_writer(JNIEnv* env, jclass jvm))
   return JfrJavaEventWriter::new_event_writer(thread);
 JVM_END
 
-NO_TRANSITION(void, jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size))
-  JfrJavaEventWriter::flush(writer, used_size, requested_size, JavaThread::current());
-NO_TRANSITION_END
+JVM_ENTRY_NO_ENV(void, jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size))
+  JfrJavaEventWriter::flush(writer, used_size, requested_size, thread);
+JVM_END
 
-NO_TRANSITION(jlong, jfr_commit(JNIEnv* env, jclass jvm, jlong next_position))
-  return JfrJavaEventWriter::commit(next_position);
-NO_TRANSITION_END
+JVM_ENTRY_NO_ENV(jlong, jfr_commit(JNIEnv* env, jclass jvm, jlong next_position))
+  return JfrJavaEventWriter::commit(next_position, thread);
+JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_flush(JNIEnv* env, jclass jvm))
   JfrRepository::flush(thread);
@@ -348,10 +350,10 @@ JVM_ENTRY_NO_ENV(void, jfr_set_force_instrumentation(JNIEnv* env, jclass jvm, jb
   JfrEventClassTransformer::set_force_instrumentation(force_instrumentation == JNI_TRUE);
 JVM_END
 
-JVM_ENTRY_NO_ENV(void, jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean emit_all, jboolean skip_bfs))
+NO_TRANSITION(void, jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean emit_all, jboolean skip_bfs))
   JfrRecorderService service;
   service.emit_leakprofiler_events(cutoff_ticks, emit_all == JNI_TRUE, skip_bfs == JNI_TRUE);
-JVM_END
+NO_TRANSITION_END
 
 JVM_ENTRY_NO_ENV(void, jfr_exclude_thread(JNIEnv* env, jclass jvm, jobject t))
   JfrJavaSupport::exclude(thread, t);
@@ -423,3 +425,15 @@ JVM_END
 JVM_ENTRY_NO_ENV(void, jfr_unregister_stack_filter(JNIEnv* env,  jclass jvm, jlong id))
   JfrStackFilterRegistry::remove(id);
 JVM_END
+
+NO_TRANSITION(jlong, jfr_nanos_now(JNIEnv* env, jclass jvm))
+  return JfrChunk::nanos_now();
+NO_TRANSITION_END
+
+NO_TRANSITION(jboolean, jfr_is_product(JNIEnv* env, jclass jvm))
+#ifdef PRODUCT
+  return true;
+#else
+  return false;
+#endif
+NO_TRANSITION_END

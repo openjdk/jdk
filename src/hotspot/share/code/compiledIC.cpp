@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
@@ -44,7 +43,7 @@
 // Every time a compiled IC is changed or its type is being accessed,
 // either the CompiledIC_lock must be set or we must be at a safe point.
 
-CompiledICLocker::CompiledICLocker(CompiledMethod* method)
+CompiledICLocker::CompiledICLocker(nmethod* method)
   : _method(method),
     _behaviour(CompiledICProtectionBehaviour::current()),
     _locked(_behaviour->lock(_method)) {
@@ -56,15 +55,15 @@ CompiledICLocker::~CompiledICLocker() {
   }
 }
 
-bool CompiledICLocker::is_safe(CompiledMethod* method) {
+bool CompiledICLocker::is_safe(nmethod* method) {
   return CompiledICProtectionBehaviour::current()->is_safe(method);
 }
 
 bool CompiledICLocker::is_safe(address code) {
   CodeBlob* cb = CodeCache::find_blob(code);
-  assert(cb != nullptr && cb->is_compiled(), "must be compiled");
-  CompiledMethod* cm = cb->as_compiled_method();
-  return CompiledICProtectionBehaviour::current()->is_safe(cm);
+  assert(cb != nullptr && cb->is_nmethod(), "must be compiled");
+  nmethod* nm = cb->as_nmethod();
+  return CompiledICProtectionBehaviour::current()->is_safe(nm);
 }
 
 CompiledICData::CompiledICData()
@@ -83,6 +82,7 @@ void CompiledICData::initialize(CallInfo* call_info, Klass* receiver_klass) {
     _speculated_klass = (uintptr_t)receiver_klass;
   }
   if (call_info->call_kind() == CallInfo::itable_call) {
+    assert(call_info->resolved_method() != nullptr, "virtual or interface method must be found");
     _itable_defc_klass = call_info->resolved_method()->method_holder();
     _itable_refc_klass = call_info->resolved_klass();
   }
@@ -167,12 +167,12 @@ CompiledIC::CompiledIC(RelocIterator* iter)
   assert(CompiledICLocker::is_safe(_method), "mt unsafe call");
 }
 
-CompiledIC* CompiledIC_before(CompiledMethod* nm, address return_addr) {
+CompiledIC* CompiledIC_before(nmethod* nm, address return_addr) {
   address call_site = nativeCall_before(return_addr)->instruction_address();
   return CompiledIC_at(nm, call_site);
 }
 
-CompiledIC* CompiledIC_at(CompiledMethod* nm, address call_site) {
+CompiledIC* CompiledIC_at(nmethod* nm, address call_site) {
   RelocIterator iter(nm, call_site, call_site + 1);
   iter.next();
   return CompiledIC_at(&iter);
@@ -180,8 +180,8 @@ CompiledIC* CompiledIC_at(CompiledMethod* nm, address call_site) {
 
 CompiledIC* CompiledIC_at(Relocation* call_reloc) {
   address call_site = call_reloc->addr();
-  CompiledMethod* cm = CodeCache::find_blob(call_reloc->addr())->as_compiled_method();
-  return CompiledIC_at(cm, call_site);
+  nmethod* nm = CodeCache::find_blob(call_reloc->addr())->as_nmethod();
+  return CompiledIC_at(nm, call_site);
 }
 
 CompiledIC* CompiledIC_at(RelocIterator* reloc_iter) {
@@ -204,7 +204,7 @@ void CompiledIC::set_to_clean() {
 void CompiledIC::set_to_monomorphic() {
   assert(data()->is_initialized(), "must be initialized");
   Method* method = data()->speculated_method();
-  CompiledMethod* code = method->code();
+  nmethod* code = method->code();
   address entry;
   bool to_compiled = code != nullptr && code->is_in_use() && !code->is_unloading();
 
@@ -238,6 +238,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info) {
       return;
     }
 #ifdef ASSERT
+    assert(call_info->resolved_method() != nullptr, "virtual or interface method must be found");
     int index = call_info->resolved_method()->itable_index();
     assert(index == itable_index, "CallInfo pre-computes this");
     InstanceKlass* k = call_info->resolved_method()->method_holder();
@@ -254,6 +255,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info) {
     }
   }
 
+  assert(call_info->selected_method() != nullptr, "virtual or interface method must be found");
   log_trace(inlinecache)("IC@" INTPTR_FORMAT ": to megamorphic %s entry: " INTPTR_FORMAT,
                          p2i(_call->instruction_address()), call_info->selected_method()->print_value_string(), p2i(entry));
 
@@ -290,7 +292,7 @@ bool CompiledIC::is_monomorphic() const {
 }
 
 bool CompiledIC::is_megamorphic() const {
-  return VtableStubs::entry_point(destination()) != nullptr;;
+  return VtableStubs::entry_point(destination()) != nullptr;
 }
 
 bool CompiledIC::is_speculated_klass(Klass* receiver_klass) {
@@ -321,7 +323,7 @@ void CompiledIC::verify() {
 // ----------------------------------------------------------------------------
 
 void CompiledDirectCall::set_to_clean() {
-  // in_use is unused but needed to match template function in CompiledMethod
+  // in_use is unused but needed to match template function in nmethod
   assert(CompiledICLocker::is_safe(instruction_address()), "mt unsafe call");
   // Reset call site
   RelocIterator iter((nmethod*)nullptr, instruction_address(), instruction_address() + 1);
@@ -343,8 +345,9 @@ void CompiledDirectCall::set_to_clean() {
 }
 
 void CompiledDirectCall::set(const methodHandle& callee_method) {
-  CompiledMethod* code = callee_method->code();
-  CompiledMethod* caller = CodeCache::find_compiled(instruction_address());
+  nmethod* code = callee_method->code();
+  nmethod* caller = CodeCache::find_nmethod(instruction_address());
+  assert(caller != nullptr, "did not find caller nmethod");
 
   bool to_interp_cont_enter = caller->method()->is_continuation_enter_intrinsic() &&
                               ContinuationEntry::is_interpreted_call(instruction_address());
@@ -377,14 +380,16 @@ bool CompiledDirectCall::is_clean() const {
 bool CompiledDirectCall::is_call_to_interpreted() const {
   // It is a call to interpreted, if it calls to a stub. Hence, the destination
   // must be in the stub part of the nmethod that contains the call
-  CompiledMethod* cm = CodeCache::find_compiled(instruction_address());
-  return cm->stub_contains(destination());
+  nmethod* nm = CodeCache::find_nmethod(instruction_address());
+  assert(nm != nullptr, "did not find nmethod");
+  return nm->stub_contains(destination());
 }
 
 bool CompiledDirectCall::is_call_to_compiled() const {
-  CompiledMethod* caller = CodeCache::find_compiled(instruction_address());
+  nmethod* caller = CodeCache::find_nmethod(instruction_address());
+  assert(caller != nullptr, "did not find caller nmethod");
   CodeBlob* dest_cb = CodeCache::find_blob(destination());
-  return !caller->stub_contains(destination()) && dest_cb->is_compiled();
+  return !caller->stub_contains(destination()) && dest_cb->is_nmethod();
 }
 
 address CompiledDirectCall::find_stub_for(address instruction) {

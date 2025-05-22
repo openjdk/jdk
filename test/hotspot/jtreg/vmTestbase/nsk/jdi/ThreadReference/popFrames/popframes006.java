@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class popframes006 {
     static final String DEBUGGEE_FIELD = "wasPopped";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 80;
+    static final int DEBUGGEE_STOPATLINE = 83;
 
     static final int ATTEMPTS = 5;
     static final int DELAY = 500; // in milliseconds
@@ -79,7 +79,10 @@ public class popframes006 {
     private volatile boolean gotEvent = false;
 
     public static void main (String argv[]) {
-        System.exit(run(argv,System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {
@@ -103,10 +106,13 @@ public class popframes006 {
             return quitDebuggee();
         }
 
-        ThreadReference thrRef = null;
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
+        // debuggee main class
+        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+        ThreadReference thrRef =
+            debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
+        if (thrRef == null) {
+            log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;
             return quitDebuggee();
@@ -114,9 +120,6 @@ public class popframes006 {
 
         Field doExit = null;
         try {
-            // debuggee main class
-            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
-
             suspendAtBP(rType, DEBUGGEE_STOPATLINE);
 
             // debuggee field used to indicate that popping has been done

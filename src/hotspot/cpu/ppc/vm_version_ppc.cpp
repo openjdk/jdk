@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
@@ -90,7 +89,7 @@ void VM_Version::initialize() {
     default: break;
   }
   guarantee(PowerArchitecturePPC64_ok, "PowerArchitecturePPC64 cannot be set to "
-            UINTX_FORMAT " on this machine", PowerArchitecturePPC64);
+            "%zu on this machine", PowerArchitecturePPC64);
 
   // Power 8: Configure Data Stream Control Register.
   if (PowerArchitecturePPC64 >= 8 && has_mfdscr()) {
@@ -110,6 +109,17 @@ void VM_Version::initialize() {
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
+  // Power7 and later.
+  if (PowerArchitecturePPC64 > 6) {
+    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+      FLAG_SET_ERGO(UsePopCountInstruction, true);
+    }
+  }
+
+  if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
+    FLAG_SET_ERGO(ConditionalMoveLimit, 0);
+  }
+
   if (PowerArchitecturePPC64 >= 8) {
     if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
@@ -121,6 +131,9 @@ void VM_Version::initialize() {
     }
   }
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_ERGO(AlignVector, false);
+  }
 
   if (PowerArchitecturePPC64 >= 9) {
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstructionsPPC64)) {
@@ -169,6 +182,17 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseByteReverseInstructions, false);
     }
   }
+
+  if (OptimizeFill) {
+    warning("OptimizeFill is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptimizeFill, false);
+  }
+
+  if (OptoScheduling) {
+    // The OptoScheduling information is not maintained in ppd.ad.
+    warning("OptoScheduling is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptoScheduling, false);
+  }
 #endif
 
   // Create and print feature-string.
@@ -195,7 +219,7 @@ void VM_Version::initialize() {
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
               );
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
   if (Verbose) {
     print_features();
   }
@@ -284,8 +308,14 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
-  if (UseGHASHIntrinsics) {
-    warning("GHASH intrinsics are not available on this CPU");
+  if (VM_Version::has_vsx()) {
+    if (FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
+      UseGHASHIntrinsics = true;
+    }
+  } else if (UseGHASHIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
+      warning("GHASH intrinsics are not available on this CPU");
+    }
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
@@ -338,6 +368,13 @@ void VM_Version::initialize() {
 
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
+  }
+
+  if (UseSecondarySupersTable && PowerArchitecturePPC64 < 7) {
+    if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
+      warning("UseSecondarySupersTable requires Power7 or later.");
+    }
+    FLAG_SET_DEFAULT(UseSecondarySupersTable, false);
   }
 
 #ifdef COMPILER2
@@ -394,7 +431,7 @@ void VM_Version::check_virtualizations() {
 
   while (fgets(line, sizeof(line), fp) != nullptr) {
     if (strncmp(line, system_type, strlen(system_type)) == 0) {
-      if (strstr(line, "qemu") != 0) {
+      if (strstr(line, "qemu") != nullptr) {
         Abstract_VM_Version::_detected_virtualization = PowerKVM;
         fclose(fp);
         return;
@@ -488,7 +525,7 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
 }
 
 void VM_Version::print_features() {
-  tty->print_cr("Version: %s L1_data_cache_line_size=%d", features_string(), L1_data_cache_line_size());
+  tty->print_cr("Version: %s L1_data_cache_line_size=%d", cpu_info_string(), L1_data_cache_line_size());
 
   if (Verbose) {
     if (ContendedPaddingWidth > 0) {
@@ -695,6 +732,6 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "PowerPC POWER%lu", PowerArchitecturePPC64);
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "PPC %s", features_string());
+  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "PPC %s", cpu_info_string());
   _initialized = true;
 }

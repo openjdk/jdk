@@ -22,11 +22,11 @@
  */
 #include <jni.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include <string.h>
 #include <stdarg.h>
-#include "jvmti_tools.h"
-#include "JVMTITools.h"
+#include "jvmti_tools.hpp"
+#include "JVMTITools.hpp"
 
 /*
 hs202t002:

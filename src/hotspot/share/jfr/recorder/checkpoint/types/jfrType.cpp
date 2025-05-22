@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
@@ -114,7 +113,7 @@ void JfrCheckpointThreadClosure::do_thread(Thread* t) {
 
 void JfrThreadConstantSet::serialize(JfrCheckpointWriter& writer) {
   JfrCheckpointThreadClosure tc(writer);
-  JfrJavaThreadIterator javathreads(false); // include not yet live threads (_thread_new)
+  JfrJavaThreadIterator javathreads;
   while (javathreads.has_next()) {
     tc.do_thread(javathreads.next());
   }
@@ -313,6 +312,23 @@ void JfrThreadConstant::serialize(JfrCheckpointWriter& writer) {
   // VirtualThread threadgroup already serialized invariant.
 }
 
+// This serializer is used when the vthread name cannot
+// be determined because we cannot access any oops.
+void JfrSimplifiedVirtualThreadConstant::serialize(JfrCheckpointWriter & writer) {
+  writer.write_key(_vtid);
+  // Write the null string categorically as the os name for virtual threads.
+  writer.write((const char*)nullptr); // os name
+  writer.write(0); // os id
+  // vthread name cannot be determined for this simplified version.
+  // This is because we cannot access any oops.
+  writer.write_empty_string();
+  writer.write(_vtid); // java tid
+  // java thread group - VirtualThread threadgroup reserved id 1
+  writer.write(1);
+  writer.write<bool>(true); // isVirtual
+  // VirtualThread threadgroup already serialized invariant.
+}
+
 void BytecodeConstant::serialize(JfrCheckpointWriter& writer) {
   static const u4 nof_entries = Bytecodes::number_of_codes;
   writer.write_count(nof_entries);
@@ -332,10 +348,10 @@ void CompilerTypeConstant::serialize(JfrCheckpointWriter& writer) {
 }
 
 void NMTTypeConstant::serialize(JfrCheckpointWriter& writer) {
-  writer.write_count(mt_number_of_types);
-  for (int i = 0; i < mt_number_of_types; ++i) {
+  writer.write_count(mt_number_of_tags);
+  for (int i = 0; i < mt_number_of_tags; ++i) {
     writer.write_key(i);
-    MEMFLAGS flag = NMTUtil::index_to_flag(i);
-    writer.write(NMTUtil::flag_to_name(flag));
+    MemTag mem_tag = NMTUtil::index_to_tag(i);
+    writer.write(NMTUtil::tag_to_name(mem_tag));
   }
 }

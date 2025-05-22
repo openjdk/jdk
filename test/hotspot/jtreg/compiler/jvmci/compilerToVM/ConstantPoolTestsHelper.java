@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import compiler.jvmci.common.testcases.MultipleImplementersInterface;
 import compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes;
 import compiler.jvmci.compilerToVM.ConstantPoolTestCase.TestedCPEntry;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.ConstantPool.Tag;
 import jdk.vm.ci.hotspot.HotSpotConstantPool.Bytecodes;
@@ -80,7 +80,7 @@ public class ConstantPoolTestsHelper {
             if (constantPoolSS.getTagAt(cpi).equals(Tag.INVOKEDYNAMIC)) {
                 for (int indy_index = 0; indy_index < WB.getIndyInfoLength(this.klass); indy_index++) {
                     if (WB.getIndyCPIndex(this.klass, indy_index) == cpi) {
-                        return ~indy_index;
+                        return indy_index;
                     }
                 }
             }

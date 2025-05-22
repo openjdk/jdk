@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,12 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zMarkCache.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 static size_t shift_for_stripes(size_t nstripes) {
-  return ZMarkStripeShift + exact_log2(nstripes);
+  return ZMarkStripeShift + (size_t)log2i_exact(nstripes);
 }
 
 ZMarkCacheEntry::ZMarkCacheEntry()

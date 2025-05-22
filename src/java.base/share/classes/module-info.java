@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,6 @@ module java.base {
     exports java.lang.annotation;
     exports java.lang.classfile;
     exports java.lang.classfile.attribute;
-    exports java.lang.classfile.components;
     exports java.lang.classfile.constantpool;
     exports java.lang.classfile.instruction;
     exports java.lang.constant;
@@ -146,6 +145,8 @@ module java.base {
         jdk.compiler;
     exports com.sun.security.ntlm to
         java.security.sasl;
+    exports jdk.internal to
+        jdk.incubator.vector;
     // Note: all modules in the exported list participate in preview  features
     // and therefore if they use preview features they do not need to be
     // compiled with "--enable-preview".
@@ -165,15 +166,17 @@ module java.base {
         java.desktop,
         java.logging,
         java.management,
-        java.naming,
         java.rmi,
         jdk.charsets,
         jdk.jartool,
         jdk.jlink,
         jdk.jfr,
+        jdk.management,
         jdk.net,
         jdk.sctp,
         jdk.crypto.cryptoki;
+    exports jdk.internal.classfile.components to
+        jdk.jfr;
     exports jdk.internal.foreign to
         jdk.incubator.vector;
     exports jdk.internal.event to
@@ -194,14 +197,6 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
-    exports jdk.internal.org.objectweb.asm to
-        jdk.jfr;
-    exports jdk.internal.org.objectweb.asm.tree to
-        jdk.jfr;
-    exports jdk.internal.org.objectweb.asm.util to
-        jdk.jfr;
-    exports jdk.internal.org.objectweb.asm.commons to
-        jdk.jfr;
     exports jdk.internal.org.xml.sax to
         jdk.jfr;
     exports jdk.internal.org.xml.sax.helpers to
@@ -223,7 +218,8 @@ module java.base {
         jdk.jshell,
         jdk.nio.mapmode,
         jdk.unsupported,
-        jdk.internal.vm.ci;
+        jdk.internal.vm.ci,
+        jdk.graal.compiler;
     exports jdk.internal.module to
         java.instrument,
         java.management.rmi,
@@ -255,7 +251,8 @@ module java.base {
         jdk.internal.jvmstat,
         jdk.management,
         jdk.management.agent,
-        jdk.internal.vm.ci;
+        jdk.internal.vm.ci,
+        jdk.jfr;
     exports jdk.internal.vm.annotation to
         java.instrument,
         jdk.internal.vm.ci,
@@ -268,14 +265,13 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
         jdk.jfr;
-    exports jdk.internal.util.random to
-        jdk.random;
     exports jdk.internal.util to
         java.desktop,
         java.prefs,
         java.security.jgss,
         java.smartcardio,
         jdk.charsets,
+        jdk.incubator.vector,
         jdk.internal.vm.ci,
         jdk.jlink,
         jdk.jpackage,
@@ -289,7 +285,6 @@ module java.base {
         java.security.jgss,
         jdk.naming.dns;
     exports sun.net.util to
-        java.desktop,
         java.net.http,
         jdk.jconsole,
         jdk.sctp;
@@ -313,14 +308,7 @@ module java.base {
         java.desktop;
     exports sun.reflect.misc to
         java.desktop,
-        java.datatransfer,
-        java.management,
-        java.management.rmi,
-        java.rmi,
-        java.sql.rowset;
-    exports sun.security.action to
-        java.desktop,
-        java.security.jgss;
+        java.management;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
@@ -332,7 +320,6 @@ module java.base {
     exports sun.security.pkcs to
         jdk.jartool;
     exports sun.security.provider to
-        java.rmi,
         java.security.jgss,
         jdk.crypto.cryptoki,
         jdk.security.auth;
@@ -346,9 +333,7 @@ module java.base {
     exports sun.security.tools to
         jdk.jartool;
     exports sun.security.util to
-        java.desktop,
         java.naming,
-        java.rmi,
         java.security.jgss,
         java.security.sasl,
         java.smartcardio,
@@ -396,7 +381,6 @@ module java.base {
     uses java.time.chrono.AbstractChronology;
     uses java.time.chrono.Chronology;
     uses java.time.zone.ZoneRulesProvider;
-    uses java.util.random.RandomGenerator;
     uses java.util.spi.CalendarDataProvider;
     uses java.util.spi.CalendarNameProvider;
     uses java.util.spi.CurrencyNameProvider;
@@ -421,10 +405,5 @@ module java.base {
 
     provides java.nio.file.spi.FileSystemProvider with
         jdk.internal.jrtfs.JrtFileSystemProvider;
-
-    provides java.util.random.RandomGenerator with
-        java.security.SecureRandom,
-        java.util.Random,
-        java.util.SplittableRandom;
 
 }

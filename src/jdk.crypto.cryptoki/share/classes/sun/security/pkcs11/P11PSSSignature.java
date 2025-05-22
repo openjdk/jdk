@@ -776,7 +776,7 @@ final class P11PSSSignature extends SignatureSpi {
     protected AlgorithmParameters engineGetParameters() {
         if (this.sigParams != null) {
             try {
-                AlgorithmParameters ap = AlgorithmParameters.getInstance("RSASSA-PSS");
+                AlgorithmParameters ap = AlgorithmParameters.getInstance("RSASSA-PSS", token.provider);
                 ap.init(this.sigParams);
                 return ap;
             } catch (GeneralSecurityException e) {

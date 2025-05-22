@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/space.inline.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -40,15 +38,10 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-ContiguousSpace::ContiguousSpace(): Space(),
-  _next_compaction_space(nullptr),
-  _top(nullptr) {
-  _mangler = new GenSpaceMangler(this);
-}
-
-ContiguousSpace::~ContiguousSpace() {
-  delete _mangler;
-}
+ContiguousSpace::ContiguousSpace():
+  _bottom(nullptr),
+  _end(nullptr),
+  _top(nullptr) {}
 
 void ContiguousSpace::initialize(MemRegion mr,
                                  bool clear_space,
@@ -62,12 +55,10 @@ void ContiguousSpace::initialize(MemRegion mr,
   if (clear_space) {
     clear(mangle_space);
   }
-  _next_compaction_space = nullptr;
 }
 
 void ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
-  set_saved_mark();
   if (ZapUnusedHeapArea && mangle_space) {
     mangle_unused_area();
   }
@@ -75,60 +66,24 @@ void ContiguousSpace::clear(bool mangle_space) {
 
 #ifndef PRODUCT
 
-void ContiguousSpace::set_top_for_allocations(HeapWord* v) {
-  mangler()->set_top_for_allocations(v);
-}
-void ContiguousSpace::set_top_for_allocations() {
-  mangler()->set_top_for_allocations(top());
-}
-void ContiguousSpace::check_mangled_unused_area(HeapWord* limit) {
-  mangler()->check_mangled_unused_area(limit);
-}
-
-void ContiguousSpace::check_mangled_unused_area_complete() {
-  mangler()->check_mangled_unused_area_complete();
-}
-
-// Mangled only the unused space that has not previously
-// been mangled and that has not been allocated since being
-// mangled.
 void ContiguousSpace::mangle_unused_area() {
-  mangler()->mangle_unused_area();
+  mangle_unused_area(MemRegion(_top, _end));
 }
-void ContiguousSpace::mangle_unused_area_complete() {
-  mangler()->mangle_unused_area_complete();
+
+void ContiguousSpace::mangle_unused_area(MemRegion mr) {
+  SpaceMangler::mangle_region(mr);
 }
+
 #endif  // NOT_PRODUCT
 
+void ContiguousSpace::print() const { print_on(tty, ""); }
 
-void Space::print_short() const { print_short_on(tty); }
-
-void Space::print_short_on(outputStream* st) const {
-  st->print(" space " SIZE_FORMAT "K, %3d%% used", capacity() / K,
-              (int) ((double) used() * 100 / capacity()));
+void ContiguousSpace::print_on(outputStream* st, const char* prefix) const {
+  st->print_cr("%sspace %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               prefix,
+               capacity() / K, (int) ((double) used() * 100 / capacity()),
+               p2i(bottom()), p2i(top()), p2i(end()));
 }
-
-void Space::print() const { print_on(tty); }
-
-void Space::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ")",
-                p2i(bottom()), p2i(end()));
-}
-
-void ContiguousSpace::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-                p2i(bottom()), p2i(top()), p2i(end()));
-}
-
-#if INCLUDE_SERIALGC
-void TenuredSpace::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-              p2i(bottom()), p2i(top()), p2i(end()));
-}
-#endif
 
 void ContiguousSpace::verify() const {
   HeapWord* p = bottom();
@@ -146,25 +101,6 @@ void ContiguousSpace::object_iterate(ObjectClosure* blk) {
     oop obj = cast_to_oop(addr);
     blk->do_object(obj);
     addr += obj->size();
-  }
-}
-
-// Very general, slow implementation.
-HeapWord* ContiguousSpace::block_start_const(const void* p) const {
-  assert(MemRegion(bottom(), end()).contains(p),
-         "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
-         p2i(p), p2i(bottom()), p2i(end()));
-  if (p >= top()) {
-    return top();
-  } else {
-    HeapWord* last = bottom();
-    HeapWord* cur = last;
-    while (cur <= p) {
-      last = cur;
-      cur += cast_to_oop(cur)->size();
-    }
-    assert(oopDesc::is_oop(cast_to_oop(last)), PTR_FORMAT " should be an object start", p2i(last));
-    return last;
   }
 }
 
@@ -213,32 +149,3 @@ HeapWord* ContiguousSpace::allocate(size_t size) {
 HeapWord* ContiguousSpace::par_allocate(size_t size) {
   return par_allocate_impl(size);
 }
-
-#if INCLUDE_SERIALGC
-HeapWord* TenuredSpace::block_start_const(const void* addr) const {
-  HeapWord* cur_block = _offsets.block_start_reaching_into_card(addr);
-
-  while (true) {
-    HeapWord* next_block = cur_block + cast_to_oop(cur_block)->size();
-    if (next_block > addr) {
-      assert(cur_block <= addr, "postcondition");
-      return cur_block;
-    }
-    cur_block = next_block;
-    // Because the BOT is precise, we should never step into the next card
-    // (i.e. crossing the card boundary).
-    assert(!SerialBlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
-  }
-}
-
-TenuredSpace::TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
-                           MemRegion mr) :
-  _offsets(sharedOffsetArray)
-{
-  initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
-}
-
-size_t TenuredSpace::allowed_dead_ratio() const {
-  return MarkSweepDeadRatio;
-}
-#endif // INCLUDE_SERIALGC

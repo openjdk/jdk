@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -333,6 +332,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return fetch_compiled_frame_from_context(ucVoid);
+  }
   return frame(sp, fp, epc);
 }
 
@@ -416,6 +421,14 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       stub = VM_Version::cpuinfo_cont_addr();
     }
 
+#if !defined(PRODUCT) && defined(_LP64)
+    if ((sig == SIGSEGV || sig == SIGBUS) && VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
+      // Verify that OS save/restore APX registers.
+      stub = VM_Version::cpuinfo_cont_addr_apx();
+      VM_Version::clear_apx_test_state();
+    }
+#endif
+
     // We test if stub is already set (by the stack overflow code
     // above) so it is not overwritten by the code that follows. This
     // check is not required on other platforms, because on other
@@ -440,20 +453,18 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
-        bool is_unsafe_arraycopy = thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc);
-        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
+        bool is_unsafe_memory_access = thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc);
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
           address next_pc = Assembler::locate_next_instruction(pc);
-          if (is_unsafe_arraycopy) {
-            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          if (is_unsafe_memory_access) {
+            next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
-      }
-      else
-
+      } else
 #ifdef AMD64
-      if (sig == SIGFPE  &&
+      if (sig == SIGFPE &&
           (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV
            // Workaround for macOS ARM incorrectly reporting FPE_FLTINV for "div by 0"
            // instead of the expected FPE_FLTDIV when running x86_64 binary under Rosetta emulation
@@ -523,8 +534,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                thread->doing_unsafe_access()) {
         address next_pc = Assembler::locate_next_instruction(pc);
-        if (UnsafeCopyMemory::contains_pc(pc)) {
-          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        if (UnsafeMemoryAccess::contains_pc(pc)) {
+          next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
         }
         stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
     }
@@ -827,23 +838,6 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", EFLAGS=" INTPTR_FORMAT, (intptr_t)uc->context_eflags);
 #endif // AMD64
   st->cr();
-  st->cr();
-}
-
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const ucontext_t* uc = (const ucontext_t*)context;
-
-  address sp = (address)os::Bsd::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc);
   st->cr();
 }
 

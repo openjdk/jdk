@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/semaphore.hpp"
 
 #if defined(LINUX) || defined(AIX) || defined(BSD)
 # include "mutex_posix.hpp"
@@ -48,8 +49,19 @@
 // A thread is not allowed to safepoint while holding a mutex whose rank
 // is nosafepoint or lower.
 
+// The Mutex class used to explicitly guarantee fence(); lock(); acquire(); semantics with
+// a hand crafted implementation. That may or may not be a desirable contract for a Mutex,
+// but is nevertheless something that older HotSpot code may or may not rely on for correctness.
+// Newer code is encouraged not to rely more on this feature, but it is not generally safe to
+// remove the fences, until all usages of Mutex have been evaluated on a case-by-case basis, whether
+// they actually rely on this stronger contract, or not.
+
+// Having a fence does not have any significant impact on peformance, as this is an internal VM
+// mutex and is generally not in hot code paths.
+
 class Mutex : public CHeapObj<mtSynchronizer> {
 
+  friend class VMStructs;
  public:
   // Special low level locks are given names and ranges avoid overlap.
   enum class Rank {
@@ -102,6 +114,9 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 #ifndef PRODUCT
   bool    _allow_vm_block;
 #endif
+  static Mutex** _mutex_array;
+  static int _num_mutex;
+
 #ifdef ASSERT
   Rank    _rank;                 // rank (to avoid/detect potential deadlocks)
   Mutex*  _next;                 // Used by a Thread to link up owned locks
@@ -193,11 +208,18 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
   const char *name() const                  { return _name; }
 
+  static void  add_mutex(Mutex* var);
+
   void print_on_error(outputStream* st) const;
   #ifndef PRODUCT
     void print_on(outputStream* st) const;
     void print() const;
   #endif
+
+  // Print all mutexes/monitors that are currently owned by a thread; called
+  // by fatal error handler.
+  static void print_owned_locks_on_error(outputStream* st);
+  static void print_lock_ranks(outputStream* st);
 };
 
 class Monitor : public Mutex {
@@ -239,6 +261,26 @@ class PaddedMonitor : public Monitor {
  public:
   PaddedMonitor(Rank rank, const char *name, bool allow_vm_block) : Monitor(rank, name, allow_vm_block) {};
   PaddedMonitor(Rank rank, const char *name) : Monitor(rank, name) {};
+};
+
+// RecursiveMutex is a minimal implementation, and has no safety and rank checks that Mutex has.
+// There are also no checks that the recursive lock is not held when going to Java or to JNI, like
+// other JVM mutexes have.  This should be used only for cases where the alternatives with all the
+// nice safety features don't work.
+// Waiting on the RecursiveMutex partipates in the safepoint protocol if the current thread is a Java thread,
+// (ie. waiting sets JavaThread to blocked)
+class RecursiveMutex : public CHeapObj<mtThread> {
+  Semaphore  _sem;
+  Thread*    _owner;
+  int        _recursions;
+
+  NONCOPYABLE(RecursiveMutex);
+ public:
+  RecursiveMutex();
+  void lock(Thread* current);
+  void unlock(Thread* current);
+  // For use in asserts
+  bool holds_lock(Thread* current) { return _owner == current; }
 };
 
 #endif // SHARE_RUNTIME_MUTEX_HPP

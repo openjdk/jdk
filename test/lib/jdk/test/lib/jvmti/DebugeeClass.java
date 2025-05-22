@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 package jdk.test.lib.jvmti;
+
+import java.io.Serial;
 
 /**
  * Base class for debuggee class in JVMTI tests.
@@ -49,6 +51,7 @@ public class DebugeeClass {
     /**
      * This method is used to load library with native methods implementation, if needed.
      */
+    @SuppressWarnings("restricted")
     public static void loadLibrary(String name) {
         try {
             System.loadLibrary(name);
@@ -70,6 +73,9 @@ public class DebugeeClass {
     }
 
     public class Failure extends RuntimeException {
+        @Serial
+        private static final long serialVersionUID = -4069390356498980839L;
+
         public Failure() {
         }
 

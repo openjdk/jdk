@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,6 @@ class AixMisc {
 
 };
 
-void* Aix_dlopen(const char* filename, int Flags, const char** error_report);
+void* Aix_dlopen(const char* filename, int Flags, int *eno, const char** error_report);
 
 #endif // OS_AIX_PORTING_AIX_HPP

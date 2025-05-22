@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-// no precompiled headers
 #include "asm/macroAssembler.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -159,6 +158,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return fetch_compiled_frame_from_context(ucVoid);
+  }
   return frame(sp, fp, epc);
 }
 
@@ -256,21 +261,18 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
-        bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
-        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
+        bool is_unsafe_memory_access = (thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc));
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
           address next_pc = pc + NativeCall::instruction_size;
-          if (is_unsafe_arraycopy) {
-            next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+          if (is_unsafe_memory_access) {
+            next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
       } else if (sig == SIGILL && nativeInstruction_at(pc)->is_stop()) {
-        // Pull a pointer to the error message out of the instruction
-        // stream.
-        const uint64_t *detail_msg_ptr
-          = (uint64_t*)(pc + NativeInstruction::instruction_size);
-        const char *detail_msg = (const char *)*detail_msg_ptr;
+        // A pointer to the message will have been placed in r0
+        const char *detail_msg = (const char *)(uc->uc_mcontext->DU3_PREFIX(ss,x[0]));
         const char *msg = "stop";
         if (TraceTraps) {
           tty->print_cr("trap: %s: (SIGILL)", msg);
@@ -299,8 +301,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                thread->doing_unsafe_access()) {
       address next_pc = pc + NativeCall::instruction_size;
-      if (UnsafeCopyMemory::contains_pc(pc)) {
-        next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+      if (UnsafeMemoryAccess::contains_pc(pc)) {
+        next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
       }
       stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
     }
@@ -442,23 +444,6 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const ucontext_t* uc = (const ucontext_t*)context;
-
-  address sp = (address)os::Bsd::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc);
-  st->cr();
-}
-
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
   const int register_count = 29 /* x0-x28 */ + 3 /* fp, lr, sp */;
   int n = continuation;
@@ -512,6 +497,7 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 }
 
 extern "C" {
+  // needs local assembler label '1:' to avoid trouble when using linktime optimization
   int SpinPause() {
     // We don't use StubRoutines::aarch64::spin_wait stub in order to
     // avoid a costly call to os::current_thread_enable_wx() on MacOS.
@@ -534,14 +520,14 @@ extern "C" {
                                       // to entry for case SpinWait::NOP
         "  add  %[d], %[d], %[o]  \n"
         "  br   %[d]              \n"
-        "  b    SpinPause_return  \n" // case SpinWait::NONE  (-1)
+        "  b    1f                \n" // case SpinWait::NONE  (-1)
         "  nop                    \n" // padding
         "  nop                    \n" // case SpinWait::NOP   ( 0)
-        "  b    SpinPause_return  \n"
+        "  b    1f                \n"
         "  isb                    \n" // case SpinWait::ISB   ( 1)
-        "  b    SpinPause_return  \n"
+        "  b    1f                \n"
         "  yield                  \n" // case SpinWait::YIELD ( 2)
-        "SpinPause_return:        \n"
+        "1:        \n"
         : [d]"=&r"(br_dst)
         : [o]"r"(off)
         : "memory");

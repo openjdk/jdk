@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DependentActionsTest
  * @run testng/othervm -Djdk.internal.httpclient.debug=true DependentActionsTest
- * @run testng/othervm/java.security.policy=dependent.policy
-  *        -Djdk.internal.httpclient.debug=true DependentActionsTest
  */
 
 import java.io.BufferedReader;

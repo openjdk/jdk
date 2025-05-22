@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,18 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.WinLauncher;
+import jdk.jpackage.internal.model.WinMsiPackage;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.util.PathGroup;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.nio.file.Files;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,6 +50,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -55,101 +60,96 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import jdk.jpackage.internal.AppImageFile.LauncherInfo;
-import jdk.jpackage.internal.IOUtils.XmlConsumer;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
-import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.WinMsiBundler.MSI_SYSTEM_WIDE;
-import static jdk.jpackage.internal.WinMsiBundler.SERVICE_INSTALLER;
-import static jdk.jpackage.internal.WinMsiBundler.WIN_APP_IMAGE;
+import static jdk.jpackage.internal.util.CollectionUtils.toCollection;
+import jdk.jpackage.internal.model.WinLauncherMixin.WinShortcut;
+import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.XmlUtils;
+import jdk.jpackage.internal.util.XmlConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import org.w3c.dom.NodeList;
 
 /**
  * Creates WiX fragment with components for contents of app image.
  */
-class WixAppImageFragmentBuilder extends WixFragmentBuilder {
+final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     @Override
-    void initFromParams(Map<String, ? super Object> params) {
-        super.initFromParams(params);
+    void initFromParams(BuildEnv env, WinMsiPackage pkg) {
+        super.initFromParams(env, pkg);
 
-        Path appImageRoot = WIN_APP_IMAGE.fetchFrom(params);
+        Path appImageRoot = env.appImageDir();
 
-        Supplier<ApplicationLayout> appImageSupplier = () -> {
-            if (StandardBundlerParam.isRuntimeInstaller(params)) {
-                return ApplicationLayout.javaRuntime();
-            } else {
-                return ApplicationLayout.platformAppImage();
-            }
-        };
-
-        systemWide = MSI_SYSTEM_WIDE.fetchFrom(params);
+        systemWide = pkg.isSystemWideInstall();
 
         registryKeyPath = Path.of("Software",
-                VENDOR.fetchFrom(params),
-                APP_NAME.fetchFrom(params),
-                VERSION.fetchFrom(params)).toString();
+                pkg.app().vendor(),
+                pkg.app().name(),
+                pkg.version()).toString();
 
         installDir = (systemWide ? PROGRAM_FILES : LOCAL_PROGRAM_FILES).resolve(
-                WINDOWS_INSTALL_DIR.fetchFrom(params));
+                pkg.relativeInstallDir());
 
-        do {
-            ApplicationLayout layout = appImageSupplier.get();
-            // Don't want AppImageFile.FILENAME in installed application.
-            new InstallableFile(AppImageFile.getPathInAppImage(Path.of("")),
-                    null).excludeFromApplicationLayout(layout);
+        // Want absolute paths to source files in generated WiX sources.
+        // This is to handle scenario if sources would be processed from
+        // different current directory.
+        initAppImageLayouts(pkg.appImageLayout(), appImageRoot.toAbsolutePath().normalize());
 
-            // Want absolute paths to source files in generated WiX sources.
-            // This is to handle scenario if sources would be processed from
-            // different current directory.
-            appImage = layout.resolveAt(appImageRoot.toAbsolutePath().normalize());
-        } while (false);
+        launchers = toCollection(pkg.app().launchers());
 
-        installedAppImage = appImageSupplier.get().resolveAt(INSTALLDIR);
-
-        shortcutFolders = Stream.of(ShortcutsFolder.values()).filter(
-                shortcutFolder -> shortcutFolder.requested(params)).collect(
-                        Collectors.toSet());
-
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            launchers = Collections.emptyList();
-        } else {
-            launchers = AppImageFile.getLaunchers(appImageRoot, params);
-        }
+        shortcutFolders = ShortcutsFolder.getForPackage(pkg);
 
         launchersAsServices = launchers.stream()
-                .filter(LauncherInfo::isService)
+                .filter(Launcher::isService)
                 .map(launcher -> {
-                    var launcherPath = addExeSuffixToPath(
-                    installedAppImage.launchersDirectory().resolve(
-                            launcher.getName()));
+                    var launcherPath = installedAppImage.launchersDirectory().resolve(
+                            launcher.executableNameWithSuffix());
                     var id = Id.File.of(launcherPath);
-                    return new WixLauncherAsService(launcher.getName(), params)
+                    return new WixLauncherAsService(pkg.app(), launcher, env::createResource)
                             .setLauncherInstallPath(toWixPath(launcherPath))
                             .setLauncherInstallPathId(id);
                 }).toList();
 
         if (!launchersAsServices.isEmpty()) {
-            serviceInstaller = SERVICE_INSTALLER.fetchFrom(params);
             // Service installer tool will be installed in launchers directory
+            final var serviceInstallerPath = pkg.serviceInstaller().orElseThrow();
             serviceInstaller = new InstallableFile(
-                    serviceInstaller.srcPath().toAbsolutePath().normalize(),
+                    serviceInstallerPath.toAbsolutePath().normalize(),
                     installedAppImage.launchersDirectory().resolve(
-                            serviceInstaller.installPath()));
+                            serviceInstallerPath.getFileName()));
         }
 
-        programMenuFolderName = MENU_GROUP.fetchFrom(params);
+        programMenuFolderName = pkg.startMenuGroupName();
 
-        initFileAssociations(params);
+        if (!pkg.isRuntimeInstaller()) {
+            packageFile = new PackageFile(pkg.packageName());
+        } else {
+            packageFile = null;
+        }
+
+        initFileAssociations();
     }
 
     @Override
     void addFilesToConfigRoot() throws IOException {
         removeFolderItems = new HashMap<>();
         defaultedMimes = new HashSet<>();
+        if (packageFile != null) {
+            packageFile.save(ApplicationLayout.build().setAll(getConfigRoot()).create());
+        }
         super.addFilesToConfigRoot();
+    }
+
+    @Override
+    List<String> getLoggableWixFeatures() {
+        if (isWithWix36Features()) {
+            return List.of(MessageFormat.format(I18N.getString("message.use-wix36-features"),
+                    getWixVersion()));
+        } else {
+            return List.of();
+        }
     }
 
     @Override
@@ -173,45 +173,41 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         );
     }
 
-    private void normalizeFileAssociation(FileAssociation fa) {
-        fa.launcherPath = addExeSuffixToPath(
-                installedAppImage.launchersDirectory().resolve(fa.launcherPath));
-
-        if (fa.iconPath != null && !Files.exists(fa.iconPath)) {
-            fa.iconPath = null;
-        }
-
-        if (fa.iconPath != null) {
-            fa.iconPath = fa.iconPath.toAbsolutePath();
-        }
-
-        // Filter out empty extensions.
-        fa.extensions = fa.extensions.stream().filter(Predicate.not(
-                String::isEmpty)).toList();
-    }
-
-    private static Path addExeSuffixToPath(Path path) {
-        return IOUtils.addSuffix(path, ".exe");
-    }
-
     private Path getInstalledFaIcoPath(FileAssociation fa) {
-        String fname = String.format("fa_%s.ico", String.join("_", fa.extensions));
-        return installedAppImage.destktopIntegrationDirectory().resolve(fname);
+        String fname = String.format("fa_%s.ico", fa.extension());
+        return installedAppImage.desktopIntegrationDirectory().resolve(fname);
     }
 
-    private void initFileAssociations(Map<String, ? super Object> params) {
-        associations = FileAssociation.fetchFrom(params).stream()
-                .peek(this::normalizeFileAssociation)
-                // Filter out file associations without extensions.
-                .filter(fa -> !fa.extensions.isEmpty())
-                .toList();
+    private void initFileAssociations() {
+        associations = launchers.stream().collect(toMap(
+                Launcher::executableNameWithSuffix,
+                WinLauncher::fileAssociations));
 
-        associations.stream().filter(fa -> fa.iconPath != null).forEach(fa -> {
+        associations.values().stream().flatMap(List::stream).filter(FileAssociation::hasIcon).toList().forEach(fa -> {
             // Need to add fa icon in the image.
             Object key = new Object();
-            appImage.pathGroup().setPath(key, fa.iconPath);
-            installedAppImage.pathGroup().setPath(key, getInstalledFaIcoPath(fa));
+            appImagePathGroup.setPath(key, fa.icon().orElseThrow().toAbsolutePath().normalize());
+            installedAppImagePathGroup.setPath(key, getInstalledFaIcoPath(fa));
         });
+    }
+
+    private void initAppImageLayouts(AppImageLayout appImageLayout, Path appImageRoot) {
+        var srcAppImageLayout = appImageLayout.resolveAt(appImageRoot);
+
+        var installedAppImageLayout = appImageLayout.resolveAt(INSTALLDIR);
+
+        appImagePathGroup = AppImageLayout.toPathGroup(srcAppImageLayout);
+        installedAppImagePathGroup = AppImageLayout.toPathGroup(installedAppImageLayout);
+
+        if (srcAppImageLayout instanceof ApplicationLayout appLayout) {
+            // Don't want app image info file in installed application.
+            var appImageFile = AppImageFile.getPathInAppImage(appLayout);
+            appImagePathGroup.ghostPath(appImageFile);
+
+            installedAppImage = (ApplicationLayout)installedAppImageLayout;
+        } else {
+            installedAppImage = null;
+        }
     }
 
     private static UUID createNameUUID(String str) {
@@ -314,12 +310,25 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             return cfg.isFile;
         }
 
-        static void startElement(XMLStreamWriter xml, String componentId,
+        static void startElement(WixToolsetType wixType, XMLStreamWriter xml, String componentId,
                 String componentGuid) throws XMLStreamException, IOException {
             xml.writeStartElement("Component");
-            xml.writeAttribute("Win64", is64Bit() ? "yes" : "no");
+            switch (wixType) {
+                case Wix3 -> {
+                    xml.writeAttribute("Win64", is64Bit() ? "yes" : "no");
+                    xml.writeAttribute("Guid", componentGuid);
+                }
+                case Wix4 -> {
+                    xml.writeAttribute("Bitness", is64Bit() ? "always64" : "always32");
+                    if (!componentGuid.equals("*")) {
+                        xml.writeAttribute("Guid", componentGuid);
+                    }
+                }
+                default -> {
+                    throw new IllegalArgumentException();
+                }
+            }
             xml.writeAttribute("Id", componentId);
-            xml.writeAttribute("Guid", componentGuid);
         }
 
         private static final class Config {
@@ -349,8 +358,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             List<String> componentIds) throws XMLStreamException, IOException {
         xml.writeStartElement("ComponentGroup");
         xml.writeAttribute("Id", id);
-        componentIds = componentIds.stream().filter(Objects::nonNull).collect(
-                Collectors.toList());
+        componentIds = componentIds.stream().filter(Objects::nonNull).toList();
         for (var componentId : componentIds) {
             xml.writeStartElement("ComponentRef");
             xml.writeAttribute("Id", componentId);
@@ -370,22 +378,31 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             directoryRefPath = path;
         }
 
-        xml.writeStartElement("DirectoryRef");
-        xml.writeAttribute("Id", Id.Folder.of(directoryRefPath));
+        startDirectoryElement(xml, "DirectoryRef", directoryRefPath);
 
         final String componentId = "c" + role.idOf(path);
-        Component.startElement(xml, componentId, String.format("{%s}",
-                role.guidOf(path)));
+        Component.startElement(getWixType(), xml, componentId, String.format(
+                "{%s}", role.guidOf(path)));
 
         if (role == Component.Shortcut) {
-            xml.writeStartElement("Condition");
             String property = shortcutFolders.stream().filter(shortcutFolder -> {
                 return path.startsWith(shortcutFolder.root);
             }).map(shortcutFolder -> {
                 return shortcutFolder.property;
             }).findFirst().get();
-            xml.writeCharacters(property);
-            xml.writeEndElement();
+            switch (getWixType()) {
+                case Wix3 -> {
+                    xml.writeStartElement("Condition");
+                    xml.writeCharacters(property);
+                    xml.writeEndElement();
+                }
+                case Wix4 -> {
+                    xml.writeAttribute("Condition", property);
+                }
+                default -> {
+                    throw new IllegalArgumentException();
+                }
+            }
         }
 
         boolean isRegistryKeyPath = !systemWide || role.isRegistryKeyPath();
@@ -433,8 +450,11 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             throws XMLStreamException, IOException {
 
         List<String> componentIds = new ArrayList<>();
-        for (var fa : associations) {
-            componentIds.addAll(addFaComponents(xml, fa));
+        for (var entry : associations.entrySet()) {
+            var launcherExe = entry.getKey();
+            for (var fa : entry.getValue()) {
+                componentIds.add(addFaComponent(xml, launcherExe, fa));
+            }
         }
         addComponentGroup(xml, "FileAssociations", componentIds);
     }
@@ -442,31 +462,37 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     private void addShortcutComponentGroup(XMLStreamWriter xml) throws
             XMLStreamException, IOException {
         List<String> componentIds = new ArrayList<>();
-        Set<ShortcutsFolder> defineShortcutFolders = new HashSet<>();
+        Set<Path> defineShortcutFolders = new HashSet<>();
         for (var launcher : launchers) {
             for (var folder : shortcutFolders) {
-                Path launcherPath = addExeSuffixToPath(installedAppImage
-                        .launchersDirectory().resolve(launcher.getName()));
+                Path launcherPath = installedAppImage.launchersDirectory().resolve(
+                        launcher.executableNameWithSuffix());
 
-                if ((launcher.isMenu() &&
-                        (folder.equals(ShortcutsFolder.ProgramMenu))) ||
-                    (launcher.isShortcut() &&
-                        (folder.equals(ShortcutsFolder.Desktop)))) {
-
-                    String componentId = addShortcutComponent(xml, launcherPath,
-                            folder);
+                if (folder.isRequestedFor(launcher)) {
+                    String componentId = addShortcutComponent(xml, launcherPath, folder);
 
                     if (componentId != null) {
-                        defineShortcutFolders.add(folder);
+                        Path folderPath = folder.getPath(this);
+                        boolean defineFolder;
+                        switch (getWixType()) {
+                            case Wix3 ->
+                                defineFolder = true;
+                            case Wix4 ->
+                                defineFolder = !SYSTEM_DIRS.contains(folderPath);
+                            default ->
+                                throw new IllegalArgumentException();
+                        }
+                        if (defineFolder) {
+                            defineShortcutFolders.add(folderPath);
+                        }
                         componentIds.add(componentId);
                     }
                 }
             }
         }
 
-        for (var folder : defineShortcutFolders) {
-            Path path = folder.getPath(this);
-            componentIds.addAll(addRootBranch(xml, path));
+        for (var folderPath : defineShortcutFolders) {
+            componentIds.addAll(addRootBranch(xml, folderPath));
         }
 
         addComponentGroup(xml, "Shortcuts", componentIds);
@@ -480,7 +506,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             throw throwInvalidPathException(launcherPath);
         }
 
-        String launcherBasename = IOUtils.replaceSuffix(
+        String launcherBasename = PathUtils.replaceSuffix(
                 IOUtils.getFileName(launcherPath), "").toString();
 
         Path shortcutPath = folder.getPath(this).resolve(launcherBasename);
@@ -493,51 +519,44 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         });
     }
 
-    private List<String> addFaComponents(XMLStreamWriter xml,
-            FileAssociation fa) throws XMLStreamException, IOException {
-        List<String> components = new ArrayList<>();
-        for (var extension: fa.extensions) {
-            Path path = INSTALLDIR.resolve(String.format("%s_%s", extension,
-                    fa.launcherPath.getFileName()));
-            components.add(addComponent(xml, path, Component.ProgId, unused -> {
-                xml.writeAttribute("Description", fa.description);
+    private String addFaComponent(XMLStreamWriter xml,
+            String launcherExe, FileAssociation fa) throws
+            XMLStreamException, IOException {
 
-                if (fa.iconPath != null) {
-                    xml.writeAttribute("Icon", Id.File.of(getInstalledFaIcoPath(
-                            fa)));
-                    xml.writeAttribute("IconIndex", "0");
-                }
+        Path path = INSTALLDIR.resolve(String.format("%s_%s", fa.extension(), launcherExe));
+        return addComponent(xml, path, Component.ProgId, unused -> {
+            xml.writeAttribute("Description", fa.description().orElseThrow());
 
-                xml.writeStartElement("Extension");
-                xml.writeAttribute("Id", extension);
-                xml.writeAttribute("Advertise", "no");
+            if (fa.hasIcon()) {
+                xml.writeAttribute("Icon", Id.File.of(getInstalledFaIcoPath(fa)));
+                xml.writeAttribute("IconIndex", "0");
+            }
 
-                var mimeIt = fa.mimeTypes.iterator();
-                if (mimeIt.hasNext()) {
-                    String mime = mimeIt.next();
-                    xml.writeAttribute("ContentType", mime);
+            xml.writeStartElement("Extension");
+            xml.writeAttribute("Id", fa.extension());
+            xml.writeAttribute("Advertise", "no");
 
-                    if (!defaultedMimes.contains(mime)) {
-                        xml.writeStartElement("MIME");
-                        xml.writeAttribute("ContentType", mime);
-                        xml.writeAttribute("Default", "yes");
-                        xml.writeEndElement();
-                        defaultedMimes.add(mime);
-                    }
-                }
+            var mime = fa.mimeType();
+            xml.writeAttribute("ContentType", mime);
 
-                xml.writeStartElement("Verb");
-                xml.writeAttribute("Id", "open");
-                xml.writeAttribute("Command", "!(loc.ContextMenuCommandLabel)");
-                xml.writeAttribute("Argument", "\"%1\" %*");
-                xml.writeAttribute("TargetFile", Id.File.of(fa.launcherPath));
-                xml.writeEndElement(); // <Verb>
+            if (!defaultedMimes.contains(mime)) {
+                xml.writeStartElement("MIME");
+                xml.writeAttribute("ContentType", mime);
+                xml.writeAttribute("Default", "yes");
+                xml.writeEndElement();
+                defaultedMimes.add(mime);
+            }
 
-                xml.writeEndElement(); // <Extension>
-            }));
-        }
+            xml.writeStartElement("Verb");
+            xml.writeAttribute("Id", "open");
+            xml.writeAttribute("Command", "!(loc.ContextMenuCommandLabel)");
+            xml.writeAttribute("Argument", "\"%1\" %*");
+            xml.writeAttribute("TargetFile", Id.File.of(
+                    installedAppImage.launchersDirectory().resolve(launcherExe)));
+            xml.writeEndElement(); // <Verb>
 
-        return components;
+            xml.writeEndElement(); // <Extension>
+        });
     }
 
     private List<String> addRootBranch(XMLStreamWriter xml, Path path)
@@ -546,13 +565,18 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             throw throwInvalidPathException(path);
         }
 
-        Function<Path, String> createDirectoryName = dir -> null;
-
         boolean sysDir = true;
-        int levels = 1;
+        int levels;
         var dirIt = path.iterator();
-        xml.writeStartElement("DirectoryRef");
-        xml.writeAttribute("Id", dirIt.next().toString());
+
+        if (getWixType() != WixToolsetType.Wix3 && TARGETDIR.equals(path.getName(0))) {
+            levels = 0;
+            dirIt.next();
+        } else {
+            levels = 1;
+            xml.writeStartElement("DirectoryRef");
+            xml.writeAttribute("Id", dirIt.next().toString());
+        }
 
         path = path.getName(0);
         while (dirIt.hasNext()) {
@@ -562,21 +586,11 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
             if (sysDir && !SYSTEM_DIRS.contains(path)) {
                 sysDir = false;
-                createDirectoryName = dir -> dir.getFileName().toString();
             }
 
-            final String directoryId;
-            if (!sysDir && path.equals(installDir)) {
-                directoryId = INSTALLDIR.toString();
-            } else {
-                directoryId = Id.Folder.of(path);
-            }
-            xml.writeStartElement("Directory");
-            xml.writeAttribute("Id", directoryId);
-
-            String directoryName = createDirectoryName.apply(path);
-            if (directoryName != null) {
-                xml.writeAttribute("Name", directoryName);
+            startDirectoryElement(xml, "Directory", path);
+            if (!sysDir) {
+                xml.writeAttribute("Name", path.getFileName().toString());
             }
         }
 
@@ -584,9 +598,38 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             xml.writeEndElement();
         }
 
-        List<String> componentIds = new ArrayList<>();
+        return List.of();
+    }
 
-        return componentIds;
+    private void startDirectoryElement(XMLStreamWriter xml,
+            String wix3ElementName, Path path) throws XMLStreamException {
+        final String elementName;
+        switch (getWixType()) {
+            case Wix3 -> {
+                elementName = wix3ElementName;
+            }
+            case Wix4 -> {
+                if (SYSTEM_DIRS.contains(path)) {
+                    elementName = "StandardDirectory";
+                } else {
+                    elementName = wix3ElementName;
+                }
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
+
+        }
+
+        final String directoryId;
+        if (path.equals(installDir)) {
+            directoryId = INSTALLDIR.toString();
+        } else {
+            directoryId = Id.Folder.of(path);
+        }
+
+        xml.writeStartElement(elementName);
+        xml.writeAttribute("Id", directoryId);
     }
 
     private String addRemoveDirectoryComponent(XMLStreamWriter xml, Path path)
@@ -600,7 +643,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         Set<Path> allDirs = new HashSet<>();
         Set<Path> emptyDirs = new HashSet<>();
-        appImage.transform(installedAppImage, new PathGroup.TransformHandler() {
+        appImagePathGroup.transform(installedAppImagePathGroup, new PathGroup.TransformHandler() {
             @Override
             public void copyFile(Path src, Path dst) throws IOException {
                 Path dir = dst.getParent();
@@ -623,6 +666,11 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 while ((it = it.getParent()) != null && emptyDirs.remove(it));
             }
         });
+
+        // The installed "app" directory is never empty as it contains at least ".package" file.
+        // However, the "app" directory in the source app image can be empty because the ".package"
+        // file is picked from the build config directory, not from the source app image.
+        Optional.ofNullable(installedAppImage).map(ApplicationLayout::appDirectory).ifPresent(emptyDirs::remove);
 
         List<String> componentIds = new ArrayList<>();
         for (var dir : emptyDirs) {
@@ -661,20 +709,24 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             throws XMLStreamException, IOException {
 
         List<Map.Entry<Path, Path>> files = new ArrayList<>();
-        appImage.transform(installedAppImage, new PathGroup.TransformHandler() {
+        appImagePathGroup.transform(installedAppImagePathGroup, new PathGroup.TransformHandler() {
             @Override
             public void copyFile(Path src, Path dst) throws IOException {
                 files.add(Map.entry(src, dst));
-            }
-
-            @Override
-            public void createDirectory(final Path dir) throws IOException {
             }
         });
 
         if (serviceInstaller != null) {
             files.add(Map.entry(serviceInstaller.srcPath(),
                     serviceInstaller.installPath()));
+        }
+
+        if (packageFile != null) {
+            files.add(Map.entry(
+                    PackageFile.getPathInAppImage(
+                            ApplicationLayout.build().setAll(
+                                    getConfigRoot().toAbsolutePath().normalize()).create()),
+                    PackageFile.getPathInAppImage(installedAppImage)));
         }
 
         List<String> componentIds = new ArrayList<>();
@@ -707,7 +759,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         }
 
         try {
-            var buffer = new DOMResult(IOUtils.initDocumentBuilder().newDocument());
+            var buffer = new DOMResult(XmlUtils.initDocumentBuilder().newDocument());
             var bufferWriter = XMLOutputFactory.newInstance().createXMLStreamWriter(
                     buffer);
 
@@ -744,21 +796,14 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     private void addIcons(XMLStreamWriter xml) throws
             XMLStreamException, IOException {
 
-        PathGroup srcPathGroup = appImage.pathGroup();
-        PathGroup dstPathGroup = installedAppImage.pathGroup();
-
         // Build list of copy operations for all .ico files in application image
         List<Map.Entry<Path, Path>> icoFiles = new ArrayList<>();
-        srcPathGroup.transform(dstPathGroup, new PathGroup.TransformHandler() {
+        appImagePathGroup.transform(installedAppImagePathGroup, new PathGroup.TransformHandler() {
             @Override
             public void copyFile(Path src, Path dst) throws IOException {
                 if (IOUtils.getFileName(src).toString().endsWith(".ico")) {
                     icoFiles.add(Map.entry(src, dst));
                 }
-            }
-
-            @Override
-            public void createDirectory(Path dst) throws IOException {
             }
         });
 
@@ -785,7 +830,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         xml.writeStartElement("RegistryKey");
         xml.writeAttribute("Root", regRoot);
         xml.writeAttribute("Key", registryKeyPath);
-        if (getWixVersion().compareTo("3.6") < 0) {
+        if (!isWithWix36Features()) {
             xml.writeAttribute("Action", "createAndRemoveOnUninstall");
         }
         xml.writeStartElement("RegistryValue");
@@ -799,7 +844,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private String addDirectoryCleaner(XMLStreamWriter xml, Path path) throws
             XMLStreamException, IOException {
-        if (getWixVersion().compareTo("3.6") < 0) {
+        if (!isWithWix36Features()) {
             return null;
         }
 
@@ -821,14 +866,13 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         xml.writeStartElement("DirectoryRef");
         xml.writeAttribute("Id", INSTALLDIR.toString());
-        Component.startElement(xml, componentId, "*");
+        Component.startElement(getWixType(), xml, componentId, "*");
 
         addRegistryKeyPath(xml, INSTALLDIR, () -> propertyId, () -> {
             return toWixPath(path);
         });
 
-        xml.writeStartElement(
-                "http://schemas.microsoft.com/wix/UtilExtension",
+        xml.writeStartElement(getWixNamespaces().get(WixNamespace.Util),
                 "RemoveFolderEx");
         xml.writeAttribute("On", "uninstall");
         xml.writeAttribute("Property", propertyId);
@@ -837,6 +881,10 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         xml.writeEndElement(); // <DirectoryRef>
 
         return componentId;
+    }
+
+    private boolean isWithWix36Features() {
+        return DottedVersion.compareComponents(getWixVersion(), DottedVersion.greedy("3.6")) >= 0;
     }
 
     // Does the following conversions:
@@ -858,22 +906,15 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     }
 
     enum ShortcutsFolder {
-        ProgramMenu(PROGRAM_MENU_PATH, Arguments.CLIOptions.WIN_MENU_HINT,
+        ProgramMenu(PROGRAM_MENU_PATH, WinShortcut.WIN_SHORTCUT_START_MENU,
                 "JP_INSTALL_STARTMENU_SHORTCUT", "JpStartMenuShortcutPrompt"),
-        Desktop(DESKTOP_PATH, Arguments.CLIOptions.WIN_SHORTCUT_HINT,
+        Desktop(DESKTOP_PATH, WinShortcut.WIN_SHORTCUT_DESKTOP,
                 "JP_INSTALL_DESKTOP_SHORTCUT", "JpDesktopShortcutPrompt");
 
-        private ShortcutsFolder(Path root, Arguments.CLIOptions cliOption,
+        private ShortcutsFolder(Path root, WinShortcut shortcutId,
                 String property, String wixVariableName) {
             this.root = root;
-            this.bundlerParam = new StandardBundlerParam<>(
-                    cliOption.getId(),
-                    Boolean.class,
-                    params -> false,
-                    // valueOf(null) is false,
-                    // and we actually do want null in some cases
-                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ? false : Boolean.valueOf(s)
-            );
+            this.shortcutId = shortcutId;
             this.wixVariableName = wixVariableName;
             this.property = property;
         }
@@ -885,18 +926,28 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             return root;
         }
 
-        boolean requested(Map<String, ? super Object> params) {
-            return bundlerParam.fetchFrom(params);
+        boolean isRequestedFor(WinLauncher launcher) {
+            return launcher.shortcuts().contains(shortcutId);
         }
 
         String getWixVariableName() {
             return wixVariableName;
         }
 
+        static Set<ShortcutsFolder> getForPackage(WinMsiPackage pkg) {
+            var launchers = Optional.ofNullable(pkg.app().launchers()).map(
+                    List::stream).orElseGet(Stream::of);
+            return launchers.map(launcher -> {
+                return Stream.of(ShortcutsFolder.values()).filter(shortcutsFolder -> {
+                    return shortcutsFolder.isRequestedFor((WinLauncher)launcher);
+                });
+            }).flatMap(Function.identity()).collect(Collectors.toSet());
+        }
+
         private final Path root;
         private final String property;
         private final String wixVariableName;
-        private final StandardBundlerParam<Boolean> bundlerParam;
+        private final WinShortcut shortcutId;
     }
 
     private boolean systemWide;
@@ -907,21 +958,25 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private String programMenuFolderName;
 
-    private List<FileAssociation> associations;
+    private Map<String, List<FileAssociation>> associations;
 
     private Set<ShortcutsFolder> shortcutFolders;
 
-    private List<LauncherInfo> launchers;
+    private List<WinLauncher> launchers;
 
     private List<WixLauncherAsService> launchersAsServices;
 
     private InstallableFile serviceInstaller;
 
-    private ApplicationLayout appImage;
     private ApplicationLayout installedAppImage;
+
+    private PathGroup appImagePathGroup;
+    private PathGroup installedAppImagePathGroup;
 
     private Map<Path, Integer> removeFolderItems;
     private Set<String> defaultedMimes;
+
+    private PackageFile packageFile;
 
     private static final Path TARGETDIR = Path.of("TARGETDIR");
 
@@ -947,38 +1002,4 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private static final Set<Path> USER_PROFILE_DIRS = Set.of(LOCAL_PROGRAM_FILES,
             PROGRAM_MENU_PATH, DESKTOP_PATH);
-
-    private static final StandardBundlerParam<String> MENU_GROUP =
-            new StandardBundlerParam<>(
-                    Arguments.CLIOptions.WIN_MENU_GROUP.getId(),
-                    String.class,
-                    params -> I18N.getString("param.menu-group.default"),
-                    (s, p) -> s
-            );
-
-    private static final BundlerParamInfo<String> WINDOWS_INSTALL_DIR =
-            new StandardBundlerParam<>(
-            "windows-install-dir",
-            String.class,
-            params -> {
-                 String dir = INSTALL_DIR.fetchFrom(params);
-                 if (dir != null) {
-                     if (dir.contains(":") || dir.contains("..")) {
-                         Log.error(MessageFormat.format(I18N.getString(
-                                "message.invalid.install.dir"), dir,
-                                APP_NAME.fetchFrom(params)));
-                     } else {
-                        if (dir.startsWith("\\")) {
-                             dir = dir.substring(1);
-                        }
-                        if (dir.endsWith("\\")) {
-                             dir = dir.substring(0, dir.length() - 1);
-                        }
-                        return dir;
-                     }
-                 }
-                 return APP_NAME.fetchFrom(params); // Default to app name
-             },
-            (s, p) -> s
-    );
 }

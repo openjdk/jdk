@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,20 @@ class fileStream;
                     develop_pd,                                             \
                     product,                                                \
                     product_pd,                                             \
-                    notproduct,                                             \
                     range,                                                  \
                     constraint)                                             \
                                                                             \
   product(bool, EnableJVMCI, false, EXPERIMENTAL,                           \
-          "Enable JVMCI")                                                   \
+          "Enable JVMCI support in the VM. "                                \
+          "Defaults to true if UseJVMCICompiler is true or "                \
+          "--add-modules=jdk.internal.vm.ci was specified. "                \
+          "The behavior of --add-modules=jdk.internal.vm.ci is triggered "  \
+          "if any of the following is true: "                               \
+          "1. -XX:+EnableJVMCI is set to true on the command line. "        \
+          "2. -XX:+EnableJVMCI is set to true by jdk/internal/vm/options "  \
+          "   in the java.base module. "                                    \
+          "3. EnableJVMCI is defaulted to true by UseJVMCICompiler and "    \
+          "   libjvmci is not enabled")                                     \
                                                                             \
   product(bool, UseGraalJIT, false, EXPERIMENTAL,                           \
           "Select the Graal JVMCI compiler. This is an alias for: "         \
@@ -89,7 +97,8 @@ class fileStream;
           "-XX:-TieredCompilation makes JVMCI compile more of itself.")     \
                                                                             \
   product(bool, EagerJVMCI, false, EXPERIMENTAL,                            \
-          "Force eager JVMCI initialization")                               \
+          "Force eager JVMCI initialization. Defaults to true if "          \
+          "UseJVMCICompiler is true.")                                      \
                                                                             \
   product(bool, PrintBootstrap, true, EXPERIMENTAL,                         \
           "Print JVMCI bootstrap progress and summary")                     \
@@ -141,12 +150,14 @@ class fileStream;
   product(bool, UseJVMCINativeLibrary, false, EXPERIMENTAL,                 \
           "Execute JVMCI Java code from a shared library (\"libjvmci\") "   \
           "instead of loading it from class files and executing it "        \
-          "on the HotSpot heap. Defaults to true if EnableJVMCIProduct is " \
-          "true and a JVMCI native library is available.")                  \
+          "on the HotSpot heap. Defaults to true if UseJVMCICompiler or "   \
+          "EnableJVMCI is true and a JVMCI native library is available.")   \
                                                                             \
-  product(double, JVMCINativeLibraryThreadFraction, 0.33, EXPERIMENTAL,     \
+  product(double, JVMCINativeLibraryThreadFraction, 0.66, EXPERIMENTAL,     \
           "The fraction of compiler threads used by libjvmci. "             \
-          "The remaining compiler threads are used by C1.")                 \
+          "The remaining compiler threads are used by C1. "                 \
+          "Reducing this value could reduce the max RSS but "               \
+          "also increase the warmup time.")                                 \
           range(0.0, 1.0)                                                   \
                                                                             \
   product(ccstr, JVMCINativeLibraryErrorFile, nullptr, EXPERIMENTAL,        \
@@ -183,8 +194,8 @@ class fileStream;
   NOT_COMPILER2(product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL, \
           "Enables aggressive reboxing of vectors"))                        \
                                                                             \
-  NOT_COMPILER2(product(bool, UseVectorStubs, false, EXPERIMENTAL,          \
-          "Use stubs for vector transcendental operations"))                \
+  product(bool, UseVectorStubs, false, EXPERIMENTAL,                        \
+          "Use stubs for vector transcendental operations")                 \
 
 // end of JVMCI_FLAGS
 

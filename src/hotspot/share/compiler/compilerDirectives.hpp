@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
 #ifndef SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 #define SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 
-#include "classfile/vmIntrinsics.hpp"
-#include "ci/ciMetadata.hpp"
 #include "ci/ciMethod.hpp"
-#include "compiler/compiler_globals.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/methodMatcher.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "opto/phasetype.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
@@ -86,11 +83,13 @@ NOT_PRODUCT(cflags(PrintIdeal,          bool, PrintIdeal, PrintIdeal)) \
     cflags(TraceSpilling,           bool, TraceSpilling, TraceSpilling) \
     cflags(Vectorize,               bool, false, Vectorize) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
-NOT_PRODUCT(cflags(IGVPrintLevel,       intx, PrintIdealGraphLevel, IGVPrintLevel)) \
+NOT_PRODUCT(cflags(PhasePrintLevel, intx, PrintPhaseLevel, PhasePrintLevel)) \
+NOT_PRODUCT(cflags(IGVPrintLevel,   intx, PrintIdealGraphLevel, IGVPrintLevel)) \
     cflags(IncrementalInlineForceCleanup, bool, IncrementalInlineForceCleanup, IncrementalInlineForceCleanup) \
     cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
 #define compilerdirectives_c2_string_flags(cflags) \
 NOT_PRODUCT(cflags(TraceAutoVectorization, ccstrlist, "", TraceAutoVectorization)) \
+NOT_PRODUCT(cflags(TraceMergeStores, ccstrlist, "", TraceMergeStores)) \
 NOT_PRODUCT(cflags(PrintIdealPhase,     ccstrlist, "", PrintIdealPhase))
 #else
   #define compilerdirectives_c2_other_flags(cflags)
@@ -132,6 +131,7 @@ private:
   TriBoolArray<(size_t)vmIntrinsics::number_of_intrinsics(), int> _intrinsic_control_words;
   CHeapBitMap _ideal_phase_name_set;
   CHeapBitMap _trace_auto_vectorization_tags;
+  CHeapBitMap _trace_merge_stores_tags;
 
 public:
   DirectiveSet(CompilerDirectives* directive);
@@ -203,7 +203,7 @@ void set_##name(void* value) {                                      \
   void set_ideal_phase_name_set(const BitMap& set) {
     _ideal_phase_name_set.set_from(set);
   };
-  bool should_print_phase(const CompilerPhaseType cpt) const {
+  bool should_print_ideal_phase(const CompilerPhaseType cpt) const {
     return _ideal_phase_name_set.at(cpt);
   };
   void set_trace_auto_vectorization_tags(const CHeapBitMap& tags) {
@@ -212,9 +212,15 @@ void set_##name(void* value) {                                      \
   const CHeapBitMap& trace_auto_vectorization_tags() {
     return _trace_auto_vectorization_tags;
   };
+  void set_trace_merge_stores_tags(const CHeapBitMap& tags) {
+    _trace_merge_stores_tags.set_from(tags);
+  };
+  const CHeapBitMap& trace_merge_stores_tags() {
+    return _trace_merge_stores_tags;
+  };
 
-  void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" INTX_FORMAT " ", n, v); } }
-  void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" UINTX_FORMAT " ", n, v); } }
+  void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:%zd ", n, v); } }
+  void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:%zu ", n, v); } }
   void print_bool(outputStream* st, ccstr n, bool v, bool mod) { if (mod) { st->print("%s:%s ", n, v ? "true" : "false"); } }
   void print_double(outputStream* st, ccstr n, double v, bool mod) { if (mod) { st->print("%s:%f ", n, v); } }
   void print_ccstr(outputStream* st, ccstr n, ccstr v, bool mod) { if (mod) { st->print("%s:%s ", n, v); } }

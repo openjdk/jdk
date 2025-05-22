@@ -24,15 +24,20 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Collections;
 import java.lang.classfile.ClassSignature;
 import java.lang.classfile.MethodSignature;
 import java.lang.classfile.Signature;
-import java.lang.classfile.Signature.*;
+import java.lang.classfile.Signature.ArrayTypeSig;
+import java.lang.classfile.Signature.ClassTypeSig;
+import java.lang.classfile.Signature.RefTypeSig;
+import java.lang.classfile.Signature.ThrowableSig;
+import java.lang.classfile.Signature.TypeArg;
+import java.lang.classfile.Signature.TypeParam;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 public final class SignaturesImpl {
 
@@ -280,24 +285,29 @@ public final class SignaturesImpl {
             if (!typeArgs.isEmpty()) {
                 var sb = new StringBuilder();
                 sb.append('<');
-                for (var ta : typeArgs)
-                    sb.append(((TypeArgImpl)ta).signatureString());
+                for (var ta : typeArgs) {
+                    switch (ta) {
+                        case TypeArg.Bounded b -> {
+                            switch (b.wildcardIndicator()) {
+                                case SUPER -> sb.append('-');
+                                case EXTENDS -> sb.append('+');
+                            }
+                            sb.append(b.boundType().signatureString());
+                        }
+                        case TypeArg.Unbounded _ -> sb.append('*');
+                    }
+                }
                 suffix = sb.append(">;").toString();
             }
             return prefix + className + suffix;
         }
     }
 
-    public static record TypeArgImpl(WildcardIndicator wildcardIndicator, Optional<RefTypeSig> boundType) implements Signature.TypeArg {
+    public static enum UnboundedTypeArgImpl implements TypeArg.Unbounded {
+        INSTANCE;
+    }
 
-        public String signatureString() {
-            return switch (wildcardIndicator) {
-                case DEFAULT -> boundType.get().signatureString();
-                case EXTENDS -> "+" + boundType.get().signatureString();
-                case SUPER -> "-" + boundType.get().signatureString();
-                case UNBOUNDED -> "*";
-            };
-        }
+    public static record TypeArgImpl(WildcardIndicator wildcardIndicator, RefTypeSig boundType) implements Signature.TypeArg.Bounded {
     }
 
     public static record TypeParamImpl(String identifier, Optional<RefTypeSig> classBound, List<RefTypeSig> interfaceBounds)

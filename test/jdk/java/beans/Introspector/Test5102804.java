@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
  * @test
  * @bug 5102804
  * @summary Tests memory leak
- * @author Sergey Malenkov
- * @run main/othervm -ms16m -mx16m Test5102804
+ * @run main/othervm -Xms16m -Xmx16m Test5102804
  */
 
 import java.beans.BeanInfo;

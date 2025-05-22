@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/bytecodeAssembler.hpp"
 #include "classfile/defaultMethods.hpp"
@@ -238,8 +237,8 @@ class PrintHierarchy : public HierarchyVisitor<PrintHierarchy> {
  public:
   bool visit() {
     InstanceKlass* cls = current_class();
-    streamIndentor si(_st, current_depth() * 2);
-    _st->indent().print_cr("%s", cls->name()->as_C_string());
+    StreamIndentor si(_st, current_depth() * 2);
+    _st->print_cr("%s", cls->name()->as_C_string());
     return true;
   }
 
@@ -437,8 +436,8 @@ class MethodFamily : public ResourceObj {
 
   void print_selected(outputStream* str, int indent) const {
     assert(has_target(), "Should be called otherwise");
-    streamIndentor si(str, indent * 2);
-    str->indent().print("Selected method: ");
+    StreamIndentor si(str, indent * 2);
+    str->print("Selected method: ");
     print_method(str, _selected_target);
     Klass* method_holder = _selected_target->method_holder();
     if (!method_holder->is_interface()) {
@@ -450,8 +449,8 @@ class MethodFamily : public ResourceObj {
   void print_exception(outputStream* str, int indent) {
     assert(throws_exception(), "Should be called otherwise");
     assert(_exception_name != nullptr, "exception_name should be set");
-    streamIndentor si(str, indent * 2);
-    str->indent().print_cr("%s: %s", _exception_name->as_C_string(), _exception_message->as_C_string());
+    StreamIndentor si(str, indent * 2);
+    str->print_cr("%s: %s", _exception_name->as_C_string(), _exception_message->as_C_string());
   }
 };
 
@@ -679,9 +678,8 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
     lt.print("Slots that need filling:");
     ResourceMark rm;
     LogStream ls(lt);
-    streamIndentor si(&ls);
+    StreamIndentor si(&ls, 2);
     for (int i = 0; i < slots->length(); ++i) {
-      ls.indent();
       slots->at(i)->print_on(&ls);
       ls.cr();
     }
@@ -852,8 +850,8 @@ void DefaultMethods::generate_default_methods(
       LogTarget(Debug, defaultmethods) lt;
       if (lt.is_enabled()) {
         LogStream ls(lt);
-        streamIndentor si(&ls, 2);
-        ls.indent().print("Looking for default methods for slot ");
+        StreamIndentor si(&ls, 2);
+        ls.print("Looking for default methods for slot ");
         slot->print_on(&ls);
         ls.cr();
       }
@@ -870,7 +868,7 @@ static Method* new_method(
     Symbol* sig, AccessFlags flags, int max_stack, int params,
     ConstMethod::MethodType mt, TRAPS) {
 
-  address code_start = 0;
+  address code_start = nullptr;
   int code_length = 0;
   InlineTableSizes sizes;
 
@@ -939,9 +937,10 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
 
   GrowableArray<Method*> overpasses;
   GrowableArray<Method*> defaults;
-  BytecodeConstantPool bpool(klass->constants());
 
   BytecodeBuffer* buffer = nullptr; // Lazily create a reusable buffer
+  BytecodeConstantPool* bpool = nullptr;
+
   for (int i = 0; i < slots->length(); ++i) {
     EmptyVtableSlot* slot = slots->at(i);
 
@@ -974,11 +973,15 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
         } else {
           buffer->clear();
         }
-        int max_stack = BytecodeAssembler::assemble_method_error(&bpool, buffer,
+        // Lazily allocate bytecode constant pool also.
+        if (bpool == nullptr) {
+          bpool = new BytecodeConstantPool(klass->constants());
+        }
+        int max_stack = BytecodeAssembler::assemble_method_error(bpool, buffer,
            method->get_exception_name(), method->get_exception_message(), CHECK);
         AccessFlags flags = accessFlags_from(
           JVM_ACC_PUBLIC | JVM_ACC_SYNTHETIC | JVM_ACC_BRIDGE);
-        Method* m = new_method(&bpool, buffer, slot->name(), slot->signature(),
+        Method* m = new_method(bpool, buffer, slot->name(), slot->signature(),
           flags, max_stack, slot->size_of_parameters(),
           ConstMethod::OVERPASS, CHECK);
         // We push to the methods list:
@@ -995,7 +998,7 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
   log_debug(defaultmethods)("Created %d default  methods", defaults.length());
 
   if (overpasses.length() > 0) {
-    switchover_constant_pool(&bpool, klass, &overpasses, CHECK);
+    switchover_constant_pool(bpool, klass, &overpasses, CHECK);
     merge_in_new_methods(klass, &overpasses, CHECK);
   }
   if (defaults.length() > 0) {

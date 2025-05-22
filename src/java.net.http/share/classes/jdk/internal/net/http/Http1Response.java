@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,6 +224,7 @@ class Http1Response<T> {
 
                 if (Log.headers()) {
                     StringBuilder sb = new StringBuilder("RESPONSE HEADERS:\n");
+                    sb.append("  %s %s %s\n".formatted(request.method(), request.uri(), responseCode));
                     Log.dumpHeaders(sb, "    ", headers);
                     Log.logHeaders(sb.toString());
                 }
@@ -285,7 +286,7 @@ class Http1Response<T> {
 
     // Used for those response codes that have no body associated
     public void nullBody(HttpResponse<T> resp, Throwable t) {
-        if (t != null) connection.close();
+        if (t != null) connection.close(t);
         else {
             return2Cache = !request.isWebSocket();
             onFinished();
@@ -331,7 +332,7 @@ class Http1Response<T> {
                 );
                 if (cf.isCompletedExceptionally()) {
                     // if an error occurs during subscription
-                    connection.close();
+                    connection.close(Utils.exceptionNow(cf));
                     return;
                 }
                 // increment the reference count on the HttpClientImpl
@@ -352,7 +353,7 @@ class Http1Response<T> {
                         } finally {
                             bodyReader.onComplete(t);
                             if (t != null) {
-                                connection.close();
+                                connection.close(t);
                             }
                         }
                     });
@@ -471,7 +472,7 @@ class Http1Response<T> {
             debug.log(Level.DEBUG, "onReadError", t);
         }
         debug.log(Level.DEBUG, () -> "closing connection: cause is " + t);
-        connection.close();
+        connection.close(t);
     }
 
     // ========================================================================

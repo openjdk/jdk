@@ -16,6 +16,7 @@ compiler.err.limit.code                                 # Code
 compiler.err.limit.code.too.large.for.try.stmt          # Gen
 compiler.err.limit.dimensions                           # Gen
 compiler.err.limit.locals                               # Code
+compiler.err.annotation.array.too.large                 # Code
 compiler.err.limit.parameters                           # Gen
 compiler.err.limit.pool                                 # Gen,JavaCompiler
 compiler.err.limit.pool.in.class                        # UNUSED?
@@ -33,7 +34,6 @@ compiler.err.proc.bad.config.file                       # JavacProcessingEnviron
 compiler.err.proc.cant.access                           # completion failure
 compiler.err.proc.cant.access.1                         # completion failure, no stack trace
 compiler.err.proc.cant.create.loader                    # security exception from service loader
-compiler.err.proc.no.service                            # JavacProcessingEnvironment: no service loader available
 compiler.err.proc.processor.bad.option.name             # cannot happen? masked by javac.err.invalid.A.key
 compiler.err.proc.service.problem                       # JavacProcessingEnvironment: catch Throwable from service loader
 compiler.err.proc.cant.load.class                       # JavacProcessingEnvironment: cant load the class/jar file
@@ -41,6 +41,7 @@ compiler.err.signature.doesnt.match.intf                # UNUSED
 compiler.err.signature.doesnt.match.supertype           # UNUSED
 compiler.err.source.cant.overwrite.input.file
 compiler.err.stack.sim.error
+compiler.err.cant.attach.type.annotations               # bad class file
 compiler.err.type.var.more.than.once                    # UNUSED
 compiler.err.type.var.more.than.once.in.result          # UNUSED
 compiler.err.unexpected.type
@@ -54,7 +55,8 @@ compiler.misc.bad.constant.range                        # bad class file
 compiler.misc.bad.constant.value                        # bad class file
 compiler.misc.bad.enclosing.class                       # bad class file
 compiler.misc.bad.enclosing.method                      # bad class file
-compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
+compiler.warn.runtime.invisible.parameter.annotations   # bad class file
+compiler.warn.runtime.visible.invisible.param.annotations.mismatch   # bad class file
 compiler.misc.bad.signature                             # bad class file
 compiler.misc.bad.requires.flag                         # bad class file
 compiler.misc.bad.utf8.byte.sequence.at                 # bad class file
@@ -143,8 +145,6 @@ compiler.note.multiple.elements                         # needs user code
 compiler.err.preview.feature.disabled.classfile         # preview feature support: needs compilation against classfile
 compiler.warn.preview.feature.use.classfile             # preview feature support: needs compilation against classfile
 compiler.note.preview.plural.additional                 # preview feature support: diag test causes intermittent failures (see JDK-8201498)
-compiler.misc.bad.intersection.target.for.functional.expr  # currently not generated, should be removed?
-compiler.misc.not.an.intf.component
 compiler.warn.declared.using.preview                    # after making sealed classes a final feature there is no other
                                                         # preview feature but we should keep this key for future use just
                                                         # in case
@@ -217,3 +217,7 @@ compiler.err.annotation.unrecognized.attribute.name
 
 # this one is transitional (waiting for FFM API to exit preview)
 compiler.warn.restricted.method
+
+# Pending removal
+compiler.note.implicit.annotation.processing
+compiler.warn.proc.use.proc.or.implicit

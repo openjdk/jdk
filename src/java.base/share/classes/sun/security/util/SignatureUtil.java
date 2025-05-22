@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.interfaces.RSAKey;
 import java.security.spec.*;
 import java.util.Locale;
 
+import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.rsa.RSAUtil;
 import jdk.internal.access.SharedSecrets;
 import sun.security.x509.AlgorithmId;
@@ -197,7 +198,7 @@ public class SignatureUtil {
         static {
             try {
                 sha512 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHA_512));
-                shake256 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHAKE256));
+                shake256 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHAKE256_512));
                 shake256$512 = new AlgorithmId(
                         ObjectIdentifier.of(KnownOIDs.SHAKE256_LEN),
                         new DerValue((byte) 2, new byte[]{2, 0})); // int 512
@@ -274,7 +275,7 @@ public class SignatureUtil {
             return signatureAlgorithm.substring(0, with);
         } else {
             throw new IllegalArgumentException(
-                    "Unknown algorithm: " + signatureAlgorithm);
+                    "Cannot extract digest algorithm from " + signatureAlgorithm);
         }
     }
 
@@ -296,6 +297,9 @@ public class SignatureUtil {
                 keyAlgorithm = signatureAlgorithm.substring(with + 4, and);
             } else {
                 keyAlgorithm = signatureAlgorithm.substring(with + 4);
+            }
+            if (keyAlgorithm.endsWith("INP1363FORMAT")) {
+                keyAlgorithm = keyAlgorithm.substring(0, keyAlgorithm.length() - 13);
             }
             if (keyAlgorithm.equalsIgnoreCase("ECDSA")) {
                 keyAlgorithm = "EC";
@@ -387,8 +391,8 @@ public class SignatureUtil {
     public static AlgorithmId fromSignature(Signature sigEngine, PrivateKey key)
             throws SignatureException {
         try {
-            if (key instanceof EdECKey) {
-                return AlgorithmId.get(((EdECKey) key).getParams().getName());
+            if (key.getParams() instanceof NamedParameterSpec nps) {
+                return AlgorithmId.get(nps.getName());
             }
 
             AlgorithmParameters params = null;
@@ -428,6 +432,14 @@ public class SignatureUtil {
     public static void checkKeyAndSigAlgMatch(PrivateKey key, String sAlg) {
         String kAlg = key.getAlgorithm().toUpperCase(Locale.ENGLISH);
         sAlg = checkName(sAlg);
+        if (key instanceof NamedPKCS8Key n8k) {
+            if (!sAlg.equalsIgnoreCase(n8k.getAlgorithm())
+                    && !sAlg.equalsIgnoreCase(n8k.getParams().getName())) {
+                throw new IllegalArgumentException(
+                        "key algorithm not compatible with signature algorithm");
+            }
+            return;
+        }
         switch (sAlg) {
             case "RSASSA-PSS" -> {
                 if (!kAlg.equals("RSASSA-PSS")
@@ -492,8 +504,10 @@ public class SignatureUtil {
             case "EDDSA" -> k instanceof EdECPrivateKey
                     ? ((EdECPrivateKey) k).getParams().getName()
                     : kAlg;
-            default -> kAlg; // All modern signature algorithms,
-                             // RSASSA-PSS, ED25519, ED448, HSS/LMS, etc
+            default -> kAlg.contains("KEM") ? null : kAlg;
+                // All modern signature algorithms use the same name across
+                // key algorithms and signature algorithms, for example,
+                // RSASSA-PSS, ED25519, ED448, HSS/LMS, etc
         };
     }
 

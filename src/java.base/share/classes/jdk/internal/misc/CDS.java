@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,59 +31,86 @@ import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 
 public class CDS {
-    private static final boolean isDumpingClassList;
-    private static final boolean isDumpingArchive;
-    private static final boolean isSharingEnabled;
-    private static final boolean isDumpingStaticArchive;
-    static {
-        isDumpingClassList = isDumpingClassList0();
-        isDumpingArchive = isDumpingArchive0();
-        isSharingEnabled = isSharingEnabled0();
-        isDumpingStaticArchive = isDumpingArchive && !isSharingEnabled;
-    }
+    // Must be in sync with cdsConfig.hpp
+    private static final int IS_DUMPING_ARCHIVE              = 1 << 0;
+    private static final int IS_DUMPING_METHOD_HANDLES       = 1 << 1;
+    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 2;
+    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 3;
+    private static final int IS_USING_ARCHIVE                = 1 << 4;
+    private static final int configStatus = getCDSConfigStatus();
 
     /**
-      * indicator for dumping class list.
-      */
-    public static boolean isDumpingClassList() {
-        return isDumpingClassList;
+     * Should we log the use of lambda form invokers?
+     */
+    public static boolean isLoggingLambdaFormInvokers() {
+        return (configStatus & IS_LOGGING_LAMBDA_FORM_INVOKERS) != 0;
     }
 
     /**
       * Is the VM writing to a (static or dynamic) CDS archive.
       */
     public static boolean isDumpingArchive() {
-        return isDumpingArchive;
+        return (configStatus & IS_DUMPING_ARCHIVE) != 0;
     }
 
     /**
-      * Is sharing enabled.
+      * Is the VM using at least one CDS archive?
       */
-    public static boolean isSharingEnabled() {
-        return isSharingEnabled;
+    public static boolean isUsingArchive() {
+        return (configStatus & IS_USING_ARCHIVE) != 0;
     }
 
     /**
       * Is dumping static archive.
       */
     public static boolean isDumpingStaticArchive() {
-        return isDumpingStaticArchive;
+        return (configStatus & IS_DUMPING_STATIC_ARCHIVE) != 0;
     }
 
-    private static native boolean isDumpingClassList0();
-    private static native boolean isDumpingArchive0();
-    private static native boolean isSharingEnabled0();
+    public static boolean isSingleThreadVM() {
+        return isDumpingStaticArchive();
+    }
+
+    private static native int getCDSConfigStatus();
     private static native void logLambdaFormInvoker(String line);
+
+
+    // Used only when dumping static archive to keep weak references alive to
+    // ensure that Soft/Weak Reference objects can be reliably archived.
+    private static ArrayList<Object> keepAliveList;
+
+    public static void keepAlive(Object s) {
+        assert isSingleThreadVM(); // no need for synchronization
+        assert isDumpingStaticArchive();
+        if (keepAliveList == null) {
+            keepAliveList = new ArrayList<>();
+        }
+        keepAliveList.add(s);
+    }
+
+    // This is called by native JVM code at the very end of Java execution before
+    // dumping the static archive.
+    // It collects the objects from keepAliveList so that they can be easily processed
+    // by the native JVM code to check that any Reference objects that need special
+    // clean up must have been registed with keepAlive()
+    private static Object[] getKeepAliveObjects() {
+        return keepAliveList.toArray();
+    }
 
     /**
      * Initialize archived static fields in the given Class using archived
@@ -112,8 +139,8 @@ public class CDS {
     /**
      * log lambda form invoker holder, name and method type
      */
-    public static void traceLambdaFormInvoker(String prefix, String holder, String name, String type) {
-        if (isDumpingClassList) {
+    public static void logLambdaFormInvoker(String prefix, String holder, String name, String type) {
+        if (isLoggingLambdaFormInvokers()) {
             logLambdaFormInvoker(prefix + " " + holder + " " + name + " " + type);
         }
     }
@@ -121,8 +148,8 @@ public class CDS {
     /**
       * log species
       */
-    public static void traceSpeciesType(String prefix, String cn) {
-        if (isDumpingClassList) {
+    public static void logSpeciesType(String prefix, String cn) {
+        if (isLoggingLambdaFormInvokers()) {
             logLambdaFormInvoker(prefix + " " + cn);
         }
     }
@@ -281,7 +308,7 @@ public class CDS {
                 listFile.delete();
             }
             dumpClassList(listFileName);
-            String jdkHome = System.getProperty("java.home");
+            String jdkHome = StaticProperty.javaHome();
             String classPath = System.getProperty("java.class.path");
             List<String> cmds = new ArrayList<String>();
             cmds.add(jdkHome + File.separator + "bin" + File.separator + "java"); // java
@@ -341,5 +368,142 @@ public class CDS {
         String archiveFilePath = new File(archiveFileName).getAbsolutePath();
         System.out.println("The process was attached by jcmd and dumped a " + (isStatic ? "static" : "dynamic") + " archive " + archiveFilePath);
         return archiveFilePath;
+    }
+
+    /**
+     * Detects if we need to emit explicit class initialization checks in
+     * AOT-cached MethodHandles and VarHandles before accessing static fields
+     * and methods.
+     * @see jdk.internal.misc.Unsafe::shouldBeInitialized
+     *
+     * @return false only if a call to {@code ensureClassInitialized} would have
+     * no effect during the application's production run.
+     */
+    public static boolean needsClassInitBarrier(Class<?> c) {
+        if (c == null) {
+            throw new NullPointerException();
+        }
+
+        if ((configStatus & IS_DUMPING_METHOD_HANDLES) == 0) {
+            return false;
+        } else {
+            return needsClassInitBarrier0(c);
+        }
+    }
+
+    private static native boolean needsClassInitBarrier0(Class<?> c);
+
+    /**
+     * This class is used only by native JVM code at CDS dump time for loading
+     * "unregistered classes", which are archived classes that are intended to
+     * be loaded by custom class loaders during runtime.
+     * See src/hotspot/share/cds/unregisteredClasses.cpp.
+     */
+    private static class UnregisteredClassLoader extends ClassLoader {
+        static {
+            registerAsParallelCapable();
+        }
+
+        static interface Source {
+            public byte[] readClassFile(String className) throws IOException;
+        }
+
+        static class JarSource implements Source {
+            private final JarFile jar;
+
+            JarSource(File file) throws IOException {
+                jar = new JarFile(file);
+            }
+
+            @Override
+            public byte[] readClassFile(String className) throws IOException {
+                final var entryName = className.replace('.', '/').concat(".class");
+                final var entry = jar.getEntry(entryName);
+                if (entry == null) {
+                    throw new IOException("No such entry: " + entryName + " in " + jar.getName());
+                }
+                try (final var in = jar.getInputStream(entry)) {
+                    return in.readAllBytes();
+                }
+            }
+        }
+
+        static class DirSource implements Source {
+            private final String basePath;
+
+            DirSource(File dir) {
+                assert dir.isDirectory();
+                basePath = dir.toString();
+            }
+
+            @Override
+            public byte[] readClassFile(String className) throws IOException {
+                final var subPath = className.replace('.', File.separatorChar).concat(".class");
+                final var fullPath = Path.of(basePath, subPath);
+                return Files.readAllBytes(fullPath);
+            }
+        }
+
+        private final HashMap<String, Source> sources = new HashMap<>();
+
+        private Source resolveSource(String path) throws IOException {
+            Source source = sources.get(path);
+            if (source != null) {
+                return source;
+            }
+
+            final var file = new File(path);
+            if (!file.exists()) {
+                throw new IOException("No such file: " + path);
+            }
+            if (file.isFile()) {
+                source = new JarSource(file);
+            } else if (file.isDirectory()) {
+                source = new DirSource(file);
+            } else {
+                throw new IOException("Not a normal file: " + path);
+            }
+            sources.put(path, source);
+
+            return source;
+        }
+
+        /**
+         * Load the class of the given <code>name</code> from the given <code>source</code>.
+         * <p>
+         * All super classes and interfaces of the named class must have already been loaded:
+         * either defined by this class loader (unregistered ones) or loaded, possibly indirectly,
+         * by the system class loader (registered ones).
+         * <p>
+         * If the named class has a registered super class or interface named N there should be no
+         * unregistered class or interface named N loaded yet.
+         *
+         * @param name the name of the class to be loaded.
+         * @param source path to a directory or a JAR file from which the named class should be
+         *               loaded.
+         */
+        private Class<?> load(String name, String source) throws IOException {
+            final Source resolvedSource = resolveSource(source);
+            final byte[] bytes = resolvedSource.readClassFile(name);
+            // 'defineClass()' may cause loading of supertypes of this unregistered class by VM
+            // calling 'this.loadClass()'.
+            //
+            // For any supertype S named SN specified in the classlist the following is ensured by
+            // the CDS implementation:
+            // - if S is an unregistered class it must have already been defined by this class
+            //   loader and thus will be found by 'this.findLoadedClass(SN)',
+            // - if S is not an unregistered class there should be no unregistered class named SN
+            //   loaded yet so either S has previously been (indirectly) loaded by this class loader
+            //   and thus it will be found when calling 'this.findLoadedClass(SN)' or it will be
+            //   found when delegating to the system class loader, which must have already loaded S,
+            //   by calling 'this.getParent().loadClass(SN, false)'.
+            // See the implementation of 'ClassLoader.loadClass()' for details.
+            //
+            // Therefore, we should resolve all supertypes to the expected ones as specified by the
+            // "super:" and "interfaces:" attributes in the classlist. This invariant is validated
+            // by the C++ function 'ClassListParser::load_class_from_source()'.
+            assert getParent() == getSystemClassLoader();
+            return defineClass(name, bytes, 0, bytes.length);
+        }
     }
 }

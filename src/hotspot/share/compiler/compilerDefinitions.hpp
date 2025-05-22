@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,23 +97,6 @@ inline bool is_c2_compile(int comp_level) {
 inline bool is_compile(int comp_level) {
   return is_c1_compile(comp_level) || is_c2_compile(comp_level);
 }
-
-
-// States of Restricted Transactional Memory usage.
-enum RTMState {
-  NoRTM      = 0x2, // Don't use RTM
-  UseRTM     = 0x1, // Use RTM
-  ProfileRTM = 0x0  // Use RTM with abort ratio calculation
-};
-
-#ifndef INCLUDE_RTM_OPT
-#define INCLUDE_RTM_OPT 0
-#endif
-#if INCLUDE_RTM_OPT
-#define RTM_OPT_ONLY(code) code
-#else
-#define RTM_OPT_ONLY(code)
-#endif
 
 class CompilerConfig : public AllStatic {
 public:

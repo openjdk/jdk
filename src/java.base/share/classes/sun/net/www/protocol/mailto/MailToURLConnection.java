@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ package sun.net.www.protocol.mailto;
 
 import java.net.URL;
 import java.net.InetAddress;
-import java.net.SocketPermission;
 import java.io.*;
-import java.security.Permission;
 
 import jdk.internal.util.StaticProperty;
 import sun.net.www.*;
@@ -48,7 +46,6 @@ public class MailToURLConnection extends URLConnection {
     OutputStream os = null;
 
     SmtpClient client;
-    Permission permission;
     private int connectTimeout = -1;
     private int readTimeout = -1;
 
@@ -67,12 +64,6 @@ public class MailToURLConnection extends URLConnection {
     String getFromAddress() {
         String str = System.getProperty("user.fromaddr");
         if (str == null) {
-            // Perform the property security check for user.name
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPropertyAccess("user.name");
-            }
             str = StaticProperty.userName();
             if (str != null) {
                 String host = System.getProperty("mail.host");
@@ -110,16 +101,6 @@ public class MailToURLConnection extends URLConnection {
 
         os = client.startMessage();
         return os;
-    }
-
-    @Override
-    public Permission getPermission() throws IOException {
-        if (permission == null) {
-            connect();
-            String host = client.getMailHost() + ":" + 25;
-            permission = new SocketPermission(host, "connect");
-        }
-        return permission;
     }
 
     @Override

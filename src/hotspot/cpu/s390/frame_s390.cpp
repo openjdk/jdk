@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -186,7 +185,8 @@ bool frame::is_interpreted_frame() const {
 
 void frame::interpreter_frame_set_locals(intptr_t* locs)  {
   assert(is_interpreted_frame(), "interpreted frame expected");
-  ijava_state_unchecked()->locals = (uint64_t)locs;
+  // set relativized locals
+  *addr_at(_z_ijava_idx(locals)) = (intptr_t) (locs - fp());
 }
 
 // sender_sp
@@ -246,6 +246,11 @@ frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
   return fr;
 }
 
+JavaThread** frame::saved_thread_address(const frame& f) {
+  Unimplemented();
+  return nullptr;
+}
+
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
   // Pass callers sender_sp as unextended_sp.
   return frame(sender_sp(), sender_pc(), (intptr_t*)(ijava_state()->sender_sp));
@@ -260,14 +265,14 @@ void frame::patch_pc(Thread* thread, address pc) {
                   p2i(&((address*) _sp)[-1]), p2i(((address*) _sp)[-1]), p2i(pc));
   }
   assert(!Continuation::is_return_barrier_entry(*pc_addr), "return barrier");
-  assert(_pc == *pc_addr || pc == *pc_addr || 0 == *pc_addr,
+  assert(_pc == *pc_addr || pc == *pc_addr || nullptr == *pc_addr,
          "must be (pc: " INTPTR_FORMAT " _pc: " INTPTR_FORMAT " pc_addr: " INTPTR_FORMAT
          " *pc_addr: " INTPTR_FORMAT  " sp: " INTPTR_FORMAT ")",
          p2i(pc), p2i(_pc), p2i(pc_addr), p2i(*pc_addr), p2i(sp()));
   DEBUG_ONLY(address old_pc = _pc;)
   own_abi()->return_pc = (uint64_t)pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     // assert(original_pc == _pc, "expected original to be stored before patching");
     _deopt_state = is_deoptimized;
@@ -275,7 +280,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   } else {
     _deopt_state = not_deoptimized;
   }
-  assert(!is_compiled_frame() || !_cb->as_compiled_method()->is_deopt_entry(_pc), "must be");
+  assert(!is_compiled_frame() || !_cb->as_nmethod()->is_deopt_entry(_pc), "must be");
 
   #ifdef ASSERT
   {
@@ -291,10 +296,10 @@ void frame::patch_pc(Thread* thread, address pc) {
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   // These are reasonable sanity checks
-  if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
+  if (fp() == nullptr || (intptr_t(fp()) & (wordSize-1)) != 0) {
     return false;
   }
-  if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
+  if (sp() == nullptr || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
   int min_frame_slots = (z_common_abi_size + z_ijava_state_size) / sizeof(intptr_t);
@@ -336,7 +341,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   if (MetaspaceObj::is_valid(cp) == false) return false;
 
   // validate locals
-  address locals = (address)(ijava_state_unchecked()->locals);
+  address locals = (address)interpreter_frame_locals();
   return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
@@ -415,7 +420,7 @@ void frame::back_trace(outputStream* st, intptr_t* start_sp, intptr_t* top_pc, u
                            ? (address) top_pc
                            : (address) *((intptr_t*)(((address) current_sp) + _z_abi(return_pc)));
 
-    if ((intptr_t*) current_fp != 0 && (intptr_t*) current_fp <= current_sp) {
+    if ((intptr_t*) current_fp != nullptr && (intptr_t*) current_fp <= current_sp) {
       st->print_cr("ERROR: corrupt stack");
       return;
     }
@@ -498,7 +503,7 @@ void frame::back_trace(outputStream* st, intptr_t* start_sp, intptr_t* top_pc, u
       case 0: // C frame:
         {
           st->print("    ");
-          if (current_pc == 0) {
+          if (current_pc == nullptr) {
             st->print("? ");
           } else {
              // name

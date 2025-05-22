@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,26 @@
  * @test id=default
  * @summary Test SuspendThread/ResumeThread, SuspendThreadList/ResumeThreadList
  *          for virtual threads.
+ * @requires vm.debug != true
  * @library /test/lib
  * @compile SuspendResume1.java
  * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/native/timeout=600
  *      -Djdk.virtualThreadScheduler.maxPoolSize=1
  *      -agentlib:SuspendResume1
+ *      SuspendResume1
+ */
+
+/*
+ * @test id=debug
+ * @requires vm.debug == true
+ * @library /test/lib
+ * @compile SuspendResume1.java
+ * @run driver jdk.test.lib.FileInstaller . .
+ * @run main/othervm/native/timeout=600
+ *      -Djdk.virtualThreadScheduler.maxPoolSize=1
+ *      -agentlib:SuspendResume1
+ *      -XX:-VerifyContinuations
  *      SuspendResume1
  */
 
@@ -150,11 +164,11 @@ class TestedThread extends Thread {
         // run in a loop
         threadReady = true;
         int i = 0;
-        int n = 1000;
+        int n = 100;
         while (!shouldFinish) {
             if (n <= 0) {
-                n = 1000;
-                SuspendResume1.sleep(10);
+                n = 100;
+                SuspendResume1.sleep(50);
             }
             if (i > n) {
                 i = 0;
@@ -168,7 +182,7 @@ class TestedThread extends Thread {
     public void ensureReady() {
         try {
             while (!threadReady) {
-                sleep(1000);
+                sleep(100);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("Interruption while preparing tested thread: \n\t" + e);

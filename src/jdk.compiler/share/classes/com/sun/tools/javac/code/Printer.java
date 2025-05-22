@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,8 +199,10 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
         List<Attribute.TypeCompound> annos = t.getAnnotationMirrors();
         if (!annos.isEmpty()) {
             if (prefix) sb.append(' ');
-            sb.append(annos);
-            sb.append(' ');
+            for (Attribute.TypeCompound anno : annos) {
+                sb.append(anno);
+                sb.append(' ');
+            }
         }
         return sb.toString();
     }

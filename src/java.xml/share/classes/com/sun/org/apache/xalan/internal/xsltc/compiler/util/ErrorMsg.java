@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,7 +33,7 @@ import jdk.xml.internal.SecuritySupport;
  * @author G. Todd Miller
  * @author Erwin Bolwidt <ejb@klomp.org>
  * @author Morten Jorgensen
- * @LastModified: Jul 2022
+ * @LastModified: Dec 2024
  */
 public final class ErrorMsg {
 
@@ -105,6 +105,7 @@ public final class ErrorMsg {
     public static final String ATTR_VAL_TEMPLATE_ERR = "ATTR_VAL_TEMPLATE_ERR";
     public static final String UNKNOWN_SIG_TYPE_ERR = "UNKNOWN_SIG_TYPE_ERR";
     public static final String DATA_CONVERSION_ERR = "DATA_CONVERSION_ERR";
+    public static final String UNSUPPORTED_EXT_FUNC_ERR = "UNSUPPORTED_EXT_FUNC_ERR";
 
     // JAXP/TrAX error messages
     public static final String NO_TRANSLET_CLASS_ERR = "NO_TRANSLET_CLASS_ERR";
@@ -168,8 +169,6 @@ public final class ErrorMsg {
                                             "OUTLINE_ERR_DELETED_TARGET";
     public static final String OUTLINE_ERR_METHOD_TOO_BIG =
                                             "OUTLINE_ERR_METHOD_TOO_BIG";
-
-    public static final String DESERIALIZE_TRANSLET_ERR = "DESERIALIZE_TRANSLET_ERR";
 
     public static final String XPATH_LIMIT = "XPATH_LIMIT";
     public static final String XPATH_GROUP_LIMIT = "XPATH_GROUP_LIMIT";

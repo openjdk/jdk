@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 
 #include "ci/compilerInterface.hpp"
 #include "compiler/abstractCompiler.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/stack.hpp"
@@ -38,6 +38,22 @@
 #endif
 
 class nmethod;
+
+#if defined(ASSERT) && COMPILER2_OR_JVMCI
+// Stress testing. Dedicated threads revert optimizations based on escape analysis concurrently to
+// the running java application.  Configured with vm options DeoptimizeObjectsALot*.
+class DeoptimizeObjectsALotThread : public JavaThread {
+
+  static void deopt_objs_alot_thread_entry(JavaThread* thread, TRAPS);
+  void deoptimize_objects_alot_loop_single();
+  void deoptimize_objects_alot_loop_all();
+
+public:
+  DeoptimizeObjectsALotThread() : JavaThread(&deopt_objs_alot_thread_entry) { }
+
+  bool is_hidden_from_external_view() const      { return true; }
+};
+#endif
 
 // CompilerCounters
 //
@@ -87,7 +103,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
 
   CompileTask* _first_stale;
 
-  int _size;
+  volatile int _size;
   int _peak_size;
   uint _total_added;
   uint _total_removed;
@@ -251,7 +267,6 @@ class CompileBroker: AllStatic {
                                           const methodHandle& method,
                                           int                 osr_bci,
                                           int                 comp_level,
-                                          const methodHandle& hot_method,
                                           int                 hot_count,
                                           CompileTask::CompileReason compile_reason,
                                           bool                blocking);
@@ -272,7 +287,6 @@ class CompileBroker: AllStatic {
   static void compile_method_base(const methodHandle& method,
                                   int osr_bci,
                                   int comp_level,
-                                  const methodHandle& hot_method,
                                   int hot_count,
                                   CompileTask::CompileReason compile_reason,
                                   bool blocking,
@@ -306,7 +320,6 @@ public:
   static nmethod* compile_method(const methodHandle& method,
                                  int osr_bci,
                                  int comp_level,
-                                 const methodHandle& hot_method,
                                  int hot_count,
                                  CompileTask::CompileReason compile_reason,
                                  TRAPS);
@@ -317,7 +330,6 @@ private:
   static nmethod* compile_method(const methodHandle& method,
                                    int osr_bci,
                                    int comp_level,
-                                   const methodHandle& hot_method,
                                    int hot_count,
                                    CompileTask::CompileReason compile_reason,
                                    DirectiveSet* directive,

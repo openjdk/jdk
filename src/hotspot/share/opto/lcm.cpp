@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.inline.hpp"
@@ -122,7 +121,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     for (uint i1 = 0; i1 < null_block->number_of_nodes(); i1++) {
       Node* nn = null_block->get_node(i1);
       if (nn->is_MachCall() &&
-          nn->as_MachCall()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point()) {
+          nn->as_MachCall()->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point()) {
         const Type* trtype = nn->in(TypeFunc::Parms)->bottom_type();
         if (trtype->isa_int() && trtype->is_int()->is_con()) {
           jint tr_con = trtype->is_int()->get_con();
@@ -161,6 +160,14 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     Node *m = val->out(i);
     if( !m->is_Mach() ) continue;
     MachNode *mach = m->as_Mach();
+    if (mach->barrier_data() != 0) {
+      // Using memory accesses with barriers to perform implicit null checks is
+      // not supported. These operations might expand into multiple assembly
+      // instructions during code emission, including new memory accesses (e.g.
+      // in G1's pre-barrier), which would invalidate the implicit null
+      // exception table.
+      continue;
+    }
     was_store = false;
     int iop = mach->ideal_Opcode();
     switch( iop ) {
@@ -183,7 +190,6 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       break;
     case Op_StoreB:
     case Op_StoreC:
-    case Op_StoreCM:
     case Op_StoreD:
     case Op_StoreF:
     case Op_StoreI:
@@ -268,8 +274,8 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         // cannot reason about it; is probably not implicit null exception
       } else {
         const TypePtr* tptr;
-        if ((UseCompressedOops || UseCompressedClassPointers) &&
-            (CompressedOops::shift() == 0 || CompressedKlassPointers::shift() == 0)) {
+        if ((UseCompressedOops && CompressedOops::shift() == 0) ||
+            (UseCompressedClassPointers && CompressedKlassPointers::shift() == 0)) {
           // 32-bits narrow oop can be the base of address expressions
           tptr = base->get_ptr_type();
         } else {
@@ -485,7 +491,10 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       if (n->needs_anti_dependence_check() &&
           n->in(LoadNode::Memory) == best->in(StoreNode::Memory)) {
         // Found anti-dependent load
-        insert_anti_dependences(block, n);
+        raise_above_anti_dependences(block, n);
+        if (C->failing()) {
+          return;
+        }
       }
     }
   }
@@ -715,7 +724,6 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
         switch (iop) {
         case Op_StoreB:
         case Op_StoreC:
-        case Op_StoreCM:
         case Op_StoreD:
         case Op_StoreF:
         case Op_StoreI:
@@ -996,21 +1004,6 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
           local++;              // One more block-local input
       }
       ready_cnt.at_put(n->_idx, local); // Count em up
-
-#ifdef ASSERT
-      if (UseG1GC) {
-        if( n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_StoreCM ) {
-          // Check the precedence edges
-          for (uint prec = n->req(); prec < n->len(); prec++) {
-            Node* oop_store = n->in(prec);
-            if (oop_store != nullptr) {
-              assert(get_block_for_node(oop_store)->_dom_depth <= block->_dom_depth, "oop_store must dominate card-mark");
-            }
-          }
-        }
-      }
-#endif
-
       // A few node types require changing a required edge to a precedence edge
       // before allocation.
       if( n->is_Mach() && n->req() > TypeFunc::Parms &&
@@ -1196,7 +1189,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       // to the Compile object, and the C2Compiler will see it and retry.
       C->record_failure(C2Compiler::retry_no_subsuming_loads());
     } else {
-      assert(false, "graph should be schedulable");
+      assert(C->failure_is_artificial(), "graph should be schedulable");
     }
     // assert( phi_cnt == end_idx(), "did not schedule all" );
     return false;
@@ -1370,7 +1363,10 @@ void PhaseCFG::call_catch_cleanup(Block* block) {
       sb->insert_node(clone, 1);
       map_node_to_block(clone, sb);
       if (clone->needs_anti_dependence_check()) {
-        insert_anti_dependences(sb, clone);
+        raise_above_anti_dependences(sb, clone);
+        if (C->failing()) {
+          return;
+        }
       }
     }
   }

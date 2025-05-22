@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,8 @@ static long calculate_number_of_pages_in_range(void* address, size_t len, size_t
     return numPages;
 }
 
-JNIEXPORT jboolean JNICALL
-Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong address,
-                                         jlong len, jlong numPages)
+jboolean JNICALL MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong address,
+                                             jlong len, jlong numPages)
 {
     jboolean loaded = JNI_TRUE;
     int result = 0;
@@ -93,8 +92,7 @@ Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong addres
 }
 
 
-JNIEXPORT void JNICALL
-Java_java_nio_MappedMemoryUtils_load0(JNIEnv *env, jobject obj, jlong address,
+void JNICALL MappedMemoryUtils_load0(JNIEnv *env, jobject obj, jlong address,
                                      jlong len)
 {
     char *a = (char *)jlong_to_ptr(address);
@@ -104,9 +102,8 @@ Java_java_nio_MappedMemoryUtils_load0(JNIEnv *env, jobject obj, jlong address,
     }
 }
 
-JNIEXPORT void JNICALL
-Java_java_nio_MappedMemoryUtils_unload0(JNIEnv *env, jobject obj, jlong address,
-                                     jlong len)
+void JNICALL MappedMemoryUtils_unload0(JNIEnv *env, jobject obj, jlong address,
+                                       jlong len)
 {
     char *a = (char *)jlong_to_ptr(address);
     int result = madvise((caddr_t)a, (size_t)len, MADV_DONTNEED);
@@ -198,8 +195,7 @@ static int validate_msync_address(size_t address)
     return 0;
 }
 
-JNIEXPORT void JNICALL
-Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
+void JNICALL MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
                                       jlong address, jlong len)
 {
     void* a = (void *)jlong_to_ptr(address);
@@ -217,4 +213,20 @@ Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
         }
         JNU_ThrowIOExceptionWithMessageAndLastError(env, "msync with parameter MS_SYNC failed");
     }
+}
+
+#define FD "Ljava/io/FileDescriptor;"
+
+static JNINativeMethod methods[] = {
+    {"isLoaded0", "(JJJ)Z",             (void *)&MappedMemoryUtils_isLoaded0},
+    {"load0",     "(JJ)V",              (void *)&MappedMemoryUtils_load0},
+    {"unload0",   "(JJ)V",              (void *)&MappedMemoryUtils_unload0},
+    {"force0",    "(" FD "JJ)V",        (void *)&MappedMemoryUtils_force0},
+};
+
+JNIEXPORT void JNICALL
+Java_java_nio_MappedMemoryUtils_registerNatives(JNIEnv *env, jclass cls)
+{
+    (*env)->RegisterNatives(env, cls,
+                            methods, sizeof(methods)/sizeof(methods[0]));
 }

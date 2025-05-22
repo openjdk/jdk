@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -197,12 +197,8 @@ breakpoint_hit2(jvmtiEnv *jvmti, JNIEnv* jni,
                 jboolean is_virtual, char* mname) {
   jvmtiError err;
 
-  // Verify that we did not get a METHOD_EXIT events when enabled on the cthread.
-  if (received_method_exit_event) {
-    passed = JNI_FALSE;
-    received_method_exit_event = JNI_FALSE;
-    LOG("FAILED: got METHOD_EXIT event on the cthread: %p\n", cthread);
-  }
+  // need to reset this value after the breakpoint_hit1
+  received_method_exit_event = JNI_FALSE;
 
   // Disable METHOD_EXIT events on the cthread.
   LOG("Hit #2: Breakpoint: %s: disabling MethodExit events on carrier thread: %p\n",
@@ -456,13 +452,25 @@ VirtualThreadMount(jvmtiEnv *jvmti, ...) {
   mname = get_method_name(jvmti, jni, method);
   cname = get_method_class_name(jvmti, jni, method);
 
+  print_frame_event_info(jvmti, jni, thread, method, "VirtualThreadMount", ++vthread_mounted_count);
+
   LOG("\nHit #%d: VirtualThreadMount #%d: enabling FramePop for method: %s::%s on virtual thread: %p\n",
-         brkptBreakpointHit, ++vthread_mounted_count, cname, mname, (void*)thread);
+         brkptBreakpointHit, vthread_mounted_count, cname, mname, (void*)thread);
 
   err = jvmti->NotifyFramePop(thread, 0);
   check_jvmti_status(jni, err, "VirtualThreadMount: error in JVMTI NotifyFramePop");
 
-  print_frame_event_info(jvmti, jni, thread, method, "VirtualThreadMount", vthread_mounted_count);
+  LOG("\nHit #%d: VirtualThreadMount #%d: enabling duplicated FramePop for method: %s::%s on virtual thread: %p\n",
+         brkptBreakpointHit, vthread_mounted_count, cname, mname, (void*)thread);
+
+  err = jvmti->NotifyFramePop(thread, 0);
+  if (err == JVMTI_ERROR_DUPLICATE) {
+    LOG("NotifyFramePop at VirtualThreadUnmount event returned expected JVMTI_ERROR_DUPLICATE\n");
+  } else {
+    LOG("Failed: NotifyFramePop at VirtualThreadUnmount returned %s(%d) instead of expected JVMTI_ERROR_DUPLICATE\n",
+           TranslateError(err), err);
+    jni->FatalError("NotifyFramePop error: expected error code JVMTI_ERROR_DUPLICATE");
+  }
 
   // Test SetThreadLocalStorage for virtual thread.
   err = jvmti->SetThreadLocalStorage(thread, tls_data2);
@@ -501,13 +509,7 @@ VirtualThreadUnmount(jvmtiEnv *jvmti, ...) {
   mname = get_method_name(jvmti, jni, method);
   cname = get_method_class_name(jvmti, jni, method);
 
-  LOG("\nHit #%d: VirtualThreadUnmount #%d: enabling FramePop for method: %s::%s on virtual thread: %p\n",
-         brkptBreakpointHit, ++vthread_unmounted_count, cname, mname, (void*)thread);
-
-  err = jvmti->NotifyFramePop(thread, 0);
-  check_jvmti_status(jni, err, "VirtualThreadUnmount: error in JVMTI NotifyFramePop");
-
-  print_frame_event_info(jvmti, jni, thread, method, "VirtualThreadUnmount", vthread_unmounted_count);
+  print_frame_event_info(jvmti, jni, thread, method, "VirtualThreadUnmount", ++vthread_unmounted_count);
 
   deallocate(jvmti, jni, (void*)mname);
   deallocate(jvmti, jni, (void*)cname);

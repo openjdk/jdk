@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classPrinter.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
@@ -96,7 +95,8 @@ class BytecodePrinter {
   // the adjustments that BytecodeStream performs applies.
   void trace(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
     ResourceMark rm;
-    if (_current_method != method()) {
+    bool method_changed = _current_method != method();
+    if (method_changed) {
       // Note 1: This code will not work as expected with true MT/MP.
       //         Need an explicit lock or a different solution.
       // It is possible for this block to be skipped, if a garbage
@@ -104,7 +104,7 @@ class BytecodePrinter {
       // the incoming method.  We could lose a line of trace output.
       // This is acceptable in a debug-only feature.
       st->cr();
-      st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
+      st->print("[%zu] ", Thread::current()->osthread()->thread_id_for_printing());
       method->print_name(st);
       st->cr();
       _current_method = method();
@@ -119,17 +119,24 @@ class BytecodePrinter {
       code = Bytecodes::code_at(method(), bcp);
     }
     _code = code;
-     int bci = (int)(bcp - method->code_base());
-    st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
-    if (Verbose) {
-      st->print("%8d  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
-           BytecodeCounter::counter_value(), bci, tos, tos2, Bytecodes::name(code));
-    } else {
-      st->print("%8d  %4d  %s",
-           BytecodeCounter::counter_value(), bci, Bytecodes::name(code));
-    }
     _next_pc = is_wide() ? bcp+2 : bcp+1;
-    print_attributes(bci, st);
+    // Trace each bytecode unless we're truncating the tracing output, then only print the first
+    // bytecode in every method as well as returns/throws that pop control flow
+    if (!TraceBytecodesTruncated || method_changed ||
+        code == Bytecodes::_athrow ||
+        code == Bytecodes::_return_register_finalizer ||
+        (code >= Bytecodes::_ireturn && code <= Bytecodes::_return)) {
+      int bci = (int)(bcp - method->code_base());
+      st->print("[%zu] ", Thread::current()->osthread()->thread_id_for_printing());
+      if (Verbose) {
+        st->print("%8zu  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+            BytecodeCounter::counter_value(), bci, tos, tos2, Bytecodes::name(code));
+      } else {
+        st->print("%8zu  %4d  %s",
+            BytecodeCounter::counter_value(), bci, Bytecodes::name(code));
+      }
+      print_attributes(bci, st);
+    }
     // Set is_wide for the next one, since the caller of this doesn't skip
     // the next bytecode.
     _is_wide = (code == Bytecodes::_wide);
@@ -171,6 +178,7 @@ class BytecodePrinter {
   }
 };
 
+#ifndef PRODUCT
 // We need a global instance to keep track of the states when the bytecodes
 // are executed. Access by multiple threads are controlled by ttyLocker.
 static BytecodePrinter _interpreter_printer;
@@ -186,6 +194,7 @@ void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, 
     _interpreter_printer.trace(method, bcp, tos, tos2, st);
   }
 }
+#endif
 
 void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags) {
   BytecodePrinter method_printer(flags);
@@ -336,7 +345,8 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
   // If the code doesn't have any fields there's nothing to print.
   // note this is ==1 because the tableswitch and lookupswitch are
   // zero size (for some reason) and we want to print stuff out for them.
-  if (Bytecodes::length_for(code) == 1) {
+  // Also skip this if we're truncating bytecode output
+  if (TraceBytecodesTruncated || Bytecodes::length_for(code) == 1) {
     st->cr();
     return;
   }
@@ -555,8 +565,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
         int indy_index;
         int cp_index;
         if (is_linked()) {
-          int i = get_native_index_u4();
-          indy_index = ConstantPool::decode_invokedynamic_index(i);
+          indy_index = get_native_index_u4();
           cp_index = constants()->resolved_indy_entry_at(indy_index)->constant_pool_index();
         } else {
           indy_index = -1;

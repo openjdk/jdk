@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ class ConsoleIOContext extends IOContext {
     String prefix = "";
 
     ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout,
-                     boolean interactive) throws Exception {
+                     boolean interactive, Size size) throws Exception {
         this.repl = repl;
         Map<String, Object> variables = new HashMap<>();
         this.input = new StopDetectingInputStream(() -> repl.stop(),
@@ -143,7 +143,6 @@ class ConsoleIOContext extends IOContext {
                 terminal = new TestTerminal(nonBlockingInput, cmdout);
                 enableHighlighter = Boolean.getBoolean("test.enable.highlighter");
             } else {
-                Size size = null;
                 terminal = new ProgrammaticInTerminal(nonBlockingInput, cmdout, interactive,
                                                       size);
                 if (!interactive) {
@@ -155,10 +154,15 @@ class ConsoleIOContext extends IOContext {
             setupReader = setupReader.andThen(r -> r.option(Option.DISABLE_HIGHLIGHTER, !enableHighlighter));
             input.setInputStream(cmdin);
         } else {
-            terminal = TerminalBuilder.builder().inputStreamWrapper(in -> {
+            //on platforms which are known to be fully supported by
+            //the FFMTerminalProvider, do not permit the ExecTerminalProvider:
+            boolean allowExecTerminal = !OSUtils.IS_WINDOWS &&
+                                        !OSUtils.IS_LINUX &&
+                                        !OSUtils.IS_OSX;
+            terminal = TerminalBuilder.builder().exec(allowExecTerminal).inputStreamWrapper(in -> {
                 input.setInputStream(in);
                 return nonBlockingInput;
-            }).build();
+            }).nativeSignals(false).build();
             useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }
         this.allowIncompleteInputs = allowIncompleteInputs;
@@ -973,7 +977,20 @@ class ConsoleIOContext extends IOContext {
     public synchronized int readUserInput() throws IOException {
         if (pendingBytes == null || pendingBytes.length <= pendingBytesPointer) {
             char userChar = readUserInputChar();
-            pendingBytes = String.valueOf(userChar).getBytes();
+            StringBuilder dataToConvert = new StringBuilder();
+            dataToConvert.append(userChar);
+            if (Character.isHighSurrogate(userChar)) {
+                //surrogates cannot be converted independently,
+                //read the low surrogate and append it to dataToConvert:
+                char lowSurrogate = readUserInputChar();
+                if (Character.isLowSurrogate(lowSurrogate)) {
+                    dataToConvert.append(lowSurrogate);
+                } else {
+                    //if not the low surrogate, rollback the reading of the character:
+                    pendingLinePointer--;
+                }
+            }
+            pendingBytes = dataToConvert.toString().getBytes();
             pendingBytesPointer = 0;
         }
         return pendingBytes[pendingBytesPointer++];
@@ -997,6 +1014,11 @@ class ConsoleIOContext extends IOContext {
         return doReadUserLine(prompt, null);
     }
 
+    @Override
+    public String readUserLine() throws IOException {
+        return readUserLine("");
+    }
+
     private synchronized String doReadUserLine(String prompt, Character mask) throws IOException {
         History prevHistory = in.getHistory();
         boolean prevDisableCr = Display.DISABLE_CR;
@@ -1007,7 +1029,7 @@ class ConsoleIOContext extends IOContext {
             input.setState(State.WAIT);
             Display.DISABLE_CR = true;
             in.setHistory(userInputHistory);
-            return in.readLine(prompt, mask);
+            return in.readLine(prompt.replace("%", "%%"), mask);
         } catch (UserInterruptException ex) {
             throw new InterruptedIOException();
         } finally {
@@ -1312,6 +1334,7 @@ class ConsoleIOContext extends IOContext {
 
     private static class ProgrammaticInTerminal extends LineDisciplineTerminal {
 
+        protected static final int DEFAULT_WIDTH = 80;
         protected static final int DEFAULT_HEIGHT = 24;
 
         private final NonBlockingReader inputReader;
@@ -1320,9 +1343,9 @@ class ConsoleIOContext extends IOContext {
         public ProgrammaticInTerminal(InputStream input, OutputStream output,
                                        boolean interactive, Size size) throws Exception {
             this(input, output, interactive ? "ansi" : "dumb",
-                 size != null ? size : new Size(80, DEFAULT_HEIGHT),
+                 size != null ? size : new Size(DEFAULT_WIDTH, DEFAULT_HEIGHT),
                  size != null ? size
-                              : interactive ? new Size(80, DEFAULT_HEIGHT)
+                              : interactive ? new Size(DEFAULT_WIDTH, DEFAULT_HEIGHT)
                                             : new Size(Integer.MAX_VALUE - 1, DEFAULT_HEIGHT));
         }
 
@@ -1366,7 +1389,7 @@ class ConsoleIOContext extends IOContext {
             } catch (Throwable ex) {
                 // ignore
             }
-            return new Size(80, h);
+            return new Size(DEFAULT_WIDTH, h);
         }
         public TestTerminal(InputStream input, OutputStream output) throws Exception {
             this(input, output, computeSize());

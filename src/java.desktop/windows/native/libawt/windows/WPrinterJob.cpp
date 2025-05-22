@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,27 +43,6 @@ static const char *HPRINTER_STR = "hPrintJob";
 /* constants for DeviceCapability buffer lengths */
 #define PAPERNAME_LENGTH 64
 #define TRAYNAME_LENGTH 24
-
-
-static BOOL IsSupportedLevel(HANDLE hPrinter, DWORD dwLevel) {
-    BOOL isSupported = FALSE;
-    DWORD cbBuf = 0;
-    LPBYTE pPrinter = NULL;
-
-    DASSERT(hPrinter != NULL);
-
-    VERIFY(::GetPrinter(hPrinter, dwLevel, NULL, 0, &cbBuf) == 0);
-    if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-        pPrinter = new BYTE[cbBuf];
-        if (::GetPrinter(hPrinter, dwLevel, pPrinter, cbBuf, &cbBuf)) {
-            isSupported = TRUE;
-        }
-        delete[] pPrinter;
-    }
-
-    return isSupported;
-}
-
 
 extern "C" {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
@@ -86,8 +85,8 @@ void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratc
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Rscratch, Roop);
-    ldr_u32(Rscratch, Address(Rscratch, Klass::access_flags_offset()));
-    tst(Rscratch, JVM_ACC_IS_VALUE_BASED_CLASS);
+    ldrb(Rscratch, Address(Rscratch, Klass::misc_flags_offset()));
+    tst(Rscratch, KlassFlags::_misc_is_value_based_class);
     b(done, ne);
   }
 

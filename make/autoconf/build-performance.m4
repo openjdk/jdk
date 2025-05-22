@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,8 @@ AC_DEFUN([BPERF_CHECK_MEMORY_SIZE],
     FOUND_MEM=yes
   elif test "x$OPENJDK_BUILD_OS" = xwindows; then
     # Windows, but without cygwin
-    MEMORY_SIZE=`wmic computersystem get totalphysicalmemory -value | grep = | cut -d "=" -f 2-`
+    MEMORY_SIZE=`powershell -Command \
+        "(Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory" | $SED 's/\\r//g' `
     MEMORY_SIZE=`expr $MEMORY_SIZE / 1024 / 1024`
     FOUND_MEM=yes
   fi
@@ -358,9 +359,6 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
   AC_MSG_CHECKING([if precompiled headers are available])
   if test "x$ICECC" != "x"; then
     AC_MSG_RESULT([no, does not work effectively with icecc])
-    PRECOMPILED_HEADERS_AVAILABLE=false
-  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    AC_MSG_RESULT([no, does not work with xlc])
     PRECOMPILED_HEADERS_AVAILABLE=false
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     # Check that the compiler actually supports precomp headers.

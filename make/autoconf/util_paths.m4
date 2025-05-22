@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 # questions.
 #
 
-###############################################################################
+################################################################################
 # Appends a string to a path variable, only adding the : when needed.
 AC_DEFUN([UTIL_APPEND_TO_PATH],
 [
@@ -36,7 +36,7 @@ AC_DEFUN([UTIL_APPEND_TO_PATH],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Prepends a string to a path variable, only adding the : when needed.
 AC_DEFUN([UTIL_PREPEND_TO_PATH],
 [
@@ -49,7 +49,7 @@ AC_DEFUN([UTIL_PREPEND_TO_PATH],
   fi
 ])
 
-###############################################################################
+################################################################################
 # This will make sure the given variable points to a full and proper
 # path. This means:
 # 1) There will be no spaces in the path. On unix platforms,
@@ -58,29 +58,43 @@ AC_DEFUN([UTIL_PREPEND_TO_PATH],
 # 2) The path will be absolute, and it will be in unix-style (on
 #     cygwin).
 # $1: The name of the variable to fix
-# $2: if NOFAIL, errors will be silently ignored
+# $2: if NOFAIL, if the path cannot be resolved then errors will not be
+#     reported and an empty path will be set
 AC_DEFUN([UTIL_FIXUP_PATH],
 [
   # Only process if variable expands to non-empty
   path="[$]$1"
   if test "x$path" != x; then
     if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-      if test "x$2" = "xNOFAIL"; then
-        quiet_option="-q"
-      fi
-      imported_path=`$FIXPATH_BASE $quiet_option import "$path"`
-      $FIXPATH_BASE verify "$imported_path"
-      if test $? -ne 0; then
+      imported_path=`$FIXPATH_BASE -q import "$path"`
+      if test $? -ne 0 || test ! -e $imported_path; then
         if test "x$2" != "xNOFAIL"; then
-          AC_MSG_ERROR([The path of $1, which resolves as "$path", could not be imported.])
+          AC_MSG_NOTICE([The path of $1, which is given as "$path", can not be properly resolved.])
+          AC_MSG_NOTICE([Please see the section "Special Considerations" in building.md.])
+          AC_MSG_NOTICE([This is the error message given by fixpath:])
+          # Rerun fixpath without -q to get an error message
+          $FIXPATH_BASE import "$path"
+          AC_MSG_ERROR([Cannot continue])
         else
           imported_path=""
         fi
       fi
-      if test "x$imported_path" != "x$path"; then
+
+      $FIXPATH_BASE -q verify "$imported_path"
+      if test $? -ne 0; then
+        if test "x$2" != "xNOFAIL"; then
+          AC_MSG_ERROR([The path of $1, which resolves as "$path", could not be verified.])
+        else
+          imported_path=""
+        fi
+      fi
+      [ imported_path_lower=`$ECHO $imported_path | $TR '[:upper:]' '[:lower:]'` ]
+      [ orig_path_lower=`$ECHO $path | $TR '[:upper:]' '[:lower:]'` ]
+      # If only case differs, keep original path
+      if test "x$imported_path_lower" != "x$orig_path_lower"; then
         $1="$imported_path"
       fi
-    else
+    else # non-Windows
       [ if [[ "$path" =~ " " ]]; then ]
         if test "x$2" != "xNOFAIL"; then
           AC_MSG_NOTICE([The path of $1, which resolves as "$path", is invalid.])
@@ -118,7 +132,7 @@ AC_DEFUN([UTIL_FIXUP_PATH],
   fi
 ])
 
-##############################################################################
+################################################################################
 # Fixup path to be a Windows full long path
 # Note: Only supported with cygwin/msys2 (cygpath tool)
 AC_DEFUN([UTIL_FIXUP_WIN_LONG_PATH],
@@ -136,7 +150,7 @@ AC_DEFUN([UTIL_FIXUP_WIN_LONG_PATH],
 ])
 
 
-###############################################################################
+################################################################################
 # Check if the given file is a unix-style or windows-style executable, that is,
 # if it expects paths in unix-style or windows-style.
 # Returns "windows" or "unix" in $RESULT.
@@ -170,7 +184,7 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
   fi
 ])
 
-###############################################################################
+################################################################################
 # This will make sure the given variable points to a executable
 # with a full and proper path. This means:
 # 1) There will be no spaces in the path. On unix platforms,
@@ -183,7 +197,6 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
 # it need to be in the PATH.
 # $1: The name of the variable to fix
 # $2: Where to look for the command (replaces $PATH)
-# $3: set to NOFIXPATH to skip prefixing FIXPATH, even if needed on platform
 AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
 [
   input="[$]$1"
@@ -230,15 +243,19 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
       # This is a path with slashes, don't look at $PATH
       if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
         # fixpath.sh import will do all heavy lifting for us
-        new_path=`$FIXPATH_BASE import "$path"`
+        new_path=`$FIXPATH_BASE -q import "$path"`
 
-        if test ! -e $new_path; then
+        if test $? -ne 0 || test ! -e $new_path; then
           # It failed, but maybe spaces were part of the path and not separating
           # the command and argument. Retry using that assumption.
-          new_path=`$FIXPATH_BASE import "$input"`
-          if test ! -e $new_path; then
-            AC_MSG_NOTICE([The command for $1, which resolves as "$input", can not be found.])
-            AC_MSG_ERROR([Cannot locate $input])
+          new_path=`$FIXPATH_BASE -q import "$input"`
+          if test $? -ne 0 || test ! -e $new_path; then
+            AC_MSG_NOTICE([The command for $1, which is given as "$input", can not be properly resolved.])
+            AC_MSG_NOTICE([Please see the section "Special Considerations" in building.md.])
+            AC_MSG_NOTICE([This is the error message given by fixpath:])
+            # Rerun fixpath without -q to get an error message
+            $FIXPATH_BASE import "$input"
+            AC_MSG_ERROR([Cannot continue])
           fi
           # It worked, clear all "arguments"
           arguments=""
@@ -279,17 +296,13 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
       fi
     fi
 
-    if test "x$3" = xNOFIXPATH; then
-      fixpath_prefix=""
-    fi
-
     # Now join together the path and the arguments once again
     new_complete="$fixpath_prefix$new_path$arguments"
     $1="$new_complete"
   fi
 ])
 
-###############################################################################
+################################################################################
 # Setup a tool for the given variable. If correctly specified by the user,
 # use that value, otherwise search for the tool using the supplied code snippet.
 # $1: variable to set
@@ -350,13 +363,23 @@ AC_DEFUN([UTIL_SETUP_TOOL],
         else
           # Otherwise we believe it is a complete path. Use it as it is.
           if test ! -x "$tool_command" && test ! -x "${tool_command}.exe"; then
-            AC_MSG_ERROR([User supplied tool $1="$tool_command" does not exist or is not executable])
+            # Maybe the path had spaces in it; try again with the entire argument
+            if test ! -x "$tool_override" && test ! -x "${tool_override}.exe"; then
+              AC_MSG_ERROR([User supplied tool $1="$tool_override" does not exist or is not executable])
+            else
+              # We successfully located the executable assuming the spaces were part of the path.
+              # We can't combine using paths with spaces and arguments, so assume tool_args is empty.
+              tool_command="$tool_override"
+              tool_args=""
+            fi
           fi
           if test ! -x "$tool_command"; then
             tool_command="${tool_command}.exe"
           fi
           $1="$tool_command"
         fi
+        # Make sure we add fixpath if needed
+        UTIL_FIXUP_EXECUTABLE($1)
         if test "x$tool_args" != x; then
           # If we got arguments, re-append them to the command after the fixup.
           $1="[$]$1 $tool_args"
@@ -369,12 +392,11 @@ AC_DEFUN([UTIL_SETUP_TOOL],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Locate a tool using proper methods.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
 # $3: [path]
-# $4: set to NOFIXPATH to skip prefixing FIXPATH, even if needed on platform
 AC_DEFUN([UTIL_LOOKUP_PROGS],
 [
   UTIL_SETUP_TOOL($1, [
@@ -416,10 +438,8 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
 
             # If we have FIXPATH enabled, strip all instances of it and prepend
             # a single one, to avoid double fixpath prefixing.
-            if test "x$4" != xNOFIXPATH; then
-              [ if [[ $FIXPATH != "" && $result =~ ^"$FIXPATH " ]]; then ]
-                result="\$FIXPATH ${result#"$FIXPATH "}"
-              fi
+            [ if [[ $FIXPATH != "" && $result =~ ^"$FIXPATH " ]]; then ]
+              result="\$FIXPATH ${result#"$FIXPATH "}"
             fi
             AC_MSG_RESULT([$result])
             break 2;
@@ -436,7 +456,7 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
   ])
 ])
 
-###############################################################################
+################################################################################
 # Call UTIL_SETUP_TOOL with AC_CHECK_TOOLS to locate the tool. This will look
 # first for cross-compilation tools.
 # $1: variable to set
@@ -452,7 +472,7 @@ AC_DEFUN([UTIL_LOOKUP_TOOLCHAIN_PROGS],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Test that variable $1 denoting a program is not empty. If empty, exit with an error.
 # $1: variable to check
 AC_DEFUN([UTIL_CHECK_NONEMPTY],
@@ -462,7 +482,7 @@ AC_DEFUN([UTIL_CHECK_NONEMPTY],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Like UTIL_LOOKUP_PROGS but fails if no tool was found.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
@@ -473,7 +493,7 @@ AC_DEFUN([UTIL_REQUIRE_PROGS],
   UTIL_CHECK_NONEMPTY($1)
 ])
 
-###############################################################################
+################################################################################
 # Like UTIL_LOOKUP_PROGS but fails if no tool was found.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
@@ -485,7 +505,7 @@ AC_DEFUN([UTIL_REQUIRE_TOOLCHAIN_PROGS],
 ])
 
 
-###############################################################################
+################################################################################
 # Like UTIL_SETUP_TOOL but fails if no tool was found.
 # $1: variable to set
 # $2: autoconf macro to call to look for the special tool
@@ -497,7 +517,7 @@ AC_DEFUN([UTIL_REQUIRE_SPECIAL],
   # unix tools. No further processing needed.
 ])
 
-###############################################################################
+################################################################################
 # Add FIXPATH prefix to variable. Normally this is done by UTIL_LOOKUP_PROGS
 # or UTIL_FIXUP_EXECUTABLE, but in some circumstances this has to be done
 # explicitly, such as when the command in question does not exist yet.
@@ -510,7 +530,25 @@ AC_DEFUN([UTIL_ADD_FIXPATH],
   fi
 ])
 
-###############################################################################
+################################################################################
+# Return a path to the executable binary from a command line, stripping away
+# any FIXPATH prefix or arguments. The resulting value can be checked for
+# existence using "test -e". The result is returned in a variable named
+# "$1_EXECUTABLE".
+#
+# $1: variable describing the command to get the binary for
+AC_DEFUN([UTIL_GET_EXECUTABLE],
+[
+  # Strip the FIXPATH prefix, if any
+  fixpath_stripped="[$]$1"
+  [ if [[ $FIXPATH != "" && $fixpath_stripped =~ ^"$FIXPATH " ]]; then ]
+      fixpath_stripped="${fixpath_stripped#"$FIXPATH "}"
+  fi
+  # Remove any arguments following the binary
+  $1_EXECUTABLE="${fixpath_stripped%% *}"
+])
+
+################################################################################
 AC_DEFUN([UTIL_REMOVE_SYMBOLIC_LINKS],
 [
   if test "x$OPENJDK_BUILD_OS" != xwindows; then

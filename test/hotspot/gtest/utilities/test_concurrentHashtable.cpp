@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
@@ -399,7 +398,8 @@ static void cht_move_to(Thread* thr) {
   EXPECT_TRUE(from_cht->insert(thr, stl3, val3)) << "Insert unique value failed.";
 
   SimpleTestTable* to_cht = new SimpleTestTable();
-  EXPECT_TRUE(from_cht->try_move_nodes_to(thr, to_cht)) << "Moving nodes to new table failed";
+  // This is single threaded and not shared
+  from_cht->rehash_nodes_to(thr, to_cht);
 
   ChtCountScan scan_old;
   EXPECT_TRUE(from_cht->try_scan(thr, scan_old)) << "Scanning table should work.";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,21 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/events.hpp"
 
-
 EventLog* Events::_logs = nullptr;
 StringEventLog* Events::_messages = nullptr;
+StringEventLog* Events::_memprotect_messages = nullptr;
+StringEventLog* Events::_nmethod_flush_messages = nullptr;
 StringEventLog* Events::_vm_operations = nullptr;
 StringEventLog* Events::_zgc_phase_switch = nullptr;
 ExceptionsEventLog* Events::_exceptions = nullptr;
@@ -47,18 +47,19 @@ StringEventLog* Events::_deopt_messages = nullptr;
 StringEventLog* Events::_dll_messages = nullptr;
 
 EventLog::EventLog() {
-  // This normally done during bootstrap when we're only single
-  // threaded but use a ThreadCritical to ensure inclusion in case
-  // some are created slightly late.
-  ThreadCritical tc;
-  _next = Events::_logs;
-  Events::_logs = this;
+  // This is normally done during bootstrap when we're only single threaded,
+  // but use lock free add because there are some events that are created later.
+  EventLog* old_head;
+  do {
+    old_head = Atomic::load(&Events::_logs);
+    _next = old_head;
+  } while (Atomic::cmpxchg(&Events::_logs, old_head, this) != old_head);
 }
 
 // For each registered event logger, print out the current contents of
 // the buffer.
 void Events::print_all(outputStream* out, int max) {
-  EventLog* log = _logs;
+  EventLog* log = Atomic::load(&Events::_logs);
   while (log != nullptr) {
     log->print_log_on(out, max);
     log = log->next();
@@ -67,7 +68,7 @@ void Events::print_all(outputStream* out, int max) {
 
 // Print a single event log specified by name.
 void Events::print_one(outputStream* out, const char* log_name, int max) {
-  EventLog* log = _logs;
+  EventLog* log = Atomic::load(&Events::_logs);
   int num_printed = 0;
   while (log != nullptr) {
     if (log->matches_name_or_handle(log_name)) {
@@ -80,7 +81,7 @@ void Events::print_one(outputStream* out, const char* log_name, int max) {
   if (num_printed == 0) {
     out->print_cr("The name \"%s\" did not match any known event log. "
                   "Valid event log names are:", log_name);
-    EventLog* log = _logs;
+    EventLog* log = Atomic::load(&Events::_logs);
     while (log != nullptr) {
       log->print_names(out);
       out->cr();
@@ -97,6 +98,8 @@ void Events::print() {
 void Events::init() {
   if (LogEvents) {
     _messages = new StringEventLog("Events", "events");
+    _nmethod_flush_messages = new StringEventLog("Nmethod flushes", "nmethodflushes");
+    _memprotect_messages = new StringEventLog("Memory protections", "memprotects");
     _vm_operations = new StringEventLog("VM Operations", "vmops");
     if (UseZGC) {
       _zgc_phase_switch = new StringEventLog("ZGC Phase Switch", "zgcps");
@@ -147,7 +150,9 @@ void UnloadingEventLog::log(Thread* thread, InstanceKlass* ik) {
   ik->name()->print_value_on(&st);
 }
 
-void ExceptionsEventLog::log(Thread* thread, Handle h_exception, const char* message, const char* file, int line) {
+void ExceptionsEventLog::log(Thread* thread, Handle h_exception,
+                             const char* message, const char* file, int line,
+                             int message_length_limit) {
   if (!should_log()) return;
 
   double timestamp = fetch_timestamp();
@@ -159,8 +164,11 @@ void ExceptionsEventLog::log(Thread* thread, Handle h_exception, const char* mes
                   _records[index].data.size());
   st.print("Exception <");
   h_exception->print_value_on(&st);
-  st.print("%s%s> (" PTR_FORMAT ") \n"
+  if (message != nullptr) {
+    int len = message_length_limit > 0 ? message_length_limit : (int)strlen(message);
+    st.print(": %.*s", len, message);
+  }
+  st.print("> (" PTR_FORMAT ") \n"
            "thrown [%s, line %d]",
-           message ? ": " : "", message ? message : "",
            p2i(h_exception()), file, line);
 }

@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,18 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotLogging.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "logging/log.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/safepoint.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
 
@@ -102,7 +104,7 @@ void ArchivedClassLoaderData::init_archived_entries(ClassLoaderData* loader_data
 }
 
 void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entries, bool do_oops) {
-  assert(UseSharedSpaces, "must be");
+  assert(CDSConfig::is_using_archive(), "must be");
   assert_valid(loader_data);
   if (_modules != nullptr) { // Could be null if we have archived no modules for platform/system loaders
     ModuleEntryTable* modules = loader_data->modules();
@@ -120,7 +122,7 @@ void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entr
 }
 
 void ArchivedClassLoaderData::clear_archived_oops() {
-  assert(UseSharedSpaces, "must be");
+  assert(CDSConfig::is_using_archive(), "must be");
   if (_modules != nullptr) {
     for (int i = 0; i < _modules->length(); i++) {
       _modules->at(i)->clear_archived_oops();
@@ -142,6 +144,21 @@ static ClassLoaderData* java_platform_loader_data_or_null() {
 
 static ClassLoaderData* java_system_loader_data_or_null() {
   return ClassLoaderData::class_loader_data_or_null(SystemDictionary::java_system_loader());
+}
+
+// ModuleEntryTables (even if empty) are required for iterate_symbols() to scan the
+// platform/system loaders inside the CDS safepoint, but the tables can be created only
+// when outside of safepoints. Let's do that now.
+void ClassLoaderDataShared::ensure_module_entry_tables_exist() {
+  assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
+  ensure_module_entry_table_exists(SystemDictionary::java_platform_loader());
+  ensure_module_entry_table_exists(SystemDictionary::java_system_loader());
+}
+
+void ClassLoaderDataShared::ensure_module_entry_table_exists(oop class_loader) {
+  Handle h_loader(JavaThread::current(), class_loader);
+  ModuleEntryTable* met = Modules::get_module_entry_table(h_loader);
+  assert(met != nullptr, "sanity");
 }
 
 void ClassLoaderDataShared::iterate_symbols(MetaspaceClosure* closure) {
@@ -172,35 +189,35 @@ void ClassLoaderDataShared::serialize(SerializeClosure* f) {
   _archived_system_loader_data.serialize(f);
   f->do_ptr(&_archived_javabase_moduleEntry);
 
-  if (f->reading() && CDSConfig::is_loading_full_module_graph()) {
+  if (f->reading() && CDSConfig::is_using_full_module_graph()) {
     // Must be done before ClassLoader::create_javabase()
     _archived_boot_loader_data.restore(null_class_loader_data(), true, false);
     ModuleEntryTable::set_javabase_moduleEntry(_archived_javabase_moduleEntry);
-    log_info(cds)("use_full_module_graph = true; java.base = " INTPTR_FORMAT,
+    aot_log_info(aot)("use_full_module_graph = true; java.base = " INTPTR_FORMAT,
                   p2i(_archived_javabase_moduleEntry));
   }
 }
 
 void ClassLoaderDataShared::clear_archived_oops() {
-  assert(!CDSConfig::is_loading_full_module_graph(), "must be");
+  assert(!CDSConfig::is_using_full_module_graph(), "must be");
   _archived_boot_loader_data.clear_archived_oops();
   _archived_platform_loader_data.clear_archived_oops();
   _archived_system_loader_data.clear_archived_oops();
 }
 
 oop ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data() {
-  assert(CDSConfig::is_loading_full_module_graph(), "must be");
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
   _archived_boot_loader_data.restore(null_class_loader_data(), false, true);
   return _archived_javabase_moduleEntry->module();
 }
 
 void ClassLoaderDataShared::restore_java_platform_loader_from_archive(ClassLoaderData* loader_data) {
-  assert(CDSConfig::is_loading_full_module_graph(), "must be");
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
   _archived_platform_loader_data.restore(loader_data, true, true);
 }
 
 void ClassLoaderDataShared::restore_java_system_loader_from_archive(ClassLoaderData* loader_data) {
-  assert(CDSConfig::is_loading_full_module_graph(), "must be");
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
   _archived_system_loader_data.restore(loader_data, true, true);
   _full_module_graph_loaded = true;
 }

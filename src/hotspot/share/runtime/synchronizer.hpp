@@ -29,6 +29,7 @@
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/resourceHash.hpp"
 
 template <typename T> class GrowableArray;
@@ -46,6 +47,7 @@ private:
   volatile size_t _max;
 
 public:
+  MonitorList() : _head(nullptr), _count(0), _max(0) {};
   void add(ObjectMonitor* monitor);
   size_t unlink_deflated(size_t deflated_count,
                          GrowableArray<ObjectMonitor*>* unlinked_list,
@@ -69,6 +71,7 @@ public:
 class ObjectSynchronizer : AllStatic {
   friend class VMStructs;
   friend class ObjectMonitorDeflationLogging;
+  friend class WhiteBox;
 
  public:
   typedef enum {
@@ -92,8 +95,9 @@ class ObjectSynchronizer : AllStatic {
   // deoptimization at monitor exit. Hence, it does not take a Handle argument.
 
   // This is the "slow path" version of monitor enter and exit.
-  static void enter(Handle obj, BasicLock* lock, JavaThread* current);
-  static void exit(oop obj, BasicLock* lock, JavaThread* current);
+  static inline void enter(Handle obj, BasicLock* lock, JavaThread* current);
+  static inline void exit(oop obj, BasicLock* lock, JavaThread* current);
+
   // Used to enter a monitor for another thread. This requires that the
   // locking_thread is suspended, and that entering on a potential
   // inflated monitor may only contend with deflation. That is the obj being
@@ -105,6 +109,9 @@ private:
   // inflated monitor enter.
   static bool enter_fast_impl(Handle obj, BasicLock* lock, JavaThread* locking_thread);
 
+  static bool quick_enter_legacy(oop obj, BasicLock* Lock, JavaThread* current);
+  static void enter_legacy(Handle obj, BasicLock* Lock, JavaThread* current);
+  static void exit_legacy(oop obj, BasicLock* lock, JavaThread* current);
 public:
   // Used only to handle jni locks or other unmatched monitor enter/exit
   // Internally they will use heavy weight monitor.
@@ -117,7 +124,12 @@ public:
   static void notifyall(Handle obj, TRAPS);
 
   static bool quick_notify(oopDesc* obj, JavaThread* current, bool All);
-  static bool quick_enter(oop obj, JavaThread* current, BasicLock* Lock);
+  static inline bool quick_enter(oop obj, BasicLock* Lock, JavaThread* current);
+
+  // Special internal-use-only method for use by JVM infrastructure
+  // that needs to wait() on a java-level object but that can't risk
+  // throwing unexpected InterruptedExecutionExceptions.
+  static void waitUninterruptibly(Handle obj, jlong Millis, TRAPS);
 
   // Inflate light weight monitor to heavy weight monitor
   static ObjectMonitor* inflate(Thread* current, oop obj, const InflateCause cause);
@@ -126,12 +138,15 @@ public:
 
 private:
   // Shared implementation between the different LockingMode.
-  static ObjectMonitor* inflate_impl(JavaThread* thread, oop obj, const InflateCause cause);
+  static ObjectMonitor* inflate_impl(JavaThread* locking_thread, oop obj, const InflateCause cause);
 
 public:
   // This version is only for internal use
   static void inflate_helper(oop obj);
   static const char* inflate_cause_name(const InflateCause cause);
+
+  inline static ObjectMonitor* read_monitor(markWord mark);
+  inline static ObjectMonitor* read_monitor(Thread* current, oop obj, markWord mark);
 
   // Returns the identity hash value for an oop
   // NOTE: It may cause monitor inflation
@@ -154,9 +169,12 @@ public:
   template <typename OwnerFilter>
   static void owned_monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter);
 
-  // Iterate ObjectMonitors where the owner == thread; this does NOT include
-  // ObjectMonitors where owner is set to a stack lock address in thread.
+  // Iterate ObjectMonitors where the owner is thread; this does NOT include
+  // ObjectMonitors where the owner is anonymous.
   static void owned_monitors_iterate(MonitorClosure* m, JavaThread* thread);
+
+  // Iterate ObjectMonitors where the owner is vthread.
+  static void owned_monitors_iterate(MonitorClosure* m, oop vthread);
 
   // Iterate ObjectMonitors owned by any thread.
   static void owned_monitors_iterate(MonitorClosure* closure);
@@ -170,6 +188,8 @@ public:
 
   // Deflate idle monitors:
   static size_t deflate_monitor_list(ObjectMonitorDeflationSafepointer* safepointer);
+  static size_t in_use_list_count();
+  static size_t in_use_list_max();
   static size_t in_use_list_ceiling();
   static void dec_in_use_list_ceiling();
   static void inc_in_use_list_ceiling();
@@ -185,7 +205,7 @@ public:
   static jlong time_since_last_async_deflation_ms();
 
   // debugging
-  static void audit_and_print_stats(bool on_exit);
+  static void audit_and_print_stats(outputStream* out, bool on_exit);
   static void chk_in_use_list(outputStream* out, int* error_cnt_p);
   static void chk_in_use_entry(ObjectMonitor* n, outputStream* out,
                                int* error_cnt_p);
@@ -194,6 +214,7 @@ public:
 
  private:
   friend class SynchronizerTest;
+  friend class LightweightSynchronizer;
 
   static MonitorList _in_use_list;
   static volatile bool _is_async_deflation_requested;
@@ -214,17 +235,22 @@ public:
 // have to pass through, and we must also be able to deal with
 // asynchronous exceptions. The caller is responsible for checking
 // the thread's pending exception if needed.
+// When using ObjectLocker the top native frames in the stack will
+// not be seen in case we attempt preemption, since we start walking
+// from the last Java anchor, so we disable it with NoPreemptMark.
 class ObjectLocker : public StackObj {
  private:
   JavaThread* _thread;
   Handle      _obj;
   BasicLock   _lock;
+  NoPreemptMark _npm;
  public:
   ObjectLocker(Handle obj, JavaThread* current);
   ~ObjectLocker();
 
   // Monitor behavior
   void wait(TRAPS)  { ObjectSynchronizer::wait(_obj, 0, CHECK); } // wait forever
+  void wait_uninterruptibly(TRAPS)  { ObjectSynchronizer::waitUninterruptibly(_obj, 0, CHECK); } // wait forever
   void notify_all(TRAPS)  { ObjectSynchronizer::notifyall(_obj, CHECK); }
 };
 

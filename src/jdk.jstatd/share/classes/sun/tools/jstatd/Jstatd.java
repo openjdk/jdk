@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,8 @@ public class Jstatd {
         String rminame = null;
         int rmiPort = 0;
         int argc = 0;
+
+        System.err.println("WARNING: jstatd is deprecated and will be removed in a future release.");
 
         for ( ; (argc < args.length) && (args[argc].startsWith("-")); argc++) {
             String arg = args[argc];

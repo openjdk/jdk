@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -227,9 +226,9 @@ static traceid method_id(KlassPtr klass, MethodPtr method) {
 }
 
 template <typename T>
-static s4 get_flags(const T* ptr) {
+static u2 get_flags(const T* ptr) {
   assert(ptr != nullptr, "invariant");
-  return ptr->access_flags().get_flags();
+  return ptr->access_flags().as_unsigned_short();
 }
 
 // Same as JVM_GetClassModifiers
@@ -310,7 +309,9 @@ static void set_serialized(const T* ptr) {
   assert(ptr != nullptr, "invariant");
   if (current_epoch()) {
     CLEAR_THIS_EPOCH_CLEARED_BIT(ptr);
+    assert(!IS_THIS_EPOCH_CLEARED_BIT_SET(ptr), "invariant");
   }
+  assert(IS_PREVIOUS_EPOCH_CLEARED_BIT_SET(ptr), "invariant");
   SET_SERIALIZED(ptr);
   assert(IS_SERIALIZED(ptr), "invariant");
 }
@@ -346,7 +347,7 @@ static void do_write_klass(JfrCheckpointWriter* writer, CldPtr cld, KlassPtr kla
   writer->write(cld != nullptr ? cld_id(cld, leakp) : 0);
   writer->write(mark_symbol(klass, leakp));
   writer->write(package_id(klass, leakp));
-  writer->write(klass->modifier_flags());
+  writer->write(klass->compute_modifier_flags());
   writer->write<bool>(klass->is_hidden());
   if (leakp) {
     assert(IS_LEAKP(klass), "invariant");
@@ -450,9 +451,9 @@ static void write_primitive(JfrCheckpointWriter* writer, KlassPtr type_array_kla
   assert(writer != nullptr, "invariant");
   assert(_artifacts != nullptr, "invariant");
   writer->write(primitive_id(type_array_klass));
-  writer->write(cld_id(get_cld(Universe::boolArrayKlassObj()), false));
+  writer->write(cld_id(get_cld(Universe::boolArrayKlass()), false));
   writer->write(mark_symbol(primitive_symbol(type_array_klass), false));
-  writer->write(package_id(Universe::boolArrayKlassObj(), false));
+  writer->write(package_id(Universe::boolArrayKlass(), false));
   writer->write(get_primitive_flags());
   writer->write<bool>(false);
 }
@@ -468,20 +469,23 @@ static bool is_initial_typeset_for_chunk() {
 // It will use a reserved constant.
 static void do_primitives() {
   assert(is_initial_typeset_for_chunk(), "invariant");
-  write_primitive(_writer, Universe::boolArrayKlassObj());
-  write_primitive(_writer, Universe::byteArrayKlassObj());
-  write_primitive(_writer, Universe::charArrayKlassObj());
-  write_primitive(_writer, Universe::shortArrayKlassObj());
-  write_primitive(_writer, Universe::intArrayKlassObj());
-  write_primitive(_writer, Universe::longArrayKlassObj());
-  write_primitive(_writer, Universe::floatArrayKlassObj());
-  write_primitive(_writer, Universe::doubleArrayKlassObj());
+  write_primitive(_writer, Universe::boolArrayKlass());
+  write_primitive(_writer, Universe::byteArrayKlass());
+  write_primitive(_writer, Universe::charArrayKlass());
+  write_primitive(_writer, Universe::shortArrayKlass());
+  write_primitive(_writer, Universe::intArrayKlass());
+  write_primitive(_writer, Universe::longArrayKlass());
+  write_primitive(_writer, Universe::floatArrayKlass());
+  write_primitive(_writer, Universe::doubleArrayKlass());
   write_primitive(_writer, nullptr); // void.class
 }
 
 static void do_unloading_klass(Klass* klass) {
   assert(klass != nullptr, "invariant");
   assert(_subsystem_callback != nullptr, "invariant");
+  if (klass->is_instance_klass() && InstanceKlass::cast(klass)->is_scratch_class()) {
+    return;
+  }
   if (JfrKlassUnloading::on_unload(klass)) {
     _subsystem_callback->do_artifact(klass);
   }
@@ -881,6 +885,15 @@ static void do_clds(CldWriter& cldw) {
   ModuleCldWriter mcw(&cldw);
   KlassAndModuleCldWriter kmcw(&kcw, &mcw);
   _artifacts->iterate_klasses(kmcw);
+  if (is_initial_typeset_for_chunk()) {
+    CldPtr bootloader = get_cld(Universe::boolArrayKlass());
+    assert(bootloader != nullptr, "invariant");
+    if (IS_NOT_SERIALIZED(bootloader)) {
+      write__cld(_writer, bootloader);
+      assert(IS_SERIALIZED(bootloader), "invariant");
+      cldw.add(1);
+    }
+  }
   _artifacts->tally(cldw);
 }
 
@@ -929,9 +942,11 @@ void set_serialized<Method>(MethodPtr method) {
   assert(method != nullptr, "invariant");
   if (current_epoch()) {
     CLEAR_THIS_EPOCH_METHOD_CLEARED_BIT(method);
+    assert(!IS_THIS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
   }
   assert(unloading() ? true : METHOD_IS_NOT_SERIALIZED(method), "invariant");
   SET_METHOD_SERIALIZED(method);
+  assert(IS_PREVIOUS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
   assert(METHOD_IS_SERIALIZED(method), "invariant");
 }
 
@@ -952,7 +967,7 @@ static int write_method(JfrCheckpointWriter* writer, MethodPtr method, bool leak
   writer->write(artifact_id(klass));
   writer->write(mark_symbol(method->name(), leakp));
   writer->write(mark_symbol(method->signature(), leakp));
-  writer->write(static_cast<u2>(get_flags(method)));
+  writer->write(get_flags(method));
   writer->write(get_visibility(method));
   return 1;
 }
@@ -1209,9 +1224,6 @@ static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer
     _artifacts = new JfrArtifactSet(class_unload);
   } else {
     _artifacts->initialize(class_unload);
-  }
-  if (!_class_unload) {
-    JfrKlassUnloading::sort(previous_epoch());
   }
   assert(_artifacts != nullptr, "invariant");
   assert(!_artifacts->has_klass_entries(), "invariant");

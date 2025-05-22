@@ -113,7 +113,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      * @throws    IOException If an I/O error has occurred.
      */
     public GZIPOutputStream(OutputStream out) throws IOException {
-        this(out, 512, false);
+        this(out, DeflaterOutputStream.DEFAULT_BUF_SIZE, false);
     }
 
     /**
@@ -135,7 +135,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
     public GZIPOutputStream(OutputStream out, boolean syncFlush)
         throws IOException
     {
-        this(out, 512, syncFlush);
+        this(out, DeflaterOutputStream.DEFAULT_BUF_SIZE, syncFlush);
     }
 
     /**
@@ -212,7 +212,9 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      */
     private void writeTrailer(byte[] buf, int offset) throws IOException {
         writeInt((int)crc.getValue(), buf, offset); // CRC-32 of uncompr. data
-        writeInt(def.getTotalIn(), buf, offset + 4); // Number of uncompr. bytes
+        // RFC 1952: Size of the original (uncompressed) input data modulo 2^32
+        int iSize = (int) def.getBytesRead();
+        writeInt(iSize, buf, offset + 4);
     }
 
     /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import static java.lang.StackWalker.Option.*;
  *          options, when the stack contains lambdas, method handle invoke
  *          virtual calls, and reflection.
  * @run main/othervm VerifyStackTrace
- * @run main/othervm/java.security.policy=stackwalk.policy VerifyStackTrace
  * @author danielfuchs
  */
 public class VerifyStackTrace {
@@ -141,10 +140,9 @@ public class VerifyStackTrace {
             "12: java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:122)\n" +
             "13: java.base/java.lang.reflect.Method.invoke(Method.java:573)\n" +
             "14: VerifyStackTrace$1.run(VerifyStackTrace.java:292)\n" +
-            "15: java.base/java.security.AccessController.executePrivileged(AccessController.java:753)\n" +
-            "16: java.base/java.security.AccessController.doPrivileged(AccessController.java:312)\n" +
-            "17: VerifyStackTrace.test(VerifyStackTrace.java:301)\n" +
-            "18: VerifyStackTrace.main(VerifyStackTrace.java:254)\n";
+            "15: java.base/java.security.AccessController.doPrivileged(AccessController.java:312)\n" +
+            "16: VerifyStackTrace.test(VerifyStackTrace.java:301)\n" +
+            "17: VerifyStackTrace.main(VerifyStackTrace.java:254)\n";
 
         @Override public StackWalker walker() { return walker;}
         @Override public String description() { return description;}

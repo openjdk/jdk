@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,12 @@
  * @summary Proper lexing of various token kinds.
  */
 
-import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
-import javax.tools.JavaFileObject;
+import javax.tools.DiagnosticListener;
 import javax.tools.SimpleJavaFileObject;
 
 import com.sun.tools.javac.parser.JavaTokenizer;
@@ -103,17 +104,29 @@ public class JavaLexerTest {
             new TestTuple(ERROR,         "\'\'"),
             new TestTuple(ERROR,         "\'\\q\'", "\'\\q\'"),
             new TestTuple(ERROR,         "\'\\{1+2}\'", "\'\\{1+2}\'"),
+            new TestTuple(ERROR,         "'\uD83D\uDE0A'",
+                          List.of("compiler.err.illegal.char.literal.multiple.surrogates")),
     };
 
     static class TestTuple {
         String input;
         TokenKind kind;
         String expected;
+        List<String> expectedErrors;
 
-        TestTuple(TokenKind kind, String input, String expected) {
+        TestTuple(TokenKind kind, String input, String expected, List<String> expectedErrors) {
             this.input = input;
             this.kind = kind;
             this.expected = expected;
+            this.expectedErrors = expectedErrors;
+        }
+
+        TestTuple(TokenKind kind, String input, List<String> expectedErrors) {
+            this(kind, input, input, expectedErrors);
+        }
+
+        TestTuple(TokenKind kind, String input, String expected) {
+            this(kind, input, expected, null);
         }
 
         TestTuple(TokenKind kind, String input) {
@@ -123,14 +136,16 @@ public class JavaLexerTest {
 
     void test(TestTuple test, boolean willFail) throws Exception {
         Context ctx = new Context();
+        List<String> errors = new ArrayList();
+
+        if (test.expectedErrors != null) {
+            ctx.put(DiagnosticListener.class, (DiagnosticListener) d -> errors.add(d.getCode()));
+        }
+
         Log log = Log.instance(ctx);
 
-        log.useSource(new SimpleJavaFileObject(new URI("mem://Test.java"), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                return test.input;
-            }
-        });
+        log.useSource(SimpleJavaFileObject.forSource(URI.create("mem://Test.java"),
+                                                     test.input));
 
         char[] inputArr = test.input.toCharArray();
         JavaTokenizer tokenizer = new JavaTokenizer(ScannerFactory.instance(ctx), inputArr, inputArr.length) {};
@@ -154,6 +169,10 @@ public class JavaLexerTest {
         if (!Objects.equals(test.expected, actual)) {
             System.err.println("input: " + test.input);
             throw new AssertionError("Unexpected token content: " + actual);
+        }
+
+        if (test.expectedErrors != null && !test.expectedErrors.equals(errors)) {
+            throw new AssertionError("Unexpected errors: " + errors);
         }
     }
 

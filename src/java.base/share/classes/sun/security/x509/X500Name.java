@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,13 @@
 
 package sun.security.x509;
 
-import java.lang.reflect.*;
 import java.io.IOException;
-import java.security.PrivilegedExceptionAction;
-import java.security.AccessController;
 import java.security.Principal;
 import java.util.*;
-import java.util.StringJoiner;
-
-import sun.security.util.*;
 import javax.security.auth.x500.X500Principal;
+
+import jdk.internal.access.SharedSecrets;
+import sun.security.util.*;
 
 /**
  * Note:  As of 1.4, the public class,
@@ -1273,119 +1270,21 @@ public class X500Name implements GeneralNameInterface, Principal {
     }
 
     /**
-     * Return lowest common ancestor of this name and other name
-     *
-     * @param other another X500Name
-     * @return X500Name of lowest common ancestor; null if none
-     */
-    public X500Name commonAncestor(X500Name other) {
-
-        if (other == null) {
-            return null;
-        }
-        int otherLen = other.names.length;
-        int thisLen = this.names.length;
-        if (thisLen == 0 || otherLen == 0) {
-            return null;
-        }
-        int minLen = Math.min(thisLen, otherLen);
-
-        //Compare names from highest RDN down the naming tree
-        //Note that these are stored in RDN[0]...
-        int i=0;
-        for (; i < minLen; i++) {
-            if (!names[i].equals(other.names[i])) {
-                if (i == 0) {
-                    return null;
-                } else {
-                    break;
-                }
-            }
-        }
-
-        //Copy matching RDNs into new RDN array
-        RDN[] ancestor = new RDN[i];
-        System.arraycopy(names, 0, ancestor, 0, i);
-
-        X500Name commonAncestor;
-        try {
-            commonAncestor = new X500Name(ancestor);
-        } catch (IOException ioe) {
-            return null;
-        }
-        return commonAncestor;
-    }
-
-    /**
-     * Constructor object for use by asX500Principal().
-     */
-    private static final Constructor<X500Principal> principalConstructor;
-
-    /**
-     * Field object for use by asX500Name().
-     */
-    private static final Field principalField;
-
-    /**
-     * Retrieve the Constructor and Field we need for reflective access
-     * and make them accessible.
-     */
-    static {
-        PrivilegedExceptionAction<Object[]> pa =
-                () -> {
-                    Class<X500Principal> pClass = X500Principal.class;
-                    Class<?>[] args = new Class<?>[] { X500Name.class };
-                    Constructor<X500Principal> cons =
-                        pClass.getDeclaredConstructor(args);
-                    cons.setAccessible(true);
-                    Field field = pClass.getDeclaredField("thisX500Name");
-                    field.setAccessible(true);
-                    return new Object[] {cons, field};
-                };
-        try {
-            @SuppressWarnings("removal")
-            Object[] result = AccessController.doPrivileged(pa);
-            @SuppressWarnings("unchecked")
-            Constructor<X500Principal> constr =
-                    (Constructor<X500Principal>)result[0];
-            principalConstructor = constr;
-            principalField = (Field)result[1];
-        } catch (Exception e) {
-            throw new InternalError("Could not obtain X500Principal access", e);
-        }
-    }
-
-    /**
      * Get an X500Principal backed by this X500Name.
-     *
-     * Note that we are using privileged reflection to access the hidden
-     * package private constructor in X500Principal.
      */
     public X500Principal asX500Principal() {
         if (x500Principal == null) {
-            try {
-                Object[] args = new Object[] {this};
-                x500Principal = principalConstructor.newInstance(args);
-            } catch (Exception e) {
-                throw new RuntimeException("Unexpected exception", e);
-            }
+            x500Principal =
+                SharedSecrets.getJavaxSecurityAccess().asX500Principal(this);
         }
         return x500Principal;
     }
 
     /**
      * Get the X500Name contained in the given X500Principal.
-     *
-     * Note that the X500Name is retrieved using reflection.
      */
     public static X500Name asX500Name(X500Principal p) {
-        try {
-            X500Name name = (X500Name)principalField.get(p);
-            name.x500Principal = p;
-            return name;
-        } catch (Exception e) {
-            throw new RuntimeException("Unexpected exception", e);
-        }
+        return SharedSecrets.getJavaxSecurityAccess().asX500Name(p);
     }
 
 }

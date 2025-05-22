@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,123 @@
 #include "gc/z/zAddress.hpp"
 
 #include "gc/shared/gc_globals.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include CPU_HEADER_INLINE(gc/z/zAddress)
+
+#include <type_traits>
+
+// Offset Operator Macro
+// Creates operators for the offset, offset_end style types
+
+#define CREATE_ZOFFSET_OPERATORS(offset_type)                                             \
+                                                                                          \
+  /* Arithmetic operators for offset_type */                                              \
+                                                                                          \
+inline offset_type operator+(offset_type offset, size_t size) {                           \
+  const auto size_value = checked_cast<std::underlying_type_t<offset_type>>(size);        \
+  return to_##offset_type(untype(offset) + size_value);                                   \
+}                                                                                         \
+                                                                                          \
+inline offset_type& operator+=(offset_type& offset, size_t size) {                        \
+  const auto size_value = checked_cast<std::underlying_type_t<offset_type>>(size);        \
+  offset = to_##offset_type(untype(offset) + size_value);                                 \
+  return offset;                                                                          \
+}                                                                                         \
+                                                                                          \
+inline offset_type operator-(offset_type offset, size_t size) {                           \
+  const auto size_value = checked_cast<std::underlying_type_t<offset_type>>(size);        \
+  return to_##offset_type(untype(offset) - size_value);                                   \
+}                                                                                         \
+                                                                                          \
+inline size_t operator-(offset_type first, offset_type second) {                          \
+  return untype(first - untype(second));                                                  \
+}                                                                                         \
+                                                                                          \
+inline offset_type& operator-=(offset_type& offset, size_t size) {                        \
+  const auto size_value = checked_cast<std::underlying_type_t<offset_type>>(size);        \
+  offset = to_##offset_type(untype(offset) - size_value);                                 \
+  return offset;                                                                          \
+}                                                                                         \
+                                                                                          \
+  /* Arithmetic operators for offset_type##_end */                                        \
+                                                                                          \
+inline offset_type##_end operator+(offset_type##_end offset, size_t size) {               \
+  const auto size_value = checked_cast<std::underlying_type_t<offset_type##_end>>(size);  \
+  return to_##offset_type##_end(untype(offset) + size_value);                             \
+}                                                                                         \
+                                                                                          \
+inline offset_type##_end& operator+=(offset_type##_end& offset, size_t size) {            \
+  const auto size_value = checked_cast<std::underlying_type_t<offset_type##_end>>(size);  \
+  offset = to_##offset_type##_end(untype(offset) + size_value);                           \
+  return offset;                                                                          \
+}                                                                                         \
+                                                                                          \
+inline offset_type##_end operator-(offset_type##_end first, size_t size) {                \
+  const auto size_value = checked_cast<std::underlying_type_t<offset_type##_end>>(size);  \
+  return to_##offset_type##_end(untype(first) - size_value);                              \
+}                                                                                         \
+                                                                                          \
+inline size_t operator-(offset_type##_end first, offset_type##_end second) {              \
+  return untype(first - untype(second));                                                  \
+}                                                                                         \
+                                                                                          \
+inline offset_type##_end& operator-=(offset_type##_end& offset, size_t size) {            \
+  const auto size_value = checked_cast<std::underlying_type_t<offset_type##_end>>(size);  \
+  offset = to_##offset_type##_end(untype(offset) - size_value);                           \
+  return offset;                                                                          \
+}                                                                                         \
+                                                                                          \
+  /* Arithmetic operators for offset_type cross offset_type##_end */                      \
+                                                                                          \
+inline size_t operator-(offset_type##_end first, offset_type second) {                    \
+  return untype(first - untype(second));                                                  \
+}                                                                                         \
+                                                                                          \
+  /* Logical operators for offset_type cross offset_type##_end */                         \
+                                                                                          \
+inline bool operator!=(offset_type first, offset_type##_end second) {                     \
+  return untype(first) != untype(second);                                                 \
+}                                                                                         \
+                                                                                          \
+inline bool operator!=(offset_type##_end first, offset_type second) {                     \
+  return untype(first) != untype(second);                                                 \
+}                                                                                         \
+                                                                                          \
+inline bool operator==(offset_type first, offset_type##_end second) {                     \
+  return untype(first) == untype(second);                                                 \
+}                                                                                         \
+                                                                                          \
+inline bool operator==(offset_type##_end first, offset_type second) {                     \
+  return untype(first) == untype(second);                                                 \
+}                                                                                         \
+                                                                                          \
+inline bool operator<(offset_type##_end first, offset_type second) {                      \
+  return untype(first) < untype(second);                                                  \
+}                                                                                         \
+                                                                                          \
+inline bool operator<(offset_type first, offset_type##_end second) {                      \
+  return untype(first) < untype(second);                                                  \
+}                                                                                         \
+                                                                                          \
+inline bool operator<=(offset_type##_end first, offset_type second) {                     \
+  return untype(first) <= untype(second);                                                 \
+}                                                                                         \
+                                                                                          \
+inline bool operator>(offset_type first, offset_type##_end second) {                      \
+  return untype(first) > untype(second);                                                  \
+}                                                                                         \
+                                                                                          \
+inline bool operator>=(offset_type first, offset_type##_end second) {                     \
+  return untype(first) >= untype(second);                                                 \
+}                                                                                         \
 
 // zoffset functions
 
@@ -57,31 +167,6 @@ inline zoffset to_zoffset(uintptr_t value) {
 inline zoffset to_zoffset(zoffset_end offset) {
   const uintptr_t value = untype(offset);
   return to_zoffset(value);
-}
-
-inline zoffset operator+(zoffset offset, size_t size) {
-  return to_zoffset(untype(offset) + size);
-}
-
-inline zoffset& operator+=(zoffset& offset, size_t size) {
-  offset = to_zoffset(untype(offset) + size);
-  return offset;
-}
-
-inline zoffset operator-(zoffset offset, size_t size) {
-  const uintptr_t value = untype(offset) - size;
-  return to_zoffset(value);
-}
-
-inline size_t operator-(zoffset left, zoffset right) {
-  const size_t diff = untype(left) - untype(right);
-  assert(diff < ZAddressOffsetMax, "Underflow");
-  return diff;
-}
-
-inline zoffset& operator-=(zoffset& offset, size_t size) {
-  offset = to_zoffset(untype(offset) - size);
-  return offset;
 }
 
 inline bool to_zoffset_end(zoffset_end* result, zoffset_end start, size_t size) {
@@ -109,58 +194,124 @@ inline zoffset_end to_zoffset_end(zoffset offset) {
   return zoffset_end(untype(offset));
 }
 
-inline bool operator!=(zoffset first, zoffset_end second) {
-  return untype(first) != untype(second);
+CREATE_ZOFFSET_OPERATORS(zoffset)
+
+// zbacking_offset functions
+
+inline uintptr_t untype(zbacking_offset offset) {
+  const uintptr_t value = static_cast<uintptr_t>(offset);
+  assert(value < ZBackingOffsetMax, "must have no other bits");
+  return value;
 }
 
-inline bool operator!=(zoffset_end first, zoffset second) {
-  return untype(first) != untype(second);
+inline uintptr_t untype(zbacking_offset_end offset) {
+  const uintptr_t value = static_cast<uintptr_t>(offset);
+  assert(value <= ZBackingOffsetMax, "must have no other bits");
+  return value;
 }
 
-inline bool operator==(zoffset first, zoffset_end second) {
-  return untype(first) == untype(second);
+inline zbacking_offset to_zbacking_offset(uintptr_t value) {
+  assert(value < ZBackingOffsetMax, "must have no other bits");
+  return zbacking_offset(value);
 }
 
-inline bool operator==(zoffset_end first, zoffset second) {
-  return untype(first) == untype(second);
+inline zbacking_offset to_zbacking_offset(zbacking_offset_end offset) {
+  const uintptr_t value = untype(offset);
+  return to_zbacking_offset(value);
 }
 
-inline bool operator<(zoffset_end first, zoffset second) {
-  return untype(first) < untype(second);
+inline zbacking_offset_end to_zbacking_offset_end(zbacking_offset start, size_t size) {
+  const uintptr_t value = untype(start) + size;
+  assert(value <= ZBackingOffsetMax, "Overflow start: " PTR_FORMAT " size: " PTR_FORMAT " value: " PTR_FORMAT,
+                                     untype(start), size, value);
+  return zbacking_offset_end(value);
 }
 
-inline bool operator<(zoffset first, zoffset_end second) {
-  return untype(first) < untype(second);
+inline zbacking_offset_end to_zbacking_offset_end(uintptr_t value) {
+  assert(value <= ZBackingOffsetMax, "must have no other bits");
+  return zbacking_offset_end(value);
 }
 
-inline bool operator>(zoffset first, zoffset_end second) {
-  return untype(first) > untype(second);
+inline zbacking_offset_end to_zbacking_offset_end(zbacking_offset offset) {
+  return zbacking_offset_end(untype(offset));
 }
 
-inline bool operator>=(zoffset first, zoffset_end second) {
-  return untype(first) >= untype(second);
+CREATE_ZOFFSET_OPERATORS(zbacking_offset)
+
+// zbacking_index functions
+
+inline uint32_t untype(zbacking_index index) {
+  const uint32_t value = static_cast<uint32_t>(index);
+  assert(value < ZBackingIndexMax, "must have no other bits");
+  return value;
 }
 
-inline size_t operator-(zoffset_end first, zoffset second) {
-  return untype(first) - untype(second);
+inline uint32_t untype(zbacking_index_end index) {
+  const uint32_t value = static_cast<uint32_t>(index);
+  assert(value <= ZBackingIndexMax, "must have no other bits");
+  return value;
 }
 
-inline zoffset_end operator-(zoffset_end first, size_t second) {
-  return to_zoffset_end(untype(first) - second);
+inline zbacking_index to_zbacking_index(uint32_t value) {
+  assert(value < ZBackingIndexMax, "must have no other bits");
+  return zbacking_index(value);
 }
 
-inline size_t operator-(zoffset_end first, zoffset_end second) {
-  return untype(first) - untype(second);
+inline zbacking_index to_zbacking_index(zbacking_index_end index) {
+  const uint32_t value = untype(index);
+  return to_zbacking_index(value);
 }
 
-inline zoffset_end& operator-=(zoffset_end& offset, size_t size) {
-  offset = to_zoffset_end(untype(offset) - size);
-  return offset;
+inline zbacking_index_end to_zbacking_index_end(zbacking_index start, size_t size) {
+  const uint32_t start_value = untype(start);
+  const uint32_t value = start_value + checked_cast<uint32_t>(size);
+  assert(value <= ZBackingIndexMax && start_value <= value,
+         "Overflow start: %x size: %zu value: %x", start_value, size, value);
+  return zbacking_index_end(value);
 }
 
-inline zoffset_end& operator+=(zoffset_end& offset, size_t size) {
-  offset = to_zoffset_end(untype(offset) + size);
-  return offset;
+inline zbacking_index_end to_zbacking_index_end(uint32_t value) {
+  assert(value <= ZBackingIndexMax, "must have no other bits");
+  return zbacking_index_end(value);
+}
+
+inline zbacking_index_end to_zbacking_index_end(zbacking_index index) {
+  return zbacking_index_end(untype(index));
+}
+
+CREATE_ZOFFSET_OPERATORS(zbacking_index)
+
+#undef CREATE_ZOFFSET_OPERATORS
+
+// zbacking_offset <-> zbacking_index conversion functions
+
+inline zbacking_index to_zbacking_index(zbacking_offset offset) {
+  const uintptr_t value = untype(offset);
+  assert(is_aligned(value, ZGranuleSize), "must be granule aligned");
+  return to_zbacking_index((uint32_t)(value >> ZGranuleSizeShift));
+}
+
+inline zbacking_offset to_zbacking_offset(zbacking_index index) {
+  const uintptr_t value = untype(index);
+  return to_zbacking_offset(value << ZGranuleSizeShift);
+}
+
+// ZRange helper functions
+
+inline zoffset to_start_type(zoffset_end offset) {
+  return to_zoffset(offset);
+}
+
+inline zbacking_index to_start_type(zbacking_index_end offset) {
+  return to_zbacking_index(offset);
+}
+
+inline zoffset_end to_end_type(zoffset start, size_t size) {
+  return to_zoffset_end(start, size);
+}
+
+inline zbacking_index_end to_end_type(zbacking_index start, size_t size) {
+  return to_zbacking_index_end(start, size);
 }
 
 // zpointer functions
@@ -329,10 +480,22 @@ inline void dereferenceable_test(zaddress addr) {
 }
 #endif
 
-inline zaddress to_zaddress(uintptr_t value) {
-  const zaddress addr = zaddress(value);
+inline void check_is_valid_zaddress(zaddress addr) {
   assert_is_valid(addr);
   DEBUG_ONLY(dereferenceable_test(addr));
+}
+
+inline void check_is_valid_zaddress(uintptr_t value) {
+  check_is_valid_zaddress(zaddress(value));
+}
+
+inline void check_is_valid_zaddress(oopDesc* o) {
+  check_is_valid_zaddress(uintptr_t(o));
+}
+
+inline zaddress to_zaddress(uintptr_t value) {
+  const zaddress addr = zaddress(value);
+  check_is_valid_zaddress(addr);
   return addr;
 }
 
@@ -340,7 +503,7 @@ inline zaddress to_zaddress(oopDesc* o) {
   return to_zaddress(uintptr_t(o));
 }
 
-inline oop to_oop(zaddress addr) {
+inline void assert_is_oop_or_null(zaddress addr) {
   const oop obj = cast_to_oop(addr);
   assert(!ZVerifyOops || oopDesc::is_oop_or_null(obj), "Broken oop: " PTR_FORMAT " [" PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT "]",
          p2i(obj),
@@ -348,7 +511,16 @@ inline oop to_oop(zaddress addr) {
          *(uintptr_t*)(untype(addr) + 0x08),
          *(uintptr_t*)(untype(addr) + 0x10),
          *(uintptr_t*)(untype(addr) + 0x18));
-  return obj;
+}
+
+inline void assert_is_oop(zaddress addr) {
+  assert(!is_null(addr), "Should not be null");
+  assert_is_oop_or_null(addr);
+}
+
+inline oop to_oop(zaddress addr) {
+  assert_is_oop_or_null(addr);
+  return cast_to_oop(addr);
 }
 
 inline zaddress operator+(zaddress addr, size_t size) {
@@ -373,7 +545,6 @@ inline bool is_valid(zaddress_unsafe addr, bool assert_on_failure = false) {
 inline void assert_is_valid(zaddress_unsafe addr) {
   DEBUG_ONLY(is_valid(addr, true /* assert_on_failure */);)
 }
-
 
 inline uintptr_t untype(zaddress_unsafe addr) {
   return static_cast<uintptr_t>(addr);
@@ -452,13 +623,6 @@ inline zaddress_unsafe ZPointer::uncolor_unsafe(zpointer ptr) {
   assert(ZPointer::is_store_bad(ptr), "Unexpected ptr");
   const uintptr_t raw_addr = untype(ptr);
   return to_zaddress_unsafe(raw_addr >> ZPointer::load_shift_lookup(raw_addr));
-}
-
-inline zpointer ZPointer::set_remset_bits(zpointer ptr) {
-  uintptr_t raw_addr = untype(ptr);
-  assert(raw_addr != 0, "raw nulls should have been purged in promotion to old gen");
-  raw_addr |= ZPointerRemembered0 | ZPointerRemembered1;
-  return to_zpointer(raw_addr);
 }
 
 inline bool ZPointer::is_load_bad(zpointer ptr) {
@@ -603,9 +767,7 @@ inline zpointer ZAddress::finalizable_good(zaddress addr, zpointer prev) {
     return color_null();
   }
 
-  const uintptr_t non_mark_bits_mask = ZPointerMarkMetadataMask ^ ZPointerAllMetadataMask;
-  const uintptr_t non_mark_prev_bits = untype(prev) & non_mark_bits_mask;
-  return color(addr, ZPointerLoadGoodMask | ZPointerMarkedYoung | ZPointerFinalizable | non_mark_prev_bits | ZPointerRememberedMask);
+  return color(addr, ZPointerLoadGoodMask | ZPointerMarkedYoung | ZPointerFinalizable | ZPointerRememberedMask);
 }
 
 inline zpointer ZAddress::mark_good(zaddress addr, zpointer prev) {
@@ -613,9 +775,7 @@ inline zpointer ZAddress::mark_good(zaddress addr, zpointer prev) {
     return color_null();
   }
 
-  const uintptr_t non_mark_bits_mask = ZPointerMarkMetadataMask ^ ZPointerAllMetadataMask;
-  const uintptr_t non_mark_prev_bits = untype(prev) & non_mark_bits_mask;
-  return color(addr, ZPointerLoadGoodMask | ZPointerMarkedYoung | ZPointerMarkedOld | non_mark_prev_bits | ZPointerRememberedMask);
+  return color(addr, ZPointerLoadGoodMask | ZPointerMarkedYoung | ZPointerMarkedOld | ZPointerRememberedMask);
 }
 
 inline zpointer ZAddress::mark_old_good(zaddress addr, zpointer prev) {

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    elementFormDefault="qualified"
+    xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/">
+    <xs:import
+        namespace="http://www.w3.org/1999/xhtml/datatypes/"
+        schemaLocation="xhtml-datatypes-1.xsd"/>
+    <xs:annotation>
+        <xs:documentation>
+        This is the XML Schema Document Structure module for XHTML
+        Document Structure
+    
+          * title, head, body, html
+    
+        The Structure Module defines the major structural elements and 
+        their attributes.
+        
+        $Id: xhtml-struct-1.xsd,v 1.11 2009/09/30 14:13:35 ahby Exp $     
+      </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_structuremodule"/>
+    </xs:annotation>
+    <xs:import namespace="http://www.w3.org/XML/1998/namespace"
+        schemaLocation="http://www.w3.org/2001/xml.xsd">
+        <xs:annotation>
+            <xs:documentation>
+                This import brings in the XML namespace attributes
+                The module itself does not provide the schemaLocation
+                and expects the driver schema to provide the
+                actual SchemaLocation.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:import>
+    <xs:attributeGroup
+        name="xhtml.title.attlist">
+        <xs:attributeGroup
+            ref="xhtml.I18n.attrib"/>
+        <xs:attributeGroup ref="xhtml.id"/>
+        <xs:attribute ref="xml:space"/>
+    </xs:attributeGroup>
+    <xs:group
+        name="xhtml.title.content">
+        <xs:sequence/>
+    </xs:group>
+    <xs:complexType
+        name="xhtml.title.type"
+        mixed="true">
+        <xs:group
+            ref="xhtml.title.content"/>
+        <xs:attributeGroup
+            ref="xhtml.title.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup
+        name="xhtml.profile.attrib">
+        <xs:attribute
+            name="profile"
+            type="xh11d:URIs"/>
+    </xs:attributeGroup>
+    <xs:attributeGroup
+        name="xhtml.head.attlist">
+        <xs:attributeGroup
+            ref="xhtml.profile.attrib"/>
+        <xs:attributeGroup
+            ref="xhtml.I18n.attrib"/>
+        <xs:attributeGroup ref="xhtml.id"/>
+        <xs:attribute ref="xml:space"/>
+    </xs:attributeGroup>
+    <xs:complexType
+        name="xhtml.head.type">
+        <xs:group
+            ref="xhtml.head.content"/>
+        <xs:attributeGroup
+            ref="xhtml.head.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup
+        name="xhtml.body.attlist">
+        <xs:attributeGroup
+            ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group
+        name="xhtml.body.content">
+        <xs:sequence>
+            <xs:group
+                ref="xhtml.Block.mix"
+                minOccurs="0"
+                maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType
+        name="xhtml.body.type">
+        <xs:group
+            ref="xhtml.body.content"/>
+        <xs:attributeGroup
+            ref="xhtml.body.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup
+        name="xhtml.version.attrib">
+        <xs:attribute
+            name="version"
+            type="xh11d:CDATA"/>
+    </xs:attributeGroup>
+    <xs:attributeGroup
+        name="xhtml.html.attlist">
+        <xs:attributeGroup
+            ref="xhtml.version.attrib"/>
+        <xs:attributeGroup
+            ref="xhtml.I18n.attrib"/>
+        <xs:attributeGroup ref="xhtml.id"/>
+        <xs:attribute ref="xml:space"/>
+    </xs:attributeGroup>
+    <xs:group
+        name="xhtml.html.content">
+        <xs:sequence>
+            <xs:element
+                name="head"
+                type="xhtml.head.type"/>
+            <xs:element
+                name="body"
+                type="xhtml.body.type"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType
+        name="xhtml.html.type">
+        <xs:group
+            ref="xhtml.html.content"/>
+        <xs:attributeGroup
+            ref="xhtml.html.attlist"/>
+    </xs:complexType>
+</xs:schema>

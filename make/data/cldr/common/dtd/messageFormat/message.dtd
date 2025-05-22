@@ -1,0 +1,58 @@
+<!--
+Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+
+<!ELEMENT message (
+  (declaration | unsupportedStatement)*,
+  (pattern | (selectors,variant+))
+)>
+
+<!-- In a <declaration type="input">, the <expression> MUST contain a <variable> -->
+<!ELEMENT declaration (expression)>
+<!ATTLIST declaration
+  type (input | local) #REQUIRED
+  name NMTOKEN #REQUIRED
+>
+
+<!ELEMENT unsupportedStatement (expression)+>
+<!ATTLIST unsupportedStatement
+  keyword CDATA #REQUIRED
+  body CDATA #IMPLIED
+>
+
+<!ELEMENT selectors (expression)+>
+<!ELEMENT variant (key+,pattern)>
+<!ELEMENT key (#PCDATA)>
+<!ATTLIST key catchall (true | false) "false">
+
+<!ELEMENT pattern (#PCDATA | expression | markup)*>
+
+<!ELEMENT expression (
+  ((literal | variable), (functionAnnotation | unsupportedAnnotation)?, attribute*) |
+  ((functionAnnotation | unsupportedAnnotation), attribute*)
+)>
+
+<!ELEMENT literal (#PCDATA)>
+
+<!ELEMENT variable (EMPTY)>
+<!ATTLIST variable name NMTOKEN #REQUIRED>
+
+<!ELEMENT functionAnnotation (option)*>
+<!ATTLIST functionAnnotation name NMTOKEN #REQUIRED>
+
+<!ELEMENT option (literal | variable)>
+<!ATTLIST option name NMTOKEN #REQUIRED>
+
+<!ELEMENT unsupportedAnnotation (#PCDATA)>
+
+<!ELEMENT attribute (literal | variable)?>
+<!ATTLIST attribute name NMTOKEN #REQUIRED>
+
+<!ELEMENT markup (option*, attribute*)>
+<!ATTLIST markup
+  kind (open | standalone | close) #REQUIRED
+  name NMTOKEN #REQUIRED
+>

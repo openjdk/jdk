@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,8 @@ public class UnsupportedDHKeys {
             try {
                 System.out.println("Checking " + keySize.primeSize + " ...");
                 KeyPairGenerator kpg =
-                        KeyPairGenerator.getInstance("DH", "SunJCE");
+                        KeyPairGenerator.getInstance("DH",
+                                System.getProperty("test.provider.name", "SunJCE"));
                 kpg.initialize(keySize.primeSize);
 
                 throw new Exception("Should not support " + keySize.primeSize);

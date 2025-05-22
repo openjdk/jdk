@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,14 +59,16 @@ public class TestRSAOidSupport {
         X509EncodedKeySpec x509Spec = new X509EncodedKeySpec
                 (toByteArray(DER_BYTES));
         String keyAlgo = "RSA";
-        KeyFactory kf = KeyFactory.getInstance(keyAlgo, "SunRsaSign");
+        KeyFactory kf = KeyFactory.getInstance(keyAlgo,
+                System.getProperty("test.provider.name", "SunRsaSign"));
         RSAPublicKey rsaKey = (RSAPublicKey) kf.generatePublic(x509Spec);
 
         if (rsaKey.getAlgorithm() != keyAlgo) {
             throw new RuntimeException("Key algo should be " + keyAlgo +
                     ", but got " + rsaKey.getAlgorithm());
         }
-        kf = KeyFactory.getInstance("RSASSA-PSS", "SunRsaSign");
+        kf = KeyFactory.getInstance("RSASSA-PSS",
+                System.getProperty("test.provider.name", "SunRsaSign"));
         try {
             kf.generatePublic(x509Spec);
             throw new RuntimeException("Should throw IKSE");

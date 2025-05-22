@@ -32,16 +32,20 @@
 #include "utilities/sizes.hpp"
 
 class JavaThread;
+class ObjectMonitor;
 class OopClosure;
 class outputStream;
+template<typename>
+class GrowableArray;
+class Thread;
 
 class LockStack {
   friend class LockStackTest;
   friend class VMStructs;
   JVMCI_ONLY(friend class JVMCIVMStructs;)
-public:
+ public:
   static const int CAPACITY = 8;
-private:
+ private:
 
   // TODO: It would be very useful if JavaThread::lock_stack_offset() and friends were constexpr,
   // but this is currently not the case because we're using offset_of() which is non-constexpr,
@@ -71,7 +75,7 @@ private:
   // Given an offset (in bytes) calculate the index into the lock-stack.
   static inline int to_index(uint32_t offset);
 
-public:
+ public:
   static ByteSize top_offset()  { return byte_offset_of(LockStack, _top); }
   static ByteSize base_offset() { return byte_offset_of(LockStack, _base); }
 
@@ -114,11 +118,40 @@ public:
   // Tests whether the oop is on this lock-stack.
   inline bool contains(oop o) const;
 
+  inline int monitor_count() const;
+  inline void move_to_address(oop* start);
+  inline void move_from_address(oop* start, int count);
+
   // GC support
   inline void oops_do(OopClosure* cl);
 
   // Printing
   void print_on(outputStream* st);
+};
+
+class OMCache {
+  friend class VMStructs;
+ public:
+  static constexpr int CAPACITY = 8;
+
+ private:
+  struct OMCacheEntry {
+    oop _oop = nullptr;
+    ObjectMonitor* _monitor = nullptr;
+  } _entries[CAPACITY];
+  const oop _null_sentinel = nullptr;
+
+ public:
+  static ByteSize entries_offset() { return byte_offset_of(OMCache, _entries); }
+  static constexpr ByteSize oop_to_oop_difference() { return in_ByteSize(sizeof(OMCacheEntry)); }
+  static constexpr ByteSize oop_to_monitor_difference() { return in_ByteSize(sizeof(oop)); }
+
+  explicit OMCache(JavaThread* jt);
+
+  inline ObjectMonitor* get_monitor(oop o);
+  inline void set_monitor(ObjectMonitor* monitor);
+  inline void clear();
+
 };
 
 #endif // SHARE_RUNTIME_LOCKSTACK_HPP

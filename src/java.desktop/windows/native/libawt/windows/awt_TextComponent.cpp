@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,12 @@ struct EnableEditingStruct {
  * AwtTextComponent fields
  */
 
+AwtTextComponent::OleCallback AwtTextComponent::sm_oleCallback;
+WNDPROC AwtTextComponent::sm_pDefWindowProc = NULL;
+
 /************************************************************************
  * AwtTextComponent methods
  */
-
-jmethodID AwtTextComponent::canAccessClipboardMID;
 
 AwtTextComponent::AwtTextComponent() {
     m_synthetic = FALSE;
@@ -390,31 +391,10 @@ AwtTextComponent::HandleEvent(MSG *msg, BOOL synthetic)
     return returnVal;
 }
 
-/*
- * If this Paste is occurring because of a synthetic Java event (e.g.,
- * a synthesized <CTRL>-V KeyEvent), then verify that the TextComponent
- * has permission to access the Clipboard before pasting. If permission
- * is denied, we should throw a SecurityException, but currently do not
- * because when we detect the security violation, we are in the Toolkit
- * thread, not the thread which dispatched the illegal event.
- */
 MsgRouting
 AwtTextComponent::WmPaste()
 {
-    if (m_synthetic) {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        if (env->EnsureLocalCapacity(1) < 0) {
-            return mrConsume;
-        }
-        jobject target = GetTarget(env);
-        jboolean canAccessClipboard =
-            env->CallBooleanMethod (target, AwtTextComponent::canAccessClipboardMID);
-        env->DeleteLocalRef(target);
-        return (canAccessClipboard) ? mrDoDefault : mrConsume;
-    }
-    else {
-        return mrDoDefault;
-    }
+    return mrDoDefault;
 }
 
 //im --- override to over the spot composition
@@ -888,31 +868,6 @@ Java_sun_awt_windows_WTextComponentPeer_enableEditing(JNIEnv *env,
     CATCH_BAD_ALLOC;
 }
 
-/*
- * Class:     sun_awt_windows_WTextComponentPeer
- * Method:    initIDs
- * Signature: ()V
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_windows_WTextComponentPeer_initIDs(JNIEnv *env, jclass cls)
-{
-    TRY;
-
-    jclass textComponentClassID = env->FindClass("java/awt/TextComponent");
-    CHECK_NULL(textComponentClassID);
-
-    AwtTextComponent::canAccessClipboardMID =
-        env->GetMethodID(textComponentClassID, "canAccessClipboard", "()Z");
-    env->DeleteLocalRef(textComponentClassID);
-
-    DASSERT(AwtTextComponent::canAccessClipboardMID != NULL);
-
-    CATCH_BAD_ALLOC;
-}
-
-
-AwtTextComponent::OleCallback AwtTextComponent::sm_oleCallback;
-
 /************************************************************************
  * Inner class OleCallback definition.
  */
@@ -1039,8 +994,6 @@ AwtTextComponent::OleCallback::GetContextMenu(WORD seltype,
  * response to particular item selection and forward it back to the RichEdit control.
  * (See AwtTextArea::WmContextMenu for more details).
  */
-
-WNDPROC AwtTextComponent::sm_pDefWindowProc = NULL;
 
 LRESULT
 AwtTextComponent::EditProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {

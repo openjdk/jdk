@@ -40,15 +40,13 @@
 #include "gc/parallel/vmStructs_parallelgc.hpp"
 #endif
 #if INCLUDE_SERIALGC
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/generation.hpp"
 #include "gc/serial/vmStructs_serial.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/vmStructs_shenandoah.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/z/shared/vmStructs_z_shared.hpp"
+#include "gc/z/vmStructs_z.hpp"
 #endif
 
 #define VM_STRUCTS_GC(nonstatic_field,                                                                                               \
@@ -71,7 +69,7 @@
   SHENANDOAHGC_ONLY(VM_STRUCTS_SHENANDOAH(nonstatic_field,                                                                           \
                                volatile_nonstatic_field,                                                                             \
                                static_field))                                                                                        \
-  ZGC_ONLY(VM_STRUCTS_Z_SHARED(nonstatic_field,                                                                                      \
+  ZGC_ONLY(VM_STRUCTS_Z(nonstatic_field,                                                                                             \
                                volatile_nonstatic_field,                                                                             \
                                static_field))                                                                                        \
                                                                                                                                      \
@@ -89,23 +87,21 @@
   nonstatic_field(CardTable,                   _page_size,                                    const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map_size,                                const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map,                                     CardTable::CardValue*)                 \
-  nonstatic_field(CardTable,                   _guard_region,                                 MemRegion)                             \
   nonstatic_field(CardTable,                   _byte_map_base,                                CardTable::CardValue*)                 \
   nonstatic_field(CardTableBarrierSet,         _defer_initial_card_mark,                      bool)                                  \
   nonstatic_field(CardTableBarrierSet,         _card_table,                                   CardTable*)                            \
                                                                                                                                      \
+     static_field(CollectedHeap,               _lab_alignment_reserve,                        size_t)                                \
   nonstatic_field(CollectedHeap,               _reserved,                                     MemRegion)                             \
-  nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
+  nonstatic_field(CollectedHeap,               _is_stw_gc_active,                             bool)                                  \
   nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
                                                                                                                                      \
+  nonstatic_field(ContiguousSpace,             _bottom,                                       HeapWord*)                             \
+  nonstatic_field(ContiguousSpace,             _end,                                          HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
-  nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
-  nonstatic_field(MemRegion,                   _word_size,                                    size_t)                                \
-                                                                                                                                     \
-  nonstatic_field(Space,                       _bottom,                                       HeapWord*)                             \
-  nonstatic_field(Space,                       _end,                                          HeapWord*)
+  nonstatic_field(MemRegion,                   _word_size,                                    size_t)
 
 #define VM_TYPES_GC(declare_type,                                         \
                     declare_toplevel_type,                                \
@@ -125,7 +121,7 @@
   SHENANDOAHGC_ONLY(VM_TYPES_SHENANDOAH(declare_type,                     \
                              declare_toplevel_type,                       \
                              declare_integer_type))                       \
-  ZGC_ONLY(VM_TYPES_Z_SHARED(declare_type,                                \
+  ZGC_ONLY(VM_TYPES_Z(declare_type,                                       \
                              declare_toplevel_type,                       \
                              declare_integer_type))                       \
                                                                           \
@@ -135,8 +131,7 @@
   /******************************************/                            \
                                                                           \
   declare_toplevel_type(CollectedHeap)                                    \
-  declare_toplevel_type(Space)                                            \
-           declare_type(ContiguousSpace,             Space)               \
+  declare_toplevel_type(ContiguousSpace)                                  \
   declare_toplevel_type(BarrierSet)                                       \
            declare_type(ModRefBarrierSet,             BarrierSet)         \
            declare_type(CardTableBarrierSet,          ModRefBarrierSet)   \
@@ -164,7 +159,6 @@
   declare_toplevel_type(HeapWord*)                                        \
   declare_toplevel_type(HeapWord* volatile)                               \
   declare_toplevel_type(MemRegion*)                                       \
-  declare_toplevel_type(Space*)                                           \
   declare_toplevel_type(ThreadLocalAllocBuffer*)                          \
                                                                           \
   declare_toplevel_type(BarrierSet::FakeRtti)
@@ -181,7 +175,7 @@
                                           declare_constant_with_value))     \
   SHENANDOAHGC_ONLY(VM_INT_CONSTANTS_SHENANDOAH(declare_constant,           \
                                      declare_constant_with_value))          \
-  ZGC_ONLY(VM_INT_CONSTANTS_Z_SHARED(declare_constant,                      \
+  ZGC_ONLY(VM_INT_CONSTANTS_Z(declare_constant,                             \
                                      declare_constant_with_value))          \
                                                                             \
   /********************************************/                            \
@@ -205,6 +199,6 @@
   declare_constant(CollectedHeap::G1)                                       \
 
 #define VM_LONG_CONSTANTS_GC(declare_constant)                              \
-  ZGC_ONLY(VM_LONG_CONSTANTS_Z_SHARED(declare_constant))
+  ZGC_ONLY(VM_LONG_CONSTANTS_Z(declare_constant))
 
 #endif // SHARE_GC_SHARED_VMSTRUCTS_GC_HPP

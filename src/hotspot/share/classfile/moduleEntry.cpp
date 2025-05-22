@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -61,8 +60,8 @@ void ModuleEntry::set_location(Symbol* location) {
 
   if (location != nullptr) {
     location->increment_refcount();
-    CDS_ONLY(if (UseSharedSpaces) {
-        _shared_path_index = FileMapInfo::get_module_shared_path_index(location);
+    CDS_ONLY(if (CDSConfig::is_using_archive()) {
+        _shared_path_index = AOTClassLocationConfig::runtime()->get_module_shared_path_index(_location);
       });
   }
 }
@@ -149,7 +148,7 @@ bool ModuleEntry::can_read(ModuleEntry* m) const {
   if (!has_reads_list()) {
     return false;
   } else {
-    return _reads->contains(m);
+    return reads()->contains(m);
   }
 }
 
@@ -164,9 +163,10 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   if (m == nullptr) {
     set_can_read_all_unnamed();
   } else {
-    if (_reads == nullptr) {
+    if (reads() == nullptr) {
       // Lazily create a module's reads list
-      _reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
+      GrowableArray<ModuleEntry*>* new_reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
+      set_reads(new_reads);
     }
 
     // Determine, based on this newly established read edge to module m,
@@ -174,7 +174,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
     set_read_walk_required(m->loader_data());
 
     // Establish readability to module m
-    _reads->append_if_missing(m);
+    reads()->append_if_missing(m);
   }
 }
 
@@ -208,7 +208,7 @@ void ModuleEntry::set_is_open(bool is_open) {
 // module will return false.
 bool ModuleEntry::has_reads_list() const {
   assert_locked_or_safepoint(Module_lock);
-  return ((_reads != nullptr) && !_reads->is_empty());
+  return ((reads() != nullptr) && !reads()->is_empty());
 }
 
 // Purge dead module entries out of reads list.
@@ -227,12 +227,12 @@ void ModuleEntry::purge_reads() {
     }
 
     // Go backwards because this removes entries that are dead.
-    int len = _reads->length();
+    int len = reads()->length();
     for (int idx = len - 1; idx >= 0; idx--) {
-      ModuleEntry* module_idx = _reads->at(idx);
+      ModuleEntry* module_idx = reads()->at(idx);
       ClassLoaderData* cld_idx = module_idx->loader_data();
       if (cld_idx->is_unloading()) {
-        _reads->delete_at(idx);
+        reads()->delete_at(idx);
       } else {
         // Update the need to walk this module's reads based on live modules
         set_read_walk_required(cld_idx);
@@ -246,15 +246,15 @@ void ModuleEntry::module_reads_do(ModuleClosure* f) {
   assert(f != nullptr, "invariant");
 
   if (has_reads_list()) {
-    int reads_len = _reads->length();
-    for (int i = 0; i < reads_len; ++i) {
-      f->do_module(_reads->at(i));
+    int reads_len = reads()->length();
+    for (ModuleEntry* m : *reads()) {
+      f->do_module(m);
     }
   }
 }
 
 void ModuleEntry::delete_reads() {
-  delete _reads;
+  delete reads();
   _reads = nullptr;
 }
 
@@ -272,7 +272,8 @@ ModuleEntry::ModuleEntry(Handle module_handle,
     _has_default_read_edges(false),
     _must_walk_reads(false),
     _is_open(is_open),
-    _is_patched(false) {
+    _is_patched(false)
+    DEBUG_ONLY(COMMA _reads_is_archived(false)) {
 
   // Initialize fields specific to a ModuleEntry
   if (_name == nullptr) {
@@ -398,7 +399,12 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   assert(is_named(), "unnamed packages/modules are not archived");
   ModuleEntry* archived_entry = (ModuleEntry*)ArchiveBuilder::rw_region_alloc(sizeof(ModuleEntry));
   memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
-  archived_entry->_archived_module_index = -1;
+
+  if (CDSConfig::is_dumping_full_module_graph()) {
+    archived_entry->_archived_module_index = HeapShared::append_root(module());
+  } else {
+    archived_entry->_archived_module_index = -1;
+  }
 
   if (_archive_modules_entries == nullptr) {
     _archive_modules_entries = new (mtClass)ArchivedModuleEntries();
@@ -407,9 +413,23 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   _archive_modules_entries->put(this, archived_entry);
   DEBUG_ONLY(_num_archived_module_entries++);
 
-  if (log_is_enabled(Info, cds, module)) {
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    OopHandle null_handle;
+    archived_entry->_shared_pd = null_handle;
+  } else {
+    assert(archived_entry->shared_protection_domain() == nullptr, "never set during -Xshare:dump");
+  }
+
+  // Clear handles and restore at run time. Handles cannot be archived.
+  OopHandle null_handle;
+  archived_entry->_module = null_handle;
+
+  // For verify_archived_module_entries()
+  DEBUG_ONLY(_num_inited_module_entries++);
+
+  if (log_is_enabled(Info, aot, module)) {
     ResourceMark rm;
-    LogStream ls(Log(cds, module)::info());
+    LogStream ls(Log(aot, module)::info());
     ls.print("Stored in archive: ");
     archived_entry->print(&ls);
   }
@@ -466,15 +486,14 @@ void ModuleEntry::iterate_symbols(MetaspaceClosure* closure) {
 }
 
 void ModuleEntry::init_as_archived_entry() {
-  Array<ModuleEntry*>* archived_reads = write_growable_array(_reads);
+  set_archived_reads(write_growable_array(reads()));
 
   _loader_data = nullptr;  // re-init at runtime
-  _shared_path_index = FileMapInfo::get_module_shared_path_index(_location);
+  _shared_path_index = AOTClassLocationConfig::dumptime()->get_module_shared_path_index(_location);
   if (name() != nullptr) {
     _name = ArchiveBuilder::get_buffered_symbol(_name);
     ArchivePtrMarker::mark_pointer((address*)&_name);
   }
-  _reads = (GrowableArray<ModuleEntry*>*)archived_reads;
   if (_version != nullptr) {
     _version = ArchiveBuilder::get_buffered_symbol(_version);
   }
@@ -488,22 +507,6 @@ void ModuleEntry::init_as_archived_entry() {
   ArchivePtrMarker::mark_pointer((address*)&_location);
 }
 
-void ModuleEntry::update_oops_in_archived_module(int root_oop_index) {
-  assert(CDSConfig::is_dumping_full_module_graph(), "sanity");
-  assert(_archived_module_index == -1, "must be set exactly once");
-  assert(root_oop_index >= 0, "sanity");
-
-  _archived_module_index = root_oop_index;
-
-  assert(shared_protection_domain() == nullptr, "never set during -Xshare:dump");
-  // Clear handles and restore at run time. Handles cannot be archived.
-  OopHandle null_handle;
-  _module = null_handle;
-
-  // For verify_archived_module_entries()
-  DEBUG_ONLY(_num_inited_module_entries++);
-}
-
 #ifndef PRODUCT
 void ModuleEntry::verify_archived_module_entries() {
   assert(_num_archived_module_entries == _num_inited_module_entries,
@@ -513,14 +516,14 @@ void ModuleEntry::verify_archived_module_entries() {
 #endif // PRODUCT
 
 void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   set_loader_data(loader_data);
-  _reads = restore_growable_array((Array<ModuleEntry*>*)_reads);
+  set_reads(restore_growable_array(archived_reads()));
   JFR_ONLY(INIT_ID(this);)
 }
 
 void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   Handle module_handle(Thread::current(), HeapShared::get_root(_archived_module_index, /*clear=*/true));
   assert(module_handle.not_null(), "huh");
   set_module(loader_data->add_handle(module_handle));
@@ -532,16 +535,16 @@ void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
   assert(java_lang_Module::loader(module_handle()) == loader_data->class_loader(),
          "must be set in dump time");
 
-  if (log_is_enabled(Info, cds, module)) {
+  if (log_is_enabled(Info, aot, module)) {
     ResourceMark rm;
-    LogStream ls(Log(cds, module)::info());
+    LogStream ls(Log(aot, module)::info());
     ls.print("Restored from archive: ");
     print(&ls);
   }
 }
 
 void ModuleEntry::clear_archived_oops() {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   HeapShared::clear_root(_archived_module_index);
 }
 
@@ -567,7 +570,7 @@ Array<ModuleEntry*>* ModuleEntryTable::allocate_archived_entries() {
 
   if (n > 1) {
     // Always allocate in the same order to produce deterministic archive.
-    QuickSort::sort(archived_modules->data(), n, (_sort_Fn)compare_module_by_name, true);
+    QuickSort::sort(archived_modules->data(), n, compare_module_by_name);
   }
   for (int i = 0; i < n; i++) {
     archived_modules->at_put(i, archived_modules->at(i)->allocate_archived_entry());
@@ -586,7 +589,7 @@ void ModuleEntryTable::init_archived_entries(Array<ModuleEntry*>* archived_modul
 
 void ModuleEntryTable::load_archived_entries(ClassLoaderData* loader_data,
                                              Array<ModuleEntry*>* archived_modules) {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
 
   for (int i = 0; i < archived_modules->length(); i++) {
     ModuleEntry* archived_entry = archived_modules->at(i);
@@ -596,7 +599,7 @@ void ModuleEntryTable::load_archived_entries(ClassLoaderData* loader_data,
 }
 
 void ModuleEntryTable::restore_archived_oops(ClassLoaderData* loader_data, Array<ModuleEntry*>* archived_modules) {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   for (int i = 0; i < archived_modules->length(); i++) {
     ModuleEntry* archived_entry = archived_modules->at(i);
     archived_entry->restore_archived_oops(loader_data);
@@ -704,7 +707,7 @@ void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module
     {
       java_lang_Class::fixup_module_field(k, module_handle);
     }
-    k->class_loader_data()->dec_keep_alive();
+    k->class_loader_data()->dec_keep_alive_ref_count();
   }
 
   delete java_lang_Class::fixup_module_field_list();
@@ -741,7 +744,7 @@ void ModuleEntryTable::modules_do(ModuleClosure* closure) {
 void ModuleEntry::print(outputStream* st) {
   st->print_cr("entry " PTR_FORMAT " name %s module " PTR_FORMAT " loader %s version %s location %s strict %s",
                p2i(this),
-               name() == nullptr ? UNNAMED_MODULE : name()->as_C_string(),
+               name_as_C_string(),
                p2i(module()),
                loader_data()->loader_name_and_id(),
                version() != nullptr ? version()->as_C_string() : "nullptr",

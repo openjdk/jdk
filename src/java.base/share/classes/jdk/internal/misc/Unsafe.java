@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,11 @@ public final class Unsafe {
 
     private static native void registerNatives();
     static {
+        runtimeSetup();
+    }
+
+    // Called from JVM when loading an AOT cache
+    private static void runtimeSetup() {
         registerNatives();
     }
 
@@ -92,8 +97,8 @@ public final class Unsafe {
         return theUnsafe;
     }
 
-    /// peek and poke operations
-    /// (compilers should optimize these to memory ops)
+    //--- peek and poke operations
+    // (compilers should optimize these to memory ops)
 
     // These work on object fields in the Java heap.
     // They will not work on elements of packed arrays.
@@ -420,7 +425,7 @@ public final class Unsafe {
 
 
 
-    /// helper methods for validating various types of objects/values
+    //--- helper methods for validating various types of objects/values
 
     /**
      * Create an exception reflecting that some of the input was invalid
@@ -581,7 +586,7 @@ public final class Unsafe {
     }
 
 
-    /// wrappers for malloc, realloc, free:
+    //--- wrappers for malloc, realloc, free:
 
     /**
      * Round up allocation size to a multiple of HeapWordSize.
@@ -1032,14 +1037,17 @@ public final class Unsafe {
     @IntrinsicCandidate
     private native void writebackPostSync0();
 
-    /// random queries
+    //--- random queries
 
     /**
      * This constant differs from all results that will ever be returned from
      * {@link #staticFieldOffset}, {@link #objectFieldOffset},
      * or {@link #arrayBaseOffset}.
+     * <p>
+     * The static type is @code long} to emphasize that long arithmetic should
+     * always be used for offset calculations to avoid overflows.
      */
-    public static final int INVALID_FIELD_OFFSET = -1;
+    public static final long INVALID_FIELD_OFFSET = -1;
 
     /**
      * Reports the location of a given field in the storage allocation of its
@@ -1167,11 +1175,15 @@ public final class Unsafe {
      * for the same class, you may use that scale factor, together with this
      * base offset, to form new offsets to access elements of arrays of the
      * given class.
+     * <p>
+     * The return value is in the range of a {@code int}.  The return type is
+     * {@code long} to emphasize that long arithmetic should always be used
+     * for offset calculations to avoid overflows.
      *
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
-    public int arrayBaseOffset(Class<?> arrayClass) {
+    public long arrayBaseOffset(Class<?> arrayClass) {
         if (arrayClass == null) {
             throw new NullPointerException();
         }
@@ -1181,39 +1193,39 @@ public final class Unsafe {
 
 
     /** The value of {@code arrayBaseOffset(boolean[].class)} */
-    public static final int ARRAY_BOOLEAN_BASE_OFFSET
+    public static final long ARRAY_BOOLEAN_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(boolean[].class);
 
     /** The value of {@code arrayBaseOffset(byte[].class)} */
-    public static final int ARRAY_BYTE_BASE_OFFSET
+    public static final long ARRAY_BYTE_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(byte[].class);
 
     /** The value of {@code arrayBaseOffset(short[].class)} */
-    public static final int ARRAY_SHORT_BASE_OFFSET
+    public static final long ARRAY_SHORT_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(short[].class);
 
     /** The value of {@code arrayBaseOffset(char[].class)} */
-    public static final int ARRAY_CHAR_BASE_OFFSET
+    public static final long ARRAY_CHAR_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(char[].class);
 
     /** The value of {@code arrayBaseOffset(int[].class)} */
-    public static final int ARRAY_INT_BASE_OFFSET
+    public static final long ARRAY_INT_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(int[].class);
 
     /** The value of {@code arrayBaseOffset(long[].class)} */
-    public static final int ARRAY_LONG_BASE_OFFSET
+    public static final long ARRAY_LONG_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(long[].class);
 
     /** The value of {@code arrayBaseOffset(float[].class)} */
-    public static final int ARRAY_FLOAT_BASE_OFFSET
+    public static final long ARRAY_FLOAT_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(float[].class);
 
     /** The value of {@code arrayBaseOffset(double[].class)} */
-    public static final int ARRAY_DOUBLE_BASE_OFFSET
+    public static final long ARRAY_DOUBLE_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(double[].class);
 
     /** The value of {@code arrayBaseOffset(Object[].class)} */
-    public static final int ARRAY_OBJECT_BASE_OFFSET
+    public static final long ARRAY_OBJECT_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(Object[].class);
 
     /**
@@ -1222,6 +1234,9 @@ public final class Unsafe {
      * will generally not work properly with accessors like {@link
      * #getByte(Object, long)}, so the scale factor for such classes is reported
      * as zero.
+     * <p>
+     * The computation of the actual memory offset should always use {@code
+     * long} arithmetic to avoid overflows.
      *
      * @see #arrayBaseOffset
      * @see #getInt(Object, long)
@@ -1312,7 +1327,7 @@ public final class Unsafe {
      */
     public static boolean isWritebackEnabled() { return DATA_CACHE_LINE_FLUSH_SIZE != 0; }
 
-    /// random trusted operations from JNI:
+    //--- random trusted operations from JNI:
 
     /**
      * Tells the VM to define a class, without security checks.  By default, the
@@ -3824,6 +3839,7 @@ public final class Unsafe {
     private native long allocateMemory0(long bytes);
     private native long reallocateMemory0(long address, long bytes);
     private native void freeMemory0(long address);
+    @IntrinsicCandidate
     private native void setMemory0(Object o, long offset, long bytes, byte value);
     @IntrinsicCandidate
     private native void copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
@@ -3834,7 +3850,7 @@ public final class Unsafe {
     private native Object staticFieldBase0(Field f);
     private native boolean shouldBeInitialized0(Class<?> c);
     private native void ensureClassInitialized0(Class<?> c);
-    private native int arrayBaseOffset0(Class<?> arrayClass);
+    private native int arrayBaseOffset0(Class<?> arrayClass); // public version returns long to promote correct arithmetic
     private native int arrayIndexScale0(Class<?> arrayClass);
     private native int getLoadAverage0(double[] loadavg, int nelems);
 
@@ -3860,92 +3876,5 @@ public final class Unsafe {
         if (cleaner != null) {
             cleaner.clean();
         }
-    }
-
-    // The following deprecated methods are used by JSR 166.
-
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getObject(Object o, long offset) {
-        return getReference(o, offset);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getObjectVolatile(Object o, long offset) {
-        return getReferenceVolatile(o, offset);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getObjectAcquire(Object o, long offset) {
-        return getReferenceAcquire(o, offset);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getObjectOpaque(Object o, long offset) {
-        return getReferenceOpaque(o, offset);
-    }
-
-
-    @Deprecated(since="12", forRemoval=true)
-    public final void putObject(Object o, long offset, Object x) {
-        putReference(o, offset, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final void putObjectVolatile(Object o, long offset, Object x) {
-        putReferenceVolatile(o, offset, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final void putObjectOpaque(Object o, long offset, Object x) {
-        putReferenceOpaque(o, offset, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final void putObjectRelease(Object o, long offset, Object x) {
-        putReferenceRelease(o, offset, x);
-    }
-
-
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getAndSetObject(Object o, long offset, Object newValue) {
-        return getAndSetReference(o, offset, newValue);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getAndSetObjectAcquire(Object o, long offset, Object newValue) {
-        return getAndSetReferenceAcquire(o, offset, newValue);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object getAndSetObjectRelease(Object o, long offset, Object newValue) {
-        return getAndSetReferenceRelease(o, offset, newValue);
-    }
-
-
-    @Deprecated(since="12", forRemoval=true)
-    public final boolean compareAndSetObject(Object o, long offset, Object expected, Object x) {
-        return compareAndSetReference(o, offset, expected, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object compareAndExchangeObject(Object o, long offset, Object expected, Object x) {
-        return compareAndExchangeReference(o, offset, expected, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object compareAndExchangeObjectAcquire(Object o, long offset, Object expected, Object x) {
-        return compareAndExchangeReferenceAcquire(o, offset, expected, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final Object compareAndExchangeObjectRelease(Object o, long offset, Object expected, Object x) {
-        return compareAndExchangeReferenceRelease(o, offset, expected, x);
-    }
-
-
-    @Deprecated(since="12", forRemoval=true)
-    public final boolean weakCompareAndSetObject(Object o, long offset, Object expected, Object x) {
-        return weakCompareAndSetReference(o, offset, expected, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final boolean weakCompareAndSetObjectAcquire(Object o, long offset, Object expected, Object x) {
-        return weakCompareAndSetReferenceAcquire(o, offset, expected, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final boolean weakCompareAndSetObjectPlain(Object o, long offset, Object expected, Object x) {
-        return weakCompareAndSetReferencePlain(o, offset, expected, x);
-    }
-    @Deprecated(since="12", forRemoval=true)
-    public final boolean weakCompareAndSetObjectRelease(Object o, long offset, Object expected, Object x) {
-        return weakCompareAndSetReferenceRelease(o, offset, expected, x);
     }
 }

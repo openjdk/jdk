@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,20 +46,20 @@ class MethodHandleNatives {
 
     private MethodHandleNatives() { } // static only
 
-    /// MemberName support
+    //--- MemberName support
 
     static native void init(MemberName self, Object ref);
     static native void expand(MemberName self);
     static native MemberName resolve(MemberName self, Class<?> caller, int lookupMode,
             boolean speculativeResolve) throws LinkageError, ClassNotFoundException;
 
-    /// Field layout queries parallel to jdk.internal.misc.Unsafe:
+    //--- Field layout queries parallel to jdk.internal.misc.Unsafe:
     static native long objectFieldOffset(MemberName self);  // e.g., returns vmindex
     static native long staticFieldOffset(MemberName self);  // e.g., returns vmindex
     static native Object staticFieldBase(MemberName self);  // e.g., returns clazz
     static native Object getMemberVMInfo(MemberName self);  // returns {vmindex,vmtarget}
 
-    /// CallSite support
+    //--- CallSite support
 
     /** Tell the JVM that we need to change the target of a CallSite. */
     static native void setCallSiteTargetNormal(CallSite site, MethodHandle target);
@@ -70,31 +70,6 @@ class MethodHandleNatives {
                                                  Object[] buf, int pos,
                                                  boolean resolve,
                                                  Object ifNotAvailable);
-
-    /** Represents a context to track nmethod dependencies on CallSite instance target. */
-    static class CallSiteContext implements Runnable {
-        //@Injected JVM_nmethodBucket* vmdependencies;
-        //@Injected jlong last_cleanup;
-
-        static CallSiteContext make(CallSite cs) {
-            final CallSiteContext newContext = new CallSiteContext();
-            // CallSite instance is tracked by a Cleanable which clears native
-            // structures allocated for CallSite context. Though the CallSite can
-            // become unreachable, its Context is retained by the Cleanable instance
-            // (which is referenced from Cleaner instance which is referenced from
-            // CleanerFactory class) until cleanup is performed.
-            CleanerFactory.cleaner().register(cs, newContext);
-            return newContext;
-        }
-
-        @Override
-        public void run() {
-            MethodHandleNatives.clearCallSiteContext(this);
-        }
-    }
-
-    /** Invalidate all recorded nmethods. */
-    private static native void clearCallSiteContext(CallSiteContext context);
 
     private static native void registerNatives();
     static {

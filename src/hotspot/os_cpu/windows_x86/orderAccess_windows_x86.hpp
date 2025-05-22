@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,7 @@ inline void OrderAccess::acquire()    { compiler_barrier(); }
 inline void OrderAccess::release()    { compiler_barrier(); }
 
 inline void OrderAccess::fence() {
-#ifdef AMD64
   StubRoutines_fence();
-#else
-  __asm {
-    lock add dword ptr [esp], 0;
-  }
-#endif // AMD64
   compiler_barrier();
 }
 

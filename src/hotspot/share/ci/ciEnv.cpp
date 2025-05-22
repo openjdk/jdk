@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciField.hpp"
@@ -43,8 +42,8 @@
 #include "compiler/compilationLog.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
-#include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -100,10 +99,6 @@ ciSymbol*        ciEnv::_unloaded_cisymbol = nullptr;
 ciInstanceKlass* ciEnv::_unloaded_ciinstance_klass = nullptr;
 ciObjArrayKlass* ciEnv::_unloaded_ciobjarrayklass = nullptr;
 
-jobject ciEnv::_ArrayIndexOutOfBoundsException_handle = nullptr;
-jobject ciEnv::_ArrayStoreException_handle = nullptr;
-jobject ciEnv::_ClassCastException_handle = nullptr;
-
 #ifndef PRODUCT
 static bool firstEnv = true;
 #endif /* PRODUCT */
@@ -111,7 +106,7 @@ static bool firstEnv = true;
 // ------------------------------------------------------------------
 // ciEnv::ciEnv
 ciEnv::ciEnv(CompileTask* task)
-  : _ciEnv_arena(mtCompiler) {
+  : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   VM_ENTRY_MARK;
 
   // Set up ciEnv::current immediately, for the sake of ciObjectFactory, etc.
@@ -121,7 +116,6 @@ ciEnv::ciEnv(CompileTask* task)
   _oop_recorder = nullptr;
   _debug_info = nullptr;
   _dependencies = nullptr;
-  _failure_reason = nullptr;
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable;
   _break_at_compile = false;
@@ -159,10 +153,16 @@ ciEnv::ciEnv(CompileTask* task)
   o = Universe::arithmetic_exception_instance();
   assert(o != nullptr, "should have been initialized");
   _ArithmeticException_instance = get_object(o)->as_instance();
+  o = Universe::array_index_out_of_bounds_exception_instance();
+  assert(o != nullptr, "should have been initialized");
+  _ArrayIndexOutOfBoundsException_instance = get_object(o)->as_instance();
+  o = Universe::array_store_exception_instance();
+  assert(o != nullptr, "should have been initialized");
+  _ArrayStoreException_instance = get_object(o)->as_instance();
+  o = Universe::class_cast_exception_instance();
+  assert(o != nullptr, "should have been initialized");
+  _ClassCastException_instance = get_object(o)->as_instance();
 
-  _ArrayIndexOutOfBoundsException_instance = nullptr;
-  _ArrayStoreException_instance = nullptr;
-  _ClassCastException_instance = nullptr;
   _the_null_string = nullptr;
   _the_min_jint_string = nullptr;
 
@@ -238,7 +238,7 @@ public:
   }
 };
 
-ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
+ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   ASSERT_IN_VM;
 
   // Set up ciEnv::current immediately, for the sake of ciObjectFactory, etc.
@@ -250,7 +250,6 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   _oop_recorder = nullptr;
   _debug_info = nullptr;
   _dependencies = nullptr;
-  _failure_reason = nullptr;
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable_never;
   _break_at_compile = false;
@@ -365,29 +364,6 @@ void ciEnv::cache_dtrace_flags() {
   _dtrace_alloc_probes  = DTraceAllocProbes;
 }
 
-// ------------------------------------------------------------------
-// helper for lazy exception creation
-ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
-  VM_ENTRY_MARK;
-  if (handle == nullptr) {
-    // Cf. universe.cpp, creation of Universe::_null_ptr_exception_instance.
-    InstanceKlass* ik = SystemDictionary::find_instance_klass(THREAD, name, Handle(), Handle());
-    jobject objh = nullptr;
-    if (ik != nullptr) {
-      oop obj = ik->allocate_instance(THREAD);
-      if (!HAS_PENDING_EXCEPTION)
-        objh = JNIHandles::make_global(Handle(THREAD, obj));
-    }
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
-    } else {
-      handle = objh;
-    }
-  }
-  oop obj = JNIHandles::resolve(handle);
-  return obj == nullptr? nullptr: get_object(obj)->as_instance();
-}
-
 ciInstanceKlass* ciEnv::get_box_klass_for_primitive_type(BasicType type) {
   switch (type) {
     case T_BOOLEAN: return Boolean_klass();
@@ -403,31 +379,6 @@ ciInstanceKlass* ciEnv::get_box_klass_for_primitive_type(BasicType type) {
       assert(false, "not a primitive: %s", type2name(type));
       return nullptr;
   }
-}
-
-ciInstance* ciEnv::ArrayIndexOutOfBoundsException_instance() {
-  if (_ArrayIndexOutOfBoundsException_instance == nullptr) {
-    _ArrayIndexOutOfBoundsException_instance
-          = get_or_create_exception(_ArrayIndexOutOfBoundsException_handle,
-          vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
-  }
-  return _ArrayIndexOutOfBoundsException_instance;
-}
-ciInstance* ciEnv::ArrayStoreException_instance() {
-  if (_ArrayStoreException_instance == nullptr) {
-    _ArrayStoreException_instance
-          = get_or_create_exception(_ArrayStoreException_handle,
-          vmSymbols::java_lang_ArrayStoreException());
-  }
-  return _ArrayStoreException_instance;
-}
-ciInstance* ciEnv::ClassCastException_instance() {
-  if (_ClassCastException_instance == nullptr) {
-    _ClassCastException_instance
-          = get_or_create_exception(_ClassCastException_handle,
-          vmSymbols::java_lang_ClassCastException());
-  }
-  return _ClassCastException_instance;
 }
 
 ciInstance* ciEnv::the_null_string() {
@@ -510,14 +461,12 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   }
 
   Handle loader;
-  Handle domain;
   if (accessing_klass != nullptr) {
     loader = Handle(current, accessing_klass->loader());
-    domain = Handle(current, accessing_klass->protection_domain());
   }
 
   Klass* found_klass = require_local ?
-                         SystemDictionary::find_instance_or_array_klass(current, sym, loader, domain) :
+                         SystemDictionary::find_instance_or_array_klass(current, sym, loader) :
                          SystemDictionary::find_constrained_instance_or_array_klass(current, sym, loader);
 
   // If we fail to find an array klass, look again for its element type.
@@ -871,10 +820,8 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     // Jump through a patchable call site, which is initially a deopt routine.
     // Patch the call site to the nmethod entry point of the static compiled lambda form.
     // As with other two-component call sites, both values must be independently verified.
-    int indy_index = cpool->decode_invokedynamic_index(index);
-    assert (indy_index >= 0, "should be");
-    assert(indy_index < cpool->cache()->resolved_indy_entries_length(), "impossible");
-    Method* adapter = cpool->resolved_indy_entry_at(indy_index)->method();
+    assert(index < cpool->cache()->resolved_indy_entries_length(), "impossible");
+    Method* adapter = cpool->resolved_indy_entry_at(index)->method();
     // Resolved if the adapter is non null.
     if (adapter != nullptr) {
       return get_method(adapter);
@@ -1036,8 +983,8 @@ void ciEnv::register_method(ciMethod* target,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
                             bool has_monitors,
-                            int immediate_oops_patched,
-                            RTMState  rtm_state) {
+                            bool has_scoped_access,
+                            int immediate_oops_patched) {
   VM_ENTRY_MARK;
   nmethod* nm = nullptr;
   {
@@ -1094,14 +1041,6 @@ void ciEnv::register_method(ciMethod* target,
       // Check for {class loads, evolution, breakpoints, ...} during compilation
       validate_compile_task_dependencies(target);
     }
-#if INCLUDE_RTM_OPT
-    if (!failing() && (rtm_state != NoRTM) &&
-        (method()->method_data() != nullptr) &&
-        (method()->method_data()->rtm_state() != rtm_state)) {
-      // Preemptive decompile if rtm state was changed.
-      record_failure("RTM state change invalidated rtm code");
-    }
-#endif
 
     if (failing()) {
       // While not a true deoptimization, it is a preemptive decompile.
@@ -1137,15 +1076,13 @@ void ciEnv::register_method(ciMethod* target,
       nm->set_has_unsafe_access(has_unsafe_access);
       nm->set_has_wide_vectors(has_wide_vectors);
       nm->set_has_monitors(has_monitors);
+      nm->set_has_scoped_access(has_scoped_access);
       assert(!method->is_synchronized() || nm->has_monitors(), "");
-#if INCLUDE_RTM_OPT
-      nm->set_rtm_state(rtm_state);
-#endif
 
       if (entry_bci == InvocationEntryBci) {
         if (TieredCompilation) {
           // If there is an old version we're done with it
-          CompiledMethod* old = method->code();
+          nmethod* old = method->code();
           if (TraceMethodReplacement && old != nullptr) {
             ResourceMark rm;
             char *method_name = method->name_and_sig_as_C_string();
@@ -1164,7 +1101,7 @@ void ciEnv::register_method(ciMethod* target,
                     task()->comp_level(), method_name);
         }
         // Allow the code to be executed
-        MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+        MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
         if (nm->make_in_use()) {
           method->set_code(method, nm);
         }
@@ -1176,7 +1113,7 @@ void ciEnv::register_method(ciMethod* target,
           lt.print("Installing osr method (%d) %s @ %d",
                     task()->comp_level(), method_name, entry_bci);
         }
-        MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+        MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
         if (nm->make_in_use()) {
           method->method_holder()->add_osr_nmethod(nm);
         }
@@ -1233,9 +1170,18 @@ int ciEnv::num_inlined_bytecodes() const {
 // ------------------------------------------------------------------
 // ciEnv::record_failure()
 void ciEnv::record_failure(const char* reason) {
-  if (_failure_reason == nullptr) {
+  // record the bailout for hserr envlog
+  if (reason != nullptr) {
+    if (CompilationLog::log() != nullptr) {
+      CompilerThread* thread = CompilerThread::current();
+      CompileTask* task = thread->task();
+      CompilationLog::log()->log_failure(thread, task, reason, nullptr);
+    }
+  }
+
+  if (_failure_reason.get() == nullptr) {
     // Record the first failure reason.
-    _failure_reason = reason;
+    _failure_reason.set(reason);
   }
 }
 
@@ -1265,7 +1211,7 @@ void ciEnv::record_method_not_compilable(const char* reason, bool all_tiers) {
     _compilable = new_compilable;
 
     // Reset failure reason; this one is more important.
-    _failure_reason = nullptr;
+    _failure_reason.clear();
     record_failure(reason);
   }
 }
@@ -1503,21 +1449,20 @@ void ciEnv::record_call_site_method(Thread* thread, Method* adapter) {
 
 // Process an invokedynamic call site and record any dynamic locations.
 void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, JavaThread* thread) {
-  int index = cp->decode_invokedynamic_index(indy_index);
-  ResolvedIndyEntry* indy_info = cp->resolved_indy_entry_at(index);
+  ResolvedIndyEntry* indy_info = cp->resolved_indy_entry_at(indy_index);
   if (indy_info->method() != nullptr) {
     // process the adapter
     Method* adapter = indy_info->method();
     record_call_site_method(thread, adapter);
     // process the appendix
-    oop appendix = cp->resolved_reference_from_indy(index);
+    oop appendix = cp->resolved_reference_from_indy(indy_index);
     {
       RecordLocation fp(this, "<appendix>");
       record_call_site_obj(thread, appendix);
     }
     // process the BSM
     int pool_index = indy_info->constant_pool_index();
-    BootstrapInfo bootstrap_specifier(cp, pool_index, index);
+    BootstrapInfo bootstrap_specifier(cp, pool_index, indy_index);
     oop bsm = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
     {
       RecordLocation fp(this, "<bsm>");
@@ -1658,6 +1603,8 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   NoSafepointVerifier no_safepoint;
   ResourceMark rm;
 
+  assert(this->task() != nullptr, "task must not be null");
+
   dump_replay_data_version(out);
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
@@ -1670,13 +1617,13 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   GrowableArray<ciMetadata*>* objects = _factory->get_ci_metadata();
   out->print_cr("# %d ciObject found", objects->length());
 
-  // The very first entry is the InstanceKlass of the root method of the current compilation in order to get the right
-  // protection domain to load subsequent classes during replay compilation.
+  // The very first entry is the InstanceKlass of the root method of the current compilation.
   ciInstanceKlass::dump_replay_instanceKlass(out, task()->method()->method_holder());
 
   for (int i = 0; i < objects->length(); i++) {
     objects->at(i)->dump_replay_data(out);
   }
+
   dump_compile_data(out);
   out->flush();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,25 +97,35 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
         }
     }
 
-    // Get buffer size needed to read all processes
-    int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0};
-    if (sysctl(mib, 4, NULL, &bufSize, NULL, 0) < 0) {
-        JNU_ThrowByNameWithLastError(env,
-            "java/lang/RuntimeException", "sysctl failed");
-        return -1;
-    }
+    int errsysctl;
+    int maxRetries = 100;
+    void *buffer = NULL;
+    do {
+        int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0};
+        if (buffer != NULL) free(buffer);
+        // Get buffer size needed to read all processes
+        if (sysctl(mib, 4, NULL, &bufSize, NULL, 0) < 0) {
+            JNU_ThrowByNameWithMessageAndLastError(env,
+                "java/lang/RuntimeException", "sysctl failed");
+            return -1;
+        }
 
-    // Allocate buffer big enough for all processes
-    void *buffer = malloc(bufSize);
-    if (buffer == NULL) {
-        JNU_ThrowOutOfMemoryError(env, "malloc failed");
-        return -1;
-    }
+        // Allocate buffer big enough for all processes; add a little
+        // bit of space to be able to hold a few more proc infos
+        // for processes started right after the first sysctl call
+        buffer = malloc(bufSize + 4 * sizeof(struct kinfo_proc));
+        if (buffer == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "malloc failed");
+            return -1;
+        }
 
-    // Read process info for all processes
-    if (sysctl(mib, 4, buffer, &bufSize, NULL, 0) < 0) {
-        JNU_ThrowByNameWithLastError(env,
-            "java/lang/RuntimeException", "sysctl failed");
+        // Read process info for all processes
+        errsysctl = sysctl(mib, 4, buffer, &bufSize, NULL, 0);
+    } while (errsysctl < 0 && errno == ENOMEM && maxRetries-- > 0);
+
+    if (errsysctl < 0) {
+        JNU_ThrowByNameWithMessageAndLastError(env,
+            "java/lang/RuntimeException", "sysctl failed to get info about all processes");
         free(buffer);
         return -1;
     }

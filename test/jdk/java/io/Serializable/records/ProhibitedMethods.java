@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8246774
  * @summary Basic tests for prohibited magic serialization methods
  * @library /test/lib
- * @enablePreview
  * @run testng ProhibitedMethods
  */
 
@@ -243,9 +242,9 @@ public class ProhibitedMethods {
     static byte[] addMethod(byte[] classBytes,
                             String name, MethodTypeDesc desc) {
         var cf = ClassFile.of();
-        return cf.transform(cf.parse(classBytes), ClassTransform.endHandler(clb -> {
+        return cf.transformClass(cf.parse(classBytes), ClassTransform.endHandler(clb -> {
             clb.withMethodBody(name, desc, ACC_PRIVATE, cob -> {
-                cob.constantInstruction(name + " should not be invoked");
+                cob.loadConstant(name + " should not be invoked");
                 cob.invokestatic(Assert.class.describeConstable().orElseThrow(), "fail",
                         MethodTypeDesc.of(CD_void, CD_String));
                 cob.return_();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -141,24 +143,15 @@ final class Short256Vector extends ShortVector {
     @ForceInline
     Short256Shuffle iotaShuffle() { return Short256Shuffle.IOTA; }
 
+    @Override
     @ForceInline
     Short256Shuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (Short256Shuffle)VectorSupport.shuffleIota(ETYPE, Short256Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (Short256Shuffle)VectorSupport.shuffleIota(ETYPE, Short256Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+        return (Short256Shuffle) iotaShuffleTemplate((short) start, (short) step, wrap);
     }
 
     @Override
     @ForceInline
-    Short256Shuffle shuffleFromBytes(byte[] reorder) { return new Short256Shuffle(reorder); }
-
-    @Override
-    @ForceInline
-    Short256Shuffle shuffleFromArray(int[] indexes, int i) { return new Short256Shuffle(indexes, i); }
+    Short256Shuffle shuffleFromArray(int[] indices, int i) { return new Short256Shuffle(indices, i); }
 
     @Override
     @ForceInline
@@ -357,9 +350,16 @@ final class Short256Vector extends ShortVector {
         return (long) super.reduceLanesTemplate(op, Short256Mask.class, (Short256Mask) m);  // specialized
     }
 
+    @Override
     @ForceInline
-    public VectorShuffle<Short> toShuffle() {
-        return super.toShuffleTemplate(Short256Shuffle.class); // specialize
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+        return bitsToShuffleTemplate(dsp);
+    }
+
+    @Override
+    @ForceInline
+    public final Short256Shuffle toShuffle() {
+        return (Short256Shuffle) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -503,9 +503,16 @@ final class Short256Vector extends ShortVector {
                                    VectorMask<Short> m) {
         return (Short256Vector)
             super.selectFromTemplate((Short256Vector) v,
-                                     (Short256Mask) m);  // specialize
+                                     Short256Mask.class, (Short256Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Short256Vector selectFrom(Vector<Short> v1,
+                                   Vector<Short> v2) {
+        return (Short256Vector)
+            super.selectFromTemplate((Short256Vector) v1, (Short256Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -531,6 +538,7 @@ final class Short256Vector extends ShortVector {
         }
     }
 
+    @ForceInline
     public short laneHelper(int i) {
         return (short) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -565,6 +573,7 @@ final class Short256Vector extends ShortVector {
         }
     }
 
+    @ForceInline
     public Short256Vector withLaneHelper(int i, short e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
@@ -814,23 +823,26 @@ final class Short256Vector extends ShortVector {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
         static final Class<Short> ETYPE = short.class; // used by the JVM
 
-        Short256Shuffle(byte[] reorder) {
-            super(VLENGTH, reorder);
+        Short256Shuffle(short[] indices) {
+            super(indices);
+            assert(VLENGTH == indices.length);
+            assert(indicesInRange(indices));
         }
 
-        public Short256Shuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+        Short256Shuffle(int[] indices, int i) {
+            this(prepare(indices, i));
         }
 
-        public Short256Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+        Short256Shuffle(IntUnaryOperator fn) {
+            this(prepare(fn));
         }
 
-        public Short256Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+        short[] indices() {
+            return (short[])getPayload();
         }
 
         @Override
+        @ForceInline
         public ShortSpecies vspecies() {
             return VSPECIES;
         }
@@ -838,40 +850,118 @@ final class Short256Vector extends ShortVector {
         static {
             // There must be enough bits in the shuffle lanes to encode
             // VLENGTH valid indexes and VLENGTH exceptional ones.
-            assert(VLENGTH < Byte.MAX_VALUE);
-            assert(Byte.MIN_VALUE <= -VLENGTH);
+            assert(VLENGTH < Short.MAX_VALUE);
+            assert(Short.MIN_VALUE <= -VLENGTH);
         }
         static final Short256Shuffle IOTA = new Short256Shuffle(IDENTITY);
 
         @Override
         @ForceInline
         public Short256Vector toVector() {
-            return VectorSupport.shuffleToVector(VCLASS, ETYPE, Short256Shuffle.class, this, VLENGTH,
-                                                    (s) -> ((Short256Vector)(((AbstractShuffle<Short>)(s)).toVectorTemplate())));
+            return toBitsVector();
         }
 
         @Override
         @ForceInline
-        public <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
-            AbstractSpecies<F> species = (AbstractSpecies<F>) s;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorShuffle length and species length differ");
-            int[] shuffleArray = toArray();
-            return s.shuffleFromArray(shuffleArray, 0).check(s);
+        Short256Vector toBitsVector() {
+            return (Short256Vector) super.toBitsVectorTemplate();
+        }
+
+        @Override
+        Short256Vector toBitsVector0() {
+            return ((Short256Vector) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+        }
+
+        @Override
+        @ForceInline
+        public int laneSource(int i) {
+            return (int)toBitsVector().lane(i);
+        }
+
+        @Override
+        @ForceInline
+        public void intoArray(int[] a, int offset) {
+            VectorSpecies<Integer> species = IntVector.SPECIES_256;
+            Vector<Short> v = toBitsVector();
+            v.convertShape(VectorOperators.S2I, species, 0)
+                    .reinterpretAsInts()
+                    .intoArray(a, offset);
+            v.convertShape(VectorOperators.S2I, species, 1)
+                    .reinterpretAsInts()
+                    .intoArray(a, offset + species.length());
+        }
+
+        @Override
+        @ForceInline
+        public void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            VectorSpecies<Integer> species = IntVector.SPECIES_256;
+            Vector<Short> v = toBitsVector();
+            v.convertShape(VectorOperators.S2I, species, 0)
+                    .reinterpretAsInts()
+                    .intoMemorySegment(ms, offset, bo);
+            v.convertShape(VectorOperators.S2I, species, 1)
+                    .reinterpretAsInts()
+                    .intoMemorySegment(ms, offset + species.vectorByteSize(), bo);
+         }
+
+        @Override
+        @ForceInline
+        public final Short256Mask laneIsValid() {
+            return (Short256Mask) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
         }
 
         @ForceInline
         @Override
-        public Short256Shuffle rearrange(VectorShuffle<Short> shuffle) {
-            Short256Shuffle s = (Short256Shuffle) shuffle;
-            byte[] reorder1 = reorder();
-            byte[] reorder2 = s.reorder();
-            byte[] r = new byte[reorder1.length];
-            for (int i = 0; i < reorder1.length; i++) {
-                int ssi = reorder2[i];
-                r[i] = reorder1[ssi];  // throws on exceptional index
+        public final Short256Shuffle rearrange(VectorShuffle<Short> shuffle) {
+            Short256Shuffle concreteShuffle = (Short256Shuffle) shuffle;
+            return (Short256Shuffle) toBitsVector().rearrange(concreteShuffle)
+                    .toShuffle(vspecies(), false);
+        }
+
+        @ForceInline
+        @Override
+        public final Short256Shuffle wrapIndexes() {
+            Short256Vector v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = (Short256Vector) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = (Short256Vector) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
             }
-            return new Short256Shuffle(r);
+            return (Short256Shuffle) v.toShuffle(vspecies(), false);
+        }
+
+        private static short[] prepare(int[] indices, int offset) {
+            short[] a = new short[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = indices[offset + i];
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (short)si;
+            }
+            return a;
+        }
+
+        private static short[] prepare(IntUnaryOperator f) {
+            short[] a = new short[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = f.applyAsInt(i);
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (short)si;
+            }
+            return a;
+        }
+
+        private static boolean indicesInRange(short[] indices) {
+            int length = indices.length;
+            for (short si : indices) {
+                if (si >= (short)length || si < (short)(-length)) {
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
+                                  java.util.Arrays.toString(indices));
+                    throw new AssertionError(msg);
+                }
+            }
+            return true;
         }
     }
 
@@ -893,6 +983,12 @@ final class Short256Vector extends ShortVector {
         return super.fromArray0Template(Short256Mask.class, a, offset, (Short256Mask) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ShortVector fromArray0(short[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Short> m) {
+        return super.fromArray0Template(Short256Mask.class, a, offset, indexMap, mapOffset, (Short256Mask) m);
+    }
 
     @ForceInline
     @Override

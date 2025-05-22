@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciKlass.hpp"
@@ -72,7 +71,7 @@ void Dependencies::initialize(ciEnv* env) {
 #endif
   DEBUG_ONLY(_deps[end_marker] = nullptr);
   for (int i = (int)FIRST_TYPE; i < (int)TYPE_LIMIT; i++) {
-    _deps[i] = new(arena) GrowableArray<ciBaseObject*>(arena, 10, 0, 0);
+    _deps[i] = new(arena) GrowableArray<ciBaseObject*>(arena, 10, 0, nullptr);
   }
   _content_bytes = nullptr;
   _size_in_bytes = (size_t)-1;
@@ -113,11 +112,7 @@ void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm)
 void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm, ciKlass* resolved_klass, ciMethod* resolved_method) {
   check_ctxk(ctxk);
   check_unique_method(ctxk, uniqm);
-  if (UseVtableBasedCHA) {
-    assert_common_4(unique_concrete_method_4, ctxk, uniqm, resolved_klass, resolved_method);
-  } else {
-    assert_common_2(unique_concrete_method_2, ctxk, uniqm);
-  }
+  assert_common_4(unique_concrete_method_4, ctxk, uniqm, resolved_klass, resolved_method);
 }
 
 void Dependencies::assert_unique_implementor(ciInstanceKlass* ctxk, ciInstanceKlass* uniqk) {
@@ -388,9 +383,7 @@ void Dependencies::copy_to(nmethod* nm) {
   address beg = nm->dependencies_begin();
   address end = nm->dependencies_end();
   guarantee(end - beg >= (ptrdiff_t) size_in_bytes(), "bad sizing");
-  Copy::disjoint_words((HeapWord*) content_bytes(),
-                       (HeapWord*) beg,
-                       size_in_bytes() / sizeof(HeapWord));
+  (void)memcpy(beg, content_bytes(), size_in_bytes());
   assert(size_in_bytes() % sizeof(HeapWord) == 0, "copy by words");
 }
 
@@ -899,7 +892,7 @@ void Dependencies::DepStream::print_dependency(outputStream* st, Klass* witness,
 void Dependencies::DepStream::initial_asserts(size_t byte_limit) {
   assert(must_be_in_vm(), "raw oops here");
   _byte_limit = byte_limit;
-  _type       = (DepType)(end_marker-1);  // defeat "already at end" assert
+  _type       = undefined_dependency;  // defeat "already at end" assert
   assert((_code!=nullptr) + (_deps!=nullptr) == 1, "one or t'other");
 }
 #endif //ASSERT
@@ -1476,7 +1469,6 @@ class LinkedConcreteMethodFinder : public AbstractClassHierarchyWalker {
   // Optionally, a method which was previously determined as a unique target (uniqm) is added as a participant
   // to enable dependency spot-checking and speed up the search.
   LinkedConcreteMethodFinder(InstanceKlass* resolved_klass, Method* resolved_method, Method* uniqm = nullptr) : AbstractClassHierarchyWalker(nullptr) {
-    assert(UseVtableBasedCHA, "required");
     assert(resolved_klass->is_linked(), "required");
     assert(resolved_method->method_holder()->is_linked(), "required");
     assert(!resolved_method->can_be_statically_bound(), "no vtable index available");
@@ -1950,7 +1942,6 @@ Klass* Dependencies::check_unique_concrete_method(InstanceKlass* ctxk,
                                                   Klass* resolved_klass,
                                                   Method* resolved_method,
                                                   KlassDepChange* changes) {
-  assert(UseVtableBasedCHA, "required");
   assert(!ctxk->is_interface() || ctxk == resolved_klass, "sanity");
   assert(!resolved_method->can_be_statically_bound() || resolved_method == uniqm, "sanity");
   assert(resolved_klass->is_subtype_of(resolved_method->method_holder()), "sanity");
@@ -2131,7 +2122,7 @@ Klass* Dependencies::DepStream::check_klass_dependency(KlassDepChange* changes) 
   Dependencies::check_valid_dependency_type(type());
 
   if (changes != nullptr) {
-    if (UseVtableBasedCHA && changes->is_klass_init_change()) {
+    if (changes->is_klass_init_change()) {
       return check_klass_init_dependency(changes->as_klass_init_change());
     } else {
       return check_new_klass_dependency(changes->as_new_klass_change());

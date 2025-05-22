@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,49 +49,22 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * thrown.
  * <p>
  * This class inflates sequences of ZLIB compressed bytes. The input byte
- * sequence is provided in either byte array or byte buffer, via one of the
+ * sequence is provided in either a byte array or a {@link ByteBuffer}, via one of the
  * {@code setInput()} methods. The output byte sequence is written to the
- * output byte array or byte buffer passed to the {@code inflate()} methods.
+ * output byte array or {@code ByteBuffer} passed to the {@code inflate()} methods.
  * <p>
- * The following code fragment demonstrates a trivial compression
- * and decompression of a string using {@code Deflater} and
- * {@code Inflater}.
- *
- * <blockquote><pre>
- * try {
- *     // Encode a String into bytes
- *     String inputString = "blahblahblah\u20AC\u20AC";
- *     byte[] input = inputString.getBytes("UTF-8");
- *
- *     // Compress the bytes
- *     byte[] output = new byte[100];
- *     Deflater compresser = new Deflater();
- *     compresser.setInput(input);
- *     compresser.finish();
- *     int compressedDataLength = compresser.deflate(output);
- *
- *     // Decompress the bytes
- *     Inflater decompresser = new Inflater();
- *     decompresser.setInput(output, 0, compressedDataLength);
- *     byte[] result = new byte[100];
- *     int resultLength = decompresser.inflate(result);
- *     decompresser.end();
- *
- *     // Decode the bytes into a String
- *     String outputString = new String(result, 0, resultLength, "UTF-8");
- * } catch (java.io.UnsupportedEncodingException ex) {
- *     // handle
- * } catch (java.util.zip.DataFormatException ex) {
- *     // handle
- * }
- * </pre></blockquote>
+ * To release the resources used by an {@code Inflater}, an application must close it
+ * by invoking its {@link #end()} or {@link #close()} method.
  *
  * @apiNote
- * To release resources used by this {@code Inflater}, the {@link #end()} method
- * should be called explicitly. Subclasses are responsible for the cleanup of resources
- * acquired by the subclass. Subclasses that override {@link #finalize()} in order
- * to perform cleanup should be modified to use alternative cleanup mechanisms such
- * as {@link java.lang.ref.Cleaner} and remove the overriding {@code finalize} method.
+ * This class implements {@link AutoCloseable} to facilitate its usage with
+ * {@code try}-with-resources statement. The {@linkplain Inflater#close() close() method} simply
+ * calls {@code end()}.
+ *
+ * <p>
+ * The following code fragment demonstrates a trivial compression
+ * and decompression of a string using {@code Deflater} and {@code Inflater}.
+ * {@snippet id="compdecomp" lang="java" class="Snippets" region="DeflaterInflaterExample"}
  *
  * @see         Deflater
  * @author      David Connelly
@@ -99,7 +72,7 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  *
  */
 
-public class Inflater {
+public class Inflater implements AutoCloseable {
 
     private final InflaterZStreamRef zsRef;
     private ByteBuffer input = ZipUtils.defaultBuf;
@@ -220,6 +193,7 @@ public class Inflater {
      * @param dictionary the dictionary data bytes
      * @param off the start offset of the data
      * @param len the length of the data
+     * @throws IllegalStateException if the Inflater is closed
      * @see Inflater#needsDictionary
      * @see Inflater#getAdler
      */
@@ -238,6 +212,7 @@ public class Inflater {
      * indicating that a preset dictionary is required. The method getAdler()
      * can be used to get the Adler-32 value of the dictionary needed.
      * @param dictionary the dictionary data bytes
+     * @throws IllegalStateException if the Inflater is closed
      * @see Inflater#needsDictionary
      * @see Inflater#getAdler
      */
@@ -255,6 +230,7 @@ public class Inflater {
      * return, its position will equal its limit.
      *
      * @param dictionary the dictionary data bytes
+     * @throws IllegalStateException if the Inflater is closed
      * @see Inflater#needsDictionary
      * @see Inflater#getAdler
      * @since 11
@@ -310,8 +286,7 @@ public class Inflater {
     }
 
     /**
-     * Returns true if a preset dictionary is needed for decompression.
-     * @return true if a preset dictionary is needed for decompression
+     * {@return true if a preset dictionary is needed for decompression}
      * @see Inflater#setDictionary
      */
     public boolean needsDictionary() {
@@ -321,10 +296,8 @@ public class Inflater {
     }
 
     /**
-     * Returns true if the end of the compressed data stream has been
-     * reached.
-     * @return true if the end of the compressed data stream has been
-     * reached
+     * {@return true if the end of the compressed data stream has been
+     * reached}
      */
     public boolean finished() {
         synchronized (zsRef) {
@@ -362,6 +335,7 @@ public class Inflater {
      * @param len the maximum number of uncompressed bytes
      * @return the actual number of uncompressed bytes
      * @throws DataFormatException if the compressed data format is invalid
+     * @throws IllegalStateException if the Inflater is closed
      * @see Inflater#needsInput
      * @see Inflater#needsDictionary
      */
@@ -468,6 +442,7 @@ public class Inflater {
      * @param output the buffer for the uncompressed data
      * @return the actual number of uncompressed bytes
      * @throws DataFormatException if the compressed data format is invalid
+     * @throws IllegalStateException if the Inflater is closed
      * @see Inflater#needsInput
      * @see Inflater#needsDictionary
      */
@@ -505,6 +480,7 @@ public class Inflater {
      * @return the actual number of uncompressed bytes
      * @throws DataFormatException if the compressed data format is invalid
      * @throws ReadOnlyBufferException if the given output buffer is read-only
+     * @throws IllegalStateException if the Inflater is closed
      * @see Inflater#needsInput
      * @see Inflater#needsDictionary
      * @since 11
@@ -630,8 +606,8 @@ public class Inflater {
     }
 
     /**
-     * Returns the ADLER-32 value of the uncompressed data.
-     * @return the ADLER-32 value of the uncompressed data
+     * {@return the ADLER-32 value of the uncompressed data}
+     * @throws IllegalStateException if the Inflater is closed
      */
     public int getAdler() {
         synchronized (zsRef) {
@@ -643,12 +619,17 @@ public class Inflater {
     /**
      * Returns the total number of compressed bytes input so far.
      *
-     * <p>Since the number of bytes may be greater than
-     * Integer.MAX_VALUE, the {@link #getBytesRead()} method is now
-     * the preferred means of obtaining this information.</p>
+     * @implSpec
+     * This method returns the equivalent of {@code (int) getBytesRead()}
+     * and therefore cannot return the correct value when it is greater
+     * than {@link Integer#MAX_VALUE}.
+     *
+     * @deprecated Use {@link #getBytesRead()} instead
      *
      * @return the total number of compressed bytes input so far
+     * @throws IllegalStateException if the Inflater is closed
      */
+    @Deprecated(since = "23")
     public int getTotalIn() {
         return (int) getBytesRead();
     }
@@ -657,6 +638,7 @@ public class Inflater {
      * Returns the total number of compressed bytes input so far.
      *
      * @return the total (non-negative) number of compressed bytes input so far
+     * @throws IllegalStateException if the Inflater is closed
      * @since 1.5
      */
     public long getBytesRead() {
@@ -669,12 +651,17 @@ public class Inflater {
     /**
      * Returns the total number of uncompressed bytes output so far.
      *
-     * <p>Since the number of bytes may be greater than
-     * Integer.MAX_VALUE, the {@link #getBytesWritten()} method is now
-     * the preferred means of obtaining this information.</p>
+     * @implSpec
+     * This method returns the equivalent of {@code (int) getBytesWritten()}
+     * and therefore cannot return the correct value when it is greater
+     * than {@link Integer#MAX_VALUE}.
+     *
+     * @deprecated Use {@link #getBytesWritten()} instead
      *
      * @return the total number of uncompressed bytes output so far
+     * @throws IllegalStateException if the Inflater is closed
      */
+    @Deprecated(since = "23")
     public int getTotalOut() {
         return (int) getBytesWritten();
     }
@@ -683,6 +670,7 @@ public class Inflater {
      * Returns the total number of uncompressed bytes output so far.
      *
      * @return the total (non-negative) number of uncompressed bytes output so far
+     * @throws IllegalStateException if the Inflater is closed
      * @since 1.5
      */
     public long getBytesWritten() {
@@ -694,6 +682,7 @@ public class Inflater {
 
     /**
      * Resets inflater so that a new set of input data can be processed.
+     * @throws IllegalStateException if the Inflater is closed
      */
     public void reset() {
         synchronized (zsRef) {
@@ -708,14 +697,22 @@ public class Inflater {
     }
 
     /**
-     * Closes the decompressor and discards any unprocessed input.
+     * Closes and releases the resources held by this {@code Inflater}
+     * and discards any unprocessed input.
+     * <p>
+     * If the {@code Inflater} is already closed then invoking this method has no effect.
      *
-     * This method should be called when the decompressor is no longer
-     * being used. Once this method is called, the behavior of the
-     * Inflater object is undefined.
+     * @implSpec Subclasses should override this method to clean up the resources
+     * acquired by the subclass.
+     *
+     * @see #close()
      */
     public void end() {
         synchronized (zsRef) {
+            // check if already closed
+            if (zsRef.address() == 0) {
+                return;
+            }
             zsRef.clean();
             input = ZipUtils.defaultBuf;
             inputArray = null;
@@ -723,10 +720,23 @@ public class Inflater {
     }
 
 
+    /**
+     * Closes and releases the resources held by this {@code Inflater}
+     * and discards any unprocessed input.
+     *
+     * @implSpec This method calls the {@link #end()} method.
+     * @since 25
+     */
+    @Override
+    public void close() {
+        end();
+    }
+
     private void ensureOpen () {
         assert Thread.holdsLock(zsRef);
-        if (zsRef.address() == 0)
-            throw new NullPointerException("Inflater has been closed");
+        if (zsRef.address() == 0) {
+            throw new IllegalStateException("Inflater has been closed");
+        }
     }
 
     boolean hasPendingOutput() {
@@ -761,10 +771,11 @@ public class Inflater {
      */
     static class InflaterZStreamRef implements Runnable {
 
-        private long address;
+        private long address; // will be a non-zero value when the native resource is in use
         private final Cleanable cleanable;
 
         private InflaterZStreamRef(Inflater owner, long addr) {
+            assert addr != 0 : "native address is 0";
             this.cleanable = (owner != null) ? CleanerFactory.cleaner().register(owner, this) : null;
             this.address = addr;
         }

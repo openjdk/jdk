@@ -83,19 +83,44 @@ on where and how to check out the source code.
   for the source code, see below for suggestions on how to keep the build
   artifacts on a local disk.
 
-* On Windows, if using [Cygwin](#cygwin), extra care must be taken to make sure
-  the environment is consistent. It is recommended that you follow this
-  procedure:
+* UTF-8 support is needed to compile the JDK. On Unix systems, this typically
+  means that the `C.UTF-8` or `en_US.UTF-8` locale needs to be available. For
+  Windows users, please see the section on [Locale
+  Requirements](#locale-requirements) below.
 
-  * Create the directory that is going to contain the top directory of the JDK
-    clone by using the `mkdir` command in the Cygwin bash shell. That is, do
-    *not* create it using Windows Explorer. This will ensure that it will have
-    proper Cygwin attributes, and that it's children will inherit those
-    attributes.
+* On Windows, extra care must be taken to have a smooth building experience:
 
-  * Do not put the JDK clone in a path under your Cygwin home directory. This
-    is especially important if your user name contains spaces and/or mixed
-    upper and lower case letters.
+  * Make sure that all relevant paths have short names. Short names are used by
+    the build system to create space-free alternative paths. Short name
+    creation is enabled per volume. The default setting can be checked with the
+    command: `fsutil 8dot3name query`. If short name creation was turned off
+    when a directory was created, it will not have a short name. Whether a
+    short name exists can be checked by running `dir /X` in the containing
+    directory (in cmd.exe). If a short path is present you should see something
+    like 'ASDF~1' being displayed in one of the columns of the ouput. If a
+    directory is missing a short name, the safest way to get one is to enable
+    short names for that particular volume with `fsutil 8dot3name set <drive
+    letter>: 0` (note that you need to run as administrator for this), and then
+    re-create the particular directory. A short name should be generated
+    automatically then. Another option is to manually assign a short name to
+    the directory using `fsutil file setShortName <path> <short name>`.
+
+  * If using [Cygwin](#cygwin), you must make sure the file permissions and
+    attributes between Windows and Cygwin are consistent. It is recommended
+    that you follow this procedure:
+
+    * Create the directory that is going to contain the top directory of the
+      JDK clone by using the `mkdir` command in the Cygwin bash shell. That is,
+      do *not* create it using Windows Explorer. This will ensure that it will
+      have proper Cygwin attributes, and that it's children will inherit those
+      attributes.
+
+    * Do not put the JDK clone in a path under your Cygwin home directory. This
+      is especially important if your user name contains spaces and/or mixed
+      upper and lower case letters.
+
+    Failure to follow these procedures might result in hard-to-debug build
+    problems.
 
   * You need to install a git client. You have two choices, Cygwin git or Git
     for Windows. Unfortunately there are pros and cons with each choice.
@@ -112,9 +137,6 @@ on where and how to check out the source code.
       the Skara CLI tooling, however. To alleviate the line ending problems,
       make sure you set `core.autocrlf` to `false` (this is asked during
       installation).
-
-  Failure to follow this procedure might result in hard-to-debug build
-  problems.
 
 ## Build Hardware Requirements
 
@@ -134,8 +156,7 @@ space is required.
 Even for 32-bit builds, it is recommended to use a 64-bit build machine, and
 instead create a 32-bit target using `--with-target-bits=32`.
 
-Note: The Windows 32-bit x86 port is deprecated and may be removed in a future
-release.
+Note: The 32-bit x86 port is deprecated and may be removed in a future release.
 
 ### Building on aarch64
 
@@ -176,7 +197,7 @@ time of writing.
 | ----------------- | ---------------------------------- |
 | Linux/x64         | Oracle Enterprise Linux 6.4 / 8.x  |
 | Linux/aarch64     | Oracle Enterprise Linux 7.6 / 8.x  |
-| macOS             | macOS 13.x (Ventura)               |
+| macOS             | macOS 14.x                         |
 | Windows           | Windows Server 2016                |
 
 The double version numbers for Linux are due to the hybrid model used at
@@ -191,8 +212,7 @@ on different platforms.
 ### Windows
 
 Windows XP is not a supported platform, but all newer Windows should be able to
-build the JDK. (Note: The Windows 32-bit x86 port is deprecated and may be
-removed in a future release.)
+build the JDK.
 
 On Windows, it is important that you pay attention to the instructions in the
 [Special Considerations](#special-considerations).
@@ -329,7 +349,7 @@ difficult for a project such as the JDK to keep pace with a continuously
 updated machine running macOS. See the section on [Apple Xcode](#apple-xcode)
 on some strategies to deal with this.
 
-It is recommended that you use at least macOS 13 (Ventura) and Xcode 14, but
+It is recommended that you use at least macOS 14 and Xcode 15.4, but
 earlier versions may also work.
 
 The standard macOS environment contains the basic tooling needed to build, but
@@ -382,7 +402,7 @@ one-to-one correlation between target operating system and toolchain.
 | ------------------ | ------------------------- |
 | Linux              | gcc, clang                |
 | macOS              | Apple Xcode (using clang) |
-| AIX                | IBM XL C/C++              |
+| AIX                | IBM Open XL C/C++         |
 | Windows            | Microsoft Visual Studio   |
 
 Please see the individual sections on the toolchains for version
@@ -392,43 +412,39 @@ possible to compile the JDK with both older and newer versions, but the closer
 you stay to this list, the more likely you are to compile successfully without
 issues.
 
-| Operating system   | Toolchain version                           |
-| ------------------ | ------------------------------------------- |
-| Linux              | gcc 13.2.0                                  |
-| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)     |
-| Windows            | Microsoft Visual Studio 2022 version 17.6.5 |
+| Operating system   | Toolchain version                            |
+| ------------------ | -------------------------------------------- |
+| Linux              | gcc 14.2.0                                   |
+| macOS              | Apple Xcode 15.4 (using clang 15.0.0)       |
+| Windows            | Microsoft Visual Studio 2022 version 17.13.2 |
 
 All compilers are expected to be able to handle the C11 language standard for
 C, and C++14 for C++.
 
 ### gcc
 
-The minimum accepted version of gcc is 6.0. Older versions will not be accepted
+The minimum accepted version of gcc is 10.0. Older versions will not be accepted
 by `configure`.
 
-The JDK is currently known to compile successfully with gcc version 13.2 or
+The JDK is currently known to compile successfully with gcc version 14.2 or
 newer.
 
 In general, any version between these two should be usable.
 
 ### clang
 
-The minimum accepted version of clang is 3.5. Older versions will not be
+The minimum accepted version of clang is 13. Older versions will not be
 accepted by `configure`.
 
 To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
 
 ### Apple Xcode
 
-The oldest supported version of Xcode is 8.
+The oldest supported version of Xcode is 13.0.
 
-You will need the Xcode command line developer tools to be able to build the
-JDK. (Actually, *only* the command line tools are needed, not the IDE.) The
-simplest way to install these is to run:
-
-```
-xcode-select --install
-```
+You will need to download Xcode either from the App Store or specific versions
+can be easily located via the [Xcode Releases](https://xcodereleases.com)
+website.
 
 When updating Xcode, it is advisable to keep an older version for building the
 JDK. To use a specific version of Xcode you have multiple options:
@@ -487,11 +503,10 @@ that the " characters are essential)
 accordingly. If you have not installed the `BuildTools`, but e.g.
 `Professional`, adjust the product ID accordingly.
 
-### IBM XL C/C++
+### IBM Open XL C/C++
 
-Please consult the AIX section of the [Supported Build Platforms](
-https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK Build
-Wiki page for details about which versions of XLC are supported.
+The minimum accepted version of Open XL is 17.1.1.4. This is in essence clang
+15, and will be treated as such by the OpenJDK build system.
 
 ## Boot JDK Requirements
 
@@ -687,9 +702,9 @@ At least version 3.2 of GNU Bash must be used.
 
 ### Graphviz and Pandoc
 
-In order to build the full docs (see the `--enable-full-docs`
-configure option) [Graphviz](https://www.graphviz.org) and
-[Pandoc](https://pandoc.org) are required. Any recent versions should
+In order to build man pages and the full docs (see the `--enable-full-docs`
+configure option) [Pandoc](https://pandoc.org) is required. For full docs also
+[Graphviz](https://www.graphviz.org) is required. Any recent versions should
 work. For reference, and subject to change, Oracle builds use Graphviz
 9.0.0 and Pandoc 2.19.2.
 
@@ -1464,6 +1479,24 @@ sh ./configure --with-jvm-variants=server \
 
 and run `make` normally.
 
+#### Building for Windows AArch64
+The Visual Studio Build Tools can be used for building the JDK without a full
+Visual Studio installation. To set up the Visual Studio 2022 Build Tools on a
+Windows AArch64 machine for a native build, launch the installer as follows
+in a Windows command prompt:
+
+```
+vs_buildtools.exe --quiet --wait --norestart --nocache ^
+--installPath "%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools" ^
+--add Microsoft.VisualStudio.Component.VC.CoreBuildTools ^
+--add Microsoft.VisualStudio.Component.VC.Tools.ARM64 ^
+--add Microsoft.VisualStudio.Component.Windows11SDK.22621
+```
+
+To generate Windows AArch64 builds using Cygwin on a Windows x64 machine,
+you must set the proper target platform by adding
+`--openjdk-target=aarch64-unknown-cygwin` to your configure command line.
+
 ## Build Performance
 
 Building the JDK requires a lot of horsepower. Some of the build tools can be
@@ -1805,9 +1838,17 @@ temporarily.
 On Windows, when configuring, `fixpath.sh` may report that some directory names
 have spaces. Usually, it assumes those directories have [short
 paths](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name).
-You can run `fsutil file setshortname` in `cmd` on certain directories, such as
-`Microsoft Visual Studio` or `Windows Kits`, to assign arbitrary short paths so
-`configure` can access them.
+You can run `fsutil file setshortname` in `cmd` on directories to assign
+arbitrary short paths so `configure` can access them. If the result says "Access
+denied", it may be that there are processes running in that directory; in this
+case, you can reboot Windows in safe mode and run the command on those directories
+again.
+
+The only directories required to have short paths are `Microsoft Visual Studio`
+and `Windows Kits`; the rest of the "contains space" warnings from `configure`,
+such as `IntelliJ IDEA`, can be ignored. You can choose any short name; once it
+is set, `configure`'s tools like `cygpath` can convert the directory with spaces
+to your chosen short name and pass it to the build system.
 
 ### Getting Help
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @bug 8245654 8256895
  * @summary Interoperability tests with Certigna Root CAs from Dhimyotis
  * @build ValidatePathWithParams
- * @run main/othervm -Djava.security.debug=certpath CertignaCA OCSP
- * @run main/othervm -Djava.security.debug=certpath CertignaCA CRL
+ * @run main/othervm/manual -Djava.security.debug=certpath CertignaCA OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath CertignaCA CRL
  */
 public class CertignaCA {
     // Owner: CN=Certigna Services CA, OID.2.5.4.97=NTRFR-48146308100036,

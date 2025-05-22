@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/counters.hpp"
@@ -34,6 +33,7 @@
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "sanitizers/address.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/debug.hpp"
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
@@ -155,6 +155,11 @@ class VirtualSpaceNodeTest {
 
       // The chunk should be as far committed as was requested
       EXPECT_GE(c->committed_words(), request_commit_words);
+
+      // At the VirtualSpaceNode level, all memory is still poisoned.
+      // Since we bypass the normal way of allocating chunks (ChunkManager::get_chunk), we
+      // need to unpoison this chunk.
+      ASAN_UNPOISON_MEMORY_REGION(c->base(), c->committed_words() * BytesPerWord);
 
       // Zap committed portion.
       DEBUG_ONLY(zap_range(c->base(), c->committed_words());)
@@ -370,7 +375,7 @@ public:
       const bool do_commit = IntRange(100).random_value() >= 50;
       if (do_commit) {
 
-        //LOG("c " SIZE_FORMAT "," SIZE_FORMAT, r.start(), r.end());
+        //LOG("c %zu,%zu", r.start(), r.end());
 
         bool rc = false;
         {
@@ -390,7 +395,7 @@ public:
 
       } else {
 
-        //LOG("u " SIZE_FORMAT "," SIZE_FORMAT, r.start(), r.end());
+        //LOG("u %zu,%zu", r.start(), r.end());
 
         {
           MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);

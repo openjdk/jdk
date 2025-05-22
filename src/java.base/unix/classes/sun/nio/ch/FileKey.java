@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,21 +33,23 @@ import java.io.IOException;
  */
 public class FileKey {
 
-    private long st_dev;    // ID of device
-    private long st_ino;    // Inode number
+    private final long st_dev;    // ID of device
+    private final long st_ino;    // Inode number
 
-    private FileKey() { }
+    private FileKey(long st_dev, long st_ino) {
+        this.st_dev = st_dev;
+        this.st_ino = st_ino;
+    }
 
     public static FileKey create(FileDescriptor fd) throws IOException {
-        FileKey fk = new FileKey();
-        fk.init(fd);
-        return fk;
+        long finfo[] = new long[2];
+        init(fd, finfo);
+        return new FileKey(finfo[0], finfo[1]);
     }
 
     @Override
     public int hashCode() {
-        return (int)(st_dev ^ (st_dev >>> 32)) +
-               (int)(st_ino ^ (st_ino >>> 32));
+        return Long.hashCode(st_dev) + Long.hashCode(st_ino);
     }
 
     @Override
@@ -59,10 +61,10 @@ public class FileKey {
                 && (this.st_ino == other.st_ino);
     }
 
-    private native void init(FileDescriptor fd) throws IOException;
-    private static native void initIDs();
+    private static native void init(FileDescriptor fd, long[] finfo)
+        throws IOException;
 
     static {
-        initIDs();
+        IOUtil.load();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,8 +234,6 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param dest the address of the destination server
      * @return this FtpClient
      * @throws IOException if connection failed.
-     * @throws SecurityException if there is a SecurityManager installed and it
-     * denied the authorization to connect to the destination.
      * @throws FtpProtocolException
      */
     public abstract FtpClient connect(SocketAddress dest) throws FtpProtocolException, IOException;
@@ -247,8 +245,6 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param timeout the value, in milliseconds, to use as a connection timeout
      * @return this FtpClient
      * @throws IOException if connection failed.
-     * @throws SecurityException if there is a SecurityManager installed and it
-     * denied the authorization to connect to the destination.
      * @throws FtpProtocolException
      */
     public abstract FtpClient connect(SocketAddress dest, int timeout) throws FtpProtocolException, IOException;

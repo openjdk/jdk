@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1VMOperations.hpp"
 #include "gc/g1/g1Trace.hpp"
+#include "gc/g1/g1VMOperations.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcId.hpp"
@@ -51,8 +50,9 @@ bool VM_G1CollectFull::skip_operation() const {
 void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
-  _gc_succeeded = g1h->do_full_collection(false /* clear_all_soft_refs */,
-                                          false /* do_maximal_compaction */);
+  g1h->do_full_collection(false /* clear_all_soft_refs */,
+                          false /* do_maximal_compaction */,
+                          size_t(0) /* allocation_word_size */);
 }
 
 VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
@@ -146,7 +146,7 @@ void VM_G1PauseConcurrent::doit() {
 
   G1ConcGCMonitoringScope monitoring_scope(g1h->monitoring_support());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
-  IsGCActiveMark x;
+  IsSTWGCActiveMark x;
 
   work();
 }

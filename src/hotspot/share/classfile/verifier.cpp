@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -60,6 +59,9 @@
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
+#if INCLUDE_CDS
+#include "classfile/systemDictionaryShared.hpp"
+#endif
 
 #define NOFAILOVER_MAJOR_VERSION                       51
 #define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51
@@ -84,15 +86,20 @@ static verify_byte_codes_fn_t verify_byte_codes_fn() {
   if (_verify_byte_codes_fn != nullptr)
     return _verify_byte_codes_fn;
 
+  void *lib_handle = nullptr;
   // Load verify dll
-  char buffer[JVM_MAXPATHLEN];
-  char ebuf[1024];
-  if (!os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify"))
-    return nullptr; // Caller will throw VerifyError
+  if (is_vm_statically_linked()) {
+    lib_handle = os::get_default_process_handle();
+  } else {
+    char buffer[JVM_MAXPATHLEN];
+    char ebuf[1024];
+    if (!os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify"))
+      return nullptr; // Caller will throw VerifyError
 
-  void *lib_handle = os::dll_load(buffer, ebuf, sizeof(ebuf));
-  if (lib_handle == nullptr)
-    return nullptr; // Caller will throw VerifyError
+    lib_handle = os::dll_load(buffer, ebuf, sizeof(ebuf));
+    if (lib_handle == nullptr)
+      return nullptr; // Caller will throw VerifyError
+  }
 
   void *fn = os::dll_lookup(lib_handle, "VerifyClassForMajorVersion");
   if (fn == nullptr)
@@ -104,11 +111,13 @@ static verify_byte_codes_fn_t verify_byte_codes_fn() {
 
 // Methods in Verifier
 
-bool Verifier::should_verify_for(oop class_loader, bool should_verify_class) {
-  return (class_loader == nullptr || !should_verify_class) ?
+// This method determines whether we run the verifier and class file format checking code.
+bool Verifier::should_verify_for(oop class_loader) {
+  return class_loader == nullptr ?
     BytecodeVerificationLocal : BytecodeVerificationRemote;
 }
 
+// This method determines whether we allow package access in access checks in reflection.
 bool Verifier::relax_access_for(oop loader) {
   bool trusted = java_lang_ClassLoader::is_trusted_loader(loader);
   bool need_verify =
@@ -117,6 +126,21 @@ bool Verifier::relax_access_for(oop loader) {
     // verifyRemote
     (!BytecodeVerificationLocal && BytecodeVerificationRemote && !trusted);
   return !need_verify;
+}
+
+// Callers will pass should_verify_class as true, depending on the results of should_verify_for() above,
+// or pass true for redefinition of any class.
+static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class) {
+  Symbol* name = klass->name();
+
+  return (should_verify_class &&
+    // Can not verify the bytecodes for shared classes because they have
+    // already been rewritten to contain constant pool cache indices,
+    // which the verifier can't understand.
+    // Shared classes shouldn't have stackmaps either.
+    // However, bytecodes for shared old classes can be verified because
+    // they have not been rewritten.
+    !(klass->is_shared() && klass->is_rewritten()));
 }
 
 void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class) {
@@ -199,12 +223,9 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
     split_verifier.verify_class(THREAD);
     exception_name = split_verifier.result();
 
-    // If dumping static archive then don't fall back to the old verifier on
-    // verification failure. If a class fails verification with the split verifier,
-    // it might fail the CDS runtime verifier constraint check. In that case, we
-    // don't want to share the class. We only archive classes that pass the split
-    // verifier.
-    bool can_failover = !CDSConfig::is_dumping_static_archive() &&
+    // If dumping {classic, final} static archive, don't bother to run the old verifier, as
+    // the class will be excluded from the archive anyway.
+    bool can_failover = !(CDSConfig::is_dumping_classic_static_archive() || CDSConfig::is_dumping_final_static_archive()) &&
       klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
     if (can_failover && !HAS_PENDING_EXCEPTION &&  // Split verifier doesn't set PENDING_EXCEPTION for failure
@@ -212,6 +233,14 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
          exception_name == vmSymbols::java_lang_ClassFormatError())) {
       log_info(verification)("Fail over class verification to old verifier for: %s", klass->external_name());
       log_info(class, init)("Fail over class verification to old verifier for: %s", klass->external_name());
+#if INCLUDE_CDS
+      // Exclude any classes that are verified with the old verifier, as the old verifier
+      // doesn't call SystemDictionaryShared::add_verification_constraint()
+      if (CDSConfig::is_dumping_archive()) {
+        SystemDictionaryShared::warn_excluded(klass, "Verified with old verifier");
+        SystemDictionaryShared::set_excluded(klass);
+      }
+#endif
       message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
       exception_message = message_buffer;
       exception_name = inference_verify(
@@ -255,7 +284,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
         // or one of it's superclasses, we're in trouble and are going
         // to infinitely recurse when we try to initialize the exception.
         // So bail out here by throwing the preallocated VM error.
-        THROW_OOP_(Universe::virtual_machine_error_instance(), false);
+        THROW_OOP_(Universe::internal_error_instance(), false);
       }
       kls = kls->super();
     }
@@ -265,36 +294,6 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
     assert(exception_message != nullptr, "");
     THROW_MSG_(exception_name, exception_message, false);
   }
-}
-
-bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class) {
-  Symbol* name = klass->name();
-  Klass* refl_serialization_ctor_klass = vmClasses::reflect_SerializationConstructorAccessorImpl_klass();
-
-  bool is_reflect_accessor = refl_serialization_ctor_klass != nullptr &&
-                                klass->is_subtype_of(refl_serialization_ctor_klass);
-
-  return (should_verify_for(klass->class_loader(), should_verify_class) &&
-    // return if the class is a bootstrapping class
-    // or defineClass specified not to verify by default (flags override passed arg)
-    // We need to skip the following four for bootstraping
-    name != vmSymbols::java_lang_Object() &&
-    name != vmSymbols::java_lang_Class() &&
-    name != vmSymbols::java_lang_String() &&
-    name != vmSymbols::java_lang_Throwable() &&
-
-    // Can not verify the bytecodes for shared classes because they have
-    // already been rewritten to contain constant pool cache indices,
-    // which the verifier can't understand.
-    // Shared classes shouldn't have stackmaps either.
-    // However, bytecodes for shared old classes can be verified because
-    // they have not been rewritten.
-    !(klass->is_shared() && klass->is_rewritten()) &&
-
-    // As of the fix for 4486457 we disable verification for all of the
-    // dynamically-generated bytecodes associated with
-    // jdk/internal/reflect/SerializationConstructorAccessor.
-    (!is_reflect_accessor));
 }
 
 Symbol* Verifier::inference_verify(
@@ -445,10 +444,10 @@ void ErrorContext::details(outputStream* ss, const Method* method) const {
 }
 
 void ErrorContext::reason_details(outputStream* ss) const {
-  streamIndentor si(ss);
-  ss->indent().print_cr("Reason:");
-  streamIndentor si2(ss);
-  ss->indent().print("%s", "");
+  StreamIndentor si(ss, 2);
+  ss->print_cr("Reason:");
+
+  StreamIndentor si2(ss, 2);
   switch (_fault) {
     case INVALID_BYTECODE:
       ss->print("Error exists in the bytecode");
@@ -506,7 +505,6 @@ void ErrorContext::reason_details(outputStream* ss) const {
 
 void ErrorContext::location_details(outputStream* ss, const Method* method) const {
   if (_bci != -1 && method != nullptr) {
-    streamIndentor si(ss);
     const char* bytecode_name = "<invalid>";
     if (method->validate_bci(_bci) != -1) {
       Bytecodes::Code code = Bytecodes::code_or_bp_at(method->bcp_from(_bci));
@@ -517,46 +515,50 @@ void ErrorContext::location_details(outputStream* ss, const Method* method) cons
       }
     }
     InstanceKlass* ik = method->method_holder();
-    ss->indent().print_cr("Location:");
-    streamIndentor si2(ss);
-    ss->indent().print_cr("%s.%s%s @%d: %s",
+
+    StreamIndentor si(ss, 2);
+    ss->print_cr("Location:");
+
+    StreamIndentor si2(ss, 2);
+    ss->print_cr("%s.%s%s @%d: %s",
         ik->name()->as_C_string(), method->name()->as_C_string(),
         method->signature()->as_C_string(), _bci, bytecode_name);
   }
 }
 
 void ErrorContext::frame_details(outputStream* ss) const {
-  streamIndentor si(ss);
+  StreamIndentor si(ss, 2);
   if (_type.is_valid() && _type.frame() != nullptr) {
-    ss->indent().print_cr("Current Frame:");
-    streamIndentor si2(ss);
+    ss->print_cr("Current Frame:");
+    StreamIndentor si2(ss, 2);
     _type.frame()->print_on(ss);
   }
   if (_expected.is_valid() && _expected.frame() != nullptr) {
-    ss->indent().print_cr("Stackmap Frame:");
-    streamIndentor si2(ss);
+    ss->print_cr("Stackmap Frame:");
+    StreamIndentor si2(ss, 2);
     _expected.frame()->print_on(ss);
   }
 }
 
 void ErrorContext::bytecode_details(outputStream* ss, const Method* method) const {
   if (method != nullptr) {
-    streamIndentor si(ss);
-    ss->indent().print_cr("Bytecode:");
-    streamIndentor si2(ss);
+    StreamIndentor si(ss, 2);
+    ss->print_cr("Bytecode:");
+    StreamIndentor si2(ss, 2);
     ss->print_data(method->code_base(), method->code_size(), false);
   }
 }
 
 void ErrorContext::handler_details(outputStream* ss, const Method* method) const {
   if (method != nullptr) {
-    streamIndentor si(ss);
+    StreamIndentor si(ss, 2);
+
     ExceptionTable table(method);
     if (table.length() > 0) {
-      ss->indent().print_cr("Exception Handler Table:");
-      streamIndentor si2(ss);
+      ss->print_cr("Exception Handler Table:");
+      StreamIndentor si2(ss, 2);
       for (int i = 0; i < table.length(); ++i) {
-        ss->indent().print_cr("bci [%d, %d] => handler: %d", table.start_pc(i),
+        ss->print_cr("bci [%d, %d] => handler: %d", table.start_pc(i),
             table.end_pc(i), table.handler_pc(i));
       }
     }
@@ -565,17 +567,16 @@ void ErrorContext::handler_details(outputStream* ss, const Method* method) const
 
 void ErrorContext::stackmap_details(outputStream* ss, const Method* method) const {
   if (method != nullptr && method->has_stackmap_table()) {
-    streamIndentor si(ss);
-    ss->indent().print_cr("Stackmap Table:");
+    StreamIndentor si(ss, 2);
+    ss->print_cr("Stackmap Table:");
     Array<u1>* data = method->stackmap_data();
     stack_map_table* sm_table =
         stack_map_table::at((address)data->adr_at(0));
     stack_map_frame* sm_frame = sm_table->entries();
-    streamIndentor si2(ss);
+    StreamIndentor si2(ss, 2);
     int current_offset = -1;
     address end_of_sm_table = (address)sm_table + method->stackmap_data()->length();
     for (u2 i = 0; i < sm_table->number_of_entries(); ++i) {
-      ss->indent();
       if (!sm_frame->verify((address)sm_frame, end_of_sm_table)) {
         sm_frame->print_truncated(ss, current_offset);
         return;
@@ -739,13 +740,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
   Array<u1>* stackmap_data = m->stackmap_data();
   StackMapStream stream(stackmap_data);
-  StackMapReader reader(this, &stream, code_data, code_length, THREAD);
-  StackMapTable stackmap_table(&reader, &current_frame, max_locals, max_stack,
-                               code_data, code_length, CHECK_VERIFY(this));
+  StackMapReader reader(this, &stream, code_data, code_length, &current_frame, max_locals, max_stack, THREAD);
+  StackMapTable stackmap_table(&reader, CHECK_VERIFY(this));
 
   LogTarget(Debug, verification) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm(THREAD);
     LogStream ls(lt);
     stackmap_table.print_on(&ls);
   }
@@ -788,7 +787,6 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
       LogTarget(Debug, verification) lt;
       if (lt.is_enabled()) {
-        ResourceMark rm(THREAD);
         LogStream ls(lt);
         current_frame.print_on(&ls);
         lt.print("offset = %d,  opcode = %s", bci,
@@ -2040,7 +2038,8 @@ void ClassVerifier::verify_cp_type(
 
   verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   unsigned int tag = cp->tag_at(index).value();
-  if ((types & (1 << tag)) == 0) {
+  // tags up to JVM_CONSTANT_ExternalMax are verifiable and valid for shift op
+  if (tag > JVM_CONSTANT_ExternalMax || (types & (1 << tag)) == 0) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
       "Illegal type at constant pool entry %d in class %s",
       index, cp->pool_holder()->external_name());
@@ -2095,15 +2094,13 @@ void ClassVerifier::class_format_error(const char* msg, ...) {
 
 Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
   HandleMark hm(THREAD);
-  // Get current loader and protection domain first.
+  // Get current loader first.
   oop loader = current_class()->class_loader();
-  oop protection_domain = current_class()->protection_domain();
 
   assert(name_in_supers(name, current_class()), "name should be a super class");
 
   Klass* kls = SystemDictionary::resolve_or_fail(
-    name, Handle(THREAD, loader), Handle(THREAD, protection_domain),
-    true, THREAD);
+    name, Handle(THREAD, loader), true, THREAD);
 
   if (kls != nullptr) {
     if (log_is_enabled(Debug, class, resolve)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public enum CompilePhase {
     ELIMINATE_VBOX_ALLOC("Eliminate VectorBoxAllocate"),
     ITER_GVN_BEFORE_EA("Iter GVN before EA"),
     ITER_GVN_AFTER_VECTOR("Iter GVN after vector box elimination"),
+    BEFORE_LOOP_OPTS("Before Loop Optimizations"),
     BEFORE_BEAUTIFY_LOOPS("Before beautify loops"),
     AFTER_BEAUTIFY_LOOPS("After beautify loops"),
     BEFORE_LOOP_UNROLLING("Before Loop Unrolling"),
@@ -95,6 +96,8 @@ public enum CompilePhase {
     CCP1("PhaseCCP 1"),
     ITER_GVN2("Iter GVN 2"),
     PHASEIDEALLOOP_ITERATIONS("PhaseIdealLoop iterations"),
+    AFTER_LOOP_OPTS("After Loop Optimizations"),
+    AFTER_MERGE_STORES("After Merge Stores"),
     BEFORE_MACRO_EXPANSION("Before Macro Expansion"),
     AFTER_MACRO_EXPANSION_STEP("After Macro Expansion Step"),
     AFTER_MACRO_EXPANSION("After Macro Expansion"),
@@ -104,6 +107,15 @@ public enum CompilePhase {
     BEFORE_MATCHING("Before matching"),
     MATCHING("After matching", RegexType.MACH),
     GLOBAL_CODE_MOTION("Global code motion", RegexType.MACH),
+    INITIAL_LIVENESS("Initial liveness", RegexType.MACH),
+    AGGRESSIVE_COALESCING("Aggressive coalescing", RegexType.MACH),
+    INITIAL_SPILLING("Initial spilling", RegexType.MACH),
+    CONSERVATIVE_COALESCING("Conservative coalescing", RegexType.MACH, ActionOnRepeat.KEEP_FIRST),
+    ITERATIVE_SPILLING("Iterative spilling", RegexType.MACH, ActionOnRepeat.KEEP_FIRST),
+    AFTER_ITERATIVE_SPILLING("After iterative spilling", RegexType.MACH),
+    POST_ALLOCATION_COPY_REMOVAL("Post-allocation copy removal", RegexType.MACH),
+    MERGE_MULTI_DEFS("Merge multiple definitions", RegexType.MACH),
+    FIX_UP_SPILLS("Fix up spills", RegexType.MACH),
     REGISTER_ALLOCATION("Register Allocation", RegexType.MACH),
     BLOCK_ORDERING("Block Ordering", RegexType.MACH),
     PEEPHOLE("Peephole", RegexType.MACH),

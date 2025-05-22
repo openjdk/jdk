@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,93 @@
 
 #include "gc/z/zLock.inline.hpp"
 #include "runtime/atomic.hpp"
+
+template <typename T>
+ZArraySlice<T>::ZArraySlice(T* data, int len)
+  : GrowableArrayView<T>(data, len, len) {}
+
+template <typename T>
+ZArraySlice<T> ZArraySlice<T>::slice_front(int end) {
+  return slice(0, end);
+}
+
+template <typename T>
+ZArraySlice<const T> ZArraySlice<T>::slice_front(int end) const {
+  return slice(0, end);
+}
+
+template <typename T>
+ZArraySlice<T> ZArraySlice<T>::slice_back(int start) {
+  return slice(start, this->_len);
+}
+
+template <typename T>
+ZArraySlice<const T> ZArraySlice<T>::slice_back(int start) const {
+  return slice(start, this->_len);
+}
+
+template <typename T>
+ZArraySlice<T> ZArraySlice<T>::slice(int start, int end) {
+  assert(0 <= start && start <= end && end <= this->_len,
+         "slice called with invalid range (%d, %d) for length %d", start, end, this->_len);
+  return ZArraySlice<T>(this->_data + start, end - start);
+}
+
+template <typename T>
+ZArraySlice<const T> ZArraySlice<T>::slice(int start, int end) const {
+  assert(0 <= start && start <= end && end <= this->_len,
+         "slice called with invalid range (%d, %d) for length %d", start, end, this->_len);
+  return ZArraySlice<const T>(this->_data + start, end - start);
+}
+
+template <typename T>
+ZArraySlice<T>::operator ZArraySlice<const T>() const {
+  return slice(0, this->_len);
+}
+
+template <typename T>
+ZArraySlice<T> ZArray<T>::slice_front(int end) {
+  return slice(0, end);
+}
+
+template <typename T>
+ZArraySlice<const T> ZArray<T>::slice_front(int end) const {
+  return slice(0, end);
+}
+
+template <typename T>
+ZArraySlice<T> ZArray<T>::slice_back(int start) {
+  return slice(start, this->_len);
+}
+
+template <typename T>
+ZArraySlice<const T> ZArray<T>::slice_back(int start) const {
+  return slice(start, this->_len);
+}
+
+template <typename T>
+ZArraySlice<T> ZArray<T>::slice(int start, int end) {
+  assert(0 <= start && start <= end && end <= this->_len,
+         "slice called with invalid range (%d, %d) for length %d", start, end, this->_len);
+  return ZArraySlice<T>(this->_data + start, end - start);
+}
+
+template <typename T>
+ZArraySlice<const T> ZArray<T>::slice(int start, int end) const {
+  assert(0 <= start && start <= end && end <= this->_len,
+         "slice called with invalid range (%d, %d) for length %d", start, end, this->_len);
+  return ZArraySlice<const T>(this->_data + start, end - start);
+}
+
+template <typename T>
+ZArray<T>::operator ZArraySlice<T>() {
+  return slice(0, this->_len);
+}
+
+template <typename T>
+ZArray<T>::operator ZArraySlice<const T>() const {
+  return slice(0, this->_len);
+}
 
 template <typename T, bool Parallel>
 inline bool ZArrayIteratorImpl<T, Parallel>::next_serial(size_t* index) {
@@ -61,7 +148,7 @@ inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const T* array, size_
 
 template <typename T, bool Parallel>
 inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const ZArray<T>* array)
-  : ZArrayIteratorImpl<T, Parallel>(array->is_empty() ? nullptr : array->adr_at(0), array->length()) {}
+  : ZArrayIteratorImpl<T, Parallel>(array->is_empty() ? nullptr : array->adr_at(0), (size_t)array->length()) {}
 
 template <typename T, bool Parallel>
 inline bool ZArrayIteratorImpl<T, Parallel>::next(T* elem) {
@@ -96,7 +183,7 @@ ZActivatedArray<T>::ZActivatedArray(bool locked)
     _array() {}
 
 template <typename T>
-ZActivatedArray<T>::~ZActivatedArray<T>() {
+ZActivatedArray<T>::~ZActivatedArray() {
   FreeHeap(_lock);
 }
 

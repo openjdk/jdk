@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -168,8 +167,10 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
   if (index->is_register()) {
     // apply the shift and accumulate the displacement
     if (shift > 0) {
-      LIR_Opr tmp = new_pointer_register();
-      __ shift_left(index, shift, tmp);
+      // Use long register to avoid overflow when shifting large index values left.
+      LIR_Opr tmp = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, index, tmp);
+      __ shift_left(tmp, shift, tmp);
       index = tmp;
     }
     if (large_disp != 0) {
@@ -275,18 +276,20 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
-
-  if (is_power_of_2(c - 1)) {
-    __ shift_left(left, exact_log2(c - 1), tmp);
+  juint u_value = (juint)c;
+  if (is_power_of_2(u_value - 1)) {
+    __ shift_left(left, exact_log2(u_value - 1), tmp);
     __ add(tmp, left, result);
     return true;
-  } else if (is_power_of_2(c + 1)) {
-    __ shift_left(left, exact_log2(c + 1), tmp);
+  } else if (is_power_of_2(u_value + 1)) {
+    __ shift_left(left, exact_log2(u_value + 1), tmp);
     __ sub(tmp, left, result);
     return true;
-  } else {
-    return false;
+  } else if (c == -1) {
+    __ negate(left, result);
+    return true;
   }
+  return false;
 }
 
 void LIRGenerator::store_stack_parameter (LIR_Opr item, ByteSize offset_from_sp) {
@@ -404,7 +407,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
 
   arithmetic_op_fpu(x->op(), reg, left.result(), right.result());
 
-  set_result(x, round_item(reg));
+  set_result(x, reg);
 }
 
 // for  _ladd, _lmul, _lsub, _ldiv, _lrem
@@ -775,13 +778,11 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
         }
         case vmIntrinsics::_floatToFloat16: {
           LIR_Opr tmp = new_register(T_FLOAT);
-          __ move(LIR_OprFact::floatConst(-0.0), tmp);
           __ f2hf(src, dst, tmp);
           break;
         }
         case vmIntrinsics::_float16ToFloat: {
           LIR_Opr tmp = new_register(T_FLOAT);
-          __ move(LIR_OprFact::floatConst(-0.0), tmp);
           __ hf2f(src, dst, tmp);
           break;
         }
@@ -876,7 +877,13 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   assert(x->number_of_arguments() == 5, "wrong type");
 
   // Make all state_for calls early since they can emit code
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem src(x->argument_at(0), this);
   LIRItem src_pos(x->argument_at(1), this);
@@ -909,6 +916,9 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   int flags;
   ciArrayKlass* expected_type;
   arraycopy_helper(x, &flags, &expected_type);
+  if (x->check_flag(Instruction::OmitChecksFlag)) {
+    flags = 0;
+  }
 
   __ arraycopy(src.result(), src_pos.result(), dst.result(), dst_pos.result(), length.result(), tmp, expected_type, flags, info); // does add_safepoint
 }
@@ -1130,7 +1140,13 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
 }
 
 void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem length(x->length(), this);
   length.load_item_force(FrameMap::r19_opr);
@@ -1147,7 +1163,7 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   __ metadata2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
 
   CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len, reg, info);
-  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path);
+  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path, x->zero_array());
 
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);
@@ -1229,7 +1245,7 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   args->append(rank);
   args->append(varargs);
   LIR_Opr reg = result_register_for(x->type());
-  __ call_runtime(Runtime1::entry_for(Runtime1::new_multi_array_id),
+  __ call_runtime(Runtime1::entry_for(C1StubId::new_multi_array_id),
                   LIR_OprFact::illegalOpr,
                   reg, args, info);
 
@@ -1260,14 +1276,14 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   CodeStub* stub;
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == nullptr, "can't patch this");
-    stub = new SimpleExceptionStub(Runtime1::throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr, info_for_exception);
+    stub = new SimpleExceptionStub(C1StubId::throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr, info_for_exception);
   } else if (x->is_invokespecial_receiver_check()) {
     assert(patching_info == nullptr, "can't patch this");
     stub = new DeoptimizeStub(info_for_exception,
                               Deoptimization::Reason_class_check,
                               Deoptimization::Action_none);
   } else {
-    stub = new SimpleExceptionStub(Runtime1::throw_class_cast_exception_id, obj.result(), info_for_exception);
+    stub = new SimpleExceptionStub(C1StubId::throw_class_cast_exception_id, obj.result(), info_for_exception);
   }
   LIR_Opr reg = rlock_result(x);
   LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
@@ -1298,6 +1314,11 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   __ instanceof(reg, obj.result(), x->klass(),
                 new_register(objectType), new_register(objectType), tmp3,
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
+}
+
+// Intrinsic for Class::isInstance
+address LIRGenerator::isInstance_entry() {
+  return Runtime1::entry_for(C1StubId::is_instance_of_id);
 }
 
 void LIRGenerator::do_If(If* x) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.awt.image.*;
  *
  * @author Jim Graham
  */
-@SuppressWarnings("removal")
+@SuppressWarnings("restricted")
 public class JPEGImageDecoder extends ImageDecoder {
     private static ColorModel RGBcolormodel;
     private static ColorModel ARGBcolormodel;
@@ -54,13 +54,7 @@ public class JPEGImageDecoder extends ImageDecoder {
     private ColorModel colormodel;
 
     static {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("javajpeg");
-                    return null;
-                }
-            });
+        System.loadLibrary("javajpeg");
         initIDs(InputStreamClass);
         RGBcolormodel = new DirectColorModel(24, 0xff0000, 0xff00, 0xff);
         ARGBcolormodel = ColorModel.getRGBdefault();

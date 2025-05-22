@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +36,6 @@ import java.nio.ByteOrder;
  * @test
  * @bug 8300258
  * @key randomness
- * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @summary C2: vectorization fails on simple ByteBuffer loop
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -50,10 +50,19 @@ public class TestVectorizationMismatchedAccess {
     private final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
-        if (ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN) {
-            throw new RuntimeException("fix test that was written for a little endian platform");
-        }
-        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+        // Cross-product: +-AlignVector and +-UseCompactObjectHeaders
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
+                                   "-XX:-AlignVector");
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
+                                   "-XX:+AlignVector");
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders",
+                                   "-XX:-AlignVector");
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders",
+                                   "-XX:+AlignVector");
     }
 
     static int size = 1024;
@@ -75,6 +84,14 @@ public class TestVectorizationMismatchedAccess {
                 verifyLongArray[i] = verifyLongArray[i] | (((long)verifyByteArray[8 * i + j]) << 8 * j);
             }
         }
+    }
+
+    // Method to adjust the value for the native byte order
+    static private long handleByteOrder(long value) {
+        if (ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN) {
+            value = Long.reverseBytes(value);
+        }
+        return value;
     }
 
     static private void runAndVerify(Runnable test, int offset) {
@@ -147,193 +164,502 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
-    public static void testByteLong1(byte[] dest, long[] src) {
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
+    //         might get fixed with JDK-8325155.
+    public static void testByteLong1a(byte[] dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i, src[i]);
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i, handleByteOrder(src[i]));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                  UseCompactObjectHeaders=true
+            // B_adr = base + 16 + 8*i  ->  always            B_adr = base + 12 + 8*i  ->  never
+            // L_adr = base + 16 + 8*i  ->  always            L_adr = base + 16 + 8*i  ->  always
+            // -> vectorize                                   -> no vectorization
         }
-    }
-
-    @Run(test = "testByteLong1")
-    public static void testByteLong1_runner() {
-        runAndVerify(() -> testByteLong1(byteArray, longArray), 0);
-    }
-
-    @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
-    public static void testByteLong2(byte[] dest, long[] src) {
-        for (int i = 1; i < src.length; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), src[i]);
-        }
-    }
-
-    @Run(test = "testByteLong2")
-    public static void testByteLong2_runner() {
-        runAndVerify(() -> testByteLong2(byteArray, longArray), -8);
-    }
-
-    @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
-    public static void testByteLong3(byte[] dest, long[] src) {
-        for (int i = 0; i < src.length - 1; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + 1), src[i]);
-        }
-    }
-
-    @Run(test = "testByteLong3")
-    public static void testByteLong3_runner() {
-        runAndVerify(() -> testByteLong3(byteArray, longArray), 8);
     }
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
-        applyIf = {"AlignVector", "false"})
-    // AlignVector cannot guarantee that invar is aligned.
-    public static void testByteLong4(byte[] dest, long[] src, int start, int stop) {
-        for (int i = start; i < stop; i++) {
-            UNSAFE.putLongUnaligned(dest, 8 * i + baseOffset, src[i]);
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: address has ConvL2I for cast of long to address, not supported.
+    public static void testByteLong1b(byte[] dest, long[] src) {
+        for (int i = 0; i < src.length; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * i, handleByteOrder(src[i]));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                  UseCompactObjectHeaders=true
+            // B_adr = base + 16 + 8*i  ->  always            B_adr = base + 12 + 8*i  ->  never
+            // L_adr = base + 16 + 8*i  ->  always            L_adr = base + 16 + 8*i  ->  always
+            // -> vectorize                                   -> no vectorization
         }
     }
 
-    @Run(test = "testByteLong4")
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"})
+    public static void testByteLong1c(byte[] dest, long[] src) {
+        long base = 64; // make sure it is big enough and 8 byte aligned (required for 32-bit)
+        for (int i = 0; i < src.length - 8; i++) {
+            UNSAFE.putLongUnaligned(dest, base + 8 * i, handleByteOrder(src[i]));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                  UseCompactObjectHeaders=true
+            // B_adr = base + 64 + 8*i  ->  always            B_adr = base + 64 + 8*i  ->  always
+            // L_adr = base + 16 + 8*i  ->  always            L_adr = base + 16 + 8*i  ->  always
+            // -> vectorize                                   -> vectorize
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: address has ConvL2I for cast of long to address, not supported.
+    public static void testByteLong1d(byte[] dest, long[] src) {
+        long base = 64; // make sure it is big enough and 8 byte aligned (required for 32-bit)
+        for (int i = 0; i < src.length - 8; i++) {
+            UNSAFE.putLongUnaligned(dest, base + 8L * i, handleByteOrder(src[i]));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                  UseCompactObjectHeaders=true
+            // B_adr = base + 64 + 8*i  ->  always            B_adr = base + 64 + 8*i  ->  always
+            // L_adr = base + 16 + 8*i  ->  always            L_adr = base + 16 + 8*i  ->  always
+            // -> vectorize                                   -> vectorize
+        }
+    }
+
+    @Run(test = {"testByteLong1a", "testByteLong1b", "testByteLong1c", "testByteLong1d"})
+    public static void testByteLong1_runner() {
+        runAndVerify(() -> testByteLong1a(byteArray, longArray), 0);
+        runAndVerify(() -> testByteLong1b(byteArray, longArray), 0);
+        testByteLong1c(byteArray, longArray);
+        testByteLong1d(byteArray, longArray);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
+    //         might get fixed with JDK-8325155.
+    public static void testByteLong2a(byte[] dest, long[] src) {
+        for (int i = 1; i < src.length; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), handleByteOrder(src[i]));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                      UseCompactObjectHeaders=true
+            // B_adr = base + 16 + 8*(i-1)  ->  always            B_adr = base + 12 + 8*(i-1)  ->  never
+            // L_adr = base + 16 + 8*i      ->  always            L_adr = base + 16 + 8*i      ->  always
+            // -> vectorize                                       -> no vectorization
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: address has ConvL2I for cast of long to address, not supported.
+    public static void testByteLong2b(byte[] dest, long[] src) {
+        for (int i = 1; i < src.length; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i - 1), handleByteOrder(src[i]));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                      UseCompactObjectHeaders=true
+            // B_adr = base + 16 + 8*(i-1)  ->  always            B_adr = base + 12 + 8*(i-1)  ->  never
+            // L_adr = base + 16 + 8*i      ->  always            L_adr = base + 16 + 8*i      ->  always
+            // -> vectorize                                       -> no vectorization
+        }
+    }
+
+    @Run(test = {"testByteLong2a", "testByteLong2b"})
+    public static void testByteLong2_runner() {
+        runAndVerify(() -> testByteLong2a(byteArray, longArray), -8);
+        runAndVerify(() -> testByteLong2b(byteArray, longArray), -8);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
+    //         might get fixed with JDK-8325155.
+    public static void testByteLong3a(byte[] dest, long[] src) {
+        for (int i = 0; i < src.length - 1; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + 1), handleByteOrder(src[i]));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                      UseCompactObjectHeaders=true
+            // B_adr = base + 16 + 8*(i+1)  ->  always            B_adr = base + 12 + 8*(i+1)  ->  never
+            // L_adr = base + 16 + 8*i      ->  always            L_adr = base + 16 + 8*i      ->  always
+            // -> vectorize                                       -> no vectorization
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: address has ConvL2I for cast of long to address, not supported.
+    public static void testByteLong3b(byte[] dest, long[] src) {
+        for (int i = 0; i < src.length - 1; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i + 1), handleByteOrder(src[i]));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                      UseCompactObjectHeaders=true
+            // B_adr = base + 16 + 8*(i+1)  ->  always            B_adr = base + 12 + 8*(i+1)  ->  never
+            // L_adr = base + 16 + 8*i      ->  always            L_adr = base + 16 + 8*i      ->  always
+            // -> vectorize                                       -> no vectorization
+        }
+    }
+
+    @Run(test = {"testByteLong3a", "testByteLong3b"})
+    public static void testByteLong3_runner() {
+        runAndVerify(() -> testByteLong3a(byteArray, longArray), 8);
+        runAndVerify(() -> testByteLong3b(byteArray, longArray), 8);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"})
+    // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
+    //         might get fixed with JDK-8325155.
+    // AlignVector cannot guarantee that invar is aligned.
+    public static void testByteLong4a(byte[] dest, long[] src, int start, int stop) {
+        for (int i = start; i < stop; i++) {
+            UNSAFE.putLongUnaligned(dest, 8 * i + baseOffset, handleByteOrder(src[i]));
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"})
+    // 32-bit: address has ConvL2I for cast of long to address, not supported.
+    // AlignVector cannot guarantee that invar is aligned.
+    public static void testByteLong4b(byte[] dest, long[] src, int start, int stop) {
+        for (int i = start; i < stop; i++) {
+            UNSAFE.putLongUnaligned(dest, 8L * i + baseOffset, handleByteOrder(src[i]));
+        }
+    }
+
+    @Run(test = {"testByteLong4a", "testByteLong4b"})
     public static void testByteLong4_runner() {
         baseOffset = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
-        runAndVerify(() -> testByteLong4(byteArray, longArray, 0, size), 0);
+        runAndVerify(() -> testByteLong4a(byteArray, longArray, 0, size), 0);
+        runAndVerify(() -> testByteLong4b(byteArray, longArray, 0, size), 0);
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
-    public static void testByteLong5(byte[] dest, long[] src, int start, int stop) {
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
+    //         might get fixed with JDK-8325155.
+    public static void testByteLong5a(byte[] dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + baseOffset), src[i]);
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + baseOffset), handleByteOrder(src[i]));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                      UseCompactObjectHeaders=true
+            // B_adr = base + 16 + 8*(i+x)  ->  always            B_adr = base + 12 + 8*(i+x)  ->  never
+            // L_adr = base + 16 + 8*i      ->  always            L_adr = base + 16 + 8*i      ->  always
+            // -> vectorize                                       -> no vectorization
         }
     }
 
-    @Run(test = "testByteLong5")
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: address has ConvL2I for cast of long to address, not supported.
+    public static void testByteLong5b(byte[] dest, long[] src, int start, int stop) {
+        for (int i = start; i < stop; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i + baseOffset), handleByteOrder(src[i]));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                      UseCompactObjectHeaders=true
+            // B_adr = base + 16 + 8*(i+x)  ->  always            B_adr = base + 12 + 8*(i+x)  ->  never
+            // L_adr = base + 16 + 8*i      ->  always            L_adr = base + 16 + 8*i      ->  always
+            // -> vectorize                                       -> no vectorization
+        }
+    }
+
+    @Run(test = {"testByteLong5a", "testByteLong5b"})
     public static void testByteLong5_runner() {
         baseOffset = 1;
-        runAndVerify(() -> testByteLong5(byteArray, longArray, 0, size-1), 8);
+        runAndVerify(() -> testByteLong5a(byteArray, longArray, 0, size-1), 8);
+        runAndVerify(() -> testByteLong5b(byteArray, longArray, 0, size-1), 8);
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
-    public static void testByteByte1(byte[] dest, byte[] src) {
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
+    //         might get fixed with JDK-8325155.
+    public static void testByteByte1a(byte[] dest, byte[] src) {
         for (int i = 0; i < src.length / 8; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i, UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                    UseCompactObjectHeaders=true
+            // src_adr = base + 16 + 8*i  ->  always            src_adr = base + 12 + 8*i  ->  never
+            // dst_adr = base + 16 + 8*i  ->  always            dst_adr = base + 12 + 8*i  ->  never
+            // -> vectorize                                     -> no vectorization
         }
-    }
-
-    @Run(test = "testByteByte1")
-    public static void testByteByte1_runner() {
-        runAndVerify2(() -> testByteByte1(byteArray, byteArray), 0);
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
-    public static void testByteByte2(byte[] dest, byte[] src) {
-        for (int i = 1; i < src.length / 8; i++) {
-            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: address has ConvL2I for cast of long to address, not supported.
+    public static void testByteByte1b(byte[] dest, byte[] src) {
+        for (int i = 0; i < src.length / 8; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * i, UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * i));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                    UseCompactObjectHeaders=true
+            // src_adr = base + 16 + 8*i  ->  always            src_adr = base + 12 + 8*i  ->  never
+            // dst_adr = base + 16 + 8*i  ->  always            dst_adr = base + 12 + 8*i  ->  never
+            // -> vectorize                                     -> no vectorization
         }
     }
 
-    @Run(test = "testByteByte2")
+    @Run(test = {"testByteByte1a", "testByteByte1b"})
+    public static void testByteByte1_runner() {
+        runAndVerify2(() -> testByteByte1a(byteArray, byteArray), 0);
+        runAndVerify2(() -> testByteByte1b(byteArray, byteArray), 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: offsets are badly aligned (UNSAFE.ARRAY_BYTE_BASE_OFFSET is 4 byte aligned, but not 8 byte aligned).
+    //         might get fixed with JDK-8325155.
+    public static void testByteByte2a(byte[] dest, byte[] src) {
+        for (int i = 1; i < src.length / 8; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                        UseCompactObjectHeaders=true
+            // src_adr = base + 16 + 8*i      ->  always            src_adr = base + 12 + 8*i      ->  never
+            // dst_adr = base + 16 + 8*(i-1)  ->  always            dst_adr = base + 12 + 8*(i-1)  ->  never
+            // -> vectorize                                         -> no vectorization
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfPlatform = {"64-bit", "true"})
+    // 32-bit: address has ConvL2I for cast of long to address, not supported.
+    public static void testByteByte2b(byte[] dest, byte[] src) {
+        for (int i = 1; i < src.length / 8; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i - 1), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * i));
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                        UseCompactObjectHeaders=true
+            // src_adr = base + 16 + 8*i      ->  always            src_adr = base + 12 + 8*i      ->  never
+            // dst_adr = base + 16 + 8*(i-1)  ->  always            dst_adr = base + 12 + 8*(i-1)  ->  never
+            // -> vectorize                                         -> no vectorization
+        }
+    }
+
+    @Run(test = {"testByteByte2a", "testByteByte2b"})
     public static void testByteByte2_runner() {
-        runAndVerify2(() -> testByteByte2(byteArray, byteArray), -8);
+        runAndVerify2(() -> testByteByte2a(byteArray, byteArray), -8);
+        runAndVerify2(() -> testByteByte2b(byteArray, byteArray), -8);
     }
 
     @Test
     @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
-    public static void testByteByte3(byte[] dest, byte[] src) {
+    public static void testByteByte3a(byte[] dest, byte[] src) {
         for (int i = 0; i < src.length / 8 - 1; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + 1), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
         }
     }
 
-    @Run(test = "testByteByte3")
+    @Test
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
+    public static void testByteByte3b(byte[] dest, byte[] src) {
+        for (int i = 0; i < src.length / 8 - 1; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i + 1), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * i));
+        }
+    }
+
+    @Run(test = {"testByteByte3a", "testByteByte3b"})
     public static void testByteByte3_runner() {
-        runAndVerify2(() -> testByteByte3(byteArray, byteArray), 8);
+        runAndVerify2(() -> testByteByte3a(byteArray, byteArray), 8);
+        runAndVerify2(() -> testByteByte3b(byteArray, byteArray), 8);
     }
 
     @Test
     @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
-    public static void testByteByte4(byte[] dest, byte[] src, int start, int stop) {
+    public static void testByteByte4a(byte[] dest, byte[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(dest, 8 * i + baseOffset, UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
         }
     }
 
-    @Run(test = "testByteByte4")
+    @Test
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
+    public static void testByteByte4b(byte[] dest, byte[] src, int start, int stop) {
+        for (int i = start; i < stop; i++) {
+            UNSAFE.putLongUnaligned(dest, 8L * i + baseOffset, UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * i));
+        }
+    }
+
+    @Run(test = {"testByteByte4a", "testByteByte4b"})
     public static void testByteByte4_runner() {
         baseOffset = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
-        runAndVerify2(() -> testByteByte4(byteArray, byteArray, 0, size), 0);
+        runAndVerify2(() -> testByteByte4a(byteArray, byteArray, 0, size), 0);
+        runAndVerify2(() -> testByteByte4b(byteArray, byteArray, 0, size), 0);
     }
 
     @Test
     @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
-    public static void testByteByte5(byte[] dest, byte[] src, int start, int stop) {
+    public static void testByteByte5a(byte[] dest, byte[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + baseOffset), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
         }
     }
 
-    @Run(test = "testByteByte5")
+    @Test
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
+    public static void testByteByte5b(byte[] dest, byte[] src, int start, int stop) {
+        for (int i = start; i < stop; i++) {
+            UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i + baseOffset), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * i));
+        }
+    }
+
+    @Run(test = {"testByteByte5a", "testByteByte5b"})
     public static void testByteByte5_runner() {
         baseOffset = 1;
-        runAndVerify2(() -> testByteByte5(byteArray, byteArray, 0, size-1), 8);
+        runAndVerify2(() -> testByteByte5a(byteArray, byteArray, 0, size-1), 8);
+        runAndVerify2(() -> testByteByte5b(byteArray, byteArray, 0, size-1), 8);
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
-    public static void testOffHeapLong1(long dest, long[] src) {
+    @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
+    // @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    // FAILS: adr is CastX2P(dest + 8 * (i + int_con))
+    // See: JDK-8331576
+    public static void testOffHeapLong1a(long dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
-            UNSAFE.putLongUnaligned(null, dest + 8 * i, src[i]);
+            UNSAFE.putLongUnaligned(null, dest + 8 * i, handleByteOrder(src[i]));
         }
     }
 
-    @Run(test = "testOffHeapLong1")
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
+    // @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    // FAILS: adr is CastX2P(dest + 8L * (i + int_con))
+    // See: JDK-8331576
+    public static void testOffHeapLong1b(long dest, long[] src) {
+        for (int i = 0; i < src.length; i++) {
+            UNSAFE.putLongUnaligned(null, dest + 8L * i, handleByteOrder(src[i]));
+        }
+    }
+
+    @Run(test = {"testOffHeapLong1a", "testOffHeapLong1b"})
     public static void testOffHeapLong1_runner() {
-        runAndVerify3(() -> testOffHeapLong1(baseOffHeap, longArray), 0);
+        runAndVerify3(() -> testOffHeapLong1a(baseOffHeap, longArray), 0);
+        runAndVerify3(() -> testOffHeapLong1b(baseOffHeap, longArray), 0);
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
-    public static void testOffHeapLong2(long dest, long[] src) {
+    @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
+    // @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    // FAILS: adr is CastX2P
+    // See: JDK-8331576
+    public static void testOffHeapLong2a(long dest, long[] src) {
         for (int i = 1; i < src.length; i++) {
-            UNSAFE.putLongUnaligned(null, dest + 8 * (i - 1), src[i]);
+            UNSAFE.putLongUnaligned(null, dest + 8 * (i - 1), handleByteOrder(src[i]));
         }
     }
 
-    @Run(test = "testOffHeapLong2")
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
+    // @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    // FAILS: adr is CastX2P
+    // See: JDK-8331576
+    public static void testOffHeapLong2b(long dest, long[] src) {
+        for (int i = 1; i < src.length; i++) {
+            UNSAFE.putLongUnaligned(null, dest + 8L * (i - 1), handleByteOrder(src[i]));
+        }
+    }
+
+    @Run(test = {"testOffHeapLong2a", "testOffHeapLong2b"})
     public static void testOffHeapLong2_runner() {
-        runAndVerify3(() -> testOffHeapLong2(baseOffHeap, longArray), -8);
+        runAndVerify3(() -> testOffHeapLong2a(baseOffHeap, longArray), -8);
+        runAndVerify3(() -> testOffHeapLong2b(baseOffHeap, longArray), -8);
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
-    public static void testOffHeapLong3(long dest, long[] src) {
+    @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
+    // @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    // FAILS: adr is CastX2P
+    // See: JDK-8331576
+    public static void testOffHeapLong3a(long dest, long[] src) {
         for (int i = 0; i < src.length - 1; i++) {
-            UNSAFE.putLongUnaligned(null, dest + 8 * (i + 1), src[i]);
+            UNSAFE.putLongUnaligned(null, dest + 8 * (i + 1), handleByteOrder(src[i]));
         }
-    }
-
-    @Run(test = "testOffHeapLong3")
-    public static void testOffHeapLong3_runner() {
-        runAndVerify3(() -> testOffHeapLong3(baseOffHeap, longArray), 8);
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
-        applyIf = {"AlignVector", "false"})
-    // AlignVector cannot guarantee that invar is aligned.
-    public static void testOffHeapLong4(long dest, long[] src, int start, int stop) {
-        for (int i = start; i < stop; i++) {
-            UNSAFE.putLongUnaligned(null, dest + 8 * i + baseOffset, src[i]);
+    @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
+    // @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    // FAILS: adr is CastX2P
+    // See: JDK-8331576
+    public static void testOffHeapLong3b(long dest, long[] src) {
+        for (int i = 0; i < src.length - 1; i++) {
+            UNSAFE.putLongUnaligned(null, dest + 8L * (i + 1), handleByteOrder(src[i]));
         }
     }
 
-    @Run(test = "testOffHeapLong4")
+    @Run(test = {"testOffHeapLong3a", "testOffHeapLong3b"})
+    public static void testOffHeapLong3_runner() {
+        runAndVerify3(() -> testOffHeapLong3a(baseOffHeap, longArray), 8);
+        runAndVerify3(() -> testOffHeapLong3b(baseOffHeap, longArray), 8);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
+    // @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+    //     applyIf = {"AlignVector", "false"})
+    // FAILS: adr is CastX2P
+    // See: JDK-8331576
+    // AlignVector cannot guarantee that invar is aligned.
+    public static void testOffHeapLong4a(long dest, long[] src, int start, int stop) {
+        for (int i = start; i < stop; i++) {
+            UNSAFE.putLongUnaligned(null, dest + 8 * i + baseOffset, handleByteOrder(src[i]));
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOAD_VECTOR_L, "=0", IRNode.STORE_VECTOR, "=0" }) // temporary
+    // @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+    //     applyIf = {"AlignVector", "false"})
+    // FAILS: adr is CastX2P
+    // See: JDK-8331576
+    // AlignVector cannot guarantee that invar is aligned.
+    public static void testOffHeapLong4b(long dest, long[] src, int start, int stop) {
+        for (int i = start; i < stop; i++) {
+            UNSAFE.putLongUnaligned(null, dest + 8L * i + baseOffset, handleByteOrder(src[i]));
+        }
+    }
+
+    @Run(test = {"testOffHeapLong4a", "testOffHeapLong4b"})
     public static void testOffHeapLong4_runner() {
         baseOffset = 8;
-        runAndVerify3(() -> testOffHeapLong4(baseOffHeap, longArray, 0, size-1), 8);
+        runAndVerify3(() -> testOffHeapLong4a(baseOffHeap, longArray, 0, size-1), 8);
+        runAndVerify3(() -> testOffHeapLong4b(baseOffHeap, longArray, 0, size-1), 8);
     }
 }

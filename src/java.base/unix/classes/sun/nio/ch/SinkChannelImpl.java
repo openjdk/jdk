@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ class SinkChannelImpl
     implements SelChImpl
 {
     // Used to make native read and write calls
-    private static final NativeDispatcher nd = new FileDispatcherImpl();
+    private static final NativeDispatcher nd = new SocketDispatcher();
 
     // The file descriptor associated with this channel
     private final FileDescriptor fd;
@@ -152,15 +152,7 @@ class SinkChannelImpl
             assert state < ST_CLOSING;
             state = ST_CLOSING;
             if (!tryClose()) {
-                long th = thread;
-                if (th != 0) {
-                    if (NativeThread.isVirtualThread(th)) {
-                        Poller.stopPoll(fdVal);
-                    } else {
-                        nd.preClose(fd);
-                        NativeThread.signal(th);
-                    }
-                }
+                nd.preClose(fd, thread, 0);
             }
         }
     }
@@ -201,6 +193,9 @@ class SinkChannelImpl
 
     @Override
     public void kill() {
+        // wait for any write operation to complete before trying to close
+        writeLock.lock();
+        writeLock.unlock();
         synchronized (stateLock) {
             if (state == ST_CLOSING) {
                 tryFinishClose();
@@ -306,6 +301,7 @@ class SinkChannelImpl
 
         writeLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             int n = 0;
             try {
@@ -334,6 +330,7 @@ class SinkChannelImpl
 
         writeLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             long n = 0;
             try {

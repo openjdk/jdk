@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,12 @@
  * @bug 8304042
  * @summary Test some examples with independent packs with cyclic dependency
  *          between the packs.
- * @requires vm.bits == 64
- * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency
+ * @run driver compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency nCOH_nAV
+ * @run driver compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency nCOH_yAV
+ * @run driver compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency yCOH_nAV
+ * @run driver compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency yCOH_yAV
  */
 
 package compiler.loopopts.superword;
@@ -74,11 +75,20 @@ public class TestIndependentPacksWithCyclicDependency {
     long[]  goldL10 = new long[RANGE];
 
     public static void main(String args[]) {
-        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::test*",
-                                   "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::verify",
-                                   "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::init",
-                                   "-XX:LoopUnrollLimit=1000");
+        TestFramework framework = new TestFramework(TestIndependentPacksWithCyclicDependency.class);
+        framework.addFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                           "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::test*",
+                           "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::verify",
+                           "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestIndependentPacksWithCyclicDependency::init",
+                           "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=1000");
+        switch (args[0]) {
+            case "nCOH_nAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "nCOH_yAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            case "yCOH_nAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "yCOH_yAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+        };
+        framework.start();
     }
 
     TestIndependentPacksWithCyclicDependency() {
@@ -120,7 +130,9 @@ public class TestIndependentPacksWithCyclicDependency {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static void test0(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
             // Hand-unrolled 2x. Int and Float slice are completely separate.
@@ -128,6 +140,10 @@ public class TestIndependentPacksWithCyclicDependency {
             dataIb[i+1] = dataIa[i+1] + 3;
             dataFb[i+0] = dataFa[i+0] * 1.3f;
             dataFb[i+1] = dataFa[i+1] * 1.3f;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 8*i   ->  always            adr = base + 12 + 8*i   ->  never
+            // -> vectorize                                  -> no vectorization
         }
     }
 
@@ -144,7 +160,9 @@ public class TestIndependentPacksWithCyclicDependency {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0", IRNode.VECTOR_CAST_F2I, "> 0", IRNode.VECTOR_CAST_I2F, "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     static void test1(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
             // Hand-unrolled 2x. Converst to and from. StoreF -> LoadF dependency.
@@ -152,6 +170,10 @@ public class TestIndependentPacksWithCyclicDependency {
             dataFa[i+1] = dataIa[i+1] + 3;
             dataIb[i+0] = (int)(dataFb[i+0] * 1.3f);
             dataIb[i+1] = (int)(dataFb[i+1] * 1.3f);
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 8*i   ->  always            adr = base + 12 + 8*i   ->  never
+            // -> vectorize                                  -> no vectorization
         }
     }
 
@@ -167,14 +189,20 @@ public class TestIndependentPacksWithCyclicDependency {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VI, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static void test2(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
             // int and float arrays are two slices. But we pretend both are of type int.
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, dataIa[i+0] + 1);
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, dataIa[i+1] + 1);
-            dataIb[i+0] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0);
-            dataIb[i+1] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4);
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, dataIa[i+0] + 1);
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, dataIa[i+1] + 1);
+            dataIb[i+0] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0);
+            dataIb[i+1] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4);
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 8*i   ->  always            adr = base + 12 + 8*i   ->  never
+            // -> vectorize                                  -> no vectorization
         }
     }
 
@@ -191,7 +219,9 @@ public class TestIndependentPacksWithCyclicDependency {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static void test3(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
             // Inversion of orders. But because we operate on separate slices, this should
@@ -201,6 +231,10 @@ public class TestIndependentPacksWithCyclicDependency {
             dataFb[i+1] = dataFa[i+1] * 1.3f;
             dataFb[i+0] = dataFa[i+0] * 1.3f;
             dataIb[i+1] = dataIa[i+1] + 3;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 8*i   ->  always            adr = base + 12 + 8*i   ->  never
+            // -> vectorize                                  -> no vectorization
         }
     }
 
@@ -246,10 +280,10 @@ public class TestIndependentPacksWithCyclicDependency {
         for (int i = 0; i < RANGE; i+=2) {
             // same as test2, except that reordering leads to different semantics
             // explanation analogue to test4
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, dataIa[i+0] + 1); // A
-            dataIb[i+0] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0); // X
-            dataIb[i+1] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4); // Y
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, dataIa[i+1] + 1); // B
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, dataIa[i+0] + 1); // A
+            dataIb[i+0] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0); // X
+            dataIb[i+1] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4); // Y
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, dataIa[i+1] + 1); // B
         }
     }
 
@@ -267,23 +301,29 @@ public class TestIndependentPacksWithCyclicDependency {
 
     @Test
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VI, "> 0", IRNode.ADD_VF, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static void test6(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb,
                       long[] dataLa, long[] dataLb) {
         for (int i = 0; i < RANGE; i+=2) {
             // Chain of parallelizable op and conversion
-            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0) + 3;
-            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4) + 3;
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, v00);
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, v01);
-            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0) * 45;
-            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4) * 45;
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0, v10);
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4, v11);
-            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0) + 0.55f;
-            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4) + 0.55f;
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0, v20);
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4, v21);
+            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0) + 3;
+            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4) + 3;
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, v00);
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, v01);
+            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0) * 45;
+            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4) * 45;
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0, v10);
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4, v11);
+            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0) + 0.55f;
+            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4) + 0.55f;
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0, v20);
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4, v21);
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // adr = base + 16 + 8*i   ->  always            adr = base + 12 + 8*i   ->  never
+            // -> vectorize                                  -> no vectorization
         }
     }
 
@@ -304,18 +344,18 @@ public class TestIndependentPacksWithCyclicDependency {
                       long[] dataLa, long[] dataLb) {
         for (int i = 0; i < RANGE; i+=2) {
             // Cycle involving 3 memory slices
-            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0) + 3;
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, v00);
-            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0) * 45;
-            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4) * 45;
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0, v10);
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4, v11);
-            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0) + 0.55f;
-            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4) + 0.55f;
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0, v20);
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4, v21);
-            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4) + 3; // moved down
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, v01);
+            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0) + 3;
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, v00);
+            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0) * 45;
+            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4) * 45;
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0, v10);
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4, v11);
+            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0) + 0.55f;
+            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4) + 0.55f;
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0, v20);
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4, v21);
+            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4) + 3; // moved down
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, v01);
         }
     }
 
@@ -337,19 +377,19 @@ public class TestIndependentPacksWithCyclicDependency {
                       long[] dataLa, long[] dataLb) {
         for (int i = 0; i < RANGE; i+=2) {
             // 2-cycle, with more ops after
-            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0) + 3;
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, v00);
-            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0) * 45;
-            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4) * 45;
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0, v10);
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4, v11);
-            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4) + 3;
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, v01);
+            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0) + 3;
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, v00);
+            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0) * 45;
+            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4) * 45;
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0, v10);
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4, v11);
+            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4) + 3;
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, v01);
             // more stuff after
-            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0) + 0.55f;
-            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4) + 0.55f;
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0, v20);
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4, v21);
+            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0) + 0.55f;
+            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4) + 0.55f;
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0, v20);
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4, v21);
         }
     }
 
@@ -370,19 +410,19 @@ public class TestIndependentPacksWithCyclicDependency {
                       long[] dataLa, long[] dataLb) {
         for (int i = 0; i < RANGE; i+=2) {
             // 2-cycle, with more stuff before
-            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0) + 0.55f;
-            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4) + 0.55f;
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0, v20);
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4, v21);
+            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0) + 0.55f;
+            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4) + 0.55f;
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0, v20);
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4, v21);
             // 2-cycle
-            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0) + 3;
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, v00);
-            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0) * 45;
-            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4) * 45;
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0, v10);
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4, v11);
-            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4) + 3;
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, v01);
+            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0) + 3;
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, v00);
+            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0) * 45;
+            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4) * 45;
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0, v10);
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4, v11);
+            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4) + 3;
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, v01);
         }
     }
 
@@ -420,18 +460,18 @@ public class TestIndependentPacksWithCyclicDependency {
             //
             // The cycle thus does not only go via packs, but also scalar ops.
             //
-            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0) + 3; // A
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, v00);
-            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0) * 45; // R: constant mismatch
-            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4) + 43; // S
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0, v10);
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4, v11);
-            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0) + 0.55f; // U
-            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4) + 0.55f; // V
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0, v20);
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4, v21);
-            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4) + 3; // B: moved down
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, v01);
+            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0) + 3; // A
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, v00);
+            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0) * 45; // R: constant mismatch
+            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4) + 43; // S
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0, v10);
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4, v11);
+            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0) + 0.55f; // U
+            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4) + 0.55f; // V
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0, v20);
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4, v21);
+            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4) + 3; // B: moved down
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, v01);
         }
     }
 
@@ -460,8 +500,8 @@ public class TestIndependentPacksWithCyclicDependency {
 
     static void verify(String name, float[] data, float[] gold) {
         for (int i = 0; i < RANGE; i++) {
-            int datav = unsafe.getInt(data, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i);
-            int goldv = unsafe.getInt(gold, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i);
+            int datav = unsafe.getInt(data, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i);
+            int goldv = unsafe.getInt(gold, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i);
             if (datav != goldv) {
                 throw new RuntimeException(" Invalid " + name + " result: dataF[" + i + "]: " + datav + " != " + goldv);
             }

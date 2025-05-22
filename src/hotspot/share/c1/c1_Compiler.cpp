@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_Compiler.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -48,16 +47,19 @@
 Compiler::Compiler() : AbstractCompiler(compiler_c1) {
 }
 
-void Compiler::init_c1_runtime() {
+bool Compiler::init_c1_runtime() {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
-  Runtime1::initialize(buffer_blob);
   FrameMap::initialize();
+  if (!Runtime1::initialize(buffer_blob)) {
+    return false;
+  }
   // initialize data structures
   ValueType::initialize();
   GraphBuilder::initialize();
   // note: to use more than one instance of LinearScan at a time this function call has to
   //       be moved somewhere outside of this constructor:
   Interval::initialize();
+  return true;
 }
 
 
@@ -66,12 +68,11 @@ void Compiler::initialize() {
   BufferBlob* buffer_blob = init_buffer_blob();
 
   if (should_perform_init()) {
-    if (buffer_blob == nullptr) {
+    if (buffer_blob == nullptr || !init_c1_runtime()) {
       // When we come here we are in state 'initializing'; entire C1 compilation
       // can be shut down.
       set_state(failed);
     } else {
-      init_c1_runtime();
       set_state(initialized);
     }
   }
@@ -156,8 +157,6 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_longBitsToDouble:
   case vmIntrinsics::_getClass:
   case vmIntrinsics::_isInstance:
-  case vmIntrinsics::_isPrimitive:
-  case vmIntrinsics::_getModifiers:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_scopedValueCache:
@@ -167,6 +166,9 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  #if defined(AMD64)
+  case vmIntrinsics::_dtanh:
+  #endif
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dexp:
@@ -222,7 +224,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
-#if defined(S390) || defined(PPC64) || defined(AARCH64)
+#if defined(S390) || defined(PPC64) || defined(AARCH64) || defined(AMD64)
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
 #endif
@@ -235,6 +237,9 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_counterTime:
 #endif
   case vmIntrinsics::_getObjectSize:
+#if defined(X86) || defined(AARCH64) || defined(S390) || defined(RISCV) || defined(PPC64)
+  case vmIntrinsics::_clone:
+#endif
     break;
   case vmIntrinsics::_blackhole:
     break;

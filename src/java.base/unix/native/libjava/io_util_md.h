@@ -41,6 +41,7 @@ jint handleAvailable(FD fd, jlong *pbytes);
 jint handleSetLength(FD fd, jlong length);
 jlong handleGetLength(FD fd);
 FD handleOpen(const char *path, int oflag, int mode);
+jboolean handleIsRegularFile(JNIEnv* env, FD fd);
 
 /*
  * Functions to get fd from the java.io.FileDescriptor field
@@ -66,19 +67,12 @@ FD getFD(JNIEnv *env, jobject cur, jfieldID fid);
 #define IO_Available handleAvailable
 #define IO_SetLength handleSetLength
 #define IO_GetLength handleGetLength
+#define IO_IsRegularFile handleIsRegularFile
 
 /*
  * On Solaris, the handle field is unused
  */
 #define SET_HANDLE(fd) return (jlong)-1
-
-/*
- * Retry the operation if it is interrupted
- */
-#define RESTARTABLE(_cmd, _result)                \
-    do {                                          \
-        _result = _cmd;                           \
-    } while ((_result == -1) && (errno == EINTR))
 
 void fileDescriptorClose(JNIEnv *env, jobject this);
 

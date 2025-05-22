@@ -34,7 +34,11 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 
-inline vframeStreamCommon::vframeStreamCommon(RegisterMap reg_map) : _reg_map(reg_map), _cont_entry(nullptr) {
+inline vframeStreamCommon::vframeStreamCommon(JavaThread* thread,
+                                              RegisterMap::UpdateMap update_map,
+                                              RegisterMap::ProcessFrames process_frames,
+                                              RegisterMap::WalkContinuation walk_cont)
+        : _reg_map(thread, update_map, process_frames, walk_cont), _cont_entry(nullptr) {
   _thread = _reg_map.thread();
 }
 
@@ -109,10 +113,10 @@ inline void vframeStreamCommon::next() {
 }
 
 inline vframeStream::vframeStream(JavaThread* thread, bool stop_at_java_call_stub, bool process_frame, bool vthread_carrier)
-  : vframeStreamCommon(RegisterMap(thread,
-                                   RegisterMap::UpdateMap::include,
-                                   process_frame ? RegisterMap::ProcessFrames::include : RegisterMap::ProcessFrames::skip ,
-                                   RegisterMap::WalkContinuation::include)) {
+  : vframeStreamCommon(thread,
+                       RegisterMap::UpdateMap::include,
+                       process_frame ? RegisterMap::ProcessFrames::include : RegisterMap::ProcessFrames::skip ,
+                       RegisterMap::WalkContinuation::include) {
   _stop_at_java_call_stub = stop_at_java_call_stub;
 
   if (!thread->has_last_Java_frame()) {
@@ -122,6 +126,13 @@ inline vframeStream::vframeStream(JavaThread* thread, bool stop_at_java_call_stu
 
   if (thread->is_vthread_mounted()) {
     _frame = vthread_carrier ? _thread->carrier_last_frame(&_reg_map) : _thread->vthread_last_frame();
+    if (Continuation::is_continuation_enterSpecial(_frame)) {
+      // This can happen when calling async_get_stack_trace() and catching the target
+      // vthread at the JRT_BLOCK_END in freeze_internal() or when posting the Monitor
+      // Waited event after target vthread was preempted. Since all continuation frames
+      // are freezed we get the top frame from the stackChunk instead.
+      _frame = Continuation::last_frame(java_lang_VirtualThread::continuation(_thread->vthread()), &_reg_map);
+    }
   } else {
     _frame = _thread->last_frame();
   }
@@ -206,7 +217,7 @@ inline bool vframeStreamCommon::fill_from_frame() {
 
   // Compiled frame
 
-  if (cb() != nullptr && cb()->is_compiled()) {
+  if (cb() != nullptr && cb()->is_nmethod()) {
     assert(nm()->method() != nullptr, "must be");
     if (nm()->is_native_method()) {
       // Do not rely on scopeDesc since the pc might be imprecise due to the _last_native_pc trick.

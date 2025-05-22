@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  */
 package jdk.internal.foreign.layout;
 
+import jdk.internal.foreign.LayoutPath;
 import jdk.internal.foreign.Utils;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
@@ -157,16 +158,13 @@ public final class ValueLayouts {
 
         @ForceInline
         public final VarHandle varHandle() {
-            if (handle == null) {
-                // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
-                handle = Utils.makeSegmentViewVarHandle(self());
+            var vh = handle;
+            if (vh == null) {
+                vh = varHandleInternal(LayoutPath.EMPTY_PATH_ELEMENTS);
+                // benign race stable field store is safe because VarHandle is thread safe
+                handle = vh;
             }
-            return handle;
-        }
-
-        @SuppressWarnings("unchecked")
-        final V self() {
-            return (V) this;
+            return vh;
         }
     }
 
@@ -278,7 +276,7 @@ public final class ValueLayouts {
         }
 
         public static OfLong of(ByteOrder order) {
-            return new OfLongImpl(order, ADDRESS_SIZE_BYTES, Optional.empty());
+            return new OfLongImpl(order, Long.BYTES, Optional.empty());
         }
     }
 
@@ -294,7 +292,7 @@ public final class ValueLayouts {
         }
 
         public static OfDouble of(ByteOrder order) {
-            return new OfDoubleImpl(order, ADDRESS_SIZE_BYTES, Optional.empty());
+            return new OfDoubleImpl(order, Double.BYTES, Optional.empty());
         }
 
     }
@@ -327,7 +325,7 @@ public final class ValueLayouts {
         @Override
         @CallerSensitive
         public AddressLayout withTargetLayout(MemoryLayout layout) {
-            Reflection.ensureNativeAccess(Reflection.getCallerClass(), AddressLayout.class, "withTargetLayout");
+            Reflection.ensureNativeAccess(Reflection.getCallerClass(), AddressLayout.class, "withTargetLayout", false);
             Objects.requireNonNull(layout);
             return new OfAddressImpl(order(), byteSize(), byteAlignment(), layout, name());
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,6 @@ import com.sun.tools.javac.resources.LauncherProperties.Errors;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
 
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.NestingKind;
-import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
@@ -112,10 +109,9 @@ final class MemoryContext {
      * Any messages generated during compilation will be written to the stream
      * provided when this object was created.
      *
-     * @return the list of top-level types defined in the source file
      * @throws Fault if any compilation errors occur, or if no class was found
      */
-    List<String> compileProgram() throws Fault {
+    void compileProgram() throws Fault {
         var units = new ArrayList<JavaFileObject>();
         units.add(descriptor.fileObject());
         if (descriptor.isModular()) {
@@ -126,35 +122,10 @@ final class MemoryContext {
         var context = new Context();
         MemoryPreview.registerInstance(context);
         var task = compiler.getTask(out, memoryFileManager, null, opts, null, units, context);
-        var fileUri = descriptor.fileObject().toUri();
-        var names = new ArrayList<String>();
-        task.addTaskListener(new TaskListener() {
-            @Override
-            public void started(TaskEvent event) {
-                if (event.getKind() != TaskEvent.Kind.ANALYZE) return;
-                TypeElement element = event.getTypeElement();
-                if (element.getNestingKind() != NestingKind.TOP_LEVEL) return;
-                JavaFileObject source = event.getSourceFile();
-                if (source == null) return;
-                if (!source.toUri().equals(fileUri)) return;
-                ElementKind kind = element.getKind();
-                if (kind != ElementKind.CLASS
-                        && kind != ElementKind.ENUM
-                        && kind != ElementKind.INTERFACE
-                        && kind != ElementKind.RECORD)
-                    return;
-                var name = element.getQualifiedName().toString();
-                names.add(name);
-            }
-        });
         var ok = task.call();
         if (!ok) {
             throw new Fault(Errors.CompilationFailed);
         }
-        if (names.isEmpty()) {
-            throw new Fault(Errors.NoClass);
-        }
-        return List.copyOf(names);
     }
 
     /**
@@ -213,10 +184,9 @@ final class MemoryContext {
      * @param parent the class loader to be used as the parent loader
      * @param mainClassName the fully-qualified name of the application class to load
      * @return class loader object able to find and load the desired class
-     * @throws ClassNotFoundException if the class cannot be located
      * @throws Fault if a modular application class is in the unnamed package
      */
-    ClassLoader newClassLoaderFor(ClassLoader parent, String mainClassName) throws ClassNotFoundException, Fault {
+    ClassLoader newClassLoaderFor(ClassLoader parent, String mainClassName) throws Fault {
         var moduleInfoBytes = inMemoryClasses.get("module-info");
         if (moduleInfoBytes == null) {
             // Trivial case: no compiled module descriptor available, no extra module layer required
@@ -238,7 +208,9 @@ final class MemoryContext {
         var modulePathModules = modulePathFinder.findAll().stream().map(ModuleReference::descriptor).map(ModuleDescriptor::name).toList();
         if (!modulePathModules.isEmpty()) {
             var modulePathConfiguration = bootLayer.configuration().resolveAndBind(modulePathFinder, ModuleFinder.of(), Set.copyOf(modulePathModules));
-            var modulePathLayer = ModuleLayer.defineModulesWithOneLoader(modulePathConfiguration, List.of(bootLayer), parent).layer();
+            var modulePathController = ModuleLayer.defineModulesWithOneLoader(modulePathConfiguration, List.of(bootLayer), parent);
+            enableNativeAccess(modulePathController, false);
+            var modulePathLayer = modulePathController.layer();
             parentLayer = modulePathLayer;
             parentLoader = modulePathLayer.findLoader(modulePathModules.getFirst());
         }
@@ -256,6 +228,9 @@ final class MemoryContext {
         var mainClassNamePackageName = mainClassName.substring(0, lastDotInMainClassName);
         memoryController.addOpens(module, mainClassNamePackageName, getClass().getModule());
 
+        // Configure native access for the modular application.
+        enableNativeAccess(memoryController, true);
+
         return memoryLayer.findLoader(applicationModule.name());
     }
 
@@ -266,6 +241,33 @@ final class MemoryContext {
         }
         var paths = Arrays.stream(elements.split(File.pathSeparator)).map(Path::of);
         return ModuleFinder.of(paths.toArray(Path[]::new));
+    }
+
+    /**
+     * Grants native access to modules selected using the --enable-native-access
+     * command line option.
+     */
+    @SuppressWarnings("restricted")
+    private void enableNativeAccess(ModuleLayer.Controller controller, boolean shouldWarn) {
+        var layer = controller.layer();
+        for (var name : options.enableNativeAccessForModules()) {
+            if (name.equals("ALL-UNNAMED")) {
+                continue; // was taken care of by module bootstrap
+            }
+            var found = layer.findModule(name);
+            if (found.isEmpty()) {
+                if (shouldWarn) {
+                    // same message as ModuleBootstrap.warnUnknownModule(ENABLE_NATIVE_ACCESS, name);
+                    out.println("WARNING: Unknown module: " + name + " specified to --enable-native-access");
+                }
+                continue;
+            }
+            var module = found.get();
+            if (module.isNativeAccessEnabled()) {
+                continue;
+            }
+            controller.enableNativeAccess(module);
+        }
     }
 
     static class MemoryPreview extends Preview {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -539,7 +538,7 @@ void TemplateTable::condy_helper(Label& Done)
 
   __ mov(rtmp, (int) bytecode());
   __ call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rtmp);
-  __ get_vm_result_2(flags, rtmp);
+  __ get_vm_result_metadata(flags, rtmp);
 
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
@@ -2494,8 +2493,8 @@ void TemplateTable::_return(TosState state) {
     assert(state == vtos, "only valid state");
     __ ldr(R1, aaddress(0));
     __ load_klass(Rtemp, R1);
-    __ ldr_u32(Rtemp, Address(Rtemp, Klass::access_flags_offset()));
-    __ tbz(Rtemp, exact_log2(JVM_ACC_HAS_FINALIZER), skip_register_finalizer);
+    __ ldrb(Rtemp, Address(Rtemp, Klass::misc_flags_offset()));
+    __ tbz(Rtemp, exact_log2(KlassFlags::_misc_has_finalizer), skip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), R1);
 
@@ -3971,16 +3970,17 @@ void TemplateTable::_new() {
   __ b(slow_case, ne);
   __ load_resolved_klass_at_offset(Rcpool, Rindex, Rklass);
 
-  // make sure klass is initialized & doesn't have finalizer
+  // make sure klass is initialized
   // make sure klass is fully initialized
   __ ldrb(Rtemp, Address(Rklass, InstanceKlass::init_state_offset()));
+  __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), Rtemp);
   __ cmp(Rtemp, InstanceKlass::fully_initialized);
   __ b(slow_case, ne);
 
   // get instance_size in InstanceKlass (scaled to a count of bytes)
   __ ldr_u32(Rsize, Address(Rklass, Klass::layout_helper_offset()));
 
-  // test to see if it has a finalizer or is malformed in some way
+  // test to see if it is malformed in some way
   // Klass::_lh_instance_slow_path_bit is really a bit mask, not bit number
   __ tbnz(Rsize, exact_log2(Klass::_lh_instance_slow_path_bit), slow_case);
 
@@ -4143,8 +4143,7 @@ void TemplateTable::checkcast() {
 
   __ push(atos);
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(Rsuper, Robj);
+  __ get_vm_result_metadata(Rsuper, Robj);
   __ pop_ptr(Robj);
   __ b(resolved);
 
@@ -4214,8 +4213,7 @@ void TemplateTable::instanceof() {
 
   __ push(atos);
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(Rsuper, Robj);
+  __ get_vm_result_metadata(Rsuper, Robj);
   __ pop_ptr(Robj);
   __ b(resolved);
 

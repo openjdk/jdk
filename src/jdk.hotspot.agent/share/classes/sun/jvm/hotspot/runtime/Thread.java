@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ public class Thread extends VMObject {
 
   private static AddressField currentPendingMonitorField;
   private static AddressField currentWaitingMonitorField;
+  private static AddressField osThreadField;
 
   private static JLongField allocatedBytesField;
 
@@ -53,6 +54,8 @@ public class Thread extends VMObject {
     Type typeJavaThread = db.lookupType("JavaThread");
 
     suspendFlagsField = typeJavaThread.getCIntegerField("_suspend_flags");
+    osThreadField = typeThread.getAddressField("_osthread");
+
 
     tlabFieldOffset    = typeThread.getField("_tlab").getOffset();
     currentPendingMonitorField = typeJavaThread.getAddressField("_current_pending_monitor");
@@ -77,15 +80,7 @@ public class Thread extends VMObject {
   }
 
   public boolean   isVMThread()                  { return false; }
-  public boolean   isJavaThread()                { return false; }
-  public boolean   isCompilerThread()            { return false; }
-  public boolean   isCodeCacheSweeperThread()    { return false; }
   public boolean   isHiddenFromExternalView()    { return false; }
-  public boolean   isJvmtiAgentThread()          { return false; }
-  public boolean   isWatcherThread()             { return false; }
-  public boolean   isServiceThread()             { return false; }
-  public boolean   isMonitorDeflationThread()    { return false; }
-  public boolean   isAttachListenerThread()      { return false; }
 
   /** Memory operations */
   public void oopsDo(AddressVisitor oopVisitor) {
@@ -121,6 +116,10 @@ public class Thread extends VMObject {
     // underlying thread, which is only present for Java threads; see
     // JavaThread.java.
     return false;
+  }
+
+  public OSThread osThread() {
+    return new OSThread(osThreadField.getValue(addr));
   }
 
   /** Assistance for ObjectMonitor implementation */

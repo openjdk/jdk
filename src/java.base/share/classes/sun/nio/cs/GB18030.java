@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import jdk.internal.misc.VM;
 import sun.nio.cs.Surrogate;
-import sun.security.action.GetPropertyAction;
 
 public class GB18030
     extends Charset
@@ -49,7 +48,7 @@ public class GB18030
     // as the system property is not ready to be read in that case.
     static final boolean IS_2000 =
         VM.initLevel() >= 1 &&
-        "2000".equals(GetPropertyAction.privilegedGetProperty("jdk.charset.GB18030", ""));
+        "2000".equals(System.getProperty("jdk.charset.GB18030", ""));
 
     public GB18030() {
         super("GB18030", StandardCharsets.aliases_GB18030());

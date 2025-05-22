@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "memory/allocation.hpp"
 
 class G1NUMA;
-class HeapRegion;
+class G1HeapRegion;
 
 // Contains per node index region count
 class G1RegionsOnNodes : public StackObj {
@@ -41,7 +41,7 @@ public:
   ~G1RegionsOnNodes();
 
   // Increase _count_per_node for the node of given heap region and returns node index.
-  uint add(HeapRegion* hr);
+  uint add(G1HeapRegion* hr);
 
   void clear();
 

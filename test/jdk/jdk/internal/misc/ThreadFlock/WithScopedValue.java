@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ class WithScopedValue {
     @MethodSource("factories")
     void testInheritsScopedValue(ThreadFactory factory) throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
-        String value = ScopedValue.callWhere(name, "duke", () -> {
+        String value = ScopedValue.where(name, "duke").call(() -> {
             var result = new AtomicReference<String>();
             try (var flock = ThreadFlock.open(null)) {
                 Thread thread = factory.newThread(() -> {
@@ -79,7 +79,7 @@ class WithScopedValue {
         }
         var box = new Box();
         try {
-            ScopedValue.runWhere(name, "x1", () -> {
+            ScopedValue.where(name, "x1").run(() -> {
                 box.flock1 = ThreadFlock.open(null);
                 box.flock2 = ThreadFlock.open(null);
             });
@@ -97,11 +97,11 @@ class WithScopedValue {
     void testStructureViolation2() {
         ScopedValue<String> name = ScopedValue.newInstance();
         try (var flock1 = ThreadFlock.open("flock1")) {
-            ScopedValue.runWhere(name, "x1", () -> {
+            ScopedValue.where(name, "x1").run(() -> {
                 try (var flock2 = ThreadFlock.open("flock2")) {
-                    ScopedValue.runWhere(name, "x2", () -> {
+                    ScopedValue.where(name, "x2").run(() -> {
                         try (var flock3 = ThreadFlock.open("flock3")) {
-                            ScopedValue.runWhere(name, "x3", () -> {
+                            ScopedValue.where(name, "x3").run(() -> {
                                 var flock4 = ThreadFlock.open("flock4");
 
                                 try {
@@ -129,11 +129,11 @@ class WithScopedValue {
     void testStructureViolation3() {
         ScopedValue<String> name = ScopedValue.newInstance();
         try (var flock1 = ThreadFlock.open("flock1")) {
-            ScopedValue.runWhere(name, "x1", () -> {
+            ScopedValue.where(name, "x1").run(() -> {
                 try (var flock2 = ThreadFlock.open("flock2")) {
-                    ScopedValue.runWhere(name, "x2", () -> {
+                    ScopedValue.where(name, "x2").run(() -> {
                         try (var flock3 = ThreadFlock.open("flock3")) {
-                            ScopedValue.runWhere(name, "x3", () -> {
+                            ScopedValue.where(name, "x3").run(() -> {
                                 var flock4 = ThreadFlock.open("flock4");
 
                                 try {
@@ -161,11 +161,11 @@ class WithScopedValue {
     void testStructureViolation4() {
         ScopedValue<String> name = ScopedValue.newInstance();
         try (var flock1 = ThreadFlock.open("flock1")) {
-            ScopedValue.runWhere(name, "x1", () -> {
+            ScopedValue.where(name, "x1").run(() -> {
                 try (var flock2 = ThreadFlock.open("flock2")) {
-                    ScopedValue.runWhere(name, "x2", () -> {
+                    ScopedValue.where(name, "x2").run(() -> {
                         try (var flock3 = ThreadFlock.open("flock3")) {
-                            ScopedValue.runWhere(name, "x3", () -> {
+                            ScopedValue.where(name, "x3").run(() -> {
                                 var flock4 = ThreadFlock.open("flock4");
 
                                 try {
@@ -193,7 +193,7 @@ class WithScopedValue {
     void testStructureViolation5(ThreadFactory factory) throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
         try (var flock = ThreadFlock.open(null)) {
-            ScopedValue.runWhere(name, "duke", () -> {
+            ScopedValue.where(name, "duke").run(() -> {
                 Thread thread = factory.newThread(() -> { });
                 assertThrows(StructureViolationException.class, () -> flock.start(thread));
             });
@@ -207,9 +207,9 @@ class WithScopedValue {
     @MethodSource("factories")
     void testStructureViolation6(ThreadFactory factory) throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
-        ScopedValue.runWhere(name, "duke", () -> {
+        ScopedValue.where(name, "duke").run(() -> {
             try (var flock = ThreadFlock.open(null)) {
-                ScopedValue.runWhere(name, "duchess", () -> {
+                ScopedValue.where(name, "duchess").run(() -> {
                     Thread thread = factory.newThread(() -> { });
                     assertThrows(StructureViolationException.class, () -> flock.start(thread));
                 });

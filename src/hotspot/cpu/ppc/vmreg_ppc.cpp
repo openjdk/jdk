@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
 
@@ -33,21 +32,29 @@ void VMRegImpl::set_regName() {
   for (i = 0; i < ConcreteRegisterImpl::max_gpr; ) {
     regName[i++] = reg->name();
     regName[i++] = reg->name();
-    if (reg->encoding() < Register::number_of_registers-1)
+    if (reg->encoding() < Register::number_of_registers - 1) {
       reg = reg->successor();
+    }
   }
 
   FloatRegister freg = ::as_FloatRegister(0);
   for ( ; i < ConcreteRegisterImpl::max_fpr; ) {
     regName[i++] = freg->name();
     regName[i++] = freg->name();
-    if (reg->encoding() < FloatRegister::number_of_registers-1)
+    if (reg->encoding() < FloatRegister::number_of_registers - 1) {
       freg = freg->successor();
+    }
   }
 
   VectorSRegister vsreg = ::as_VectorSRegister(0);
   for ( ; i < ConcreteRegisterImpl::max_vsr; ) {
     regName[i++] = vsreg->name();
+    regName[i++] = vsreg->name();
+    regName[i++] = vsreg->name();
+    regName[i++] = vsreg->name();
+    if (reg->encoding() < VectorSRegister::number_of_registers - 1) {
+      vsreg = vsreg->successor();
+    }
   }
 
   for ( ; i < ConcreteRegisterImpl::number_of_registers; ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,18 +46,15 @@ import jdk.jpackage.test.AdditionalLauncher;
 /*
  * @test
  * @summary jpackage with --type app-image --app-image "appImage" --mac-sign
- * @library ../helpers
- * @library /test/lib
+ * @library /test/jdk/tools/jpackage/helpers
  * @library base
  * @build SigningBase
- * @build SigningCheck
- * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @build SigningAppImageTwoStepsTest
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @requires (os.family == "mac")
+ * @requires (jpackage.test.MacSignTests == "run")
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningAppImageTwoStepsTest
+ *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 public class SigningAppImageTwoStepsTest {
 
@@ -69,11 +66,7 @@ public class SigningAppImageTwoStepsTest {
     @Parameter({"true", "false"})
     // Unsigned
     @Parameter({"false", "true"})
-    public void test(String... testArgs) throws Exception {
-        boolean signAppImage = Boolean.parseBoolean(testArgs[0]);
-        boolean signingKey = Boolean.parseBoolean(testArgs[1]);
-
-        SigningCheck.checkCertificates(SigningBase.DEFAULT_INDEX);
+    public void test(boolean signAppImage, boolean signingKey) throws Exception {
 
         Path appimageOutput = TKit.createTempDirectory("appimage");
 

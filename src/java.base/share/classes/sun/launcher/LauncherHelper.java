@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.jar.Attributes;
@@ -72,7 +73,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.misc.MethodFinder;
-import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
@@ -155,7 +155,6 @@ public final class LauncherHelper {
      *    this code determine this value, using a suitable method or omit the
      *    line entirely.
      */
-    @SuppressWarnings("fallthrough")
     static void showSettings(boolean printToStderr, String optionFlag,
             long initialHeapSize, long maxHeapSize, long stackSize) {
 
@@ -318,6 +317,8 @@ public final class LauncherHelper {
                 Locale.getDefault(Category.DISPLAY).getDisplayName());
         ostream.println(INDENT + "default format locale = " +
                 Locale.getDefault(Category.FORMAT).getDisplayName());
+        ostream.println(INDENT + "default timezone = " +
+                TimeZone.getDefault().getID());
         ostream.println(INDENT + "tzdata version = " +
                 ZoneInfoFile.getVersion());
         if (verbose) {
@@ -370,6 +371,10 @@ public final class LauncherHelper {
         final long longRetvalNotSupported = -2;
 
         ostream.println(INDENT + "Provider: " + c.getProvider());
+        if (!c.isContainerized()) {
+            ostream.println(INDENT + "System not containerized.");
+            return;
+        }
         ostream.println(INDENT + "Effective CPU Count: " + c.getEffectiveCpuCount());
         ostream.println(formatCpuVal(c.getCpuPeriod(), INDENT + "CPU Period: ", longRetvalNotSupported));
         ostream.println(formatCpuVal(c.getCpuQuota(), INDENT + "CPU Quota: ", longRetvalNotSupported));
@@ -582,6 +587,15 @@ public final class LauncherHelper {
         }
     }
 
+    /**
+     * Prints the short usage text to the desired output stream.
+     */
+    static void printConciseUsageMessage(boolean printToStderr) {
+        initOutput(printToStderr);
+        ostream.println(getLocalizedMessage("java.launcher.opt.concise.header",
+                File.pathSeparator));
+    }
+
     static void initOutput(boolean printToStderr) {
         ostream =  (printToStderr) ? System.err : System.out;
     }
@@ -717,7 +731,6 @@ public final class LauncherHelper {
      *
      * @return the application's main class
      */
-    @SuppressWarnings("fallthrough")
     public static Class<?> checkAndLoadMain(boolean printToStderr,
                                             int mode,
                                             String what) {
@@ -904,6 +917,9 @@ public final class LauncherHelper {
         return false;
     }
 
+    private static boolean isStaticMain = false;
+    private static boolean noArgMain = false;
+
     // Check the existence and signature of main and abort if incorrect.
     private static void validateMainMethod(Class<?> mainClass) {
         Method mainMethod = null;
@@ -927,20 +943,14 @@ public final class LauncherHelper {
         }
 
         int mods = mainMethod.getModifiers();
-        boolean isStatic = Modifier.isStatic(mods);
-        boolean isPublic = Modifier.isPublic(mods);
-        boolean noArgs = mainMethod.getParameterCount() == 0;
+        isStaticMain = Modifier.isStatic(mods);
+        noArgMain = mainMethod.getParameterCount() == 0;
 
-        if (!PreviewFeatures.isEnabled()) {
-            if (!isStatic || !isPublic || noArgs) {
-                  abort(null, "java.launcher.cls.error2", mainClass.getName(),
-                       JAVAFX_APPLICATION_CLASS_NAME);
-            }
-            return;
-        }
-
-        if (!isStatic) {
+        if (!isStaticMain) {
             String className = mainMethod.getDeclaringClass().getName();
+            if (Modifier.isAbstract(mainClass.getModifiers())) {
+                abort(null, "java.launcher.cls.error8", className);
+            }
             if (mainClass.isMemberClass() && !Modifier.isStatic(mainClass.getModifiers())) {
                 abort(null, "java.launcher.cls.error7", className);
             }

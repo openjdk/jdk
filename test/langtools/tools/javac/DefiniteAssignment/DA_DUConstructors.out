@@ -1,0 +1,3 @@
+DA_DUConstructors.java:22:17: compiler.err.var.might.already.be.assigned: x
+DA_DUConstructors.java:41:23: compiler.err.var.might.not.have.been.initialized: x
+2 errors

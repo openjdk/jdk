@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,11 +26,10 @@
 #ifndef SHARE_NMT_MALLOCTRACKER_HPP
 #define SHARE_NMT_MALLOCTRACKER_HPP
 
-#include "memory/allocation.hpp"
 #include "nmt/mallocHeader.hpp"
+#include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 class outputStream;
@@ -145,28 +144,28 @@ class MallocMemory {
 class MallocMemorySummary;
 
 // A snapshot of malloc'd memory, includes malloc memory
-// usage by types and memory used by tracking itself.
+// usage by tags and memory used by tracking itself.
 class MallocMemorySnapshot {
   friend class MallocMemorySummary;
 
  private:
-  MallocMemory      _malloc[mt_number_of_types];
+  MallocMemory      _malloc[mt_number_of_tags];
   MemoryCounter     _all_mallocs;
 
 
  public:
-  inline MallocMemory* by_type(MEMFLAGS flags) {
-    int index = NMTUtil::flag_to_index(flags);
+  inline MallocMemory* by_tag(MemTag mem_tag) {
+    int index = NMTUtil::tag_to_index(mem_tag);
     return &_malloc[index];
   }
 
-  inline const MallocMemory* by_type(MEMFLAGS flags) const {
-    int index = NMTUtil::flag_to_index(flags);
+  inline const MallocMemory* by_tag(MemTag mem_tag) const {
+    int index = NMTUtil::tag_to_index(mem_tag);
     return &_malloc[index];
   }
 
   inline size_t malloc_overhead() const {
-    return _all_mallocs.count() * sizeof(MallocHeader);
+    return _all_mallocs.count() * MallocHeader::malloc_overhead();
   }
 
   // Total malloc invocation count
@@ -177,6 +176,16 @@ class MallocMemorySnapshot {
   // Total malloc'd memory amount
   size_t total() const {
     return _all_mallocs.size() + malloc_overhead() + total_arena();
+  }
+
+  // Total peak malloc
+  size_t total_peak() const {
+    return _all_mallocs.peak_size();
+  }
+
+  // Total peak count
+  size_t total_peak_count() const {
+    return _all_mallocs.peak_count();
   }
 
   // Total malloc'd memory used by arenas
@@ -204,31 +213,31 @@ class MallocMemorySummary : AllStatic {
 
   // Called when a total limit break was detected.
   // Will return true if the limit was handled, false if it was ignored.
-  static bool category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit);
+  static bool category_limit_reached(MemTag mem_tag, size_t s, size_t so_far, const malloclimit* limit);
 
  public:
    static void initialize();
 
-   static inline void record_malloc(size_t size, MEMFLAGS flag) {
-     as_snapshot()->by_type(flag)->record_malloc(size);
+   static inline void record_malloc(size_t size, MemTag mem_tag) {
+     as_snapshot()->by_tag(mem_tag)->record_malloc(size);
      as_snapshot()->_all_mallocs.allocate(size);
    }
 
-   static inline void record_free(size_t size, MEMFLAGS flag) {
-     as_snapshot()->by_type(flag)->record_free(size);
+   static inline void record_free(size_t size, MemTag mem_tag) {
+     as_snapshot()->by_tag(mem_tag)->record_free(size);
      as_snapshot()->_all_mallocs.deallocate(size);
    }
 
-   static inline void record_new_arena(MEMFLAGS flag) {
-     as_snapshot()->by_type(flag)->record_new_arena();
+   static inline void record_new_arena(MemTag mem_tag) {
+     as_snapshot()->by_tag(mem_tag)->record_new_arena();
    }
 
-   static inline void record_arena_free(MEMFLAGS flag) {
-     as_snapshot()->by_type(flag)->record_arena_free();
+   static inline void record_arena_free(MemTag mem_tag) {
+     as_snapshot()->by_tag(mem_tag)->record_arena_free();
    }
 
-   static inline void record_arena_size_change(ssize_t size, MEMFLAGS flag) {
-     as_snapshot()->by_type(flag)->record_arena_size_change(size);
+   static inline void record_arena_size_change(ssize_t size, MemTag mem_tag) {
+     as_snapshot()->by_tag(mem_tag)->record_arena_size_change(size);
    }
 
    static void snapshot(MallocMemorySnapshot* s) {
@@ -247,7 +256,7 @@ class MallocMemorySummary : AllStatic {
 
   // MallocLimit: returns true if allocating s bytes on f would trigger
   // either global or the category limit
-  static inline bool check_exceeds_limit(size_t s, MEMFLAGS f);
+  static inline bool check_exceeds_limit(size_t s, MemTag mem_tag);
 
 };
 
@@ -259,7 +268,7 @@ class MallocTracker : AllStatic {
 
   // The overhead that is incurred by switching on NMT (we need, per malloc allocation,
   // space for header and 16-bit footer)
-  static const size_t overhead_per_malloc = sizeof(MallocHeader) + sizeof(uint16_t);
+  static inline size_t overhead_per_malloc() { return MallocHeader::malloc_overhead(); }
 
   // Parameter name convention:
   // memblock :   the beginning address for user data
@@ -270,7 +279,7 @@ class MallocTracker : AllStatic {
   //
 
   // Record  malloc on specified memory block
-  static void* record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
+  static void* record_malloc(void* malloc_base, size_t size, MemTag mem_tag,
     const NativeCallStack& stack);
 
   // Given a block returned by os::malloc() or os::realloc():
@@ -279,21 +288,21 @@ class MallocTracker : AllStatic {
   // Given the free info from a block, de-account block from NMT.
   static void deaccount(MallocHeader::FreeInfo free_info);
 
-  static inline void record_new_arena(MEMFLAGS flags) {
-    MallocMemorySummary::record_new_arena(flags);
+  static inline void record_new_arena(MemTag mem_tag) {
+    MallocMemorySummary::record_new_arena(mem_tag);
   }
 
-  static inline void record_arena_free(MEMFLAGS flags) {
-    MallocMemorySummary::record_arena_free(flags);
+  static inline void record_arena_free(MemTag mem_tag) {
+    MallocMemorySummary::record_arena_free(mem_tag);
   }
 
-  static inline void record_arena_size_change(ssize_t size, MEMFLAGS flags) {
-    MallocMemorySummary::record_arena_size_change(size, flags);
+  static inline void record_arena_size_change(ssize_t size, MemTag mem_tag) {
+    MallocMemorySummary::record_arena_size_change(size, mem_tag);
   }
 
   // MallocLimt: Given an allocation size s, check if mallocing this much
-  // under category f would hit either the global limit or the limit for category f.
-  static inline bool check_exceeds_limit(size_t s, MEMFLAGS f);
+  // for MemTag would hit either the global limit or the limit for MemTag.
+  static inline bool check_exceeds_limit(size_t s, MemTag mem_tag);
 
   // Given a pointer, look for the containing malloc block.
   // Print the block. Note that since there is very low risk of memory looking

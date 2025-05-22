@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/phasetype.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/traceMergeStoresTag.hpp"
 #include "runtime/os.hpp"
+
 #include <string.h>
 
 void DirectivesParser::push_tmp(CompilerDirectives* dir) {
@@ -346,6 +347,15 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
             set->set_trace_auto_vectorization_tags(validator.tags());
           } else {
             error(VALUE_ERROR, "Unrecognized tag name detected in TraceAutoVectorization: %s", validator.what());
+          }
+        } else if (strncmp(option_key->name, "TraceMergeStores", 16) == 0) {
+          TraceMergeStores::TagValidator validator(s, false);
+
+          valid = validator.is_valid();
+          if (valid) {
+            set->set_trace_merge_stores_tags(validator.tags());
+          } else {
+            error(VALUE_ERROR, "Unrecognized tag name detected in TraceMergeStores: %s", validator.what());
           }
         } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
           PhaseNameValidator validator(s);

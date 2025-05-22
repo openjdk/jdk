@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 import java.nio.file.Path;
-import jdk.jpackage.internal.ApplicationLayout;
+import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
@@ -51,19 +51,16 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --type pkg,dmg --app-image
- * @library ../helpers
- * @library /test/lib
+ * @library /test/jdk/tools/jpackage/helpers
  * @library base
  * @key jpackagePlatformPackage
  * @build SigningBase
- * @build SigningCheck
- * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @build SigningPackageTwoStepTest
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @requires (os.family == "mac")
+ * @requires (jpackage.test.MacSignTests == "run")
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTwoStepTest
+ *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 public class SigningPackageTwoStepTest {
 
@@ -108,12 +105,7 @@ public class SigningPackageTwoStepTest {
     @Parameter({"true", "false"})
     // Unsigned
     @Parameter({"false", "true"})
-    public static void test(String... testArgs) throws Exception {
-        boolean signAppImage = Boolean.parseBoolean(testArgs[0]);
-        boolean signingKey = Boolean.parseBoolean(testArgs[1]);
-
-        SigningCheck.checkCertificates(SigningBase.DEFAULT_INDEX);
-
+    public static void test(boolean signAppImage, boolean signingKey) throws Exception {
         Path appimageOutput = TKit.createTempDirectory("appimage");
 
         JPackageCommand appImageCmd = JPackageCommand.helloAppImage()

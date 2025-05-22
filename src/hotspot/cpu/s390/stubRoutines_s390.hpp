@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,13 +31,16 @@
 
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
-enum { // Platform dependent constants.
-  // simply increase sizes if too small (assembler will crash if too small)
-  _initial_stubs_code_size      = 20000,
-  _continuation_stubs_code_size =  2000,
-  _compiler_stubs_code_size     = 20000,
-  _final_stubs_code_size        = 20000
+// emit enum used to size per-blob code buffers
+
+#define DEFINE_BLOB_SIZE(blob_name, size) \
+  _ ## blob_name ## _code_size = size,
+
+enum platform_dependent_constants {
+  STUBGEN_ARCH_BLOBS_DO(DEFINE_BLOB_SIZE)
 };
+
+#undef DEFINE_BLOB_SIZE
 
 // MethodHandles adapters
 enum method_handles_platform_dependent_constants {
@@ -69,10 +72,24 @@ class zarch {
     locked   = 1
   };
 
+  // declare fields for arch-specific entries
+
+#define DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  static address STUB_FIELD_NAME(field_name) ;
+
+#define DECLARE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name)
+
+private:
+  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY, DECLARE_ARCH_ENTRY_INIT)
+
+#undef DECLARE_ARCH_ENTRY_INIT
+#undef DECLARE_ARCH_ENTRY
+
  private:
+
   static int _atomic_memory_operation_lock;
 
-  static address _partial_subtype_check;
   static juint   _crc_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
   static juint   _crc32c_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
 
@@ -81,6 +98,20 @@ class zarch {
   static jlong   _trot_table[TROT_COLUMN_SIZE];
 
  public:
+
+  // declare getters for arch-specific entries
+
+#define DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name) \
+  static address getter_name() { return STUB_FIELD_NAME(field_name) ; }
+
+#define DEFINE_ARCH_ENTRY_GETTER_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name)
+
+  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT)
+
+#undef DEFINE_ARCH_ENTRY_GETTER_INIT
+#undef DEFINE_ARCH_ENTRY_GETTER
+
   // Global lock for everyone who needs to use atomic_compare_and_exchange
   // or atomic_increment -- should probably use more locks for more
   // scalability -- for instance one for each eden space or group of.
@@ -91,8 +122,6 @@ class zarch {
   // Accessor and mutator for _atomic_memory_operation_lock.
   static int atomic_memory_operation_lock() { return _atomic_memory_operation_lock; }
   static void set_atomic_memory_operation_lock(int value) { _atomic_memory_operation_lock = value; }
-
-  static address partial_subtype_check()                  { return _partial_subtype_check; }
 
   static void generate_load_absolute_address(MacroAssembler* masm, Register table, address table_addr, uint64_t table_contents);
   static void generate_load_crc_table_addr(MacroAssembler* masm, Register table);

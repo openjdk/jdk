@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,11 @@
 #include <limits.h>
 
 #include "childproc.h"
+#include "jni_util.h"
 
 const char * const *parentPathv;
 
-int
+static int
 restartableDup2(int fd_from, int fd_to)
 {
     int err;
@@ -50,7 +51,7 @@ closeSafely(int fd)
     return (fd == -1) ? 0 : close(fd);
 }
 
-int
+static int
 isAsciiDigit(char c)
 {
   return c >= '0' && c <= '9';
@@ -65,7 +66,7 @@ isAsciiDigit(char c)
   #define FD_DIR "/proc/self/fd"
 #endif
 
-int
+static int
 closeDescriptors(void)
 {
     DIR *dp;
@@ -103,7 +104,7 @@ closeDescriptors(void)
     return 1;
 }
 
-int
+static int
 moveDescriptor(int fd_from, int fd_to)
 {
     if (fd_from != fd_to) {
@@ -143,7 +144,7 @@ readFully(int fd, void *buf, size_t nbyte)
             buf = (void *) (((char *)buf) + n);
         } else if (errno == EINTR) {
             /* Strange signals like SIGJVM1 are possible at any time.
-             * See http://www.dreamsongs.com/WorseIsBetter.html */
+             * See https://dreamsongs.com/WorseIsBetter.html */
         } else {
             return -1;
         }
@@ -209,7 +210,7 @@ initVectorFromBlock(const char**vector, const char* block, int count)
  * misfeature, but compatibility wins over sanity.  The original support for
  * this was imported accidentally from execvp().
  */
-void
+static void
 execve_as_traditional_shell_script(const char *file,
                                    const char *argv[],
                                    const char *const envp[])
@@ -232,7 +233,7 @@ execve_as_traditional_shell_script(const char *file,
  * Like execve(2), except that in case of ENOEXEC, FILE is assumed to
  * be a shell script and the system default shell is invoked to run it.
  */
-void
+static void
 execve_with_shell_fallback(int mode, const char *file,
                            const char *argv[],
                            const char *const envp[])
@@ -256,7 +257,7 @@ execve_with_shell_fallback(int mode, const char *file,
  * JDK_execvpe is identical to execvp, except that the child environment is
  * specified via the 3rd argument instead of being inherited from environ.
  */
-void
+static void
 JDK_execvpe(int mode, const char *file,
             const char *argv[],
             const char *const envp[])

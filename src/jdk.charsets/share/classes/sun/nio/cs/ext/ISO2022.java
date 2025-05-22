@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
  */
 
 package sun.nio.cs.ext;
@@ -66,8 +63,6 @@ abstract class ISO2022
         public static final byte SS2 = (byte)0x8e;
         public static final byte PLANE2 = (byte)0xA2;
         public static final byte PLANE3 = (byte)0xA3;
-
-        protected final byte maximumDesignatorLength = 4;
 
         protected byte[] SODesig,
                          SS2Desig = null,

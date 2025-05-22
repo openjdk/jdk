@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,9 @@ class DeoptimizationScope {
   DeoptimizationScope();
   ~DeoptimizationScope();
   // Mark a method, if already marked as dependent.
-  void mark(CompiledMethod* cm, bool inc_recompile_counts = true);
+  void mark(nmethod* nm, bool inc_recompile_counts = true);
   // Record this as a dependent method.
-  void dependent(CompiledMethod* cm);
+  void dependent(nmethod* nm);
 
   // Execute the deoptimization.
   // Make the nmethods not entrant, stackwalks and patch return pcs and sets post call nops.
@@ -98,6 +98,7 @@ class Deoptimization : AllStatic {
 #endif
 
     Reason_profile_predicate,     // compiler generated predicate moved from frequent branch in a loop failed
+    Reason_auto_vectorization_check, // compiler generated (speculative) auto vectorization checks failed
 
     // recorded per method
     Reason_unloaded,              // unloaded class or constant pool entry
@@ -113,7 +114,6 @@ class Deoptimization : AllStatic {
     Reason_speculate_class_check, // saw unexpected object class from type speculation
     Reason_speculate_null_check,  // saw unexpected null from type speculation
     Reason_speculate_null_assert, // saw unexpected null from type speculation
-    Reason_rtm_state_change,      // rtm state change detected
     Reason_unstable_if,           // a branch predicted always false was taken
     Reason_unstable_fused_if,     // fused two ifs that had each one untaken branch. One is now taken.
     Reason_receiver_constraint,   // receiver subtype check failed
@@ -184,7 +184,7 @@ class Deoptimization : AllStatic {
   static void deoptimize(JavaThread* thread, frame fr, DeoptReason reason = Reason_constraint);
 
 #if INCLUDE_JVMCI
-  static address deoptimize_for_missing_exception_handler(CompiledMethod* cm);
+  static address deoptimize_for_missing_exception_handler(nmethod* nm);
   static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, bool& cache_init_error, TRAPS);
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, the original author or authors.
+ * Copyright (c) 2022, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -10,23 +10,40 @@ package jdk.internal.org.jline.terminal.impl;
 
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ServiceLoader;
+import java.util.Arrays;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
 
 import jdk.internal.org.jline.terminal.Attributes;
 import jdk.internal.org.jline.terminal.Terminal;
+import jdk.internal.org.jline.terminal.spi.SystemStream;
 import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 import jdk.internal.org.jline.utils.OSUtils;
 
 public class Diag {
 
     public static void main(String[] args) {
-        diag(System.out);
+        diag(System.out, Arrays.asList(args).contains("--verbose"));
     }
 
-    static void diag(PrintStream out) {
+    public static void diag(PrintStream out) {
+        diag(out, true);
+    }
+
+    public static void diag(PrintStream out, boolean verbose) {
+        new Diag(out, verbose).run();
+    }
+
+    private final PrintStream out;
+    private final boolean verbose;
+
+    public Diag(PrintStream out, boolean verbose) {
+        this.out = out;
+        this.verbose = verbose;
+    }
+
+    public void run() {
         out.println("System properties");
         out.println("=================");
         out.println("os.name =         " + System.getProperty("os.name"));
@@ -50,23 +67,44 @@ public class Diag {
         out.println("IS_OSX =     " + OSUtils.IS_OSX);
         out.println();
 
+        // FFM
+        out.println("FFM Support");
+        out.println("=================");
+        try {
+            TerminalProvider provider = TerminalProvider.load("ffm");
+            testProvider(provider);
+        } catch (Throwable t) {
+            error("FFM support not available", t);
+        }
+        out.println();
+
         out.println("JnaSupport");
         out.println("=================");
         try {
             TerminalProvider provider = TerminalProvider.load("jna");
-            testProvider(out, provider);
+            testProvider(provider);
         } catch (Throwable t) {
-            out.println("JNA support not available: " + t);
+            error("JNA support not available", t);
         }
         out.println();
 
-        out.println("JansiSupport");
+        out.println("Jansi2Support");
         out.println("=================");
         try {
             TerminalProvider provider = TerminalProvider.load("jansi");
-            testProvider(out, provider);
+            testProvider(provider);
         } catch (Throwable t) {
-            out.println("Jansi support not available: " + t);
+            error("Jansi 2 support not available", t);
+        }
+        out.println();
+
+        out.println("JniSupport");
+        out.println("=================");
+        try {
+            TerminalProvider provider = TerminalProvider.load("jni");
+            testProvider(provider);
+        } catch (Throwable t) {
+            error("JNI support not available", t);
         }
         out.println();
 
@@ -75,59 +113,84 @@ public class Diag {
         out.println("=================");
         try {
             TerminalProvider provider = TerminalProvider.load("exec");
-            testProvider(out, provider);
+            testProvider(provider);
         } catch (Throwable t) {
-            out.println("Exec support not available: " + t);
+            error("Exec support not available", t);
+        }
+
+        if (!verbose) {
+            out.println();
+            out.println("Run with --verbose argument to print stack traces");
         }
     }
 
-    private static void testProvider(PrintStream out, TerminalProvider provider) {
+    private void testProvider(TerminalProvider provider) {
         try {
-            out.println("StdIn stream =    " + provider.isSystemStream(TerminalProvider.Stream.Input));
-            out.println("StdOut stream =   " + provider.isSystemStream(TerminalProvider.Stream.Output));
-            out.println("StdErr stream =   " + provider.isSystemStream(TerminalProvider.Stream.Error));
-        } catch (Throwable t2) {
-            out.println("Unable to check stream: " + t2);
+            out.println("StdIn stream =    " + provider.isSystemStream(SystemStream.Input));
+            out.println("StdOut stream =   " + provider.isSystemStream(SystemStream.Output));
+            out.println("StdErr stream =   " + provider.isSystemStream(SystemStream.Error));
+        } catch (Throwable t) {
+            error("Unable to check stream", t);
         }
         try {
-            out.println("StdIn stream name =     " + provider.systemStreamName(TerminalProvider.Stream.Input));
-            out.println("StdOut stream name =    " + provider.systemStreamName(TerminalProvider.Stream.Output));
-            out.println("StdErr stream name =    " + provider.systemStreamName(TerminalProvider.Stream.Error));
-        } catch (Throwable t2) {
-            out.println("Unable to check stream names: " + t2);
+            out.println("StdIn stream name =     " + provider.systemStreamName(SystemStream.Input));
+            out.println("StdOut stream name =    " + provider.systemStreamName(SystemStream.Output));
+            out.println("StdErr stream name =    " + provider.systemStreamName(SystemStream.Error));
+        } catch (Throwable t) {
+            error("Unable to check stream names", t);
         }
-        try (Terminal terminal = provider.sysTerminal("diag", "xterm", false, StandardCharsets.UTF_8,
-                false, Terminal.SignalHandler.SIG_DFL, false, TerminalProvider.Stream.Output, input -> input) ) {
+        try (Terminal terminal = provider.sysTerminal(
+                "diag",
+                "xterm",
+                false,
+                StandardCharsets.UTF_8,
+                false,
+                Terminal.SignalHandler.SIG_DFL,
+                false,
+                SystemStream.Output,
+                input -> input)) {
             if (terminal != null) {
                 Attributes attr = terminal.enterRawMode();
                 try {
                     out.println("Terminal size: " + terminal.getSize());
-                    ForkJoinTask<Integer> t = new ForkJoinPool(1).submit(() -> terminal.reader().read(1) );
-                    int r = t.get(1000, TimeUnit.MILLISECONDS);
+                    ForkJoinPool forkJoinPool = new ForkJoinPool(1);
+                    try {
+                        ForkJoinTask<Integer> t =
+                                forkJoinPool.submit(() -> terminal.reader().read(1));
+                        t.get(1000, TimeUnit.MILLISECONDS);
+                    } finally {
+                        forkJoinPool.shutdown();
+                    }
                     StringBuilder sb = new StringBuilder();
                     sb.append("The terminal seems to work: ");
                     sb.append("terminal ").append(terminal.getClass().getName());
                     if (terminal instanceof AbstractPosixTerminal) {
-                        sb.append(" with pty ").append(((AbstractPosixTerminal) terminal).getPty().getClass().getName());
+                        sb.append(" with pty ")
+                                .append(((AbstractPosixTerminal) terminal)
+                                        .getPty()
+                                        .getClass()
+                                        .getName());
                     }
                     out.println(sb);
-                } catch (Throwable t3) {
-                    out.println("Unable to read from terminal: " + t3);
-                    t3.printStackTrace();
+                } catch (Throwable t2) {
+                    error("Unable to read from terminal", t2);
                 } finally {
                     terminal.setAttributes(attr);
                 }
             } else {
                 out.println("Not supported by provider");
             }
-        } catch (Throwable t2) {
-            out.println("Unable to open terminal: " + t2);
-            t2.printStackTrace();
+        } catch (Throwable t) {
+            error("Unable to open terminal", t);
         }
     }
 
-    static <S> S load(Class<S> clazz) {
-        return ServiceLoader.load(clazz, clazz.getClassLoader()).iterator().next();
+    private void error(String message, Throwable cause) {
+        if (verbose) {
+            out.println(message);
+            cause.printStackTrace(out);
+        } else {
+            out.println(message + ": " + cause);
+        }
     }
-
 }

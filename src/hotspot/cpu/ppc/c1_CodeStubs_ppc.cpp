@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -68,19 +67,19 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
 
   if (_info->deoptimize_on_exception()) {
-    address a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+    address a = Runtime1::entry_for(C1StubId::predicate_failed_trap_id);
     //__ load_const_optimized(R0, a);
     __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(a));
     __ mtctr(R0);
     __ bctrl();
     ce->add_call_info_here(_info);
     ce->verify_oop_map(_info);
-    debug_only(__ illtrap());
+    DEBUG_ONLY(__ illtrap());
     return;
   }
 
-  address stub = _throw_index_out_of_bounds_exception ? Runtime1::entry_for(Runtime1::throw_index_exception_id)
-                                                      : Runtime1::entry_for(Runtime1::throw_range_check_failed_id);
+  address stub = _throw_index_out_of_bounds_exception ? Runtime1::entry_for(C1StubId::throw_index_exception_id)
+                                                      : Runtime1::entry_for(C1StubId::throw_range_check_failed_id);
   //__ load_const_optimized(R0, stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
   __ mtctr(R0);
@@ -99,7 +98,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ bctrl();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ illtrap());
+  DEBUG_ONLY(__ illtrap());
 }
 
 
@@ -109,14 +108,14 @@ PredicateFailedStub::PredicateFailedStub(CodeEmitInfo* info) {
 
 void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  address a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+  address a = Runtime1::entry_for(C1StubId::predicate_failed_trap_id);
   //__ load_const_optimized(R0, a);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(a));
   __ mtctr(R0);
   __ bctrl();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ illtrap());
+  DEBUG_ONLY(__ illtrap());
 }
 
 
@@ -133,7 +132,7 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ load_const_optimized(R0, md.value());
   __ std(R0, -8, R1_SP);
 
-  address a = Runtime1::entry_for(Runtime1::counter_overflow_id);
+  address a = Runtime1::entry_for(C1StubId::counter_overflow_id);
   //__ load_const_optimized(R0, a);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(a));
   __ mtctr(R0);
@@ -150,14 +149,14 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
     ce->compilation()->implicit_exception_table()->append(_offset, __ offset());
   }
   __ bind(_entry);
-  address stub = Runtime1::entry_for(Runtime1::throw_div0_exception_id);
+  address stub = Runtime1::entry_for(C1StubId::throw_div0_exception_id);
   //__ load_const_optimized(R0, stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
   __ mtctr(R0);
   __ bctrl();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ illtrap());
+  DEBUG_ONLY(__ illtrap());
 }
 
 
@@ -165,9 +164,9 @@ void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
   address a;
   if (_info->deoptimize_on_exception()) {
     // Deoptimize, do not throw the exception, because it is probably wrong to do it here.
-    a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+    a = Runtime1::entry_for(C1StubId::predicate_failed_trap_id);
   } else {
-    a = Runtime1::entry_for(Runtime1::throw_null_pointer_exception_id);
+    a = Runtime1::entry_for(C1StubId::throw_null_pointer_exception_id);
   }
 
   if (ImplicitNullChecks || TrapBasedNullChecks) {
@@ -180,7 +179,7 @@ void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
   __ bctrl();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ illtrap());
+  DEBUG_ONLY(__ illtrap());
 }
 
 
@@ -194,19 +193,19 @@ void SimpleExceptionStub::emit_code(LIR_Assembler* ce) {
   __ mtctr(R0);
   __ bctrl();
   ce->add_call_info_here(_info);
-  debug_only( __ illtrap(); )
+  DEBUG_ONLY( __ illtrap(); )
 }
 
 
 // Implementation of NewInstanceStub
-NewInstanceStub::NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, Runtime1::StubID stub_id) {
+NewInstanceStub::NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, C1StubId stub_id) {
   _result = result;
   _klass = klass;
   _klass_reg = klass_reg;
   _info = new CodeEmitInfo(info);
-  assert(stub_id == Runtime1::new_instance_id                 ||
-         stub_id == Runtime1::fast_new_instance_id            ||
-         stub_id == Runtime1::fast_new_instance_init_check_id,
+  assert(stub_id == C1StubId::new_instance_id                 ||
+         stub_id == C1StubId::fast_new_instance_id            ||
+         stub_id == C1StubId::fast_new_instance_init_check_id,
          "need new_instance id");
   _stub_id = stub_id;
 }
@@ -236,7 +235,7 @@ NewTypeArrayStub::NewTypeArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr re
 void NewTypeArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
 
-  address entry = Runtime1::entry_for(Runtime1::new_type_array_id);
+  address entry = Runtime1::entry_for(C1StubId::new_type_array_id);
   //__ load_const_optimized(R0, entry);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(entry));
   __ mr_if_needed(/*op->tmp1()->as_register()*/ R5_ARG3, _length->as_register()); // already sign-extended
@@ -259,7 +258,7 @@ NewObjectArrayStub::NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Op
 void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
 
-  address entry = Runtime1::entry_for(Runtime1::new_object_array_id);
+  address entry = Runtime1::entry_for(C1StubId::new_object_array_id);
   //__ load_const_optimized(R0, entry);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(entry));
   __ mr_if_needed(/*op->tmp1()->as_register()*/ R5_ARG3, _length->as_register()); // already sign-extended
@@ -272,7 +271,7 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  address stub = Runtime1::entry_for(ce->compilation()->has_fpu_code() ? Runtime1::monitorenter_id : Runtime1::monitorenter_nofpu_id);
+  address stub = Runtime1::entry_for(ce->compilation()->has_fpu_code() ? C1StubId::monitorenter_id : C1StubId::monitorenter_nofpu_id);
   //__ load_const_optimized(R0, stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
   __ mr_if_needed(/*scratch_opr()->as_register()*/ R4_ARG2, _obj_reg->as_register());
@@ -289,7 +288,7 @@ void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   if (_compute_lock) {
     ce->monitor_address(_monitor_ix, _lock_reg);
   }
-  address stub = Runtime1::entry_for(ce->compilation()->has_fpu_code() ? Runtime1::monitorexit_id : Runtime1::monitorexit_nofpu_id);
+  address stub = Runtime1::entry_for(ce->compilation()->has_fpu_code() ? C1StubId::monitorexit_id : C1StubId::monitorexit_nofpu_id);
   //__ load_const_optimized(R0, stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
   assert(_lock_reg->as_register() == R4_ARG2, "");
@@ -368,9 +367,9 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     __ mr(R0, _obj); // spill
     __ ld(_obj, java_lang_Class::klass_offset(), _obj);
     __ ld(_obj, in_bytes(InstanceKlass::init_thread_offset()), _obj);
-    __ cmpd(CCR0, _obj, R16_thread);
+    __ cmpd(CR0, _obj, R16_thread);
     __ mr(_obj, R0); // restore
-    __ bne(CCR0, call_patch);
+    __ bne(CR0, call_patch);
 
     // Load_klass patches may execute the patched code before it's
     // copied back into place so we need to jump back into the main
@@ -403,12 +402,12 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
-    case access_field_id:  target = Runtime1::entry_for(Runtime1::access_field_patching_id); break;
-    case load_klass_id:    target = Runtime1::entry_for(Runtime1::load_klass_patching_id);
+    case access_field_id:  target = Runtime1::entry_for(C1StubId::access_field_patching_id); break;
+    case load_klass_id:    target = Runtime1::entry_for(C1StubId::load_klass_patching_id);
                            reloc_type = relocInfo::metadata_type; break;
-    case load_mirror_id:   target = Runtime1::entry_for(Runtime1::load_mirror_patching_id);
+    case load_mirror_id:   target = Runtime1::entry_for(C1StubId::load_mirror_patching_id);
                            reloc_type = relocInfo::oop_type; break;
-    case load_appendix_id: target = Runtime1::entry_for(Runtime1::load_appendix_patching_id);
+    case load_appendix_id: target = Runtime1::entry_for(C1StubId::load_appendix_patching_id);
                            reloc_type = relocInfo::oop_type; break;
     default: ShouldNotReachHere();
   }
@@ -434,7 +433,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
 void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  address stub = Runtime1::entry_for(Runtime1::deoptimize_id);
+  address stub = Runtime1::entry_for(C1StubId::deoptimize_id);
   //__ load_const_optimized(R0, stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
   __ mtctr(R0);
@@ -442,7 +441,7 @@ void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
   __ load_const_optimized(R0, _trap_request); // Pass trap request in R0.
   __ bctrl();
   ce->add_call_info_here(_info);
-  debug_only(__ illtrap());
+  DEBUG_ONLY(__ illtrap());
 }
 
 

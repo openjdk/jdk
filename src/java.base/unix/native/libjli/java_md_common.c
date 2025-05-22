@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 #include <sys/time.h>
 #include "java.h"
+
+#define JAVA_DLL "libjava.so"
 
 /*
  * Find the last occurrence of a string
@@ -74,7 +76,7 @@ TruncatePath(char *buf, jboolean pathisdll)
 }
 
 /*
- * Retrieves the path to the JRE home by locating the executable file
+ * Retrieves the path to the JDK home by locating the executable file
  * of the current process and then truncating the path to the executable
  */
 jboolean
@@ -91,7 +93,7 @@ GetApplicationHome(char *buf, jint bufsize)
 }
 
 /*
- * Retrieves the path to the JRE home by locating the
+ * Retrieves the path to the JDK home by locating the
  * shared library and then truncating the path to it.
  */
 jboolean
@@ -107,6 +109,47 @@ GetApplicationHomeFromDll(char *buf, jint bufsize)
     }
     return JNI_FALSE;
 }
+
+#if defined(AIX)
+static jboolean
+LibjavaExists(const char *path)
+{
+    char tmp[PATH_MAX + 1];
+    struct stat statbuf;
+    JLI_Snprintf(tmp, PATH_MAX, "%s/%s", path, JAVA_DLL);
+    if (stat(tmp, &statbuf) == 0) {
+        return JNI_TRUE;
+    }
+    return JNI_FALSE;
+}
+
+/*
+ * Retrieves the path to the JDK home by locating libjava.so in
+ * LIBPATH and then truncating the path to it.
+ */
+jboolean
+GetApplicationHomeFromLibpath(char *buf, jint bufsize)
+{
+    char *env = getenv("LIBPATH");
+    char *tmp;
+    char *save_ptr = NULL;
+    char *envpath = JLI_StringDup(env);
+    for (tmp = strtok_r(envpath, ":", &save_ptr); tmp != NULL; tmp = strtok_r(NULL, ":", &save_ptr)) {
+        if (LibjavaExists(tmp)) {
+            char *path = realpath(tmp, buf);
+            if (path == buf) {
+                JLI_StrCat(buf, "/");
+                if (JNI_TRUE == TruncatePath(buf, JNI_TRUE)) {
+                    JLI_MemFree(envpath);
+                    return JNI_TRUE;
+                }
+            }
+        }
+    }
+    JLI_MemFree(envpath);
+    return JNI_FALSE;
+}
+#endif
 
 /*
  * Return true if the named program exists
@@ -200,13 +243,7 @@ JLI_ReportErrorMessage(const char* fmt, ...) {
 JNIEXPORT void JNICALL
 JLI_ReportErrorMessageSys(const char* fmt, ...) {
     va_list vl;
-    char *emsg;
-
-    /*
-     * TODO: its safer to use strerror_r but is not available on
-     * Solaris 8. Until then....
-     */
-    emsg = strerror(errno);
+    char *emsg = strerror(errno);
     if (emsg != NULL) {
         fprintf(stderr, "%s\n", emsg);
     }
@@ -225,7 +262,7 @@ JLI_ReportExceptionDescription(JNIEnv * env) {
 /*
  *      Since using the file system as a registry is a bit risky, perform
  *      additional sanity checks on the identified directory to validate
- *      it as a valid jre/sdk.
+ *      it as a valid JDK.
  *
  *      Return 0 if the tests fail; otherwise return non-zero (true).
  *

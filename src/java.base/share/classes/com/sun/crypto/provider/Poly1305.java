@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,18 @@
 package com.sun.crypto.provider;
 
 import java.nio.ByteBuffer;
-import java.security.Key;
 import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 import java.util.Objects;
 
-import sun.security.util.math.*;
-import sun.security.util.math.intpoly.*;
-import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
+import sun.security.util.math.IntegerFieldModuloP;
+import sun.security.util.math.IntegerModuloP;
+import sun.security.util.math.MutableIntegerModuloP;
+import sun.security.util.math.intpoly.IntegerPolynomial1305;
 
 /**
  * This class represents the Poly1305 function defined in RFC 7539.

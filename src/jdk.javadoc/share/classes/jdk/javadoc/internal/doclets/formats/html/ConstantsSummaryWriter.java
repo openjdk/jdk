@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,20 +39,21 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 
 /**
@@ -143,8 +144,8 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
      * Builds the list of contents for the groups of packages appearing in the constants summary page.
      */
     protected void buildContents() {
-        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, Text.of(resources.getText("doclet.Constants_Summary")))
-                .pushNestedList();
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, Text.of(resources.getText("doclet.Constants_Summary")),
+                TableOfContents.Level.FIRST);
         packageGroupHeadings.clear();
         for (PackageElement pkg : configuration.packages) {
             String abbrevPackageName = getAbbrevPackageName(pkg);
@@ -153,7 +154,6 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
                 packageGroupHeadings.add(abbrevPackageName);
             }
         }
-        tableOfContents.popNestedList();
         bodyContents.setSideContent(tableOfContents.toContent(true));
     }
 
@@ -328,21 +328,23 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
          bodyContents.setHeader(getHeader(PageMode.CONSTANT_VALUES));
          Content titleContent = contents.constantsSummaryTitle;
          var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                 HtmlStyle.title, titleContent);
-         var div = HtmlTree.DIV(HtmlStyle.header, pHeading);
+                 HtmlStyles.title, titleContent);
+         var div = HtmlTree.DIV(HtmlStyles.header, pHeading);
          bodyContents.addMainContent(div);
          return body;
     }
 
     Content getContentsHeader() {
-        return HtmlTree.UL(HtmlStyle.contentsList);
+        return HtmlTree.UL(HtmlStyles.contentsList);
     }
 
     void addLinkToTableOfContents(String abbrevPackageName) {
         if (abbrevPackageName.isEmpty()) {
-            tableOfContents.addLink(HtmlIds.UNNAMED_PACKAGE_ANCHOR, contents.defaultPackageLabel);
+            tableOfContents.addLink(HtmlIds.UNNAMED_PACKAGE_ANCHOR, contents.defaultPackageLabel,
+                    TableOfContents.Level.SECOND);
         } else {
-            tableOfContents.addLink(HtmlId.of(abbrevPackageName), Text.of(abbrevPackageName + ".*"));
+            tableOfContents.addLink(HtmlId.of(abbrevPackageName), Text.of(abbrevPackageName + ".*"),
+                    TableOfContents.Level.SECOND);
         }
     }
 
@@ -361,14 +363,14 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
         var heading = HtmlTree.HEADING_TITLE(
                 Headings.ConstantsSummary.PACKAGE_HEADING,
                 headingContent);
-        summarySection = HtmlTree.SECTION(HtmlStyle.constantsSummary, heading)
+        summarySection = HtmlTree.SECTION(HtmlStyles.constantsSummary, heading)
                 .setId(anchorName);
 
         toContent.add(summarySection);
     }
 
      Content getClassConstantHeader() {
-        return HtmlTree.UL(HtmlStyle.blockList);
+        return HtmlTree.UL(HtmlStyles.blockList);
     }
 
      void addClassConstant(Content fromClassConstant) {
@@ -394,10 +396,10 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
         }
         caption.add(classLink);
 
-        var table = new Table<Void>(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyles.summaryTable)
                 .setCaption(caption)
                 .setHeader(constantsTableHeader)
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colSecond, HtmlStyles.colLast);
 
         for (VariableElement field : fields) {
             table.addRow(getTypeColumn(field), getNameColumn(field), getValue(field));
@@ -413,7 +415,7 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
      */
     private Content getTypeColumn(VariableElement member) {
         Content typeContent = new ContentBuilder();
-        var code = new HtmlTree(TagName.CODE)
+        var code = HtmlTree.CODE()
                 .setId(htmlIds.forMember(currentTypeElement, member));
         for (Modifier mod : member.getModifiers()) {
             code.add(Text.of(mod.toString()))

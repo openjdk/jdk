@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test id=platform
+ * @bug 8284161 8347039
  * @summary Basic tests for new thread-per-task executors
  * @run junit/othervm -DthreadFactory=platform ThreadPerTaskExecutorTest
  */
@@ -157,6 +158,7 @@ class ThreadPerTaskExecutorTest {
                 assertTrue(executor.isShutdown());
                 assertFalse(executor.isTerminated());
                 assertFalse(executor.awaitTermination(500, TimeUnit.MILLISECONDS));
+                assertFalse(future.isDone());
             } finally {
                 future.cancel(true);  // interrupt task
             }
@@ -280,13 +282,13 @@ class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Test awaitTermination when not shutdown.
+     * Test awaitTermination with no tasks running.
      */
     @ParameterizedTest
     @MethodSource("executors")
     void testAwaitTermination1(ExecutorService executor) throws Exception {
         assertFalse(executor.awaitTermination(100, TimeUnit.MILLISECONDS));
-        executor.close();
+        executor.shutdown();
         assertTrue(executor.awaitTermination(100, TimeUnit.MILLISECONDS));
     }
 
@@ -296,16 +298,62 @@ class ThreadPerTaskExecutorTest {
     @ParameterizedTest
     @MethodSource("executors")
     void testAwaitTermination2(ExecutorService executor) throws Exception {
-        Phaser barrier = new Phaser(2);
-        Future<?> future = executor.submit(barrier::arriveAndAwaitAdvance);
+        var started = new CountDownLatch(1);
+        var stop = new CountDownLatch(1);
+        Future<?> future = executor.submit(() -> {
+            started.countDown();
+            stop.await();
+            return null;
+        });
+        started.await();
         try {
             executor.shutdown();
-            assertFalse(executor.awaitTermination(100, TimeUnit.MILLISECONDS));
-            barrier.arriveAndAwaitAdvance();
-            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+            assertFalse(executor.awaitTermination(1, TimeUnit.SECONDS));
+            assertFalse(future.isDone());
         } finally {
-            future.cancel(true);
+            stop.countDown();
         }
+        assertTrue(executor.awaitTermination(1, TimeUnit.MINUTES));
+        assertTrue(future.isDone());
+    }
+
+    /**
+     * Test awaitTermination with cancelled task still running.
+     */
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testAwaitTermination3(ExecutorService executor) throws Exception {
+        var started = new CountDownLatch(1);
+        var stop = new CountDownLatch(1);
+        Future<?> future = executor.submit(() -> {
+            started.countDown();
+            stop.await();
+            return null;
+        });
+        started.await();
+        try {
+            future.cancel(false);
+            executor.shutdown();
+            assertFalse(executor.awaitTermination(1, TimeUnit.SECONDS));
+        } finally {
+            stop.countDown();
+        }
+        assertTrue(executor.awaitTermination(1, TimeUnit.MINUTES));
+    }
+
+    /**
+     * Test awaitTermination with cancelled task that may not have started execution.
+     */
+    @ParameterizedTest
+    @MethodSource("executors")
+    void testAwaitTermination4(ExecutorService executor) throws Exception {
+        Future<?> future = executor.submit(() -> {
+            Thread.sleep(Duration.ofMillis(50));
+            return null;
+        });
+        future.cancel(false);
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(1, TimeUnit.MINUTES));
     }
 
     /**

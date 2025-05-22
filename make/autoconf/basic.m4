@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 m4_include([basic_tools.m4])
 m4_include([basic_windows.m4])
 
-###############################################################################
+################################################################################
 AC_DEFUN_ONCE([BASIC_INIT],
 [
   # Save the original command line. This is passed to us by the wrapper configure script.
@@ -46,7 +46,7 @@ AC_DEFUN_ONCE([BASIC_INIT],
   AC_MSG_NOTICE([Configuration created at $DATE_WHEN_CONFIGURED.])
 ])
 
-###############################################################################
+################################################################################
 # Check that there are no unprocessed overridden variables left.
 # If so, they are an incorrect argument and we will exit with an error.
 AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
@@ -58,7 +58,7 @@ AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
 # Make sure to only use tools set up in BASIC_SETUP_FUNDAMENTAL_TOOLS.
 AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
@@ -75,15 +75,25 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
     AC_MSG_NOTICE([Rewriting ORIGINAL_PATH to $REWRITTEN_PATH])
   fi
 
+  if test "x$OPENJDK_TARGET_CPU" = xx86 && test "x$with_jvm_variants" != xzero; then
+    AC_MSG_ERROR([32-bit x86 builds are not supported])
+  fi
+
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     BASIC_SETUP_PATHS_WINDOWS
   fi
 
   # We get the top-level directory from the supporting wrappers.
   BASIC_WINDOWS_VERIFY_DIR($TOPDIR, source)
+  orig_topdir="$TOPDIR"
   UTIL_FIXUP_PATH(TOPDIR)
   AC_MSG_CHECKING([for top-level directory])
   AC_MSG_RESULT([$TOPDIR])
+  if test "x$TOPDIR" != "x$orig_topdir"; then
+    AC_MSG_WARN([Your top dir was originally represented as $orig_topdir,])
+    AC_MSG_WARN([but after rewriting it became $TOPDIR.])
+    AC_MSG_WARN([This typically means you have characters like space in the path, which can cause all kind of trouble.])
+  fi
   AC_SUBST(TOPDIR)
 
   if test "x$CUSTOM_ROOT" != x; then
@@ -102,7 +112,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   AUTOCONF_DIR=$TOPDIR/make/autoconf
 ])
 
-###############################################################################
+################################################################################
 # Setup what kind of build environment type we have (CI or local developer)
 AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
 [
@@ -124,24 +134,40 @@ AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
   )
   AC_SUBST(BUILD_ENV)
 
+  AC_MSG_CHECKING([for locale to use])
   if test "x$LOCALE" != x; then
     # Check if we actually have C.UTF-8; if so, use it
     if $LOCALE -a | $GREP -q -E "^C\.(utf8|UTF-8)$"; then
       LOCALE_USED=C.UTF-8
+      AC_MSG_RESULT([C.UTF-8 (recommended)])
+    elif $LOCALE -a | $GREP -q -E "^en_US\.(utf8|UTF-8)$"; then
+      LOCALE_USED=en_US.UTF-8
+      AC_MSG_RESULT([en_US.UTF-8 (acceptable fallback)])
     else
-      AC_MSG_WARN([C.UTF-8 locale not found, using C locale])
-      LOCALE_USED=C
+      # As a fallback, check if users locale is UTF-8. USER_LOCALE was saved
+      # by the wrapper configure script before autconf messed up LC_ALL.
+      if $ECHO $USER_LOCALE | $GREP -q -E "\.(utf8|UTF-8)$"; then
+        LOCALE_USED=$USER_LOCALE
+        AC_MSG_RESULT([$USER_LOCALE (untested fallback)])
+        AC_MSG_WARN([Could not find C.UTF-8 or en_US.UTF-8 locale. This is not supported, and the build might fail unexpectedly.])
+      else
+        AC_MSG_RESULT([no UTF-8 locale found])
+        AC_MSG_WARN([No UTF-8 locale found. This is not supported. Proceeding with the C locale, but the build might fail unexpectedly.])
+        LOCALE_USED=C
+      fi
+      AC_MSG_NOTICE([The recommended locale is C.UTF-8, but en_US.UTF-8 is also accepted.])
     fi
   else
-    AC_MSG_WARN([locale command not not found, using C locale])
-    LOCALE_USED=C
+    LOCALE_USED=C.UTF-8
+    AC_MSG_RESULT([C.UTF-8 (default)])
+    AC_MSG_WARN([locale command not not found, using C.UTF-8 locale])
   fi
 
   export LC_ALL=$LOCALE_USED
   AC_SUBST(LOCALE_USED)
 ])
 
-###############################################################################
+################################################################################
 # Evaluates platform specific overrides for devkit variables.
 # $1: Name of variable
 AC_DEFUN([BASIC_EVAL_DEVKIT_VARIABLE],
@@ -151,7 +177,7 @@ AC_DEFUN([BASIC_EVAL_DEVKIT_VARIABLE],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Evaluates platform specific overrides for build devkit variables.
 # $1: Name of variable
 AC_DEFUN([BASIC_EVAL_BUILD_DEVKIT_VARIABLE],
@@ -161,7 +187,7 @@ AC_DEFUN([BASIC_EVAL_BUILD_DEVKIT_VARIABLE],
   fi
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
 [
   AC_MSG_CHECKING([for sdk name])
@@ -246,7 +272,7 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
   fi
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 [
   AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
@@ -380,7 +406,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
   AC_MSG_RESULT([$EXTRA_PATH])
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
 [
 
@@ -477,7 +503,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_CONFIG_FILES([$OUTPUTDIR/Makefile:$AUTOCONF_DIR/Makefile.template])
 ])
 
-###############################################################################
+################################################################################
 # Check if build directory is on local disk. If not possible to determine,
 # we prefer to claim it's local.
 # Argument 1: directory to test
@@ -514,7 +540,7 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Check that source files have basic read permissions set. This might
 # not be the case in cygwin in certain conditions.
 AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
@@ -529,7 +555,7 @@ AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
   fi
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
 [
   AC_MSG_CHECKING([if build directory is on local disk])
@@ -539,9 +565,6 @@ AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
   AC_MSG_RESULT($OUTPUT_DIR_IS_LOCAL)
 
   BASIC_CHECK_SRC_PERMS
-
-  # Check if the user has any old-style ALT_ variables set.
-  FOUND_ALT_VARIABLES=`env | grep ^ALT_`
 
   # Before generating output files, test if they exist. If they do, this is a reconfigure.
   # Since we can't properly handle the dependencies for this, warn the user about the situation
@@ -572,7 +595,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEFAULT_MAKE_TARGET],
   AC_SUBST(DEFAULT_MAKE_TARGET)
 ])
 
-###############################################################################
+################################################################################
 # Setup the default value for LOG=
 #
 AC_DEFUN_ONCE([BASIC_SETUP_DEFAULT_LOG],
@@ -591,7 +614,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEFAULT_LOG],
   AC_SUBST(DEFAULT_LOG)
 ])
 
-###############################################################################
+################################################################################
 # Code to run after AC_OUTPUT
 AC_DEFUN_ONCE([BASIC_POST_CONFIG_OUTPUT],
 [

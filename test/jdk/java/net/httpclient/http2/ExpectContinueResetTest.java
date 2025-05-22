@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -75,6 +73,7 @@ public class ExpectContinueResetTest {
     URI warmup, partialResponseResetNoError, partialResponseResetError, fullResponseResetNoError, fullResponseResetError;
 
     static PrintStream err = new PrintStream(System.err);
+    static PrintStream out = System.out;
 
     @DataProvider(name = "testData")
     public Object[][] testData() {
@@ -90,17 +89,24 @@ public class ExpectContinueResetTest {
 
     @Test(dataProvider = "testData")
     public void test(URI uri) {
+        out.printf("\nTesting with Version: %s, URI: %s\n", HTTP_2, uri.toASCIIString());
         err.printf("\nTesting with Version: %s, URI: %s\n", HTTP_2, uri.toASCIIString());
         Iterable<byte[]> iterable = EndlessDataChunks::new;
         HttpRequest.BodyPublisher testPub = HttpRequest.BodyPublishers.ofByteArrays(iterable);
-        Throwable testThrowable = null;
+        Exception expectedException = null;
         try {
             performRequest(testPub, uri);
+            throw new AssertionError("Expected exception not raised for " + uri);
         } catch (Exception e) {
-            testThrowable = e.getCause();
+            expectedException = e;
         }
-        assertNotNull(testThrowable, "Request should have completed exceptionally but testThrowable is null");
-        assertEquals(testThrowable.getClass(), IOException.class, "Test should have closed with an IOException");
+        Throwable testThrowable = expectedException.getCause();
+        if (testThrowable == null) {
+            throw new AssertionError("Unexpected null cause for " + expectedException,
+                    expectedException);
+        }
+        assertEquals(testThrowable.getClass(), IOException.class,
+                "Test should have closed with an IOException");
         testThrowable.printStackTrace();
     }
 
@@ -179,7 +185,7 @@ public class ExpectContinueResetTest {
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
             err.println("Sending 100");
-            exchange.sendResponseHeaders(100, 0);
+            exchange.sendResponseHeaders(100, -1);
             if (exchange instanceof ExpectContinueResetTestExchangeImpl testExchange) {
                 err.println("Sending Reset");
                 err.println(exchange.getRequestURI().getPath());
@@ -199,8 +205,9 @@ public class ExpectContinueResetTest {
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
             err.println("Sending 100");
-            exchange.sendResponseHeaders(100, 0);
+            exchange.sendResponseHeaders(100, -1);
             err.println("Sending 200");
+
             exchange.sendResponseHeaders(200, 0);
             if (exchange instanceof ExpectContinueResetTestExchangeImpl testExchange) {
                 err.println("Sending Reset");

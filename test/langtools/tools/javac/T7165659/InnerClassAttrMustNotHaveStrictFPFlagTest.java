@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 7165659
  * @summary javac incorrectly sets strictfp access flag on inner-classes
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.util
  */
 
@@ -48,7 +47,7 @@ public class InnerClassAttrMustNotHaveStrictFPFlagTest {
 
     void analyzeClassFile(File path) throws Exception {
         ClassModel classFile = ClassFile.of().parse(path.toPath());
-        InnerClassesAttribute innerClasses = classFile.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+        InnerClassesAttribute innerClasses = classFile.findAttribute(Attributes.innerClasses()).orElse(null);
         assert innerClasses != null;
         for (InnerClassInfo classInfo : innerClasses.classes()) {
             Assert.check(classInfo.flagsMask() != ClassFile.ACC_STRICT,

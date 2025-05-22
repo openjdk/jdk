@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2016, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -25,7 +25,9 @@ public class DiffHelper {
      * which means: delete "Hello", add "Goodbye" and keep " world."
      */
     public enum Operation {
-        DELETE, INSERT, EQUAL
+        DELETE,
+        INSERT,
+        EQUAL
     }
 
     /**
@@ -86,16 +88,13 @@ public class DiffHelper {
                 && text1.charAt(commonStart) == text2.charAt(commonStart)
                 && text1.styleAt(commonStart).equals(text2.styleAt(commonStart))) {
             if (text1.isHidden(commonStart)) {
-                if (startHiddenRange < 0)
-                    startHiddenRange = commonStart;
-            } else
-                startHiddenRange = -1;
+                if (startHiddenRange < 0) startHiddenRange = commonStart;
+            } else startHiddenRange = -1;
             commonStart++;
         }
         if (startHiddenRange >= 0
-            && ((l1 > commonStart && text1.isHidden(commonStart))
-                || (l2 > commonStart && text2.isHidden(commonStart))))
-            commonStart = startHiddenRange;
+                && ((l1 > commonStart && text1.isHidden(commonStart))
+                        || (l2 > commonStart && text2.isHidden(commonStart)))) commonStart = startHiddenRange;
 
         startHiddenRange = -1;
         int commonEnd = 0;
@@ -103,32 +102,24 @@ public class DiffHelper {
                 && text1.charAt(l1 - commonEnd - 1) == text2.charAt(l2 - commonEnd - 1)
                 && text1.styleAt(l1 - commonEnd - 1).equals(text2.styleAt(l2 - commonEnd - 1))) {
             if (text1.isHidden(l1 - commonEnd - 1)) {
-                if (startHiddenRange < 0)
-                    startHiddenRange = commonEnd;
-            } else
-                startHiddenRange = -1;
+                if (startHiddenRange < 0) startHiddenRange = commonEnd;
+            } else startHiddenRange = -1;
             commonEnd++;
         }
-        if (startHiddenRange >= 0)
-            commonEnd = startHiddenRange;
+        if (startHiddenRange >= 0) commonEnd = startHiddenRange;
         LinkedList<Diff> diffs = new LinkedList<>();
         if (commonStart > 0) {
-            diffs.add(new Diff(DiffHelper.Operation.EQUAL,
-                    text1.subSequence(0, commonStart)));
+            diffs.add(new Diff(DiffHelper.Operation.EQUAL, text1.subSequence(0, commonStart)));
         }
         if (l2 > commonStart + commonEnd) {
-            diffs.add(new Diff(DiffHelper.Operation.INSERT,
-                    text2.subSequence(commonStart, l2 - commonEnd)));
+            diffs.add(new Diff(DiffHelper.Operation.INSERT, text2.subSequence(commonStart, l2 - commonEnd)));
         }
         if (l1 > commonStart + commonEnd) {
-            diffs.add(new Diff(DiffHelper.Operation.DELETE,
-                    text1.subSequence(commonStart, l1 - commonEnd)));
+            diffs.add(new Diff(DiffHelper.Operation.DELETE, text1.subSequence(commonStart, l1 - commonEnd)));
         }
         if (commonEnd > 0) {
-            diffs.add(new Diff(DiffHelper.Operation.EQUAL,
-                    text1.subSequence(l1 - commonEnd, l1)));
+            diffs.add(new Diff(DiffHelper.Operation.EQUAL, text1.subSequence(l1 - commonEnd, l1)));
         }
         return diffs;
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.Objects;
 
 import sun.util.logging.PlatformLogger;
 
-class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
+final class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
 
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XCheckboxPeer");
 
@@ -82,6 +82,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
         updateMotifColors(getPeerBackground());
     }
 
+    @Override
     public void preInit(XCreateWindowParams params) {
         // Put this here so it is executed before layout() is called from
         // setFont() in XComponent.postInit()
@@ -90,14 +91,17 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
         super.preInit(params);
     }
 
+    @Override
     public boolean isFocusable() { return true; }
 
+    @Override
     public void focusGained(FocusEvent e) {
         // TODO: only need to paint the focus bit
         super.focusGained(e);
         repaint();
     }
 
+    @Override
     public void focusLost(FocusEvent e) {
         // TODO: only need to paint the focus bit?
         super.focusLost(e);
@@ -105,6 +109,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
     }
 
 
+    @Override
     void handleJavaKeyEvent(KeyEvent e) {
         int i = e.getID();
         switch (i) {
@@ -148,6 +153,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
         }
     }
 
+    @Override
     void handleJavaMouseEvent(MouseEvent e) {
         super.handleJavaMouseEvent(e);
         int i = e.getID();
@@ -241,6 +247,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
 
     public void mouseClicked(MouseEvent e) {}
 
+    @Override
     public Dimension getMinimumSize() {
         /*
          * Spacing (number of pixels between check mark and label text) is
@@ -263,6 +270,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
         return (fm.getHeight() * 76 / 100) - 1;
     }
 
+    @Override
     public void setBackground(Color c) {
         updateMotifColors(c);
         super.setBackground(c);
@@ -271,6 +279,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
     /*
      * Layout the checkbox/radio button and text label
      */
+    @Override
     public void layout() {
         Dimension size = getPeerSize();
         Font f = getPeerFont();
@@ -362,12 +371,15 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
 
             if (armed | selected) {
                 //Paint the check
+                AffineTransform af = g2.getTransform();
+                double scaleX = af.getScaleX();
+                double scaleY = af.getScaleY();
 
                 // FIXME: is this the right color?
                 g2.setColor(getPeerForeground());
 
-                AffineTransform af = g2.getTransform();
-                g2.setTransform(AffineTransform.getTranslateInstance(rx,ry));
+                g2.setTransform(AffineTransform.getTranslateInstance(rx * scaleX, ry * scaleY));
+                g2.scale(scaleX, scaleY);
                 g2.fill(myCheckMark);
                 g2.setTransform(af);
             }

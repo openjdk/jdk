@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This file contains functionality related to handling paths for source files
 # and object files. This is complicated by the fact that we usually, but not
@@ -31,6 +34,7 @@
 # "@-files", which we normally use to avoid hitting command line length limits.
 # Finally this file contains functionality for locating all source code files
 # that should be included in the compilation.
+################################################################################
 
 ################################################################################
 # When absolute paths are not allowed in the output, and the compiler does not
@@ -113,7 +117,7 @@ else
 endif
 
 ################################################################################
-define LocateSourceFiles
+define SetupSourceFiles
   $$(foreach d, $$($1_SRC), $$(if $$(wildcard $$d), , \
       $$(error SRC specified to SetupNativeCompilation $1 contains missing directory $$d)))
 
@@ -124,10 +128,9 @@ define LocateSourceFiles
   # Extract the C/C++ files.
   ifneq ($$($1_EXCLUDE_PATTERNS), )
     # We must not match the exclude pattern against the src root(s).
-    $1_SRCS_WITHOUT_ROOTS := $$($1_SRCS)
-    $$(foreach i, $$($1_SRC), $$(eval $1_SRCS_WITHOUT_ROOTS := $$(patsubst \
-        $$i/%,%, $$($1_SRCS_WITHOUT_ROOTS))))
-    $1_ALL_EXCLUDE_FILES :=  $$(call containing, $$($1_EXCLUDE_PATTERNS), \
+    $1_SRCS_WITHOUT_ROOTS := $$(foreach i, $$($1_SRC), \
+        $$(patsubst $$i/%,%, $$(filter $$i/%, $$($1_SRCS))))
+    $1_ALL_EXCLUDE_FILES := $$(call containing, $$($1_EXCLUDE_PATTERNS), \
         $$($1_SRCS_WITHOUT_ROOTS))
   endif
   ifneq ($$($1_EXCLUDE_FILES), )
@@ -143,10 +146,7 @@ define LocateSourceFiles
     $1_INCLUDE_FILES_PAT := $$(foreach i, $$($1_SRC), $$(addprefix $$i/, $$($1_INCLUDE_FILES)))
     $1_SRCS := $$(filter $$($1_INCLUDE_FILES_PAT), $$($1_SRCS))
   endif
-  # There can be only a single bin dir root, no need to foreach over the roots.
-  $1_BINS := $$(wildcard $$($1_OBJECT_DIR)/*$(OBJ_SUFFIX))
   # Now we have a list of all c/c++ files to compile: $$($1_SRCS)
-  # and we have a list of all existing object files: $$($1_BINS)
 
   # Prepend the source/bin path to the filter expressions. Then do the filtering.
   ifneq ($$($1_INCLUDES), )
@@ -184,12 +184,6 @@ define SetupOutputFiles
   # Calculate the expected output from compiling the sources
   $1_EXPECTED_OBJS_FILENAMES := $$(call replace_with_obj_extension, $$(notdir $$($1_SRCS)))
   $1_EXPECTED_OBJS := $$(addprefix $$($1_OBJECT_DIR)/, $$($1_EXPECTED_OBJS_FILENAMES))
-  # Are there too many object files on disk? Perhaps because some source file was removed?
-  $1_SUPERFLOUS_OBJS := $$(sort $$(filter-out $$($1_EXPECTED_OBJS), $$($1_BINS)))
-  # Clean out the superfluous object files.
-  ifneq ($$($1_SUPERFLUOUS_OBJS), )
-    $$(shell $(RM) -f $$($1_SUPERFLUOUS_OBJS))
-  endif
   # Sort to remove duplicates and provide a reproducible order on the input files to the linker.
   $1_ALL_OBJS := $$(sort $$($1_EXPECTED_OBJS) $$($1_EXTRA_OBJECT_FILES))
   ifeq ($(STATIC_LIBS), true)
@@ -201,18 +195,24 @@ define SetupOutputFiles
 endef
 
 ################################################################################
+define RemoveSuperfluousOutputFiles
+  # Are there too many object files on disk? Perhaps because some source file was removed?
+  $1_BINS := $$(wildcard $$($1_OBJECT_DIR)/*$(OBJ_SUFFIX))
+  $1_SUPERFLOUS_OBJS := $$(sort $$(filter-out $$($1_EXPECTED_OBJS), $$($1_BINS)))
+  # Clean out the superfluous object files.
+  ifneq ($$($1_SUPERFLUOUS_OBJS), )
+    $$(shell $(RM) -f $$($1_SUPERFLUOUS_OBJS))
+  endif
+endef
+
+################################################################################
 define SetupObjectFileList
   $1_LD_OBJ_ARG := $$($1_ALL_OBJS)
 
   # If there are many object files, use an @-file...
   ifneq ($$(word 17, $$($1_ALL_OBJS)), )
     $1_OBJ_FILE_LIST := $$($1_OBJECT_DIR)/_$1_objectfilenames.txt
-    ifneq ($(COMPILER_COMMAND_FILE_FLAG), )
-      $1_LD_OBJ_ARG := $(COMPILER_COMMAND_FILE_FLAG)$$($1_OBJ_FILE_LIST)
-    else
-      # ...except for toolchains which don't support them.
-      $1_LD_OBJ_ARG := `cat $$($1_OBJ_FILE_LIST)`
-    endif
+    $1_LD_OBJ_ARG := @$$($1_OBJ_FILE_LIST)
 
     # If we are building static library, 'AR' on macosx/aix may not support @-file.
     ifeq ($$($1_TYPE), STATIC_LIBRARY)
@@ -243,3 +243,8 @@ define SetupObjectFileList
     endif
   endif
 endef
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

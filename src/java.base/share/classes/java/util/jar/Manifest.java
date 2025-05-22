@@ -119,8 +119,7 @@ public class Manifest implements Cloneable {
     }
 
     /**
-     * Returns the main Attributes for the Manifest.
-     * @return the main Attributes for the Manifest
+     * {@return the main Attributes for the Manifest}
      */
     public Attributes getMainAttributes() {
         return attr;
@@ -217,22 +216,6 @@ public class Manifest implements Cloneable {
             e.getValue().write(dos);
         }
         dos.flush();
-    }
-
-    /**
-     * Adds line breaks to enforce a maximum of 72 bytes per line.
-     *
-     * @deprecation Replaced with {@link #println72}.
-     */
-    @Deprecated(since = "13")
-    static void make72Safe(StringBuffer line) {
-        int length = line.length();
-        int index = 72;
-        while (index < length) {
-            line.insert(index, "\r\n ");
-            index += 74; // + line width + line break ("\r\n")
-            length += 3; // + line break ("\r\n") and space
-        }
     }
 
     /**

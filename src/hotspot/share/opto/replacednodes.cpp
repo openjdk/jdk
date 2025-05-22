@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/phaseX.hpp"
@@ -208,7 +207,7 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
       hash_table_size++;
     }
     // Map from current node to cloned/replaced node
-    ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler> clones(hash_table_size, hash_table_size);
+    OrigToNewHashtable clones(hash_table_size, hash_table_size);
     // Record mapping from initial to improved nodes
     for (int i = 0; i < _replaced_nodes->length(); i++) {
       ReplacedNode replaced = _replaced_nodes->at(i);

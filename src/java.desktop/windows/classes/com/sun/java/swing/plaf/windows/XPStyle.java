@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.WritableRaster;
-import java.security.AccessController;
 import java.util.HashMap;
 
 import javax.swing.AbstractButton;
@@ -79,7 +78,6 @@ import javax.swing.text.JTextComponent;
 
 import sun.awt.image.SunWritableRaster;
 import sun.awt.windows.ThemeReader;
-import sun.security.action.GetPropertyAction;
 import sun.swing.CachedPainter;
 
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
@@ -92,7 +90,7 @@ import static com.sun.java.swing.plaf.windows.TMSchema.TypeEnum;
  *
  * @author Leif Samuelsson
  */
-class XPStyle {
+final class XPStyle {
     // Singleton instance of this class
     private static XPStyle xp;
 
@@ -124,7 +122,6 @@ class XPStyle {
      * @return the singleton instance of this class or null if XP styles
      * are not active or if this is not Windows XP
      */
-    @SuppressWarnings("removal")
     static synchronized XPStyle getXP() {
         if (themeActive == null) {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -134,9 +131,8 @@ class XPStyle {
                 themeActive = Boolean.FALSE;
             }
             if (themeActive.booleanValue()) {
-                GetPropertyAction propertyAction =
-                    new GetPropertyAction("swing.noxp");
-                if (AccessController.doPrivileged(propertyAction) == null &&
+                String propertyAction = System.getProperty("swing.noxp");
+                if (propertyAction == null &&
                     ThemeReader.isThemed() &&
                     !(UIManager.getLookAndFeel()
                       instanceof WindowsClassicLookAndFeel)) {
@@ -335,6 +331,7 @@ class XPStyle {
             super(color, thickness);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets)       {
             Insets margin = null;
             //
@@ -359,7 +356,7 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPStatefulFillBorder extends XPFillBorder {
+    private final class XPStatefulFillBorder extends XPFillBorder {
         private final Part part;
         private final Prop prop;
         XPStatefulFillBorder(Color color, int thickness, Part part, Prop prop) {
@@ -368,6 +365,7 @@ class XPStyle {
             this.prop = prop;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             State state = State.NORMAL;
             // special casing for comboboxes.
@@ -387,18 +385,20 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPImageBorder extends AbstractBorder implements UIResource {
+    private final class XPImageBorder extends AbstractBorder implements UIResource {
         Skin skin;
 
         XPImageBorder(Component c, Part part) {
             this.skin = getSkin(c, part);
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g,
                                 int x, int y, int width, int height) {
             skin.paintSkin(g, x, y, width, height, null);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets)       {
             Insets margin = null;
             Insets borderInsets = skin.getContentMargin();
@@ -427,11 +427,12 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private static class XPEmptyBorder extends EmptyBorder implements UIResource {
+    private static final class XPEmptyBorder extends EmptyBorder implements UIResource {
         XPEmptyBorder(Insets m) {
             super(m.top+2, m.left+2, m.bottom+2, m.right+2);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets)       {
             insets = super.getBorderInsets(c, insets);
 
@@ -498,7 +499,7 @@ class XPStyle {
      * (component type) and which provides methods for painting backgrounds
      * and glyphs
      */
-    static class Skin {
+    static final class Skin {
         final Component component;
         final Part part;
         final State state;
@@ -570,14 +571,17 @@ class XPStyle {
             return getHeight((state != null) ? state : State.NORMAL);
         }
 
+        @Override
         public String toString() {
             return string;
         }
 
+        @Override
         public boolean equals(Object obj) {
             return (obj instanceof Skin && ((Skin)obj).string.equals(string));
         }
 
+        @Override
         public int hashCode() {
             return string.hashCode();
         }
@@ -679,16 +683,18 @@ class XPStyle {
         }
     }
 
-    private static class SkinPainter extends CachedPainter {
+    private static final class SkinPainter extends CachedPainter {
         SkinPainter() {
             super(30);
             flush();
         }
 
+        @Override
         public void flush() {
             super.flush();
         }
 
+        @Override
         protected void paintToImage(Component c, Image image, Graphics g,
                                     int w, int h, Object[] args) {
             Skin skin = (Skin)args[0];
@@ -721,6 +727,7 @@ class XPStyle {
             SunWritableRaster.markDirty(dbi);
         }
 
+        @Override
         protected Image createImage(Component c, int w, int h,
                                     GraphicsConfiguration config, Object[] args) {
             return new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
@@ -741,6 +748,7 @@ class XPStyle {
             setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         }
 
+        @Override
         @SuppressWarnings("deprecation")
         public boolean isFocusTraversable() {
             return false;
@@ -758,6 +766,7 @@ class XPStyle {
             return state;
         }
 
+        @Override
         public void paintComponent(Graphics g) {
             if (XPStyle.getXP() == null || skin == null) {
                 return;
@@ -773,6 +782,7 @@ class XPStyle {
             repaint();
         }
 
+        @Override
         protected void paintBorder(Graphics g) {
         }
 

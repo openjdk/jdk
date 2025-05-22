@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /* @test
  * @bug 8032400
  * @summary JSR292: invokeSpecial: InternalError attempting to lookup a method
- * @enablePreview
  * @compile -XDignore.symbol.file SpecialStatic.java
  * @run testng test.java.lang.invoke.lookup.SpecialStatic
  */
@@ -164,7 +163,7 @@ public class SpecialStatic {
             });
             clb.withMethodBody("getMethodHandle", MethodTypeDesc.of(CD_MethodHandle),
                     ACC_PUBLIC | ACC_STATIC, cob -> {
-                cob.constantInstruction(MethodHandleDesc.ofMethod(SPECIAL, CD_T1, METHOD_NAME, MTD_int));
+                cob.loadConstant(MethodHandleDesc.ofMethod(SPECIAL, CD_T1, METHOD_NAME, MTD_int));
                 cob.areturn();
             });
             clb.withMethodBody("getLookup", MTD_Lookup,

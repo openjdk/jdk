@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,18 @@
 
 /*
  * @test
- * @bug 7142086
+ * @bug 7142086 8337334
+ * @requires vm.debug == false
  * @summary performance problem in Check.checkOverrideClashes(...)
  * @modules jdk.compiler
  * @run main/timeout=10 T7142086
+ */
+
+/*
+ * @test
+ * @requires vm.debug == true
+ * @modules jdk.compiler
+ * @run main/timeout=20 T7142086
  */
 
 import com.sun.source.util.JavacTask;

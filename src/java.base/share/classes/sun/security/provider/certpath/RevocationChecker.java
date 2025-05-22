@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.AccessController;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.CertPathValidatorException.BasicReason;
@@ -181,34 +179,21 @@ class RevocationChecker extends PKIXRevocationChecker {
         }
     }
 
-    @SuppressWarnings("removal")
     private static RevocationProperties getRevocationProperties() {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<RevocationProperties>() {
-                public RevocationProperties run() {
-                    RevocationProperties rp = new RevocationProperties();
-                    String onlyEE = Security.getProperty(
-                        "com.sun.security.onlyCheckRevocationOfEECert");
-                    rp.onlyEE = onlyEE != null
-                                && onlyEE.equalsIgnoreCase("true");
-                    String ocspEnabled = Security.getProperty("ocsp.enable");
-                    rp.ocspEnabled = ocspEnabled != null
-                                     && ocspEnabled.equalsIgnoreCase("true");
-                    rp.ocspUrl = Security.getProperty("ocsp.responderURL");
-                    rp.ocspSubject
-                        = Security.getProperty("ocsp.responderCertSubjectName");
-                    rp.ocspIssuer
-                        = Security.getProperty("ocsp.responderCertIssuerName");
-                    rp.ocspSerial
-                        = Security.getProperty("ocsp.responderCertSerialNumber");
-                    rp.crlDPEnabled
-                        = Boolean.getBoolean("com.sun.security.enableCRLDP");
-                    rp.ocspNonce
-                        = Boolean.getBoolean("jdk.security.certpath.ocspNonce");
-                    return rp;
-                }
-            }
-        );
+        RevocationProperties rp = new RevocationProperties();
+        String onlyEE = Security.getProperty(
+            "com.sun.security.onlyCheckRevocationOfEECert");
+        rp.onlyEE = onlyEE != null && onlyEE.equalsIgnoreCase("true");
+        String ocspEnabled = Security.getProperty("ocsp.enable");
+        rp.ocspEnabled = ocspEnabled != null
+                         && ocspEnabled.equalsIgnoreCase("true");
+        rp.ocspUrl = Security.getProperty("ocsp.responderURL");
+        rp.ocspSubject = Security.getProperty("ocsp.responderCertSubjectName");
+        rp.ocspIssuer = Security.getProperty("ocsp.responderCertIssuerName");
+        rp.ocspSerial = Security.getProperty("ocsp.responderCertSerialNumber");
+        rp.crlDPEnabled = Boolean.getBoolean("com.sun.security.enableCRLDP");
+        rp.ocspNonce = Boolean.getBoolean("jdk.security.certpath.ocspNonce");
+        return rp;
     }
 
     private static X509Certificate getResponderCert(RevocationProperties rp,

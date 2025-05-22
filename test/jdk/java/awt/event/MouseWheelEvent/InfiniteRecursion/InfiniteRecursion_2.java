@@ -27,20 +27,16 @@
   @bug 6480024
   @library ../../../regtesthelpers
   @build Util Sysout AbstractTest
-  @summary stack overflow on mouse wheel rotation within JApplet
+  @summary stack overflow on mouse wheel rotation within a Window
   @run main InfiniteRecursion_2
 */
 
 /**
  * InfiniteRecursion_2.java
  *
- * summary: put a JButton into JPanel and then put JPanel into Applet.
- * Add MouseWheelListener to Applet.
+ * summary: put a JButton into JPanel and then put JPanel into the Window.
+ * Add MouseWheelListener to the Window
  * Add MouseListener to JPanel.
- * Rotating a wheel over the JButton would result in stack overflow.
-
- * summary: put a JButton into JApplet.
- * Add MouseWheelListener to JApplet.
  * Rotating a wheel over the JButton would result in stack overflow.
  */
 
@@ -79,7 +75,7 @@ public class InfiniteRecursion_2 extends Frame {
         this.addMouseWheelListener(new MouseWheelListener() {
                 public void mouseWheelMoved(MouseWheelEvent e)
                 {
-                    System.out.println("Wheel moved on APPLET : "+e);
+                    System.out.println("Wheel moved on Window : "+e);
                     actualEvents++;
                 }
             });

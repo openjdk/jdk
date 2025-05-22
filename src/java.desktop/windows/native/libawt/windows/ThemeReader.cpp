@@ -41,53 +41,53 @@
 #define GREEN_SHIFT 8
 
 
-typedef HRESULT(__stdcall *PFNCLOSETHEMEDATA)(HTHEME hTheme);
+typedef HRESULT(*PFNCLOSETHEMEDATA)(HTHEME hTheme);
 
-typedef HRESULT(__stdcall *PFNDRAWTHEMEBACKGROUND)(HTHEME hTheme, HDC hdc,
+typedef HRESULT(*PFNDRAWTHEMEBACKGROUND)(HTHEME hTheme, HDC hdc,
         int iPartId, int iStateId, const RECT *pRect,  const RECT *pClipRect);
 
-typedef HTHEME(__stdcall *PFNOPENTHEMEDATA)(HWND hwnd, LPCWSTR pszClassList);
-typedef HTHEME(__stdcall *PFNOPENTHEMEDATAFORDPI)(HWND hwnd, LPCWSTR pszClassList, UINT dpi);
+typedef HTHEME(*PFNOPENTHEMEDATA)(HWND hwnd, LPCWSTR pszClassList);
+typedef HTHEME(*PFNOPENTHEMEDATAFORDPI)(HWND hwnd, LPCWSTR pszClassList, UINT dpi);
 
-typedef HRESULT (__stdcall *PFNDRAWTHEMETEXT)(HTHEME hTheme, HDC hdc,
+typedef HRESULT (*PFNDRAWTHEMETEXT)(HTHEME hTheme, HDC hdc,
           int iPartId, int iStateId, LPCWSTR pszText, int iCharCount,
           DWORD dwTextFlags, DWORD dwTextFlags2, const RECT *pRect);
 
-typedef HRESULT (__stdcall *PFNGETTHEMEBACKGROUNDCONTENTRECT)(HTHEME hTheme,
+typedef HRESULT (*PFNGETTHEMEBACKGROUNDCONTENTRECT)(HTHEME hTheme,
         HDC hdc, int iPartId, int iStateId,  const RECT *pBoundingRect,
         RECT *pContentRect);
 
-typedef HRESULT (__stdcall *PFNGETTHEMEMARGINS)(HTHEME hTheme,
+typedef HRESULT (*PFNGETTHEMEMARGINS)(HTHEME hTheme,
         OPTIONAL HDC hdc, int iPartId, int iStateId, int iPropId,
         OPTIONAL RECT *prc, OUT MARGINS *pMargins);
 
-typedef BOOL (__stdcall *PFNISTHEMEPARTDEFINED)(HTHEME hTheme, int iPartId, int iStateId);
+typedef BOOL (*PFNISTHEMEPARTDEFINED)(HTHEME hTheme, int iPartId, int iStateId);
 
-typedef HRESULT (__stdcall *PFNGETTHEMEBOOL)(HTHEME hTheme, int iPartId,
+typedef HRESULT (*PFNGETTHEMEBOOL)(HTHEME hTheme, int iPartId,
         int iStateId, int iPropId, BOOL *pfVal);
 
-typedef BOOL (__stdcall *PFNGETTHEMESYSBOOL)(HTHEME hTheme, int iPropId);
+typedef BOOL (*PFNGETTHEMESYSBOOL)(HTHEME hTheme, int iPropId);
 
-typedef HRESULT (__stdcall *PFNGETTHEMECOLOR)(HTHEME hTheme, int iPartId,
+typedef HRESULT (*PFNGETTHEMECOLOR)(HTHEME hTheme, int iPartId,
         int iStateId, int iPropId, COLORREF *pColor);
 
-typedef HRESULT (__stdcall *PFNGETTHEMEENUMVALUE)(HTHEME hTheme, int iPartId,
+typedef HRESULT (*PFNGETTHEMEENUMVALUE)(HTHEME hTheme, int iPartId,
         int iStateId, int iPropId, int *val);
-typedef HRESULT (__stdcall *PFNGETTHEMEINT)(HTHEME hTheme, int iPartId,
+typedef HRESULT (*PFNGETTHEMEINT)(HTHEME hTheme, int iPartId,
         int iStateId, int iPropId, int *val);
-typedef HRESULT (__stdcall *PFNGETTHEMEPARTSIZE)(HTHEME hTheme, HDC hdc,
+typedef HRESULT (*PFNGETTHEMEPARTSIZE)(HTHEME hTheme, HDC hdc,
         int iPartId, int iStateId, RECT *prc, THEMESIZE eSize, SIZE *size);
 
-typedef HRESULT (__stdcall *PFNGETTHEMEPOSITION)(HTHEME hTheme, int iPartId,
+typedef HRESULT (*PFNGETTHEMEPOSITION)(HTHEME hTheme, int iPartId,
         int iStateId, int propID, POINT *point);
 
-typedef HRESULT(__stdcall *PFNSETWINDOWTHEME)(HWND hwnd, LPCWSTR pszSubAppName,
+typedef HRESULT(*PFNSETWINDOWTHEME)(HWND hwnd, LPCWSTR pszSubAppName,
             LPCWSTR pszSubIdList);
 
-typedef BOOL (__stdcall *PFNISTHEMEBACKGROUNDPARTIALLYTRANSPARENT)
+typedef BOOL (*PFNISTHEMEBACKGROUNDPARTIALLYTRANSPARENT)
              (HTHEME hTheme, int iPartId, int iStateId);
 
-typedef HRESULT (__stdcall *PFNGETTHEMETRANSITIONDURATION)
+typedef HRESULT (*PFNGETTHEMETRANSITIONDURATION)
                 (HTHEME hTheme, int iPartId, int iStateIdFrom, int iStateIdTo,
                  int iPropId, DWORD *pdwDuration);
 

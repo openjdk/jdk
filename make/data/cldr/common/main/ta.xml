@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -68,6 +68,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bik">பிகோல்</language>
 			<language type="bin">பினி</language>
 			<language type="bla">சிக்சிகா</language>
+			<language type="blo" draft="contributed">அனீ</language>
 			<language type="bm">பம்பாரா</language>
 			<language type="bn">வங்காளம்</language>
 			<language type="bo">திபெத்தியன்</language>
@@ -293,6 +294,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">கொமி</language>
 			<language type="kw">கார்னிஷ்</language>
 			<language type="kwk">குவாக்வாலா</language>
+			<language type="kxv" draft="contributed">குவி</language>
 			<language type="ky">கிர்கிஸ்</language>
 			<language type="la">லத்தின்</language>
 			<language type="lad">லடினோ</language>
@@ -306,7 +308,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lij" draft="contributed">லிகூரியன்</language>
 			<language type="lil">லில்லூயிட்</language>
 			<language type="lkt">லகோடா</language>
-			<language type="lmo" draft="contributed">லொம்பார்டு</language>
+			<language type="lmo">லொம்பார்டு</language>
 			<language type="ln">லிங்காலா</language>
 			<language type="lo">லாவோ</language>
 			<language type="lol">மோங்கோ</language>
@@ -499,6 +501,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">கொமோரியன்</language>
 			<language type="syc">பாரம்பரிய சிரியாக்</language>
 			<language type="syr">சிரியாக்</language>
+			<language type="szl" draft="contributed">சிலேசியன்</language>
 			<language type="ta">தமிழ்</language>
 			<language type="tce">தெற்கு டட்சோன்</language>
 			<language type="te">தெலுங்கு</language>
@@ -547,7 +550,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">உஸ்பெக்</language>
 			<language type="vai">வை</language>
 			<language type="ve">வென்டா</language>
+			<language type="vec" draft="contributed">வினிசியன்</language>
 			<language type="vi">வியட்நாமீஸ்</language>
+			<language type="vmw" draft="contributed">மகுவா</language>
 			<language type="vo">ஒலாபூக்</language>
 			<language type="vot">வோட்க்</language>
 			<language type="vun">வுன்ஜோ</language>
@@ -561,6 +566,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">வூ சீனம்</language>
 			<language type="xal">கல்மிக்</language>
 			<language type="xh">ஹோசா</language>
+			<language type="xnr" draft="contributed">காங்கிரி</language>
 			<language type="xog">சோகா</language>
 			<language type="yao">யாவ்</language>
 			<language type="yap">யாபேசே</language>
@@ -879,7 +885,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">இஸ்ரேல்</territory>
 			<territory type="IM">ஐல் ஆஃப் மேன்</territory>
 			<territory type="IN">இந்தியா</territory>
-			<territory type="IO" draft="contributed">பிரிட்டிஷ் இந்தியப் பெருங்கடல் பிரதேசம்</territory>
+			<territory type="IO">பிரிட்டிஷ் இந்தியப் பெருங்கடல் பிரதேசம்</territory>
 			<territory type="IO" alt="chagos" draft="contributed">சாகோஸ் தீவுக்கூட்டம்</territory>
 			<territory type="IQ">ஈராக்</territory>
 			<territory type="IR">ஈரான்</territory>
@@ -1105,7 +1111,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">தொலைபேசி புத்தக வரிசை முறை</type>
 			<type key="collation" type="phonetic">ஒலியியல் வரிசைப்படுத்தல் முறை</type>
 			<type key="collation" type="pinyin">பின்யின் வரிசை முறை</type>
-			<type key="collation" type="reformed">சீர்திருத்தப்பட்ட வரிசை முறை</type>
 			<type key="collation" type="search">பொதுப்படையான தேடல்</type>
 			<type key="collation" type="searchjl">ஹங்குல் முதன்மை மெய்யெழுத்தின்படி தேடு</type>
 			<type key="collation" type="standard">நிலையான வரிசை முறை</type>
@@ -1202,7 +1207,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1421,16 +1426,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Ehm">E a h:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
-						<dateFormatItem id="h">a h</dateFormatItem>
-						<dateFormatItem id="hm">a h:mm</dateFormatItem>
-						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
@@ -1456,22 +1456,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">a h – a h</greatestDifference>
-							<greatestDifference id="h">a h–h</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">a h:mm – a h:mm</greatestDifference>
-							<greatestDifference id="h">a h:mm–h:mm</greatestDifference>
-							<greatestDifference id="m">a h:mm–h:mm</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">a h:mm – a h:mm v</greatestDifference>
-							<greatestDifference id="h">a h:mm–h:mm v</greatestDifference>
-							<greatestDifference id="m">a h:mm–h:mm v</greatestDifference>
+							<greatestDifference id="a">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">a h – a h v</greatestDifference>
-							<greatestDifference id="h">a h–h v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M – M</greatestDifference>
@@ -1627,13 +1627,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<quarters>
 					<quarterContext type="format">
 						<quarterWidth type="abbreviated">
-							<quarter type="1">காலா.1</quarter>
-							<quarter type="2">காலா.2</quarter>
-							<quarter type="3">காலா.3</quarter>
-							<quarter type="4">காலா.4</quarter>
+							<quarter type="1">கா.1</quarter>
+							<quarter type="2">கா.2</quarter>
+							<quarter type="3">கா.3</quarter>
+							<quarter type="4">கா.4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1">ஒன்றாம் காலாண்டு</quarter>
+							<quarter type="1">முதல் காலாண்டு</quarter>
+							<quarter type="2">இரண்டாம் காலாண்டு</quarter>
+							<quarter type="3">மூன்றாம் காலாண்டு</quarter>
+							<quarter type="4">நான்காம் காலாண்டு</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">கா.1</quarter>
+							<quarter type="2">கா.2</quarter>
+							<quarter type="3">கா.3</quarter>
+							<quarter type="4">கா.4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">முதல் காலாண்டு</quarter>
 							<quarter type="2">இரண்டாம் காலாண்டு</quarter>
 							<quarter type="3">மூன்றாம் காலாண்டு</quarter>
 							<quarter type="4">நான்காம் காலாண்டு</quarter>
@@ -1644,9 +1658,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">நள்ளிரவு</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">நண்பகல்</dayPeriod>
-							<dayPeriod type="pm">பிற்பகல்</dayPeriod>
 							<dayPeriod type="morning1">அதிகாலை</dayPeriod>
 							<dayPeriod type="morning2">காலை</dayPeriod>
 							<dayPeriod type="afternoon1">மதியம்</dayPeriod>
@@ -1657,9 +1669,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">நள்.</dayPeriod>
-							<dayPeriod type="am">மு.ப</dayPeriod>
 							<dayPeriod type="noon">நண்.</dayPeriod>
-							<dayPeriod type="pm">பி.ப</dayPeriod>
 							<dayPeriod type="morning1">அதி.</dayPeriod>
 							<dayPeriod type="morning2">கா.</dayPeriod>
 							<dayPeriod type="afternoon1">மதி.</dayPeriod>
@@ -1670,15 +1680,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">முற்பகல்</dayPeriod>
-							<dayPeriod type="pm">பிற்பகல்</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">நள்.</dayPeriod>
-							<dayPeriod type="am">மு.ப</dayPeriod>
 							<dayPeriod type="noon">நண்.</dayPeriod>
-							<dayPeriod type="pm">பி.ப</dayPeriod>
 							<dayPeriod type="morning1">அதி.</dayPeriod>
 							<dayPeriod type="morning2">கா.</dayPeriod>
 							<dayPeriod type="afternoon1">மதி.</dayPeriod>
@@ -1686,10 +1690,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="evening1">மா.</dayPeriod>
 							<dayPeriod type="evening2">அந்தி மா.</dayPeriod>
 							<dayPeriod type="night1">இ.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">முற்பகல்</dayPeriod>
-							<dayPeriod type="pm">பிற்பகல்</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -1731,25 +1731,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>a h:mm:ss zzzz</pattern>
+							<pattern>h:mm:ss a zzzz</pattern>
 							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>a h:mm:ss z</pattern>
+							<pattern>h:mm:ss a z</pattern>
 							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>a h:mm:ss</pattern>
+							<pattern>h:mm:ss a</pattern>
 							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>a h:mm</pattern>
+							<pattern>h:mm a</pattern>
 							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
@@ -1788,17 +1788,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Ehm">E a h:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y G</dateFormatItem>
-						<dateFormatItem id="h">a h</dateFormatItem>
-						<dateFormatItem id="hm">a h:mm</dateFormatItem>
-						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">a h:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">a h:mm v</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">dd-MM, E</dateFormatItem>
 						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM W -ஆம் வாரம்</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM W -ஆம் வாரம்</dateFormatItem>
@@ -1817,34 +1811,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="h">
-							<greatestDifference id="a">a h – a h</greatestDifference>
-							<greatestDifference id="h">a h–h</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH – HH</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="a">a h:mm – a h:mm</greatestDifference>
-							<greatestDifference id="h">a h:mm–h:mm</greatestDifference>
-							<greatestDifference id="m">a h:mm–h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">a h:mm – a h:mm v</greatestDifference>
-							<greatestDifference id="h">a h:mm – h:mm v</greatestDifference>
-							<greatestDifference id="m">a h:mm – h:mm v</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">a h – a h v</greatestDifference>
-							<greatestDifference id="h">a h – h v</greatestDifference>
+							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH – HH v</greatestDifference>
@@ -2582,8 +2565,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} நேரம்</regionFormat>
 			<regionFormat type="daylight">{0} பகலொளி நேரம்</regionFormat>
 			<regionFormat type="standard">{0} நிலையான நேரம்</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>சான்டா இசபெல்</exemplarCity>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ஹோனோலூலூ</exemplarCity>
 			</zone>
 			<zone type="Etc/UTC">
 				<long>
@@ -2706,9 +2689,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>மெல்போர்ன்</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>கியூரி</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ஹோபர்ட்</exemplarCity>
@@ -2863,9 +2843,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>க்ரெஸ்டான்</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>யெல்லோநைஃப்</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>எட்மான்டான்</exemplarCity>
 			</zone>
@@ -2884,29 +2861,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>ரெசலூட்</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>ரெய்னி ரிவர்</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>ரான்கின் இன்லெட்</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>அடிகோகன்</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>தண்டர் பே</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>நிபிகான்</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>டொரொன்டோ</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>இகாலூயித்</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>பாங்னிர்துங்</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>மாங்டான்</exemplarCity>
@@ -3340,9 +3305,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>உலான்பாட்டர்</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>சோய்பால்சான்</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>மகாவு</exemplarCity>
 			</zone>
@@ -3721,17 +3683,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>தார் எஸ் சலாம்</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>உஷோரோட்</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>கீவ்</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>சிம்ஃபெரோபோல்</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>ஜபோரோஸியே</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>கம்பாலா</exemplarCity>
@@ -3747,12 +3703,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>நோம்</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ஹோனோலூலூ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ஜோன்ஸ்டன்</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>அங்கோரேஜ்</exemplarCity>
@@ -4133,13 +4083,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>சீன பகலொளி நேரம்</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>சோய்பால்சன் நேரம்</generic>
-					<standard>சோய்பால்சன் நிலையான நேரம்</standard>
-					<daylight>சோய்பால்சன் கோடை நேரம்</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>கிறிஸ்துமஸ் தீவு நேரம்</standard>
@@ -4393,6 +4336,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>பெட்ரோபவ்லோவ்ஸ்க் கம்சட்ஸ்கி கோடை நேரம்</daylight>
 				</long>
 			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>கஜகஸ்தான் நேரம்</standard>
+				</long>
+			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
 					<standard>கிழக்கு கஜகஸ்தான் நேரம்</standard>
@@ -4451,11 +4399,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>மக்காவ் கோடை நேரம்</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>மாக்கியூரி தீவு நேரம்</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>மகதன் நேரம்</generic>
@@ -4493,13 +4436,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>மாசன் நேரம்</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>வடமேற்கு மெக்ஸிகோ நேரம்</generic>
-					<standard>வடமேற்கு மெக்ஸிகோ நிலையான நேரம்</standard>
-					<daylight>வடமேற்கு மெக்ஸிகோ பகலொளி நேரம்</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -4931,6 +4867,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##,##0.00</pattern>
+					<pattern alt="noCurrency" draft="contributed">#,##,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
@@ -4970,8 +4907,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">¤ 000டி</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencyFormats numberSystem="tamldec">
 			<currencyFormatLength>
@@ -6051,7 +5986,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>மில்லிகிராம்கள்/டெசிலிட்டர்</displayName>
 				<unitPattern count="one">{0} மில்லிகிராம்/டெசிலிட்டர்</unitPattern>
+				<unitPattern count="one" case="ablative" draft="contributed">{0} மில்லிகிராம்/டெசிலிட்டரில்</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} மில்லிகிராம்/டெசிலிட்டரை</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} மில்லிகிராம்/டெசிலிட்டருக்கு</unitPattern>
 				<unitPattern count="other">{0} மில்லிகிராம்கள்/டெசிலிட்டர்</unitPattern>
+				<unitPattern count="other" case="ablative" draft="contributed">{0} மில்லிகிராம்கள்/டெசிலிட்டரில்</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} மில்லிகிராம்கள்/டெசிலிட்டரை</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} மில்லிகிராம்கள்/டெசிலிட்டருக்கு</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<displayName>மில்லிமோல்கள்/லிட்டர்</displayName>
@@ -6483,7 +6424,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="energy-kilocalorie">
 				<displayName>கிலோகலோரிகள்</displayName>
 				<unitPattern count="one">{0} கிலோகலோரி</unitPattern>
+				<unitPattern count="one" case="ablative" draft="contributed">{0} கிலோகலோரியில்</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} கிலோகலோரியை</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} கிலோகலோரிக்கு</unitPattern>
 				<unitPattern count="other">{0} கிலோகலோரிகள்</unitPattern>
+				<unitPattern count="other" case="ablative" draft="contributed">{0} கிலோ கலோரிகளில்</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} கிலோ கலோரிகளை</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} கிலோ கலோரிகளுக்கு</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<displayName>கலோரிகள்</displayName>
@@ -6835,7 +6782,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-point">
 				<displayName>அச்சுப் புள்ளிகள்</displayName>
 				<unitPattern count="one">{0} அச்சுப் புள்ளி</unitPattern>
+				<unitPattern count="one" case="ablative" draft="contributed">{0} அச்சுப் புள்ளியில்</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} அச்சுப் புள்ளியை</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} அச்சுப் புள்ளிக்கு</unitPattern>
 				<unitPattern count="other">{0} அச்சுப் புள்ளிகள்</unitPattern>
+				<unitPattern count="other" case="ablative" draft="contributed">{0} அச்சுப் புள்ளிகளில்</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} அச்சுப் புள்ளிகளை</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} அச்சுப் புள்ளிகளுக்கு</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<unitPattern count="one">{0} சூரிய ஆரம்</unitPattern>
@@ -7051,7 +7004,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>பாதரச மில்லிமீட்டர்கள்</displayName>
 				<unitPattern count="one">{0} பாதரச மில்லிமீட்டர்</unitPattern>
+				<unitPattern count="one" case="ablative" draft="contributed">{0} மில்லிமீட்டர் பாதரசத்தில்</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} மில்லிமீட்டர் பாதரசத்தை</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} மில்லிமீட்டர் பாதரசத்திற்கு</unitPattern>
 				<unitPattern count="other">{0} பாதரச மில்லிமீட்டர்கள்</unitPattern>
+				<unitPattern count="other" case="ablative" draft="contributed">{0} மில்லிமீட்டர் பாதரசத்தில்</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} மில்லிமீட்டர் பாதரசத்தை</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} மில்லிமீட்டர் பாதரசத்திற்கு</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>பவுண்டுகள்/சதுர அங்குலம்</displayName>
@@ -7467,6 +7426,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>இம்பீரியல் குவார்ட்ஸ்</displayName>
 				<unitPattern count="one">{0} இம்பீரியல் குவார்ட்</unitPattern>
 				<unitPattern count="other">{0} இம்பீரியல் குவார்ட்ஸ்</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>ஒளிவேகம்</displayName>
+				<unitPattern count="one">{0} ஒளிவேகம்</unitPattern>
+				<unitPattern count="one" case="ablative" draft="contributed">{0} ஒளிவேகத்தில்</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ஒளிவேகத்தை</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} ஒளிவேகத்திற்கு</unitPattern>
+				<unitPattern count="other">{0} ஒளிவேகம்</unitPattern>
+				<unitPattern count="other" case="ablative" draft="contributed">{0} ஒளிவேகத்தில்</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ஒளிவேகத்தை</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} ஒளிவேகத்திற்கு</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>பார்ட்ஸ்/பில்லியன்</displayName>
+				<unitPattern count="one" draft="contributed">{0} பார்ட்ஸ்/பில்லியன்</unitPattern>
+				<unitPattern count="one" case="ablative" draft="contributed">{0} பார்ட்ஸ்/பில்லியனில்</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} பார்ட்ஸ்/பில்லியனை</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} பார்ட்ஸ்/பில்லியனுக்கு</unitPattern>
+				<unitPattern count="other">{0} பார்ட்ஸ்/பில்லியன்</unitPattern>
+				<unitPattern count="other" case="ablative" draft="contributed">{0} பார்ட்ஸ்/பில்லியனில்</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} பார்ட்ஸ்/பில்லியனை</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} பார்ட்ஸ்/பில்லியனுக்கு</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>இரவுகள்</displayName>
+				<unitPattern count="one">{0} இரவு</unitPattern>
+				<unitPattern count="one" case="ablative" draft="contributed">{0} இரவில்</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} இரவை</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} இரவுக்கு</unitPattern>
+				<unitPattern count="other">{0} இரவுகள்</unitPattern>
+				<unitPattern count="other" case="ablative" draft="contributed">{0} இரவுகளில்</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} இரவுகளை</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} இரவுகளுக்கு</unitPattern>
+				<perUnitPattern>{0}/இரவு</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>கார்டினல் திசை</displayName>
@@ -8453,6 +8446,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} குவாட். இம்பீ.</unitPattern>
 				<unitPattern count="other">{0} குவாட். இம்பீ.</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName draft="contributed">ஒளிவேகம்</displayName>
+				<unitPattern count="one">{0} ஒளிவேகம்</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ஒளிவேகம்</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName draft="contributed">பார்ட்ஸ்/பில்லியன்</displayName>
+				<unitPattern count="one">{0} பார்ட்ஸ்/பில்லியன்</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} பார்ட்ஸ்/பில்லியன்</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName draft="contributed">இரவுகள்</displayName>
+				<unitPattern count="one" draft="contributed">{0} இரவு</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} இரவுகள்</unitPattern>
+				<perUnitPattern draft="contributed">{0}/இரவு</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>திசை</displayName>
 				<coordinateUnitPattern type="east">{0}கி</coordinateUnitPattern>
@@ -9153,6 +9162,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<unitPattern count="one">{0}கு. இம்.</unitPattern>
 				<unitPattern count="other">{0}கு. இம்.</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>ஒளிவேகம்</displayName>
+				<unitPattern count="one" draft="contributed">{0}ஒ.வே</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}ஒ.வே</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName draft="contributed">பா/பி</displayName>
+				<unitPattern count="one" draft="contributed">{0} பா/பி</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} பா/பி</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>இரவுகள்</displayName>
+				<unitPattern count="one" draft="contributed">{0} இ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} இ</unitPattern>
+				<perUnitPattern>{0}/இரவு</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/relocInfo.hpp"
 #include "memory/universe.hpp"
@@ -36,9 +35,8 @@
 #include "utilities/checkedCast.hpp"
 
 
-void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
+void Relocation::pd_set_data_value(address x, bool verify_only) {
 #ifdef AMD64
-  x += o;
   typedef Assembler::WhichOperand WhichOperand;
   WhichOperand which = (WhichOperand) format(); // that is, disp32 or imm, call32, narrow oop
   assert(which == Assembler::disp32_operand ||
@@ -80,9 +78,9 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
   }
 #else
   if (verify_only) {
-    guarantee(*pd_address_in_code() == (x + o), "instructions must match");
+    guarantee(*pd_address_in_code() == x, "instructions must match");
   } else {
-    *pd_address_in_code() = x + o;
+    *pd_address_in_code() = x;
   }
 #endif // AMD64
 }
@@ -99,7 +97,11 @@ address Relocation::pd_call_destination(address orig_addr) {
   if (ni->is_call()) {
     return nativeCall_at(addr())->destination() + adj;
   } else if (ni->is_jump()) {
-    return nativeJump_at(addr())->jump_destination() + adj;
+    address dest = nativeJump_at(addr())->jump_destination();
+    if (dest == (address) -1) {
+      return addr(); // jump to self
+    }
+    return dest + adj;
   } else if (ni->is_cond_jump()) {
     return nativeGeneralJump_at(addr())->jump_destination() + adj;
   } else if (ni->is_mov_literal64()) {

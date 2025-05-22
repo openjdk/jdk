@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -245,7 +245,7 @@ void VM_RedefineClasses::doit() {
   }
 
 #if INCLUDE_CDS
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     // Sharing is enabled so we remap the shared readonly space to
     // shared readwrite, private just in case we need to redefine
     // a shared class. We do the remap during the doit() phase of
@@ -1004,8 +1004,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   }
 
   // Check whether class modifiers are the same.
-  jushort old_flags = (jushort) the_class->access_flags().get_flags();
-  jushort new_flags = (jushort) scratch_class->access_flags().get_flags();
+  u2 old_flags = the_class->access_flags().as_class_flags();
+  u2 new_flags = scratch_class->access_flags().as_class_flags();
   if (old_flags != new_flags) {
     log_info(redefine, class, normalize)
         ("redefined class %s modifiers change error: modifiers changed from %d to %d.",
@@ -1039,9 +1039,9 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
     // access
-    old_flags = old_fs.access_flags().as_short();
-    new_flags = new_fs.access_flags().as_short();
-    if ((old_flags ^ new_flags) & JVM_RECOGNIZED_FIELD_MODIFIERS) {
+    old_flags = old_fs.access_flags().as_field_flags();
+    new_flags = new_fs.access_flags().as_field_flags();
+    if (old_flags != new_flags) {
       log_info(redefine, class, normalize)
           ("redefined class %s field %s change error: modifiers changed from %d to %d.",
            the_class->external_name(), name_sym2->as_C_string(), old_flags, new_flags);
@@ -1146,8 +1146,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
     switch (method_was) {
     case matched:
       // methods match, be sure modifiers do too
-      old_flags = (jushort) k_old_method->access_flags().get_flags();
-      new_flags = (jushort) k_new_method->access_flags().get_flags();
+      old_flags = k_old_method->access_flags().as_method_flags();
+      new_flags = k_new_method->access_flags().as_method_flags();
       if ((old_flags ^ new_flags) & ~(JVM_ACC_NATIVE)) {
         log_info(redefine, class, normalize)
           ("redefined class %s  method %s modifiers error: modifiers changed from %d to %d",
@@ -1173,7 +1173,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
           }
         }
       }
-      JFR_ONLY(k_new_method->copy_trace_flags(*k_old_method->trace_flags_addr());)
+      JFR_ONLY(k_new_method->copy_trace_flags(k_old_method->trace_flags());)
       log_trace(redefine, class, normalize)
         ("Method matched: new: %s [%d] == old: %s [%d]",
          k_new_method->name_and_sig_as_C_string(), ni, k_old_method->name_and_sig_as_C_string(), oi);
@@ -1361,8 +1361,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
 
     ClassFileStream st((u1*)_class_defs[i].class_bytes,
                        _class_defs[i].class_byte_count,
-                       "__VM_RedefineClasses__",
-                       ClassFileStream::verify);
+                       "__VM_RedefineClasses__");
 
     // Set redefined class handle in JvmtiThreadState class.
     // This redefined class is sent to agent event handler for class file
@@ -1573,28 +1572,20 @@ void VM_RedefineClasses::map_operand_index(int old_index, int new_index) {
 
 
 // Merge old_cp and scratch_cp and return the results of the merge via
-// merge_cp_p. The number of entries in *merge_cp_p is returned via
+// merge_cp_p. The number of entries in merge_cp_p is returned via
 // merge_cp_length_p. The entries in old_cp occupy the same locations
-// in *merge_cp_p. Also creates a map of indices from entries in
-// scratch_cp to the corresponding entry in *merge_cp_p. Index map
+// in merge_cp_p. Also creates a map of indices from entries in
+// scratch_cp to the corresponding entry in merge_cp_p. Index map
 // entries are only created for entries in scratch_cp that occupy a
-// different location in *merged_cp_p.
+// different location in merged_cp_p.
 bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
-       const constantPoolHandle& scratch_cp, constantPoolHandle *merge_cp_p,
-       int *merge_cp_length_p, TRAPS) {
+       const constantPoolHandle& scratch_cp, constantPoolHandle& merge_cp_p,
+       int& merge_cp_length_p, TRAPS) {
 
-  if (merge_cp_p == nullptr) {
-    assert(false, "caller must provide scratch constantPool");
-    return false; // robustness
-  }
-  if (merge_cp_length_p == nullptr) {
-    assert(false, "caller must provide scratch CP length");
-    return false; // robustness
-  }
   // Worst case we need old_cp->length() + scratch_cp()->length(),
   // but the caller might be smart so make sure we have at least
   // the minimum.
-  if ((*merge_cp_p)->length() < old_cp->length()) {
+  if (merge_cp_p->length() < old_cp->length()) {
     assert(false, "merge area too small");
     return false; // robustness
   }
@@ -1622,36 +1613,36 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
         // revert the copy to JVM_CONSTANT_UnresolvedClass
         // May be resolving while calling this so do the same for
         // JVM_CONSTANT_UnresolvedClass (klass_name_at() deals with transition)
-        (*merge_cp_p)->temp_unresolved_klass_at_put(old_i,
+        merge_cp_p->temp_unresolved_klass_at_put(old_i,
           old_cp->klass_name_index_at(old_i));
         break;
 
       case JVM_CONSTANT_Double:
       case JVM_CONSTANT_Long:
-        // just copy the entry to *merge_cp_p, but double and long take
+        // just copy the entry to merge_cp_p, but double and long take
         // two constant pool entries
-        ConstantPool::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i);
+        ConstantPool::copy_entry_to(old_cp, old_i, merge_cp_p, old_i);
         old_i++;
         break;
 
       default:
-        // just copy the entry to *merge_cp_p
-        ConstantPool::copy_entry_to(old_cp, old_i, *merge_cp_p, old_i);
+        // just copy the entry to merge_cp_p
+        ConstantPool::copy_entry_to(old_cp, old_i, merge_cp_p, old_i);
         break;
       }
     } // end for each old_cp entry
 
-    ConstantPool::copy_operands(old_cp, *merge_cp_p, CHECK_false);
-    (*merge_cp_p)->extend_operands(scratch_cp, CHECK_false);
+    ConstantPool::copy_operands(old_cp, merge_cp_p, CHECK_false);
+    merge_cp_p->extend_operands(scratch_cp, CHECK_false);
 
     // We don't need to sanity check that *merge_cp_length_p is within
     // *merge_cp_p bounds since we have the minimum on-entry check above.
-    (*merge_cp_length_p) = old_i;
+    merge_cp_length_p = old_i;
   }
 
   // merge_cp_len should be the same as old_cp->length() at this point
   // so this trace message is really a "warm-and-breathing" message.
-  log_debug(redefine, class, constantpool)("after pass 0: merge_cp_len=%d", *merge_cp_length_p);
+  log_debug(redefine, class, constantpool)("after pass 0: merge_cp_len=%d", merge_cp_length_p);
 
   int scratch_i;  // index into scratch_cp
   {
@@ -1675,13 +1666,13 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
         break;
       }
 
-      bool match = scratch_cp->compare_entry_to(scratch_i, *merge_cp_p, scratch_i);
+      bool match = scratch_cp->compare_entry_to(scratch_i, merge_cp_p, scratch_i);
       if (match) {
         // found a match at the same index so nothing more to do
         continue;
       }
 
-      int found_i = scratch_cp->find_matching_entry(scratch_i, *merge_cp_p);
+      int found_i = scratch_cp->find_matching_entry(scratch_i, merge_cp_p);
       if (found_i != 0) {
         guarantee(found_i != scratch_i,
           "compare_entry_to() and find_matching_entry() do not agree");
@@ -1693,14 +1684,14 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       }
 
       // No match found so we have to append this entry and any unique
-      // referenced entries to *merge_cp_p.
-      append_entry(scratch_cp, scratch_i, merge_cp_p, merge_cp_length_p);
+      // referenced entries to merge_cp_p.
+      append_entry(scratch_cp, scratch_i, &merge_cp_p, &merge_cp_length_p);
     }
   }
 
   log_debug(redefine, class, constantpool)
     ("after pass 1a: merge_cp_len=%d, scratch_i=%d, index_map_len=%d",
-     *merge_cp_length_p, scratch_i, _index_map_count);
+     merge_cp_length_p, scratch_i, _index_map_count);
 
   if (scratch_i < scratch_cp->length()) {
     // Pass 1b:
@@ -1722,24 +1713,24 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       }
 
       int found_i =
-        scratch_cp->find_matching_entry(scratch_i, *merge_cp_p);
+        scratch_cp->find_matching_entry(scratch_i, merge_cp_p);
       if (found_i != 0) {
-        // Found a matching entry somewhere else in *merge_cp_p so
+        // Found a matching entry somewhere else in merge_cp_p so
         // just need a mapping entry.
         map_index(scratch_cp, scratch_i, found_i);
         continue;
       }
 
       // No match found so we have to append this entry and any unique
-      // referenced entries to *merge_cp_p.
-      append_entry(scratch_cp, scratch_i, merge_cp_p, merge_cp_length_p);
+      // referenced entries to merge_cp_p.
+      append_entry(scratch_cp, scratch_i, &merge_cp_p, &merge_cp_length_p);
     }
 
     log_debug(redefine, class, constantpool)
       ("after pass 1b: merge_cp_len=%d, scratch_i=%d, index_map_len=%d",
-       *merge_cp_length_p, scratch_i, _index_map_count);
+       merge_cp_length_p, scratch_i, _index_map_count);
   }
-  finalize_operands_merge(*merge_cp_p, CHECK_false);
+  finalize_operands_merge(merge_cp_p, CHECK_false);
 
   return true;
 } // end merge_constant_pools()
@@ -1816,8 +1807,8 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
 
   // reference to the cp holder is needed for copy_operands()
   merge_cp->set_pool_holder(scratch_class);
-  bool result = merge_constant_pools(old_cp, scratch_cp, &merge_cp,
-                  &merge_cp_length, THREAD);
+  bool result = merge_constant_pools(old_cp, scratch_cp, merge_cp,
+                  merge_cp_length, THREAD);
   merge_cp->set_pool_holder(nullptr);
 
   if (!result) {
@@ -4350,7 +4341,8 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   the_class->vtable().initialize_vtable();
   the_class->itable().initialize_itable();
 
-  // Leave arrays of jmethodIDs and itable index cache unchanged
+  // Update jmethodID cache if present.
+  the_class->update_methods_jmethod_cache();
 
   // Copy the "source debug extension" attribute from new class version
   the_class->set_source_debug_extension(

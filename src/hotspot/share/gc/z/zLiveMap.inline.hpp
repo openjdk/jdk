@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,19 +52,19 @@ inline size_t ZLiveMap::live_bytes() const {
 }
 
 inline const BitMapView ZLiveMap::segment_live_bits() const {
-  return BitMapView(const_cast<BitMap::bm_word_t*>(&_segment_live_bits), nsegments);
+  return BitMapView(const_cast<BitMap::bm_word_t*>(&_segment_live_bits), NumSegments);
 }
 
 inline const BitMapView ZLiveMap::segment_claim_bits() const {
-  return BitMapView(const_cast<BitMap::bm_word_t*>(&_segment_claim_bits), nsegments);
+  return BitMapView(const_cast<BitMap::bm_word_t*>(&_segment_claim_bits), NumSegments);
 }
 
 inline BitMapView ZLiveMap::segment_live_bits() {
-  return BitMapView(&_segment_live_bits, nsegments);
+  return BitMapView(&_segment_live_bits, NumSegments);
 }
 
 inline BitMapView ZLiveMap::segment_claim_bits() {
-  return BitMapView(&_segment_claim_bits, nsegments);
+  return BitMapView(&_segment_claim_bits, NumSegments);
 }
 
 inline bool ZLiveMap::is_segment_live(BitMap::idx_t segment) const {
@@ -80,15 +80,11 @@ inline bool ZLiveMap::claim_segment(BitMap::idx_t segment) {
 }
 
 inline BitMap::idx_t ZLiveMap::first_live_segment() const {
-  return segment_live_bits().find_first_set_bit(0, nsegments);
+  return segment_live_bits().find_first_set_bit(0, NumSegments);
 }
 
 inline BitMap::idx_t ZLiveMap::next_live_segment(BitMap::idx_t segment) const {
-  return segment_live_bits().find_first_set_bit(segment + 1, nsegments);
-}
-
-inline BitMap::idx_t ZLiveMap::segment_size() const {
-  return _bitmap.size() / nsegments;
+  return segment_live_bits().find_first_set_bit(segment + 1, NumSegments);
 }
 
 inline BitMap::idx_t ZLiveMap::index_to_segment(BitMap::idx_t index) const {
@@ -125,11 +121,11 @@ inline void ZLiveMap::inc_live(uint32_t objects, size_t bytes) {
 }
 
 inline BitMap::idx_t ZLiveMap::segment_start(BitMap::idx_t segment) const {
-  return segment_size() * segment;
+  return segment * _segment_size;
 }
 
 inline BitMap::idx_t ZLiveMap::segment_end(BitMap::idx_t segment) const {
-  return segment_start(segment) + segment_size();
+  return segment_start(segment) + _segment_size;
 }
 
 inline size_t ZLiveMap::do_object(ObjectClosure* cl, zaddress addr) const {
@@ -167,7 +163,7 @@ inline void ZLiveMap::iterate(ZGenerationId id, Function function) {
     return true;
   };
 
-  for (BitMap::idx_t segment = first_live_segment(); segment < nsegments; segment = next_live_segment(segment)) {
+  for (BitMap::idx_t segment = first_live_segment(); segment < NumSegments; segment = next_live_segment(segment)) {
     // For each live segment
     iterate_segment(segment, live_only);
   }
@@ -222,7 +218,7 @@ inline BitMap::idx_t ZLiveMap::find_base_bit_in_segment(BitMap::idx_t start, Bit
   }
 
   // The bitmaps contain pairs of bits to deal with strongly marked vs only
-  // finalizable marked. Align down to get the the first bit position.
+  // finalizable marked. Align down to get the first bit position.
   return bit & ~BitMap::idx_t(1);
 }
 

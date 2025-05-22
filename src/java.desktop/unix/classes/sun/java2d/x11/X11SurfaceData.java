@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,9 +210,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
 
             initIDs(XORComposite.class);
 
-            @SuppressWarnings("removal")
-            String xtextpipe = java.security.AccessController.doPrivileged
-                (new sun.security.action.GetPropertyAction("sun.java2d.xtextpipe"));
+            String xtextpipe = System.getProperty("sun.java2d.xtextpipe");
             if (xtextpipe == null || "true".startsWith(xtextpipe)) {
                 if ("true".equals(xtextpipe)) {
                     // Only verbose if they use the full string "true"
@@ -248,9 +246,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
             if (GraphicsEnvironment.isHeadless()) {
                 accelerationEnabled = Boolean.FALSE;
             } else {
-                @SuppressWarnings("removal")
-                String prop = java.security.AccessController.doPrivileged(
-                        new sun.security.action.GetPropertyAction("sun.java2d.pmoffscreen"));
+                String prop = System.getProperty("sun.java2d.pmoffscreen");
                 if (prop != null) {
                     // true iff prop==true, false otherwise
                     accelerationEnabled = Boolean.valueOf(prop);
@@ -433,7 +429,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
         this.depth = cm.getPixelSize();
         initOps(peer, graphicsConfig, depth);
         if (isAccelerationEnabled()) {
-            setBlitProxyKey(gc.getProxyKey());
+            setBlitProxyCache(gc.getSurfaceDataProxyCache());
         }
     }
 

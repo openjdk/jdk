@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,22 +37,12 @@
 
 package compiler.intrinsics.sha.cli;
 
-import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForOtherCPU;
-import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedAArch64CPU;
-import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedRISCV64CPU;
-import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedX86CPU;
-import compiler.intrinsics.sha.cli.testcases.UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU;
+import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedCPU;
 
 public class TestUseMD5IntrinsicsOptionOnUnsupportedCPU {
     public static void main(String args[]) throws Throwable {
         new DigestOptionsBase(
-                new GenericTestCaseForUnsupportedX86CPU(
-                        DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false),
-                new GenericTestCaseForUnsupportedAArch64CPU(
-                        DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false),
-                new GenericTestCaseForUnsupportedRISCV64CPU(
-                        DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false),
-                new GenericTestCaseForOtherCPU(
+                new GenericTestCaseForUnsupportedCPU(
                         DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false)).test();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,11 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
 import java.lang.foreign.AddressLayout;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
 import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.PaddingLayout;
 import java.lang.foreign.SequenceLayout;
@@ -57,7 +57,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.HashSet;
 import java.util.List;
-import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Set;
 
@@ -72,7 +71,20 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         MemorySegment makeStub(MethodHandle target, Arena arena);
     }
 
-    private record LinkRequest(FunctionDescriptor descriptor, LinkerOptions options) {}
+    private record LinkRequest(FunctionDescriptor descriptor, LinkerOptions options) {
+        // Overrides for boot performance
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof LinkRequest other &&
+                    other.descriptor.equals(descriptor) &&
+                    other.options.equals(options);
+        }
+
+        @Override
+        public int hashCode() {
+            return descriptor.hashCode() * 1237 + options.hashCode();
+        }
+    }
     private final SoftReferenceCache<LinkRequest, MethodHandle> DOWNCALL_CACHE = new SoftReferenceCache<>();
     private final SoftReferenceCache<LinkRequest, UpcallStubFactory> UPCALL_CACHE = new SoftReferenceCache<>();
     private final Set<MemoryLayout> CANONICAL_LAYOUTS_CACHE = new HashSet<>(canonicalLayouts().values());
@@ -80,7 +92,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     @Override
     @CallerSensitive
     public final MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle");
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle", false);
         SharedUtils.checkSymbol(symbol);
         return downcallHandle0(function, options).bindTo(symbol);
     }
@@ -88,7 +100,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     @Override
     @CallerSensitive
     public final MethodHandle downcallHandle(FunctionDescriptor function, Option... options) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle");
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle", false);
         return downcallHandle0(function, options);
     }
 
@@ -115,7 +127,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     @Override
     @CallerSensitive
     public final MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "upcallStub");
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "upcallStub", false);
         Objects.requireNonNull(arena);
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
@@ -140,9 +152,6 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     public SystemLookup defaultLookup() {
         return SystemLookup.getInstance();
     }
-
-    /** {@return byte order used by this linker} */
-    protected abstract ByteOrder linkerByteOrder();
 
     // C spec mandates that variadic arguments smaller than int are promoted to int,
     // and float is promoted to double
@@ -192,6 +201,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             checkHasNaturalAlignment(layout);
             long offset = 0;
             long lastUnpaddedOffset = 0;
+            PaddingLayout preceedingPadding = null;
             for (MemoryLayout member : sl.memberLayouts()) {
                 // check element offset before recursing so that an error points at the
                 // outermost layout first
@@ -199,29 +209,65 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 checkStructMember(member, offset);
 
                 offset += member.byteSize();
-                if (!(member instanceof PaddingLayout)) {
+                if (!(member instanceof PaddingLayout pl)) {
                     lastUnpaddedOffset = offset;
+                    if (preceedingPadding != null) {
+                        preceedingPadding = null;
+                    }
+                } else {
+                    if (preceedingPadding != null) {
+                        throw new IllegalArgumentException("The padding layout " + pl +
+                                " was preceded by another padding layout " + preceedingPadding +
+                                inMessage(sl));
+                    }
+                    preceedingPadding = pl;
                 }
             }
-            checkGroupSize(sl, lastUnpaddedOffset);
+            checkNotAllPadding(sl);
+            checkGroup(sl, lastUnpaddedOffset);
         } else if (layout instanceof UnionLayout ul) {
             checkHasNaturalAlignment(layout);
-            long maxUnpaddedLayout = 0;
+            // We need to know this up front
+            long maxUnpaddedLayout = ul.memberLayouts().stream()
+                    .filter(l -> !(l instanceof PaddingLayout))
+                    .mapToLong(MemoryLayout::byteSize)
+                    .max()
+                    .orElse(0);
+
+            boolean hasPadding = false;
+
             for (MemoryLayout member : ul.memberLayouts()) {
                 checkLayoutRecursive(member);
-                if (!(member instanceof PaddingLayout)) {
-                    maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.byteSize());
+                if (member instanceof PaddingLayout pl) {
+                    if (hasPadding) {
+                        throw new IllegalArgumentException("More than one padding" + inMessage(ul));
+                    }
+                    hasPadding = true;
+                    if (pl.byteSize() <= maxUnpaddedLayout) {
+                        throw new IllegalArgumentException("Superfluous padding " + pl + inMessage(ul));
+                    }
                 }
             }
-            checkGroupSize(ul, maxUnpaddedLayout);
+            checkGroup(ul, maxUnpaddedLayout);
         } else if (layout instanceof SequenceLayout sl) {
             checkHasNaturalAlignment(layout);
+            if (sl.elementLayout() instanceof PaddingLayout pl) {
+                throw memberException(sl, pl,
+                        "not supported because a sequence of a padding layout is not allowed");
+            }
             checkLayoutRecursive(sl.elementLayout());
         }
     }
 
-    // check for trailing padding
-    private void checkGroupSize(GroupLayout gl, long maxUnpaddedOffset) {
+    // check elements are not all padding layouts
+    private static void checkNotAllPadding(StructLayout sl) {
+        if (!sl.memberLayouts().isEmpty() && sl.memberLayouts().stream().allMatch(e -> e instanceof PaddingLayout)) {
+            throw new IllegalArgumentException("Layout '" + sl + "' is non-empty and only has padding layouts");
+        }
+    }
+
+    // check trailing padding
+    private static void checkGroup(GroupLayout gl, long maxUnpaddedOffset) {
         long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.byteAlignment());
         if (gl.byteSize() != expectedSize) {
             throw new IllegalArgumentException("Layout '" + gl + "' has unexpected size: "
@@ -229,15 +275,26 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
+    private static String inMessage(GroupLayout gl) {
+        return " in " + gl;
+    }
+
     // checks both that there is no excess padding between 'memberLayout' and
     // the previous layout
-    private void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
+    private static void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
                                           long lastUnpaddedOffset, long offset) {
         long expectedOffset = Utils.alignUp(lastUnpaddedOffset, memberLayout.byteAlignment());
         if (expectedOffset != offset) {
-            throw new IllegalArgumentException("Member layout '" + memberLayout + "', of '" + parent + "'" +
-                    " found at unexpected offset: " + offset + " != " + expectedOffset);
+            throw memberException(parent, memberLayout,
+                    "found at unexpected offset: " + offset + " != " + expectedOffset);
         }
+    }
+
+    private static IllegalArgumentException memberException(MemoryLayout parent,
+                                                            MemoryLayout member,
+                                                            String info) {
+        return new IllegalArgumentException(
+                "Member layout '" + member + "', of '" + parent + "' " + info);
     }
 
     private void checkSupported(ValueLayout valueLayout) {
@@ -264,22 +321,30 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             case StructLayout sl -> MemoryLayout.structLayout(stripNames(sl.memberLayouts()));
             case UnionLayout ul -> MemoryLayout.unionLayout(stripNames(ul.memberLayouts()));
             case SequenceLayout sl -> MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
-            case AddressLayout al -> al.targetLayout()
-                    .map(tl -> al.withoutName().withTargetLayout(stripNames(tl))) // restricted
-                    .orElseGet(al::withoutName);
+            case AddressLayout al -> {
+                var stripped = al.withoutName();
+                var target = al.targetLayout();
+                if (target.isPresent())
+                    stripped = stripped.withTargetLayout(stripNames(target.get()));
+                yield stripped;
+            }
             default -> ml.withoutName(); // ValueLayout and PaddingLayout
         };
     }
 
     private static MemoryLayout[] stripNames(List<MemoryLayout> layouts) {
-        return layouts.stream()
-                .map(AbstractLinker::stripNames)
-                .toArray(MemoryLayout[]::new);
+        var ret = new MemoryLayout[layouts.size()];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = stripNames(layouts.get(i));
+        }
+        return ret;
     }
 
     private static FunctionDescriptor stripNames(FunctionDescriptor function) {
-        return function.returnLayout()
-                .map(rl -> FunctionDescriptor.of(stripNames(rl), stripNames(function.argumentLayouts())))
-                .orElseGet(() -> FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts())));
+        var retLayout = function.returnLayout();
+        if (retLayout.isEmpty()) {
+            return FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts()));
+        }
+        return FunctionDescriptor.of(stripNames(retLayout.get()), stripNames(function.argumentLayouts()));
     }
 }

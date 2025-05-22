@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileParser.hpp"
@@ -32,6 +31,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
@@ -78,7 +78,8 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
       ClassFileStream* stream = new ClassFileStream(ptr,
                                                     pointer_delta_as_int(end_ptr, ptr),
                                                     cfs->source(),
-                                                    ClassFileStream::verify);
+                                                    /* from_boot_loader_modules_image */ false,
+                                                    /* from_class_file_load_hook */ true);
       ClassLoadInfo cl_info(protection_domain);
       ClassFileParser parser(stream,
                              class_name,
@@ -157,7 +158,8 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
       stream = new ClassFileStream(ptr,
                                    pointer_delta_as_int(end_ptr, ptr),
                                    stream->source(),
-                                   stream->need_verify());
+                                   /* from_boot_loader_modules_image */ false,
+                                   /* from_class_file_load_hook */ true);
     }
   }
 
@@ -203,6 +205,9 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
   InstanceKlass* result = parser.create_instance_klass(old_stream != stream, *cl_inst_info, CHECK_NULL);
   assert(result != nullptr, "result cannot be null with no pending exception");
+  if (CDSConfig::is_dumping_archive() && stream->from_class_file_load_hook()) {
+    SystemDictionaryShared::set_from_class_file_load_hook(result);
+  }
 
   if (cached_class_file != nullptr) {
     // JVMTI: we have an InstanceKlass now, tell it about the cached bytes

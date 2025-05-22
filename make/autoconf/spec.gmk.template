@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,7 @@ endif
 
 LIBM := @LIBM@
 LIBDL := @LIBDL@
+LIBPTHREAD := @LIBPTHREAD@
 
 WINENV_ROOT := @WINENV_ROOT@
 WINENV_PREFIX := @WINENV_PREFIX@
@@ -272,7 +273,7 @@ VERSION_CFLAGS = \
     -DVERSION_CLASSFILE_MINOR=$(VERSION_CLASSFILE_MINOR) \
     #
 
-ifneq ($(COMPANY_NAME),)
+ifneq ($(COMPANY_NAME), )
   # COMPANY_NAME is set to "N/A" in make/conf/branding.conf by default,
   # but can be customized with the '--with-vendor-name' configure option.
   # Only export "VENDOR" to the build if COMPANY_NAME contains a real value.
@@ -288,13 +289,13 @@ endif
 # Only export VENDOR_URL, VENDOR_URL_BUG and VENDOR_VM_URL_BUG to the build if
 # they are not empty. Otherwise, default values which are defined in the sources
 # will be used.
-ifneq ($(VENDOR_URL),)
+ifneq ($(VENDOR_URL), )
   VERSION_CFLAGS += -DVENDOR_URL='"$(VENDOR_URL)"'
 endif
-ifneq ($(VENDOR_URL_BUG),)
+ifneq ($(VENDOR_URL_BUG), )
   VERSION_CFLAGS += -DVENDOR_URL_BUG='"$(VENDOR_URL_BUG)"'
 endif
-ifneq ($(VENDOR_URL_VM_BUG),)
+ifneq ($(VENDOR_URL_VM_BUG), )
   VERSION_CFLAGS += -DVENDOR_URL_VM_BUG='"$(VENDOR_URL_VM_BUG)"'
 endif
 
@@ -353,6 +354,8 @@ BUNDLES_OUTPUTDIR = $(OUTPUTDIR)/bundles
 TESTMAKE_OUTPUTDIR = $(OUTPUTDIR)/test-make
 MAKESUPPORT_OUTPUTDIR = $(OUTPUTDIR)/make-support
 
+JAVA_TMP_DIR = $(SUPPORT_OUTPUTDIR)/javatmp
+
 # This does not get overridden in a bootcycle build
 CONFIGURESUPPORT_OUTPUTDIR := @CONFIGURESUPPORT_OUTPUTDIR@
 BUILDJDK_OUTPUTDIR = $(OUTPUTDIR)/buildjdk
@@ -365,9 +368,8 @@ ENABLE_GENERATE_CLASSLIST := @ENABLE_GENERATE_CLASSLIST@
 
 EXCLUDE_TRANSLATIONS := @EXCLUDE_TRANSLATIONS@
 
-BUILD_MANPAGES := @BUILD_MANPAGES@
-
 BUILD_CDS_ARCHIVE := @BUILD_CDS_ARCHIVE@
+BUILD_CDS_ARCHIVE_COH := @BUILD_CDS_ARCHIVE_COH@
 
 ENABLE_COMPATIBLE_CDS_ALIGNMENT := @ENABLE_COMPATIBLE_CDS_ALIGNMENT@
 
@@ -425,11 +427,11 @@ LIBFFI_LIBS := @LIBFFI_LIBS@
 LIBFFI_CFLAGS := @LIBFFI_CFLAGS@
 ENABLE_LIBFFI_BUNDLING := @ENABLE_LIBFFI_BUNDLING@
 LIBFFI_LIB_FILE := @LIBFFI_LIB_FILE@
+ICONV_CFLAGS := @ICONV_CFLAGS@
+ICONV_LDFLAGS := @ICONV_LDFLAGS@
+ICONV_LIBS := @ICONV_LIBS@
 FILE_MACRO_CFLAGS := @FILE_MACRO_CFLAGS@
 REPRODUCIBLE_CFLAGS := @REPRODUCIBLE_CFLAGS@
-BRANCH_PROTECTION_CFLAGS := @BRANCH_PROTECTION_CFLAGS@
-
-STATIC_LIBS_CFLAGS := @STATIC_LIBS_CFLAGS@
 
 JMH_CORE_JAR := @JMH_CORE_JAR@
 JMH_GENERATOR_JAR := @JMH_GENERATOR_JAR@
@@ -452,6 +454,7 @@ JCOV_ENABLED := @JCOV_ENABLED@
 JCOV_HOME := @JCOV_HOME@
 JCOV_INPUT_JDK := @JCOV_INPUT_JDK@
 JCOV_FILTERS := @JCOV_FILTERS@
+JCOV_MODULES := @JCOV_MODULES@
 
 # AddressSanitizer
 ASAN_ENABLED := @ASAN_ENABLED@
@@ -477,7 +480,10 @@ MACOSX_VERSION_MAX := @MACOSX_VERSION_MAX@
 MACOSX_CODESIGN_MODE := @MACOSX_CODESIGN_MODE@
 MACOSX_CODESIGN_IDENTITY := @MACOSX_CODESIGN_IDENTITY@
 
-# Toolchain type: gcc, clang, xlc, microsoft...
+# The code signing hook configuration
+SIGNING_HOOK := @SIGNING_HOOK@
+
+# Toolchain type: gcc, clang, microsoft...
 TOOLCHAIN_TYPE := @TOOLCHAIN_TYPE@
 TOOLCHAIN_VERSION := @TOOLCHAIN_VERSION@
 CC_VERSION_NUMBER := @CC_VERSION_NUMBER@
@@ -486,20 +492,7 @@ CXX_VERSION_NUMBER := @CXX_VERSION_NUMBER@
 # Legacy support
 HOTSPOT_TOOLCHAIN_TYPE := @HOTSPOT_TOOLCHAIN_TYPE@
 
-# Option used to tell the compiler whether to create 32- or 64-bit executables
-COMPILER_TARGET_BITS_FLAG := @COMPILER_TARGET_BITS_FLAG@
-COMPILER_SUPPORTS_TARGET_BITS_FLAG := @COMPILER_SUPPORTS_TARGET_BITS_FLAG@
-
-# Option used to pass a command file to the compiler
-COMPILER_COMMAND_FILE_FLAG := @COMPILER_COMMAND_FILE_FLAG@
-
-# Option for specifying a file which saves the binder commands
-# produced by the link step (for debugging, currently AIX only)
-COMPILER_BINDCMD_FILE_FLAG := @COMPILER_BINDCMD_FILE_FLAG@
-
 CC_OUT_OPTION := @CC_OUT_OPTION@
-LD_OUT_OPTION := @LD_OUT_OPTION@
-AR_OUT_OPTION := @AR_OUT_OPTION@
 
 # Flags used for overriding the default opt setting for a C/C++ source file.
 C_O_FLAG_HIGHEST_JVM := @C_O_FLAG_HIGHEST_JVM@
@@ -525,6 +518,7 @@ DISABLED_WARNINGS_CXX := @DISABLED_WARNINGS_CXX@
 
 # A global flag (true or false) determining if native warnings are considered errors.
 WARNINGS_AS_ERRORS := @WARNINGS_AS_ERRORS@
+JAVA_WARNINGS_AS_ERRORS := @JAVA_WARNINGS_AS_ERRORS@
 
 CFLAGS_CCACHE := @CFLAGS_CCACHE@
 ADLC_LANGSTD_CXXFLAGS := @ADLC_LANGSTD_CXXFLAGS@
@@ -568,11 +562,12 @@ SYSROOT := @SYSROOT@
 
 # LDFLAGS used to link the jdk native libraries (C-code)
 LDFLAGS_JDKLIB := @LDFLAGS_JDKLIB@
-JDKLIB_LIBS := @JDKLIB_LIBS@
 
 # LDFLAGS used to link the jdk native launchers (C-code)
 LDFLAGS_JDKEXE := @LDFLAGS_JDKEXE@
-JDKEXE_LIBS := @JDKEXE_LIBS@
+
+# LDFLAGS used to link the static jdk library
+LDFLAGS_STATIC_JDK := @LDFLAGS_STATIC_JDK@
 
 # LDFLAGS specific to C++ linking.
 LDFLAGS_CXX_JDK := @LDFLAGS_CXX_JDK@
@@ -584,9 +579,6 @@ LDFLAGS_CXX_PARTIAL_LINKING := @LDFLAGS_CXX_PARTIAL_LINKING@
 LDCXX := @LDCXX@
 # The flags for linking libstdc++ linker.
 LIBCXX := @LIBCXX@
-
-# Compiler and linker flags used when building native tests
-LDFLAGS_TESTEXE := @LDFLAGS_TESTEXE@
 
 # BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
 # build platform.
@@ -604,10 +596,10 @@ BUILD_SYSROOT_LDFLAGS := @BUILD_SYSROOT_LDFLAGS@
 
 AS := @AS@
 
-# AR is used to create a static library (is ar in unix, lib.exe in windows)
 AR := @AR@
 ARFLAGS := @ARFLAGS@
-
+LIB := @LIB@
+LIBFLAGS := @LIBFLAGS@
 NM := @NM@
 NMFLAGS := @NMFLAGS@
 STRIP := @STRIP@
@@ -618,10 +610,6 @@ LIPO := @LIPO@
 INSTALL_NAME_TOOL := @INSTALL_NAME_TOOL@
 METAL := @METAL@
 METALLIB := @METALLIB@
-
-# Options to linker to specify a mapfile.
-# (Note absence of := assignment, because we do not want to evaluate the macro body here)
-SET_SHARED_LIBRARY_MAPFILE = @SET_SHARED_LIBRARY_MAPFILE@
 
 #
 # Options for generating debug symbols
@@ -647,23 +635,16 @@ SHARED_LIBRARY_FLAGS := @SHARED_LIBRARY_FLAGS@
 SET_SHARED_LIBRARY_ORIGIN = @SET_SHARED_LIBRARY_ORIGIN@
 SET_EXECUTABLE_ORIGIN = @SET_EXECUTABLE_ORIGIN@
 
-# Different OS:es have different ways of naming shared libraries.
-# The SHARED_LIBRARY and STATIC_LIBRARY macros takes "verify" as and argument and returns:
-#    "libverify.so" or "libverify.dylib" or "verify.dll" depending on platform.
-# (Note absence of := assignment, because we do not want to evaluate the macro body here)
-SHARED_LIBRARY = @SHARED_LIBRARY@
-STATIC_LIBRARY = @STATIC_LIBRARY@
-
 LIBRARY_PREFIX := @LIBRARY_PREFIX@
 SHARED_LIBRARY_SUFFIX := @SHARED_LIBRARY_SUFFIX@
 STATIC_LIBRARY_SUFFIX := @STATIC_LIBRARY_SUFFIX@
 EXECUTABLE_SUFFIX := @EXECUTABLE_SUFFIX@
 OBJ_SUFFIX := @OBJ_SUFFIX@
-STATIC_BUILD := @STATIC_BUILD@
 
 STRIPFLAGS := @STRIPFLAGS@
 
-JAVA_FLAGS := @JAVA_FLAGS@
+JAVA_FLAGS_TMPDIR := -Djava.io.tmpdir=$(JAVA_TMP_DIR)
+JAVA_FLAGS := @JAVA_FLAGS@ $(JAVA_FLAGS_TMPDIR)
 JAVA_FLAGS_BIG := @JAVA_FLAGS_BIG@
 JAVA_FLAGS_SMALL := @JAVA_FLAGS_SMALL@
 BUILD_JAVA_FLAGS_SMALL := @BUILD_JAVA_FLAGS_SMALL@
@@ -699,8 +680,12 @@ BUILD_JAR = @FIXPATH@ $(BUILD_JDK)/bin/jar
 
 DOCS_REFERENCE_JAVADOC := @DOCS_REFERENCE_JAVADOC@
 
+# A file containing a way to uniquely identify the source code revision that
+# the build was created from
+SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
+
 # Interim langtools modules and arguments
-INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
+INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.internal.md jdk.javadoc
 INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
 INTERIM_LANGTOOLS_ADD_EXPORTS := \
     --add-exports java.base/sun.reflect.annotation=jdk.compiler.interim \
@@ -731,6 +716,8 @@ NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) $(JAVADOC_MAIN_CLASS)
 
 JMOD_COMPRESS := @JMOD_COMPRESS@
 JLINK_KEEP_PACKAGED_MODULES := @JLINK_KEEP_PACKAGED_MODULES@
+JLINK_PRODUCE_LINKABLE_RUNTIME := @JLINK_PRODUCE_LINKABLE_RUNTIME@
+JLINK_USER_EXTRA_FLAGS := @JLINK_USER_EXTRA_FLAGS@
 
 RCFLAGS := @RCFLAGS@
 
@@ -742,6 +729,7 @@ CCACHE := @CCACHE@
 # CD is going away, but remains to cater for legacy makefiles.
 CD := cd
 CHMOD := @CHMOD@
+CMAKE := @CMAKE@
 CODESIGN := @CODESIGN@
 CP := @CP@
 CUT := @CUT@
@@ -766,6 +754,7 @@ MKDIR := @MKDIR@
 MV := @MV@
 NICE := @NICE@
 PANDOC := @PANDOC@
+TIDY := @TIDY@
 PATCH := @PATCH@
 PRINTF := @PRINTF@
 READLINK := @READLINK@
@@ -813,7 +802,11 @@ TAR_SUPPORTS_TRANSFORM := @TAR_SUPPORTS_TRANSFORM@
 
 # Build setup
 USE_EXTERNAL_LIBJPEG := @USE_EXTERNAL_LIBJPEG@
+LIBJPEG_CFLAGS := @LIBJPEG_CFLAGS@
+LIBJPEG_LIBS := @LIBJPEG_LIBS@
 USE_EXTERNAL_LIBGIF := @USE_EXTERNAL_LIBGIF@
+GIFLIB_CFLAGS := @GIFLIB_CFLAGS@
+GIFLIB_LIBS := @GIFLIB_LIBS@
 USE_EXTERNAL_LIBZ := @USE_EXTERNAL_LIBZ@
 LIBZ_CFLAGS := @LIBZ_CFLAGS@
 LIBZ_LIBS := @LIBZ_LIBS@
@@ -825,11 +818,7 @@ UCRT_DLL_DIR := @UCRT_DLL_DIR@
 ENABLE_PANDOC := @ENABLE_PANDOC@
 PANDOC_MARKDOWN_FLAG := @PANDOC_MARKDOWN_FLAG@
 
-####################################################
-#
 # Libraries
-#
-
 USE_EXTERNAL_LCMS := @USE_EXTERNAL_LCMS@
 LCMS_CFLAGS := @LCMS_CFLAGS@
 LCMS_LIBS := @LCMS_LIBS@
@@ -842,11 +831,7 @@ USE_EXTERNAL_LIBPNG := @USE_EXTERNAL_LIBPNG@
 PNG_LIBS := @PNG_LIBS@
 PNG_CFLAGS := @PNG_CFLAGS@
 
-####################################################
-#
 # Misc
-#
-
 INCLUDE_SA := @INCLUDE_SA@
 INCLUDE_JVMCI := @INCLUDE_JVMCI@
 INCLUDE_COMPILER2 := @INCLUDE_COMPILER2@
@@ -855,14 +840,19 @@ OS_VERSION_MAJOR := @OS_VERSION_MAJOR@
 OS_VERSION_MINOR := @OS_VERSION_MINOR@
 OS_VERSION_MICRO := @OS_VERSION_MICRO@
 
+# Arm SVE
+SVE_CFLAGS := @SVE_CFLAGS@
+
 # Images directory definitions
 JDK_IMAGE_SUBDIR := jdk
 JRE_IMAGE_SUBDIR := jre
 JCOV_IMAGE_SUBDIR := jdk-jcov
+STATIC_JDK_IMAGE_SUBDIR := static-jdk
 
 # Colon left out to be able to override output dir for bootcycle-images
 JDK_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(JDK_IMAGE_SUBDIR)
 JRE_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(JRE_IMAGE_SUBDIR)
+STATIC_JDK_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(STATIC_JDK_IMAGE_SUBDIR)
 JCOV_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(JCOV_IMAGE_SUBDIR)
 
 # Test image, as above
@@ -942,6 +932,7 @@ DOCS_JAVASE_BUNDLE_NAME := javase-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
 DOCS_REFERENCE_BUNDLE_NAME := jdk-reference-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
 STATIC_LIBS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-static-libs$(DEBUG_PART).tar.gz
 STATIC_LIBS_GRAAL_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-static-libs-graal$(DEBUG_PART).tar.gz
+STATIC_JDK_BUNDLE_NAME := static-jdk-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
 JCOV_BUNDLE_NAME := jdk-jcov-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
 
 JDK_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JDK_BUNDLE_NAME)
@@ -952,6 +943,7 @@ TEST_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(TEST_BUNDLE_NAME)
 DOCS_JDK_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(DOCS_JDK_BUNDLE_NAME)
 DOCS_JAVASE_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(DOCS_JAVASE_BUNDLE_NAME)
 DOCS_REFERENCE_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(DOCS_REFERENCE_BUNDLE_NAME)
+STATIC_JDK_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(STATIC_JDK_BUNDLE_NAME)
 JCOV_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JCOV_BUNDLE_NAME)
 
 # This macro is called to allow inclusion of closed source counterparts.

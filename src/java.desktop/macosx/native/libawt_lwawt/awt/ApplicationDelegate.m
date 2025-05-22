@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,11 @@
 
 // The following is a AWT convention?
 #define PREFERENCES_TAG  42
+
+// Custom event that is provided by AWT to allow libraries like
+// JavaFX to forward native events to AWT even if AWT runs in
+// embedded mode.
+static NSString* awtEmbeddedEvent = @"AWTEmbeddedEvent";
 
 static void addMenuItem(NSMenuItem* menuItem, NSInteger index) {
 AWT_ASSERT_APPKIT_THREAD;
@@ -117,12 +122,28 @@ AWT_ASSERT_APPKIT_THREAD;
     // don't install the EAWT delegate if another kind of NSApplication is installed, like say, Safari
     BOOL shouldInstall = NO;
     BOOL overrideDelegate = (getenv("AWT_OVERRIDE_NSDELEGATE") != NULL);
+    BOOL isApplicationOwner = NO;
     if (NSApp != nil) {
         if ([NSApp isMemberOfClass:[NSApplication class]] && overrideDelegate) shouldInstall = YES;
-        if ([NSApp isKindOfClass:[NSApplicationAWT class]]) shouldInstall = YES;
+        if ([NSApp isKindOfClass:[NSApplicationAWT class]]) {
+            shouldInstall = YES;
+            isApplicationOwner = YES;
+        }
     }
+
+    if (!isApplicationOwner) {
+        // Register embedded event listener
+        NSNotificationCenter *ctr = [NSNotificationCenter defaultCenter];
+        Class clz = [ApplicationDelegate class];
+        [ctr addObserver:clz selector:@selector(_embeddedEvent:) name:awtEmbeddedEvent object:nil];
+    }
+
     checked = YES;
-    if (!shouldInstall) return nil;
+    if (!shouldInstall) {
+        [ThreadUtilities setApplicationOwner:NO];
+        return nil;
+    }
+    [ThreadUtilities setApplicationOwner:isApplicationOwner];
 
     sApplicationDelegate = [[ApplicationDelegate alloc] init];
     return sApplicationDelegate;
@@ -282,11 +303,16 @@ static jclass sjc_AppEventHandler = NULL;
     GET_CLASS_RETURN(sjc_AppEventHandler, "com/apple/eawt/_AppEventHandler", ret);
 
 - (void)_handleOpenURLEvent:(NSAppleEventDescriptor *)openURLEvent withReplyEvent:(NSAppleEventDescriptor *)replyEvent {
-AWT_ASSERT_APPKIT_THREAD;
     if (!fHandlesURLTypes) return;
 
     NSString *url = [[openURLEvent paramDescriptorForKeyword:keyDirectObject] stringValue];
+    [ApplicationDelegate _openURL:url];
 
+    [replyEvent insertDescriptor:[NSAppleEventDescriptor nullDescriptor] atIndex:0];
+}
+
++ (void)_openURL:(NSString *)url {
+AWT_ASSERT_APPKIT_THREAD;
     //fprintf(stderr,"jm_handleOpenURL\n");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     jstring jURL = NSStringToJavaString(env, url);
@@ -295,8 +321,6 @@ AWT_ASSERT_APPKIT_THREAD;
     (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handleOpenURI, jURL);
     CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jURL);
-
-    [replyEvent insertDescriptor:[NSAppleEventDescriptor nullDescriptor] atIndex:0];
 }
 
 // Helper for both open file and print file methods
@@ -465,6 +489,15 @@ AWT_ASSERT_APPKIT_THREAD;
 
 + (void)_systemDidWake {
     [self _notifyJava:com_apple_eawt__AppEventHandler_NOTIFY_SYSTEM_WAKE];
+}
+
++ (void)_embeddedEvent:(NSNotification *)notification {
+    NSString *name = notification.userInfo[@"name"];
+
+    if ([name isEqualToString:@"openURL"]) {
+        NSString *url = notification.userInfo[@"url"];
+        [ApplicationDelegate _openURL:url];
+    }
 }
 
 + (void)_registerForNotification:(NSNumber *)notificationTypeNum {

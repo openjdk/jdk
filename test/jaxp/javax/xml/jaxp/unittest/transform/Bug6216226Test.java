@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,24 @@
 
 package transform;
 
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.runWithTmpPermission;
-
 import java.io.File;
 import java.io.StringReader;
 import java.util.PropertyPermission;
-
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 
 /*
  * @test
  * @bug 6216226
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6216226Test
  * @run testng/othervm transform.Bug6216226Test
  * @summary Test StreamResult(File) is closed after transform().
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6216226Test {
 
     @Test
@@ -58,7 +51,7 @@ public class Bug6216226Test {
             Transformer xformer = tf.newTransformer();
             StringReader st = new StringReader("<?xml version=\"1.0\" encoding=\"UTF-8\"?><doc></doc>");
             StreamSource s = new StreamSource(st);
-            StreamResult r = runWithTmpPermission(() -> new StreamResult(test), new PropertyPermission("user.dir", "read"));
+            StreamResult r = new StreamResult(test);
             xformer.transform(s, r);
             if (!test.delete()) {
                 Assert.fail("cannot delete file: " + test.getPath());

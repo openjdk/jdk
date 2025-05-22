@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,16 +59,8 @@ import static java.util.Arrays.asList;
 
 public class InheritedChannelTest {
 
-    private static final String TEST_SRC = System.getProperty("test.src");
     private static final String TEST_CLASSPATH = System.getProperty("test.class.path");
     private static final String TEST_CLASSES = System.getProperty("test.classes");
-    private static final Path POLICY_PASS = Paths.get(TEST_SRC, "java.policy.pass");
-    private static final Path POLICY_FAIL = Paths.get(TEST_SRC, "java.policy.fail");
-
-    private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
-
-    private static final String ARCH = System.getProperty("os.arch");
-    private static final String OS_ARCH = ARCH.equals("i386") ? "i586" : ARCH;
 
     private static final Path libraryPath
             = Paths.get(System.getProperty("java.library.path"));
@@ -82,25 +74,6 @@ public class InheritedChannelTest {
             { "EchoTest",  List.of(EchoTest.class.getName())  },
             { "CheckIPv6Test",  List.of(CheckIPv6Test.class.getName())  },
             { "CloseTest", List.of(CloseTest.class.getName()) },
-
-            // run StateTest with a SecurityManager set
-            // Note that the system properties are arguments to StateTest and not options.
-            // These system properties are passed to the launched service as options:
-            // java [-options] class [args...]
-
-            { "StateTest run with " + POLICY_PASS, List.of(StateTest.class.getName(),
-                                                           "-Djava.security.manager",
-                                                           "-Dtest.classes=" + TEST_CLASSES,
-                                                           "-Djava.security.policy="
-                                                           + POLICY_PASS)
-            },
-            { "StateTest run with " + POLICY_FAIL, List.of(StateTest.class.getName(),
-                                                           "-expectFail",
-                                                           "-Djava.security.manager",
-                                                           "-Dtest.classes=" + TEST_CLASSES,
-                                                           "-Djava.security.policy="
-                                                           + POLICY_FAIL)
-            }
         };
     }
 

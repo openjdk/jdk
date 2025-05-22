@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@ package transform;
 
 import java.io.StringReader;
 import org.xml.sax.InputSource;
-
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.TransformerConfigurationException;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -38,11 +36,9 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8058152
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.StylesheetTest
  * @run testng/othervm transform.StylesheetTest
  * @summary this test contains test cases for verifying stylesheet
  */
-@Listeners(jaxp.library.FilePolicy.class)
 public class StylesheetTest {
 
     /**

@@ -172,8 +172,14 @@ public class CtwRunner {
 
         long classStart = start(totalClassCount);
         long classStop = stop(totalClassCount);
-
         long classCount = classStop - classStart;
+
+        boolean allowZeroClassCount = Boolean.getBoolean("sun.hotspot.tools.ctw.allow_zero_class_count");
+        if (allowZeroClassCount && totalClassCount == 0L) {
+            System.out.println("WARN: " + target + "(at " + targetPath + ") has no classes. Ignoring.");
+            return;
+        }
+
         Asserts.assertGreaterThan(classCount, 0L,
                 target + "(at " + targetPath + ") does not have any classes");
 
@@ -273,6 +279,7 @@ public class CtwRunner {
                 "-Xbatch",
                 "-XX:-ShowMessageBoxOnError",
                 "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
                 // redirect VM output to cerr so it won't collide w/ ctw output
                 "-XX:+DisplayVMOutputToStderr",
                 // define phase start
@@ -293,8 +300,17 @@ public class CtwRunner {
                 String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
                 // MethodHandle MUST NOT be compiled
                 "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
-                // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
+                // CTW does not have good execution profile info, which would uncommon-trap
+                // a lot of branches/calls that are presumed to be never executed.
+                // Expand the optimization scope by disallowing most traps.
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:PerMethodSpecTrapLimit=0",
+                // Do not pay extra stack trace generation cost for normally thrown exceptions
+                "-XX:-StackTraceInThrowable",
                 "-XX:+IgnoreUnrecognizedVMOptions",
+                // Do not pay extra zapping cost for explicit GC invocations
+                "-XX:-ZapUnusedHeapArea",
+                // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
                 "-XX:+StressLCM",
                 "-XX:+StressGCM",
                 "-XX:+StressIGVN",
@@ -302,7 +318,17 @@ public class CtwRunner {
                 "-XX:+StressMacroExpansion",
                 "-XX:+StressIncrementalInlining",
                 // StressSeed is uint
-                "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE)));
+                "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE),
+                // Do not fail on huge methods where StressGCM makes register
+                // allocation allocate lots of memory
+                "-XX:CompileCommand=memlimit,*.*,0"));
+
+        // Use this stress mode 10% of the time as it could make some long-running compilations likely to abort.
+        if (rng.nextInt(10) == 0) {
+            Args.add("-XX:+StressBailout");
+            Args.add("-XX:StressBailoutMean=100000");
+            Args.add("-XX:+CaptureBailoutInformation");
+        }
 
         for (String arg : CTW_EXTRA_ARGS.split(",")) {
             Args.add(arg);

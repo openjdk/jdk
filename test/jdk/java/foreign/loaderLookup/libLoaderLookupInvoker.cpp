@@ -22,7 +22,7 @@
  */
 
 #include "jni.h"
-#include "testlib_threads.h"
+#include "testlib_threads.hpp"
 
 struct Context {
     JavaVM* jvm;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,10 @@ import jdk.internal.util.ArraysSupport;
 import sun.nio.cs.UTF_8;
 
 /**
- * Utility class for zipfile name and comment decoding and encoding
+ * Utility class for ZIP file entry name and comment decoding and encoding.
+ * <p>
+ * The {@code ZipCoder} for UTF-8 charset is thread safe, {@code ZipCoder}
+ * for other charsets require external synchronization.
  */
 class ZipCoder {
 
@@ -56,28 +59,27 @@ class ZipCoder {
     }
 
     /**
-     * This enum represents the three possible return values for
+     * Constants representing the three possible return values for
      * {@link #compare(String, byte[], int, int, boolean)} when
      * this method compares a lookup name to a string encoded in the
      * CEN byte array.
      */
-    enum Comparison {
-        /**
+    static final byte
+        /*
          * The lookup string is exactly equal
          * to the encoded string.
-          */
-        EXACT_MATCH,
-        /**
+         */
+        EXACT_MATCH = 0,
+        /*
          * The lookup string and the encoded string differs only
          * by the encoded string having a trailing '/' character.
          */
-        DIRECTORY_MATCH,
-        /**
+        DIRECTORY_MATCH = 1,
+        /*
          * The lookup string and the encoded string do not match.
          * (They are neither an exact match or a directory match.)
          */
-        NO_MATCH
-    }
+        NO_MATCH = 2;
 
     String toString(byte[] ba, int off, int length) {
         try {
@@ -158,13 +160,6 @@ class ZipCoder {
         return hsh;
     }
 
-    boolean hasTrailingSlash(byte[] a, int end) {
-        byte[] slashBytes = slashBytes();
-        return end >= slashBytes.length &&
-            Arrays.mismatch(a, end - slashBytes.length, end, slashBytes, 0, slashBytes.length) == -1;
-    }
-
-    private byte[] slashBytes;
     private final Charset cs;
     protected CharsetDecoder dec;
     private CharsetEncoder enc;
@@ -182,6 +177,13 @@ class ZipCoder {
         return dec;
     }
 
+    /**
+     * {@return the {@link Charset} used by this {@code ZipCoder}}
+     */
+    final Charset charset() {
+        return this.cs;
+    }
+
     private CharsetEncoder encoder() {
         if (enc == null) {
             enc = cs.newEncoder()
@@ -189,23 +191,6 @@ class ZipCoder {
               .onUnmappableCharacter(CodingErrorAction.REPORT);
         }
         return enc;
-    }
-
-    // This method produces an array with the bytes that will correspond to a
-    // trailing '/' in the chosen character encoding.
-    //
-    // While in most charsets a trailing slash will be encoded as the byte
-    // value of '/', this does not hold in the general case. E.g., in charsets
-    // such as UTF-16 and UTF-32 it will be represented by a sequence of 2 or 4
-    // bytes, respectively.
-    private byte[] slashBytes() {
-        if (slashBytes == null) {
-            // Take into account charsets that produce a BOM, e.g., UTF-16
-            byte[] slash = "/".getBytes(cs);
-            byte[] doubleSlash = "//".getBytes(cs);
-            slashBytes = Arrays.copyOfRange(doubleSlash, slash.length, doubleSlash.length);
-        }
-        return slashBytes;
     }
 
     /**
@@ -221,13 +206,13 @@ class ZipCoder {
      * The return values of this method are as follows:
      *
      * If the lookup name is exactly equal to the encoded string, return
-     * {@link Comparison#EXACT_MATCH}.
+     * {@link EXACT_MATCH}.
      *
      * If the parameter {@code matchDirectory} is {@code true} and the
      * two strings differ only by the encoded string having an extra
-     * trailing '/' character, then return {@link Comparison#DIRECTORY_MATCH}.
+     * trailing '/' character, then return {@link DIRECTORY_MATCH}.
      *
-     * Otherwise, return {@link Comparison#NO_MATCH}
+     * Otherwise, return {@link NO_MATCH}
      *
      * While a general implementation will need to decode bytes into a
      * String for comparison, this can be avoided if the String coder
@@ -241,18 +226,18 @@ class ZipCoder {
      *                      a directory match will also be tested
      *
      */
-    Comparison compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
+    byte compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
         String decoded = toString(b, off, len);
         if (decoded.startsWith(str)) {
             if (decoded.length() == str.length()) {
-                return Comparison.EXACT_MATCH;
+                return EXACT_MATCH;
             } else if (matchDirectory
                 && decoded.length() == str.length() + 1
                 && decoded.endsWith("/") ) {
-                return Comparison.DIRECTORY_MATCH;
+                return DIRECTORY_MATCH;
             }
         }
-        return Comparison.NO_MATCH;
+        return NO_MATCH;
     }
     static final class UTF8ZipCoder extends ZipCoder {
 
@@ -281,7 +266,7 @@ class ZipCoder {
                 return 0;
             }
             int end = off + len;
-            int asciiLen = JLA.countPositives(a, off, len);
+            int asciiLen = JLA.uncheckedCountPositives(a, off, len);
             if (asciiLen != len) {
                 // Non-ASCII, fall back to decoding a String
                 // We avoid using decoder() here since the UTF8ZipCoder is
@@ -290,33 +275,31 @@ class ZipCoder {
                 // exceptions eagerly when opening ZipFiles
                 return hash(JLA.newStringUTF8NoRepl(a, off, len));
             }
-            // T_BOOLEAN to treat the array as unsigned bytes, in line with StringLatin1.hashCode
-            int h = ArraysSupport.vectorizedHashCode(a, off, len, 0, ArraysSupport.T_BOOLEAN);
+            int h = ArraysSupport.hashCodeOfUnsigned(a, off, len, 0);
             if (a[end - 1] != '/') {
                 h = 31 * h + '/';
             }
             return h;
         }
 
-        @Override
-        boolean hasTrailingSlash(byte[] a, int end) {
+        private boolean hasTrailingSlash(byte[] a, int end) {
             return end > 0 && a[end - 1] == '/';
         }
 
         @Override
-        Comparison compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
+        byte compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
             try {
-                byte[] encoded = JLA.getBytesNoRepl(str, UTF_8.INSTANCE);
+                byte[] encoded = JLA.uncheckedGetBytesNoRepl(str, UTF_8.INSTANCE);
                 int mismatch = Arrays.mismatch(encoded, 0, encoded.length, b, off, off+len);
                 if (mismatch == -1) {
-                    return Comparison.EXACT_MATCH;
+                    return EXACT_MATCH;
                 } else if (matchDirectory && len == mismatch + 1 && hasTrailingSlash(b, off + len)) {
-                    return Comparison.DIRECTORY_MATCH;
+                    return DIRECTORY_MATCH;
                 } else {
-                    return Comparison.NO_MATCH;
+                    return NO_MATCH;
                 }
             } catch (CharacterCodingException e) {
-                return Comparison.NO_MATCH;
+                return NO_MATCH;
             }
         }
     }

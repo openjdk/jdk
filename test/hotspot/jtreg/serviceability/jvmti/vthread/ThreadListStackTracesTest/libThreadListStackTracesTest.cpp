@@ -25,7 +25,7 @@
 #include <jvmti.h>
 #include <stdio.h>
 #include <string.h>
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 static jvmtiEnv* jvmti = nullptr;
 static const jint MAX_FRAME_COUNT = 32;

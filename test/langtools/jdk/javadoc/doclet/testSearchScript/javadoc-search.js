@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ function loadIndexFiles(docsPath) {
     tryLoad(docsPath, "type-search-index.js");
     tryLoad(docsPath, "member-search-index.js");
     tryLoad(docsPath, "tag-search-index.js");
-    load(docsPath + "/search.js");
+    load(docsPath + "/script-files/search.js");
 }
 
 function tryLoad(docsPath, file) {
@@ -63,6 +63,12 @@ var $ = function(f) {
         f();
     } else {
         return {
+            attr: function() {
+                return this;
+            },
+            css: function() {
+                return this;
+            },
             val: function() {
                 return this;
             },

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/predicates_enums.hpp"
 #include "opto/type.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -57,10 +58,8 @@ class     JProjNode;
 class       JumpProjNode;
 class     SCMemProjNode;
 class PhaseIdealLoop;
-
-// The success projection of a Parse Predicate is always an IfTrueNode and the uncommon projection an IfFalseNode
-typedef IfTrueNode ParsePredicateSuccessProj;
-typedef IfFalseNode ParsePredicateUncommonProj;
+enum class AssertionPredicateType;
+enum class PredicateState;
 
 //------------------------------RegionNode-------------------------------------
 // The class of RegionNodes, which can be mapped to basic blocks in the
@@ -118,7 +117,7 @@ public:
 #endif //ASSERT
   LoopStatus loop_status() const { return _loop_status; };
   void set_loop_status(LoopStatus status);
-  DEBUG_ONLY(void verify_can_be_irreducible_entry() const;)
+  bool can_be_irreducible_entry() const;
 
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
@@ -181,6 +180,8 @@ class PhiNode : public TypeNode {
 
   bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
 
+  bool is_split_through_mergemem_terminating() const;
+
 public:
   // Node layout (parallels RegionNode):
   enum { Region,                // Control input is the Phi's region.
@@ -237,7 +238,7 @@ public:
   int is_diamond_phi() const;
   bool try_clean_memory_phi(PhaseIterGVN* igvn);
   virtual int Opcode() const;
-  virtual bool pinned() const { return in(0) != 0; }
+  virtual bool pinned() const { return in(0) != nullptr; }
   virtual const TypePtr *adr_type() const { verify_adr_type(true); return _adr_type; }
 
   void  set_inst_mem_id(int inst_mem_id) { _inst_mem_id = inst_mem_id; }
@@ -318,11 +319,23 @@ public:
 //------------------------------IfNode-----------------------------------------
 // Output selected Control, based on a boolean test
 class IfNode : public MultiBranchNode {
+ public:
+  float _prob;                           // Probability of true path being taken.
+  float _fcnt;                           // Frequency counter
+
+ private:
+  AssertionPredicateType _assertion_predicate_type;
+
+  void init_node(Node* control, Node* bol) {
+    init_class_id(Class_If);
+    init_req(0, control);
+    init_req(1, bol);
+  }
+
   // Size is bigger to hold the probability field.  However, _prob does not
   // change the semantics so it does not appear in the hash & cmp functions.
   virtual uint size_of() const { return sizeof(*this); }
 
-private:
   // Helper methods for fold_compares
   bool cmpi_folds(PhaseIterGVN* igvn, bool fold_ne = false);
   bool is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn);
@@ -334,7 +347,6 @@ private:
   bool is_null_check(ProjNode* proj, PhaseIterGVN* igvn);
   bool is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn);
   void reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn);
-  ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call) const;
   bool fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
   static bool is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* unc);
 
@@ -413,14 +425,11 @@ public:
   // Magic manifest probabilities such as 0.83, 0.7, ... can be found in
   // gen_subtype_check() and catch_inline_exceptions().
 
-  float _prob;                  // Probability of true path being taken.
-  float _fcnt;                  // Frequency counter
-  IfNode( Node *control, Node *b, float p, float fcnt )
-    : MultiBranchNode(2), _prob(p), _fcnt(fcnt) {
-    init_class_id(Class_If);
-    init_req(0,control);
-    init_req(1,b);
-  }
+  IfNode(Node* control, Node* bol, float p, float fcnt);
+  IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type);
+
+  static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node* bol);
+
   virtual int Opcode() const;
   virtual bool pinned() const { return true; }
   virtual const Type *bottom_type() const { return TypeTuple::IFBOTH; }
@@ -432,11 +441,16 @@ public:
   static Node* up_one_dom(Node* curr, bool linear_only = false);
   bool is_zero_trip_guard() const;
   Node* dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_access_nodes);
+  ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
 
   // Takes the type of val and filters it through the test represented
   // by if_proj and returns a more refined type if one is produced.
   // Returns null is it couldn't improve the type.
   static const TypeInt* filtered_int_type(PhaseGVN* phase, Node* val, Node* if_proj);
+
+  AssertionPredicateType assertion_predicate_type() const {
+    return _assertion_predicate_type;
+  }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -447,11 +461,15 @@ public:
 
 class RangeCheckNode : public IfNode {
 private:
-  int is_range_check(Node* &range, Node* &index, jint &offset);
+  int is_range_check(Node*& range, Node*& index, jint& offset);
 
 public:
-  RangeCheckNode(Node* control, Node *b, float p, float fcnt)
-    : IfNode(control, b, p, fcnt) {
+  RangeCheckNode(Node* control, Node* bol, float p, float fcnt) : IfNode(control, bol, p, fcnt) {
+    init_class_id(Class_RangeCheck);
+  }
+
+  RangeCheckNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type)
+      : IfNode(control, bol, p, fcnt, assertion_predicate_type) {
     init_class_id(Class_RangeCheck);
   }
 
@@ -468,7 +486,11 @@ public:
 // More information about predicates can be found in loopPredicate.cpp.
 class ParsePredicateNode : public IfNode {
   Deoptimization::DeoptReason _deopt_reason;
-  bool _useless; // If the associated loop dies, this parse predicate becomes useless and can be cleaned up by Value().
+
+  // When a Parse Predicate loses its connection to a loop head, it will be marked useless by
+  // EliminateUselessPredicates and cleaned up by Value(). It can also become useless when cloning it to both loops
+  // during Loop Multiversioning - we no longer use the old version.
+  PredicateState _predicate_state;
  public:
   ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn);
   virtual int Opcode() const;
@@ -479,15 +501,26 @@ class ParsePredicateNode : public IfNode {
   }
 
   bool is_useless() const {
-    return _useless;
+    return _predicate_state == PredicateState::Useless;
   }
 
-  void mark_useless() {
-    _useless = true;
+  void mark_useless(PhaseIterGVN& igvn);
+
+  void mark_maybe_useful() {
+    _predicate_state = PredicateState::MaybeUseful;
+  }
+
+  bool is_useful() const {
+    return _predicate_state == PredicateState::Useful;
   }
 
   void mark_useful() {
-    _useless = false;
+    _predicate_state = PredicateState::Useful;
+  }
+
+  // Return the uncommon trap If projection of this Parse Predicate.
+  ParsePredicateUncommonProj* uncommon_proj() const {
+    return proj_out(0)->as_IfFalse();
   }
 
   Node* uncommon_trap() const;
@@ -684,7 +717,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int required_outcnt() const { return 2; }
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const { }
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const { }
   virtual uint size(PhaseRegAlloc *ra_) const { return 0; }
 #ifndef PRODUCT
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;
@@ -702,6 +735,7 @@ public:
   virtual int   Opcode() const;
   virtual uint ideal_reg() const { return 0; } // not matched in the AD file
   virtual const Type* bottom_type() const { return TypeTuple::MEMBAR; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
   const RegMask &in_RegMask(uint idx) const {
     // Fake the incoming arguments mask for blackholes: accept all registers

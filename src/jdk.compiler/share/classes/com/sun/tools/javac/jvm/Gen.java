@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,8 +172,8 @@ public class Gen extends JCTree.Visitor {
     Chain switchExpressionFalseChain;
     List<LocalItem> stackBeforeSwitchExpression;
     LocalItem switchResult;
-    Set<JCMethodInvocation> invocationsWithPatternMatchingCatch = Set.of();
-    ListBuffer<int[]> patternMatchingInvocationRanges;
+    PatternMatchingCatchConfiguration patternMatchingCatchConfiguration =
+            new PatternMatchingCatchConfiguration(Set.of(), null, null, null);
 
     /** Cache the symbol to reflect the qualifying type.
      *  key: corresponding type
@@ -1074,29 +1074,48 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitBlock(JCBlock tree) {
+        /* this method is heavily invoked, as expected, for deeply nested blocks, if blocks doesn't happen to have
+         * patterns there will be an unnecessary tax on memory consumption every time this method is executed, for this
+         * reason we have created helper methods and here at a higher level we just discriminate depending on the
+         * presence, or not, of patterns in a given block
+         */
         if (tree.patternMatchingCatch != null) {
-            Set<JCMethodInvocation> prevInvocationsWithPatternMatchingCatch = invocationsWithPatternMatchingCatch;
-            ListBuffer<int[]> prevRanges = patternMatchingInvocationRanges;
-            State startState = code.state.dup();
-            try {
-                invocationsWithPatternMatchingCatch = tree.patternMatchingCatch.calls2Handle();
-                patternMatchingInvocationRanges = new ListBuffer<>();
-                doVisitBlock(tree);
-            } finally {
-                Chain skipCatch = code.branch(goto_);
-                JCCatch handler = tree.patternMatchingCatch.handler();
-                code.entryPoint(startState, handler.param.sym.type);
-                genPatternMatchingCatch(handler, env, patternMatchingInvocationRanges.toList());
-                code.resolve(skipCatch);
-                invocationsWithPatternMatchingCatch = prevInvocationsWithPatternMatchingCatch;
-                patternMatchingInvocationRanges = prevRanges;
-            }
+            visitBlockWithPatterns(tree);
         } else {
-            doVisitBlock(tree);
+            internalVisitBlock(tree);
         }
     }
 
-    private void doVisitBlock(JCBlock tree) {
+    private void visitBlockWithPatterns(JCBlock tree) {
+        PatternMatchingCatchConfiguration prevConfiguration = patternMatchingCatchConfiguration;
+        try {
+            patternMatchingCatchConfiguration =
+                    new PatternMatchingCatchConfiguration(tree.patternMatchingCatch.calls2Handle(),
+                                                         new ListBuffer<int[]>(),
+                                                         tree.patternMatchingCatch.handler(),
+                                                         code.state.dup());
+            internalVisitBlock(tree);
+        } finally {
+            generatePatternMatchingCatch(env);
+            patternMatchingCatchConfiguration = prevConfiguration;
+        }
+    }
+
+    private void generatePatternMatchingCatch(Env<GenContext> env) {
+        if (patternMatchingCatchConfiguration.handler != null &&
+            !patternMatchingCatchConfiguration.ranges.isEmpty()) {
+            Chain skipCatch = code.branch(goto_);
+            JCCatch handler = patternMatchingCatchConfiguration.handler();
+            code.entryPoint(patternMatchingCatchConfiguration.startState(),
+                            handler.param.sym.type);
+            genPatternMatchingCatch(handler,
+                                    env,
+                                    patternMatchingCatchConfiguration.ranges.toList());
+            code.resolve(skipCatch);
+        }
+    }
+
+    private void internalVisitBlock(JCBlock tree) {
         int limit = code.nextreg;
         Env<GenContext> localEnv = env.dup(tree, new GenContext());
         genStats(tree.stats, localEnv);
@@ -1173,11 +1192,7 @@ public class Gen extends JCTree.Visitor {
                     code.resolve(c.falseJumps);
                 }
             }
-            Chain exit = loopEnv.info.exit;
-            if (exit != null) {
-                code.resolve(exit);
-                exit.state.defined.excludeFrom(code.nextreg);
-            }
+            code.resolve(loopEnv.info.exit);
         }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
@@ -1187,11 +1202,7 @@ public class Gen extends JCTree.Visitor {
     public void visitLabelled(JCLabeledStatement tree) {
         Env<GenContext> localEnv = env.dup(tree, new GenContext());
         genStat(tree.body, localEnv, CRT_STATEMENT);
-        Chain exit = localEnv.info.exit;
-        if (exit != null) {
-            code.resolve(exit);
-            exit.state.defined.excludeFrom(code.nextreg);
-        }
+        code.resolve(localEnv.info.exit);
     }
 
     public void visitSwitch(JCSwitch tree) {
@@ -1394,11 +1405,7 @@ public class Gen extends JCTree.Visitor {
             }
 
             // Resolve all breaks.
-            Chain exit = switchEnv.info.exit;
-            if  (exit != null) {
-                code.resolve(exit);
-                exit.state.defined.excludeFrom(limit);
-            }
+            code.resolve(switchEnv.info.exit);
 
             // If we have not set the default offset, we do so now.
             if (code.get4(tableBase) == -1) {
@@ -1834,7 +1841,6 @@ public class Gen extends JCTree.Visitor {
                 if (switchResult != null)
                     switchResult.load();
 
-                code.state.forceStackTop(tree.target.type);
                 targetEnv.info.addExit(code.branch(goto_));
                 code.markDead();
             }
@@ -1917,12 +1923,26 @@ public class Gen extends JCTree.Visitor {
         if (!msym.isDynamic()) {
             code.statBegin(tree.pos);
         }
-        if (invocationsWithPatternMatchingCatch.contains(tree)) {
+        if (patternMatchingCatchConfiguration.invocations().contains(tree)) {
             int start = code.curCP();
             result = m.invoke();
-            patternMatchingInvocationRanges.add(new int[] {start, code.curCP()});
+            patternMatchingCatchConfiguration.ranges().add(new int[] {start, code.curCP()});
         } else {
-            result = m.invoke();
+            if (msym.isConstructor() && TreeInfo.isConstructorCall(tree)) {
+                //if this is a this(...) or super(...) call, there is a pending
+                //"uninitialized this" before this call. One catch handler cannot
+                //handle exceptions that may come from places with "uninitialized this"
+                //and (initialized) this, hence generate one set of handlers here
+                //for the "uninitialized this" case, and another set of handlers
+                //will be generated at the end of the method for the initialized this,
+                //if needed:
+                generatePatternMatchingCatch(env);
+                result = m.invoke();
+                patternMatchingCatchConfiguration =
+                        patternMatchingCatchConfiguration.restart(code.state.dup());
+            } else {
+                result = m.invoke();
+            }
         }
     }
 
@@ -1936,7 +1956,6 @@ public class Gen extends JCTree.Visitor {
             int startpc = genCrt ? code.curCP() : 0;
             code.statBegin(tree.truepart.pos);
             genExpr(tree.truepart, pt).load();
-            code.state.forceStackTop(tree.type);
             if (genCrt) code.crt.put(tree.truepart, CRT_FLOW_TARGET,
                                      startpc, code.curCP());
             thenExit = code.branch(goto_);
@@ -1946,7 +1965,6 @@ public class Gen extends JCTree.Visitor {
             int startpc = genCrt ? code.curCP() : 0;
             code.statBegin(tree.falsepart.pos);
             genExpr(tree.falsepart, pt).load();
-            code.state.forceStackTop(tree.type);
             if (genCrt) code.crt.put(tree.falsepart, CRT_FLOW_TARGET,
                                      startpc, code.curCP());
         }
@@ -2507,7 +2525,14 @@ public class Gen extends JCTree.Visitor {
     /** code generation contexts,
      *  to be used as type parameter for environments.
      */
-    static class GenContext {
+    final class GenContext {
+
+        /**
+         * The top defined local variables for exit or continue branches to merge into.
+         * It may contain uninitialized variables to be initialized by branched code,
+         * so we cannot use Code.State.defined bits.
+         */
+        final int limit;
 
         /** A chain for all unresolved jumps that exit the current environment.
          */
@@ -2533,17 +2558,39 @@ public class Gen extends JCTree.Visitor {
          */
         ListBuffer<Integer> gaps = null;
 
+        GenContext() {
+            var code = Gen.this.code;
+            this.limit = code == null ? 0 : code.nextreg;
+        }
+
         /** Add given chain to exit chain.
          */
         void addExit(Chain c)  {
+            if (c != null) {
+                c.state.defined.excludeFrom(limit);
+            }
             exit = Code.mergeChains(c, exit);
         }
 
         /** Add given chain to cont chain.
          */
         void addCont(Chain c) {
+            if (c != null) {
+                c.state.defined.excludeFrom(limit);
+            }
             cont = Code.mergeChains(c, cont);
         }
     }
 
+    record PatternMatchingCatchConfiguration(Set<JCMethodInvocation> invocations,
+                                            ListBuffer<int[]> ranges,
+                                            JCCatch handler,
+                                            State startState) {
+        public PatternMatchingCatchConfiguration restart(State newState) {
+            return new PatternMatchingCatchConfiguration(invocations(),
+                                                        new ListBuffer<int[]>(),
+                                                        handler(),
+                                                        newState);
+        }
+    }
 }

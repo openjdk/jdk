@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8234805 8235193
  * @summary Test DatagramChannel send/receive and that receive returns the expected
- *     sender address
+ *     sender address.
  * @run main/othervm ManySourcesAndTargets
  * @run main/othervm -Djava.net.preferIPv4Stack=true ManySourcesAndTargets
  */
@@ -63,6 +63,7 @@ public class ManySourcesAndTargets {
         try (DatagramChannel reader = DatagramChannel.open()) {
             // bind reader to wildcard address so it can receive from any address
             reader.bind(new InetSocketAddress(0));
+            System.out.println("\nReader bound to: " + reader.getLocalAddress());
             for (InetAddress address : addresses) {
                 System.out.format("%n-- %s --%n", address.getHostAddress());
 
@@ -75,6 +76,7 @@ public class ManySourcesAndTargets {
         try (DatagramChannel sender = DatagramChannel.open()) {
             // bind sender to wildcard address so it can send to any address
             sender.bind(new InetSocketAddress(0));
+            System.out.println("\nSender bound to: " + sender.getLocalAddress());
             for (InetAddress address : addresses) {
                 System.out.format("%n-- %s --%n", address.getHostAddress());
 
@@ -97,6 +99,11 @@ public class ManySourcesAndTargets {
             sender.bind(new InetSocketAddress(address, 0));
 
             SocketAddress local = sender.getLocalAddress();
+            System.out.println("Sender bound to: " + local);
+            if (((InetSocketAddress)local).getPort() == remotePort) {
+                System.out.println("testSend: Sender and reader have same port: skipping");
+                return;
+            }
             byte[] bytes = serialize(local);
 
             SocketAddress previousSource = null;
@@ -105,6 +112,8 @@ public class ManySourcesAndTargets {
                 sender.send(ByteBuffer.wrap(bytes), remote);
 
                 ByteBuffer bb = ByteBuffer.allocate(1000);
+                System.out.format("testSend: reader waiting to receive at: %s%n",
+                        reader.getLocalAddress());
                 SocketAddress source = reader.receive(bb);
                 System.out.format("received datagram from %s%n", source);
 
@@ -138,11 +147,18 @@ public class ManySourcesAndTargets {
 
             SocketAddress remote = reader.getLocalAddress();
 
+            System.out.println("Reader bound to: " + remote);
+            if (((InetSocketAddress)local).getPort() == ((InetSocketAddress)remote).getPort()) {
+                System.out.println("testReceive: Sender and reader have same port: skipping");
+                return;
+            }
             for (int i = 0; i < count; i++) {
                 System.out.format("send %s -> %s%n", local, remote);
                 sender.send(ByteBuffer.allocate(32), remote);
 
                 ByteBuffer bb = ByteBuffer.allocate(1000);
+                System.out.format("testReceive: reader waiting to receive at: %s%n",
+                        reader.getLocalAddress());
                 SocketAddress source = reader.receive(bb);
                 System.out.format("received datagram from %s%n", source);
             }
@@ -165,7 +181,12 @@ public class ManySourcesAndTargets {
 
     private static Optional<NetworkInterface> networkInterface(InetAddress ia) {
         try {
-            return Optional.ofNullable(NetworkInterface.getByInetAddress(ia));
+            NetworkInterface nif = NetworkInterface.getByInetAddress(ia);
+            if (nif != null) {
+                System.out.format("Selecting interface %s[%d]%n\twith addresses:%n\t%s%n",
+                    nif.getDisplayName(), nif.getIndex(), nif.inetAddresses().toList());
+            }
+            return Optional.ofNullable(nif);
         } catch (SocketException e) {
             return Optional.empty();
         }
