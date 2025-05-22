@@ -84,7 +84,6 @@ public class TestTutorial {
         //       with -DCompileFrameworkVerbose=true
         comp.compile();
 
-        // Object ret = p.xyz.InnerTest1.main();
         comp.invoke("p.xyz.InnerTest1",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest2",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest3",  "main", new Object[] {});
