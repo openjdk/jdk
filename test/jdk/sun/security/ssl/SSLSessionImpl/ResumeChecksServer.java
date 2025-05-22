@@ -105,9 +105,14 @@ public class ResumeChecksServer extends SSLContextTemplate {
 
         switch (testMode) {
             case BASIC:
-                // fail if session is not resumed
+                // Fail if session is not resumed or session's certificates
+                // are not restored correctly.
                 if (secondSession.getCreationTime() > secondStartTime) {
                     throw new RuntimeException("Session was not reused");
+                } else if (!java.util.Arrays.equals(
+                        firstSession.getLocalCertificates(),
+                        secondSession.getLocalCertificates())) {
+                    throw new RuntimeException("Certificates do not match");
                 }
                 break;
             case CLIENT_AUTH:
