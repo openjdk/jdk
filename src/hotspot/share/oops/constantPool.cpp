@@ -446,7 +446,7 @@ void ConstantPool::remove_unshareable_info() {
   if (CDSConfig::is_dumping_final_static_archive()) {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
     InstanceKlass* src_holder = src_cp->pool_holder();
-    if (src_holder->is_shared_unregistered_class()) {
+    if (src_holder->defined_by_other_loaders()) {
       // Unregistered classes are not loaded in the AOT assembly phase. The resolved reference length
       // is already saved during the training run.
       precond(!src_holder->is_loaded());
