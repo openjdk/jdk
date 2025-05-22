@@ -53,6 +53,7 @@ public class PrintNullString implements Printable {
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
+
         new PrintNullString();
     }
 
