@@ -39,6 +39,7 @@ class SuspendThreadHandshake;
 class ThreadSelfSuspensionHandshake;
 class UnsafeAccessErrorHandshake;
 class ThreadsListHandle;
+class HandshakeSuspender;
 
 // A handshake closure is a callback that is executed for a JavaThread
 // while it is in a safepoint/handshake-safe state. Depending on the
@@ -92,6 +93,7 @@ class HandshakeState {
   friend SuspendThreadHandshake;
   friend UnsafeAccessErrorHandshake;
   friend JavaThread;
+  friend HandshakeSuspender;
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.
   JavaThread* _handshakee;
@@ -172,19 +174,55 @@ class HandshakeState {
   // and we have not yet processed it.
   bool _async_suspend_handshake;
 
-  // Called from the suspend handshake.
-  bool suspend_with_handshake(bool register_vthread_SR);
-  // Called from the async handshake (the trap)
-  // to stop a thread from continuing execution when suspended.
-  void do_self_suspend();
-
   bool is_suspended()                       { return Atomic::load(&_suspended); }
   void set_suspended(bool to, bool register_vthread_SR);
+
   bool has_async_suspend_handshake()        { return _async_suspend_handshake; }
   void set_async_suspend_handshake(bool to) { _async_suspend_handshake = to; }
+};
 
-  bool suspend(bool register_vthread_SR);
-  bool resume(bool register_vthread_SR);
+class HandshakeSuspender {
+    friend SuspendThreadHandshake;
+    friend ThreadSelfSuspensionHandshake;
+    friend JavaThread;
+    HandshakeSuspender(HandshakeState* state);
+    ~HandshakeSuspender();
+private:
+    HandshakeState* _state;
+    bool suspend(bool register_vthread_SR);
+    bool resume(bool register_vthread_SR);
+
+    // Called from the async handshake (the trap)
+    // to stop a thread from continuing execution when suspended.
+    void do_self_suspend();
+
+    // Called from the suspend handshake.
+    bool suspend_with_handshake(bool register_vthread_SR);
+
+    JavaThread* get_handshakee() { 
+        return _state->_handshakee;
+    }
+
+    void set_suspended(bool to, bool register_vthread_SR) {
+        _state->set_suspended(to, register_vthread_SR);
+    }
+
+    bool is_suspended() {
+        return _state->is_suspended();
+    }
+
+    Monitor* get_lock_ptr()
+    {
+        return &_state->_lock;
+    }
+    bool has_async_suspend_handshake() {
+        return _state->has_async_suspend_handshake();
+    }
+
+    void set_async_suspend_handshake(bool to) { 
+        _state->set_async_suspend_handshake(to);
+    }
+
 };
 
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP
