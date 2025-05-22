@@ -88,12 +88,13 @@ private:
       // Align stack pointer to 16 byte boundary. This is hard constraint
       // for push2/pop2 with PPX hints.
       __ andptr(rsp, -StackAlignmentInBytes);
-      // Push original stack pointer along with remaining registers on 16B aligned stack.
-      // Note: For PPX to work properly, a PPX-marked PUSH2 (respectively, POP2) should always
-      // be matched with a PPX-marked POP2 (PUSH2), not with two PPX-marked POPs (PUSHs).
-      __ pushp(rcx);
+      // Push original stack pointer.
+      __ push(rcx);
       // Restore the original contents of RCX register.
       __ movptr(rcx, Address(rcx));
+      // Now push remaining caller save GPRs and EGPRs on 16B aligned stack.
+      // Note: For PPX to work properly, a PPX-marked PUSH2 (respectively, POP2) should always
+      // be matched with a PPX-marked POP2 (PUSH2), not with two PPX-marked POPs (PUSHs).
       __ pushp(rdx);
       __ push2p(rdi, rsi);
       __ push2p(r8, r9);
