@@ -5242,7 +5242,7 @@ instruct compareAndSwapB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
 
   format %{
     "cmpxchg $mem, $oldval, $newval\t# (byte) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapB"
+    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapB_narrow"
   %}
 
   ins_encode %{
@@ -5261,8 +5261,6 @@ instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R1
   match(Set res (CompareAndSwapB mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 10 + BRANCH_COST * 4);
-
-  effect(TEMP_DEF res, USE_KILL oldval, USE_KILL newval, KILL cr);
 
   format %{
     "cmpxchg $mem, $oldval, $newval\t# (byte) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -5291,7 +5289,7 @@ instruct compareAndSwapS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
 
   format %{
     "cmpxchg $mem, $oldval, $newval\t# (short) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapS"
+    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapS_narrow"
   %}
 
   ins_encode %{
@@ -5310,8 +5308,6 @@ instruct compareAndSwapS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R1
   match(Set res (CompareAndSwapS mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 11 + BRANCH_COST * 4);
-
-  effect(TEMP_DEF res, USE_KILL oldval, USE_KILL newval, KILL cr);
 
   format %{
     "cmpxchg $mem, $oldval, $newval\t# (short) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -5392,6 +5388,7 @@ instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval
 instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
   predicate(n->as_LoadStore()->barrier_data() == 0);
+
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 8 + BRANCH_COST * 4);
@@ -5424,7 +5421,7 @@ instruct compareAndSwapBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval
 
   format %{
     "cmpxchg_acq $mem, $oldval, $newval\t# (byte) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapBAcq"
+    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapBAcq_narrow"
   %}
 
   ins_encode %{
@@ -5443,8 +5440,6 @@ instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI
   match(Set res (CompareAndSwapB mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 10 + BRANCH_COST * 4);
-
-  effect(TEMP_DEF res, USE_KILL oldval, USE_KILL newval, KILL cr);
 
   format %{
     "cmpxchg $mem, $oldval, $newval\t# (byte) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -5473,7 +5468,7 @@ instruct compareAndSwapSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval
 
   format %{
     "cmpxchg_acq $mem, $oldval, $newval\t# (short) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapSAcq"
+    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapSAcq_narrow"
   %}
 
   ins_encode %{
@@ -5492,8 +5487,6 @@ instruct compareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI
   match(Set res (CompareAndSwapS mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 11 + BRANCH_COST * 4);
-
-  effect(TEMP_DEF res, USE_KILL oldval, USE_KILL newval, KILL cr);
 
   format %{
     "cmpxchg $mem, $oldval, $newval\t# (short) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -5615,7 +5608,7 @@ instruct compareAndExchangeB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
   effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{
-    "cmpxchg $res = $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeB"
+    "cmpxchg $res = $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeB_narrow"
   %}
 
   ins_encode %{
@@ -5634,8 +5627,6 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 5);
-
-  effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval);
 
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeB"
@@ -5661,7 +5652,7 @@ instruct compareAndExchangeS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
   effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{
-    "cmpxchg $res = $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeS"
+    "cmpxchg $res = $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeS_narrow"
   %}
 
   ins_encode %{
@@ -5681,8 +5672,6 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 6);
 
-  effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval);
-
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeS"
   %}
@@ -5700,8 +5689,6 @@ instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
-
-  effect(TEMP_DEF res);
 
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeI"
@@ -5721,8 +5708,6 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
 
-  effect(TEMP_DEF res);
-
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeL"
   %}
@@ -5738,11 +5723,10 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
   predicate(n->as_LoadStore()->barrier_data() == 0);
+
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 3);
-
-  effect(TEMP_DEF res);
 
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeN"
@@ -5759,11 +5743,10 @@ instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN ne
 instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval)
 %{
   predicate(n->as_LoadStore()->barrier_data() == 0);
+
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
-
-  effect(TEMP_DEF res);
 
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeP"
@@ -5789,7 +5772,7 @@ instruct compareAndExchangeBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
   effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{
-    "cmpxchg_acq $res = $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeBAcq"
+    "cmpxchg_acq $res = $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeBAcq_narrow"
   %}
 
   ins_encode %{
@@ -5809,15 +5792,13 @@ instruct compareAndExchangeBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 5);
 
-  effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval);
-
   format %{
     "cmpxchg_acq $res = $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeBAcq"
   %}
 
   ins_encode %{
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-              /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
+               /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
   %}
 
   ins_pipe(pipe_slow);
@@ -5835,7 +5816,7 @@ instruct compareAndExchangeSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
   effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{
-    "cmpxchg_acq $res = $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeSAcq"
+    "cmpxchg_acq $res = $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeSAcq_narrow"
   %}
 
   ins_encode %{
@@ -5854,8 +5835,6 @@ instruct compareAndExchangeSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 6);
-
-  effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval);
 
   format %{
     "cmpxchg_acq $res = $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeSAcq"
@@ -5877,8 +5856,6 @@ instruct compareAndExchangeIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
 
-  effect(TEMP_DEF res);
-
   format %{
     "cmpxchg_acq $res = $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeIAcq"
   %}
@@ -5898,8 +5875,6 @@ instruct compareAndExchangeLAcq(iRegLNoSp res, indirect mem, iRegL oldval, iRegL
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
-
-  effect(TEMP_DEF res);
 
   format %{
     "cmpxchg_acq $res = $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeLAcq"
@@ -5921,8 +5896,6 @@ instruct compareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRegN
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
 
-  effect(TEMP_DEF res);
-
   format %{
     "cmpxchg_acq $res = $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeNAcq"
   %}
@@ -5942,8 +5915,6 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
-
-  effect(TEMP_DEF res);
 
   format %{
     "cmpxchg_acq $res = $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangePAcq"
@@ -5970,7 +5941,7 @@ instruct weakCompareAndSwapB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
   format %{
     "weak_cmpxchg $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "# $res == 1 when success, #@weakCompareAndSwapB"
+    "# $res == 1 when success, #@weakCompareAndSwapB_narrow"
   %}
 
   ins_encode %{
@@ -5989,8 +5960,6 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 6);
-
-  effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval);
 
   format %{
     "weak_cmpxchg $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -6018,7 +5987,7 @@ instruct weakCompareAndSwapS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
   format %{
     "weak_cmpxchg $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "# $res == 1 when success, #@weakCompareAndSwapS"
+    "# $res == 1 when success, #@weakCompareAndSwapS_narrow"
   %}
 
   ins_encode %{
@@ -6037,8 +6006,6 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 7);
-
-  effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval);
 
   format %{
     "weak_cmpxchg $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -6094,6 +6061,7 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
   predicate(n->as_LoadStore()->barrier_data() == 0);
+
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 4);
@@ -6114,6 +6082,7 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
 instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval)
 %{
   predicate(n->as_LoadStore()->barrier_data() == 0);
+
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
@@ -6144,7 +6113,7 @@ instruct weakCompareAndSwapBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
 
   format %{
     "weak_cmpxchg_acq $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "# $res == 1 when success, #@weakCompareAndSwapBAcq"
+    "# $res == 1 when success, #@weakCompareAndSwapBAcq_narrow"
   %}
 
   ins_encode %{
@@ -6163,8 +6132,6 @@ instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 6);
-
-  effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval);
 
   format %{
     "weak_cmpxchg_acq $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -6192,7 +6159,7 @@ instruct weakCompareAndSwapSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
 
   format %{
     "weak_cmpxchg_acq $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
-    "# $res == 1 when success, #@weakCompareAndSwapSAcq"
+    "# $res == 1 when success, #@weakCompareAndSwapSAcq_narrow"
   %}
 
   ins_encode %{
@@ -6211,8 +6178,6 @@ instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 7);
-
-  effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval);
 
   format %{
     "weak_cmpxchg_acq $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"

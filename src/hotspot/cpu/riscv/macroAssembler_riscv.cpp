@@ -3798,7 +3798,7 @@ void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register o
 
 void MacroAssembler::load_reserved(Register dst,
                                    Register addr,
-                                   enum operand_size size,
+                                   Assembler::operand_size size,
                                    Assembler::Aqrl acquire) {
   switch (size) {
     case int64:
@@ -3819,7 +3819,7 @@ void MacroAssembler::load_reserved(Register dst,
 void MacroAssembler::store_conditional(Register dst,
                                        Register new_val,
                                        Register addr,
-                                       enum operand_size size,
+                                       Assembler::operand_size size,
                                        Assembler::Aqrl release) {
   switch (size) {
     case int64:
@@ -3836,7 +3836,7 @@ void MacroAssembler::store_conditional(Register dst,
 
 
 void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
-                                                 enum operand_size size,
+                                                 Assembler::operand_size size,
                                                  Register shift, Register mask, Register aligned_addr) {
   assert(size == int8 || size == int16, "unsupported operand size");
 
@@ -3866,7 +3866,7 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
 // which are forced to work with 4-byte aligned address.
 void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
                                           Register new_val,
-                                          enum operand_size size,
+                                          Assembler::operand_size size,
                                           Assembler::Aqrl acquire, Assembler::Aqrl release,
                                           Register result, bool result_as_bool,
                                           Register tmp1, Register tmp2, Register tmp3) {
@@ -3941,7 +3941,7 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
 // failed.
 void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
                                                Register new_val,
-                                               enum operand_size size,
+                                               Assembler::operand_size size,
                                                Assembler::Aqrl acquire, Assembler::Aqrl release,
                                                Register result,
                                                Register tmp1, Register tmp2, Register tmp3) {
@@ -4136,7 +4136,7 @@ ATOMIC_XCHGU(xchgalwu, xchgalw)
 #undef ATOMIC_XCHGU
 
 void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
-                                enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
+                                Assembler::operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
   switch (size) {
     case int64:
       amocas_d(prev, addr, newv, (Assembler::Aqrl)(acquire | release));

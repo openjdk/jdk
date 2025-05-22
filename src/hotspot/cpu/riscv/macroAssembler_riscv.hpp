@@ -1187,26 +1187,26 @@ public:
   void cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp, Label &succeed, Label *fail);
   void cmpxchg(Register addr, Register expected,
                Register new_val,
-               enum operand_size size,
+               Assembler::operand_size size,
                Assembler::Aqrl acquire, Assembler::Aqrl release,
                Register result, bool result_as_bool = false);
   void weak_cmpxchg(Register addr, Register expected,
                     Register new_val,
-                    enum operand_size size,
+                    Assembler::operand_size size,
                     Assembler::Aqrl acquire, Assembler::Aqrl release,
                     Register result);
   void cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
-                                   enum operand_size size,
+                                   Assembler::operand_size size,
                                    Register shift, Register mask, Register aligned_addr);
   void cmpxchg_narrow_value(Register addr, Register expected,
                             Register new_val,
-                            enum operand_size size,
+                            Assembler::operand_size size,
                             Assembler::Aqrl acquire, Assembler::Aqrl release,
                             Register result, bool result_as_bool,
                             Register tmp1, Register tmp2, Register tmp3);
   void weak_cmpxchg_narrow_value(Register addr, Register expected,
                                  Register new_val,
-                                 enum operand_size size,
+                                 Assembler::operand_size size,
                                  Assembler::Aqrl acquire, Assembler::Aqrl release,
                                  Register result,
                                  Register tmp1, Register tmp2, Register tmp3);
@@ -1223,7 +1223,7 @@ public:
   void atomic_xchgwu(Register prev, Register newv, Register addr);
   void atomic_xchgalwu(Register prev, Register newv, Register addr);
 
-  void atomic_cas(Register prev, Register newv, Register addr, enum operand_size size,
+  void atomic_cas(Register prev, Register newv, Register addr, Assembler::operand_size size,
               Assembler::Aqrl acquire = Assembler::relaxed, Assembler::Aqrl release = Assembler::relaxed);
 
   // Emit a far call/jump. Only invalidates the tmp register which
@@ -1636,8 +1636,8 @@ private:
   int bitset_to_regs(unsigned int bitset, unsigned char* regs);
   Address add_memory_helper(const Address dst, Register tmp);
 
-  void load_reserved(Register dst, Register addr, enum operand_size size, Assembler::Aqrl acquire);
-  void store_conditional(Register dst, Register new_val, Register addr, enum operand_size size, Assembler::Aqrl release);
+  void load_reserved(Register dst, Register addr, Assembler::operand_size size, Assembler::Aqrl acquire);
+  void store_conditional(Register dst, Register new_val, Register addr, Assembler::operand_size size, Assembler::Aqrl release);
 
 public:
   void lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
