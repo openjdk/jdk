@@ -384,7 +384,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                                             + " #" + waiter.exchange.multi.id + ": will downgrade or fail");
                                 }
                                 completedWaiters++;
-                                waiter.cf.complete(null);
+                                waiter.complete(null, error);
                             }
                         }
                     } catch (Throwable t) {
