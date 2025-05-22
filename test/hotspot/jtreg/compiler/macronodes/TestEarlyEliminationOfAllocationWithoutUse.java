@@ -50,8 +50,6 @@ public class TestEarlyEliminationOfAllocationWithoutUse {
     }
 
     private static void test1(A otherA, boolean[] flags) {
-        if (flags == null) {
-        }
         otherA.field1 = 42;
         // Fully unrolled before EA
         for (int i = 0; i < 3; i++) {
