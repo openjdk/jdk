@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import java.io.*;
 import java.security.*;
 import java.net.*;
 import java.util.*;
+import sun.security.x509.X509CertImpl;
 
 public class ResumeChecksServer extends SSLContextTemplate {
 
@@ -57,7 +58,8 @@ public class ResumeChecksServer extends SSLContextTemplate {
         VERSION_2_TO_3,
         VERSION_3_TO_2,
         CIPHER_SUITE,
-        SIGNATURE_SCHEME
+        SIGNATURE_SCHEME,
+        LOCAL_CERTS
     }
 
     public static void main(String[] args) throws Exception {
@@ -71,6 +73,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
     }
 
     private void run() throws Exception {
+        SSLSession firstSession;
         SSLSession secondSession = null;
 
         SSLContext sslContext = createServerSSLContext();
@@ -81,7 +84,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
         Client client = startClient(ssock.getLocalPort());
 
         try {
-            connect(client, ssock, testMode, false);
+            firstSession = connect(client, ssock, testMode, null);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -89,7 +92,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
         long secondStartTime = System.currentTimeMillis();
         Thread.sleep(10);
         try {
-            secondSession = connect(client, ssock, testMode, true);
+            secondSession = connect(client, ssock, testMode, firstSession);
         } catch (SSLHandshakeException ex) {
             // this is expected
         } catch (Exception ex) {
@@ -100,27 +103,28 @@ public class ResumeChecksServer extends SSLContextTemplate {
         client.signal();
 
         switch (testMode) {
-        case BASIC:
-            // fail if session is not resumed
-            if (secondSession.getCreationTime() > secondStartTime) {
-                throw new RuntimeException("Session was not reused");
-            }
-            break;
-        case CLIENT_AUTH:
-            // throws an exception if the client is not authenticated
-            secondSession.getPeerCertificates();
-            break;
-        case VERSION_2_TO_3:
-        case VERSION_3_TO_2:
-        case CIPHER_SUITE:
-        case SIGNATURE_SCHEME:
-            // fail if a new session is not created
-            if (secondSession.getCreationTime() <= secondStartTime) {
-                throw new RuntimeException("Existing session was used");
-            }
-            break;
-        default:
-            throw new RuntimeException("unknown mode: " + testMode);
+            case BASIC:
+                // fail if session is not resumed
+                if (secondSession.getCreationTime() > secondStartTime) {
+                    throw new RuntimeException("Session was not reused");
+                }
+                break;
+            case CLIENT_AUTH:
+                // throws an exception if the client is not authenticated
+                secondSession.getPeerCertificates();
+                break;
+            case VERSION_2_TO_3:
+            case VERSION_3_TO_2:
+            case CIPHER_SUITE:
+            case SIGNATURE_SCHEME:
+            case LOCAL_CERTS:
+                // fail if a new session is not created
+                if (secondSession.getCreationTime() <= secondStartTime) {
+                    throw new RuntimeException("Existing session was used");
+                }
+                break;
+            default:
+                throw new RuntimeException("unknown mode: " + testMode);
         }
     }
 
@@ -153,7 +157,9 @@ public class ResumeChecksServer extends SSLContextTemplate {
     }
 
     private static SSLSession connect(Client client, SSLServerSocket ssock,
-        TestMode mode, boolean second) throws Exception {
+            TestMode mode, SSLSession firstSession) throws Exception {
+
+        boolean second = firstSession != null;
 
         try {
             client.signal();
@@ -162,51 +168,64 @@ public class ResumeChecksServer extends SSLContextTemplate {
             SSLParameters params = sock.getSSLParameters();
 
             switch (mode) {
-            case BASIC:
-                // do nothing to ensure resumption works
-                break;
-            case CLIENT_AUTH:
-                if (second) {
+                case BASIC:
+                    // do nothing to ensure resumption works
+                    break;
+                case CLIENT_AUTH:
+                    if (second) {
+                        params.setNeedClientAuth(true);
+                    } else {
+                        params.setNeedClientAuth(false);
+                    }
+                    break;
+                case VERSION_2_TO_3:
+                    if (second) {
+                        params.setProtocols(new String[]{"TLSv1.3"});
+                    } else {
+                        params.setProtocols(new String[]{"TLSv1.2"});
+                    }
+                    break;
+                case VERSION_3_TO_2:
+                    if (second) {
+                        params.setProtocols(new String[]{"TLSv1.2"});
+                    } else {
+                        params.setProtocols(new String[]{"TLSv1.3"});
+                    }
+                    break;
+                case CIPHER_SUITE:
+                    if (second) {
+                        params.setCipherSuites(
+                                new String[]{"TLS_AES_128_GCM_SHA256"});
+                    } else {
+                        params.setCipherSuites(
+                                new String[]{"TLS_AES_256_GCM_SHA384"});
+                    }
+                    break;
+                case SIGNATURE_SCHEME:
                     params.setNeedClientAuth(true);
-                } else {
-                    params.setNeedClientAuth(false);
-                }
-                break;
-            case VERSION_2_TO_3:
-                if (second) {
-                    params.setProtocols(new String[] {"TLSv1.3"});
-                } else {
-                    params.setProtocols(new String[] {"TLSv1.2"});
-                }
-                break;
-            case VERSION_3_TO_2:
-                if (second) {
-                    params.setProtocols(new String[] {"TLSv1.2"});
-                } else {
-                    params.setProtocols(new String[] {"TLSv1.3"});
-                }
-                break;
-            case CIPHER_SUITE:
-                if (second) {
-                    params.setCipherSuites(
-                        new String[] {"TLS_AES_128_GCM_SHA256"});
-                } else {
-                    params.setCipherSuites(
-                        new String[] {"TLS_AES_256_GCM_SHA384"});
-                }
-                break;
-            case SIGNATURE_SCHEME:
-                params.setNeedClientAuth(true);
-                AlgorithmConstraints constraints =
-                    params.getAlgorithmConstraints();
-                if (second) {
-                    params.setAlgorithmConstraints(new NoSig("ecdsa"));
-                } else {
-                    params.setAlgorithmConstraints(new NoSig("rsa"));
-                }
-                break;
-            default:
-                throw new RuntimeException("unknown mode: " + mode);
+                    AlgorithmConstraints constraints =
+                            params.getAlgorithmConstraints();
+                    if (second) {
+                        params.setAlgorithmConstraints(
+                                new NoSig("ecdsa_secp384r1_sha384"));
+                    } else {
+                        params.setAlgorithmConstraints(
+                                new NoSig("ecdsa_secp521r1_sha512"));
+                    }
+                    break;
+                case LOCAL_CERTS:
+                    if (second) {
+                        // Add first session's certificate signature
+                        // algorithm to constraints so local certificates
+                        // can't be restored from the session ticket.
+                        params.setAlgorithmConstraints(
+                                new NoSig(X509CertImpl.toImpl((X509CertImpl)
+                                                firstSession.getLocalCertificates()[0])
+                                        .getSigAlgName()));
+                    }
+                    break;
+                default:
+                    throw new RuntimeException("unknown mode: " + mode);
             }
             sock.setSSLParameters(params);
             BufferedReader reader = new BufferedReader(
@@ -222,7 +241,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
             sock.close();
             return result;
         } catch (SSLHandshakeException ex) {
-            if (!second) {
+            if (firstSession == null) {
                 throw ex;
             }
         }

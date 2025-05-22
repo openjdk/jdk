@@ -306,7 +306,7 @@ final class SessionTicketExtension {
                 gos.finish();
 
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.finest("decompressed bytes: " + decompressedLen
+                    SSLLogger.fine("decompressed bytes: " + decompressedLen
                             + "; compressed bytes: " + baos.size());
                 }
 
@@ -325,7 +325,7 @@ final class SessionTicketExtension {
                 byte[] out = gis.readAllBytes();
 
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.finest("compressed bytes: " + compressedLen
+                    SSLLogger.fine("compressed bytes: " + compressedLen
                             + "; decompressed bytes: " + out.length);
                 }
 

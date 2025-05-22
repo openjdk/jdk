@@ -458,7 +458,9 @@ final class PreSharedKeyExtension {
                 result = false;
             }
 
-            // Make sure the list of supported signature algorithms matches
+            // Make sure the list of supported signature algorithms matches.
+            // HandshakeContext's localSupportedCertSignAlgs has been already
+            // updated when we set the negotiated protocol.
             Collection<SignatureScheme> sessionSigAlgs =
                 s.getLocalSupportedSignatureSchemes();
             if (result &&

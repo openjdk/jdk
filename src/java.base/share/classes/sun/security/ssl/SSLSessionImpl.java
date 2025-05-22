@@ -428,8 +428,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                             // Use certs from cache.
                             tmpCerts.add(
                                     X509Factory.cachedGetX509Cert(encoded));
-                        } else {
-                            break;
                         }
                     } catch (Exception e) {
                         throw new IOException(e);
@@ -439,16 +437,18 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
             if (tmpCerts.size() == len) {
                 this.localCerts = tmpCerts.toArray(new X509Certificate[len]);
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.finest("Restored " + len
-                            + " local certificates from session ticket");
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,session")) {
+                    SSLLogger.fine("Restored " + len
+                            + " local certificates from session ticket"
+                            + " for algorithms " + Arrays.toString(certAlgs));
                 }
             } else {
                 this.localCerts = null;
                 this.invalidated = true;
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,session")) {
                     SSLLogger.warning("Local certificates can not be restored "
-                            + "from session ticket");
+                            + "from session ticket "
+                            + "for algorithms " + Arrays.toString(certAlgs));
                 }
             }
         }
@@ -589,7 +589,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         return hos.toByteArray();
     }
 
-    private int getChecksum(byte[] input) {
+    private static int getChecksum(byte[] input) {
         Adler32 adler32 = new Adler32();
         adler32.update(input);
         return (int) adler32.getValue();
