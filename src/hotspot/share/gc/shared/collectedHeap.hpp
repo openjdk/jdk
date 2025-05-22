@@ -50,9 +50,9 @@ class GCHeapSummary;
 class GCTimer;
 class GCTracer;
 class GCMemoryManager;
-class HeapGCLog;
+class GCHeapLog;
 class MemoryPool;
-class MetaspaceGCLog;
+class GCMetaspaceLog;
 class MetaspaceSummary;
 class ReservedHeapSpace;
 class Thread;
@@ -95,8 +95,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class MemAllocator;
 
  private:
-  HeapGCLog*      _heap_log;
-  MetaspaceGCLog* _metaspace_log;
+  GCHeapLog*      _heap_log;
+  GCMetaspaceLog* _metaspace_log;
 
   // Historic gc information
   size_t _capacity_at_last_gc;

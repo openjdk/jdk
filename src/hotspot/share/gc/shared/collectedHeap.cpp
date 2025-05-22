@@ -105,24 +105,24 @@ void GCLog::log_gc(const CollectedHeap* heap, GCWhen::Type when) {
   st.print_cr("}");
 }
 
-class HeapGCLog : public GCLog {
+class GCHeapLog : public GCLog {
  private:
   void log_usage(const CollectedHeap* heap, outputStream* st) const override {
     heap->print_heap_on(st);
   }
 
  public:
-  HeapGCLog() : GCLog("GC Heap Usage History", "heap") {}
+  GCHeapLog() : GCLog("GC Heap Usage History", "heap") {}
 };
 
-class MetaspaceGCLog : public GCLog {
+class GCMetaspaceLog : public GCLog {
  private:
   void log_usage(const CollectedHeap* heap, outputStream* st) const override {
     MetaspaceUtils::print_on(st);
   }
 
  public:
-  MetaspaceGCLog() : GCLog("Metaspace Usage History", "metaspace") {}
+  GCMetaspaceLog() : GCLog("Metaspace Usage History", "metaspace") {}
 };
 
 ParallelObjectIterator::ParallelObjectIterator(uint thread_num) :
@@ -314,8 +314,8 @@ CollectedHeap::CollectedHeap() :
 
   // Create the ring log
   if (LogEvents) {
-    _metaspace_log = new MetaspaceGCLog();
-    _heap_log = new HeapGCLog();
+    _metaspace_log = new GCMetaspaceLog();
+    _heap_log = new GCHeapLog();
   } else {
     _metaspace_log = nullptr;
     _heap_log = nullptr;
