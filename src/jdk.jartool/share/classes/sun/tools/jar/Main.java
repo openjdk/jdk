@@ -447,11 +447,8 @@ public class Main {
     }
 
     private boolean validateJar(File file) throws IOException {
-        try (ZipFile zf = new ZipFile(file);
-            ZipInputStream zis = new ZipInputStream(new BufferedInputStream(
-                    new FileInputStream(file)))) {
-
-            return Validator.validate(this, zf, zis);
+        try {
+            return Validator.validate(this, file);
         } catch (IOException e) {
             error(formatMsg("error.validator.jarfile.exception", fname, e.getMessage()));
             return true;

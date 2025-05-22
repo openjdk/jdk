@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -107,8 +107,8 @@ argument is the first argument specified on the command line.
 :   Prints the module descriptor or automatic module name.
 
 `--validate`
-:   Validate the contents of the jar archive.
-    See `Integrity of a jar Archive` section below for more details.
+:   Validate the contents of the JAR file.
+    See `Integrity of a JAR File` section below for more details.
 
 ## Operation Modifiers Valid in Any Mode
 
@@ -217,13 +217,13 @@ operation modes:
 `--version`
 :   Prints the program version.
 
-## Integrity of a jar Archive
-As a jar archive is based on ZIP format, it is possible to create a jar archive using tools
+## Integrity of a JAR File
+As a JAR file is based on ZIP format, it is possible to create a JAR file using tools
 other than the `jar` command. The --validate option may be used to perform the following
-integrity checks against a jar archive:
+integrity checks against a JAR file:
 
-- That there are no duplicate Zip Entry file names
-- Verify that the Zip Entry file name:
+- That there are no duplicate Zip entry file names
+- Verify that the Zip entry file name:
     - is not an absolute path
     - the file name is not '.' or '..'
     - does not contain a backslash, '\\'
@@ -232,10 +232,10 @@ integrity checks against a jar archive:
 - The API exported by a multi-release jar archive is consistent across all different release
   versions.
 
-The jar tool returns a status code of 0 if there were no integrity issues encountered, otherwise
-a non-zero status code would be returned.
-When an integrity issue is reported, it will often require that the jar file is re-created by the
-original source of the jar file.
+The jar tool returns an exit code of 0 if there were no integrity issues encountered, otherwise
+a non-zero exit code would be returned.
+When an integrity issue is reported, it will often require that the JAR file is re-created by the
+original source of the JAR file.
 
 ## Examples of jar Command Syntax
 

@@ -25,6 +25,9 @@
 
 package sun.tools.jar;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.module.ModuleDescriptor;
@@ -99,8 +102,12 @@ final class Validator {
         checkModuleDescriptor(MODULE_INFO);
     }
 
-    static boolean validate(Main main, ZipFile zf, ZipInputStream zis) throws IOException {
-        return new Validator(main, zf, zis).validate();
+    static boolean validate(Main main, File zipFile) throws IOException {
+        try (ZipFile zf = new ZipFile(zipFile);
+            ZipInputStream zis = new ZipInputStream(new BufferedInputStream(
+                    new FileInputStream(zipFile)))) {
+            return new Validator(main, zf, zis).validate();
+        }
     }
 
     /**
@@ -116,7 +123,7 @@ final class Validator {
      * Also validate that the file name is not "." or "..", and that any name
      * element is not equal to "." or ".."
      *
-     * @param entryName CEN/LOC header file name field entry
+     * @param entryName ZIP entry name
      * @return true if a valid Zip Entry file name; false otherwise
      */
     public static boolean isZipEntryNameValid(String entryName) {
