@@ -62,11 +62,13 @@ public class TestSplitPaneResetDividerLoc {
     private static volatile int setLoc;
     private static volatile int curLoc;
 
-     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+    private static boolean setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
             UIManager.setLookAndFeel(laf.getClassName());
+            return true;
         } catch (UnsupportedLookAndFeelException ignored) {
             System.out.println("Unsupported LAF: " + laf.getClassName());
+            return false;
         } catch (ClassNotFoundException | InstantiationException
                  | IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -77,7 +79,9 @@ public class TestSplitPaneResetDividerLoc {
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing LAF : " + laf.getClassName());
             try {
-                setLookAndFeel(laf);
+                if (!setLookAndFeel(laf)) {
+                    continue;
+                }
                 SwingUtilities.invokeAndWait(TestSplitPaneResetDividerLoc::createAndShowUI);
 
                 Robot robot = new Robot();
