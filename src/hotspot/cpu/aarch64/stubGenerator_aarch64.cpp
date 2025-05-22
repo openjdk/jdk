@@ -8109,7 +8109,8 @@ class StubGenerator: public StubCodeGenerator {
     __ andr(rscratch2, cnt, vf - 1);
     __ bind(TAIL_SHORTCUT);
     __ adr(rscratch1, BR_BASE);
-    __ sub(rscratch1, rscratch1, rscratch2, ext::uxtw, 3);
+    // For Cortex-A53 offset is 4 because 2 nops are generated.
+    __ sub(rscratch1, rscratch1, rscratch2, ext::uxtw, VM_Version::supports_a53mac() ? 4 : 3);
     __ movw(rscratch2, 0x1f);
     __ br(rscratch1);
 
@@ -8117,6 +8118,11 @@ class StubGenerator: public StubCodeGenerator {
       __ load(rscratch1, Address(__ post(ary, type2aelembytes(eltype))),
                                    eltype);
       __ maddw(result, result, rscratch2, rscratch1);
+      // maddw generates an extra nop for Cortex-A53 (see maddw definition in macroAssembler).
+      // Generate 2nd nop to have 4 instructions per iteration.
+      if (VM_Version::supports_a53mac()) {
+        __ nop();
+      }
     }
     __ bind(BR_BASE);
 

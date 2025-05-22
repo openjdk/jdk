@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,17 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8145255
- * @run main/othervm java.base/sun.security.ssl.TestHkdf
- * @summary HKDF for Sun JSSE
- */
+public class Cls<K, V> {
 
+  public static Cls<Object, Object> newInstance() {
+    return new Cls<>();
+  }
+
+  public <K1 extends K, V1 extends @Anno V> V1 doSomething(Intf1 arg) {
+      throw new UnsupportedOperationException();
+  }
+
+  public <K1 extends K, V1 extends @Anno V> V1 doSomething(Intf2 arg) {
+      throw new UnsupportedOperationException();
+  }
+}

@@ -31,6 +31,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 
 class AllClassLocationStreams;
 class ClassLocationStream;
@@ -201,6 +202,9 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
   void print_dumptime_classpath(LogStream& ls, int index_start, int index_limit,
                                 bool do_substitute, size_t remove_prefix_len,
                                 const char* prepend, size_t prepend_len) const;
+
+  void print_on(outputStream* st) const;
+
 public:
   static AOTClassLocationConfig* dumptime() {
     assert(_dumptime_instance != nullptr, "can only be called when dumping an AOT cache");
@@ -268,6 +272,8 @@ public:
   bool validate(bool has_aot_linked_classes, bool* has_extra_module_paths) const;
 
   bool is_valid_classpath_index(int classpath_index, InstanceKlass* ik);
+
+  static void print();
 };
 
 
