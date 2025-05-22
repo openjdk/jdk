@@ -643,8 +643,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         assert(typeInt->is_con(), "must be constant");
         jint value = typeInt->get_con();
 
-        // max. 2 chars allowed
-        if (value >= -9 && value <= 99) {
+        // Only use up to 4 chars and fall back to a generic "I" to keep it short.
+        if (value >= -999 && value <= 9999) {
           os::snprintf_checked(buffer, sizeof(buffer), "%d", value);
           print_prop(short_name, buffer);
         } else {
@@ -657,8 +657,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         assert(typeLong->is_con(), "must be constant");
         jlong value = typeLong->get_con();
 
-        // max. 2 chars allowed
-        if (value >= -9 && value <= 99) {
+        // Only use up to 4 chars and fall back to a generic "L" to keep it short.
+        if (value >= -999 && value <= 9999) {
           os::snprintf_checked(buffer, sizeof(buffer), JLONG_FORMAT, value);
           print_prop(short_name, buffer);
         } else {
@@ -676,7 +676,11 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       } else if (t->base() == Type::Return_Address) {
         print_prop(short_name, "RA");
       } else if (t->base() == Type::AnyPtr) {
-        print_prop(short_name, "P");
+        if (t->is_ptr()->ptr() == TypePtr::Null) {
+          print_prop(short_name, "NULL");
+        } else {
+          print_prop(short_name, "P");
+        }
       } else if (t->base() == Type::RawPtr) {
         print_prop(short_name, "RP");
       } else if (t->base() == Type::AryPtr) {
