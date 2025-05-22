@@ -23,10 +23,10 @@
  */
 
 #include "classfile/classLoader.hpp"
+#include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
-#include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nmt/memTracker.hpp"
 #include "os_posix.inline.hpp"
