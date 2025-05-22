@@ -221,18 +221,14 @@ class ValidatorTest {
     }
 
     @Test
-    public void testValidateJar() throws IOException {
+    public void testValidJar() throws IOException {
         var zip = Path.of("Regular.jar");
         writeManifestAsFirstSecondAndFourthEntry(zip, false, false);
-        try {
-            jar("--validate --file " + zip.toString());
-        } catch (IOException e) {
-            fail("Expecting zero exit code");
-        }
+        jar("--validate --file " + zip.toString());
     }
 
     @Test
-    public void testValidate() throws IOException {
+    public void testMultiManifestJar() throws IOException {
         var zip = Path.of("MultipleManifestTest.jar");
         writeManifestAsFirstSecondAndFourthEntry(zip, true, true);
         try {
@@ -290,6 +286,7 @@ class ValidatorTest {
             fail("Expecting non-zero exit code");
         } catch (IOException e) {
             var err = e.getMessage();
+            System.out.println(err);
             assertTrue(err.contains("Warning: Central directory and local file header entries are not in the same order"));
         }
     }
@@ -305,7 +302,7 @@ class ValidatorTest {
             var err = e.getMessage();
             System.out.println(err);
             for (var entryName : invalidEntryNames) {
-                assertTrue(err.contains("Warning: entry name " + entryName + " is not valid"));
+                assertTrue(err.contains("Warning: entry name " + entryName + " is not valid"), "missing warning for " + entryName);
             }
         }
     }
@@ -323,6 +320,7 @@ class ValidatorTest {
         try {
             int rc = JAR_TOOL.run(jarOut, err, cmdline.split(" +"));
             if (rc != 0) {
+                assertTrue(rc > 0, "exit code: " + rc);
                 throw new IOException(baes.toString());
             } else {
                 return baes.toString();

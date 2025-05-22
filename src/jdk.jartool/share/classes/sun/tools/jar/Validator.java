@@ -138,13 +138,13 @@ final class Validator {
      *
      * NOTE: In order to check the encounter order based on the CEN listing,
      *       this implementation assumes CEN entries are to be added before
-     *       add any LOC entries. That is, addCenEntry should be called before
+     *       adding any LOC entries. That is, addCenEntry should be called before
      *       calls to addLocEntry to ensure encounter order can be compared
      *       properly.
      */
     private class EntryValidator {
         // A place holder when an entry is not yet seen in the directory
-        static EntryEncounter PLACE_HOLDER = new EntryEncounter(0, 0);
+        static final EntryEncounter PLACE_HOLDER = new EntryEncounter(0, 0);
         // Flag to signal the CEN and LOC is not in the same order
         boolean outOfOrder = false;
         /**
@@ -167,7 +167,7 @@ final class Validator {
              * True if this entry is not in the directory.
              */
             boolean isPlaceHolder() {
-                return count == 0;
+                return this == PLACE_HOLDER;
             }
         }
 
@@ -182,7 +182,7 @@ final class Validator {
         LinkedHashMap<String, EntryInfo> entries = new LinkedHashMap<>();
         // Encounter order in CEN, step by 1 on each new entry
         int cenEncounterOrder = 0;
-        // Encounter order in LOC, step by 1 for new LOC entry exist in CEN
+        // Encounter order in LOC, step by 1 for new LOC entry that exists in CEN
         int locEncounterOrder = 0;
 
         /**
@@ -205,7 +205,7 @@ final class Validator {
 
         /**
          * Record an entry apperance in LOC
-         * We compare entry order based on the CEN. Thus do not step LOC
+         * We compare entry order based on the CEN. Thus do not increase LOC
          * encounter order if the entry is only in LOC.
          * NOTE: This works because all CEN entries are added before adding LOC entries.
          */
@@ -235,7 +235,7 @@ final class Validator {
 
         /**
          * Validation per entry observed.
-         * Each entry must appeared at least oncee in CEN or LOC.
+         * Each entry must appeare at least once in the CEN or LOC.
          */
         private void validateEntry(String entryName, EntryInfo entryInfo) {
             // Check invalid entry name
@@ -262,7 +262,7 @@ final class Validator {
         }
 
         /**
-         * Validate the jar entries by check each entry in encounter order
+         * Validate the jar entries by checking each entry in encounter order
          */
         public void validate() {
             entries.sequencedEntrySet().forEach(e -> validateEntry(e.getKey(), e.getValue()));

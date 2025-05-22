@@ -233,7 +233,7 @@ integrity checks against a JAR file:
   versions.
 
 The jar tool returns an exit code of 0 if there were no integrity issues encountered, otherwise
-a non-zero exit code would be returned.
+an exit code >0 would be returned.
 When an integrity issue is reported, it will often require that the JAR file is re-created by the
 original source of the JAR file.
 
