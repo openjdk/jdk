@@ -58,8 +58,6 @@ MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap) :
 }
 
 void MetaspaceDCmd::execute(DCmdSource source, TRAPS) {
-  MetaspaceUtils::print_on(output());
-
   // Parse scale value.
   const char* scale_value = _scale.value();
   size_t scale = 0;
