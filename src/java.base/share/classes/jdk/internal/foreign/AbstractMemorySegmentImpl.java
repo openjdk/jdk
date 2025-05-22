@@ -206,7 +206,8 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     @Override
     public final MemorySegment fill(byte value) {
-        return SegmentBulkOperations.fill(this, value);
+        SegmentBulkOperations.fill(this, value);
+        return this;
     }
 
     @Override

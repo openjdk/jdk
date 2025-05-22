@@ -72,10 +72,9 @@ public final class SegmentBulkOperations {
      *
      * @param dst   segment to fill
      * @param value to fill the segment with
-     * @return the provided {@code dst} segment
      */
     @ForceInline
-    public static MemorySegment fill(AbstractMemorySegmentImpl dst, byte value) {
+    public static void fill(AbstractMemorySegmentImpl dst, byte value) {
         dst.checkReadOnly(false);
         final long len = dst.length;
         /* The multiplication below is equivalent to:
@@ -92,7 +91,6 @@ public final class SegmentBulkOperations {
             case 4 -> fill4(dst, len, longValue);
             default -> fill5AndUpwards(dst, len, longValue);
         }
-        return dst;
     }
 
     @ForceInline
