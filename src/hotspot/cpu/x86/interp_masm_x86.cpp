@@ -989,12 +989,10 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 void InterpreterMacroAssembler::enter_jfr_critical_section() {
   const Address sampling_critical_section(r15_thread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
   movbool(sampling_critical_section, true);
-  membar(Assembler::StoreLoad);
 }
 
 void InterpreterMacroAssembler::leave_jfr_critical_section() {
   const Address sampling_critical_section(r15_thread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
-  membar(Assembler::StoreStore);
   movbool(sampling_critical_section, false);
 }
 #endif // INCLUDE_JFR

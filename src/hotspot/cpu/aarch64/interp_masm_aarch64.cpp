@@ -669,12 +669,10 @@ void InterpreterMacroAssembler::enter_jfr_critical_section() {
   const Address sampling_critical_section(rthread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
   mov(rscratch1, true);
   strb(rscratch1, sampling_critical_section);
-  membar(Assembler::StoreLoad);
 }
 
 void InterpreterMacroAssembler::leave_jfr_critical_section() {
   const Address sampling_critical_section(rthread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
-  membar(Assembler::StoreStore);
   strb(zr, sampling_critical_section);
 }
 #endif // INCLUDE_JFR
