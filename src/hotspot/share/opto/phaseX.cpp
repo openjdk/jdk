@@ -1322,6 +1322,13 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //    test/hotspot/jtreg/gc/stress/gcbasher/TestGCBasherWithG1.java
     //    -XX:VerifyIterativeGVN=1110
     case Op_AndI:
+    // Same for AndL.
+    // Found with:
+    //   compiler/intrinsics/bigInteger/MontgomeryMultiplyTest.java
+    //    -XX:VerifyIterativeGVN=1110
+    case Op_AndL:
+    // I'll defensively add this other remaining MulNodes
+    case Op_MulHF:
       return false;
 
     // SubLNode::Ideal does transform like:
