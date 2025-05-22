@@ -609,7 +609,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 if (Log.quicHandshake()) {
                     Log.logQuic("{0} handshake completed {1}",
                             logTag(),
-                            t == null ? "succesfully" : ("exceptionally: " + t));
+                            t == null ? "successfully" : ("exceptionally: " + t));
                 }
                 if (t != null) {
                     handshakeReachedPeerCF.completeExceptionally(t);
