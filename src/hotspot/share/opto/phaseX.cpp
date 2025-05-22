@@ -1205,6 +1205,16 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     case Op_If:
       return false;
 
+    // IfNode::simple_subsuming
+    // Looks for dominating test that subsumes the current test.
+    // Notification could be difficult because of larger distance.
+    //
+    // Found with:
+    //   runtime/exceptionMsgs/ArrayIndexOutOfBoundsException/ArrayIndexOutOfBoundsExceptionTest.java#id1
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_CountedLoopEnd:
+      return false;
+
     // RegionNode::Ideal does "Skip around the useless IF diamond".
     //   245  IfTrue  === 244
     //   258  If  === 245 257
