@@ -139,6 +139,9 @@ void AOTCodeCache::initialize() {
     return; // AOTCache must be specified to dump and use AOT code
   }
 
+  // Disable stubs caching until JDK-8357398 is fixed.
+  FLAG_SET_ERGO(AOTStubCaching, false);
+
   if (VerifyOops) {
     // Disable AOT stubs caching when VerifyOops flag is on.
     // Verify oops code generated a lot of C strings which overflow
