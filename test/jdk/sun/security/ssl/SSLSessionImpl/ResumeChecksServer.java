@@ -241,7 +241,7 @@ public class ResumeChecksServer extends SSLContextTemplate {
             sock.close();
             return result;
         } catch (SSLHandshakeException ex) {
-            if (firstSession == null) {
+            if (!second) {
                 throw ex;
             }
         }
