@@ -108,7 +108,7 @@ public class DeoptimizeRelocatedNMethod {
         NMethod origNmethod = NMethod.get(method, false);
 
         // Relocate nmethod and mark old for cleanup
-        WHITE_BOX.relocateNMethodTo(method, BlobType.MethodProfiled.id);
+        WHITE_BOX.relocateNMethodFromMethod(method, BlobType.MethodProfiled.id);
 
         // Trigger GC to clean up old nmethod
         WHITE_BOX.fullGC();

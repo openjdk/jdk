@@ -25,7 +25,7 @@
 /*
  * @test id=Serial
  * @bug 8316694
- * @summary test that WB::relocateNMethodTo() correctly creates a new nmethod
+ * @summary test that nmethod::relocate() correctly creates a new nmethod
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  *
@@ -39,7 +39,7 @@
 /*
  * @test id=Parallel
  * @bug 8316694
- * @summary test that WB::relocateNMethodTo() correctly creates a new nmethod
+ * @summary test that nmethod::relocate() correctly creates a new nmethod
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  *
@@ -53,7 +53,7 @@
 /*
  * @test id=G1
  * @bug 8316694
- * @summary test that WB::relocateNMethodTo() correctly creates a new nmethod
+ * @summary test that nmethod::relocate() correctly creates a new nmethod
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  *
@@ -67,7 +67,7 @@
 /*
  * @test id=Shenandoah
  * @bug 8316694
- * @summary test that WB::relocateNMethodTo() correctly creates a new nmethod
+ * @summary test that nmethod::relocate() correctly creates a new nmethod
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  *
@@ -81,7 +81,7 @@
 /*
  * @test id=ZGC
  * @bug 8316694
- * @summary test that WB::relocateNMethodTo() correctly creates a new nmethod
+ * @summary test that nmethod::relocate() correctly creates a new nmethod
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  *
@@ -122,7 +122,7 @@ public class RelocateNMethod extends CompilerWhiteBoxTest {
         checkCompiled();
         NMethod origNmethod = NMethod.get(method, false);
 
-        WHITE_BOX.relocateNMethodTo(method, BlobType.MethodProfiled.id);
+        WHITE_BOX.relocateNMethodFromMethod(method, BlobType.MethodProfiled.id);
 
         WHITE_BOX.fullGC();
 

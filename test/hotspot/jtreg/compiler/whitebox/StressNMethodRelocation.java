@@ -198,7 +198,7 @@ public class StressNMethodRelocation {
                 CodeBlob[] nonProfiledBlobs = CodeBlob.getCodeBlobs(BlobType.MethodNonProfiled);
                 for (CodeBlob blob : nonProfiledBlobs) {
                     if (blob.isNMethod) {
-                        WHITE_BOX.relocateMemNMethodTo0(blob.address, BlobType.MethodProfiled.id);
+                        WHITE_BOX.relocateNMethodFromAddr0(blob.address, BlobType.MethodProfiled.id);
                     }
                 }
 
@@ -206,7 +206,7 @@ public class StressNMethodRelocation {
                 CodeBlob[] profiledBlobs = CodeBlob.getCodeBlobs(BlobType.MethodProfiled);
                 for (CodeBlob blob : nonProfiledBlobs) {
                     if (blob.isNMethod) {
-                        WHITE_BOX.relocateMemNMethodTo0(blob.address, BlobType.MethodNonProfiled.id);
+                        WHITE_BOX.relocateNMethodFromAddr0(blob.address, BlobType.MethodNonProfiled.id);
                     }
                 }
             }

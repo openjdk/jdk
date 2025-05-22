@@ -195,7 +195,7 @@ public class RelocateNMethodMultiplePaths {
         NMethod origNmethod = NMethod.get(method, false);
 
         // Relocate nmethod and mark old for cleanup
-        WHITE_BOX.relocateNMethodTo(method, BlobType.MethodNonProfiled.id);
+        WHITE_BOX.relocateNMethodFromMethod(method, BlobType.MethodNonProfiled.id);
 
         // Trigger GC to clean up old nmethod
         WHITE_BOX.fullGC();

@@ -490,12 +490,12 @@ public class WhiteBox {
     Objects.requireNonNull(method);
     return getNMethod0(method, isOsr);
   }
-  private native void     relocateNMethodTo0(Executable method, int type);
-  public         void     relocateNMethodTo(Executable method, int type) {
+  private native void     relocateNMethodFromMethod0(Executable method, int type);
+  public         void     relocateNMethodFromMethod(Executable method, int type) {
     Objects.requireNonNull(method);
-    relocateNMethodTo0(method, type);
+    relocateNMethodFromMethod0(method, type);
   }
-  public native void    relocateMemNMethodTo0(long address, int type);
+  public native void    relocateNMethodFromAddr0(long address, int type);
   public native long    allocateCodeBlob(int size, int type);
   public        long    allocateCodeBlob(long size, int type) {
       int intSize = (int) size;
