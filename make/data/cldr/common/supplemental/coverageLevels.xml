@@ -138,7 +138,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%monthTypes" value="(1[0-3]?|[2-9])"/>
 		<coverageVariable key="%msTypes80" value="(metric|u[ks]system)"/>
 		<coverageVariable key="%numberingSystem80" value="(adlm|arab(ext)?|armn(low)?|beng|cakm|deva|ethi|fullwide|geor|grek(low)?|gujr|guru|hanidec|han[st](fin)?|hebr|java|jpan(fin)?|khmr|knda|laoo|mlym|mtei|mymr|native|olck|orya|roman(low)?|taml(dec)?|telu|thai|tibt|vaii)"/>
-		<coverageVariable key="%numberingSystem100" value="(finance|traditional|bali|brah|cham|diak|gara|gong|gonm|gukh|hanidays|hmnp|jpanyear|kali|kawi|krai|lana(tham)?|lepc|limb|mong|mymrepka|mymrpao|mymrshan|nagm|nkoo|onao|osma|outlined|rohg|saur|shrd|sora|sund|sunu|takr|talu|tnsa|wcho)"/>
+		<coverageVariable key="%numberingSystem100" value="(finance|traditional|bali|brah|cham|chis|diak|gara|gong|gonm|gukh|hanidays|hmnp|jpanyear|kali|kawi|krai|lana(tham)?|lepc|limb|mong|mymrepka|mymrpao|mymrshan|nagm|nkoo|onao|osma|outlined|rohg|saur|shrd|sora|sund|sunu|takr|talu|tnsa|tols|wcho)"/>
 		<coverageVariable key="%persianCalendarTerritories" value="(AF|IR)"/>
 		<coverageVariable key="%personNameLanguages" value="(ar|de|en|es|fr|hu|id|is|ja|ko|nl|ru|uk|zh)"/> <!-- currently unused -->
 		<coverageVariable key="%phonebookCollationLanguages" value="(de|fi)"/>

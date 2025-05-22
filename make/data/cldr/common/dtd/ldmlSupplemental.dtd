@@ -1091,7 +1091,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST numberingSystem radix NMTOKEN #IMPLIED >
     <!--@VALUE-->
 <!ATTLIST numberingSystem digits CDATA #IMPLIED >
-    <!--@MATCH:unicodeset/[\p{Nd}[\u3007\u4E00\u4E03\u4E09\u4E5D\u4E8C\u4E94\u516B\u516D\u56DB][\U00010D40-\U00010D49\U000116D0-\U000116E3\U00011BF0-\U00011BF9\U00016130-\U00016139\U00016D70-\U00016D79\U0001CCF0-\U0001CCF9\U0001E5F1-\U0001E5FA]]-->
+    <!--@MATCH:unicodeset/[\p{Nd}[\u3007\u4E00\u4E03\u4E09\u4E5D\u4E8C\u4E94\u516B\u516D\u56DB][\U00011DE0-\U00011DE9\U00016DA0-\U00016DA9]]-->
     <!--@VALUE-->
 <!ATTLIST numberingSystem rules CDATA #IMPLIED >
     <!--@MATCH:any-->

@@ -22,6 +22,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="brah" description="Brahmi digits" since="21"/>
             <type name="cakm" description="Chakma digits" since="21"/>
             <type name="cham" description="Cham digits" since="21"/>
+            <type name="chis" description="Chisoi digits" since="48"/>
             <type name="cyrl" description="Cyrillic numerals — algorithmic" since="28"/>
             <type name="deva" description="Devanagari digits"/>
             <type name="diak" description="Dives Akuru digits" since="36.1"/>
@@ -105,6 +106,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="thai" description="Thai digits"/>
             <type name="tirh" description="Tirhuta digits" since="28"/>
             <type name="tibt" description="Tibetan digits"/>
+            <type name="tols" description="Tolong Siki digits" since="48"/>
             <type name="traditio" description="Traditional numerals — may be algorithmic" alias="traditional" since="21"/>
             <type name="vaii" description="Vai digits" since="21"/>
             <type name="wara" description="Warang Citi digits" since="28"/>

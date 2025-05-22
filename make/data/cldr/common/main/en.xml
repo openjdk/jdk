@@ -1595,6 +1595,7 @@ annotations.
 			<type key="numbers" type="brah">Brahmi Digits</type>
 			<type key="numbers" type="cakm">Chakma Digits</type>
 			<type key="numbers" type="cham">Cham Digits</type>
+			<type key="numbers" type="chis">Chisoi Digits</type>
 			<type key="numbers" type="cyrl">Cyrillic Numerals</type>
 			<type key="numbers" type="deva">Devanagari Digits</type>
 			<type key="numbers" type="diak">Dives Akuru Digits</type>
@@ -1678,6 +1679,7 @@ annotations.
 			<type key="numbers" type="tibt">Tibetan Digits</type>
 			<type key="numbers" type="tirh">Tirhuta Digits</type>
 			<type key="numbers" type="tnsa">Tangsa Digits</type>
+			<type key="numbers" type="tols">Tolong Siki Digits</type>
 			<type key="numbers" type="traditional">Traditional Numerals</type>
 			<type key="numbers" type="vaii">Vai Digits</type>
 			<type key="numbers" type="wara">Warang Citi Digits</type>
