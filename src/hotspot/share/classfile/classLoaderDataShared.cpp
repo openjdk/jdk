@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotLogging.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -192,7 +193,7 @@ void ClassLoaderDataShared::serialize(SerializeClosure* f) {
     // Must be done before ClassLoader::create_javabase()
     _archived_boot_loader_data.restore(null_class_loader_data(), true, false);
     ModuleEntryTable::set_javabase_moduleEntry(_archived_javabase_moduleEntry);
-    log_info(cds)("use_full_module_graph = true; java.base = " INTPTR_FORMAT,
+    aot_log_info(aot)("use_full_module_graph = true; java.base = " INTPTR_FORMAT,
                   p2i(_archived_javabase_moduleEntry));
   }
 }
