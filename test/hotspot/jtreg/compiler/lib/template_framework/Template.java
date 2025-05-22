@@ -206,13 +206,13 @@ import compiler.lib.ir_framework.TestFramework;
  *
  * <p>
  * Similarly, we may want to model method and class names, and possibly other structural names. We model
- * these names with {@link StructuralName}, which works analogous to {@link DataName}, except that they
+ * these names with {@link StructuralName}, which works analogously to {@link DataName}, except that they
  * are not concerned about mutability.
  *
  * <p>
  * When working with {@link DataName}s and {@link StructuralName}s, it is important to be aware of the
  * relevant scopes, as well as the execution order of the {@link Template} lambdas, as well as the evaluation
- * of the {@link Template#body} tokens. When a {@link Template} is rendered, its lambda is invoke. In the
+ * of the {@link Template#body} tokens. When a {@link Template} is rendered, its lambda is invoked. In the
  * lambda, we generate the tokens, and create the {@link Template#body}. Once the lambda returns, the
  * tokens are evaluated one by one. While evaluating the tokens, the Renderer might encounter a nested
  * {@link TemplateToken}, which in turn triggers the evaluation of that nested {@link Template}, i.e.
@@ -258,7 +258,7 @@ import compiler.lib.ir_framework.TestFramework;
  *     // evaluated later. By that time, the token for "v1" is evaluated, and so the
  *     // nested Template would observe an increment in the count.
  *     anotherTemplate.asToken(),
- *     // By this point, all methods are called, and the tokens generated. The
+ *     // By this point, all methods are called, and the tokens generated.
  *     // The lambda returns the "body", which is all of the tokens that we just
  *     // generated. After returning from the lambda, the tokens will be evaluated
  *     // one by one.
@@ -605,7 +605,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * }
      *
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
-     *               (e.g. {@link Integer}), any {@link Token}, or {@link List}s
+     *               (for example {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
      * @return The {@link TemplateBody} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
@@ -749,7 +749,7 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Add a {@link DataName} in the current scope, i.e. the innermost of either
+     * Add a {@link DataName} in the current scope, that is the innermost of either
      * {@link Template#body} or {@link Hook#anchor}.
      *
      * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
@@ -771,7 +771,7 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Add a {@link DataName} in the current scope, i.e. the innermost of either
+     * Add a {@link DataName} in the current scope, that is the innermost of either
      * {@link Template#body} or {@link Hook#anchor}, with a {@code weight} of 1.
      *
      * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
@@ -796,7 +796,7 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Add a {@link StructuralName} in the current scope, i.e. the innermost of either
+     * Add a {@link StructuralName} in the current scope, that is the innermost of either
      * {@link Template#body} or {@link Hook#anchor}.
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
@@ -810,7 +810,7 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Add a {@link StructuralName} in the current scope, i.e. the innermost of either
+     * Add a {@link StructuralName} in the current scope, that is the innermost of either
      * {@link Template#body} or {@link Hook#anchor}, with a {@code weight} of 1.
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
