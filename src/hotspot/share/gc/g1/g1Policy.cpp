@@ -94,7 +94,7 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
 
-  _young_gen_sizer.adjust_max_new_size(_g1h->max_regions());
+  _young_gen_sizer.adjust_max_new_size(_g1h->max_num_regions());
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
@@ -676,9 +676,9 @@ void G1Policy::record_young_collection_start() {
   // every time we calculate / recalculate the target young length.
   update_survivors_policy();
 
-  assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_regions(),
+  assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_num_regions(),
          "Maximum survivor regions %u plus used regions %u exceeds max regions %u",
-         max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_regions());
+         max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_num_regions());
   assert_used_and_recalculate_used_equal(_g1h);
 
   phase_times()->record_cur_collection_start_sec(now.seconds());
@@ -1200,7 +1200,7 @@ void G1Policy::update_survivors_policy() {
   // The real maximum survivor size is bounded by the number of regions that can
   // be allocated into.
   _max_survivor_regions = MIN2(desired_max_survivor_regions,
-                               _g1h->num_free_or_inactive_regions());
+                               _g1h->num_available_regions());
 }
 
 bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) {
@@ -1445,7 +1445,7 @@ uint G1Policy::calc_max_old_cset_length() const {
   // as a percentage of the heap size. I.e., it should bound the
   // number of old regions added to the CSet irrespective of how many
   // of them are available.
-  double result = (double)_g1h->committed_regions() * G1OldCSetRegionThresholdPercent / 100;
+  double result = (double)_g1h->num_committed_regions() * G1OldCSetRegionThresholdPercent / 100;
   // Round up to be conservative.
   return (uint)ceil(result);
 }

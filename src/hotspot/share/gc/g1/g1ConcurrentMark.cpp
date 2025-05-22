@@ -475,7 +475,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   _heap(_g1h->reserved()),
 
-  _root_regions(_g1h->max_regions()),
+  _root_regions(_g1h->max_num_regions()),
 
   _global_mark_stack(),
 
@@ -513,9 +513,9 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _num_concurrent_workers(0),
   _max_concurrent_workers(0),
 
-  _region_mark_stats(NEW_C_HEAP_ARRAY(G1RegionMarkStats, _g1h->max_reserved_regions(), mtGC)),
-  _top_at_mark_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_reserved_regions(), mtGC)),
-  _top_at_rebuild_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_reserved_regions(), mtGC)),
+  _region_mark_stats(NEW_C_HEAP_ARRAY(G1RegionMarkStats, _g1h->max_num_regions(), mtGC)),
+  _top_at_mark_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_num_regions(), mtGC)),
+  _top_at_rebuild_starts(NEW_C_HEAP_ARRAY(HeapWord*, _g1h->max_num_regions(), mtGC)),
   _needs_remembered_set_rebuild(false)
 {
   assert(CGC_lock != nullptr, "CGC_lock must be initialized");
@@ -570,8 +570,8 @@ void G1ConcurrentMark::reset() {
     _tasks[i]->reset(mark_bitmap());
   }
 
-  uint max_reserved_regions = _g1h->max_reserved_regions();
-  for (uint i = 0; i < max_reserved_regions; i++) {
+  uint max_num_regions = _g1h->max_num_regions();
+  for (uint i = 0; i < max_num_regions; i++) {
     _top_at_rebuild_starts[i] = nullptr;
     _region_mark_stats[i].clear();
   }
@@ -613,8 +613,8 @@ void G1ConcurrentMark::reset_marking_for_restart() {
   if (has_overflown()) {
     _global_mark_stack.expand();
 
-    uint max_reserved_regions = _g1h->max_reserved_regions();
-    for (uint i = 0; i < max_reserved_regions; i++) {
+    uint max_num_regions = _g1h->max_num_regions();
+    for (uint i = 0; i < max_num_regions; i++) {
       _region_mark_stats[i].clear_during_overflow();
     }
   }
@@ -782,7 +782,7 @@ public:
 void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers, bool may_yield) {
   assert(may_yield || SafepointSynchronize::is_at_safepoint(), "Non-yielding bitmap clear only allowed at safepoint.");
 
-  size_t const num_bytes_to_clear = (G1HeapRegion::GrainBytes * _g1h->committed_regions()) / G1CMBitMap::heap_map_factor();
+  size_t const num_bytes_to_clear = (G1HeapRegion::GrainBytes * _g1h->num_committed_regions()) / G1CMBitMap::heap_map_factor();
   size_t const num_chunks = align_up(num_bytes_to_clear, G1ClearBitMapTask::chunk_size()) / G1ClearBitMapTask::chunk_size();
 
   uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
@@ -1434,20 +1434,20 @@ void G1ConcurrentMark::remark() {
       GCTraceTime(Debug, gc, phases) debug("Select For Rebuild and Reclaim Empty Regions", _gc_timer_cm);
 
       G1UpdateRegionLivenessAndSelectForRebuildTask cl(_g1h, this, _g1h->workers()->active_workers());
-      uint const num_workers = MIN2(G1UpdateRegionLivenessAndSelectForRebuildTask::desired_num_workers(_g1h->committed_regions()),
+      uint const num_workers = MIN2(G1UpdateRegionLivenessAndSelectForRebuildTask::desired_num_workers(_g1h->num_committed_regions()),
                                     _g1h->workers()->active_workers());
-      log_debug(gc,ergo)("Running %s using %u workers for %u regions in heap", cl.name(), num_workers, _g1h->committed_regions());
+      log_debug(gc,ergo)("Running %s using %u workers for %u regions in heap", cl.name(), num_workers, _g1h->num_committed_regions());
       _g1h->workers()->run_task(&cl, num_workers);
 
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
-                                        _g1h->committed_regions(), cl.total_selected_for_rebuild());
+                                        _g1h->num_committed_regions(), cl.total_selected_for_rebuild());
 
       _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
 
       if (_needs_remembered_set_rebuild) {
         // Prune rebuild candidates based on G1HeapWastePercent.
         // Improves rebuild time in addition to remembered set memory usage.
-        G1CollectionSetChooser::build(_g1h->workers(), _g1h->committed_regions(), _g1h->policy()->candidates());
+        G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_committed_regions(), _g1h->policy()->candidates());
       }
     }
 

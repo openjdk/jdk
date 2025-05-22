@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,7 @@ class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
 //   committed regions. These may not be contiguous.
 // * _next_highest_used_hrm_index (not exposed outside this class) is the
 //   highest heap region index +1 for which we have G1HeapRegions.
-// * max_length() returns the maximum number of regions the heap may commit.
-// * max_reserved_regions() returns the maximum number of regions the heap has reserved.
+// * max_num_regions() returns the maximum number of regions the heap has reserved.
 //
 
 class G1HeapRegionManager: public CHeapObj<mtGC> {
@@ -221,7 +220,7 @@ public:
     return _free_list.length();
   }
 
-  uint num_used_regions() const { return committed_regions() - num_free_regions(); }
+  uint num_used_regions() const { return num_committed_regions() - num_free_regions(); }
 
   uint num_free_regions(uint node_index) const {
     return _free_list.length(node_index);
@@ -232,15 +231,15 @@ public:
   }
 
   // Return the number of regions uncommitted or ready to be uncommitted.
-  uint inactive_regions() const { return max_reserved_regions() - committed_regions(); }
+  uint num_inactive_regions() const { return max_num_regions() - num_committed_regions(); }
 
   // Return the number of regions currently active and available for use.
-  uint committed_regions() const { return _committed_map.num_active(); }
+  uint num_committed_regions() const { return _committed_map.num_active(); }
 
   // The number of regions reserved for the heap.
-  uint max_reserved_regions() const { return (uint)_regions.length(); }
+  uint max_num_regions() const { return (uint)_regions.length(); }
 
-  uint free_or_inactive_regions() const { return num_free_regions() + inactive_regions(); }
+  uint num_available_regions() const { return num_free_regions() + num_inactive_regions(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const;
 

@@ -90,7 +90,7 @@ class WorkerThreads;
 typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
 
-typedef int RegionIdx_t;   // needs to hold [ 0..max_reserved_regions() )
+typedef int RegionIdx_t;   // needs to hold [ 0..max_num_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
 
 // The G1 STW is alive closure.
@@ -971,7 +971,7 @@ public:
   // But G1CollectedHeap doesn't yet support this.
 
   bool is_maximal_no_gc() const override {
-    return _hrm.inactive_regions() == 0;
+    return _hrm.num_inactive_regions() == 0;
   }
 
   // Returns true if an incremental GC should be upgrade to a full gc. This
@@ -981,14 +981,10 @@ public:
   }
 
   // The current number of regions in the heap.
-  uint committed_regions() const { return _hrm.committed_regions(); }
+  uint num_committed_regions() const { return _hrm.num_committed_regions(); }
 
-  // The max number of regions reserved for the heap. Except for static array
-  // sizing purposes you probably want to use max_regions().
-  uint max_reserved_regions() const { return _hrm.max_reserved_regions(); }
-
-  // Max number of regions that can be committed.
-  uint max_regions() const { return _hrm.max_reserved_regions(); }
+  // The max number of regions reserved for the heap.
+  uint max_num_regions() const { return _hrm.max_num_regions(); }
 
   // The number of regions that are completely free.
   uint num_free_regions() const { return _hrm.num_free_regions(); }
@@ -997,7 +993,7 @@ public:
   uint num_used_regions() const { return _hrm.num_used_regions(); }
 
   // The number of regions that can be allocated into.
-  uint num_free_or_inactive_regions() const { return _hrm.free_or_inactive_regions(); }
+  uint num_available_regions() const { return _hrm.num_available_regions(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const {
     return _hrm.get_auxiliary_data_memory_usage();
