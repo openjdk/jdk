@@ -634,13 +634,13 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     cmpw(rscratch1, (u1)StackOverflow::stack_guard_enabled);
     br(Assembler::EQ, no_reserved_zone_enabling);
 
-    JFR_ONLY(leave_jfr_critical_section();)
-
     // look for an overflow into the stack reserved zone, i.e.
     // interpreter_frame_sender_sp <= JavaThread::reserved_stack_activation
     ldr(rscratch1, Address(rthread, JavaThread::reserved_stack_activation_offset()));
     cmp(rscratch2, rscratch1);
     br(Assembler::LS, no_reserved_zone_enabling);
+
+    JFR_ONLY(leave_jfr_critical_section();)
 
     call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), rthread);
