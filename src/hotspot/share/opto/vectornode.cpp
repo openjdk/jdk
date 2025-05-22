@@ -88,9 +88,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_FmaHF:
     return (bt == T_SHORT ? Op_FmaVHF : 0);
   case Op_CMoveI:
-    return ((SuperWord::support_vectorize_cmovefd_bool_unconditionally() && bt == T_INT) ? Op_VectorBlend : 0);
+    return (bt == T_INT ? Op_VectorBlend : 0);
   case Op_CMoveL:
-    return ((SuperWord::support_vectorize_cmovefd_bool_unconditionally() && bt == T_LONG) ? Op_VectorBlend : 0);
+    return (bt == T_LONG ? Op_VectorBlend : 0);
   case Op_CMoveF:
     return (bt == T_FLOAT ? Op_VectorBlend : 0);
   case Op_CMoveD:
@@ -434,6 +434,9 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     if (VectorNode::is_vector_integral_negate(vopc)) {
       return is_vector_integral_negate_supported(vopc, vlen, bt, false);
     }
+    if (vopc == Op_VectorBlend) {
+      return VectorBlendNode::implemented(opc);
+    }
     return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
   return false;
@@ -514,6 +517,10 @@ bool VectorNode::is_vector_integral_negate_supported(int opc, uint vlen, BasicTy
 bool VectorNode::is_populate_index_supported(BasicType bt) {
   int vlen = Matcher::max_vector_size(bt);
   return Matcher::match_rule_supported_vector(Op_PopulateIndex, vlen, bt);
+}
+
+bool VectorNode::is_vectorize_cmove_bool_unconditionally_supported() {
+  return Matcher::supports_vectorize_cmove_bool_unconditionally();
 }
 
 bool VectorNode::is_shift_opcode(int opc) {
@@ -2192,6 +2199,14 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
+bool VectorBlendNode::implemented(int opc) {
+  assert(opc == Op_CMoveF || opc == Op_CMoveD ||
+         opc == Op_CMoveI || opc == Op_CMoveL ||
+         opc == Op_CMoveN || opc == Op_CMoveP, "must");
+  return Matcher::supports_transform_cmove_to_vectorblend(opc);
+}
+
 static bool is_replicate_uint_constant(const Node* n) {
   return n->Opcode() == Op_Replicate &&
          n->in(1)->is_Con() &&

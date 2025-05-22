@@ -422,8 +422,6 @@ class SuperWord : public ResourceObj {
   // Decide if loop can eventually be vectorized, and what unrolling factor is required.
   static void unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor);
 
-  static bool support_vectorize_cmovefd_bool_unconditionally();
-
   // VLoop accessors
   PhaseIdealLoop* phase()     const { return _vloop.phase(); }
   PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }

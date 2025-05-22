@@ -199,8 +199,20 @@
     return false;
   }
 
-  static bool support_vectorize_cmovefd_bool_unconditionally() {
+  static bool supports_vectorize_cmove_bool_unconditionally() {
     return true;
+  }
+
+  static bool supports_transform_cmove_to_vectorblend(int cmove_opc) {
+    switch (cmove_opc) {
+      case Op_CMoveF:
+      case Op_CMoveD:
+      case Op_CMoveI:
+      case Op_CMoveL:
+        return true;
+      default:
+        return false;
+    }
   }
 
 #endif // CPU_RISCV_MATCHER_RISCV_HPP
