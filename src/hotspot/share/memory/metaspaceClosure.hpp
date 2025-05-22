@@ -236,11 +236,11 @@ private:
 
     virtual void metaspace_pointers_do(MetaspaceClosure *it) const {
       Array<T>* array = ArrayRef<T>::dereference();
-      log_trace(cds)("Iter(OtherArray): %p [%d]", array, array->length());
+      log_trace(aot)("Iter(OtherArray): %p [%d]", array, array->length());
     }
     virtual void metaspace_pointers_do_at(MetaspaceClosure *it, address new_loc) const {
       Array<T>* array = (Array<T>*)new_loc;
-      log_trace(cds)("Iter(OtherArray): %p [%d]", array, array->length());
+      log_trace(aot)("Iter(OtherArray): %p [%d]", array, array->length());
     }
   };
 
@@ -258,7 +258,7 @@ private:
     }
   private:
     void metaspace_pointers_do_at_impl(MetaspaceClosure *it, Array<T>* array) const {
-      log_trace(cds)("Iter(MSOArray): %p [%d]", array, array->length());
+      log_trace(aot)("Iter(MSOArray): %p [%d]", array, array->length());
       for (int i = 0; i < array->length(); i++) {
         T* elm = array->adr_at(i);
         elm->metaspace_pointers_do(it);
@@ -280,7 +280,7 @@ private:
     }
   private:
     void metaspace_pointers_do_at_impl(MetaspaceClosure *it, Array<T*>* array) const {
-      log_trace(cds)("Iter(MSOPointerArray): %p [%d]", array, array->length());
+      log_trace(aot)("Iter(MSOPointerArray): %p [%d]", array, array->length());
       for (int i = 0; i < array->length(); i++) {
         T** mpp = array->adr_at(i);
         it->push(mpp);

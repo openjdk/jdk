@@ -24,6 +24,7 @@
 
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotLogging.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -102,8 +103,8 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
   InstanceKlass* ik = find_builtin_class(class_name);
 
   if (ik != nullptr && !ik->shared_loading_failed()) {
-    if ((SystemDictionary::is_system_class_loader(class_loader()) && ik->is_shared_app_class())  ||
-        (SystemDictionary::is_platform_class_loader(class_loader()) && ik->is_shared_platform_class())) {
+    if ((SystemDictionary::is_system_class_loader(class_loader()) && ik->defined_by_app_loader())  ||
+        (SystemDictionary::is_platform_class_loader(class_loader()) && ik->defined_by_platform_loader())) {
       SharedClassLoadingMark slm(THREAD, ik);
       PackageEntry* pkg_entry = CDSProtectionDomain::get_package_entry_from_class(ik, class_loader);
       Handle protection_domain =
@@ -229,7 +230,7 @@ bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClass
 // Returns true so the caller can do:    return warn_excluded(".....");
 bool SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
   ResourceMark rm;
-  log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
+  aot_log_warning(aot)("Skipping %s: %s", k->name()->as_C_string(), reason);
   return true;
 }
 
@@ -249,7 +250,7 @@ bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
 }
 
 bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
-  if (CDSConfig::is_dumping_final_static_archive() && k->is_shared_unregistered_class()
+  if (CDSConfig::is_dumping_final_static_archive() && k->defined_by_other_loaders()
       && k->is_shared()) {
     return false; // Do not exclude: unregistered classes are passed from preimage to final image.
   }
@@ -273,7 +274,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
         k->set_shared_classpath_index(0);
       } else {
         ResourceMark rm;
-        log_info(cds)("Skipping %s because it is dynamically generated", k->name()->as_C_string());
+        aot_log_info(aot)("Skipping %s because it is dynamically generated", k->name()->as_C_string());
         return true; // exclude without warning
       }
     } else {
@@ -325,14 +326,14 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
 
   if (UnregisteredClasses::check_for_exclusion(k)) {
     ResourceMark rm;
-    log_info(cds)("Skipping %s: used only when dumping CDS archive", k->name()->as_C_string());
+    aot_log_info(aot)("Skipping %s: used only when dumping CDS archive", k->name()->as_C_string());
     return true;
   }
 
   InstanceKlass* super = k->java_super();
   if (super != nullptr && check_for_exclusion(super, nullptr)) {
     ResourceMark rm;
-    log_warning(cds)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
+    aot_log_warning(aot)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
     return true;
   }
 
@@ -342,7 +343,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     InstanceKlass* intf = interfaces->at(i);
     if (check_for_exclusion(intf, nullptr)) {
       ResourceMark rm;
-      log_warning(cds)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
+      aot_log_warning(aot)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
     }
   }
@@ -591,11 +592,11 @@ void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
         assert(LambdaProxyClassDictionary::is_registered_lambda_proxy_class(k), "unexpected hidden class %s", name);
       }
     }
-    guarantee(!k->is_shared_unregistered_class(),
+    guarantee(!k->defined_by_other_loaders(),
               "Class loader type must be set for BUILTIN class %s", name);
 
   } else {
-    guarantee(k->is_shared_unregistered_class(),
+    guarantee(k->defined_by_other_loaders(),
               "Class loader type must not be set for UNREGISTERED class %s", name);
   }
 }
@@ -758,7 +759,7 @@ void SystemDictionaryShared::dumptime_classes_do(MetaspaceClosure* it) {
 
   auto do_klass = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
     if (CDSConfig::is_dumping_final_static_archive() && !k->is_loaded()) {
-      assert(k->is_shared_unregistered_class(), "must be");
+      assert(k->defined_by_other_loaders(), "must be");
       info.metaspace_pointers_do(it);
     } else if (k->is_loader_alive() && !info.is_excluded()) {
       info.metaspace_pointers_do(it);
@@ -829,9 +830,9 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
       Symbol* name      = vc->name();
       Symbol* from_name = vc->from_name();
 
-      if (log_is_enabled(Trace, cds, verification)) {
+      if (log_is_enabled(Trace, aot, verification)) {
         ResourceMark rm(THREAD);
-        log_trace(cds, verification)("check_verification_constraint: %s: %s must be subclass of %s [0x%x]",
+        log_trace(aot, verification)("check_verification_constraint: %s: %s must be subclass of %s [0x%x]",
                                      klass->external_name(), from_name->as_klass_external_name(),
                                      name->as_klass_external_name(), record->verifier_constraint_flag(i));
       }
@@ -944,11 +945,11 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
 bool SystemDictionaryShared::check_linking_constraints(Thread* current, InstanceKlass* klass) {
   assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   LogTarget(Info, class, loader, constraints) log;
-  if (klass->is_shared_boot_class()) {
+  if (klass->defined_by_boot_loader()) {
     // No class loader constraint check performed for boot classes.
     return true;
   }
-  if (klass->is_shared_platform_class() || klass->is_shared_app_class()) {
+  if (klass->defined_by_platform_loader() || klass->defined_by_app_loader()) {
     RunTimeClassInfo* info = RunTimeClassInfo::get_for(klass);
     assert(info != nullptr, "Sanity");
     if (info->num_loader_constraints() > 0) {
@@ -991,7 +992,7 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
 void SystemDictionaryShared::copy_linking_constraints_from_preimage(InstanceKlass* klass) {
   assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   JavaThread* current = JavaThread::current();
-  if (klass->is_shared_platform_class() || klass->is_shared_app_class()) {
+  if (klass->defined_by_platform_loader() || klass->defined_by_app_loader()) {
     RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from preimage
 
     if (rt_info->num_loader_constraints() > 0) {
@@ -1047,9 +1048,9 @@ public:
       } else {
         _writer->add(hash, delta);
       }
-      if (log_is_enabled(Trace, cds, hashtables)) {
+      if (log_is_enabled(Trace, aot, hashtables)) {
         ResourceMark rm;
-        log_trace(cds,hashtables)("%s dictionary: %s", (_is_builtin ? "builtin" : "unregistered"), info._klass->external_name());
+        log_trace(aot, hashtables)("%s dictionary: %s", (_is_builtin ? "builtin" : "unregistered"), info._klass->external_name());
       }
 
       // Save this for quick runtime lookup of InstanceKlass* -> RunTimeClassInfo*
@@ -1159,13 +1160,13 @@ const char* SystemDictionaryShared::loader_type_for_shared_class(Klass* k) {
   assert(k->is_shared(), "Must be");
   assert(k->is_instance_klass(), "Must be");
   InstanceKlass* ik = InstanceKlass::cast(k);
-  if (ik->is_shared_boot_class()) {
+  if (ik->defined_by_boot_loader()) {
     return "boot_loader";
-  } else if (ik->is_shared_platform_class()) {
+  } else if (ik->defined_by_platform_loader()) {
     return "platform_loader";
-  } else if (ik->is_shared_app_class()) {
+  } else if (ik->defined_by_app_loader()) {
     return "app_loader";
-  } else if (ik->is_shared_unregistered_class()) {
+  } else if (ik->defined_by_other_loaders()) {
     return "unregistered_loader";
   } else {
     return "unknown loader";

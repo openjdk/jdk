@@ -136,6 +136,7 @@ void Method::deallocate_contents(ClassLoaderData* loader_data) {
   clear_method_data();
   MetadataFactory::free_metadata(loader_data, method_counters());
   clear_method_counters();
+  set_adapter_entry(nullptr);
   // The nmethod will be gone when we get here.
   if (code() != nullptr) _code = nullptr;
 }
@@ -387,7 +388,7 @@ Symbol* Method::klass_name() const {
 }
 
 void Method::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(Method): %p", this);
+  log_trace(aot)("Iter(Method): %p", this);
 
   if (!method_holder()->is_rewritten()) {
     it->push(&_constMethod, MetaspaceClosure::_writable);
@@ -414,8 +415,9 @@ void Method::remove_unshareable_info() {
   if (method_counters() != nullptr) {
     method_counters()->remove_unshareable_info();
   }
-  if (AOTCodeCache::is_dumping_adapter() && _adapter != nullptr) {
+  if (CDSConfig::is_dumping_adapters() && _adapter != nullptr) {
     _adapter->remove_unshareable_info();
+    _adapter = nullptr;
   }
   JFR_ONLY(REMOVE_METHOD_ID(this);)
 }
@@ -1193,7 +1195,7 @@ void Method::unlink_code() {
 void Method::unlink_method() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   _code = nullptr;
-  if (!AOTCodeCache::is_dumping_adapter() || AdapterHandlerLibrary::is_abstract_method_adapter(_adapter)) {
+  if (!CDSConfig::is_dumping_adapters() || AdapterHandlerLibrary::is_abstract_method_adapter(_adapter)) {
     _adapter = nullptr;
   }
   _i2i_entry = nullptr;

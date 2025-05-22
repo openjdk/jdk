@@ -955,13 +955,13 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
   int total = (int)_items_count;
   size_t single_array_size = objArrayOopDesc::object_size(total);
 
-  log_info(cds)("allocated string table for %d strings", total);
+  log_info(aot)("allocated string table for %d strings", total);
 
   if (!ArchiveHeapWriter::is_too_large_to_archive(single_array_size)) {
     // The entire table can fit in a single array
     objArrayOop array = oopFactory::new_objArray(vmClasses::Object_klass(), total, CHECK);
     _shared_strings_array = OopHandle(Universe::vm_global(), array);
-    log_info(cds)("string table array (single level) length = %d", total);
+    log_info(aot)("string table array (single level) length = %d", total);
   } else {
     // Split the table in two levels of arrays.
     int primary_array_length = (total + _secondary_array_max_length - 1) / _secondary_array_max_length;
@@ -972,7 +972,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
       // This can only happen if you have an extremely large number of classes that
       // refer to more than 16384 * 16384 = 26M interned strings! Not a practical concern
       // but bail out for safety.
-      log_error(cds)("Too many strings to be archived: %zu", _items_count);
+      log_error(aot)("Too many strings to be archived: %zu", _items_count);
       MetaspaceShared::unrecoverable_writing_error();
     }
 
@@ -980,7 +980,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
     objArrayHandle primaryHandle(THREAD, primary);
     _shared_strings_array = OopHandle(Universe::vm_global(), primary);
 
-    log_info(cds)("string table array (primary) length = %d", primary_array_length);
+    log_info(aot)("string table array (primary) length = %d", primary_array_length);
     for (int i = 0; i < primary_array_length; i++) {
       int len;
       if (total > _secondary_array_max_length) {
@@ -993,7 +993,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
       objArrayOop secondary = oopFactory::new_objArray(vmClasses::Object_klass(), len, CHECK);
       primaryHandle()->obj_at_put(i, secondary);
 
-      log_info(cds)("string table array (secondary)[%d] length = %d", i, len);
+      log_info(aot)("string table array (secondary)[%d] length = %d", i, len);
       assert(!ArchiveHeapWriter::is_too_large_to_archive(secondary), "sanity");
     }
 
@@ -1064,7 +1064,7 @@ oop StringTable::init_shared_strings_array() {
   };
 
   _local_table->do_safepoint_scan(copy_into_array);
-  log_info(cds)("Archived %d interned strings", index);
+  log_info(aot)("Archived %d interned strings", index);
   return array;
 };
 

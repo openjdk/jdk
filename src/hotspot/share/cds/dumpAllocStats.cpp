@@ -53,7 +53,7 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
   const char *sep = "--------------------+---------------------------+---------------------------+--------------------------";
   const char *hdr = "                        ro_cnt   ro_bytes     % |   rw_cnt   rw_bytes     % |  all_cnt  all_bytes     %";
 
-  LogMessage(cds) msg;
+  LogMessage(aot) msg;
 
   msg.debug("Detailed metadata info (excluding heap region):");
   msg.debug("%s", hdr);
