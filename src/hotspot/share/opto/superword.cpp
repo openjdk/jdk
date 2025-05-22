@@ -1621,6 +1621,12 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
                                                   (arith_type->basic_type() == T_INT ||
                                                    arith_type->basic_type() == T_LONG);
       if (is_two_element_int_or_long_reduction && AutoVectorizationOverrideProfitability != 2) {
+#ifndef PRODUCT
+        if (is_trace_superword_rejections()) {
+          tty->print_cr("\nPerformance heuristic: 2-element INT/LONG reduction not profitable.");
+          tty->print_cr("  Can override with AutoVectorizationOverrideProfitability=2");
+        }
+#endif
         return false;
       }
       retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
@@ -1785,6 +1791,13 @@ bool SuperWord::profitable(const Node_List* p) const {
       // reduction out of the loop, replacing it with a single vector op.
       // See: PhaseIdealLoop::move_unordered_reduction_out_of_loop
       // Hence, this heuristic has room for improvement.
+#ifndef PRODUCT
+        if (is_trace_superword_rejections()) {
+          tty->print_cr("\nPerformance heuristic: not enough vectors in the loop to make");
+          tty->print_cr("  reduction profitable.");
+          tty->print_cr("  Can override with AutoVectorizationOverrideProfitability=2");
+        }
+#endif
       return false;
     } else if (second_pk->size() != p->size()) {
       return false;
@@ -1940,6 +1953,16 @@ bool SuperWord::schedule_and_apply() const {
 
   if (!vtransform.schedule()) { return false; }
   if (vtransform.has_store_to_load_forwarding_failure()) { return false; }
+
+  if (AutoVectorizationOverrideProfitability == 0) {
+#ifndef PRODUCT
+    if (is_trace_superword_any()) {
+      tty->print_cr("\nForced bailout of vectorization (AutoVectorizationOverrideProfitability=0).");
+    }
+    return false;
+#endif
+  }
+
   vtransform.apply();
   return true;
 }
