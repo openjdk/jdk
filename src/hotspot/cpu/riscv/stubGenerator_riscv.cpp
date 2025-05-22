@@ -1721,58 +1721,32 @@ class StubGenerator: public StubCodeGenerator {
       __ fill_words(dest, cnt_words, value);
     }
 
-    // Remaining count is less than 8 bytes and address is heapword aligned.
-    {
-      Label L_fill_2, L_fill_1, L_exit;
-      __ test_bit(tmp_reg, count, 2);
-      __ beqz(tmp_reg, L_fill_2);
-      __ sw(value, Address(dest, 0));
-      __ addi(dest, dest, 4);
-
-      __ bind(L_fill_2);
-      __ test_bit(tmp_reg, count, 1);
-      __ beqz(tmp_reg, L_fill_1);
-      __ sh(value, Address(dest, 0));
-      __ addi(dest, dest, 2);
-
-      __ bind(L_fill_1);
-      __ test_bit(tmp_reg, count, 0);
-      __ beqz(tmp_reg, L_exit);
-      __ sb(value, Address(dest, 0));
-
-      __ bind(L_exit);
-      __ leave();
-      __ ret();
-    }
-
     // Handle copies less than 8 bytes
     __ bind(L_fill_elements);
-    {
-      Label L_fill_2, L_fill_1, L_exit;
-      __ test_bit(tmp_reg, count, 2);
-      __ beqz(tmp_reg, L_fill_2);
-      __ sb(value, Address(dest, 0));
-      __ sb(value, Address(dest, 1));
-      __ sb(value, Address(dest, 2));
-      __ sb(value, Address(dest, 3));
-      __ addi(dest, dest, 4);
+    Label L_fill_2, L_fill_1, L_exit;
+    __ test_bit(tmp_reg, count, 2);
+    __ beqz(tmp_reg, L_fill_2);
+    __ sb(value, Address(dest, 0));
+    __ sb(value, Address(dest, 1));
+    __ sb(value, Address(dest, 2));
+    __ sb(value, Address(dest, 3));
+    __ addi(dest, dest, 4);
 
-      __ bind(L_fill_2);
-      __ test_bit(tmp_reg, count, 1);
-      __ beqz(tmp_reg, L_fill_1);
-      __ sb(value, Address(dest, 0));
-      __ sb(value, Address(dest, 1));
-      __ addi(dest, dest, 2);
+    __ bind(L_fill_2);
+    __ test_bit(tmp_reg, count, 1);
+    __ beqz(tmp_reg, L_fill_1);
+    __ sb(value, Address(dest, 0));
+    __ sb(value, Address(dest, 1));
+    __ addi(dest, dest, 2);
 
-      __ bind(L_fill_1);
-      __ test_bit(tmp_reg, count, 0);
-      __ beqz(tmp_reg, L_exit);
-      __ sb(value, Address(dest, 0));
+    __ bind(L_fill_1);
+    __ test_bit(tmp_reg, count, 0);
+    __ beqz(tmp_reg, L_exit);
+    __ sb(value, Address(dest, 0));
 
-      __ bind(L_exit);
-      __ leave();
-      __ ret();
-    }
+    __ bind(L_exit);
+    __ leave();
+    __ ret();
 
     return start;
   }
