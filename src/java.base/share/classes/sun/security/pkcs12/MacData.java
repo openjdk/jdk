@@ -25,20 +25,17 @@
 
 package sun.security.pkcs12;
 
-import java.io.*;
-import java.security.*;
+import java.io.IOException;
+import java.security.AlgorithmParameters;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
-import java.util.Base64;
-
-import sun.security.util.DerInputStream;
-import sun.security.util.DerOutputStream;
-import sun.security.util.DerValue;
-import sun.security.util.KnownOIDs;
-import sun.security.util.ObjectIdentifier;
-import sun.security.x509.AlgorithmId;
-import sun.security.pkcs.ParsingException;
-
+import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.PBMAC1ParameterSpec;
+
+import sun.security.pkcs.ParsingException;
+import sun.security.util.*;
+import sun.security.x509.AlgorithmId;
 
 
 /**
@@ -50,20 +47,19 @@ import javax.crypto.spec.PBMAC1ParameterSpec;
 class MacData {
 
     private final String digestAlgorithmName;
-    private AlgorithmParameters digestAlgorithmParams;
+    private final AlgorithmParameters digestAlgorithmParams;
     private final byte[] digest;
     private final byte[] macSalt;
     private final int iterations;
     private final String kdfHmac;
     private final String Hmac;
-    private final int keysize;
+    private final int keyLength;
 
     // the ASN.1 encoded contents of this class
     private byte[] encoded = null;
 
     /**
      * Parses a PKCS#12 MAC data.
-     * Good for default or PBMAC1 or whatever else ails you.
      */
     MacData(DerInputStream derin) throws IOException {
         DerValue[] macData = derin.getSequence(2);
@@ -104,14 +100,14 @@ class MacData {
             this.macSalt = pbmac1Spec.getSalt();
             this.kdfHmac = pbmac1Spec.getkdfHmac();
             this.Hmac = pbmac1Spec.getHmac();
-            this.keysize = pbmac1Spec.getKeySize();
+            this.keyLength = pbmac1Spec.getKeyLength();
             return;
         }
 
         // Get the salt.
         this.macSalt = macData[1].getOctetString();
 
-        // Iterations is optional. The default value is 1.
+        // Iterations are optional. The default value is 1.
         if (macData.length > 2) {
             this.iterations = macData[2].getInteger();
         } else {
@@ -119,16 +115,16 @@ class MacData {
         }
         this.kdfHmac = null;
         this.Hmac = null;
-        this.keysize = 0;
+        this.keyLength = 0;
     }
 
-    // default constructor
-    MacData(String algName, byte[] digest, byte[] salt, int iterations)
+    MacData(String algName, byte[] digest, AlgorithmParameterSpec params)
         throws NoSuchAlgorithmException
     {
-        if (algName == null)
+        if (algName == null) {
            throw new NullPointerException("the algName parameter " +
                                                "must be non-null");
+        }
 
         AlgorithmId algid = AlgorithmId.get(algName);
         this.digestAlgorithmName = algid.getName();
@@ -144,54 +140,25 @@ class MacData {
             this.digest = digest.clone();
         }
 
-        this.macSalt = salt;
-        this.iterations = iterations;
-        this.kdfHmac = null;
-        this.Hmac = null;
-        this.keysize = 0;
-
-        // delay the generation of ASN.1 encoding until
-        // getEncoded() is called
-        this.encoded = null;
-
-    }
-
-    // constructor for PBMAC1
-    MacData(String algName, byte[] digest, byte[] salt, int iterations,
-            String kdfHmac, String Hmac, int keysize)
-        throws NoSuchAlgorithmException
-    {
-/*
-        if (algName == null)
-           throw new NullPointerException("the algName parameter " +
-                                               "must be non-null");
-
-        AlgorithmId algid = AlgorithmId.get(algName);
-*/
-        AlgorithmId algid = AlgorithmId.get("PBMAC1");
-        this.digestAlgorithmName = algid.getName();
-        this.digestAlgorithmParams = algid.getParameters();
-
-        if (digest == null) {
-            throw new NullPointerException("the digest " +
-                                           "parameter must be non-null");
-        } else if (digest.length == 0) {
-            throw new IllegalArgumentException("the digest " +
-                                                "parameter must not be empty");
+        if (params instanceof PBMAC1ParameterSpec p) {
+            this.macSalt = p.getSalt();
+            this.iterations = p.getIterationCount();
+            this.kdfHmac = p.getkdfHmac();
+            this.Hmac = p.getHmac();
+            this.keyLength = p.getKeyLength();
+        } else if (params instanceof PBEParameterSpec p) {
+            this.macSalt = p.getSalt();
+            this.iterations = p.getIterationCount();
+            this.kdfHmac = null;
+            this.Hmac = null;
+            this.keyLength = 0;
         } else {
-            this.digest = digest.clone();
+            throw new IllegalArgumentException("unsupported parameter spec");
         }
 
-        this.macSalt = salt;
-        this.iterations = iterations;
-        this.kdfHmac = kdfHmac;
-        this.Hmac = Hmac;
-        this.keysize = keysize;
-
         // delay the generation of ASN.1 encoding until
         // getEncoded() is called
         this.encoded = null;
-
     }
 
     String getDigestAlgName() {
@@ -218,8 +185,8 @@ class MacData {
         return Hmac;
     }
 
-    int getKeySize() {
-        return keysize;
+    int getKeyLength() {
+        return keyLength;
     }
 
     /**
@@ -233,12 +200,8 @@ class MacData {
     {
         if (digestAlgorithmName.equals("PBMAC1")) {
             byte[] notUsed = { 'N', 'O', 'T', ' ', 'U', 'S', 'E', 'D' };
-            ObjectIdentifier pkcs5PBMAC1_OID = ObjectIdentifier.of("1.2.840.113549.1.5.14");
-    ObjectIdentifier pkcs5PBKDF2_OID =
-            ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
-            AlgorithmId algid = AlgorithmId.get(digestAlgorithmName);
-            AlgorithmId HmacAlgid = AlgorithmId.get(Hmac);
-            AlgorithmId kdfHmacAlgid = AlgorithmId.get(kdfHmac);
+            ObjectIdentifier pkcs5PBKDF2_OID =
+                    ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
 
             DerOutputStream out = new DerOutputStream();
             DerOutputStream tmp0 = new DerOutputStream();
@@ -248,7 +211,6 @@ class MacData {
             DerOutputStream tmp4 = new DerOutputStream();
             DerOutputStream Hmac = new DerOutputStream();
             DerOutputStream kdfHmac = new DerOutputStream();
-            DerOutputStream keyDerivationFunc = new DerOutputStream();
 
             // encode kdfHmac algorithm
             kdfHmac.putOID(ObjectIdentifier.of(KnownOIDs
@@ -267,8 +229,8 @@ class MacData {
             pBKDF2_params.putInteger(iterations);
 
             // encode derived key length
-            if (keysize > 0) {
-                pBKDF2_params.putInteger(keysize / 8); // derived key length (in octets)
+            if (keyLength > 0) {
+                pBKDF2_params.putInteger(keyLength / 8); // derived key length (in octets)
             }
             pBKDF2_params.write(DerValue.tag_Sequence, kdfHmac);
             tmp3.putOID(pkcs5PBKDF2_OID);
