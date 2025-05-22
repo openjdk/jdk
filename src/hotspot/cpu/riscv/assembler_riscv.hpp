@@ -3304,48 +3304,48 @@ public:
   }
 
 // --------------------------
-  void sd(Register Rd, Register Rs, const int32_t offset) {
+  void sd(Register Rs2, Register Rs1, const int32_t offset) {
     /* sd -> c.sdsp/c.sd */
     if (do_compress()) {
-      if (is_c_ldsdsp(Rs, Rd, offset, false)) {
-        c_sdsp(Rd, offset);
+      if (is_c_ldsdsp(Rs1, Rs2, offset, false)) {
+        c_sdsp(Rs2, offset);
         return;
-      } else if (is_c_ldsd(Rs, Rd, offset)) {
-        c_sd(Rd, Rs, offset);
+      } else if (is_c_ldsd(Rs1, Rs2, offset)) {
+        c_sd(Rs2, Rs1, offset);
         return;
       }
     }
-    _sd(Rd, Rs, offset);
+    _sd(Rs2, Rs1, offset);
   }
 
 // --------------------------
-  void sw(Register Rd, Register Rs, const int32_t offset) {
+  void sw(Register Rs2, Register Rs1, const int32_t offset) {
     /* sw -> c.swsp/c.sw */
     if (do_compress()) {
-      if (is_c_lwswsp(Rs, Rd, offset, false)) {
-        c_swsp(Rd, offset);
+      if (is_c_lwswsp(Rs1, Rs2, offset, false)) {
+        c_swsp(Rs2, offset);
         return;
-      } else if (is_c_lwsw(Rs, Rd, offset)) {
-        c_sw(Rd, Rs, offset);
+      } else if (is_c_lwsw(Rs1, Rs2, offset)) {
+        c_sw(Rs2, Rs1, offset);
         return;
       }
     }
-    _sw(Rd, Rs, offset);
+    _sw(Rs2, Rs1, offset);
   }
 
 // --------------------------
-  void fsd(FloatRegister Rd, Register Rs, const int32_t offset) {
+  void fsd(FloatRegister Rs2, Register Rs1, const int32_t offset) {
     /* fsd -> c.fsdsp/c.fsd */
     if (do_compress()) {
-      if (is_c_fldsdsp(Rs, offset)) {
-        c_fsdsp(Rd, offset);
+      if (is_c_fldsdsp(Rs1, offset)) {
+        c_fsdsp(Rs2, offset);
         return;
-      } else if (is_c_fldsd(Rs, Rd, offset)) {
-        c_fsd(Rd, Rs, offset);
+      } else if (is_c_fldsd(Rs1, Rs2, offset)) {
+        c_fsd(Rs2, Rs1, offset);
         return;
       }
     }
-    _fsd(Rd, Rs, offset);
+    _fsd(Rs2, Rs1, offset);
   }
 
 // --------------------------
