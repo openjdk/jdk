@@ -89,7 +89,6 @@ class BSMAttributeEntry {
   u2* argument_indexes() {
     return reinterpret_cast<u2*>(this + 1);
   }
-
   // These are overlays on top of the operands array. Do not construct.
   BSMAttributeEntry() = delete;
 
@@ -100,7 +99,6 @@ public:
   int argument_count() const {
     return _argument_count;
   }
-
   int argument_index(int n) const {
     assert(checked_cast<u2>(n) < _argument_count, "oob");
     return argument_indexes()[n];
@@ -549,10 +547,6 @@ class ConstantPool : public Metadata {
     assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
     return extract_low_short_from_int(*int_at_addr(cp_index));
   }
-  int bootstrap_operand_base(int cp_index) {
-    int bsms_attribute_index = bootstrap_methods_attribute_index(cp_index);
-    return operand_offset_at(operands(), bsms_attribute_index);
-  }
   // The first part of the operands array consists of an index into the second part.
   // Extract a 32-bit index value from the first part.
   static int operand_offset_at(Array<u2>* operands, int bsms_attribute_index) {
@@ -589,10 +583,6 @@ class ConstantPool : public Metadata {
       return operands->length();
     else
       return operand_offset_at(operands, nextidx);
-  }
-  int bootstrap_operand_limit(int cp_index) {
-    int bsms_attribute_index = bootstrap_methods_attribute_index(cp_index);
-    return operand_limit_at(operands(), bsms_attribute_index);
   }
 #endif //ASSERT
 
