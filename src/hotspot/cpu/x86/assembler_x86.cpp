@@ -12973,8 +12973,7 @@ void Assembler::emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexS
     attributes.set_is_evex_instruction();
     if (swap) {
       encode = vex_prefix_and_encode(nds_enc, dst_enc, src_enc, pre, opc, &attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
-    }
-    else {
+    } else {
       encode = vex_prefix_and_encode(src_enc, dst_enc, nds_enc, pre, opc, &attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
     }
     emit_int16(opcode_byte, (0xC0 | encode));
