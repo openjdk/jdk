@@ -104,7 +104,7 @@ public class TestRedundantLea {
             }
             case "StringEquals" -> {
                 framework = new TestFramework(StringEqualsTest.class);
-                framework.addHelperClasses(StringEqualsHelper.class);
+                framework.addHelperClasses(StringEqualsTestHelper.class);
             }
             case "StringInflate" -> {
                 framework = new TestFramework(StringInflateTest.class);
@@ -155,31 +155,31 @@ public class TestRedundantLea {
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_8_NARROW, "=1"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
+        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824", "TieredCompilation", "true"})
     // Test that the peephole worked for leaP(8|32)Narrow
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         counts = {IRNode.LEA_P_8_NARROW, "=1"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
+        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824", "TieredCompilation", "true"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=1"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
+        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824", "TieredCompilation", "true"})
     // Test that the peephole worked for leaPCompressedOopOffset
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=1"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
+        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824", "TieredCompilation", "true"})
     public void testGetAndSet() {
         obj.getAndSet(CURRENT);
     }
 }
 
 // This generates leaP* rules for the chained dereferences of the String.value
-// fields that are used in the string equals VM intrinsic.
+// fields that are used in the string_equals VM intrinsic.
 class StringEqualsTest {
-    final StringEqualsHelper strEqHelper = new StringEqualsHelper("I am the string that is tested against");
+    final StringEqualsTestHelper strEqHelper = new StringEqualsTestHelper("I am the string that is tested against");
 
     @Setup
     private static Object[] setup() {
@@ -191,32 +191,32 @@ class StringEqualsTest {
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3",
                   IRNode.LEA_P_8_NARROW, "=2"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
+        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824", "TieredCompilation", "true"})
     // Test that the peephole worked for leaP(8|32)Narrow
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_8_NARROW, "=2"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
+        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824", "TieredCompilation", "true"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
+        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824", "TieredCompilation", "true"})
     // Test that the peephole worked for leaPCompressedOopOffset
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
+        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824", "TieredCompilation", "true"})
     @Arguments(setup = "setup")
     public boolean test(String str) {
         return strEqHelper.doEquals(str);
     }
 }
 
-private class StringEqualsHelper {
+class StringEqualsTestHelper {
     private String str;
 
-    public StringEqualsHelper(String str) {
+    public StringEqualsTestHelper(String str) {
         this.str = str;
     }
 
@@ -282,22 +282,22 @@ class RegexFindTest {
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=7",
                   IRNode.LEA_P_8_NARROW, "=1"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824", "UseAVX", "=3"})
+        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824", "UseAVX", "=3", "TieredCompilation", "true"})
     // Test that the peephole worked for leaP(8|32)Narrow
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=6",
                   IRNode.LEA_P_8_NARROW, "=1"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824", "UseAVX", "=3"})
+        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824", "UseAVX", "=3", "TieredCompilation", "true"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=9",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=1"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824", "UseAVX", "=3"})
+        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824", "UseAVX", "=3", "TieredCompilation", "true"})
     // Test that the peephole worked for leaPCompressedOopOffset
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=8",
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=1"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824", "UseAVX", "=3"})
+        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824", "UseAVX", "=3", "TieredCompilation", "true"})
     @Arguments(setup = "setup")
     public boolean test(Matcher m) {
         return m.find();
@@ -317,8 +317,8 @@ class StoreNTest {
     private static final Object CURRENT = new Object();
     private static final Object OTHER = new Object();
 
-    private StoreNHelper[] classArr8bit = new StoreNHelper[SOME_SIZE];
-    private StoreNHelper[] classArr32bit = new StoreNHelper[SOME_SIZE];
+    private StoreNTestHelper[] classArr8bit = new StoreNTestHelper[SOME_SIZE];
+    private StoreNTestHelper[] classArr32bit = new StoreNTestHelper[SOME_SIZE];
     private Object[] objArr8bit = new Object[SOME_SIZE];
     private Object[] objArr32bit = new Object[SOME_SIZE];
 
@@ -349,12 +349,12 @@ class StoreNTest {
     @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY, "=4"},
         phase = { CompilePhase.FINAL_CODE },
         applyIfAnd ={"OptoPeephole", "false", "UseCompactObjectHeaders", "false"})
-    @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY, "=4"},
+    @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY, "=3"},
         phase = { CompilePhase.FINAL_CODE },
         applyIfAnd ={"OptoPeephole", "true", "UseCompactObjectHeaders", "false"})
     public void testRemoveSpill() {
-        this.classArr8bit[OFFSET8BIT_IDX] = new StoreNHelper(CURRENT, OTHER);
-        this.classArr32bit[OFFSET32BIT_IDX] = new StoreNHelper(OTHER, CURRENT);
+        this.classArr8bit[OFFSET8BIT_IDX] = new StoreNTestHelper(CURRENT, OTHER);
+        this.classArr32bit[OFFSET32BIT_IDX] = new StoreNTestHelper(OTHER, CURRENT);
     }
 
     // This variation of the test above generates a split spill register path.
@@ -380,8 +380,8 @@ class StoreNTest {
         phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
     public void testPhiSpill() {
-        this.classArr8bit[OFFSET8BIT_IDX] = new StoreNHelper(CURRENT, OTHER);
-        this.classArr8bit[OFFSET32BIT_IDX] = new StoreNHelper(CURRENT, OTHER);
+        this.classArr8bit[OFFSET8BIT_IDX] = new StoreNTestHelper(CURRENT, OTHER);
+        this.classArr8bit[OFFSET32BIT_IDX] = new StoreNTestHelper(CURRENT, OTHER);
     }
 
     @Test
@@ -441,11 +441,11 @@ class StoreNTest {
     }
 }
 
-private class StoreNHelper {
+class StoreNTestHelper {
     Object o1;
     Object o2;
 
-    public StoreNHelper(Object o1, Object o2) {
+    public StoreNTestHelper(Object o1, Object o2) {
         this.o1 = o1;
         this.o2 = o2;
     }
