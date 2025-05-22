@@ -120,7 +120,7 @@ public class TestRedundantLea {
                 for (String extra : extraScenarioArgs) {
                     scenarios[i] = new Scenario(i, compressedTest ? "-XX:MaxHeapSize=4g" : "-XX:MaxHeapSize=32m");
                     if (negativeTest) {
-                        scenarios[i].addFlags("-XX:-OptoPeephole");
+                        scenarios[i].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-OptoPeephole");
                     }
                     if (extra != "") {
                         scenarios[i].addFlags(extra);
@@ -284,8 +284,10 @@ class StoreNTest {
     private static final Object CURRENT = new Object();
     private static final Object OTHER = new Object();
 
-    private final StoreNHelper[] helper8bit = new StoreNHelper[SOME_SIZE];
-    private final StoreNHelper[] helper32bit = new StoreNHelper[SOME_SIZE];
+    private StoreNHelper[] classArr8bit = new StoreNHelper[SOME_SIZE];
+    private StoreNHelper[] classArr32bit = new StoreNHelper[SOME_SIZE];
+    private Object[] objArr8bit = new Object[SOME_SIZE];
+    private Object[] objArr32bit = new Object[SOME_SIZE];
 
     @Test
     // Negative test
@@ -310,10 +312,80 @@ class StoreNTest {
         counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2",
                   IRNode.MEM2REG_SPILL_COPY, "=2"},
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
-    public void test() {
-        this.helper8bit[OFFSET8BIT_IDX] = new StoreNHelper(CURRENT, OTHER);
-        //this.helper8bit[OFFSET32BIT_IDX] = new StoreNHelper(CURRENT, OTHER);
-        this.helper32bit[OFFSET32BIT_IDX] = new StoreNHelper(OTHER, CURRENT);
+    public void testRemoveSpill() {
+        this.classArr8bit[OFFSET8BIT_IDX] = new StoreNHelper(CURRENT, OTHER);
+        this.classArr32bit[OFFSET32BIT_IDX] = new StoreNHelper(OTHER, CURRENT);
+    }
+
+    // This variation of the test above generates a split spill register path.
+    // Due to the complicated graph structure with the phis, the peephole
+    // cannot remove the redundant decode.
+    @Test
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
+                  IRNode.LEA_P_8_NARROW, "=1",
+                  IRNode.LEA_P_32_NARROW, "=1"},
+        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
+                  IRNode.LEA_P_8_NARROW, "=1",
+                  IRNode.LEA_P_32_NARROW, "=1"},
+        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
+                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
+                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
+    public void testPhiSpill() {
+        this.classArr8bit[OFFSET8BIT_IDX] = new StoreNHelper(CURRENT, OTHER);
+        this.classArr8bit[OFFSET32BIT_IDX] = new StoreNHelper(CURRENT, OTHER);
+    }
+
+    @Test
+    // Negative test
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2",
+                  IRNode.LEA_P_8_NARROW, "=1",
+                  IRNode.LEA_P_32_NARROW, "=1"},
+        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
+    // Test that the peephole worked for leaP(8|32)Narrow
+    @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
+        counts = {IRNode.LEA_P_8_NARROW, "=1",
+                  IRNode.LEA_P_32_NARROW, "=1"},
+        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
+    // Negative test
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2",
+                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
+    // Test that the peephole worked for leaPCompressedOopOffset
+    @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
+        counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
+    public void testNoAlloc() {
+        this.objArr8bit[OFFSET8BIT_IDX] = CURRENT;
+        this.objArr32bit[OFFSET32BIT_IDX] = OTHER;
+    }
+
+    @Test
+    // Negative test
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
+                  IRNode.LEA_P_8_NARROW, "=1",
+                  IRNode.LEA_P_32_NARROW, "=1"},
+        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
+    // Test that the peephole worked for leaP(8|32)Narrow
+    @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
+        counts = {IRNode.LEA_P_8_NARROW, "=1",
+                  IRNode.LEA_P_32_NARROW, "=1"},
+        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
+    // Negative test
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
+                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
+    // Test that the peephole worked for leaPCompressedOopOffset
+    @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
+        counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
+        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
+    public void testNoAllocSameArray() {
+        this.objArr8bit[OFFSET8BIT_IDX] = CURRENT;
+        this.objArr8bit[OFFSET32BIT_IDX] = OTHER;
     }
 }
 

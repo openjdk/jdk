@@ -344,12 +344,14 @@ bool Peephole::lea_remove_redundant(Block* block, int block_index, PhaseCFG* cfg
     decode_spill->set_removed();
     block->find_remove(decode_spill);
     cfg_->map_node_to_block(decode_spill, nullptr);
+    decode_spill->del_req(1);
   }
 
   // Remove the decode
   lea_base->set_removed();
   block->find_remove(lea_base);
   cfg_->map_node_to_block(lea_base, nullptr);
+  lea_base->del_req(1);
 
   return true;
 }
