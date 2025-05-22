@@ -52,7 +52,7 @@ final class MenuItemTestHelper {
 
         Icon myIcon = new ColoredIcon(Color.RED, 10, 10);
         Icon myIcon2 = new ColoredIcon(Color.GREEN, 15, 10);
-        
+
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(createViewMenu(myIcon, myIcon2));
         menuBar.add(createNoNothingMenu());
