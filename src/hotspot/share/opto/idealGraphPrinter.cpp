@@ -626,12 +626,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     const char *short_name = "short_name";
     if (strcmp(node->Name(), "Parm") == 0 && node->as_Proj()->_con >= TypeFunc::Parms) {
       int index = node->as_Proj()->_con - TypeFunc::Parms;
-      if (index >= 10) {
-        print_prop(short_name, "PA");
-      } else {
-        os::snprintf_checked(buffer, sizeof(buffer), "P%d", index);
-        print_prop(short_name, buffer);
-      }
+      os::snprintf_checked(buffer, sizeof(buffer), "P%d", index);
+      print_prop(short_name, buffer);
     } else if (strcmp(node->Name(), "IfTrue") == 0) {
       print_prop(short_name, "T");
     } else if (strcmp(node->Name(), "IfFalse") == 0) {
