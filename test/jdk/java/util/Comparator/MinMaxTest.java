@@ -76,4 +76,15 @@ public class MinMaxTest {
     assertSame(o1, allEqual.min(o1, o2));
     assertSame(o1, allEqual.max(o1, o2));
   }
+
+  @Test
+  void testComparatorSubtype() {
+    Comparator<CharSequence> byLength = Comparator.comparing(CharSequence::length);
+    String s1 = "long_string";
+    String s2 = "short";
+    String min = byLength.min(s1, s2);
+    String max = byLength.max(s1, s2);
+    assertEquals(s1, max);
+    assertEquals(s2, min);
+  }
 }

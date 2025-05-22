@@ -195,6 +195,7 @@ public interface Comparator<T> {
      *
      * @param   a   an argument.
      * @param   b   another argument.
+     * @param   <U> the type of the arguments and the result.
      * @return  the larger of {@code a} and {@code b} according to this comparator.
      * @throws  ClassCastException if the collection contains elements that are
      *          not <em>mutually comparable</em> (for example, strings and
@@ -202,7 +203,7 @@ public interface Comparator<T> {
      *
      * @since 25
      */
-    default T max(T a, T b) {
+    default <U extends T> U max(U a, U b) {
         return compare(a, b) >= 0 ? a : b;
     }
 
@@ -213,6 +214,7 @@ public interface Comparator<T> {
      *
      * @param   a   an argument.
      * @param   b   another argument.
+     * @param   <U> the type of the arguments and the result.
      * @return  the smaller of {@code a} and {@code b} according to this comparator.
      * @throws  ClassCastException if the collection contains elements that are
      *          not <em>mutually comparable</em> (for example, strings and
@@ -220,7 +222,7 @@ public interface Comparator<T> {
      *
      * @since 25
      */
-    default T min(T a, T b) {
+    default <U extends T> U min(U a, U b) {
         return compare(a, b) <= 0 ? a : b;
     }
 
