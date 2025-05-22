@@ -338,15 +338,15 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
 
 TEST_VM_F(NMTVMATreeTest, UseTagInplace) {
   Tree tree;
-  VMATree::RegionData rd1(si[0], mtTest);
-  VMATree::RegionData rd2(si[1], mtNone);
-  tree.reserve_mapping(0, 100, rd1);
+  VMATree::RegionData rd_Test_cs0(si[0], mtTest);
+  VMATree::RegionData rd_None_cs1(si[1], mtNone);
+  tree.reserve_mapping(0, 100, rd_Test_cs0);
   // reserve:   0---------------------100
   // commit:        20**********70
   // uncommit:          30--40
   // post-cond: 0---20**30--40**70----100
-  tree.commit_mapping(20, 50, rd2, true);
-  tree.uncommit_mapping(30, 10, rd2);
+  tree.commit_mapping(20, 50, rd_None_cs1, true);
+  tree.uncommit_mapping(30, 10, rd_None_cs1);
   tree.visit_in_order([&](TNode* node) {
     if (node->key() != 100) {
       EXPECT_EQ(mtTest, node->val().out.mem_tag()) << "failed at: " << node->key();
@@ -372,10 +372,10 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Identical operation but different metadata should not merge
     Tree tree;
-    VMATree::RegionData rd{si[0], mtTest };
-    VMATree::RegionData rd2{si[1], mtNMT };
-    tree.reserve_mapping(0, 100, rd);
-    tree.reserve_mapping(100, 100, rd2);
+    VMATree::RegionData rd_Test_cs0{si[0], mtTest};
+    VMATree::RegionData rd_NMT_cs1{si[1], mtNMT};
+    tree.reserve_mapping(0, 100, rd_Test_cs0);
+    tree.reserve_mapping(100, 100, rd_NMT_cs1);
 
     EXPECT_EQ(3, count_nodes(tree));
     int found_nodes = 0;
@@ -383,10 +383,10 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Reserving after commit should overwrite commit
     Tree tree;
-    VMATree::RegionData rd{si[0], mtTest };
-    VMATree::RegionData rd2{si[1], mtNMT };
-    tree.commit_mapping(50, 50, rd2);
-    tree.reserve_mapping(0, 100, rd);
+    VMATree::RegionData rd_Test_cs0{si[0], mtTest};
+    VMATree::RegionData rd_NMT_cs1{si[1], mtNMT};
+    tree.commit_mapping(50, 50, rd_NMT_cs1);
+    tree.reserve_mapping(0, 100, rd_Test_cs0);
     treap(tree).visit_in_order([&](TNode* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
@@ -399,19 +399,19 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Split a reserved region into two different reserved regions
     Tree tree;
-    VMATree::RegionData rd{si[0], mtTest };
-    VMATree::RegionData rd2{si[1], mtNMT };
-    VMATree::RegionData rd3{si[0], mtNone };
-    tree.reserve_mapping(0, 100, rd);
-    tree.reserve_mapping(0, 50, rd2);
-    tree.reserve_mapping(50, 50, rd3);
+    VMATree::RegionData rd_Test_cs0{si[0], mtTest};
+    VMATree::RegionData rd_NMT_cs1{si[1], mtNMT};
+    VMATree::RegionData rd_None_cs0{si[0], mtNone};
+    tree.reserve_mapping(0, 100, rd_Test_cs0);
+    tree.reserve_mapping(0, 50, rd_NMT_cs1);
+    tree.reserve_mapping(50, 50, rd_None_cs0);
 
     EXPECT_EQ(3, count_nodes(tree));
   }
   { // One big reserve + release leaves an empty tree
-    Tree::RegionData rd{si[0], mtNMT};
+    VMATree::RegionData rd_NMT_cs0{si[0], mtNMT};
     Tree tree;
-    tree.reserve_mapping(0, 500000, rd);
+    tree.reserve_mapping(0, 500000, rd_NMT_cs0);
     tree.release_mapping(0, 500000);
 
     EXPECT_EQ(nullptr, treap_root(tree));
@@ -419,11 +419,11 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // A committed region inside of/replacing a reserved region
     // should replace the reserved region's metadata.
-    Tree::RegionData rd{si[0], mtNMT};
-    VMATree::RegionData rd2{si[1], mtTest};
+    VMATree::RegionData rd_NMT_cs0{si[0], mtNMT};
+    VMATree::RegionData rd_Test_cs1{si[1], mtTest};
     Tree tree;
-    tree.reserve_mapping(0, 100, rd);
-    tree.commit_mapping(0, 100, rd2);
+    tree.reserve_mapping(0, 100, rd_NMT_cs0);
+    tree.commit_mapping(0, 100, rd_Test_cs1);
     treap(tree).visit_range_in_order(0, 99999, [&](TNode* x) {
       if (x->key() == 0) {
         EXPECT_EQ(mtTest, x->val().out.reserved_regiondata().mem_tag);
@@ -436,10 +436,10 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Attempting to reserve or commit an empty region should not change the tree.
     Tree tree;
-    Tree::RegionData rd{si[0], mtNMT};
-    tree.reserve_mapping(0, 0, rd);
+    VMATree::RegionData rd_NMT_cs0{si[0], mtNMT};
+    tree.reserve_mapping(0, 0, rd_NMT_cs0);
     EXPECT_EQ(nullptr, treap_root(tree));
-    tree.commit_mapping(0, 0, rd);
+    tree.commit_mapping(0, 0, rd_NMT_cs0);
     EXPECT_EQ(nullptr, treap_root(tree));
   }
 }
@@ -638,10 +638,10 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
 // Tests for summary accounting
 TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
   { // Fully enclosed re-reserving works correctly.
-    Tree::RegionData rd(NCS::StackIndex(), mtTest);
-    Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
+    Tree::RegionData rd_Test_cs0(NCS::StackIndex(), mtTest);
+    Tree::RegionData rd_NMT_cs0(NCS::StackIndex(), mtNMT);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd_Test_cs0);
 //            1         2         3         4         5         6         7         8         9         10         11
 //  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 //  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA..........
@@ -650,7 +650,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
-    all_diff = tree.reserve_mapping(50, 25, rd2);
+    all_diff = tree.reserve_mapping(50, 25, rd_NMT_cs0);
 //              1         2         3         4         5         6         7         8         9         10         11
 //    01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 //    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCC..........
@@ -665,9 +665,9 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     EXPECT_EQ(25, diff2.reserve);
   }
   { // Fully release reserved mapping
-    Tree::RegionData rd(NCS::StackIndex(), mtTest);
+    Tree::RegionData rd_Test_cs0(NCS::StackIndex(), mtTest);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd_Test_cs0);
 //            1         2         3         4         5         6         7         8         9         10         11
 //  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 //  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA..........
@@ -685,9 +685,9 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     EXPECT_EQ(-100, diff.reserve);
   }
   { // Convert some of a released mapping to a committed one
-    Tree::RegionData rd(NCS::StackIndex(), mtTest);
+    Tree::RegionData rd_Test_cs0(NCS::StackIndex(), mtTest);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
+    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd_Test_cs0);
 //            1         2         3         4         5         6         7         8         9         10         11
 //  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 //  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA..........
@@ -696,7 +696,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
-    all_diff = tree.commit_mapping(0, 100, rd);
+    all_diff = tree.commit_mapping(0, 100, rd_Test_cs0);
 //            1         2         3         4         5         6         7         8         9         10         11
 //  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 //  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..........
@@ -708,9 +708,9 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     EXPECT_EQ(100, diff.commit);
   }
   { // Adjacent reserved mappings with same type
-    Tree::RegionData rd(NCS::StackIndex(), mtTest);
+    Tree::RegionData rd_Test_cs0(NCS::StackIndex(), mtTest);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 10, rd);
+    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 10, rd_Test_cs0);
 //            1         2
 //  01234567890123456789
 //  AAAAAAAAAA..........
@@ -719,7 +719,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 10);
-    all_diff = tree.reserve_mapping(10, 10, rd);
+    all_diff = tree.reserve_mapping(10, 10, rd_Test_cs0);
 //            1         2         3
 //  012345678901234567890123456789
 //  AAAAAAAAAAAAAAAAAAAA..........
@@ -730,10 +730,10 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     EXPECT_EQ(10, diff.reserve);
   }
   { // Adjacent reserved mappings with different tags
-  Tree::RegionData rd(NCS::StackIndex(), mtTest);
-    Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
+    Tree::RegionData rd_Test_cs0(NCS::StackIndex(), mtTest);
+    Tree::RegionData rd_NMT_cs0(NCS::StackIndex(), mtNMT);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 10, rd);
+    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 10, rd_Test_cs0);
 //            1         2
 //  01234567890123456789
 //  AAAAAAAAAA..........
@@ -742,7 +742,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 10);
-    all_diff = tree.reserve_mapping(10, 10, rd2);
+    all_diff = tree.reserve_mapping(10, 10, rd_NMT_cs0);
 //            1         2         3
 //  012345678901234567890123456789
 //  AAAAAAAAAABBBBBBBBBB..........
@@ -759,22 +759,22 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
   { // A commit with two previous commits inside of it should only register
     // the new memory in the commit diff.
     Tree tree;
-    Tree::RegionData rd(NCS::StackIndex(), mtTest);
-    tree.commit_mapping(16, 16, rd);
+    Tree::RegionData rd_Test_cs0(NCS::StackIndex(), mtTest);
+    tree.commit_mapping(16, 16, rd_Test_cs0);
 //            1         2         3         4
 //  0123456789012345678901234567890123456789
 //  ................aaaaaaaaaaaaaaaa..........
 //  Legend:
 //  a - Test (committed)
 //  . - free
-    tree.commit_mapping(32, 32, rd);
+    tree.commit_mapping(32, 32, rd_Test_cs0);
 //            1         2         3         4         5         6         7
 //  0123456789012345678901234567890123456789012345678901234567890123456789
 //  ................aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..........
 //  Legend:
 //  a - Test (committed)
 //  . - free
-    VMATree::SummaryDiff diff = tree.commit_mapping(0, 64, rd);
+    VMATree::SummaryDiff diff = tree.commit_mapping(0, 64, rd_Test_cs0);
 //            1         2         3         4         5         6         7
 //  0123456789012345678901234567890123456789012345678901234567890123456789
 //  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..........
@@ -987,21 +987,21 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
 
 TEST_VM_F(NMTVMATreeTest, SummaryAccountingWhenUseTagInplace) {
   Tree tree;
-  VMATree::RegionData rd1(si[0], mtTest);
-  VMATree::RegionData rd2(si[1], mtNone);
+  VMATree::RegionData rd_Test_cs0(si[0], mtTest);
+  VMATree::RegionData rd_None_cs1(si[1], mtNone);
 //            1         2         3         4         5
 //  012345678901234567890123456789012345678901234567890
 //  ..................................................
 // Legend:
 // . - free(released)
-  tree.reserve_mapping(0, 50, rd1);
+  tree.reserve_mapping(0, 50, rd_Test_cs0);
 //            1         2         3         4         5
 //  012345678901234567890123456789012345678901234567890
 //  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
 // Legend:
 // r - reserve
 
-VMATree::SummaryDiff diff = tree.commit_mapping(0, 25, rd2, true);
+VMATree::SummaryDiff diff = tree.commit_mapping(0, 25, rd_None_cs1, true);
 //            1         2         3         4         5
 //  012345678901234567890123456789012345678901234567890
 //  CCCCCCCCCCCCCCCCCCCCCCCCCrrrrrrrrrrrrrrrrrrrrrrrrr
@@ -1011,7 +1011,7 @@ VMATree::SummaryDiff diff = tree.commit_mapping(0, 25, rd2, true);
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   EXPECT_EQ(25, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
 
-  diff = tree.commit_mapping(30, 5, rd2, true);
+  diff = tree.commit_mapping(30, 5, rd_None_cs1, true);
 //            1         2         3         4         5
 //  012345678901234567890123456789012345678901234567890
 //  CCCCCCCCCCCCCCCCCCCCCCCCCrrrrrCCCCCrrrrrrrrrrrrrrr
@@ -1021,7 +1021,7 @@ VMATree::SummaryDiff diff = tree.commit_mapping(0, 25, rd2, true);
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   EXPECT_EQ(5, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
 
-  diff = tree.uncommit_mapping(0, 25, rd2);
+  diff = tree.uncommit_mapping(0, 25, rd_None_cs1);
 //            1         2         3         4         5
 //  012345678901234567890123456789012345678901234567890
 //  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrCCCCCrrrrrrrrrrrrrrr
@@ -1041,8 +1041,8 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   const State Rs = State::Reserved;
   const State Rl = State::Released;
   const State C = State::Committed;
-  VMATree::RegionData call_stack_1(si_1, mtTest);
-  VMATree::RegionData call_stack_2(si_2, mtNone);
+  VMATree::RegionData rd_Test_cs1(si_1, mtTest);
+  VMATree::RegionData rd_None_cs2(si_2, mtNone);
 
   // Visualization guide
   // Nodes in the tree are shown in ascending order as:
@@ -1077,7 +1077,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
 
   {// Check committing into a reserved region inherits the call stacks
     Tree tree;
-    tree.reserve_mapping(0, 50, call_stack_1); // reserve in an empty tree
+    tree.reserve_mapping(0, 50, rd_Test_cs1); // reserve in an empty tree
     // Pre: empty tree.
     // Post:
     //            1         2         3         4         5         6         7
@@ -1096,7 +1096,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
                            {-1    , -1    , -1    }};
     check_tree(tree, et1, __LINE__);
 
-    tree.commit_mapping(25, 10, call_stack_2, true); // commit at the middle of the region
+    tree.commit_mapping(25, 10, rd_None_cs2, true); // commit at the middle of the region
     // Post:
     //            1         2         3         4         5         6         7
     //  0123456789012345678901234567890123456789012345678901234567890123456789
@@ -1115,7 +1115,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
                            {-1    , -1    , si_2  , -1    , -1    }};
     check_tree(tree, et2, __LINE__);
 
-    tree.commit_mapping(0, 20, call_stack_2, true); // commit at the beginning of the region
+    tree.commit_mapping(0, 20, rd_None_cs2, true); // commit at the beginning of the region
     // Post:
     //            1         2         3         4         5         6         7
     //  0123456789012345678901234567890123456789012345678901234567890123456789
@@ -1134,7 +1134,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
                            {-1    , si_2  , -1    , si_2  , -1    , -1    }};
     check_tree(tree, et3, __LINE__);
 
-    tree.commit_mapping(40, 10, call_stack_2, true); // commit at the end of the region
+    tree.commit_mapping(40, 10, rd_None_cs2, true); // commit at the end of the region
     // Post:
     //            1         2         3         4         5         6         7
     //  0123456789012345678901234567890123456789012345678901234567890123456789
@@ -1155,7 +1155,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   }
   {// committing overlapped regions does not destroy the old call-stacks
     Tree tree;
-    tree.reserve_mapping(0, 50, call_stack_1); // reserving in an empty tree
+    tree.reserve_mapping(0, 50, rd_Test_cs1); // reserving in an empty tree
     // Pre: empty tree.
     //            1         2         3         4         5         6         7
     //  0123456789012345678901234567890123456789012345678901234567890123456789
@@ -1173,7 +1173,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
                            {-1    , -1    , -1    }};
     check_tree(tree, et1, __LINE__);
 
-    tree.commit_mapping(10, 10, call_stack_2, true);
+    tree.commit_mapping(10, 10, rd_None_cs2, true);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  aaaaaaaaaaCCCCCCCCCCaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.
@@ -1195,9 +1195,9 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     check_tree(tree, et2, __LINE__);
 
     SIndex si_3 = si[2];
-    VMATree::RegionData call_stack_3(si_3, mtTest);
+    VMATree::RegionData rd_Test_cs3(si_3, mtTest);
     // commit with overlap at the region's start
-    tree.commit_mapping(5, 10, call_stack_3);
+    tree.commit_mapping(5, 10, rd_Test_cs3);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  aaaaaaaaaaCCCCCCCCCCaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.
@@ -1244,13 +1244,13 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   }
   {// uncommit should not store any call-stack
     Tree tree;
-    tree.reserve_mapping(0, 50, call_stack_1);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
 
-    tree.commit_mapping(10, 10, call_stack_2, true);
+    tree.commit_mapping(10, 10, rd_None_cs2, true);
 
-    tree.commit_mapping(0, 5, call_stack_2, true);
+    tree.commit_mapping(0, 5, rd_None_cs2, true);
 
-    tree.uncommit_mapping(0, 3, call_stack_2);
+    tree.uncommit_mapping(0, 3, rd_None_cs2);
     // Pre:  .........0*****************5--------10********20-------50.........
     //        mtNone         mtTest        mtTest    mtTest    mtTest    mtNone
     //        Rl             C             Rs        C         Rs        Rl
@@ -1268,7 +1268,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
                            {-1    , -1    , si_2  , -1    , si_2  , -1    , -1    }};
     check_tree(tree, et1, __LINE__);
 
-    tree.uncommit_mapping(5, 10, call_stack_2);
+    tree.uncommit_mapping(5, 10, rd_None_cs2);
     // Pre:  .........0--------3********5----10*************20-------50..........
     // Post: .........0--------3********5---------15********20-------50..........
     //        mtNone    mtTest   mtTest    mtTest    mtTest    mtTest    mtNone
@@ -1287,7 +1287,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     VMATree::RegionData call_stack_4(si_4, mtTest);
 
     Tree tree;
-    tree.reserve_mapping(0, 50, call_stack_1);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
     tree.reserve_mapping(10, 10, call_stack_4);
     // Pre:  .........0----------------------------50.........
     // Post: .........0--------10--------20--------50.........
@@ -1304,7 +1304,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   }
   {// commit without reserve
     Tree tree;
-    tree.commit_mapping(0, 50, call_stack_1);
+    tree.commit_mapping(0, 50, rd_Test_cs1);
     ExpectedTree<2> et = {{     0,      50       },
                           {mtNone, mtTest, mtNone},
                           {Rl    , C     , Rl    },
@@ -1314,8 +1314,8 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   }
   {// reserve after commit
     Tree tree;
-    tree.commit_mapping(0, 50, call_stack_2);
-    tree.reserve_mapping(0, 50, call_stack_1);
+    tree.commit_mapping(0, 50, rd_None_cs2);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
     ExpectedTree<2> et = {{     0,      50       },
                           {mtNone, mtTest, mtNone},
                           {Rl    , Rs    , Rl    },
@@ -1345,21 +1345,21 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_eq_X) {
   const State Rs = State::Reserved;
   const State Rl = State::Released;
   const State C = State::Committed;
-  VMATree::RegionData call_stack_1(si_1, mtTest);
-  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
-  VMATree::RegionData call_stack_2(si_2, mtTest);
-  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
-  VMATree::RegionData call_stack_3(si_3, mtTest);
+  VMATree::RegionData rd_Test_cs1(si_1, mtTest);
+  VMATree::RegionData rd_None_cs1(si_1, mtNone);
+  VMATree::RegionData rd_Test_cs2(si_2, mtTest);
+  VMATree::RegionData rd_None_cs2(si_2, mtNone);
+  VMATree::RegionData rd_Test_cs3(si_3, mtTest);
 
   { // Do 'Reserve' for a released region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     tree.release_mapping(10, 10);
     // New request
-    tree.reserve_mapping(10, 15, call_stack_2);
+    tree.reserve_mapping(10, 15, rd_Test_cs2);
     // Pre:  ........0--------10................20------------------------30********40........
     // Request:               10--------------------------------25
     // Post: ........0--------10--------------------------------25--------30********40........
@@ -1377,12 +1377,12 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_eq_X) {
   { // Do 'Commit' for a released region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     tree.release_mapping(10, 10);
     // New request
-    tree.commit_mapping(10, 15, call_stack_2);
+    tree.commit_mapping(10, 15, rd_Test_cs2);
     // Pre:  ........0--------10................20------------------------30********40........
     // Request:               10********************************25
     // Post: ........0--------10********************************25--------30********40........
@@ -1400,12 +1400,12 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_eq_X) {
   { // Do 'Uncommit' for a released region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     tree.release_mapping(10, 10);
     // New request
-    tree.uncommit_mapping(10, 15, call_stack_2);
+    tree.uncommit_mapping(10, 15, rd_Test_cs2);
     //
     // Pre:  ........0--------10................20------------------------30********40........
     // Request:               10--------------------------------25
@@ -1424,9 +1424,9 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_eq_X) {
   { // Do 'Release' for a released region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     tree.release_mapping(10, 10);
     // New request
     tree.release_mapping(10, 15);
@@ -1447,12 +1447,12 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_eq_X) {
   { // Do 'Reserve' for a reserved region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
-    tree.reserve_mapping(10, 10, call_stack_1);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
+    tree.reserve_mapping(10, 10, rd_Test_cs1);
     // New request
-    tree.reserve_mapping(10, 15, call_stack_2);
+    tree.reserve_mapping(10, 15, rd_Test_cs2);
     // Pre:  ........0--------10----------------20------------------------30********40........
     // Request:               10--------------------------------25
     // Post: ........0--------10--------------------------------25--------30********40........
@@ -1470,12 +1470,12 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_eq_X) {
   { // Do 'Commit' for a reserved region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
-    tree.reserve_mapping(10, 10, call_stack_1);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
+    tree.reserve_mapping(10, 10, rd_Test_cs1);
     // New request
-    tree.commit_mapping(10, 15, call_stack_2);
+    tree.commit_mapping(10, 15, rd_Test_cs2);
     // Pre:  ........0--------10----------------20------------------------30********40........
     // Request:               10********************************25
     // Post: ........0--------10********************************25--------30********40........
@@ -1493,12 +1493,12 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_eq_X) {
   { // Do 'Uncommit' over two different reserved regions
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
-    tree.reserve_mapping(10, 10, call_stack_2);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
+    tree.reserve_mapping(10, 10, rd_Test_cs2);
     // New request
-    tree.uncommit_mapping(10, 15, call_stack_1_mtNone);
+    tree.uncommit_mapping(10, 15, rd_None_cs1);
     // Pre:  ........0--------10----------------20------------------------30********40........
     // Request:               10--------------------------------25
     // Post: ........0--------10----------------20------------------------30********40........
@@ -1516,10 +1516,10 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_eq_X) {
   { // Do 'Release' for a reserved region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
-    tree.reserve_mapping(10, 10, call_stack_1);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
+    tree.reserve_mapping(10, 10, rd_Test_cs1);
     // New request
     tree.release_mapping(10, 15);
     // Pre:  ........0--------10----------------20------------------------30********40........
@@ -1539,11 +1539,11 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_eq_X) {
   { // Do 'Reserve' for a committed region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     // New request
-    tree.reserve_mapping(10, 15, call_stack_2);
+    tree.reserve_mapping(10, 15, rd_Test_cs2);
     // Pre:  ........0--------10****************20------------------------30********40........
     // Request:               10--------------------------------25
     // Post: ........0--------10--------------------------------25--------30********40........
@@ -1561,11 +1561,11 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_eq_X) {
   { // Do 'Commit' for a committed region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     // New request
-    tree.commit_mapping(10, 15, call_stack_2);
+    tree.commit_mapping(10, 15, rd_Test_cs2);
     // Pre:  ........0--------10****************20------------------------30********40........
     // Request:               10********************************25
     // Post: ........0--------10********************************25--------30********40........
@@ -1583,11 +1583,11 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_eq_X) {
   { // Do 'Uncommit' for a committed region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     // New request
-    tree.uncommit_mapping(10, 15, call_stack_1_mtNone);
+    tree.uncommit_mapping(10, 15, rd_None_cs1);
     // Pre:  ........0--------10****************20------------------30********40........
     // Request:               10--------------------------25
     // Post: ........0----------------------------------------------30********40........
@@ -1605,9 +1605,9 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_eq_X) {
   { // Do 'Release' for a committed region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     // New request
     tree.release_mapping(10, 15);
     // Pre:  ........0--------10****************20------------------------30********40........
@@ -1636,20 +1636,20 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_neq_X) {
   const State Rs = State::Reserved;
   const State Rl = State::Released;
   const State C = State::Committed;
-  VMATree::RegionData call_stack_1(si_1, mtTest);
-  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
-  VMATree::RegionData call_stack_2(si_2, mtTest);
-  VMATree::RegionData call_stack_3(si_3, mtTest);
+  VMATree::RegionData rd_Test_cs1(si_1, mtTest);
+  VMATree::RegionData rd_None_cs1(si_1, mtNone);
+  VMATree::RegionData rd_Test_cs2(si_2, mtTest);
+  VMATree::RegionData rd_Test_cs3(si_3, mtTest);
 
   { // Do 'Reserve' for a released region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     tree.release_mapping(10, 10);
     // New request
-    tree.reserve_mapping(15, 10, call_stack_2);
+    tree.reserve_mapping(15, 10, rd_Test_cs2);
     // Pre:  ........0--------10................20----------------------30*********40........
     // Request:                         15----------------25
     // Post: ........0--------10........15----------------25------------30*********40........
@@ -1667,12 +1667,12 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_neq_X) {
   { // Do 'Commit' for a released region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     tree.release_mapping(10, 10);
     // New request
-    tree.commit_mapping(15, 10, call_stack_2);
+    tree.commit_mapping(15, 10, rd_Test_cs2);
     // Pre:  ........0--------10................20----------------------30********40........
     // Request:                         15****************25
     // Post: ........0--------10........15****************25------------30********40........
@@ -1690,13 +1690,13 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_neq_X) {
   { // Do 'Uncommit' for a released region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     tree.release_mapping(10, 10);
     // New request
     // 8354115
-    tree.uncommit_mapping(15, 10, call_stack_2);
+    tree.uncommit_mapping(15, 10, rd_Test_cs2);
     // Pre:  ........0--------10................20-----------------------30********40........
     // Request:                         15----------------25
     // Post: ........0--------10................20-----------------------30********40........
@@ -1714,9 +1714,9 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_neq_X) {
   { // Do 'Release' for a released region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     tree.release_mapping(10, 10);
     // New request
     tree.release_mapping(15, 10);
@@ -1737,12 +1737,12 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_neq_X) {
   { // Do 'Reserve' for a reserved region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
-    tree.reserve_mapping(10, 10, call_stack_3);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
+    tree.reserve_mapping(10, 10, rd_Test_cs3);
     // New request
-    tree.reserve_mapping(15, 10, call_stack_2);
+    tree.reserve_mapping(15, 10, rd_Test_cs2);
     // Pre:  ........0--------10----------------20----------------------30********40........
     // Request:                         15----------------25
     // Post: ........0--------10--------15----------------25------------30********40........
@@ -1760,12 +1760,12 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_neq_X) {
   { // Do 'Commit' over two different reserved regions
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
-    tree.reserve_mapping(10, 10, call_stack_3);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
+    tree.reserve_mapping(10, 10, rd_Test_cs3);
     // New request
-    tree.commit_mapping(15, 10, call_stack_2);
+    tree.commit_mapping(15, 10, rd_Test_cs2);
     // Pre:  ........0--------10-------------------20------------------30********40........
     //                   si_1         si_3                  si_1                si_1
     //
@@ -1785,12 +1785,12 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_neq_X) {
   { // Do 'Uncommit' over two different reserved regions
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
-    tree.reserve_mapping(10, 10, call_stack_2);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
+    tree.reserve_mapping(10, 10, rd_Test_cs2);
     // New request
-    tree.uncommit_mapping(15, 10, call_stack_1_mtNone);
+    tree.uncommit_mapping(15, 10, rd_None_cs1);
     // Pre:  ........0--------10----------------20-----------------------30********40........
     //                  si_1          si_2                 si_1                  si_1
     //
@@ -1810,10 +1810,10 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_neq_X) {
   { // Do 'Release' for a reserved region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
-    tree.reserve_mapping(10, 10, call_stack_2);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
+    tree.reserve_mapping(10, 10, rd_Test_cs2);
     // New request
     tree.release_mapping(15, 10);
     // Pre:  ........0--------10----------------20----------------------30********40........
@@ -1833,11 +1833,11 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_neq_X) {
   { // Do 'Reserve' for a committed region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     // New request
-    tree.reserve_mapping(15, 10, call_stack_2);
+    tree.reserve_mapping(15, 10, rd_Test_cs2);
     // Pre:  ........0--------10****************20----------------------30********40........
     // Request:                         15----------------25
     // Post: ........0--------10********15----------------25------------30********40........
@@ -1855,11 +1855,11 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_neq_X) {
   { // Do 'Commit' for a committed region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     // New request
-    tree.commit_mapping(15, 10, call_stack_2);
+    tree.commit_mapping(15, 10, rd_Test_cs2);
     // Pre:  ........0--------10****************20----------------------30********40........
     // Request:                         15****************25
     // Post: ........0--------10********15****************25------------30********40........
@@ -1877,11 +1877,11 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_neq_X) {
   { // Do 'Uncommit' for a committed region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     // New request
-    tree.uncommit_mapping(15, 10, call_stack_1_mtNone);
+    tree.uncommit_mapping(15, 10, rd_None_cs1);
     // Pre:  ........0--------10*******************20--------------------30********40........
     // Request:                         15--------------------25
     // Post: ........0--------10********15-------------------------------30********40........
@@ -1899,9 +1899,9 @@ TEST_VM_F(NMTVMATreeTest, AllCases_A_neq_X) {
   { // Do 'Release' for a committed region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 40, call_stack_1);
-    tree.commit_mapping(10, 10, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 10, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 40, rd_Test_cs1);
+    tree.commit_mapping(10, 10, rd_None_cs1, true);
+    tree.commit_mapping(30, 10, rd_None_cs1, true);
     // New request
     tree.release_mapping(15, 10);
     // Pre:  ........0--------10****************20----------------------30********40........
@@ -1930,21 +1930,21 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   const State Rs = State::Reserved;
   const State Rl = State::Released;
   const State C = State::Committed;
-  VMATree::RegionData call_stack_1(si_1, mtTest);
-  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
-  VMATree::RegionData call_stack_2(si_2, mtTest);
-  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
-  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+  VMATree::RegionData rd_Test_cs1(si_1, mtTest);
+  VMATree::RegionData rd_None_cs1(si_1, mtNone);
+  VMATree::RegionData rd_Test_cs2(si_2, mtTest);
+  VMATree::RegionData rd_None_cs2(si_2, mtNone);
+  VMATree::RegionData rd_None_cs3(si_3, mtNone);
 
   { // Do 'Reserve' over multiple committed/reserved regions
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 50, call_stack_1);
-    tree.commit_mapping(10, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(20, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 5, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    tree.commit_mapping(10, 5, rd_None_cs1, true);
+    tree.commit_mapping(20, 5, rd_None_cs1, true);
+    tree.commit_mapping(30, 5, rd_None_cs1, true);
     // New request
-    tree.reserve_mapping(5, 40, call_stack_2);
+    tree.reserve_mapping(5, 40, rd_Test_cs2);
     // Pre:     ........0----------------10*********15--------20********25--------30********35-------------------50........
     // Request: (reserve)        5-----------------------------------------------------------------------45
     // Post:    ........0--------5-----------------------------------------------------------------------45-------50........
@@ -1962,12 +1962,12 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   { // Do 'Reserve' [A, B) over multiple committed/reserved regions where B already exists in nodes
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 50, call_stack_1);
-    tree.commit_mapping(10, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(20, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 5, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    tree.commit_mapping(10, 5, rd_None_cs1, true);
+    tree.commit_mapping(20, 5, rd_None_cs1, true);
+    tree.commit_mapping(30, 5, rd_None_cs1, true);
     // New request
-    tree.reserve_mapping(5, 30, call_stack_2);
+    tree.reserve_mapping(5, 30, rd_Test_cs2);
     // Pre:     ........0----------------10*********15--------20********25--------30********35-------------------50........
     // Request: (reserve)        5----------------------------------------------------------35
     // Post:    ........0--------5----------------------------------------------------------35-------------------50........
@@ -1985,12 +1985,12 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   { // Do 'Reserve' [A, B) over multiple committed/reserved regions where A already exists in nodes
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 50, call_stack_1);
-    tree.commit_mapping(10, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(20, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 5, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    tree.commit_mapping(10, 5, rd_None_cs1, true);
+    tree.commit_mapping(20, 5, rd_None_cs1, true);
+    tree.commit_mapping(30, 5, rd_None_cs1, true);
     // New request
-    tree.reserve_mapping(0, 45, call_stack_2);
+    tree.reserve_mapping(0, 45, rd_Test_cs2);
     // Pre:     ..........0----------------10*********15--------20********25--------30********35------------50........
     // Request: (reserve) 0-------------------------------------------------------------------------45
     // Post:    ..........0-------------------------------------------------------------------------45------50........
@@ -2008,12 +2008,12 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   { // Do 'Uncommit' over multiple committed/reserved regions
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 50, call_stack_1);
-    tree.commit_mapping(10, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(20, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 5, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    tree.commit_mapping(10, 5, rd_None_cs1, true);
+    tree.commit_mapping(20, 5, rd_None_cs1, true);
+    tree.commit_mapping(30, 5, rd_None_cs1, true);
     // New request
-    tree.uncommit_mapping(5, 40, call_stack_1_mtNone);
+    tree.uncommit_mapping(5, 40, rd_None_cs1);
     // Pre:     ..........0----------------10*********15--------20********25--------30********35------------50........
     // Request: (uncommit)         5----------------------------------------------------------------45
     // Post:    ..........0---------------------------------------------------------------------------------50........
@@ -2034,12 +2034,12 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   { // Do 'Uncommit' over multiple committed/reserved regions with different call-stacks
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 50, call_stack_1);
-    tree.reserve_mapping(10, 5, call_stack_2);
-    tree.reserve_mapping(20, 5, call_stack_2);
-    tree.reserve_mapping(30, 5, call_stack_2);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    tree.reserve_mapping(10, 5, rd_Test_cs2);
+    tree.reserve_mapping(20, 5, rd_Test_cs2);
+    tree.reserve_mapping(30, 5, rd_Test_cs2);
     // New request
-    tree.uncommit_mapping(5, 35, call_stack_3_mtNone); // The call-stack should not be taken into account
+    tree.uncommit_mapping(5, 35, rd_None_cs3); // The call-stack should not be taken into account
 
     // Pre:     ........0----------------10---------15--------20--------25--------30--------35-------------------50........
     //                         si_1          si_2       si_1      si_2       si_1       si_2          si_1           -
@@ -2062,12 +2062,12 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   { // Do 'Uncommit' [A,B) over multiple committed/reserved regions where B already exists in the nodes
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 50, call_stack_1);
-    tree.commit_mapping(10, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(20, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 5, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    tree.commit_mapping(10, 5, rd_None_cs1, true);
+    tree.commit_mapping(20, 5, rd_None_cs1, true);
+    tree.commit_mapping(30, 5, rd_None_cs1, true);
     // New request
-    tree.uncommit_mapping(5, 30, call_stack_1_mtNone);
+    tree.uncommit_mapping(5, 30, rd_None_cs1);
     // Pre:     ........0----------------100*********200--------300********400--------500********600-------------------1000........
     // Request: (uncommit)       50--------------------------------------------------------------600
     // Post:    ........0----------------------------------------------------------------------------------------------1000........
@@ -2088,12 +2088,12 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   { // Do 'Uncommit' [A,B) over multiple committed/reserved regions where A already exists in the nodes
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 50, call_stack_1);
-    tree.commit_mapping(10, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(20, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 5, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    tree.commit_mapping(10, 5, rd_None_cs1, true);
+    tree.commit_mapping(20, 5, rd_None_cs1, true);
+    tree.commit_mapping(30, 5, rd_None_cs1, true);
     // New request
-    tree.uncommit_mapping(10, 40, call_stack_1_mtNone);
+    tree.uncommit_mapping(10, 40, rd_None_cs1);
     // Pre:     ........0----------------100*********200--------300********400--------500********600-------------------1000........
     // Request: (uncommit)               100--------------------------------------------------------------950
     // Post:    ........0----------------------------------------------------------------------------------------------1000........
@@ -2114,10 +2114,10 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   { // Do 'Release' over multiple committed/reserved regions
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 50, call_stack_1);
-    tree.commit_mapping(10, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(20, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 5, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    tree.commit_mapping(10, 5, rd_None_cs1, true);
+    tree.commit_mapping(20, 5, rd_None_cs1, true);
+    tree.commit_mapping(30, 5, rd_None_cs1, true);
     // New request
     tree.release_mapping(5, 40);
     // Pre:     ........0----------------100*********200--------300********400--------500********600-------------------1000........
@@ -2137,10 +2137,10 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   { // Do 'Release' [A,B) over multiple committed/reserved regions where B already exists in the nodes
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 50, call_stack_1);
-    tree.commit_mapping(10, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(20, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 5, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    tree.commit_mapping(10, 5, rd_None_cs1, true);
+    tree.commit_mapping(20, 5, rd_None_cs1, true);
+    tree.commit_mapping(30, 5, rd_None_cs1, true);
     // New request
     tree.release_mapping(5, 30);
     // Pre:     ........0----------------100*********200--------300********400--------500********600-------------------1000........
@@ -2160,10 +2160,10 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   { // Do 'Release' [A,B) over multiple committed/reserved regions where B is start of a released region
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 50, call_stack_1);
-    tree.commit_mapping(10, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(20, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 5, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    tree.commit_mapping(10, 5, rd_None_cs1, true);
+    tree.commit_mapping(20, 5, rd_None_cs1, true);
+    tree.commit_mapping(30, 5, rd_None_cs1, true);
     // New request
     tree.release_mapping(5, 40);
     // Pre:     ........0----------------100*********200--------300********400--------500********600-------------------1000........
@@ -2183,10 +2183,10 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   { // Do 'Release' [A,B) over multiple committed/reserved regions where A already exists in the nodes
     Tree tree;
     // Prepare pre-cond
-    tree.reserve_mapping(0, 50, call_stack_1);
-    tree.commit_mapping(10, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(20, 5, call_stack_1_mtNone, true);
-    tree.commit_mapping(30, 5, call_stack_1_mtNone, true);
+    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    tree.commit_mapping(10, 5, rd_None_cs1, true);
+    tree.commit_mapping(20, 5, rd_None_cs1, true);
+    tree.commit_mapping(30, 5, rd_None_cs1, true);
     // New request
     tree.release_mapping(0, 40);
     // Pre:     ........0----------------100*********200--------300********400--------500********600-------------------1000........
@@ -2218,11 +2218,11 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows0To3) {
   const State Rs = State::Reserved;
   const State Rl = State::Released;
   const State C = State::Committed;
-  VMATree::RegionData call_stack_1(si_1, mtTest);
-  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
-  VMATree::RegionData call_stack_2(si_2, mtTest);
-  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
-  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+  VMATree::RegionData rd_Test_cs1(si_1, mtTest);
+  VMATree::RegionData rd_None_cs1(si_1, mtNone);
+  VMATree::RegionData rd_Test_cs2(si_2, mtTest);
+  VMATree::RegionData rd_None_cs2(si_2, mtNone);
+  VMATree::RegionData rd_None_cs3(si_3, mtNone);
 
   // row  0:  .........A..................B.....
   // case of empty tree is already covered in other tests.
@@ -2246,7 +2246,7 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows0To3) {
                            {-1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, call_stack_2, false);
+    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10);
     ExpectedTree<6> et = {{     5,     10,     12,     14,     16,     25        },
@@ -2274,7 +2274,7 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows0To3) {
                            {-1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 15, call_stack_2, false);
+    VMATree::SummaryDiff diff = tree.commit_mapping(5, 15, rd_Test_cs2, false);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 15);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 5);
     ExpectedTree<6> et = {{   5,      10,     12,     14,     16,      20        },
@@ -2298,11 +2298,11 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
   const State Rs = State::Reserved;
   const State Rl = State::Released;
   const State C = State::Committed;
-  VMATree::RegionData call_stack_1(si_1, mtTest);
-  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
-  VMATree::RegionData call_stack_2(si_2, mtTest);
-  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
-  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+  VMATree::RegionData rd_Test_cs1(si_1, mtTest);
+  VMATree::RegionData rd_None_cs1(si_1, mtNone);
+  VMATree::RegionData rd_Test_cs2(si_2, mtTest);
+  VMATree::RegionData rd_None_cs2(si_2, mtNone);
+  VMATree::RegionData rd_None_cs3(si_3, mtNone);
 
   {
     // row  4:  .....X...A..................B.....
@@ -2319,7 +2319,7 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(20, 20, call_stack_2, false);
+    VMATree::SummaryDiff diff = tree.commit_mapping(20, 20, rd_Test_cs2, false);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 20);
     ExpectedTree<4> et = {{     0,     10,     20,     40        },
@@ -2345,7 +2345,7 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, call_stack_2, false);
+    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 25 - 10);
     ExpectedTree<4> et = {{     0,      5,     10,     25        },
@@ -2375,7 +2375,7 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(7, 20, call_stack_2, false);
+    VMATree::SummaryDiff diff = tree.commit_mapping(7, 20, rd_Test_cs2, false);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10);
     ExpectedTree<8> et = {{     0,      5,      7,    10,      12,     14,     16,     27        },
@@ -2402,7 +2402,7 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(7, 13, call_stack_2, false);
+    VMATree::SummaryDiff diff = tree.commit_mapping(7, 13, rd_Test_cs2, false);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 13);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 3);
     ExpectedTree<8> et = {{     0,      5,      7,     10,     12,     14,     16,     20        },
@@ -2426,11 +2426,11 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
   const State Rs = State::Reserved;
   const State Rl = State::Released;
   const State C = State::Committed;
-  VMATree::RegionData call_stack_1(si_1, mtTest);
-  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
-  VMATree::RegionData call_stack_2(si_2, mtTest);
-  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
-  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+  VMATree::RegionData rd_Test_cs1(si_1, mtTest);
+  VMATree::RegionData rd_None_cs1(si_1, mtNone);
+  VMATree::RegionData rd_Test_cs2(si_2, mtTest);
+  VMATree::RegionData rd_None_cs2(si_2, mtNone);
+  VMATree::RegionData rd_None_cs3(si_3, mtNone);
   {
     // row  8:  ........XA..................B.....
     // nodes:   0--------50...........................
@@ -2441,17 +2441,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
     //            si1        si2
     //            -          si2
     Tree tree;
-    ExpectedTree<2> pre = {{     0,     50,       },
+    ExpectedTree<2> pre = {{     0,     10,       },
                            {mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    },
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 200);
-    ExpectedTree<3> et = {{     0,     50,    250        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(10, 20, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 20);
+    ExpectedTree<3> et = {{     0,     10,     30        },
                           {mtNone, mtTest, mtTest, mtNone},
                           {Rl    , Rs    , C     , Rl    },
                           {-1    , si_1  , si_2  , -1    },
@@ -2467,17 +2467,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
     //                    si1        si2
     //                    si2        si2
     Tree tree;
-    ExpectedTree<2> pre = {{    10,     70,       },
+    ExpectedTree<2> pre = {{     0,     10,       },
                            {mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    },
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(10, 240, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 240);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 250 - 70);
-    ExpectedTree<3> et = {{    10,     70,    250        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(0, 20, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10);
+    ExpectedTree<3> et = {{     0,     10,     20        },
                           {mtNone, mtTest, mtTest, mtNone},
                           {Rl    , C     , C     , Rl    },
                           {-1    , si_1  , si_2  , -1    },
@@ -2497,17 +2497,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
     //                    si2   si1   si2   si1   si2   si2
     //                    si2   si2   si2   si2   si2   si2
     Tree tree;
-    ExpectedTree<6> pre = {{    50,    100,    120,    140,    160,    200        },
+    ExpectedTree<6> pre = {{     5,     10,     12,     14,     16,     20        },
                            {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                            {Rl    , Rs    , Rs    , Rs    , Rs    , Rs    , Rl    },
                            {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    },
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 250 - 200);
-    ExpectedTree<6> et = {{    50,    100,    120,    140,    160,    250        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 25 - 20);
+    ExpectedTree<6> et = {{     5,     10,     12,     14,     16,     25        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , C     , C     , C     , C     , C     , Rl    },
                           {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    },
@@ -2524,17 +2524,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
     //                    si2   si1   si2   si1   si2
     //                    si2   si2   si2   si2   si2
     Tree tree;
-    ExpectedTree<6> pre = {{    50,    100,    120,    140,    160,    200        },
+    ExpectedTree<6> pre = {{     5,     10,     12,     14,     16,     20        },
                            {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                            {Rl    , Rs    , Rs    , Rs    , Rs    , Rs    , Rl    },
                            {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    },
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 150, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 150);
+    VMATree::SummaryDiff diff = tree.commit_mapping(5, 15, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 15);
     EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 0);
-    ExpectedTree<6> et = {{    50,    100,    120,    140,    160,    200        },
+    ExpectedTree<6> et = {{     5,     10,     12,     14,     16,     20        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , C     , C     , C     , C     , C     , Rl    },
                           {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    },
@@ -2555,11 +2555,11 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
   const State Rs = State::Reserved;
   const State Rl = State::Released;
   const State C = State::Committed;
-  VMATree::RegionData call_stack_1(si_1, mtTest);
-  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
-  VMATree::RegionData call_stack_2(si_2, mtTest);
-  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
-  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+  VMATree::RegionData rd_Test_cs1(si_1, mtTest);
+  VMATree::RegionData rd_None_cs1(si_1, mtNone);
+  VMATree::RegionData rd_Test_cs2(si_2, mtTest);
+  VMATree::RegionData rd_None_cs2(si_2, mtNone);
+  VMATree::RegionData rd_None_cs3(si_3, mtNone);
 
   {
     // row 12:  .........A..................B.....U
@@ -2569,17 +2569,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
     //                          si2
     //                          si2
     Tree tree;
-    ExpectedTree<2> pre = {{   300,    400        },
+    ExpectedTree<2> pre = {{    30,     40        },
                            {mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    },
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 200);
-    ExpectedTree<4> et = {{    50,    250,    300,    400        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 20);
+    ExpectedTree<4> et = {{     5,     25,     30,     40        },
                           {mtNone, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , C     , Rl    , Rs    , Rl    },
                           {-1    , si_2  , -1    , si_1  , -1    },
@@ -2595,17 +2595,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
     //                    si2     si1          si1
     //                    si2     si2          -
     Tree tree;
-    ExpectedTree<2> pre = {{    70,    300        },
+    ExpectedTree<2> pre = {{    10,     30        },
                            {mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    },
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 70 - 50);
-    ExpectedTree<4> et = {{    50,     70,    250,    300        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 30 - 25);
+    ExpectedTree<4> et = {{     5,     10,     25,     30        },
                           {mtNone, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , C     , C     , Rs    , Rl    },
                           {-1    , si_2  , si_1  , si_1  , -1    },
@@ -2624,17 +2624,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
     //                     si2   si1  si2   si1     si2
     //                     si2   si2  si2   si2     si2
     Tree tree;
-    ExpectedTree<7> pre = {{   100,    120,    140,    160,    200,    300,    400        },
+    ExpectedTree<7> pre = {{    10,     12,     14,     16,     20,     30,     40        },
                            {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rs    , Rs    , Rs    , Rl    , Rs    , Rl    },
                            {-1    , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 100);
-    ExpectedTree<8> et = {{    50,    100,    120,    140,    160,    250,    300,    400        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, (10 - 5) + ( 25 - 20));
+    ExpectedTree<8> et = {{     5,     10,     12,     14,     16,     25,     30,     40        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
                           {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
@@ -2653,17 +2653,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
     //                     si2   si1  si2   si1    si2
     //                     si2   si2  si2   si2    si2
     Tree tree;
-    ExpectedTree<7> pre = {{   100,    120,    140,    160,    200,    300,    400        },
+    ExpectedTree<7> pre = {{    10,     12,     14,     16,     20,     30,     40        },
                            {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rs    , Rs    , Rs    , Rl    , Rs    , Rl    },
                            {-1    , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 150, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 150);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 50);
-    ExpectedTree<8> et = {{    50,    100,    120,    140,    160,    200,    300,    400        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(5, 15, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 15);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10 - 5);
+    ExpectedTree<8> et = {{     5,     10,     12,     14,     16,     20,     30,     40        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
                           {-1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
@@ -2684,11 +2684,11 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
   const State Rs = State::Reserved;
   const State Rl = State::Released;
   const State C = State::Committed;
-  VMATree::RegionData call_stack_1(si_1, mtTest);
-  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
-  VMATree::RegionData call_stack_2(si_2, mtTest);
-  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
-  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+  VMATree::RegionData rd_Test_cs1(si_1, mtTest);
+  VMATree::RegionData rd_None_cs1(si_1, mtNone);
+  VMATree::RegionData rd_Test_cs2(si_2, mtTest);
+  VMATree::RegionData rd_None_cs2(si_2, mtNone);
+  VMATree::RegionData rd_None_cs3(si_3, mtNone);
 
   {
     // row 16:  .....X...A..................B....U
@@ -2698,17 +2698,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
     //                          si2
     //                          si2
     Tree tree;
-    ExpectedTree<4> pre = {{     0,    10,     300,    400        },
+    ExpectedTree<4> pre = {{     0,    10,      30,     40        },
                            {mtNone, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    , si_1  , -1    },
                            {-1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 200);
-    ExpectedTree<6> et = {{     0,     10,     50,    250,    300,    400        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(15, 10, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 10);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10);
+    ExpectedTree<6> et = {{     0,     10,     15,     25,     30,     40        },
                           {mtNone, mtTest, mtNone, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , Rs    , Rl    , C     , Rl    , Rs    , Rl    },
                           {-1    , si_1  , -1    , si_2  , -1    , si_1  , -1    },
@@ -2724,17 +2724,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
     //                    si2     si1          si1
     //                    si2     si2          -
     Tree tree;
-    ExpectedTree<4> pre = {{     0,     10,     70,    300        },
+    ExpectedTree<4> pre = {{     0,     10,     20,     30        },
                            {mtNone, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    , si_1  , -1    },
                            {-1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 70 - 50);
-    ExpectedTree<6> et = {{     0,     10,     50,     70,    250,    300        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(15, 10, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 10);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 20 - 15);
+    ExpectedTree<6> et = {{     0,     10,     15,     20,     25,     30        },
                           {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , Rs    , Rl    , C     , C     , Rs    , Rl    },
                           {-1    , si_1  , -1    , si_2  , si_1  , si_1  , -1    },
@@ -2754,17 +2754,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
     //                        si2     si1   si2    si1  si2
     //                        si2     si2   si2    si2  si2
     Tree tree;
-    ExpectedTree<9> pre = {{     0,     10,    100,    120,    140,    160,    200,    300,    400        },
+    ExpectedTree<9> pre = {{     0,      5,     10,     12,     14,     16,     20,     30,     40        },
                            {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    , Rs    , Rs    , Rs    , Rs    , Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    , si_2  , si_1  , si_2  , si_1  , -1    , si_1  , -1    },
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 100);
-    ExpectedTree<10> et = {{     0,     10,     50,    120,    140,    160,    200,   250,    300,    400        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(7, 20, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, (10 - 7) + (27 - 20));
+    ExpectedTree<10> et = {{     0,      5,      7,     12,     14,     16,     20,     27,     30,     40        },
                            {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
@@ -2780,17 +2780,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
     //                     si2   si1  si2   si1   si2
     //                     si2   si2  si2   si2   si2
     Tree tree;
-    ExpectedTree<9> pre = {{     0,     10,    100,    120,    140,    160,    200,    300,    400        },
+    ExpectedTree<9> pre = {{     0,      5,     10,     12,     14,     16,     20,     30,     40        },
                            {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    , Rs    , Rs    , Rs    , Rs    , Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 150, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 150);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 50);
-    ExpectedTree<10> et = {{     0,     10,     50,    100,    120,    140,    160,    200,    300,    400        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(7, 13, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 13);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10 - 7);
+    ExpectedTree<10> et = {{     0,      5,      7,     10,     12,     14,     16,     20,     30,     40        },
                            {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    , si_2  , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
@@ -2811,11 +2811,11 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
   const State Rs = State::Reserved;
   const State Rl = State::Released;
   const State C = State::Committed;
-  VMATree::RegionData call_stack_1(si_1, mtTest);
-  VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
-  VMATree::RegionData call_stack_2(si_2, mtTest);
-  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
-  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
+  VMATree::RegionData rd_Test_cs1(si_1, mtTest);
+  VMATree::RegionData rd_None_cs1(si_1, mtNone);
+  VMATree::RegionData rd_Test_cs2(si_2, mtTest);
+  VMATree::RegionData rd_None_cs2(si_2, mtNone);
+  VMATree::RegionData rd_None_cs3(si_3, mtNone);
 
   {
     // row 20:  ........XA..................B....U
@@ -2825,17 +2825,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
     //                          si2
     //                          si2
     Tree tree;
-    ExpectedTree<4> pre = {{     0,    50,     300,    400        },
+    ExpectedTree<4> pre = {{     0,     10,      30,     40        },
                            {mtNone, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    , si_1  , -1    },
                            {-1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 200);
-    ExpectedTree<5> et = {{     0,     50,    250,    300,    400        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(10, 15, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 15);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 15);
+    ExpectedTree<5> et = {{     0,     10,     25,     30,     40        },
                           {mtNone, mtTest, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , Rs    , C     , Rl    , Rs    , Rl    },
                           {-1    , si_1  , si_2  , -1    , si_1  , -1    },
@@ -2851,17 +2851,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
     //                    si2     si1          si1
     //                    si2     si2          -
     Tree tree;
-    ExpectedTree<4> pre = {{     0,     50,     70,    300        },
+    ExpectedTree<4> pre = {{     0,     10,     20,     30        },
                            {mtNone, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    , si_1  , -1    },
                            {-1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 70 - 50);
-    ExpectedTree<5> et = {{     0,     50,     70,    250,    300        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(10, 15, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 15);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 20 - 10);
+    ExpectedTree<5> et = {{     0,     10,     20,     25,     30        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , Rs    , C     , C     , Rs    , Rl    },
                           {-1    , si_1  , si_2  , si_1  , si_1  , -1    },
@@ -2881,17 +2881,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
     //                        si2     si1   si2    si1  si2
     //                        si2     si2   si2    si2  si2
     Tree tree;
-    ExpectedTree<9> pre = {{     0,     50,    100,    120,    140,    160,    200,    300,    400        },
+    ExpectedTree<9> pre = {{     0,      5,     10,     12,     14,     16,     20,     30,     40        },
                            {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    , Rs    , Rs    , Rs    , Rs    , Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    , si_2  , si_1  , si_2  , si_1  , -1    , si_1  , -1    },
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 200, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 200);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 100);
-    ExpectedTree<9> et = {{     0,     50,    120,    140,    160,    200,   250,    300,    400        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, (10 - 5) + (25 - 20));
+    ExpectedTree<9> et = {{     0,      5,     12,     14,     16,     20,    25,      30,     40        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , Rs    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
                           {-1    , si_1  , si_2  , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
@@ -2907,17 +2907,17 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
     //                     si2  si1   si2   si1   si2
     //                     si2  si2   si2   si2   si2
     Tree tree;
-    ExpectedTree<9> pre = {{     0,     50,    100,    120,    140,    160,    200,    300,    400        },
+    ExpectedTree<9> pre = {{     0,      5,     10,     12,     14,     16,     20,     30,     40        },
                            {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    , Rs    , Rs    , Rs    , Rs    , Rl    , Rs    , Rl    },
                            {-1    , si_1  , -1    , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre);
-    VMATree::SummaryDiff diff = tree.commit_mapping(50, 150, call_stack_2, false);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 150);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 50);
-    ExpectedTree<9> et = {{     0,     50,    100,    120,    140,    160,    200,    300,    400        },
+    VMATree::SummaryDiff diff = tree.commit_mapping(5, 15, rd_Test_cs2, false);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 15);
+    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10 - 5);
+    ExpectedTree<9> et = {{     0,      5,     10,     12,     14,     16,     20,     30,     40        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , Rs    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
                           {-1    , si_1  , si_2  , si_1  , si_2  , si_1  , si_2  , -1    , si_1  , -1    },
