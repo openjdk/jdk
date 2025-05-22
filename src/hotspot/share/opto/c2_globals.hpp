@@ -367,6 +367,14 @@
           "loop iterations this detection spans.")                          \
           range(0, 4096)                                                    \
                                                                             \
+  product(uint, SuperWordAutomaticAlignment, 1, DIAGNOSTIC,                 \
+          "0 = Disabled (unless AlignVector is enabled)"                    \
+          "Else: align with a load or store of the largest vector width,"   \
+          "      and if there are loads and stores of the largest width:"   \
+          "1 = Prefer alignment with vector store (default)"                \
+          "2 = Prefer alignment with vector load.")                         \
+          range(0, 2)                                                       \
+                                                                            \
   product(uint, AutoVectorizationOverrideProfitability, 1, DIAGNOSTIC,      \
           "Override the auto vectorization profitability heuristics."       \
           "0 = Run auto vectorizer, but abort just before applying"         \
