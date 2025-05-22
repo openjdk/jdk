@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
-#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CardSet.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
@@ -280,9 +280,6 @@ private:
                                 uint gc_counter,
                                 uint old_marking_started_before);
 
-  bool try_collect_fullgc(GCCause::Cause cause,
-                          const G1GCCounters& counters_before);
-
   // indicates whether we are in young or mixed GC mode
   G1CollectorState _collector_state;
 
@@ -480,10 +477,13 @@ private:
   //   cleared during the GC.
   // - if do_maximal_compaction is true, full gc will do a maximally
   //   compacting collection, leaving no dead wood.
+  // - if allocation_word_size is set, then this allocation size will
+  //    be accounted for in case shrinking of the heap happens.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
   bool do_full_collection(bool clear_all_soft_refs,
-                          bool do_maximal_compaction);
+                          bool do_maximal_compaction,
+                          size_t allocation_word_size);
 
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   void do_full_collection(bool clear_all_soft_refs) override;
@@ -501,7 +501,7 @@ private:
   bool abort_concurrent_cycle();
   void verify_before_full_collection();
   void prepare_heap_for_full_collection();
-  void prepare_for_mutator_after_full_collection();
+  void prepare_for_mutator_after_full_collection(size_t allocation_word_size);
   void abort_refinement();
   void verify_after_full_collection();
   void print_heap_after_full_collection();
@@ -560,7 +560,7 @@ public:
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
 
-  void resize_heap_if_necessary();
+  void resize_heap_if_necessary(size_t allocation_word_size);
 
   // Check if there is memory to uncommit and if so schedule a task to do it.
   void uncommit_regions_if_necessary();
@@ -1312,9 +1312,9 @@ private:
   void print_regions_on(outputStream* st) const;
 
 public:
-  void print_on(outputStream* st) const override;
-  void print_extended_on(outputStream* st) const override;
-  void print_on_error(outputStream* st) const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_extended_on(outputStream* st) const;
+  void print_gc_on(outputStream* st) const override;
 
   void gc_threads_do(ThreadClosure* tc) const override;
 

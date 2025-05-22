@@ -289,10 +289,17 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
         toop->isa_instptr() &&
         toop->is_instptr()->instance_klass()->is_java_lang_Object() &&
         toop->offset() == Type::OffsetBot)) {
-    // compress paths and change unreachable cycles to TOP
-    // If not, we can update the input infinitely along a MergeMem cycle
-    // Equivalent code in PhiNode::Ideal
-    Node* m  = phase->transform(mmem);
+    // IGVN _delay_transform may be set to true and if that is the case and mmem
+    // is already a registered node then the validation inside transform will
+    // complain.
+    Node* m = mmem;
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    if (igvn == nullptr || !igvn->delay_transform()) {
+      // compress paths and change unreachable cycles to TOP
+      // If not, we can update the input infinitely along a MergeMem cycle
+      // Equivalent code in PhiNode::Ideal
+      m = phase->transform(mmem);
+    }
     // If transformed to a MergeMem, get the desired slice
     // Otherwise the returned node represents memory for every slice
     mem = (m->is_MergeMem())? m->as_MergeMem()->memory_at(alias_idx) : m;
@@ -1206,12 +1213,12 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
       // (This is one of the few places where a generic PhaseTransform
       // can create new nodes.  Think of it as lazily manifesting
       // virtually pre-existing constants.)
-      if (memory_type() != T_VOID) {
+      if (value_basic_type() != T_VOID) {
         if (ReduceBulkZeroing || find_array_copy_clone(ld_alloc, in(MemNode::Memory)) == nullptr) {
           // If ReduceBulkZeroing is disabled, we need to check if the allocation does not belong to an
           // ArrayCopyNode clone. If it does, then we cannot assume zero since the initialization is done
           // by the ArrayCopyNode.
-          return phase->zerocon(memory_type());
+          return phase->zerocon(value_basic_type());
         }
       } else {
         // TODO: materialize all-zero vector constant
@@ -2040,7 +2047,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         int stable_dimension = (ary->stable_dimension() > 0 ? ary->stable_dimension() - 1 : 0);
         const Type* con_type = Type::make_constant_from_array_element(aobj->as_array(), off,
                                                                       stable_dimension,
-                                                                      memory_type(), is_unsigned());
+                                                                      value_basic_type(), is_unsigned());
         if (con_type != nullptr) {
           return con_type;
         }
@@ -2108,7 +2115,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     const TypeInstPtr* tinst = tp->is_instptr();
     ciObject* const_oop = tinst->const_oop();
     if (!is_mismatched_access() && off != Type::OffsetBot && const_oop != nullptr && const_oop->is_instance()) {
-      const Type* con_type = Type::make_constant_from_field(const_oop->as_instance(), off, is_unsigned(), memory_type());
+      const Type* con_type = Type::make_constant_from_field(const_oop->as_instance(), off, is_unsigned(), value_basic_type());
       if (con_type != nullptr) {
         return con_type;
       }
@@ -2211,10 +2218,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     // This will help short-circuit some reflective code.
     if (tkls->offset() == in_bytes(Klass::layout_helper_offset()) &&
         tkls->isa_instklassptr() && // not directly typed as an array
-        !tkls->is_instklassptr()->instance_klass()->is_java_lang_Object() // not the supertype of all T[] and specifically not Serializable & Cloneable
-        ) {
-      // Note:  When interfaces are reliable, we can narrow the interface
-      // test to (klass != Serializable && klass != Cloneable).
+        !tkls->is_instklassptr()->might_be_an_array() // not the supertype of all T[] (java.lang.Object) or has an interface that is not Serializable or Cloneable
+    ) {
       assert(Opcode() == Op_LoadI, "must load an int from _layout_helper");
       jint min_size = Klass::instance_layout_helper(oopDesc::header_size(), false);
       // The key property of this type is that it folds up tests

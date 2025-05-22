@@ -1098,7 +1098,7 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   clone_template_and_replace_init_input(const TemplateAssertionPredicate& template_assertion_predicate) const;
 
   InitializedAssertionPredicate initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate,
-                                                         Node* new_control) const;
+                                                         IfTrueNode* cloned_template_predicate_tail) const;
   void rewire_to_old_predicate_chain_head(Node* initialized_assertion_predicate_success_proj) const;
 
  public:
@@ -1176,6 +1176,7 @@ class CloneUnswitchedLoopPredicatesVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_false_path_loop;
 
   PhaseIdealLoop* const _phase;
+  const bool _is_counted_loop;
 
  public:
   CloneUnswitchedLoopPredicatesVisitor(LoopNode* true_path_loop_head,

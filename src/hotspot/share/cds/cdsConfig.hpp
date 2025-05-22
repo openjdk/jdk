@@ -42,9 +42,10 @@ class CDSConfig : public AllStatic {
   static bool _is_using_full_module_graph;
   static bool _has_aot_linked_classes;
 
-  static char* _default_archive_path;
-  static char* _static_archive_path;
-  static char* _dynamic_archive_path;
+  const static char* _default_archive_path;
+  const static char* _input_static_archive_path;
+  const static char* _input_dynamic_archive_path;
+  const static char* _output_archive_path;
 
   static bool  _old_cds_flags_used;
   static bool  _new_aot_flags_used;
@@ -53,17 +54,24 @@ class CDSConfig : public AllStatic {
   static JavaThread* _dumper_thread;
 #endif
 
-  static void extract_shared_archive_paths(const char* archive_path,
-                                           char** base_archive_path,
-                                           char** top_archive_path);
-  static void init_shared_archive_paths();
+  static void extract_archive_paths(const char* archive_path,
+                                    const char** base_archive_path,
+                                    const char** top_archive_path);
+  static int num_archive_paths(const char* path_spec);
+  static void check_flag_single_path(const char* flag_name, const char* value);
 
-  static void check_flag_alias(bool alias_is_default, const char* alias_name);
+  // Checks before Arguments::apply_ergo()
+  static void check_new_flag(bool new_flag_is_default, const char* new_flag_name);
   static void check_aot_flags();
   static void check_aotmode_off();
   static void check_aotmode_auto_or_on();
   static void check_aotmode_record();
   static void check_aotmode_create();
+  static void check_unsupported_dumping_module_options();
+
+  // Called after Arguments::apply_ergo() has started
+  static void ergo_init_classic_archive_paths();
+  static void ergo_init_aot_paths();
 
 public:
   // Used by jdk.internal.misc.CDS.getCDSConfigStatus();
@@ -76,24 +84,26 @@ public:
   static int get_status() NOT_CDS_RETURN_(0);
 
   // Initialization and command-line checking
-  static void initialize() NOT_CDS_RETURN;
+  static void ergo_initialize() NOT_CDS_RETURN;
   static void set_old_cds_flags_used()                       { CDS_ONLY(_old_cds_flags_used = true); }
   static bool old_cds_flags_used()                           { return CDS_ONLY(_old_cds_flags_used) NOT_CDS(false); }
   static bool new_aot_flags_used()                           { return CDS_ONLY(_new_aot_flags_used) NOT_CDS(false); }
   static void check_internal_module_property(const char* key, const char* value) NOT_CDS_RETURN;
   static void check_incompatible_property(const char* key, const char* value) NOT_CDS_RETURN;
-  static void check_unsupported_dumping_module_options() NOT_CDS_RETURN;
   static bool has_unsupported_runtime_module_options() NOT_CDS_RETURN_(false);
   static bool check_vm_args_consistency(bool patch_mod_javabase, bool mode_flag_cmd_line) NOT_CDS_RETURN_(true);
   static const char* type_of_archive_being_loaded();
   static const char* type_of_archive_being_written();
+  static void prepare_for_dumping();
 
   // --- Basic CDS features
 
   // archive(s) in general
   static bool is_dumping_archive()                           { return is_dumping_static_archive() || is_dumping_dynamic_archive(); }
+
+  // input archive(s)
   static bool is_using_archive()                             NOT_CDS_RETURN_(false);
-  static int num_archives(const char* archive_path)          NOT_CDS_RETURN_(0);
+  static bool is_using_only_default_archive()                NOT_CDS_RETURN_(false);
 
   // static_archive
   static bool is_dumping_static_archive()                    { return CDS_ONLY(_is_dumping_static_archive) NOT_CDS(false); }
@@ -125,7 +135,7 @@ public:
 
   // dynamic_archive
   static bool is_dumping_dynamic_archive()                   { return CDS_ONLY(_is_dumping_dynamic_archive) NOT_CDS(false); }
-  static void enable_dumping_dynamic_archive()               { CDS_ONLY(_is_dumping_dynamic_archive = true); }
+  static void enable_dumping_dynamic_archive(const char* output_path) NOT_CDS_RETURN;
   static void disable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_dynamic_archive = false); }
 
   // Misc CDS features
@@ -139,6 +149,7 @@ public:
   static void stop_using_optimized_module_handling()         NOT_CDS_RETURN;
 
   static bool is_logging_lambda_form_invokers()              NOT_CDS_RETURN_(false);
+  static bool is_dumping_regenerated_lambdaform_invokers()   NOT_CDS_RETURN_(false);
 
   static bool is_dumping_aot_linked_classes()                NOT_CDS_JAVA_HEAP_RETURN_(false);
   static bool is_using_aot_linked_classes()                  NOT_CDS_JAVA_HEAP_RETURN_(false);
@@ -146,12 +157,11 @@ public:
 
   // archive_path
 
-  // Points to the classes.jsa in $JAVA_HOME
-  static char* default_archive_path()                        NOT_CDS_RETURN_(nullptr);
-  // The actual static archive  (if any) selected at runtime
-  static const char* static_archive_path()                   { return CDS_ONLY(_static_archive_path) NOT_CDS(nullptr); }
-  // The actual dynamic archive  (if any) selected at runtime
-  static const char* dynamic_archive_path()                  { return CDS_ONLY(_dynamic_archive_path) NOT_CDS(nullptr); }
+  // Points to the classes.jsa in $JAVA_HOME (could be input or output)
+  static const char* default_archive_path()                  NOT_CDS_RETURN_(nullptr);
+  static const char* input_static_archive_path()             { return CDS_ONLY(_input_static_archive_path) NOT_CDS(nullptr); }
+  static const char* input_dynamic_archive_path()            { return CDS_ONLY(_input_dynamic_archive_path) NOT_CDS(nullptr); }
+  static const char* output_archive_path()                   { return CDS_ONLY(_output_archive_path) NOT_CDS(nullptr); }
 
   // --- Archived java objects
 
@@ -171,6 +181,12 @@ public:
   static bool is_using_full_module_graph()                   NOT_CDS_JAVA_HEAP_RETURN_(false);
   static void stop_dumping_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
   static void stop_using_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
+
+  // --- AOT code
+
+  static bool is_dumping_aot_code()                          NOT_CDS_RETURN_(false);
+  static void disable_dumping_aot_code()                     NOT_CDS_RETURN;
+  static void enable_dumping_aot_code()                      NOT_CDS_RETURN;
 
   // Some CDS functions assume that they are called only within a single-threaded context. I.e.,
   // they are called from:

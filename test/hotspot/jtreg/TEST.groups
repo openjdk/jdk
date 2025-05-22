@@ -171,6 +171,8 @@ tier1_compiler_1 = \
   -compiler/c2/Test6912517.java
 
 tier1_compiler_2 = \
+  compiler/ccp/ \
+  compiler/ciTypeFlow/ \
   compiler/classUnloading/ \
   compiler/codecache/ \
   compiler/codegen/ \
@@ -181,6 +183,7 @@ tier1_compiler_2 = \
   compiler/exceptions/ \
   compiler/floatingpoint/ \
   compiler/gcbarriers/ \
+  compiler/igvn/ \
   compiler/inlining/ \
   compiler/integerArithmetic/ \
   compiler/interpreter/ \
@@ -198,9 +201,12 @@ tier1_compiler_3 = \
   compiler/macronodes/ \
   compiler/memoryinitialization/ \
   compiler/osr/ \
+  compiler/predicates/ \
   compiler/profiling \
   compiler/regalloc/ \
   compiler/runtime/ \
+  compiler/sharedstubs/ \
+  compiler/splitif/ \
   compiler/startup/ \
   compiler/types/ \
   compiler/uncommontrap/ \
@@ -407,14 +413,15 @@ hotspot_cds_only = \
 
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
+ -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
+ -runtime/cds/appcds/aotCode \
  -runtime/cds/appcds/applications \
  -runtime/cds/appcds/cacheObject \
  -runtime/cds/appcds/complexURI \
  -runtime/cds/appcds/customLoader \
  -runtime/cds/appcds/dynamicArchive \
  -runtime/cds/appcds/jigsaw/ExactOptionMatch.java \
- -runtime/cds/appcds/jigsaw/modulepath/AddExports.java \
  -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndFMG.java \
  -runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java \
  -runtime/cds/appcds/loaderConstraints/DynamicLoaderConstraintsTest.java \
@@ -447,7 +454,8 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/LambdaWithUseImplMethodHandle.java \
  -runtime/cds/appcds/LambdaWithOldClass.java \
  -runtime/cds/appcds/LongClassListPath.java \
- -runtime/cds/appcds/LotsOfClasses.java \
+ -runtime/cds/appcds/LotsOfJRTClasses.java \
+ -runtime/cds/appcds/LotsOfSyntheticClasses.java \
  -runtime/cds/appcds/MismatchedPathTriggerMemoryRelease.java \
  -runtime/cds/appcds/NonExistClasspath.java \
  -runtime/cds/appcds/RelativePath.java \
@@ -506,7 +514,9 @@ hotspot_cds_epsilongc = \
 # those that rely on redefining classes that are already archived.
 hotspot_aot_classlinking = \
   runtime/cds \
+ -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
+ -runtime/cds/appcds/aotCode \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
@@ -532,8 +542,6 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java \
  -runtime/cds/appcds/jigsaw/ExactOptionMatch.java \
  -runtime/cds/appcds/jigsaw/JigsawOptionsCombo.java \
- -runtime/cds/appcds/jigsaw/modulepath/AddExports.java \
- -runtime/cds/appcds/jigsaw/modulepath/AddOpens.java \
  -runtime/cds/appcds/jigsaw/modulepath/AddModules.java \
  -runtime/cds/appcds/jigsaw/modulepath/JvmtiAddPath.java \
  -runtime/cds/appcds/jigsaw/modulepath/MainModuleOnly.java \
@@ -584,9 +592,9 @@ hotspot_metaspace = \
 
 # A subset of AppCDS tests to be run in tier1
 tier1_runtime_appcds = \
-  runtime/cds/appcds/HelloTest.java \
-  runtime/cds/appcds/sharedStrings/SharedStringsBasic.java \
-  runtime/cds/appcds/ClassLoaderTest.java
+  runtime/cds/appcds/aotCache/HelloAOTCache.java \
+  runtime/cds/appcds/aotCode \
+  runtime/cds/appcds/HelloTest.java
 
 tier1_runtime_appcds_exclude = \
   runtime/cds/appcds/ \
