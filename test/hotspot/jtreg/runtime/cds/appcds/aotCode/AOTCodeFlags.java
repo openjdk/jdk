@@ -50,7 +50,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class AOTCodeFlags {
     public static void main(String... args) throws Exception {
         Tester t = new Tester();
-        for (int mode = 0; mode < 3; mode++) {
+        // Run only 2 modes (0 - no AOT code, 1 - AOT adapters) until stubs caching is restored
+        for (int mode = 0; mode < 2; mode++) {
             t.setTestMode(mode);
             t.run(new String[] {"AOT"});
         }
