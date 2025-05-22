@@ -1303,6 +1303,14 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   -XX:VerifyIterativeGVN=1110
     case Op_XorI:
     case Op_XorL:
+    // It seems we may have similar issues with the HF cases.
+    // Found with aarch64:
+    //   compiler/vectorization/TestFloat16VectorOperations.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_AddHF:
+    case Op_MulHF:
+    case Op_MaxHF:
+    case Op_MinHF:
       return false;
 
     // In MulNode::Ideal the edges can be swapped to help value numbering:
