@@ -109,4 +109,54 @@ public class TestAutoVectorizationOverrideProfitability {
     public static void checkSimpleFloatCopy() {
         Verify.checkEQ(GOLD_SIMPLE_FLOAT_COPY, rF);
     }
+
+    public static final int GOLD_SIMPLE_INT_REDUCTION = simpleIntReduction();
+
+    @Test
+    @Warmup(10)
+    @IR(applyIfCPUFeatureOr = {"avx", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 2"},
+        counts = {IRNode.ADD_REDUCTION_VI, "> 0"})
+    @IR(applyIfCPUFeatureOr = {"avx", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "< 2"},
+        counts = {IRNode.ADD_REDUCTION_VI, "= 0"})
+    // Current heuristics say that this simple int reduction is not profitable.
+    // But it would actually be profitable, since we are able to move the
+    // reduction out of the loop (we can reorder the reduction).
+    // See: JDK-8307516 JDK-8345044
+    private static int simpleIntReduction() {
+        int sum = 0;
+        for (int i = 0; i < aI.length; i++) {
+            sum += aI[i];
+        }
+        return sum;
+    }
+
+    @Check(test="simpleIntReduction")
+    public static void checkSimpleIntReduction(int result) {
+        Verify.checkEQ(GOLD_SIMPLE_INT_REDUCTION, result);
+    }
+
+    static { simpleIntCopy(); }
+    public static final int[] GOLD_SIMPLE_INT_COPY = rI.clone();
+
+    @Test
+    @Warmup(10)
+    @IR(applyIfCPUFeatureOr = {"avx", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"},
+        counts = {IRNode.LOAD_VECTOR_I, "> 0"})
+    @IR(applyIfCPUFeatureOr = {"avx", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"},
+        counts = {IRNode.LOAD_VECTOR_I, "= 0"})
+    // The simple int copy is always profitable.
+    private static void simpleIntCopy() {
+        for (int i = 0; i < aI.length; i++) {
+            rI[i] = aI[i];
+        }
+    }
+
+    @Check(test="simpleIntCopy")
+    public static void checkSimpleIntCopy() {
+        Verify.checkEQ(GOLD_SIMPLE_INT_COPY, rI);
+    }
 }
