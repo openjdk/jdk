@@ -149,19 +149,10 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   return frame(sp, fp, pc);
 }
 
-#ifdef ASSERT
-static bool is_interpreter(const ucontext_t* uc) {
-  assert(uc != nullptr, "invariant");
-  address pc = os::Posix::ucontext_get_pc(uc);
-  assert(pc != nullptr, "invariant");
-  return Interpreter::contains(pc);
-}
-#endif
-
 intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
   assert(ucVoid != nullptr, "invariant");
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
-  assert(is_interpreter(uc), "invariant");
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
   return reinterpret_cast<intptr_t*>(uc->uc_mcontext.regs[REG_BCP]);
 }
 

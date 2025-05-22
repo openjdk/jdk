@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
+#include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nmt/memTracker.hpp"
 #include "os_posix.inline.hpp"
@@ -1329,6 +1330,15 @@ void os::Posix::init_2(void) {
 int os::Posix::clock_tics_per_second() {
   return clock_tics_per_sec;
 }
+
+#ifdef ASSERT
+bool os::Posix::ucontext_is_interpreter(const ucontext_t* uc) {
+  assert(uc != nullptr, "invariant");
+  address pc = os::Posix::ucontext_get_pc(uc);
+  assert(pc != nullptr, "invariant");
+  return Interpreter::contains(pc);
+}
+#endif
 
 // Utility to convert the given timeout to an absolute timespec
 // (based on the appropriate clock) to use with pthread_cond_timewait,
