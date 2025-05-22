@@ -865,9 +865,10 @@ void TemplateInterpreterGenerator::lock_method() {
 //      rcpool: cp cache
 //      stack_pointer: previous sp
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
-  // Save ConstMethod* in r5_ConstMethod for later use to avoid loading multiple times
-  Register r5_ConstMethod = r5;
-  __ ldr(r5_ConstMethod, Address(rmethod, Method::const_offset()));
+  // Save ConstMethod* in r5_const_method for later use to avoid loading multiple times
+  Register r5_const_method = r5;
+  const Register r5 = noreg;
+  __ ldr(r5_const_method, Address(rmethod, Method::const_offset()));
 
   // initialize fixed part of activation frame
   if (native_call) {
@@ -879,8 +880,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ stp(zr, zr, Address(sp, 12 * wordSize));
   } else {
     __ sub(esp, sp, 12 *  wordSize);
-    // Use stored ConstMethod* to avoid loading again
-    __ add(rbcp, r5_ConstMethod, in_bytes(ConstMethod::codes_offset())); // get codebase
+    __ add(rbcp, r5_const_method, in_bytes(ConstMethod::codes_offset())); // get codebase
     __ mov(rscratch1, frame::interpreter_frame_initial_sp_offset);
     __ stp(rscratch1, rbcp, Address(__ pre(sp, -12 * wordSize)));
   }
@@ -900,11 +900,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ stp(rfp, lr, Address(sp, 10 * wordSize));
   __ lea(rfp, Address(sp, 10 * wordSize));
 
-  // Save ConstantPool* in r11_ConstantPool for later use to avoid loading multiple times
-  // Use stored ConstMethod* to avoid loading again
-  Register r11_ConstantPool = r11;
-  __ ldr(r11_ConstantPool, Address(r5_ConstMethod, ConstMethod::constants_offset()));
-  __ ldr(rcpool, Address(r11_ConstantPool, ConstantPool::cache_offset()));
+  // Save ConstantPool* in r11_constants for later use to avoid loading multiple times
+  Register r11_constants = r11;
+  const Register r11 = noreg;
+  __ ldr(r11_constants, Address(r5_const_method, ConstMethod::constants_offset()));
+  __ ldr(rcpool, Address(r11_constants, ConstantPool::cache_offset()));
   __ sub(rscratch1, rlocals, rfp);
   __ lsr(rscratch1, rscratch1, Interpreter::logStackElementSize);   // rscratch1 = rlocals - fp();
   // Store relativized rlocals, see frame::interpreter_frame_locals().
@@ -914,14 +914,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // leave last_sp as null
   __ stp(zr, r19_sender_sp, Address(sp, 8 * wordSize));
 
-  // Get mirror
-  // Use stored ConstantPool* to avoid loading again, resolve ConstantPool* -> InstanceKlass* -> Java mirror.
-  __ ldr(r10, Address(r11_ConstantPool, ConstantPool::pool_holder_offset()));
+  // Get mirror. Resolve ConstantPool* -> InstanceKlass* -> Java mirror.
+  __ ldr(r10, Address(r11_constants, ConstantPool::pool_holder_offset()));
   __ ldr(r10, Address(r10, in_bytes(Klass::java_mirror_offset())));
   __ resolve_oop_handle(r10, rscratch1, rscratch2);
   if (! native_call) {
-    // Use stored ConstMethod* to avoid loading again
-    __ ldrh(rscratch1, Address(r5_ConstMethod, ConstMethod::max_stack_offset()));
+    __ ldrh(rscratch1, Address(r5_const_method, ConstMethod::max_stack_offset()));
     __ add(rscratch1, rscratch1, MAX2(3, Method::extra_stack_entries()));
     __ sub(rscratch1, sp, rscratch1, ext::uxtw, 3);
     __ andr(rscratch1, rscratch1, -16);
