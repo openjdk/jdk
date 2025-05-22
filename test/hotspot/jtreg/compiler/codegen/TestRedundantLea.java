@@ -326,29 +326,32 @@ class StoreNTest {
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2",
                   IRNode.LEA_P_8_NARROW, "=1",
-                  IRNode.LEA_P_32_NARROW, "=1",
-                  IRNode.MEM_TO_REG_SPILL_COPY, "=4"},
+                  IRNode.LEA_P_32_NARROW, "=1"},
         phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
     // Test that the peephole worked for leaP(8|32)Narrow
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
         counts = {IRNode.LEA_P_8_NARROW, "=1",
-                  IRNode.LEA_P_32_NARROW, "=1",
-                  IRNode.MEM_TO_REG_SPILL_COPY, "=3"},
+                  IRNode.LEA_P_32_NARROW, "=1"},
         phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
     // Negative test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=2",
-                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2",
-                  IRNode.MEM_TO_REG_SPILL_COPY, "=4"},
+                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
         phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
     // Test that the peephole worked for leaPCompressedOopOffset
     @IR(failOn = {IRNode.DECODE_HEAP_OOP_NOT_NULL},
-        counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2",
-                  IRNode.MEM_TO_REG_SPILL_COPY, "=3"},
+        counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
         phase = { CompilePhase.FINAL_CODE },
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
+    // Test that the peephole removes a spill.
+    @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY, "=4"},
+        phase = { CompilePhase.FINAL_CODE },
+        applyIfAnd ={"OptoPeephole", "false", "UseCompactObjectHeaders", "false"})
+    @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY, "=4"},
+        phase = { CompilePhase.FINAL_CODE },
+        applyIfAnd ={"OptoPeephole", "true", "UseCompactObjectHeaders", "false"})
     public void testRemoveSpill() {
         this.classArr8bit[OFFSET8BIT_IDX] = new StoreNHelper(CURRENT, OTHER);
         this.classArr32bit[OFFSET32BIT_IDX] = new StoreNHelper(OTHER, CURRENT);
@@ -356,7 +359,7 @@ class StoreNTest {
 
     // This variation of the test above generates a split spill register path.
     // Due to the complicated graph structure with the phis, the peephole
-    // cannot remove the redundant decode.
+    // cannot remove the redundant decode shared by both leaP*s.
     @Test
     @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=1",
                   IRNode.LEA_P_8_NARROW, "=1",
