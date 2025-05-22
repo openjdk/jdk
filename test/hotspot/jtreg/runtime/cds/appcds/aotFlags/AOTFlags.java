@@ -178,8 +178,8 @@ public class AOTFlags {
             "-Xlog:aot=debug",
             "-cp", appJar);
         out = CDSTestUtils.executeAndLog(pb, "asm");
-        out.shouldContain("Dumping shared data to file:");
-        out.shouldMatch("cds.*hello[.]aot");
+        out.shouldContain("Writing AOTCache file:");
+        out.shouldMatch("aot.*hello[.]aot");
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------

@@ -735,7 +735,7 @@ void FileMapInfo::open_as_output() {
     if (CDSConfig::is_dumping_preimage_static_archive()) {
       log_info(aot)("Writing binary AOTConfiguration file: %s",  _full_path);
     } else {
-      log_info(aot)("Writing binary AOTConfiguration file: %s",  _full_path);
+      log_info(aot)("Writing AOTCache file: %s",  _full_path);
     }
   } else {
     aot_log_info(aot)("Dumping shared data to file: %s", _full_path);
