@@ -43,6 +43,7 @@
  */
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -61,15 +62,13 @@ public class ExcludedClasses {
     static final String mainClass = "TestApp";
 
     public static void main(String[] args) throws Exception {
-        {
-          Tester tester = new Tester();
-          tester.run(new String[] {"AOT"} );
-        }
+        Tester tester = new Tester();
+        tester.runAOTWorkflow();
     }
 
     static class Tester extends CDSAppTester {
         public Tester() {
-            super(mainClass);;
+            super(mainClass);
         }
 
         @Override
@@ -108,7 +107,7 @@ class TestApp {
         // In new workflow, classes from custom loaders are passed from the preimage
         // to the final image. See ClassPrelinker::record_unregistered_klasses().
         custInstance = initFromCustomLoader();
-        custArrayInstance = java.lang.reflect.Array.newInstance(custInstance.getClass(), 0);
+        custArrayInstance = Array.newInstance(custInstance.getClass(), 0);
         System.out.println(custArrayInstance);
         System.out.println("Counter = " + Foo.hotSpot());
     }
@@ -195,9 +194,7 @@ class TestApp {
         static void lambdaHotSpot() {
             long start = System.currentTimeMillis();
             while (System.currentTimeMillis() - start < 20) {
-                doit(() -> {
-                        counter ++;
-                    });
+                doit(() -> counter ++ );
             }
         }
 
