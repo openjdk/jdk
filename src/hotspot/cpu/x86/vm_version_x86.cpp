@@ -927,7 +927,7 @@ void VM_Version::get_processor_features() {
 #endif
 
   // Check if processor has Intel Ecore
-  if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && is_P6_or_later() &&
+  if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && is_intel_server_family() &&
     (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF ||
       _model == 0xCC || _model == 0xDD)) {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
@@ -1632,7 +1632,7 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(UseStoreImmI16)) {
       UseStoreImmI16 = false; // don't use it on Intel cpus
     }
-    if (is_P6_or_later() || cpu_family() == 15) {
+    if (is_intel_server_family() || cpu_family() == 15) {
       if (FLAG_IS_DEFAULT(UseAddressNop)) {
         // Use it on all Intel cpus starting from PentiumPro
         UseAddressNop = true;
@@ -1648,7 +1648,7 @@ void VM_Version::get_processor_features() {
         UseXmmRegToRegMoveAll = false;
       }
     }
-    if (is_P6_or_later() && supports_sse3()) { // New Intel cpus
+    if (is_intel_server_family() && supports_sse3()) { // New Intel cpus
 #ifdef COMPILER2
       if (FLAG_IS_DEFAULT(MaxLoopPad)) {
         // For new Intel cpus do the next optimization:
@@ -1901,7 +1901,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, allocate_prefetch_distance(use_watermark_prefetch));
   }
 
-  if (is_intel() && is_P6_or_later() && supports_sse3()) {
+  if (is_intel() && is_intel_server_family() && supports_sse3()) {
     if (FLAG_IS_DEFAULT(AllocatePrefetchLines) &&
         supports_sse4_2() && supports_ht()) { // Nehalem based cpus
       FLAG_SET_DEFAULT(AllocatePrefetchLines, 4);
@@ -3296,7 +3296,7 @@ int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
       return 128; // Athlon
     }
   } else { // Intel
-    if (supports_sse3() && is_P6_or_later()) {
+    if (supports_sse3() && is_intel_server_family()) {
       if (supports_sse4_2() && supports_ht()) { // Nehalem based cpus
         return 192;
       } else if (use_watermark_prefetch) { // watermark prefetching on Core
@@ -3308,7 +3308,7 @@ int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
       }
     }
     if (supports_sse2()) {
-      if (is_P6_or_later()) {
+      if (is_intel_server_family()) {
         return 256; // Pentium M, Core, Core2
       } else {
         return 512; // Pentium 4
