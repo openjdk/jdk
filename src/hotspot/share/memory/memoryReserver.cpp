@@ -90,13 +90,13 @@ static char* reserve_memory_inner(char* requested_address,
     assert(is_aligned(requested_address, alignment),
            "Requested address " PTR_FORMAT " must be aligned to %zu",
            p2i(requested_address), alignment);
-    return os::attempt_reserve_memory_at(requested_address, size, exec, mem_tag);
+    return os::attempt_reserve_memory_at(requested_address, size, mem_tag, exec);
   }
 
   // Optimistically assume that the OS returns an aligned base pointer.
   // When reserving a large address range, most OSes seem to align to at
   // least 64K.
-  char* base = os::reserve_memory(size, exec, mem_tag);
+  char* base = os::reserve_memory(size, mem_tag, exec);
   if (is_aligned(base, alignment)) {
     return base;
   }
@@ -107,7 +107,7 @@ static char* reserve_memory_inner(char* requested_address,
   }
 
   // Map using the requested alignment.
-  return os::reserve_memory_aligned(size, alignment, exec);
+  return os::reserve_memory_aligned(size, alignment, mem_tag, exec);
 }
 
 ReservedSpace MemoryReserver::reserve_memory(char* requested_address,
@@ -261,7 +261,7 @@ static char* map_memory_to_file(char* requested_address,
   // Optimistically assume that the OS returns an aligned base pointer.
   // When reserving a large address range, most OSes seem to align to at
   // least 64K.
-  char* base = os::map_memory_to_file(size, fd);
+  char* base = os::map_memory_to_file(size, fd, mem_tag);
   if (is_aligned(base, alignment)) {
     return base;
   }

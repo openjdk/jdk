@@ -225,7 +225,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       if (!ClearArrayNode::step_through(&mem, alloc->_idx, phase)) {
         // Can not bypass initialization of the instance
         // we are looking.
-        debug_only(intptr_t offset;)
+        DEBUG_ONLY(intptr_t offset;)
         assert(alloc == AllocateNode::Ideal_allocation(mem->in(3), phase, offset), "sanity");
         InitializeNode* init = alloc->as_Allocate()->initialization();
         // We are looking for stored value, return Initialize node
@@ -1328,7 +1328,7 @@ void PhaseMacroExpand::expand_allocate_common(
     // No initial test, just fall into next case
     assert(allocation_has_use || !expand_fast_path, "Should already have been handled");
     toobig_false = ctrl;
-    debug_only(slow_region = NodeSentinel);
+    DEBUG_ONLY(slow_region = NodeSentinel);
   }
 
   // If we are here there are several possibilities
@@ -2350,6 +2350,16 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
   _igvn.replace_node(check, C->top());
 }
 
+// Perform refining of strip mined loop nodes in the macro nodes list.
+void PhaseMacroExpand::refine_strip_mined_loop_macro_nodes() {
+   for (int i = C->macro_count(); i > 0; i--) {
+    Node* n = C->macro_node(i - 1);
+    if (n->is_OuterStripMinedLoop()) {
+      n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
+    }
+  }
+}
+
 //---------------------------eliminate_macro_nodes----------------------
 // Eliminate scalar replaced allocations and associated locks.
 void PhaseMacroExpand::eliminate_macro_nodes() {
@@ -2457,6 +2467,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
+  refine_strip_mined_loop_macro_nodes();
   // Do not allow new macro nodes once we started to expand
   C->reset_allow_macro_nodes();
   if (StressMacroExpansion) {
@@ -2509,7 +2520,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, _igvn.intcon(1));
 #endif // ASSERT
       } else if (n->Opcode() == Op_OuterStripMinedLoop) {
-        n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
         C->remove_macro_node(n);
         success = true;
       } else if (n->Opcode() == Op_MaxL) {

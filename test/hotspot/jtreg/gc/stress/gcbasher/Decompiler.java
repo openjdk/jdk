@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,6 +258,7 @@ class Decompiler {
         final int CONSTANT_NameAndType = 12;
         final int CONSTANT_MethodHandle = 15;
         final int CONSTANT_MethodType = 16;
+        final int CONSTANT_Dynamic = 17;
         final int CONSTANT_InvokeDynamic = 18;
 
         ConstantPoolEntry[] constantPool = new ConstantPoolEntry[cursor.readUnsignedShort()];
@@ -317,6 +318,11 @@ class Decompiler {
 
                 case CONSTANT_MethodType:
                     cursor.readUnsignedShort(); // descriptor_index
+                    break;
+
+                case CONSTANT_Dynamic:
+                    cursor.readUnsignedShort(); // bootstrap_method_attr_index
+                    cursor.readUnsignedShort(); // name_and_type_index
                     break;
 
                 case CONSTANT_InvokeDynamic:

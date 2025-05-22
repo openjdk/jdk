@@ -94,10 +94,13 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ function_entry();
 
+    int save_nonvolatile_registers_size = __ save_nonvolatile_registers_size(true, SuperwordUseVSX);
+
     // some sanity checks
+    STATIC_ASSERT(StackAlignmentInBytes == 16);
     assert((sizeof(frame::native_abi_minframe) % 16) == 0,    "unaligned");
     assert((sizeof(frame::native_abi_reg_args) % 16) == 0,    "unaligned");
-    assert((sizeof(frame::spill_nonvolatiles) % 16) == 0,     "unaligned");
+    assert((save_nonvolatile_registers_size % 16) == 0,       "unaligned");
     assert((sizeof(frame::parent_ijava_frame_abi) % 16) == 0, "unaligned");
     assert((sizeof(frame::entry_frame_locals) % 16) == 0,     "unaligned");
 
@@ -106,39 +109,47 @@ class StubGenerator: public StubCodeGenerator {
     Register r_arg_result_type              = R5;
     Register r_arg_method                   = R6;
     Register r_arg_entry                    = R7;
+    Register r_arg_argument_addr            = R8;
+    Register r_arg_argument_count           = R9;
     Register r_arg_thread                   = R10;
 
-    Register r_temp                         = R24;
-    Register r_top_of_arguments_addr        = R25;
-    Register r_entryframe_fp                = R26;
+    Register r_entryframe_fp                = R2; // volatile
+    Register r_argument_size                = R11_scratch1; // volatile
+    Register r_top_of_arguments_addr        = R21_tmp1;
 
     {
       // Stack on entry to call_stub:
       //
       //      F1      [C_FRAME]
       //              ...
-
-      Register r_arg_argument_addr          = R8;
-      Register r_arg_argument_count         = R9;
-      Register r_frame_alignment_in_bytes   = R27;
-      Register r_argument_addr              = R28;
-      Register r_argumentcopy_addr          = R29;
-      Register r_argument_size_in_bytes     = R30;
-      Register r_frame_size                 = R23;
-
+      Register r_frame_size  = R12_scratch2; // volatile
       Label arguments_copied;
 
       // Save LR/CR to caller's C_FRAME.
       __ save_LR_CR(R0);
 
-      // Zero extend arg_argument_count.
-      __ clrldi(r_arg_argument_count, r_arg_argument_count, 32);
-
-      // Save non-volatiles GPRs to ENTRY_FRAME (not yet pushed, but it's safe).
-      __ save_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
-
       // Keep copy of our frame pointer (caller's SP).
       __ mr(r_entryframe_fp, R1_SP);
+
+      // calculate frame size
+      STATIC_ASSERT(Interpreter::logStackElementSize == 3);
+
+      // space for arguments aligned up: ((arg_count + 1) * 8) &~ 15
+      __ addi(r_frame_size, r_arg_argument_count, 1);
+      __ rldicr(r_frame_size, r_frame_size, 3, 63 - 4);
+
+      // this is the pure space for arguments (excluding alignment padding)
+      __ sldi(r_argument_size, r_arg_argument_count, 3);
+
+      __ addi(r_frame_size, r_frame_size,
+              save_nonvolatile_registers_size + frame::entry_frame_locals_size + frame::top_ijava_frame_abi_size);
+
+      // push ENTRY_FRAME
+      __ push_frame(r_frame_size, R0);
+
+      // Save non-volatiles registers to ENTRY_FRAME.
+      __ save_nonvolatile_registers(r_entryframe_fp, -(frame::entry_frame_locals_size + save_nonvolatile_registers_size),
+                                    true, SuperwordUseVSX);
 
       BLOCK_COMMENT("Push ENTRY_FRAME including arguments");
       // Push ENTRY_FRAME including arguments:
@@ -146,53 +157,24 @@ class StubGenerator: public StubCodeGenerator {
       //      F0      [TOP_IJAVA_FRAME_ABI]
       //              alignment (optional)
       //              [outgoing Java arguments]
+      //              [non-volatiles]
       //              [ENTRY_FRAME_LOCALS]
       //      F1      [C_FRAME]
       //              ...
 
-      // calculate frame size
-
-      // unaligned size of arguments
-      __ sldi(r_argument_size_in_bytes,
-                  r_arg_argument_count, Interpreter::logStackElementSize);
-      // arguments alignment (max 1 slot)
-      // FIXME: use round_to() here
-      __ andi_(r_frame_alignment_in_bytes, r_arg_argument_count, 1);
-      __ sldi(r_frame_alignment_in_bytes,
-              r_frame_alignment_in_bytes, Interpreter::logStackElementSize);
-
-      // size = unaligned size of arguments + top abi's size
-      __ addi(r_frame_size, r_argument_size_in_bytes,
-              frame::top_ijava_frame_abi_size);
-      // size += arguments alignment
-      __ add(r_frame_size,
-             r_frame_size, r_frame_alignment_in_bytes);
-      // size += size of call_stub locals
-      __ addi(r_frame_size,
-              r_frame_size, frame::entry_frame_locals_size);
-
-      // push ENTRY_FRAME
-      __ push_frame(r_frame_size, r_temp);
-
       // initialize call_stub locals (step 1)
-      __ std(r_arg_call_wrapper_addr,
-             _entry_frame_locals_neg(call_wrapper_address), r_entryframe_fp);
-      __ std(r_arg_result_addr,
-             _entry_frame_locals_neg(result_address), r_entryframe_fp);
-      __ std(r_arg_result_type,
-             _entry_frame_locals_neg(result_type), r_entryframe_fp);
+      __ std(r_arg_call_wrapper_addr, _entry_frame_locals_neg(call_wrapper_address), r_entryframe_fp);
+      __ std(r_arg_result_addr, _entry_frame_locals_neg(result_address), r_entryframe_fp);
+      __ std(r_arg_result_type, _entry_frame_locals_neg(result_type), r_entryframe_fp);
       // we will save arguments_tos_address later
-
 
       BLOCK_COMMENT("Copy Java arguments");
       // copy Java arguments
 
       // Calculate top_of_arguments_addr which will be R17_tos (not prepushed) later.
-      // FIXME: why not simply use SP+frame::top_ijava_frame_size?
-      __ addi(r_top_of_arguments_addr,
-              R1_SP, frame::top_ijava_frame_abi_size);
-      __ add(r_top_of_arguments_addr,
-             r_top_of_arguments_addr, r_frame_alignment_in_bytes);
+      __ addi(r_top_of_arguments_addr, r_entryframe_fp,
+              -(save_nonvolatile_registers_size + frame::entry_frame_locals_size));
+      __ sub(r_top_of_arguments_addr, r_top_of_arguments_addr, r_argument_size);
 
       // any arguments to copy?
       __ cmpdi(CR0, r_arg_argument_count, 0);
@@ -200,6 +182,8 @@ class StubGenerator: public StubCodeGenerator {
 
       // prepare loop and copy arguments in reverse order
       {
+        Register r_argument_addr     = R22_tmp2;
+        Register r_argumentcopy_addr = R23_tmp3;
         // init CTR with arg_argument_count
         __ mtctr(r_arg_argument_count);
 
@@ -207,8 +191,7 @@ class StubGenerator: public StubCodeGenerator {
         __ mr(r_argumentcopy_addr, r_top_of_arguments_addr);
 
         // let r_argument_addr point to last incoming java argument
-        __ add(r_argument_addr,
-                   r_arg_argument_addr, r_argument_size_in_bytes);
+        __ add(r_argument_addr, r_arg_argument_addr, r_argument_size);
         __ addi(r_argument_addr, r_argument_addr, -BytesPerWord);
 
         // now loop while CTR > 0 and copy arguments
@@ -216,10 +199,10 @@ class StubGenerator: public StubCodeGenerator {
           Label next_argument;
           __ bind(next_argument);
 
-          __ ld(r_temp, 0, r_argument_addr);
+          __ ld(R0, 0, r_argument_addr);
           // argument_addr--;
           __ addi(r_argument_addr, r_argument_addr, -BytesPerWord);
-          __ std(r_temp, 0, r_argumentcopy_addr);
+          __ std(R0, 0, r_argumentcopy_addr);
           // argumentcopy_addr++;
           __ addi(r_argumentcopy_addr, r_argumentcopy_addr, BytesPerWord);
 
@@ -234,11 +217,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       BLOCK_COMMENT("Call frame manager or native entry.");
       // Call frame manager or native entry.
-      Register r_new_arg_entry = R14;
-      assert_different_registers(r_new_arg_entry, r_top_of_arguments_addr,
-                                 r_arg_method, r_arg_thread);
-
-      __ mr(r_new_arg_entry, r_arg_entry);
+      assert_different_registers(r_arg_entry, r_top_of_arguments_addr, r_arg_method, r_arg_thread);
 
       // Register state on entry to frame manager / native entry:
       //
@@ -262,31 +241,32 @@ class StubGenerator: public StubCodeGenerator {
       assert(tos != r_arg_thread && R19_method != r_arg_thread, "trashed r_arg_thread");
 
       // Set R15_prev_state to 0 for simplifying checks in callee.
-      __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
+      __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R0);
       // Stack on entry to frame manager / native entry:
       //
       //      F0      [TOP_IJAVA_FRAME_ABI]
       //              alignment (optional)
       //              [outgoing Java arguments]
+      //              [non-volatiles]
       //              [ENTRY_FRAME_LOCALS]
       //      F1      [C_FRAME]
       //              ...
       //
 
       // global toc register
-      __ load_const_optimized(R29_TOC, MacroAssembler::global_toc(), R11_scratch1);
+      __ load_const_optimized(R29_TOC, MacroAssembler::global_toc(), R0);
       // Remember the senderSP so we interpreter can pop c2i arguments off of the stack
       // when called via a c2i.
 
       // Pass initial_caller_sp to framemanager.
       __ mr(R21_sender_SP, R1_SP);
 
-      // Do a light-weight C-call here, r_new_arg_entry holds the address
+      // Do a light-weight C-call here, r_arg_entry holds the address
       // of the interpreter entry point (frame manager or native entry)
       // and save runtime-value of LR in return_address.
-      assert(r_new_arg_entry != tos && r_new_arg_entry != R19_method && r_new_arg_entry != R16_thread,
-             "trashed r_new_arg_entry");
-      return_address = __ call_stub(r_new_arg_entry);
+      assert(r_arg_entry != tos && r_arg_entry != R19_method && r_arg_entry != R16_thread,
+             "trashed r_arg_entry");
+      return_address = __ call_stub(r_arg_entry);
     }
 
     {
@@ -298,6 +278,7 @@ class StubGenerator: public StubCodeGenerator {
       //
       //      F0      [ABI]
       //              ...
+      //              [non-volatiles]
       //              [ENTRY_FRAME_LOCALS]
       //      F1      [C_FRAME]
       //              ...
@@ -310,39 +291,38 @@ class StubGenerator: public StubCodeGenerator {
       Label ret_is_float;
       Label ret_is_double;
 
-      Register r_entryframe_fp = R30;
-      Register r_lr            = R7_ARG5;
-      Register r_cr            = R8_ARG6;
+      Register r_lr = R11_scratch1;
+      Register r_cr = R12_scratch2;
 
       // Reload some volatile registers which we've spilled before the call
       // to frame manager / native entry.
       // Access all locals via frame pointer, because we know nothing about
       // the topmost frame's size.
-      __ ld(r_entryframe_fp, _abi0(callers_sp), R1_SP);
+      __ ld(r_entryframe_fp, _abi0(callers_sp), R1_SP); // restore after call
       assert_different_registers(r_entryframe_fp, R3_RET, r_arg_result_addr, r_arg_result_type, r_cr, r_lr);
-      __ ld(r_arg_result_addr,
-            _entry_frame_locals_neg(result_address), r_entryframe_fp);
-      __ ld(r_arg_result_type,
-            _entry_frame_locals_neg(result_type), r_entryframe_fp);
+      __ ld(r_arg_result_addr, _entry_frame_locals_neg(result_address), r_entryframe_fp);
+      __ ld(r_arg_result_type, _entry_frame_locals_neg(result_type), r_entryframe_fp);
       __ ld(r_cr, _abi0(cr), r_entryframe_fp);
       __ ld(r_lr, _abi0(lr), r_entryframe_fp);
-
-      // pop frame and restore non-volatiles, LR and CR
-      __ mr(R1_SP, r_entryframe_fp);
-      __ pop_cont_fastpath();
-      __ mtcr(r_cr);
-      __ mtlr(r_lr);
+      __ mtcr(r_cr); // restore CR
+      __ mtlr(r_lr); // restore LR
 
       // Store result depending on type. Everything that is not
       // T_OBJECT, T_LONG, T_FLOAT, or T_DOUBLE is treated as T_INT.
-      __ cmpwi(CR0, r_arg_result_type, T_OBJECT);
-      __ cmpwi(CR1, r_arg_result_type, T_LONG);
-      __ cmpwi(CR5, r_arg_result_type, T_FLOAT);
-      __ cmpwi(CR6, r_arg_result_type, T_DOUBLE);
+      // Using volatile CRs.
+      __ cmpwi(CR1, r_arg_result_type, T_OBJECT);
+      __ cmpwi(CR5, r_arg_result_type, T_LONG);
+      __ cmpwi(CR6, r_arg_result_type, T_FLOAT);
+      __ cmpwi(CR7, r_arg_result_type, T_DOUBLE);
+
+      __ pop_cont_fastpath(); // kills CR0, uses R16_thread
 
       // restore non-volatile registers
-      __ restore_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
+      __ restore_nonvolatile_registers(r_entryframe_fp, -(frame::entry_frame_locals_size + save_nonvolatile_registers_size),
+                                       true, SuperwordUseVSX);
 
+      // pop frame
+      __ mr(R1_SP, r_entryframe_fp);
 
       // Stack on exit from call_stub:
       //
@@ -351,24 +331,18 @@ class StubGenerator: public StubCodeGenerator {
       //
       //  no call_stub frames left.
 
-      // All non-volatiles have been restored at this point!!
-      assert(R3_RET == R3, "R3_RET should be R3");
-
-      __ beq(CR0, ret_is_object);
-      __ beq(CR1, ret_is_long);
-      __ beq(CR5, ret_is_float);
-      __ beq(CR6, ret_is_double);
+      __ beq(CR1, ret_is_object);
+      __ beq(CR5, ret_is_long);
+      __ beq(CR6, ret_is_float);
+      __ beq(CR7, ret_is_double);
 
       // default:
       __ stw(R3_RET, 0, r_arg_result_addr);
       __ blr(); // return to caller
 
       // case T_OBJECT:
-      __ bind(ret_is_object);
-      __ std(R3_RET, 0, r_arg_result_addr);
-      __ blr(); // return to caller
-
       // case T_LONG:
+      __ bind(ret_is_object);
       __ bind(ret_is_long);
       __ std(R3_RET, 0, r_arg_result_addr);
       __ blr(); // return to caller
@@ -546,6 +520,177 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Computes the Galois/Counter Mode (GCM) product and reduction.
+  //
+  // This function performs polynomial multiplication of the subkey H with
+  // the current GHASH state using vectorized polynomial multiplication (`vpmsumd`).
+  // The subkey H is divided into lower, middle, and higher halves.
+  // The multiplication results are reduced using `vConstC2` to stay within GF(2^128).
+  // The final computed value is stored back into `vState`.
+  static void computeGCMProduct(MacroAssembler* _masm,
+                                VectorRegister vLowerH, VectorRegister vH, VectorRegister vHigherH,
+                                VectorRegister vConstC2, VectorRegister vZero, VectorRegister vState,
+                                VectorRegister vLowProduct, VectorRegister vMidProduct, VectorRegister vHighProduct,
+                                VectorRegister vReducedLow, VectorRegister vTmp8, VectorRegister vTmp9,
+                                VectorRegister vCombinedResult, VectorRegister vSwappedH) {
+    __ vxor(vH, vH, vState);
+    __ vpmsumd(vLowProduct, vLowerH, vH);                          // L : Lower Half of subkey H
+    __ vpmsumd(vMidProduct, vSwappedH, vH);                        // M : Combined halves of subkey H
+    __ vpmsumd(vHighProduct, vHigherH, vH);                        // H : Higher Half of subkey H
+    __ vpmsumd(vReducedLow, vLowProduct, vConstC2);                // Reduction
+    __ vsldoi(vTmp8, vMidProduct, vZero, 8);                       // mL : Extract the lower 64 bits of M
+    __ vsldoi(vTmp9, vZero, vMidProduct, 8);                       // mH : Extract the higher 64 bits of M
+    __ vxor(vLowProduct, vLowProduct, vTmp8);                      // LL + mL : Partial result for lower half
+    __ vxor(vHighProduct, vHighProduct, vTmp9);                    // HH + mH : Partial result for upper half
+    __ vsldoi(vLowProduct, vLowProduct, vLowProduct, 8);           // Swap
+    __ vxor(vLowProduct, vLowProduct, vReducedLow);
+    __ vsldoi(vCombinedResult, vLowProduct, vLowProduct, 8);       // Swap
+    __ vpmsumd(vLowProduct, vLowProduct, vConstC2);                // Reduction using constant
+    __ vxor(vCombinedResult, vCombinedResult, vHighProduct);       // Combine reduced Low & High products
+    __ vxor(vState, vLowProduct, vCombinedResult);
+  }
+
+  // Generate stub for ghash process blocks.
+  //
+  // Arguments for generated stub:
+  //      state:    R3_ARG1 (long[] state)
+  //      subkeyH:  R4_ARG2 (long[] subH)
+  //      data:     R5_ARG3 (byte[] data)
+  //      blocks:   R6_ARG4 (number of 16-byte blocks to process)
+  //
+  // The polynomials are processed in bit-reflected order for efficiency reasons.
+  // This optimization leverages the structure of the Galois field arithmetic
+  // to minimize the number of bit manipulations required during multiplication.
+  // For an explanation of how this works, refer :
+  // Vinodh Gopal, Erdinc Ozturk, Wajdi Feghali, Jim Guilford, Gil Wolrich,
+  // Martin Dixon. "Optimized Galois-Counter-Mode Implementation on Intel®
+  // Architecture Processor"
+  // http://web.archive.org/web/20130609111954/http://www.intel.com/content/dam/www/public/us/en/documents/white-papers/communications-ia-galois-counter-mode-paper.pdf
+  //
+  //
+  address generate_ghash_processBlocks() {
+    StubCodeMark mark(this, "StubRoutines", "ghash");
+    address start = __ function_entry();
+
+    // Registers for parameters
+    Register state = R3_ARG1;                     // long[] state
+    Register subkeyH = R4_ARG2;                   // long[] subH
+    Register data = R5_ARG3;                      // byte[] data
+    Register blocks = R6_ARG4;
+    Register temp1 = R8;
+    // Vector Registers
+    VectorRegister vZero = VR0;
+    VectorRegister vH = VR1;
+    VectorRegister vLowerH = VR2;
+    VectorRegister vHigherH = VR3;
+    VectorRegister vLowProduct = VR4;
+    VectorRegister vMidProduct = VR5;
+    VectorRegister vHighProduct = VR6;
+    VectorRegister vReducedLow = VR7;
+    VectorRegister vTmp8 = VR8;
+    VectorRegister vTmp9 = VR9;
+    VectorRegister vTmp10 = VR10;
+    VectorRegister vSwappedH = VR11;
+    VectorRegister vTmp12 = VR12;
+    VectorRegister loadOrder = VR13;
+    VectorRegister vHigh = VR14;
+    VectorRegister vLow = VR15;
+    VectorRegister vState = VR16;
+    VectorRegister vPerm = VR17;
+    VectorRegister vCombinedResult = VR18;
+    VectorRegister vConstC2 = VR19;
+
+    __ li(temp1, 0xc2);
+    __ sldi(temp1, temp1, 56);
+    __ vspltisb(vZero, 0);
+    __ mtvrd(vConstC2, temp1);
+    __ lxvd2x(vH->to_vsr(), subkeyH);
+    __ lxvd2x(vState->to_vsr(), state);
+    // Operations to obtain lower and higher bytes of subkey H.
+    __ vspltisb(vReducedLow, 1);
+    __ vspltisb(vTmp10, 7);
+    __ vsldoi(vTmp8, vZero, vReducedLow, 1);            // 0x1
+    __ vor(vTmp8, vConstC2, vTmp8);                     // 0xC2...1
+    __ vsplt(vTmp9, 0, vH);                             // MSB of H
+    __ vsl(vH, vH, vReducedLow);                        // Carry = H<<7
+    __ vsrab(vTmp9, vTmp9, vTmp10);
+    __ vand(vTmp9, vTmp9, vTmp8);                       // Carry
+    __ vxor(vTmp10, vH, vTmp9);
+    __ vsldoi(vConstC2, vZero, vConstC2, 8);
+    __ vsldoi(vSwappedH, vTmp10, vTmp10, 8);            // swap Lower and Higher Halves of subkey H
+    __ vsldoi(vLowerH, vZero, vSwappedH, 8);            // H.L
+    __ vsldoi(vHigherH, vSwappedH, vZero, 8);           // H.H
+#ifdef ASSERT
+    __ cmpwi(CR0, blocks, 0);                           // Compare 'blocks' (R6_ARG4) with zero
+    __ asm_assert_ne("blocks should NOT be zero");
+#endif
+    __ clrldi(blocks, blocks, 32);
+    __ mtctr(blocks);
+    __ lvsl(loadOrder, temp1);
+#ifdef VM_LITTLE_ENDIAN
+    __ vspltisb(vTmp12, 0xf);
+    __ vxor(loadOrder, loadOrder, vTmp12);
+#define LE_swap_bytes(x) __ vec_perm(x, x, x, loadOrder)
+#else
+#define LE_swap_bytes(x)
+#endif
+
+    // This code performs Karatsuba multiplication in Galois fields to compute the GHASH operation.
+    //
+    // The Karatsuba method breaks the multiplication of two 128-bit numbers into smaller parts,
+    // performing three 128-bit multiplications and combining the results efficiently.
+    //
+    // (C1:C0) = A1*B1, (D1:D0) = A0*B0, (E1:E0) = (A0+A1)(B0+B1)
+    // (A1:A0)(B1:B0) = C1:(C0+C1+D1+E1):(D1+C0+D0+E0):D0
+    //
+    // Inputs:
+    // - vH:       The data vector (state), containing both B0 (lower half) and B1 (higher half).
+    // - vLowerH:  Lower half of the subkey H (A0).
+    // - vHigherH: Higher half of the subkey H (A1).
+    // - vConstC2: Constant used for reduction (for final processing).
+    //
+    // References:
+    // Shay Gueron, Michael E. Kounavis.
+    // "Intel® Carry-Less Multiplication Instruction and its Usage for Computing the GCM Mode"
+    // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
+    //
+    Label L_aligned_loop, L_store, L_unaligned_loop, L_initialize_unaligned_loop;
+    __ andi(temp1, data, 15);
+    __ cmpwi(CR0, temp1, 0);
+    __ bne(CR0, L_initialize_unaligned_loop);
+
+    __ bind(L_aligned_loop);
+      __ lvx(vH, temp1, data);
+      LE_swap_bytes(vH);
+      computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
+                    vLowProduct, vMidProduct, vHighProduct, vReducedLow, vTmp8, vTmp9, vCombinedResult, vSwappedH);
+      __ addi(data, data, 16);
+    __ bdnz(L_aligned_loop);
+    __ b(L_store);
+
+    __ bind(L_initialize_unaligned_loop);
+    __ li(temp1, 0);
+    __ lvsl(vPerm, temp1, data);
+    __ lvx(vHigh, temp1, data);
+#ifdef VM_LITTLE_ENDIAN
+    __ vspltisb(vTmp12, -1);
+    __ vxor(vPerm, vPerm, vTmp12);
+#endif
+    __ bind(L_unaligned_loop);
+      __ addi(data, data, 16);
+      __ lvx(vLow, temp1, data);
+      __ vec_perm(vH, vHigh, vLow, vPerm);
+      computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
+                    vLowProduct, vMidProduct, vHighProduct, vReducedLow, vTmp8, vTmp9, vCombinedResult, vSwappedH);
+      __ vmr(vHigh, vLow);
+    __ bdnz(L_unaligned_loop);
+
+    __ bind(L_store);
+    __ stxvd2x(vState->to_vsr(), state);
+    __ blr();
+
+    return start;
+  }
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
   //
   // The code is implemented(ported from sparc) as we believe it benefits JVM98, however
@@ -2383,6 +2528,105 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
+  // Helper for generate_unsafe_setmemory
+  //
+  // Atomically fill an array of memory using 1-, 2-, 4-, or 8-byte chunks and return.
+  static void do_setmemory_atomic_loop(int elem_size, Register dest, Register size, Register byteVal,
+                                       MacroAssembler *_masm) {
+
+    Label L_Loop, L_Tail; // 2x unrolled loop
+
+    // Propagate byte to required width
+    if (elem_size > 1) __ rldimi(byteVal, byteVal,  8, 64 - 2 *  8);
+    if (elem_size > 2) __ rldimi(byteVal, byteVal, 16, 64 - 2 * 16);
+    if (elem_size > 4) __ rldimi(byteVal, byteVal, 32, 64 - 2 * 32);
+
+    __ srwi_(R0, size, exact_log2(2 * elem_size)); // size is a 32 bit value
+    __ beq(CR0, L_Tail);
+    __ mtctr(R0);
+
+    __ align(32); // loop alignment
+    __ bind(L_Loop);
+    __ store_sized_value(byteVal, 0, dest, elem_size);
+    __ store_sized_value(byteVal, elem_size, dest, elem_size);
+    __ addi(dest, dest, 2 * elem_size);
+    __ bdnz(L_Loop);
+
+    __ bind(L_Tail);
+    __ andi_(R0, size, elem_size);
+    __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
+    __ store_sized_value(byteVal, 0, dest, elem_size);
+    __ blr();
+  }
+
+  //
+  //  Generate 'unsafe' set memory stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t (# bytes) argument instead of an element count.
+  //
+  //  Input:
+  //    R3_ARG1   - destination array address
+  //    R4_ARG2   - byte count (size_t)
+  //    R5_ARG3   - byte value
+  //
+  address generate_unsafe_setmemory(address unsafe_byte_fill) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, StubGenStubId::unsafe_setmemory_id);
+    address start = __ function_entry();
+
+    // bump this on entry, not on exit:
+    // inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
+
+    {
+      Label L_fill8Bytes, L_fill4Bytes, L_fillBytes;
+
+      const Register dest = R3_ARG1;
+      const Register size = R4_ARG2;
+      const Register byteVal = R5_ARG3;
+      const Register rScratch1 = R6;
+
+      // fill_to_memory_atomic(unsigned char*, unsigned long, unsigned char)
+
+      // Check for pointer & size alignment
+      __ orr(rScratch1, dest, size);
+
+      __ andi_(R0, rScratch1, 7);
+      __ beq(CR0, L_fill8Bytes);
+
+      __ andi_(R0, rScratch1, 3);
+      __ beq(CR0, L_fill4Bytes);
+
+      __ andi_(R0, rScratch1, 1);
+      __ bne(CR0, L_fillBytes);
+
+      // Mark remaining code as such which performs Unsafe accesses.
+      UnsafeMemoryAccessMark umam(this, true, false);
+
+      // At this point, we know the lower bit of size is zero and a
+      // multiple of 2
+      do_setmemory_atomic_loop(2, dest, size, byteVal, _masm);
+
+      __ align(32);
+      __ bind(L_fill8Bytes);
+      // At this point, we know the lower 3 bits of size are zero and a
+      // multiple of 8
+      do_setmemory_atomic_loop(8, dest, size, byteVal, _masm);
+
+      __ align(32);
+      __ bind(L_fill4Bytes);
+      // At this point, we know the lower 2 bits of size are zero and a
+      // multiple of 4
+      do_setmemory_atomic_loop(4, dest, size, byteVal, _masm);
+
+      __ align(32);
+      __ bind(L_fillBytes);
+      do_setmemory_atomic_loop(1, dest, size, byteVal, _masm);
+    }
+
+    return start;
+  }
+
+
   //
   //  Generate generic array copy stubs
   //
@@ -3207,6 +3451,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_arrayof_jshort_fill = generate_fill(StubGenStubId::arrayof_jshort_fill_id);
       StubRoutines::_arrayof_jint_fill   = generate_fill(StubGenStubId::arrayof_jint_fill_id);
     }
+    StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory(StubRoutines::_jbyte_fill);
 #endif
   }
 
@@ -4926,6 +5171,10 @@ void generate_lookup_secondary_supers_table_stub() {
     if (VM_Version::supports_data_cache_line_flush()) {
       StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
       StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
+    }
+
+    if (UseGHASHIntrinsics) {
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
 
     if (UseAESIntrinsics) {
