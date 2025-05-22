@@ -89,7 +89,6 @@ public class WeakReferenceTest {
                 return new String[] {
                     "-Xlog:gc,cds+class=debug",
                     "-XX:AOTInitTestClass=" + mainClass,
-                    "-Xlog:cds+map,cds+map+oops=trace:file=cds.oops.txt:none:filesize=0",
                 };
             } else {
                 return new String[] {

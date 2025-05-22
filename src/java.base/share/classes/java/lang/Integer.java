@@ -435,9 +435,9 @@ public final class Integer extends Number
         byte coder = COMPACT_STRINGS ? LATIN1 : UTF16;
         byte[] buf = (byte[]) Unsafe.getUnsafe().allocateUninitializedArray(byte.class, size << coder);
         if (coder == LATIN1) {
-            DecimalDigits.getCharsLatin1(i, size, buf);
+            DecimalDigits.uncheckedGetCharsLatin1(i, size, buf);
         } else {
-            DecimalDigits.getCharsUTF16(i, size, buf);
+            DecimalDigits.uncheckedGetCharsUTF16(i, size, buf);
         }
         return new String(buf, coder);
     }
