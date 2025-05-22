@@ -632,43 +632,31 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
 
   auto fn_vec_op = [this](int opcode, const VectorRegister &dst, const VectorRegister &a, const VectorRegister &b) {
     switch(opcode) {
-      case Op_AddReductionVI:
-        vadduwm(dst, a, b); break;
-      case Op_MulReductionVI:
-        vmuluwm(dst, a , b); break;
-      case Op_AndReductionV:
-        vand(dst, a, b); break;
-      case Op_OrReductionV:
-        vor(dst, a, b); break;
-      case Op_XorReductionV:
-        vxor(dst, a, b); break;
-      case Op_MinReductionV:
-        vminsw(dst, a, b); break;
-      case Op_MaxReductionV:
-        vmaxsw(dst, a, b); break;
+      case Op_AddReductionVI: vadduwm(dst, a, b);  break;
+      case Op_MulReductionVI: vmuluwm(dst, a , b); break;
+      case Op_AndReductionV:  vand(dst, a, b);     break;
+      case Op_OrReductionV:   vor(dst, a, b);      break;
+      case Op_XorReductionV:  vxor(dst, a, b);     break;
+      case Op_MinReductionV:  vminsw(dst, a, b);   break;
+      case Op_MaxReductionV:  vmaxsw(dst, a, b);   break;
       default: assert(false, "wrong opcode");
     }
   };
 
-  auto fn_scalar_op = [this](int opcode, const Register &dst, const Register &src) {
+  auto fn_scalar_op = [this](int opcode, const Register &dst, const Register &a, const Register &b) {
     switch (opcode) {
-      case Op_AddReductionVI:
-        add(dst, src, dst); break;
-      case Op_MulReductionVI:
-        mullw(dst, src, dst); break;
-      case Op_AndReductionV:
-        andr(dst, src, dst); break;
-      case Op_OrReductionV:
-        orr(dst, src, dst); break;
-      case Op_XorReductionV:
-        xorr(dst, src, dst); break;
+      case Op_AddReductionVI: add(dst, a, b);   break;
+      case Op_MulReductionVI: mullw(dst, a, b); break;
+      case Op_AndReductionV:  andr(dst, a, b);  break;
+      case Op_OrReductionV:   orr(dst, a, b);   break;
+      case Op_XorReductionV:  xorr(dst, a, b);  break;
       case Op_MinReductionV:
-        cmpw(CR0, src, dst);
-        isel(dst, CR0, Assembler::less, /*invert*/false, src, dst);
+        cmpw(CR0, a, b);
+        isel(dst, CR0, Assembler::less, /*invert*/false, a, b);
         break;
       case Op_MaxReductionV:
-        cmpw(CR0, src, dst);
-        isel(dst, CR0, Assembler::greater, /*invert*/false, src, dst);
+        cmpw(CR0, a, b);
+        isel(dst, CR0, Assembler::greater, /*invert*/false, a, b);
         break;
       default: assert(false, "wrong opcode");
     }
@@ -679,7 +667,7 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
   fn_vec_op(opcode, vTmp2, vSrc, vTmp1);  // vTmp2 <- [op(i0,i2), op(i1,i3), op(i2,i0), op(i3,i1)]
   vsldoi(vTmp1, vTmp2, vTmp2, 4);         // vTmp1 <- [op(i1,i3), op(i2,i0), op(i3,i1), op(i0,i2)]
   fn_vec_op(opcode, vTmp1, vTmp1, vTmp2); // vTmp1 <- [op(i0,i1,i2,i3), op(i0,i1,i2,i3), op(i0,i1,i2,i3), op(i0,i1,i2,i3)]
-  mfvsrwz(dst, vTmp1.to_vsr());           //
-  fn_scalar_op(opcode, dst, iSrc);        // dst <- op(iSrc, dst)
+  mfvsrwz(R0, vTmp1.to_vsr());            // R0    <- op(i0,i1,i2,i3)
+  fn_scalar_op(opcode, dst, iSrc, R0);    // dst   <- op(iSrc, R0)
 }
 
