@@ -161,7 +161,7 @@ public class ServerStopTerminationTest {
 
         // Complete the exchange 10 second into the future.
         // Runs in parallel, so won't block the server stop
-        final Duration exchangeDuration = Duration.ofSeconds(Utils.adjustTimeout(5));
+        final Duration exchangeDuration = Duration.ofSeconds(Utils.adjustTimeout(10));
         completeExchange(exchangeDuration);
         log("Complete Exchange triggered");
 

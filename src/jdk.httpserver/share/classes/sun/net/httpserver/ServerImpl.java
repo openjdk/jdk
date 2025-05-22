@@ -225,17 +225,17 @@ class ServerImpl {
     }
 
     public final boolean isFinishing() {
-        return finishedLatch.getCount()==0;
+        return finishedLatch.getCount() == 0;
     }
 
     /**
      * This method stops the server by adding a stop request event and
      * waiting for the server until the event is triggered or until the maximum delay is triggered.
      * <p>
-     * This ensures that the server is stopped immediately after all exchanges are complete,
-     * but still stops as soon as maximum delay is reached.
+     * This ensures that the server is stopped immediately after all exchanges are complete. HttpConnections will be forcefully closed if active exchanges do not
+     * complete within the imparted delay.
      *
-     * @param delay maximum delay in stopping the server
+     * @param delay maximum delay to wait for exchanges completion, in seconds
      */
     public void stop (int delay) {
         if (delay < 0) {
@@ -486,6 +486,7 @@ class ServerImpl {
         }
 
         public void run() {
+            // isFinishing() will be true when there are no active exchange after terminating
              while (!isFinishing()) {
                 try {
                     List<Event> list = null;
