@@ -266,11 +266,23 @@ class FieldInfoStream : AllStatic {
   friend class JavaFieldStream;
   friend class FieldStreamBase;
   friend class ClassFileParser;
+  friend class FieldInfoReader;
 
- public:
+ private:
   // Don't generate the table for small classes at all.
   static const int SEARCH_TABLE_THRESHOLD = 16;
 
+  static inline int search_table_position_width(int stream_length) {
+    assert(stream_length <= (1 << 24), "stream too long");
+    return stream_length > UINT16_MAX + 1 ? 3 : 2;
+  }
+  static inline int search_table_index_width(int java_fields) {
+    assert(java_fields <= (1 << 16), "too many fields");
+    return java_fields > UINT8_MAX + 1 ? 2 : 1;
+  }
+  static int compare_name_and_sig(const Symbol* n1, const Symbol* s1, const Symbol* n2, const Symbol* s2);
+
+ public:
   static int num_java_fields(const Array<u1>* fis);
   static int num_injected_java_fields(const Array<u1>* fis);
   static int num_total_fields(const Array<u1>* fis);
@@ -280,6 +292,8 @@ class FieldInfoStream : AllStatic {
   static Array<u1>* create_search_table(ConstantPool* cp, const Array<u1>* fis, ClassLoaderData* loader_data, TRAPS);
   static GrowableArray<FieldInfo>* create_FieldInfoArray(const Array<u1>* fis, int* java_fields_count, int* injected_fields_count);
   static void print_from_fieldinfo_stream(Array<u1>* fis, outputStream* os, ConstantPool* cp);
+
+  DEBUG_ONLY(static void validate_search_table(ConstantPool* cp, const Array<u1>* fis, const Array<u1> *search_table);)
 };
 
 class FieldStatus {

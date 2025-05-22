@@ -2706,6 +2706,8 @@ void InstanceKlass::remove_unshareable_info() {
   DEBUG_ONLY(_shared_class_load_count = 0);
 
   remove_unshareable_flags();
+
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
 void InstanceKlass::remove_unshareable_flags() {
@@ -2812,6 +2814,8 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation() && !is_value_based()) {
     set_is_value_based();
   }
+
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
 // Check if a class or any of its supertypes has a version older than 50.

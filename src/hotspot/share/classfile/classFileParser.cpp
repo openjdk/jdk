@@ -3748,6 +3748,8 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_permitted_subclasses(_permitted_subclasses);
   this_klass->set_record_components(_record_components);
 
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_cp, _fieldinfo_stream, _fieldinfo_search_table));
+
   // Delay the setting of _local_interfaces and _transitive_interfaces until after
   // initialize_supers() in fill_instance_klass(). It is because the _local_interfaces could
   // be shared with _transitive_interfaces and _transitive_interfaces may be shared with

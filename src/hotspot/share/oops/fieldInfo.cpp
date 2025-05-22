@@ -119,6 +119,11 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
   return fis;
 }
 
+int FieldInfoStream::compare_name_and_sig(const Symbol* n1, const Symbol* s1, const Symbol* n2, const Symbol* s2) {
+  int cmp = n1->fast_compare(n2);
+  return cmp != 0 ? cmp : s1->fast_compare(s2);
+}
+
 Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1>* fis, ClassLoaderData* loader_data, TRAPS) {
   FieldInfoReader r(fis);
   int java_fields;
@@ -131,8 +136,8 @@ Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1
   // We use fixed width to let us skip through the table during binary search.
   // With the max of 65536 fields (and at most tens of bytes per field),
   // 3-byte offsets would suffice. In the common case with < 64kB stream 2-byte offsets are enough.
-  int position_width = fis->length() > UINT16_MAX + 1 ? 3 : 2;
-  int index_width = java_fields > UINT8_MAX + 1 ? 2 : 1;
+  int position_width = search_table_position_width(fis->length());
+  int index_width = search_table_index_width(java_fields);
   int item_width = position_width + index_width;
 
   Array<u1>* table = MetadataFactory::new_array<u1>(loader_data, java_fields * item_width, CHECK_NULL);
@@ -161,13 +166,9 @@ Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1
     positions[i].index = i;
   }
   auto compare_pair = [](const void *v1, const void *v2) {
-    int name_result = reinterpret_cast<const field_pos_t *>(v1)->name->fast_compare(
-                      reinterpret_cast<const field_pos_t *>(v2)->name);
-    if (name_result != 0) {
-      return name_result;
-    }
-    return reinterpret_cast<const field_pos_t *>(v1)->signature->fast_compare(
-           reinterpret_cast<const field_pos_t *>(v2)->signature);
+    const field_pos_t *p1 = reinterpret_cast<const field_pos_t *>(v1);
+    const field_pos_t *p2 = reinterpret_cast<const field_pos_t *>(v2);
+    return compare_name_and_sig(p1->name, p1->signature, p2->name, p2->signature);
   };
   qsort(positions, java_fields, sizeof(field_pos_t), compare_pair);
 
@@ -216,12 +217,42 @@ void FieldInfoStream::print_from_fieldinfo_stream(Array<u1>* fis, outputStream* 
   }
 }
 
+#ifdef ASSERT
+void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* fis, const Array<u1> *search_table) {
+  if (search_table == nullptr) {
+    return;
+  }
+  UNSIGNED5::Reader<const u1*, int> reader(fis->data(), fis->length());
+  int java_fields = reader.next_uint();
+  int position_width = search_table_position_width(fis->length());
+  int item_width = position_width  + search_table_index_width(java_fields);
+  auto read_position = position_width == 3 ?
+    [](const u1 *ptr) { return (int) ptr[0] + (((int) ptr[1] << 8)) + (((int) ptr[2]) << 16); } :
+    [](const u1 *ptr) { return (int) *reinterpret_cast<const u2 *>(ptr); };
+
+  const Symbol* prev_name = nullptr;
+  const Symbol* prev_sig = nullptr;
+  const u1* ptr = search_table->data();
+  for (int i = 0; i < java_fields; ++i, ptr += item_width) {
+    reader.set_position(read_position(ptr));
+    const Symbol* name = cp->symbol_at(reader.next_uint());
+    const Symbol* signature = cp->symbol_at(reader.next_uint());
+
+    if (prev_name != nullptr && prev_sig != nullptr) {
+      assert(compare_name_and_sig(name, signature, prev_name, prev_sig) > 0, "not sorted");
+    }
+    prev_name = name;
+    prev_sig = signature;
+  }
+}
+#endif
+
 int FieldInfoReader::search_table_lookup(const Array<u1> *search_table, const Symbol *name, const Symbol *signature, ConstantPool *cp, int java_fields) {
   UNSIGNED5::Reader<const u1*, int> r2(_r.array());
   int low = 0, high = java_fields - 1;
-  int position_width = _r.limit() > UINT16_MAX + 1 ? 3 : 2;
-  int item_width = position_width  + (java_fields > UINT8_MAX + 1 ? 2 : 1);
-  auto read_position = _r.limit() > UINT16_MAX + 1 ?
+  int position_width = FieldInfoStream::search_table_position_width(_r.limit());
+  int item_width = position_width  + FieldInfoStream::search_table_index_width(java_fields);
+  auto read_position = position_width == 3 ?
     [](const u1 *ptr) { return (int) ptr[0] + (((int) ptr[1] << 8)) + (((int) ptr[2]) << 16); } :
     [](const u1 *ptr) { return (int) *reinterpret_cast<const u2 *>(ptr); };
   while (low <= high) {
@@ -232,24 +263,13 @@ int FieldInfoReader::search_table_lookup(const Array<u1> *search_table, const Sy
     Symbol *mid_name = cp->symbol_at(checked_cast<u2>(r2.next_uint()));
     Symbol *mid_sig = cp->symbol_at(checked_cast<u2>(r2.next_uint()));
 
-    if (mid_name == name && mid_sig == signature) {
+    int cmp = FieldInfoStream::compare_name_and_sig(name, signature, mid_name, mid_sig);
+    if (cmp == 0) {
       _r.set_position(position);
-      _next_index = java_fields > UINT8_MAX + 1 ?
+      _next_index = item_width == 2 ?
         *reinterpret_cast<const u2 *>(ptr + position_width) : ptr[position_width];
       return _next_index;
-    }
-
-    int cmp = name->fast_compare(mid_name);
-    if (cmp < 0) {
-      high = mid - 1;
-      continue;
-    } else if (cmp > 0) {
-      low = mid + 1;
-      continue;
-    }
-    cmp = signature->fast_compare(mid_sig);
-    assert(cmp != 0, "Equality check above did not match");
-    if (cmp < 0) {
+    } else if (cmp < 0) {
       high = mid - 1;
     } else {
       low = mid + 1;
