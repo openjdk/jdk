@@ -844,24 +844,6 @@ void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
   }
 }
 
-void JVMCINMethodData::clear_nmethod_mirror_index() {
-  _nmethod_mirror_index = -1;
-}
-
-void JVMCINMethodData::relocate_nmethod_mirror(nmethod* nm) {
-  oop nmethod_mirror = get_nmethod_mirror(nm, /* phantom_ref */ false);
-  if (nmethod_mirror == nullptr) {
-    return;
-  }
-
-  JVMCIEnv* jvmciEnv = nullptr;
-  HotSpotJVMCI::InstalledCode::set_address(jvmciEnv, nmethod_mirror, (jlong)(nm));
-  HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, (jlong)(nm->entry_point()));
-  HotSpotJVMCI::HotSpotInstalledCode::set_size(jvmciEnv, nmethod_mirror, (jlong)(nm->size()));
-  HotSpotJVMCI::HotSpotInstalledCode::set_codeStart(jvmciEnv, nmethod_mirror, (jlong)(nm->code_begin()));
-  HotSpotJVMCI::HotSpotInstalledCode::set_codeSize(jvmciEnv, nmethod_mirror, (jlong)(nm->code_size()));
-}
-
 // Handles to objects in the Hotspot heap.
 static OopStorage* object_handles() {
   return Universe::vm_global();

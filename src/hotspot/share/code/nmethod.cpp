@@ -1576,14 +1576,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   if (nm_copy->method() != nullptr && nm_copy->method()->code() == this && nm_copy->make_in_use()) {
     methodHandle mh(Thread::current(), nm_copy->method());
     nm_copy->method()->set_code(mh, nm_copy);
-
-#if INCLUDE_JVMCI
-    if (jvmci_nmethod_data() != nullptr) {
-      nm_copy->jvmci_nmethod_data()->relocate_nmethod_mirror(nm_copy);
-      jvmci_nmethod_data()->clear_nmethod_mirror_index();
-    }
-#endif
-
     make_not_used();
   }
 
@@ -1591,6 +1583,10 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 }
 
 bool nmethod::is_relocatable() {
+  if (is_compiled_by_jvmci()) {
+    return false;
+  }
+
   if (is_marked_for_deoptimization()) {
     return false;
   }
