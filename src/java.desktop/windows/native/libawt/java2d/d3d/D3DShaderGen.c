@@ -55,8 +55,7 @@ static char *strHeaderFile = "D3DShaders.h";
     (((flags) & (flagbit)) != 0)
 
 // REMIND
-//#define J2dTraceLn(a, b) fprintf(stderr, "%s\n", b);
-//#define J2dTraceLn(a, b, c) fprintf(stderr, b, c);
+//#define J2dTraceLn(level, ...) (fprintf(stderr, __VA_ARGS__), fprintf(stderr, "\n"));
 #define J2dTraceLn(level, ...)
 
 /************************* General shader support ***************************/
