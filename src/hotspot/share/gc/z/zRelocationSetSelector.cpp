@@ -57,7 +57,7 @@ ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
     _stats() {}
 
 bool ZRelocationSetSelectorGroup::is_disabled() {
-  // Medium pages are disabled when their page size is zero
+  // Only medium pages can be disabled
   return _page_type == ZPageType::medium && !ZPageSizeMediumEnabled;
 }
 
