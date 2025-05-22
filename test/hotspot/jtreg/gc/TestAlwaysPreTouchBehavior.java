@@ -30,7 +30,7 @@ package gc;
  * @summary tests AlwaysPreTouch
  * @requires vm.gc.Parallel
  * @requires os.maxMemory > 2G
- * @requires vm.debug != true
+ * @requires !vm.debug
  * @requires os.family == "linux"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -43,7 +43,7 @@ package gc;
  * @summary tests AlwaysPreTouch
  * @requires vm.gc.Serial
  * @requires os.maxMemory > 2G
- * @requires vm.debug != true
+ * @requires !vm.debug
  * @requires os.family == "linux"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -56,7 +56,7 @@ package gc;
  * @summary tests AlwaysPreTouch
  * @requires vm.gc.Shenandoah
  * @requires os.maxMemory > 2G
- * @requires vm.debug != true
+ * @requires !vm.debug
  * @requires os.family == "linux"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -69,7 +69,7 @@ package gc;
  * @summary tests AlwaysPreTouch
  * @requires vm.gc.G1
  * @requires os.maxMemory > 2G
- * @requires vm.debug != true
+ * @requires !vm.debug
  * @requires os.family == "linux"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -82,7 +82,7 @@ package gc;
  * @summary tests AlwaysPreTouch
  * @requires vm.gc.Z
  * @requires os.maxMemory > 2G
- * @requires vm.debug != true
+ * @requires !vm.debug
  * @requires os.family == "linux"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -95,14 +95,13 @@ package gc;
  * @summary tests AlwaysPreTouch
  * @requires vm.gc.Epsilon
  * @requires os.maxMemory > 2G
- * @requires vm.debug != true
+ * @requires !vm.debug
  * @requires os.family == "linux"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xmx256m -Xms256m -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
  */
-
 
 import jdk.test.lib.Asserts;
 
@@ -123,8 +122,9 @@ public class TestAlwaysPreTouchBehavior {
     //    - specifying @requires os.maxMemory > 2G
     //    - checking  if the memory still available on the host machine after starting the process is lower than a
     //      certain required threshold; if it is, we take this as a sign of memory pressure and disregard test errors.
-    //    - restricting the test to non-debug JVMs, since debug JVMs accrue much more non-heap RSS, and RSS is generally
-    //      more unpredictable.
+    //    - we only run this test with release JVMs - debug JVMs have a higher and more unpredictable RSS footprint
+    //      and therefore would require a larger heap for a clear difference between non-pretouch and pretouch; also,
+    //      there should not be much difference between debug and release code.
     //
     //    Obviously, all of this is not bulletproof and only useful on Linux:
     //    - On MacOS, os::available_memory() drastically underreports available memory, so this technique would almost
@@ -146,9 +146,9 @@ public class TestAlwaysPreTouchBehavior {
         long minRequiredRss = heapSize;
 
         // The minimum required available memory size to count test errors as errors (to somewhat safely disregard
-        // outside memory pressure as the culprit)
-        // Note that we are over-generous and require at least 1G free. This is to make the chance for false positives
-        // very low.
+        // outside memory pressure as the culprit). We are over-cautious and require at least 1G free. We rather err
+        // on the side of disregarding true errors than to produce false positives (if pretouching is broken, at least
+        // some of the runs of this test will run on beefy enough machines and show the test as failed).
         long requiredAvailable = 1024 * 1024 * 1024;
         if (rss == 0) {
             throw new SkippedException("cannot get RSS?");
