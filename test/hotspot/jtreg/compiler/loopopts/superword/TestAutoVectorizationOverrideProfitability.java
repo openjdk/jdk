@@ -116,13 +116,15 @@ public class TestAutoVectorizationOverrideProfitability {
     @Warmup(10)
     @IR(applyIfCPUFeatureOr = {"avx", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "= 2"},
-        counts = {IRNode.ADD_REDUCTION_VI, "> 0"})
+        counts = {IRNode.ADD_REDUCTION_VI, "> 0", IRNode.ADD_VI, "> 0"})
     @IR(applyIfCPUFeatureOr = {"avx", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "< 2"},
-        counts = {IRNode.ADD_REDUCTION_VI, "= 0"})
+        counts = {IRNode.ADD_REDUCTION_VI, "= 0", IRNode.ADD_VI, "= 0"})
     // Current heuristics say that this simple int reduction is not profitable.
     // But it would actually be profitable, since we are able to move the
-    // reduction out of the loop (we can reorder the reduction).
+    // reduction out of the loop (we can reorder the reduction). When moving
+    // the reduction out of the loop, we instead accumulate with a simple
+    // ADD_VI inside the loop.
     // See: JDK-8307516 JDK-8345044
     private static int simpleIntReduction() {
         int sum = 0;
