@@ -90,7 +90,7 @@ inline bool ZRelocationSetSelectorGroup::pre_filter_page(const ZPage* page, size
     // Because the page sizes are always a power of two we can rewrite this
     // using log2 and bit-shift.
     const size_t size = page->size();
-    const int shift = ZPageSizeMediumShift - log2i_exact(size);
+    const int shift = ZPageSizeMediumMaxShift - log2i_exact(size);
     const size_t page_fragmentation_limit = _page_fragmentation_limit >> shift;
 
     const size_t garbage = size - live_bytes;

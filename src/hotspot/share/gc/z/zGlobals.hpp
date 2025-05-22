@@ -43,7 +43,7 @@ const size_t      ZMaxVirtualReservations       = 100; // Each reservation at le
 
 // Page size shifts
 const size_t      ZPageSizeSmallShift           = ZGranuleSizeShift;
-extern int        ZPageSizeMediumShift;
+extern int        ZPageSizeMediumMaxShift;
 
 // Page sizes
 const size_t      ZPageSizeSmall                = (size_t)1 << ZPageSizeSmallShift;

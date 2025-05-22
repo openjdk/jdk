@@ -23,7 +23,7 @@
 
 #include "gc/z/zGlobals.hpp"
 
-int        ZPageSizeMediumShift;
+int        ZPageSizeMediumMaxShift;
 size_t     ZPageSizeMediumMax;
 size_t     ZPageSizeMediumMin;
 bool       ZPageSizeMediumEnabled;
