@@ -392,6 +392,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 CLOSED = 512;      // CONNECTION_CLOSE ACK sent or received
         public abstract int state();
         public boolean helloSent() {return isMarked(HISENT);}
+        public boolean handshakeComplete() { return isMarked(HSCOMPLETE);}
+        public boolean handshakeConfirmed() { return isMarked(HSCONFIRMED);}
         public boolean established() { return isMarked(ESTABLISHED);}
         public boolean closing() { return isMarked(CLOSING);}
         public boolean draining() { return isMarked(DRAINING);}
