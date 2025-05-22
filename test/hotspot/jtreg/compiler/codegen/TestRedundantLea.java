@@ -231,6 +231,8 @@ class StringEqualsTestHelper {
 // leaP* rule is generated). With VM intrinsics enabled (this is the case
 // here) leaP* rules are also generated for the string_equals and arrays_hashcode
 // VM instrinsics.
+// This generates a larger number of decodes for -XX:UseAVX={0,1} thank for
+// other flags.
 class StringInflateTest {
     @Setup
     private static Object[] setup() {
@@ -241,26 +243,26 @@ class StringInflateTest {
     }
 
     @Test
-    // Negative test
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=5",
-                  IRNode.LEA_P_8_NARROW, "=2"},
+    @IR(counts = {IRNode.LEA_P_8_NARROW, "=2"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", "<1073741824"})
-    // Test that the peephole worked for leaP(8|32)Narrow
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3",
-                  IRNode.LEA_P_8_NARROW, "=2"},
+        applyIf = {"MaxHeapSize", "<1073741824"})
+    @IR(counts = {IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
         phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", "<1073741824"})
-    // Negative test
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=5",
-                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
-        phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "false", "MaxHeapSize", ">1073741824"})
-    // Test that the peephole worked for leaPCompressedOopOffset
-    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3",
-                  IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
-        phase = { CompilePhase.FINAL_CODE },
-        applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
+        applyIf = {"MaxHeapSize", ">1073741824"})
+    // Negative
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=5"},
+        phase = {CompilePhase.FINAL_CODE},
+        applyIfAnd = {"OptoPeephole", "false", "UseAVX", ">=2"})
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=13"},
+        phase = {CompilePhase.FINAL_CODE},
+        applyIfAnd = {"OptoPeephole", "false", "UseAVX", "<2"})
+    // 2 decodes get removed
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=3"},
+        phase = {CompilePhase.FINAL_CODE},
+        applyIfAnd = {"OptoPeephole", "false", "UseAVX", ">=2"})
+    @IR(counts = {IRNode.DECODE_HEAP_OOP_NOT_NULL, "=11"},
+        phase = {CompilePhase.FINAL_CODE},
+        applyIfAnd = {"OptoPeephole", "true", "UseAVX", "<2"})
     @Arguments(setup = "setup")
     public static Name test(Name n1, Name n2) {
         return n1.append(n2);
