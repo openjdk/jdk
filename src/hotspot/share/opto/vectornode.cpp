@@ -27,6 +27,7 @@
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/superword.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -87,9 +88,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_FmaHF:
     return (bt == T_SHORT ? Op_FmaVHF : 0);
   case Op_CMoveI:
-    return (bt == T_INT ? Op_VectorBlend : 0);
+    return ((SuperWord::support_vectorize_cmovefd_bool_unconditionally() && bt == T_INT) ? Op_VectorBlend : 0);
   case Op_CMoveL:
-    return (bt == T_LONG ? Op_VectorBlend : 0);
+    return ((SuperWord::support_vectorize_cmovefd_bool_unconditionally() && bt == T_LONG) ? Op_VectorBlend : 0);
   case Op_CMoveF:
     return (bt == T_FLOAT ? Op_VectorBlend : 0);
   case Op_CMoveD:

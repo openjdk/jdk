@@ -204,4 +204,8 @@
     return false;
   }
 
+  static bool support_vectorize_cmovefd_bool_unconditionally() {
+    return false;
+  }
+
 #endif // CPU_PPC_MATCHER_PPC_HPP

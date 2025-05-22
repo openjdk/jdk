@@ -265,6 +265,10 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
   }
 }
 
+bool SuperWord::support_vectorize_cmovefd_bool_unconditionally() {
+  return Matcher::support_vectorize_cmovefd_bool_unconditionally();
+}
+
 bool VLoopReductions::is_reduction(const Node* n) {
   if (!is_reduction_operator(n)) {
     return false;
@@ -2354,7 +2358,7 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) cons
 
   // Default case: input size of use equals output size of def.
   return (type2aelembytes(use_bt) == type2aelembytes(def_bt)) ||
-         (use->is_CMove() && def->is_Bool());
+         (support_vectorize_cmovefd_bool_unconditionally() && use->is_CMove() && def->is_Bool());
 }
 
 // Return nullptr if success, else failure message

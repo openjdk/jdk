@@ -204,4 +204,9 @@
   static bool is_feat_fp16_supported() {
     return (VM_Version::supports_fphp() && VM_Version::supports_asimdhp());
   }
+
+  static bool support_vectorize_cmovefd_bool_unconditionally() {
+    return false;
+  }
+
 #endif // CPU_AARCH64_MATCHER_AARCH64_HPP

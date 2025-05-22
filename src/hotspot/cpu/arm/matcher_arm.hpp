@@ -193,4 +193,8 @@
     return false;
   }
 
+  static bool support_vectorize_cmovefd_bool_unconditionally() {
+    return false;
+  }
+
 #endif // CPU_ARM_MATCHER_ARM_HPP

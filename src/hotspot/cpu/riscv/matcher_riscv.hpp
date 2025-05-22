@@ -199,4 +199,8 @@
     return false;
   }
 
+  static bool support_vectorize_cmovefd_bool_unconditionally() {
+    return true;
+  }
+
 #endif // CPU_RISCV_MATCHER_RISCV_HPP

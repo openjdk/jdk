@@ -196,4 +196,8 @@
     return false;
   }
 
+  static bool support_vectorize_cmovefd_bool_unconditionally() {
+    return false;
+  }
+
 #endif // CPU_S390_MATCHER_S390_HPP

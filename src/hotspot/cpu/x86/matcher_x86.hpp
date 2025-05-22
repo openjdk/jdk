@@ -236,4 +236,8 @@
     }
   }
 
+  static bool support_vectorize_cmovefd_bool_unconditionally() {
+    return false;
+  }
+
 #endif // CPU_X86_MATCHER_X86_HPP
