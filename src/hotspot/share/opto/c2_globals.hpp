@@ -367,6 +367,18 @@
           "loop iterations this detection spans.")                          \
           range(0, 4096)                                                    \
                                                                             \
+  product(uint, AutoVectorizationOverrideProfitability, 1, DIAGNOSTIC,      \
+          "Override the auto vectorization profitability heuristics."       \
+          "0 = Run auto vectorizer, but abort just before applying"         \
+          "    vectrorization, as though it was not profitable."            \
+          "1 = Run auto vectorizer with the default profitability"          \
+          "    heuristics. This is is the default, and hopefully"           \
+          "    delivers the best performance."                              \
+          "2 = Run auto vectorizer, and vectorize even if the"              \
+          "    profitability heuristics predict that vectorization"         \
+          "    is not profitable.")                                         \
+          range(0, 2)                                                       \
+                                                                            \
   product(bool, UseCMoveUnconditionally, false,                             \
           "Use CMove (scalar and vector) ignoring profitability test.")     \
                                                                             \

@@ -1605,12 +1605,25 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
     int opc = p0->Opcode();
     if (is_marked_reduction(p0)) {
       const Type *arith_type = p0->bottom_type();
-      // Length 2 reductions of INT/LONG do not offer performance benefits
-      if (((arith_type->basic_type() == T_INT) || (arith_type->basic_type() == T_LONG)) && (size == 2)) {
-        retValue = false;
-      } else {
-        retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
+      // This heuristic predicts that 2-element reductions for INT/LONG, predicting
+      // that they are not profitable. This was added in JDK-8078563. The argument
+      // was that reductions are not just a single instruction, but multiple, and
+      // hence it is not directly clear that they are profitable. If we only have
+      // two elements per vector, then the performance gains from non-reduction
+      // vectors is at most going from 2 scalar instructions to 1 vector instruction.
+      // But a 2-element reduction vector goes from 2 scalar instructions to
+      // 3 instructions (1 shuffle and two reduction ops).
+      // However, this optimization assumes that these reductions stay in the loop
+      // which may not be true any more in most cases after the introduction of:
+      // PhaseIdealLoop::move_unordered_reduction_out_of_loop
+      // Hence, this heuristic has room for improvement.
+      bool is_two_element_int_or_long_reduction = (size == 2) &&
+                                                  (arith_type->basic_type() == T_INT ||
+                                                   arith_type->basic_type() == T_LONG);
+      if (is_two_element_int_or_long_reduction && AutoVectorizationOverrideProfitability != 2) {
+        return false;
       }
+      retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
     } else if (VectorNode::is_convert_opcode(opc)) {
       retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
     } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(velt_basic_type(p0))) {
@@ -1756,9 +1769,22 @@ bool SuperWord::profitable(const Node_List* p) const {
   if (is_marked_reduction(p0)) {
     Node* second_in = p0->in(2);
     Node_List* second_pk = get_pack(second_in);
-    if ((second_pk == nullptr) || (_num_work_vecs == _num_reductions)) {
-      // No parent pack or not enough work
-      // to cover reduction expansion overhead
+    if (second_pk == nullptr) {
+      // The second input has to be the vector we wanted to reduce,
+      // but it was not packed.
+      return false;
+    } else if (_num_work_vecs == _num_reductions && AutoVectorizationOverrideProfitability != 2) {
+      // This heuristic predicts that the reduction is not profitable.
+      // Reduction vectors can be expensive, because they require multiple
+      // operations to fold all the lanes together. Hence, vectorizing the
+      // reduction is not profitable on its own. Hence, we need a lot of
+      // other "work vectors" that deliver performance improvements to
+      // balance out the performance loss due to reductions.
+      // This heuristic is a bit simplistic, and assumes that the reduction
+      // vector stays in the loop. But in some cases, we can move the
+      // reduction out of the loop, replacing it with a single vector op.
+      // See: PhaseIdealLoop::move_unordered_reduction_out_of_loop
+      // Hence, this heuristic has room for improvement.
       return false;
     } else if (second_pk->size() != p->size()) {
       return false;
