@@ -12858,8 +12858,7 @@ void Assembler::emit_eevex_or_demote(Register dst, Register src1, Address src2, 
   if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
     if (size == EVEX_64bit) {
       emit_prefix_and_int8(get_prefixq(src2, dst, is_map1), opcode_byte);
-    }
-    else {
+    } else {
       // For 32-bit, 16-bit and 8-bit
       if (size == EVEX_16bit) {
         emit_int8(0x66);
