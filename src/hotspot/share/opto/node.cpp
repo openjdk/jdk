@@ -2972,6 +2972,25 @@ bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const 
   return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_pure_function();
 }
 
+//--------------------------has_non_debug_uses------------------------------
+// Checks whether the node has any non-debug uses or not.
+bool Node::has_non_debug_uses() const {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* u = fast_out(i);
+    if (u->is_SafePoint()) {
+      if (u->is_Call() && u->as_Call()->has_non_debug_use(this)) {
+        return true;
+      }
+      // Non-call safepoints have only debug uses.
+    } else if (u->is_ReachabilityFence()) {
+      // Reachability fence is treated as debug use.
+    } else {
+      return true; // everything else is conservatively treated as non-debug use
+    }
+  }
+  return false; // no non-debug uses found
+}
+
 //=============================================================================
 //------------------------------yank-------------------------------------------
 // Find and remove

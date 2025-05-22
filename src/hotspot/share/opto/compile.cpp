@@ -2583,7 +2583,7 @@ void Compile::Optimize() {
  // to remove hashes to unlock nodes for modifications.
  C->node_hash()->clear();
 
-  // A method with only infinite loops has no edges entering loops from root
+ // A method with only infinite loops has no edges entering loops from root
  {
    TracePhase tp(_t_graphReshaping);
    if (final_graph_reshaping()) {
@@ -3908,20 +3908,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 //------------------------------final_graph_reshaping_walk---------------------
 // Replacing Opaque nodes with their input in final_graph_reshaping_impl(),
 // requires that the walk visits a node's inputs before visiting the node.
-
-static bool has_non_debug_uses(Node* n) {
-  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-    Node* u = n->fast_out(i);
-    if (u->is_Call() && u->as_Call()->has_non_debug_use(n)) {
-      return false;
-    }
-    if (!u->is_SafePoint() && !u->is_ReachabilityFence()) {
-      return false;
-    }
-  }
-  return true;
-}
-
 void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes) {
   Unique_Node_List sfpt;
 
@@ -3970,7 +3956,7 @@ void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_R
     Node* rf = C->reachability_fence(i);
     Node* in = rf->in(1);
     if (in->is_DecodeN()) {
-      if (!has_non_debug_uses(in) || Matcher::narrow_oop_use_complex_address()) {
+      if (!in->has_non_debug_uses() || Matcher::narrow_oop_use_complex_address()) {
         rf->set_req(1, in->in(1));
         if (in->outcnt() == 0) {
           in->disconnect_inputs(this);
@@ -3992,7 +3978,7 @@ void Compile::final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_R
                         n->as_CallStaticJava()->uncommon_trap_request() != 0);
     for (int j = start; j < end; j++) {
       Node* in = n->in(j);
-      if (in->is_DecodeNarrowPtr() && (is_uncommon || has_non_debug_uses(in))) {
+      if (in->is_DecodeNarrowPtr() && (is_uncommon || !in->has_non_debug_uses())) {
         n->set_req(j, in->in(1));
         if (in->outcnt() == 0) {
           in->disconnect_inputs(this);

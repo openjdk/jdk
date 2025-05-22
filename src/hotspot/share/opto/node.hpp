@@ -443,6 +443,9 @@ public:
   // Check whether node has become unreachable
   bool is_unreachable(PhaseIterGVN &igvn) const;
 
+  // Does the node have any immediate non-debug uses?
+  bool has_non_debug_uses() const;
+
   // Set a required input edge, also updates corresponding output edge
   void add_req( Node *n ); // Append a NEW required input
   void add_req( Node *n0, Node *n1 ) {

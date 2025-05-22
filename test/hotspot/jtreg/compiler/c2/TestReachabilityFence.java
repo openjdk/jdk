@@ -90,7 +90,7 @@ public class TestReachabilityFence {
             try {
                 return payload[id][offset];
             } finally {
-//                Reference.reachabilityFence(this);
+                Reference.reachabilityFence(this);
             }
         }
     }

@@ -723,7 +723,7 @@ public:
   // Returns true if the call may modify n
   virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
   // Does this node have a use of n other than in debug information?
-  bool                has_non_debug_use(Node* n);
+  bool                has_non_debug_use(const Node* n);
   // Returns the unique CheckCastPP of a call
   // or result projection is there are several CheckCastPP
   // or returns null if there is no one.

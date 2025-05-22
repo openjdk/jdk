@@ -70,6 +70,12 @@ static bool is_redundant_rf_helper(Node* ctrl, Node* referent, PhaseIdealLoop* p
   if (t == TypePtr::NULL_PTR) {
     return true; // no-op fence
   }
+  if (referent->is_Proj() && referent->in(0)->is_CallJava()) {
+    ciMethod* m = referent->in(0)->as_CallJava()->method();
+    if (m != nullptr && m->is_boxing_method()) {
+      return true;
+    }
+  }
   for (Node* cur = referent;
        cur != nullptr;
        cur = (cur->is_ConstraintCast() ? cur->in(1) : nullptr)) {
@@ -101,7 +107,7 @@ Node* ReachabilityFenceNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 Node* ReachabilityFenceNode::Identity(PhaseGVN* phase) {
-  if (is_redundant_rf_helper(this, in(1), nullptr, *phase, true /*cfg_only*/)) {
+  if (is_redundant_rf_helper(this, in(1), nullptr, *phase, true /*rf_only*/)) {
     return in(0);
   }
   return this;
@@ -192,20 +198,23 @@ void PhaseIdealLoop::remove_rf(Node* rf) {
   replace_rf(rf, rf_ctrl_in);
 }
 
-bool PhaseIdealLoop::is_redundant_rf(Node* rf, bool cfg_only) {
+bool PhaseIdealLoop::is_redundant_rf(Node* rf, bool rf_only) {
   assert(rf->is_ReachabilityFence(), "");
   Node* referent = rf->in(1);
-  return is_redundant_rf_helper(rf, referent, this, igvn(), cfg_only);
+  return is_redundant_rf_helper(rf, referent, this, igvn(), rf_only);
 }
 
+// Updates the unique list of redundant RFs.
+// Returns true if new instances of redundant fences are found.
 bool PhaseIdealLoop::find_redundant_rfs(Unique_Node_List& redundant_rfs) {
   bool found = false;
   for (int i = 0; i < C->reachability_fences_count(); i++) {
     Node* rf = C->reachability_fence(i);
     Node* referent = rf->in(1);
     assert(rf->outcnt() > 0, "dead node");
-    if (!redundant_rfs.member(rf) && is_redundant_rf(rf, true /*cfg_only*/)) {
+    if (!redundant_rfs.member(rf) && is_redundant_rf(rf, true /*rf_only*/)) {
       redundant_rfs.push(rf);
+      found = true;
     }
   }
   return found;
@@ -255,15 +264,15 @@ static void dump_rfs_on(outputStream* st, PhaseIdealLoop* phase, Unique_Node_Lis
   }
 }
 
-bool PhaseIdealLoop::has_redundant_rfs(Unique_Node_List& ignored_rfs, bool cfg_only) {
+bool PhaseIdealLoop::has_redundant_rfs(Unique_Node_List& ignored_rfs, bool rf_only) {
   for (int i = 0; i < C->reachability_fences_count(); i++) {
     Node* rf = C->reachability_fence(i);
     Node* referent = rf->in(1);
     assert(rf->outcnt() > 0, "dead node");
     if (ignored_rfs.member(rf)) {
       continue; // skip
-    } else if (is_redundant_rf(rf, cfg_only)) {
-      dump_rfs_on(tty, this, ignored_rfs, cfg_only);
+    } else if (is_redundant_rf(rf, rf_only)) {
+      dump_rfs_on(tty, this, ignored_rfs, rf_only);
       return true;
     }
   }
@@ -329,7 +338,7 @@ bool PhaseIdealLoop::optimize_reachability_fences() {
   }
 
   assert(redundant_rfs.size() == 0, "");
-  assert(!has_redundant_rfs(redundant_rfs, true /*cfg_only*/), "");
+  assert(!has_redundant_rfs(redundant_rfs, true /*rf_only*/), "");
 
   return progress;
 }
@@ -412,8 +421,8 @@ bool PhaseIdealLoop::eliminate_reachability_fences() {
   Node_List worklist;
   for (int i = 0; i < C->reachability_fences_count(); i++) {
     ReachabilityFenceNode* rf = C->reachability_fence(i)->as_ReachabilityFence();
-    assert(!is_redundant_rf(rf, true /*cfg_only*/), "missed");
-    if (!is_redundant_rf(rf, false /*cfg_only*/)) {
+    assert(!is_redundant_rf(rf, true /*rf_only*/), "missed");
+    if (!is_redundant_rf(rf, false /*rf_only*/)) {
       Node_List safepoints;
       enumerate_interfering_sfpts(rf, this, safepoints);
 
@@ -464,8 +473,6 @@ static Node* sfpt_ctrl_out(SafePointNode* sfpt) {
     } else {
       ShouldNotReachHere();
     }
-  } else if (sfpt->unique_ctrl_out()->is_OuterStripMinedLoopEnd()) {
-    return sfpt->unique_ctrl_out()->as_OuterStripMinedLoopEnd()->proj_out_or_null(0 /*false*/); // outer_loop_exit()
   } else {
     return sfpt;
   }

@@ -43,9 +43,8 @@ public:
   virtual uint ideal_reg() const { return 0; } // not matched in the AD file
   virtual const Type* bottom_type() const { return Type::CONTROL; }
   const RegMask &in_RegMask(uint idx) const {
-    // Fake the incoming arguments mask for blackholes: accept all registers
-    // and all stack slots. This would avoid any redundant register moves
-    // for blackhole inputs.
+    // Fake input register mask for the referent: accepts all registers and all stack slots.
+    // This avoids redundant register moves around reachability fences.
     return RegMask::All;
   }
 

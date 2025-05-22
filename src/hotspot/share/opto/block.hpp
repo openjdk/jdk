@@ -325,7 +325,7 @@ public:
 
   // Return the empty status of a block
   enum { not_empty, empty_with_goto, completely_empty };
-  int is_Empty(Compile* C) const;
+  int is_Empty() const;
 
   // Forward through connectors
   Block* non_connector() {

@@ -876,7 +876,7 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
 }
 
 // Does this call have a direct reference to n other than debug information?
-bool CallNode::has_non_debug_use(Node *n) {
+bool CallNode::has_non_debug_use(const Node *n) {
   const TypeTuple * d = tf()->domain();
   for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
     Node *arg = in(i);
@@ -966,7 +966,7 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
             assert(projs->exobj == nullptr, "only one");
             projs->exobj = e;
           } else  {
-            // exception table for rethrow case
+            assert(e->in(0)->as_CatchProj()->_con > 1, ""); // exception table for rethrow case
           }
         }
       }

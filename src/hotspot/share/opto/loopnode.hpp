@@ -1476,13 +1476,13 @@ public:
   bool optimize_reachability_fences();
   bool eliminate_reachability_fences();
 
-  bool is_redundant_rf(Node* rf, bool cfg_only);
+  bool is_redundant_rf(Node* rf, bool rf_only);
   bool find_redundant_rfs(Unique_Node_List& redundant_rfs);
   void insert_rf(Node* ctrl, Node* referent);
   void replace_rf(Node* old_node, Node* new_node);
   void remove_rf(Node* rf);
 #ifdef ASSERT
-  bool has_redundant_rfs(Unique_Node_List& ignored_rfs, bool cfg_only);
+  bool has_redundant_rfs(Unique_Node_List& ignored_rfs, bool rf_only);
 #endif // ASSERT
 
 public:
