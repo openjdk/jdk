@@ -105,7 +105,7 @@
           "Verify remembered sets")                                         \
                                                                             \
   product(bool, ZUseMediumPageSizeRange, true, DIAGNOSTIC,                  \
-          "Allow multiple medium pages sizes")                              \
+          "Allow multiple medium page sizes")                               \
                                                                             \
   product(bool, ZStressFastMediumPageAllocation, false, DIAGNOSTIC,         \
           "Always use the minimum medium page size for fast medium page "   \
