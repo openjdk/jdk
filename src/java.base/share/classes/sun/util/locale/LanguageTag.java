@@ -246,25 +246,25 @@ public record LanguageTag(String language, String script, String region, String 
         if (itr.isDone() || pp.getErrorIndex() != -1) {
             return EMPTY_SUBTAGS;
         }
-        List<String> extLangs = null;
+        List<String> extlangs = null;
         while (!itr.isDone()) {
             String s = itr.current();
             if (!isExtlang(s)) {
                 break;
             }
-            if (extLangs == null) {
-                extLangs = new ArrayList<>(3);
+            if (extlangs == null) {
+                extlangs = new ArrayList<>(3);
             }
-            extLangs.add(s);
+            extlangs.add(s);
             pp.setIndex(itr.currentEnd());
             itr.next();
-            if (extLangs.size() == 3) {
+            if (extlangs.size() == 3) {
                 // Maximum 3 extlangs
                 break;
             }
         }
-        return extLangs == null ? EMPTY_SUBTAGS :
-                Collections.unmodifiableList(extLangs);
+        return extlangs == null ? EMPTY_SUBTAGS :
+                Collections.unmodifiableList(extlangs);
     }
 
     private static String parseScript(StringTokenIterator itr, ParsePosition pp) {
