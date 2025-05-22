@@ -149,7 +149,7 @@ void ConstantPool::release_C_heap_structures() {
 }
 
 void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(ConstantPool): %p", this);
+  log_trace(aot)("Iter(ConstantPool): %p", this);
 
   it->push(&_tags, MetaspaceClosure::_writable);
   it->push(&_cache);
@@ -446,7 +446,7 @@ void ConstantPool::remove_unshareable_info() {
   if (CDSConfig::is_dumping_final_static_archive()) {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
     InstanceKlass* src_holder = src_cp->pool_holder();
-    if (src_holder->is_shared_unregistered_class()) {
+    if (src_holder->defined_by_other_loaders()) {
       // Unregistered classes are not loaded in the AOT assembly phase. The resolved reference length
       // is already saved during the training run.
       precond(!src_holder->is_loaded());
@@ -508,7 +508,7 @@ static const char* get_type(Klass* k) {
 
 void ConstantPool::remove_unshareable_entries() {
   ResourceMark rm;
-  log_info(cds, resolve)("Archiving CP entries for %s", pool_holder()->name()->as_C_string());
+  log_info(aot, resolve)("Archiving CP entries for %s", pool_holder()->name()->as_C_string());
   for (int cp_index = 1; cp_index < length(); cp_index++) { // cp_index 0 is unused
     int cp_tag = tag_at(cp_index).value();
     switch (cp_tag) {
@@ -567,7 +567,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
     resolved_klasses()->at_put(resolved_klass_index, nullptr);
   }
 
-  LogStreamHandle(Trace, cds, resolve) log;
+  LogStreamHandle(Trace, aot, resolve) log;
   if (log.is_enabled()) {
     ResourceMark rm;
     log.print("%s klass  CP entry [%3d]: %s %s",

@@ -99,7 +99,7 @@ void LambdaProxyClassDictionary::dumptime_init() {
 }
 
 bool LambdaProxyClassDictionary::is_supported_invokedynamic(BootstrapInfo* bsi) {
-  LogTarget(Debug, cds, lambda) log;
+  LogTarget(Debug, aot, lambda) log;
   if (bsi->arg_values() == nullptr || !bsi->arg_values()->is_objArray()) {
     if (log.is_enabled()) {
       LogStream log_stream(log);
@@ -170,7 +170,6 @@ void LambdaProxyClassDictionary::add_lambda_proxy_class(InstanceKlass* caller_ik
 
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
 
-  lambda_ik->assign_class_loader_type();
   lambda_ik->set_shared_classpath_index(caller_ik->shared_classpath_index());
   InstanceKlass* nest_host = caller_ik->nest_host(CHECK);
   assert(nest_host != nullptr, "unexpected nullptr nest_host");
@@ -268,9 +267,9 @@ InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(InstanceKlass
   const RunTimeLambdaProxyClassInfo* info = _runtime_static_table.lookup(&key, hash, 0);
   InstanceKlass* proxy_klass = find_lambda_proxy_class(info);
   if (proxy_klass == nullptr) {
-    if (info != nullptr && log_is_enabled(Debug, cds)) {
+    if (info != nullptr && log_is_enabled(Debug, aot)) {
       ResourceMark rm;
-      log_debug(cds)("Used all static archived lambda proxy classes for: %s %s%s",
+      log_debug(aot)("Used all static archived lambda proxy classes for: %s %s%s",
                      caller_ik->external_name(), invoked_name->as_C_string(), invoked_type->as_C_string());
     }
   } else {
@@ -281,9 +280,9 @@ InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(InstanceKlass
   info = _runtime_dynamic_table.lookup(&key, hash, 0);
   proxy_klass = find_lambda_proxy_class(info);
   if (proxy_klass == nullptr) {
-    if (info != nullptr && log_is_enabled(Debug, cds)) {
+    if (info != nullptr && log_is_enabled(Debug, aot)) {
       ResourceMark rm;
-      log_debug(cds)("Used all dynamic archived lambda proxy classes for: %s %s%s",
+      log_debug(aot)("Used all dynamic archived lambda proxy classes for: %s %s%s",
                      caller_ik->external_name(), invoked_name->as_C_string(), invoked_type->as_C_string());
     }
   }
@@ -306,9 +305,9 @@ InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(const RunTime
       prev_klass->set_next_link(nullptr);
       proxy_klass = curr_klass;
       proxy_klass->clear_lambda_proxy_is_available();
-      if (log_is_enabled(Debug, cds)) {
+      if (log_is_enabled(Debug, aot)) {
         ResourceMark rm;
-        log_debug(cds)("Loaded lambda proxy: %s ", proxy_klass->external_name());
+        log_debug(aot)("Loaded lambda proxy: %s ", proxy_klass->external_name());
       }
     }
   }
@@ -413,7 +412,7 @@ public:
     // In static dump, info._proxy_klasses->at(0) is already relocated to point to the archived class
     // (not the original class).
     ResourceMark rm;
-    log_info(cds,dynamic)("Archiving hidden %s", info._proxy_klasses->at(0)->external_name());
+    log_info(cds, dynamic)("Archiving hidden %s", info._proxy_klasses->at(0)->external_name());
     size_t byte_size = sizeof(RunTimeLambdaProxyClassInfo);
     RunTimeLambdaProxyClassInfo* runtime_info =
         (RunTimeLambdaProxyClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
