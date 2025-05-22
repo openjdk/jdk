@@ -48,7 +48,6 @@ public class bug6197830 {
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(bug6197830::createTestUI)
-                .position(PassFailJFrame.Position.TOP_LEFT_CORNER)
                 .positionTestUIBottomRowCentered()
                 .build()
                 .awaitAndCheck();
