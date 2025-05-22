@@ -32,8 +32,13 @@
 package compiler.loopopts.superword;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.verify.*;
+import compiler.lib.generators.Generator;
+import static compiler.lib.generators.Generators.G;
 
 public class TestAutoVectorizationOverrideProfitability {
+    public static final Generator<Integer> GEN_I = G.ints();
+    public static final Generator<Float>   GEN_F = G.floats();
 
     public static int[] aI = new int[10_000];
     public static int[] rI = new int[10_000];
@@ -41,10 +46,8 @@ public class TestAutoVectorizationOverrideProfitability {
     public static float[] rF = new float[10_000];
 
     static {
-        for (int i = 0; i < aF.length; i++) {
-            aI[i] = i;
-            aF[i] = i;
-        }
+        G.fill(GEN_I, aI);
+        G.fill(GEN_F, aF);
     }
 
     public static void main(String[] args) throws Exception {
@@ -62,9 +65,15 @@ public class TestAutoVectorizationOverrideProfitability {
     public static final float GOLD_SIMPLE_FLOAT_REDUCTION = simpleFloatReduction();
 
     @Test
+    @Warmup(10)
     @IR(applyIfCPUFeatureOr = {"avx", "true"},
-        applyIf = {"SuperWordReductions", "true"},
-        counts = {IRNode.ADD_REDUCTION_VF, ">= 1"})
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 2"},
+        counts = {IRNode.ADD_REDUCTION_VF, "> 0"})
+    @IR(applyIfCPUFeatureOr = {"avx", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "< 2"},
+        counts = {IRNode.ADD_REDUCTION_VF, "= 0"})
+    // The simple float reduction is not profitable. We need to sequentially
+    // add up the values, and so we cannot move the reduction out of the loop.
     private static float simpleFloatReduction() {
         float sum = 0;
         for (int i = 0; i < aF.length; i++) {
@@ -75,5 +84,29 @@ public class TestAutoVectorizationOverrideProfitability {
 
     @Check(test="simpleFloatReduction")
     public static void checkSimpleFloatReduction(float result) {
+        Verify.checkEQ(GOLD_SIMPLE_FLOAT_REDUCTION, result);
+    }
+
+    static { simpleFloatCopy(); }
+    public static final float[] GOLD_SIMPLE_FLOAT_COPY = rF.clone();
+
+    @Test
+    @Warmup(10)
+    @IR(applyIfCPUFeatureOr = {"avx", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"},
+        counts = {IRNode.LOAD_VECTOR_F, "> 0"})
+    @IR(applyIfCPUFeatureOr = {"avx", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"},
+        counts = {IRNode.LOAD_VECTOR_F, "= 0"})
+    // The simple float copy is always profitable.
+    private static void simpleFloatCopy() {
+        for (int i = 0; i < aF.length; i++) {
+            rF[i] = aF[i];
+        }
+    }
+
+    @Check(test="simpleFloatCopy")
+    public static void checkSimpleFloatCopy() {
+        Verify.checkEQ(GOLD_SIMPLE_FLOAT_COPY, rF);
     }
 }
