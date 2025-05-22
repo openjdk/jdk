@@ -3818,20 +3818,26 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
 //        exit  4
 //
 //
-// This method creates a list (_required_safept) of ncsfpt nodes that must
-// be protected is created for each loop. When a ncsfpt maybe deleted, it
-// is first looked for in the lists for the outer loops of the current loop.
+// This method maintains a list (_required_safept) of ncsfpts that must
+// be protected for each loop. It only marks ncsfpts for prevervation,
+// and does not actually delete any of them.
+//
+// If some other method needs to delete a ncsfpt later, it will make sure
+// the ncsfpt is not in the list of all outer loops of the current loop.
+// See `PhaseIdealLoop::is_deleteable_safept`.
 //
 // The insights into the problem:
-//  A) counted loops are okay
-//  B) innermost loops are okay (only an inner loop can delete
-//     a ncsfpt needed by an outer loop)
-//  C) a loop is immune from an inner loop deleting a safepoint
-//     if the loop has a call on the idom-path
-//  D) a loop is also immune if it has a ncsfpt (non-call safepoint) on the
-//     idom-path that is not in a nested loop
-//  E) otherwise, an ncsfpt on the idom-path that is nested in an inner
-//     loop needs to be prevented from deletion by an inner loop
+//  A) Counted loops are okay
+//  B) Innermost loops are okay because there's no inner loops can delete
+//     their ncsfpts
+//  C) If an outer loop has a call that's guaranteed to execute (on the
+//     idom-path), then that loop is okay. Because the call will always
+//     perform a safepoint poll, regardless of what safepoints are deleted
+//     from its inner loops
+//  D) Similarly, if an outer loop has a ncsfpt on the idom-path that isn't
+//     inside any nested loop, then that loop is okay
+//  E) Otherwise, if an outer loop's ncsfpt on the idom-path is nested in
+//     an inner loop, we need to prevent the inner loop from deleting it
 //
 // There are two analyses:
 //  1) The first, and cheaper one, scans the loop body from
@@ -3865,6 +3871,8 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
           break;
         } else if (n->Opcode() == Op_SafePoint) {
           if (_phase->get_loop(n) == this) {
+            // We found a local ncsfpt.
+            // Continue searching for a call that is guaranteed to be a safepoint.
             has_local_ncsfpt = true;
           } else if (nonlocal_ncsfpt == nullptr) {
             nonlocal_ncsfpt = n; // save the one closest to the tail
