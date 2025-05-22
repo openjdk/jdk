@@ -419,7 +419,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
             if (pos instanceof X509Possession x509Pos
                     && x509Pos.popCerts != null
-                    && x509Pos.popCerts.length == len) {
+                    && x509Pos.popCerts.length >= len) {
 
                 for (int i = 0; i < x509Pos.popCerts.length; i++) {
                     try {
