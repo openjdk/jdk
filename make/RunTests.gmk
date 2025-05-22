@@ -583,8 +583,6 @@ define SetMicroValue
   else
     ifneq ($3, )
       $1_$2 := $3
-    else
-      $1_$2 :=
     endif
   endif
 endef
@@ -711,8 +709,6 @@ define SetJtregValue
     else
       ifneq ($3, )
         $1_$2 := $3
-      else
-        $1_$2 :=
       endif
     endif
   endif
@@ -873,7 +869,7 @@ define SetupRunJtregTestBody
   # version of the JDK.
   $1_JTREG_BASIC_OPTIONS += -$$($1_JTREG_TEST_MODE) \
       -verbose:$$(JTREG_VERBOSE) -retain:$$(JTREG_RETAIN) \
-      -concurrency:$$($1_JTREG_JOBS) \
+      -concurrency:$$($1_JTREG_JOBS) -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR) \
       -vmoption:-XX:MaxRAMPercentage=$$($1_JTREG_MAX_RAM_PERCENTAGE) \
       -vmoption:-Dtest.boot.jdk="$$(BOOT_JDK)" \
       -vmoption:-Djava.io.tmpdir="$$($1_TEST_TMP_DIR)"
@@ -998,7 +994,6 @@ define SetupRunJtregTestBody
   endif
 
   JTREG_TIMEOUT_FACTOR ?= $$(JTREG_AUTO_TIMEOUT_FACTOR)
-  $1_JTREG_BASIC_OPTIONS += -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR)
 
   clean-outputdirs-$1:
 	$$(call LogWarn, Clean up dirs for $1)
