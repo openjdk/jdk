@@ -57,7 +57,7 @@ public class JDK_AOT_VM_OPTIONS {
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTCacheOutput=" + aotCacheFile,
-            "-Xlog:cds=debug",
+            "-Xlog:aot=debug",
             "-cp", appJar, helloClass);
         // The "-Xshare:off" below should be treated as part of a property value and not
         // a VM option by itself
@@ -73,7 +73,7 @@ public class JDK_AOT_VM_OPTIONS {
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
-            "-Xlog:cds=debug",
+            "-Xlog:aot=debug",
             "-cp", appJar, helloClass);
 
         out = CDSTestUtils.executeAndLog(pb, "train");
@@ -86,7 +86,7 @@ public class JDK_AOT_VM_OPTIONS {
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
-            "-Xlog:cds",
+            "-Xlog:aot",
             "-cp", appJar);
         pb.environment().put("JDK_AOT_VM_OPTIONS", "-XX:-AOTClassLinking");
         out = CDSTestUtils.executeAndLog(pb, "asm");
@@ -102,7 +102,7 @@ public class JDK_AOT_VM_OPTIONS {
             "-XX:VMOptionsFile=" + optionsFile,
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
-            "-Xlog:cds",
+            "-Xlog:aot",
             "-cp", appJar);
         pb.environment().put("JDK_AOT_VM_OPTIONS", "-XX:-AOTClassLinking");
         out = CDSTestUtils.executeAndLog(pb, "asm");
@@ -117,7 +117,7 @@ public class JDK_AOT_VM_OPTIONS {
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
-            "-Xlog:cds",
+            "-Xlog:aot",
             "-cp", appJar);
         pb.environment().put("JDK_AOT_VM_OPTIONS", "-XX:VMOptionsFile="  + optionsFile);
         out = CDSTestUtils.executeAndLog(pb, "asm");

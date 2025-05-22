@@ -367,8 +367,8 @@ void Symbol::make_permanent() {
 }
 
 void Symbol::metaspace_pointers_do(MetaspaceClosure* it) {
-  if (log_is_enabled(Trace, cds)) {
-    LogStream trace_stream(Log(cds)::trace());
+  if (log_is_enabled(Trace, aot)) {
+    LogStream trace_stream(Log(aot)::trace());
     trace_stream.print("Iter(Symbol): %p ", this);
     print_value_on(&trace_stream);
     trace_stream.cr();

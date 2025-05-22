@@ -200,6 +200,10 @@ class Arguments : AllStatic {
   static char* _java_command;
   // number of unique modules specified in the --add-modules option
   static unsigned int _addmods_count;
+#if INCLUDE_JVMCI
+  // was jdk.internal.vm.ci module specified in the --add-modules option?
+  static bool _jvmci_module_added;
+#endif
 
   // Property list
   static SystemProperty* _system_properties;

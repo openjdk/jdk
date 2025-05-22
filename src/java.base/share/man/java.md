@@ -2701,7 +2701,12 @@ Java HotSpot VM.
     >   `-XX:ParallelGCThreads=2`
 
 `-XX:+ParallelRefProcEnabled`
-:   Enables parallel reference processing. By default, this option is disabled.
+:   Enables parallel reference processing. By default, collectors employing multiple
+    threads perform parallel reference processing if the number of parallel threads
+    to use is larger than one.
+    The option is available only when the throughput or G1 garbage collector is used
+    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
+    threads always perform reference processing in parallel.
 
 `-XX:+PrintAdaptiveSizePolicy`
 :   Enables printing of information about adaptive-generation sizing. By
@@ -4138,7 +4143,7 @@ The AOT cache can be used with the following command-line options:
      - If `AOTMode` is `on`, the JVM will print an error message and exit immediately. This
        mode should be used only as a "fail-fast" debugging aid to check if your command-line
        options are compatible with the AOT cache. An alternative is to run your application with
-       `-XX:AOTMode=auto -Xlog:cds,aot` to see if the AOT cache can be used or not.
+       `-XX:AOTMode=auto -Xlog:aot` to see if the AOT cache can be used or not.
 
 `-XX:+AOTClassLinking`
 :   If this option is enabled, the JVM will perform more advanced optimizations (such

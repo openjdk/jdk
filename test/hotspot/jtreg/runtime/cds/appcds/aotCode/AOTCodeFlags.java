@@ -26,7 +26,11 @@
  * @test
  * @summary Sanity test of combinations of the AOT Code Caching diagnostic flags
  * @requires vm.cds.supports.aot.code.caching
- * @requires vm.flagless
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @comment Both C1 and C2 JIT compilers are required because the test verifies
+ *          compiler's runtime blobs generation.
+ * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
+ * @comment VerifyOops flag switch off AOT code generation. Skip it.
  * @library /test/lib /test/setup_aot
  * @build AOTCodeFlags JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
@@ -46,7 +50,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class AOTCodeFlags {
     public static void main(String... args) throws Exception {
         Tester t = new Tester();
-        for (int mode = 0; mode < 3; mode++) {
+        // Run only 2 modes (0 - no AOT code, 1 - AOT adapters) until JDK-8357398 is fixed
+        for (int mode = 0; mode < 2; mode++) {
             t.setTestMode(mode);
             t.run(new String[] {"AOT", "--two-step-training"});
         }

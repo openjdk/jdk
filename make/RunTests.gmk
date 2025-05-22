@@ -757,7 +757,7 @@ define SetupAOTBody
 	      cd $$($1_AOT_JDK_OUTPUT_DIR); \
 	      $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
 	      $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
-	          -Xlog:class+load,cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log  -Xlog:cds*=error \
+	          -Xlog:class+load,aot,aot+class=debug:file=$$($1_AOT_JDK_CACHE).log  -Xlog:cds*=error -Xlog:aot*=error  \
 	          -XX:AOTMode=record -XX:AOTCacheOutput=$$($1_AOT_JDK_CACHE) \
 	          TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
 	  ))
@@ -769,7 +769,7 @@ define SetupAOTBody
 	      cd $$($1_AOT_JDK_OUTPUT_DIR); \
 	      $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
 	      $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
-	          -Xlog:class+load,cds,cds+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error \
+	          -Xlog:class+load,aot,aot+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error -Xlog:aot*=error \
 	          -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
 	          TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
 	  ))
@@ -777,7 +777,7 @@ define SetupAOTBody
 	  $$(call LogWarn, AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
 	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
 	      $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
-	          $$($1_VM_OPTIONS) -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log -Xlog:cds*=error \
+	          $$($1_VM_OPTIONS) -Xlog:aot,aot+class=debug:file=$$($1_AOT_JDK_CACHE).log -Xlog:cds*=error -Xlog:aot*=error \
 	          -XX:ExtraSharedClassListFile=$(JDK_UNDER_TEST)/lib/classlist \
 	          -XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
 	  ))
