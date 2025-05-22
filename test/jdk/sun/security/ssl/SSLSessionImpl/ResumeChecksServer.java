@@ -26,6 +26,7 @@
  * @bug 8206929
  * @summary ensure that server only resumes a session if certain properties
  *    of the session are compatible with the new connection
+ * @modules java.base/sun.security.x509
  * @library /javax/net/ssl/templates
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=false ResumeChecksServer BASIC
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=false ResumeChecksServer BASIC
