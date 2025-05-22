@@ -213,7 +213,7 @@ class StringEqualsTest {
     }
 }
 
-class StringEqualsHelper {
+private class StringEqualsHelper {
     private String str;
 
     public StringEqualsHelper(String str) {
@@ -438,7 +438,7 @@ class StoreNTest {
     }
 }
 
-class StoreNHelper {
+private class StoreNHelper {
     Object o1;
     Object o2;
 
