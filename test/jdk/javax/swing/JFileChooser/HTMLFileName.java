@@ -50,22 +50,29 @@ import javax.swing.filechooser.FileSystemView;
 
 public class HTMLFileName {
     private static final String INSTRUCTIONS = """
-            1. FileChooser shows up a virtual directory and file with name
-               "<html><h1 color=#ff00ff><font face="Comic Sans MS">Swing Rocks!".
-            2. On "HTML disabled" frame :
-                  a. Verify that the folder and file name must be plain text.
-                  b. If the name in file pane window and also in directory
-                     ComboBox remains in plain text, then test passes.
-                     If it appears to be in HTML format with Pink color,
-                     then test fails.
-                     (Verify for all Look and Feel).
-            3. On "HTML enabled" frame :
-                  a. Verify that the folder and file name remains in HTML
-                     format with name "Testing Name" pink in color.
-                  b. If the name in file pane window and also in directory
-                     ComboBox remains in HTML format string, then test passes.
-                     If it appears to be in plain text, then test fails.
-                     (Verify for all Look and Feel).
+            <html>
+            <ol>
+            <li>FileChooser shows up a virtual directory and file with name
+               <html><h1 color=#ff00ff><font face="Comic Sans MS">Swing Rocks!.
+            <li>On "HTML disabled" frame :
+                <ol>
+                  <li>Verify that the folder and file name must be plain text.
+                  <li>If the name in file pane window and also in directory
+                     ComboBox remains in plain text, then press <b>Pass</b>.
+                     If it appears to be in HTML format with Pink color as
+                     shown, then press <b>Fail</b>.
+                </ol>
+
+            <li>On "HTML enabled" frame :
+                <ol>
+                  <li>Verify that the folder and file name remains in HTML
+                     format with name "Swing Rocks!" pink in color as shown.
+                  <li>If the name in file pane window and also in directory
+                     ComboBox remains in HTML format string, then press <b>Pass</b>.
+                     If it appears to be in plain text, then press <b>Fail</b>.
+                </ol>
+            </ol>
+            </html>
             """;
 
     public static void main(String[] args) throws Exception {
@@ -107,6 +114,7 @@ public class HTMLFileName {
         JFileChooser jfc = new JFileChooser(new VirtualFileSystemView());
         jfc.putClientProperty("html.disable", htmlEnabled);
         jfc.setControlButtonsAreShown(false);
+
         JFrame frame = new JFrame((htmlEnabled) ? "HTML enabled" : "HTML disabled");
         frame.add(jfc);
         frame.pack();
@@ -123,7 +131,7 @@ public class HTMLFileName {
         public File[] getRoots() {
             return new File[]{
                     new File("/", "<html><h1 color=#ff00ff><font " +
-                            "face=\"Comic Sans MS\">Swing Rocks!!!!111"),
+                            "face=\"Comic Sans MS\">Swing Rocks!"),
                     new File("/", "virtualFile2.txt"),
                     new File("/", "virtualFolder")
             };
