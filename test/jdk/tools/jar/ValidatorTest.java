@@ -57,7 +57,6 @@ import java.util.zip.ZipOutputStream;
 
 import jdk.test.lib.util.FileUtils;
 
-@TestInstance(Lifecycle.PER_CLASS)
 class ValidatorTest {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
         .orElseThrow(() ->
@@ -319,8 +318,9 @@ class ValidatorTest {
         System.setErr(err);
         try {
             int rc = JAR_TOOL.run(jarOut, err, cmdline.split(" +"));
+            System.out.println("exit code: " + rc);
             if (rc != 0) {
-                assertTrue(rc > 0, "exit code: " + rc);
+                assertTrue(rc > 0);
                 throw new IOException(baes.toString());
             } else {
                 return baes.toString();

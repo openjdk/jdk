@@ -183,6 +183,7 @@ final class Validator {
         // Encounter order in CEN, step by 1 on each new entry
         int cenEncounterOrder = 0;
         // Encounter order in LOC, step by 1 for new LOC entry that exists in CEN
+        // Order comparing is based on CEN listing, therefore we skip LOC only entries.
         int locEncounterOrder = 0;
 
         /**

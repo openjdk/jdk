@@ -232,8 +232,9 @@ integrity checks against a JAR file:
 - The API exported by a multi-release jar archive is consistent across all different release
   versions.
 
-The jar tool returns an exit code of 0 if there were no integrity issues encountered, otherwise
-an exit code >0 would be returned.
+The jar tool exits with a status of 0 if there were no integrity issues encountered and >0 if an
+error/warning occurred.
+
 When an integrity issue is reported, it will often require that the JAR file is re-created by the
 original source of the JAR file.
 
