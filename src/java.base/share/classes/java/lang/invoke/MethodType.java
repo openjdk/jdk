@@ -1332,13 +1332,13 @@ s.writeObject(this.parameterArray());
      * deserialize it).
      * This instance is a scratch object with bogus final fields.
      * It provides the parameters to the factory method called by
-     * {@code readResolve}.
+     * {@link #readResolve readResolve}.
      * After that call it is discarded.
      * @param s the stream to read the object from
      * @throws java.io.IOException if there is a problem reading the object
      * @throws ClassNotFoundException if one of the component classes cannot be resolved
-     * @see <code>MethodType.readResolve()</code>
-     * @see <code>MethodType.writeObject(ObjectOutputStream s)</code>
+     * @see #readResolve
+     * @see #writeObject
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
