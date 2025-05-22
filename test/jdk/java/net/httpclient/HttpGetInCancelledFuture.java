@@ -73,11 +73,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @bug 8316580
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build HttpGetInCancelledFuture ReferenceTracker
- * @run junit/othervm -Djdk.tracePinnedThreads=full
- *                   -DuseReferenceTracker=false
+ * @run junit/othervm -DuseReferenceTracker=false
  *                   HttpGetInCancelledFuture
- * @run junit/othervm -Djdk.tracePinnedThreads=full
- *                   -DuseReferenceTracker=true
+ * @run junit/othervm -DuseReferenceTracker=true
  *                   HttpGetInCancelledFuture
  * @summary This test verifies that cancelling a future that
  * does an HTTP request using the HttpClient doesn't cause

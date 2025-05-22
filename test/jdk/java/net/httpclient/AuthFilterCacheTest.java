@@ -56,7 +56,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
-/**
+/*
  * @test
  * @bug 8232853
  * @summary AuthenticationFilter.Cache::remove may throw ConcurrentModificationException
@@ -64,7 +64,6 @@ import static org.testng.Assert.*;
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DigestEchoServer ReferenceTracker jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run testng/othervm -Dtest.requiresHost=true
- * -Djdk.tracePinnedThreads=full
  * -Djdk.httpclient.HttpClient.log=requests,headers,errors,quic
  * -Djdk.internal.httpclient.debug=false
  * AuthFilterCacheTest

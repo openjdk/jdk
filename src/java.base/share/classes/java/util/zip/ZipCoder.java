@@ -266,7 +266,7 @@ class ZipCoder {
                 return 0;
             }
             int end = off + len;
-            int asciiLen = JLA.countPositives(a, off, len);
+            int asciiLen = JLA.uncheckedCountPositives(a, off, len);
             if (asciiLen != len) {
                 // Non-ASCII, fall back to decoding a String
                 // We avoid using decoder() here since the UTF8ZipCoder is
@@ -289,7 +289,7 @@ class ZipCoder {
         @Override
         byte compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
             try {
-                byte[] encoded = JLA.getBytesNoRepl(str, UTF_8.INSTANCE);
+                byte[] encoded = JLA.uncheckedGetBytesNoRepl(str, UTF_8.INSTANCE);
                 int mismatch = Arrays.mismatch(encoded, 0, encoded.length, b, off, off+len);
                 if (mismatch == -1) {
                     return EXACT_MATCH;
