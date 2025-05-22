@@ -24,7 +24,7 @@
 /*
  * @test id=GetAndSet
  * @bug 8020282
- * @summary Test that we do not generate redundant leas on x86
+ * @summary Test that we do not generate redundant leas on x86 for AtomicReference.getAndSet.
  * @requires os.simpleArch == "x64"
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @library /test/lib /
@@ -34,7 +34,7 @@
 /*
  * @test id=StringEquals
  * @bug 8020282
- * @summary Test that we do not generate redundant leas on x86
+ * @summary Test that we do not generate redundant leas on x86 for String.Equals.
  * @requires os.simpleArch == "x64"
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @library /test/lib /
@@ -44,7 +44,7 @@
 /*
  * @test id=StringInflate
  * @bug 8020282
- * @summary Test that we do not generate redundant leas on x86
+ * @summary Test that we do not generate redundant leas on x86 for StringConcat intrinsics.
  * @requires os.simpleArch == "x64"
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @library /test/lib /
@@ -54,7 +54,7 @@
 /*
  * @test id=RegexFind
  * @bug 8020282
- * @summary Test that we do not generate redundant leas on x86
+ * @summary Test that we do not generate redundant leas on x86 when performing regex matching.
  * @requires os.simpleArch == "x64"
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @library /test/lib /
@@ -64,7 +64,7 @@
 /*
  * @test id=StoreN
  * @bug 8020282
- * @summary Test that we do not generate redundant leas on x86
+ * @summary Test that we do not generate redundant leas on x86 when storing narrow oops to object arrays.
  * @requires os.simpleArch == "x64"
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @library /test/lib /
@@ -82,12 +82,21 @@ import com.sun.tools.javac.util.*;
 
 import compiler.lib.ir_framework.*;
 
+// The following tests ensure that we do not generate a redundant lea instruction on x86.
+// These get generated on chained dereferences for the rules leaPCompressedOopOffset,
+// leaP8Narow, and leaP32Narrow and stem from a decodeHeapOopNotNull that is not needed
+// unless the derived oop is added to an oop map. The redundant lea is removed with an
+// opto assembly peephole optimization. Hence, all tests below feature a negative test
+// run with -XX:-OptoPeephole to detect changes that obsolete that peephole.
+// Further, all tests are run with different max heap sizes to trigger the generation of
+// different lea match rules: -XX:MaxHeapSize=32m generates leaP(8|32)Narrow and
+// -XX:MaxHeapSize=4g generates leaPCompressedOopOffset, since the address computation
+// needs to shift left by 3.
 public class TestRedundantLea {
     public static void main(String[] args) {
         String testName = args[0];
-
+        // To add extra args overwrite this with a new String array.
         String[] extraScenarioArgs = new String[] { "" };
-
         TestFramework framework;
         switch (testName) {
             case "GetAndSet" -> {
@@ -118,6 +127,7 @@ public class TestRedundantLea {
         for (boolean negativeTest : new boolean[] {false, true}) {
             for (boolean compressedTest : new boolean[] {false, true}) {
                 for (String extra : extraScenarioArgs) {
+                    //                                             leaPComperssedOopOffset  leaP(8|32)Narrow
                     scenarios[i] = new Scenario(i, compressedTest ? "-XX:MaxHeapSize=4g" : "-XX:MaxHeapSize=32m");
                     if (negativeTest) {
                         scenarios[i].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-OptoPeephole");
@@ -134,6 +144,8 @@ public class TestRedundantLea {
     }
 }
 
+ // This generates a leaP* rule for the chained dereference of obj.value that
+ // gets passed to the get and set VM instrinsic.
  class GetAndSetTest {
     private static final Object CURRENT = new Object();
     private final AtomicReference<Object> obj = new AtomicReference<Object>();
@@ -160,6 +172,8 @@ public class TestRedundantLea {
     }
 }
 
+// This generates leaP* rules for the chained dereferences of the String.value
+// fields that are used in the string equals VM intrinsic.
 class StringEqualsTest {
     final StringEqualsHelper strEqHelper = new StringEqualsHelper("I am the string that is tested against");
 
@@ -204,12 +218,12 @@ class StringEqualsHelper {
     }
 }
 
+// With all VM instrinsics disabled, this test only generates a leaP* rule
+// before the string_inflate intrinsic (with -XX:-OptimizeStringConcat no
+// leaP* rule is generated). With VM intrinsics enabled (this is the case
+// here) leaP* rules are also generated for the string_equals and arrays_hashcode
+// VM instrinsics.
 class StringInflateTest {
-    // leaPCompressedOopOffset before string_inflate (if all VM intrinsics are
-    // disabled; otherwise also string_equals and arrays_hashcode)
-    // Does not generate leaPCompressedOopOffsets with -XX:-OptimizeStringConcat (if
-    // all VM intrinsics are disabled)
-
     @Setup
     private static Object[] setup() {
         Names names = new Names(new Context());
@@ -236,13 +250,13 @@ class StringInflateTest {
                   IRNode.LEA_P_COMPRESSED_OOP_OFFSET, "=2"},
         applyIfAnd = {"OptoPeephole", "true", "MaxHeapSize", ">1073741824"})
     @Arguments(setup = "setup")
-    public Name test(Name n1, Name n2) {
+    public static Name test(Name n1, Name n2) {
         return n1.append(n2);
     }
 }
 
-    // leaPCommpressedOopOffset before arrayof_jint_fill
-    // needs -XX:+UseAVX3
+// This test case generates leaP* rules before arrayof_jint_fill intrinsics,
+// but only with -XX:+UseAVX3.
 class RegexFindTest {
     @Setup
     private static Object[] setup() {
@@ -274,8 +288,11 @@ class RegexFindTest {
     }
 }
 
-    // leaPCompressedOopOffset before storeN
-    // -XX:+UseParallelGC
+// The matcher generates leaP* rules for storing an object in an array of objects
+// at a constant offset, but only when using the Serial or Parallel GC.
+// Here, we can also manipulate the offset such that we get a leaP32Narrow rule
+// and we can demonstrate that the peephole also removes simple cases of unneeded
+// spills.
 class StoreNTest {
     private static final int SOME_SIZE = 42;
     private static final int OFFSET8BIT_IDX = 3;
