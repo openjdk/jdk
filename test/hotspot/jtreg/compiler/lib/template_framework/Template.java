@@ -693,14 +693,14 @@ public sealed interface Template permits Template.ZeroArgs,
      * Default amount of fuel for Template rendering. It guides the nesting depth of Templates. Can be changed when
      * rendering a template with {@code render(fuel)} (e.g. {@link ZeroArgs#render(float)}).
      */
-    float DEFAULT_FUEL = 100.0f;
+    static final float DEFAULT_FUEL = 100.0f;
 
     /**
      * The default amount of fuel spent per Template. It is subtracted from the current {@link #fuel} at every
      * nesting level, and once the {@link #fuel} reaches zero, the nesting is supposed to terminate. Can be changed
      * with {@link #setFuelCost(float)} inside {@link #body(Object...)}.
      */
-    float DEFAULT_FUEL_COST = 10.0f;
+    static final float DEFAULT_FUEL_COST = 10.0f;
 
     /**
      * The current remaining fuel for nested Templates. Every level of Template nesting
