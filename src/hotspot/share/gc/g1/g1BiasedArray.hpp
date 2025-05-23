@@ -106,7 +106,7 @@ class G1BiasedMappedArray : public G1BiasedMappedArrayBase {
 
   // The raw biased base pointer.
   T* biased_base() const { return (T*)G1BiasedMappedArrayBase::_biased_base; }
-    
+
 public:
   typedef G1BiasedMappedArrayBase::idx_t idx_t;
 
