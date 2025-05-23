@@ -78,7 +78,7 @@ static void add_previous_filter(const JfrFilter* previous_filter) {
 }
 
 const JfrFilter* JfrFilterManager::current() {
-  return Atomic::load(&_current);
+  return Atomic::load_acquire(&_current);
 }
 
 void JfrFilterManager::install(const JfrFilter* new_filter) {

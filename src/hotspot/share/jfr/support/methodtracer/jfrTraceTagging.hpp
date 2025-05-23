@@ -28,7 +28,7 @@
 #include "jfr/support/methodtracer/jfrTracedMethod.hpp"
 #include "memory/allStatic.hpp"
 
-class InstanceKlass;;
+class InstanceKlass;
 class Method;
 
 template <typename E> class GrowableArray;

@@ -1293,8 +1293,8 @@
 
   <Event name="MethodTiming" category="Java Application" label="Method Timing" thread="false" stackTrace="false" startTime="false" period="everyChunk">
     <Field type="Method" name="method" label="Method" />
-    <Field type="long" name="invocations" label="Invocations" description = "The number of times the method was invoked"/>
-    <Field type="Tickspan" name="average" label="Average" description="An approximation of the wall-clock time it took for the method to execute"/>
+    <Field type="long" name="invocations" label="Invocations" description="The number of times the method was invoked" />
+    <Field type="Tickspan" name="average" label="Average" description="An approximation of the wall-clock time it took for the method to execute" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

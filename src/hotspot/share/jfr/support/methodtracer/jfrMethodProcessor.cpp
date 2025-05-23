@@ -86,18 +86,11 @@ void JfrMethodProcessor::set_timing(int modification) {
   }
 }
 
-static inline bool is_timing(int modification) {
-  return modification == -1 ? false : (modification & 1) != 0;
-}
-
-static inline bool is_tracing(int modification) {
-  return modification == -1 ? false : (modification & 2) != 0;
-}
 
 static void log(const Method* method, traceid id, int new_modification) {
   assert(method != nullptr, "invariant");
-  const char* timing = is_timing(new_modification) ? "+timing" : "-timing";
-  const char* tracing = is_tracing(new_modification) ? "+tracing" : "-tracing";
+  const char* timing = JfrFilter::is_timing(new_modification) ? "+timing" : "-timing";
+  const char* tracing = JfrFilter::is_tracing(new_modification) ? "+tracing" : "-tracing";
   stringStream param_stream;
   method->signature()->print_as_signature_external_parameters(&param_stream);
   const char* param_string = param_stream.as_string();
@@ -130,13 +123,13 @@ void JfrMethodProcessor::process() {
     assert(m != nullptr, "invariant");
     if (filter->can_instrument_method(m)) {
       const int new_modification = JfrFilter::combine_bits(class_modifications, filter->method_modifications(m));
-      if (new_modification != -1 || JfrTraceId::has_sticky_bit(m)) {
+      if (new_modification != JfrFilter::NONE || JfrTraceId::has_sticky_bit(m)) {
         // Allocate lazy, most classes will not match a filter
         if (_methods == nullptr) {
           _methods = new GrowableArray<JfrTracedMethod>();
         }
         set_timing(new_modification);
-        const int modification = new_modification == -1 ? 0 : new_modification;
+        const int modification = new_modification == JfrFilter::NONE ? 0 : new_modification;
         JfrTracedMethod traced_method(_klass, m, modification, i);
         _methods->append(traced_method);
         if (_log) {

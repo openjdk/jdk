@@ -89,7 +89,12 @@ jlongArray JfrMethodTracer::set_filters(JNIEnv* env, jobjectArray classes, jobje
   }
   retransform(env, filter_class_closure, THREAD);
   MutexLocker lock(ClassLoaderDataGraph_lock);
-  return _timing_entries->is_nonempty() ? JfrJavaSupport::create_long_array(_timing_entries, THREAD) : nullptr;
+  if (_timing_entries->is_empty()) {
+    return nullptr;
+  }
+  jlongArray array = JfrJavaSupport::create_long_array(_timing_entries, THREAD);
+  _timing_entries->clear();
+  return array;
 }
 
 class MirrorClosure {
@@ -184,7 +189,7 @@ void JfrMethodTracer::on_klass_creation(InstanceKlass*& ik, ClassFileParser& par
   // On initial class load the newly created klass can be installed into the instrumented class list directly.
   add_instrumented_class(ik, mp.methods());
   if (mp.has_timing()) {
-    // After having installed the newly created klass into the list, perform and upcall to publish the associated TimedClass.
+    // After having installed the newly created klass into the list, perform an upcall to publish the associated TimedClass.
     JfrUpcalls::publish_method_timers_for_klass(JfrTraceId::load_raw(ik), THREAD);
   }
 }
@@ -296,6 +301,7 @@ jlongArray JfrMethodTracer::drain_stale_class_ids(TRAPS) {
   assert(_stale_class_ids != _empty_class_ids, "invariant");
   assert(_stale_class_ids->is_nonempty(), "invariant");
   jlongArray array = JfrJavaSupport::create_long_array(_stale_class_ids, THREAD);
+  _stale_class_ids->clear();
   assert(_stale_class_ids->is_empty(), "invariant");
   _stale_class_ids = _empty_class_ids;
   return array;

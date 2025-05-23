@@ -939,6 +939,5 @@ jlongArray JfrJavaSupport::create_long_array(GrowableArray<jlong>* array, TRAPS)
   assert(length > 0, "invariant");
   typeArrayOop obj = oopFactory::new_typeArray(T_LONG, length, CHECK_NULL);
   ArrayAccess<>::arraycopy_from_native(&array->first(), obj, typeArrayOopDesc::element_offset<jlong>(0), length);
-  array->clear();
   return static_cast<jlongArray>(JfrJavaSupport::local_jni_handle(obj, THREAD));
 }

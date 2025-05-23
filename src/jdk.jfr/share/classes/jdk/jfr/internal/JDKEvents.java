@@ -78,7 +78,7 @@ public final class JDKEvents {
         DirectBufferStatisticsEvent.class,
         InitialSecurityPropertyEvent.class,
         MethodTraceEvent.class,
-        MethodTimingEvent.class
+        MethodTimingEvent.class,
     };
 
     private static final Runnable emitExceptionStatistics = JDKEvents::emitExceptionStatistics;

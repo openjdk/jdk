@@ -286,9 +286,9 @@ ClassFileStream* JfrUpcalls::on_method_trace(InstanceKlass* ik, const ClassFileS
     h_modification_array->int_at_put(i, method.modification());
   }
 
-  // Call JVMUpcalls::onMethodTrace(byte[], long[] , String[], String[], int[])
+  // Call JVMUpcalls::onMethodTrace
   JavaCallArguments args;
-  JavaValue result(T_OBJECT);
+  JavaValue result(T_ARRAY);
   args.push_oop(module_handle);
   args.push_oop(class_loader_handle);
   args.push_oop(class_name_h);

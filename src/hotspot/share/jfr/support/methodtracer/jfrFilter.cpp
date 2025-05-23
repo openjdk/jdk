@@ -68,9 +68,6 @@ bool JfrFilter::can_instrument_module(const ModuleEntry* module) const {
   if (name->equals("jdk.jfr", 7)) {
     return false;
   }
-  if (name->equals("jdk.proxy1", 10)) {
-    return false;
-  }
   return true;
 }
 
@@ -141,10 +138,10 @@ bool JfrFilter::match_annotations(const InstanceKlass* ik, AnnotationArray* anno
 }
 
 int JfrFilter::combine_bits(int a, int b) {
-  if (a == -1) {
+  if (a == NONE) {
     return b;
   }
-  if (b == -1) {
+  if (b == NONE) {
     return a;
   }
   return a | b;
@@ -154,9 +151,9 @@ int JfrFilter::class_modifications(const InstanceKlass* ik, bool log) const {
   assert(ik != nullptr, "invariant");
   AnnotationArray* class_annotations = ik->class_annotations();
   if (class_annotations == nullptr) {
-    return -1;
+    return NONE;
   }
-  int result = -1;
+  int result = NONE;
   for (int i = 0; i < _count; i++) {
     const Symbol* annotation_filter = _annotation_names[i];
     if (annotation_filter != nullptr && match_annotations(ik, class_annotations, annotation_filter, log)) {
@@ -172,13 +169,13 @@ int JfrFilter::class_modifications(const InstanceKlass* ik, bool log) const {
 
 bool JfrFilter::match(const InstanceKlass* ik) const {
   assert(ik != nullptr, "invariant");
-  if (class_modifications(ik, false) != -1) {
+  if (class_modifications(ik, false) != NONE) {
     return true;
   }
   const Array<Method*>* methods = ik->methods();
   const int method_count = methods->length();
   for (int i = 0; i < method_count; i++) {
-    if (method_modifications(methods->at(i)) != -1) {
+    if (method_modifications(methods->at(i)) != NONE) {
       return true;
     }
   }
@@ -188,7 +185,7 @@ bool JfrFilter::match(const InstanceKlass* ik) const {
 int JfrFilter::method_modifications(const Method* method) const {
   assert(method != nullptr, "invariant");
   InstanceKlass* klass = method->method_holder();
-  int result = -1;
+  int result = NONE;
   for (int i = 0; i < _count; i++) {
     Symbol* annotation_name = _annotation_names[i];
     if (annotation_name != nullptr) {
@@ -219,16 +216,7 @@ void JfrFilter::log(const char* caption) const {
     const Symbol* m = _method_names[i];
     const Symbol* c = _class_names[i];
     const Symbol* a = _annotation_names[i];
-    const int mod = _modifications[i];
-    const char* modification = "-timing -tracing";
-
-    if (mod == 1) {
-      modification = "+timing";
-    } else if (mod == 2) {
-      modification = "+tracing";
-    } else if (mod == 3) {
-      modification = "+timing +tracing";
-    }
+    const char* modification = modification_to_text(_modifications[i]);
 
     if (a != nullptr) {
       char annotation_buffer[100];
@@ -257,3 +245,26 @@ void JfrFilter::log(const char* caption) const {
   msg.debug("}");
 }
 
+bool JfrFilter::is_timing(int modification) {
+  return modification == NONE ? false : (modification & TIMING) != 0;
+}
+
+bool JfrFilter::is_tracing(int modification) {
+  return modification == NONE ? false : (modification & TRACING) != 0;
+}
+
+const char* JfrFilter::modification_to_text(int modification) {
+  switch (modification) {
+  case 0:
+    return "-timing -tracing";
+  case TIMING:
+    return "+timing";
+  case TRACING:
+    return "+tracing";
+  case TIMING + TRACING:
+    return "+timing +tracing";
+  default:
+    ShouldNotReachHere();
+  };
+  return "unknown modification";
+}

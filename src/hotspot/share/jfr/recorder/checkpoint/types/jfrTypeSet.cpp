@@ -499,7 +499,7 @@ static void do_method_tracer_klasses() {
       continue;
     }
     assert(jic.trace_id() == JfrTraceId::load_raw(jic.instance_klass()), "invariant");
-    assert(HAS_STICKY_BIT(jic.instance_klass()), "invariant");
+    assert(JfrTraceId::has_sticky_bit(jic.instance_klass()), "invariant");
     if (current_epoch()) {
       JfrTraceId::load(jic.instance_klass()); // enqueue klass for this epoch
     } else {

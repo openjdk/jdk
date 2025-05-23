@@ -269,8 +269,8 @@ public final class PlatformTracer {
             Logger.log(LogTag.JFR_METHODTRACE, LogLevel.DEBUG, "Method tracer initialization started.");
             Thread current = Thread.currentThread();
             JVM.exclude(current);
-            long classId = Type.getKnownType(String.class).getId();
-            long methodId = classId << 16 + 983059;
+            long methodId = 16384126;
+            long classId = methodId >> 16;
             ClassLoader cl = null;
             String className = " java/lang/String";
             Module m = String.class.getModule();

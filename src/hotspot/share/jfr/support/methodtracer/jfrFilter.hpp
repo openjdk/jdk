@@ -44,6 +44,9 @@ class Symbol;
 class JfrFilter : public JfrCHeapObj {
   friend class JfrFilterManager;
  private:
+  static constexpr int TIMING  = 1;
+  static constexpr int TRACING = 2;
+
   Symbol** _class_names;
   Symbol** _method_names;
   Symbol** _annotation_names;
@@ -66,6 +69,10 @@ class JfrFilter : public JfrCHeapObj {
   bool match_annotations(const InstanceKlass* klass, AnnotationArray* annotation, const Symbol* symbol, bool log) const;
   void log(const char* caption) const;
 
+  static constexpr int NONE = -1;
+  static bool is_timing(int modification);
+  static bool is_tracing(int modification);
+  static const char* modification_to_text(int modification);
   static int combine_bits(int a, int b);
 };
 

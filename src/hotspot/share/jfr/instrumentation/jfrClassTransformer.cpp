@@ -106,7 +106,6 @@ InstanceKlass* JfrClassTransformer::create_new_instance_klass(InstanceKlass* ik,
   ClassLoaderData* const cld = ik->class_loader_data();
   Handle pd(THREAD, ik->protection_domain());
   Symbol* const class_name = ik->name();
-  const char* const klass_name = class_name != nullptr ? class_name->as_C_string() : "";
   ClassLoadInfo cl_info(pd);
   ClassFileParser new_parser(stream,
                              class_name,
@@ -128,7 +127,7 @@ InstanceKlass* JfrClassTransformer::create_new_instance_klass(InstanceKlass* ik,
   }
   assert(new_ik != nullptr, "invariant");
   assert(new_ik->name() != nullptr, "invariant");
-  assert(strncmp(ik->name()->as_C_string(), new_ik->name()->as_C_string(), strlen(ik->name()->as_C_string())) == 0, "invariant");
+  assert(ik->name() == new_ik->name(), "invariant");
   return new_ik;
 }
 
@@ -137,9 +136,6 @@ const Klass* JfrClassTransformer::find_existing_klass(const InstanceKlass* ik, J
   assert(ik != nullptr, "invariant");
   assert(thread != nullptr, "invariant");
   JvmtiThreadState* const state = thread->jvmti_thread_state();
-  if (state == nullptr) {
-    return nullptr;
-  }
   return state != nullptr ? klass_being_redefined(ik, state) : nullptr;
 }
 
