@@ -195,7 +195,7 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
   void set_rate(double rate, bool autoadapt);
   int64_t get_sampling_period() const { return Atomic::load(&_current_sampling_period_ns); };
 
-  void sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt);
+  void sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl);
 
   // sample all marked threads out of safepoint
   void sample_out_of_safepoint();
@@ -345,9 +345,15 @@ inline bool operator==(const JfrSampleRequest& lhs, const JfrSampleRequest& rhs)
          lhs._sample_bcp == rhs._sample_bcp;
 }
 
+static inline bool is_in_continuation(const frame& frame, JavaThread* jt) {
+  return JfrThreadLocal::is_vthread(jt) &&
+         (Continuation::is_frame_in_continuation(jt, frame) || Continuation::is_continuation_enterSpecial(frame));
+}
+
 void JfrCPUTimeThreadSampler::sample_out_of_safepoint(JavaThread* thread) {
   assert(thread->jfr_thread_local() != nullptr, "invariant");
-  JfrCPUTimeTraceQueue& queue = thread->jfr_thread_local()->cpu_time_jfr_queue();
+  JfrThreadLocal* tl = thread->jfr_thread_local();
+  JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
   assert(!queue.is_empty(), "invariant");
   if (queue.is_empty()) {
     return;
@@ -374,7 +380,7 @@ void JfrCPUTimeThreadSampler::sample_out_of_safepoint(JavaThread* thread) {
     JfrCPUTimeSampleRequest& request = queue.at(i);
     JfrStackTrace stacktrace;
     traceid tid = JfrThreadLocal::thread_id(thread);
-    if (!stacktrace.record_inner(thread, top_frame, 0)) {
+    if (!stacktrace.record_inner(thread, top_frame, is_in_continuation(top_frame, thread), 0)) {
       log_info(jfr)("Unable to record native stacktrace for thread %s in CPU time sampler", thread->name());
       JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, now, tid, request._cpu_time_period);
     } else {
@@ -541,8 +547,8 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
   Atomic::dec(&_sampler->_active_signal_handlers, memory_order_acq_rel);
 }
 
-void JfrCPUTimeThreadSampler::sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt) {
-  JfrSampleRequestBuilder::build_cpu_time_sample_request(request, ucontext, jt);
+void JfrCPUTimeThreadSampler::sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl) {
+  JfrSampleRequestBuilder::build_cpu_time_sample_request(request, ucontext, jt, jt->jfr_thread_local());
 }
 
 volatile size_t count__ = 0;
@@ -582,7 +588,7 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   // so samples might be skipped and we have to compute the actual period
   int64_t period = get_sampling_period() * (info->si_overrun + 1);
   request._cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
-  sample_thread(request._request, context, jt);
+  sample_thread(request._request, context, jt, tl);
 
   if (tl->cpu_time_jfr_queue().enqueue(request)) {
     tl->set_has_cpu_time_jfr_requests(true);

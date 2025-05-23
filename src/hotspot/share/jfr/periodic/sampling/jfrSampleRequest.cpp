@@ -315,13 +315,14 @@ static inline void set_cpu_time_biased_sample(JfrSampleRequest& request, JavaThr
 
 void JfrSampleRequestBuilder::build_cpu_time_sample_request(JfrSampleRequest& request,
                                                             void* ucontext,
-                                                            JavaThread* jt) {
+                                                            JavaThread* jt,
+                                                            JfrThreadLocal* tl) {
   assert(jt != nullptr, "invariant");
   SuspendedThreadTaskContext context(reinterpret_cast<Thread*>(jt), ucontext);
 
   // Prioritize the ljf, if one exists.
   request._sample_sp = jt->last_Java_sp();
-  if (request._sample_sp == nullptr || !build_from_ljf(request, context, jt)) {
+  if (request._sample_sp == nullptr || !build_from_ljf(request, context, tl, jt)) {
     intptr_t* fp;
     request._sample_pc = os::fetch_frame_from_context(ucontext, reinterpret_cast<intptr_t**>(&request._sample_sp), &fp);
     assert(sp_in_stack(request, jt), "invariant");

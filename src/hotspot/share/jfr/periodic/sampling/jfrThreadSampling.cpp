@@ -28,6 +28,7 @@
 #include "code/nmethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
 #include "memory/resourceArea.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
@@ -161,10 +162,10 @@ static inline bool is_valid(const PcDesc* pc_desc) {
   return pc_desc != nullptr && pc_desc->scope_decode_offset() != DebugInformationRecorder::serialized_null;
 }
 
-static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame, bool& in_continuation, JavaThread* jt, bool* biased) {
+static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame, bool& in_continuation, JavaThread* jt, bool& biased) {
   assert(jt != nullptr, "invariant");
 
-  *biased = false;
+  biased = false;
 
   if (!jt->has_last_Java_frame()) {
     return false;
@@ -176,16 +177,12 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
 
   void* const sampled_pc = request._sample_pc;
 
-  CodeBlob* const sampled_cb = CodeCache::find_blob(sampled_pc);
-  if (sampled_cb == nullptr) {
-    // No code blob... probably native code. Perform a biased sample.
-
   CodeBlob* sampled_cb;
   if (sampled_pc == nullptr || (sampled_cb = CodeCache::find_blob(sampled_pc)) == nullptr) {
     // A biased sample is requested or no code blob.
     top_frame = jt->last_frame();
     in_continuation = is_in_continuation(top_frame, jt);
-    &biased = true;
+    biased = true;
     return true;
   }
 
@@ -248,7 +245,7 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
       // The sample didn't have an nmethod; we decide to trace from its sender.
       // Another instance of safepoint bias.
       top_frame = *current;
-      *biased = true;
+      biased = true;
     }
 
     // Check for a matching compiled method.
@@ -264,7 +261,7 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
     // Either a hit or a mismatched sample in which case we trace from the sender.
     // Yet another instance of safepoint bias,to be addressed with
     // more exact and stricter versions when parsable blobs become available.
-    *biased = true;
+    biased = true;
     top_frame = *current;
     break;
   }
@@ -281,7 +278,7 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
   frame top_frame;
   bool biased;
   bool in_continuation;
-  if (!compute_top_frame(request, top_frame, in_continuation, jt, &biased)) {
+  if (!compute_top_frame(request, top_frame, in_continuation, jt, biased)) {
     return;
   }
 
@@ -304,13 +301,17 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
 }
 
 #ifdef LINUX
-static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const JfrTicks& now, JavaThread* jt, Thread* current) {
+static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const JfrTicks& now, const JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
   assert(jt != nullptr, "invariant");
+  assert(tl != nullptr, "invariant");
   assert(current != nullptr, "invariant");
   frame top_frame;
-  const traceid tid = JfrThreadLocal::thread_id(jt);
   bool biased = false;
-  if (!compute_top_frame(request._request, top_frame, jt, &biased)) {
+  bool in_continuation = false;
+  bool could_compute_top_frame = compute_top_frame(request._request, top_frame, in_continuation, jt, biased);
+  const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
+
+  if (!could_compute_top_frame) {
     JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, now, tid, request._cpu_time_period);
     return;
   }
@@ -318,7 +319,7 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
   {
     ResourceMark rm(current);
     JfrStackTrace stacktrace;
-    if (!stacktrace.record(jt, top_frame, request._request)) {
+    if (!stacktrace.record(jt, top_frame, in_continuation, request._request)) {
       // Unable to record stacktrace. Fail.
       JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, now, tid, request._cpu_time_period);
       return;
@@ -326,8 +327,12 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
     sid = JfrStackTraceRepository::add(stacktrace);
   }
   assert(sid != 0, "invariant");
+
+
   JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, now, sid, tid, request._cpu_time_period, biased);
-  send_safepoint_latency_event(request._request, now, sid, jt);
+  if (current == jt) {
+    send_safepoint_latency_event(request._request, now, sid, jt);
+  }
 }
 #endif
 
@@ -358,7 +363,7 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
     tl->acquire_cpu_time_jfr_dequeue_lock();
     JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
     for (u4 i = 0; i < queue.size(); i++) {
-      record_cpu_time_thread(queue.at(i), now, jt, current);
+      record_cpu_time_thread(queue.at(i), now, tl, jt, current);
     }
     queue.set_size(0);
     assert(queue.is_empty(), "invariant");
