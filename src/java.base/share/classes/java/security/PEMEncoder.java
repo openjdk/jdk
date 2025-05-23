@@ -84,7 +84,8 @@ import java.util.concurrent.locks.ReentrantLock;
  *  <li>{@code X509CRL} : X509 CRL</li>
  *  <li>{@code PublicKey}: PUBLIC KEY</li>
  *  <li>{@code PrivateKey} : PRIVATE KEY</li>
- *  <li>{@code PrivateKey} (if configured with encryption): ENCRYPTED PRIVATE KEY</li>
+ *  <li>{@code PrivateKey} (if configured with encryption):
+ *  ENCRYPTED PRIVATE KEY</li>
  *  <li>{@code EncryptedPrivateKeyInfo} : ENCRYPTED PRIVATE KEY</li>
  *  <li>{@code KeyPair} : PRIVATE KEY</li>
  *  <li>{@code X509EncodedKeySpec} : PUBLIC KEY</li>
@@ -107,8 +108,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *     byte[] pemData = pe.encode(privKey);
  * }
  *
- * @implNote An implementation may support other PEM types and
- * {@code DEREncodables}.
+ * @implNote An implementation may support other PEM types and DEREncodables.
  *
  *
  * @see PEMDecoder

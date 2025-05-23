@@ -29,7 +29,6 @@ import jdk.internal.javac.PreviewFeature;
 
 import sun.security.util.Pem;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -61,6 +60,8 @@ import java.util.Objects;
  *
  * @see PEMDecoder
  * @see PEMEncoder
+ *
+ * @since 25
  */
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public record PEMRecord(String type, String pem, byte[] leadingData)
@@ -74,7 +75,7 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      *           footer.
      * @param leadingData any non-PEM data read during the decoding process
      *                    before the PEM header.  This value maybe {@code null}.
-     * @throws IllegalArgumentException if {@code type} is incorrectly
+     * @throws IllegalArgumentException if the {@code type} is incorrectly
      * formatted.
      * @throws NullPointerException if {@code type} and/or {@code pem} are
      * {@code null}.
@@ -103,7 +104,7 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      * @param type the PEM type identifier
      * @param pem the Base64-encoded data encapsulated by the PEM header and
      *           footer.
-     * @throws IllegalArgumentException if {@code type} is incorrectly
+     * @throws IllegalArgumentException if the {@code type} is incorrectly
      * formatted.
      * @throws NullPointerException if {@code type} and/or {@code pem} are
      * {@code null}.

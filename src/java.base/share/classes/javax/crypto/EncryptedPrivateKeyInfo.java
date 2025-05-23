@@ -322,7 +322,8 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
 
     /**
      * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from a given
-     * {@code PrivateKey}.  A password must be specified.
+     * {@code PrivateKey}.  A valid password-based encryption (PBE) algorithm
+     * and password must be specified.
      *
      * <p> The PBE algorithm string format details can be found in the
      * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
@@ -338,7 +339,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @param params the {@code AlgorithmParameterSpec} to be used with
      *               encryption.  The provider default will be used if
      *               {@code null}.
-     * @param provider the {@code Provider} to be used for PBE
+     * @param provider the {@code Provider} will be used for PBE
      *                 {@link SecretKeyFactory} generation and {@link Cipher}
      *                 encryption operations. The default provider list will be
      *                 used if {@code null}.
@@ -389,7 +390,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
     /**
      * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from a given
      * {@code PrivateKey} and password.  Default algorithm and parameters are
-     * used.  A password must be specified.
+     * used.
      *
      * @param key the {@code PrivateKey} to be encrypted
      * @param password the password used in the PBE encryption.  This array
@@ -415,13 +416,13 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
 
     /**
      * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from the given
-     * {@link PrivateKey} using {@code encKey} and given parameters.
+     * {@link PrivateKey} using the {@code encKey} and given parameters.
      *
      * @param key the {@code PrivateKey} to be encrypted
      * @param encKey the password-based encryption (PBE) {@code Key} used to
      *              encrypt {@code key}.
      * @param algorithm the PBE encryption algorithm.  The default algorithm is
-     *                 used if {@code null}; however, {@code null} is
+     *                 will be used if {@code null}; however, {@code null} is
      *                 not allowed when {@code params} is non-null.
      * @param params the {@code AlgorithmParameterSpec} to be used with
      *               encryption. The provider list default will be used if

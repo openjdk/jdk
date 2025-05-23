@@ -59,12 +59,16 @@ import java.util.Objects;
  *  <li>CERTIFICATE : {@code X509Certificate}</li>
  *  <li>X509 CRL : {@code X509CRL}</li>
  *  <li>PUBLIC KEY : {@code PublicKey}</li>
- *  <li>PUBLIC KEY : {@code X509EncodedKeySpec} (Only supported when passed as a {@code Class} parameter)</li>
+ *  <li>PUBLIC KEY : {@code X509EncodedKeySpec} (Only supported when passed as
+ *  a {@code Class} parameter)</li>
  *  <li>PRIVATE KEY : {@code PrivateKey}</li>
- *  <li>PRIVATE KEY : {@code PKCS8EncodedKeySpec} (Only supported when passed as a {@code Class} parameter)</li>
- *  <li>PRIVATE KEY : {@code KeyPair} (if the encoding also contains a public key)</li>
+ *  <li>PRIVATE KEY : {@code PKCS8EncodedKeySpec} (Only supported when passed
+ *  as a {@code Class} parameter)</li>
+ *  <li>PRIVATE KEY : {@code KeyPair} (if the encoding also contains a
+ *  public key)</li>
  *  <li>ENCRYPTED PRIVATE KEY : {@code EncryptedPrivateKeyInfo} </li>
- *  <li>ENCRYPTED PRIVATE KEY : {@code PrivateKey} (if configured with Decryption)</li>
+ *  <li>ENCRYPTED PRIVATE KEY : {@code PrivateKey} (if configured with
+ *  Decryption)</li>
  *  <li>Other types : {@code PEMRecord} </li>
  * </ul>
  *
@@ -77,16 +81,16 @@ import java.util.Objects;
  * {@link PEMRecord}.
  *
  * <p> The {@linkplain #decode(String, Class)} and
- * {@linkplain #decode(InputStream, Class)} methods take a class parameter
+ * {@linkplain #decode(InputStream, Class)} methods take a Class parameter
  * which determines the type of {@code DEREncodable} that is returned. These
  * methods are useful when extracting or changing the return class.
  * For example, if the PEM contains both public and private keys, the
- * class parameter can specify which to return. Use
+ * Class parameter can specify which to return. Use
  * {@code PrivateKey.class} to return only the private key.
- * If the class parameter is set to {@code X509EncodedKeySpec.class}, the
+ * If the Class parameter is set to {@code X509EncodedKeySpec.class}, the
  * public key will be returned in that format.  Any type of PEM data can be
  * decoded into a {@code PEMRecord} by specifying {@code PEMRecord.class}.
- * If the class parameter doesn't match the PEM content, an
+ * If the Class parameter doesn't match the PEM content, an
  * {@code IllegalArgumentException} will be thrown.
  *
  * <p> A new {@code PEMDecoder} instance is created when configured
@@ -110,12 +114,12 @@ import java.util.Objects;
  *     PrivateKey priKey = pd.decode(priKeyPEM, PrivateKey.class);
  * }
  *
- * <p> Here is an example of a {@code PEMDecoder} configured with decryption
+ * <p> Here is an example of a {@code PEMEncoder} configured with decryption
  * and a factory provider:
  * {@snippet lang = java:
- *     PEMEncoder pe = PEMDecoder.of().withDecryption(password).
+ *     PEMEncoder pe = PEMEncoder.of().withDecryption(password).
  *         withFactory(provider);
- *     byte[] pemData = pe.decode(privKey);
+ *     byte[] pemData = pe.encode(privKey);
  * }
  *
  * @implNote An implementation may support other PEM types and
@@ -170,9 +174,6 @@ public final class PEMDecoder {
      */
     private DEREncodable decode(PEMRecord pem) {
         Base64.Decoder decoder = Base64.getMimeDecoder();
-        if (pem.type() == null) {
-            return pem;
-        }
 
         try {
             return switch (pem.type()) {

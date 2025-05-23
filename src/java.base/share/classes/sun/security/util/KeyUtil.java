@@ -26,7 +26,6 @@
 package sun.security.util;
 
 import java.io.IOException;
-import java.lang.reflect.GenericArrayType;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.*;
