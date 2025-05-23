@@ -640,8 +640,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         jint value = typeInt->get_con();
 
         // Only use up to 4 chars and fall back to a generic "I" to keep it short.
-        if (value >= -999 && value <= 9999) {
-          os::snprintf_checked(buffer, sizeof(buffer), "%d", value);
+        int written_chars = os::snprintf_checked(buffer, sizeof(buffer), "%d", value);
+        if (written_chars <= 4) {
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "I");
@@ -654,8 +654,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         jlong value = typeLong->get_con();
 
         // Only use up to 4 chars and fall back to a generic "L" to keep it short.
-        if (value >= -999 && value <= 9999) {
-          os::snprintf_checked(buffer, sizeof(buffer), JLONG_FORMAT, value);
+        int written_chars = os::snprintf_checked(buffer, sizeof(buffer), JLONG_FORMAT, value);
+        if (written_chars <= 4) {
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "L");
@@ -673,7 +673,7 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         print_prop(short_name, "RA");
       } else if (t->base() == Type::AnyPtr) {
         if (t->is_ptr()->ptr() == TypePtr::Null) {
-          print_prop(short_name, "NULL");
+          print_prop(short_name, "Null");
         } else {
           print_prop(short_name, "P");
         }
@@ -681,6 +681,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         print_prop(short_name, "RP");
       } else if (t->base() == Type::AryPtr) {
         print_prop(short_name, "AP");
+      } else if (t->base() == Type::NarrowOop && t->is_narrowoop() == TypeNarrowOop::NULL_PTR) {
+        print_prop(short_name, "Null");
       }
     }
 
