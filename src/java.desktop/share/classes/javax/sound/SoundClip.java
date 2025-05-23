@@ -34,6 +34,10 @@ import com.sun.media.sound.JavaSoundAudioClip;
  * The {@code SoundClip} class is a simple abstraction for playing a sound clip.
  * It will play any format that is recognized by the {@code javax.sound} API,
  * and for which it has support. This includes midi data.
+ * <p>
+ * This class is intended for easy playback of short clips
+ * or snippets of sound. Applications needing more precise control or advanced
+ * features should look into other parts of the {@code javax.sound} API.
  * Playing sound requires that the environment grants access to audio devices.
  * Typically this means running the application in a desktop environment.
  * <p>
@@ -49,18 +53,19 @@ public final class SoundClip {
     /**
      * Creates a {@code SoundClip} instance which will play a clip from the supplied file.
      * <p>
+     * The file contents will be fully read before this method returns.
      * If the file does not contain recognizable and supported sound data, or
      * if the implementation does not find a suitable output device for the data,
      * playing the clip will be a no-op.
      *
      * @param file the file from which to obtain the sound data
      * @return a {@code SoundClip}
-     * @throws IllegalArgumentException if {@code file} is {@code null}
+     * @throws NullPointerException if {@code file} is {@code null}
      * @throws IOException if there is an error reading from {@code file}
      */
     public static SoundClip createSoundClip(File file) throws IOException {
         if (file == null) {
-            throw new IllegalArgumentException("file must not be null");
+            throw new NullPointerException("file must not be null");
         }
         return new SoundClip(file);
     }
@@ -75,37 +80,49 @@ public final class SoundClip {
      * A value of {@code false} means that calling any of the other methods
      * of this class is a no-op.
      */
-    public synchronized boolean canPlay() {
+    public boolean canPlay() {
         return clip.canPlay();
     }
 
     /**
      * {@return whether sound is currently playing}
      */
-    public synchronized boolean isPlaying() {
+    public boolean isPlaying() {
         return clip.isPlaying();
     }
 
     /**
      * Starts playing this sound clip.
      * Each time this method is called, the clip is restarted from the beginning.
+     * This method will return immediately whether or not sound is played,
+     * and possibly before the sound has started playing.
+     * The application can call the {@code stop()} method to stop it early.
+     * This should be done if the application needs to guarantee exit before the clip
+     * has finished playing.
      */
-    public synchronized void play() {
+    public void play() {
         clip.play();
     }
 
     /**
      * Starts playing this sound clip in a loop.
      * Each time this method is called, the clip is restarted from the beginning.
+     * This method will return immediately whether or not sound is played,
+     * and possibly before the sound has started playing.
+     * The application should call the {@code stop()} method to stop it.
+     * Failure to do so may mean the application does not terminate.
      */
-    public synchronized void loop() {
+    public void loop() {
         clip.loop();
     }
 
     /**
      * Stops playing this sound clip.
+     * Call this if the clip is playing and the application needs to stop
+     * it early, for example so that the application can ensure the clip
+     * playing does not block exit.
      */
-    public synchronized void stop() {
+    public void stop() {
         clip.stop();
     }
 }
