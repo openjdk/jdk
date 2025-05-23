@@ -1054,7 +1054,7 @@ public class Introspector {
         if (match) {
             Class<?> oldClass = old.getMethod().getDeclaringClass();
             Class<?> mdClass = md.getMethod().getDeclaringClass();
-            if (oldClass == mdClass || oldClass.isAssignableFrom(mdClass)) {
+            if (oldClass == mdClass || oldClass.isAssignableFrom(mdClass) || !mdClass.isAssignableFrom(oldClass)) {
                 MethodDescriptor composite = new MethodDescriptor(old, md);
                 methods.put(name, composite);
             }
