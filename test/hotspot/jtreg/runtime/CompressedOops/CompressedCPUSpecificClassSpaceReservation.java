@@ -100,11 +100,10 @@ public class CompressedCPUSpecificClassSpaceReservation {
             }
             output.shouldContain(tryReserveFor16bitMoveIntoQ3);
         } else if (Platform.isX64()) {
+            output.shouldContain(tryReserveBelow4G);
             if (CDS) {
-                output.shouldContain(tryReserveBelow4G);
                 output.shouldNotContain(tryReserveForZeroBased);
             } else {
-                output.shouldContain(tryReserveForUnscaled);
                 output.shouldContain(tryReserveForZeroBased);
             }
         } else {
