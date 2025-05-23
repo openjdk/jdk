@@ -594,9 +594,16 @@ public class TestVectorConditionalMove {
     //   To guarantee that CMove is introduced, I need to perform the loads before the branch. To ensure they
     //   do not float down into the branches, I compute a value, and store it to r2 (same as r, except that the
     //   compilation does not know that).
-    //   So far, vectorization only works for CMoveF/D, with same data-width comparison (F/I for F, D/L for D).
+    //   So far, vectorization works for:
+    //      - CMoveF/D, with same data-width comparison (F/I for F, D/L for D)
+    //      - CMoveI/L/F/D, with same or differet data-width (optionally on some platforms)
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, ">0",
+                  IRNode.VECTOR_MASK_CMP_I, ">0",
+                  IRNode.VECTOR_BLEND_I, ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfPlatform = {"riscv64", "false"}, applyIfCPUFeature = {"rvv", "true"})
     private static void testCMoveIGTforI(int[] a, int[] b, int[] c, int[] d, int[] r, int[] r2) {
         for (int i = 0; i < a.length; i++) {
             int cc = c[i];
@@ -607,7 +614,12 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, ">0",
+                  IRNode.VECTOR_MASK_CMP_I, ">0",
+                  IRNode.VECTOR_BLEND_L, ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfPlatform = {"riscv64", "false"}, applyIfCPUFeature = {"rvv", "true"})
     private static void testCMoveIGTforL(int[] a, int[] b, long[] c, long[] d, long[] r, long[] r2) {
         for (int i = 0; i < a.length; i++) {
             long cc = c[i];
@@ -634,7 +646,12 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, ">0",
+                  IRNode.VECTOR_MASK_CMP_I, ">0",
+                  IRNode.VECTOR_BLEND_D, ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfPlatform = {"riscv64", "false"}, applyIfCPUFeature = {"rvv", "true"})
     private static void testCMoveIGTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -645,7 +662,12 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_L, ">0",
+                  IRNode.VECTOR_MASK_CMP_L, ">0",
+                  IRNode.VECTOR_BLEND_I, ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfPlatform = {"riscv64", "false"}, applyIfCPUFeature = {"rvv", "true"})
     private static void testCMoveLGTforI(long[] a, long[] b, int[] c, int[] d, int[] r, int[] r2) {
         for (int i = 0; i < a.length; i++) {
             int cc = c[i];
@@ -656,7 +678,12 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_L, ">0",
+                  IRNode.VECTOR_MASK_CMP_L, ">0",
+                  IRNode.VECTOR_BLEND_L, ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfPlatform = {"riscv64", "false"}, applyIfCPUFeature = {"rvv", "true"})
     private static void testCMoveLGTforL(long[] a, long[] b, long[] c, long[] d, long[] r, long[] r2) {
         for (int i = 0; i < a.length; i++) {
             long cc = c[i];
@@ -667,7 +694,12 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_L, ">0",
+                  IRNode.VECTOR_MASK_CMP_L, ">0",
+                  IRNode.VECTOR_BLEND_F, ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfPlatform = {"riscv64", "false"}, applyIfCPUFeature = {"rvv", "true"})
     private static void testCMoveLGTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -695,7 +727,12 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_F, ">0",
+                  IRNode.VECTOR_MASK_CMP_F, ">0",
+                  IRNode.VECTOR_BLEND_I, ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfPlatform = {"riscv64", "false"}, applyIfCPUFeature = {"rvv", "true"})
     private static void testCMoveFGTforI(float[] a, float[] b, int[] c, int[] d, int[] r, int[] r2) {
         for (int i = 0; i < a.length; i++) {
             int cc = c[i];
@@ -706,7 +743,12 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_F, ">0",
+                  IRNode.VECTOR_MASK_CMP_F, ">0",
+                  IRNode.VECTOR_BLEND_L, ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfPlatform = {"riscv64", "false"}, applyIfCPUFeature = {"rvv", "true"})
     private static void testCMoveFGTforL(float[] a, float[] b, long[] c, long[] d, long[] r, long[] r2) {
         for (int i = 0; i < a.length; i++) {
             long cc = c[i];
@@ -732,7 +774,12 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_F, ">0",
+                  IRNode.VECTOR_MASK_CMP_F, ">0",
+                  IRNode.VECTOR_BLEND_D, ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfPlatform = {"riscv64", "false"}, applyIfCPUFeature = {"rvv", "true"})
     private static void testCMoveFGTforD(float[] a, float[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -743,7 +790,12 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_D, ">0",
+                  IRNode.VECTOR_MASK_CMP_D, ">0",
+                  IRNode.VECTOR_BLEND_I, ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfPlatform = {"riscv64", "false"}, applyIfCPUFeature = {"rvv", "true"})
     private static void testCMoveDGTforI(double[] a, double[] b, int[] c, int[] d, int[] r, int[] r2) {
         for (int i = 0; i < a.length; i++) {
             int cc = c[i];
@@ -754,7 +806,12 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_D, ">0",
+                  IRNode.VECTOR_MASK_CMP_D, ">0",
+                  IRNode.VECTOR_BLEND_L, ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfPlatform = {"riscv64", "false"}, applyIfCPUFeature = {"rvv", "true"})
     private static void testCMoveDGTforL(double[] a, double[] b, long[] c, long[] d, long[] r, long[] r2) {
         for (int i = 0; i < a.length; i++) {
             long cc = c[i];
@@ -765,7 +822,12 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR_D, ">0",
+                  IRNode.VECTOR_MASK_CMP_D, ">0",
+                  IRNode.VECTOR_BLEND_F, ">0",
+                  IRNode.STORE_VECTOR, ">0"},
+        applyIfPlatform = {"riscv64", "false"}, applyIfCPUFeature = {"rvv", "true"})
     private static void testCMoveDGTforF(double[] a, double[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
