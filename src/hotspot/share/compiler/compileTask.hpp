@@ -113,8 +113,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
  public:
   CompileTask(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
-              int hot_count,
-              CompileReason compile_reason, bool is_blocking);
+              int hot_count, CompileReason compile_reason, bool is_blocking);
   ~CompileTask();
 
   int          compile_id() const                { return _compile_id; }
