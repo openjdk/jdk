@@ -154,18 +154,6 @@ public:
     biased_base()[biased_index] = value;
   }
 
-  // Set the value of all array entries that correspond to addresses
-  // in the specified MemRegion.
-  void set_by_address(MemRegion range, T value) {
-    idx_t biased_start = ((uintptr_t)range.start()) >> this->shift_by();
-    idx_t biased_last = ((uintptr_t)range.last()) >> this->shift_by();
-    this->verify_biased_index(biased_start);
-    this->verify_biased_index(biased_last);
-    for (idx_t i = biased_start; i <= biased_last; i++) {
-      biased_base()[i] = value;
-    }
-  }
-
   // Return the smallest address (inclusive) in the heap that this array covers.
   HeapWord* bottom_address_mapped() const {
     return (HeapWord*) ((uintptr_t)this->bias() << this->shift_by());
