@@ -26,6 +26,8 @@
 
 #include "gc/z/zPageAge.hpp"
 
+#include <type_traits>
+
 inline uint untype(ZPageAge age) {
   return static_cast<uint>(age);
 }
@@ -33,6 +35,16 @@ inline uint untype(ZPageAge age) {
 inline ZPageAge to_zpageage(uint age) {
   assert(age < ZPageAgeCount, "Invalid age");
   return static_cast<ZPageAge>(age);
+}
+
+inline ZPageAge operator+(ZPageAge age, size_t size) {
+  const auto size_value = checked_cast<std::underlying_type_t<ZPageAge>>(size);
+  return to_zpageage(untype(age) + size_value);
+}
+
+inline ZPageAge operator-(ZPageAge age, size_t size) {
+  const auto size_value = checked_cast<std::underlying_type_t<ZPageAge>>(size);
+  return to_zpageage(untype(age) - size_value);
 }
 
 #endif // SHARE_GC_Z_ZPAGEAGE_INLINE_HPP

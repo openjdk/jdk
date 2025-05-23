@@ -35,7 +35,7 @@ inline ZAllocatorEden* ZAllocator::eden() {
 }
 
 inline ZAllocatorForRelocation* ZAllocator::relocation(ZPageAge page_age) {
-  return _relocation[untype(page_age) - 1];
+  return _relocation[untype(page_age - 1)];
 }
 
 inline ZAllocatorForRelocation* ZAllocator::old() {

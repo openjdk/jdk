@@ -488,11 +488,11 @@ public:
   }
 
   ZPage* shared(ZPageAge age) {
-    return _shared[untype(age) - 1];
+    return _shared[untype(age - 1)];
   }
 
   void set_shared(ZPageAge age, ZPage* page) {
-    _shared[untype(age) - 1] = page;
+    _shared[untype(age - 1)] = page;
   }
 
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
@@ -570,11 +570,11 @@ private:
 
 
   ZPage* target(ZPageAge age) {
-    return _target[untype(age) - 1];
+    return _target[untype(age - 1)];
   }
 
   void set_target(ZPageAge age, ZPage* page) {
-    _target[untype(age) - 1] = page;
+    _target[untype(age - 1)] = page;
   }
 
   size_t object_alignment() const {
