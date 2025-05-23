@@ -257,9 +257,9 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
 
         // Inputs exactly equal.
         clientKey = clientSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytes, 128);
+                "Generic", "hello", bytes, 128);
         serverKey = serverSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytes, 128);
+                "Generic", "hello", bytes, 128);
         assertEquals(clientKey, serverKey,
                 "Key: Equal inputs but exporters are not equal");
         log("Key: Equal inputs test passed");
@@ -274,9 +274,9 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
 
         // Different labels, now use exportKeyingMaterialData() for coverage
         clientKey = clientSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytes, 128);
+                "Generic", "hello", bytes, 128);
         serverKey = serverSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "goodbye", bytes, 128);
+                "Generic", "goodbye", bytes, 128);
         assertNotEquals(clientKey, serverKey,
                 "Key: Different labels but exporters same");
         log("Key: Different labels test passed");
@@ -291,9 +291,9 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
 
         // Different output sizes
         clientKey = clientSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytes, 128);
+                "Generic", "hello", bytes, 128);
         serverKey = serverSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytes, 127);
+                "Generic", "hello", bytes, 127);
         assertNotEquals(clientKey, serverKey,
                 "Key: Different output sizes but exporters same");
         log("Key: Different output size test passed");
@@ -310,9 +310,9 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
 
         // Different context values
         clientKey = clientSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytes, 128);
+                "Generic", "hello", bytes, 128);
         serverKey = serverSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytesDiff, 128);
+                "Generic", "hello", bytesDiff, 128);
         assertNotEquals(clientKey, serverKey,
                 "Key: Different context but exporters same");
         log("Key: Different context test passed");
@@ -327,9 +327,9 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
 
         // Different context sizes
         clientKey = clientSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytes, 128);
+                "Generic", "hello", bytes, 128);
         serverKey = serverSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytesDiffSize, 128);
+                "Generic", "hello", bytesDiffSize, 128);
         assertNotEquals(clientKey, serverKey,
                 "Key: Different context sizes but exporters same");
         log("Key: Different context sizes test passed");
@@ -344,9 +344,9 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
 
         // No context, but otherwise the same
         clientKey = clientSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", null, 128);
+                "Generic", "hello", null, 128);
         serverKey = serverSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", null, 128);
+                "Generic", "hello", null, 128);
         assertEquals(clientKey, serverKey,
                 "Key: No context and exporters are not the same");
         log("Key: No context test passed");
@@ -361,9 +361,9 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
 
         // Smaller key size
         clientKey = clientSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytes, 5);
+                "Generic", "hello", bytes, 5);
         serverKey = serverSession.exportKeyingMaterialKey(
-                "TlsExporterKeyingMaterial", "hello", bytes, 5);
+                "Generic", "hello", bytes, 5);
         assertEquals(clientKey, serverKey,
                 "Key: Smaller key size should be the same");
         log("Key: Smaller key size test passed");
