@@ -967,6 +967,7 @@ public class Proxy implements java.io.Serializable {
      * @return  the invocation handler for the proxy instance
      * @throws  IllegalArgumentException if the argument is not a
      *          proxy instance
+     * @throws  NullPointerException if {@code proxy} is {@code null}
      */
     public static InvocationHandler getInvocationHandler(Object proxy)
         throws IllegalArgumentException
