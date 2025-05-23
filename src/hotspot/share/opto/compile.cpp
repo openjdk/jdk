@@ -33,6 +33,7 @@
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
@@ -576,6 +577,10 @@ void Compile::print_compile_messages() {
 }
 
 #ifndef PRODUCT
+void Compile::print_phase(const char* phase_name) {
+  tty->print_cr("%u.\t%s", ++_phase_counter, phase_name);
+}
+
 void Compile::print_ideal_ir(const char* phase_name) {
   // keep the following output all in one block
   // This output goes directly to the tty, not the compiler log.
@@ -1069,6 +1074,7 @@ void Compile::Init(bool aliasing) {
   set_decompile_count(0);
 
 #ifndef PRODUCT
+  _phase_counter = 0;
   Copy::zero_to_bytes(_igv_phase_iter, sizeof(_igv_phase_iter));
 #endif
 
@@ -5149,7 +5155,10 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   if (should_print_igv(level)) {
     _igv_printer->print_graph(name);
   }
-  if (should_print_phase(cpt)) {
+  if (should_print_phase(level)) {
+    print_phase(name);
+  }
+  if (should_print_ideal_phase(cpt)) {
     print_ideal_ir(CompilerPhaseTypeHelper::to_name(cpt));
   }
 #endif
@@ -5180,26 +5189,26 @@ void Compile::end_method() {
 #endif
 }
 
-bool Compile::should_print_phase(CompilerPhaseType cpt) {
 #ifndef PRODUCT
-  if (_directive->should_print_phase(cpt)) {
-    return true;
-  }
-#endif
-  return false;
+bool Compile::should_print_phase(const int level) const {
+  return PrintPhaseLevel > 0 && directive()->PhasePrintLevelOption >= level &&
+         _method != nullptr; // Do not print phases for stubs.
 }
 
-#ifndef PRODUCT
+bool Compile::should_print_ideal_phase(CompilerPhaseType cpt) const {
+  return _directive->should_print_ideal_phase(cpt);
+}
+
 void Compile::init_igv() {
   if (_igv_printer == nullptr) {
     _igv_printer = IdealGraphPrinter::printer();
     _igv_printer->set_compile(this);
   }
 }
-#endif
 
 bool Compile::should_print_igv(const int level) {
-#ifndef PRODUCT
+  PRODUCT_RETURN_(return false;);
+
   if (PrintIdealGraphLevel < 0) { // disabled by the user
     return false;
   }
@@ -5209,12 +5218,8 @@ bool Compile::should_print_igv(const int level) {
     Compile::init_igv();
   }
   return need;
-#else
-  return false;
-#endif
 }
 
-#ifndef PRODUCT
 IdealGraphPrinter* Compile::_debug_file_printer = nullptr;
 IdealGraphPrinter* Compile::_debug_network_printer = nullptr;
 
@@ -5303,7 +5308,7 @@ void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const N
   tty->print_cr("Method printed over network stream to IGV");
   _debug_network_printer->print(name, C->root(), visible_nodes, fr);
 }
-#endif
+#endif // !PRODUCT
 
 Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res) {
   if (type != nullptr && phase->type(value)->higher_equal(type)) {

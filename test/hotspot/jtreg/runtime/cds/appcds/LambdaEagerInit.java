@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class LambdaEagerInit {
         ".class.load. java.util.stream.Collectors[$][$]Lambda.*/0x.*source:.*java.*util.*stream.*Collectors";
     private static final String lambdaLoadedFromArchive =
         ".class.load. java.util.stream.Collectors[$][$]Lambda.*/0x.*source:.*shared.*objects.*file";
-    private static final String cdsLoadedLambdaProxy = ".cds.*Loaded.*lambda.*proxy";
+    private static final String cdsLoadedLambdaProxy = ".aot.*Loaded.*lambda.*proxy";
     private static final String archiveName = mainClass + ".jsa";
     private static String appJar;
 
@@ -75,7 +75,7 @@ public class LambdaEagerInit {
         // create base archive with the -Djdk.internal.lambda.disableEagerInitialization=true property
         CDSOptions opts = (new CDSOptions())
             .addPrefix(testProperty,
-                       "-Xlog:class+load,cds")
+                       "-Xlog:class+load,aot,cds")
             .setArchiveName(archiveName);
         CDSTestUtils.createArchiveAndCheck(opts);
     }
@@ -96,7 +96,7 @@ public class LambdaEagerInit {
     static void testWithEagerInitializationDisabled() throws Exception {
         // run with custom base archive without the -Djdk.internal.lambda.disableEagerInitialization=true property
         CDSOptions runOpts = (new CDSOptions())
-            .addPrefix("-cp", appJar, "-Xlog:class+load,cds=debug")
+            .addPrefix("-cp", appJar, "-Xlog:class+load,aot=debug,cds=debug")
             .setArchiveName(archiveName)
             .setUseVersion(false)
             .addSuffix(mainClass);
@@ -110,7 +110,7 @@ public class LambdaEagerInit {
         // run with default CDS archive with the -Djdk.internal.lambda.disableEagerInitialization=true property
         CDSOptions runOpts = (new CDSOptions())
             .setXShareMode("auto")
-            .addPrefix("-cp", appJar, testProperty,  "-Xlog:class+load,cds=debug")
+            .addPrefix("-cp", appJar, testProperty,  "-Xlog:class+load,aot=debug,cds=debug")
             .setUseSystemArchive(true)
             .setUseVersion(false)
             .addSuffix(mainClass);
@@ -124,7 +124,7 @@ public class LambdaEagerInit {
         // run with default CDS archive without the -Djdk.internal.lambda.disableEagerInitialization=true property
         CDSOptions runOpts = (new CDSOptions())
             .setXShareMode("auto")
-            .addPrefix("-cp", appJar, "-Xlog:class+load,cds=debug")
+            .addPrefix("-cp", appJar, "-Xlog:class+load,aot=debug,cds=debug")
             .setUseSystemArchive(true)
             .setUseVersion(false)
             .addSuffix("-showversion", mainClass);
