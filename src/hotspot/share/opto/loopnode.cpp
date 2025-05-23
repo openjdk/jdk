@@ -4596,7 +4596,7 @@ void PhaseIdealLoop::build_and_optimize() {
   bool do_split_ifs = (_mode == LoopOptsDefault);
   bool skip_loop_opts = (_mode == LoopOptsNone);
   bool do_max_unroll = (_mode == LoopOptsMaxUnroll);
-  bool optimize_rfs = (_mode == LoopOptsEliminateRFs);
+  bool eliminate_rfs = (_mode == LoopOptsEliminateRFs);
 
   int old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
@@ -4842,7 +4842,7 @@ void PhaseIdealLoop::build_and_optimize() {
     return;
   }
 
-  if (optimize_rfs) {
+  if (eliminate_rfs) {
     eliminate_reachability_fences();
     C->restore_major_progress(old_progress);
     return;

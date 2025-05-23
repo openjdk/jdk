@@ -2521,7 +2521,7 @@ void Compile::Optimize() {
   { // No more loop opts. It is safe to eliminate reachability fence nodes.
     TracePhase tp(_t_idealLoop);
     PhaseIdealLoop::optimize(igvn, LoopOptsEliminateRFs);
-    print_method(PHASE_OPTIMIZE_RF, 2);
+    print_method(PHASE_ELIMINATE_REACHABILITY_FENCES, 2);
     if (failing())  return;
   }
 

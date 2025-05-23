@@ -85,7 +85,7 @@
   flags(PHASEIDEALLOOP1,                "PhaseIdealLoop 1") \
   flags(PHASEIDEALLOOP2,                "PhaseIdealLoop 2") \
   flags(PHASEIDEALLOOP3,                "PhaseIdealLoop 3") \
-  flags(OPTIMIZE_RF,                    "Optimize Reachability Fences") \
+  flags(ELIMINATE_REACHABILITY_FENCES,  "Eliminate Reachability Fences") \
   flags(BEFORE_CCP1,                    "Before PhaseCCP 1") \
   flags(CCP1,                           "PhaseCCP 1") \
   flags(ITER_GVN2,                      "Iter GVN 2") \
