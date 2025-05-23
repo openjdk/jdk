@@ -78,7 +78,9 @@ CompileTask::CompileTask(int compile_id,
 }
 
 CompileTask::~CompileTask() {
-  assert(!lock()->is_locked(), "Should not be locked when freed");
+  assert(!_lock->is_locked(), "Should not be locked when freed");
+  delete _lock;
+
   if ((_method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder))) {
     JNIHandles::destroy_weak_global(_method_holder);
   } else {
