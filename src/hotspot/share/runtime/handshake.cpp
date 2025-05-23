@@ -786,8 +786,7 @@ bool HandshakeSuspender::suspend(bool register_vthread_SR) {
     set_suspended(true, register_vthread_SR);
     do_self_suspend();
     return true;
-  }
-  else {
+  } else {
     SuspendThreadHandshake st(register_vthread_SR);
     Handshake::execute(&st, get_handshakee());
     return st.did_suspend();
@@ -830,8 +829,7 @@ bool HandshakeSuspender::suspend_with_handshake(bool register_vthread_SR) {
       // Target is already suspended.
       log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspended", p2i(get_handshakee()));
       return false;
-    }
-    else {
+    } else {
       // Target is going to wake up and leave suspension.
       // Let's just stop the thread from doing that.
       log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-suspended", p2i(get_handshakee()));
