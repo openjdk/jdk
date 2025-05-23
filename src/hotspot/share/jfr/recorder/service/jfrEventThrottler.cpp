@@ -69,6 +69,9 @@ void JfrEventThrottler::destroy() {
 // and another for the SamplingLatency event.
 // When introducing many more throttlers, consider adding a lookup map keyed by event id.
 JfrEventThrottler* JfrEventThrottler::for_event(JfrEventId event_id) {
+  if (event_id == JfrCPUTimeSampleEvent) {
+    return nullptr;
+  }
   assert(_object_allocation_throttler != nullptr, "ObjectAllocation throttler has not been properly initialized");
   assert(_safepoint_latency_throttler != nullptr, "SafepointLatency throttler has not been properly initialized");
   assert(event_id == JfrObjectAllocationSampleEvent || event_id == JfrSafepointLatencyEvent, "Event type has an unconfigured throttler");
@@ -112,7 +115,9 @@ void JfrEventThrottler::configure(int64_t sample_size, int64_t period_ms) {
 // Predicate for event selection.
 bool JfrEventThrottler::accept(JfrEventId event_id, int64_t timestamp /* 0 */) {
   JfrEventThrottler* const throttler = for_event(event_id);
-  assert(throttler != nullptr, "invariant");
+  if (throttler == nullptr) {
+    return true;
+  }
   return throttler->_disabled ? true : throttler->sample(timestamp);
 }
 

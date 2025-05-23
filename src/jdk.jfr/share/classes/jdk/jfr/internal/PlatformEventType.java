@@ -30,8 +30,10 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
+import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.ImplicitFields;
+import jdk.jfr.internal.util.TimespanRate;
 import jdk.jfr.internal.util.Utils;
 /**
  * Implementation of event type.
@@ -43,6 +45,7 @@ public final class PlatformEventType extends Type {
     private final boolean isJVM;
     private final boolean isJDK;
     private final boolean isMethodSampling;
+    private final boolean isCPUTimeMethodSampling;
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
     private final int stackTraceOffset;
@@ -54,6 +57,7 @@ public final class PlatformEventType extends Type {
     private boolean stackTraceEnabled = true;
     private long thresholdTicks = 0;
     private long period = 0;
+    private TimespanRate cpuRate;
     private boolean hasHook;
 
     private boolean beginChunk;
@@ -73,6 +77,7 @@ public final class PlatformEventType extends Type {
         this.dynamicSettings = dynamicSettings;
         this.isJVM = Type.isDefinedByJVM(id);
         this.isMethodSampling = isJVM && (name.equals(Type.EVENT_NAME_PREFIX + "ExecutionSample") || name.equals(Type.EVENT_NAME_PREFIX + "NativeMethodSample"));
+        this.isCPUTimeMethodSampling = isJVM && name.equals(Type.EVENT_NAME_PREFIX + "CPUTimeSample");
         this.isJDK = isJDK;
         this.stackTraceOffset = stackTraceOffset(name, isJDK);
     }
@@ -163,6 +168,13 @@ public final class PlatformEventType extends Type {
         }
     }
 
+    public void setCPUThrottle(TimespanRate rate) {
+        if (isCPUTimeMethodSampling) {
+            this.cpuRate = rate;
+            JVM.setCPUThrottle(rate.rate(), rate.autoadapt());
+        }
+    }
+
     public void setHasPeriod(boolean hasPeriod) {
         this.hasPeriod = hasPeriod;
     }
@@ -180,8 +192,8 @@ public final class PlatformEventType extends Type {
     }
 
     public boolean hasThreshold() {
-        if (hasCutoff) {
-            // Event has a duration, but not a threshold. Used by OldObjectSample
+        if (hasCutoff || isCPUTimeMethodSampling) {
+            // Event has a duration, but not a threshold. Used by OldObjectSample and CPUTimeSample
             return false;
         }
         return getField(ImplicitFields.DURATION) != null;
@@ -223,6 +235,9 @@ public final class PlatformEventType extends Type {
             if (isMethodSampling) {
                 long p = enabled ? period : 0;
                 JVM.setMethodSamplingPeriod(getId(), p);
+            } else if (isCPUTimeMethodSampling) {
+                TimespanRate r = enabled ? cpuRate : new TimespanRate(0, false);
+                JVM.setCPUThrottle(r.rate(), r.autoadapt());
             } else {
                 JVM.setEnabled(getId(), enabled);
             }
@@ -358,6 +373,10 @@ public final class PlatformEventType extends Type {
 
     public boolean isMethodSampling() {
         return isMethodSampling;
+    }
+
+    public boolean isCPUTimeMethodSampling() {
+        return isCPUTimeMethodSampling;
     }
 
     public void setStackFilterId(long id) {

@@ -56,6 +56,7 @@ class ParkEvent;
 class ResourceArea;
 class SafeThreadsListPtr;
 class ThreadClosure;
+class ThreadCrashProtection;
 class ThreadsList;
 class ThreadsSMRSupport;
 class VMErrorCallback;
@@ -78,6 +79,7 @@ class JavaThread;
 //       - WorkerThread
 //     - WatcherThread
 //     - JfrThreadSampler
+//     - JfrCPUTimeThreadSampler
 //     - LogAsyncWriter
 //
 // All Thread subclasses must be either JavaThread or NonJavaThread.
@@ -621,8 +623,14 @@ protected:
 #endif // __APPLE__ && AARCH64
 
  private:
+  ThreadCrashProtection* _crash_protection = nullptr;
   bool _in_asgct = false;
+
  public:
+  ThreadCrashProtection* crash_protection() const { return _crash_protection; }
+  void set_crash_protection(ThreadCrashProtection* cp) { _crash_protection = cp; }
+
+  // in ASGCT or the signal handler of the JfrCPUTimeSampler
   bool in_asgct() const { return _in_asgct; }
   void set_in_asgct(bool value) { _in_asgct = value; }
   static bool current_in_asgct() {

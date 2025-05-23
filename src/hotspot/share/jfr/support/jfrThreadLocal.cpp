@@ -26,6 +26,7 @@
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrOopTraceId.inline.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
@@ -129,7 +130,9 @@ void JfrThreadLocal::on_start(Thread* t) {
   if (JfrRecorder::is_recording()) {
     JfrCheckpointManager::write_checkpoint(t);
     if (t->is_Java_thread()) {
-      send_java_thread_start_event(JavaThread::cast(t));
+      JavaThread *const jt = JavaThread::cast(t);
+      send_java_thread_start_event(jt);
+      JfrCPUTimeThreadSampling::on_javathread_create(jt);
     }
   }
   if (t->jfr_thread_local()->has_cached_stack_trace()) {
@@ -221,6 +224,7 @@ void JfrThreadLocal::on_exit(Thread* t) {
   if (t->is_Java_thread()) {
     JavaThread* const jt = JavaThread::cast(t);
     send_java_thread_end_event(jt, JfrThreadLocal::jvm_thread_id(jt));
+    JfrCPUTimeThreadSampling::on_javathread_terminate(jt);
     JfrThreadCPULoadEvent::send_event_for_thread(jt);
   }
   release(tl, Thread::current()); // because it could be that Thread::current() != t
@@ -537,3 +541,48 @@ Arena* JfrThreadLocal::dcmd_arena(JavaThread* jt) {
   tl->_dcmd_arena = arena;
   return arena;
 }
+
+
+#ifdef LINUX
+
+bool JfrThreadLocal::acquire_cpu_time_jfr_enqueue_lock() {
+  return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
+}
+
+bool JfrThreadLocal::acquire_cpu_time_jfr_native_lock() {
+  return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, NATIVE) == UNLOCKED;
+}
+
+void JfrThreadLocal::acquire_cpu_time_jfr_dequeue_lock() {
+  while (Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED);
+}
+
+void JfrThreadLocal::release_cpu_time_jfr_queue_lock() {
+  Atomic::store(&_cpu_time_jfr_locked, UNLOCKED);
+}
+
+void JfrThreadLocal::set_has_cpu_time_jfr_requests(bool has_events) {
+  Atomic::release_store(&_has_cpu_time_jfr_requests, has_events);
+}
+
+bool JfrThreadLocal::has_cpu_time_jfr_requests() {
+  return Atomic::load(&_has_cpu_time_jfr_requests);
+}
+
+JfrCPUTimeTraceQueue& JfrThreadLocal::cpu_time_jfr_queue() {
+  return _cpu_time_jfr_queue;
+}
+
+void JfrThreadLocal::disable_cpu_time_jfr_queue() {
+  cpu_time_jfr_queue().ensure_capacity(0);
+}
+
+void JfrThreadLocal::set_wants_out_of_safepoint_sampling(bool wants) {
+  Atomic::release_store(&_wants_out_of_safepoint_sampling, wants);
+}
+
+bool JfrThreadLocal::wants_out_of_safepoint_sampling() {
+  return Atomic::load(&_wants_out_of_safepoint_sampling);
+}
+
+#endif

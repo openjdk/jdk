@@ -54,6 +54,7 @@ class JfrRecorder : public JfrCHeapObj {
   static bool create_storage();
   static bool create_stringpool();
   static bool create_thread_sampler();
+  static bool create_cpu_time_thread_sampling();
   static bool create_event_throttler();
   static bool create_components();
   static void destroy_components();
