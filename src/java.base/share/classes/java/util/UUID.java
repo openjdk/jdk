@@ -470,7 +470,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
 
         // Although the UUID byte ordering is defined to be big-endian, ByteArrayLittleEndian is used here to optimize
         // for the most common architectures. hex8 reverses the order internally.
-        ByteArrayLittleEndian.setLong(buf, 0, HexDigits.hex8(mostSigBits >>> 32));
+        ByteArrayLittleEndian.setLong(buf, 0, Long.reverseBytes(HexDigits.hex8(mostSigBits >>> 32)));
         long x0 = Long.reverseBytes(HexDigits.hex8(mostSigBits));
         ByteArrayLittleEndian.setInt(buf, 9, (int) x0);
         ByteArrayLittleEndian.setInt(buf, 14, (int) (x0 >>> 32));
