@@ -25,6 +25,8 @@
 
 package java.security;
 
+import jdk.internal.vm.annotation.Stable;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.InvalidObjectException;
@@ -66,7 +68,8 @@ public final class Timestamp implements Serializable {
     /*
      * Hash code for this timestamp.
      */
-    private transient int myhash = -1;
+    @Stable
+    private transient int myhash;
 
     /**
      * Constructs a {@code Timestamp}.
@@ -112,10 +115,11 @@ public final class Timestamp implements Serializable {
      * @return a hash code value for this {@code Timestamp}.
      */
     public int hashCode() {
-        if (myhash == -1) {
-            myhash = timestamp.hashCode() + signerCertPath.hashCode();
+        int h = myhash;
+        if (h == 0) {
+            myhash = h = timestamp.hashCode() + signerCertPath.hashCode();
         }
-        return myhash;
+        return h;
     }
 
     /**
@@ -172,7 +176,7 @@ public final class Timestamp implements Serializable {
         if (isNull(timestamp, signerCertPath)) {
             throw new InvalidObjectException("Invalid null field(s)");
         }
-        myhash = -1;
+        myhash = 0;
         timestamp = new Date(timestamp.getTime());
     }
 
