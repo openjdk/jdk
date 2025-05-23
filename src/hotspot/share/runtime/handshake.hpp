@@ -213,8 +213,7 @@ private:
     return _state->is_suspended();
   }
 
-  Monitor* get_lock_ptr()
-  {
+  Monitor* get_lock_ptr() {
     return &_state->_lock;
   }
 
