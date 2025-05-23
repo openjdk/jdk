@@ -105,27 +105,19 @@ public final class IdleTimeoutManager {
         final Deadline deadline = timeLine().instant().plusMillis(timeoutDurations.preIdleTimeoutMs);
         this.timeoutEventLock.lock();
         try {
-            if (this.preIdleTimeoutEvent != null) {
-                // timeout event is already registered with the QuicTimerQueue.
-                // Don't update the "deadline" on the event and let the handle()
-                // method of the event reschedule itself by generating a new deadline
-                // if necessary
-                if (debug.on()) {
-                    debug.log("pre idle timeout event: "
-                            + this.preIdleTimeoutEvent + " already registered with deadline: "
-                            + this.preIdleTimeoutEvent.deadline + ", ignoring new deadline: "
-                            + deadline);
-                }
-                return;
-            }
+            // we don't expect idle timeout management to be started more than once
+            assert this.preIdleTimeoutEvent == null : "idle timeout management"
+                    + " already started for connection";
             // create the pre idle timeout event and register with the QuicTimerQueue.
             this.preIdleTimeoutEvent = new PreIdleTimeoutEvent(deadline);
             timerQueue.offer(this.preIdleTimeoutEvent);
             if (debug.on()) {
-                debug.log("registered pre idle timeout event: "
-                        + this.preIdleTimeoutEvent + " deadline: " + deadline);
+                debug.log("started QUIC idle timeout management for connection,"
+                        + " pre idle timeout event: " + this.preIdleTimeoutEvent
+                        + " deadline: " + deadline);
             }  else {
-                Log.logQuic("{0} registered pre idle timeout event: {1} deadline: {2}",
+                Log.logQuic("{0} started QUIC idle timeout management for connection,"
+                                + " pre idle timeout event: {1} deadline: {2}",
                         connection.logTag(), this.preIdleTimeoutEvent, deadline);
             }
         } finally {
