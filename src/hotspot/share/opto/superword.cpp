@@ -1959,8 +1959,8 @@ bool SuperWord::schedule_and_apply() const {
     if (is_trace_superword_any()) {
       tty->print_cr("\nForced bailout of vectorization (AutoVectorizationOverrideProfitability=0).");
     }
-    return false;
 #endif
+    return false;
   }
 
   vtransform.apply();
