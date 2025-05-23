@@ -1908,7 +1908,18 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     // Don't need to adjust limit for maximally unroll since trip count is even.
   } else if (loop_head->has_exact_trip_count() && init->is_Con()) {
     // We should not be here if we have old_trip_count == max_juint
-    // it would make trip_count == 2^31 which causes overflow and the situation is overall weird
+    // it would be an overall weird situation:
+    // - the case that would make old_trip_count not smaller than max_juint would make
+    //   the new trip_count as big as 2^31 (due to the ceiling involving stride_m)
+    //   which makes the multiplication in the rhs of adjust_min_trip's assignment would overflow
+    // - the old trip count has its default value (which should not be assigned otherwise
+    //   since the assignment of the trip count either decrease it, or is guarded with
+    //   trip_count < max_juint) meaning that it hasn't been assigned, so we can't really
+    //   trust the current state and compare the old trip count with the new one in a
+    //   meaningful way. It is not clear what would be the correct behavior wrt adjust_min_trip.
+    // Let's check we are in a surprise-free situation, that should be the only one reachable
+    // here. => old_trip_count was set, is reliable, and is small enough to be sure that `stride_con`
+    // will also be small enough, and no overflow risk.
     assert(old_trip_count < max_juint, "sanity");
     // Loop's limit is constant. Loop's init could be constant when pre-loop
     // become peeled iteration.

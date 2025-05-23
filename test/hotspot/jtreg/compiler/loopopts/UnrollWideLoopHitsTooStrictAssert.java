@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8356647
- * @summary C2's unrolling code has a too strict assert when a counted loop's range as wide as int's.
+ * @summary C2's unrolling code has a too strict assert when a counted loop's range is as wide as int's.
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.UnrollWideLoopHitsTooStrictAssert::test -Xcomp
  *                   compiler.loopopts.UnrollWideLoopHitsTooStrictAssert
  * @run main compiler.loopopts.UnrollWideLoopHitsTooStrictAssert
