@@ -24,8 +24,6 @@
  */
 package sun.security.ssl;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.zip.Adler32;
 import sun.security.provider.X509Factory;
 
