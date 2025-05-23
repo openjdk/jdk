@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Red Hat. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +64,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         final String tryReserveForUnscaled = "reserve_between (range [0x0000000000000000-0x0000000100000000)";
+        final String tryReserveBelow4G = "reserve_between (range [0x0000000000000000-0x0000000100000000)";
         final String tryReserveForZeroBased = "reserve_between (range [0x0000000100000000-0x0000000800000000)";
         final String tryReserveFor16bitMoveIntoQ3 = "reserve_between (range [0x0000000100000000-0x0001000000000000)";
         if (Platform.isAArch64()) {
@@ -99,8 +101,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
             output.shouldContain(tryReserveFor16bitMoveIntoQ3);
         } else if (Platform.isX64()) {
             if (CDS) {
-                // We always try to allocate below 4 GB.
-                output.shouldContain("reserve_between (range [0x0000000000000000-0x0000000100000000)");
+                output.shouldContain(tryReserveBelow4G);
                 output.shouldNotContain(tryReserveForZeroBased);
             } else {
                 output.shouldContain(tryReserveForUnscaled);

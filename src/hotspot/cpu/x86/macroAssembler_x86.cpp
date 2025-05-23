@@ -5441,7 +5441,6 @@ void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
     shlq(r, CompressedKlassPointers::shift());
   }
   if (CompressedKlassPointers::base() != nullptr) {
-    // Note: we use movptr to uses a 32-bit mov if the base is small enough
     if (AOTCodeCache::is_on_for_dump()) {
       movptr(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
     } else {
@@ -5467,7 +5466,6 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
   } else {
     if (CompressedKlassPointers::shift() <= Address::times_8) {
       if (CompressedKlassPointers::base() != nullptr) {
-        // Uses 32-bit mov if base is small enough
         movptr(dst, (intptr_t)CompressedKlassPointers::base());
       } else {
         xorq(dst, dst);
@@ -5482,7 +5480,6 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
       if (CompressedKlassPointers::base() != nullptr) {
         const intptr_t base_right_shifted =
             (intptr_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
-        // Uses 32-bit mov if base is small enough
         movptr(dst, base_right_shifted);
       } else {
         xorq(dst, dst);

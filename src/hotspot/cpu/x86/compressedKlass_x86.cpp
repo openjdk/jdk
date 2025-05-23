@@ -33,14 +33,21 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
 
   char* result = nullptr;
 
-  // We always attempt to reserve < 4GB:
-  // - without CDS, this means we can use zero-based encoding
-  // - even with CDS (which disallows zero-based encoding), this allows us to use shorter imm32 movs when loading the base
-  result = reserve_address_space_X(0, nth_bit(32), size, Metaspace::reserve_alignment(), aslr);
+  bool did_look_in_lower_4G = false;
+  if (optimize_for_zero_base && CompressedKlassPointers::narrow_klass_pointer_bits() == 32) {
+    result = reserve_address_space_for_unscaled_encoding(size, aslr);
+    did_look_in_lower_4G = true;
+  }
 
-  if (result == 0 && optimize_for_zero_base) {
-    // Failing that, if we are running without CDS, attempt to allocate below 32G. This allows us to use zero-based encoding
-    // with a non-zero shift.
+  if (result == nullptr && !did_look_in_lower_4G) {
+    // Even without aiming for zero-based encoding, allocating below 4G gives us
+    // a low base address that can be encoded with imm32
+    result = reserve_address_space_below_4G(size, aslr);
+  }
+
+  if (result == nullptr && optimize_for_zero_base) {
+    // Failing that, if we are running without CDS, attempt to allocate below 32G.
+    // This allows us to use zero-based encoding with a non-zero shift.
     result = reserve_address_space_for_zerobased_encoding(size, aslr);
   }
 
