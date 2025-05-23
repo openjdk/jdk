@@ -326,20 +326,25 @@ public class TestTutorial {
 
             public class InnerTest4 {
             """,
-            // We set a Hook outside the main method, but inside the Class.
-            // The Hook is set for the Tokens inside the set braces.
-            // As long as the hook is anchored, we can insert code into the hook,
-            // here we can define static fields for example.
+            // We anchor a Hook outside the main method, but inside the Class.
+            // Anchoring a Hook creates a scope, spanning the braces of the
+            // "anchor" call. Any Hool.insert that happens inside this scope
+            // goes to the top of that scope.
             myHook.anchor(
+                // Any Hook.insert goes here.
+                //
+                // <-------- field_X = 5 ------------------+
+                // <-------- field_Y = 7 -------------+    |
+                //                                    |    |
                 """
                 public static void main() {
-                """,
-                    template2.asToken(5),
-                    template2.asToken(7),
+                """, //                               ^    ^
+                    template2.asToken(5), // -------- | ---+
+                    template2.asToken(7), // ---------+
                 """
                 }
                 """
-            ),
+            ), // The Hook scope ends here.
             """
             }
             """
@@ -625,6 +630,8 @@ public class TestTutorial {
         // the current scope.
         var templateSample = Template.make("type", (DataName.Type type) -> body(
             let("name", dataNames(MUTABLE).exactOf(type).sample().name()),
+            // Note: we could also sample from MUTABLE_OR_IMMUTABLE, we will
+            //       cover the concept of mutability in an example further down.
             """
             System.out.println("Sampling type #type: #name = " + #name);
             """
@@ -634,6 +641,8 @@ public class TestTutorial {
         var templateStatus = Template.make(() -> body(
             let("ints", dataNames(MUTABLE).exactOf(myInt).count()),
             let("longs", dataNames(MUTABLE).exactOf(myLong).count()),
+            // Note: we could also count the MUTABLE_OR_IMMUTABLE, we will
+            //       cover the concept of mutability in an example further down.
             """
             System.out.println("Status: #ints ints, #longs longs.");
             """
