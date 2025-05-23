@@ -376,7 +376,7 @@ public final class IdleTimeoutManager {
                 return;
             }
             final QuicTimerQueue timerQueue = connection.endpoint().timer();
-            // create the pre idle timeout event and register with the QuicTimerQueue.
+            // create the idle timeout event and register with the QuicTimerQueue.
             final IdleTimeoutEvent idleTimeoutEvent = new IdleTimeoutEvent(idleTimeoutDeadline);
             timerQueue.offer(idleTimeoutEvent);
             if (debug.on()) {
