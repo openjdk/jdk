@@ -185,10 +185,12 @@ class HandshakeSuspender {
     friend SuspendThreadHandshake;
     friend ThreadSelfSuspensionHandshake;
     friend JavaThread;
+public:
     HandshakeSuspender(HandshakeState* state);
     ~HandshakeSuspender();
 private:
     HandshakeState* _state;
+
     bool suspend(bool register_vthread_SR);
     bool resume(bool register_vthread_SR);
 
@@ -215,6 +217,7 @@ private:
     {
         return &_state->_lock;
     }
+
     bool has_async_suspend_handshake() {
         return _state->has_async_suspend_handshake();
     }
