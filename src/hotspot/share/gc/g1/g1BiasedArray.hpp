@@ -44,7 +44,7 @@ public:
 protected:
   address _base;          // the real base address
   size_t _length;         // the length of the array
-  address _biased_base;   // base address biased by "bias" elements
+  uintptr_t _biased_base; // base address biased by "bias" elements
   size_t _bias;           // the bias, i.e. the offset biased_base is located to the right in elements
   uint _shift_by;         // the amount of bits to shift right when mapping to an index of the array.
 
@@ -62,7 +62,7 @@ protected:
     assert(shift_by < sizeof(uintptr_t) * 8, "Shifting by %u, larger than word size?", shift_by);
     _base = base;
     _length = length;
-    _biased_base = base - (bias * elem_size);
+    _biased_base = (uintptr_t)base - (bias * elem_size);
     _bias = bias;
     _shift_by = shift_by;
   }
@@ -103,10 +103,14 @@ public:
 // heap into this array.
 template<class T>
 class G1BiasedMappedArray : public G1BiasedMappedArrayBase {
+protected:
+  T* base() const { return (T*)G1BiasedMappedArrayBase::_base; }
+
+  T* biased_base_at(idx_t index) const { return (T*)(G1BiasedMappedArrayBase::_biased_base + index * sizeof(T)); }
+
 public:
   typedef G1BiasedMappedArrayBase::idx_t idx_t;
 
-  T* base() const { return (T*)G1BiasedMappedArrayBase::_base; }
   // Return the element of the given array at the given index. Assume
   // the index is valid. This is a convenience method that does sanity
   // checking on the index.
@@ -123,15 +127,12 @@ public:
     this->base()[index] = value;
   }
 
-  // The raw biased base pointer.
-  T* biased_base() const { return (T*)G1BiasedMappedArrayBase::_biased_base; }
-
   // Return the element of the given array that covers the given word in the
   // heap. Assumes the index is valid.
   T get_by_address(HeapWord* value) const {
     idx_t biased_index = ((uintptr_t)value) >> this->shift_by();
     this->verify_biased_index(biased_index);
-    return biased_base()[biased_index];
+    return *biased_base_at(biased_index);
   }
 
   T* get_ref_by_index(uintptr_t index) const {
@@ -151,27 +152,7 @@ public:
   void set_by_address(HeapWord * address, T value) {
     idx_t biased_index = ((uintptr_t)address) >> this->shift_by();
     this->verify_biased_index(biased_index);
-    biased_base()[biased_index] = value;
-  }
-
-  // Set the value of all array entries that correspond to addresses
-  // in the specified MemRegion.
-  void set_by_address(MemRegion range, T value) {
-    idx_t biased_start = ((uintptr_t)range.start()) >> this->shift_by();
-    idx_t biased_last = ((uintptr_t)range.last()) >> this->shift_by();
-    this->verify_biased_index(biased_start);
-    this->verify_biased_index(biased_last);
-    for (idx_t i = biased_start; i <= biased_last; i++) {
-      biased_base()[i] = value;
-    }
-  }
-
-protected:
-  // Returns the address of the element the given address maps to
-  T* address_mapped_to(HeapWord* address) {
-    idx_t biased_index = ((uintptr_t)address) >> this->shift_by();
-    this->verify_biased_index_inclusive_end(biased_index);
-    return biased_base() + biased_index;
+    *biased_base_at(biased_index) = value;
   }
 
 public:
