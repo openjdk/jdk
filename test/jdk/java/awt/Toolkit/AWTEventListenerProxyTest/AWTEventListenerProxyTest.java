@@ -38,29 +38,19 @@ public class AWTEventListenerProxyTest {
     public static void main(String[] args) throws Exception {
         EventQueue.invokeAndWait(() -> {
             Toolkit tk = Toolkit.getDefaultToolkit();
-            if ("sun.awt.X11.XToolkit".equals(tk.getClass().getName())) {
-                System.out.println("Do not test for XAWT Toolkit.");
-                System.out.println("Passing automatically.");
-                return;
-            }
 
             // check that if no listeners added, returns a 0-length array,
             // not null
-            AWTEventListener[] array1 = tk.getAWTEventListeners();
-            if (array1 == null || array1.length != 0) {
-                System.out.println("[Empty array test failed!!]");
-                throw new RuntimeException("Test failed -" +
-                    " didn't return 0-sized array");
-            }
+            verify(tk, 0);
             System.out.println("[Empty array test passed]");
 
-            // check that if a null listener is added, returns a 0-length
+            // check that if a null listener is added, returns an empty array
             tk.addAWTEventListener(null, AWTEvent.ACTION_EVENT_MASK);
             verify(tk, 0);
             NullProxyListener nl = new NullProxyListener();
             tk.addAWTEventListener(nl, AWTEvent.ACTION_EVENT_MASK);
             verify(tk, 0);
-            // check that if a null listener is removed, returns a 0-length
+            // check that if a null listener is removed, returns an empty array
             tk.removeAWTEventListener(null);
             verify(tk, 0);
             tk.removeAWTEventListener(nl);
@@ -72,6 +62,7 @@ public class AWTEventListenerProxyTest {
             tk.addAWTEventListener(dl1, dl1MASK);
             verify(tk, 1);
 
+            AWTEventListener[] array1 = tk.getAWTEventListeners();
             AWTEventListenerProxy dp1 = (AWTEventListenerProxy) array1[0];
             EventListener getdl1 = dp1.getListener();
             if (getdl1 != dl1) {
