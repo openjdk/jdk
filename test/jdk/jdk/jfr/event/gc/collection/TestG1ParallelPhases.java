@@ -119,7 +119,10 @@ public class TestG1ParallelPhases {
             "RebuildFreeList",
             "SampleCandidates",
             "ResetMarkingState",
-            "NoteStartOfMark"
+            "NoteStartOfMark",
+            "Termination: Parallel Marking",
+            "Termination: Concurrent Marking",
+            "Termination: Par Remark"
         );
 
         // Some GC phases may or may not occur depending on environment. Filter them out
