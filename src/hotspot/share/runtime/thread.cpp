@@ -52,10 +52,7 @@
 #include "jfr/jfr.hpp"
 #endif
 
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
-// Current thread is maintained as a thread-local variable
 THREAD_LOCAL Thread* Thread::_thr_current = nullptr;
-#endif
 
 // ======= Thread ========
 // Base class for all threads: VMThread, WatcherThread, ConcurrentMarkSweepThread,
@@ -92,7 +89,7 @@ Thread::Thread(MemTag mem_tag) {
   new HandleMark(this);
 
   // plain initialization
-  debug_only(_owned_locks = nullptr;)
+  DEBUG_ONLY(_owned_locks = nullptr;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
@@ -157,11 +154,28 @@ void Thread::initialize_tlab() {
   }
 }
 
+void Thread::retire_tlab(ThreadLocalAllocStats* stats) {
+  // Sampling and serviceability support
+  if (tlab().end() != nullptr) {
+    incr_allocated_bytes(tlab().used_bytes());
+    heap_sampler().retire_tlab(tlab().top());
+  }
+
+  // Retire the TLAB
+  tlab().retire(stats);
+}
+
+void Thread::fill_tlab(HeapWord* start, size_t pre_reserved, size_t new_size) {
+  // Thread allocation sampling support
+  heap_sampler().set_tlab_top_at_sample_start(start);
+
+  // Fill the TLAB
+  tlab().fill(start, start + pre_reserved, new_size);
+}
+
 void Thread::initialize_thread_current() {
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   assert(_thr_current == nullptr, "Thread::current already initialized");
   _thr_current = this;
-#endif
   assert(ThreadLocalStorage::thread() == nullptr, "ThreadLocalStorage::thread already initialized");
   ThreadLocalStorage::set_thread(this);
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
@@ -169,9 +183,7 @@ void Thread::initialize_thread_current() {
 
 void Thread::clear_thread_current() {
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   _thr_current = nullptr;
-#endif
   ThreadLocalStorage::set_thread(nullptr);
 }
 
@@ -379,7 +391,7 @@ bool Thread::is_JavaThread_protected_by_TLH(const JavaThread* target) {
 }
 
 void Thread::set_priority(Thread* thread, ThreadPriority priority) {
-  debug_only(check_for_dangling_thread_pointer(thread);)
+  DEBUG_ONLY(check_for_dangling_thread_pointer(thread);)
   // Can return an error!
   (void)os::set_priority(thread, priority);
 }
@@ -488,7 +500,7 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
   }
   ThreadsSMRSupport::print_info_on(this, st);
   st->print(" ");
-  debug_only(if (WizardMode) print_owned_locks_on(st);)
+  DEBUG_ONLY(if (WizardMode) print_owned_locks_on(st);)
 }
 
 void Thread::print() const { print_on(tty); }
@@ -562,7 +574,7 @@ bool Thread::set_as_starting_thread(JavaThread* jt) {
 // short-duration critical sections where we're concerned
 // about native mutex_t or HotSpot Mutex:: latency.
 
-void Thread::SpinAcquire(volatile int * adr, const char * LockName) {
+void Thread::SpinAcquire(volatile int * adr) {
   if (Atomic::cmpxchg(adr, 0, 1) == 0) {
     return;   // normal fast-path return
   }

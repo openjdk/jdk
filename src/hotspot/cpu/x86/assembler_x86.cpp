@@ -24,6 +24,8 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "asm/codeBuffer.hpp"
+#include "code/codeCache.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -119,8 +121,6 @@ AddressLiteral::AddressLiteral(address target, relocInfo::relocType rtype) {
 
 // Implementation of Address
 
-#ifdef _LP64
-
 Address Address::make_array(ArrayAddress adr) {
   // Not implementable on 64bit machines
   // Should have been handled higher up the call chain.
@@ -157,30 +157,6 @@ Address::Address(int disp, address loc, relocInfo::relocType rtype) {
       ShouldNotReachHere();
   }
 }
-#else // LP64
-
-Address Address::make_array(ArrayAddress adr) {
-  AddressLiteral base = adr.base();
-  Address index = adr.index();
-  assert(index._disp == 0, "must not have disp"); // maybe it can?
-  Address array(index._base, index._index, index._scale, (intptr_t) base.target());
-  array._rspec = base._rspec;
-  return array;
-}
-
-// exceedingly dangerous constructor
-Address::Address(address loc, RelocationHolder spec) {
-  _base  = noreg;
-  _index = noreg;
-  _scale = no_scale;
-  _disp  = (intptr_t) loc;
-  _rspec = spec;
-  _xmmindex = xnoreg;
-  _isxmmindex = false;
-}
-
-#endif // _LP64
-
 
 
 // Convert the raw encoding form into the form expected by the constructor for
@@ -214,7 +190,6 @@ void Assembler::init_attributes(void) {
   _legacy_mode_dq = (VM_Version::supports_avx512dq() == false);
   _legacy_mode_vl = (VM_Version::supports_avx512vl() == false);
   _legacy_mode_vlbw = (VM_Version::supports_avx512vlbw() == false);
-  NOT_LP64(_is_managed = false;)
   _attributes = nullptr;
 }
 
@@ -744,8 +719,8 @@ void Assembler::emit_operand_helper(int reg_enc, int base_enc, int index_enc,
       assert(inst_mark() != nullptr, "must be inside InstructionMark");
       address next_ip = pc() + sizeof(int32_t) + post_addr_length;
       int64_t adjusted = disp;
-      // Do rip-rel adjustment for 64bit
-      LP64_ONLY(adjusted -=  (next_ip - inst_mark()));
+      // Do rip-rel adjustment
+      adjusted -=  (next_ip - inst_mark());
       assert(is_simm32(adjusted),
              "must be 32bit offset (RIP relative address)");
       emit_data((int32_t) adjusted, rspec, disp32_operand);
@@ -826,7 +801,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   address ip = inst;
   bool is_64bit = false;
 
-  debug_only(bool has_disp32 = false);
+  DEBUG_ONLY(bool has_disp32 = false);
   int tail_size = 0; // other random bytes (#32, #16, etc.) at end of insn
 
   again_after_prefix:
@@ -846,7 +821,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case FS_segment:
   case GS_segment:
     // Seems dubious
-    LP64_ONLY(assert(false, "shouldn't have that prefix"));
+    assert(false, "shouldn't have that prefix");
     assert(ip == inst+1, "only one prefix allowed");
     goto again_after_prefix;
 
@@ -859,11 +834,9 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case REX_RB:
   case REX_RX:
   case REX_RXB:
-    NOT_LP64(assert(false, "64bit prefixes"));
     goto again_after_prefix;
 
   case REX2:
-    NOT_LP64(assert(false, "64bit prefixes"));
     if ((0xFF & *ip++) & REX2BIT_W) {
       is_64bit = true;
     }
@@ -877,7 +850,6 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case REX_WRB:
   case REX_WRX:
   case REX_WRXB:
-    NOT_LP64(assert(false, "64bit prefixes"));
     is_64bit = true;
     goto again_after_prefix;
 
@@ -887,7 +859,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case 0x8A: // movb r, a
   case 0x8B: // movl r, a
   case 0x8F: // popl a
-    debug_only(has_disp32 = true);
+    DEBUG_ONLY(has_disp32 = true);
     break;
 
   case 0x68: // pushq #32
@@ -916,11 +888,9 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case REX_WRB:
     case REX_WRX:
     case REX_WRXB:
-      NOT_LP64(assert(false, "64bit prefix found"));
       goto again_after_size_prefix2;
 
     case REX2:
-      NOT_LP64(assert(false, "64bit prefix found"));
       if ((0xFF & *ip++) & REX2BIT_W) {
         is_64bit = true;
       }
@@ -928,10 +898,10 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
 
     case 0x8B: // movw r, a
     case 0x89: // movw a, r
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
       break;
     case 0xC7: // movw a, #16
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
       tail_size = 2;  // the imm16
       break;
     case 0x0F: // several SSE/SSE2 variants
@@ -945,20 +915,15 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case REP8(0xB8): // movl/q r, #32/#64(oop?)
     if (which == end_pc_operand)  return ip + (is_64bit ? 8 : 4);
     // these asserts are somewhat nonsensical
-#ifndef _LP64
-    assert(which == imm_operand || which == disp32_operand,
-           "which %d is_64_bit %d ip " INTPTR_FORMAT, which, is_64bit, p2i(ip));
-#else
     assert(((which == call32_operand || which == imm_operand) && is_64bit) ||
            (which == narrow_oop_operand && !is_64bit),
            "which %d is_64_bit %d ip " INTPTR_FORMAT, which, is_64bit, p2i(ip));
-#endif // _LP64
     return ip;
 
   case 0x69: // imul r, a, #32
   case 0xC7: // movl a, #32(oop?)
     tail_size = 4;
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     break;
 
   case 0x0F: // movx..., etc.
@@ -967,11 +932,11 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
       tail_size = 1;
     case 0x38: // ptest, pmovzxbw
       ip++; // skip opcode
-      debug_only(has_disp32 = true); // has both kinds of operands!
+      DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
       break;
 
     case 0x70: // pshufd r, r/a, #8
-      debug_only(has_disp32 = true); // has both kinds of operands!
+      DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     case 0x73: // psrldq r, #8
       tail_size = 1;
       break;
@@ -996,7 +961,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case 0xAE: // ldmxcsr, stmxcsr, fxrstor, fxsave, clflush
     case 0xD6: // movq
     case 0xFE: // paddd
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
       break;
 
     case 0xAD: // shrd r, a, %cl
@@ -1011,18 +976,18 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case 0xC1: // xaddl
     case 0xC7: // cmpxchg8
     case REP16(0x90): // setcc a
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
       // fall out of the switch to decode the address
       break;
 
     case 0xC4: // pinsrw r, a, #8
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
     case 0xC5: // pextrw r, r, #8
       tail_size = 1;  // the imm8
       break;
 
     case 0xAC: // shrd r, a, #8
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
       tail_size = 1;  // the imm8
       break;
 
@@ -1039,12 +1004,12 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     // also: orl, adcl, sbbl, andl, subl, xorl, cmpl
     // on 32bit in the case of cmpl, the imm might be an oop
     tail_size = 4;
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     break;
 
   case 0x83: // addl a, #8; addl r, #8
     // also: orl, adcl, sbbl, andl, subl, xorl, cmpl
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     tail_size = 1;
     break;
 
@@ -1061,7 +1026,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case 0x9B:
     switch (0xFF & *ip++) {
     case 0xD9: // fnstcw a
-      debug_only(has_disp32 = true);
+      DEBUG_ONLY(has_disp32 = true);
       break;
     default:
       ShouldNotReachHere();
@@ -1080,7 +1045,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case 0x87: // xchg r, a
   case REP4(0x38): // cmp...
   case 0x85: // test r, a
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     break;
 
   case 0xA8: // testb rax, #8
@@ -1092,7 +1057,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case 0xC6: // movb a, #8
   case 0x80: // cmpb a, #8
   case 0x6B: // imul r, a, #8
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     tail_size = 1; // the imm8
     break;
 
@@ -1113,8 +1078,6 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     // to check for them in product version.
 
     // Check second byte
-    NOT_LP64(assert((0xC0 & *ip) == 0xC0, "shouldn't have LDS and LES instructions"));
-
     int vex_opcode;
     // First byte
     if ((0xFF & *inst) == VEX_3bytes) {
@@ -1146,7 +1109,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
         break;
     }
     ip++; // skip opcode
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     break;
 
   case 0x62: // EVEX_4bytes
@@ -1172,7 +1135,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
       break;
     }
     ip++; // skip opcode
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     break;
 
   case 0xD1: // sal a, 1; sar a, 1; shl a, 1; shr a, 1
@@ -1184,7 +1147,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   case 0xD8: // fadd_s a; fsubr_s a; fmul_s a; fdivr_s a; fcomp_s a
   case 0xDC: // fadd_d a; fsubr_d a; fmul_d a; fdivr_d a; fcomp_d a
   case 0xDE: // faddp_d a; fsubrp_d a; fmulp_d a; fdivrp_d a; fcompp_d a
-    debug_only(has_disp32 = true);
+    DEBUG_ONLY(has_disp32 = true);
     break;
 
   case 0xE8: // call rdisp32
@@ -1216,12 +1179,12 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case REX_WRX:
     case REX_WRXB:
     case REX2:
-      NOT_LP64(assert(false, "found 64bit prefix"));
       ip++;
+      // fall-through
     default:
       ip++;
     }
-    debug_only(has_disp32 = true); // has both kinds of operands!
+    DEBUG_ONLY(has_disp32 = true); // has both kinds of operands!
     break;
 
   default:
@@ -1232,12 +1195,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   }
 
   assert(which != call32_operand, "instruction is not a call, jmp, or jcc");
-#ifdef _LP64
   assert(which != imm_operand, "instruction is not a movq reg, imm64");
-#else
-  // assert(which != imm_operand || has_imm32, "instruction has no imm32 field");
-  assert(which != imm_operand || has_disp32, "instruction has no imm32 field");
-#endif // LP64
   assert(which != disp32_operand || has_disp32, "instruction has no disp32 field");
 
   // parse the output of emit_operand
@@ -1292,11 +1250,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     return ip + tail_size;
   }
 
-#ifdef _LP64
   assert(which == narrow_oop_operand && !is_64bit, "instruction is not a movl adr, imm32");
-#else
-  assert(which == imm_operand, "instruction has only an imm field");
-#endif // LP64
   return ip;
 }
 
@@ -1319,8 +1273,7 @@ void Assembler::check_relocation(RelocationHolder const& rspec, int format) {
     // assert(format == imm32_operand, "cannot specify a nonzero format");
     opnd = locate_operand(inst, call32_operand);
   } else if (r->is_data()) {
-    assert(format == imm_operand || format == disp32_operand
-           LP64_ONLY(|| format == narrow_oop_operand), "format ok");
+    assert(format == imm_operand || format == disp32_operand || format == narrow_oop_operand, "format ok");
     opnd = locate_operand(inst, (WhichOperand)format);
   } else {
     assert(format == imm_operand, "cannot specify a format");
@@ -1830,9 +1783,6 @@ void Assembler::blsrl(Register dst, Address src) {
 }
 
 void Assembler::call(Label& L, relocInfo::relocType rtype) {
-  // suspect disp32 is always good
-  int operand = LP64_ONLY(disp32_operand) NOT_LP64(imm_operand);
-
   if (L.is_bound()) {
     const int long_size = 5;
     int offs = (int)( target(L) - pc() );
@@ -1840,14 +1790,14 @@ void Assembler::call(Label& L, relocInfo::relocType rtype) {
     InstructionMark im(this);
     // 1110 1000 #32-bit disp
     emit_int8((unsigned char)0xE8);
-    emit_data(offs - long_size, rtype, operand);
+    emit_data(offs - long_size, rtype, disp32_operand);
   } else {
     InstructionMark im(this);
     // 1110 1000 #32-bit disp
     L.add_patch_at(code(), locator());
 
     emit_int8((unsigned char)0xE8);
-    emit_data(int(0), rtype, operand);
+    emit_data(int(0), rtype, disp32_operand);
   }
 }
 
@@ -1874,8 +1824,7 @@ void Assembler::call_literal(address entry, RelocationHolder const& rspec) {
   // Technically, should use call32_operand, but this format is
   // implied by the fact that we're emitting a call instruction.
 
-  int operand = LP64_ONLY(disp32_operand) NOT_LP64(call32_operand);
-  emit_data((int) disp, rspec, operand);
+  emit_data((int) disp, rspec, disp32_operand);
 }
 
 void Assembler::cdql() {
@@ -1887,7 +1836,6 @@ void Assembler::cld() {
 }
 
 void Assembler::cmovl(Condition cc, Register dst, Register src) {
-  NOT_LP64(guarantee(VM_Version::supports_cmov(), "illegal instruction"));
   int encode = prefix_and_encode(dst->encoding(), src->encoding(), true /* is_map1 */);
   emit_opcode_prefix_and_encoding(0x40 | cc, 0xC0, encode);
 }
@@ -1900,7 +1848,6 @@ void Assembler::ecmovl(Condition cc, Register dst, Register src1, Register src2)
 
 void Assembler::cmovl(Condition cc, Register dst, Address src) {
   InstructionMark im(this);
-  NOT_LP64(guarantee(VM_Version::supports_cmov(), "illegal instruction"));
   prefix(src, dst, false, true /* is_map1 */);
   emit_int8((0x40 | cc));
   emit_operand(dst, src, 0);
@@ -2063,6 +2010,11 @@ void Assembler::cpuid() {
   emit_int16(0x0F, (unsigned char)0xA2);
 }
 
+void Assembler::serialize() {
+  assert(VM_Version::supports_serialize(), "");
+  emit_int24(0x0F, 0x01, 0xE8);
+}
+
 // Opcode / Instruction                      Op /  En  64 - Bit Mode     Compat / Leg Mode Description                  Implemented
 // F2 0F 38 F0 / r       CRC32 r32, r / m8   RM        Valid             Valid             Accumulate CRC32 on r / m8.  v
 // F2 REX 0F 38 F0 / r   CRC32 r32, r / m8*  RM        Valid             N.E.              Accumulate CRC32 on r / m8.  -
@@ -2091,8 +2043,7 @@ void Assembler::crc32(Register crc, Register v, int8_t sizeInBytes) {
     case 2:
     case 4:
       break;
-    LP64_ONLY(case 8:)
-      // This instruction is not valid in 32 bits
+    case 8:
       // Note:
       // http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-instruction-set-reference-manual-325383.pdf
       //
@@ -2111,7 +2062,7 @@ void Assembler::crc32(Register crc, Register v, int8_t sizeInBytes) {
       assert(0, "Unsupported value for a sizeInBytes argument");
       break;
     }
-    LP64_ONLY(prefix(crc, v, p);)
+    prefix(crc, v, p);
     emit_int32(0x0F,
                0x38,
                0xF0 | w,
@@ -2140,15 +2091,14 @@ void Assembler::crc32(Register crc, Address adr, int8_t sizeInBytes) {
     case 2:
     case 4:
       break;
-    LP64_ONLY(case 8:)
-      // This instruction is not valid in 32 bits
+    case 8:
       p = REX_W;
       break;
     default:
       assert(0, "Unsupported value for a sizeInBytes argument");
       break;
     }
-    LP64_ONLY(prefix(crc, adr, p);)
+    prefix(crc, adr, p);
     emit_int24(0x0F, 0x38, (0xF0 | w));
     emit_operand(crc, adr, 0);
   }
@@ -2840,7 +2790,6 @@ void Assembler::leal(Register dst, Address src) {
   emit_operand(dst, src, 0);
 }
 
-#ifdef _LP64
 void Assembler::lea(Register dst, Label& L) {
   emit_prefix_and_int8(get_prefixq(Address(), dst), (unsigned char)0x8D);
   if (!L.is_bound()) {
@@ -2858,7 +2807,6 @@ void Assembler::lea(Register dst, Label& L) {
     emit_int32(disp);
   }
 }
-#endif
 
 void Assembler::lfence() {
   emit_int24(0x0F, (unsigned char)0xAE, (unsigned char)0xE8);
@@ -2916,7 +2864,7 @@ void Assembler::sfence() {
 }
 
 void Assembler::mov(Register dst, Register src) {
-  LP64_ONLY(movq(dst, src)) NOT_LP64(movl(dst, src));
+  movq(dst, src);
 }
 
 void Assembler::movapd(XMMRegister dst, XMMRegister src) {
@@ -2941,7 +2889,6 @@ void Assembler::movlhps(XMMRegister dst, XMMRegister src) {
 }
 
 void Assembler::movb(Register dst, Address src) {
-  NOT_LP64(assert(dst->has_byte_register(), "must have byte register"));
   InstructionMark im(this);
   prefix(src, dst, true);
   emit_int8((unsigned char)0x8A);
@@ -3932,7 +3879,6 @@ void Assembler::movsbl(Register dst, Address src) { // movsxb
 }
 
 void Assembler::movsbl(Register dst, Register src) { // movsxb
-  NOT_LP64(assert(src->has_byte_register(), "must have byte register"));
   int encode = prefix_and_encode(dst->encoding(), false, src->encoding(), true, true /* is_map1 */);
   emit_opcode_prefix_and_encoding((unsigned char)0xBE, 0xC0, encode);
 }
@@ -4082,7 +4028,6 @@ void Assembler::movzbl(Register dst, Address src) { // movzxb
 }
 
 void Assembler::movzbl(Register dst, Register src) { // movzxb
-  NOT_LP64(assert(src->has_byte_register(), "must have byte register"));
   int encode = prefix_and_encode(dst->encoding(), false, src->encoding(), true, true /* is_map1 */);
   emit_opcode_prefix_and_encoding((unsigned char)0xB6, 0xC0, encode);
 }
@@ -5810,16 +5755,6 @@ void Assembler::popf() {
   emit_int8((unsigned char)0x9D);
 }
 
-#ifndef _LP64 // no 32bit push/pop on amd64
-void Assembler::popl(Address dst) {
-  // NOTE: this will adjust stack by 8byte on 64bits
-  InstructionMark im(this);
-  prefix(dst);
-  emit_int8((unsigned char)0x8F);
-  emit_operand(rax, dst, 0);
-}
-#endif
-
 void Assembler::prefetchnta(Address src) {
   InstructionMark im(this);
   prefix(src, true /* is_map1 */);
@@ -6220,7 +6155,6 @@ void Assembler::evpunpckhqdq(XMMRegister dst, KRegister mask, XMMRegister src1, 
   emit_int16(0x6D, (0xC0 | encode));
 }
 
-#ifdef _LP64
 void Assembler::push2(Register src1, Register src2, bool with_ppx) {
   assert(VM_Version::supports_apx_f(), "requires APX");
   InstructionAttr attributes(0, /* rex_w */ with_ppx, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -6282,8 +6216,6 @@ void Assembler::popp(Register dst) {
   int encode = prefixq_and_encode_rex2(dst->encoding());
   emit_int8((unsigned char)0x58 | encode);
 }
-#endif //_LP64
-
 
 void Assembler::push(int32_t imm32) {
   // in 64bits we push 64bits onto the stack but only
@@ -6300,16 +6232,6 @@ void Assembler::push(Register src) {
 void Assembler::pushf() {
   emit_int8((unsigned char)0x9C);
 }
-
-#ifndef _LP64 // no 32bit push/pop on amd64
-void Assembler::pushl(Address src) {
-  // Note this will push 64bit on 64bit
-  InstructionMark im(this);
-  prefix(src);
-  emit_int8((unsigned char)0xFF);
-  emit_operand(rsi, src, 0);
-}
-#endif
 
 void Assembler::rcll(Register dst, int imm8) {
   assert(isShiftCount(imm8), "illegal shift count");
@@ -6353,43 +6275,37 @@ void Assembler::rdtsc() {
 void Assembler::rep_mov() {
   // REP
   // MOVSQ
-  LP64_ONLY(emit_int24((unsigned char)0xF3, REX_W, (unsigned char)0xA5);)
-  NOT_LP64( emit_int16((unsigned char)0xF3,        (unsigned char)0xA5);)
+  emit_int24((unsigned char)0xF3, REX_W, (unsigned char)0xA5);
 }
 
 // sets rcx bytes with rax, value at [edi]
 void Assembler::rep_stosb() {
   // REP
   // STOSB
-  LP64_ONLY(emit_int24((unsigned char)0xF3, REX_W, (unsigned char)0xAA);)
-  NOT_LP64( emit_int16((unsigned char)0xF3,        (unsigned char)0xAA);)
+  emit_int24((unsigned char)0xF3, REX_W, (unsigned char)0xAA);
 }
 
 // sets rcx pointer sized words with rax, value at [edi]
 // generic
 void Assembler::rep_stos() {
   // REP
-  // LP64:STOSQ, LP32:STOSD
-  LP64_ONLY(emit_int24((unsigned char)0xF3, REX_W, (unsigned char)0xAB);)
-  NOT_LP64( emit_int16((unsigned char)0xF3,        (unsigned char)0xAB);)
+  // STOSQ
+  emit_int24((unsigned char)0xF3, REX_W, (unsigned char)0xAB);
 }
 
 // scans rcx pointer sized words at [edi] for occurrence of rax,
 // generic
 void Assembler::repne_scan() { // repne_scan
   // SCASQ
-  LP64_ONLY(emit_int24((unsigned char)0xF2, REX_W, (unsigned char)0xAF);)
-  NOT_LP64( emit_int16((unsigned char)0xF2,        (unsigned char)0xAF);)
+  emit_int24((unsigned char)0xF2, REX_W, (unsigned char)0xAF);
 }
 
-#ifdef _LP64
 // scans rcx 4 byte words at [edi] for occurrence of rax,
 // generic
 void Assembler::repne_scanl() { // repne_scan
   // SCASL
   emit_int16((unsigned char)0xF2, (unsigned char)0xAF);
 }
-#endif
 
 void Assembler::ret(int imm16) {
   if (imm16 == 0) {
@@ -6464,7 +6380,6 @@ void Assembler::erorl(Register dst, Register src, bool no_flags) {
   emit_int16((unsigned char)0xD3, (0xC8 | encode));
 }
 
-#ifdef _LP64
 void Assembler::rorq(Register dst) {
   int encode = prefixq_and_encode(dst->encoding());
   emit_int16((unsigned char)0xD3, (0xC8 | encode));
@@ -6527,15 +6442,6 @@ void Assembler::erolq(Register dst, Register src, int imm8, bool no_flags) {
    } else {
      emit_int24((unsigned char)0xC1, (0xc0 | encode), imm8);
    }
- }
-#endif
-
-void Assembler::sahf() {
-#ifdef _LP64
-  // Not supported in 64bit mode
-  ShouldNotReachHere();
-#endif
-  emit_int8((unsigned char)0x9E);
 }
 
 void Assembler::sall(Address dst, int imm8) {
@@ -6988,7 +6894,6 @@ void Assembler::eshrdl(Register dst, Register src1, Register src2, int8_t imm8, 
   emit_int24(0x2C, (0xC0 | encode), imm8);
 }
 
-#ifdef _LP64
 void Assembler::shldq(Register dst, Register src, int8_t imm8) {
   int encode = prefixq_and_encode(src->encoding(), dst->encoding(), true /* is_map1 */);
   emit_opcode_prefix_and_encoding((unsigned char)0xA4, 0xC0, encode, imm8);
@@ -7014,7 +6919,6 @@ void Assembler::eshrdq(Register dst, Register src1, Register src2, int8_t imm8, 
   int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
   emit_int24(0x2C, (0xC0 | encode), imm8);
 }
-#endif
 
 // copies a single word from [esi] to [edi]
 void Assembler::smovl() {
@@ -7208,7 +7112,6 @@ void Assembler::subss(XMMRegister dst, Address src) {
 }
 
 void Assembler::testb(Register dst, int imm8, bool use_ral) {
-  NOT_LP64(assert(dst->has_byte_register(), "must have byte register"));
   if (dst == rax) {
     if (use_ral) {
       emit_int8((unsigned char)0xA8);
@@ -12872,54 +12775,6 @@ void Assembler::emit_farith(int b1, int b2, int i) {
   emit_int16(b1, b2 + i);
 }
 
-#ifndef _LP64
-// 32bit only pieces of the assembler
-
-void Assembler::emms() {
-  NOT_LP64(assert(VM_Version::supports_mmx(), ""));
-  emit_int16(0x0F, 0x77);
-}
-
-void Assembler::vzeroupper() {
-  vzeroupper_uncached();
-}
-
-void Assembler::cmp_literal32(Register src1, int32_t imm32, RelocationHolder const& rspec) {
-  // NO PREFIX AS NEVER 64BIT
-  InstructionMark im(this);
-  emit_int16((unsigned char)0x81, (0xF8 | src1->encoding()));
-  emit_data(imm32, rspec, 0);
-}
-
-void Assembler::cmp_literal32(Address src1, int32_t imm32, RelocationHolder const& rspec) {
-  // NO PREFIX AS NEVER 64BIT (not even 32bit versions of 64bit regs
-  InstructionMark im(this);
-  emit_int8((unsigned char)0x81);
-  emit_operand(rdi, src1, 4);
-  emit_data(imm32, rspec, 0);
-}
-
-// The 64-bit (32bit platform) cmpxchg compares the value at adr with the contents of rdx:rax,
-// and stores rcx:rbx into adr if so; otherwise, the value at adr is loaded
-// into rdx:rax.  The ZF is set if the compared values were equal, and cleared otherwise.
-void Assembler::cmpxchg8(Address adr) {
-  InstructionMark im(this);
-  emit_int16(0x0F, (unsigned char)0xC7);
-  emit_operand(rcx, adr, 0);
-}
-
-void Assembler::decl(Register dst) {
-  // Don't use it directly. Use MacroAssembler::decrementl() instead.
- emit_int8(0x48 | dst->encoding());
-}
-
-void Assembler::edecl(Register dst, Register src, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  (void) evex_prefix_and_encode_ndd(0, dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
-  emit_int8(0x48 | src->encoding());
-}
-#endif // !_LP64
-
 // SSE SIMD prefix byte values corresponding to VexSimdPrefix encoding.
 static int simd_pre[4] = { 0, 0x66, 0xF3, 0xF2 };
 // SSE opcode second byte values (first is 0x0F) corresponding to VexOpcode encoding.
@@ -13053,7 +12908,7 @@ void Assembler::vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix
   // is allowed in legacy mode and has resources which will fit in it.
   // Pure EVEX instructions will have is_evex_instruction set in their definition.
   if (!attributes->is_legacy_mode()) {
-    if (UseAVX > 2 && !attributes->is_evex_instruction() && !is_managed()) {
+    if (UseAVX > 2 && !attributes->is_evex_instruction()) {
       if ((attributes->get_vector_len() != AVX_512bit) && !is_extended) {
           attributes->set_is_legacy_mode();
       }
@@ -13068,7 +12923,6 @@ void Assembler::vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix
     assert((!is_extended || (!attributes->is_legacy_mode())),"XMM register should be 0-15");
   }
 
-  clear_managed();
   if (UseAVX > 2 && !attributes->is_legacy_mode())
   {
     bool evex_r = (xreg_enc >= 16);
@@ -13116,7 +12970,7 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
   // is allowed in legacy mode and has resources which will fit in it.
   // Pure EVEX instructions will have is_evex_instruction set in their definition.
   if (!attributes->is_legacy_mode()) {
-    if (UseAVX > 2 && !attributes->is_evex_instruction() && !is_managed()) {
+    if (UseAVX > 2 && !attributes->is_evex_instruction()) {
       if ((!attributes->uses_vl() || (attributes->get_vector_len() != AVX_512bit)) &&
            !is_extended) {
           attributes->set_is_legacy_mode();
@@ -13138,7 +12992,6 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
     assert(((!is_extended) || (!attributes->is_legacy_mode())),"XMM register should be 0-15");
   }
 
-  clear_managed();
   if (UseAVX > 2 && !attributes->is_legacy_mode())
   {
     bool evex_r = (dst_enc >= 16);
@@ -14037,55 +13890,6 @@ void Assembler::evcompresspd(XMMRegister dst, KRegister mask, XMMRegister src, b
   int encode = vex_prefix_and_encode(src->encoding(), 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int16((unsigned char)0x8A, (0xC0 | encode));
 }
-
-#ifndef _LP64
-
-void Assembler::incl(Register dst) {
-  // Don't use it directly. Use MacroAssembler::incrementl() instead.
-  emit_int8(0x40 | dst->encoding());
-}
-
-void Assembler::eincl(Register dst, Register src, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  (void) evex_prefix_and_encode_ndd(0, dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
-  emit_int8(0x40 | src->encoding());
-}
-
-void Assembler::lea(Register dst, Address src) {
-  leal(dst, src);
-}
-
-void Assembler::mov_literal32(Address dst, int32_t imm32, RelocationHolder const& rspec) {
-  InstructionMark im(this);
-  emit_int8((unsigned char)0xC7);
-  emit_operand(rax, dst, 4);
-  emit_data((int)imm32, rspec, 0);
-}
-
-void Assembler::mov_literal32(Register dst, int32_t imm32, RelocationHolder const& rspec) {
-  InstructionMark im(this);
-  int encode = prefix_and_encode(dst->encoding());
-  emit_int8((0xB8 | encode));
-  emit_data((int)imm32, rspec, 0);
-}
-
-void Assembler::popa() { // 32bit
-  emit_int8(0x61);
-}
-
-void Assembler::push_literal32(int32_t imm32, RelocationHolder const& rspec) {
-  InstructionMark im(this);
-  emit_int8(0x68);
-  emit_data(imm32, rspec, 0);
-}
-
-void Assembler::pusha() { // 32bit
-  emit_int8(0x60);
-}
-
-#else // LP64
-
-// 64bit only pieces of the assembler
 
 // This should only be used by 64bit instructions that can use rip-relative
 // it cannot be used by instructions that want an immediate value.
@@ -16039,7 +15843,6 @@ void Assembler::rorxq(Register dst, Address src, int imm8) {
   emit_int8(imm8);
 }
 
-#ifdef _LP64
 void Assembler::salq(Address dst, int imm8) {
   InstructionMark im(this);
   assert(isShiftCount(imm8 >> 1), "illegal shift count");
@@ -16194,7 +15997,6 @@ void Assembler::esarq(Register dst, Register src, bool no_flags) {
   int encode = evex_prefix_and_encode_ndd(0, dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
   emit_int16((unsigned char)0xD3, (0xF8 | encode));
 }
-#endif
 
 void Assembler::sbbq(Address dst, int32_t imm32) {
   InstructionMark im(this);
@@ -16538,8 +16340,6 @@ void Assembler::exorq(Register dst, Address src1, Register src2, bool no_flags) 
   emit_int8(0x31);
   emit_operand(src2, src1, 0);
 }
-
-#endif // !LP64
 
 void InstructionAttr::set_address_attributes(int tuple_type, int input_size_in_bits) {
   if (VM_Version::supports_evex()) {

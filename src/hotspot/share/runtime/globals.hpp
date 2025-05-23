@@ -128,7 +128,7 @@ const size_t minimumSymbolTableSize = 1024;
           "(Deprecated) Use 32-bit class pointers in 64-bit VM. "           \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
-  product(bool, UseCompactObjectHeaders, false, EXPERIMENTAL,               \
+  product(bool, UseCompactObjectHeaders, false,                             \
           "Use compact 64-bit object headers in 64-bit VM")                 \
                                                                             \
   product(int, ObjectAlignmentInBytes, 8,                                   \
@@ -324,6 +324,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseChaCha20Intrinsics, false, DIAGNOSTIC,                   \
           "Use intrinsics for the vectorized version of ChaCha20")          \
+                                                                            \
+  product(bool, UseKyberIntrinsics, false, DIAGNOSTIC,                      \
+          "Use intrinsics for the vectorized version of Kyber")             \
                                                                             \
   product(bool, UseDilithiumIntrinsics, false, DIAGNOSTIC,                  \
           "Use intrinsics for the vectorized version of Dilithium")         \
@@ -648,6 +651,10 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, StressCompiledExceptionHandlers, false,                     \
           "Exercise compiled exception handlers")                           \
                                                                             \
+  product(bool, DeoptimizeOnAllocationException, false, DIAGNOSTIC,         \
+          "Deoptimize on exception during allocation instead of using the " \
+          "compiled exception handlers")                                    \
+                                                                            \
   develop(bool, InterceptOSException, false,                                \
           "Start debugger when an implicit OS (e.g. null pointer) "         \
           "exception happens")                                              \
@@ -699,6 +706,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, PrintClassLoaderDataGraphAtExit, false,                     \
           "Print the class loader data graph at exit")                      \
+                                                                            \
+  product(bool, PrintVMInfoAtExit, false, DIAGNOSTIC,                       \
+          "Executes the VM.info diagnostic command at exit")                \
                                                                             \
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \

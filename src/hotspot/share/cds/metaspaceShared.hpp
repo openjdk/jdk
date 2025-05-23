@@ -67,8 +67,9 @@ class MetaspaceShared : AllStatic {
     ro = 1,  // read-only shared space
     bm = 2,  // relocation bitmaps (freed after file mapping is finished)
     hp = 3,  // heap region
+    ac = 4,  // aot code
     num_core_region = 2,       // rw and ro
-    n_regions = 4              // total number of regions
+    n_regions = 5              // total number of regions
   };
 
   static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
@@ -109,7 +110,8 @@ public:
   static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
   static bool is_shared_static(void* p) NOT_CDS_RETURN_(false);
 
-  static void unrecoverable_loading_error(const char* message = nullptr);
+  static void unrecoverable_loading_error(const char* message = "unrecoverable error");
+  static void report_loading_error(const char* format, ...) ATTRIBUTE_PRINTF(1, 0);
   static void unrecoverable_writing_error(const char* message = nullptr);
   static void writing_error(const char* message = nullptr);
 

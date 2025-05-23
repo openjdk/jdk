@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,16 @@ import java.lang.constant.ConstantDescs;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.Label;
 import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.LabelTarget;
 
 /**
  * An implementation of {@link jdk.jshell.spi.ExecutionControl} which executes
@@ -90,11 +95,19 @@ public class LocalExecutionControl extends DirectExecutionControl {
     private static byte[] instrument(byte[] classFile) {
         var cc = ClassFile.of();
         return cc.transformClass(cc.parse(classFile),
-                        ClassTransform.transformingMethodBodies((cob, coe) -> {
-                            if (coe instanceof BranchInstruction)
-                                cob.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
-                            cob.with(coe);
-                        }));
+                        ClassTransform.transformingMethodBodies(
+                            CodeTransform.ofStateful(() -> {
+                                Set<Label> priorLabels = new HashSet<>();
+                                return (builder, element) -> {
+                                    switch (element) {
+                                        case LabelTarget target -> priorLabels.add(target.label());
+                                        case BranchInstruction branch when priorLabels.contains(branch.target())
+                                            -> builder.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
+                                        default -> { }
+                                    }
+                                    builder.with(element);
+                                };
+                            })));
     }
 
     private static ClassBytecodes genCancelClass() {
@@ -119,28 +132,29 @@ public class LocalExecutionControl extends DirectExecutionControl {
         }
         allStop.set(null, false);
 
-        execThreadGroup = new ThreadGroup("JShell process local execution");
-
         AtomicReference<InvocationTargetException> iteEx = new AtomicReference<>();
         AtomicReference<IllegalAccessException> iaeEx = new AtomicReference<>();
         AtomicReference<NoSuchMethodException> nmeEx = new AtomicReference<>();
         AtomicReference<Boolean> stopped = new AtomicReference<>(false);
 
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-            if (e instanceof InvocationTargetException) {
-                if (e.getCause() instanceof ThreadDeath) {
+        execThreadGroup = new ThreadGroup("JShell process local execution") {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                if (e instanceof InvocationTargetException) {
+                    if (e.getCause() instanceof ThreadDeath) {
+                        stopped.set(true);
+                    } else {
+                        iteEx.set((InvocationTargetException) e);
+                    }
+                } else if (e instanceof IllegalAccessException) {
+                    iaeEx.set((IllegalAccessException) e);
+                } else if (e instanceof NoSuchMethodException) {
+                    nmeEx.set((NoSuchMethodException) e);
+                } else if (e instanceof ThreadDeath) {
                     stopped.set(true);
-                } else {
-                    iteEx.set((InvocationTargetException) e);
                 }
-            } else if (e instanceof IllegalAccessException) {
-                iaeEx.set((IllegalAccessException) e);
-            } else if (e instanceof NoSuchMethodException) {
-                nmeEx.set((NoSuchMethodException) e);
-            } else if (e instanceof ThreadDeath) {
-                stopped.set(true);
             }
-        });
+        };
 
         final Object[] res = new Object[1];
         Thread snippetThread = new Thread(execThreadGroup, () -> {
