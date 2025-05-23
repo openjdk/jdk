@@ -537,7 +537,7 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
              ref->msotype() == MetaspaceObj::MethodCountersType) {
     return set_to_null;
   } else if (ref->msotype() == MetaspaceObj::AdapterHandlerEntryType) {
-    if (AOTCodeCache::is_dumping_adapter()) {
+    if (CDSConfig::is_dumping_adapters()) {
       AdapterHandlerEntry* entry = (AdapterHandlerEntry*)ref->obj();
       return AdapterHandlerLibrary::is_abstract_method_adapter(entry) ? set_to_null : make_a_copy;
     } else {

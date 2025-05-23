@@ -2456,7 +2456,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(int total_args_passed, BasicT
 #if INCLUDE_CDS
   // if we are building the archive then the archived adapter table is
   // not valid and we need to use the ones added to the runtime table
-  if (!AOTCodeCache::is_dumping_adapter()) {
+  if (AOTCodeCache::is_using_adapter()) {
     // Search archived table first. It is read-only table so can be searched without lock
     entry = _aot_adapter_handler_table.lookup(fp, fp->compute_hash(), 0 /* unused */);
     if (entry != nullptr) {
@@ -2566,7 +2566,7 @@ void AdapterHandlerLibrary::initialize() {
 
 #if INCLUDE_CDS
   // Link adapters in AOT Cache to their code in AOT Code Cache
-  if (!_aot_adapter_handler_table.empty()) {
+  if (AOTCodeCache::is_using_adapter() && !_aot_adapter_handler_table.empty()) {
     link_aot_adapters();
     lookup_simple_adapters();
     return;
@@ -2988,6 +2988,7 @@ void AdapterHandlerEntry::link() {
 }
 
 void AdapterHandlerLibrary::link_aot_adapters() {
+  assert(AOTCodeCache::is_using_adapter(), "AOT adapters code should be available");
   _aot_adapter_handler_table.iterate([](AdapterHandlerEntry* entry) {
     assert(!entry->is_linked(), "AdapterHandlerEntry is already linked!");
     entry->link();
@@ -3374,10 +3375,12 @@ JRT_END
 bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
   bool found = false;
 #if INCLUDE_CDS
-  auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
-    return (found = (b == CodeCache::find_blob(handler->get_i2c_entry())));
-  };
-  _aot_adapter_handler_table.iterate(findblob_archived_table);
+  if (AOTCodeCache::is_using_adapter()) {
+    auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
+      return (found = (b == CodeCache::find_blob(handler->get_i2c_entry())));
+    };
+    _aot_adapter_handler_table.iterate(findblob_archived_table);
+  }
 #endif // INCLUDE_CDS
   if (!found) {
     auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
@@ -3401,18 +3404,19 @@ uint32_t AdapterHandlerLibrary::id(AdapterFingerPrint* fingerprint) {
 void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b) {
   bool found = false;
 #if INCLUDE_CDS
-  auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
-    if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
-      found = true;
-      st->print("Adapter for signature: ");
-      handler->print_adapter_on(st);
-      return true;
-    } else {
-      return false; // keep looking
-
-    }
-  };
-  _aot_adapter_handler_table.iterate(findblob_archived_table);
+  if (AOTCodeCache::is_using_adapter()) {
+    auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
+      if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
+        found = true;
+        st->print("Adapter for signature: ");
+        handler->print_adapter_on(st);
+        return true;
+      } else {
+        return false; // keep looking
+      }
+    };
+    _aot_adapter_handler_table.iterate(findblob_archived_table);
+  }
 #endif // INCLUDE_CDS
   if (!found) {
     auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
