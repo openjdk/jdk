@@ -184,18 +184,10 @@ void ShenandoahArguments::initialize() {
   // Current default is good for generational collectors that run frequent young GCs.
   // With Shenandoah, GC cycles are much less frequent, so we need we need sizing policy
   // to converge faster over smaller number of resizing decisions.
-#undef KELVIN_EXPERIMENT
-#ifdef KELVIN_EXPERIMENT
-  // this experiment tests control, before our tlab optimizations
-  if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
-    FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
-  }
-#else
   if (strcmp(ShenandoahGCMode, "generational") && FLAG_IS_DEFAULT(TLABAllocationWeight)) {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
   }
   // In generational mode, let TLABAllocationWeight keeps its default value of 35.
-#endif
 
   if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
     vm_exit_during_initialization(
