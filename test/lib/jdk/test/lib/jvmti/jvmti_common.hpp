@@ -459,7 +459,7 @@ static unsigned char* jni_array_to_jvmti_allocated(jvmtiEnv *jvmti, JNIEnv *jni,
     if (jni_arr == nullptr) {
       fatal(jni, "JNI GetByteArrayElements returned nullptr");
     }
-    jvmtiError err = jvmti->Allocate(len, &new_arr); 
+    jvmtiError err = jvmti->Allocate(len, &new_arr);
     check_jvmti_status(jni, err, "JVMTI Allocate returned an error code");
 
     memcpy(new_arr, jni_arr, (size_t)len);
