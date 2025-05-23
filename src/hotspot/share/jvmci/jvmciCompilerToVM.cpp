@@ -808,6 +808,14 @@ C2V_VMENTRY_NULL(jobject, lookupConstantInPool, (JNIEnv* env, jobject, ARGUMENT_
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(obj));
 C2V_END
 
+C2V_VMENTRY_0(jint, getNumIndyEntries, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp)))
+  constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
+  if (cp->cache()->resolved_indy_entries() == nullptr) {
+    return 0;
+  }
+  return cp->resolved_indy_entries_length();
+C2V_END
+
 C2V_VMENTRY_NULL(jobjectArray, resolveBootstrapMethod, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   constantTag tag = cp->tag_at(index);
@@ -3295,6 +3303,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "lookupAppendixInPool",                         CC "(" HS_CONSTANT_POOL2 "II)" OBJECTCONSTANT,                                        FN_PTR(lookupAppendixInPool)},
   {CC "lookupMethodInPool",                           CC "(" HS_CONSTANT_POOL2 "IB" HS_METHOD2 ")" HS_METHOD,                               FN_PTR(lookupMethodInPool)},
   {CC "lookupConstantInPool",                         CC "(" HS_CONSTANT_POOL2 "IZ)" JAVACONSTANT,                                          FN_PTR(lookupConstantInPool)},
+  {CC "getNumIndyEntries",                            CC "(" HS_CONSTANT_POOL2 ")I",                                                        FN_PTR(getNumIndyEntries)},
   {CC "resolveBootstrapMethod",                       CC "(" HS_CONSTANT_POOL2 "I)[" OBJECT,                                                FN_PTR(resolveBootstrapMethod)},
   {CC "bootstrapArgumentIndexAt",                     CC "(" HS_CONSTANT_POOL2 "II)I",                                                      FN_PTR(bootstrapArgumentIndexAt)},
   {CC "getUncachedStringInPool",                      CC "(" HS_CONSTANT_POOL2 "I)" JAVACONSTANT,                                           FN_PTR(getUncachedStringInPool)},

@@ -530,19 +530,21 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         }
     }
 
-    static class BootstrapMethodInvocationImpl implements BootstrapMethodInvocation {
+    class BootstrapMethodInvocationImpl implements BootstrapMethodInvocation {
         private final boolean indy;
         private final ResolvedJavaMethod method;
         private final String name;
         private final JavaConstant type;
         private final List<JavaConstant> staticArguments;
+        private final int indyIndex;
 
-        BootstrapMethodInvocationImpl(boolean indy, ResolvedJavaMethod method, String name, JavaConstant type, List<JavaConstant> staticArguments) {
+        BootstrapMethodInvocationImpl(boolean indy, ResolvedJavaMethod method, String name, JavaConstant type, List<JavaConstant> staticArguments, int indyIndex) {
             this.indy = indy;
             this.method = method;
             this.name = name;
             this.type = type;
             this.staticArguments = staticArguments;
+            this.indyIndex = indyIndex;
         }
 
         @Override
@@ -568,6 +570,21 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         @Override
         public List<JavaConstant> getStaticArguments() {
             return staticArguments;
+        }
+
+        @Override
+        public void resolveInvokeDynamic() {
+            if (isInvokeDynamic()) {
+                loadReferencedType(indyIndex, Bytecodes.INVOKEDYNAMIC);
+            }
+        }
+
+        @Override
+        public JavaConstant lookupInvokeDynamicAppendix() {
+            if (isInvokeDynamic()) {
+                return lookupAppendix(indyIndex, Bytecodes.INVOKEDYNAMIC);
+            }
+            return null;
         }
 
         @Override
@@ -612,10 +629,25 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                     int bss_index = bsciArgs[1];
                     staticArgumentsList = new CachedBSMArgs(this, bss_index, argCount);
                 }
-                return new BootstrapMethodInvocationImpl(tag.name.equals("InvokeDynamic"), method, name, type, staticArgumentsList);
+                boolean isIndy = tag.name.equals("InvokeDynamic");
+                int indyIndex = isIndy ? index : -1;
+                return new BootstrapMethodInvocationImpl(isIndy, method, name, type, staticArgumentsList, indyIndex);
             default:
                 return null;
         }
+    }
+
+    @Override
+    public BootstrapMethodInvocation[] lookupAllIndyBootstrapMethodInvocations() {
+        int numIndys = compilerToVM().getNumIndyEntries(this);
+        if (numIndys == 0) {
+            return null;
+        }
+        BootstrapMethodInvocation[] bmis = new BootstrapMethodInvocation[numIndys];
+        for(int i = 0; i < numIndys; i++) {
+            bmis[i] = lookupBootstrapMethodInvocation(i, Bytecodes.INVOKEDYNAMIC);
+        }
+        return bmis;
     }
 
     /**
