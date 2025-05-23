@@ -493,7 +493,7 @@ public class GathererTest {
 
         var result = StreamSupport.stream(s, parallel)
                                   .gather(
-                                      Gatherer.ofSequential(
+                                      Gatherer.of(
                                           (_, i, d)
                                               -> d.push(i) && false
                                       )
