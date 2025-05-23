@@ -33,17 +33,18 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
 
   char* result = nullptr;
 
-  bool did_look_in_lower_4G = false;
-  if (optimize_for_zero_base && CompressedKlassPointers::narrow_klass_pointer_bits() == 32) {
-    result = reserve_address_space_for_unscaled_encoding(size, aslr);
-    did_look_in_lower_4G = true;
-  }
+  assert(CompressedKlassPointers::narrow_klass_pointer_bits() == 32 ||
+         CompressedKlassPointers::narrow_klass_pointer_bits() == 22, "Rethink if we ever use different nKlass bit sizes");
 
-  if (result == nullptr && !did_look_in_lower_4G) {
-    // Even without aiming for zero-based encoding, allocating below 4G gives us
-    // a low base address that can be encoded with imm32
-    result = reserve_address_space_below_4G(size, aslr);
-  }
+  // Unconditionally attempting to reserve in lower 4G first makes always sense:
+  // -CDS -COH: try to get unscaled mode (zero base zero shift)
+  // +CDS -COH: No zero base possible (CDS prevents it); but we still benefit from small base pointers (imm32 movabs)
+  // -CDS +COH: No zero base possible (22bit nKlass + zero base zero shift = 4MB encoding range, way too small);
+  //            but we still benefit from small base pointers (imm32 movabs)
+  // +CDS +COH: No zero base possible for multiple reasons (CDS prevents it and encoding range too small);
+  //            but we still benefit from small base pointers (imm32 movabs)
+
+  result = reserve_address_space_below_4G(size, aslr);
 
   if (result == nullptr && optimize_for_zero_base) {
     // Failing that, if we are running without CDS, attempt to allocate below 32G.
