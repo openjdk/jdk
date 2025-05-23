@@ -50,8 +50,8 @@ constexpr uint ZPageAgeCount = static_cast<uint>(ZPageAge::old) + 1;
 constexpr ZPageAge ZPageAgeLastPlusOne = static_cast<ZPageAge>(ZPageAgeCount);
 
 ENUMERATOR_RANGE(ZPageAge,
-                ZPageAge::eden,
-                ZPageAge::old);
+                 ZPageAge::eden,
+                 ZPageAge::old);
 
 using ZPageAgeRange = EnumRange<ZPageAge>;
 
