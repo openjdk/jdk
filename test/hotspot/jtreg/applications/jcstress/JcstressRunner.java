@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.util.List;
         revision = JcstressRunner.VERSION, extension = "jar", unpack = false)
 public class JcstressRunner {
 
-    public static final String VERSION = "0.17-SNAPSHOT-20240328";
+    public static final String VERSION = "0.17-SNAPSHOT-20241217";
     public static final String MAIN_CLASS = "org.openjdk.jcstress.Main";
 
     public static final String TIME_BUDGET_PROPERTY = "jcstress.time_budget";

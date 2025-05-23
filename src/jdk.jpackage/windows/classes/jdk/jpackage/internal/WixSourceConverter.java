@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.resources.ResourceLocator;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -70,7 +71,7 @@ final class WixSourceConverter {
     WixSourceConverter(Path resourceDir) throws IOException {
         var buf = new ByteArrayOutputStream();
 
-        new OverridableResource("wix3-to-wix4-conv.xsl")
+        new OverridableResource("wix3-to-wix4-conv.xsl", ResourceLocator.class)
                 .setPublicName("wix-conv.xsl")
                 .setResourceDir(resourceDir)
                 .setCategory(I18N.getString("resource.wix-src-conv"))
@@ -160,7 +161,7 @@ final class WixSourceConverter {
         return buf.toByteArray();
     }
 
-    final static class ResourceGroup {
+    static final class ResourceGroup {
 
         ResourceGroup(WixToolsetType wixToolsetType) {
             this.wixToolsetType = wixToolsetType;
@@ -415,7 +416,7 @@ final class WixSourceConverter {
     private final XMLOutputFactory outputFactory;
 
     // The list of WiX v3 namespaces this converter can handle
-    private final static Set<String> KNOWN_NAMESPACES = Set.of(
+    private static final Set<String> KNOWN_NAMESPACES = Set.of(
             "http://schemas.microsoft.com/wix/2006/localization",
             "http://schemas.microsoft.com/wix/2006/wi");
 }
