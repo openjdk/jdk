@@ -201,7 +201,7 @@ private:
     // Called from the suspend handshake.
     bool suspend_with_handshake(bool register_vthread_SR);
 
-    JavaThread* get_handshakee() { 
+    JavaThread* get_handshakee() {
         return _state->_handshakee;
     }
 
@@ -222,7 +222,7 @@ private:
         return _state->has_async_suspend_handshake();
     }
 
-    void set_async_suspend_handshake(bool to) { 
+    void set_async_suspend_handshake(bool to) {
         _state->set_async_suspend_handshake(to);
     }
 
