@@ -25,7 +25,7 @@
 
 ################################################################################
 
-DISABLED_WARNINGS_java += dangling-doc-comments lossy-conversions this-escape
+DISABLED_WARNINGS_java += dangling-doc-comments lossy-conversions this-escape suppression
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:$(call CommaList, javax.xml.catalog javax.xml.datatype \
     javax.xml.transform javax.xml.validation javax.xml.xpath)'
