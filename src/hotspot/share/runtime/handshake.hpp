@@ -185,44 +185,41 @@ class HandshakeSuspender {
   friend SuspendThreadHandshake;
   friend ThreadSelfSuspensionHandshake;
   friend JavaThread;
-public:
-  HandshakeSuspender(HandshakeState* state);
-  ~HandshakeSuspender();
-private:
-  HandshakeState* _state;
 
-  bool suspend(bool register_vthread_SR);
-  bool resume(bool register_vthread_SR);
+private:
+
+  static bool suspend(HandshakeState* state, bool register_vthread_SR);
+  static bool resume(HandshakeState* state, bool register_vthread_SR);
 
   // Called from the async handshake (the trap)
   // to stop a thread from continuing execution when suspended.
-  void do_self_suspend();
+  static void do_self_suspend(HandshakeState* state);
 
   // Called from the suspend handshake.
-  bool suspend_with_handshake(bool register_vthread_SR);
+  static bool suspend_with_handshake(HandshakeState* state, bool register_vthread_SR);
 
-  JavaThread* get_handshakee() {
-    return _state->_handshakee;
+  static JavaThread* get_handshakee(HandshakeState* state) {
+    return state->_handshakee;
   }
 
-  void set_suspended(bool to, bool register_vthread_SR) {
-    _state->set_suspended(to, register_vthread_SR);
+  static void set_suspended(HandshakeState* state, bool to, bool register_vthread_SR) {
+    state->set_suspended(to, register_vthread_SR);
   }
 
-  bool is_suspended() {
-    return _state->is_suspended();
+  static bool is_suspended(HandshakeState* state) {
+    return state->is_suspended();
   }
 
-  Monitor* get_lock_ptr() {
-    return &_state->_lock;
+  static Monitor* get_lock_ptr(HandshakeState* state) {
+    return &state->_lock;
   }
 
-  bool has_async_suspend_handshake() {
-    return _state->has_async_suspend_handshake();
+  static bool has_async_suspend_handshake(HandshakeState* state) {
+    return state->has_async_suspend_handshake();
   }
 
-  void set_async_suspend_handshake(bool to) {
-    _state->set_async_suspend_handshake(to);
+  static void set_async_suspend_handshake(HandshakeState* state, bool to) {
+    state->set_async_suspend_handshake(to);
   }
 
 };

@@ -498,7 +498,6 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _pending_interrupted_exception(false),
 
   _handshake(this),
-  _handshake_suspender(&_handshake),
 
   _popframe_preserved_args(nullptr),
   _popframe_preserved_args_size(0),
@@ -1202,13 +1201,13 @@ bool JavaThread::java_suspend(bool register_vthread_SR) {
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");
-  return this->handshake_suspender()->suspend(register_vthread_SR);
+  return HandshakeSuspender::suspend(this->handshake_state(), register_vthread_SR);
 }
 
 bool JavaThread::java_resume(bool register_vthread_SR) {
   guarantee(Thread::is_JavaThread_protected_by_TLH(/* target */ this),
             "missing ThreadsListHandle in calling context.");
-  return this->handshake_suspender()->resume(register_vthread_SR);
+  return HandshakeSuspender::resume(this->handshake_state(), register_vthread_SR);
 }
 
 // Wait for another thread to perform object reallocation and relocking on behalf of

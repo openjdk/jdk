@@ -687,10 +687,8 @@ private:
 
   // Support for thread handshake operations
   HandshakeState _handshake;
-  HandshakeSuspender _handshake_suspender;
  public:
   HandshakeState* handshake_state() { return &_handshake; }
-  HandshakeSuspender* handshake_suspender() { return &_handshake_suspender; }
 
   // A JavaThread can always safely operate on it self and other threads
   // can do it safely if they are the active handshaker.
