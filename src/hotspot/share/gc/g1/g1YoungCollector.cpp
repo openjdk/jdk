@@ -664,7 +664,8 @@ public:
     _per_thread_states(per_thread_states),
     _task_queues(task_queues),
     _terminator(num_workers, _task_queues, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::Termination)),
-    _pinned_regions_recorded(false) {}
+    _pinned_regions_recorded(false)
+  { }
 
   void work(uint worker_id) {
     start_work(worker_id);

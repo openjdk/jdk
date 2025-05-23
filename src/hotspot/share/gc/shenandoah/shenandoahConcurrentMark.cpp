@@ -221,7 +221,7 @@ void ShenandoahConcurrentMark::concurrent_mark() {
   ShenandoahGenerationType gen_type = _generation->type();
   ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
   ShenandoahFlushSATBHandshakeClosure flush_satb(qset);
-  TaskTerminator terminator(nworkers, task_queues(), TERMINATION_EVENT_NAME("Shenandoah Concurrent Mark"));
+  TaskTerminator terminator(nworkers, task_queues(), TERMINATION_EVENT_NAME("Concurrent Mark"));
   for (uint flushes = 0; flushes < ShenandoahMaxSATBBufferFlushes; flushes++) {
     switch (gen_type) {
       case YOUNG: {
@@ -296,7 +296,7 @@ void ShenandoahConcurrentMark::finish_mark_work() {
   task_queues()->reserve(nworkers);
 
   StrongRootsScope scope(nworkers);
-  TaskTerminator terminator(nworkers, task_queues(), TERMINATION_EVENT_NAME("Shenandoah Final Mark"));
+  TaskTerminator terminator(nworkers, task_queues(), TERMINATION_EVENT_NAME("Final Mark"));
 
   switch (_generation->type()) {
     case YOUNG:{

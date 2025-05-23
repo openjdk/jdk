@@ -204,7 +204,7 @@ class ParallelScavengeRefProcProxyTask : public RefProcProxyTask {
 public:
   ParallelScavengeRefProcProxyTask(uint max_workers)
     : RefProcProxyTask("ParallelScavengeRefProcProxyTask", max_workers),
-      _terminator(max_workers, ParCompactionManager::marking_stacks(), TERMINATION_EVENT_NAME("ParallelScavengeRefProcProxyTask")) {}
+      _terminator(max_workers, ParCompactionManager::marking_stacks(), TERMINATION_EVENT_NAME("Reference Processing")) {}
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
@@ -259,7 +259,7 @@ public:
     _gen_top(old_gen->object_space()->top()),
     _active_workers(active_workers),
     _is_old_gen_empty(old_gen->object_space()->is_empty()),
-    _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth(), TERMINATION_EVENT_NAME("ScavengeRootsTask")) {
+    _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth(), TERMINATION_EVENT_NAME("Scavenge")) {
     if (!_is_old_gen_empty) {
       PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
       card_table->pre_scavenge(active_workers);

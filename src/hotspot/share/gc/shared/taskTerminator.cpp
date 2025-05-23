@@ -26,15 +26,12 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "jfr/jfrEvents.hpp"
 #include "workerThread.hpp"
-
-#define TERMINATION_EVENT_NAME_PREFIX_ASSERT(name) \
-assert(name == nullptr || strncmp(name, TERMINATION_EVENT_NAME_PREFIX, strlen(TERMINATION_EVENT_NAME_PREFIX)) == 0, "Must be")
 
 TaskTerminator::DelayContext::DelayContext() {
   _yield_count = 0;
@@ -78,9 +75,7 @@ TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set, con
   _termination_event_name(termination_event_name),
   _offered_termination(0),
   _blocker(Mutex::nosafepoint, "TaskTerminator_lock"),
-  _spin_master(nullptr) {
-  TERMINATION_EVENT_NAME_PREFIX_ASSERT(termination_event_name);
-}
+  _spin_master(nullptr) { }
 
 TaskTerminator::~TaskTerminator() {
   if (_offered_termination != 0) {
@@ -110,18 +105,11 @@ void TaskTerminator::reset_for_reuse(uint n_threads) {
   _n_threads = n_threads;
 }
 
-void TaskTerminator::reset_for_reuse(uint n_threads, const char* termination_event_name) {
-  TERMINATION_EVENT_NAME_PREFIX_ASSERT(termination_event_name);
-  reset_for_reuse(n_threads);
-  _termination_event_name = termination_event_name;
-}
-
 const char* TaskTerminator::termination_event_name() {
   return _termination_event_name;
 }
 
 void TaskTerminator::set_termination_event_name(const char* termination_event_name) {
-  TERMINATION_EVENT_NAME_PREFIX_ASSERT(termination_event_name);
   _termination_event_name = termination_event_name;
 }
 
@@ -161,8 +149,8 @@ public:
   _worker_id(worker_id) { }
 
   ~TaskTerminationTracker() {
-    if (_terminator->_termination_event_name != nullptr && _event.should_commit()) {
-      _event.commit(GCId::current(), _terminator->_n_threads > 1 ? _worker_id : 0, _terminator->_termination_event_name);
+    if (_event.should_commit()) {
+      _event.commit(GCId::current(), _terminator->threads() > 1 ? _worker_id : 0, _terminator->termination_event_name());
     }
   }
 };
@@ -242,4 +230,3 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
     }
   }
 }
-#undef TERMINATION_EVENT_NAME_PREFIX_ASSERT

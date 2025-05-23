@@ -34,7 +34,7 @@ class TerminatorTerminator;
 class Thread;
 
 #define TERMINATION_EVENT_NAME_PREFIX "Termination"
-#define TERMINATION_EVENT_NAME(task_name) "" TERMINATION_EVENT_NAME_PREFIX ":" task_name ""
+#define TERMINATION_EVENT_NAME(name) "" TERMINATION_EVENT_NAME_PREFIX ": " name ""
 
 class TaskTerminationTracker;
 
@@ -57,7 +57,6 @@ class TaskTerminationTracker;
  * detecting new tasks for stealing and termination condition.
  */
 class TaskTerminator : public CHeapObj<mtGC> {
-  friend class TaskTerminationTracker;
   class DelayContext {
     uint _yield_count;
     // Number of hard spin loops done since last yield
@@ -101,7 +100,7 @@ class TaskTerminator : public CHeapObj<mtGC> {
   NONCOPYABLE(TaskTerminator);
 
 public:
-  TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set, const char* termination_event_name = nullptr);
+  TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set, const char* termination_event_name = TERMINATION_EVENT_NAME_PREFIX);
   ~TaskTerminator();
 
   // The current thread has no work, and is ready to terminate if everyone
@@ -125,12 +124,32 @@ public:
   // Same as above but the number of parallel threads is set to the
   // given number.
   void reset_for_reuse(uint n_threads);
-  // Same as above but task name is set to new task name.
-  void reset_for_reuse(uint n_threads, const char* termination_event_name);
+
   // Get termination event name
   const char* termination_event_name();
   // Set termination event name
   void set_termination_event_name(const char* termination_event_name);
+
+  uint threads() {
+    return _n_threads;
+  }
+};
+
+class TaskTerminatorReuseMark : public StackObj {
+private:
+  TaskTerminator* const _terminator;
+  const char* _original_event_name;
+
+public:
+  TaskTerminatorReuseMark(TaskTerminator* terminator, uint active_workers, const char* event_name) :
+    _terminator(terminator) {
+    _terminator->reset_for_reuse(active_workers);
+    _original_event_name = _terminator->termination_event_name();
+    _terminator->set_termination_event_name(event_name);
+  };
+  ~TaskTerminatorReuseMark() {
+    _terminator->set_termination_event_name(_original_event_name);
+  }
 };
 
 #endif // SHARE_GC_SHARED_TASKTERMINATOR_HPP

@@ -1007,8 +1007,7 @@ public:
   }
 
   G1CMConcurrentMarkingTask(G1ConcurrentMark* cm) :
-      WorkerTask("Concurrent Mark"), _cm(cm) {
-  }
+      WorkerTask("Concurrent Mark"), _cm(cm) { }
 
   ~G1CMConcurrentMarkingTask() { }
 };
@@ -1833,7 +1832,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
 
 class G1CMRemarkTask : public WorkerTask {
   G1ConcurrentMark* _cm;
-  const char* _original_termination_event_name;
+  TaskTerminatorReuseMark _ttmr;
 public:
   void work(uint worker_id) {
     G1CMTask* task = _cm->task(worker_id);
@@ -1856,14 +1855,8 @@ public:
   }
 
   G1CMRemarkTask(G1ConcurrentMark* cm, uint active_workers) :
-    WorkerTask("Par Remark"), _cm(cm) {
-    _original_termination_event_name = _cm->terminator()->termination_event_name();
-    _cm->terminator()->reset_for_reuse(active_workers, TERMINATION_EVENT_NAME("Par Remark"));
-  }
-
-  ~G1CMRemarkTask() {
-    _cm->terminator()->set_termination_event_name(_original_termination_event_name);
-  }
+    WorkerTask("Par Remark"), _cm(cm),
+    _ttmr(cm->terminator(), active_workers, TERMINATION_EVENT_NAME("Par Remark")) {}
 };
 
 void G1ConcurrentMark::finalize_marking() {
