@@ -658,13 +658,13 @@ uint G1HeapRegionManager::find_empty_from_idx_reverse(uint start_idx, uint* res_
 
 void G1HeapRegionManager::verify() {
   guarantee(num_committed_regions() <= _next_highest_used_hrm_index,
-            "invariant: _length: %u _next_highest_used_hrm_index: %u",
+            "invariant: committed regions: %u _next_highest_used_hrm_index: %u",
             num_committed_regions(), _next_highest_used_hrm_index);
   guarantee(_next_highest_used_hrm_index <= max_num_regions(),
-            "invariant: _next_highest_used_hrm_index: %u _max_length: %u",
+            "invariant: _next_highest_used_hrm_index: %u max_num_regions: %u",
             _next_highest_used_hrm_index, max_num_regions());
   guarantee(num_committed_regions() <= max_num_regions(),
-            "invariant: committed regions: %u max_regions: %u",
+            "invariant: committed regions: %u max_num_regions: %u",
             num_committed_regions(), max_num_regions());
 
   bool prev_committed = true;
