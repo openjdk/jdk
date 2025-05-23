@@ -1492,7 +1492,7 @@ public class Thread implements Runnable {
         }
 
         try {
-            if (threadLocals != null && TerminatingThreadLocal.REGISTRY.isPresent()) {
+            if (threadLocals != null) {
                 TerminatingThreadLocal.threadTerminated();
             }
         } finally {

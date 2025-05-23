@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,14 +49,42 @@ public class TerminatingThreadLocal<T> extends CarrierThreadLocal<T> {
     }
 
     /**
+     * Invoked by a thread to release any native resources maintained by the value.
+     * This method may be invoked more than once.
+     *
+     * @implSpec The default implementation does nothing.
+     *
+     * @param value current thread's value of this thread-local variable
+     *              (may be null but only if null value was explicitly initialized)
+     */
+    protected void releaseResources(T value) { }
+
+    /**
+     * Invokes the TerminatingThreadLocal's {@link #releaseResources()} method
+     * on all instances registered in current thread.
+     */
+    public static void releaseResources() {
+        if (REGISTRY.isPresent()) {
+            for (TerminatingThreadLocal<?> ttl : REGISTRY.get()) {
+                ttl._releaseResources();
+            }
+        }
+    }
+
+    private void _releaseResources() { releaseResources(get()); }
+
+    /**
      * Invoked by a thread when terminating and this thread-local has an associated
      * value for the terminating thread (even if that value is null), so that any
      * native resources maintained by the value can be released.
+     *
+     * @implSpec The default implementation invokes {@link #releaseResources()}.
      *
      * @param value current thread's value of this thread-local variable
      *              (may be null but only if null value was explicitly initialized)
      */
     protected void threadTerminated(T value) {
+        releaseResources(value);
     }
 
     // following methods and field are implementation details and should only be
@@ -67,8 +95,10 @@ public class TerminatingThreadLocal<T> extends CarrierThreadLocal<T> {
      * on all instances registered in current thread.
      */
     public static void threadTerminated() {
-        for (TerminatingThreadLocal<?> ttl : REGISTRY.get()) {
-            ttl._threadTerminated();
+        if (REGISTRY.isPresent()) {
+            for (TerminatingThreadLocal<?> ttl : REGISTRY.get()) {
+                ttl._threadTerminated();
+            }
         }
     }
 
@@ -96,7 +126,7 @@ public class TerminatingThreadLocal<T> extends CarrierThreadLocal<T> {
      * a per-carrier-thread registry of TerminatingThreadLocal(s) that have been registered
      * but later not unregistered in a particular carrier-thread.
      */
-    public static final CarrierThreadLocal<Collection<TerminatingThreadLocal<?>>> REGISTRY =
+    private static final CarrierThreadLocal<Collection<TerminatingThreadLocal<?>>> REGISTRY =
         new CarrierThreadLocal<>() {
             @Override
             protected Collection<TerminatingThreadLocal<?>> initialValue() {

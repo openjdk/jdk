@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ class NativeBuffers {
     // per-carrier-thread cache of NativeBuffer(s)
     private static final TerminatingThreadLocal<NativeBuffer[]> threadLocal = new TerminatingThreadLocal<>() {
         @Override
-        protected void threadTerminated(NativeBuffer[] buffers) {
+        protected void releaseResources(NativeBuffer[] buffers) {
             // threadLocal may be initialized but with initialValue of null
             if (buffers != null) {
                 for (int i = 0; i < TEMP_BUF_POOL_SIZE; i++) {

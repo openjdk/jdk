@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,9 +133,14 @@ public final class InnocuousThread extends Thread {
     /**
      * Drops all thread locals (and inherited thread locals).
      */
-    public final void eraseThreadLocals() {
-        UNSAFE.putReference(this, THREAD_LOCALS, null);
-        UNSAFE.putReference(this, INHERITABLE_THREAD_LOCALS, null);
+    public void eraseThreadLocals() {
+        if (UNSAFE.getReference(this, THREAD_LOCALS) != null) {
+            TerminatingThreadLocal.releaseResources();
+            UNSAFE.putReference(this, THREAD_LOCALS, null);
+        }
+        if (UNSAFE.getReference(this, INHERITABLE_THREAD_LOCALS) != null) {
+            UNSAFE.putReference(this, INHERITABLE_THREAD_LOCALS, null);
+        }
     }
 
     // ensure run method is run only once

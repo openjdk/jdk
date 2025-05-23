@@ -37,6 +37,7 @@ package java.util.concurrent;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
 
 /**
@@ -227,8 +228,10 @@ public class ForkJoinWorkerThread extends Thread {
      * Clears ThreadLocals
      */
     final void resetThreadLocals() {
-         if (U.getReference(this, THREADLOCALS) != null)
+         if (U.getReference(this, THREADLOCALS) != null) {
+             TerminatingThreadLocal.releaseResources();
              U.putReference(this, THREADLOCALS, null);
+         }
          if (U.getReference(this, INHERITABLETHREADLOCALS) != null)
              U.putReference(this, INHERITABLETHREADLOCALS, null);
          onThreadLocalReset();
