@@ -179,36 +179,82 @@ public final class HexDigits {
                 67 - Long.numberOfLeadingZeros(value) >> 2;
     }
 
+
+
     /**
-     * Extract the least significant 4 bytes from the input integer i, convert each byte into its corresponding 2-digit
-     * hexadecimal representation, concatenate these hexadecimal strings into one continuous string, and then interpret
-     * this string as a hexadecimal number to form and return a long value.
+     * Efficiently converts 8 hexadecimal digits to their ASCII representation using SIMD-style vector operations.
+     * This method processes multiple digits in parallel by treating a long value as eight 8-bit lanes,
+     * achieving significantly better performance compared to traditional loop-based conversion.
+     *
+     * <p>The conversion algorithm works as follows:
+     * <pre>
+     * 1. Input expansion: Each 4-bit hex digit is expanded to 8 bits
+     * 2. Vector processing:
+     *    - Add 6 to each digit: triggers carry flag for a-f digits
+     *    - Mask with 0x10 pattern to isolate carry flags
+     *    - Calculate ASCII adjustment: (carry << 1) + (carry >> 1) - (carry >> 4)
+     *    - Add ASCII '0' base (0x30) and original value
+     * 3. Byte order adjustment for final output
+     * </pre>
+     *
+     * <p>Performance characteristics:
+     * <ul>
+     *   <li>Processes 8 digits in parallel using vector operations
+     *   <li>Avoids branching and loops completely
+     *   <li>Uses only integer arithmetic and bit operations
+     *   <li>Constant time execution regardless of input values
+     * </ul>
+     *
+     * <p>ASCII conversion mapping:
+     * <ul>
+     *   <li>Digits 0-9 → ASCII '0'-'9' (0x30-0x39)
+     *   <li>Digits a-f → ASCII 'a'-'f' (0x61-0x66)
+     * </ul>
+     *
+     * @param input A long containing 8 hex digits (each digit must be 0-15)
+     * @return A long containing 8 ASCII bytes representing the hex digits
+     *
+     * @implNote The implementation leverages CPU vector processing capabilities through
+     *           long integer operations. The algorithm is based on the observation that
+     *           ASCII hex digits have a specific pattern that can be computed efficiently
+     *           using carry flag manipulation.
+     *
+     * @example
+     * <pre>
+     * Input:  0xABCDEF01
+     * Output: 3130666564636261 ('1','0','f','e','d','c','b','a' in ASCII)
+     * </pre>
+     *
+     * @see Long#reverseBytes(long)
      */
-    public static long hex8(long i) {
-        long x = Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL);
+    private static long hex8(long i) {
+        // Expand each 4-bit group into 8 bits, spreading them out in the long value: 0xAABBCCDD -> 0xA0A0B0B0C0C0D0D
+        i = Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL);
+
         /*
-            Use long to simulate vector operations and generate 8 hexadecimal characters at a time.
-            ------------
-            0  = 0b0000_0000 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '0'
-            1  = 0b0000_0001 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '1'
-            2  = 0b0000_0010 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '2'
-            3  = 0b0000_0011 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '3'
-            4  = 0b0000_0100 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '4'
-            5  = 0b0000_0101 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '5'
-            6  = 0b0000_0110 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '6'
-            7  = 0b0000_0111 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '7'
-            8  = 0b0000_1000 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '8'
-            9  = 0b0000_1001 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 0  + 0x30 + (i & 0xF) => '9'
-            10 = 0b0000_1010 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'a'
-            11 = 0b0000_1011 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'b'
-            12 = 0b0000_1100 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'c'
-            13 = 0b0000_1101 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'd'
-            14 = 0b0000_1110 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'e'
-            15 = 0b0000_1111 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'f'
+         * This method efficiently converts 8 hexadecimal digits simultaneously using vector operations
+         * The algorithm works as follows:
+         *
+         * For input values 0-15:
+         * - For digits 0-9: converts to ASCII '0'-'9' (0x30-0x39)
+         * - For digits 10-15: converts to ASCII 'a'-'f' (0x61-0x66)
+         *
+         * The conversion process:
+         * 1. Add 6 to each 4-bit group: i + 0x0606_0606_0606_0606L
+         * 2. Mask to get the adjustment flags: & 0x1010_1010_1010_1010L
+         * 3. Calculate the offset: (m << 1) + (m >> 1) - (m >> 4)
+         *    - For 0-9: offset = 0
+         *    - For a-f: offset = 39 (to bridge the gap between '9' and 'a' in ASCII)
+         * 4. Add ASCII '0' base (0x30) and the original value
+         * 5. Reverse byte order for correct positioning
          */
-        long m = (x + 0x0606_0606_0606_0606L) & 0x1010_1010_1010_1010L;
-        return ((m << 1) + (m >> 1) - (m >> 4))
-                + 0x3030_3030_3030_3030L
-                + x;
+        long m = (i + 0x0606_0606_0606_0606L) & 0x1010_1010_1010_1010L;
+
+        // Calculate final ASCII values and reverse bytes for proper ordering
+        return Long.reverseBytes(
+                ((m << 1) + (m >> 1) - (m >> 4))
+                        + 0x3030_3030_3030_3030L // Add ASCII '0' base to all digits
+                        + i                      // Add original values
+        );
     }
 }
