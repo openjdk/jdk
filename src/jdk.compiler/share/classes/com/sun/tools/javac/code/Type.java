@@ -665,6 +665,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         return (tsym.flags() & FINAL) != 0;
     }
 
+    public boolean isValueBased() {
+        return tsym != null && (tsym.flags_field & VALUE_BASED) != 0;
+    }
+
     /**
      * Does this type contain occurrences of type t?
      */
@@ -1151,7 +1155,11 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
 
         public List<Type> allparams() {
             if (allparams_field == null) {
-                allparams_field = getTypeArguments().prependList(getEnclosingType().allparams());
+                Type enclosingType = getEnclosingType();
+                while (enclosingType.hasTag(TYPEVAR)) {
+                    enclosingType = enclosingType.getUpperBound();
+                }
+                allparams_field = getTypeArguments().prependList(enclosingType.allparams());
             }
             return allparams_field;
         }
