@@ -78,5 +78,5 @@ void JfrTraceIdEpoch::reset_method_tracer_tag_state() {
 }
 
 bool JfrTraceIdEpoch::has_method_tracer_changed_tag_state() {
-  return Atomic::load(&_method_tracer_state);
+  return Atomic::load_acquire(&_method_tracer_state);
 }
