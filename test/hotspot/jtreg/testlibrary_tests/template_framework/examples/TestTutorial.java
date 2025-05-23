@@ -328,7 +328,7 @@ public class TestTutorial {
             """,
             // We anchor a Hook outside the main method, but inside the Class.
             // Anchoring a Hook creates a scope, spanning the braces of the
-            // "anchor" call. Any Hool.insert that happens inside this scope
+            // "anchor" call. Any Hook.insert that happens inside this scope
             // goes to the top of that scope.
             myHook.anchor(
                 // Any Hook.insert goes here.
