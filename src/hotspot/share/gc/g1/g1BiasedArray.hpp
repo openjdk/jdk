@@ -89,7 +89,6 @@ protected:
 
   void verify_index(idx_t index) const PRODUCT_RETURN;
   void verify_biased_index(idx_t biased_index) const PRODUCT_RETURN;
-  void verify_biased_index_inclusive_end(idx_t biased_index) const PRODUCT_RETURN;
 
 public:
   virtual ~G1BiasedMappedArrayBase();
@@ -102,7 +101,7 @@ public:
 // heap into this array.
 template<class T>
 class G1BiasedMappedArray : public G1BiasedMappedArrayBase {
-
+protected:
   T* base() const { return (T*)G1BiasedMappedArrayBase::_base; }
 
   // The raw biased base pointer.
@@ -153,14 +152,6 @@ public:
     idx_t biased_index = ((uintptr_t)address) >> this->shift_by();
     this->verify_biased_index(biased_index);
     biased_base()[biased_index] = value;
-  }
-
-protected:
-  // Returns the address of the element the given address maps to
-  T* address_mapped_to(HeapWord* address) {
-    idx_t biased_index = ((uintptr_t)address) >> this->shift_by();
-    this->verify_biased_index_inclusive_end(biased_index);
-    return biased_base() + biased_index;
   }
 
 public:
