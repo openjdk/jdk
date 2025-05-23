@@ -1528,7 +1528,7 @@ class StubGenerator: public StubCodeGenerator {
     // Prefetch the data into the L2 cache.
     __ dcbt(R3_ARG1, 0);
 
-    // If supported set DSCR pre-fetch to deepest.
+    // Set DSCR pre-fetch to deepest.
     __ load_const_optimized(tmp2, VM_Version::_dscr_val | 7);
     __ mtdscr(tmp2);
 

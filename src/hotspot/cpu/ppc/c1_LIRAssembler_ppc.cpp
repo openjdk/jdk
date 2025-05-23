@@ -538,27 +538,31 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       __ extsh(dst->as_register(), src->as_register());
       break;
     }
-    case Bytecodes::_i2d:
-    case Bytecodes::_l2d: {
+    case Bytecodes::_i2d:{
       FloatRegister rdst = dst->as_double_reg();
       // move src to dst register
-      if (code == Bytecodes::_i2d) {
-        __ mtfprwa(rdst, src->as_register());
-      } else {
-        __ mtfprd(rdst, src->as_register_lo());
-      }
+      __ mtfprwa(rdst, src->as_register());
       __ fcfid(rdst, rdst);
       break;
     }
-    case Bytecodes::_i2f:
+    case Bytecodes::_l2d: {
+      FloatRegister rdst = dst->as_double_reg();
+      // move src to dst register
+      __ mtfprd(rdst, src->as_register_lo());
+      __ fcfid(rdst, rdst);
+      break;
+    }
+    case Bytecodes::_i2f:{
+      FloatRegister rdst = dst->as_float_reg();
+      // move src to dst register
+      __ mtfprwa(rdst, src->as_register());
+      __ fcfids(rdst, rdst);
+      break;
+    }
     case Bytecodes::_l2f: {
       FloatRegister rdst = dst->as_float_reg();
       // move src to dst register
-      if (code == Bytecodes::_i2f) {
-        __ mtfprwa(rdst, src->as_register());
-      } else {
-        __ mtfprd(rdst, src->as_register_lo());
-      }
+      __ mtfprd(rdst, src->as_register_lo());
       __ fcfids(rdst, rdst);
       break;
     }
