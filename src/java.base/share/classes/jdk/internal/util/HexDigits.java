@@ -227,7 +227,7 @@ public final class HexDigits {
      *
      * @see Long#reverseBytes(long)
      */
-    private static long hex8(long i) {
+    public static long hex8(long i) {
         // Expand each 4-bit group into 8 bits, spreading them out in the long value: 0xAABBCCDD -> 0xA0A0B0B0C0C0D0D
         i = Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL);
 
