@@ -109,13 +109,17 @@ public class TestZMediumPageSizes {
     }
 
     private static void runTestDefault() throws Exception  {
-        var oa = createAndExecuteJava("-XX:+ZUseMediumPageSizeRange");
+        var oa = createAndExecuteJava(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+ZUseMediumPageSizeRange");
         oa.shouldContain("Page Size Medium: Range");
         oa.shouldNotContain("Mapped Cache Harvested");
     }
 
     private static void runTestFixedPageSize() throws Exception {
-        var oa = createAndExecuteJava("-XX:-ZUseMediumPageSizeRange");
+        var oa = createAndExecuteJava(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:-ZUseMediumPageSizeRange");
         oa.shouldNotContain("Page Size Medium: Range");
         oa.shouldContain("Mapped Cache Harvested");
     }
