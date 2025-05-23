@@ -256,7 +256,7 @@ uint CompileTrainingData::compute_init_deps_left(bool count_initialized) {
       InstanceKlass* holder = ktd->holder();
       if (!ktd->holder()->is_initialized() || count_initialized) {
         ++left;
-      } else if (holder->is_shared_unregistered_class()) {
+      } else if (holder->defined_by_other_loaders()) {
         Key k(holder);
         if (CDS_ONLY(!Key::can_compute_cds_hash(&k)) NOT_CDS(true)) {
           ++left;
@@ -622,7 +622,7 @@ void MethodTrainingData::verify() {
 void CompileTrainingData::verify() {
   for (int i = 0; i < init_dep_count(); i++) {
     KlassTrainingData* ktd = init_dep(i);
-    if (ktd->has_holder() && ktd->holder()->is_shared_unregistered_class()) {
+    if (ktd->has_holder() && ktd->holder()->defined_by_other_loaders()) {
       LogStreamHandle(Warning, training) log;
       if (log.is_enabled()) {
         ResourceMark rm;
