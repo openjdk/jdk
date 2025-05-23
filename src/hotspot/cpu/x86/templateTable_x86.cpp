@@ -1841,12 +1841,11 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       // pop the interpreter frame
       __ movptr(sender_sp, Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize)); // get sender sp
       __ leave();                                // remove frame anchor
+      JFR_ONLY(__ leave_jfr_critical_section();)
       __ pop(retaddr);                           // get return address
       __ mov(rsp, sender_sp);                    // set sp to sender sp
       // Ensure compiled code always sees stack at proper alignment
       __ andptr(rsp, -(StackAlignmentInBytes));
-
-      JFR_ONLY(__ leave_jfr_critical_section();)
 
       // push the return address
       __ push(retaddr);

@@ -42,9 +42,10 @@ static inline RegisterMap::WalkContinuation walk_continuation(JavaThread* jt) {
     : RegisterMap::WalkContinuation::include;
 }
 
-JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub) :
+JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool in_continuation, bool stop_at_java_call_stub) :
   vframeStreamCommon(jt, RegisterMap::UpdateMap::skip, RegisterMap::ProcessFrames::skip, walk_continuation(jt)),
-  _vthread(JfrThreadLocal::is_vthread(jt)), _cont_entry(_vthread ? jt->last_continuation() : nullptr) {
+  _vthread(in_continuation), _cont_entry(_vthread ? jt->last_continuation() : nullptr) {
+  assert(!_vthread || JfrThreadLocal::is_vthread(jt), "invariant");
   assert(!_vthread || _cont_entry != nullptr, "invariant");
   _frame = fr;
   _stop_at_java_call_stub = stop_at_java_call_stub;

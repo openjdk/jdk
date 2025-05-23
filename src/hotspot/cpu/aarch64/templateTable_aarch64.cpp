@@ -1903,10 +1903,11 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
         Address(rfp, frame::interpreter_frame_sender_sp_offset * wordSize));
     // remove frame anchor
     __ leave();
-    // Ensure compiled code always sees stack at proper alignment
-    __ andr(sp, esp, -16);
 
     JFR_ONLY(__ leave_jfr_critical_section();)
+
+    // Ensure compiled code always sees stack at proper alignment
+    __ andr(sp, esp, -16);
 
     // and begin the OSR nmethod
     __ ldr(rscratch1, Address(r19, nmethod::osr_entry_point_offset()));

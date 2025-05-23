@@ -73,6 +73,11 @@ static inline bool is_interpreter(const JfrSampleRequest& request) {
   return request._sample_bcp != nullptr;
 }
 
+static inline bool is_in_continuation(const frame& frame, JavaThread* jt) {
+  return JfrThreadLocal::is_vthread(jt) &&
+         (Continuation::is_frame_in_continuation(jt, frame) || Continuation::is_continuation_enterSpecial(frame));
+}
+
 // A sampled interpreter frame is handled differently from a sampled compiler frame.
 //
 // The JfrSampleRequest description partially describes a _potential_ interpreter Java frame.
@@ -86,7 +91,7 @@ static inline bool is_interpreter(const JfrSampleRequest& request) {
 //
 // If it is not a valid interpreter frame, then the JfrSampleRequest is invalidated, and the current frame is returned per the sender frame.
 //
-static bool compute_sender_frame(JfrSampleRequest& request, frame& sender_frame, JavaThread* jt) {
+static bool compute_sender_frame(JfrSampleRequest& request, frame& sender_frame, bool& in_continuation, JavaThread* jt) {
   assert(is_interpreter(request), "invariant");
   assert(jt != nullptr, "invariant");
   assert(jt->has_last_Java_frame(), "invariant");
@@ -111,6 +116,7 @@ static bool compute_sender_frame(JfrSampleRequest& request, frame& sender_frame,
       if (!method->is_native() &&  !method->contains(static_cast<address>(request._sample_bcp))) {
         request._sample_bcp = frame->interpreter_frame_bcp();
       }
+      in_continuation = is_in_continuation(*frame, jt);
       break;
     }
     if (real_fp >= sampled_fp) {
@@ -118,6 +124,7 @@ static bool compute_sender_frame(JfrSampleRequest& request, frame& sender_frame,
       // Invalidate the sample request and use current.
       request._sample_bcp = nullptr;
       sender_frame = *stream.current();
+      in_continuation = is_in_continuation(sender_frame, jt);
       return true;
     }
     stream.next();
@@ -127,6 +134,13 @@ static bool compute_sender_frame(JfrSampleRequest& request, frame& sender_frame,
 
   // Step to sender.
   stream.next();
+
+  // If the top frame is in a continuation, check that the sender frame is too.
+  if (in_continuation && !is_in_continuation(*stream.current(), jt)) {
+    // Leave sender frame empty.
+    return true;
+  }
+
   sender_frame = *stream.current();
 
   assert(request._sample_pc != nullptr, "invariant");
@@ -147,7 +161,7 @@ static inline bool is_valid(const PcDesc* pc_desc) {
   return pc_desc != nullptr && pc_desc->scope_decode_offset() != DebugInformationRecorder::serialized_null;
 }
 
-static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame, JavaThread* jt, bool* biased) {
+static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame, bool& in_continuation, JavaThread* jt, bool* biased) {
   assert(jt != nullptr, "invariant");
 
   *biased = false;
@@ -157,21 +171,21 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
   }
 
   if (is_interpreter(request)) {
-    return compute_sender_frame(const_cast<JfrSampleRequest&>(request), top_frame, jt);
+    return compute_sender_frame(const_cast<JfrSampleRequest&>(request), top_frame, in_continuation, jt);
   }
 
   void* const sampled_pc = request._sample_pc;
-  if (sampled_pc == nullptr) {
-    // A biased sample is requested.
-    top_frame = jt->last_frame();
-    *biased = true;
-    return true;
-  }
 
   CodeBlob* const sampled_cb = CodeCache::find_blob(sampled_pc);
   if (sampled_cb == nullptr) {
     // No code blob... probably native code. Perform a biased sample.
+
+  CodeBlob* sampled_cb;
+  if (sampled_pc == nullptr || (sampled_cb = CodeCache::find_blob(sampled_pc)) == nullptr) {
+    // A biased sample is requested or no code blob.
     top_frame = jt->last_frame();
+    in_continuation = is_in_continuation(top_frame, jt);
+    &biased = true;
     return true;
   }
 
@@ -206,11 +220,11 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
           // very location because we just popped such a frame before we hit the return poll site.
           //
           // Let's attempt to correct for the safepoint bias.
-          const PcDesc* pc_desc = get_pc_desc(sampled_nm, sampled_pc);
+          const PcDesc* const pc_desc = get_pc_desc(sampled_nm, sampled_pc);
           if (is_valid(pc_desc)) {
-            assert(CodeCache::find_blob(pc_desc->real_pc(sampled_nm)) == sampled_nm, "invariant");
             intptr_t* const synthetic_sp = sender_sp - sampled_nm->frame_size();
             top_frame = frame(synthetic_sp, synthetic_sp, sender_sp, pc_desc->real_pc(sampled_nm), sampled_nm);
+            in_continuation = is_in_continuation(top_frame, jt);
             return true;
           }
         }
@@ -235,7 +249,6 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
       // Another instance of safepoint bias.
       top_frame = *current;
       *biased = true;
-      return true;
     }
 
     // Check for a matching compiled method.
@@ -247,41 +260,43 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
           current->adjust_pc(pc_desc->real_pc(sampled_nm));
         }
       }
-      top_frame = *current;
-      return true;
     }
-    // A mismatched sample in which case we trace from the sender.
+    // Either a hit or a mismatched sample in which case we trace from the sender.
     // Yet another instance of safepoint bias,to be addressed with
     // more exact and stricter versions when parsable blobs become available.
     *biased = true;
     top_frame = *current;
-    return true;
+    break;
   }
 
-  assert(false, "Should not reach here");
-  return false;
+  in_continuation = is_in_continuation(top_frame, jt);
+  return true;
 }
 
-static void record_thread_in_java(const JfrSampleRequest& request, const JfrTicks& now, JavaThread* jt, Thread* current) {
+static void record_thread_in_java(const JfrSampleRequest& request, const JfrTicks& now, const JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
   assert(jt != nullptr, "invariant");
+  assert(tl != nullptr, "invariant");
   assert(current != nullptr, "invariant");
+
   frame top_frame;
   bool biased;
-  if (!compute_top_frame(request, top_frame, jt, &biased)) {
+  bool in_continuation;
+  if (!compute_top_frame(request, top_frame, in_continuation, jt, &biased)) {
     return;
   }
+
   traceid sid;
   {
     ResourceMark rm(current);
     JfrStackTrace stacktrace;
-    if (!stacktrace.record(jt, top_frame, request)) {
+    if (!stacktrace.record(jt, top_frame, in_continuation, request)) {
       // Unable to record stacktrace. Fail.
       return;
     }
     sid = JfrStackTraceRepository::add(stacktrace);
   }
   assert(sid != 0, "invariant");
-  const traceid tid = JfrThreadLocal::thread_id(jt);
+  const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
   send_sample_event<EventExecutionSample>(request._sample_ticks, now, sid, tid);
   if (current == jt) {
     send_safepoint_latency_event(request, now, sid, jt);
@@ -324,7 +339,7 @@ static void drain_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, Jav
   assert_lock_strong(tl->sample_monitor());
   if (tl->has_enqueued_requests()) {
     for (const JfrSampleRequest& request : *tl->sample_requests()) {
-      record_thread_in_java(request, now, jt, current);
+      record_thread_in_java(request, now, tl, jt, current);
     }
     tl->clear_enqueued_requests();
   }
@@ -403,7 +418,7 @@ bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaTh
       ResourceMark rm(sampler_thread);
       JfrStackTrace stacktrace;
       const frame top_frame = jt->last_frame();
-      if (!stacktrace.record_inner(jt, top_frame, 0 /* skip level */)) {
+      if (!stacktrace.record_inner(jt, top_frame, is_in_continuation(top_frame, jt), 0 /* skip level */)) {
         // Unable to record stacktrace. Fail.
         return false;
       }

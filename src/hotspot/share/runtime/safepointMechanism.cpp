@@ -32,8 +32,8 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "utilities/globalDefinitions.hpp"
-#ifdef INCLUDE_JFR
-#include "jfr/jfr.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
 #endif
 
 uintptr_t SafepointMechanism::_poll_word_armed_value;

@@ -640,6 +640,8 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     cmp(rscratch2, rscratch1);
     br(Assembler::LS, no_reserved_zone_enabling);
 
+    JFR_ONLY(leave_jfr_critical_section();)
+
     call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), rthread);
     call_VM(noreg, CAST_FROM_FN_PTR(address,
@@ -649,17 +651,19 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     bind(no_reserved_zone_enabling);
   }
 
-  // restore sender esp
-  mov(esp, rscratch2);
   // remove frame anchor
   leave();
+
+  JFR_ONLY(leave_jfr_critical_section();)
+
+  // restore sender esp
+  mov(esp, rscratch2);
+
   // If we're returning to interpreted code we will shortly be
   // adjusting SP to allow some space for ESP.  If we're returning to
   // compiled code the saved sender SP was saved in sender_sp, so this
   // restores it.
   andr(sp, esp, -16);
-
-  JFR_ONLY(leave_jfr_critical_section();)
 }
 
 #if INCLUDE_JFR
@@ -667,12 +671,10 @@ void InterpreterMacroAssembler::enter_jfr_critical_section() {
   const Address sampling_critical_section(rthread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
   mov(rscratch1, true);
   strb(rscratch1, sampling_critical_section);
-  membar(Assembler::StoreLoad);
 }
 
 void InterpreterMacroAssembler::leave_jfr_critical_section() {
   const Address sampling_critical_section(rthread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
-  membar(Assembler::StoreStore);
   strb(zr, sampling_critical_section);
 }
 #endif // INCLUDE_JFR

@@ -26,6 +26,7 @@
 
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
@@ -2201,6 +2202,12 @@ void SharedRuntime::generate_deopt_blob() {
   }
 #endif
   const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, (uint)SharedStubId::deopt_id, name);
+  if (blob != nullptr) {
+    _deopt_blob = blob->as_deoptimization_blob();
+    return;
+  }
+
   CodeBuffer buffer(name, 2048+pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words;
@@ -2564,6 +2571,8 @@ void SharedRuntime::generate_deopt_blob() {
     _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
   }
 #endif
+
+  AOTCodeCache::store_code_blob(*_deopt_blob, AOTCodeEntry::SharedBlob, (uint)SharedStubId::deopt_id, name);
 }
 
 // Number of stack slots between incoming argument block and the start of
@@ -2592,12 +2601,16 @@ VMReg SharedRuntime::thread_register() {
 SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
   assert(is_polling_page_id(id), "expected a polling page stub id");
 
+  // Allocate space for the code.  Setup code generation tools.
+  const char* name = SharedRuntime::stub_name(id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, (uint)id, name);
+  if (blob != nullptr) {
+    return blob->as_safepoint_blob();
+  }
+
   ResourceMark rm;
   OopMapSet *oop_maps = new OopMapSet();
   OopMap* map;
-
-  // Allocate space for the code.  Setup code generation tools.
-  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
@@ -2706,7 +2719,10 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   masm->flush();
 
   // Fill-out other meta info
-  return SafepointBlob::create(&buffer, oop_maps, frame_size_in_words);
+  SafepointBlob* sp_blob = SafepointBlob::create(&buffer, oop_maps, frame_size_in_words);
+
+  AOTCodeCache::store_code_blob(*sp_blob, AOTCodeEntry::SharedBlob, (uint)id, name);
+  return sp_blob;
 }
 
 //
@@ -2721,10 +2737,14 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
   assert(is_resolve_id(id), "expected a resolve stub id");
 
+  const char* name = SharedRuntime::stub_name(id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, (uint)id, name);
+  if (blob != nullptr) {
+    return blob->as_runtime_stub();
+  }
+
   // allocate space for the code
   ResourceMark rm;
-
-  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 1000, 512);
   MacroAssembler* masm                = new MacroAssembler(&buffer);
 
@@ -2797,7 +2817,10 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   // return the  blob
   // frame_size_words or bytes??
-  return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
+  RuntimeStub* rs_blob = RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
+
+  AOTCodeCache::store_code_blob(*rs_blob, AOTCodeEntry::SharedBlob, (uint)id, name);
+  return rs_blob;
 }
 
 // Continuation point for throwing of implicit exceptions that are
@@ -2837,10 +2860,15 @@ RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address ru
   int insts_size = 512;
   int locs_size  = 64;
 
-  ResourceMark rm;
   const char* timer_msg = "SharedRuntime generate_throw_exception";
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
 
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, (uint)id, name);
+  if (blob != nullptr) {
+    return blob->as_runtime_stub();
+  }
+
+  ResourceMark rm;
   CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps  = new OopMapSet();
   MacroAssembler* masm = new MacroAssembler(&code);
@@ -2867,7 +2895,7 @@ RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address ru
 
   __ mov(c_rarg0, rthread);
   BLOCK_COMMENT("call runtime_entry");
-  __ mov(rscratch1, runtime_entry);
+  __ lea(rscratch1, RuntimeAddress(runtime_entry));
   __ blr(rscratch1);
 
   // Generate oop map
@@ -2900,6 +2928,8 @@ RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address ru
                                   frame_complete,
                                   (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                   oop_maps, false);
+  AOTCodeCache::store_code_blob(*stub, AOTCodeEntry::SharedBlob, (uint)id, name);
+
   return stub;
 }
 

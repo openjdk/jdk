@@ -397,6 +397,19 @@ traceid JfrThreadLocal::vthread_id(const Thread* t) {
   return Atomic::load(&t->jfr_thread_local()->_vthread_id);
 }
 
+traceid JfrThreadLocal::vthread_id_with_epoch_update(const JavaThread* jt) const {
+  assert(is_vthread(jt), "invariant");
+  const traceid tid = vthread_id(jt);
+  assert(tid != 0, "invariant");
+  if (!is_vthread_excluded()) {
+    const u2 current_epoch = AccessThreadTraceId::current_epoch();
+    if (vthread_epoch(jt) != current_epoch) {
+      set_vthread_epoch_checked(jt, tid, current_epoch);
+    }
+  }
+  return tid;
+}
+
 u2 JfrThreadLocal::vthread_epoch(const JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   return Atomic::load(&jt->jfr_thread_local()->_vthread_epoch);
@@ -412,19 +425,7 @@ traceid JfrThreadLocal::thread_id(const Thread* t) {
     return jvm_thread_id(tl);
   }
   const JavaThread* jt = JavaThread::cast(t);
-  if (!is_vthread(jt)) {
-    return jvm_thread_id(tl);
-  }
-  // virtual thread
-  const traceid tid = vthread_id(jt);
-  assert(tid != 0, "invariant");
-  if (!tl->is_vthread_excluded()) {
-    const u2 current_epoch = AccessThreadTraceId::current_epoch();
-    if (vthread_epoch(jt) != current_epoch) {
-      set_vthread_epoch_checked(jt, tid, current_epoch);
-    }
-  }
-  return tid;
+  return is_vthread(jt) ? tl->vthread_id_with_epoch_update(jt) : jvm_thread_id(tl);
 }
 
 // When not recording, there is no checkpoint system

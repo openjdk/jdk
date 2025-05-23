@@ -280,9 +280,6 @@ private:
                                 uint gc_counter,
                                 uint old_marking_started_before);
 
-  bool try_collect_fullgc(GCCause::Cause cause,
-                          const G1GCCounters& counters_before);
-
   // indicates whether we are in young or mixed GC mode
   G1CollectorState _collector_state;
 

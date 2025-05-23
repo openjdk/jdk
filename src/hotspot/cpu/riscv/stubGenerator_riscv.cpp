@@ -2122,32 +2122,32 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Remaining count is less than 8 bytes and address is heapword aligned.
-    Label L_fill_2, L_fill_4, L_exit1;
+    Label L_fill_1, L_fill_2, L_exit1;
     switch (t) {
       case T_BYTE:
-        __ test_bit(t0, count, 0);
+        __ test_bit(t0, count, 2);
         __ beqz(t0, L_fill_2);
-        __ sb(value, Address(to, 0));
-        __ addi(to, to, 1);
+        __ sw(value, Address(to, 0));
+        __ addi(to, to, 4);
         __ bind(L_fill_2);
         __ test_bit(t0, count, 1);
-        __ beqz(t0, L_fill_4);
+        __ beqz(t0, L_fill_1);
         __ sh(value, Address(to, 0));
         __ addi(to, to, 2);
-        __ bind(L_fill_4);
-        __ test_bit(t0, count, 2);
+        __ bind(L_fill_1);
+        __ test_bit(t0, count, 0);
         __ beqz(t0, L_exit1);
-        __ sw(value, Address(to, 0));
+        __ sb(value, Address(to, 0));
         break;
       case T_SHORT:
-        __ test_bit(t0, count, 0);
-        __ beqz(t0, L_fill_4);
-        __ sh(value, Address(to, 0));
-        __ addi(to, to, 2);
-        __ bind(L_fill_4);
         __ test_bit(t0, count, 1);
-        __ beqz(t0, L_exit1);
+        __ beqz(t0, L_fill_2);
         __ sw(value, Address(to, 0));
+        __ addi(to, to, 4);
+        __ bind(L_fill_2);
+        __ test_bit(t0, count, 0);
+        __ beqz(t0, L_exit1);
+        __ sh(value, Address(to, 0));
         break;
       case T_INT:
         __ beqz(count, L_exit1);

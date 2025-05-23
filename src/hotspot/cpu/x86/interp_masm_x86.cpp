@@ -966,6 +966,8 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     cmpptr(rbx, Address(rthread, JavaThread::reserved_stack_activation_offset()));
     jcc(Assembler::lessEqual, no_reserved_zone_enabling);
 
+    JFR_ONLY(leave_jfr_critical_section();)
+
     call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), rthread);
     call_VM(noreg, CAST_FROM_FN_PTR(address,
@@ -976,23 +978,23 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   }
 
   leave();                           // remove frame anchor
+
+  JFR_ONLY(leave_jfr_critical_section();)
+
   pop(ret_addr);                     // get return address
   mov(rsp, rbx);                     // set sp to sender sp
   pop_cont_fastpath();
 
-  JFR_ONLY(leave_jfr_critical_section();)
 }
 
 #if INCLUDE_JFR
 void InterpreterMacroAssembler::enter_jfr_critical_section() {
   const Address sampling_critical_section(r15_thread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
   movbool(sampling_critical_section, true);
-  membar(Assembler::StoreLoad);
 }
 
 void InterpreterMacroAssembler::leave_jfr_critical_section() {
   const Address sampling_critical_section(r15_thread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
-  membar(Assembler::StoreStore);
   movbool(sampling_critical_section, false);
 }
 #endif // INCLUDE_JFR
@@ -1273,46 +1275,19 @@ void InterpreterMacroAssembler::set_mdp_data_at(Register mdp_in,
 
 
 void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
-                                                      int constant,
-                                                      bool decrement) {
-  // Counter address
-  Address data(mdp_in, constant);
-
-  increment_mdp_data_at(data, decrement);
-}
-
-void InterpreterMacroAssembler::increment_mdp_data_at(Address data,
-                                                      bool decrement) {
+                                                      int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  // %%% this does 64bit counters at best it is wasting space
-  // at worst it is a rare bug when counters overflow
-
-  if (decrement) {
-    // Decrement the register.  Set condition codes.
-    addptr(data, -DataLayout::counter_increment);
-    // If the decrement causes the counter to overflow, stay negative
-    Label L;
-    jcc(Assembler::negative, L);
-    addptr(data, DataLayout::counter_increment);
-    bind(L);
-  } else {
-    assert(DataLayout::counter_increment == 1,
-           "flow-free idiom only works with 1");
-    // Increment the register.  Set carry flag.
-    addptr(data, DataLayout::counter_increment);
-    // If the increment causes the counter to overflow, pull back by 1.
-    sbbptr(data, 0);
-  }
+  Address data(mdp_in, constant);
+  addptr(data, DataLayout::counter_increment);
 }
 
 
 void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
-                                                      Register reg,
-                                                      int constant,
-                                                      bool decrement) {
-  Address data(mdp_in, reg, Address::times_1, constant);
-
-  increment_mdp_data_at(data, decrement);
+                                                      Register index,
+                                                      int constant) {
+  assert(ProfileInterpreter, "must be profiling interpreter");
+  Address data(mdp_in, index, Address::times_1, constant);
+  addptr(data, DataLayout::counter_increment);
 }
 
 void InterpreterMacroAssembler::set_mdp_flag_at(Register mdp_in,

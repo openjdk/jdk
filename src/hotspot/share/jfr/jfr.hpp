@@ -25,7 +25,6 @@
 #ifndef SHARE_JFR_JFR_HPP
 #define SHARE_JFR_JFR_HPP
 
-#include "jni.h"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/exceptions.hpp"
@@ -36,6 +35,7 @@ class ciKlass;
 class ciMethod;
 class GraphBuilder;
 class JavaThread;
+struct JavaVMOption;
 class Klass;
 class outputStream;
 class Parse;
