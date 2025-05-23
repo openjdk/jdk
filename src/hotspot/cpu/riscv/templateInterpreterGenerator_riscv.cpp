@@ -765,6 +765,11 @@ void TemplateInterpreterGenerator::lock_method() {
 //      xcpool: cp cache
 //      stack_pointer: previous sp
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
+  // Save ConstMethod* in x15
+  Register x15_const_method = x15;
+  const Register x15 = noreg;
+  __ ld(x15_const_method, Address(xmethod, Method::const_offset()));     // get ConstMethod
+
   // initialize fixed part of activation frame
   if (native_call) {
     __ subi(esp, sp, 14 * wordSize);
@@ -775,8 +780,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ sd(zr, Address(sp, 12 * wordSize));
   } else {
     __ subi(esp, sp, 12 * wordSize);
-    __ ld(t0, Address(xmethod, Method::const_offset()));     // get ConstMethod
-    __ add(xbcp, t0, in_bytes(ConstMethod::codes_offset())); // get codebase
+    __ add(xbcp, x15_const_method, in_bytes(ConstMethod::codes_offset())); // get codebase
     __ subi(sp, sp, 12 * wordSize);
   }
   __ sd(xbcp, Address(sp, wordSize));
@@ -798,9 +802,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(fp, Address(sp, 10 * wordSize));
   __ la(fp, Address(sp, 12 * wordSize)); // include ra & fp
 
-  __ ld(xcpool, Address(xmethod, Method::const_offset()));
-  __ ld(xcpool, Address(xcpool, ConstMethod::constants_offset()));
-  __ ld(xcpool, Address(xcpool, ConstantPool::cache_offset()));
+  // Save ConstantPool* in x11_constants
+  Register x11_constants = x11;
+  const Register x11 = noreg;
+  __ ld(x11_constants, Address(x15_const_method, ConstMethod::constants_offset()));
+  __ ld(xcpool, Address(x11_constants, ConstantPool::cache_offset()));
   __ sd(xcpool, Address(sp, 3 * wordSize));
   __ sub(t0, xlocals, fp);
   __ srai(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
@@ -812,13 +818,15 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(x19_sender_sp, Address(sp, 9 * wordSize));
   __ sd(zr, Address(sp, 8 * wordSize));
 
-  // Get mirror and store it in the frame as GC root for this Method*
-  __ load_mirror(t2, xmethod, x15, t1);
+  // Get mirror, Resolve ConstantPool* -> InstanceKlass* -> Java mirror
+  // and store it in the frame as GC root for this Method*
+  __ ld(t2, Address(x11_constants, ConstantPool::pool_holder_offset()));
+  __ ld(t2, Address(t2, in_bytes(Klass::java_mirror_offset())));
+  __ resolve_oop_handle(t2, t0, t1);
   __ sd(t2, Address(sp, 4 * wordSize));
 
   if (!native_call) {
-    __ ld(t0, Address(xmethod, Method::const_offset()));
-    __ lhu(t0, Address(t0, ConstMethod::max_stack_offset()));
+    __ lhu(t0, Address(x15_const_method, ConstMethod::max_stack_offset()));
     __ add(t0, t0, MAX2(3, Method::extra_stack_entries()));
     __ slli(t0, t0, 3);
     __ sub(t0, sp, t0);
