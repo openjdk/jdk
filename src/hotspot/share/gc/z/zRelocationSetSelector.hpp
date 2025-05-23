@@ -79,7 +79,7 @@ public:
 class ZRelocationSetSelectorGroup {
 private:
   static constexpr int NumPartitionsShift = 11;
-  static constexpr int NPartitions = int(1) << NumPartitionsShift;
+  static constexpr int NumPartitions = int(1) << NumPartitionsShift;
 
   const char* const                _name;
   const ZPageType                  _page_type;
