@@ -94,10 +94,10 @@ public final class TimeSource implements TimeLine {
 
     @Override
     public Deadline instant() {
+        // use localSource if possible to avoid a volatile read
         NanoSource source = localSource;
         long nanos = System.nanoTime();
         long delay = source.delay(nanos);
-        // use localSource if possible to avoid a volatile read
         if (source.isInWindow(delay)) {
             return source.instant(nanos, delay);
         } else {
