@@ -225,7 +225,6 @@ public final class HexDigits {
      * Output: 3130666564636261 ('1','0','f','e','d','c','b','a' in ASCII)
      * </pre>
      *
-     * @see Long#reverseBytes(long)
      */
     public static long hex8(long i) {
         // Expand each 4-bit group into 8 bits, spreading them out in the long value: 0xAABBCCDD -> 0xA0A0B0B0C0C0D0D
@@ -251,10 +250,8 @@ public final class HexDigits {
         long m = (i + 0x0606_0606_0606_0606L) & 0x1010_1010_1010_1010L;
 
         // Calculate final ASCII values and reverse bytes for proper ordering
-        return Long.reverseBytes(
-                ((m << 1) + (m >> 1) - (m >> 4))
-                        + 0x3030_3030_3030_3030L // Add ASCII '0' base to all digits
-                        + i                      // Add original values
-        );
+        return ((m << 1) + (m >> 1) - (m >> 4))
+                + 0x3030_3030_3030_3030L // Add ASCII '0' base to all digits
+                + i;                     // Add original values
     }
 }
