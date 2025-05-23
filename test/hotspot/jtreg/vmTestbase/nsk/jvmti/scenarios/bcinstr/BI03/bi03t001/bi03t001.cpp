@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ const char* CLASS_NAME = "nsk/jvmti/scenarios/bcinstr/BI03/bi03t001a";
 /** callback functions **/
 
 static void JNICALL
-ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
+ClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
         jclass class_being_redefined, jobject loader,
         const char* name, jobject protection_domain,
         jint class_data_len, const unsigned char* class_data,
@@ -62,17 +62,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
         if (class_being_redefined == nullptr) {
             /* sent by class load */
 
-            if (!NSK_JNI_VERIFY(jni_env, (*new_class_data_len =
-                    jni_env->GetArrayLength(classBytes)) > 0)) {
-                nsk_jvmti_setFailStatus();
-                return;
-            }
-
-            if (!NSK_JNI_VERIFY(jni_env, (*new_class_data = (unsigned char*)
-                    jni_env->GetByteArrayElements(classBytes, nullptr)) != nullptr)) {
-                nsk_jvmti_setFailStatus();
-                return;
-            }
+            *new_class_data = jni_array_to_jvmti_allocated(jvmti, jni, classBytes, new_class_data_len);
         }
     }
 }
