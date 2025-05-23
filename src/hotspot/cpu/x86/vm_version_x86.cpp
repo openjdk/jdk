@@ -1030,6 +1030,10 @@ void VM_Version::get_processor_features() {
     _features.clear_feature(CPU_APX_F);
   }
 
+  if (!UseBMI2Instructions && UseAVX < 3) {
+    _features.clear_feature(CPU_BMI2);
+  }
+
   if (UseAVX < 2) {
     _features.clear_feature(CPU_AVX2);
     _features.clear_feature(CPU_AVX_IFMA);
