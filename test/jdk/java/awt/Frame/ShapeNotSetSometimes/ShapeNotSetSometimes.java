@@ -151,14 +151,17 @@ public class ShapeNotSetSometimes {
         Rectangle screenBounds = window.getGraphicsConfiguration().getBounds();
         BufferedImage screenCapture = robot.createScreenCapture(screenBounds);
         try {
-            colorCheck(innerPoint.x, innerPoint.y, SHAPE_COLOR, true, screenCapture);
+            colorCheck(innerPoint.x, innerPoint.y, SHAPE_COLOR,
+                    true, screenCapture);
 
             for (Point point : pointsOutsideToCheck) {
-                colorCheck(point.x, point.y, BACKGROUND_COLOR, true, screenCapture);
+                colorCheck(point.x, point.y, BACKGROUND_COLOR,
+                        true, screenCapture);
             }
 
             for (Point point : shadedPointsToCheck) {
-                colorCheck(point.x, point.y, SHAPE_COLOR, false, screenCapture);
+                colorCheck(point.x, point.y, SHAPE_COLOR,
+                        false, screenCapture);
             }
         } finally {
             EventQueue.invokeAndWait(() -> {
@@ -172,7 +175,8 @@ public class ShapeNotSetSometimes {
         }
     }
 
-    private void colorCheck(int x, int y, Color expectedColor, boolean mustBeExpectedColor,BufferedImage screenCapture) {
+    private void colorCheck(int x, int y, Color expectedColor,
+                            boolean mustBeExpectedColor, BufferedImage screenCapture) {
         int screenX = window.getX() + x;
         int screenY = window.getY() + y;
 
