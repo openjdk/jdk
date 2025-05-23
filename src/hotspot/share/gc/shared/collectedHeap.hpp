@@ -46,13 +46,13 @@
 // class defines the functions that a heap must implement, and contains
 // infrastructure common to all heaps.
 
+class GCHeapLog;
 class GCHeapSummary;
+class GCMemoryManager;
+class GCMetaspaceLog;
 class GCTimer;
 class GCTracer;
-class GCMemoryManager;
-class GCHeapLog;
 class MemoryPool;
-class GCMetaspaceLog;
 class MetaspaceSummary;
 class ReservedHeapSpace;
 class Thread;
