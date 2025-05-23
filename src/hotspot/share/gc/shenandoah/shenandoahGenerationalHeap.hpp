@@ -128,15 +128,6 @@ public:
 
   void stop() override;
 
-  // Used for logging the result of a region transfer outside the heap lock
-  struct TransferResult {
-    bool success;
-    size_t region_count;
-    const char* region_destination;
-
-    void print_on(const char* when, outputStream* ss) const;
-  };
-
   const ShenandoahGenerationSizer* generation_sizer()  const { return &_generation_sizer;  }
 
   // Computes the optimal size for the old generation, represented as a surplus or deficit of old regions

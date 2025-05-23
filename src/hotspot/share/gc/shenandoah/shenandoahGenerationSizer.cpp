@@ -137,8 +137,8 @@ bool ShenandoahGenerationSizer::transfer_regions(ShenandoahGeneration* src, Shen
   src->decrease_capacity(bytes_to_transfer);
   dst->increase_capacity(bytes_to_transfer);
   const size_t new_size = dst->max_capacity();
-  log_info(gc, ergo)("Transfer %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
-                     regions, src->name(), dst->name(), PROPERFMTARGS(new_size));
+  log_develop_debug(gc, ergo)("Transfer %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
+                              regions, src->name(), dst->name(), PROPERFMTARGS(new_size));
   return true;
 }
 
@@ -178,8 +178,7 @@ bool ShenandoahGenerationSizer::transfer_to_old(size_t regions) const {
   return transfer_regions(heap->young_generation(), heap->old_generation(), regions);
 }
 
-// This is used when promoting humongous or highly utilized regular regions in place.  It is not required in this situation
-// that the transferred regions be unaffiliated.
+
 void ShenandoahGenerationSizer::force_transfer_to_old(size_t regions) const {
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahGeneration* old_gen = heap->old_generation();
@@ -189,8 +188,23 @@ void ShenandoahGenerationSizer::force_transfer_to_old(size_t regions) const {
   young_gen->decrease_capacity(bytes_to_transfer);
   old_gen->increase_capacity(bytes_to_transfer);
   const size_t new_size = old_gen->max_capacity();
-  log_info(gc, ergo)("Forcing transfer of %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
-                     regions, young_gen->name(), old_gen->name(), PROPERFMTARGS(new_size));
+  log_develop_debug(gc, ergo)("Forcing transfer of %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
+                              regions, young_gen->name(), old_gen->name(), PROPERFMTARGS(new_size));
+}
+
+// This is used when promoting humongous or highly utilized regular regions in place.  It is not required in this situation
+// that the transferred regions be unaffiliated.
+void ShenandoahGenerationSizer::promote_regions_in_place(size_t regions) const {
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
+  ShenandoahGeneration* old_gen = heap->old_generation();
+  ShenandoahGeneration* young_gen = heap->young_generation();
+  const size_t bytes_to_transfer = regions * ShenandoahHeapRegion::region_size_bytes();
+
+  young_gen->decrease_capacity(bytes_to_transfer);
+  old_gen->increase_capacity(bytes_to_transfer);
+  const size_t new_size = old_gen->max_capacity();
+  log_develop_debug(gc, ergo)("Promoting %zu regions in place, changing affiliations from %s to %s, yielding size: " PROPERFMT,
+                              regions, young_gen->name(), old_gen->name(), PROPERFMTARGS(new_size));
 }
 
 // This is used to transfer excess old-gen regions to young at the start of evacuation after collection set is determined.
@@ -203,8 +217,9 @@ void ShenandoahGenerationSizer::force_transfer_to_young(size_t regions) const {
   young_gen->increase_capacity(bytes_to_transfer);
   old_gen->decrease_capacity(bytes_to_transfer);
   const size_t new_size = young_gen->max_capacity();
-  log_info(gc)("Forcing transfer of %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
-          regions, old_gen->name(), young_gen->name(), PROPERFMTARGS(new_size));
+  log_develop_debug(gc, ergo)
+    ("Rebalancing regions after rebuild free set, moving %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
+     regions, old_gen->name(), young_gen->name(), PROPERFMTARGS(new_size));
 }
 
 bool ShenandoahGenerationSizer::transfer_to_young(size_t regions) const {

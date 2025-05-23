@@ -86,7 +86,11 @@ public:
   bool transfer_to_young(size_t regions) const;
   bool transfer_to_old(size_t regions) const;
 
-  // Force transfer is used when we promote humongous objects or promote regular regions in place.
+  // Use this to adjust generation sizes when we promote humongous objects or promote regular regions in place.
+  // May violate min/max limits on generation sizes.
+  void promote_regions_in_place(size_t regions) const;
+
+  // Force transfer is used to adjust accounting of regions in generations after rebuilding free set.
   // May violate min/max limits on generation sizes.
   void force_transfer_to_old(size_t regions) const;
 

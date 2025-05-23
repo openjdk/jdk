@@ -235,7 +235,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
 // try_evacuate_object registers the object and dirties the associated remembered set information when evacuating
 // to OLD_GENERATION.
 oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region,
-                                        ShenandoahAffiliation target_gen) {
+                                                    ShenandoahAffiliation target_gen) {
   bool alloc_from_lab = true;
   bool has_plab = false;
   HeapWord* copy = nullptr;
@@ -295,28 +295,11 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
 
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
-#ifdef KELVIN_ORIGINAL
-      if (!is_promotion || !has_plab || (size > PLAB::min_size())) {
-        ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen, is_promotion);
-        copy = allocate_memory(req);
-        alloc_from_lab = false;
-      }
-      // else, we leave copy equal to nullptr, signaling a promotion failure below if appropriate.
-      // We choose not to promote objects smaller than PLAB::min_size() by way of shared allocations, as this is too
-      // costly.  Instead, we'll simply "evacuate" to young-gen memory (using a GCLAB) and will promote in a future
-      // evacuation pass.  This condition is denoted by: is_promotion && has_plab && (size <= PLAB::min_size())
-#else
-      // The value of this "improvement" has not yet been measured or quantified.  There is a suspicion that too much
-      // promotion by shared allocation is resulting in degraded latency at all percentiles.  The only evidence observed
-      // is that an 8G heap size with share-allocation reserves has higher latency in 75% OldEvacRatio than tip, even though
-      // this PR branch has fewer concurret GC cycles, fewer mixed cycles, equal number of old GC cycles, and improvement
-      // in every metric except pause-init-mark, which increased by 79%.  The dominant cost of pause-init-mark is known to
-      // be copying of remembered set.  That this takes almost twice as long with 5% fewer GC cycles seems to suggest that
-      // our branch typically has a much larger remembered set size (i.e. a larger old-gen size).  It seems plausible that
-      // the branch is more successful with promoting by shared allocations.  We need to study this further.  May revert
-      // this change depending on results of further analysis.
 
-      // Reduce, but do not totally eliminate promotion by shared allocation
+      // Reduce, but do not totally eliminate promotion by shared allocation.  Shared allocations are normally
+      // not a good thing.  Usually is much better to evacuate into a young-gen GCLAB than promote to old-gen with a
+      // shared allocation.  Objects above a particular threshold size (6 * min-size) are considered to be worth the
+      // effort required to promote by shared allocation.
       static size_t size_threshhold = MIN2(PLAB::max_size(), PLAB::min_size() * 6);
       if (!is_promotion || !has_plab || (size > size_threshhold)) {
         ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen, is_promotion);
@@ -327,7 +310,6 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       // We choose not to promote objects smaller than size_threshold by way of shared allocations as this is too
       // costly.  Instead, we'll simply "evacuate" to young-gen memory (using a GCLAB) and will promote in a future
       // evacuation pass.  This condition is denoted by: is_promotion && has_plab && (size <= size_threshhold).
-#endif
     }
 #ifdef ASSERT
   }
@@ -617,7 +599,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   // clamped by the old generation space available.
   //
   // Here's the algebra.
-  // Let SOEP = ShenandoahOldEvacRatioPercent,
+  // Let SOEP = ShenandoahOldEvacPercent,
   //     OE = old evac,
   //     YE = young evac, and
   //     TE = total evac = OE + YE
@@ -629,7 +611,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   //  =>              OE = YE*SOEP/(100-SOEP)
 
   // We have to be careful in the event that SOEP is set to 100 by the user.
-  assert(ShenandoahOldEvacRatioPercent <= 100, "Error");
+  assert(ShenandoahOldEvacPercent <= 100, "Error");
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
   ShenandoahOldGeneration* old_gen = old_generation();
@@ -650,11 +632,11 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   // The free set will reserve this amount of memory to hold young evacuations (initialized to the ideal reserve)
   size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
 
-  // If ShenandoahOldEvacRatioPercent equals 100, max_old_reserve is limited only by mutator_xfer_limit and young_reserve
-  const size_t bound_on_old_reserve = ((old_available + mutator_xfer_limit + young_reserve) * ShenandoahOldEvacRatioPercent) / 100;
-  size_t proposed_max_old = ((ShenandoahOldEvacRatioPercent == 100)?
+  // If ShenandoahOldEvacPercent equals 100, max_old_reserve is limited only by mutator_xfer_limit and young_reserve
+  const size_t bound_on_old_reserve = ((old_available + mutator_xfer_limit + young_reserve) * ShenandoahOldEvacPercent) / 100;
+  size_t proposed_max_old = ((ShenandoahOldEvacPercent == 100)?
                              bound_on_old_reserve:
-                             MIN2((young_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent),
+                             MIN2((young_reserve * ShenandoahOldEvacPercent) / (100 - ShenandoahOldEvacPercent),
                                   bound_on_old_reserve));
   if (young_reserve > young_available) {
     young_reserve = young_available;
@@ -747,7 +729,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   } else {
    // We'll try to xfer from both mutator excess and from young collector reserve
     size_t available_reserves = old_available + young_reserve + mutator_xfer_limit;
-    size_t old_entitlement = (available_reserves  * ShenandoahOldEvacRatioPercent) / 100;
+    size_t old_entitlement = (available_reserves  * ShenandoahOldEvacPercent) / 100;
 
     // Round old_entitlement down to nearest multiple of regions to be transferred to old
     size_t entitled_xfer = old_entitlement - old_available;
@@ -794,19 +776,6 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   young_generation()->set_evacuation_reserve(young_reserve);
   old_generation()->set_evacuation_reserve(reserve_for_mixed);
   old_generation()->set_promoted_reserve(reserve_for_promo);
-}
-
-void ShenandoahGenerationalHeap::TransferResult::print_on(const char* when, outputStream* ss) const {
-  auto heap = ShenandoahGenerationalHeap::heap();
-  ShenandoahYoungGeneration* const young_gen = heap->young_generation();
-  ShenandoahOldGeneration* const old_gen = heap->old_generation();
-  const size_t young_available = young_gen->available();
-  const size_t old_available = old_gen->available();
-  ss->print_cr("After %s, %s %zu regions to %s to prepare for next gc, old available: "
-                     PROPERFMT ", young_available: " PROPERFMT,
-                     when,
-                     success? "successfully transferred": "failed to transfer", region_count, region_destination,
-                     PROPERFMTARGS(old_available), PROPERFMTARGS(young_available));
 }
 
 void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) {

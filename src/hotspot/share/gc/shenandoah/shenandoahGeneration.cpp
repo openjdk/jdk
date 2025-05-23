@@ -279,7 +279,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   // clamped by the old generation space available.
   //
   // Here's the algebra.
-  // Let SOEP = ShenandoahOldEvacRatioPercent,
+  // Let SOEP = ShenandoahOldEvacPercent,
   //     OE = old evac,
   //     YE = young evac, and
   //     TE = total evac = OE + YE
@@ -291,10 +291,10 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   //  =>              OE = YE*SOEP/(100-SOEP)
 
   // We have to be careful in the event that SOEP is set to 100 by the user.
-  assert(ShenandoahOldEvacRatioPercent <= 100, "Error");
+  assert(ShenandoahOldEvacPercent <= 100, "Error");
   const size_t old_available = old_generation->available();
-  const size_t maximum_old_evacuation_reserve = (ShenandoahOldEvacRatioPercent == 100) ?
-    old_available : MIN2((maximum_young_evacuation_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent),
+  const size_t maximum_old_evacuation_reserve = (ShenandoahOldEvacPercent == 100) ?
+    old_available : MIN2((maximum_young_evacuation_reserve * ShenandoahOldEvacPercent) / (100 - ShenandoahOldEvacPercent),
                           old_available);
 
 

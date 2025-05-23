@@ -244,8 +244,8 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     young_gen->decrease_used(region_used);
     young_gen->decrement_affiliated_region_count();
 
-    // transfer_to_old() increases capacity of old and decreases capacity of young
-    _heap->generation_sizer()->force_transfer_to_old(1);
+    // promote_regions_in_place() increases capacity of old and decreases capacity of young
+    _heap->generation_sizer()->promote_regions_in_place(1);
     region->set_affiliation(OLD_GENERATION);
 
     old_gen->increment_affiliated_region_count();
@@ -286,8 +286,8 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
     young_gen->decrease_humongous_waste(humongous_waste);
     young_gen->decrease_affiliated_region_count(spanned_regions);
 
-    // transfer_to_old() increases capacity of old and decreases capacity of young
-    _heap->generation_sizer()->force_transfer_to_old(spanned_regions);
+    // promote_regions_in_place() increases capacity of old and decreases capacity of young
+    _heap->generation_sizer()->promote_regions_in_place(spanned_regions);
 
     // For this region and each humongous continuation region spanned by this humongous object, change
     // affiliation to OLD_GENERATION and adjust the generation-use tallies.  The remnant of memory

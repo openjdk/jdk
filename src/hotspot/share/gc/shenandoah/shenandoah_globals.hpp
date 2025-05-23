@@ -373,43 +373,20 @@
           "reserve/waste is incorrect, at the risk that application "       \
           "runs out of memory too early.")                                  \
                                                                             \
-  product(uintx, ShenandoahOldEvacRatioPercent, 75, EXPERIMENTAL,           \
-          "The maximum percent of memory that can be reserved for "         \
-          "evacuation into old generation.  With the default setting, "     \
-          "given a total evacuation budget of X, the amount of memory "     \
-          "reserved to hold objects evacuated to old generation is 0.75x."  \
-          "This limits both the promotion of aged young regions and "       \
-          "the compaction of existing old regions.  It does not restrict "  \
-          "the collector from copying more objects into old-generation "    \
-          "memory if the young-generation collection set does not consume " \
-          "all of the memory originally reserved for young-generation "     \
-          "evacuation.  It also does not restrict the amount of memory "    \
-          "that can be promoted in place, by simply changing the "          \
-          "affiliation of the region from young to old.  If there is an "   \
-          "abundance of free memory, this will result in a larger total "   \
-          "evacuation effort, roughly quadrupling the amount of memory "    \
-          "normally evacuated during young evacuations (so that old "       \
-          "evacuates three times as much as young, and young evacuates its "\
-          "normal amount).  If free memory is in short supply, this may "   \
-          "result in paring back both young-gen and old-gen evacuations, "  \
-          "such that the fraction of old is 75% (in the default "           \
-          "configuration) of the total available evacuation reserve, "      \
-          "with young evacuating one fourth of its normal amount, "         \
-          "and old evacuating three times as much as young evacuates.  "    \
-          "Setting a larger value allows for quicker promotion and a "      \
-          "smaller number of mixed evacuations to process the entire list " \
-          "of old-gen collection candidates at the cost of increased "      \
-          "disruption of the normal young-gen collection cadence.  A "      \
-          "value of 100 allows a mixed evacuation to focus entirely "       \
-          "on old-gen memory, allowing no young-gen regions to be "         \
-          "collected.  This would likely result in subsequent allocation "  \
-          "failures because the young-gen allocation pool would not be "    \
-          "replenished.  A value of 0 prevents mixed evacuations "          \
-          "from defragmenting old-gen memory, likely resulting in "         \
-          "subsequent promotion failures and triggering of stop-the-world " \
-          "full GC events.  Faiure to defragment old-gen memory can also "  \
-          "result in unconstrained expansion of old-gen, and shrinkage of " \
-          "young gen, causing inefficient high frequency of young-gen GC.") \
+  product(uintx, ShenandoahOldEvacPercent, 75, EXPERIMENTAL,                \
+          "The maximum evacuation to old-gen expressed as a percent of "    \
+          "the total live memory within the collection set.  With the "     \
+          "default setting, if collection set evacuates X, no more than "   \
+          "75% of X may hold object evacuated from old or promoted to old " \
+          "from young.  A value of 100 allows the entire collection set "   \
+          "to be comprised of old-gen regions and young regions that have " \
+          "reached the tenure age.  Larger values allow fewer mixed "       \
+          "evacuations to reclaim all the garbage from old.  Smaller "      \
+          "values result in less variation in GC cycle times between "      \
+          "young vs. mixed cycles.  A value of 0 prevents mixed "           \
+          "evacations from running and blocks promotion of aged regions "   \
+          "by evacuation.  Setting the value to 0 does not prevent "        \
+          "regions from being promoted in place.")                          \
           range(0,100)                                                      \
                                                                             \
   product(uintx, ShenandoahMinYoungPercentage, 20, EXPERIMENTAL,            \
