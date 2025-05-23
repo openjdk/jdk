@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,18 +68,17 @@ public @interface PreviewFeature {
         // keeping the constant of a feature that has been integrated or dropped, serves the purpose of muting such warnings.
 
         //---
-        @JEP(number=495, title="Simple Source Files and Instance Main Methods", status="Fourth Preview")
-        IMPLICIT_CLASSES,
+        IMPLICIT_CLASSES, //to be removed when boot JDK is 25
         @JEP(number=487, title="Scoped Values", status="Fourth Preview")
         SCOPED_VALUES,
-        @JEP(number=499, title="Structured Concurrency", status="Fourth Preview")
+        @JEP(number=505, title="Structured Concurrency", status="Fifth Preview")
         STRUCTURED_CONCURRENCY,
         CLASSFILE_API,
         STREAM_GATHERERS,
-        @JEP(number=494, title="Module Import Declarations", status="Second Preview")
-        MODULE_IMPORTS,
-        @JEP(number=478, title="Key Derivation Function API", status="Preview")
-        KEY_DERIVATION,
+        MODULE_IMPORTS, //remove when the boot JDK is JDK 25
+        KEY_DERIVATION, //remove when the boot JDK is JDK 25
+        @JEP(number = 502, title = "Stable Values", status = "Preview")
+        STABLE_VALUES,
         LANGUAGE_MODEL,
         /**
          * A key for testing.

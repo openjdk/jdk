@@ -489,10 +489,14 @@ class StubGenerator: public StubCodeGenerator {
 
   // SHA3 stubs
   void generate_sha3_stubs();
-  address generate_sha3_implCompress(StubGenStubId stub_id);
+
+  // Kyber stubs
+  void generate_kyber_stubs();
+
+  // Dilithium stubs
+  void generate_dilithium_stubs();
 
   // BASE64 stubs
-
   address base64_shuffle_addr();
   address base64_avx2_shuffle_addr();
   address base64_avx2_input_mask_addr();

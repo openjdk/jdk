@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -157,7 +157,8 @@ import jdk.internal.vm.ScopedValueContainer;
  *     private static final ScopedValue<String> NAME = ScopedValue.newInstance();
 
  *     ScopedValue.where(NAME, "duke").run(() -> {
- *         try (var scope = new StructuredTaskScope<String>()) {
+ *         // @link substring="open" target="StructuredTaskScope#open()" :
+ *         try (var scope = StructuredTaskScope.open()) {
  *
  *              // @link substring="fork" target="StructuredTaskScope#fork(java.util.concurrent.Callable)" :
  *              scope.fork(() -> childTask1());

@@ -71,9 +71,9 @@ void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* na
   c |= from_is_object          ? RunTimeClassInfo::FROM_IS_OBJECT          : 0;
   vcflags_array->append(c);
 
-  if (log_is_enabled(Trace, cds, verification)) {
+  if (log_is_enabled(Trace, aot, verification)) {
     ResourceMark rm;
-    log_trace(cds, verification)("add_verification_constraint: %s: %s must be subclass of %s [0x%x] array len %d flags len %d",
+    log_trace(aot, verification)("add_verification_constraint: %s: %s must be subclass of %s [0x%x] array len %d flags len %d",
                                  k->external_name(), from_name->as_klass_external_name(),
                                  name->as_klass_external_name(), c, vc_array->length(), vcflags_array->length());
   }
