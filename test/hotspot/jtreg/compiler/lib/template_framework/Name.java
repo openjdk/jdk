@@ -30,7 +30,7 @@ import java.util.List;
 
 sealed interface Name permits DataName, StructuralName {
     /**
-     * The name of the type, that can be used in code.
+     * The name of the name, that can be used in code.
      *
      * @return The {@String} name of the name, that can be used in code.
      */

@@ -27,7 +27,7 @@ import java.util.List;
 
 /**
  * {@link DataName}s represent things like fields and local variables, and can be added to the local
- * scope with {@link Template#addDataName}, and accessed with {@link Template#dataNames}, from where
+ * scope with {@link Template#addDataName}, and accessed with {@link Template#dataNames}, to
  * count, list or even sample random {@link DataName}s. Every {@link DataName} has a {@link DataName.Type},
  * so that sampling can be restricted to these types.
  *

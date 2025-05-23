@@ -146,8 +146,8 @@ import compiler.lib.ir_framework.TestFramework;
  * <p>
  * A {@link Template} can have zero or more arguments. A template can be created with {@code make} methods like
  * {@link Template#make(String, Function)}. For each number of arguments there is an implementation
- * (e.g. {@link Template.TwoArgs} for two arguments). This allows the use of Generics for the
- * Template argument types which enables type checking of the Template arguments.
+ * (e.g. {@link Template.TwoArgs} for two arguments). This allows the use of generics for the
+ * {@link Template} argument types which enables type checking of the {@link Template} arguments.
  *
  * <p>
  * A {@link Template} can be rendered to a {@link String} (e.g. {@link Template.ZeroArgs#render()}).
@@ -211,10 +211,10 @@ import compiler.lib.ir_framework.TestFramework;
  *
  * <p>
  * When working with {@link DataName}s and {@link StructuralName}s, it is important to be aware of the
- * relevant scopes, as well as the execution order of the {@link Template} lambdas, as well as the evaluation
+ * relevant scopes, as well as the execution order of the {@link Template} lambdas and the evaluation
  * of the {@link Template#body} tokens. When a {@link Template} is rendered, its lambda is invoked. In the
  * lambda, we generate the tokens, and create the {@link Template#body}. Once the lambda returns, the
- * tokens are evaluated one by one. While evaluating the tokens, the Renderer might encounter a nested
+ * tokens are evaluated one by one. While evaluating the tokens, the {@link Renderer} might encounter a nested
  * {@link TemplateToken}, which in turn triggers the evaluation of that nested {@link Template}, i.e.
  * the evaluation of its lambda and later the evaluation of its tokens. It is important to keep in mind
  * that the lambda is always executed first, and the tokens are evaluated afterwards. A method like
@@ -758,7 +758,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *                   i.e. if we intend to use the {@link DataName} only for reading
      *                   or if we also allow it to be mutated.
      * @param weight The weight of the {@link DataName}, which correlates to the probability
-     *               of this {@link DataName} being chosen when we sample.
+     *               of this {@link DataName} being chosen when we sample. Must be smaller than 1000.
      * @return The token that performs the defining action.
      */
     static Token addDataName(String name, DataName.Type type, DataName.Mutability mutability, int weight) {
