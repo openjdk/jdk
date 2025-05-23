@@ -68,7 +68,7 @@ public class AsyncExceptionTest extends Thread {
         }
 
         if (receivedThreadDeathinInternal2 == false && receivedThreadDeathinInternal1 == false) {
-            error =  new RuntimeException("Didn't catch ThreadDeath in internalRun2() nor in internalRun1().\n"
+            error = new RuntimeException("Didn't catch ThreadDeath in internalRun2() nor in internalRun1().\n"
                     + "receivedThreadDeathinInternal1=" + receivedThreadDeathinInternal1
                     + "; receivedThreadDeathinInternal2=" + receivedThreadDeathinInternal2);
         }
