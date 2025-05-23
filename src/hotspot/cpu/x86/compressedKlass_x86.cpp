@@ -25,9 +25,9 @@
 
 #ifdef _LP64
 
+#include "memory/metaspace.hpp"
 #include "oops/compressedKlass.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "memory/metaspace.hpp"
 
 char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base) {
 
@@ -37,7 +37,7 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
          CompressedKlassPointers::narrow_klass_pointer_bits() == 22, "Rethink if we ever use different nKlass bit sizes");
 
   // Unconditionally attempting to reserve in lower 4G first makes always sense:
-  // -CDS -COH: try to get unscaled mode (zero base zero shift)
+  // -CDS -COH: try to get unscaled mode (zero base, zero shift)
   // +CDS -COH: No zero base possible (CDS prevents it); but we still benefit from small base pointers (imm32 movabs)
   // -CDS +COH: No zero base possible (22bit nKlass + zero base zero shift = 4MB encoding range, way too small);
   //            but we still benefit from small base pointers (imm32 movabs)

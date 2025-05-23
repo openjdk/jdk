@@ -5415,7 +5415,7 @@ void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
   if (CompressedKlassPointers::shift() != 0) {
     shrq(r, CompressedKlassPointers::shift());
   }
-  BLOCK_COMMENT("} encode_and_move_klass_not_null");
+  BLOCK_COMMENT("} encode_klass_not_null");
 }
 
 void MacroAssembler::encode_and_move_klass_not_null(Register dst, Register src) {
