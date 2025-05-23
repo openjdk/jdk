@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
@@ -1205,7 +1206,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   k->clear_archived_mirror_index();
 
   // mirror is archived, restore
-  log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
+  log_debug(aot, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
   assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
@@ -1230,9 +1231,9 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   set_mirror_module_field(THREAD, k, mirror, module);
 
-  if (log_is_enabled(Trace, cds, heap, mirror)) {
+  if (log_is_enabled(Trace, aot, heap, mirror)) {
     ResourceMark rm(THREAD);
-    log_trace(cds, heap, mirror)(
+    log_trace(aot, heap, mirror)(
         "Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
   }
 
@@ -5460,9 +5461,7 @@ bool JavaClasses::is_supported_for_archiving(oop obj) {
     }
   }
 
-  if (klass->is_subclass_of(vmClasses::Reference_klass())) {
-    // It's problematic to archive Reference objects. One of the reasons is that
-    // Reference::discovered may pull in unwanted objects (see JDK-8284336)
+  if (!AOTReferenceObjSupport::is_enabled() && klass->is_subclass_of(vmClasses::Reference_klass())) {
     return false;
   }
 
