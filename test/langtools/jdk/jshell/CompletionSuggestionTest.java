@@ -827,9 +827,11 @@ public class CompletionSuggestionTest extends KullaTesting {
 
     //JDK-8353581: completion for module imports:
     public void testModuleImport() {
-        assertCompletionIncludesExcludes("import |", Set.of("module"), Set.of());
+        assertCompletionIncludesExcludes("import |", Set.of("module "), Set.of());
         assertCompletionIncludesExcludes("import module |", Set.of("java.base"), Set.of("java.", "module"));
         assertCompletionIncludesExcludes("import module java.|", Set.of("java.base"), Set.of());
         assertCompletion("import module java.ba|", "java.base");
+        assertCompletionIncludesExcludes("import module ja|", Set.of("java.base"), Set.of("jdk.compiler"));
+        assertCompletion("import module java/*c*/./*c*/ba|", "java.base");
     }
 }

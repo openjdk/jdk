@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,19 +307,18 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             case CLASS, METHOD -> proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(code));
             default -> proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
         };
-        String requiredPrefix = identifier;
-        return computeSuggestions(codeWrap, cursor, anchor).stream()
-                .filter(s -> s.filteringText.startsWith(requiredPrefix) && !s.continuation().equals(REPL_DOESNOTMATTER_CLASS_NAME))
+        String[] requiredPrefix = new String[] {identifier};
+        return computeSuggestions(codeWrap, cursor, requiredPrefix, anchor).stream()
+                .filter(s -> s.continuation().startsWith(requiredPrefix[0]) && !s.continuation().equals(REPL_DOESNOTMATTER_CLASS_NAME))
                 .sorted(Comparator.comparing(Suggestion::continuation))
-                .map(s -> (Suggestion) s)
                 .toList();
     }
 
-    private List<SuggestionImpl> computeSuggestions(OuterWrap code, int cursor, int[] anchor) {
+    private List<Suggestion> computeSuggestions(OuterWrap code, int cursor, String[] requiredPrefix, int[] anchor) {
         return proc.taskFactory.analyze(code, at -> {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
-            List<SuggestionImpl> result = new ArrayList<>();
+            List<Suggestion> result = new ArrayList<>();
             TreePath tp = pathFor(topLevel, sp, code, cursor);
             if (tp != null) {
                 Scope scope = at.trees().getScope(tp);
@@ -408,12 +407,17 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                         ImportTree it = findImport(tp);
 
                         if (it != null && it.isModule()) {
-                            String fullCode = code.wrapped();
                             int selectStart = (int) sp.getStartPosition(topLevel, tp.getLeaf());
-                            int selectEnd   = (int) sp.getEndPosition(topLevel, tp.getLeaf());
-                            String qualifiedPrefix = fullCode.substring(selectStart, selectEnd);
+                            String qualifiedPrefix = it.getQualifiedIdentifier().getKind() == Kind.MEMBER_SELECT
+                                ? ((MemberSelectTree) it.getQualifiedIdentifier()).getExpression().toString() + "."
+                                : "";
 
                             addModuleElements(at, qualifiedPrefix, result);
+
+                            requiredPrefix[0] = qualifiedPrefix + requiredPrefix[0];
+                            anchor[0] = selectStart;
+
+                            return result;
                         }
 
                         boolean isImport = it != null;
@@ -491,8 +495,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                                                 : accessibility,
                                         smartFilter, result);
 
-                                //check source level(!)
-                                result.add(new SuggestionImpl("module", false));
+                                result.add(new SuggestionImpl("module ", false));
                             }
                         }
                         break;
@@ -1007,18 +1010,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private final Function<Boolean, String> DEFAULT_PAREN = hasParams -> hasParams ? "(" : "()";
     private final Function<Boolean, String> NO_PAREN = hasParams -> "";
 
-    private void addElements(Iterable<? extends Element> elements,
-                             Predicate<Element> accept,
-                             Predicate<Element> smart,
-                             List<SuggestionImpl> result) {
+    private void addElements(Iterable<? extends Element> elements, Predicate<Element> accept, Predicate<Element> smart, List<Suggestion> result) {
         addElements(elements, accept, smart, DEFAULT_PAREN, result);
     }
-
-    private void addElements(Iterable<? extends Element> elements,
-                             Predicate<Element> accept,
-                             Predicate<Element> smart,
-                             Function<Boolean, String> paren,
-                             List<SuggestionImpl> result) {
+    private void addElements(Iterable<? extends Element> elements, Predicate<Element> accept, Predicate<Element> smart, Function<Boolean, String> paren, List<Suggestion> result) {
         Set<String> hasParams = Util.stream(elements)
                 .filter(accept)
                 .filter(IS_CONSTRUCTOR.or(IS_METHOD))
@@ -1052,13 +1047,12 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     private void addModuleElements(AnalyzeTask at,
                                    String prefix,
-                                   List<SuggestionImpl> result) {
+                                   List<Suggestion> result) {
         for (ModuleElement me : at.getElements().getAllModuleElements()) {
             if (!me.getQualifiedName().toString().startsWith(prefix)) {
                 continue;
             }
             result.add(new SuggestionImpl(me.getQualifiedName().toString(),
-                                          me.getSimpleName().toString(),
                                           false));
         }
     }
@@ -1433,10 +1427,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         };
     }
 
-    private void addScopeElements(AnalyzeTask at, Scope scope,
-                                  Function<Element, Iterable<? extends Element>> elementConvertor,
-                                  Predicate<Element> filter, Predicate<Element> smartFilter,
-                                  List<SuggestionImpl> result) {
+    private void addScopeElements(AnalyzeTask at, Scope scope, Function<Element, Iterable<? extends Element>> elementConvertor, Predicate<Element> filter, Predicate<Element> smartFilter, List<Suggestion> result) {
         addElements(scopeContent(at, scope, elementConvertor), filter, smartFilter, result);
     }
 
@@ -2217,7 +2208,6 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private static class SuggestionImpl implements Suggestion {
 
         private final String continuation;
-        private final String filteringText;
         private final boolean matchesType;
 
         /**
@@ -2227,20 +2217,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
          * @param matchesType does the candidate match the target type
          */
         public SuggestionImpl(String continuation, boolean matchesType) {
-            this(continuation, continuation, matchesType);
-        }
-
-        /**
-         * Create a {@code Suggestion} instance.
-         *
-         * @param continuation a candidate continuation of the user's input
-         * @param filteringText a filtering prefix
-         * @param matchesType does the candidate match the target type
-         */
-        public SuggestionImpl(String continuation, String filteringText,
-                              boolean matchesType) {
             this.continuation = continuation;
-            this.filteringText = filteringText;
             this.matchesType = matchesType;
         }
 
