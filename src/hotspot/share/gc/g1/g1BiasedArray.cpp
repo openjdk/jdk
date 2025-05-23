@@ -57,11 +57,4 @@ void G1BiasedMappedArrayBase::verify_biased_index(idx_t biased_index) const {
             biased_index, bias(), length());
 }
 
-void G1BiasedMappedArrayBase::verify_biased_index_inclusive_end(idx_t biased_index) const {
-  guarantee(_biased_base != nullptr, "Array not initialized");
-  guarantee(biased_index >= bias() && biased_index <= (bias() + length()),
-            "Biased index out of inclusive bounds, index: %zu bias: %zu length: %zu",
-            biased_index, bias(), length());
-}
-
 #endif
