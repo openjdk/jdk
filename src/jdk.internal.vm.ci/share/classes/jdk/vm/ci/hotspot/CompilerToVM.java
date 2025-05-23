@@ -472,13 +472,13 @@ final class CompilerToVM {
 
     private native int decodeMethodIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int rawIndex);
 
-	/**
-	 * Returns the number of {@code ResolvedIndyEntry} present within this constant
-	 * pool.
-	 */
-	int getNumIndyEntries(HotSpotConstantPool constantPool) {
-		return getNumIndyEntries(constantPool, constantPool.getConstantPoolPointer());
-	}
+    /**
+     * Returns the number of {@code ResolvedIndyEntry} present within this constant
+     * pool.
+     */
+    int getNumIndyEntries(HotSpotConstantPool constantPool) {
+        return getNumIndyEntries(constantPool, constantPool.getConstantPoolPointer());
+    }
 
     private native int getNumIndyEntries(HotSpotConstantPool constantPool, long constantPoolPointer);
 
