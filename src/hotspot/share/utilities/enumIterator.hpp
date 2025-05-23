@@ -266,7 +266,7 @@ public:
     assert(start <= end, "invalid range");
   }
 
-  template <EnumType Start, EnumType End>
+  template <T Start, T End>
   static constexpr EnumRange<T> create() {
     Traits::template assert_in_range<Start>();
     Traits::template assert_in_range<End>();
