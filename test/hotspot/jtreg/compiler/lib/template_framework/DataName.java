@@ -67,9 +67,6 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
      * Creates a new {@link DataName}.
      */
     public DataName {
-        if (0 >= weight || weight > 1000) {
-            throw new IllegalArgumentException("Unexpected weight: " + weight);
-        }
     }
 
     /**

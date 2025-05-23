@@ -44,9 +44,6 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
      * Creates a new {@link StructuralName}.
      */
     public StructuralName {
-        if (0 >= weight || weight > 1000) {
-            throw new IllegalArgumentException("Unexpected weight: " + weight);
-        }
     }
 
     /**

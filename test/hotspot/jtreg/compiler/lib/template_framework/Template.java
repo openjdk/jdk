@@ -758,7 +758,8 @@ public sealed interface Template permits Template.ZeroArgs,
      *                   i.e. if we intend to use the {@link DataName} only for reading
      *                   or if we also allow it to be mutated.
      * @param weight The weight of the {@link DataName}, which correlates to the probability
-     *               of this {@link DataName} being chosen when we sample. Must be smaller than 1000.
+     *               of this {@link DataName} being chosen when we sample.
+     *               Must be a value from 0 to 1000.
      * @return The token that performs the defining action.
      */
     static Token addDataName(String name, DataName.Type type, DataName.Mutability mutability, int weight) {
@@ -767,6 +768,9 @@ public sealed interface Template permits Template.ZeroArgs,
             throw new IllegalArgumentException("Unexpected mutability: " + mutability);
         }
         boolean mutable = mutability == DataName.Mutability.MUTABLE;
+        if (0 >= weight || weight > 1000) {
+            throw new IllegalArgumentException("Unexpected weight: " + weight);
+        }
         return new AddNameToken(new DataName(name, type, mutable, weight));
     }
 
@@ -803,9 +807,13 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param type The type of the {@link StructuralName}.
      * @param weight The weight of the {@link StructuralName}, which correlates to the probability
      *               of this {@link StructuralName} being chosen when we sample.
+     *               Must be a value from 0 to 1000.
      * @return The token that performs the defining action.
      */
     static Token addStructuralName(String name, StructuralName.Type type, int weight) {
+        if (0 >= weight || weight > 1000) {
+            throw new IllegalArgumentException("Unexpected weight: " + weight);
+        }
         return new AddNameToken(new StructuralName(name, type, weight));
     }
 
