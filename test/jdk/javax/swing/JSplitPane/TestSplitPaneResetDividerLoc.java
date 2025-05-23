@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8356594
+ * @key headful
  * @summary Verifies if JSplitPane loses divider location when
  *          reopened via JOptionPane.createDialog()
  * @run main TestSplitPaneResetDividerLoc
