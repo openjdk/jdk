@@ -484,15 +484,14 @@ static const char* get_type(Klass* k) {
     type = "prim";
   } else {
     InstanceKlass* src_ik = InstanceKlass::cast(src_k);
-    oop loader = src_ik->class_loader();
-    if (loader == nullptr) {
-      type = "boot";
-    } else if (loader == SystemDictionary::java_platform_loader()) {
-      type = "plat";
-    } else if (loader == SystemDictionary::java_system_loader()) {
-      type = "app";
+    if (src_ik->defined_by_boot_loader()) {
+      return "boot";
+    } else if (src_ik->defined_by_platform_loader()) {
+      return "plat";
+    } else if (src_ik->defined_by_app_loader()) {
+      return "app";
     } else {
-      type = "unreg";
+      return "unreg";
     }
   }
 

@@ -31,13 +31,16 @@
  * @run main/manual bug6197830
  */
 
+import java.util.List;
+import javax.swing.JFrame;
+
 public class bug6197830 {
 
     private static final String INSTRUCTIONS = """
-        Four windows should appear: Left-to-right and Right-to-left for
-        the two different Look and Feels (Motif and GTK).
-        Check that text on all the menu items of all menus is properly
-        vertically aligned.""";
+            Four windows should appear: Left-to-right and Right-to-left for
+            the two different Look and Feels (Motif and GTK).
+            Check that text on all the menu items of all menus is properly
+            vertically aligned.""";
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
@@ -45,30 +48,20 @@ public class bug6197830 {
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(bug6197830::createTestUI)
-                .position(PassFailJFrame.Position.TOP_LEFT_CORNER)
+                .positionTestUIBottomRowCentered()
                 .build()
                 .awaitAndCheck();
     }
 
     private static List<JFrame> createTestUI() {
-        JFrame frame1 = MenuItemTest.doMenuItemTest(true,
-                            "com.sun.java.swing.plaf.motif.MotifLookAndFeel",
-                             20);
-        frame1.setLocation(300, 300);
-        JFrame frame2 = MenuItemTest.doMenuItemTest(false,
-                            "com.sun.java.swing.plaf.motif.MotifLookAndFeel",
-                             20);
-        frame2.setLocation((int)(frame1.getLocation().getX() + frame1.getWidth()
-                            + 100), 300);
-        JFrame frame3 = MenuItemTest.doMenuItemTest(true,
-                             "com.sun.java.swing.plaf.gtk.GTKLookAndFeel", 420);
-        frame3.setLocation(300, (int)(frame1.getLocation().getY()
-                                 + frame1.getHeight() + 100));
-        JFrame frame4 = MenuItemTest.doMenuItemTest(false,
-                             "com.sun.java.swing.plaf.gtk.GTKLookAndFeel", 420);
-        frame4.setLocation((int)(frame3.getLocation().getX() + frame3.getWidth()
-                            + 100),
-                           (int)frame3.getLocation().getY());
+        JFrame frame1 = MenuItemTestHelper.getMenuItemTestFrame(true,
+                "com.sun.java.swing.plaf.motif.MotifLookAndFeel");
+        JFrame frame2 = MenuItemTestHelper.getMenuItemTestFrame(false,
+                "com.sun.java.swing.plaf.motif.MotifLookAndFeel");
+        JFrame frame3 = MenuItemTestHelper.getMenuItemTestFrame(true,
+                "com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+        JFrame frame4 = MenuItemTestHelper.getMenuItemTestFrame(false,
+                "com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         return List.of(frame1, frame2, frame3, frame4);
     }
 }
