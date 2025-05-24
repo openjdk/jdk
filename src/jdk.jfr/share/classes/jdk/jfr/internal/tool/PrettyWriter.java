@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,26 @@
 
 package jdk.jfr.internal.tool;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.SequencedSet;
 import java.util.StringJoiner;
 
+import jdk.jfr.Contextual;
 import jdk.jfr.DataAmount;
+import jdk.jfr.EventType;
 import jdk.jfr.Frequency;
 import jdk.jfr.MemoryAddress;
 import jdk.jfr.Percentage;
@@ -46,7 +57,7 @@ import jdk.jfr.consumer.RecordedMethod;
 import jdk.jfr.consumer.RecordedObject;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordedThread;
-import jdk.jfr.internal.Type;
+import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.util.ValueFormatter;
 
 /**
@@ -55,10 +66,58 @@ import jdk.jfr.internal.util.ValueFormatter;
  * This class is also used by {@link RecordedObject#toString()}
  */
 public final class PrettyWriter extends EventPrintWriter {
-    private static final String TYPE_OLD_OBJECT = Type.TYPES_PREFIX + "OldObject";
+    private static record Timestamp(RecordedEvent event, long seconds, int nanosCompare, boolean start, boolean contextual) implements Comparable<Timestamp> {
+        public static Timestamp create(RecordedEvent event, boolean start, boolean contextual) {
+            Instant time = start ? event.getStartTime() : event.getEndTime();
+            // If two timestamps have the same nanos value, but one is a
+            // start timestamp and the other is an end timestamp, the start
+            // timestamp comes first. This ensures that non-durational events
+            // are treated as expected. To avoid checking this with every
+            // comparison, we can just multiply the nanos value by two and add
+            // one if it's an end timestamp to ensure correct ordering when
+            // comparing.
+            long seconds = time.getEpochSecond();
+            int nanos = time.getNano();
+            if (start) {
+                return new Timestamp(event, seconds, 2 * nanos, start, contextual);
+            } else {
+                return new Timestamp(event, seconds, 2 * nanos + 1, start, contextual);
+            }
+        }
+
+        @Override
+        public int compareTo(Timestamp that) {
+            // This is taken from Instant::compareTo
+            int cmp = Long.compare(seconds, that.seconds);
+            if (cmp != 0) {
+                return cmp;
+            }
+            return nanosCompare - that.nanosCompare;
+        }
+    }
+
+    private static record TypeInformation(Long id, List<ValueDescriptor> contextualFields, boolean contextual, String simpleName) {
+    }
+
+    private static final SequencedSet<RecordedEvent> EMPTY_SET = new LinkedHashSet<>();
+    private static final String TYPE_OLD_OBJECT = "jdk.types.OldObject";
     private static final DateTimeFormatter TIME_FORMAT_EXACT = DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSSSSS (yyyy-MM-dd)");
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss.SSS (yyyy-MM-dd)");
     private static final Long ZERO = 0L;
+    // Rationale for using one million events in the window.
+    // Events in JFR arrive in batches. The commit time (end time) of an
+    // event in batch N typically doesn't come before any events in batch N - 1,
+    // but it can't be ruled out completely. Data is also partitioned into chunks,
+    // typically 16 MB each. Within a chunk, there must be at least one batch.
+    // The size of an event is typically more than 16 bytes, so an
+    // EVENT_WINDOW_SIZE of 1 000 000 events will likely cover more than one batch.
+    // Having at least two batches in a window avoids boundary issues.
+    // At the same time, a too large window, means it will take more time
+    // before the first event is printed and tool will feel unresponsive.
+    private static final int EVENT_WINDOW_SIZE = 1_000_000;
+    private final PriorityQueue<Timestamp> timeline = new PriorityQueue<>(EVENT_WINDOW_SIZE + 4);
+    private final Map<Long, TypeInformation> typeInformation = new HashMap<>();
+    private final Map<Long, SequencedSet<RecordedEvent>> contexts = new HashMap<>();
     private final boolean showExact;
     private RecordedEvent currentEvent;
 
@@ -71,19 +130,114 @@ public final class PrettyWriter extends EventPrintWriter {
         this(destination, false);
     }
 
-    @Override
-    protected void print(List<RecordedEvent> events) {
-        for (RecordedEvent e : events) {
-            print(e);
-            flush(false);
+    void print(Path source) throws IOException {
+        printBegin();
+        try (RecordingFile file = new RecordingFile(source)) {
+            while (file.hasMoreEvents()) {
+                RecordedEvent event = file.readEvent();
+                if (typeInformation(event).contextual()) {
+                    addEvent(event, true);
+                }
+                if (acceptEvent(event)) {
+                    addEvent(event, false);
+                }
+                // There should not be a limit on the size of the recording files that
+                // the 'jfr' tool can process. To avoid OutOfMemoryError and time complexity
+                // issues on large recordings, a window size must be set when sorting
+                // and processing contextual events.
+                while (timeline.size() > EVENT_WINDOW_SIZE) {
+                    print(timeline.remove());
+                    flush(false);
+                }
+            }
+            while (!timeline.isEmpty()) {
+                print(timeline.remove());
+            }
+        }
+        printEnd();
+        flush(true);
+    }
+
+    private TypeInformation typeInformation(RecordedEvent event) {
+        long id = event.getEventType().getId();
+        TypeInformation ti = typeInformation.get(id);
+        if (ti == null) {
+            ti = createTypeInformation(event.getEventType());
+            typeInformation.put(ti.id(), ti);
+        }
+        return ti;
+    }
+
+    private TypeInformation createTypeInformation(EventType eventType) {
+        ArrayList<ValueDescriptor> contextualFields = new ArrayList<>();
+        for (ValueDescriptor v : eventType.getFields()) {
+            if (v.getAnnotation(Contextual.class) != null) {
+                contextualFields.add(v);
+            }
+        }
+        contextualFields.trimToSize();
+        String name = eventType.getName();
+        String simpleName = name.substring(name.lastIndexOf(".") + 1);
+        boolean contextual = contextualFields.size() > 0;
+        return new TypeInformation(eventType.getId(), contextualFields, contextual, simpleName);
+    }
+
+    private boolean print(Timestamp t) {
+        RecordedEvent event = t.event();
+        RecordedThread rt = event.getThread();
+        if (rt != null) {
+            processThreadedTimestamp(rt, t);
+        } else {
+            if (!t.contextual() && !t.start) {
+                print(event);
+            }
+        }
+        return true;
+    }
+
+    public void processThreadedTimestamp(RecordedThread thread, Timestamp t) {
+        RecordedEvent event = t.event();
+        var contextEvents = contexts.computeIfAbsent(thread.getId(), k -> new LinkedHashSet<>(1));
+        if (t.contextual) {
+            if (t.start) {
+                contextEvents.add(event);
+            } else {
+                contextEvents.remove(event);
+            }
+            return;
+        }
+        // Print events in the order they were committed (end time).
+        if (!t.start) {
+            if (typeInformation(event).contextual()) {
+                print(event);
+            } else {
+                print(event, contextEvents);
+            }
         }
     }
 
+    public void addEvent(RecordedEvent event, boolean asContextual) {
+        timeline.add(Timestamp.create(event, true, asContextual));
+        timeline.add(Timestamp.create(event, false, asContextual));
+    }
+
+    @Override
+    protected void print(List<RecordedEvent> events) {
+        throw new InternalError("Should not reach here!");
+    }
+
     public void print(RecordedEvent event) {
+        print(event, EMPTY_SET);
+    }
+
+    public void print(RecordedEvent event, SequencedSet<RecordedEvent> context) {
         currentEvent = event;
         print(event.getEventType().getName(), " ");
         println("{");
         indent();
+        if (!context.isEmpty()) {
+            printContexts(context);
+        }
         for (ValueDescriptor v : event.getFields()) {
             String name = v.getName();
             if (!isZeroDuration(event, name) && !isLateField(name)) {
@@ -104,6 +258,22 @@ public final class PrettyWriter extends EventPrintWriter {
         printIndent();
         println("}");
         println();
+    }
+
+    private void printContexts(SequencedSet<RecordedEvent> contextEvents) {
+        for (RecordedEvent e : contextEvents) {
+            printContextFields(e);
+        }
+    }
+
+    private void printContextFields(RecordedEvent contextEvent) {
+        TypeInformation ti = typeInformation(contextEvent);
+        for (ValueDescriptor v : ti.contextualFields()) {
+            printIndent();
+            String name = "Context: " + ti.simpleName() + "." + v.getName();
+            print(name, " = ");
+            printValue(getValue(contextEvent, v), v, "");
+        }
     }
 
     private boolean isZeroDuration(RecordedEvent event, String name) {
