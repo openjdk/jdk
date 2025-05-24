@@ -8236,6 +8236,16 @@ instruct castLL_checked(iRegL dst, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
+instruct castHH(vRegF dst)
+%{
+  match(Set dst (CastHH dst));
+  size(0);
+  format %{ "# castHH of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
 instruct castFF(vRegF dst)
 %{
   match(Set dst (CastFF dst));
