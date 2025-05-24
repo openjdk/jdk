@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,5 +170,48 @@ public class AlgorithmDecomposer {
      */
     static String decomposeDigestName(String algorithm) {
         return DECOMPOSED_DIGEST_NAMES.getOrDefault(algorithm, algorithm);
+    }
+
+    private static final String SHA512TRUNCATED = "SHA512/2";
+
+    /**
+     * Split a Cipher transformation of the form algorithm/mode/padding,
+     * algorithm/mode or algorithm into its components.
+     *
+     * Array components of a Cipher transformation:
+     *
+     * index 0: algorithm component (e.g. AES)
+     * index 1: feedback component (e.g. CFB)
+     * index 2: padding component (e.g. PKCS5Padding)
+     */
+    public static String[] getTransformationTokens(String transformation) {
+        // check if the transformation contains algorithms with "/" in their
+        // name which can cause the parsing logic to go wrong
+        int sha512Idx = transformation.toUpperCase(Locale.ENGLISH)
+                .indexOf(SHA512TRUNCATED);
+        int startIdx = (sha512Idx == -1 ? 0 :
+                sha512Idx + SHA512TRUNCATED.length());
+        int endIdx = transformation.indexOf('/', startIdx);
+        if (endIdx == -1) {
+            // algorithm
+            return new String[] { transformation.trim() };
+        } else {
+            String algorithm;
+            String mode;
+            String padding;
+            algorithm = transformation.substring(0, endIdx).trim();
+            startIdx = endIdx + 1;
+            endIdx = transformation.indexOf('/', startIdx);
+            if (endIdx == -1) {
+                // algorithm/mode
+                mode = transformation.substring(startIdx).trim();
+                return new String[] { algorithm, mode };
+            } else {
+                // algorithm/mode/padding
+                mode = transformation.substring(startIdx, endIdx).trim();
+                padding = transformation.substring(endIdx + 1).trim();
+                return new String[] { algorithm, mode, padding };
+            }
+        }
     }
 }

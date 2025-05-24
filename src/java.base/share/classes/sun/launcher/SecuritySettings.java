@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.io.PrintStream;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
@@ -140,6 +139,30 @@ public final class SecuritySettings {
         ostream.println();
     }
 
+    private static void printSecurityProviderServices(
+            Set<Provider.Service> services) {
+        if (!services.isEmpty()) {
+            services.stream().sorted(
+                    Comparator.comparing(Provider.Service::getType)
+                            .thenComparing(Provider.Service::getAlgorithm))
+                    .forEach(ps -> {
+                        ostream.println(THREEINDENT +
+                                ps.getType() + "." + ps.getAlgorithm());
+                        List<String> aliases = SharedSecrets
+                                .getJavaSecurityProviderAccess().getAliases(ps);
+
+                        if (!aliases.isEmpty()) {
+                            ostream.println(wrappedString(
+                                    aliases.stream().sorted()
+                                            .collect(Collectors.joining(", ", INDENT + " aliases: [", "]")),
+                                    80, " " + TWOINDENT, INDENT + THREEINDENT));
+                        }
+                    });
+        } else {
+            ostream.println(THREEINDENT + "<none>");
+        }
+    }
+
     private static void printSecurityProviderConfig(boolean verbose) {
         ostream.println(INDENT + "Security provider static configuration: (in order of preference)");
         for (Provider p : Security.getProviders()) {
@@ -149,39 +172,14 @@ public final class SecuritySettings {
             }
             ostream.println(TWOINDENT + "Provider name: " + p.getName());
             if (verbose) {
-                ostream.println(wrappedString(PROV_INFO_STRING + p.getInfo(), 80,
-                        TWOINDENT, THREEINDENT));
-                ostream.println(TWOINDENT + "Provider services: (type : algorithm)");
-                Set<Provider.Service> services = p.getServices();
-                Set<String> keys = Collections.list(p.keys())
-                        .stream()
-                        .map(String.class::cast)
-                        .filter(s -> s.startsWith("Alg.Alias."))
-                        .collect(Collectors.toSet());
-                if (!services.isEmpty()) {
-                    services.stream()
-                            .sorted(Comparator.comparing(Provider.Service::getType)
-                                    .thenComparing(Provider.Service::getAlgorithm))
-                            .forEach(ps -> {
-                                ostream.println(THREEINDENT +
-                                        ps.getType() + "." + ps.getAlgorithm());
-                                List<String> aliases = keys
-                                        .stream()
-                                        .filter(s -> s.startsWith("Alg.Alias." + ps.getType()))
-                                        .filter(s -> p.getProperty(s).equals(ps.getAlgorithm()))
-                                        .map(s -> s.substring(("Alg.Alias." + ps.getType() + ".").length()))
-                                        .toList();
-
-                                if (!aliases.isEmpty()) {
-                                    ostream.println(wrappedString(
-                                            aliases.stream()
-                                                    .collect(Collectors.joining(", ", INDENT + " aliases: [", "]")),
-                                            80, " " + TWOINDENT, INDENT + THREEINDENT));
-                                }
-                            });
-                } else {
-                    ostream.println(THREEINDENT + "<none>");
-                }
+                ostream.println(wrappedString(PROV_INFO_STRING + p.getInfo(),
+                        80, TWOINDENT, THREEINDENT));
+                ostream.println(TWOINDENT + "Provider services allowed: (type : algorithm)");
+                printSecurityProviderServices(p.getServices());
+                ostream.println(TWOINDENT + "Provider services NOT allowed: (type : algorithm)");
+                printSecurityProviderServices(
+                        SharedSecrets.getJavaSecurityProviderAccess()
+                                .getServicesNotAllowed(p));
             }
         }
         if (verbose) {
