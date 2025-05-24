@@ -236,7 +236,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void update_mdp_by_constant(Register mdp_in, int constant);
   void update_mdp_for_ret(Register return_bci);
 
-  void profile_taken_branch(Register mdp, Register bumped_count);
+  void profile_taken_branch(Register mdp);
   void profile_not_taken_branch(Register mdp);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
