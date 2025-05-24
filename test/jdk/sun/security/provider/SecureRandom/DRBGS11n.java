@@ -34,8 +34,8 @@ import java.lang.reflect.Field;
  * @bug 8157308
  * @modules java.base/sun.security.provider:+open
  * @summary Make AbstractDrbg non-Serializable
- * @run main DRBGS11n mech
- * @run main DRBGS11n capability
+ * @run main/othervm DRBGS11n mech
+ * @run main/othervm DRBGS11n capability
  */
 public class DRBGS11n {
 
