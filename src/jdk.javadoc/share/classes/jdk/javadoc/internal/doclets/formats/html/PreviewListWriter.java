@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,18 +98,22 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
     }
 
     @Override
-    protected void addExtraSection(Content content) {
+    protected void addContentsLinks(Content list) {
+        super.addContentsLinks(list);
         var notes = builder.getElementNotes();
         if (!notes.isEmpty()) {
-            addSummaryAPI(notes, HtmlId.of("preview-api-notes"),
-                    "doclet.Preview_Notes_Elements", "doclet.Element", content);
+            addContentsLink(HtmlId.of("preview-api-notes"), "doclet.Preview_Notes", list);
         }
     }
 
     @Override
-    protected void addExtraIndexLink(Content target) {
-        if (!builder.getElementNotes().isEmpty()) {
-            addIndexLink(HtmlId.of("preview-api-notes"), "doclet.Preview_Notes", target);
+    protected void addSummaries(Content content) {
+        var notes = builder.getElementNotes();
+        super.addSummaries(content);
+        // Add permanent APIs with preview notes below preview API tables
+        if (!notes.isEmpty()) {
+            addSummaryAPI(notes, HtmlId.of("preview-api-notes"),
+                    "doclet.Preview_Notes", "doclet.Element", content);
         }
     }
 
