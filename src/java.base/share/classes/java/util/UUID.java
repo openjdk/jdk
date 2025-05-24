@@ -61,18 +61,18 @@ import jdk.internal.util.ByteArrayLittleEndian;
  * {@code UUID}.  The bit layout described above is valid only for a {@code
  * UUID} with a variant value of 2, which indicates the Leach-Salz variant.
  *
- * <p> The version field holds a value that describes the type of this {@code
- * UUID}.  There are four different basic types of UUIDs: time-based, DCE
- * security, name-based, and randomly generated UUIDs.  These types have a
- * version value of 1, 2, 3 and 4, respectively.
+ * <p> There are eight defined types of UUIDs, each identified by a version number:
+ * time-based (version 1), DCE security (version 2), name-based with MD5 (version 3),
+ * randomly generated (version 4), name-based with SHA-1 (version 5), reordered time-based (version 6),
+ * Unix epoch time-based (version 7), and custom-defined layout (version 8).
  *
  * <p> For more information including algorithms used to create {@code UUID}s,
  * see <a href="http://www.ietf.org/rfc/rfc4122.txt"> <i>RFC&nbsp;4122: A
  * Universally Unique IDentifier (UUID) URN Namespace</i></a>, section 4.2
  * &quot;Algorithms for Creating a Time-Based UUID&quot;.
  *
- * @spec https://www.rfc-editor.org/info/rfc4122
- *      RFC 4122: A Universally Unique IDentifier (UUID) URN Namespace
+ * @spec https://www.rfc-editor.org/rfc/rfc9562.html
+ *      RFC 9562 Universally Unique IDentifiers (UUIDs)
  * @since   1.5
  */
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
@@ -178,6 +178,46 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         md5Bytes[8]  &= 0x3f;  /* clear variant        */
         md5Bytes[8]  |= (byte) 0x80;  /* set to IETF variant  */
         return new UUID(md5Bytes);
+    }
+
+    /**
+     * Static factory to retrieve a type 7 (time based) {@code UUID} based on
+     * the current timestamp, enhanced with sub-millisecond precision.
+     *
+     * The {@code UUID} embeds the current Unix timestamp in milliseconds into
+     * the first 6 bytes, sets the version and variant bits as per RFC 9562,
+     * replaces the first 12 random bits with a value derived from the current
+     * system clock's sub-millisecond precision, and fills the
+     * remaining bytes with cryptographically strong random data.
+     *
+     * @return A {@code UUID} generated from the current system time
+     *
+     * @spec RFC 9562
+     */
+    public static UUID timestampUUID() {
+        long msTime = System.currentTimeMillis();
+        long nsTime = System.nanoTime();
+        SecureRandom ng = Holder.numberGenerator;
+        byte[] randomBytes = new byte[16];
+        ng.nextBytes(randomBytes);
+
+        // Set the first 6 bytes to the ms time
+        for (int i = 0; i < 6; i++) {
+            randomBytes[i] = (byte) (msTime >>> (40 - 8 * i));
+        }
+
+        // Scale sub-ms nanoseconds to a 12-bit value
+        int nsBits = (int) ((nsTime % 1_000_000) / 1_000_000.0 * 4096);
+
+        // Set version and increased precision time bits
+        randomBytes[6] = (byte) (0x70 | ((nsBits >>> 8) & 0x0F));
+        randomBytes[7] = (byte) (nsBits & 0xFF);
+
+        // Set variant to 2
+        randomBytes[8] &= 0x3F;
+        randomBytes[8] |= (byte) 0x80;
+
+        return new UUID(randomBytes);
     }
 
     private static final byte[] NIBBLES;
@@ -322,6 +362,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * <li>2    DCE security UUID
      * <li>3    Name-based UUID
      * <li>4    Randomly generated UUID
+     * <li>7    Unix timestamp-based UUID
      * </ul>
      *
      * @return  The version number of this {@code UUID}

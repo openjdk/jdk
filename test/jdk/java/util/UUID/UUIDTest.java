@@ -47,6 +47,8 @@ public class UUIDTest {
         randomUUIDTest();
         randomUUIDTest_Multi();
         nameUUIDFromBytesTest();
+        timestampUUIDTest();
+        timestampUUIDTest_Multi();
         stringTest();
         versionTest();
         variantTest();
@@ -146,6 +148,59 @@ public class UUIDTest {
         }
     }
 
+    private static void timestampUUIDTest() throws Exception {
+        List<UUID> collisions = new ArrayList<>();
+
+        Set<UUID> set = new HashSet<>();
+        for (int i = 0; i < COUNT; i++) {
+            UUID u = UUID.timestampUUID();
+            if (u.version() != 7) {
+                throw new Exception("Bad version: " + u);
+            }
+            if (u.variant() != 2) {
+                throw new Exception("Bad variant: " + u);
+            }
+            if (!set.add(u)) {
+                collisions.add(u);
+            }
+        }
+
+        if (!collisions.isEmpty()) {
+            // This is extremely unlikely to happen. If you see this failure,
+            // this highly likely points to the implementation bug, rather than
+            // the odd chance.
+            throw new Exception("UUID collisions detected: " + collisions);
+        }
+    }
+
+    private static void timestampUUIDTest_Multi() throws Exception {
+        List<UUID> uuids = IntStream.range(0, COUNT).parallel()
+                .mapToObj(i -> UUID.timestampUUID())
+                .toList();
+
+        List<UUID> collisions = new ArrayList<>();
+
+        Set<UUID> set = new HashSet<>();
+        for (UUID u : uuids) {
+            if (u.version() != 7) {
+                throw new Exception("Bad version: " + u);
+            }
+            if (u.variant() != 2) {
+                throw new Exception("Bad variant: " + u);
+            }
+            if (!set.add(u)) {
+                collisions.add(u);
+            }
+        }
+
+        if (!collisions.isEmpty()) {
+            // This is extremely unlikely to happen. If you see this failure,
+            // this highly likely points to the implementation bug, rather than
+            // the odd chance.
+            throw new Exception("UUID collisions detected: " + collisions);
+        }
+    }
+
     private static void stringTest() throws Exception {
         for (int i = 0; i < COUNT; i++) {
             UUID u1 = UUID.randomUUID();
@@ -185,6 +240,11 @@ public class UUIDTest {
         test = UUID.nameUUIDFromBytes(someBytes);
         if (test.version() != 3) {
             throw new Exception("nameUUIDFromBytes not type 3: " + test);
+        }
+
+        test = UUID.timestampUUID();
+        if (test.version() != 7) {
+            throw new Exception("timestampUUID not type 7: " + test);
         }
 
         test = UUID.fromString("9835451d-e2e0-1e41-8a5a-be785f17dcda");
@@ -239,6 +299,11 @@ public class UUIDTest {
         test = UUID.nameUUIDFromBytes(someBytes);
         if (test.variant() != 2) {
             throw new Exception("nameUUIDFromBytes not variant 2");
+        }
+
+        test = UUID.timestampUUID();
+        if (test.variant() != 2) {
+            throw new Exception("timestampUUID not variant 2");
         }
 
         test = new UUID(55L, 0x0000000000001000L);
