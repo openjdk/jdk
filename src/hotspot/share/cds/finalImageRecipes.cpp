@@ -173,7 +173,7 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
     Klass* k = _all_klasses->at(i);
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (ik->is_shared_unregistered_class()) {
+      if (ik->defined_by_other_loaders()) {
         SystemDictionaryShared::init_dumptime_info(ik);
         SystemDictionaryShared::add_unregistered_class(THREAD, ik);
         SystemDictionaryShared::copy_unregistered_class_size_and_crc32(ik);
@@ -208,7 +208,7 @@ void FinalImageRecipes::apply_recipes(TRAPS) {
       log_error(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
       log_error(aot)("Please check if your VM command-line is the same as in the training run");
-      MetaspaceShared::unrecoverable_writing_error("Unexpected exception, use -Xlog:cds,exceptions=trace for detail");
+      MetaspaceShared::unrecoverable_writing_error("Unexpected exception, use -Xlog:aot,exceptions=trace for detail");
     }
   }
 

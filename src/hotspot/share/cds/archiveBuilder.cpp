@@ -537,7 +537,7 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
              ref->msotype() == MetaspaceObj::MethodCountersType) {
     return set_to_null;
   } else if (ref->msotype() == MetaspaceObj::AdapterHandlerEntryType) {
-    if (AOTCodeCache::is_dumping_adapter()) {
+    if (CDSConfig::is_dumping_adapters()) {
       AdapterHandlerEntry* entry = (AdapterHandlerEntry*)ref->obj();
       return AdapterHandlerLibrary::is_abstract_method_adapter(entry) ? set_to_null : make_a_copy;
     } else {
@@ -834,10 +834,6 @@ void ArchiveBuilder::make_klasses_shareable() {
       bool aotlinked = AOTClassLinker::is_candidate(src_ik);
       inited = ik->has_aot_initialized_mirror();
       ADD_COUNT(num_instance_klasses);
-      if (CDSConfig::is_dumping_dynamic_archive()) {
-        // For static dump, class loader type are already set.
-        ik->assign_class_loader_type();
-      }
       if (ik->is_hidden()) {
         ADD_COUNT(num_hidden_klasses);
         hidden = " hidden";
@@ -861,17 +857,17 @@ void ArchiveBuilder::make_klasses_shareable() {
           // Legacy CDS support for lambda proxies
           CDS_JAVA_HEAP_ONLY(assert(HeapShared::is_lambda_proxy_klass(ik), "sanity");)
         }
-      } else if (ik->is_shared_boot_class()) {
+      } else if (ik->defined_by_boot_loader()) {
         type = "boot";
         ADD_COUNT(num_boot_klasses);
-      } else if (ik->is_shared_platform_class()) {
+      } else if (ik->defined_by_platform_loader()) {
         type = "plat";
         ADD_COUNT(num_platform_klasses);
-      } else if (ik->is_shared_app_class()) {
+      } else if (ik->defined_by_app_loader()) {
         type = "app";
         ADD_COUNT(num_app_klasses);
       } else {
-        assert(ik->is_shared_unregistered_class(), "must be");
+        assert(ik->defined_by_other_loaders(), "must be");
         type = "unreg";
         ADD_COUNT(num_unregistered_klasses);
       }
@@ -883,11 +879,11 @@ void ArchiveBuilder::make_klasses_shareable() {
       if (!ik->is_linked()) {
         num_unlinked_klasses ++;
         unlinked = " unlinked";
-        if (ik->is_shared_boot_class()) {
+        if (ik->defined_by_boot_loader()) {
           boot_unlinked ++;
-        } else if (ik->is_shared_platform_class()) {
+        } else if (ik->defined_by_platform_loader()) {
           platform_unlinked ++;
-        } else if (ik->is_shared_app_class()) {
+        } else if (ik->defined_by_app_loader()) {
           app_unlinked ++;
         } else {
           unreg_unlinked ++;
@@ -1155,12 +1151,12 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
   static void log_klass(Klass* k, address runtime_dest, const char* type_name, int bytes, Thread* current) {
     ResourceMark rm(current);
-    log_debug(cds, map)(_LOG_PREFIX " %s",
+    log_debug(aot, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes, k->external_name());
   }
   static void log_method(Method* m, address runtime_dest, const char* type_name, int bytes, Thread* current) {
     ResourceMark rm(current);
-    log_debug(cds, map)(_LOG_PREFIX " %s",
+    log_debug(aot, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes,  m->external_name());
   }
 
@@ -1203,12 +1199,12 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         {
           ResourceMark rm(current);
           Symbol* s = (Symbol*)src;
-          log_debug(cds, map)(_LOG_PREFIX " %s", p2i(runtime_dest), type_name, bytes,
+          log_debug(aot, map)(_LOG_PREFIX " %s", p2i(runtime_dest), type_name, bytes,
                               s->as_quoted_ascii());
         }
         break;
       default:
-        log_debug(cds, map)(_LOG_PREFIX, p2i(runtime_dest), type_name, bytes);
+        log_debug(aot, map)(_LOG_PREFIX, p2i(runtime_dest), type_name, bytes);
         break;
       }
 
@@ -1218,7 +1214,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
     log_as_hex(last_obj_base, last_obj_end, last_obj_base + buffer_to_runtime_delta());
     if (last_obj_end < region_end) {
-      log_debug(cds, map)(PTR_FORMAT ": @@ Misc data %zu bytes",
+      log_debug(aot, map)(PTR_FORMAT ": @@ Misc data %zu bytes",
                           p2i(last_obj_end + buffer_to_runtime_delta()),
                           size_t(region_end - last_obj_end));
       log_as_hex(last_obj_end, region_end, last_obj_end + buffer_to_runtime_delta());
@@ -1242,7 +1238,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     } else {
       top = requested_base + size;
     }
-    log_info(cds, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " %9zu bytes]",
+    log_info(aot, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " %9zu bytes]",
                        name, p2i(base), p2i(top), size);
   }
 
@@ -1253,7 +1249,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     address end = address(r.end());
     log_region("heap", start, end, ArchiveHeapWriter::buffered_addr_to_requested_addr(start));
 
-    LogStreamHandle(Info, cds, map) st;
+    LogStreamHandle(Info, aot, map) st;
 
     HeapRootSegments segments = heap_info->heap_root_segments();
     assert(segments.base_offset() == 0, "Sanity");
@@ -1362,7 +1358,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
   // Print the fields of instanceOops, or the elements of arrayOops
   static void log_oop_details(ArchiveHeapInfo* heap_info, oop source_oop, address buffered_addr) {
-    LogStreamHandle(Trace, cds, map, oops) st;
+    LogStreamHandle(Trace, aot, map, oops) st;
     if (st.is_enabled()) {
       Klass* source_klass = source_oop->klass();
       ArchiveBuilder* builder = ArchiveBuilder::current();
@@ -1430,7 +1426,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   }
 
   static void log_heap_roots() {
-    LogStreamHandle(Trace, cds, map, oops) st;
+    LogStreamHandle(Trace, aot, map, oops) st;
     if (st.is_enabled()) {
       for (int i = 0; i < HeapShared::pending_roots()->length(); i++) {
         st.print("roots[%4d]: ", i);
@@ -1491,7 +1487,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   static void log_as_hex(address base, address top, address requested_base, bool is_heap = false) {
     assert(top >= base, "must be");
 
-    LogStreamHandle(Trace, cds, map) lsh;
+    LogStreamHandle(Trace, aot, map) lsh;
     if (lsh.is_enabled()) {
       int unitsize = sizeof(address);
       if (is_heap && UseCompressedOops) {
@@ -1504,7 +1500,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   }
 
   static void log_header(FileMapInfo* mapinfo) {
-    LogStreamHandle(Info, cds, map) lsh;
+    LogStreamHandle(Info, aot, map) lsh;
     if (lsh.is_enabled()) {
       mapinfo->print(&lsh);
     }
@@ -1514,7 +1510,7 @@ public:
   static void log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
                   ArchiveHeapInfo* heap_info,
                   char* bitmap, size_t bitmap_size_in_bytes) {
-    log_info(cds, map)("%s CDS archive map for %s", CDSConfig::is_dumping_static_archive() ? "Static" : "Dynamic", mapinfo->full_path());
+    log_info(aot, map)("%s CDS archive map for %s", CDSConfig::is_dumping_static_archive() ? "Static" : "Dynamic", mapinfo->full_path());
 
     address header = address(mapinfo->header());
     address header_end = header + mapinfo->header()->header_size();
@@ -1538,7 +1534,7 @@ public:
     }
 #endif
 
-    log_info(cds, map)("[End of CDS archive map]");
+    log_info(aot, map)("[End of CDS archive map]");
   }
 }; // end ArchiveBuilder::CDSMapLogger
 
@@ -1580,7 +1576,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
     print_stats();
   }
 
-  if (log_is_enabled(Info, cds, map)) {
+  if (log_is_enabled(Info, aot, map)) {
     CDSMapLogger::log(this, mapinfo, heap_info,
                       bitmap, bitmap_size_in_bytes);
   }

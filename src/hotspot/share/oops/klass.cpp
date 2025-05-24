@@ -761,9 +761,9 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
 }
 
 void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
-  if (log_is_enabled(Trace, cds)) {
+  if (log_is_enabled(Trace, aot)) {
     ResourceMark rm;
-    log_trace(cds)("Iter(Klass): %p (%s)", this, external_name());
+    log_trace(aot)("Iter(Klass): %p (%s)", this, external_name());
   }
 
   it->push(&_name);
@@ -831,12 +831,12 @@ void Klass::remove_java_mirror() {
     if (orig_mirror == nullptr) {
       assert(CDSConfig::is_dumping_final_static_archive(), "sanity");
       if (is_instance_klass()) {
-        assert(InstanceKlass::cast(this)->is_shared_unregistered_class(), "sanity");
+        assert(InstanceKlass::cast(this)->defined_by_other_loaders(), "sanity");
       } else {
         precond(is_objArray_klass());
         Klass *k = ObjArrayKlass::cast(this)->bottom_klass();
         precond(k->is_instance_klass());
-        assert(InstanceKlass::cast(k)->is_shared_unregistered_class(), "sanity");
+        assert(InstanceKlass::cast(k)->defined_by_other_loaders(), "sanity");
       }
     } else {
       oop scratch_mirror = HeapShared::scratch_java_mirror(orig_mirror);
