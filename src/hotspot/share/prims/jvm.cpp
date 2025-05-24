@@ -2961,6 +2961,11 @@ JVM_ENTRY(jobject, JVM_GetStackTrace(JNIEnv *env, jobject jthread))
   return JNIHandles::make_local(THREAD, trace);
 JVM_END
 
+JVM_ENTRY(jobject, JVM_CreateThreadSnapshot(JNIEnv* env, jobject jthread))
+  oop snapshot = java_lang_Thread::get_thread_snapshot(jthread, THREAD);
+  return JNIHandles::make_local(THREAD, snapshot);
+JVM_END
+
 JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name))
   // We don't use a ThreadsListHandle here because the current thread
   // must be alive.
