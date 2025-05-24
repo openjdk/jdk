@@ -232,7 +232,7 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
         WCHAR stdNameInReg[MAX_ZONE_CHAR];
         TziValue tempTzi;
         WCHAR *stdNamePtr = tzi.StandardName;
-        int onlyMapID;
+     // int onlyMapID;
 
         timeType = GetTimeZoneInformation(&tzi);
         if (timeType == TIME_ZONE_ID_INVALID) {
@@ -304,7 +304,7 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
          * Compare to the "Std" value of each subkey and find the entry that
          * matches the current control panel setting.
          */
-        onlyMapID = 0;
+     // onlyMapID = 0;
         for (i = 0; i < nSubKeys; ++i) {
             DWORD size = sizeof(subKeyName);
             ret = RegEnumKeyEx(hKey, i, subKeyName, &size, NULL, NULL, NULL, NULL);
@@ -325,7 +325,7 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
                  * entry in the Time Zones registry.
                  */
                 RegCloseKey(hSubKey);
-                onlyMapID = 1;
+             // onlyMapID = 1;
                 ret = RegOpenKeyExW(hKey, stdNamePtr, 0, KEY_READ, (PHKEY)&hSubKey);
                 if (ret != ERROR_SUCCESS) {
                     goto err;
