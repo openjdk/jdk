@@ -297,7 +297,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
     /**
      * Appends the specified character sequence to this writer.
      *
-     * @implSpec The default implemenation behaves in exactly the same way as
+     * @implSpec The default implementation behaves in exactly the same way as
      *           the invocation
      *
      *           {@snippet lang=java :
