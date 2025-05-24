@@ -160,8 +160,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     return false;
   }
 
-  assert(heap->is_concurrent_weak_root_in_progress(), "Must be doing weak roots now");
-
   // Concurrent stack processing
   if (heap->is_evacuation_in_progress()) {
     entry_thread_roots();
@@ -202,9 +200,8 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       return false;
     }
 
-    entry_concurrent_update_refs_prepare(heap);
-
     // Perform update-refs phase.
+    entry_concurrent_update_refs_prepare(heap);
     if (ShenandoahVerify || ShenandoahPacing) {
       vmop_entry_init_update_refs();
     }
@@ -225,6 +222,8 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     // Update references freed up collection set, kick the cleanup to reclaim the space.
     entry_cleanup_complete();
   } else {
+    _abbreviated = true;
+
     if (!entry_final_roots()) {
       assert(_degen_point != _degenerated_unset, "Need to know where to start degenerated cycle");
       return false;
@@ -233,7 +232,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     if (VerifyAfterGC) {
       vmop_entry_verify_final_roots();
     }
-    _abbreviated = true;
   }
 
   // We defer generation resizing actions until after cset regions have been recycled.  We do this even following an
@@ -292,6 +290,12 @@ bool ShenandoahConcurrentGC::complete_abbreviated_cycle() {
     heap->concurrent_final_roots(&complete_thread_local_satb_buffers);
     heap->old_generation()->concurrent_transfer_pointers_from_satb();
   }
+
+  // After an abbreviated cycle, we reclaim immediate garbage.  Rebuild the freeset in order to establish
+  // reserves for the next GC cycle.
+  assert(_abbreviated, "Only rebuild free set for abbreviated and old-marking cycles");
+  heap->rebuild_free_set(true /*concurrent*/);
+
   return true;
 }
 
