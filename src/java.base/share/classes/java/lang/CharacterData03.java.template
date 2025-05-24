@@ -30,7 +30,7 @@ import jdk.internal.vm.annotation.Stable;
 /** The CharacterData class encapsulates the large tables found in
     Java.lang.Character. */
 
-class CharacterData03 extends CharacterData {
+final class CharacterData03 extends CharacterData {
     /* The character properties are currently encoded into 32 bits in the following manner:
         1 bit   mirrored property
         4 bits  directionality property

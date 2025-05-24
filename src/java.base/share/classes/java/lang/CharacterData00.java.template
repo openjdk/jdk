@@ -32,7 +32,7 @@ import jdk.internal.vm.annotation.Stable;
  * java.lang.Character
 */
 
-class CharacterData00 extends CharacterData {
+final class CharacterData00 extends CharacterData {
     /* The character properties are currently encoded into 32 bits in the following manner:
         1 bit   mirrored property
         4 bits  directionality property
