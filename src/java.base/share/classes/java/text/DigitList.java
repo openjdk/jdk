@@ -320,14 +320,22 @@ final class DigitList implements Cloneable {
      * fractional digits to be converted.  If false, total digits.
      */
     final void set(boolean isNegative, double source, int maximumDigits, boolean fixedPoint) {
+        assert !FloatingDecimal.isExceptional(source);
+        boolean hasBeenRoundedUp = false, valueExactAsDecimal = false;
+        byte[] chars;
+        int len;
+        if (source == 0) {
+            chars = new byte[] {'0'};
+            len = 1;
+        } else {
+            var fdConverter = new FloatingDecimal.BinaryToASCIIConverter(source);
+            hasBeenRoundedUp = fdConverter.digitsRoundedUp();
+            valueExactAsDecimal = fdConverter.decimalDigitsExact();
+            chars = getDataChars(20);
+            len = fdConverter.getChars(chars);
+        }
 
-        FloatingDecimal.BinaryToASCIIConverter fdConverter  = FloatingDecimal.getBinaryToASCIIConverter(source);
-        boolean hasBeenRoundedUp = fdConverter.digitsRoundedUp();
-        boolean valueExactAsDecimal = fdConverter.decimalDigitsExact();
-        assert !fdConverter.isExceptional();
-        String digitsString = fdConverter.toJavaFormatString();
-
-        set(isNegative, digitsString,
+        set(isNegative, chars, len,
             hasBeenRoundedUp, valueExactAsDecimal,
             maximumDigits, fixedPoint);
     }
@@ -339,15 +347,11 @@ final class DigitList implements Cloneable {
      * @param valueExactAsDecimal whether or not collected digits provide
      * an exact decimal representation of the value.
      */
-    @SuppressWarnings("deprecation")
-    private void set(boolean isNegative, String s,
+    private void set(boolean isNegative, byte[] source, int len,
                      boolean roundedUp, boolean valueExactAsDecimal,
                      int maximumDigits, boolean fixedPoint) {
 
         this.isNegative = isNegative;
-        int len = s.length();
-        byte[] source = getDataChars(len);
-        s.getBytes(0, len, source, 0);
 
         decimalAt = -1;
         count = 0;
@@ -670,11 +674,16 @@ final class DigitList implements Cloneable {
      * @param fixedPoint If true, then maximumDigits is the maximum
      * fractional digits to be converted.  If false, total digits.
      */
+    @SuppressWarnings("deprecation")
     final void set(boolean isNegative, BigDecimal source, int maximumDigits, boolean fixedPoint) {
         String s = source.toString();
         extendDigits(s.length());
 
-        set(isNegative, s,
+        int len = s.length();
+        byte[] chars = getDataChars(len);
+        s.getBytes(0, len, chars, 0);
+
+        set(isNegative, chars, len,
             false, true,
             maximumDigits, fixedPoint);
     }
