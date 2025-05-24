@@ -35,6 +35,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/trainingData.hpp"
 #include "utilities/resourceHash.hpp"
 
 // All the classes that should be included in the AOT cache (in at least the "allocated" state)
@@ -165,6 +166,8 @@ void AOTArtifactFinder::find_artifacts() {
   });
 
   end_scanning_for_oops();
+
+  TrainingData::cleanup_training_data();
 }
 
 void AOTArtifactFinder::start_scanning_for_oops() {
