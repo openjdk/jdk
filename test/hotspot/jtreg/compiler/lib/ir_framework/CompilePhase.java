@@ -97,7 +97,7 @@ public enum CompilePhase {
     ITER_GVN2("Iter GVN 2"),
     PHASEIDEALLOOP_ITERATIONS("PhaseIdealLoop iterations"),
     AFTER_LOOP_OPTS("After Loop Optimizations"),
-    AFTER_MERGE_STORES("After Merge Stores"),
+    AFTER_MERGE_MEMOPS("After Merge Memops"),
     BEFORE_MACRO_EXPANSION("Before Macro Expansion"),
     AFTER_MACRO_EXPANSION_STEP("After Macro Expansion Step"),
     AFTER_MACRO_EXPANSION("After Macro Expansion"),
