@@ -258,6 +258,9 @@ public interface SequencedMap<K, V> extends Map<K, V> {
         throw new UnsupportedOperationException();
     }
 
+    // XXX TODO need to update @implSpec for these three view classes to cover
+    // the behavior of add,get,remove/First,Last
+
     /**
      * Returns a {@code SequencedSet} view of this map's {@link #keySet keySet}.
      *
