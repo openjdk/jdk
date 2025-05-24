@@ -662,7 +662,7 @@ u2 VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& s
 void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, int old_bs_i,
        constantPoolHandle *merge_cp_p, int *merge_cp_length_p) {
 
-  u2 old_ref_i = scratch_cp->operand_bootstrap_method_ref_index_at(old_bs_i);
+  u2 old_ref_i = scratch_cp->bsm_attribute_entry(old_bs_i)->bootstrap_method_index();
   u2 new_ref_i = find_or_append_indirect_entry(scratch_cp, old_ref_i, merge_cp_p,
                                                merge_cp_length_p);
   if (new_ref_i != old_ref_i) {
@@ -676,14 +676,14 @@ void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, in
   // However, the operand_offset_at(0) was set in the extend_operands() call.
   int new_base = (new_bs_i == 0) ? (*merge_cp_p)->operand_offset_at(0)
                                  : (*merge_cp_p)->operand_next_offset_at(new_bs_i - 1);
-  u2 argc      = scratch_cp->operand_argument_count_at(old_bs_i);
+  u2 argc      = scratch_cp->bsm_attribute_entry(old_bs_i)->argument_count();
 
   ConstantPool::operand_offset_at_put(merge_ops, _operands_cur_length, new_base);
   merge_ops->at_put(new_base++, new_ref_i);
   merge_ops->at_put(new_base++, argc);
 
   for (int i = 0; i < argc; i++) {
-    u2 old_arg_ref_i = scratch_cp->operand_argument_index_at(old_bs_i, i);
+    u2 old_arg_ref_i = scratch_cp->bsm_attribute_entry(old_bs_i)->argument_index(i);
     u2 new_arg_ref_i = find_or_append_indirect_entry(scratch_cp, old_arg_ref_i, merge_cp_p,
                                                      merge_cp_length_p);
     merge_ops->at_put(new_base++, new_arg_ref_i);
