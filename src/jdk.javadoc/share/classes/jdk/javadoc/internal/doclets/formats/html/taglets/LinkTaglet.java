@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,6 +276,13 @@ public class LinkTaglet extends BaseTaglet {
                     // The method to actually link.
                     refMem = overriddenMethod;
                 }
+            }
+            if (!utils.isLinkable(containing, refMem)) {
+                String suggestion = utils.isProtected(refMem) ? "protected" : "private";
+                reportWarning.accept(
+                        "doclet.link.see.reference_not_visible",
+                        new Object[]{suggestion}
+                );
             }
 
             return htmlWriter.getDocLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, containing,
