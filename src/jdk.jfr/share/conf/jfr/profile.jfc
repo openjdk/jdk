@@ -206,6 +206,19 @@
       <setting name="period" control="method-sampling-native-interval">20 ms</setting>
     </event>
 
+    <event name="jdk.MethodTrace">
+      <setting name="enabled">true</setting>
+      <setting name="filter" control="method-trace"></setting>
+      <setting name="threshold">0 ms</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.MethodTiming">
+      <setting name="enabled">true</setting>
+      <setting name="filter" control="method-timing"></setting>
+      <setting name="period">endChunk</setting>
+    </event>
+
     <event name="jdk.SafepointBegin">
       <setting name="enabled">true</setting>
       <setting name="threshold">0 ms</setting>
@@ -1149,6 +1162,10 @@
       <text name="file-threshold" label="File I/O Threshold" contentType="timespan" minimum="0 s">10 ms</text>
 
       <text name="socket-threshold" label="Socket I/O Threshold" contentType="timespan" minimum="0 s">10 ms</text>
+
+      <text name="method-timing" label="Method Timing" contentType="text"></text>
+
+      <text name="method-trace" label="Method Trace" contentType="text"></text>
 
       <flag name="class-loading" label="Class Loading">false</flag>
     </control>
