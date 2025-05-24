@@ -27,17 +27,13 @@
  * @bug 8228604
  *
  * @requires vm.jvmti
- * @library /testlibrary/asm
  * @library /test/lib
  *
  * @run main/othervm/native -agentlib:MissedStackMapFrames MissedStackMapFrames
  */
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
 
 public class MissedStackMapFrames {
     static {
@@ -58,30 +54,15 @@ public class MissedStackMapFrames {
     private static native byte[] retransformBytes(int idx);
 
     private static int getStackMapFrameCount(byte[] classfileBuffer) {
-        ClassReader reader = new ClassReader(classfileBuffer);
-        final int[] frameCount = {0};
-        ClassVisitor cv = new ClassVisitor(Opcodes.ASM9) {
-            @Override
-            public MethodVisitor visitMethod(int access, String name,
-                                             String descriptor, String signature,
-                                             String[] exceptions) {
-                return new MethodVisitor(Opcodes.ASM9) {
-                    private int methodFrames = 0;
-                    @Override
-                    public void visitFrame(int type, int numLocal, Object[] local,
-                                           int numStack, Object[] stack) {
-                        methodFrames++;
-                    }
-                    @Override
-                    public void visitEnd() {
-                        log("  method " + name + " - " + methodFrames + " frames");
-                        frameCount[0] += methodFrames;
-                    }
-                };
+        var cm = ClassFile.of().parse(classfileBuffer);
+        int count = 0;
+        for (var mth : cm.methods()) {
+            var optSmt = mth.code().flatMap(code -> code.findAttribute(Attributes.stackMapTable()));
+            if (optSmt.isPresent()) {
+                count += optSmt.get().entries().size();
             }
-        };
-        reader.accept(cv, 0);
-        return frameCount[0];
+        }
+        return count;
     }
 
     private static int checkStackMapFrames(String mode, byte[] classfileBuffer) {
