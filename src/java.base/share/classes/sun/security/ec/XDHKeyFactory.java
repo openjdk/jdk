@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
 
 package sun.security.ec;
 
-import java.security.KeyFactorySpi;
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.PrivateKey;
-import java.security.InvalidKeyException;
-import java.security.ProviderException;
+import sun.security.pkcs.PKCS8Key;
+
+import java.security.*;
 import java.security.interfaces.XECKey;
 import java.security.interfaces.XECPrivateKey;
 import java.security.interfaces.XECPublicKey;
@@ -160,9 +157,19 @@ public class XDHKeyFactory extends KeyFactorySpi {
                 InvalidKeySpecException::new, publicKeySpec.getParams());
             checkLockedParams(InvalidKeySpecException::new, params);
             return new XDHPublicKeyImpl(params, publicKeySpec.getU());
+        } else if (keySpec instanceof PKCS8EncodedKeySpec p8) {
+            PKCS8Key p8key = new XDHPrivateKeyImpl(p8.getEncoded());
+            if (!p8key.hasPublicKey()) {
+                throw new InvalidKeySpecException("No public key found.");
+            }
+            XDHPublicKeyImpl result =
+                new XDHPublicKeyImpl(p8key.getPubKeyEncoded());
+            checkLockedParams(InvalidKeySpecException::new,
+                result.getParams());
+            return result;
         } else {
-            throw new InvalidKeySpecException(
-                "Only X509EncodedKeySpec and XECPublicKeySpec are supported");
+            throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                " not supported.");
         }
     }
 

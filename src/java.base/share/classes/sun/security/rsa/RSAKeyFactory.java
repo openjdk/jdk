@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
 
+import sun.security.pkcs.PKCS8Key;
 import sun.security.rsa.RSAUtil.KeyType;
 
 /**
@@ -332,9 +333,15 @@ public class RSAKeyFactory extends KeyFactorySpi {
             } catch (ProviderException e) {
                 throw new InvalidKeySpecException(e);
             }
+        } else if (keySpec instanceof PKCS8EncodedKeySpec p8) {
+            PKCS8Key p8key = new PKCS8Key(p8.getEncoded());
+            if (!p8key.hasPublicKey()) {
+                throw new InvalidKeySpecException("No public key found.");
+            }
+            return RSAPublicKeyImpl.newKey(type, "X.509",
+                p8key.getPubKeyEncoded());
         } else {
-            throw new InvalidKeySpecException("Only RSAPublicKeySpec "
-                + "and X509EncodedKeySpec supported for RSA public keys");
+            throw new InvalidKeySpecException(keySpec.getClass().getName() + " not supported.");
         }
     }
 

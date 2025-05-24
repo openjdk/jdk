@@ -1549,3 +1549,12 @@ jdk.tls.alpnCharset=ISO_8859_1
 # security property value defined here.
 #
 #jdk.security.krb5.name.case.sensitive=false
+
+#
+# Default algorithm for PEMEncoder Encrypted PKCS#8
+#
+# This property defines the default password-based encryption algorithm for
+# java.security.PEMEncoder when configured for encryption with the
+# withEncryption method.
+#
+jdk.epkcs8.defaultAlgorithm=PBEWithHmacSHA256AndAES_128
