@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,8 +175,8 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
             displayIDs = new int[]{mainDisplayID};
         }
         for (int id : displayIDs) {
-            devices.put(id, old.containsKey(id) ? old.remove(id)
-                                                : new CGraphicsDevice(id));
+            CGraphicsDevice d = old.remove(id);
+            devices.put(id, d != null ? d : new CGraphicsDevice(id));
         }
         // fetch the main display again, the old value might be outdated
         mainDisplayID = getMainDisplayID();
