@@ -623,6 +623,8 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
                   use->as_ArrayCopy()->is_copyofrange_validated()) &&
                  use->in(ArrayCopyNode::Dest) == res) {
         // ok to eliminate
+      } else if (use->is_ReachabilityFence()) {
+        // ok to eliminate
       } else if (use->is_SafePoint()) {
         SafePointNode* sfpt = use->as_SafePoint();
         if (sfpt->is_Call() && sfpt->as_Call()->has_non_debug_use(res)) {
@@ -977,6 +979,8 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
           }
         }
         _igvn._worklist.push(ac);
+      } else if (use->is_ReachabilityFence() && OptimizeReachabilityFences) {
+        _igvn.replace_input_of(use, 1, _igvn.makecon(TypePtr::NULL_PTR)); // reset; redundant fence
       } else {
         eliminate_gc_barrier(use);
       }
