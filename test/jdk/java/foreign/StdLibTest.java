@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng/othervm --enable-native-access=ALL-UNNAMED StdLibTest
+ * @run testng/othervm/timeout=600 --enable-native-access=ALL-UNNAMED StdLibTest
  */
 
 import java.lang.invoke.MethodHandle;
@@ -51,33 +51,33 @@ import static org.testng.Assert.*;
 
 public class StdLibTest extends NativeTestHelper {
 
-    final static Linker abi = Linker.nativeLinker();
+    static final Linker abi = Linker.nativeLinker();
 
-    private StdLibHelper stdLibHelper = new StdLibHelper();
+    private static final StdLibHelper STD_LIB_HELPER = new StdLibHelper();
 
     @Test(dataProvider = "stringPairs")
     void test_strcat(String s1, String s2) throws Throwable {
-        assertEquals(stdLibHelper.strcat(s1, s2), s1 + s2);
+        assertEquals(STD_LIB_HELPER.strcat(s1, s2), s1 + s2);
     }
 
     @Test(dataProvider = "stringPairs")
     void test_strcmp(String s1, String s2) throws Throwable {
-        assertEquals(Math.signum(stdLibHelper.strcmp(s1, s2)), Math.signum(s1.compareTo(s2)));
+        assertEquals(Math.signum(STD_LIB_HELPER.strcmp(s1, s2)), Math.signum(s1.compareTo(s2)));
     }
 
     @Test(dataProvider = "strings")
     void test_puts(String s) throws Throwable {
-        assertTrue(stdLibHelper.puts(s) >= 0);
+        assertTrue(STD_LIB_HELPER.puts(s) >= 0);
     }
 
     @Test(dataProvider = "strings")
     void test_strlen(String s) throws Throwable {
-        assertEquals(stdLibHelper.strlen(s), s.length());
+        assertEquals(STD_LIB_HELPER.strlen(s), s.length());
     }
 
     @Test(dataProvider = "instants")
     void test_time(Instant instant) throws Throwable {
-        StdLibHelper.Tm tm = stdLibHelper.gmtime(instant.getEpochSecond());
+        StdLibHelper.Tm tm = STD_LIB_HELPER.gmtime(instant.getEpochSecond());
         LocalDateTime localTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
         assertEquals(tm.sec(), localTime.getSecond());
         assertEquals(tm.min(), localTime.getMinute());
@@ -97,7 +97,7 @@ public class StdLibTest extends NativeTestHelper {
     void test_qsort(List<Integer> ints) throws Throwable {
         if (ints.size() > 0) {
             int[] input = ints.stream().mapToInt(i -> i).toArray();
-            int[] sorted = stdLibHelper.qsort(input);
+            int[] sorted = STD_LIB_HELPER.qsort(input);
             Arrays.sort(input);
             assertEquals(sorted, input);
         }
@@ -105,9 +105,9 @@ public class StdLibTest extends NativeTestHelper {
 
     @Test
     void test_rand() throws Throwable {
-        int val = stdLibHelper.rand();
+        int val = STD_LIB_HELPER.rand();
         for (int i = 0 ; i < 100 ; i++) {
-            int newVal = stdLibHelper.rand();
+            int newVal = STD_LIB_HELPER.rand();
             if (newVal != val) {
                 return; //ok
             }
@@ -131,7 +131,7 @@ public class StdLibTest extends NativeTestHelper {
         String expected = String.format(javaFormatString, args.stream()
                 .map(a -> a.javaValue).toArray());
 
-        int found = stdLibHelper.printf(nativeFormatString, args);
+        int found = STD_LIB_HELPER.printf(nativeFormatString, args);
         assertEquals(found, expected.length());
     }
 
@@ -140,41 +140,41 @@ public class StdLibTest extends NativeTestHelper {
         assertTrue(LINKER.defaultLookup().find("strlen\u0000foobar").isEmpty());
     }
 
-    static class StdLibHelper {
+    static final class StdLibHelper {
 
-        final static MethodHandle strcat = abi.downcallHandle(abi.defaultLookup().find("strcat").get(),
+        static final MethodHandle strcat = abi.downcallHandle(abi.defaultLookup().findOrThrow("strcat"),
                 FunctionDescriptor.of(C_POINTER, C_POINTER, C_POINTER));
 
-        final static MethodHandle strcmp = abi.downcallHandle(abi.defaultLookup().find("strcmp").get(),
+        static final MethodHandle strcmp = abi.downcallHandle(abi.defaultLookup().findOrThrow("strcmp"),
                 FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER));
 
-        final static MethodHandle puts = abi.downcallHandle(abi.defaultLookup().find("puts").get(),
+        static final MethodHandle puts = abi.downcallHandle(abi.defaultLookup().findOrThrow("puts"),
                 FunctionDescriptor.of(C_INT, C_POINTER));
 
-        final static MethodHandle strlen = abi.downcallHandle(abi.defaultLookup().find("strlen").get(),
+        static final MethodHandle strlen = abi.downcallHandle(abi.defaultLookup().findOrThrow("strlen"),
                 FunctionDescriptor.of(C_INT, C_POINTER));
 
-        final static MethodHandle gmtime = abi.downcallHandle(abi.defaultLookup().find("gmtime").get(),
+        static final MethodHandle gmtime = abi.downcallHandle(abi.defaultLookup().findOrThrow("gmtime"),
                 FunctionDescriptor.of(C_POINTER.withTargetLayout(Tm.LAYOUT), C_POINTER));
 
         // void qsort( void *ptr, size_t count, size_t size, int (*comp)(const void *, const void *) );
-        final static MethodHandle qsort = abi.downcallHandle(abi.defaultLookup().find("qsort").get(),
+        static final MethodHandle qsort = abi.downcallHandle(abi.defaultLookup().findOrThrow("qsort"),
                 FunctionDescriptor.ofVoid(C_POINTER, C_SIZE_T, C_SIZE_T, C_POINTER));
 
-        final static FunctionDescriptor qsortComparFunction = FunctionDescriptor.of(C_INT,
+        static final FunctionDescriptor qsortComparFunction = FunctionDescriptor.of(C_INT,
                 C_POINTER.withTargetLayout(C_INT), C_POINTER.withTargetLayout(C_INT));
 
-        final static MethodHandle qsortCompar;
+        static final MethodHandle qsortCompar;
 
-        final static MethodHandle rand = abi.downcallHandle(abi.defaultLookup().find("rand").get(),
+        static final MethodHandle rand = abi.downcallHandle(abi.defaultLookup().findOrThrow("rand"),
                 FunctionDescriptor.of(C_INT));
 
-        final static MethodHandle vprintf = abi.downcallHandle(abi.defaultLookup().find("vprintf").get(),
+        static final MethodHandle vprintf = abi.downcallHandle(abi.defaultLookup().findOrThrow("vprintf"),
                 FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER));
 
-        final static MemorySegment printfAddr = abi.defaultLookup().find("printf").get();
+        static final MemorySegment printfAddr = abi.defaultLookup().findOrThrow("printf");
 
-        final static FunctionDescriptor printfBase = FunctionDescriptor.of(C_INT, C_POINTER);
+        static final FunctionDescriptor printfBase = FunctionDescriptor.of(C_INT, C_POINTER);
 
         static {
             try {
@@ -225,7 +225,7 @@ public class StdLibTest extends NativeTestHelper {
             }
         }
 
-        static class Tm {
+        static final class Tm {
 
             //Tm pointer should never be freed directly, as it points to shared memory
             private final MemorySegment base;
