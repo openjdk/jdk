@@ -26,7 +26,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -145,7 +144,6 @@ int main(int argc, char *argv[]) {
     struct stat buf;
     /* argv[1] contains the fd number to read all the child info */
     int r, fdinr, fdinw, fdout;
-    sigset_t unblock_signals;
 
 #ifdef DEBUG
     jtregSimulateCrash(0, 4);
@@ -172,10 +170,6 @@ int main(int argc, char *argv[]) {
         fprintf(stdout, "Incorrect FD array data: %s\n", argv[2]);
         shutItDown();
     }
-
-    // Reset any mask signals from parent
-    sigemptyset(&unblock_signals);
-    sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
 
     // Close the writing end of the pipe we use for reading from the parent.
     // We have to do this before we start reading from the parent to avoid
