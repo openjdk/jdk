@@ -95,9 +95,6 @@ class Klass;
 // 0x8_0000_0000                      0x8_4800_0000                            0x9_0000_0000
 //
 
-// If compressed klass pointers then use narrowKlass.
-typedef juint  narrowKlass;
-
 // For UseCompressedClassPointers.
 class CompressedKlassPointers : public AllStatic {
   friend class VMStructs;
@@ -209,6 +206,9 @@ public:
   //  structures outside this range).
   static void initialize(address addr, size_t len);
 
+  static bool pre_initialized()   { return _narrow_klass_pointer_bits != -1; }
+  static bool fully_initialized() { return _base != (address)-1; }
+
   static void     print_mode(outputStream* st);
 
   // Can only be used after initialization
@@ -226,6 +226,10 @@ public:
   // so this will return 8 even if shift is 0.
   static int klass_alignment_in_bytes() { return nth_bit(MAX2(3, _shift)); }
   static int klass_alignment_in_words() { return klass_alignment_in_bytes() / BytesPerWord; }
+
+  // Returns the alignment a Klass* is guaranteed to have, for COH
+  static constexpr int klass_alignment_in_bytes_coh = nth_bit(max_shift_coh);
+  static constexpr int klass_alignment_in_words_coh = nth_bit(max_shift_coh) / BytesPerWord;
 
   // Returns the highest possible narrowKlass value given the current Klass range
   static narrowKlass highest_valid_narrow_klass_id() { return _highest_valid_narrow_klass_id; }

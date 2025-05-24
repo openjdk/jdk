@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_ARRAYOOP_HPP
 #define SHARE_OOPS_ARRAYOOP_HPP
 
+#include "oops/objLayout.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -125,6 +126,14 @@ private:
   static void set_length(HeapWord* mem, int length) {
     *length_addr_impl(mem) = length;
   }
+
+  // Variants of length_offset_in_bytes/length_addr/length that avoid dynamic switching for UseCompressedClassPointers/UseCompactObjectHeaders
+  template <HeaderMode mode> inline
+  constexpr static int length_offset_in_bytes_nobranches();
+  template <HeaderMode mode>
+  inline int* length_addr_nobranches() const;
+  template <HeaderMode mode>
+  inline int length_nobranches() const;
 
   // Return the maximum length of an array of BasicType.  The length can be passed
   // to typeArrayOop::object_size(scale, length, header_size) without causing an

@@ -217,20 +217,12 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   // Calculate Base and Shift:
 
   if (UseCompactObjectHeaders) {
-
-    // In compact object header mode, with 22-bit narrowKlass, we don't attempt for
-    // zero-based mode. Instead, we set the base to the start of the klass range and
-    // then try for the smallest shift possible that still covers the whole range.
-    // The reason is that we want to avoid, if possible, shifts larger than
-    // a cacheline size.
+    // We use a large shift in order to shrink the narrowKlass down to 22bit while still retaining
+    // the ability to address a large (4GB) memory range. This also yields narrowKlass values that
+    // are ID-like (dense, with almost every value in the 22-bit range addressing another Klass),
+    // which is perfect for use as lookup index into the Klass info lookup table (KLUT).
     _base = addr;
-
-    const int log_cacheline = exact_log2(DEFAULT_CACHE_LINE_SIZE);
-    int s = max_shift();
-    while (s > log_cacheline && ((size_t)nth_bit(narrow_klass_pointer_bits() + s - 1) > len)) {
-      s--;
-    }
-    _shift = s;
+    _shift = max_shift();
 
   } else {
 

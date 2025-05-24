@@ -29,7 +29,7 @@
 
 #include "memory/memRegion.hpp"
 #include "oops/arrayKlass.hpp"
-#include "oops/arrayOop.hpp"
+#include "oops/arrayOop.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -69,7 +69,7 @@ void ObjArrayKlass::oop_oop_iterate_elements_bounded(
 }
 
 template <typename T, typename OopClosureType>
-void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
+void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute) {
   assert(obj->is_array(), "obj must be array");
   objArrayOop a = objArrayOop(obj);
 
@@ -81,13 +81,7 @@ void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
 }
 
 template <typename T, typename OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  // No reverse implementation ATM.
-  oop_oop_iterate<T>(obj, closure);
-}
-
-template <typename T, typename OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
+void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute) {
   assert(obj->is_array(), "obj must be array");
   objArrayOop a  = objArrayOop(obj);
 
@@ -98,24 +92,29 @@ void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, Me
   oop_oop_iterate_elements_bounded<T>(a, closure, mr.start(), mr.end());
 }
 
+template <typename T, typename OopClosureType>
+void ObjArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute) {
+  // No reverse implementation ATM.
+  oop_oop_iterate<T>(obj, closure, klute);
+}
+
 // Like oop_oop_iterate but only iterates over a specified range and only used
 // for objArrayOops.
-template <typename T, class OopClosureType>
+template <HeaderMode mode, typename T, class OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end) {
-  T* low = (T*)a->base() + start;
-  T* high = (T*)a->base() + end;
+  assert(start <= end, "Sanity");
+  assert(start >= 0, "Sanity");
+  const int len = a->length_nobranches<mode>();
+  assert(a->length() == len, "Sanity (%d vs %d)", len, a->length());
+  T* const b = (T*)a->base_nobranches<mode, T>();
+  assert(((T*)a->base()) == b, "Sanity");
 
-  oop_oop_iterate_elements_bounded<T>(a, closure, low, high);
-}
+  if (len < end) {
+    end = len;
+  }
 
-// Placed here to resolve include cycle between objArrayKlass.inline.hpp and objArrayOop.inline.hpp
-template <typename OopClosureType>
-void objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end) {
-  if (UseCompressedOops) {
-    ((ObjArrayKlass*)klass())->oop_oop_iterate_range<narrowOop>(this, blk, start, end);
-  } else {
-    ((ObjArrayKlass*)klass())->oop_oop_iterate_range<oop>(this, blk, start, end);
+  for (int i = start; i < end; i++) {
+    Devirtualizer::do_oop(closure, b + i);
   }
 }
-
 #endif // SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP

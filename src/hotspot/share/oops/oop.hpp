@@ -29,6 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/objLayout.hpp"
@@ -83,7 +84,14 @@ class oopDesc {
   // objects during a GC) -- requires a valid klass pointer
   inline void init_mark();
 
+  template <HeaderMode mode>
+  inline klute_raw_t get_klute() const;
+  inline klute_raw_t get_klute() const;
+
+  template <HeaderMode mode>
   inline Klass* klass() const;
+  inline Klass* klass() const;
+
   inline Klass* klass_or_null() const;
   inline Klass* klass_or_null_acquire() const;
   // Get the klass without running any asserts.
@@ -113,7 +121,7 @@ class oopDesc {
 
   // Sometimes (for complicated concurrency-related reasons), it is useful
   // to be able to figure out the size of an object knowing its klass.
-  inline size_t size_given_klass(Klass* klass);
+  inline size_t size_given_klass(const Klass* klass);
 
   // type test operations (inlined in oop.inline.hpp)
   inline bool is_instance()    const;
@@ -300,9 +308,6 @@ class oopDesc {
 
   template <typename OopClosureType>
   inline void oop_iterate_backwards(OopClosureType* cl);
-
-  template <typename OopClosureType>
-  inline void oop_iterate_backwards(OopClosureType* cl, Klass* klass);
 
   inline static bool is_instanceof_or_null(oop obj, Klass* klass);
 

@@ -54,6 +54,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -788,13 +789,17 @@ void ArchiveBuilder::make_klasses_shareable() {
   int unreg_unlinked = 0;
 
   for (int i = 0; i < klasses()->length(); i++) {
+    Klass* k = get_buffered_addr(klasses()->at(i));
     // Some of the code in ConstantPool::remove_unshareable_info() requires the classes
     // to be in linked state, so it must be call here before the next loop, which returns
     // all classes to unlinked state.
-    Klass* k = get_buffered_addr(klasses()->at(i));
     if (k->is_instance_klass()) {
       InstanceKlass::cast(k)->constants()->remove_unshareable_info();
     }
+    // Every archived Klass must carry a valid klute. That is because every archived Klass
+    // would have been created via the usual dynamic class loading or - generation, which should
+    // have registered the Klass with klut.
+    DEBUG_ONLY(KlassLUTEntry(k->klute()).verify_against_klass(k));
   }
 
   for (int i = 0; i < klasses()->length(); i++) {
