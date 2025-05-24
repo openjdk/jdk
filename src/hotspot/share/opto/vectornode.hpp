@@ -110,6 +110,9 @@ class VectorNode : public TypeNode {
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
   static bool is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
   static bool is_populate_index_supported(BasicType bt);
+  // Supports to vectorize CMove which uses Bool unconditionally?
+  // Otherwise only same type size of CMove and Bool will be supported for this transformation.
+  static bool is_vectorize_cmove_bool_unconditionally_supported();
   // Return true if every bit in this vector is 1.
   static bool is_all_ones_vector(Node* n);
   // Return true if every bit in this vector is 0.
@@ -1736,6 +1739,8 @@ class VectorBlendNode : public VectorNode {
   Node* vec1() const { return in(1); }
   Node* vec2() const { return in(2); }
   Node* vec_mask() const { return in(3); }
+
+  static bool implemented(int opc);
 };
 
 class VectorRearrangeNode : public VectorNode {
