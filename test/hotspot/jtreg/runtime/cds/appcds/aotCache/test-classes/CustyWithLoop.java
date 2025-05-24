@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.meta.ProfilingInfo;
+// A class to be loaded by a custom class loader. It has a loop. AOT
+// optimizations may be applied to this loop.
+public class CustyWithLoop {
+    volatile static int cnt;
 
-/**
- * Extends {@link ProfilingInfo} with HotSpot specific profiling info.
- */
-public interface HotSpotProfilingInfo extends ProfilingInfo {
-
-    /**
-     * Returns {@code MethodData::_compiler_counters._nof_decompiles}.
-     */
-    int getDecompileCount();
-
-    /**
-     * Returns {@code MethodData::_compiler_counters._nof_overflow_recompiles}.
-     */
-    int getOverflowRecompileCount();
-
-    /**
-     * Returns {@code MethodData::_compiler_counters._nof_overflow_traps}.
-     */
-    int getOverflowTrapCount();
+    @Override
+    public boolean equals(Object other) {
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < 20) {
+            cnt += 2;
+            for (int i = 0; i < 1000; i++) {
+                int n = cnt - 2;
+                if (n < 2) {
+                    n = 2;
+                }
+                cnt += (i + cnt) % n + cnt % 2;
+            }
+        }
+        return (cnt % 17) == 8;
+    }
 }
