@@ -1796,7 +1796,7 @@ void JavaThread::print_stack_on(outputStream* st) {
 
       // Print out lock information
       if (JavaMonitorsInStackTrace) {
-        jvf->print_lock_info_on(st, count);
+        jvf->print_lock_info_on(st, false/*is_virtual*/, count);
       }
     } else {
       // Ignore non-Java frames
@@ -1838,7 +1838,7 @@ void JavaThread::print_vthread_stack_on(outputStream* st) {
 
       // Print out lock information
       if (JavaMonitorsInStackTrace) {
-        jvf->print_lock_info_on(st, count);
+        jvf->print_lock_info_on(st, true/*is_virtual*/, count);
       }
     } else {
       // Ignore non-Java frames
