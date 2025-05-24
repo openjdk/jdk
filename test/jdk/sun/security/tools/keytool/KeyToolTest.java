@@ -637,12 +637,12 @@ public class KeyToolTest {
         // when specify keypass, make sure keypass==storepass...
         testOK("changeit\n", "-keystore x.p12 -keypass changeit " +
                 "-storetype PKCS12 -genkeypair -keyalg DSA -alias p3 -dname CN=olala");
-        assertTrue(err.indexOf("Warning") == -1,
+        assertTrue(err.indexOf("Warning:  Different store and key passwords") == -1,
                 "PKCS12 silent when keypass == storepass");
         // otherwise, print a warning
         testOK("changeit\n", "-keystore x.p12 -keypass another" +
                 " -storetype PKCS12 -genkeypair -keyalg DSA -alias p2 -dname CN=olala");
-        assertTrue(err.indexOf("Warning") != -1,
+        assertTrue(err.indexOf("Warning:  Different store and key passwords") != -1,
                 "PKCS12 warning when keypass != storepass");
         // no -keypasswd for PKCS12
         testFail("", "-keystore x.p12 -storepass changeit -storetype PKCS12" +
