@@ -25,6 +25,8 @@
 
 package java.security;
 
+import jdk.internal.vm.annotation.Stable;
+
 import java.io.*;
 import java.security.cert.CertPath;
 import java.util.Objects;
@@ -59,7 +61,8 @@ public final class CodeSigner implements Serializable {
     /*
      * Hash code for this code signer.
      */
-    private transient int myhash = -1;
+    @Stable
+    private transient int myhash;
 
     /**
      * Constructs a {@code CodeSigner} object.
@@ -105,10 +108,11 @@ public final class CodeSigner implements Serializable {
      */
     @Override
     public int hashCode() {
-        if (myhash == -1) {
-            myhash = signerCertPath.hashCode() + Objects.hashCode(timestamp);
+        int h = myhash;
+        if (h == 0) {
+            myhash = h = signerCertPath.hashCode() + Objects.hashCode(timestamp);
         }
-        return myhash;
+        return h;
     }
 
     /**

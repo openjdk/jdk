@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.regex.Pattern;
+
+import jdk.internal.vm.annotation.Stable;
 import sun.security.util.*;
 
 /**
@@ -45,7 +47,9 @@ public final class PKCS12Attribute implements KeyStore.Entry.Attribute {
     private String name;
     private String value;
     private final byte[] encoded;
-    private int hashValue = -1;
+
+    @Stable
+    private int hashValue;
 
     /**
      * Constructs a PKCS12 attribute from its name and value.
@@ -207,7 +211,7 @@ public final class PKCS12Attribute implements KeyStore.Entry.Attribute {
     @Override
     public int hashCode() {
         int h = hashValue;
-        if (h == -1) {
+        if (h == 0) {
             hashValue = h = Arrays.hashCode(encoded);
         }
         return h;
