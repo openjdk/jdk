@@ -2362,10 +2362,6 @@ bool Matcher::match_rule_supported(int opcode) {
   }
 
   switch (opcode) {
-    case Op_SqrtD:
-      return VM_Version::has_fsqrt();
-    case Op_RoundDoubleMode:
-      return VM_Version::has_vsx();
     case Op_CountLeadingZerosI:
     case Op_CountLeadingZerosL:
       return UseCountLeadingZerosInstructionsPPC64;
@@ -2374,11 +2370,10 @@ bool Matcher::match_rule_supported(int opcode) {
       return (UseCountLeadingZerosInstructionsPPC64 || UseCountTrailingZerosInstructionsPPC64);
     case Op_PopCountI:
     case Op_PopCountL:
-      return (UsePopCountInstruction && VM_Version::has_popcntw());
+      return UsePopCountInstruction;
     case Op_ConvF2HF:
     case Op_ConvHF2F:
       return VM_Version::supports_float16();
-
     case Op_AddVB:
     case Op_AddVS:
     case Op_AddVI:
@@ -3185,85 +3180,42 @@ encode %{
   %}
 
   enc_class postalloc_expand_encode_oop(iRegNdst dst, iRegPdst src, flagsReg crx) %{
+    // use isel instruction with Power 7
+    cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
+    encodeP_subNode    *n_sub_base = new encodeP_subNode();
+    encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
+    cond_set_0_oopNode *n_cond_set = new cond_set_0_oopNode();
 
-    if (VM_Version::has_isel()) {
-      // use isel instruction with Power 7
-      cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
-      encodeP_subNode    *n_sub_base = new encodeP_subNode();
-      encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
-      cond_set_0_oopNode *n_cond_set = new cond_set_0_oopNode();
+    n_compare->add_req(n_region, n_src);
+    n_compare->_opnds[0] = op_crx;
+    n_compare->_opnds[1] = op_src;
+    n_compare->_opnds[2] = new immL16Oper(0);
 
-      n_compare->add_req(n_region, n_src);
-      n_compare->_opnds[0] = op_crx;
-      n_compare->_opnds[1] = op_src;
-      n_compare->_opnds[2] = new immL16Oper(0);
+    n_sub_base->add_req(n_region, n_src);
+    n_sub_base->_opnds[0] = op_dst;
+    n_sub_base->_opnds[1] = op_src;
+    n_sub_base->_bottom_type = _bottom_type;
 
-      n_sub_base->add_req(n_region, n_src);
-      n_sub_base->_opnds[0] = op_dst;
-      n_sub_base->_opnds[1] = op_src;
-      n_sub_base->_bottom_type = _bottom_type;
+    n_shift->add_req(n_region, n_sub_base);
+    n_shift->_opnds[0] = op_dst;
+    n_shift->_opnds[1] = op_dst;
+    n_shift->_bottom_type = _bottom_type;
 
-      n_shift->add_req(n_region, n_sub_base);
-      n_shift->_opnds[0] = op_dst;
-      n_shift->_opnds[1] = op_dst;
-      n_shift->_bottom_type = _bottom_type;
+    n_cond_set->add_req(n_region, n_compare, n_shift);
+    n_cond_set->_opnds[0] = op_dst;
+    n_cond_set->_opnds[1] = op_crx;
+    n_cond_set->_opnds[2] = op_dst;
+    n_cond_set->_bottom_type = _bottom_type;
 
-      n_cond_set->add_req(n_region, n_compare, n_shift);
-      n_cond_set->_opnds[0] = op_dst;
-      n_cond_set->_opnds[1] = op_crx;
-      n_cond_set->_opnds[2] = op_dst;
-      n_cond_set->_bottom_type = _bottom_type;
+    ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
+    ra_->set_pair(n_sub_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
 
-      ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-      ra_->set_pair(n_sub_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-      nodes->push(n_compare);
-      nodes->push(n_sub_base);
-      nodes->push(n_shift);
-      nodes->push(n_cond_set);
-
-    } else {
-      // before Power 7
-      moveRegNode        *n_move     = new moveRegNode();
-      cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
-      encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
-      cond_sub_baseNode  *n_sub_base = new cond_sub_baseNode();
-
-      n_move->add_req(n_region, n_src);
-      n_move->_opnds[0] = op_dst;
-      n_move->_opnds[1] = op_src;
-      ra_->set_oop(n_move, true); // Until here, 'n_move' still produces an oop.
-
-      n_compare->add_req(n_region, n_src);
-      n_compare->add_prec(n_move);
-
-      n_compare->_opnds[0] = op_crx;
-      n_compare->_opnds[1] = op_src;
-      n_compare->_opnds[2] = new immL16Oper(0);
-
-      n_sub_base->add_req(n_region, n_compare, n_src);
-      n_sub_base->_opnds[0] = op_dst;
-      n_sub_base->_opnds[1] = op_crx;
-      n_sub_base->_opnds[2] = op_src;
-      n_sub_base->_bottom_type = _bottom_type;
-
-      n_shift->add_req(n_region, n_sub_base);
-      n_shift->_opnds[0] = op_dst;
-      n_shift->_opnds[1] = op_dst;
-      n_shift->_bottom_type = _bottom_type;
-
-      ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-      ra_->set_pair(n_sub_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_move->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-      nodes->push(n_move);
-      nodes->push(n_compare);
-      nodes->push(n_sub_base);
-      nodes->push(n_shift);
-    }
+    nodes->push(n_compare);
+    nodes->push(n_sub_base);
+    nodes->push(n_shift);
+    nodes->push(n_cond_set);
 
     assert(!(ra_->is_oop(this)), "sanity"); // This is not supposed to be GC'ed.
   %}
@@ -3303,56 +3255,33 @@ encode %{
     n_shift->_opnds[1] = op_src;
     n_shift->_bottom_type = _bottom_type;
 
-    if (VM_Version::has_isel()) {
-      // use isel instruction with Power 7
+    // use isel instruction with Power 7
+    decodeN_addNode *n_add_base = new decodeN_addNode();
+    n_add_base->add_req(n_region, n_shift);
+    n_add_base->_opnds[0] = op_dst;
+    n_add_base->_opnds[1] = op_dst;
+    n_add_base->_bottom_type = _bottom_type;
 
-      decodeN_addNode *n_add_base = new decodeN_addNode();
-      n_add_base->add_req(n_region, n_shift);
-      n_add_base->_opnds[0] = op_dst;
-      n_add_base->_opnds[1] = op_dst;
-      n_add_base->_bottom_type = _bottom_type;
+    cond_set_0_ptrNode *n_cond_set = new cond_set_0_ptrNode();
+    n_cond_set->add_req(n_region, n_compare, n_add_base);
+    n_cond_set->_opnds[0] = op_dst;
+    n_cond_set->_opnds[1] = op_crx;
+    n_cond_set->_opnds[2] = op_dst;
+    n_cond_set->_bottom_type = _bottom_type;
 
-      cond_set_0_ptrNode *n_cond_set = new cond_set_0_ptrNode();
-      n_cond_set->add_req(n_region, n_compare, n_add_base);
-      n_cond_set->_opnds[0] = op_dst;
-      n_cond_set->_opnds[1] = op_crx;
-      n_cond_set->_opnds[2] = op_dst;
-      n_cond_set->_bottom_type = _bottom_type;
+    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
+    ra_->set_oop(n_cond_set, true);
 
-      assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-      ra_->set_oop(n_cond_set, true);
+    ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
+    ra_->set_pair(n_add_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
 
-      ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-      ra_->set_pair(n_add_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    nodes->push(n_compare);
+    nodes->push(n_shift);
+    nodes->push(n_add_base);
+    nodes->push(n_cond_set);
 
-      nodes->push(n_compare);
-      nodes->push(n_shift);
-      nodes->push(n_add_base);
-      nodes->push(n_cond_set);
-
-    } else {
-      // before Power 7
-      cond_add_baseNode *n_add_base = new cond_add_baseNode();
-
-      n_add_base->add_req(n_region, n_compare, n_shift);
-      n_add_base->_opnds[0] = op_dst;
-      n_add_base->_opnds[1] = op_crx;
-      n_add_base->_opnds[2] = op_dst;
-      n_add_base->_bottom_type = _bottom_type;
-
-      assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-      ra_->set_oop(n_add_base, true);
-
-      ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-      ra_->set_pair(n_add_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-      nodes->push(n_compare);
-      nodes->push(n_shift);
-      nodes->push(n_add_base);
-    }
   %}
 
   enc_class postalloc_expand_decode_oop_not_null(iRegPdst dst, iRegNsrc src) %{
@@ -3377,25 +3306,6 @@ encode %{
     nodes->push(n2);
   %}
 
-  enc_class enc_cmove_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src, cmpOp cmp) %{
-    int cc        = $cmp$$cmpcode;
-    int flags_reg = $crx$$reg;
-    Label done;
-    assert((Assembler::bcondCRbiIs1 & ~Assembler::bcondCRbiIs0) == 8, "check encoding");
-    // Branch if not (cmp crx).
-    __ bc(cc_to_inverse_boint(cc), cc_to_biint(cc, flags_reg), done);
-    __ mr($dst$$Register, $src$$Register);
-    __ bind(done);
-  %}
-
-  enc_class enc_cmove_imm(iRegIdst dst, flagsRegSrc crx, immI16 src, cmpOp cmp) %{
-    Label done;
-    assert((Assembler::bcondCRbiIs1 & ~Assembler::bcondCRbiIs0) == 8, "check encoding");
-    // Branch if not (cmp crx).
-    __ bc(cc_to_inverse_boint($cmp$$cmpcode), cc_to_biint($cmp$$cmpcode, $crx$$reg), done);
-    __ li($dst$$Register, $src$$constant);
-    __ bind(done);
-  %}
 
   // This enc_class is needed so that scheduler gets proper
   // input mapping for latency computation.
@@ -7096,7 +7006,7 @@ instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
   effect(TEMP_DEF dst, TEMP crx);
   predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
              n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
-            CompressedOops::base_disjoint() && VM_Version::has_isel());
+            CompressedOops::base_disjoint());
   ins_cost(3 * DEFAULT_COST);
 
   format %{ "DecodeN  $dst, $src \t// decode with disjoint base using isel" %}
@@ -7476,7 +7386,6 @@ instruct membar_CPUOrder() %{
 // Cmove using isel.
 instruct cmovI_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) %{
   match(Set dst (CMoveI (Binary cmp crx) (Binary dst src)));
-  predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST);
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
@@ -7488,40 +7397,12 @@ instruct cmovI_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) 
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
   %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovI_reg(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) %{
-  match(Set dst (CMoveI (Binary cmp crx) (Binary dst src)));
-  predicate(!VM_Version::has_isel());
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler
-  size(8);
-  ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovI_imm(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, immI16 src) %{
-  match(Set dst (CMoveI (Binary cmp crx) (Binary dst src)));
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler
-  size(8);
-  ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
 
 // Cmove using isel.
 instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) %{
   match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
-  predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST);
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
@@ -7533,40 +7414,12 @@ instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) 
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
   %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovL_reg(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) %{
-  match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
-  predicate(!VM_Version::has_isel());
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovL_imm(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, immL16 src) %{
-  match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
 
 // Cmove using isel.
 instruct cmovN_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) %{
   match(Set dst (CMoveN (Binary cmp crx) (Binary dst src)));
-  predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST);
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
@@ -7578,41 +7431,12 @@ instruct cmovN_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) 
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
   %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Conditional move for RegN. Only cmov(reg, reg).
-instruct cmovN_reg(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) %{
-  match(Set dst (CMoveN (Binary cmp crx) (Binary dst src)));
-  predicate(!VM_Version::has_isel());
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovN_imm(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, immN_0 src) %{
-  match(Set dst (CMoveN (Binary cmp crx) (Binary dst src)));
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
 
 // Cmove using isel.
 instruct cmovP_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegPsrc src) %{
   match(Set dst (CMoveP (Binary cmp crx) (Binary dst src)));
-  predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST);
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
@@ -7624,33 +7448,6 @@ instruct cmovP_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegPsrc src) 
     __ isel($dst$$Register, $crx$$CondRegister,
             (Assembler::Condition)(cc & 3), /*invert*/((~cc) & 8), $src$$Register);
   %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovP_reg(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegP_N2P src) %{
-  match(Set dst (CMoveP (Binary cmp crx) (Binary dst src)));
-  predicate(!VM_Version::has_isel());
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovP_imm(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, immP_0 src) %{
-  match(Set dst (CMoveP (Binary cmp crx) (Binary dst src)));
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode( enc_cmove_imm(dst, crx, src, cmp) );
   ins_pipe(pipe_class_default);
 %}
 
@@ -7704,31 +7501,11 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
 
 instruct compareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapB mem_ptr (Binary src1 src2)));
-  predicate(VM_Version::has_lqarx());
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                $res$$Register, nullptr, true);
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      __ sync();
-    }
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct compareAndSwapB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, iRegIdst tmp1, iRegIdst tmp2, flagsRegCR0 cr0) %{
-  match(Set res (CompareAndSwapB mem_ptr (Binary src1 src2)));
-  predicate(!VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
-  format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
-  ins_encode %{
-    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
+    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 $res$$Register, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7742,31 +7519,11 @@ instruct compareAndSwapB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIs
 
 instruct compareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapS mem_ptr (Binary src1 src2)));
-  predicate(VM_Version::has_lqarx());
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                $res$$Register, nullptr, true);
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      __ sync();
-    }
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct compareAndSwapS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, iRegIdst tmp1, iRegIdst tmp2, flagsRegCR0 cr0) %{
-  match(Set res (CompareAndSwapS mem_ptr (Binary src1 src2)));
-  predicate(!VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
-  format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
-  ins_encode %{
-    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
+    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 $res$$Register, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7856,26 +7613,12 @@ instruct compareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iRegPsrc
 
 instruct weakCompareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapB mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst && VM_Version::has_lqarx());
+  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
-                MacroAssembler::MemBarNone,
-                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct weakCompareAndSwapB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, iRegIdst tmp1, iRegIdst tmp2, flagsRegCR0 cr0) %{
-  match(Set res (WeakCompareAndSwapB mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst && !VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
-  format %{ "weak CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
-  ins_encode %{
-    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
+    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7884,26 +7627,12 @@ instruct weakCompareAndSwapB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iR
 
 instruct weakCompareAndSwapB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapB mem_ptr (Binary src1 src2)));
-  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) && VM_Version::has_lqarx());
+  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) );
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
-                support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
-                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct weakCompareAndSwapB4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, iRegIdst tmp1, iRegIdst tmp2, flagsRegCR0 cr0) %{
-  match(Set res (WeakCompareAndSwapB mem_ptr (Binary src1 src2)));
-  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) && !VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
-  format %{ "weak CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as bool" %}
-  ins_encode %{
-    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
+    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7912,26 +7641,12 @@ instruct weakCompareAndSwapB4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr
 
 instruct weakCompareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapS mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst && VM_Version::has_lqarx());
+  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
-                MacroAssembler::MemBarNone,
-                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct weakCompareAndSwapS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, iRegIdst tmp1, iRegIdst tmp2, flagsRegCR0 cr0) %{
-  match(Set res (WeakCompareAndSwapS mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst && !VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
-  format %{ "weak CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
-  ins_encode %{
-    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
+    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7940,26 +7655,12 @@ instruct weakCompareAndSwapS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iR
 
 instruct weakCompareAndSwapS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapS mem_ptr (Binary src1 src2)));
-  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) && VM_Version::has_lqarx());
+  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
-                support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
-                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct weakCompareAndSwapS4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, iRegIdst tmp1, iRegIdst tmp2, flagsRegCR0 cr0) %{
-  match(Set res (WeakCompareAndSwapS mem_ptr (Binary src1 src2)));
-  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) && !VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
-  format %{ "weak CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as bool" %}
-  ins_encode %{
-    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
+    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -8091,26 +7792,12 @@ instruct weakCompareAndSwapP_acq_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, 
 
 instruct compareAndExchangeB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeB mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst && VM_Version::has_lqarx());
+  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, nullptr, true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct compareAndExchangeB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, iRegIdst tmp1, flagsRegCR0 cr0) %{
-  match(Set res (CompareAndExchangeB mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst && !VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP cr0);
-  format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as int" %}
-  ins_encode %{
-    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
+    __ cmpxchgb(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
   %}
@@ -8119,12 +7806,12 @@ instruct compareAndExchangeB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iR
 
 instruct compareAndExchangeB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeB mem_ptr (Binary src1 src2)));
-  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) && VM_Version::has_lqarx());
+  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
+    __ cmpxchgb(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -8137,48 +7824,15 @@ instruct compareAndExchangeB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangeB4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, iRegIdst tmp1, flagsRegCR0 cr0) %{
-  match(Set res (CompareAndExchangeB mem_ptr (Binary src1 src2)));
-  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) && !VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP cr0);
-  format %{ "CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as int" %}
-  ins_encode %{
-    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, nullptr, true);
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      // isync would be sufficient in case of CompareAndExchangeAcquire, but we currently don't optimize for that.
-      __ sync();
-    }
-  %}
-  ins_pipe(pipe_class_default);
-%}
 
 instruct compareAndExchangeS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeS mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst && VM_Version::has_lqarx());
+  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, nullptr, true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct compareAndExchangeS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, iRegIdst tmp1, flagsRegCR0 cr0) %{
-  match(Set res (CompareAndExchangeS mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst && !VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP cr0);
-  format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as int" %}
-  ins_encode %{
-    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
+    __ cmpxchgh(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
   %}
@@ -8187,32 +7841,12 @@ instruct compareAndExchangeS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iR
 
 instruct compareAndExchangeS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeS mem_ptr (Binary src1 src2)));
-  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) && VM_Version::has_lqarx());
+  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst));
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
     // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, nullptr, true);
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      // isync would be sufficient in case of CompareAndExchangeAcquire, but we currently don't optimize for that.
-      __ sync();
-    }
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct compareAndExchangeS4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, iRegIdst tmp1, flagsRegCR0 cr0) %{
-  match(Set res (CompareAndExchangeS mem_ptr (Binary src1 src2)));
-  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) && !VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP cr0);
-  format %{ "CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as int" %}
-  ins_encode %{
-    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
+    __ cmpxchgh(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -8367,29 +8001,11 @@ instruct compareAndExchangeP_acq_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, 
 
 instruct getAndAddB(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndAddB mem_ptr src));
-  predicate(VM_Version::has_lqarx());
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndAddB $res, $mem_ptr, $src" %}
   ins_encode %{
     __ getandaddb($res$$Register, $src$$Register, $mem_ptr$$Register,
                   R0, noreg, noreg, MacroAssembler::cmpxchgx_hint_atomic_update());
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      __ sync();
-    }
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct getAndAddB4(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src, iRegIsrc tmp1, iRegIsrc tmp2, flagsRegCR0 cr0) %{
-  match(Set res (GetAndAddB mem_ptr src));
-  predicate(!VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0);
-  format %{ "GetAndAddB $res, $mem_ptr, $src" %}
-  ins_encode %{
-    __ getandaddb($res$$Register, $src$$Register, $mem_ptr$$Register,
-                  R0, $tmp1$$Register, $tmp2$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -8401,7 +8017,6 @@ instruct getAndAddB4(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src, iRegIsrc tmp
 
 instruct getAndAddS(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndAddS mem_ptr src));
-  predicate(VM_Version::has_lqarx());
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndAddS $res, $mem_ptr, $src" %}
   ins_encode %{
@@ -8416,22 +8031,6 @@ instruct getAndAddS(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr
   ins_pipe(pipe_class_default);
 %}
 
-instruct getAndAddS4(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src, iRegIsrc tmp1, iRegIsrc tmp2, flagsRegCR0 cr0) %{
-  match(Set res (GetAndAddS mem_ptr src));
-  predicate(!VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0);
-  format %{ "GetAndAddS $res, $mem_ptr, $src" %}
-  ins_encode %{
-    __ getandaddh($res$$Register, $src$$Register, $mem_ptr$$Register,
-                  R0, $tmp1$$Register, $tmp2$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      __ sync();
-    }
-  %}
-  ins_pipe(pipe_class_default);
-%}
 
 instruct getAndAddI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndAddI mem_ptr src));
@@ -8467,29 +8066,11 @@ instruct getAndAddL(iRegLdst res, iRegPdst mem_ptr, iRegLsrc src, flagsRegCR0 cr
 
 instruct getAndSetB(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetB mem_ptr src));
-  predicate(VM_Version::has_lqarx());
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndSetB $res, $mem_ptr, $src" %}
   ins_encode %{
     __ getandsetb($res$$Register, $src$$Register, $mem_ptr$$Register,
                   noreg, noreg, noreg, MacroAssembler::cmpxchgx_hint_atomic_update());
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      __ sync();
-    }
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct getAndSetB4(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src, iRegIsrc tmp1, iRegIsrc tmp2, flagsRegCR0 cr0) %{
-  match(Set res (GetAndSetB mem_ptr src));
-  predicate(!VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0);
-  format %{ "GetAndSetB $res, $mem_ptr, $src" %}
-  ins_encode %{
-    __ getandsetb($res$$Register, $src$$Register, $mem_ptr$$Register,
-                  R0, $tmp1$$Register, $tmp2$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       __ isync();
     } else {
@@ -8501,7 +8082,6 @@ instruct getAndSetB4(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src, iRegIsrc tmp
 
 instruct getAndSetS(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetS mem_ptr src));
-  predicate(VM_Version::has_lqarx());
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndSetS $res, $mem_ptr, $src" %}
   ins_encode %{
@@ -8516,22 +8096,6 @@ instruct getAndSetS(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr
   ins_pipe(pipe_class_default);
 %}
 
-instruct getAndSetS4(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src, iRegIsrc tmp1, iRegIsrc tmp2, flagsRegCR0 cr0) %{
-  match(Set res (GetAndSetS mem_ptr src));
-  predicate(!VM_Version::has_lqarx());
-  effect(TEMP_DEF res, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0);
-  format %{ "GetAndSetS $res, $mem_ptr, $src" %}
-  ins_encode %{
-    __ getandseth($res$$Register, $src$$Register, $mem_ptr$$Register,
-                  R0, $tmp1$$Register, $tmp2$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      __ sync();
-    }
-  %}
-  ins_pipe(pipe_class_default);
-%}
 
 instruct getAndSetI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetI mem_ptr src));
@@ -9820,7 +9384,6 @@ instruct negD_absD_reg(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// VM_Version::has_fsqrt() decides if this node will be used.
 // Sqrt float double precision
 instruct sqrtD_reg(regD dst, regD src) %{
   match(Set dst (SqrtD src));
@@ -9835,7 +9398,6 @@ instruct sqrtD_reg(regD dst, regD src) %{
 // Single-precision sqrt.
 instruct sqrtF_reg(regF dst, regF src) %{
   match(Set dst (SqrtF src));
-  predicate(VM_Version::has_fsqrts());
   ins_cost(DEFAULT_COST);
 
   format %{ "FSQRTS  $dst, $src" %}
@@ -10337,7 +9899,6 @@ instruct andcL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 
 instruct moveL2D_reg(regD dst, iRegLsrc src) %{
   match(Set dst (MoveL2D src));
-  predicate(VM_Version::has_mtfprd());
 
   format %{ "MTFPRD  $dst, $src" %}
   size(4);
@@ -10457,18 +10018,6 @@ instruct moveI2F_reg_stack(stackSlotF dst, iRegIsrc src) %{
   ins_pipe(pipe_class_memory);
 %}
 
-//----------Moves between long and float
-
-instruct moveF2L_reg_stack(stackSlotL dst, regF src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE src);
-  predicate(false);
-
-  format %{ "storeD  $src, $dst \t// STACK" %}
-  size(4);
-  ins_encode( enc_stfd(src, dst) );
-  ins_pipe(pipe_class_default);
-%}
 
 //----------Moves between long and double
 
@@ -10494,27 +10043,6 @@ instruct moveD2L_reg_stack(stackSlotL dst, regD src) %{
   ins_pipe(pipe_class_memory);
 %}
 
-// Move long value from long stack-location to double register.
-instruct moveL2D_stack_reg(regD dst, stackSlotL src) %{
-  match(Set dst (MoveL2D src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "LFD     $dst, $src \t// MoveL2D" %}
-  size(4);
-  ins_encode( enc_lfd(dst, src) );
-  ins_pipe(pipe_class_memory);
-%}
-
-// Move long value from long register to double stack-location.
-instruct moveL2D_reg_stack(stackSlotD dst, iRegLsrc src) %{
-  match(Set dst (MoveL2D src));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STD     $src, $dst \t// MoveL2D" %}
-  size(4);
-  ins_encode( enc_std(src, dst) );
-  ins_pipe(pipe_class_memory);
-%}
 
 //----------Register Move Instructions-----------------------------------------
 
@@ -10914,59 +10442,6 @@ instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bso_stackSlotL_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, stackSlotL mem) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE mem);
-  predicate(false);
-
-  format %{ "CmovI   $dst, $crx, $mem \t// postalloc expanded" %}
-  postalloc_expand %{
-    //
-    // replaces
-    //
-    //   region  dst  crx  mem
-    //    \       |    |   /
-    //     dst=cmovI_bso_stackSlotL_conLvalue0
-    //
-    // with
-    //
-    //   region  dst
-    //    \       /
-    //     dst=loadConI16(0)
-    //      |
-    //      ^  region  dst  crx  mem
-    //      |   \       |    |    /
-    //      dst=cmovI_bso_stackSlotL
-    //
-
-    // Create new nodes.
-    MachNode *m1 = new loadConI16Node();
-    MachNode *m2 = new cmovI_bso_stackSlotLNode();
-
-    // inputs for new nodes
-    m1->add_req(n_region);
-    m2->add_req(n_region, n_crx, n_mem);
-
-    // precedences for new nodes
-    m2->add_prec(m1);
-
-    // operands for new nodes
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new immI16Oper(0);
-
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_crx;
-    m2->_opnds[2] = op_mem;
-
-    // registers for new nodes
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-
-    // Insert new nodes.
-    nodes->push(m1);
-    nodes->push(m2);
-  %}
-%}
 
 instruct cmovI_bso_reg_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
@@ -11022,27 +10497,10 @@ instruct cmovI_bso_reg_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, regD src) %{
   %}
 %}
 
-// Double to Int conversion, NaN is mapped to 0.
-instruct convD2I_reg_ExEx(iRegIdst dst, regD src) %{
-  match(Set dst (ConvD2I src));
-  predicate(!VM_Version::has_mtfprd());
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    regD tmpD;
-    stackSlotL tmpS;
-    flagsReg crx;
-    cmpDUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
-    convD2IRaw_regD(tmpD, src);                         // Convert float to int (speculated).
-    moveD2L_reg_stack(tmpS, tmpD);                      // Store float to stack (speculated).
-    cmovI_bso_stackSlotL_conLvalue0_Ex(dst, crx, tmpS); // Cmove based on NaN check.
-  %}
-%}
 
 // Double to Int conversion, NaN is mapped to 0. Special version for Power8.
 instruct convD2I_reg_mffprd_ExEx(iRegIdst dst, regD src) %{
   match(Set dst (ConvD2I src));
-  predicate(VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -11067,27 +10525,10 @@ instruct convF2IRaw_regF(regF dst, regF src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Float to Int conversion, NaN is mapped to 0.
-instruct convF2I_regF_ExEx(iRegIdst dst, regF src) %{
-  match(Set dst (ConvF2I src));
-  predicate(!VM_Version::has_mtfprd());
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    regF tmpF;
-    stackSlotL tmpS;
-    flagsReg crx;
-    cmpFUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
-    convF2IRaw_regF(tmpF, src);                         // Convert float to int (speculated).
-    moveF2L_reg_stack(tmpS, tmpF);                      // Store float to stack (speculated).
-    cmovI_bso_stackSlotL_conLvalue0_Ex(dst, crx, tmpS); // Cmove based on NaN check.
-  %}
-%}
 
 // Float to Int conversion, NaN is mapped to 0. Special version for Power8.
 instruct convF2I_regF_mffprd_ExEx(iRegIdst dst, regF src) %{
   match(Set dst (ConvF2I src));
-  predicate(VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -11178,56 +10619,6 @@ instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovL_bso_stackSlotL_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, stackSlotL mem) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE mem);
-  predicate(false);
-
-  format %{ "CmovL   $dst, $crx, $mem \t// postalloc expanded" %}
-  postalloc_expand %{
-    //
-    // replaces
-    //
-    //   region  dst  crx  mem
-    //    \       |    |   /
-    //     dst=cmovL_bso_stackSlotL_conLvalue0
-    //
-    // with
-    //
-    //   region  dst
-    //    \       /
-    //     dst=loadConL16(0)
-    //      |
-    //      ^  region  dst  crx  mem
-    //      |   \       |    |    /
-    //      dst=cmovL_bso_stackSlotL
-    //
-
-    // Create new nodes.
-    MachNode *m1 = new loadConL16Node();
-    MachNode *m2 = new cmovL_bso_stackSlotLNode();
-
-    // inputs for new nodes
-    m1->add_req(n_region);
-    m2->add_req(n_region, n_crx, n_mem);
-    m2->add_prec(m1);
-
-    // operands for new nodes
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new immL16Oper(0);
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_crx;
-    m2->_opnds[2] = op_mem;
-
-    // registers for new nodes
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-
-    // Insert new nodes.
-    nodes->push(m1);
-    nodes->push(m2);
-  %}
-%}
 
 instruct cmovL_bso_reg_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, regD src) %{
   // no match-rule, false predicate
@@ -11280,27 +10671,10 @@ instruct cmovL_bso_reg_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, regD src) %{
   %}
 %}
 
-// Float to Long conversion, NaN is mapped to 0.
-instruct convF2L_reg_ExEx(iRegLdst dst, regF src) %{
-  match(Set dst (ConvF2L src));
-  predicate(!VM_Version::has_mtfprd());
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    regF tmpF;
-    stackSlotL tmpS;
-    flagsReg crx;
-    cmpFUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
-    convF2LRaw_regF(tmpF, src);                         // Convert float to long (speculated).
-    moveF2L_reg_stack(tmpS, tmpF);                      // Store float to stack (speculated).
-    cmovL_bso_stackSlotL_conLvalue0_Ex(dst, crx, tmpS); // Cmove based on NaN check.
-  %}
-%}
 
 // Float to Long conversion, NaN is mapped to 0. Special version for Power8.
 instruct convF2L_reg_mffprd_ExEx(iRegLdst dst, regF src) %{
   match(Set dst (ConvF2L src));
-  predicate(VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -11325,27 +10699,10 @@ instruct convD2LRaw_regD(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Double to Long conversion, NaN is mapped to 0.
-instruct convD2L_reg_ExEx(iRegLdst dst, regD src) %{
-  match(Set dst (ConvD2L src));
-  predicate(!VM_Version::has_mtfprd());
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    regD tmpD;
-    stackSlotL tmpS;
-    flagsReg crx;
-    cmpDUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
-    convD2LRaw_regD(tmpD, src);                         // Convert float to long (speculated).
-    moveD2L_reg_stack(tmpS, tmpD);                      // Store float to stack (speculated).
-    cmovL_bso_stackSlotL_conLvalue0_Ex(dst, crx, tmpS); // Cmove based on NaN check.
-  %}
-%}
 
 // Double to Long conversion, NaN is mapped to 0. Special version for Power8.
 instruct convD2L_reg_mffprd_ExEx(iRegLdst dst, regD src) %{
   match(Set dst (ConvD2L src));
-  predicate(VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -11384,25 +10741,6 @@ instruct convD2F_reg(regF dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Integer to Float conversion.
-instruct convI2F_ireg_Ex(regF dst, iRegIsrc src) %{
-  match(Set dst (ConvI2F src));
-  predicate(!VM_Version::has_fcfids());
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    iRegLdst tmpL;
-    stackSlotL tmpS;
-    regD tmpD;
-    regD tmpD2;
-    convI2L_reg(tmpL, src);              // Sign-extension int to long.
-    regL_to_stkL(tmpS, tmpL);            // Store long to stack.
-    moveL2D_stack_reg(tmpD, tmpS);       // Load long into double register.
-    convL2DRaw_regD(tmpD2, tmpD);        // Convert to double.
-    convD2F_reg(dst, tmpD2);             // Convert double to float.
-  %}
-%}
-
 instruct convL2FRaw_regF(regF dst, regD src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE src);
@@ -11416,27 +10754,10 @@ instruct convL2FRaw_regF(regF dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Integer to Float conversion. Special version for Power7.
-instruct convI2F_ireg_fcfids_Ex(regF dst, iRegIsrc src) %{
-  match(Set dst (ConvI2F src));
-  predicate(VM_Version::has_fcfids() && !VM_Version::has_mtfprd());
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    iRegLdst tmpL;
-    stackSlotL tmpS;
-    regD tmpD;
-    convI2L_reg(tmpL, src);              // Sign-extension int to long.
-    regL_to_stkL(tmpS, tmpL);            // Store long to stack.
-    moveL2D_stack_reg(tmpD, tmpS);       // Load long into double register.
-    convL2FRaw_regF(dst, tmpD);          // Convert to float.
-  %}
-%}
 
 // Integer to Float conversion. Special version for Power8.
 instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIsrc src) %{
   match(Set dst (ConvI2F src));
-  predicate(VM_Version::has_fcfids() && VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -11446,25 +10767,10 @@ instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIsrc src) %{
   %}
 %}
 
-// L2F to avoid runtime call.
-instruct convL2F_ireg_fcfids_Ex(regF dst, iRegLsrc src) %{
-  match(Set dst (ConvL2F src));
-  predicate(VM_Version::has_fcfids() && !VM_Version::has_mtfprd());
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    stackSlotL tmpS;
-    regD tmpD;
-    regL_to_stkL(tmpS, src);             // Store long to stack.
-    moveL2D_stack_reg(tmpD, tmpS);       // Load long into double register.
-    convL2FRaw_regF(dst, tmpD);          // Convert to float.
-  %}
-%}
 
 // L2F to avoid runtime call.  Special version for Power8.
 instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
   match(Set dst (ConvL2F src));
-  predicate(VM_Version::has_fcfids() && VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -11479,27 +10785,10 @@ instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
 
 // Convert to Double
 
-// Integer to Double conversion.
-instruct convI2D_reg_Ex(regD dst, iRegIsrc src) %{
-  match(Set dst (ConvI2D src));
-  predicate(!VM_Version::has_mtfprd());
-  ins_cost(DEFAULT_COST);
-
-  expand %{
-    iRegLdst tmpL;
-    stackSlotL tmpS;
-    regD tmpD;
-    convI2L_reg(tmpL, src);              // Sign-extension int to long.
-    regL_to_stkL(tmpS, tmpL);            // Store long to stack.
-    moveL2D_stack_reg(tmpD, tmpS);       // Load long into double register.
-    convL2DRaw_regD(dst, tmpD);          // Convert to double.
-  %}
-%}
 
 // Integer to Double conversion. Special version for Power8.
 instruct convI2D_reg_mtfprd_Ex(regD dst, iRegIsrc src) %{
   match(Set dst (ConvI2D src));
-  predicate(VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -11509,22 +10798,10 @@ instruct convI2D_reg_mtfprd_Ex(regD dst, iRegIsrc src) %{
   %}
 %}
 
-// Long to Double conversion
-instruct convL2D_reg_Ex(regD dst, stackSlotL src) %{
-  match(Set dst (ConvL2D src));
-  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-
-  expand %{
-    regD tmpD;
-    moveL2D_stack_reg(tmpD, src);
-    convL2DRaw_regD(dst, tmpD);
-  %}
-%}
 
 // Long to Double conversion. Special version for Power8.
 instruct convL2D_reg_mtfprd_Ex(regD dst, iRegLsrc src) %{
   match(Set dst (ConvL2D src));
-  predicate(VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -13119,30 +12396,10 @@ instruct encode_ascii_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst
 
 //---------- Min/Max Instructions ---------------------------------------------
 
-instruct minI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
-  match(Set dst (MinI src1 src2));
-  ins_cost(DEFAULT_COST*6);
-
-  expand %{
-    iRegLdst src1s;
-    iRegLdst src2s;
-    iRegLdst diff;
-    iRegLdst sm;
-    iRegLdst doz; // difference or zero
-    convI2L_reg(src1s, src1); // Ensure proper sign extension.
-    convI2L_reg(src2s, src2); // Ensure proper sign extension.
-    subL_reg_reg(diff, src2s, src1s);
-    // Need to consider >=33 bit result, therefore we need signmaskL.
-    signmask64L_regL(sm, diff);
-    andL_reg_reg(doz, diff, sm); // <=0
-    addI_regL_regL(dst, doz, src1s);
-  %}
-%}
 
 instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set dst (MinI src1 src2));
   effect(KILL cr0);
-  predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST*2);
 
   ins_encode %{
@@ -13152,30 +12409,10 @@ instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_pipe(pipe_class_default);
 %}
 
-instruct maxI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
-  match(Set dst (MaxI src1 src2));
-  ins_cost(DEFAULT_COST*6);
-
-  expand %{
-    iRegLdst src1s;
-    iRegLdst src2s;
-    iRegLdst diff;
-    iRegLdst sm;
-    iRegLdst doz; // difference or zero
-    convI2L_reg(src1s, src1); // Ensure proper sign extension.
-    convI2L_reg(src2s, src2); // Ensure proper sign extension.
-    subL_reg_reg(diff, src2s, src1s);
-    // Need to consider >=33 bit result, therefore we need signmaskL.
-    signmask64L_regL(sm, diff);
-    andcL_reg_reg(doz, diff, sm); // >=0
-    addI_regL_regL(dst, doz, src1s);
-  %}
-%}
 
 instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set dst (MaxI src1 src2));
   effect(KILL cr0);
-  predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST*2);
 
   ins_encode %{
@@ -13190,7 +12427,7 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
 // Popcnt for Power7.
 instruct popCountI(iRegIdst dst, iRegIsrc src) %{
   match(Set dst (PopCountI src));
-  predicate(UsePopCountInstruction && VM_Version::has_popcntw());
+  predicate(UsePopCountInstruction);
   ins_cost(DEFAULT_COST);
 
   format %{ "POPCNTW $dst, $src" %}
@@ -13203,7 +12440,7 @@ instruct popCountI(iRegIdst dst, iRegIsrc src) %{
 
 // Popcnt for Power7.
 instruct popCountL(iRegIdst dst, iRegLsrc src) %{
-  predicate(UsePopCountInstruction && VM_Version::has_popcntw());
+  predicate(UsePopCountInstruction);
   match(Set dst (PopCountL src));
   ins_cost(DEFAULT_COST);
 
@@ -13562,7 +12799,7 @@ instruct loadI_reversed_acquire(iRegIdst dst, indirect mem) %{
 // Load Long - aligned and reversed
 instruct loadL_reversed(iRegLdst dst, indirect mem) %{
   match(Set dst (ReverseBytesL (LoadL mem)));
-  predicate(VM_Version::has_ldbrx() && (n->in(1)->as_Load()->is_unordered() || followed_by_acquire(n->in(1))));
+  predicate((n->in(1)->as_Load()->is_unordered() || followed_by_acquire(n->in(1))));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
@@ -13574,7 +12811,6 @@ instruct loadL_reversed(iRegLdst dst, indirect mem) %{
 
 instruct loadL_reversed_acquire(iRegLdst dst, indirect mem) %{
   match(Set dst (ReverseBytesL (LoadL mem)));
-  predicate(VM_Version::has_ldbrx());
   ins_cost(2 * MEMORY_REF_COST);
 
   size(12);
@@ -13655,7 +12891,6 @@ instruct storeI_reversed(iRegIsrc src, indirect mem) %{
 // Store Long reversed byte order
 instruct storeL_reversed(iRegLsrc src, indirect mem) %{
   match(Set mem (StoreL mem (ReverseBytesL src)));
-  predicate(VM_Version::has_stdbrx());
   ins_cost(MEMORY_REF_COST);
 
   size(4);

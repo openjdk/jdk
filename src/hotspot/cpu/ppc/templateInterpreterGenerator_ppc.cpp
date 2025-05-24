@@ -1078,7 +1078,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   // PPC64 specific:
   switch (kind) {
-    case Interpreter::java_lang_math_sqrt: use_instruction = VM_Version::has_fsqrt(); break;
+    case Interpreter::java_lang_math_sqrt: use_instruction = true; break;
     case Interpreter::java_lang_math_abs:  use_instruction = true; break;
     case Interpreter::java_lang_math_fmaF:
     case Interpreter::java_lang_math_fmaD: use_instruction = UseFMA; break;
@@ -1091,7 +1091,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
     case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
-    case Interpreter::java_lang_math_sqrt : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);  break;
+    case Interpreter::java_lang_math_sqrt : /* run interpreted */  break;
     case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;
     case Interpreter::java_lang_math_log10: runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10); break;
     case Interpreter::java_lang_math_pow  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dpow); num_args = 2; break;
