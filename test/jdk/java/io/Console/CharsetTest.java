@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,11 @@ import java.nio.file.Paths;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import static jdk.test.lib.Utils.*;
 
 /**
  * @test
- * @bug 8264208 8265918
+ * @bug 8264208 8265918 8356985
  * @summary Tests Console.charset() method. "expect" command in Windows/Cygwin
  *          does not work as expected. Ignoring tests on Windows.
  * @requires (os.family == "linux") | (os.family == "mac")
@@ -50,22 +51,18 @@ public class CharsetTest {
             // check "expect" command availability
             var expect = Paths.get("/usr/bin/expect");
             if (!Files.exists(expect) || !Files.isExecutable(expect)) {
-                System.out.println("'expect' command not found. Test ignored.");
-                return;
+                throw new jtreg.SkippedException("'expect' command not found. Test ignored.");
             }
 
             // invoking "expect" command
-            var testSrc = System.getProperty("test.src", ".");
-            var testClasses = System.getProperty("test.classes", ".");
-            var jdkDir = System.getProperty("test.jdk");
             OutputAnalyzer output = ProcessTools.executeProcess(
                     "expect",
                     "-n",
-                    testSrc + "/script.exp",
-                    jdkDir + "/bin/java",
+                    TEST_SRC + "/script.exp",
+                    TEST_JDK + "/bin/java",
                     args[0],
                     args[1],
-                    testClasses);
+                    TEST_CLASSES);
             output.reportDiagnosticSummary();
             var eval = output.getExitValue();
             if (eval != 0) {
