@@ -686,6 +686,11 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_fieldinfo_stream(nullptr);
 
+  if (fieldinfo_search_table() != nullptr && !fieldinfo_search_table()->is_shared()) {
+    MetadataFactory::free_array<u1>(loader_data, fieldinfo_search_table());
+  }
+  set_fieldinfo_search_table(nullptr);
+
   if (fields_status() != nullptr && !fields_status()->is_shared()) {
     MetadataFactory::free_array<FieldStatus>(loader_data, fields_status());
   }
@@ -1785,13 +1790,12 @@ FieldInfo InstanceKlass::field(int index) const {
 }
 
 bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
-  for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
-    Symbol* f_name = fs.name();
-    Symbol* f_sig  = fs.signature();
-    if (f_name == name && f_sig == sig) {
-      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
-      return true;
-    }
+  JavaFieldStream fs(this);
+  if (fs.lookup(name, sig)) {
+    assert(fs.name() == name, "name must match");
+    assert(fs.signature() == sig, "signature must match");
+    fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
+    return true;
   }
   return false;
 }
@@ -2609,6 +2613,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 
   it->push(&_fieldinfo_stream);
+  it->push(&_fieldinfo_search_table);
   // _fields_status might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
   it->push(&_fields_status, MetaspaceClosure::_writable);
 
@@ -2707,6 +2712,8 @@ void InstanceKlass::remove_unshareable_info() {
   DEBUG_ONLY(_shared_class_load_count = 0);
 
   remove_unshareable_flags();
+
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
 void InstanceKlass::remove_unshareable_flags() {
@@ -2813,6 +2820,8 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation() && !is_value_based()) {
     set_is_value_based();
   }
+
+  DEBUG_ONLY(FieldInfoStream::validate_search_table(_constants, _fieldinfo_stream, _fieldinfo_search_table));
 }
 
 // Check if a class or any of its supertypes has a version older than 50.

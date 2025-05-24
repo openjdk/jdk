@@ -22,6 +22,7 @@
  *
  */
 
+#include "memory/resourceArea.hpp"
 #include "oops/fieldInfo.inline.hpp"
 #include "runtime/atomic.hpp"
 
@@ -37,8 +38,10 @@ void FieldInfo::print(outputStream* os, ConstantPool* cp) {
                 field_flags().as_uint(),
                 initializer_index(),
                 generic_signature_index(),
-                _field_flags.is_injected() ? lookup_symbol(generic_signature_index())->as_utf8() : cp->symbol_at(generic_signature_index())->as_utf8(),
-                contended_group());
+                _field_flags.is_generic() ? (_field_flags.is_injected() ?
+                  lookup_symbol(generic_signature_index())->as_utf8() : cp->symbol_at(generic_signature_index())->as_utf8()
+                  ) : "",
+                is_contended() ? contended_group() : 0);
 }
 
 void FieldInfo::print_from_growable_array(outputStream* os, GrowableArray<FieldInfo>* array, ConstantPool* cp) {
@@ -62,13 +65,17 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
   StreamSizer s;
   StreamFieldSizer sizer(&s);
 
+  assert(fields->length() == java_fields + injected_fields, "must be");
+
   sizer.consumer()->accept_uint(java_fields);
   sizer.consumer()->accept_uint(injected_fields);
   for (int i = 0; i < fields->length(); i++) {
     FieldInfo* fi = fields->adr_at(i);
     sizer.map_field_info(*fi);
   }
-  int storage_size = sizer.consumer()->position() + 1;
+  // Originally there was an extra byte with 0 terminating the reading;
+  // now we check limits instead.
+  int storage_size = sizer.consumer()->position();
   Array<u1>* const fis = MetadataFactory::new_array<u1>(loader_data, storage_size, CHECK_NULL);
 
   using StreamWriter = UNSIGNED5::Writer<Array<u1>*, int, ArrayHelper<Array<u1>*, int>>;
@@ -79,15 +86,14 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
   writer.consumer()->accept_uint(java_fields);
   writer.consumer()->accept_uint(injected_fields);
   for (int i = 0; i < fields->length(); i++) {
-    FieldInfo* fi = fields->adr_at(i);
-    writer.map_field_info(*fi);
+    writer.map_field_info(fields->at(i));
   }
 
 #ifdef ASSERT
   FieldInfoReader r(fis);
-  int jfc = r.next_uint();
+  int jfc, ifc;
+  r.read_field_counts(&jfc, &ifc);
   assert(jfc == java_fields, "Must be");
-  int ifc = r.next_uint();
   assert(ifc == injected_fields, "Must be");
   for (int i = 0; i < jfc + ifc; i++) {
     FieldInfo fi;
@@ -113,30 +119,161 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
   return fis;
 }
 
-GrowableArray<FieldInfo>* FieldInfoStream::create_FieldInfoArray(const Array<u1>* fis, int* java_fields_count, int* injected_fields_count) {
-  int length = FieldInfoStream::num_total_fields(fis);
-  GrowableArray<FieldInfo>* array = new GrowableArray<FieldInfo>(length);
+int FieldInfoStream::compare_name_and_sig(const Symbol* n1, const Symbol* s1, const Symbol* n2, const Symbol* s2) {
+  int cmp = n1->fast_compare(n2);
+  return cmp != 0 ? cmp : s1->fast_compare(s2);
+}
+
+Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1>* fis, ClassLoaderData* loader_data, TRAPS) {
   FieldInfoReader r(fis);
-  *java_fields_count = r.next_uint();
-  *injected_fields_count = r.next_uint();
+  int java_fields;
+  int injected_fields;
+  r.read_field_counts(&java_fields, &injected_fields);
+  if (java_fields <= SEARCH_TABLE_THRESHOLD) {
+    return nullptr;
+  }
+
+  // We use fixed width to let us skip through the table during binary search.
+  // With the max of 65536 fields (and at most tens of bytes per field),
+  // 3-byte offsets would suffice. In the common case with < 64kB stream 2-byte offsets are enough.
+  int position_width = search_table_position_width(fis->length());
+  int index_width = search_table_index_width(java_fields);
+  int item_width = position_width + index_width;
+
+  Array<u1>* table = MetadataFactory::new_array<u1>(loader_data, java_fields * item_width, CHECK_NULL);
+
+  ResourceMark rm;
+  // We use both name and signature during the comparison; while JLS require unique
+  // names for fields, JVMS requires only unique name + signature combination.
+  typedef struct {
+    Symbol *name;
+    Symbol *signature;
+    int index;
+    int position;
+  } field_pos_t;
+  field_pos_t *positions = nullptr;
+
+  positions = NEW_RESOURCE_ARRAY(field_pos_t, java_fields);
+  for (int i = 0; i < java_fields; ++i) {
+    assert(r.has_next(), "number of fields must match");
+
+    positions[i].position = r.position();
+    FieldInfo fi;
+    r.read_field_info(fi);
+
+    positions[i].name = fi.name(cp);
+    positions[i].signature = fi.signature(cp);
+    positions[i].index = i;
+  }
+  auto compare_pair = [](const void *v1, const void *v2) {
+    const field_pos_t *p1 = reinterpret_cast<const field_pos_t *>(v1);
+    const field_pos_t *p2 = reinterpret_cast<const field_pos_t *>(v2);
+    return compare_name_and_sig(p1->name, p1->signature, p2->name, p2->signature);
+  };
+  qsort(positions, java_fields, sizeof(field_pos_t), compare_pair);
+
+  auto write_position = position_width == 2 ?
+    [](u1 *ptr, int position) { *reinterpret_cast<u2*>(ptr) = checked_cast<u2>(position); } :
+    [](u1 *ptr, int position) {
+      ptr[0] = static_cast<u1>(position);
+      ptr[1] = static_cast<u1>(position >> 8);
+      ptr[2] = checked_cast<u1>(position >> 16);
+    };
+  auto write_index = index_width == 1 ?
+    [](u1 *ptr, int index) { *ptr = checked_cast<u1>(index); } :
+    [](u1 *ptr, int index) { *reinterpret_cast<u2 *>(ptr) = checked_cast<u2>(index); };
+  for (int i = 0; i < java_fields; ++i) {
+    u1 *ptr = table->adr_at(item_width * i);
+    write_position(ptr, positions[i].position);
+    write_index(ptr + position_width, positions[i].index);
+  }
+  return table;
+}
+
+GrowableArray<FieldInfo>* FieldInfoStream::create_FieldInfoArray(const Array<u1>* fis, int* java_fields_count, int* injected_fields_count) {
+  FieldInfoReader r(fis);
+  r.read_field_counts(java_fields_count, injected_fields_count);
+  int length = *java_fields_count + *injected_fields_count;
+
+  GrowableArray<FieldInfo>* array = new GrowableArray<FieldInfo>(length);
   while (r.has_next()) {
     FieldInfo fi;
     r.read_field_info(fi);
     array->append(fi);
   }
   assert(array->length() == length, "Must be");
-  assert(array->length() == *java_fields_count + *injected_fields_count, "Must be");
   return array;
 }
 
 void FieldInfoStream::print_from_fieldinfo_stream(Array<u1>* fis, outputStream* os, ConstantPool* cp) {
-  int length = FieldInfoStream::num_total_fields(fis);
   FieldInfoReader r(fis);
-  int java_field_count = r.next_uint();
-  int injected_fields_count = r.next_uint();
+  int java_fields_count;
+  int injected_fields_count;
+  r.read_field_counts(&java_fields_count, &injected_fields_count);
   while (r.has_next()) {
     FieldInfo fi;
     r.read_field_info(fi);
     fi.print(os, cp);
   }
+}
+
+#ifdef ASSERT
+void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* fis, const Array<u1> *search_table) {
+  if (search_table == nullptr) {
+    return;
+  }
+  UNSIGNED5::Reader<const u1*, int> reader(fis->data(), fis->length());
+  int java_fields = reader.next_uint();
+  int position_width = search_table_position_width(fis->length());
+  int item_width = position_width  + search_table_index_width(java_fields);
+  auto read_position = position_width == 3 ?
+    [](const u1 *ptr) { return (int) ptr[0] + (((int) ptr[1] << 8)) + (((int) ptr[2]) << 16); } :
+    [](const u1 *ptr) { return (int) *reinterpret_cast<const u2 *>(ptr); };
+
+  const Symbol* prev_name = nullptr;
+  const Symbol* prev_sig = nullptr;
+  const u1* ptr = search_table->data();
+  for (int i = 0; i < java_fields; ++i, ptr += item_width) {
+    reader.set_position(read_position(ptr));
+    const Symbol* name = cp->symbol_at(reader.next_uint());
+    const Symbol* signature = cp->symbol_at(reader.next_uint());
+
+    if (prev_name != nullptr && prev_sig != nullptr) {
+      assert(compare_name_and_sig(name, signature, prev_name, prev_sig) > 0, "not sorted");
+    }
+    prev_name = name;
+    prev_sig = signature;
+  }
+}
+#endif
+
+int FieldInfoReader::search_table_lookup(const Array<u1> *search_table, const Symbol *name, const Symbol *signature, ConstantPool *cp, int java_fields) {
+  UNSIGNED5::Reader<const u1*, int> r2(_r.array());
+  int low = 0, high = java_fields - 1;
+  int position_width = FieldInfoStream::search_table_position_width(_r.limit());
+  int item_width = position_width  + FieldInfoStream::search_table_index_width(java_fields);
+  auto read_position = position_width == 3 ?
+    [](const u1 *ptr) { return (int) ptr[0] + (((int) ptr[1] << 8)) + (((int) ptr[2]) << 16); } :
+    [](const u1 *ptr) { return (int) *reinterpret_cast<const u2 *>(ptr); };
+  while (low <= high) {
+    int mid = low + (high - low) / 2;
+    const u1 *ptr = search_table->data() + item_width * mid;
+    int position = read_position(ptr);
+    r2.set_position(position);
+    Symbol *mid_name = cp->symbol_at(checked_cast<u2>(r2.next_uint()));
+    Symbol *mid_sig = cp->symbol_at(checked_cast<u2>(r2.next_uint()));
+
+    int cmp = FieldInfoStream::compare_name_and_sig(name, signature, mid_name, mid_sig);
+    if (cmp == 0) {
+      _r.set_position(position);
+      _next_index = item_width == 2 ?
+        *reinterpret_cast<const u2 *>(ptr + position_width) : ptr[position_width];
+      return _next_index;
+    } else if (cmp < 0) {
+      high = mid - 1;
+    } else {
+      low = mid + 1;
+    }
+  }
+  return -1;
 }
