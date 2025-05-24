@@ -71,10 +71,6 @@ inline bool ZPageTableIterator::next(ZPage** page) {
   return false;
 }
 
-inline ZPageTableParallelIterator::ZPageTableParallelIterator(const ZPageTable* table)
-  : _table(table),
-    _index_distributor(table->count()) {}
-
 template <typename Function>
 inline void ZPageTableParallelIterator::do_pages(Function function) {
   _index_distributor.do_indices([&](int index) {
