@@ -74,6 +74,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     private boolean clipPlaying = false;
 
     private DataPusher datapusher = null;
+    private boolean daemonThread = false;
 
     private Sequencer sequencer = null;
     private Sequence sequence = null;
@@ -95,6 +96,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
 
     public static JavaSoundAudioClip create(final File file) throws IOException {
         JavaSoundAudioClip clip = new JavaSoundAudioClip();
+        clip.daemonThread = true; // used only by javax.sound.SoundClip
         try (FileInputStream stream = new FileInputStream(file)) {
             clip.init(stream);
         }
@@ -441,7 +443,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
                 return false;
             }
             SourceDataLine source = (SourceDataLine) AudioSystem.getLine(info);
-            datapusher = new DataPusher(source, loadedAudioFormat, loadedAudio, loadedAudioByteLength, true);
+            datapusher = new DataPusher(source, loadedAudioFormat, loadedAudio, loadedAudioByteLength, daemonThread);
         } catch (Exception e) {
             if (Printer.err) e.printStackTrace();
             // fail silently
