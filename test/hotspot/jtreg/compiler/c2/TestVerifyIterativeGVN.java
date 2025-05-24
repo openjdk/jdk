@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
  * @test
  * @bug 8238756
  * @requires vm.debug == true & vm.flavor == "server"
- * @summary Run with -Xcomp to test -XX:VerifyIterativeGVN=11 in debug builds.
+ * @summary Run with -Xcomp to test -XX:VerifyIterativeGVN=1111 in debug builds.
  *
- * @run main/othervm/timeout=300 -Xbatch -Xcomp -XX:VerifyIterativeGVN=11 compiler.c2.TestVerifyIterativeGVN
+ * @run main/othervm/timeout=300 -Xcomp -XX:VerifyIterativeGVN=1111 compiler.c2.TestVerifyIterativeGVN
  */
 package compiler.c2;
 
