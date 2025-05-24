@@ -155,43 +155,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-// Base class for float and double modulus
-class ModFloatingNode : public CallLeafNode {
-protected:
-  Node* replace_with_con(PhaseIterGVN* phase, const Type* con);
-
-public:
-  ModFloatingNode(Compile* C, const TypeFunc* tf, const char *name);
-};
-
-// Float Modulus
-class ModFNode : public ModFloatingNode {
-private:
-  Node* dividend() const { return in(TypeFunc::Parms + 0); }
-  Node* divisor() const { return in(TypeFunc::Parms + 1); }
-
-public:
-  ModFNode(Compile* C, Node* a, Node* b);
-  virtual int Opcode() const;
-  virtual uint ideal_reg() const { return Op_RegF; }
-  virtual uint size_of() const { return sizeof(*this); }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-};
-
-// Double Modulus
-class ModDNode : public ModFloatingNode {
-private:
-  Node* dividend() const { return in(TypeFunc::Parms + 0); }
-  Node* divisor() const { return in(TypeFunc::Parms + 2); }
-
-public:
-  ModDNode(Compile* C, Node* a, Node* b);
-  virtual int Opcode() const;
-  virtual uint ideal_reg() const { return Op_RegD; }
-  virtual uint size_of() const { return sizeof(*this); }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-};
-
 //------------------------------UModINode---------------------------------------
 // Unsigned integer modulus
 class UModINode : public Node {
