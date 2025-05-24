@@ -441,7 +441,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
                 return false;
             }
             SourceDataLine source = (SourceDataLine) AudioSystem.getLine(info);
-            datapusher = new DataPusher(source, loadedAudioFormat, loadedAudio, loadedAudioByteLength);
+            datapusher = new DataPusher(source, loadedAudioFormat, loadedAudio, loadedAudioByteLength, true);
         } catch (Exception e) {
             if (Printer.err) e.printStackTrace();
             // fail silently
