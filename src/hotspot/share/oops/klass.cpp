@@ -314,10 +314,9 @@ jint Klass::array_layout_helper(BasicType etype) {
   int  hsize = arrayOopDesc::base_offset_in_bytes(etype);
   int  esize = type2aelembytes(etype);
   bool isobj = (etype == T_OBJECT);
-  int  tag   =  isobj ? _lh_array_tag_obj_value : _lh_array_tag_type_value;
+  uint32_t tag = isobj ? _lh_array_tag_obj_value : _lh_array_tag_type_value;
   int lh = array_layout_helper(tag, hsize, etype, exact_log2(esize));
 
-  assert(lh < (int)_lh_neutral_value, "must look like an array layout");
   assert(layout_helper_is_array(lh), "correct kind");
   assert(layout_helper_is_objArray(lh) == isobj, "correct kind");
   assert(layout_helper_is_typeArray(lh) == !isobj, "correct kind");
