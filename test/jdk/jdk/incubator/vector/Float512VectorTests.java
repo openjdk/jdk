@@ -434,6 +434,17 @@ relativeError));
         }
     }
 
+    static void assertArraysEquals(float[] r, float[] a, float b, FBinOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i], b));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a[i], b), "(" + a[i] + ", " + b + ") at index #" + i);
+        }
+    }
+
     static void assertBroadcastArraysEquals(float[] r, float[] a, float[] b, FBinOp f) {
         int i = 0;
         try {
@@ -470,6 +481,21 @@ relativeError));
             }
         } catch (AssertionError err) {
             Assert.assertEquals(r[i], f.apply(a[i], b[i], mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", mask = " + mask[i % SPECIES.length()]);
+        }
+    }
+
+    static void assertArraysEquals(float[] r, float[] a, float b, boolean[] mask, FBinOp f) {
+        assertArraysEquals(r, a, b, mask, FBinMaskOp.lift(f));
+    }
+
+    static void assertArraysEquals(float[] r, float[] a, float b, boolean[] mask, FBinMaskOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i], b, mask[i % SPECIES.length()]));
+            }
+        } catch (AssertionError err) {
+            Assert.assertEquals(r[i], f.apply(a[i], b, mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b + ", mask = " + mask[i % SPECIES.length()]);
         }
     }
 
@@ -2033,6 +2059,112 @@ relativeError));
         }
 
         assertBroadcastLongArraysEquals(r, a, b, mask, Float512VectorTests::ADD);
+    }
+
+    static FloatVector bv_MIN = FloatVector.broadcast(SPECIES, (float)10);
+
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void MINFloat512VectorTestsWithMemOp(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (float)10, Float512VectorTests::MIN);
+    }
+
+    static FloatVector bv_min = FloatVector.broadcast(SPECIES, (float)10);
+
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void minFloat512VectorTestsWithMemOp(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                av.min(bv_min).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (float)10, Float512VectorTests::min);
+    }
+
+    static FloatVector bv_MIN_M = FloatVector.broadcast(SPECIES, (float)10);
+
+    @Test(dataProvider = "floatUnaryOpMaskProvider")
+    static void MINFloat512VectorTestsMaskedWithMemOp(IntFunction<float[]> fa, IntFunction<boolean[]> fm) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN_M, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (float)10, mask, Float512VectorTests::MIN);
+    }
+
+    static FloatVector bv_MAX = FloatVector.broadcast(SPECIES, (float)10);
+
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void MAXFloat512VectorTestsWithMemOp(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (float)10, Float512VectorTests::MAX);
+    }
+
+    static FloatVector bv_max = FloatVector.broadcast(SPECIES, (float)10);
+
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void maxFloat512VectorTestsWithMemOp(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                av.max(bv_max).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (float)10, Float512VectorTests::max);
+    }
+
+    static FloatVector bv_MAX_M = FloatVector.broadcast(SPECIES, (float)10);
+
+    @Test(dataProvider = "floatUnaryOpMaskProvider")
+    static void MAXFloat512VectorTestsMaskedWithMemOp(IntFunction<float[]> fa, IntFunction<boolean[]> fm) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX_M, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (float)10, mask, Float512VectorTests::MAX);
     }
 
     static float MIN(float a, float b) {
