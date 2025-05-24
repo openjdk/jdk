@@ -464,6 +464,7 @@ void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
   AOTClassLocation* jrt = AOTClassLocation::allocate(THREAD, ClassLoader::get_jrt_entry()->name(),
                                                0, Group::MODULES_IMAGE,
                                                /*from_cpattr*/false, /*is_jrt*/true);
+  log_info(class, path)("path [%d] = (modules image)", tmp_array.length());
   tmp_array.append(jrt);
 
   parse(THREAD, tmp_array, all_css.boot_cp(), Group::BOOT_CLASSPATH, /*parse_manifest*/true);
@@ -573,6 +574,7 @@ void AOTClassLocationConfig::parse(JavaThread* current, GrowableClassLocationArr
 void AOTClassLocationConfig::add_class_location(JavaThread* current, GrowableClassLocationArray& tmp_array,
                                                 const char* path, Group group, bool parse_manifest, bool from_cpattr) {
   AOTClassLocation* cs = AOTClassLocation::allocate(current, path, tmp_array.length(), group, from_cpattr);
+  log_info(class, path)("path [%d] = %s%s", tmp_array.length(), path, from_cpattr ? " (from cpattr)" : "");
   tmp_array.append(cs);
 
   if (!parse_manifest) {
@@ -726,6 +728,8 @@ bool AOTClassLocationConfig::is_valid_classpath_index(int classpath_index, Insta
 }
 
 AOTClassLocationConfig* AOTClassLocationConfig::write_to_archive() const {
+  log_locations(CDSConfig::output_archive_path(), /*is_write=*/true);
+
   Array<AOTClassLocation*>* archived_copy = ArchiveBuilder::new_ro_array<AOTClassLocation*>(_class_locations->length());
   for (int i = 0; i < _class_locations->length(); i++) {
     archived_copy->at_put(i, _class_locations->at(i)->write_to_archive());
@@ -773,7 +777,7 @@ bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_a
       effective_dumptime_path = substitute(effective_dumptime_path, _dumptime_lcp_len, runtime_lcp, runtime_lcp_len);
     }
 
-    log_info(class, path)("Checking '%s' %s%s", effective_dumptime_path, cs->file_type_string(),
+    log_info(class, path)("Checking [%d] '%s' %s%s", i, effective_dumptime_path, cs->file_type_string(),
                           cs->from_cpattr() ? " (from JAR manifest ClassPath attribute)" : "");
     if (!cs->from_cpattr() && file_exists(effective_dumptime_path)) {
       if (!runtime_css.has_next()) {
@@ -903,7 +907,7 @@ void AOTClassLocationConfig::print_dumptime_classpath(LogStream& ls, int index_s
     const char* path = cs->path();
     if (!cs->from_cpattr()) {
       ls.print("%s", sep);
-      if (do_substitute) {
+      if (do_substitute && remove_prefix_len > 0) {
         path = substitute(path, remove_prefix_len, prepend, prepend_len);
       }
       ls.print("%s", path);
@@ -961,11 +965,14 @@ bool AOTClassLocationConfig::need_lcp_match_helper(int start, int end, ClassLoca
   return true;
 }
 
-bool AOTClassLocationConfig::validate(bool has_aot_linked_classes, bool* has_extra_module_paths) const {
+bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_linked_classes, bool* has_extra_module_paths) const {
   ResourceMark rm;
   AllClassLocationStreams all_css;
 
+  log_locations(cache_filename, /*is_write=*/false);
+
   const char* jrt = ClassLoader::get_jrt_entry()->name();
+  log_info(class, path)("Checking [0] (modules image)");
   bool success = class_location_at(0)->check(jrt, has_aot_linked_classes);
   log_info(class, path)("Modules image %s validation: %s", jrt, success ? "passed" : "failed");
   if (!success) {
@@ -1036,6 +1043,17 @@ bool AOTClassLocationConfig::validate(bool has_aot_linked_classes, bool* has_ext
   return success;
 }
 
+void AOTClassLocationConfig::log_locations(const char* cache_filename, bool is_write) const {
+  if (log_is_enabled(Info, class, path)) {
+    LogStreamHandle(Info, class, path) st;
+    st.print_cr("%s classpath(s) %s %s (size = %d)",
+                is_write ? "Writing" : "Reading",
+                is_write ? "into" : "from",
+                cache_filename, class_locations()->length());
+    print_on(&st);
+  }
+}
+
 void AOTClassLocationConfig::print() {
   if (CDSConfig::is_dumping_archive()) {
     tty->print_cr("AOTClassLocationConfig::_dumptime_instance = %p", _dumptime_instance);
@@ -1052,8 +1070,15 @@ void AOTClassLocationConfig::print() {
 }
 
 void AOTClassLocationConfig::print_on(outputStream* st) const {
+  const char* type = "boot";
   int n = class_locations()->length();
   for (int i = 0; i < n; i++) {
+    if (i >= boot_cp_end_index()) {
+      type = "app";
+    }
+    if (i >= app_cp_end_index()) {
+      type = "module";
+    }
     const AOTClassLocation* cs = class_location_at(i);
     const char* path;
     if (i == 0) {
@@ -1061,12 +1086,6 @@ void AOTClassLocationConfig::print_on(outputStream* st) const {
     } else {
       path = cs->path();
     }
-    st->print_cr("[%d] = %s", i, path);
-    if (i == boot_cp_end_index() && i < n) {
-      st->print_cr("--- end of boot");
-    }
-    if (i == app_cp_end_index() && i < n) {
-      st->print_cr("--- end of app");
-    }
+    st->print_cr("(%-6s) [%d] = %s", type, i, path);
   }
 }
