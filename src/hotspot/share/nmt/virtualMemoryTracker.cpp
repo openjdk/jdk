@@ -22,16 +22,14 @@
  *
  */
 #include "logging/log.hpp"
-#include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/nativeCallStackPrinter.hpp"
-#include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 
-VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
+Deferred<VirtualMemorySnapshot> VirtualMemorySummary::_snapshot;
 
 void VirtualMemory::update_peak(size_t size) {
   size_t peak_sz = peak_size();
@@ -631,7 +629,7 @@ public:
   SnapshotThreadStackWalker() {}
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
-    if (MemTracker::NmtVirtualMemoryLocker::is_safe_to_use()) {
+    if (NmtVirtualMemoryLocker::is_safe_to_use()) {
       assert_lock_strong(NmtVirtualMemory_lock);
     }
     if (rgn->mem_tag() == mtThreadStack) {
@@ -674,7 +672,7 @@ void VirtualMemoryTracker::snapshot_thread_stacks() {
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   assert(_reserved_regions != nullptr, "Sanity check");
-  MemTracker::NmtVirtualMemoryLocker nvml;
+  NmtVirtualMemoryLocker nvml;
   // Check that the _reserved_regions haven't been deleted.
   if (_reserved_regions != nullptr) {
     LinkedListNode<ReservedMemoryRegion>* head = _reserved_regions->head();

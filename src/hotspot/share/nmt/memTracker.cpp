@@ -52,7 +52,7 @@ NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
 Deferred<MemBaseline> MemTracker::_baseline;
 
-bool MemTracker::NmtVirtualMemoryLocker::_safe_to_use;
+bool NmtVirtualMemoryLocker::_safe_to_use;
 
 void MemTracker::initialize() {
   bool rc = true;
@@ -71,6 +71,7 @@ void MemTracker::initialize() {
     _baseline.initialize();
     if (!MallocTracker::initialize(level) ||
         !MemoryFileTracker::Instance::initialize(level) ||
+        !VirtualMemorySummary::initialize() ||
         !VirtualMemoryTracker::initialize(level)) {
       assert(false, "NMT initialization failed");
       level = NMT_off;
