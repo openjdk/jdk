@@ -29,6 +29,7 @@
 #include "code/nmethod.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/xmlstream.hpp"
 
 class DirectiveSet;
@@ -81,7 +82,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
  private:
   static CompileTask*  _task_free_list;
-  Monitor*             _lock;
   int                  _compile_id;
   Method*              _method;
   jobject              _method_holder;
@@ -114,11 +114,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   size_t               _arena_bytes;  // peak size of temporary memory during compilation (e.g. node arenas)
 
  public:
-  CompileTask() : _failure_reason(nullptr), _failure_reason_on_C_heap(false) {
-    // May hold MethodCompileQueue_lock
-    _lock = new Monitor(Mutex::safepoint-1, "CompileTask_lock");
-  }
-
+  CompileTask() : _failure_reason(nullptr), _failure_reason_on_C_heap(false) {}
   void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
                   int hot_count,
                   CompileTask::CompileReason compile_reason, bool is_blocking);
@@ -170,21 +166,19 @@ class CompileTask : public CHeapObj<mtCompiler> {
   }
 #endif
 
-  Monitor*     lock() const                      { return _lock; }
-
   // See how many threads are waiting for this task. Must have lock to read this.
   int waiting_for_completion_count() {
-    assert(_lock->owned_by_self(), "must have lock to use waiting_for_completion_count()");
+    assert(CompileTaskWait_lock->owned_by_self(), "must have lock to use waiting_for_completion_count()");
     return _waiting_count;
   }
   // Indicates that a thread is waiting for this task to complete. Must have lock to use this.
   void inc_waiting_for_completion() {
-    assert(_lock->owned_by_self(), "must have lock to use inc_waiting_for_completion()");
+    assert(CompileTaskWait_lock->owned_by_self(), "must have lock to use inc_waiting_for_completion()");
     _waiting_count++;
   }
   // Indicates that a thread stopped waiting for this task to complete. Must have lock to use this.
   void dec_waiting_for_completion() {
-    assert(_lock->owned_by_self(), "must have lock to use dec_waiting_for_completion()");
+    assert(CompileTaskWait_lock->owned_by_self(), "must have lock to use dec_waiting_for_completion()");
     assert(_waiting_count > 0, "waiting count is not positive");
     _waiting_count--;
   }

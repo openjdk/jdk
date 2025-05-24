@@ -230,7 +230,7 @@ CompileTaskWrapper::~CompileTaskWrapper() {
   if (task->is_blocking()) {
     bool free_task = false;
     {
-      MutexLocker notifier(thread, task->lock());
+      MutexLocker notifier(thread, CompileTaskWait_lock);
       task->mark_complete();
 #if INCLUDE_JVMCI
       if (CompileBroker::compiler(task->comp_level())->is_jvmci()) {
@@ -244,7 +244,7 @@ CompileTaskWrapper::~CompileTaskWrapper() {
       if (!free_task) {
         // Notify the waiting thread that the compilation has completed
         // so that it can free the task.
-        task->lock()->notify_all();
+        CompileTaskWait_lock->notify_all();
       }
     }
     if (free_task) {
@@ -367,12 +367,12 @@ void CompileQueue::free_all() {
     next = current->next();
     bool found_waiter = false;
     {
-      MutexLocker ct_lock(current->lock());
+      MutexLocker ct_lock(CompileTaskWait_lock);
       assert(current->waiting_for_completion_count() <= 1, "more than one thread are waiting for task");
       if (current->waiting_for_completion_count() > 0) {
         // If another thread waits for this task, we must wake them up
         // so they will stop waiting and free the task.
-        current->lock()->notify();
+        CompileTaskWait_lock->notify_all();
         found_waiter = true;
       }
     }
@@ -1630,7 +1630,7 @@ static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 10;
  */
 bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask* task, JavaThread* thread) {
   assert(UseJVMCICompiler, "sanity");
-  MonitorLocker ml(thread, task->lock());
+  MonitorLocker ml(thread, CompileTaskWait_lock);
   int progress_wait_attempts = 0;
   jint thread_jvmci_compilation_ticks = 0;
   jint global_jvmci_compilation_ticks = jvmci->global_compilation_ticks();
@@ -1698,7 +1698,7 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   } else
 #endif
   {
-    MonitorLocker ml(thread, task->lock());
+    MonitorLocker ml(thread, CompileTaskWait_lock);
     free_task = true;
     task->inc_waiting_for_completion();
     while (!task->is_complete() && !is_compilation_disabled_forever()) {
