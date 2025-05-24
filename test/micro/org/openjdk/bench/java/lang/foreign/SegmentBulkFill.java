@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 package org.openjdk.bench.java.lang.foreign;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.misc.ScopedMemoryAccess;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -48,25 +50,27 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3)
+@Fork(value = 3, jvmArgs = { "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED","--add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED"})
 public class SegmentBulkFill {
 
-    @Param({"2", "3", "4", "5", "6", "7", "8", "64", "512",
+    private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+
+    @Param({"2", "3", "4", "5", "6", "7", "8", "12", "64", "512",
             "4096", "32768", "262144", "2097152", "16777216", "134217728"})
     public int ELEM_SIZE;
 
     byte[] array;
-    MemorySegment heapSegment;
-    MemorySegment nativeSegment;
-    MemorySegment unalignedSegment;
+    AbstractMemorySegmentImpl heapSegment;
+    AbstractMemorySegmentImpl nativeSegment;
+    AbstractMemorySegmentImpl unalignedSegment;
     ByteBuffer buffer;
 
     @Setup
     public void setup() {
         array = new byte[ELEM_SIZE];
-        heapSegment = MemorySegment.ofArray(array);
-        nativeSegment = Arena.ofAuto().allocate(ELEM_SIZE, 8);
-        unalignedSegment = Arena.ofAuto().allocate(ELEM_SIZE + 1, 8).asSlice(1);
+        heapSegment = (AbstractMemorySegmentImpl)MemorySegment.ofArray(array);
+        nativeSegment = (AbstractMemorySegmentImpl)Arena.ofAuto().allocate(ELEM_SIZE, 8);
+        unalignedSegment = (AbstractMemorySegmentImpl)Arena.ofAuto().allocate(ELEM_SIZE + 1, 8).asSlice(1);
         buffer = ByteBuffer.wrap(array);
     }
 
@@ -95,10 +99,9 @@ public class SegmentBulkFill {
         heapSegment.fill((byte) 0);
     }
 
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
     @Benchmark
     public void heapSegmentFillUnsafe() {
-        heapSegment.fill((byte) 0);
+        SCOPED_MEMORY_ACCESS.setMemory(heapSegment.sessionImpl(), heapSegment.unsafeGetBase(), heapSegment.unsafeGetOffset(), heapSegment.byteSize(), (byte) 0);
     }
 
     @Benchmark
@@ -114,10 +117,9 @@ public class SegmentBulkFill {
         nativeSegment.fill((byte) 0);
     }
 
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
     @Benchmark
     public void nativeSegmentFillUnsafe() {
-        nativeSegment.fill((byte) 0);
+        SCOPED_MEMORY_ACCESS.setMemory(nativeSegment.sessionImpl(), nativeSegment.unsafeGetBase(), nativeSegment.unsafeGetOffset(), nativeSegment.byteSize(), (byte) 0);
     }
 
     @Benchmark
@@ -133,10 +135,9 @@ public class SegmentBulkFill {
         unalignedSegment.fill((byte) 0);
     }
 
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
     @Benchmark
     public void unalignedSegmentFillUnsafe() {
-        unalignedSegment.fill((byte) 0);
+        SCOPED_MEMORY_ACCESS.setMemory(unalignedSegment.sessionImpl(), unalignedSegment.unsafeGetBase(), unalignedSegment.unsafeGetOffset(), unalignedSegment.byteSize(), (byte) 0);
     }
 
     @Benchmark
