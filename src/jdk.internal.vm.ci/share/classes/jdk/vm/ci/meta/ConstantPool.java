@@ -191,7 +191,24 @@ public interface ConstantPool {
          * @jvms 5.4.3.6
          */
         List<JavaConstant> getStaticArguments();
-    }
+
+		/**
+		 * If this bootstrap method invocation is for a {@code
+		 * CONSTANTAdd_InvokeDynamic_info} pool entry, then this method ensures the invoke
+		 * dynamic is resolved. This can be used to compile time resolve the invoke
+		 * dynamic. If the bootstrap method is for a {@code CONSTANT_Dynamic_info}
+		 * entry, then no action is performed
+		 */
+		void resolveInvokeDynamic();
+
+		/**
+		 * If this bootstrap method invocation is for a {@code
+		 * CONSTANT_InvokeDynamic_info} pool entry, then this method looks up the
+		 * corresponding invoke dynamic's appendix. If the bootstrap method is for a
+		 * {@code CONSTANT_Dynamic_info} entry, then null is returned.
+		 */
+		JavaConstant lookupInvokeDynamicAppendix();
+	}
 
     /**
      * Gets the details for invoking a bootstrap method associated with the
@@ -210,6 +227,14 @@ public interface ConstantPool {
     default BootstrapMethodInvocation lookupBootstrapMethodInvocation(int index, int opcode) {
         throw new UnsupportedOperationException();
     }
+
+	/**
+	 * Returns all BootstrapMethodInvocations within the constant pool where
+	 * {@link BootstrapMethodMethodInvocation#isInvokeDynamic} is true. If this
+	 * constant pool contains no invokedynamic BootstrapMethodInvocations, then null
+	 * is returned.
+	 */
+	BootstrapMethodInvocation[] lookupAllIndyBootstrapMethodInvocations();
 
     /**
      * Looks up a reference to a type. If {@code opcode} is non-negative, then resolution checks
