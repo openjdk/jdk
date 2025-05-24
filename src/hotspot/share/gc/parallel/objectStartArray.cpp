@@ -36,9 +36,15 @@ static size_t num_bytes_required(MemRegion mr) {
   return mr.word_size() / CardTable::card_size_in_words();
 }
 
-void ObjectStartArray::initialize(MemRegion reserved_region) {
+ObjectStartArray::ObjectStartArray(char* start_addr, size_t num_bytes)
+  : _virtual_space(ReservedSpace{}, os::vm_page_size()) {
+  MemRegion covered_region{(HeapWord*)start_addr, (HeapWord*) (start_addr + num_bytes)};
+  initialize(covered_region);
+}
+
+void ObjectStartArray::initialize(MemRegion covered_region) {
   // Calculate how much space must be reserved
-  size_t bytes_to_reserve = num_bytes_required(reserved_region);
+  size_t bytes_to_reserve = num_bytes_required(covered_region);
   assert(bytes_to_reserve > 0, "Sanity");
 
   bytes_to_reserve =
@@ -56,7 +62,7 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
 
   assert(_virtual_space.low_boundary() != nullptr, "set from the backing_store");
 
-  _offset_base = (uint8_t*)(_virtual_space.low_boundary() - (uintptr_t(reserved_region.start()) >> CardTable::card_shift()));
+  _offset_base = (uint8_t*)(_virtual_space.low_boundary() - (uintptr_t(covered_region.start()) >> CardTable::card_shift()));
 }
 
 void ObjectStartArray::set_covered_region(MemRegion mr) {

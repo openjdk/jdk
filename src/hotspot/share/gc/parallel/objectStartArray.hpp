@@ -72,9 +72,10 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
   void verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const;
+  void initialize(MemRegion covered_region);
 
  public:
-  void initialize(MemRegion reserved_region);
+  ObjectStartArray(char* start_addr, size_t num_bytes);
 
   // Heap old-gen resizing
   void set_covered_region(MemRegion mr);

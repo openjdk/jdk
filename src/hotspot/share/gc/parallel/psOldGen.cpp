@@ -38,6 +38,7 @@
 
 PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
                    size_t max_size, const char* perf_data_name, int level):
+  _start_array(rs.base(), max_size),
   _min_gen_size(min_size),
   _max_gen_size(max_size)
 {
@@ -66,9 +67,6 @@ void PSOldGen::initialize_virtual_space(ReservedSpace rs,
 void PSOldGen::initialize_work(const char* perf_data_name, int level) {
   MemRegion const reserved_mr = reserved();
   assert(reserved_mr.byte_size() == max_gen_size(), "invariant");
-
-  // Object start stuff: for all reserved memory
-  start_array()->initialize(reserved_mr);
 
   // Card table stuff: for all committed memory
   MemRegion committed_mr((HeapWord*)virtual_space()->low(),
