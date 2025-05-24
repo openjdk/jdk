@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,10 +76,11 @@ class IOVecWrapper {
             return new IOVecWrapper[1];  // one slot cache
         }
         @Override
-        protected void threadTerminated(IOVecWrapper[] cache) {
+        protected void releaseResources(IOVecWrapper[] cache) { // will never be null
             IOVecWrapper wrapper = cache[0];
             if (wrapper != null) {
                 wrapper.vecArray.free();
+                cache[0] = null;
             }
         }
     };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class Util {
             return new BufferCache();
         }
         @Override
-        protected void threadTerminated(BufferCache cache) { // will never be null
+        protected void releaseResources(BufferCache cache) { // will never be null
             while (!cache.isEmpty()) {
                 ByteBuffer bb = cache.removeFirst();
                 free(bb);
