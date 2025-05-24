@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.LongFunction;
 import java.util.function.Supplier;
 
 // A compilation test for the code snippets in this class-level javadoc can be found at:
@@ -207,6 +209,19 @@ public interface Collector<T, A, R> {
     Supplier<A> supplier();
 
     /**
+     * A function that creates and returns a new mutable result container given
+     * the exact number of input elements or {@code -1} if not known.
+     *
+     * @implSpec The default implementation returns a function that returns the
+     * result of calling {@link #supplier()}.
+     *
+     * @return a function which returns a new, mutable result container
+     */
+    default LongFunction<A> sizedSupplier() {
+        return _ -> supplier().get();
+    }
+
+    /**
      * A function that folds a value into a mutable result container.
      *
      * @return a function which folds a value into a mutable result container
@@ -273,7 +288,7 @@ public interface Collector<T, A, R> {
                                   ? Collectors.CH_ID
                                   : Collections.unmodifiableSet(EnumSet.of(Collector.Characteristics.IDENTITY_FINISH,
                                                                            characteristics));
-        return new Collectors.CollectorImpl<>(supplier, accumulator, combiner, cs);
+        return Collectors.CollectorImpl.ofUnsized(supplier, accumulator, combiner, cs);
     }
 
     /**
@@ -308,7 +323,85 @@ public interface Collector<T, A, R> {
             Collections.addAll(cs, characteristics);
             cs = Collections.unmodifiableSet(cs);
         }
-        return new Collectors.CollectorImpl<>(supplier, accumulator, combiner, finisher, cs);
+        return Collectors.CollectorImpl.ofUnsized(supplier, accumulator, combiner, finisher, cs);
+    }
+
+    /**
+     * Returns a new {@code Collector} described by the given {@code supplier},
+     * {@code sizedSupplier}, {@code accumulator}, and {@code combiner} functions.
+     * The resulting {@code Collector} has the
+     * {@code Collector.Characteristics.IDENTITY_FINISH} characteristic.
+     *
+     * @param supplier The supplier function for the new collector if the stream
+     *                 size is unknown
+     * @param sizedSupplier The function which returns a new result container
+     *                      of the appropriate size if the stream size is known
+     * @param accumulator The accumulator function for the new collector
+     * @param combiner The combiner function for the new collector
+     * @param characteristics The collector characteristics for the new
+     *                        collector
+     * @param <T> The type of input elements for the new collector
+     * @param <R> The type of intermediate accumulation result, and final result,
+     *           for the new collector
+     * @throws NullPointerException if any argument is null
+     * @return the new {@code Collector}
+     */
+    public static<T, R> Collector<T, R, R> ofSized(Supplier<R> supplier,
+                                                   IntFunction<R> sizedSupplier,
+                                                   BiConsumer<R, T> accumulator,
+                                                   BinaryOperator<R> combiner,
+                                                   Characteristics... characteristics) {
+        Objects.requireNonNull(supplier);
+        Objects.requireNonNull(sizedSupplier);
+        Objects.requireNonNull(accumulator);
+        Objects.requireNonNull(combiner);
+        Objects.requireNonNull(characteristics);
+        Set<Characteristics> cs = (characteristics.length == 0)
+                                  ? Collectors.CH_ID
+                                  : Collections.unmodifiableSet(EnumSet.of(Collector.Characteristics.IDENTITY_FINISH,
+                                                                           characteristics));
+        return Collectors.CollectorImpl.of(supplier, sizedSupplier, accumulator, combiner, cs);
+    }
+
+    /**
+     * Returns a new {@code Collector} described by the given {@code supplier},
+     * {@code sizedSupplier}, {@code accumulator}, {@code combiner}, and
+     * {@code finisher} functions.
+     *
+     * @param supplier The supplier function for the new collector if the stream
+     *                 size is unknown
+     * @param sizedSupplier The function which returns a new result container
+     *                      of the appropriate size if the stream size is known
+     * @param accumulator The accumulator function for the new collector
+     * @param combiner The combiner function for the new collector
+     * @param finisher The finisher function for the new collector
+     * @param characteristics The collector characteristics for the new
+     *                        collector
+     * @param <T> The type of input elements for the new collector
+     * @param <A> The intermediate accumulation type of the new collector
+     * @param <R> The final result type of the new collector
+     * @throws NullPointerException if any argument is null
+     * @return the new {@code Collector}
+     */
+    public static<T, A, R> Collector<T, A, R> ofSized(Supplier<A> supplier,
+                                                      IntFunction<A> sizedSupplier,
+                                                      BiConsumer<A, T> accumulator,
+                                                      BinaryOperator<A> combiner,
+                                                      Function<A, R> finisher,
+                                                      Characteristics... characteristics) {
+        Objects.requireNonNull(supplier);
+        Objects.requireNonNull(sizedSupplier);
+        Objects.requireNonNull(accumulator);
+        Objects.requireNonNull(combiner);
+        Objects.requireNonNull(finisher);
+        Objects.requireNonNull(characteristics);
+        Set<Characteristics> cs = Collectors.CH_NOID;
+        if (characteristics.length > 0) {
+            cs = EnumSet.noneOf(Characteristics.class);
+            Collections.addAll(cs, characteristics);
+            cs = Collections.unmodifiableSet(cs);
+        }
+        return Collectors.CollectorImpl.of(supplier, sizedSupplier, accumulator, combiner, finisher, cs);
     }
 
     /**
