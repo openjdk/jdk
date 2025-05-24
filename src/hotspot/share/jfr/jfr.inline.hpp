@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,23 @@
  *
  */
 
-#ifndef SHARE_JFR_PERIODIC_SAMPLING_JFRCALLTRACE_HPP
-#define SHARE_JFR_PERIODIC_SAMPLING_JFRCALLTRACE_HPP
+#ifndef SHARE_JFR_JFR_INLINE_HPP
+#define SHARE_JFR_JFR_INLINE_HPP
 
-#include "memory/allocation.hpp"
+#include "jfr/jfr.hpp"
 
-class frame;
-class Method;
-class JavaThread;
+#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
+#include "runtime/javaThread.hpp"
 
-class JfrGetCallTrace : public StackObj {
- private:
-  JavaThread* _thread;
-  bool _in_java;
+inline bool Jfr::has_sample_request(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  return jt->jfr_thread_local()->has_sample_request();
+}
 
- public:
-  JfrGetCallTrace(bool in_java, JavaThread* thread) : _thread(thread), _in_java(in_java) {}
-  bool find_top_frame(frame& topframe, Method** method, frame& first_frame);
-  bool get_topframe(void* ucontext, frame& top);
-};
+inline void Jfr::check_and_process_sample_request(JavaThread* jt) {
+  if (has_sample_request(jt)) {
+    JfrThreadSampling::process_sample_request(jt);
+  }
+}
 
-#endif // SHARE_JFR_PERIODIC_SAMPLING_JFRCALLTRACE_HPP
+#endif // SHARE_JFR_JFR_INLINE_HPP

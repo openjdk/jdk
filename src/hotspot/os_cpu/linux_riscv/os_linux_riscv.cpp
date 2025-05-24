@@ -157,6 +157,11 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   return frame(frame_sp, frame_fp, epc);
 }
 
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  Unimplemented();
+  return nullptr;
+}
+
 // By default, gcc always saves frame pointer rfp on this stack. This
 // may get turned off by -fomit-frame-pointer.
 frame os::get_sender_for_C_frame(frame* fr) {

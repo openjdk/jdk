@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,20 @@
  *
  */
 
-#include "runtime/atomic.hpp"
-#include "runtime/suspendedThreadTask.hpp"
+#ifndef SHARE_JFR_RECORDER_STACKTRACE_JFRVFRAMESTREAM_HPP
+#define SHARE_JFR_RECORDER_STACKTRACE_JFRVFRAMESTREAM_HPP
 
-void SuspendedThreadTask::run() {
-  internal_do_task();
-  _done = true;
-}
+#include "runtime/vframe.hpp"
+
+class JfrVframeStream : public vframeStreamCommon {
+ private:
+  bool _vthread;
+  const ContinuationEntry* _cont_entry;
+  void step_to_sender();
+  void next_frame();
+ public:
+  JfrVframeStream(JavaThread* jt, const frame& fr, bool in_continuation, bool stop_at_java_call_stub);
+  void next_vframe();
+};
+
+#endif // SHARE_JFR_RECORDER_STACKTRACE_JFRVFRAMESTREAM_HPP

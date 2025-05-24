@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,21 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_SUSPENDEDTHREADTASK_HPP
-#define SHARE_RUNTIME_SUSPENDEDTHREADTASK_HPP
+#ifndef SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
+#define SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
 
+#include "memory/allocation.hpp"
+
+class JavaThread;
+class JfrThreadLocal;
 class Thread;
 
-class SuspendedThreadTaskContext {
+class JfrThreadSampling : AllStatic {
+  friend class JfrSamplerThread;
  private:
-  Thread* _thread;
-  void* _ucontext;
+  static bool process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread);
  public:
-  SuspendedThreadTaskContext(Thread* thread, void* ucontext) : _thread(thread), _ucontext(ucontext) {}
-  Thread* thread() const { return _thread; }
-  void* ucontext() const { return _ucontext; }
+  static void process_sample_request(JavaThread* jt);
 };
 
-class SuspendedThreadTask {
- private:
-  Thread* _thread;
-  void internal_do_task();
- protected:
-  ~SuspendedThreadTask() {}
- public:
-  SuspendedThreadTask(Thread* thread) : _thread(thread) {}
-  void run() { internal_do_task(); }
-  virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
-};
-
-#endif // SHARE_RUNTIME_SUSPENDEDTHREADTASK_HPP
+#endif // SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
