@@ -191,39 +191,41 @@ public interface Comparator<T> {
     /**
      * Returns the greater of two values according to this comparator.
      * If the arguments are equal with respect to this comparator,
-     * the {@code a} argument is returned.
+     * the {@code o1} argument is returned.
      *
-     * @param   a   an argument.
-     * @param   b   another argument.
+     * @param   o1   an argument.
+     * @param   o2   another argument.
      * @param   <U> the type of the arguments and the result.
-     * @return  the larger of {@code a} and {@code b} according to this comparator.
-     * @throws  ClassCastException if the collection contains elements that are
-     *          not <em>mutually comparable</em> (for example, strings and
-     *          integers).
+     * @return  the larger of {@code o1} and {@code o2} according to this comparator.
+     * @throws  NullPointerException if an argument is null and this
+     *          comparator does not permit null arguments
+     * @throws  ClassCastException if the arguments' types prevent them from
+     *          being compared by this comparator.
      *
      * @since 25
      */
-    default <U extends T> U max(U a, U b) {
-        return compare(a, b) >= 0 ? a : b;
+    default <U extends T> U max(U o1, U o2) {
+        return compare(o1, o2) >= 0 ? o1 : o2;
     }
 
     /**
      * Returns the smaller of two values according to this comparator.
      * If the arguments are equal with respect to this comparator,
-     * the {@code a} argument is returned.
+     * the {@code o1} argument is returned.
      *
-     * @param   a   an argument.
-     * @param   b   another argument.
+     * @param   o1   an argument.
+     * @param   o2   another argument.
      * @param   <U> the type of the arguments and the result.
-     * @return  the smaller of {@code a} and {@code b} according to this comparator.
-     * @throws  ClassCastException if the collection contains elements that are
-     *          not <em>mutually comparable</em> (for example, strings and
-     *          integers).
+     * @return  the smaller of {@code o1} and {@code o2} according to this comparator.
+     * @throws  NullPointerException if an argument is null and this
+     *          comparator does not permit null arguments
+     * @throws  ClassCastException if the arguments' types prevent them from
+     *          being compared by this comparator.
      *
      * @since 25
      */
-    default <U extends T> U min(U a, U b) {
-        return compare(a, b) <= 0 ? a : b;
+    default <U extends T> U min(U o1, U o2) {
+        return compare(o1, o2) <= 0 ? o1 : o2;
     }
 
     /**
