@@ -96,7 +96,7 @@ public class SerializerMessages_it extends ListResourceBundle {
                 "Errore di I/O" },
 
             {   MsgKey.ER_ILLEGAL_ATTRIBUTE_POSITION,
-                "Impossibile aggiungere l''attributo {0} dopo i nodi figlio o prima che sia prodotto un elemento. L''attributo verr\u00E0 ignorato." },
+                "Impossibile aggiungere l''attributo {0} dopo i nodi figlio o prima che sia prodotto un elemento. L''attributo verrà ignorato." },
 
             /*
              * Note to translators:  The stylesheet contained a reference to a
@@ -104,7 +104,7 @@ public class SerializerMessages_it extends ListResourceBundle {
              * text is the name of the prefix.
              */
             {   MsgKey.ER_NAMESPACE_PREFIX,
-                "Lo spazio di nomi per il prefisso ''{0}'' non \u00E8 stato dichiarato." },
+                "Lo spazio di nomi per il prefisso ''{0}'' non è stato dichiarato." },
 
             /*
              * Note to translators:  This message is reported if the stylesheet
@@ -132,19 +132,19 @@ public class SerializerMessages_it extends ListResourceBundle {
                 "Tentativo di eseguire l''output di un carattere di valore integrale {0} non rappresentato nella codifica di output {1} specificata." },
 
             {   MsgKey.ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-                "Impossibile caricare il file delle propriet\u00E0 ''{0}'' per il metodo di emissione ''{1}'' (verificare CLASSPATH)" },
+                "Impossibile caricare il file delle proprietà ''{0}'' per il metodo di emissione ''{1}'' (verificare CLASSPATH)" },
 
             {   MsgKey.ER_INVALID_PORT,
                 "Numero di porta non valido" },
 
             {   MsgKey.ER_PORT_WHEN_HOST_NULL,
-                "La porta non pu\u00F2 essere impostata se l'host \u00E8 nullo" },
+                "La porta non può essere impostata se l'host è nullo" },
 
             {   MsgKey.ER_HOST_ADDRESS_NOT_WELLFORMED,
-                "Host non \u00E8 un indirizzo corretto" },
+                "Host non è un indirizzo corretto" },
 
             {   MsgKey.ER_SCHEME_NOT_CONFORMANT,
-                "Lo schema non \u00E8 conforme." },
+                "Lo schema non è conforme." },
 
             {   MsgKey.ER_SCHEME_FROM_NULL_STRING,
                 "Impossibile impostare lo schema da una stringa nulla" },
@@ -159,10 +159,10 @@ public class SerializerMessages_it extends ListResourceBundle {
                 "Il frammento contiene un carattere non valido" },
 
             {   MsgKey.ER_FRAG_WHEN_PATH_NULL,
-                "Il frammento non pu\u00F2 essere impostato se il percorso \u00E8 nullo" },
+                "Il frammento non può essere impostato se il percorso è nullo" },
 
             {   MsgKey.ER_FRAG_FOR_GENERIC_URI,
-                "Il frammento pu\u00F2 essere impostato solo per un URI generico" },
+                "Il frammento può essere impostato solo per un URI generico" },
 
             {   MsgKey.ER_NO_SCHEME_IN_URI,
                 "Nessuno schema trovato nell'URI" },
@@ -171,22 +171,22 @@ public class SerializerMessages_it extends ListResourceBundle {
                 "Impossibile inizializzare l'URI con i parametri vuoti" },
 
             {   MsgKey.ER_NO_FRAGMENT_STRING_IN_PATH,
-                "Il frammento non pu\u00F2 essere specificato sia nel percorso che nel frammento" },
+                "Il frammento non può essere specificato sia nel percorso che nel frammento" },
 
             {   MsgKey.ER_NO_QUERY_STRING_IN_PATH,
-                "La stringa di query non pu\u00F2 essere specificata nella stringa di percorso e query." },
+                "La stringa di query non può essere specificata nella stringa di percorso e query." },
 
             {   MsgKey.ER_NO_PORT_IF_NO_HOST,
-                "La porta non pu\u00F2 essere specificata se l'host non \u00E8 specificato" },
+                "La porta non può essere specificata se l'host non è specificato" },
 
             {   MsgKey.ER_NO_USERINFO_IF_NO_HOST,
-                "Userinfo non pu\u00F2 essere specificato se l'host non \u00E8 specificato" },
+                "Userinfo non può essere specificato se l'host non è specificato" },
 
             {   MsgKey.ER_XML_VERSION_NOT_SUPPORTED,
-                "Avvertenza: la versione del documento di output deve essere ''{0}''. Questa versione di XML non \u00E8 supportata. La versione del documento di output sar\u00E0 ''1.0''." },
+                "Avvertenza: la versione del documento di output deve essere ''{0}''. Questa versione di XML non è supportata. La versione del documento di output sarà ''1.0''." },
 
             {   MsgKey.ER_SCHEME_REQUIRED,
-                "Lo schema \u00E8 obbligatorio." },
+                "Lo schema è obbligatorio." },
 
             /*
              * Note to translators:  The words 'Properties' and
@@ -194,37 +194,37 @@ public class SerializerMessages_it extends ListResourceBundle {
              * and should not be translated.
              */
             {   MsgKey.ER_FACTORY_PROPERTY_MISSING,
-                "L''oggetto Properties passato a SerializerFactory non dispone di una propriet\u00E0 ''{0}''." },
+                "L''oggetto Properties passato a SerializerFactory non dispone di una proprietà ''{0}''." },
 
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
-                "Avvertenza: la codifica ''{0}'' non \u00E8 supportata da Java Runtime." },
+                "Avvertenza: la codifica ''{0}'' non è supportata da Java Runtime." },
 
              {MsgKey.ER_FEATURE_NOT_FOUND,
-             "Il parametro {0} non \u00E8 riconosciuto."},
+             "Il parametro {0} non è riconosciuto."},
 
              {MsgKey.ER_FEATURE_NOT_SUPPORTED,
-             "Il parametro ''{0}'' \u00E8 stato riconosciuto, ma non \u00E8 possibile impostare il valore richiesto."},
+             "Il parametro ''{0}'' è stato riconosciuto, ma non è possibile impostare il valore richiesto."},
 
              {MsgKey.ER_STRING_TOO_LONG,
-             "La stringa risultante \u00E8 troppo lunga per adattarsi in DOMString: ''{0}''."},
+             "La stringa risultante è troppo lunga per adattarsi in DOMString: ''{0}''."},
 
              {MsgKey.ER_TYPE_MISMATCH_ERR,
-             "Il tipo di valore per questo nome parametro non \u00E8 compatibile con il tipo di valore previsto. "},
+             "Il tipo di valore per questo nome parametro non è compatibile con il tipo di valore previsto. "},
 
              {MsgKey.ER_NO_OUTPUT_SPECIFIED,
-             "La destinazione di output per i dati da scrivere \u00E8 nulla."},
+             "La destinazione di output per i dati da scrivere è nulla."},
 
              {MsgKey.ER_UNSUPPORTED_ENCODING,
-             "\u00C8 stata rilevata una codifica non supportata."},
+             "È stata rilevata una codifica non supportata."},
 
              {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
              "Impossibile serializzare il nodo."},
 
              {MsgKey.ER_CDATA_SECTIONS_SPLIT,
-             "La sezione CDATA contiene uno o pi\u00F9 indicatori di fine ']]>'."},
+             "La sezione CDATA contiene uno o più indicatori di fine ']]>'."},
 
              {MsgKey.ER_WARNING_WF_NOT_CHECKED,
-                 "Impossibile creare un'istanza dello strumento di controllo della correttezza del formato. Il parametro con formato valido \u00E8 impostato su true, ma non \u00E8 possibile eseguire il controllo della correttezza del formato."
+                 "Impossibile creare un'istanza dello strumento di controllo della correttezza del formato. Il parametro con formato valido è impostato su true, ma non è possibile eseguire il controllo della correttezza del formato."
              },
 
              {MsgKey.ER_WF_INVALID_CHARACTER,
@@ -232,27 +232,27 @@ public class SerializerMessages_it extends ListResourceBundle {
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
-                 "\u00C8 stato trovato un carattere XML non valido (Unicode: 0x{0}) nel commento."
+                 "È stato trovato un carattere XML non valido (Unicode: 0x{0}) nel commento."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
-                 "\u00C8 stato trovato un carattere XML non valido (Unicode: 0x{0}) nei dati dell''istruzione di elaborazione."
+                 "È stato trovato un carattere XML non valido (Unicode: 0x{0}) nei dati dell''istruzione di elaborazione."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
-                 "\u00C8 stato trovato un carattere XML non valido (Unicode: 0x{0}) nei contenuti della sezione CDATA."
+                 "È stato trovato un carattere XML non valido (Unicode: 0x{0}) nei contenuti della sezione CDATA."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
-                 "\u00C8 stato trovato un carattere XML non valido (Unicode: 0x{0}) nel contenuto dei dati carattere del nodo."
+                 "È stato trovato un carattere XML non valido (Unicode: 0x{0}) nel contenuto dei dati carattere del nodo."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
-                 "\u00C8 stato trovato un carattere o caratteri XML non validi nel nodo {0} denominato ''{1}''."
+                 "È stato trovato un carattere o caratteri XML non validi nel nodo {0} denominato ''{1}''."
              },
 
              { MsgKey.ER_WF_DASH_IN_COMMENT,
-                 "La stringa \"--\" non \u00E8 consentita nei commenti."
+                 "La stringa \"--\" non è consentita nei commenti."
              },
 
              {MsgKey.ER_WF_LT_IN_ATTVAL,
@@ -260,11 +260,11 @@ public class SerializerMessages_it extends ListResourceBundle {
              },
 
              {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
-                 "Il riferimento di entit\u00E0 non analizzata \"&{0};\" non \u00E8 consentito."
+                 "Il riferimento di entità non analizzata \"&{0};\" non è consentito."
              },
 
              {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
-                 "Il riferimento di entit\u00E0 esterna \"&{0};\" non \u00E8 consentito in un valore di attributo."
+                 "Il riferimento di entità esterna \"&{0};\" non è consentito in un valore di attributo."
              },
 
              {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
@@ -272,23 +272,23 @@ public class SerializerMessages_it extends ListResourceBundle {
              },
 
              {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
-                 "Il nome locale dell''elemento \"{0}\" \u00E8 nullo."
+                 "Il nome locale dell''elemento \"{0}\" è nullo."
              },
 
              {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
-                 "Il nome locale dell''attributo \"{0}\" \u00E8 nullo."
+                 "Il nome locale dell''attributo \"{0}\" è nullo."
              },
 
              { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
-                 "Il testo di sostituzione del nodo entit\u00E0 \"{0}\" contiene un nodo elemento \"{1}\" con un prefisso non associato \"{2}\"."
+                 "Il testo di sostituzione del nodo entità \"{0}\" contiene un nodo elemento \"{1}\" con un prefisso non associato \"{2}\"."
              },
 
              { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
-                 "Il testo di sostituzione del nodo entit\u00E0 \"{0}\" contiene un nodo attributo \"{1}\" con un prefisso non associato \"{2}\"."
+                 "Il testo di sostituzione del nodo entità \"{0}\" contiene un nodo attributo \"{1}\" con un prefisso non associato \"{2}\"."
              },
 
              { MsgKey.ER_WRITING_INTERNAL_SUBSET,
-                 "Si \u00E8 verificato un errore durante la scrittura del subset interno."
+                 "Si è verificato un errore durante la scrittura del subset interno."
              },
 
         };

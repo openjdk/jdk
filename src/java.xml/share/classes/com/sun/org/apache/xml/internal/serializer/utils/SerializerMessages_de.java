@@ -72,7 +72,7 @@ public class SerializerMessages_de extends ListResourceBundle {
     public Object[][] getContents() {
         Object[][] contents = new Object[][] {
             {   MsgKey.BAD_MSGKEY,
-                "Der Nachrichtenschl\u00FCssel \"{0}\" ist nicht in der Nachrichtenklasse \"{1}\" enthalten" },
+                "Der Nachrichtenschlüssel \"{0}\" ist nicht in der Nachrichtenklasse \"{1}\" enthalten" },
 
             {   MsgKey.BAD_MSGFORMAT,
                 "Das Format der Nachricht \"{0}\" in der Nachrichtenklasse \"{1}\" war nicht erfolgreich." },
@@ -87,16 +87,16 @@ public class SerializerMessages_de extends ListResourceBundle {
                     "Ressource [ {0} ] konnte nicht geladen werden: {1} \n {2} \t {3}" },
 
             {   MsgKey.ER_BUFFER_SIZE_LESSTHAN_ZERO,
-                    "Puffergr\u00F6\u00DFe <=0" },
+                    "Puffergröße <=0" },
 
             {   MsgKey.ER_INVALID_UTF16_SURROGATE,
-                    "Ung\u00FCltige UTF-16-Ersetzung festgestellt: {0}?" },
+                    "Ungültige UTF-16-Ersetzung festgestellt: {0}?" },
 
             {   MsgKey.ER_OIERROR,
                 "I/O-Fehler" },
 
             {   MsgKey.ER_ILLEGAL_ATTRIBUTE_POSITION,
-                "Attribut {0} kann nicht nach untergeordneten Knoten oder vor dem Erstellen eines Elements hinzugef\u00FCgt werden. Attribut wird ignoriert." },
+                "Attribut {0} kann nicht nach untergeordneten Knoten oder vor dem Erstellen eines Elements hinzugefügt werden. Attribut wird ignoriert." },
 
             /*
              * Note to translators:  The stylesheet contained a reference to a
@@ -104,7 +104,7 @@ public class SerializerMessages_de extends ListResourceBundle {
              * text is the name of the prefix.
              */
             {   MsgKey.ER_NAMESPACE_PREFIX,
-                "Namespace f\u00FCr Pr\u00E4fix \"{0}\" wurde nicht deklariert." },
+                "Namespace für Präfix \"{0}\" wurde nicht deklariert." },
 
             /*
              * Note to translators:  This message is reported if the stylesheet
@@ -113,7 +113,7 @@ public class SerializerMessages_de extends ListResourceBundle {
              * specifies the name of the attribute.
              */
             {   MsgKey.ER_STRAY_ATTRIBUTE,
-                "Attribut \"{0}\" au\u00DFerhalb des Elements." },
+                "Attribut \"{0}\" außerhalb des Elements." },
 
             /*
              * Note to translators:  As with the preceding message, a namespace
@@ -123,19 +123,19 @@ public class SerializerMessages_de extends ListResourceBundle {
              * namespace declaration.
              */
             {   MsgKey.ER_STRAY_NAMESPACE,
-                "Namespace-Deklaration {0}={1} au\u00DFerhalb des Elements." },
+                "Namespace-Deklaration {0}={1} außerhalb des Elements." },
 
             {   MsgKey.ER_COULD_NOT_LOAD_RESOURCE,
-                "\"{0}\" konnte nicht geladen werden (CLASSPATH pr\u00FCfen). Die Standardwerte werden verwendet" },
+                "\"{0}\" konnte nicht geladen werden (CLASSPATH prüfen). Die Standardwerte werden verwendet" },
 
             {   MsgKey.ER_ILLEGAL_CHARACTER,
                 "Versuch, Zeichen mit Integralwert {0} auszugeben, das nicht in der speziellen Ausgabecodierung von {1} dargestellt wird." },
 
             {   MsgKey.ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-                "Property-Datei \"{0}\" konnte f\u00FCr Ausgabemethode \"{1}\" nicht geladen werden (CLASSPATH pr\u00FCfen)" },
+                "Property-Datei \"{0}\" konnte für Ausgabemethode \"{1}\" nicht geladen werden (CLASSPATH prüfen)" },
 
             {   MsgKey.ER_INVALID_PORT,
-                "Ung\u00FCltige Portnummer" },
+                "Ungültige Portnummer" },
 
             {   MsgKey.ER_PORT_WHEN_HOST_NULL,
                 "Port kann nicht festgelegt werden, wenn der Host null ist" },
@@ -150,19 +150,19 @@ public class SerializerMessages_de extends ListResourceBundle {
                 "Schema kann nicht von Nullzeichenfolge festgelegt werden" },
 
             {   MsgKey.ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
-                "Pfad enth\u00E4lt eine ung\u00FCltige Escapesequenz" },
+                "Pfad enthält eine ungültige Escapesequenz" },
 
             {   MsgKey.ER_PATH_INVALID_CHAR,
-                "Pfad enth\u00E4lt ung\u00FCltiges Zeichen: {0}" },
+                "Pfad enthält ungültiges Zeichen: {0}" },
 
             {   MsgKey.ER_FRAG_INVALID_CHAR,
-                "Fragment enth\u00E4lt ein ung\u00FCltiges Zeichen" },
+                "Fragment enthält ein ungültiges Zeichen" },
 
             {   MsgKey.ER_FRAG_WHEN_PATH_NULL,
                 "Fragment kann nicht festgelegt werden, wenn der Pfad null ist" },
 
             {   MsgKey.ER_FRAG_FOR_GENERIC_URI,
-                "Fragment kann nur f\u00FCr eine generische URI festgelegt werden" },
+                "Fragment kann nur für eine generische URI festgelegt werden" },
 
             {   MsgKey.ER_NO_SCHEME_IN_URI,
                 "Kein Schema gefunden in URI" },
@@ -180,10 +180,10 @@ public class SerializerMessages_de extends ListResourceBundle {
                 "Port kann nicht angegeben werden, wenn der Host nicht angegeben wurde" },
 
             {   MsgKey.ER_NO_USERINFO_IF_NO_HOST,
-                "Benutzerinformationen k\u00F6nnen nicht angegeben werden, wenn der Host nicht angegeben wurde" },
+                "Benutzerinformationen können nicht angegeben werden, wenn der Host nicht angegeben wurde" },
 
             {   MsgKey.ER_XML_VERSION_NOT_SUPPORTED,
-                "Warnung: Die Version des Ausgabedokuments soll \"{0}\" sein. Diese Version von XML wird nicht unterst\u00FCtzt. Die Version des Ausgabedokuments wird \"1.0\" sein." },
+                "Warnung: Die Version des Ausgabedokuments soll \"{0}\" sein. Diese Version von XML wird nicht unterstützt. Die Version des Ausgabedokuments wird \"1.0\" sein." },
 
             {   MsgKey.ER_SCHEME_REQUIRED,
                 "Schema ist erforderlich." },
@@ -194,10 +194,10 @@ public class SerializerMessages_de extends ListResourceBundle {
              * and should not be translated.
              */
             {   MsgKey.ER_FACTORY_PROPERTY_MISSING,
-                "Das an die SerializerFactory \u00FCbergebene Properties-Objekt verf\u00FCgt \u00FCber keine Eigenschaft \"{0}\"." },
+                "Das an die SerializerFactory übergebene Properties-Objekt verfügt über keine Eigenschaft \"{0}\"." },
 
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
-                "Warnung: Die Codierung \"{0}\" wird nicht von Java Runtime unterst\u00FCtzt." },
+                "Warnung: Die Codierung \"{0}\" wird nicht von Java Runtime unterstützt." },
 
              {MsgKey.ER_FEATURE_NOT_FOUND,
              "Parameter \"{0}\" nicht erkannt."},
@@ -209,66 +209,66 @@ public class SerializerMessages_de extends ListResourceBundle {
              "Die resultierende Zeichenfolge ist zu lang, um in eine DOMString zupassen: \"{0}\"."},
 
              {MsgKey.ER_TYPE_MISMATCH_ERR,
-             "Der Werttyp f\u00FCr diesen Parameternamen ist nicht mit dem erwarteten Werttyp kompatibel. "},
+             "Der Werttyp für diesen Parameternamen ist nicht mit dem erwarteten Werttyp kompatibel. "},
 
              {MsgKey.ER_NO_OUTPUT_SPECIFIED,
              "Ausgabeziel, in das Daten geschrieben werden sollen, war nicht angegeben."},
 
              {MsgKey.ER_UNSUPPORTED_ENCODING,
-             "Nicht unterst\u00FCtzte Codierung gefunden."},
+             "Nicht unterstützte Codierung gefunden."},
 
              {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
              "Knoten konnte nicht serialisiert werden."},
 
              {MsgKey.ER_CDATA_SECTIONS_SPLIT,
-             "Der CDATA-Abschnitt enth\u00E4lt mindestens eine Endmarkierung \"]]>\"."},
+             "Der CDATA-Abschnitt enthält mindestens eine Endmarkierung \"]]>\"."},
 
              {MsgKey.ER_WARNING_WF_NOT_CHECKED,
-                 "Eine Instanz der Pr\u00FCfung f\u00FCr ordnungsgem\u00E4\u00DFe Formatierung konnte nicht erstellt werden. Der ordnungsgem\u00E4\u00DF formatierte Parameter wurde auf \"True\" gesetzt, aber die Pr\u00FCfung auf ordnungsgem\u00E4\u00DFe Formatierung kann nicht ausgef\u00FChrt werden."
+                 "Eine Instanz der Prüfung für ordnungsgemäße Formatierung konnte nicht erstellt werden. Der ordnungsgemäß formatierte Parameter wurde auf \"True\" gesetzt, aber die Prüfung auf ordnungsgemäße Formatierung kann nicht ausgeführt werden."
              },
 
              {MsgKey.ER_WF_INVALID_CHARACTER,
-                 "Der Knoten \"{0}\" enth\u00E4lt ung\u00FCltige XML-Zeichen."
+                 "Der Knoten \"{0}\" enthält ungültige XML-Zeichen."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
-                 "Ung\u00FCltiges XML-Zeichen (Unicode: 0x{0}) wurde im Kommentar gefunden."
+                 "Ungültiges XML-Zeichen (Unicode: 0x{0}) wurde im Kommentar gefunden."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
-                 "Ung\u00FCltiges XML-Zeichen (Unicode: 0x{0}) wurde in den Verarbeitungsanweisungsdaten gefunden."
+                 "Ungültiges XML-Zeichen (Unicode: 0x{0}) wurde in den Verarbeitungsanweisungsdaten gefunden."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
-                 "Ung\u00FCltiges XML-Zeichen (Unicode: 0x{0}) wurde im Inhalt des CDATA-Abschnitts gefunden."
+                 "Ungültiges XML-Zeichen (Unicode: 0x{0}) wurde im Inhalt des CDATA-Abschnitts gefunden."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
-                 "Ung\u00FCltiges XML-Zeichen (Unicode: 0x{0}) wurde in den Zeichendaten des Knotens gefunden."
+                 "Ungültiges XML-Zeichen (Unicode: 0x{0}) wurde in den Zeichendaten des Knotens gefunden."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
-                 "Ung\u00FCltige(s) XML-Zeichen wurde(n) im {0}-Knoten mit Namen \"{1}\" gefunden."
+                 "Ungültige(s) XML-Zeichen wurde(n) im {0}-Knoten mit Namen \"{1}\" gefunden."
              },
 
              { MsgKey.ER_WF_DASH_IN_COMMENT,
-                 "Zeichenfolge \"--\" ist in Kommentaren nicht zul\u00E4ssig."
+                 "Zeichenfolge \"--\" ist in Kommentaren nicht zulässig."
              },
 
              {MsgKey.ER_WF_LT_IN_ATTVAL,
-                 "Wert des Attributs \"{1}\", das mit Elementtyp \"{0}\" verkn\u00FCpft ist, darf nicht das Zeichen \"<\" enthalten."
+                 "Wert des Attributs \"{1}\", das mit Elementtyp \"{0}\" verknüpft ist, darf nicht das Zeichen \"<\" enthalten."
              },
 
              {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
-                 "Nicht geparste Entityreferenz \"&{0};\" ist nicht zul\u00E4ssig."
+                 "Nicht geparste Entityreferenz \"&{0};\" ist nicht zulässig."
              },
 
              {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
-                 "Externe Entityreferenz \"&{0};\" ist in einem Attributwert nicht zul\u00E4ssig."
+                 "Externe Entityreferenz \"&{0};\" ist in einem Attributwert nicht zulässig."
              },
 
              {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
-                 "Pr\u00E4fix \"{0}\" kann nicht an den Namespace \"{1}\" gebunden werden."
+                 "Präfix \"{0}\" kann nicht an den Namespace \"{1}\" gebunden werden."
              },
 
              {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
@@ -280,11 +280,11 @@ public class SerializerMessages_de extends ListResourceBundle {
              },
 
              { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
-                 "Der Ersatztext des Entityknotens \"{0}\" enth\u00E4lt einen Elementknoten \"{1}\" mit nicht gebundenem Pr\u00E4fix \"{2}\"."
+                 "Der Ersatztext des Entityknotens \"{0}\" enthält einen Elementknoten \"{1}\" mit nicht gebundenem Präfix \"{2}\"."
              },
 
              { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
-                 "Der Ersatztext des Entityknotens \"{0}\" enth\u00E4lt einen Attributknoten \"{1}\" mit nicht gebundenem Pr\u00E4fix \"{2}\"."
+                 "Der Ersatztext des Entityknotens \"{0}\" enthält einen Attributknoten \"{1}\" mit nicht gebundenem Präfix \"{2}\"."
              },
 
              { MsgKey.ER_WRITING_INTERNAL_SUBSET,

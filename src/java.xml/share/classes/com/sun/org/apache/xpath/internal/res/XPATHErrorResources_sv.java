@@ -360,7 +360,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { "ERROR0000" , "{0}" },
 
-  { ER_CURRENT_NOT_ALLOWED_IN_MATCH, "Funktionen current() \u00E4r inte till\u00E5ten i ett matchningsm\u00F6nster!" },
+  { ER_CURRENT_NOT_ALLOWED_IN_MATCH, "Funktionen current() är inte tillåten i ett matchningsmönster!" },
 
   { ER_CURRENT_TAKES_NO_ARGS, "Funktionen current() tar inte emot argument!" },
 
@@ -368,31 +368,31 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "Implementeringen av funktionen document() har inte ersatts av com.sun.org.apache.xalan.internal.xslt.FuncDocument!"},
 
   { ER_CONTEXT_CAN_NOT_BE_NULL,
-      "Kontexten kan inte vara null n\u00E4r \u00E5tg\u00E4rden \u00E4r kontextberoende."},
+      "Kontexten kan inte vara null när åtgärden är kontextberoende."},
 
   { ER_CONTEXT_HAS_NO_OWNERDOC,
-      "context har inget \u00E4gardokument!"},
+      "context har inget ägardokument!"},
 
   { ER_LOCALNAME_HAS_TOO_MANY_ARGS,
-      "local-name() har f\u00F6r m\u00E5nga argument."},
+      "local-name() har för många argument."},
 
   { ER_NAMESPACEURI_HAS_TOO_MANY_ARGS,
-      "namespace-uri() har f\u00F6r m\u00E5nga argument."},
+      "namespace-uri() har för många argument."},
 
   { ER_NORMALIZESPACE_HAS_TOO_MANY_ARGS,
-      "normalize-space() har f\u00F6r m\u00E5nga argument."},
+      "normalize-space() har för många argument."},
 
   { ER_NUMBER_HAS_TOO_MANY_ARGS,
-      "number() har f\u00F6r m\u00E5nga argument."},
+      "number() har för många argument."},
 
   { ER_NAME_HAS_TOO_MANY_ARGS,
-     "name() har f\u00F6r m\u00E5nga argument."},
+     "name() har för många argument."},
 
   { ER_STRING_HAS_TOO_MANY_ARGS,
-      "string() har f\u00F6r m\u00E5nga argument."},
+      "string() har för många argument."},
 
   { ER_STRINGLENGTH_HAS_TOO_MANY_ARGS,
-      "string-length() har f\u00F6r m\u00E5nga argument."},
+      "string-length() har för många argument."},
 
   { ER_TRANSLATE_TAKES_3_ARGS,
       "Funktionen translate() tar emot tre argument!"},
@@ -401,16 +401,16 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "Funktionen unparsed-entity-uri borde ta emot ett argument!"},
 
   { ER_NAMESPACEAXIS_NOT_IMPLEMENTED,
-      "namnrymdsaxeln \u00E4r inte implementerad \u00E4n!"},
+      "namnrymdsaxeln är inte implementerad än!"},
 
   { ER_UNKNOWN_AXIS,
-     "ok\u00E4nd axel: {0}"},
+     "okänd axel: {0}"},
 
   { ER_UNKNOWN_MATCH_OPERATION,
-     "ok\u00E4nd matchnings\u00E5tg\u00E4rd!"},
+     "okänd matchningsåtgärd!"},
 
   { ER_INCORRECT_ARG_LENGTH,
-      "Felaktig argumentl\u00E4ngd p\u00E5 nodtest f\u00F6r processing-instruction()!"},
+      "Felaktig argumentlängd på nodtest för processing-instruction()!"},
 
   { ER_CANT_CONVERT_TO_NUMBER,
       "Kan inte konvertera {0} till ett tal"},
@@ -425,52 +425,52 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "Kan inte konvertera {0} till type#{1}"},
 
   { ER_EXPECTED_MATCH_PATTERN,
-      "F\u00F6rv\u00E4ntat matchningsm\u00F6nster i getMatchScore!"},
+      "Förväntat matchningsmönster i getMatchScore!"},
 
   { ER_COULDNOT_GET_VAR_NAMED,
-      "Kunde inte h\u00E4mta variabeln {0}"},
+      "Kunde inte hämta variabeln {0}"},
 
   { ER_UNKNOWN_OPCODE,
-     "FEL! Ok\u00E4nd op-kod: {0}"},
+     "FEL! Okänd op-kod: {0}"},
 
   { ER_EXTRA_ILLEGAL_TOKENS,
-     "Extra otill\u00E5tna tecken: {0}"},
+     "Extra otillåtna tecken: {0}"},
 
   { ER_EXPECTED_DOUBLE_QUOTE,
-      "Litteral omges av fel sorts citattecken... dubbla citattecken f\u00F6rv\u00E4ntade!"},
+      "Litteral omges av fel sorts citattecken... dubbla citattecken förväntade!"},
 
   { ER_EXPECTED_SINGLE_QUOTE,
-      "Litteral omges av fel sorts citattecken... enkla citattecken f\u00F6rv\u00E4ntade!"},
+      "Litteral omges av fel sorts citattecken... enkla citattecken förväntade!"},
 
   { ER_EMPTY_EXPRESSION,
      "Tomt uttryck!"},
 
   { ER_EXPECTED_BUT_FOUND,
-     "F\u00F6rv\u00E4ntade {0}, men hittade: {1}"},
+     "Förväntade {0}, men hittade: {1}"},
 
   { ER_INCORRECT_PROGRAMMER_ASSERTION,
-      "Programmerarens utsaga \u00E4r inte korrekt! - {0}"},
+      "Programmerarens utsaga är inte korrekt! - {0}"},
 
   { ER_BOOLEAN_ARG_NO_LONGER_OPTIONAL,
-      "Argumentet boolean(...) \u00E4r inte l\u00E4ngre valfritt med 19990709 XPath-utkast."},
+      "Argumentet boolean(...) är inte längre valfritt med 19990709 XPath-utkast."},
 
   { ER_FOUND_COMMA_BUT_NO_PRECEDING_ARG,
-      "Hittade ',' utan f\u00F6reg\u00E5ende argument!"},
+      "Hittade ',' utan föregående argument!"},
 
   { ER_FOUND_COMMA_BUT_NO_FOLLOWING_ARG,
-      "Hittade ',' utan efterf\u00F6ljande argument!"},
+      "Hittade ',' utan efterföljande argument!"},
 
   { ER_PREDICATE_ILLEGAL_SYNTAX,
-      "'..[predikat]' eller '.[predikat]' \u00E4r otill\u00E5ten syntax. Anv\u00E4nd 'self::node()[predikat]' ist\u00E4llet."},
+      "'..[predikat]' eller '.[predikat]' är otillåten syntax. Använd 'self::node()[predikat]' istället."},
 
   { ER_ILLEGAL_AXIS_NAME,
-     "otill\u00E5tet axelnamn: {0}"},
+     "otillåtet axelnamn: {0}"},
 
   { ER_UNKNOWN_NODETYPE,
-     "Ok\u00E4nd nodtyp: {0}"},
+     "Okänd nodtyp: {0}"},
 
   { ER_PATTERN_LITERAL_NEEDS_BE_QUOTED,
-      "M\u00F6nsterlitteralen ({0}) m\u00E5ste omges av citattecken!"},
+      "Mönsterlitteralen ({0}) måste omges av citattecken!"},
 
   { ER_COULDNOT_BE_FORMATTED_TO_NUMBER,
       "{0} kunde inte formateras till ett tal!"},
@@ -485,13 +485,13 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "FEL! Hittade inte ENDOP efter OP_LOCATIONPATH"},
 
   { ER_ERROR_OCCURED,
-     "Ett fel har intr\u00E4ffat!"},
+     "Ett fel har inträffat!"},
 
   { ER_ILLEGAL_VARIABLE_REFERENCE,
-      "VariableReference angiven f\u00F6r variabel som \u00E4r utanf\u00F6r kontext eller som saknar definition! Namn = {0}"},
+      "VariableReference angiven för variabel som är utanför kontext eller som saknar definition! Namn = {0}"},
 
   { ER_AXES_NOT_ALLOWED,
-      "Endast underordnade:: och attribut::-axlar \u00E4r till\u00E5tna i matchningsm\u00F6nster! Regelvidriga axlar = {0}"},
+      "Endast underordnade:: och attribut::-axlar är tillåtna i matchningsmönster! Regelvidriga axlar = {0}"},
 
   { ER_KEY_HAS_TOO_MANY_ARGS,
       "key() har felaktigt antal argument."},
@@ -503,22 +503,22 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
      "Hittade inte funktionen: {0}"},
 
   { ER_UNSUPPORTED_ENCODING,
-     "Kodning utan st\u00F6d: {0}"},
+     "Kodning utan stöd: {0}"},
 
   { ER_PROBLEM_IN_DTM_NEXTSIBLING,
-      "Problem intr\u00E4ffade i DTM i getNextSibling... f\u00F6rs\u00F6ker \u00E5terskapa"},
+      "Problem inträffade i DTM i getNextSibling... försöker återskapa"},
 
   { ER_CANNOT_WRITE_TO_EMPTYNODELISTIMPL,
       "Programmerarfel: kan inte skriva till EmptyNodeList."},
 
   { ER_SETDOMFACTORY_NOT_SUPPORTED,
-      "setDOMFactory st\u00F6ds inte i XPathContext!"},
+      "setDOMFactory stöds inte i XPathContext!"},
 
   { ER_PREFIX_MUST_RESOLVE,
-      "Prefix m\u00E5ste matchas till en namnrymd: {0}"},
+      "Prefix måste matchas till en namnrymd: {0}"},
 
   { ER_PARSE_NOT_SUPPORTED,
-      "tolkning (InputSource-k\u00E4lla) st\u00F6ds inte i XPathContext! Kan inte \u00F6ppna {0}"},
+      "tolkning (InputSource-källa) stöds inte i XPathContext! Kan inte öppna {0}"},
 
   { ER_SAX_API_NOT_HANDLED,
       "SAX API-tecken(char ch[]... hanteras inte av DTM!"},
@@ -539,13 +539,13 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
      "Fel i DOM2Helper.parse"},
 
   { ER_INVALID_UTF16_SURROGATE,
-      "Ogiltigt UTF-16-surrogat uppt\u00E4ckt: {0} ?"},
+      "Ogiltigt UTF-16-surrogat upptäckt: {0} ?"},
 
   { ER_OIERROR,
      "IO-fel"},
 
   { ER_CANNOT_CREATE_URL,
-     "Kan inte skapa URL f\u00F6r: {0}"},
+     "Kan inte skapa URL för: {0}"},
 
   { ER_XPATH_READOBJECT,
      "I XPath.readObject: {0}"},
@@ -557,68 +557,68 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
        "Kan inte hantera XPath-typ: {0}"},
 
   { ER_NODESET_NOT_MUTABLE,
-       "Detta NodeSet \u00E4r of\u00F6r\u00E4nderligt"},
+       "Detta NodeSet är oföränderligt"},
 
   { ER_NODESETDTM_NOT_MUTABLE,
-       "Detta NodeSetDTM \u00E4r of\u00F6r\u00E4nderligt"},
+       "Detta NodeSetDTM är oföränderligt"},
 
   { ER_VAR_NOT_RESOLVABLE,
         "Variabeln kan inte matchas: {0}"},
 
   { ER_NULL_ERROR_HANDLER,
-        "Felhanterare med v\u00E4rde null"},
+        "Felhanterare med värde null"},
 
   { ER_PROG_ASSERT_UNKNOWN_OPCODE,
-       "Programmerarens utsaga: ok\u00E4nd op-kod: {0}"},
+       "Programmerarens utsaga: okänd op-kod: {0}"},
 
   { ER_ZERO_OR_ONE,
        "0 eller 1"},
 
   { ER_RTF_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
-       "rtf() st\u00F6ds inte av XRTreeFragSelectWrapper"},
+       "rtf() stöds inte av XRTreeFragSelectWrapper"},
 
   { ER_ASNODEITERATOR_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
-       "asNodeIterator() st\u00F6ds inte av XRTreeFragSelectWrapper"},
+       "asNodeIterator() stöds inte av XRTreeFragSelectWrapper"},
 
         /**  detach() not supported by XRTreeFragSelectWrapper   */
    { ER_DETACH_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
-                "detach() st\u00F6ds inte av XRTreeFragSelectWrapper"},
+                "detach() stöds inte av XRTreeFragSelectWrapper"},
 
         /**  num() not supported by XRTreeFragSelectWrapper   */
    { ER_NUM_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
-                "num() st\u00F6ds inte av XRTreeFragSelectWrapper"},
+                "num() stöds inte av XRTreeFragSelectWrapper"},
 
         /**  xstr() not supported by XRTreeFragSelectWrapper   */
    { ER_XSTR_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
-                "xstr() st\u00F6ds inte av XRTreeFragSelectWrapper"},
+                "xstr() stöds inte av XRTreeFragSelectWrapper"},
 
         /**  str() not supported by XRTreeFragSelectWrapper   */
    { ER_STR_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
-                "str() st\u00F6ds inte av XRTreeFragSelectWrapper"},
+                "str() stöds inte av XRTreeFragSelectWrapper"},
 
   { ER_FSB_NOT_SUPPORTED_XSTRINGFORCHARS,
-       "fsb() st\u00F6ds inte f\u00F6r XStringForChars"},
+       "fsb() stöds inte för XStringForChars"},
 
   { ER_COULD_NOT_FIND_VAR,
       "Hittade inte variabel med namnet {0}"},
 
   { ER_XSTRINGFORCHARS_CANNOT_TAKE_STRING,
-      "XStringForChars kan inte ta emot en str\u00E4ng f\u00F6r argument"},
+      "XStringForChars kan inte ta emot en sträng för argument"},
 
   { ER_FASTSTRINGBUFFER_CANNOT_BE_NULL,
-      "FastStringBuffer-argumentet f\u00E5r inte vara null"},
+      "FastStringBuffer-argumentet får inte vara null"},
 
   { ER_TWO_OR_THREE,
        "2 eller 3"},
 
   { ER_VARIABLE_ACCESSED_BEFORE_BIND,
-       "\u00C5tkomst till variabel innan den \u00E4r bunden!"},
+       "Åtkomst till variabel innan den är bunden!"},
 
   { ER_FSB_CANNOT_TAKE_STRING,
-       "XStringForFSB kan inte ta emot en str\u00E4ng f\u00F6r argument!"},
+       "XStringForFSB kan inte ta emot en sträng för argument!"},
 
   { ER_SETTING_WALKER_ROOT_TO_NULL,
-       "\n !!!! Fel! Anger roten f\u00F6r en ''walker'' som null!!!"},
+       "\n !!!! Fel! Anger roten för en ''walker'' som null!!!"},
 
   { ER_NODESETDTM_CANNOT_ITERATE,
        "Detta NodeSetDTM kan inte iterera till en tidigare nod!"},
@@ -627,87 +627,87 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
        "Detta NodeSet kan inte iterera till en tidigare nod!"},
 
   { ER_NODESETDTM_CANNOT_INDEX,
-       "Detta NodeSetDTM kan inte utf\u00F6ra funktioner som indexerar eller r\u00E4knar!"},
+       "Detta NodeSetDTM kan inte utföra funktioner som indexerar eller räknar!"},
 
   { ER_NODESET_CANNOT_INDEX,
-       "Detta NodeSet kan inte utf\u00F6ra funktioner som indexerar eller r\u00E4knar!"},
+       "Detta NodeSet kan inte utföra funktioner som indexerar eller räknar!"},
 
   { ER_CANNOT_CALL_SETSHOULDCACHENODE,
        "Kan inte anropa setShouldCacheNodes efter anropat nextNode!"},
 
   { ER_ONLY_ALLOWS,
-       "{0} till\u00E5ter endast {1} argument"},
+       "{0} tillåter endast {1} argument"},
 
   { ER_UNKNOWN_STEP,
-       "Programmerarens utsaga i getNextStepPos: ok\u00E4nt stepType: {0}"},
+       "Programmerarens utsaga i getNextStepPos: okänt stepType: {0}"},
 
   //Note to translators:  A relative location path is a form of XPath expression.
   // The message indicates that such an expression was expected following the
   // characters '/' or '//', but was not found.
   { ER_EXPECTED_REL_LOC_PATH,
-      "En relativ s\u00F6kv\u00E4g f\u00F6rv\u00E4ntades efter tecknet '/' eller '//'."},
+      "En relativ sökväg förväntades efter tecknet '/' eller '//'."},
 
   // Note to translators:  A location path is a form of XPath expression.
   // The message indicates that syntactically such an expression was expected,but
   // the characters specified by the substitution text were encountered instead.
   { ER_EXPECTED_LOC_PATH,
-       "En s\u00F6kv\u00E4g f\u00F6rv\u00E4ntades, men f\u00F6ljande tecken p\u00E5tr\u00E4ffades: {0}"},
+       "En sökväg förväntades, men följande tecken påträffades: {0}"},
 
   // Note to translators:  A location path is a form of XPath expression.
   // The message indicates that syntactically such a subexpression was expected,
   // but no more characters were found in the expression.
   { ER_EXPECTED_LOC_PATH_AT_END_EXPR,
-       "En s\u00F6kv\u00E4g f\u00F6rv\u00E4ntades, men slutet av XPath-uttrycket hittades ist\u00E4llet."},
+       "En sökväg förväntades, men slutet av XPath-uttrycket hittades istället."},
 
   // Note to translators:  A location step is part of an XPath expression.
   // The message indicates that syntactically such an expression was expected
   // following the specified characters.
   { ER_EXPECTED_LOC_STEP,
-       "Ett platssteg f\u00F6rv\u00E4ntades efter tecknet '/' eller '//'."},
+       "Ett platssteg förväntades efter tecknet '/' eller '//'."},
 
   // Note to translators:  A node test is part of an XPath expression that is
   // used to test for particular kinds of nodes.  In this case, a node test that
   // consists of an NCName followed by a colon and an asterisk or that consists
   // of a QName was expected, but was not found.
   { ER_EXPECTED_NODE_TEST,
-       "Ett nodtest som matchar antingen NCName:* eller QName f\u00F6rv\u00E4ntades."},
+       "Ett nodtest som matchar antingen NCName:* eller QName förväntades."},
 
   // Note to translators:  A step pattern is part of an XPath expression.
   // The message indicates that syntactically such an expression was expected,
   // but the specified character was found in the expression instead.
   { ER_EXPECTED_STEP_PATTERN,
-       "Ett stegm\u00F6nster f\u00F6rv\u00E4ntades, men '/' p\u00E5tr\u00E4ffades."},
+       "Ett stegmönster förväntades, men '/' påträffades."},
 
   // Note to translators: A relative path pattern is part of an XPath expression.
   // The message indicates that syntactically such an expression was expected,
   // but was not found.
   { ER_EXPECTED_REL_PATH_PATTERN,
-       "Ett m\u00F6nster f\u00F6r relativ s\u00F6kv\u00E4g f\u00F6rv\u00E4ntades."},
+       "Ett mönster för relativ sökväg förväntades."},
 
   // Note to translators:  The substitution text is the name of a data type.  The
   // message indicates that a value of a particular type could not be converted
   // to a value of type boolean.
   { ER_CANT_CONVERT_TO_BOOLEAN,
-       "XPathResult i XPath-uttrycket ''{0}'' inneh\u00E5ller XPathResultType {1} som inte kan konverteras till booleskt v\u00E4rde."},
+       "XPathResult i XPath-uttrycket ''{0}'' innehåller XPathResultType {1} som inte kan konverteras till booleskt värde."},
 
   // Note to translators: Do not translate ANY_UNORDERED_NODE_TYPE and
   // FIRST_ORDERED_NODE_TYPE.
   { ER_CANT_CONVERT_TO_SINGLENODE,
-       "XPathResult i XPath-uttrycket ''{0}'' inneh\u00E5ller XPathResultType {1} som inte kan konverteras till enskild nod. Metoden getSingleNodeValue anv\u00E4nds endast till typ ANY_UNORDERED_NODE_TYPE och FIRST_ORDERED_NODE_TYPE."},
+       "XPathResult i XPath-uttrycket ''{0}'' innehåller XPathResultType {1} som inte kan konverteras till enskild nod. Metoden getSingleNodeValue används endast till typ ANY_UNORDERED_NODE_TYPE och FIRST_ORDERED_NODE_TYPE."},
 
   // Note to translators: Do not translate UNORDERED_NODE_SNAPSHOT_TYPE and
   // ORDERED_NODE_SNAPSHOT_TYPE.
   { ER_CANT_GET_SNAPSHOT_LENGTH,
-       "Metoden getSnapshotLength kan inte anropas vid XPathResult fr\u00E5n XPath-uttrycket ''{0}'' eftersom XPathResultType \u00E4r {1}. Metoden anv\u00E4nds endast till typ UNORDERED_NODE_SNAPSHOT_TYPE och ORDERED_NODE_SNAPSHOT_TYPE."},
+       "Metoden getSnapshotLength kan inte anropas vid XPathResult från XPath-uttrycket ''{0}'' eftersom XPathResultType är {1}. Metoden används endast till typ UNORDERED_NODE_SNAPSHOT_TYPE och ORDERED_NODE_SNAPSHOT_TYPE."},
 
   { ER_NON_ITERATOR_TYPE,
-       "Metoden iterateNext kan inte anropas vid XPathResult fr\u00E5n XPath-uttrycket ''{0}'' eftersom XPathResultType \u00E4r {1}. Metoden anv\u00E4nds endast till typ UNORDERED_NODE_ITERATOR_TYPE och ORDERED_NODE_ITERATOR_TYPE."},
+       "Metoden iterateNext kan inte anropas vid XPathResult från XPath-uttrycket ''{0}'' eftersom XPathResultType är {1}. Metoden används endast till typ UNORDERED_NODE_ITERATOR_TYPE och ORDERED_NODE_ITERATOR_TYPE."},
 
   // Note to translators: This message indicates that the document being operated
   // upon changed, so the iterator object that was being used to traverse the
   // document has now become invalid.
   { ER_DOC_MUTATED,
-       "Dokumentet har muterats sedan resultatet genererades. Iteratorn \u00E4r ogiltig."},
+       "Dokumentet har muterats sedan resultatet genererades. Iteratorn är ogiltig."},
 
   { ER_INVALID_XPATH_TYPE,
        "Ogiltigt XPath-typargument: {0}"},
@@ -716,66 +716,66 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
        "Tomt XPath-resultatobjekt"},
 
   { ER_INCOMPATIBLE_TYPES,
-       "XPathResult i XPath-uttrycket ''{0}'' inneh\u00E5ller XPathResultType {1} som inte kan tvingas till angiven XPathResultType {2}."},
+       "XPathResult i XPath-uttrycket ''{0}'' innehåller XPathResultType {1} som inte kan tvingas till angiven XPathResultType {2}."},
 
   { ER_NULL_RESOLVER,
-       "Kan inte matcha prefix med prefixmatchning som \u00E4r null."},
+       "Kan inte matcha prefix med prefixmatchning som är null."},
 
   // Note to translators:  The substitution text is the name of a data type.  The
   // message indicates that a value of a particular type could not be converted
   // to a value of type string.
   { ER_CANT_CONVERT_TO_STRING,
-       "XPathResult i XPath-uttrycket ''{0}'' inneh\u00E5ller XPathResultType {1} som inte kan konverteras till en str\u00E4ng."},
+       "XPathResult i XPath-uttrycket ''{0}'' innehåller XPathResultType {1} som inte kan konverteras till en sträng."},
 
   // Note to translators: Do not translate snapshotItem,
   // UNORDERED_NODE_SNAPSHOT_TYPE and ORDERED_NODE_SNAPSHOT_TYPE.
   { ER_NON_SNAPSHOT_TYPE,
-       "Metoden snapshotItem kan inte anropas vid XPathResult fr\u00E5n XPath-uttrycket ''{0}'' eftersom XPathResultType \u00E4r {1}. Metoden anv\u00E4nds endast till typ UNORDERED_NODE_SNAPSHOT_TYPE och ORDERED_NODE_SNAPSHOT_TYPE."},
+       "Metoden snapshotItem kan inte anropas vid XPathResult från XPath-uttrycket ''{0}'' eftersom XPathResultType är {1}. Metoden används endast till typ UNORDERED_NODE_SNAPSHOT_TYPE och ORDERED_NODE_SNAPSHOT_TYPE."},
 
   // Note to translators:  XPathEvaluator is a Java interface name.  An
   // XPathEvaluator is created with respect to a particular XML document, and in
   // this case the expression represented by this object was being evaluated with
   // respect to a context node from a different document.
   { ER_WRONG_DOCUMENT,
-       "Kontextnoden tillh\u00F6r inte dokumentet som \u00E4r bundet till denna XPathEvaluator."},
+       "Kontextnoden tillhör inte dokumentet som är bundet till denna XPathEvaluator."},
 
   // Note to translators:  The XPath expression cannot be evaluated with respect
   // to this type of node.
   { ER_WRONG_NODETYPE,
-       "Kontextnodtypen st\u00F6ds inte."},
+       "Kontextnodtypen stöds inte."},
 
   { ER_XPATH_ERROR,
-       "Ok\u00E4nt fel i XPath."},
+       "Okänt fel i XPath."},
 
   { ER_CANT_CONVERT_XPATHRESULTTYPE_TO_NUMBER,
-        "XPathResult i XPath-uttrycket ''{0}'' inneh\u00E5ller XPathResultType {1} som inte kan konverteras till ett tal."},
+        "XPathResult i XPath-uttrycket ''{0}'' innehåller XPathResultType {1} som inte kan konverteras till ett tal."},
 
   //BEGIN:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
 
   /** Field ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED                       */
 
   { ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED,
-       "Till\u00E4ggsfunktion: ''{0}'' kan inte anropas om funktionen XMLConstants.FEATURE_SECURE_PROCESSING anges som true."},
+       "Tilläggsfunktion: ''{0}'' kan inte anropas om funktionen XMLConstants.FEATURE_SECURE_PROCESSING anges som true."},
 
   /** Field ER_RESOLVE_VARIABLE_RETURNS_NULL                       */
 
   { ER_RESOLVE_VARIABLE_RETURNS_NULL,
-       "resolveVariable f\u00F6r variabeln {0} returnerar null"},
+       "resolveVariable för variabeln {0} returnerar null"},
 
   /** Field ER_UNSUPPORTED_RETURN_TYPE                       */
 
   { ER_UNSUPPORTED_RETURN_TYPE,
-       "Det finns inget st\u00F6d f\u00F6r returtypen: {0}"},
+       "Det finns inget stöd för returtypen: {0}"},
 
   /** Field ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL                       */
 
   { ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL,
-       "K\u00E4lla och/eller returtyp f\u00E5r inte vara null"},
+       "Källa och/eller returtyp får inte vara null"},
 
   /** Field ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL                       */
 
   { ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL,
-       "K\u00E4lla och/eller returtyp f\u00E5r inte vara null"},
+       "Källa och/eller returtyp får inte vara null"},
 
   /** Field ER_ARG_CANNOT_BE_NULL                       */
 
@@ -795,54 +795,54 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   /** Field ER_OBJECT_MODEL_EMPTY                       */
 
   { ER_FEATURE_NAME_NULL,
-       "F\u00F6rs\u00F6ker ange en funktion med null-namn: {0}#setFeature( null, {1})"},
+       "Försöker ange en funktion med null-namn: {0}#setFeature( null, {1})"},
 
   /** Field ER_FEATURE_UNKNOWN                       */
 
   { ER_FEATURE_UNKNOWN,
-       "F\u00F6rs\u00F6ker ange en ok\u00E4nd funktion \"{0}\":{1}#setFeature({0},{2})"},
+       "Försöker ange en okänd funktion \"{0}\":{1}#setFeature({0},{2})"},
 
   /** Field ER_GETTING_NULL_FEATURE                       */
 
   { ER_GETTING_NULL_FEATURE,
-       "F\u00F6rs\u00F6ker h\u00E4mta en funktion med null-namn: {0}#getFeature(null)"},
+       "Försöker hämta en funktion med null-namn: {0}#getFeature(null)"},
 
   /** Field ER_GETTING_NULL_FEATURE                       */
 
   { ER_GETTING_UNKNOWN_FEATURE,
-       "F\u00F6rs\u00F6ker h\u00E4mta en ok\u00E4nd funktion \"{0}\":{1}#getFeature({0})"},
+       "Försöker hämta en okänd funktion \"{0}\":{1}#getFeature({0})"},
 
   {ER_SECUREPROCESSING_FEATURE,
-        "FEATURE_SECURE_PROCESSING: Kan inte ange funktionen som false om s\u00E4kerhetshanteraren anv\u00E4nds: {1}#setFeature({0},{2})"},
+        "FEATURE_SECURE_PROCESSING: Kan inte ange funktionen som false om säkerhetshanteraren används: {1}#setFeature({0},{2})"},
 
   /** Field ER_NULL_XPATH_FUNCTION_RESOLVER                       */
 
   { ER_NULL_XPATH_FUNCTION_RESOLVER,
-       "F\u00F6rs\u00F6ker ange nullv\u00E4rde f\u00F6r XPathFunctionResolver:{0}#setXPathFunctionResolver(null)"},
+       "Försöker ange nullvärde för XPathFunctionResolver:{0}#setXPathFunctionResolver(null)"},
 
   /** Field ER_NULL_XPATH_VARIABLE_RESOLVER                       */
 
   { ER_NULL_XPATH_VARIABLE_RESOLVER,
-       "F\u00F6rs\u00F6ker ange nullv\u00E4rde f\u00F6r XPathVariableResolver:{0}#setXPathVariableResolver(null)"},
+       "Försöker ange nullvärde för XPathVariableResolver:{0}#setXPathVariableResolver(null)"},
 
   //END:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
 
   // Warnings...
 
   { WG_LOCALE_NAME_NOT_HANDLED,
-      "spr\u00E5kkonventionsnamnet i funktionen format-number har \u00E4nnu inte hanterats!"},
+      "språkkonventionsnamnet i funktionen format-number har ännu inte hanterats!"},
 
   { WG_PROPERTY_NOT_SUPPORTED,
-      "XSL-egenskapen st\u00F6ds inte: {0}"},
+      "XSL-egenskapen stöds inte: {0}"},
 
   { WG_DONT_DO_ANYTHING_WITH_NS,
-      "G\u00F6r f\u00F6r n\u00E4rvarande inte n\u00E5gonting med namnrymden {0} i egenskap: {1}"},
+      "Gör för närvarande inte någonting med namnrymden {0} i egenskap: {1}"},
 
   { WG_QUO_NO_LONGER_DEFINED,
-      "Gammal syntax: quo(...) definieras inte l\u00E4ngre i XPath."},
+      "Gammal syntax: quo(...) definieras inte längre i XPath."},
 
   { WG_NEED_DERIVED_OBJECT_TO_IMPLEMENT_NODETEST,
-      "XPath beh\u00F6ver ett h\u00E4rledningsobjekt f\u00F6r att implementera nodeTest!"},
+      "XPath behöver ett härledningsobjekt för att implementera nodeTest!"},
 
   { WG_FUNCTION_TOKEN_NOT_FOUND,
       "funktionstecken hittades inte."},
@@ -851,16 +851,16 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "Hittade inte funktionen: {0}"},
 
   { WG_CANNOT_MAKE_URL_FROM,
-      "Kan inte skapa URL fr\u00E5n: {0}"},
+      "Kan inte skapa URL från: {0}"},
 
   { WG_EXPAND_ENTITIES_NOT_SUPPORTED,
-      "Alternativet -E st\u00F6ds inte i DTM-parser"},
+      "Alternativet -E stöds inte i DTM-parser"},
 
   { WG_ILLEGAL_VARIABLE_REFERENCE,
-      "VariableReference angiven f\u00F6r variabel som \u00E4r utanf\u00F6r kontext eller som saknar definition! Namn = {0}"},
+      "VariableReference angiven för variabel som är utanför kontext eller som saknar definition! Namn = {0}"},
 
   { WG_UNSUPPORTED_ENCODING,
-     "Kodning utan st\u00F6d: {0}"},
+     "Kodning utan stöd: {0}"},
 
 
 
@@ -868,23 +868,23 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { "ui_language", "en"},
   { "help_language", "en"},
   { "language", "en"},
-  { "BAD_CODE", "Parameter f\u00F6r createMessage ligger utanf\u00F6r gr\u00E4nsv\u00E4rdet"},
-  { "FORMAT_FAILED", "Undantag utl\u00F6st vid messageFormat-anrop"},
+  { "BAD_CODE", "Parameter för createMessage ligger utanför gränsvärdet"},
+  { "FORMAT_FAILED", "Undantag utlöst vid messageFormat-anrop"},
   { "version", ">>>>>>> Xalan version "},
   { "version2", "<<<<<<<"},
   { "yes", "ja"},
   { "line", "Rad nr"},
   { "column", "Kolumn nr"},
-  { "xsldone", "XSLProcessor: utf\u00F6rd"},
+  { "xsldone", "XSLProcessor: utförd"},
   { "xpath_option", "xpath-alternativ: "},
   { "optionIN", "   [-in inputXMLURL]"},
   { "optionSelect", "   [-select xpath-uttryck]"},
-  { "optionMatch", "   [-match matchningsm\u00F6nster (f\u00F6r matchningsdiagnostik)]"},
+  { "optionMatch", "   [-match matchningsmönster (för matchningsdiagnostik)]"},
   { "optionAnyExpr", "Eller bara ett xpath-uttryck skapar en diagnostikdump"},
-  { "noParsermsg1", "XSL-processen utf\u00F6rdes inte."},
+  { "noParsermsg1", "XSL-processen utfördes inte."},
   { "noParsermsg2", "** Hittade inte parser **"},
-  { "noParsermsg3", "Kontrollera klass\u00F6kv\u00E4gen."},
-  { "noParsermsg4", "Om du inte har IBMs XML Parser f\u00F6r Java kan du ladda ned den fr\u00E5n"},
+  { "noParsermsg3", "Kontrollera klassökvägen."},
+  { "noParsermsg4", "Om du inte har IBMs XML Parser för Java kan du ladda ned den från"},
   { "noParsermsg5", "IBMs AlphaWorks: http://www.alphaworks.ibm.com/formula/xml"},
   { "gtone", ">1" },
   { "zero", "0" },

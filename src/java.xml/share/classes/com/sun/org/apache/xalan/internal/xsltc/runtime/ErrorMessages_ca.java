@@ -90,14 +90,14 @@ public class ErrorMessages_ca extends ListResourceBundle {
          * is a class name.  Used for internal errors in the processor.
          */
         {BasisLibrary.RUN_TIME_INTERNAL_ERR,
-        "S''ha produ\u00eft un error intern de temps d''execuci\u00f3 a ''{0}''"},
+        "S''ha produït un error intern de temps d''execució a ''{0}''"},
 
         /*
          * Note to translators:  <xsl:copy> is a keyword that should not be
          * translated.
          */
         {BasisLibrary.RUN_TIME_COPY_ERR,
-        "Es produeix un error de temps d'execuci\u00f3 en executar <xsl:copy>."},
+        "Es produeix un error de temps d'execució en executar <xsl:copy>."},
 
         /*
          * Note to translators:  The substitution text refers to data types.
@@ -106,7 +106,7 @@ public class ErrorMessages_ca extends ListResourceBundle {
          * {0}.
          */
         {BasisLibrary.DATA_CONVERSION_ERR,
-        "La conversi\u00f3 de ''{0}'' a ''{1}'' no \u00e9s v\u00e0lida."},
+        "La conversió de ''{0}'' a ''{1}'' no és vàlida."},
 
         /*
          * Note to translators:  This message is displayed if the function named
@@ -114,7 +114,7 @@ public class ErrorMessages_ca extends ListResourceBundle {
          * is the acronym naming the product.
          */
         {BasisLibrary.EXTERNAL_FUNC_ERR,
-        "XSLTC no d\u00f3na suport a la funci\u00f3 externa ''{0}''."},
+        "XSLTC no dóna suport a la funció externa ''{0}''."},
 
         /*
          * Note to translators:  This message is displayed if two values are
@@ -122,7 +122,7 @@ public class ErrorMessages_ca extends ListResourceBundle {
          * unknown.
          */
         {BasisLibrary.EQUALITY_EXPR_ERR,
-        "L'expressi\u00f3 d'igualtat cont\u00e9 un tipus d'argument desconegut."},
+        "L'expressió d'igualtat conté un tipus d'argument desconegut."},
 
         /*
          * Note to translators:  The substitution text for {0} will be a data
@@ -131,7 +131,7 @@ public class ErrorMessages_ca extends ListResourceBundle {
          * permitted for a call to this function.
          */
         {BasisLibrary.INVALID_ARGUMENT_ERR,
-        "La crida a ''{1}'' cont\u00e9 un tipus d''argument ''{0}'' no v\u00e0lid."},
+        "La crida a ''{1}'' conté un tipus d''argument ''{0}'' no vàlid."},
 
         /*
          * Note to translators:  There is way of specifying a format for a
@@ -139,7 +139,7 @@ public class ErrorMessages_ca extends ListResourceBundle {
          * particular value using the specified pattern.
          */
         {BasisLibrary.FORMAT_NUMBER_ERR,
-        "S''ha intentat donar format al n\u00famero ''{0}'' mitjan\u00e7ant el patr\u00f3 ''{1}''."},
+        "S''ha intentat donar format al número ''{0}'' mitjançant el patró ''{1}''."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -156,7 +156,7 @@ public class ErrorMessages_ca extends ListResourceBundle {
          * support.
          */
         {BasisLibrary.AXIS_SUPPORT_ERR,
-        "L''iterador de l''eix ''{0}'' no t\u00e9 suport."},
+        "L''iterador de l''eix ''{0}'' no té suport."},
 
         /*
          * Note to translators:  The following represents an internal error
@@ -165,7 +165,7 @@ public class ErrorMessages_ca extends ListResourceBundle {
          * support.
          */
         {BasisLibrary.TYPED_AXIS_SUPPORT_ERR,
-        "L''iterador de l''eix escrit ''{0}'' no t\u00e9 suport."},
+        "L''iterador de l''eix escrit ''{0}'' no té suport."},
 
         /*
          * Note to translators:  This message is reported if the stylesheet
@@ -184,7 +184,7 @@ public class ErrorMessages_ca extends ListResourceBundle {
          * namespace declaration.
          */
         {BasisLibrary.STRAY_NAMESPACE_ERR,
-        "La declaraci\u00f3 d''espai de noms ''{0}''=''{1}'' es troba fora de l''element."},
+        "La declaració d''espai de noms ''{0}''=''{1}'' es troba fora de l''element."},
 
         /*
          * Note to translators:  The stylesheet contained a reference to a
@@ -199,7 +199,7 @@ public class ErrorMessages_ca extends ListResourceBundle {
          * DOMAdapter is a Java class in XSLTC.
          */
         {BasisLibrary.DOM_ADAPTER_INIT_ERR,
-        "DOMAdapter s'ha creat mitjan\u00e7ant un tipus incorrecte de DOM d'origen."},
+        "DOMAdapter s'ha creat mitjançant un tipus incorrecte de DOM d'origen."},
 
         /*
          * Note to translators:  The following message indicates that the XML
@@ -208,7 +208,7 @@ public class ErrorMessages_ca extends ListResourceBundle {
          * DTD.
          */
         {BasisLibrary.PARSER_DTD_SUPPORT_ERR,
-        "L'analitzador SAX que feu servir no gestiona esdeveniments de declaraci\u00f3 de DTD."},
+        "L'analitzador SAX que feu servir no gestiona esdeveniments de declaració de DTD."},
 
         /*
          * Note to translators:  The following message indicates that the XML
@@ -217,14 +217,14 @@ public class ErrorMessages_ca extends ListResourceBundle {
          * declarations.
          */
         {BasisLibrary.NAMESPACES_SUPPORT_ERR,
-        "L'analitzador SAX que feu servir no d\u00f3na suport a espais de noms XML."},
+        "L'analitzador SAX que feu servir no dóna suport a espais de noms XML."},
 
         /*
          * Note to translators:  The substitution text is the URI that was in
          * error.
          */
         {BasisLibrary.CANT_RESOLVE_RELATIVE_URI_ERR,
-        "No s''ha pogut resoldre la refer\u00e8ncia d''URI ''{0}''."}
+        "No s''ha pogut resoldre la referència d''URI ''{0}''."}
     };
 
     }

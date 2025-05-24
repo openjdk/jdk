@@ -96,7 +96,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
     {
       return new Object[][] {
         {ErrorMsg.MULTIPLE_STYLESHEET_ERR,
-        "\u540C\u3058\u30D5\u30A1\u30A4\u30EB\u306B\u8907\u6570\u306E\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u304C\u5B9A\u7FA9\u3055\u308C\u3066\u3044\u307E\u3059\u3002"},
+        "同じファイルに複数のスタイルシートが定義されています。"},
 
         /*
          * Note to translators:  The substitution text is the name of a
@@ -104,7 +104,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * same stylesheet.
          */
         {ErrorMsg.TEMPLATE_REDEF_ERR,
-        "\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8''{0}''\u306F\u3053\u306E\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u5185\u3067\u3059\u3067\u306B\u5B9A\u7FA9\u3055\u308C\u3066\u3044\u307E\u3059\u3002"},
+        "テンプレート''{0}''はこのスタイルシート内ですでに定義されています。"},
 
 
         /*
@@ -113,14 +113,14 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * template is undefined.
          */
         {ErrorMsg.TEMPLATE_UNDEF_ERR,
-        "\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8''{0}''\u306F\u3053\u306E\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u5185\u3067\u5B9A\u7FA9\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
+        "テンプレート''{0}''はこのスタイルシート内で定義されていません。"},
 
         /*
          * Note to translators:  The substitution text is the name of a variable
          * that was defined more than once.
          */
         {ErrorMsg.VARIABLE_REDEF_ERR,
-        "\u5909\u6570''{0}''\u306F\u540C\u3058\u30B9\u30B3\u30FC\u30D7\u5185\u3067\u8907\u6570\u5B9A\u7FA9\u3055\u308C\u3066\u3044\u307E\u3059\u3002"},
+        "変数''{0}''は同じスコープ内で複数定義されています。"},
 
         /*
          * Note to translators:  The substitution text is the name of a variable
@@ -128,7 +128,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * but it was never defined.
          */
         {ErrorMsg.VARIABLE_UNDEF_ERR,
-        "\u5909\u6570\u307E\u305F\u306F\u30D1\u30E9\u30E1\u30FC\u30BF''{0}''\u304C\u672A\u5B9A\u7FA9\u3067\u3059\u3002"},
+        "変数またはパラメータ''{0}''が未定義です。"},
 
         /*
          * Note to translators:  The word "class" here refers to a Java class.
@@ -136,7 +136,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * not be found.  The substitution text is the name of the class.
          */
         {ErrorMsg.CLASS_NOT_FOUND_ERR,
-        "\u30AF\u30E9\u30B9''{0}''\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002"},
+        "クラス''{0}''が見つかりません。"},
 
         /*
          * Note to translators:  The word "method" here refers to a Java method.
@@ -145,7 +145,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * Java keyword.
          */
         {ErrorMsg.METHOD_NOT_FOUND_ERR,
-        "\u5916\u90E8\u30E1\u30BD\u30C3\u30C9''{0}''\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093(public\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059)\u3002"},
+        "外部メソッド''{0}''が見つかりません(publicである必要があります)。"},
 
         /*
          * Note to translators:  The word "method" here refers to a Java method.
@@ -154,42 +154,42 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * arguments or return type could be found.
          */
         {ErrorMsg.ARGUMENT_CONVERSION_ERR,
-        "\u30E1\u30BD\u30C3\u30C9''{0}''\u306E\u547C\u51FA\u3057\u306E\u5F15\u6570\u30BF\u30A4\u30D7\u307E\u305F\u306F\u623B\u308A\u578B\u3092\u5909\u63DB\u3067\u304D\u307E\u305B\u3093"},
+        "メソッド''{0}''の呼出しの引数タイプまたは戻り型を変換できません"},
 
         /*
          * Note to translators:  The file or URI named in the substitution text
          * is missing.
          */
         {ErrorMsg.FILE_NOT_FOUND_ERR,
-        "\u30D5\u30A1\u30A4\u30EB\u307E\u305F\u306FURI ''{0}''\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002"},
+        "ファイルまたはURI ''{0}''が見つかりません。"},
 
         /*
          * Note to translators:  This message is displayed when the URI
          * mentioned in the substitution text is not well-formed syntactically.
          */
         {ErrorMsg.INVALID_URI_ERR,
-        "URI ''{0}''\u304C\u7121\u52B9\u3067\u3059\u3002"},
+        "URI ''{0}''が無効です。"},
 
         /*
          * Note to translators:  This message is displayed when the URI
          * mentioned in the substitution text is not well-formed syntactically.
          */
         {ErrorMsg.CATALOG_EXCEPTION,
-        "JAXP08090001: CatalogResolver\u306F\u30AB\u30BF\u30ED\u30B0\"{0}\"\u3067\u6709\u52B9\u3067\u3059\u304C\u3001CatalogException\u304C\u8FD4\u3055\u308C\u307E\u3059\u3002"},
+        "JAXP08090001: CatalogResolverはカタログ\"{0}\"で有効ですが、CatalogExceptionが返されます。"},
 
         /*
          * Note to translators:  The file or URI named in the substitution text
          * exists but could not be opened.
          */
         {ErrorMsg.FILE_ACCESS_ERR,
-        "\u30D5\u30A1\u30A4\u30EB\u307E\u305F\u306FURI ''{0}''\u3092\u958B\u304F\u3053\u3068\u304C\u3067\u304D\u307E\u305B\u3093\u3002"},
+        "ファイルまたはURI ''{0}''を開くことができません。"},
 
         /*
          * Note to translators: <xsl:stylesheet> and <xsl:transform> are
          * keywords that should not be translated.
          */
         {ErrorMsg.MISSING_ROOT_ERR,
-        "<xsl:stylesheet>\u307E\u305F\u306F<xsl:transform>\u306E\u8981\u7D20\u304C\u3042\u308A\u307E\u305B\u3093\u3002"},
+        "<xsl:stylesheet>または<xsl:transform>の要素がありません。"},
 
         /*
          * Note to translators:  The stylesheet contained a reference to a
@@ -197,21 +197,21 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * text is the name of the prefix.
          */
         {ErrorMsg.NAMESPACE_UNDEF_ERR,
-        "\u30CD\u30FC\u30E0\u30B9\u30DA\u30FC\u30B9\u306E\u63A5\u982D\u8F9E''{0}''\u306F\u5BA3\u8A00\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
+        "ネームスペースの接頭辞''{0}''は宣言されていません。"},
 
         /*
          * Note to translators:  The Java function named in the stylesheet could
          * not be found.
          */
         {ErrorMsg.FUNCTION_RESOLVE_ERR,
-        "\u95A2\u6570''{0}''\u306E\u547C\u51FA\u3057\u3092\u89E3\u6C7A\u3067\u304D\u307E\u305B\u3093\u3002"},
+        "関数''{0}''の呼出しを解決できません。"},
 
         /*
          * Note to translators:  The substitution text is the name of a
          * function.  A literal string here means a constant string value.
          */
         {ErrorMsg.NEED_LITERAL_ERR,
-        "''{0}''\u3078\u306E\u5F15\u6570\u306F\u30EA\u30C6\u30E9\u30EB\u6587\u5B57\u5217\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
+        "''{0}''への引数はリテラル文字列である必要があります。"},
 
         /*
          * Note to translators:  This message indicates there was a syntactic
@@ -219,7 +219,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * the expression.
          */
         {ErrorMsg.XPATH_PARSER_ERR,
-        "XPath\u5F0F''{0}''\u306E\u89E3\u6790\u4E2D\u306B\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002"},
+        "XPath式''{0}''の解析中にエラーが発生しました。"},
 
         /*
          * Note to translators:  An element in the stylesheet requires a
@@ -227,7 +227,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * attribute was not specified in the stylesheet.
          */
         {ErrorMsg.REQUIRED_ATTR_ERR,
-        "\u5FC5\u9808\u5C5E\u6027''{0}''\u304C\u3042\u308A\u307E\u305B\u3093\u3002"},
+        "必須属性''{0}''がありません。"},
 
         /*
          * Note to translators:  This message indicates that a character not
@@ -235,7 +235,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * text is the offending character.
          */
         {ErrorMsg.ILLEGAL_CHAR_ERR,
-        "XPath\u5F0F\u306E\u6587\u5B57''{0}''\u306F\u7121\u52B9\u3067\u3059\u3002"},
+        "XPath式の文字''{0}''は無効です。"},
 
         /*
          * Note to translators:  A processing instruction is a mark-up item in
@@ -244,7 +244,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * text is the name.
          */
         {ErrorMsg.ILLEGAL_PI_ERR,
-        "\u51E6\u7406\u547D\u4EE4\u306E\u540D\u524D''{0}''\u306F\u7121\u52B9\u3067\u3059\u3002"},
+        "処理命令の名前''{0}''は無効です。"},
 
         /*
          * Note to translators:  This message is reported if the stylesheet
@@ -253,7 +253,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * specifies the name of the attribute.
          */
         {ErrorMsg.STRAY_ATTRIBUTE_ERR,
-        "\u5C5E\u6027''{0}''\u304C\u8981\u7D20\u306E\u5916\u5074\u306B\u3042\u308A\u307E\u3059\u3002"},
+        "属性''{0}''が要素の外側にあります。"},
 
         /*
          * Note to translators:  An attribute that wasn't recognized was
@@ -262,7 +262,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * text.
          */
         {ErrorMsg.ILLEGAL_ATTRIBUTE_ERR,
-        "\u4E0D\u6B63\u306A\u5C5E\u6027''{0}''\u3067\u3059\u3002"},
+        "不正な属性''{0}''です。"},
 
         /*
          * Note to translators:  "import" and "include" are keywords that should
@@ -271,14 +271,14 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * directly or indirectly.
          */
         {ErrorMsg.CIRCULAR_INCLUDE_ERR,
-        "\u30A4\u30F3\u30DD\u30FC\u30C8\u307E\u305F\u306F\u30A4\u30F3\u30AF\u30EB\u30FC\u30C9\u304C\u5FAA\u74B0\u3057\u3066\u3044\u307E\u3059\u3002\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8''{0}''\u306F\u3059\u3067\u306B\u30ED\u30FC\u30C9\u3055\u308C\u3066\u3044\u307E\u3059\u3002"},
+        "インポートまたはインクルードが循環しています。スタイルシート''{0}''はすでにロードされています。"},
 
         /*
          * Note to translators:  "xsl:import" and "xsl:include" are keywords that
          * should not be translated.
          */
         {ErrorMsg.IMPORT_PRECEDE_OTHERS_ERR,
-        "xsl:import\u8981\u7D20\u306E\u5B50\u306F\u3001xsl:stylesheet\u8981\u7D20\u306E\u4ED6\u306E\u3059\u3079\u3066\u306E\u8981\u7D20\u306E\u5B50(\u3059\u3079\u3066\u306Exsl:include\u8981\u7D20\u306E\u5B50\u3092\u542B\u3080)\u3088\u308A\u524D\u306B\u7F6E\u304F\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
+        "xsl:import要素の子は、xsl:stylesheet要素の他のすべての要素の子(すべてのxsl:include要素の子を含む)より前に置く必要があります。"},
 
         /*
          * Note to translators:  A result-tree fragment is a portion of a
@@ -286,7 +286,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * keyword and should not be translated.
          */
         {ErrorMsg.RESULT_TREE_SORT_ERR,
-        "\u7D50\u679C\u30C4\u30EA\u30FC\u30FB\u30D5\u30E9\u30B0\u30E1\u30F3\u30C8\u306F\u30BD\u30FC\u30C8\u3067\u304D\u307E\u305B\u3093(<xsl:sort>\u8981\u7D20\u306F\u7121\u8996\u3055\u308C\u307E\u3059)\u3002\u7D50\u679C\u30C4\u30EA\u30FC\u3092\u4F5C\u6210\u3059\u308B\u3068\u304D\u306B\u30CE\u30FC\u30C9\u3092\u30BD\u30FC\u30C8\u3059\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
+        "結果ツリー・フラグメントはソートできません(<xsl:sort>要素は無視されます)。結果ツリーを作成するときにノードをソートする必要があります。"},
 
         /*
          * Note to translators:  A name can be given to a particular style to be
@@ -294,35 +294,35 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * of such a style for which more than one declaration was encountered.
          */
         {ErrorMsg.SYMBOLS_REDEF_ERR,
-        "10\u9032\u6570\u30D5\u30A9\u30FC\u30DE\u30C3\u30C8''{0}''\u306F\u3059\u3067\u306B\u5B9A\u7FA9\u3055\u308C\u3066\u3044\u307E\u3059\u3002"},
+        "10進数フォーマット''{0}''はすでに定義されています。"},
 
         /*
          * Note to translators:  The stylesheet version named in the
          * substitution text is not supported.
          */
         {ErrorMsg.XSL_VERSION_ERR,
-        "XSL\u30D0\u30FC\u30B8\u30E7\u30F3''{0}''\u306FXSLTC\u306B\u3088\u3063\u3066\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
+        "XSLバージョン''{0}''はXSLTCによってサポートされていません。"},
 
         /*
          * Note to translators:  The definitions of one or more variables or
          * parameters depend on one another.
          */
         {ErrorMsg.CIRCULAR_VARIABLE_ERR,
-        "''{0}''\u5185\u306E\u5909\u6570\u53C2\u7167\u307E\u305F\u306F\u30D1\u30E9\u30E1\u30FC\u30BF\u53C2\u7167\u304C\u5FAA\u74B0\u3057\u3066\u3044\u307E\u3059\u3002"},
+        "''{0}''内の変数参照またはパラメータ参照が循環しています。"},
 
         /*
          * Note to translators:  The operator in an expresion with two operands was
          * not recognized.
          */
         {ErrorMsg.ILLEGAL_BINARY_OP_ERR,
-        "2\u9032\u6570\u306E\u5F0F\u306B\u5BFE\u3059\u308B\u4E0D\u660E\u306A\u6F14\u7B97\u5B50\u3067\u3059\u3002"},
+        "2進数の式に対する不明な演算子です。"},
 
         /*
          * Note to translators:  This message is produced if a reference to a
          * function has too many or too few arguments.
          */
         {ErrorMsg.ILLEGAL_ARG_ERR,
-        "\u95A2\u6570\u547C\u51FA\u3057\u306E\u5F15\u6570\u304C\u4E0D\u6B63\u3067\u3059\u3002"},
+        "関数呼出しの引数が不正です。"},
 
         /*
          * Note to translators:  "document()" is the name of function and must
@@ -330,7 +330,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * representation of an XML document.
          */
         {ErrorMsg.DOCUMENT_ARG_ERR,
-        "document()\u95A2\u6570\u306E2\u756A\u76EE\u306E\u5F15\u6570\u306F\u30CE\u30FC\u30C9\u30BB\u30C3\u30C8\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
+        "document()関数の2番目の引数はノードセットである必要があります。"},
 
         /*
          * Note to translators:  "<xsl:when>" and "<xsl:choose>" are keywords
@@ -338,7 +338,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * in the stylesheet.
          */
         {ErrorMsg.MISSING_WHEN_ERR,
-        "<xsl:choose>\u5185\u306B\u306F\u5C11\u306A\u304F\u3068\u30821\u3064\u306E<xsl:when>\u8981\u7D20\u304C\u5FC5\u8981\u3067\u3059\u3002"},
+        "<xsl:choose>内には少なくとも1つの<xsl:when>要素が必要です。"},
 
         /*
          * Note to translators:  "<xsl:otherwise>" and "<xsl:choose>" are
@@ -346,7 +346,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * syntax error in the stylesheet.
          */
         {ErrorMsg.MULTIPLE_OTHERWISE_ERR,
-        "<xsl:choose>\u5185\u3067\u306F1\u3064\u306E<xsl:otherwise>\u8981\u7D20\u306E\u307F\u304C\u8A31\u53EF\u3055\u308C\u3066\u3044\u307E\u3059\u3002"},
+        "<xsl:choose>内では1つの<xsl:otherwise>要素のみが許可されています。"},
 
         /*
          * Note to translators:  "<xsl:otherwise>" and "<xsl:choose>" are
@@ -354,7 +354,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * syntax error in the stylesheet.
          */
         {ErrorMsg.STRAY_OTHERWISE_ERR,
-        "<xsl:otherwise>\u306F<xsl:choose>\u5185\u3067\u306E\u307F\u4F7F\u7528\u3067\u304D\u307E\u3059\u3002"},
+        "<xsl:otherwise>は<xsl:choose>内でのみ使用できます。"},
 
         /*
          * Note to translators:  "<xsl:when>" and "<xsl:choose>" are keywords
@@ -362,7 +362,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * in the stylesheet.
          */
         {ErrorMsg.STRAY_WHEN_ERR,
-        "<xsl:when>\u306F<xsl:choose>\u5185\u3067\u306E\u307F\u4F7F\u7528\u3067\u304D\u307E\u3059\u3002"},
+        "<xsl:when>は<xsl:choose>内でのみ使用できます。"},
 
         /*
          * Note to translators:  "<xsl:when>", "<xsl:otherwise>" and
@@ -370,21 +370,21 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * message describes a syntax error in the stylesheet.
          */
         {ErrorMsg.WHEN_ELEMENT_ERR,
-        "<xsl:choose>\u5185\u3067\u306F<xsl:when>\u3068<xsl:otherwise>\u306E\u8981\u7D20\u306E\u307F\u304C\u8A31\u53EF\u3055\u308C\u307E\u3059\u3002"},
+        "<xsl:choose>内では<xsl:when>と<xsl:otherwise>の要素のみが許可されます。"},
 
         /*
          * Note to translators:  "<xsl:attribute-set>" and "name" are keywords
          * that should not be translated.
          */
         {ErrorMsg.UNNAMED_ATTRIBSET_ERR,
-        "<xsl:attribute-set>\u306B'name'\u5C5E\u6027\u304C\u3042\u308A\u307E\u305B\u3093\u3002"},
+        "<xsl:attribute-set>に'name'属性がありません。"},
 
         /*
          * Note to translators:  An element in the stylesheet contained an
          * element of a type that it was not permitted to contain.
          */
         {ErrorMsg.ILLEGAL_CHILD_ERR,
-        "\u5B50\u8981\u7D20\u304C\u4E0D\u6B63\u3067\u3059\u3002"},
+        "子要素が不正です。"},
 
         /*
          * Note to translators:  The stylesheet tried to create an element with
@@ -392,7 +392,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * the name.
          */
         {ErrorMsg.ILLEGAL_ELEM_NAME_ERR,
-        "\u8981\u7D20''{0}''\u3092\u547C\u3073\u51FA\u3059\u3053\u3068\u306F\u3067\u304D\u307E\u305B\u3093"},
+        "要素''{0}''を呼び出すことはできません"},
 
         /*
          * Note to translators:  The stylesheet tried to create an attribute
@@ -400,7 +400,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * contains the name.
          */
         {ErrorMsg.ILLEGAL_ATTR_NAME_ERR,
-        "\u5C5E\u6027''{0}''\u3092\u547C\u3073\u51FA\u3059\u3053\u3068\u306F\u3067\u304D\u307E\u305B\u3093"},
+        "属性''{0}''を呼び出すことはできません"},
 
         /*
          * Note to translators:  The children of the outermost element of a
@@ -410,7 +410,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * "<xsl:stylesheet>" is a keyword that should not be translated.
          */
         {ErrorMsg.ILLEGAL_TEXT_NODE_ERR,
-        "\u30C6\u30AD\u30B9\u30C8\u30FB\u30C7\u30FC\u30BF\u306F\u30C8\u30C3\u30D7\u30EC\u30D9\u30EB\u306E<xsl:stylesheet>\u8981\u7D20\u306E\u5916\u5074\u306B\u3042\u308A\u307E\u3059\u3002"},
+        "テキスト・データはトップレベルの<xsl:stylesheet>要素の外側にあります。"},
 
         /*
          * Note to translators:  JAXP is an acronym for the Java API for XML
@@ -418,14 +418,14 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * XSLTC to process the XML input document had a configuration problem.
          */
         {ErrorMsg.SAX_PARSER_CONFIG_ERR,
-        "JAXP\u30D1\u30FC\u30B5\u30FC\u304C\u6B63\u3057\u304F\u69CB\u6210\u3055\u308C\u3066\u3044\u307E\u305B\u3093"},
+        "JAXPパーサーが正しく構成されていません"},
 
         /*
          * Note to translators:  The substitution text names the internal error
          * encountered.
          */
         {ErrorMsg.INTERNAL_ERR,
-        "\u30EA\u30AB\u30D0\u30EA\u4E0D\u80FD\u306AXSLTC\u5185\u90E8\u30A8\u30E9\u30FC: ''{0}''"},
+        "リカバリ不能なXSLTC内部エラー: ''{0}''"},
 
         /*
          * Note to translators:  The stylesheet contained an element that was
@@ -433,7 +433,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * gives the element name.
          */
         {ErrorMsg.UNSUPPORTED_XSL_ERR,
-        "XSL\u8981\u7D20''{0}''\u306F\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
+        "XSL要素''{0}''はサポートされていません。"},
 
         /*
          * Note to translators:  The stylesheet referred to an extension to the
@@ -442,7 +442,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * gives the extension name.
          */
         {ErrorMsg.UNSUPPORTED_EXT_ERR,
-        "XSLTC\u62E1\u5F35''{0}''\u306F\u8A8D\u8B58\u3055\u308C\u307E\u305B\u3093\u3002"},
+        "XSLTC拡張''{0}''は認識されません。"},
 
         /*
          * Note to translators:  The XML document given to XSLTC as a stylesheet
@@ -452,20 +452,20 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * for that namespace was seen.
          */
         {ErrorMsg.MISSING_XSLT_URI_ERR,
-        "\u5165\u529B\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u306F\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u3067\u306F\u3042\u308A\u307E\u305B\u3093(XSL\u306E\u30CD\u30FC\u30E0\u30B9\u30DA\u30FC\u30B9\u306F\u30EB\u30FC\u30C8\u8981\u7D20\u5185\u3067\u5BA3\u8A00\u3055\u308C\u3066\u3044\u307E\u305B\u3093)\u3002"},
+        "入力ドキュメントはスタイルシートではありません(XSLのネームスペースはルート要素内で宣言されていません)。"},
 
         /*
          * Note to translators:  XSLTC could not find the stylesheet document
          * with the name specified by the substitution text.
          */
         {ErrorMsg.MISSING_XSLT_TARGET_ERR,
-        "\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u30FB\u30BF\u30FC\u30B2\u30C3\u30C8''{0}''\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3067\u3057\u305F\u3002"},
+        "スタイルシート・ターゲット''{0}''が見つかりませんでした。"},
 
         /*
          * Note to translators:  access to the stylesheet target is denied
          */
         {ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
-        "accessExternalStylesheet\u30D7\u30ED\u30D1\u30C6\u30A3\u3067\u8A2D\u5B9A\u3055\u308C\u305F\u5236\u9650\u306B\u3088\u308A''{1}''\u30A2\u30AF\u30BB\u30B9\u304C\u8A31\u53EF\u3055\u308C\u3066\u3044\u306A\u3044\u305F\u3081\u3001\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u30FB\u30BF\u30FC\u30B2\u30C3\u30C8''{0}''\u3092\u8AAD\u307F\u53D6\u308C\u307E\u305B\u3093\u3067\u3057\u305F\u3002"},
+        "accessExternalStylesheetプロパティで設定された制限により''{1}''アクセスが許可されていないため、スタイルシート・ターゲット''{0}''を読み取れませんでした。"},
 
         /*
          * Note to translators:  This message represents an internal error in
@@ -473,21 +473,21 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * that is missing some functionality.
          */
         {ErrorMsg.NOT_IMPLEMENTED_ERR,
-        "''{0}''\u304C\u5B9F\u88C5\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
+        "''{0}''が実装されていません。"},
 
         /*
          * Note to translators:  The XML document given to XSLTC as a stylesheet
          * was not, in fact, a stylesheet.
          */
         {ErrorMsg.NOT_STYLESHEET_ERR,
-        "\u5165\u529B\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u306BXSL\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
+        "入力ドキュメントにXSLスタイルシートが含まれていません。"},
 
         /*
          * Note to translators:  The element named in the substitution text was
          * encountered in the stylesheet but is not recognized.
          */
         {ErrorMsg.ELEMENT_PARSE_ERR,
-        "\u8981\u7D20''{0}''\u3092\u89E3\u6790\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F"},
+        "要素''{0}''を解析できませんでした"},
 
         /*
          * Note to translators:  "use", "<key>", "node", "node-set", "string"
@@ -496,7 +496,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * attribute was not one of the permitted values.
          */
         {ErrorMsg.KEY_USE_ATTR_ERR,
-        "<key>\u306Euse\u5C5E\u6027\u306F\u3001\u30CE\u30FC\u30C9\u3001\u30CE\u30FC\u30C9\u30BB\u30C3\u30C8\u3001\u6587\u5B57\u5217\u307E\u305F\u306F\u6570\u5024\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
+        "<key>のuse属性は、ノード、ノードセット、文字列または数値である必要があります。"},
 
         /*
          * Note to translators:  An XML document can specify the version of the
@@ -504,14 +504,14 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * the version specified for the output document was not valid.
          */
         {ErrorMsg.OUTPUT_VERSION_ERR,
-        "\u51FA\u529BXML\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u306E\u30D0\u30FC\u30B8\u30E7\u30F3\u306F1.0\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"},
+        "出力XMLドキュメントのバージョンは1.0である必要があります"},
 
         /*
          * Note to translators:  The operator in a comparison operation was
          * not recognized.
          */
         {ErrorMsg.ILLEGAL_RELAT_OP_ERR,
-        "\u95A2\u4FC2\u5F0F\u306E\u4E0D\u660E\u306A\u6F14\u7B97\u5B50\u3067\u3059"},
+        "関係式の不明な演算子です"},
 
         /*
          * Note to translators:  An attribute set defines as a set of XML
@@ -521,7 +521,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * that is in error.
          */
         {ErrorMsg.ATTRIBSET_UNDEF_ERR,
-        "\u5B58\u5728\u3057\u306A\u3044\u5C5E\u6027\u30BB\u30C3\u30C8''{0}''\u3092\u4F7F\u7528\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F\u3002"},
+        "存在しない属性セット''{0}''を使用しようとしました。"},
 
         /*
          * Note to translators:  The term "attribute value template" is a term
@@ -531,13 +531,13 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * contains the expression that was in error.
          */
         {ErrorMsg.ATTR_VAL_TEMPLATE_ERR,
-        "\u5C5E\u6027\u5024\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8''{0}''\u3092\u89E3\u6790\u3067\u304D\u307E\u305B\u3093\u3002"},
+        "属性値テンプレート''{0}''を解析できません。"},
 
         /*
          * Note to translators:  ???
          */
         {ErrorMsg.UNKNOWN_SIG_TYPE_ERR,
-        "\u30AF\u30E9\u30B9''{0}''\u306E\u7F72\u540D\u306B\u4E0D\u660E\u306A\u30C7\u30FC\u30BF\u578B\u304C\u3042\u308A\u307E\u3059\u3002"},
+        "クラス''{0}''の署名に不明なデータ型があります。"},
 
         /*
          * Note to translators:  The substitution text refers to data types.
@@ -546,36 +546,36 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * type {0}.
          */
         {ErrorMsg.DATA_CONVERSION_ERR,
-        "\u30C7\u30FC\u30BF\u578B''{0}''\u3092''{1}''\u306B\u5909\u63DB\u3067\u304D\u307E\u305B\u3093\u3002"},
+        "データ型''{0}''を''{1}''に変換できません。"},
 
         /*
          * Note to translators:  property name "jdk.xml.enableExtensionFunctions"
          * and value "true" should not be translated.
          */
         {ErrorMsg.UNSUPPORTED_EXT_FUNC_ERR,
-        "\u30BB\u30AD\u30E5\u30A2\u51E6\u7406\u6A5F\u80FD\u307E\u305F\u306F\u30D7\u30ED\u30D1\u30C6\u30A3''jdk.xml.enableExtensionFunctions''\u306B\u3088\u3063\u3066\u62E1\u5F35\u95A2\u6570\u304C\u7121\u52B9\u306B\u306A\u3063\u3066\u3044\u308B\u3068\u304D\u3001\u62E1\u5F35\u95A2\u6570''{0}''\u306E\u4F7F\u7528\u306F\u8A31\u53EF\u3055\u308C\u307E\u305B\u3093\u3002\u62E1\u5F35\u95A2\u6570\u3092\u6709\u52B9\u306B\u3059\u308B\u306B\u306F\u3001''jdk.xml.enableExtensionFunctions''\u3092''true''\u306B\u8A2D\u5B9A\u3057\u307E\u3059\u3002"},
+        "セキュア処理機能またはプロパティ''jdk.xml.enableExtensionFunctions''によって拡張関数が無効になっているとき、拡張関数''{0}''の使用は許可されません。拡張関数を有効にするには、''jdk.xml.enableExtensionFunctions''を''true''に設定します。"},
         /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.
          */
         {ErrorMsg.NO_TRANSLET_CLASS_ERR,
-        "\u3053\u306E\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u306B\u306F\u6709\u52B9\u306Atranslet\u30AF\u30E9\u30B9\u5B9A\u7FA9\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
+        "このテンプレートには有効なtransletクラス定義が含まれていません。"},
 
         /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.
          */
         {ErrorMsg.NO_MAIN_TRANSLET_ERR,
-        "\u3053\u306E\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u306B\u306F\u540D\u524D''{0}''\u3092\u6301\u3064\u30AF\u30E9\u30B9\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
+        "このテンプレートには名前''{0}''を持つクラスが含まれていません。"},
 
         /*
          * Note to translators:  The substitution text is the name of a class.
          */
         {ErrorMsg.TRANSLET_CLASS_ERR,
-        "translet\u30AF\u30E9\u30B9''{0}''\u3092\u30ED\u30FC\u30C9\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"},
+        "transletクラス''{0}''をロードできませんでした。"},
 
         {ErrorMsg.TRANSLET_OBJECT_ERR,
-        "Translet\u30AF\u30E9\u30B9\u304C\u30ED\u30FC\u30C9\u3055\u308C\u307E\u3057\u305F\u304C\u3001translet\u30A4\u30F3\u30B9\u30BF\u30F3\u30B9\u3092\u4F5C\u6210\u3067\u304D\u307E\u305B\u3093\u3002"},
+        "Transletクラスがロードされましたが、transletインスタンスを作成できません。"},
 
         /*
          * Note to translators:  "ErrorListener" is a Java interface name that
@@ -584,28 +584,28 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * substitution text with "null" Java value.
          */
         {ErrorMsg.ERROR_LISTENER_NULL_ERR,
-        "''{0}''\u306EErrorListener\u3092null\u306B\u8A2D\u5B9A\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F"},
+        "''{0}''のErrorListenerをnullに設定しようとしました"},
 
         /*
          * Note to translators:  StreamSource, SAXSource and DOMSource are Java
          * interface names that should not be translated.
          */
         {ErrorMsg.JAXP_UNKNOWN_SOURCE_ERR,
-        "StreamSource\u3001SAXSource\u304A\u3088\u3073DOMSource\u306E\u307F\u304CXSLTC\u306B\u3088\u3063\u3066\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u307E\u3059"},
+        "StreamSource、SAXSourceおよびDOMSourceのみがXSLTCによってサポートされています"},
 
         /*
          * Note to translators:  "Source" is a Java class name that should not
          * be translated.  The substitution text is the name of Java method.
          */
         {ErrorMsg.JAXP_NO_SOURCE_ERR,
-        "''{0}''\u306B\u6E21\u3055\u308C\u305F\u30BD\u30FC\u30B9\u30FB\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u306B\u30B3\u30F3\u30C6\u30F3\u30C4\u304C\u3042\u308A\u307E\u305B\u3093\u3002"},
+        "''{0}''に渡されたソース・オブジェクトにコンテンツがありません。"},
 
         /*
          * Note to translators:  The message indicates that XSLTC failed to
          * compile the stylesheet into a translet (class file).
          */
         {ErrorMsg.JAXP_COMPILE_ERR,
-        "\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u3092\u30B3\u30F3\u30D1\u30A4\u30EB\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F"},
+        "スタイルシートをコンパイルできませんでした"},
 
         /*
          * Note to translators:  "TransformerFactory" is a class name.  In this
@@ -616,17 +616,17 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * translate the term "attribute".
          */
         {ErrorMsg.JAXP_INVALID_ATTR_ERR,
-        "TransformerFactory\u306F\u5C5E\u6027''{0}''\u3092\u8A8D\u8B58\u3057\u307E\u305B\u3093\u3002"},
+        "TransformerFactoryは属性''{0}''を認識しません。"},
 
         {ErrorMsg.JAXP_INVALID_ATTR_VALUE_ERR,
-        "''{0}''\u5C5E\u6027\u306B\u6307\u5B9A\u3055\u308C\u305F\u5024\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093\u3002"},
+        "''{0}''属性に指定された値が正しくありません。"},
 
         /*
          * Note to translators:  "setResult()" and "startDocument()" are Java
          * method names that should not be translated.
          */
         {ErrorMsg.JAXP_SET_RESULT_ERR,
-        "setResult()\u306FstartDocument()\u3088\u308A\u3082\u524D\u306B\u547C\u3073\u51FA\u3059\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
+        "setResult()はstartDocument()よりも前に呼び出す必要があります。"},
 
         /*
          * Note to translators:  "Transformer" is a Java interface name that
@@ -636,7 +636,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * met.
          */
         {ErrorMsg.JAXP_NO_TRANSLET_ERR,
-        "\u30C8\u30E9\u30F3\u30B9\u30D5\u30A9\u30FC\u30DE\u306B\u306F\u30AB\u30D7\u30BB\u30EB\u5316\u3055\u308C\u305Ftranslet\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u304C\u3042\u308A\u307E\u305B\u3093\u3002"},
+        "トランスフォーマにはカプセル化されたtransletオブジェクトがありません。"},
 
         /*
          * Note to translators:  The XML document that results from a
@@ -644,14 +644,14 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * message is produced if that requirement is not met.
          */
         {ErrorMsg.JAXP_NO_HANDLER_ERR,
-        "\u5909\u63DB\u7D50\u679C\u306B\u5BFE\u3057\u3066\u5B9A\u7FA9\u6E08\u306E\u51FA\u529B\u30CF\u30F3\u30C9\u30E9\u304C\u3042\u308A\u307E\u305B\u3093\u3002"},
+        "変換結果に対して定義済の出力ハンドラがありません。"},
 
         /*
          * Note to translators:  "Result" is a Java interface name in this
          * context.  The substitution text is a method name.
          */
         {ErrorMsg.JAXP_NO_RESULT_ERR,
-        "''{0}''\u306B\u6E21\u3055\u308C\u305F\u7D50\u679C\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u306F\u7121\u52B9\u3067\u3059\u3002"},
+        "''{0}''に渡された結果オブジェクトは無効です。"},
 
         /*
          * Note to translators:  "Transformer" is a Java interface name.  The
@@ -661,7 +661,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * would be best to translate the term "property".
          */
         {ErrorMsg.JAXP_UNKNOWN_PROP_ERR,
-        "\u7121\u52B9\u306A\u30C8\u30E9\u30F3\u30B9\u30D5\u30A9\u30FC\u30DE\u30FB\u30D7\u30ED\u30D1\u30C6\u30A3''{0}''\u306B\u30A2\u30AF\u30BB\u30B9\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F\u3002"},
+        "無効なトランスフォーマ・プロパティ''{0}''にアクセスしようとしました。"},
 
         /*
          * Note to translators:  SAX2DOM is the name of a Java class that should
@@ -669,28 +669,28 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * DOM object and converts it to something that uses the SAX API.
          */
         {ErrorMsg.SAX2DOM_ADAPTER_ERR,
-        "SAX2DOM\u30A2\u30C0\u30D7\u30BF''{0}''\u3092\u4F5C\u6210\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"},
+        "SAX2DOMアダプタ''{0}''を作成できませんでした。"},
 
         /*
          * Note to translators:  "XSLTCSource.build()" is a Java method name.
          * "systemId" is an XML term that is short for "system identification".
          */
         {ErrorMsg.XSLTC_SOURCE_ERR,
-        "systemId\u3092\u8A2D\u5B9A\u305B\u305A\u306BXSLTCSource.build()\u304C\u547C\u3073\u51FA\u3055\u308C\u307E\u3057\u305F\u3002"},
+        "systemIdを設定せずにXSLTCSource.build()が呼び出されました。"},
 
         { ErrorMsg.ER_RESULT_NULL,
-            "\u7D50\u679C\u306Fnull\u306B\u3067\u304D\u307E\u305B\u3093"},
+            "結果はnullにできません"},
 
         /*
          * Note to translators:  This message indicates that the value argument
          * of setParameter must be a valid Java Object.
          */
         {ErrorMsg.JAXP_INVALID_SET_PARAM_VALUE,
-        "\u30D1\u30E9\u30E1\u30FC\u30BF{0}\u306F\u6709\u52B9\u306AJava\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"},
+        "パラメータ{0}は有効なJavaオブジェクトである必要があります"},
 
 
         {ErrorMsg.COMPILE_STDIN_ERR,
-        "-i\u30AA\u30D7\u30B7\u30E7\u30F3\u306F-o\u30AA\u30D7\u30B7\u30E7\u30F3\u3068\u3068\u3082\u306B\u4F7F\u7528\u3059\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
+        "-iオプションは-oオプションとともに使用する必要があります。"},
 
 
         /*
@@ -703,7 +703,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * documentation.
          */
         {ErrorMsg.COMPILE_USAGE_STR,
-        "\u5F62\u5F0F\n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Compile [-o <output>]\n      [-d <directory>] [-j <jarfile>] [-p <package>]\n      [-n] [-x] [-u] [-v] [-h] { <stylesheet> | -i }\n\nOPTIONS\n   -o <output>    \u540D\u524D<output>\u3092\u751F\u6210\u6E08translet\u306B\n                  \u5272\u308A\u5F53\u3066\u308B\u3002\u30C7\u30D5\u30A9\u30EB\u30C8\u3067\u306F\u3001translet\u540D\u306F\n                  <stylesheet>\u540D\u306B\u7531\u6765\u3057\u307E\u3059\u3002\u3053\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u306F\n                  \u8907\u6570\u306E\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u3092\u30B3\u30F3\u30D1\u30A4\u30EB\u3059\u308B\u5834\u5408\u306F\u7121\u8996\u3055\u308C\u307E\u3059\u3002\n   -d <directory> translet\u306E\u5B9B\u5148\u30C7\u30A3\u30EC\u30AF\u30C8\u30EA\u3092\u6307\u5B9A\u3059\u308B\n   -j <jarfile>   <jarfile>\u3067\u6307\u5B9A\u3055\u308C\u308B\u540D\u524D\u306Ejar\u30D5\u30A1\u30A4\u30EB\u306Btranslet\u30AF\u30E9\u30B9\u3092\n                  \u30D1\u30C3\u30B1\u30FC\u30B8\u3059\u308B\n   -p <package>   \u751F\u6210\u3055\u308C\u308B\u3059\u3079\u3066\u306Etranslet\u30AF\u30E9\u30B9\u306E\u30D1\u30C3\u30B1\u30FC\u30B8\u540D\n                  \u63A5\u982D\u8F9E\u3092\u6307\u5B9A\u3059\u308B\u3002\n   -n             \u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u306E\u30A4\u30F3\u30E9\u30A4\u30F3\u5316\u3092\u6709\u52B9\u306B\u3059\u308B(\u5E73\u5747\u3057\u3066\u30C7\u30D5\u30A9\u30EB\u30C8\u52D5\u4F5C\u306E\u65B9\u304C\n                  \u512A\u308C\u3066\u3044\u307E\u3059)\u3002\n   -x             \u8FFD\u52A0\u306E\u30C7\u30D0\u30C3\u30B0\u30FB\u30E1\u30C3\u30BB\u30FC\u30B8\u51FA\u529B\u3092\u30AA\u30F3\u306B\u3059\u308B\n   -u             <stylesheet>\u5F15\u6570\u3092URL\u3068\u3057\u3066\u89E3\u91C8\u3059\u308B\n   -i             \u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u3092stdin\u304B\u3089\u8AAD\u307F\u8FBC\u3080\u3053\u3068\u3092\u30B3\u30F3\u30D1\u30A4\u30E9\u306B\u5F37\u5236\u3059\u308B\n   -v             \u30B3\u30F3\u30D1\u30A4\u30E9\u306E\u30D0\u30FC\u30B8\u30E7\u30F3\u3092\u51FA\u529B\u3059\u308B\n   -h             \u3053\u306E\u4F7F\u7528\u65B9\u6CD5\u306E\u6587\u3092\u51FA\u529B\u3059\u308B\n"},
+        "形式\n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Compile [-o <output>]\n      [-d <directory>] [-j <jarfile>] [-p <package>]\n      [-n] [-x] [-u] [-v] [-h] { <stylesheet> | -i }\n\nOPTIONS\n   -o <output>    名前<output>を生成済transletに\n                  割り当てる。デフォルトでは、translet名は\n                  <stylesheet>名に由来します。このオプションは\n                  複数のスタイルシートをコンパイルする場合は無視されます。\n   -d <directory> transletの宛先ディレクトリを指定する\n   -j <jarfile>   <jarfile>で指定される名前のjarファイルにtransletクラスを\n                  パッケージする\n   -p <package>   生成されるすべてのtransletクラスのパッケージ名\n                  接頭辞を指定する。\n   -n             テンプレートのインライン化を有効にする(平均してデフォルト動作の方が\n                  優れています)。\n   -x             追加のデバッグ・メッセージ出力をオンにする\n   -u             <stylesheet>引数をURLとして解釈する\n   -i             スタイルシートをstdinから読み込むことをコンパイラに強制する\n   -v             コンパイラのバージョンを出力する\n   -h             この使用方法の文を出力する\n"},
 
         /*
          * Note to translators:  This message contains usage information for a
@@ -715,7 +715,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * documentation.
          */
         {ErrorMsg.TRANSFORM_USAGE_STR,
-        "\u5F62\u5F0F \n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Transform [-j <jarfile>]\n      [-x] [-n <iterations>] {-u <document_url> | <document>}\n      <class> [<param1>=<value1> ...]\n\n   translet <class>\u3092\u4F7F\u7528\u3057\u3066\u3001<document>\u3067\u6307\u5B9A\u3055\u308C\u308B\n   XML\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u3092\u5909\u63DB\u3059\u308B\u3002translet <class>\u306F\n   \u30E6\u30FC\u30B6\u30FC\u306ECLASSPATH\u5185\u304B\u3001\u30AA\u30D7\u30B7\u30E7\u30F3\u3067\u6307\u5B9A\u3055\u308C\u305F<jarfile>\u5185\u306B\u3042\u308A\u307E\u3059\u3002\nOPTIONS\n   -j <jarfile>    translet\u3092\u30ED\u30FC\u30C9\u3059\u308Bjarfile\u3092\u6307\u5B9A\u3059\u308B\n   -x              \u8FFD\u52A0\u306E\u30C7\u30D0\u30C3\u30B0\u30FB\u30E1\u30C3\u30BB\u30FC\u30B8\u51FA\u529B\u3092\u30AA\u30F3\u306B\u3059\u308B\n   -n <iterations> \u5909\u63DB\u3092<iterations>\u56DE\u5B9F\u884C\u3057\u3001\n                   \u30D7\u30ED\u30D5\u30A1\u30A4\u30EA\u30F3\u30B0\u60C5\u5831\u3092\u8868\u793A\u3059\u308B\n   -u <document_url> XML\u5165\u529B\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u3092URL\u3068\u3057\u3066\u6307\u5B9A\u3059\u308B\n"},
+        "形式 \n   java com.sun.org.apache.xalan.internal.xsltc.cmdline.Transform [-j <jarfile>]\n      [-x] [-n <iterations>] {-u <document_url> | <document>}\n      <class> [<param1>=<value1> ...]\n\n   translet <class>を使用して、<document>で指定される\n   XMLドキュメントを変換する。translet <class>は\n   ユーザーのCLASSPATH内か、オプションで指定された<jarfile>内にあります。\nOPTIONS\n   -j <jarfile>    transletをロードするjarfileを指定する\n   -x              追加のデバッグ・メッセージ出力をオンにする\n   -n <iterations> 変換を<iterations>回実行し、\n                   プロファイリング情報を表示する\n   -u <document_url> XML入力ドキュメントをURLとして指定する\n"},
 
 
 
@@ -726,7 +726,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * one of the other kinds of elements mentioned.
          */
         {ErrorMsg.STRAY_SORT_ERR,
-        "<xsl:sort>\u306F<xsl:for-each>\u307E\u305F\u306F<xsl:apply-templates>\u306E\u5185\u90E8\u3067\u306E\u307F\u4F7F\u7528\u3067\u304D\u307E\u3059\u3002"},
+        "<xsl:sort>は<xsl:for-each>または<xsl:apply-templates>の内部でのみ使用できます。"},
 
         /*
          * Note to translators:  The message indicates that the encoding
@@ -735,14 +735,14 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * the program.
          */
         {ErrorMsg.UNSUPPORTED_ENCODING,
-        "\u51FA\u529B\u30A8\u30F3\u30B3\u30FC\u30C7\u30A3\u30F3\u30B0''{0}''\u306F\u3053\u306EJVM\u3067\u306F\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
+        "出力エンコーディング''{0}''はこのJVMではサポートされていません。"},
 
         /*
          * Note to translators:  The message indicates that the XPath expression
          * named in the substitution text was not well formed syntactically.
          */
         {ErrorMsg.SYNTAX_ERR,
-        "''{0}''\u306B\u69CB\u6587\u30A8\u30E9\u30FC\u304C\u3042\u308A\u307E\u3059\u3002"},
+        "''{0}''に構文エラーがあります。"},
 
         /*
          * Note to translators:  The substitution text is the name of a Java
@@ -751,7 +751,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * class.
          */
         {ErrorMsg.CONSTRUCTOR_NOT_FOUND,
-        "\u5916\u90E8\u30B3\u30F3\u30B9\u30C8\u30E9\u30AF\u30BF''{0}''\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002"},
+        "外部コンストラクタ''{0}''が見つかりません。"},
 
         /*
          * Note to translators:  "static" is the Java keyword.  The substitution
@@ -759,7 +759,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * is not of the required type.
          */
         {ErrorMsg.NO_JAVA_FUNCT_THIS_REF,
-        "static\u3067\u306A\u3044Java\u95A2\u6570''{0}''\u306E\u6700\u521D\u306E\u5F15\u6570\u306F\u7121\u52B9\u306A\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u53C2\u7167\u3067\u3059\u3002"},
+        "staticでないJava関数''{0}''の最初の引数は無効なオブジェクト参照です。"},
 
         /*
          * Note to translators:  An XPath expression was not of the type
@@ -767,7 +767,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * expression that was in error.
          */
         {ErrorMsg.TYPE_CHECK_ERR,
-        "\u5F0F''{0}''\u306E\u30BF\u30A4\u30D7\u306E\u78BA\u8A8D\u4E2D\u306B\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002"},
+        "式''{0}''のタイプの確認中にエラーが発生しました。"},
 
         /*
          * Note to translators:  An XPath expression was not of the type
@@ -775,21 +775,21 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * problematic expression is unknown.
          */
         {ErrorMsg.TYPE_CHECK_UNK_LOC_ERR,
-        "\u4E0D\u660E\u306A\u5834\u6240\u3067\u306E\u5F0F\u306E\u30BF\u30A4\u30D7\u306E\u78BA\u8A8D\u4E2D\u306B\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002"},
+        "不明な場所での式のタイプの確認中にエラーが発生しました。"},
 
         /*
          * Note to translators:  The substitution text is the name of a command-
          * line option that was not recognized.
          */
         {ErrorMsg.ILLEGAL_CMDLINE_OPTION_ERR,
-        "\u30B3\u30DE\u30F3\u30C9\u884C\u30AA\u30D7\u30B7\u30E7\u30F3''{0}''\u306F\u7121\u52B9\u3067\u3059\u3002"},
+        "コマンド行オプション''{0}''は無効です。"},
 
         /*
          * Note to translators:  The substitution text is the name of a command-
          * line option.
          */
         {ErrorMsg.CMDLINE_OPT_MISSING_ARG_ERR,
-        "\u30B3\u30DE\u30F3\u30C9\u884C\u30AA\u30D7\u30B7\u30E7\u30F3''{0}''\u306B\u5FC5\u9808\u306E\u5F15\u6570\u304C\u3042\u308A\u307E\u305B\u3093\u3002"},
+        "コマンド行オプション''{0}''に必須の引数がありません。"},
 
         /*
          * Note to translators:  This message is used to indicate the severity
@@ -843,14 +843,14 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * Note to translators:  The substitution text is the name of a class.
          */
         {ErrorMsg.TRANSFORM_WITH_TRANSLET_STR,
-        "translet ''{0}''\u3092\u4F7F\u7528\u3057\u3066\u5909\u63DB\u3057\u307E\u3059 "},
+        "translet ''{0}''を使用して変換します "},
 
         /*
          * Note to translators:  The first substitution is the name of a class,
          * while the second substitution is the name of a jar file.
          */
         {ErrorMsg.TRANSFORM_WITH_JAR_STR,
-        "translet ''{0}''\u3092\u4F7F\u7528\u3057\u3066jar\u30D5\u30A1\u30A4\u30EB''{1}''\u304B\u3089\u5909\u63DB\u3057\u307E\u3059"},
+        "translet ''{0}''を使用してjarファイル''{1}''から変換します"},
 
         /*
          * Note to translators:  "TransformerFactory" is the name of a Java
@@ -858,7 +858,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * the name of the class that could not be instantiated.
          */
         {ErrorMsg.COULD_NOT_CREATE_TRANS_FACT,
-        "TransformerFactory\u30AF\u30E9\u30B9''{0}''\u306E\u30A4\u30F3\u30B9\u30BF\u30F3\u30B9\u3092\u4F5C\u6210\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"},
+        "TransformerFactoryクラス''{0}''のインスタンスを作成できませんでした。"},
 
         /*
          * Note to translators:  This message is produced when the user
@@ -868,7 +868,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * specifies the name the processor used instead.
          */
         {ErrorMsg.TRANSLET_NAME_JAVA_CONFLICT,
-         "\u540D\u524D''{0}''\u306B\u306FJava\u30AF\u30E9\u30B9\u306E\u540D\u524D\u306B\u8A31\u53EF\u3055\u308C\u3066\u3044\u306A\u3044\u6587\u5B57\u304C\u542B\u307E\u308C\u3066\u3044\u308B\u305F\u3081\u3001translet\u30AF\u30E9\u30B9\u306E\u540D\u524D\u3068\u3057\u3066\u4F7F\u7528\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u540D\u524D''{1}''\u304C\u304B\u308F\u308A\u306B\u4F7F\u7528\u3055\u308C\u307E\u3059\u3002"},
+         "名前''{0}''にはJavaクラスの名前に許可されていない文字が含まれているため、transletクラスの名前として使用できませんでした。名前''{1}''がかわりに使用されます。"},
 
         /*
          * Note to translators:  The following message is used as a header.
@@ -876,7 +876,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * this message.
          */
         {ErrorMsg.COMPILER_ERROR_KEY,
-        "\u30B3\u30F3\u30D1\u30A4\u30E9\u30FB\u30A8\u30E9\u30FC:"},
+        "コンパイラ・エラー:"},
 
         /*
          * Note to translators:  The following message is used as a header.
@@ -884,7 +884,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * beneath this message.
          */
         {ErrorMsg.COMPILER_WARNING_KEY,
-        "\u30B3\u30F3\u30D1\u30A4\u30E9\u306E\u8B66\u544A:"},
+        "コンパイラの警告:"},
 
         /*
          * Note to translators:  The following message is used as a header.
@@ -894,7 +894,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * stylesheet (see above).
          */
         {ErrorMsg.RUNTIME_ERROR_KEY,
-        "Translet\u30A8\u30E9\u30FC:"},
+        "Transletエラー:"},
 
         /*
          * Note to translators:  An attribute whose value is constrained to
@@ -903,7 +903,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {ErrorMsg.INVALID_QNAME_ERR,
-        "\u5024\u304C1\u3064\u306EQName\u307E\u305F\u306FQName\u306E\u7A7A\u767D\u6587\u5B57\u533A\u5207\u308A\u30EA\u30B9\u30C8\u3067\u3042\u308B\u3053\u3068\u304C\u5FC5\u8981\u306A\u5C5E\u6027\u306E\u5024\u304C''{0}''\u3067\u3057\u305F"},
+        "値が1つのQNameまたはQNameの空白文字区切りリストであることが必要な属性の値が''{0}''でした"},
 
         /*
          * Note to translators:  An attribute whose value is required to
@@ -912,7 +912,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * substitution text contains the actual value of the attribute.
          */
         {ErrorMsg.INVALID_NCNAME_ERR,
-        "\u5024\u304CNCName\u3067\u3042\u308B\u3053\u3068\u304C\u5FC5\u8981\u306A\u5C5E\u6027\u306E\u5024\u304C''{0}''\u3067\u3057\u305F"},
+        "値がNCNameであることが必要な属性の値が''{0}''でした"},
 
         /*
          * Note to translators:  An attribute with an incorrect value was
@@ -925,19 +925,19 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * attribute.
          */
         {ErrorMsg.INVALID_METHOD_IN_OUTPUT,
-        "<xsl:output>\u8981\u7D20\u306E\u30E1\u30BD\u30C3\u30C9\u5C5E\u6027\u306E\u5024\u304C''{0}''\u3067\u3057\u305F\u3002\u5024\u306F''xml''\u3001''html''\u3001''text''\u307E\u305F\u306Fqname-but-not-ncname\u306E\u3044\u305A\u308C\u304B\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"},
+        "<xsl:output>要素のメソッド属性の値が''{0}''でした。値は''xml''、''html''、''text''またはqname-but-not-ncnameのいずれかである必要があります"},
 
         {ErrorMsg.JAXP_GET_FEATURE_NULL_NAME,
-        "\u6A5F\u80FD\u540D\u306FTransformerFactory.getFeature(String name)\u5185\u3067null\u306B\u3067\u304D\u307E\u305B\u3093\u3002"},
+        "機能名はTransformerFactory.getFeature(String name)内でnullにできません。"},
 
         {ErrorMsg.JAXP_SET_FEATURE_NULL_NAME,
-        "\u6A5F\u80FD\u540D\u306FTransformerFactory.setFeature(String name, boolean value)\u5185\u3067null\u306B\u3067\u304D\u307E\u305B\u3093\u3002"},
+        "機能名はTransformerFactory.setFeature(String name, boolean value)内でnullにできません。"},
 
         {ErrorMsg.JAXP_UNSUPPORTED_FEATURE,
-        "\u6A5F\u80FD''{0}''\u3092\u3053\u306ETransformerFactory\u306B\u8A2D\u5B9A\u3067\u304D\u307E\u305B\u3093\u3002"},
+        "機能''{0}''をこのTransformerFactoryに設定できません。"},
 
         {ErrorMsg.JAXP_SECUREPROCESSING_FEATURE,
-        "FEATURE_SECURE_PROCESSING: \u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30DE\u30CD\u30FC\u30B8\u30E3\u304C\u5B58\u5728\u3059\u308B\u3068\u304D\u3001\u6A5F\u80FD\u3092false\u306B\u8A2D\u5B9A\u3067\u304D\u307E\u305B\u3093\u3002"},
+        "FEATURE_SECURE_PROCESSING: セキュリティ・マネージャが存在するとき、機能をfalseに設定できません。"},
 
         /*
          * Note to translators:  This message describes an internal error in the
@@ -947,7 +947,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * technical term internal to XSLTC and should not be translated.
          */
         {ErrorMsg.OUTLINE_ERR_TRY_CATCH,
-         "\u5185\u90E8XSLTC\u30A8\u30E9\u30FC: \u751F\u6210\u3055\u308C\u305F\u30D0\u30A4\u30C8\u30FB\u30B3\u30FC\u30C9\u306F\u3001try-catch-finally\u30D6\u30ED\u30C3\u30AF\u3092\u542B\u3093\u3067\u3044\u308B\u305F\u3081\u3001\u30A2\u30A6\u30C8\u30E9\u30A4\u30F3\u5316\u3067\u304D\u307E\u305B\u3093\u3002"},
+         "内部XSLTCエラー: 生成されたバイト・コードは、try-catch-finallyブロックを含んでいるため、アウトライン化できません。"},
 
         /*
          * Note to translators:  This message describes an internal error in the
@@ -960,7 +960,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * pair must also be between that same enclosing pair.
          */
         {ErrorMsg.OUTLINE_ERR_UNBALANCED_MARKERS,
-         "\u5185\u90E8XSLTC\u30A8\u30E9\u30FC: OutlineableChunkStart\u30DE\u30FC\u30AB\u30FC\u3068OutlineableChunkEnd\u30DE\u30FC\u30AB\u30FC\u306F\u3001\u5BFE\u306B\u306A\u3063\u3066\u304A\u308A\u3001\u304B\u3064\u6B63\u3057\u304F\u30CD\u30B9\u30C8\u3055\u308C\u3066\u3044\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
+         "内部XSLTCエラー: OutlineableChunkStartマーカーとOutlineableChunkEndマーカーは、対になっており、かつ正しくネストされている必要があります。"},
 
         /*
          * Note to translators:  This message describes an internal error in the
@@ -973,7 +973,7 @@ public class ErrorMessages_ja extends ListResourceBundle {
          * should not be translated.
          */
         {ErrorMsg.OUTLINE_ERR_DELETED_TARGET,
-         "\u5185\u90E8XSLTC\u30A8\u30E9\u30FC: \u30A2\u30A6\u30C8\u30E9\u30A4\u30F3\u5316\u3055\u308C\u305F\u30D0\u30A4\u30C8\u30FB\u30B3\u30FC\u30C9\u306E\u30D6\u30ED\u30C3\u30AF\u306E\u4E00\u90E8\u3067\u3042\u3063\u305F\u547D\u4EE4\u306F\u3001\u5143\u306E\u30E1\u30BD\u30C3\u30C9\u306E\u4E2D\u3067\u307E\u3060\u53C2\u7167\u3055\u308C\u3066\u3044\u307E\u3059\u3002"
+         "内部XSLTCエラー: アウトライン化されたバイト・コードのブロックの一部であった命令は、元のメソッドの中でまだ参照されています。"
         },
 
 
@@ -984,16 +984,16 @@ public class ErrorMessages_ja extends ListResourceBundle {
          *
          */
         {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
-         "\u5185\u90E8XSLTC\u30A8\u30E9\u30FC: \u30C8\u30E9\u30F3\u30B9\u30EC\u30C3\u30C8\u5185\u306E\u30E1\u30BD\u30C3\u30C9\u304C\u3001Java\u4EEE\u60F3\u30DE\u30B7\u30F3\u306E\u5236\u9650(1\u30E1\u30BD\u30C3\u30C9\u306E\u9577\u3055\u306F\u6700\u592764\u30AD\u30ED\u30D0\u30A4\u30C8)\u3092\u8D85\u3048\u3066\u3044\u307E\u3059\u3002\u4E00\u822C\u7684\u306B\u3001\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u5185\u306E\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u306E\u30B5\u30A4\u30BA\u304C\u5927\u304D\u904E\u304E\u308B\u3053\u3068\u304C\u539F\u56E0\u3068\u3057\u3066\u8003\u3048\u3089\u308C\u307E\u3059\u3002\u5C0F\u3055\u3044\u30B5\u30A4\u30BA\u306E\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u3092\u4F7F\u7528\u3057\u3066\u3001\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u3092\u518D\u69CB\u6210\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
+         "内部XSLTCエラー: トランスレット内のメソッドが、Java仮想マシンの制限(1メソッドの長さは最大64キロバイト)を超えています。一般的に、スタイルシート内のテンプレートのサイズが大き過ぎることが原因として考えられます。小さいサイズのテンプレートを使用して、スタイルシートを再構成してください。"
         },
 
         {ErrorMsg.XPATH_GROUP_LIMIT,
-            "JAXP0801001: \u30B3\u30F3\u30D1\u30A4\u30E9\u306F\u3001''{2}''\u3067\u8A2D\u5B9A\u3055\u308C\u305F''{1}''\u5236\u9650\u3092\u8D85\u3048\u308B''{0}''\u30B0\u30EB\u30FC\u30D7\u3092\u542B\u3080XPath\u5F0F\u3092\u691C\u51FA\u3057\u307E\u3057\u305F\u3002"},
+            "JAXP0801001: コンパイラは、''{2}''で設定された''{1}''制限を超える''{0}''グループを含むXPath式を検出しました。"},
 
         {ErrorMsg.XPATH_OPERATOR_LIMIT,
-            "JAXP0801002: \u30B3\u30F3\u30D1\u30A4\u30E9\u306F\u3001''{2}''\u3067\u8A2D\u5B9A\u3055\u308C\u305F''{1}''\u5236\u9650\u3092\u8D85\u3048\u308B''{0}''\u6F14\u7B97\u5B50\u3092\u542B\u3080XPath\u5F0F\u3092\u691C\u51FA\u3057\u307E\u3057\u305F\u3002"},
+            "JAXP0801002: コンパイラは、''{2}''で設定された''{1}''制限を超える''{0}''演算子を含むXPath式を検出しました。"},
         {ErrorMsg.XPATH_TOTAL_OPERATOR_LIMIT,
-            "JAXP0801003: \u30B3\u30F3\u30D1\u30A4\u30E9\u306F\u3001''{2}''\u3067\u8A2D\u5B9A\u3055\u308C\u305F''{1}''\u5236\u9650\u3092\u8D85\u3048\u308B\u7D2F\u7A4D''{0}''\u6F14\u7B97\u5B50\u3092\u542B\u3080XPath\u5F0F\u3092\u691C\u51FA\u3057\u307E\u3057\u305F\u3002"},
+            "JAXP0801003: コンパイラは、''{2}''で設定された''{1}''制限を超える累積''{0}''演算子を含むXPath式を検出しました。"},
       };
 
     }

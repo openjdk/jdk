@@ -478,564 +478,564 @@ public class XSLTErrorResources_ko extends ListResourceBundle
   {"ER0000" , "{0}" },
 
     { ER_NO_CURLYBRACE,
-      "\uC624\uB958: \uD45C\uD604\uC2DD\uC5D0\uB294 '{'\uAC00 \uD3EC\uD568\uB420 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "오류: 표현식에는 '{'가 포함될 수 없습니다."},
 
     { ER_ILLEGAL_ATTRIBUTE ,
-     "{0}\uC5D0 \uC798\uBABB\uB41C \uC18D\uC131\uC774 \uC788\uC74C: {1}"},
+     "{0}에 잘못된 속성이 있음: {1}"},
 
   {ER_NULL_SOURCENODE_APPLYIMPORTS ,
-      "xsl:apply-imports\uC758 sourceNode\uAC00 \uB110\uC785\uB2C8\uB2E4!"},
+      "xsl:apply-imports의 sourceNode가 널입니다!"},
 
   {ER_CANNOT_ADD,
-      "{1}\uC5D0 {0}\uC744(\uB97C) \uCD94\uAC00\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "{1}에 {0}을(를) 추가할 수 없습니다."},
 
     { ER_NULL_SOURCENODE_HANDLEAPPLYTEMPLATES,
-      "handleApplyTemplatesInstruction\uC758 sourceNode\uAC00 \uB110\uC785\uB2C8\uB2E4!"},
+      "handleApplyTemplatesInstruction의 sourceNode가 널입니다!"},
 
     { ER_NO_NAME_ATTRIB,
-     "{0}\uC5D0\uB294 name \uC18D\uC131\uC774 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+     "{0}에는 name 속성이 있어야 합니다."},
 
     {ER_TEMPLATE_NOT_FOUND,
-     "\uBA85\uBA85\uB41C \uD15C\uD50C\uB9AC\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C: {0}"},
+     "명명된 템플리트를 찾을 수 없음: {0}"},
 
     {ER_CANT_RESOLVE_NAME_AVT,
-      "xsl:call-template\uC5D0\uC11C \uC774\uB984 AVT\uB97C \uBD84\uC11D\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "xsl:call-template에서 이름 AVT를 분석할 수 없습니다."},
 
     {ER_REQUIRES_ATTRIB,
-     "{0}\uC5D0 \uC18D\uC131\uC774 \uD544\uC694\uD568: {1}"},
+     "{0}에 속성이 필요함: {1}"},
 
     { ER_MUST_HAVE_TEST_ATTRIB,
-      "{0}\uC5D0\uB294 ''test'' \uC18D\uC131\uC774 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+      "{0}에는 ''test'' 속성이 있어야 합니다."},
 
     {ER_BAD_VAL_ON_LEVEL_ATTRIB,
-      "level \uC18D\uC131\uC5D0 \uC798\uBABB\uB41C \uAC12\uC774 \uC788\uC74C: {0}"},
+      "level 속성에 잘못된 값이 있음: {0}"},
 
     {ER_PROCESSINGINSTRUCTION_NAME_CANT_BE_XML,
-      "processing-instruction \uC774\uB984\uC740 'xml'\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "processing-instruction 이름은 'xml'일 수 없습니다."},
 
     { ER_PROCESSINGINSTRUCTION_NOTVALID_NCNAME,
-      "processing-instruction \uC774\uB984\uC740 \uC801\uD569\uD55C NCName\uC774\uC5B4\uC57C \uD568: {0}"},
+      "processing-instruction 이름은 적합한 NCName이어야 함: {0}"},
 
     { ER_NEED_MATCH_ATTRIB,
-      "{0}\uC5D0 \uBAA8\uB4DC\uAC00 \uC788\uC744 \uACBD\uC6B0 match \uC18D\uC131\uC774 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+      "{0}에 모드가 있을 경우 match 속성이 있어야 합니다."},
 
     { ER_NEED_NAME_OR_MATCH_ATTRIB,
-      "{0}\uC5D0\uB294 name \uB610\uB294 match \uC18D\uC131\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."},
+      "{0}에는 name 또는 match 속성이 필요합니다."},
 
     {ER_CANT_RESOLVE_NSPREFIX,
-      "\uB124\uC784\uC2A4\uD398\uC774\uC2A4 \uC811\uB450\uC5B4\uB97C \uBD84\uC11D\uD560 \uC218 \uC5C6\uC74C: {0}"},
+      "네임스페이스 접두어를 분석할 수 없음: {0}"},
 
     { ER_ILLEGAL_VALUE,
-     "xml:space\uC5D0 \uC798\uBABB\uB41C \uAC12\uC774 \uC788\uC74C: {0}"},
+     "xml:space에 잘못된 값이 있음: {0}"},
 
     { ER_NO_OWNERDOC,
-      "\uD558\uC704 \uB178\uB4DC\uC5D0 \uC18C\uC720\uC790 \uBB38\uC11C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "하위 노드에 소유자 문서가 없습니다!"},
 
     { ER_ELEMTEMPLATEELEM_ERR,
-     "ElemTemplateElement \uC624\uB958: {0}"},
+     "ElemTemplateElement 오류: {0}"},
 
     { ER_NULL_CHILD,
-     "\uB110 \uD558\uC704\uB97C \uCD94\uAC00\uD558\uB824\uACE0 \uC2DC\uB3C4\uD558\uB294 \uC911\uC785\uB2C8\uB2E4!"},
+     "널 하위를 추가하려고 시도하는 중입니다!"},
 
     { ER_NEED_SELECT_ATTRIB,
-     "{0}\uC5D0\uB294 select \uC18D\uC131\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."},
+     "{0}에는 select 속성이 필요합니다."},
 
     { ER_NEED_TEST_ATTRIB ,
-      "xsl:when\uC5D0\uB294 'test' \uC18D\uC131\uC774 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+      "xsl:when에는 'test' 속성이 있어야 합니다."},
 
     { ER_NEED_NAME_ATTRIB,
-      "xsl:with-param\uC5D0\uB294 'name' \uC18D\uC131\uC774 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+      "xsl:with-param에는 'name' 속성이 있어야 합니다."},
 
     { ER_NO_CONTEXT_OWNERDOC,
-      "\uCEE8\uD14D\uC2A4\uD2B8\uC5D0 \uC18C\uC720\uC790 \uBB38\uC11C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "컨텍스트에 소유자 문서가 없습니다!"},
 
     {ER_COULD_NOT_CREATE_XML_PROC_LIAISON,
-      "XML TransformerFactory \uC5F0\uACB0\uC744 \uC0DD\uC131\uD560 \uC218 \uC5C6\uC74C: {0}"},
+      "XML TransformerFactory 연결을 생성할 수 없음: {0}"},
 
     {ER_PROCESS_NOT_SUCCESSFUL,
-      "Xalan: \uD504\uB85C\uC138\uC2A4\uB97C \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."},
+      "Xalan: 프로세스를 실패했습니다."},
 
     { ER_NOT_SUCCESSFUL,
-     "Xalan: \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."},
+     "Xalan: 실패했습니다."},
 
     { ER_ENCODING_NOT_SUPPORTED,
-     "\uC778\uCF54\uB529\uC774 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC74C: {0}"},
+     "인코딩이 지원되지 않음: {0}"},
 
     {ER_COULD_NOT_CREATE_TRACELISTENER,
-      "TraceListener\uB97C \uC0DD\uC131\uD560 \uC218 \uC5C6\uC74C: {0}"},
+      "TraceListener를 생성할 수 없음: {0}"},
 
     {ER_KEY_REQUIRES_NAME_ATTRIB,
-      "xsl:key\uC5D0\uB294 'name' \uC18D\uC131\uC774 \uD544\uC694\uD569\uB2C8\uB2E4!"},
+      "xsl:key에는 'name' 속성이 필요합니다!"},
 
     { ER_KEY_REQUIRES_MATCH_ATTRIB,
-      "xsl:key\uC5D0\uB294 'match' \uC18D\uC131\uC774 \uD544\uC694\uD569\uB2C8\uB2E4!"},
+      "xsl:key에는 'match' 속성이 필요합니다!"},
 
     { ER_KEY_REQUIRES_USE_ATTRIB,
-      "xsl:key\uC5D0\uB294 'use' \uC18D\uC131\uC774 \uD544\uC694\uD569\uB2C8\uB2E4!"},
+      "xsl:key에는 'use' 속성이 필요합니다!"},
 
     { ER_REQUIRES_ELEMENTS_ATTRIB,
-      "(StylesheetHandler) {0}\uC5D0\uB294 ''elements'' \uC18D\uC131\uC774 \uD544\uC694\uD569\uB2C8\uB2E4!"},
+      "(StylesheetHandler) {0}에는 ''elements'' 속성이 필요합니다!"},
 
     { ER_MISSING_PREFIX_ATTRIB,
-      "(StylesheetHandler) {0} \uC18D\uC131 ''prefix''\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+      "(StylesheetHandler) {0} 속성 ''prefix''가 누락되었습니다."},
 
     { ER_BAD_STYLESHEET_URL,
-     "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 URL\uC774 \uC798\uBABB\uB428: {0}"},
+     "스타일시트 URL이 잘못됨: {0}"},
 
     { ER_FILE_NOT_FOUND,
-     "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C: {0}"},
+     "스타일시트 파일을 찾을 수 없음: {0}"},
 
     { ER_IOEXCEPTION,
-      "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uD30C\uC77C\uC5D0 IO \uC608\uC678\uC0AC\uD56D \uBC1C\uC0DD: {0}"},
+      "스타일시트 파일에 IO 예외사항 발생: {0}"},
 
     { ER_NO_HREF_ATTRIB,
-      "(StylesheetHandler) {0}\uC5D0 \uB300\uD55C href \uC18D\uC131\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "(StylesheetHandler) {0}에 대한 href 속성을 찾을 수 없습니다."},
 
     { ER_STYLESHEET_INCLUDES_ITSELF,
-      "(StylesheetHandler) {0}\uC5D0 \uC9C1\uC811 \uB610\uB294 \uAC04\uC811\uC801\uC73C\uB85C \uC790\uC2E0\uC774 \uD3EC\uD568\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4!"},
+      "(StylesheetHandler) {0}에 직접 또는 간접적으로 자신이 포함되어 있습니다!"},
 
     { ER_PROCESSINCLUDE_ERROR,
-      "StylesheetHandler.processInclude \uC624\uB958, {0}"},
+      "StylesheetHandler.processInclude 오류, {0}"},
 
     { ER_MISSING_LANG_ATTRIB,
-      "(StylesheetHandler) {0} \uC18D\uC131 ''lang''\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+      "(StylesheetHandler) {0} 속성 ''lang''가 누락되었습니다."},
 
     { ER_MISSING_CONTAINER_ELEMENT_COMPONENT,
-      "(StylesheetHandler) {0} \uC694\uC18C\uC758 \uC704\uCE58\uAC00 \uC798\uBABB\uB41C \uAC83 \uAC19\uC2B5\uB2C8\uB2E4. \uCEE8\uD14C\uC774\uB108 \uC694\uC18C ''component''\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+      "(StylesheetHandler) {0} 요소의 위치가 잘못된 것 같습니다. 컨테이너 요소 ''component''가 누락되었습니다."},
 
     { ER_CAN_ONLY_OUTPUT_TO_ELEMENT,
-      "Element, DocumentFragment, Document \uB610\uB294 PrintWriter\uC5D0\uB9CC \uCD9C\uB825\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."},
+      "Element, DocumentFragment, Document 또는 PrintWriter에만 출력할 수 있습니다."},
 
     { ER_PROCESS_ERROR,
-     "StylesheetRoot.process \uC624\uB958"},
+     "StylesheetRoot.process 오류"},
 
     { ER_UNIMPLNODE_ERROR,
-     "UnImplNode \uC624\uB958: {0}"},
+     "UnImplNode 오류: {0}"},
 
     { ER_NO_SELECT_EXPRESSION,
-      "\uC624\uB958: xpath select \uD45C\uD604\uC2DD(-select)\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "오류: xpath select 표현식(-select)을 찾을 수 없습니다."},
 
     { ER_CANNOT_SERIALIZE_XSLPROCESSOR,
-      "XSLProcessor\uB97C \uC9C1\uB82C\uD654\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "XSLProcessor를 직렬화할 수 없습니다!"},
 
     { ER_NO_INPUT_STYLESHEET,
-      "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uC785\uB825\uAC12\uC774 \uC9C0\uC815\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4!"},
+      "스타일시트 입력값이 지정되지 않았습니다!"},
 
     { ER_FAILED_PROCESS_STYLESHEET,
-      "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uCC98\uB9AC\uB97C \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4!"},
+      "스타일시트 처리를 실패했습니다!"},
 
     { ER_COULDNT_PARSE_DOC,
-     "{0} \uBB38\uC11C\uC758 \uAD6C\uBB38\uC744 \uBD84\uC11D\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+     "{0} 문서의 구문을 분석할 수 없습니다!"},
 
     { ER_COULDNT_FIND_FRAGMENT,
-     "\uBD80\uBD84\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C: {0}"},
+     "부분을 찾을 수 없음: {0}"},
 
     { ER_NODE_NOT_ELEMENT,
-      "\uBD80\uBD84 \uC2DD\uBCC4\uC790\uAC00 \uAC00\uB9AC\uD0A8 \uB178\uB4DC\uB294 \uC694\uC18C\uAC00 \uC544\uB2D8: {0}"},
+      "부분 식별자가 가리킨 노드는 요소가 아님: {0}"},
 
     { ER_FOREACH_NEED_MATCH_OR_NAME_ATTRIB,
-      "for-each\uC5D0\uB294 match \uB610\uB294 name \uC18D\uC131\uC774 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+      "for-each에는 match 또는 name 속성이 있어야 합니다."},
 
     { ER_TEMPLATES_NEED_MATCH_OR_NAME_ATTRIB,
-      "templates\uC5D0\uB294 match \uB610\uB294 name \uC18D\uC131\uC774 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+      "templates에는 match 또는 name 속성이 있어야 합니다."},
 
     { ER_NO_CLONE_OF_DOCUMENT_FRAG,
-      "\uBB38\uC11C \uBD80\uBD84\uC758 \uBCF5\uC81C\uBCF8\uC774 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "문서 부분의 복제본이 없습니다!"},
 
     { ER_CANT_CREATE_ITEM,
-      "\uACB0\uACFC \uD2B8\uB9AC\uC5D0 \uD56D\uBAA9\uC744 \uC0DD\uC131\uD560 \uC218 \uC5C6\uC74C: {0}"},
+      "결과 트리에 항목을 생성할 수 없음: {0}"},
 
     { ER_XMLSPACE_ILLEGAL_VALUE,
-      "\uC18C\uC2A4 XML\uC758 xml:space\uC5D0 \uC798\uBABB\uB41C \uAC12\uC774 \uC788\uC74C: {0}"},
+      "소스 XML의 xml:space에 잘못된 값이 있음: {0}"},
 
     { ER_NO_XSLKEY_DECLARATION,
-      "{0}\uC5D0 \uB300\uD55C xsl:key \uC120\uC5B8\uC774 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "{0}에 대한 xsl:key 선언이 없습니다!"},
 
     { ER_CANT_CREATE_URL,
-     "\uC624\uB958: {0}\uC5D0 \uB300\uD55C URL\uC744 \uC0DD\uC131\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+     "오류: {0}에 대한 URL을 생성할 수 없습니다."},
 
     { ER_XSLFUNCTIONS_UNSUPPORTED,
-     "xsl:functions\uB294 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+     "xsl:functions는 지원되지 않습니다."},
 
     { ER_PROCESSOR_ERROR,
-     "XSLT TransformerFactory \uC624\uB958"},
+     "XSLT TransformerFactory 오류"},
 
     { ER_NOT_ALLOWED_INSIDE_STYLESHEET,
-      "(StylesheetHandler) \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uC5D0\uC11C\uB294 {0}\uC774(\uAC00) \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4!"},
+      "(StylesheetHandler) 스타일시트에서는 {0}이(가) 허용되지 않습니다!"},
 
     { ER_RESULTNS_NOT_SUPPORTED,
-      "result-ns\uB294 \uB354 \uC774\uC0C1 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4! \uB300\uC2E0 xsl:output\uC744 \uC0AC\uC6A9\uD558\uC2ED\uC2DC\uC624."},
+      "result-ns는 더 이상 지원되지 않습니다! 대신 xsl:output을 사용하십시오."},
 
     { ER_DEFAULTSPACE_NOT_SUPPORTED,
-      "default-space\uB294 \uB354 \uC774\uC0C1 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4! \uB300\uC2E0 xsl:strip-space \uB610\uB294 xsl:preserve-space\uB97C \uC0AC\uC6A9\uD558\uC2ED\uC2DC\uC624."},
+      "default-space는 더 이상 지원되지 않습니다! 대신 xsl:strip-space 또는 xsl:preserve-space를 사용하십시오."},
 
     { ER_INDENTRESULT_NOT_SUPPORTED,
-      "indent-result\uB294 \uB354 \uC774\uC0C1 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4! \uB300\uC2E0 xsl:output\uC744 \uC0AC\uC6A9\uD558\uC2ED\uC2DC\uC624."},
+      "indent-result는 더 이상 지원되지 않습니다! 대신 xsl:output을 사용하십시오."},
 
     { ER_ILLEGAL_ATTRIB,
-      "(StylesheetHandler) {0}\uC5D0 \uC798\uBABB\uB41C \uC18D\uC131\uC774 \uC788\uC74C: {1}"},
+      "(StylesheetHandler) {0}에 잘못된 속성이 있음: {1}"},
 
     { ER_UNKNOWN_XSL_ELEM,
-     "\uC54C \uC218 \uC5C6\uB294 XSL \uC694\uC18C: {0}"},
+     "알 수 없는 XSL 요소: {0}"},
 
     { ER_BAD_XSLSORT_USE,
-      "(StylesheetHandler) xsl:sort\uB294 xsl:apply-templates \uB610\uB294 xsl:for-each\uC640 \uD568\uAED8\uB9CC \uC0AC\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."},
+      "(StylesheetHandler) xsl:sort는 xsl:apply-templates 또는 xsl:for-each와 함께만 사용할 수 있습니다."},
 
     { ER_MISPLACED_XSLWHEN,
-      "(StylesheetHandler) xsl:when\uC758 \uC704\uCE58\uAC00 \uC798\uBABB\uB418\uC5C8\uC2B5\uB2C8\uB2E4!"},
+      "(StylesheetHandler) xsl:when의 위치가 잘못되었습니다!"},
 
     { ER_XSLWHEN_NOT_PARENTED_BY_XSLCHOOSE,
-      "(StylesheetHandler) xsl:when\uC774 xsl:choose\uC5D0 \uC758\uD574 \uC0C1\uC704\uB85C \uC9C0\uC815\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4!"},
+      "(StylesheetHandler) xsl:when이 xsl:choose에 의해 상위로 지정되지 않았습니다!"},
 
     { ER_MISPLACED_XSLOTHERWISE,
-      "(StylesheetHandler) xsl:otherwise\uC758 \uC704\uCE58\uAC00 \uC798\uBABB\uB418\uC5C8\uC2B5\uB2C8\uB2E4!"},
+      "(StylesheetHandler) xsl:otherwise의 위치가 잘못되었습니다!"},
 
     { ER_XSLOTHERWISE_NOT_PARENTED_BY_XSLCHOOSE,
-      "(StylesheetHandler) xsl:otherwise\uAC00 xsl:choose\uC5D0 \uC758\uD574 \uC0C1\uC704\uB85C \uC9C0\uC815\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4!"},
+      "(StylesheetHandler) xsl:otherwise가 xsl:choose에 의해 상위로 지정되지 않았습니다!"},
 
     { ER_NOT_ALLOWED_INSIDE_TEMPLATE,
-      "(StylesheetHandler) \uD15C\uD50C\uB9AC\uD2B8\uC5D0\uC11C\uB294 {0}\uC774(\uAC00) \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4!"},
+      "(StylesheetHandler) 템플리트에서는 {0}이(가) 허용되지 않습니다!"},
 
     { ER_UNKNOWN_EXT_NS_PREFIX,
-      "(StylesheetHandler) {0} \uD655\uC7A5 \uB124\uC784\uC2A4\uD398\uC774\uC2A4 \uC811\uB450\uC5B4 {1}\uC744(\uB97C) \uC54C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "(StylesheetHandler) {0} 확장 네임스페이스 접두어 {1}을(를) 알 수 없습니다."},
 
     { ER_IMPORTS_AS_FIRST_ELEM,
-      "(StylesheetHandler) \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uC758 \uCCAB\uBC88\uC9F8 \uC694\uC18C\uB85C\uB9CC \uC784\uD3EC\uD2B8\uB97C \uC218\uD589\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4!"},
+      "(StylesheetHandler) 스타일시트의 첫번째 요소로만 임포트를 수행할 수 있습니다!"},
 
     { ER_IMPORTING_ITSELF,
-      "(StylesheetHandler) {0}\uC774(\uAC00) \uC9C1\uC811 \uB610\uB294 \uAC04\uC811\uC801\uC73C\uB85C \uC790\uC2E0\uC744 \uC784\uD3EC\uD2B8\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4!"},
+      "(StylesheetHandler) {0}이(가) 직접 또는 간접적으로 자신을 임포트하고 있습니다!"},
 
     { ER_XMLSPACE_ILLEGAL_VAL,
-      "(StylesheetHandler) xml:space\uC5D0 \uC798\uBABB\uB41C \uAC12\uC774 \uC788\uC74C: {0}"},
+      "(StylesheetHandler) xml:space에 잘못된 값이 있음: {0}"},
 
     { ER_PROCESSSTYLESHEET_NOT_SUCCESSFUL,
-      "processStylesheet\uB97C \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4!"},
+      "processStylesheet를 실패했습니다!"},
 
     { ER_SAX_EXCEPTION,
-     "SAX \uC608\uC678\uC0AC\uD56D"},
+     "SAX 예외사항"},
 
 //  add this message to fix bug 21478
     { ER_FUNCTION_NOT_SUPPORTED,
-     "\uD568\uC218\uAC00 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4!"},
+     "함수가 지원되지 않습니다!"},
 
     { ER_XSLT_ERROR,
-     "XSLT \uC624\uB958"},
+     "XSLT 오류"},
 
     { ER_CURRENCY_SIGN_ILLEGAL,
-      "\uD615\uC2DD \uD328\uD134 \uBB38\uC790\uC5F4\uC5D0\uC11C\uB294 \uD1B5\uD654 \uAE30\uD638\uAC00 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+      "형식 패턴 문자열에서는 통화 기호가 허용되지 않습니다."},
 
     { ER_DOCUMENT_FUNCTION_INVALID_IN_STYLESHEET_DOM,
-      "Document \uD568\uC218\uB294 \uC2A4\uD0C0\uC77C\uC2DC\uD2B8 DOM\uC5D0\uC11C \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4!"},
+      "Document 함수는 스타일시트 DOM에서 지원되지 않습니다!"},
 
     { ER_CANT_RESOLVE_PREFIX_OF_NON_PREFIX_RESOLVER,
-      "\uBE44\uC811\uB450\uC5B4 \uBD84\uC11D\uAE30\uC758 \uC811\uB450\uC5B4\uB97C \uBD84\uC11D\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "비접두어 분석기의 접두어를 분석할 수 없습니다!"},
 
     { ER_REDIRECT_COULDNT_GET_FILENAME,
-      "\uC7AC\uC9C0\uC815 \uD655\uC7A5: \uD30C\uC77C \uC774\uB984\uC744 \uAC00\uC838\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. file \uB610\uB294 select \uC18D\uC131\uC740 \uC801\uD569\uD55C \uBB38\uC790\uC5F4\uC744 \uBC18\uD658\uD574\uC57C \uD569\uB2C8\uB2E4."},
+      "재지정 확장: 파일 이름을 가져올 수 없습니다. file 또는 select 속성은 적합한 문자열을 반환해야 합니다."},
 
     { ER_CANNOT_BUILD_FORMATTERLISTENER_IN_REDIRECT,
-      "\uC7AC\uC9C0\uC815 \uD655\uC7A5\uC5D0 FormatterListener\uB97C \uC0DD\uC131\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "재지정 확장에 FormatterListener를 생성할 수 없습니다!"},
 
     { ER_INVALID_PREFIX_IN_EXCLUDERESULTPREFIX,
-      "exclude-result-prefixes\uC758 \uC811\uB450\uC5B4\uAC00 \uBD80\uC801\uD569\uD568: {0}"},
+      "exclude-result-prefixes의 접두어가 부적합함: {0}"},
 
     { ER_MISSING_NS_URI,
-      "\uC9C0\uC815\uB41C \uC811\uB450\uC5B4\uC5D0 \uB300\uD55C \uB124\uC784\uC2A4\uD398\uC774\uC2A4 URI\uAC00 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+      "지정된 접두어에 대한 네임스페이스 URI가 누락되었습니다."},
 
     { ER_MISSING_ARG_FOR_OPTION,
-      "\uC635\uC158\uC5D0 \uB300\uD55C \uC778\uC218\uAC00 \uB204\uB77D\uB428: {0}"},
+      "옵션에 대한 인수가 누락됨: {0}"},
 
     { ER_INVALID_OPTION,
-     "\uBD80\uC801\uD569\uD55C \uC635\uC158: {0}"},
+     "부적합한 옵션: {0}"},
 
     { ER_MALFORMED_FORMAT_STRING,
-     "\uC798\uBABB\uB41C \uD615\uC2DD \uBB38\uC790\uC5F4: {0}"},
+     "잘못된 형식 문자열: {0}"},
 
     { ER_STYLESHEET_REQUIRES_VERSION_ATTRIB,
-      "xsl:stylesheet\uC5D0\uB294 'version' \uC18D\uC131\uC774 \uD544\uC694\uD569\uB2C8\uB2E4!"},
+      "xsl:stylesheet에는 'version' 속성이 필요합니다!"},
 
     { ER_ILLEGAL_ATTRIBUTE_VALUE,
-      "{0} \uC18D\uC131\uC5D0 \uC798\uBABB\uB41C \uAC12\uC774 \uC788\uC74C: {1}"},
+      "{0} 속성에 잘못된 값이 있음: {1}"},
 
     { ER_CHOOSE_REQUIRES_WHEN,
-     "xsl:choose\uC5D0\uB294 xsl:when\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."},
+     "xsl:choose에는 xsl:when이 필요합니다."},
 
     { ER_NO_APPLY_IMPORT_IN_FOR_EACH,
-      "xsl:for-each\uC5D0\uC11C\uB294 xsl:apply-imports\uAC00 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+      "xsl:for-each에서는 xsl:apply-imports가 허용되지 않습니다."},
 
     { ER_CANT_USE_DTM_FOR_OUTPUT,
-      "\uCD9C\uB825 DOM \uB178\uB4DC\uC5D0 DTMLiaison\uC744 \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB300\uC2E0 com.sun.org.apache.xpath.internal.DOM2Helper\uB97C \uC804\uB2EC\uD558\uC2ED\uC2DC\uC624!"},
+      "출력 DOM 노드에 DTMLiaison을 사용할 수 없습니다. 대신 com.sun.org.apache.xpath.internal.DOM2Helper를 전달하십시오!"},
 
     { ER_CANT_USE_DTM_FOR_INPUT,
-      "\uC785\uB825 DOM \uB178\uB4DC\uC5D0 DTMLiaison\uC744 \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB300\uC2E0 com.sun.org.apache.xpath.internal.DOM2Helper\uB97C \uC804\uB2EC\uD558\uC2ED\uC2DC\uC624!"},
+      "입력 DOM 노드에 DTMLiaison을 사용할 수 없습니다. 대신 com.sun.org.apache.xpath.internal.DOM2Helper를 전달하십시오!"},
 
     { ER_CALL_TO_EXT_FAILED,
-      "\uD655\uC7A5 \uC694\uC18C\uC5D0 \uB300\uD55C \uD638\uCD9C \uC2E4\uD328: {0}"},
+      "확장 요소에 대한 호출 실패: {0}"},
 
     { ER_PREFIX_MUST_RESOLVE,
-      "\uC811\uB450\uC5B4\uB294 \uB124\uC784\uC2A4\uD398\uC774\uC2A4\uB85C \uBD84\uC11D\uB418\uC5B4\uC57C \uD568: {0}"},
+      "접두어는 네임스페이스로 분석되어야 함: {0}"},
 
     { ER_INVALID_UTF16_SURROGATE,
-      "\uBD80\uC801\uD569\uD55C UTF-16 \uB300\uB9AC \uC694\uC18C\uAC00 \uAC10\uC9C0\uB428: {0}"},
+      "부적합한 UTF-16 대리 요소가 감지됨: {0}"},
 
     { ER_XSLATTRSET_USED_ITSELF,
-      "xsl:attribute-set {0}\uC774(\uAC00) \uC790\uC2E0\uC744 \uC0AC\uC6A9\uD588\uC2B5\uB2C8\uB2E4. \uC774 \uACBD\uC6B0 \uBB34\uD55C \uB8E8\uD504\uAC00 \uBC1C\uC0DD\uD569\uB2C8\uB2E4."},
+      "xsl:attribute-set {0}이(가) 자신을 사용했습니다. 이 경우 무한 루프가 발생합니다."},
 
     { ER_CANNOT_MIX_XERCESDOM,
-      "\uBE44Xerces-DOM \uC785\uB825\uACFC Xerces-DOM \uCD9C\uB825\uC744 \uD568\uAED8 \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "비Xerces-DOM 입력과 Xerces-DOM 출력을 함께 사용할 수 없습니다!"},
 
     { ER_TOO_MANY_LISTENERS,
       "addTraceListenersToStylesheet - TooManyListenersException"},
 
     { ER_IN_ELEMTEMPLATEELEM_READOBJECT,
-      "ElemTemplateElement.readObject\uC5D0 \uC624\uB958 \uBC1C\uC0DD: {0}"},
+      "ElemTemplateElement.readObject에 오류 발생: {0}"},
 
     { ER_DUPLICATE_NAMED_TEMPLATE,
-      "\uBA85\uBA85\uB41C \uD15C\uD50C\uB9AC\uD2B8\uB97C \uB450 \uAC1C \uC774\uC0C1 \uCC3E\uC74C: {0}"},
+      "명명된 템플리트를 두 개 이상 찾음: {0}"},
 
     { ER_INVALID_KEY_CALL,
-      "\uBD80\uC801\uD569\uD55C \uD568\uC218 \uD638\uCD9C: recursive key() \uD638\uCD9C\uC740 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+      "부적합한 함수 호출: recursive key() 호출은 허용되지 않습니다."},
 
     { ER_REFERENCING_ITSELF,
-      "{0} \uBCC0\uC218\uAC00 \uC9C1\uC811 \uB610\uB294 \uAC04\uC811\uC801\uC73C\uB85C \uC790\uC2E0\uC744 \uCC38\uC870\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4!"},
+      "{0} 변수가 직접 또는 간접적으로 자신을 참조하고 있습니다!"},
 
     { ER_ILLEGAL_DOMSOURCE_INPUT,
-      "newTemplates\uC758 DOMSource\uC5D0 \uB300\uD55C \uC785\uB825 \uB178\uB4DC\uB294 \uB110\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "newTemplates의 DOMSource에 대한 입력 노드는 널일 수 없습니다!"},
 
     { ER_CLASS_NOT_FOUND_FOR_OPTION,
-        "{0} \uC635\uC158\uC5D0 \uB300\uD55C \uD074\uB798\uC2A4 \uD30C\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "{0} 옵션에 대한 클래스 파일을 찾을 수 없습니다."},
 
     { ER_REQUIRED_ELEM_NOT_FOUND,
-        "\uD544\uC218 \uC694\uC18C\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C: {0}"},
+        "필수 요소를 찾을 수 없음: {0}"},
 
     { ER_INPUT_CANNOT_BE_NULL,
-        "InputStream\uC740 \uB110\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "InputStream은 널일 수 없습니다."},
 
     { ER_URI_CANNOT_BE_NULL,
-        "URI\uB294 \uB110\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "URI는 널일 수 없습니다."},
 
     { ER_FILE_CANNOT_BE_NULL,
-        "\uD30C\uC77C\uC740 \uB110\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "파일은 널일 수 없습니다."},
 
     { ER_SOURCE_CANNOT_BE_NULL,
-                "InputSource\uB294 \uB110\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+                "InputSource는 널일 수 없습니다."},
 
     { ER_CANNOT_INIT_BSFMGR,
-                "BSF \uAD00\uB9AC\uC790\uB97C \uCD08\uAE30\uD654\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+                "BSF 관리자를 초기화할 수 없습니다."},
 
     { ER_CANNOT_CMPL_EXTENSN,
-                "\uD655\uC7A5\uC744 \uCEF4\uD30C\uC77C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+                "확장을 컴파일할 수 없습니다."},
 
     { ER_CANNOT_CREATE_EXTENSN,
-      "{0} \uD655\uC7A5\uC744 \uC0DD\uC131\uD560 \uC218 \uC5C6\uB294 \uC6D0\uC778: {1}"},
+      "{0} 확장을 생성할 수 없는 원인: {1}"},
 
     { ER_INSTANCE_MTHD_CALL_REQUIRES,
-      "{0} \uBA54\uC18C\uB4DC\uC5D0 \uB300\uD55C \uC778\uC2A4\uD134\uC2A4 \uBA54\uC18C\uB4DC\uC5D0\uB294 \uAC1D\uCCB4 \uC778\uC2A4\uD134\uC2A4\uAC00 \uCCAB\uBC88\uC9F8 \uC778\uC218\uB85C \uD544\uC694\uD569\uB2C8\uB2E4."},
+      "{0} 메소드에 대한 인스턴스 메소드에는 객체 인스턴스가 첫번째 인수로 필요합니다."},
 
     { ER_INVALID_ELEMENT_NAME,
-      "\uBD80\uC801\uD569\uD55C \uC694\uC18C \uC774\uB984\uC774 \uC9C0\uC815\uB428: {0}"},
+      "부적합한 요소 이름이 지정됨: {0}"},
 
     { ER_ELEMENT_NAME_METHOD_STATIC,
-      "\uC694\uC18C \uC774\uB984 \uBA54\uC18C\uB4DC\uB294 \uC815\uC801 {0}\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+      "요소 이름 메소드는 정적 {0}이어야 합니다."},
 
     { ER_EXTENSION_FUNC_UNKNOWN,
-             "\uD655\uC7A5 \uD568\uC218 {0}: {1}\uC744(\uB97C) \uC54C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+             "확장 함수 {0}: {1}을(를) 알 수 없습니다."},
 
     { ER_MORE_MATCH_CONSTRUCTOR,
-             "{0}\uC5D0 \uB300\uD55C \uC0DD\uC131\uC790\uC640 \uAC00\uC7A5 \uC798 \uC77C\uCE58\uD558\uB294 \uD56D\uBAA9\uC774 \uB450 \uAC1C \uC774\uC0C1 \uC788\uC2B5\uB2C8\uB2E4."},
+             "{0}에 대한 생성자와 가장 잘 일치하는 항목이 두 개 이상 있습니다."},
 
     { ER_MORE_MATCH_METHOD,
-             "{0} \uBA54\uC18C\uB4DC\uC640 \uAC00\uC7A5 \uC798 \uC77C\uCE58\uD558\uB294 \uD56D\uBAA9\uC774 \uB450 \uAC1C \uC774\uC0C1 \uC788\uC2B5\uB2C8\uB2E4."},
+             "{0} 메소드와 가장 잘 일치하는 항목이 두 개 이상 있습니다."},
 
     { ER_MORE_MATCH_ELEMENT,
-             "\uC694\uC18C \uBA54\uC18C\uB4DC {0}\uACFC(\uC640) \uAC00\uC7A5 \uC798 \uC77C\uCE58\uD558\uB294 \uD56D\uBAA9\uC774 \uB450 \uAC1C \uC774\uC0C1 \uC788\uC2B5\uB2C8\uB2E4."},
+             "요소 메소드 {0}과(와) 가장 잘 일치하는 항목이 두 개 이상 있습니다."},
 
     { ER_INVALID_CONTEXT_PASSED,
-             "{0} \uD3C9\uAC00\uB97C \uC704\uD574 \uBD80\uC801\uD569\uD55C \uCEE8\uD14D\uC2A4\uD2B8\uAC00 \uC804\uB2EC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+             "{0} 평가를 위해 부적합한 컨텍스트가 전달되었습니다."},
 
     { ER_POOL_EXISTS,
-             "\uD480\uC774 \uC874\uC7AC\uD569\uB2C8\uB2E4."},
+             "풀이 존재합니다."},
 
     { ER_NO_DRIVER_NAME,
-             "\uC9C0\uC815\uB41C \uB4DC\uB77C\uC774\uBC84 \uC774\uB984\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."},
+             "지정된 드라이버 이름이 없습니다."},
 
     { ER_NO_URL,
-             "\uC9C0\uC815\uB41C URL\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."},
+             "지정된 URL이 없습니다."},
 
     { ER_POOL_SIZE_LESSTHAN_ONE,
-             "\uD480 \uD06C\uAE30\uAC00 1\uBCF4\uB2E4 \uC791\uC2B5\uB2C8\uB2E4!"},
+             "풀 크기가 1보다 작습니다!"},
 
     { ER_INVALID_DRIVER,
-             "\uBD80\uC801\uD569\uD55C \uB4DC\uB77C\uC774\uBC84 \uC774\uB984\uC774 \uC9C0\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4!"},
+             "부적합한 드라이버 이름이 지정되었습니다!"},
 
     { ER_NO_STYLESHEETROOT,
-             "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uB8E8\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+             "스타일시트 루트를 찾을 수 없습니다!"},
 
     { ER_ILLEGAL_XMLSPACE_VALUE,
-         "xml:space\uC5D0 \uB300\uD55C \uAC12\uC774 \uC798\uBABB\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+         "xml:space에 대한 값이 잘못되었습니다."},
 
     { ER_PROCESSFROMNODE_FAILED,
-         "processFromNode\uB97C \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."},
+         "processFromNode를 실패했습니다."},
 
     { ER_RESOURCE_COULD_NOT_LOAD,
-        "[{0}] \uB9AC\uC18C\uC2A4\uAC00 \uB2E4\uC74C\uC744 \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC74C: {1} \n {2} \t {3}"},
+        "[{0}] 리소스가 다음을 로드할 수 없음: {1} \n {2} \t {3}"},
 
     { ER_BUFFER_SIZE_LESSTHAN_ZERO,
-        "\uBC84\uD37C \uD06C\uAE30 <=0"},
+        "버퍼 크기 <=0"},
 
     { ER_UNKNOWN_ERROR_CALLING_EXTENSION,
-        "\uD655\uC7A5\uC744 \uD638\uCD9C\uD558\uB294 \uC911 \uC54C \uC218 \uC5C6\uB294 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
+        "확장을 호출하는 중 알 수 없는 오류가 발생했습니다."},
 
     { ER_NO_NAMESPACE_DECL,
-        "{0} \uC811\uB450\uC5B4\uC5D0 \uD574\uB2F9\uD558\uB294 \uB124\uC784\uC2A4\uD398\uC774\uC2A4 \uC120\uC5B8\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "{0} 접두어에 해당하는 네임스페이스 선언이 없습니다."},
 
     { ER_ELEM_CONTENT_NOT_ALLOWED,
-        "lang=javaclass {0}\uC5D0 \uB300\uD574\uC11C\uB294 \uC694\uC18C \uCF58\uD150\uCE20\uAC00 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "lang=javaclass {0}에 대해서는 요소 콘텐츠가 허용되지 않습니다."},
 
     { ER_STYLESHEET_DIRECTED_TERMINATION,
-        "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uAC00 \uC885\uB8CC\uB97C \uC9C0\uC815\uD588\uC2B5\uB2C8\uB2E4."},
+        "스타일시트가 종료를 지정했습니다."},
 
     { ER_ONE_OR_TWO,
-        "1 \uB610\uB294 2"},
+        "1 또는 2"},
 
     { ER_TWO_OR_THREE,
-        "2 \uB610\uB294 3"},
+        "2 또는 3"},
 
     { ER_COULD_NOT_LOAD_RESOURCE,
-        "{0}\uC744(\uB97C) \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. CLASSPATH\uB97C \uD655\uC778\uD558\uC2ED\uC2DC\uC624. \uD604\uC7AC \uAE30\uBCF8\uAC12\uB9CC \uC0AC\uC6A9\uD558\uB294 \uC911\uC785\uB2C8\uB2E4."},
+        "{0}을(를) 로드할 수 없습니다. CLASSPATH를 확인하십시오. 현재 기본값만 사용하는 중입니다."},
 
     { ER_CANNOT_INIT_DEFAULT_TEMPLATES,
-        "\uAE30\uBCF8 \uD15C\uD50C\uB9AC\uD2B8\uB97C \uCD08\uAE30\uD654\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "기본 템플리트를 초기화할 수 없습니다."},
 
     { ER_RESULT_NULL,
-        "\uACB0\uACFC\uB294 \uB110\uC774 \uC544\uB2C8\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+        "결과는 널이 아니어야 합니다."},
 
     { ER_RESULT_COULD_NOT_BE_SET,
-        "\uACB0\uACFC\uB97C \uC124\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "결과를 설정할 수 없습니다."},
 
     { ER_NO_OUTPUT_SPECIFIED,
-        "\uC9C0\uC815\uB41C \uCD9C\uB825\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "지정된 출력이 없습니다."},
 
     { ER_CANNOT_TRANSFORM_TO_RESULT_TYPE,
-        "{0} \uC720\uD615\uC758 \uACB0\uACFC\uB85C \uBCC0\uD658\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "{0} 유형의 결과로 변환할 수 없습니다."},
 
     { ER_CANNOT_TRANSFORM_SOURCE_TYPE,
-        "{0} \uC720\uD615\uC758 \uC18C\uC2A4\uB97C \uBCC0\uD658\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "{0} 유형의 소스를 변환할 수 없습니다."},
 
     { ER_NULL_CONTENT_HANDLER,
-        "\uB110 \uCF58\uD150\uCE20 \uCC98\uB9AC\uAE30"},
+        "널 콘텐츠 처리기"},
 
     { ER_NULL_ERROR_HANDLER,
-        "\uB110 \uC624\uB958 \uCC98\uB9AC\uAE30"},
+        "널 오류 처리기"},
 
     { ER_CANNOT_CALL_PARSE,
-        "ContentHandler\uAC00 \uC124\uC815\uB418\uC9C0 \uC54A\uC740 \uACBD\uC6B0 parse\uB97C \uD638\uCD9C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "ContentHandler가 설정되지 않은 경우 parse를 호출할 수 없습니다."},
 
     { ER_NO_PARENT_FOR_FILTER,
-        "\uD544\uD130\uC5D0 \uB300\uD55C \uC0C1\uC704\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        "필터에 대한 상위가 없습니다."},
 
     { ER_NO_STYLESHEET_IN_MEDIA,
-         "{0}\uC5D0\uC11C \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB9E4\uCCB4 = {1}"},
+         "{0}에서 스타일시트를 찾을 수 없습니다. 매체 = {1}"},
 
     { ER_NO_STYLESHEET_PI,
-         "{0}\uC5D0\uC11C xml-stylesheet PI\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+         "{0}에서 xml-stylesheet PI를 찾을 수 없습니다."},
 
     { ER_NOT_SUPPORTED,
-       "\uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC74C: {0}"},
+       "지원되지 않음: {0}"},
 
     { ER_PROPERTY_VALUE_BOOLEAN,
-       "{0} \uC18D\uC131\uC5D0 \uB300\uD55C \uAC12\uC740 \uBD80\uC6B8 \uC778\uC2A4\uD134\uC2A4\uC5EC\uC57C \uD569\uB2C8\uB2E4."},
+       "{0} 속성에 대한 값은 부울 인스턴스여야 합니다."},
 
     { ER_COULD_NOT_FIND_EXTERN_SCRIPT,
-         "{0}\uC5D0 \uC788\uB294 \uC678\uBD80 \uC2A4\uD06C\uB9BD\uD2B8\uB85C \uAC00\uC838\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+         "{0}에 있는 외부 스크립트로 가져올 수 없습니다."},
 
     { ER_RESOURCE_COULD_NOT_FIND,
-        "[{0}] \uB9AC\uC18C\uC2A4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.\n {1}"},
+        "[{0}] 리소스를 찾을 수 없습니다.\n {1}"},
 
     { ER_OUTPUT_PROPERTY_NOT_RECOGNIZED,
-        "\uCD9C\uB825 \uC18D\uC131\uC744 \uC778\uC2DD\uD560 \uC218 \uC5C6\uC74C: {0}"},
+        "출력 속성을 인식할 수 없음: {0}"},
 
     { ER_FAILED_CREATING_ELEMLITRSLT,
-        "ElemLiteralResult \uC778\uC2A4\uD134\uC2A4 \uC0DD\uC131\uC744 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."},
+        "ElemLiteralResult 인스턴스 생성을 실패했습니다."},
 
   //Earlier (JDK 1.4 XALAN 2.2-D11) at key code '204' the key name was ER_PRIORITY_NOT_PARSABLE
   // In latest Xalan code base key name is  ER_VALUE_SHOULD_BE_NUMBER. This should also be taken care
   //in locale specific files like XSLTErrorResources_de.java, XSLTErrorResources_fr.java etc.
   //NOTE: Not only the key name but message has also been changed.
     { ER_VALUE_SHOULD_BE_NUMBER,
-        "{0}\uC5D0 \uB300\uD55C \uAC12\uC5D0\uB294 \uAD6C\uBB38\uC744 \uBD84\uC11D\uD560 \uC218 \uC788\uB294 \uC22B\uC790\uAC00 \uD3EC\uD568\uB418\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+        "{0}에 대한 값에는 구문을 분석할 수 있는 숫자가 포함되어야 합니다."},
 
     { ER_VALUE_SHOULD_EQUAL,
-        "{0}\uC5D0 \uB300\uD55C \uAC12\uC740 yes \uB610\uB294 no\uC5EC\uC57C \uD569\uB2C8\uB2E4."},
+        "{0}에 대한 값은 yes 또는 no여야 합니다."},
 
     { ER_FAILED_CALLING_METHOD,
-        "{0} \uBA54\uC18C\uB4DC \uD638\uCD9C\uC744 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."},
+        "{0} 메소드 호출을 실패했습니다."},
 
     { ER_FAILED_CREATING_ELEMTMPL,
-        "ElemTemplateElement \uC778\uC2A4\uD134\uC2A4 \uC0DD\uC131\uC744 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."},
+        "ElemTemplateElement 인스턴스 생성을 실패했습니다."},
 
     { ER_CHARS_NOT_ALLOWED,
-        "\uBB38\uC11C\uC758 \uC774 \uC9C0\uC810\uC5D0\uC11C\uB294 \uBB38\uC790\uAC00 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+        "문서의 이 지점에서는 문자가 허용되지 않습니다."},
 
     { ER_ATTR_NOT_ALLOWED,
-        "{1} \uC694\uC18C\uC5D0\uC11C\uB294 \"{0}\" \uC18D\uC131\uC774 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4!"},
+        "{1} 요소에서는 \"{0}\" 속성이 허용되지 않습니다!"},
 
     { ER_BAD_VALUE,
-     "{0}: \uC798\uBABB\uB41C \uAC12 {1} "},
+     "{0}: 잘못된 값 {1} "},
 
     { ER_ATTRIB_VALUE_NOT_FOUND,
-     "{0} \uC18D\uC131\uAC12\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. "},
+     "{0} 속성값을 찾을 수 없습니다. "},
 
     { ER_ATTRIB_VALUE_NOT_RECOGNIZED,
-     "{0} \uC18D\uC131\uAC12\uC744 \uC778\uC2DD\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. "},
+     "{0} 속성값을 인식할 수 없습니다. "},
 
     { ER_NULL_URI_NAMESPACE,
-     "\uB110 URI\uB97C \uC0AC\uC6A9\uD558\uC5EC \uB124\uC784\uC2A4\uD398\uC774\uC2A4 \uC811\uB450\uC5B4\uB97C \uC0DD\uC131\uD558\uB824\uACE0 \uC2DC\uB3C4\uD558\uB294 \uC911"},
+     "널 URI를 사용하여 네임스페이스 접두어를 생성하려고 시도하는 중"},
 
     { ER_NUMBER_TOO_BIG,
-     "\uAC00\uC7A5 \uD070 Long \uC815\uC218\uBCF4\uB2E4 \uD070 \uC22B\uC790\uC758 \uD615\uC2DD\uC744 \uC9C0\uC815\uD558\uB824\uACE0 \uC2DC\uB3C4\uD558\uB294 \uC911"},
+     "가장 큰 Long 정수보다 큰 숫자의 형식을 지정하려고 시도하는 중"},
 
     { ER_CANNOT_FIND_SAX1_DRIVER,
-     "SAX1 \uB4DC\uB77C\uC774\uBC84 \uD074\uB798\uC2A4 {0}\uC744(\uB97C) \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+     "SAX1 드라이버 클래스 {0}을(를) 찾을 수 없습니다."},
 
     { ER_SAX1_DRIVER_NOT_LOADED,
-     "SAX1 \uB4DC\uB77C\uC774\uBC84 \uD074\uB798\uC2A4 {0}\uC774(\uAC00) \uBC1C\uACAC\uB418\uC5C8\uC9C0\uB9CC \uD574\uB2F9 \uD074\uB798\uC2A4\uB97C \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+     "SAX1 드라이버 클래스 {0}이(가) 발견되었지만 해당 클래스를 로드할 수 없습니다."},
 
     { ER_SAX1_DRIVER_NOT_INSTANTIATED,
-     "SAX1 \uB4DC\uB77C\uC774\uBC84 \uD074\uB798\uC2A4 {0}\uC774(\uAC00) \uB85C\uB4DC\uB418\uC5C8\uC9C0\uB9CC \uD574\uB2F9 \uD074\uB798\uC2A4\uB97C \uC778\uC2A4\uD134\uC2A4\uD654\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+     "SAX1 드라이버 클래스 {0}이(가) 로드되었지만 해당 클래스를 인스턴스화할 수 없습니다."},
 
     { ER_SAX1_DRIVER_NOT_IMPLEMENT_PARSER,
-     "SAX1 \uB4DC\uB77C\uC774\uBC84 \uD074\uB798\uC2A4 {0}\uC774(\uAC00) org.xml.sax.Parser\uB97C \uAD6C\uD604\uD558\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+     "SAX1 드라이버 클래스 {0}이(가) org.xml.sax.Parser를 구현하지 않았습니다."},
 
     { ER_PARSER_PROPERTY_NOT_SPECIFIED,
-     "\uC2DC\uC2A4\uD15C \uC18D\uC131 org.xml.sax.parser\uAC00 \uC9C0\uC815\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+     "시스템 속성 org.xml.sax.parser가 지정되지 않았습니다."},
 
     { ER_PARSER_ARG_CANNOT_BE_NULL,
-     "\uAD6C\uBB38 \uBD84\uC11D\uAE30 \uC778\uC218\uB294 \uB110\uC774 \uC544\uB2C8\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+     "구문 분석기 인수는 널이 아니어야 합니다."},
 
     { ER_FEATURE,
-     "\uAE30\uB2A5: {0}"},
+     "기능: {0}"},
 
     { ER_PROPERTY,
-     "\uC18D\uC131: {0}"},
+     "속성: {0}"},
 
     { ER_NULL_ENTITY_RESOLVER,
-     "\uB110 \uC5D4\uD2F0\uD2F0 \uBD84\uC11D\uAE30"},
+     "널 엔티티 분석기"},
 
     { ER_NULL_DTD_HANDLER,
-     "\uB110 DTD \uCC98\uB9AC\uAE30"},
+     "널 DTD 처리기"},
 
     { ER_NO_DRIVER_NAME_SPECIFIED,
-     "\uC9C0\uC815\uB41C \uB4DC\uB77C\uC774\uBC84 \uC774\uB984\uC774 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+     "지정된 드라이버 이름이 없습니다!"},
 
     { ER_NO_URL_SPECIFIED,
-     "\uC9C0\uC815\uB41C URL\uC774 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+     "지정된 URL이 없습니다!"},
 
     { ER_POOLSIZE_LESS_THAN_ONE,
-     "\uD480 \uD06C\uAE30\uAC00 1 \uBBF8\uB9CC\uC785\uB2C8\uB2E4!"},
+     "풀 크기가 1 미만입니다!"},
 
     { ER_INVALID_DRIVER_NAME,
-     "\uBD80\uC801\uD569\uD55C \uB4DC\uB77C\uC774\uBC84 \uC774\uB984\uC774 \uC9C0\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4!"},
+     "부적합한 드라이버 이름이 지정되었습니다!"},
 
     { ER_ERRORLISTENER,
      "ErrorListener"},
@@ -1048,7 +1048,7 @@ public class XSLTErrorResources_ko extends ListResourceBundle
 //   'ElemTemplateElement' is the name of a class, and should not be
 //   translated.
     { ER_ASSERT_NO_TEMPLATE_PARENT,
-     "\uD504\uB85C\uADF8\uB798\uBA38 \uC624\uB958\uC785\uB2C8\uB2E4! \uD45C\uD604\uC2DD\uC5D0 ElemTemplateElement \uC0C1\uC704\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+     "프로그래머 오류입니다! 표현식에 ElemTemplateElement 상위가 없습니다!"},
 
 
 // Note to translators:  The following message should not normally be displayed
@@ -1059,18 +1059,18 @@ public class XSLTErrorResources_ko extends ListResourceBundle
 //   'RedundentExprEliminator' is the name of a class, and should not be
 //   translated.
     { ER_ASSERT_REDUNDENT_EXPR_ELIMINATOR,
-     "RedundentExprEliminator\uC5D0 \uD504\uB85C\uADF8\uB798\uBA38 \uAC80\uC99D\uC774 \uC788\uC74C: {0}"},
+     "RedundentExprEliminator에 프로그래머 검증이 있음: {0}"},
 
     { ER_NOT_ALLOWED_IN_POSITION,
-     "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uC758 \uC774 \uC704\uCE58\uC5D0\uB294 {0}\uC774(\uAC00) \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4!"},
+     "스타일시트의 이 위치에는 {0}이(가) 허용되지 않습니다!"},
 
     { ER_NONWHITESPACE_NOT_ALLOWED_IN_POSITION,
-     "\uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uC758 \uC774 \uC704\uCE58\uC5D0\uB294 \uACF5\uBC31\uC774 \uC544\uB2CC \uD14D\uC2A4\uD2B8\uB294 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4!"},
+     "스타일시트의 이 위치에는 공백이 아닌 텍스트는 허용되지 않습니다!"},
 
   // This code is shared with warning codes.
   // SystemId Unknown
     { INVALID_TCHAR,
-     "\uC798\uBABB\uB41C \uAC12: {1}\uC774(\uAC00) CHAR \uC18D\uC131\uC5D0 \uC0AC\uC6A9\uB428: {0}. CHAR \uC720\uD615\uC758 \uC18D\uC131\uC740 1\uC790\uC5EC\uC57C \uD569\uB2C8\uB2E4!"},
+     "잘못된 값: {1}이(가) CHAR 속성에 사용됨: {0}. CHAR 유형의 속성은 1자여야 합니다!"},
 
     // Note to translators:  The following message is used if the value of
     // an attribute in a stylesheet is invalid.  "QNAME" is the XML data-type of
@@ -1078,7 +1078,7 @@ public class XSLTErrorResources_ko extends ListResourceBundle
     // the attribute value and {0} is the attribute name.
   //The following codes are shared with the warning codes...
     { INVALID_QNAME,
-     "\uC798\uBABB\uB41C \uAC12: {1}\uC774(\uAC00) QNAME \uC18D\uC131\uC5D0 \uC0AC\uC6A9\uB428: {0}"},
+     "잘못된 값: {1}이(가) QNAME 속성에 사용됨: {0}"},
 
     // Note to translators:  The following message is used if the value of
     // an attribute in a stylesheet is invalid.  "ENUM" is the XML data-type of
@@ -1086,35 +1086,35 @@ public class XSLTErrorResources_ko extends ListResourceBundle
     // the attribute value, {0} is the attribute name, and {2} is a list of valid
     // values.
     { INVALID_ENUM,
-     "\uC798\uBABB\uB41C \uAC12: {1}\uC774(\uAC00) ENUM \uC18D\uC131\uC5D0 \uC0AC\uC6A9\uB428: {0}. \uC801\uD569\uD55C \uAC12: {2}."},
+     "잘못된 값: {1}이(가) ENUM 속성에 사용됨: {0}. 적합한 값: {2}."},
 
 // Note to translators:  The following message is used if the value of
 // an attribute in a stylesheet is invalid.  "NMTOKEN" is the XML data-type
 // of the attribute, and should not be translated.  The substitution text {1} is
 // the attribute value and {0} is the attribute name.
     { INVALID_NMTOKEN,
-     "\uC798\uBABB\uB41C \uAC12: {1}\uC774(\uAC00) NMTOKEN \uC18D\uC131\uC5D0 \uC0AC\uC6A9\uB428: {0} "},
+     "잘못된 값: {1}이(가) NMTOKEN 속성에 사용됨: {0} "},
 
 // Note to translators:  The following message is used if the value of
 // an attribute in a stylesheet is invalid.  "NCNAME" is the XML data-type
 // of the attribute, and should not be translated.  The substitution text {1} is
 // the attribute value and {0} is the attribute name.
     { INVALID_NCNAME,
-     "\uC798\uBABB\uB41C \uAC12: {1}\uC774(\uAC00) NCNAME \uC18D\uC131\uC5D0 \uC0AC\uC6A9\uB428: {0} "},
+     "잘못된 값: {1}이(가) NCNAME 속성에 사용됨: {0} "},
 
 // Note to translators:  The following message is used if the value of
 // an attribute in a stylesheet is invalid.  "boolean" is the XSLT data-type
 // of the attribute, and should not be translated.  The substitution text {1} is
 // the attribute value and {0} is the attribute name.
     { INVALID_BOOLEAN,
-     "\uC798\uBABB\uB41C \uAC12: {1}\uC774(\uAC00) boolean \uC18D\uC131\uC5D0 \uC0AC\uC6A9\uB428: {0} "},
+     "잘못된 값: {1}이(가) boolean 속성에 사용됨: {0} "},
 
 // Note to translators:  The following message is used if the value of
 // an attribute in a stylesheet is invalid.  "number" is the XSLT data-type
 // of the attribute, and should not be translated.  The substitution text {1} is
 // the attribute value and {0} is the attribute name.
      { INVALID_NUMBER,
-     "\uC798\uBABB\uB41C \uAC12: {1}\uC774(\uAC00) number \uC18D\uC131\uC5D0 \uC0AC\uC6A9\uB428: {0} "},
+     "잘못된 값: {1}이(가) number 속성에 사용됨: {0} "},
 
 
   // End of shared codes...
@@ -1125,27 +1125,27 @@ public class XSLTErrorResources_ko extends ListResourceBundle
 // a match pattern, its argument must be a string literal (or constant.)
 // ER_ARG_LITERAL - new error message for bugzilla //5202
     { ER_ARG_LITERAL,
-     "\uC77C\uCE58 \uD328\uD134\uC758 {0}\uC5D0 \uB300\uD55C \uC778\uC218\uB294 \uB9AC\uD130\uB7F4\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+     "일치 패턴의 {0}에 대한 인수는 리터럴이어야 합니다."},
 
 // Note to translators:  The following message indicates that two definitions of
 // a variable.  A "global variable" is a variable that is accessible everywher
 // in the stylesheet.
 // ER_DUPLICATE_GLOBAL_VAR - new error message for bugzilla #790
     { ER_DUPLICATE_GLOBAL_VAR,
-     "\uC804\uC5ED \uBCC0\uC218 \uC120\uC5B8\uC774 \uC911\uBCF5\uB429\uB2C8\uB2E4."},
+     "전역 변수 선언이 중복됩니다."},
 
 
 // Note to translators:  The following message indicates that two definitions of
 // a variable were encountered.
 // ER_DUPLICATE_VAR - new error message for bugzilla #790
     { ER_DUPLICATE_VAR,
-     "\uBCC0\uC218 \uC120\uC5B8\uC774 \uC911\uBCF5\uB429\uB2C8\uB2E4."},
+     "변수 선언이 중복됩니다."},
 
     // Note to translators:  "xsl:template, "name" and "match" are XSLT keywords
     // which must not be translated.
     // ER_TEMPLATE_NAME_MATCH - new error message for bugzilla #789
     { ER_TEMPLATE_NAME_MATCH,
-     "xsl:template\uC5D0\uB294 name \uB610\uB294 match \uC18D\uC131 \uC911 \uD558\uB098\uAC00 \uC788\uAC70\uB098 \uBAA8\uB450 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+     "xsl:template에는 name 또는 match 속성 중 하나가 있거나 모두 있어야 합니다."},
 
     // Note to translators:  "exclude-result-prefixes" is an XSLT keyword which
     // should not be translated.  The message indicates that a namespace prefix
@@ -1153,7 +1153,7 @@ public class XSLTErrorResources_ko extends ListResourceBundle
     // was in error.
     // ER_INVALID_PREFIX - new error message for bugzilla #788
     { ER_INVALID_PREFIX,
-     "exclude-result-prefixes\uC758 \uC811\uB450\uC5B4\uAC00 \uBD80\uC801\uD569\uD568: {0}"},
+     "exclude-result-prefixes의 접두어가 부적합함: {0}"},
 
     // Note to translators:  An "attribute set" is a set of attributes that can
     // be added to an element in the output document as a group.  The message
@@ -1161,156 +1161,156 @@ public class XSLTErrorResources_ko extends ListResourceBundle
     // was never defined.
     // ER_NO_ATTRIB_SET - new error message for bugzilla #782
     { ER_NO_ATTRIB_SET,
-     "\uC774\uB984\uC774 {0}\uC778 attribute-set\uAC00 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+     "이름이 {0}인 attribute-set가 존재하지 않습니다."},
 
     // Note to translators:  This message indicates that there was a reference
     // to a function named {0} for which no function definition could be found.
     { ER_FUNCTION_NOT_FOUND,
-     "\uC774\uB984\uC774 {0}\uC778 \uD568\uC218\uAC00 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
+     "이름이 {0}인 함수가 존재하지 않습니다."},
 
     // Note to translators:  This message indicates that the XSLT instruction
     // that is named by the substitution text {0} must not contain other XSLT
     // instructions (content) or a "select" attribute.  The word "select" is
     // an XSLT keyword in this case and must not be translated.
     { ER_CANT_HAVE_CONTENT_AND_SELECT,
-     "{0} \uC694\uC18C\uC5D0\uB294 content \uC18D\uC131\uACFC select \uC18D\uC131\uC774 \uD568\uAED8 \uD3EC\uD568\uB418\uC9C0 \uC54A\uC544\uC57C \uD569\uB2C8\uB2E4."},
+     "{0} 요소에는 content 속성과 select 속성이 함께 포함되지 않아야 합니다."},
 
     // Note to translators:  This message indicates that the value argument
     // of setParameter must be a valid Java Object.
     { ER_INVALID_SET_PARAM_VALUE,
-     "{0} \uB9E4\uAC1C\uBCC0\uC218\uC758 \uAC12\uC740 \uC801\uD569\uD55C Java \uAC1D\uCCB4\uC5EC\uC57C \uD569\uB2C8\uB2E4."},
+     "{0} 매개변수의 값은 적합한 Java 객체여야 합니다."},
 
     { ER_INVALID_NAMESPACE_URI_VALUE_FOR_RESULT_PREFIX_FOR_DEFAULT,
-      "xsl:namespace-alias \uC694\uC18C\uC758 result-prefix \uC18D\uC131\uC5D0 \uB300\uD55C \uAC12\uC740 '#default'\uC774\uC9C0\uB9CC \uC694\uC18C\uC5D0 \uB300\uD55C \uBC94\uC704\uC5D0\uC11C \uAE30\uBCF8 \uB124\uC784\uC2A4\uD398\uC774\uC2A4\uAC00 \uC120\uC5B8\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+      "xsl:namespace-alias 요소의 result-prefix 속성에 대한 값은 '#default'이지만 요소에 대한 범위에서 기본 네임스페이스가 선언되지 않았습니다."},
 
     { ER_INVALID_NAMESPACE_URI_VALUE_FOR_RESULT_PREFIX,
-      "xsl:namespace-alias \uC694\uC18C\uC758 result-prefix \uC18D\uC131\uC5D0 \uB300\uD55C \uAC12\uC740 ''{0}''\uC774\uC9C0\uB9CC \uC694\uC18C\uC5D0 \uB300\uD55C \uBC94\uC704\uC5D0\uC11C ''{0}'' \uC811\uB450\uC5B4\uC758 \uB124\uC784\uC2A4\uD398\uC774\uC2A4\uAC00 \uC120\uC5B8\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+      "xsl:namespace-alias 요소의 result-prefix 속성에 대한 값은 ''{0}''이지만 요소에 대한 범위에서 ''{0}'' 접두어의 네임스페이스가 선언되지 않았습니다."},
 
     { ER_SET_FEATURE_NULL_NAME,
-      "\uAE30\uB2A5 \uC774\uB984\uC740 TransformerFactory.setFeature(\uBB38\uC790\uC5F4 \uC774\uB984, \uBD80\uC6B8 \uAC12)\uC5D0\uC11C \uB110\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "기능 이름은 TransformerFactory.setFeature(문자열 이름, 부울 값)에서 널일 수 없습니다."},
 
     { ER_GET_FEATURE_NULL_NAME,
-      "\uAE30\uB2A5 \uC774\uB984\uC740 TransformerFactory.getFeature(\uBB38\uC790\uC5F4 \uC774\uB984)\uC5D0\uC11C \uB110\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "기능 이름은 TransformerFactory.getFeature(문자열 이름)에서 널일 수 없습니다."},
 
     { ER_UNSUPPORTED_FEATURE,
-      "\uC774 TransformerFactory\uC5D0\uC11C ''{0}'' \uAE30\uB2A5\uC744 \uC124\uC815\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "이 TransformerFactory에서 ''{0}'' 기능을 설정할 수 없습니다."},
 
     { ER_EXTENSION_ELEMENT_NOT_ALLOWED_IN_SECURE_PROCESSING,
-          "\uBCF4\uC548 \uCC98\uB9AC \uAE30\uB2A5\uC774 true\uB85C \uC124\uC815\uB41C \uACBD\uC6B0 \uD655\uC7A5 \uC694\uC18C ''{0}''\uC744(\uB97C) \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+          "보안 처리 기능이 true로 설정된 경우 확장 요소 ''{0}''을(를) 사용할 수 없습니다."},
 
     { ER_NAMESPACE_CONTEXT_NULL_NAMESPACE,
-      "\uB110 \uB124\uC784\uC2A4\uD398\uC774\uC2A4 URI\uC5D0 \uB300\uD55C \uC811\uB450\uC5B4\uB97C \uAC00\uC838\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "널 네임스페이스 URI에 대한 접두어를 가져올 수 없습니다."},
 
     { ER_NAMESPACE_CONTEXT_NULL_PREFIX,
-      "\uB110 \uC811\uB450\uC5B4\uC5D0 \uB300\uD55C \uB124\uC784\uC2A4\uD398\uC774\uC2A4 URI\uB97C \uAC00\uC838\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "널 접두어에 대한 네임스페이스 URI를 가져올 수 없습니다."},
 
     { ER_XPATH_RESOLVER_NULL_QNAME,
-      "\uD568\uC218 \uC774\uB984\uC740 \uB110\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "함수 이름은 널일 수 없습니다."},
 
     { ER_XPATH_RESOLVER_NEGATIVE_ARITY,
-      "\uC778\uC790 \uC218\uB294 \uC74C\uC218\uC77C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "인자 수는 음수일 수 없습니다."},
   // Warnings...
 
     { WG_FOUND_CURLYBRACE,
-      "'}'\uB97C \uCC3E\uC558\uC9C0\uB9CC \uC5F4\uB824 \uC788\uB294 \uC18D\uC131 \uD15C\uD50C\uB9AC\uD2B8\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4!"},
+      "'}'를 찾았지만 열려 있는 속성 템플리트가 없습니다!"},
 
     { WG_COUNT_ATTRIB_MATCHES_NO_ANCESTOR,
-      "\uACBD\uACE0: count \uC18D\uC131\uC774 xsl:number\uC758 \uC870\uC0C1\uACFC \uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4! \uB300\uC0C1 = {0}"},
+      "경고: count 속성이 xsl:number의 조상과 일치하지 않습니다! 대상 = {0}"},
 
     { WG_EXPR_ATTRIB_CHANGED_TO_SELECT,
-      "\uC774\uC804 \uAD6C\uBB38: 'expr' \uC18D\uC131\uC758 \uC774\uB984\uC774 'select'\uB85C \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+      "이전 구문: 'expr' 속성의 이름이 'select'로 변경되었습니다."},
 
     { WG_NO_LOCALE_IN_FORMATNUMBER,
-      "Xalan\uC774 format-number \uD568\uC218\uC5D0\uC11C \uB85C\uCF00\uC77C \uC774\uB984\uC744 \uC544\uC9C1 \uCC98\uB9AC\uD558\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
+      "Xalan이 format-number 함수에서 로케일 이름을 아직 처리하지 않았습니다."},
 
     { WG_LOCALE_NOT_FOUND,
-      "\uACBD\uACE0: xml:lang={0}\uC5D0 \uB300\uD55C \uB85C\uCF00\uC77C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "경고: xml:lang={0}에 대한 로케일을 찾을 수 없습니다."},
 
     { WG_CANNOT_MAKE_URL_FROM,
-      "{0}\uC5D0\uC11C URL\uC744 \uC0DD\uC131\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "{0}에서 URL을 생성할 수 없습니다."},
 
     { WG_CANNOT_LOAD_REQUESTED_DOC,
-      "\uC694\uCCAD\uB41C \uBB38\uC11C\uB97C \uB85C\uB4DC\uD560 \uC218 \uC5C6\uC74C: {0}"},
+      "요청된 문서를 로드할 수 없음: {0}"},
 
     { WG_CANNOT_FIND_COLLATOR,
-      "<sort xml:lang={0}\uC5D0 \uB300\uD55C \uBCD1\uD569\uAE30\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+      "<sort xml:lang={0}에 대한 병합기를 찾을 수 없습니다."},
 
     { WG_FUNCTIONS_SHOULD_USE_URL,
-      "\uC774\uC804 \uAD6C\uBB38: \uD568\uC218 \uBA85\uB839\uC5D0 {0} URL\uC774 \uC0AC\uC6A9\uB418\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+      "이전 구문: 함수 명령에 {0} URL이 사용되어야 합니다."},
 
     { WG_ENCODING_NOT_SUPPORTED_USING_UTF8,
-      "\uC778\uCF54\uB529\uC774 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC74C: {0}. UTF-8\uC744 \uC0AC\uC6A9\uD558\uB294 \uC911\uC785\uB2C8\uB2E4."},
+      "인코딩이 지원되지 않음: {0}. UTF-8을 사용하는 중입니다."},
 
     { WG_ENCODING_NOT_SUPPORTED_USING_JAVA,
-      "\uC778\uCF54\uB529\uC774 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC74C: {0}. Java {1}\uC744(\uB97C) \uC0AC\uC6A9\uD558\uB294 \uC911\uC785\uB2C8\uB2E4."},
+      "인코딩이 지원되지 않음: {0}. Java {1}을(를) 사용하는 중입니다."},
 
     { WG_SPECIFICITY_CONFLICTS,
-      "\uD2B9\uC218 \uCDA9\uB3CC\uC774 \uBC1C\uACAC\uB428: {0}. \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uC5D0\uC11C \uBC1C\uACAC\uB41C \uB9C8\uC9C0\uB9C9 \uD56D\uBAA9\uC774 \uC0AC\uC6A9\uB429\uB2C8\uB2E4."},
+      "특수 충돌이 발견됨: {0}. 스타일시트에서 발견된 마지막 항목이 사용됩니다."},
 
     { WG_PARSING_AND_PREPARING,
-      "========= \uAD6C\uBB38 \uBD84\uC11D \uD6C4 {0} \uC900\uBE44 \uC911 =========="},
+      "========= 구문 분석 후 {0} 준비 중 =========="},
 
     { WG_ATTR_TEMPLATE,
-     "\uC18D\uC131 \uD15C\uD50C\uB9AC\uD2B8, {0}"},
+     "속성 템플리트, {0}"},
 
     { WG_CONFLICT_BETWEEN_XSLSTRIPSPACE_AND_XSLPRESERVESPACE,
-      "xsl:strip-space\uC640 xsl:preserve-space \uAC04\uC758 \uC77C\uCE58 \uCDA9\uB3CC"},
+      "xsl:strip-space와 xsl:preserve-space 간의 일치 충돌"},
 
     { WG_ATTRIB_NOT_HANDLED,
-      "Xalan\uC774 {0} \uC18D\uC131\uC744 \uC544\uC9C1 \uCC98\uB9AC\uD558\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4!"},
+      "Xalan이 {0} 속성을 아직 처리하지 않았습니다!"},
 
     { WG_NO_DECIMALFORMAT_DECLARATION,
-      "\uC2ED\uC9C4\uC218 \uD615\uC2DD\uC5D0 \uB300\uD55C \uC120\uC5B8\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC74C: {0}"},
+      "십진수 형식에 대한 선언을 찾을 수 없음: {0}"},
 
     { WG_OLD_XSLT_NS,
-     "XSLT \uB124\uC784\uC2A4\uD398\uC774\uC2A4\uAC00 \uB204\uB77D\uB418\uAC70\uB098 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. "},
+     "XSLT 네임스페이스가 누락되거나 올바르지 않습니다. "},
 
     { WG_ONE_DEFAULT_XSLDECIMALFORMAT_ALLOWED,
-      "\uAE30\uBCF8 xsl:decimal-format \uC120\uC5B8\uC740 \uD558\uB098\uB9CC \uD5C8\uC6A9\uB429\uB2C8\uB2E4."},
+      "기본 xsl:decimal-format 선언은 하나만 허용됩니다."},
 
     { WG_XSLDECIMALFORMAT_NAMES_MUST_BE_UNIQUE,
-      "xsl:decimal-format \uC774\uB984\uC740 \uACE0\uC720\uD574\uC57C \uD569\uB2C8\uB2E4. \"{0}\" \uC774\uB984\uC774 \uC911\uBCF5\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
+      "xsl:decimal-format 이름은 고유해야 합니다. \"{0}\" 이름이 중복되었습니다."},
 
     { WG_ILLEGAL_ATTRIBUTE,
-      "{0}\uC5D0 \uC798\uBABB\uB41C \uC18D\uC131\uC774 \uC788\uC74C: {1}"},
+      "{0}에 잘못된 속성이 있음: {1}"},
 
     { WG_COULD_NOT_RESOLVE_PREFIX,
-      "\uB124\uC784\uC2A4\uD398\uC774\uC2A4 \uC811\uB450\uC5B4\uB97C \uBD84\uC11D\uD560 \uC218 \uC5C6\uC74C: {0}. \uB178\uB4DC\uAC00 \uBB34\uC2DC\uB429\uB2C8\uB2E4."},
+      "네임스페이스 접두어를 분석할 수 없음: {0}. 노드가 무시됩니다."},
 
     { WG_STYLESHEET_REQUIRES_VERSION_ATTRIB,
-      "xsl:stylesheet\uC5D0\uB294 'version' \uC18D\uC131\uC774 \uD544\uC694\uD569\uB2C8\uB2E4!"},
+      "xsl:stylesheet에는 'version' 속성이 필요합니다!"},
 
     { WG_ILLEGAL_ATTRIBUTE_NAME,
-      "\uC798\uBABB\uB41C \uC18D\uC131 \uC774\uB984: {0}"},
+      "잘못된 속성 이름: {0}"},
 
     { WG_ILLEGAL_ATTRIBUTE_VALUE,
-      "{0} \uC18D\uC131\uC5D0 \uC798\uBABB\uB41C \uAC12\uC774 \uC0AC\uC6A9\uB428: {1}"},
+      "{0} 속성에 잘못된 값이 사용됨: {1}"},
 
     { WG_EMPTY_SECOND_ARG,
-      "document \uD568\uC218\uC758 \uB450\uBC88\uC9F8 \uC778\uC218\uC5D0\uC11C \uACB0\uACFC\uB85C \uB098\uD0C0\uB09C nodeset\uAC00 \uBE44\uC5B4 \uC788\uC2B5\uB2C8\uB2E4. \uBE48 node-set\uAC00 \uBC18\uD658\uB429\uB2C8\uB2E4."},
+      "document 함수의 두번째 인수에서 결과로 나타난 nodeset가 비어 있습니다. 빈 node-set가 반환됩니다."},
 
   //Following are the new WARNING keys added in XALAN code base after Jdk 1.4 (Xalan 2.2-D11)
 
     // Note to translators:  "name" and "xsl:processing-instruction" are keywords
     // and must not be translated.
     { WG_PROCESSINGINSTRUCTION_NAME_CANT_BE_XML,
-      "xsl:processing-instruction \uC774\uB984\uC758 'name' \uC18D\uC131\uAC12\uC740 'xml'\uC774 \uC544\uB2C8\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+      "xsl:processing-instruction 이름의 'name' 속성값은 'xml'이 아니어야 합니다."},
 
     // Note to translators:  "name" and "xsl:processing-instruction" are keywords
     // and must not be translated.  "NCName" is an XML data-type and must not be
     // translated.
     { WG_PROCESSINGINSTRUCTION_NOTVALID_NCNAME,
-      "xsl:processing-instruction\uC758 ''name'' \uC18D\uC131\uAC12\uC740 \uC801\uD569\uD55C NCName\uC774\uC5B4\uC57C \uD568: {0}"},
+      "xsl:processing-instruction의 ''name'' 속성값은 적합한 NCName이어야 함: {0}"},
 
     // Note to translators:  This message is reported if the stylesheet that is
     // being processed attempted to construct an XML document with an attribute in a
     // place other than on an element.  The substitution text specifies the name of
     // the attribute.
     { WG_ILLEGAL_ATTRIBUTE_POSITION,
-      "\uD558\uC704 \uB178\uB4DC\uAC00 \uC0DD\uC131\uB41C \uD6C4 \uB610\uB294 \uC694\uC18C\uAC00 \uC0DD\uC131\uB418\uAE30 \uC804\uC5D0 {0} \uC18D\uC131\uC744 \uCD94\uAC00\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uC18D\uC131\uC774 \uBB34\uC2DC\uB429\uB2C8\uB2E4."},
+      "하위 노드가 생성된 후 또는 요소가 생성되기 전에 {0} 속성을 추가할 수 없습니다. 속성이 무시됩니다."},
 
     { NO_MODIFICATION_ALLOWED_ERR,
-      "\uC218\uC815\uC774 \uD5C8\uC6A9\uB418\uC9C0 \uC54A\uB294 \uAC1D\uCCB4\uB97C \uC218\uC815\uD558\uB824\uACE0 \uC2DC\uB3C4\uD588\uC2B5\uB2C8\uB2E4."
+      "수정이 허용되지 않는 객체를 수정하려고 시도했습니다."
     },
 
     //Check: WHY THERE IS A GAP B/W NUMBERS in the XSLTErrorResources properties file?
@@ -1319,97 +1319,97 @@ public class XSLTErrorResources_ko extends ListResourceBundle
   { "ui_language", "ko"},
   {  "help_language",  "ko" },
   {  "language",  "ko" },
-  { "BAD_CODE", "createMessage\uC5D0 \uB300\uD55C \uB9E4\uAC1C\uBCC0\uC218\uAC00 \uBC94\uC704\uB97C \uBC97\uC5B4\uB0AC\uC2B5\uB2C8\uB2E4."},
-  {  "FORMAT_FAILED", "messageFormat \uD638\uCD9C \uC911 \uC608\uC678\uC0AC\uD56D\uC774 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
-  {  "version", ">>>>>>> Xalan \uBC84\uC804 "},
+  { "BAD_CODE", "createMessage에 대한 매개변수가 범위를 벗어났습니다."},
+  {  "FORMAT_FAILED", "messageFormat 호출 중 예외사항이 발생했습니다."},
+  {  "version", ">>>>>>> Xalan 버전 "},
   {  "version2",  "<<<<<<<"},
-  {  "yes", "\uC608"},
-  { "line", "\uD589 \uBC88\uD638"},
-  { "column","\uC5F4 \uBC88\uD638"},
-  { "xsldone", "XSLProcessor: \uC644\uB8CC"},
+  {  "yes", "예"},
+  { "line", "행 번호"},
+  { "column","열 번호"},
+  { "xsldone", "XSLProcessor: 완료"},
 
 
   // Note to translators:  The following messages provide usage information
   // for the Xalan Process command line.  "Process" is the name of a Java class,
   // and should not be translated.
-  { "xslProc_option", "Xalan-J \uBA85\uB839\uD589 Process \uD074\uB798\uC2A4 \uC635\uC158:"},
-  { "xslProc_option", "Xalan-J \uBA85\uB839\uD589 Process \uD074\uB798\uC2A4 \uC635\uC158:"},
-  { "xslProc_invalid_xsltc_option", "XSLTC \uBAA8\uB4DC\uC5D0\uC11C\uB294 {0} \uC635\uC158\uC774 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
-  { "xslProc_invalid_xalan_option", "{0} \uC635\uC158\uC740 -XSLTC\uC5D0\uB9CC \uC0AC\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."},
-  { "xslProc_no_input", "\uC624\uB958: \uC9C0\uC815\uB41C \uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uB610\uB294 \uC785\uB825 xml\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uC0AC\uC6A9\uBC95 \uC9C0\uCE68\uC5D0 \uB300\uD55C \uC635\uC158 \uC5C6\uC774 \uC774 \uBA85\uB839\uC744 \uC2E4\uD589\uD558\uC2ED\uC2DC\uC624."},
-  { "xslProc_common_options", "-\uC77C\uBC18 \uC635\uC158-"},
-  { "xslProc_xalan_options", "-Xalan \uC635\uC158-"},
-  { "xslProc_xsltc_options", "-XSLTC \uC635\uC158-"},
-  { "xslProc_return_to_continue", "(\uACC4\uC18D\uD558\uB824\uBA74 <Return> \uD0A4\uB97C \uB204\uB974\uC2ED\uC2DC\uC624.)"},
+  { "xslProc_option", "Xalan-J 명령행 Process 클래스 옵션:"},
+  { "xslProc_option", "Xalan-J 명령행 Process 클래스 옵션:"},
+  { "xslProc_invalid_xsltc_option", "XSLTC 모드에서는 {0} 옵션이 지원되지 않습니다."},
+  { "xslProc_invalid_xalan_option", "{0} 옵션은 -XSLTC에만 사용할 수 있습니다."},
+  { "xslProc_no_input", "오류: 지정된 스타일시트 또는 입력 xml이 없습니다. 사용법 지침에 대한 옵션 없이 이 명령을 실행하십시오."},
+  { "xslProc_common_options", "-일반 옵션-"},
+  { "xslProc_xalan_options", "-Xalan 옵션-"},
+  { "xslProc_xsltc_options", "-XSLTC 옵션-"},
+  { "xslProc_return_to_continue", "(계속하려면 <Return> 키를 누르십시오.)"},
 
    // Note to translators: The option name and the parameter name do not need to
    // be translated. Only translate the messages in parentheses.  Note also that
    // leading whitespace in the messages is used to indent the usage information
    // for each option in the English messages.
    // Do not translate the keywords: XSLTC, SAX, DOM and DTM.
-  { "optionXSLTC", "   [-XSLTC(\uBCC0\uD658\uC5D0 XSLTC \uC0AC\uC6A9)]"},
+  { "optionXSLTC", "   [-XSLTC(변환에 XSLTC 사용)]"},
   { "optionIN", "   [-IN inputXMLURL]"},
   { "optionXSL", "   [-XSL XSLTransformationURL]"},
   { "optionOUT",  "   [-OUT outputFileName]"},
   { "optionLXCIN", "   [-LXCIN compiledStylesheetFileNameIn]"},
   { "optionLXCOUT", "   [-LXCOUT compiledStylesheetFileNameOutOut]"},
-  { "optionPARSER", "   [-PARSER \uAD6C\uBB38 \uBD84\uC11D\uAE30 \uC5F0\uACB0\uC758 \uC804\uCCB4 \uD074\uB798\uC2A4 \uC774\uB984]"},
-  {  "optionE", "   [-E(\uC5D4\uD2F0\uD2F0 \uCC38\uC870 \uD655\uC7A5 \uC548\uD568)]"},
-  {  "optionV",  "   [-E(\uC5D4\uD2F0\uD2F0 \uCC38\uC870 \uD655\uC7A5 \uC548\uD568)]"},
-  {  "optionQC", "   [-QC(\uC790\uB3D9 \uD328\uD134 \uCDA9\uB3CC \uACBD\uACE0)]"},
-  {  "optionQ", "   [-Q(\uC790\uB3D9 \uBAA8\uB4DC)]"},
-  {  "optionLF", "   [-LF(\uCD9C\uB825\uC5D0\uB9CC \uC904 \uBC14\uAFC8 \uC0AC\uC6A9 {\uAE30\uBCF8\uAC12: CR/LF})]"},
-  {  "optionCR", "   [-CR(\uCD9C\uB825\uC5D0\uB9CC \uCE90\uB9AC\uC9C0 \uB9AC\uD134 \uC0AC\uC6A9 {\uAE30\uBCF8\uAC12: CR/LF})]"},
-  { "optionESCAPE", "   [-ESCAPE(\uC774\uC2A4\uCF00\uC774\uD504 \uBB38\uC790 {\uAE30\uBCF8\uAC12: <>&\"'\\r\\n}]"},
-  { "optionINDENT", "   [-INDENT(\uB4E4\uC5EC \uC4F8 \uACF5\uBC31 \uC218 \uC81C\uC5B4 {\uAE30\uBCF8\uAC12: 0})]"},
-  { "optionTT", "   [-TT(\uD15C\uD50C\uB9AC\uD2B8 \uD638\uCD9C \uC2DC \uCD94\uC801)]"},
-  { "optionTG", "   [-TG(\uAC01 \uC0DD\uC131 \uC774\uBCA4\uD2B8 \uCD94\uC801)]"},
-  { "optionTS", "   [-TS(\uAC01 \uC120\uD0DD \uC774\uBCA4\uD2B8 \uCD94\uC801)]"},
-  {  "optionTTC", "   [-TTC(\uD15C\uD50C\uB9AC\uD2B8 \uD558\uC704 \uD56D\uBAA9 \uCC98\uB9AC \uC2DC \uCD94\uC801)]"},
-  { "optionTCLASS", "   [-TCLASS(\uCD94\uC801 \uD655\uC7A5\uC5D0 \uB300\uD55C TraceListener \uD074\uB798\uC2A4)]"},
-  { "optionVALIDATE", "   [-VALIDATE(\uAC80\uC99D \uC5EC\uBD80 \uC124\uC815. \uAE30\uBCF8\uC801\uC73C\uB85C \uAC80\uC99D\uC740 \uD574\uC81C\uB418\uC5B4 \uC788\uC74C)]"},
-  { "optionEDUMP", "   [-EDUMP {\uC120\uD0DD\uC801 \uD30C\uC77C \uC774\uB984}(\uC624\uB958 \uBC1C\uC0DD \uC2DC \uC2A4\uD0DD \uB364\uD504)]"},
-  {  "optionXML", "   [-XML(XML \uD3EC\uB9F7\uD130 \uC0AC\uC6A9 \uBC0F XML \uD5E4\uB354 \uCD94\uAC00)]"},
-  {  "optionTEXT", "   [-TEXT(\uAC04\uB2E8\uD55C \uD14D\uC2A4\uD2B8 \uD3EC\uB9F7\uD130 \uC0AC\uC6A9)]"},
-  {  "optionHTML", "   [-HTML(HTML \uD3EC\uB9F7\uD130 \uC0AC\uC6A9)]"},
-  {  "optionPARAM", "   [-PARAM \uC774\uB984 \uD45C\uD604\uC2DD(\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uB9E4\uAC1C\uBCC0\uC218 \uC124\uC815)]"},
-  {  "noParsermsg1", "XSL \uD504\uB85C\uC138\uC2A4\uB97C \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."},
-  {  "noParsermsg2", "** \uAD6C\uBB38 \uBD84\uC11D\uAE30\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C **"},
-  { "noParsermsg3",  "\uD074\uB798\uC2A4 \uACBD\uB85C\uB97C \uD655\uC778\uD558\uC2ED\uC2DC\uC624."},
-  { "noParsermsg4", "IBM\uC758 Java\uC6A9 XML \uAD6C\uBB38 \uBD84\uC11D\uAE30\uAC00 \uC5C6\uC744 \uACBD\uC6B0 \uB2E4\uC74C \uC704\uCE58\uC5D0\uC11C \uB2E4\uC6B4\uB85C\uB4DC\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."},
+  { "optionPARSER", "   [-PARSER 구문 분석기 연결의 전체 클래스 이름]"},
+  {  "optionE", "   [-E(엔티티 참조 확장 안함)]"},
+  {  "optionV",  "   [-E(엔티티 참조 확장 안함)]"},
+  {  "optionQC", "   [-QC(자동 패턴 충돌 경고)]"},
+  {  "optionQ", "   [-Q(자동 모드)]"},
+  {  "optionLF", "   [-LF(출력에만 줄 바꿈 사용 {기본값: CR/LF})]"},
+  {  "optionCR", "   [-CR(출력에만 캐리지 리턴 사용 {기본값: CR/LF})]"},
+  { "optionESCAPE", "   [-ESCAPE(이스케이프 문자 {기본값: <>&\"'\\r\\n}]"},
+  { "optionINDENT", "   [-INDENT(들여 쓸 공백 수 제어 {기본값: 0})]"},
+  { "optionTT", "   [-TT(템플리트 호출 시 추적)]"},
+  { "optionTG", "   [-TG(각 생성 이벤트 추적)]"},
+  { "optionTS", "   [-TS(각 선택 이벤트 추적)]"},
+  {  "optionTTC", "   [-TTC(템플리트 하위 항목 처리 시 추적)]"},
+  { "optionTCLASS", "   [-TCLASS(추적 확장에 대한 TraceListener 클래스)]"},
+  { "optionVALIDATE", "   [-VALIDATE(검증 여부 설정. 기본적으로 검증은 해제되어 있음)]"},
+  { "optionEDUMP", "   [-EDUMP {선택적 파일 이름}(오류 발생 시 스택 덤프)]"},
+  {  "optionXML", "   [-XML(XML 포맷터 사용 및 XML 헤더 추가)]"},
+  {  "optionTEXT", "   [-TEXT(간단한 텍스트 포맷터 사용)]"},
+  {  "optionHTML", "   [-HTML(HTML 포맷터 사용)]"},
+  {  "optionPARAM", "   [-PARAM 이름 표현식(스타일시트 매개변수 설정)]"},
+  {  "noParsermsg1", "XSL 프로세스를 실패했습니다."},
+  {  "noParsermsg2", "** 구문 분석기를 찾을 수 없음 **"},
+  { "noParsermsg3",  "클래스 경로를 확인하십시오."},
+  { "noParsermsg4", "IBM의 Java용 XML 구문 분석기가 없을 경우 다음 위치에서 다운로드할 수 있습니다."},
   { "noParsermsg5", "IBM AlphaWorks: http://www.alphaworks.ibm.com/formula/xml"},
-  { "optionURIRESOLVER", "   [-URIRESOLVER \uC804\uCCB4 \uD074\uB798\uC2A4 \uC774\uB984(URI \uBD84\uC11D\uC5D0 \uC0AC\uC6A9\uD560 URIResolver)]"},
-  { "optionENTITYRESOLVER",  "   [-ENTITYRESOLVER \uC804\uCCB4 \uD074\uB798\uC2A4 \uC774\uB984(\uC5D4\uD2F0\uD2F0 \uBD84\uC11D\uC5D0 \uC0AC\uC6A9\uD560 EntityResolver)]"},
-  { "optionCONTENTHANDLER",  "   [-CONTENTHANDLER \uC804\uCCB4 \uD074\uB798\uC2A4 \uC774\uB984(\uCD9C\uB825 \uC9C1\uB82C\uD654\uC5D0 \uC0AC\uC6A9\uD560 ContentHandler)]"},
-  {  "optionLINENUMBERS",  "   [-L(\uC18C\uC2A4 \uBB38\uC11C\uC5D0 \uD589 \uBC88\uD638 \uC0AC\uC6A9)]"},
-  { "optionSECUREPROCESSING", "   [-SECURE(\uBCF4\uC548 \uCC98\uB9AC \uAE30\uB2A5\uC744 true\uB85C \uC124\uC815)]"},
+  { "optionURIRESOLVER", "   [-URIRESOLVER 전체 클래스 이름(URI 분석에 사용할 URIResolver)]"},
+  { "optionENTITYRESOLVER",  "   [-ENTITYRESOLVER 전체 클래스 이름(엔티티 분석에 사용할 EntityResolver)]"},
+  { "optionCONTENTHANDLER",  "   [-CONTENTHANDLER 전체 클래스 이름(출력 직렬화에 사용할 ContentHandler)]"},
+  {  "optionLINENUMBERS",  "   [-L(소스 문서에 행 번호 사용)]"},
+  { "optionSECUREPROCESSING", "   [-SECURE(보안 처리 기능을 true로 설정)]"},
 
     // Following are the new options added in XSLTErrorResources.properties files after Jdk 1.4 (Xalan 2.2-D11)
 
 
-  {  "optionMEDIA",  "   [-MEDIA mediaType(media \uC18D\uC131\uC744 \uC0AC\uC6A9\uD558\uC5EC \uBB38\uC11C\uC640 \uC5F0\uAD00\uB41C \uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uCC3E\uAE30)]"},
-  {  "optionFLAVOR",  "   [-FLAVOR flavorName(\uBCC0\uD658\uC5D0 \uBA85\uC2DC\uC801\uC73C\uB85C s2s=SAX \uB610\uB294 d2d=DOM \uC0AC\uC6A9)] "}, // Added by sboag/scurcuru; experimental
-  { "optionDIAG", "   [-DIAG(\uBCC0\uD658\uC5D0 \uAC78\uB9B0 \uCD1D \uC2DC\uAC04(\uBC00\uB9AC\uCD08) \uC778\uC1C4)]"},
-  { "optionINCREMENTAL",  "   [-INCREMENTAL(http://xml.apache.org/xalan/features/incremental\uC744 true\uB85C \uC124\uC815\uD558\uC5EC \uC99D\uBD84\uC801 DTM \uC0DD\uC131 \uC694\uCCAD)]"},
-  {  "optionNOOPTIMIMIZE",  "   [-NOOPTIMIMIZE(http://xml.apache.org/xalan/features/optimize\uB97C false\uB85C \uC124\uC815\uD558\uC5EC \uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uCD5C\uC801\uD654 \uCC98\uB9AC \uC548\uD568 \uC694\uCCAD)]"},
-  { "optionRL",  "   [-RL recursionlimit(\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uC21C\uD658 \uAE4A\uC774\uC5D0 \uB300\uD55C \uC22B\uC790 \uC81C\uD55C \uAC80\uC99D)]"},
-  {   "optionXO",  "   [-XO [transletName](\uC0DD\uC131\uB41C translet\uC5D0 \uC774\uB984 \uC9C0\uC815)]"},
-  {  "optionXD", "   [-XD destinationDirectory(translet\uC5D0 \uB300\uD55C \uB300\uC0C1 \uB514\uB809\uD1A0\uB9AC \uC9C0\uC815)]"},
-  {  "optionXJ",  "   [-XJ jarfile(translet \uD074\uB798\uC2A4\uB97C <jarfile> \uC774\uB984\uC758 jar \uD30C\uC77C\uB85C \uD328\uD0A4\uC9C0\uD654)]"},
-  {   "optionXP",  "   [-XP package(\uC0DD\uC131\uB41C \uBAA8\uB4E0 translet \uD074\uB798\uC2A4\uC5D0 \uB300\uD55C \uD328\uD0A4\uC9C0 \uC774\uB984 \uC811\uB450\uC5B4 \uC9C0\uC815)]"},
+  {  "optionMEDIA",  "   [-MEDIA mediaType(media 속성을 사용하여 문서와 연관된 스타일시트 찾기)]"},
+  {  "optionFLAVOR",  "   [-FLAVOR flavorName(변환에 명시적으로 s2s=SAX 또는 d2d=DOM 사용)] "}, // Added by sboag/scurcuru; experimental
+  { "optionDIAG", "   [-DIAG(변환에 걸린 총 시간(밀리초) 인쇄)]"},
+  { "optionINCREMENTAL",  "   [-INCREMENTAL(http://xml.apache.org/xalan/features/incremental을 true로 설정하여 증분적 DTM 생성 요청)]"},
+  {  "optionNOOPTIMIMIZE",  "   [-NOOPTIMIMIZE(http://xml.apache.org/xalan/features/optimize를 false로 설정하여 스타일시트 최적화 처리 안함 요청)]"},
+  { "optionRL",  "   [-RL recursionlimit(스타일시트 순환 깊이에 대한 숫자 제한 검증)]"},
+  {   "optionXO",  "   [-XO [transletName](생성된 translet에 이름 지정)]"},
+  {  "optionXD", "   [-XD destinationDirectory(translet에 대한 대상 디렉토리 지정)]"},
+  {  "optionXJ",  "   [-XJ jarfile(translet 클래스를 <jarfile> 이름의 jar 파일로 패키지화)]"},
+  {   "optionXP",  "   [-XP package(생성된 모든 translet 클래스에 대한 패키지 이름 접두어 지정)]"},
 
   //AddITIONAL  STRINGS that need L10n
   // Note to translators:  The following message describes usage of a particular
   // command-line option that is used to enable the "template inlining"
   // optimization.  The optimization involves making a copy of the code
   // generated for a template in another template that refers to it.
-  { "optionXN",  "   [-XN(\uD15C\uD50C\uB9AC\uD2B8 \uC778\uB77C\uC778\uC744 \uC0AC\uC6A9\uC73C\uB85C \uC124\uC815)]" },
-  { "optionXX",  "   [-XX(\uCD94\uAC00 \uB514\uBC84\uAE45 \uBA54\uC2DC\uC9C0 \uCD9C\uB825 \uC124\uC815)]"},
-  { "optionXT" , "   [-XT(\uAC00\uB2A5\uD55C \uACBD\uC6B0 \uBCC0\uD658\uC5D0 translet \uC0AC\uC6A9)]"},
-  { "diagTiming"," --------- {1}\uC744(\uB97C) \uD1B5\uD55C {0} \uBCC0\uD658\uC5D0 {2}\uBC00\uB9AC\uCD08\uAC00 \uAC78\uB838\uC2B5\uB2C8\uB2E4." },
-  { "recursionTooDeep","\uD15C\uD50C\uB9AC\uD2B8\uAC00 \uB108\uBB34 \uAE4A\uAC8C \uC911\uCCA9\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC911\uCCA9 = {0}, \uD15C\uD50C\uB9AC\uD2B8: {1} {2}" },
-  { "nameIs", "\uC774\uB984:" },
-  { "matchPatternIs", "\uC77C\uCE58 \uD328\uD134:" }
+  { "optionXN",  "   [-XN(템플리트 인라인을 사용으로 설정)]" },
+  { "optionXX",  "   [-XX(추가 디버깅 메시지 출력 설정)]"},
+  { "optionXT" , "   [-XT(가능한 경우 변환에 translet 사용)]"},
+  { "diagTiming"," --------- {1}을(를) 통한 {0} 변환에 {2}밀리초가 걸렸습니다." },
+  { "recursionTooDeep","템플리트가 너무 깊게 중첩되었습니다. 중첩 = {0}, 템플리트: {1} {2}" },
+  { "nameIs", "이름:" },
+  { "matchPatternIs", "일치 패턴:" }
 
   };
 
