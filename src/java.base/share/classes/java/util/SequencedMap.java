@@ -286,6 +286,16 @@ public interface SequencedMap<K, V> extends Map<K, V> {
             public int hashCode() {
                 return view().hashCode();
             }
+            public void addFirst(K k) { throw new UnsupportedOperationException(); }
+            public void addLast(K k) { throw new UnsupportedOperationException(); }
+            public K getFirst() { return nsee(SequencedMap.this.firstEntry()).getKey(); }
+            public K getLast() { return nsee(SequencedMap.this.lastEntry()).getKey(); }
+            public K removeFirst() {
+                return nsee(SequencedMap.this.pollFirstEntry()).getKey();
+            }
+            public K removeLast() {
+                return nsee(SequencedMap.this.pollLastEntry()).getKey();
+            }
         }
         return new SeqKeySet();
     }
@@ -312,6 +322,16 @@ public interface SequencedMap<K, V> extends Map<K, V> {
             }
             public SequencedCollection<V> reversed() {
                 return SequencedMap.this.reversed().sequencedValues();
+            }
+            public void addFirst(V v) { throw new UnsupportedOperationException(); }
+            public void addLast(V v) { throw new UnsupportedOperationException(); }
+            public V getFirst() { return nsee(SequencedMap.this.firstEntry()).getValue(); }
+            public V getLast() { return nsee(SequencedMap.this.lastEntry()).getValue(); }
+            public V removeFirst() {
+                return nsee(SequencedMap.this.pollFirstEntry()).getValue();
+            }
+            public V removeLast() {
+                return nsee(SequencedMap.this.pollLastEntry()).getValue();
             }
         }
         return new SeqValues();
@@ -345,6 +365,16 @@ public interface SequencedMap<K, V> extends Map<K, V> {
             }
             public int hashCode() {
                 return view().hashCode();
+            }
+            public void addFirst(Map.Entry<K, V> e) { throw new UnsupportedOperationException(); }
+            public void addLast(Map.Entry<K, V> e) { throw new UnsupportedOperationException(); }
+            public Map.Entry<K, V> getFirst() { return nsee(SequencedMap.this.firstEntry()); }
+            public Map.Entry<K, V> getLast() { return nsee(SequencedMap.this.lastEntry()); }
+            public Map.Entry<K, V> removeFirst() {
+                return nsee(SequencedMap.this.pollFirstEntry());
+            }
+            public Map.Entry<K, V> removeLast() {
+                return nsee(SequencedMap.this.pollLastEntry());
             }
         }
         return new SeqEntrySet();

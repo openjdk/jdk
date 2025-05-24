@@ -1358,6 +1358,16 @@ public final class Collections {
 
         public E first()                   {return ss.first();}
         public E last()                    {return ss.last();}
+        public void addFirst(E e)          {throw new UnsupportedOperationException();}
+        public void addLast(E e)           {throw new UnsupportedOperationException();}
+        public E getFirst()                {return ss.getFirst();}
+        public E getLast()                 {return ss.getLast();}
+        public E removeFirst()             {throw new UnsupportedOperationException();}
+        public E removeLast()              {throw new UnsupportedOperationException();}
+
+        public SortedSet<E> reversed() {
+            return new UnmodifiableSortedSet<>(ss.reversed());
+        }
     }
 
     /**
@@ -1439,6 +1449,13 @@ public final class Collections {
         public Iterator<E> descendingIterator()
                                          { return descendingSet().iterator(); }
 
+        public void addFirst(E e){ throw new UnsupportedOperationException(); }
+        public void addLast(E e) { throw new UnsupportedOperationException(); }
+        public E getFirst()                           { return ns.getFirst(); }
+        public E getLast()                             { return ns.getLast(); }
+        public E removeFirst()   { throw new UnsupportedOperationException(); }
+        public E removeLast()    { throw new UnsupportedOperationException(); }
+
         public NavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
             return new UnmodifiableNavigableSet<>(
                 ns.subSet(fromElement, fromInclusive, toElement, toInclusive));
@@ -1452,6 +1469,10 @@ public final class Collections {
         public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
             return new UnmodifiableNavigableSet<>(
                 ns.tailSet(fromElement, inclusive));
+        }
+
+        public NavigableSet<E> reversed() {
+            return new UnmodifiableNavigableSet<>(ns.reversed());
         }
     }
 
@@ -1518,13 +1539,23 @@ public final class Collections {
             throw new UnsupportedOperationException();
         }
 
-        @Override
         public void replaceAll(UnaryOperator<E> operator) {
             throw new UnsupportedOperationException();
         }
-        @Override
+
         public void sort(Comparator<? super E> c) {
             throw new UnsupportedOperationException();
+        }
+
+        public void addFirst(E e) { throw new UnsupportedOperationException(); }
+        public void addLast(E e)  { throw new UnsupportedOperationException(); }
+        public E getFirst()       { return list.getFirst(); }
+        public E getLast()        { return list.getLast(); }
+        public E removeFirst()    { throw new UnsupportedOperationException(); }
+        public E removeLast()     { throw new UnsupportedOperationException(); }
+
+        public List<E> reversed() {
+            return ReverseOrderListView.of(this, false);
         }
 
         public ListIterator<E> listIterator()   {return listIterator(0);}
