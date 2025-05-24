@@ -35,7 +35,7 @@ import java.awt.image.BufferedImage;
  * @library /java/awt/patchlib
  * @library /lib/client ../
  * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @build SystemTrayIconHelper
  * @run main TrayIconEventsTest
  */
 
@@ -43,7 +43,7 @@ public class TrayIconEventsTest {
 
     private static boolean isOel7orLater;
     TrayIcon icon;
-    ExtendedRobot robot;
+    Robot robot;
 
     boolean actionPerformed = false;
     Object actionLock = new Object();
@@ -88,7 +88,7 @@ public class TrayIconEventsTest {
     }
 
     public TrayIconEventsTest() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait(this::initializeGUI);
     }
 

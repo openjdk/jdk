@@ -86,13 +86,13 @@ public class FocusTransferDialogsTest {
     private Frame parentFrame;
 
     private static final int delay = 1000;
-    private final ExtendedRobot robot;
+    private final Robot robot;
     private Dialog.ModalityType modalityType;
 
     FocusTransferDialogsTest(Dialog.ModalityType modType) throws Exception {
 
         modalityType = modType;
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(this::createGUI);
     }
 

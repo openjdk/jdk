@@ -30,6 +30,7 @@ import java.awt.Frame;
 import java.awt.GridLayout;
 import java.awt.List;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.TextArea;
 import java.awt.TextField;
 import java.awt.event.InputEvent;
@@ -60,7 +61,6 @@ import test.java.awt.event.helpers.lwcomponents.LWList;
  * @build LWComponent
  * @build LWButton
  * @build LWList
- * @build ExtendedRobot
  * @run main/timeout=300 MouseButtonsAndKeyMasksTest
  */
 
@@ -75,7 +75,7 @@ public class MouseButtonsAndKeyMasksTest implements MouseListener, KeyListener {
     List      list;
     LWList    listLW;
 
-    ExtendedRobot robot;
+    Robot robot;
 
     private final static int robotDelay = 500;
     private final static int   keyDelay =  100;
@@ -90,7 +90,7 @@ public class MouseButtonsAndKeyMasksTest implements MouseListener, KeyListener {
 
     MouseButtonsAndKeyMasksTest() throws Exception {
         lock = new Object();
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait( this::createGUI );
     }
 

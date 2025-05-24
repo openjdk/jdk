@@ -189,7 +189,7 @@ public class TestFrame extends Frame implements ActionListener,
     @Override
     public void windowOpened(WindowEvent e) {}
 
-    public void clickButton(Button b, ExtendedRobot robot) {
+    public void clickButton(Button b, Robot robot) {
         try {
             Flag.waitTillShown(b);
         } catch (InterruptedException e) {}
@@ -204,11 +204,11 @@ public class TestFrame extends Frame implements ActionListener,
         }
     }
 
-    public void clickOpenButton(ExtendedRobot robot) throws Exception {
+    public void clickOpenButton(Robot robot) throws Exception {
         clickOpenButton(robot, true, "");
     }
 
-    public void clickOpenButton(ExtendedRobot robot,
+    public void clickOpenButton(Robot robot,
                                 boolean       refState,
                                 String        message) throws Exception {
         openClicked.reset();
@@ -221,11 +221,11 @@ public class TestFrame extends Frame implements ActionListener,
         assertEQ(openClicked.flag(), refState, msg + " " + message);
     }
 
-    public void clickCloseButton(ExtendedRobot robot) throws Exception {
+    public void clickCloseButton(Robot robot) throws Exception {
         clickCloseButton(robot, true, "");
     }
 
-    public void clickCloseButton(ExtendedRobot robot,
+    public void clickCloseButton(Robot robot,
                                  boolean       refState,
                                  String        message) throws Exception {
         closeClicked.reset();
@@ -238,16 +238,16 @@ public class TestFrame extends Frame implements ActionListener,
         assertEQ(closeClicked.flag(), refState, msg + " " + message);
     }
 
-    public void clickDummyButton(ExtendedRobot robot) throws Exception {
+    public void clickDummyButton(Robot robot) throws Exception {
         clickDummyButton(robot, Flag.ATTEMPTS);
     }
 
-    public void clickDummyButton(ExtendedRobot robot,
+    public void clickDummyButton(Robot robot,
                                  int           attempts) throws Exception {
         clickDummyButton(robot, attempts, true, "");
     }
 
-    public void clickDummyButton(ExtendedRobot robot,
+    public void clickDummyButton(Robot robot,
                                  int           attempts,
                                  boolean       refState,
                                  String        message) throws Exception {
@@ -261,7 +261,7 @@ public class TestFrame extends Frame implements ActionListener,
         assertEQ(dummyClicked.flag(), refState, msg + " " + message);
     }
 
-    public void clickInside(ExtendedRobot robot) throws Exception {
+    public void clickInside(Robot robot) throws Exception {
         try {
             Flag.waitTillShown(topPanel);
         } catch (InterruptedException e) {}
@@ -275,7 +275,7 @@ public class TestFrame extends Frame implements ActionListener,
         }
     }
 
-    public void transferFocusToFrame(ExtendedRobot robot,
+    public void transferFocusToFrame(Robot robot,
                                      String message,
                                      Button b) throws Exception {
         focusGained.reset();
@@ -294,7 +294,7 @@ public class TestFrame extends Frame implements ActionListener,
         }
     }
 
-    public void transferFocusToBlockedFrame(ExtendedRobot robot,
+    public void transferFocusToBlockedFrame(Robot robot,
                                             String message,
                                             Button b) throws Exception {
         focusGained.reset();
@@ -316,7 +316,7 @@ public class TestFrame extends Frame implements ActionListener,
     }
 
     public void checkBlockedFrame(
-            ExtendedRobot robot, String message) throws Exception {
+            Robot robot, String message) throws Exception {
 
         dummyGained.reset();
         dummyClicked.reset();
@@ -336,7 +336,7 @@ public class TestFrame extends Frame implements ActionListener,
             "A blocked Frame gained focus when component clicked. " + message);
     }
 
-    public void checkUnblockedFrame(ExtendedRobot robot,
+    public void checkUnblockedFrame(Robot robot,
                                     String message) throws Exception {
         dummyGained.reset();
         dummyClicked.reset();
