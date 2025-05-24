@@ -2413,7 +2413,7 @@ G1HeapPrinterMark::G1HeapPrinterMark(G1CollectedHeap* g1h) : _g1h(g1h), _heap_tr
   _g1h->rem_set()->print_periodic_summary_info("Before GC RS summary",
                                                _g1h->total_collections(),
                                                true /* show_thread_times */);
-  _g1h->print_heap_before_gc();
+  _g1h->print_before_gc();
   _g1h->print_heap_regions();
 }
 
@@ -2427,7 +2427,7 @@ G1HeapPrinterMark::~G1HeapPrinterMark() {
 
   _heap_transition.print();
   _g1h->print_heap_regions();
-  _g1h->print_heap_after_gc();
+  _g1h->print_after_gc();
   // Print NUMA statistics.
   _g1h->numa()->print_statistics();
 }
