@@ -100,6 +100,7 @@ public final class Integer extends Number
     /**
      * All possible chars for representing a number as a String
      */
+    @Stable
     static final byte[] digits = {
         '0' , '1' , '2' , '3' , '4' , '5' ,
         '6' , '7' , '8' , '9' , 'a' , 'b' ,
