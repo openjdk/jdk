@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.EndPosTable;
@@ -403,9 +405,13 @@ public class Log extends AbstractLog {
      */
     public int nerrors = 0;
 
-    /** The number of warnings encountered so far.
+    /** The total number of warnings encountered so far.
      */
     public int nwarnings = 0;
+
+    /** Tracks whether any warnings have been encountered in each {@link LintCategory}.
+     */
+    public final EnumSet<LintCategory> lintWarnings = LintCategory.newEmptySet();
 
     /** The number of errors encountered after MaxErrors was reached.
      */
@@ -671,7 +677,6 @@ public class Log extends AbstractLog {
      */
     public void strictWarning(DiagnosticPosition pos, String key, Object ... args) {
         writeDiagnostic(diags.warning(null, source, pos, key, args));
-        nwarnings++;
     }
 
     /**
@@ -689,6 +694,7 @@ public class Log extends AbstractLog {
     public void clear() {
         recorded.clear();
         sourceMap.clear();
+        lintWarnings.clear();
         nerrors = 0;
         nwarnings = 0;
         nsuppressederrors = 0;
@@ -730,7 +736,6 @@ public class Log extends AbstractLog {
                 if (emitWarnings || diagnostic.isMandatory()) {
                     if (nwarnings < MaxWarnings) {
                         writeDiagnostic(diagnostic);
-                        nwarnings++;
                     } else {
                         nsuppressedwarns++;
                     }
@@ -742,7 +747,6 @@ public class Log extends AbstractLog {
                      shouldReport(diagnostic)) {
                     if (nerrors < MaxErrors) {
                         writeDiagnostic(diagnostic);
-                        nerrors++;
                     } else {
                         nsuppressederrors++;
                     }
@@ -756,9 +760,25 @@ public class Log extends AbstractLog {
     }
 
     /**
-     * Write out a diagnostic.
+     * Write out a diagnostic and bump the warning and error counters as needed.
      */
     protected void writeDiagnostic(JCDiagnostic diag) {
+
+        // Increment counter(s)
+        switch (diag.getType()) {
+        case WARNING:
+            nwarnings++;
+            Optional.of(diag)
+              .map(JCDiagnostic::getLintCategory)
+              .ifPresent(lintWarnings::add);
+            break;
+        case ERROR:
+            nerrors++;
+            break;
+        default:
+            break;
+        }
+
         if (diagListener != null) {
             diagListener.report(diag);
             return;

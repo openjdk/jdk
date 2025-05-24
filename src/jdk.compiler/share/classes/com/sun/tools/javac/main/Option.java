@@ -531,6 +531,8 @@ public enum Option {
     // treat warnings as errors
     WERROR("-Werror", "opt.Werror", STANDARD, BASIC),
 
+    WERROR_CUSTOM("-Werror:", "opt.arg.Werror", "opt.Werror.custom", STANDARD, BASIC, ANYOF, getXLintChoices()),
+
     // prompt after each error
     // new Option("-prompt",                                        "opt.prompt"),
     PROMPT("-prompt", null, HIDDEN, BASIC),
