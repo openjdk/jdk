@@ -626,12 +626,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     const char *short_name = "short_name";
     if (strcmp(node->Name(), "Parm") == 0 && node->as_Proj()->_con >= TypeFunc::Parms) {
       int index = node->as_Proj()->_con - TypeFunc::Parms;
-      if (index >= 10) {
-        print_prop(short_name, "PA");
-      } else {
-        os::snprintf_checked(buffer, sizeof(buffer), "P%d", index);
-        print_prop(short_name, buffer);
-      }
+      os::snprintf_checked(buffer, sizeof(buffer), "P%d", index);
+      print_prop(short_name, buffer);
     } else if (strcmp(node->Name(), "IfTrue") == 0) {
       print_prop(short_name, "T");
     } else if (strcmp(node->Name(), "IfFalse") == 0) {
@@ -643,9 +639,9 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         assert(typeInt->is_con(), "must be constant");
         jint value = typeInt->get_con();
 
-        // max. 2 chars allowed
-        if (value >= -9 && value <= 99) {
-          os::snprintf_checked(buffer, sizeof(buffer), "%d", value);
+        // Only use up to 4 chars and fall back to a generic "I" to keep it short.
+        int written_chars = os::snprintf_checked(buffer, sizeof(buffer), "%d", value);
+        if (written_chars <= 4) {
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "I");
@@ -657,9 +653,9 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         assert(typeLong->is_con(), "must be constant");
         jlong value = typeLong->get_con();
 
-        // max. 2 chars allowed
-        if (value >= -9 && value <= 99) {
-          os::snprintf_checked(buffer, sizeof(buffer), JLONG_FORMAT, value);
+        // Only use up to 4 chars and fall back to a generic "L" to keep it short.
+        int written_chars = os::snprintf_checked(buffer, sizeof(buffer), JLONG_FORMAT, value);
+        if (written_chars <= 4) {
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "L");
@@ -676,11 +672,17 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       } else if (t->base() == Type::Return_Address) {
         print_prop(short_name, "RA");
       } else if (t->base() == Type::AnyPtr) {
-        print_prop(short_name, "P");
+        if (t->is_ptr()->ptr() == TypePtr::Null) {
+          print_prop(short_name, "Null");
+        } else {
+          print_prop(short_name, "P");
+        }
       } else if (t->base() == Type::RawPtr) {
         print_prop(short_name, "RP");
       } else if (t->base() == Type::AryPtr) {
         print_prop(short_name, "AP");
+      } else if (t->base() == Type::NarrowOop && t->is_narrowoop() == TypeNarrowOop::NULL_PTR) {
+        print_prop(short_name, "Null");
       }
     }
 
