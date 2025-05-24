@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,9 +114,9 @@
 
 - (void) blitTexture {
     if (self.ctx == NULL || self.javaLayer == NULL || self.buffer == nil || self.ctx.device == nil) {
-        J2dTraceLn4(J2D_TRACE_VERBOSE,
-                    "MTLLayer.blitTexture: uninitialized (mtlc=%p, javaLayer=%p, buffer=%p, device=%p)", self.ctx,
-                    self.javaLayer, self.buffer, ctx.device);
+        J2dTraceLn(J2D_TRACE_VERBOSE,
+                   "MTLLayer.blitTexture: uninitialized (mtlc=%p, javaLayer=%p, buffer=%p, device=%p)",
+                   self.ctx, self.javaLayer, self.buffer, ctx.device);
         [self stopDisplayLink];
         return;
     }
