@@ -1331,10 +1331,25 @@ final class SocketTube implements FlowTube {
     public void connectFlows(TubePublisher writePublisher,
                              TubeSubscriber readSubscriber) {
         if (debug.on()) debug.log("connecting flows");
+        ensureReadingStopped();
         this.subscribe(readSubscriber);
         writePublisher.subscribe(this);
     }
 
+    /**
+     * This method ensure that we stop reading before
+     * switching subscribers
+     */
+    private void ensureReadingStopped() {
+        var readPublisher = this.readPublisher;
+        if (readPublisher == null) return;
+        var readSubscription = readPublisher.subscription;
+        if (readSubscription == null) return;
+        readSubscription.stopReading();
+        var subscriptionImpl = readPublisher.subscriptionImpl;
+        if (subscriptionImpl == null) return;
+        subscriptionImpl.pauseReadEvent();
+    }
 
     @Override
     public String toString() {
