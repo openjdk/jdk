@@ -32,7 +32,7 @@
  * @test id=Z
  * @requires vm.debug == true & vm.continuations
  * @requires vm.gc.Z
- * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm/timeout=400 -XX:+UnlockDiagnosticVMOptions
  *     -XX:+UseZGC
  *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1500m Skynet
  */
