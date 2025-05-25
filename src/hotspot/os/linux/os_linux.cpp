@@ -31,6 +31,7 @@
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
+#include "libnuma_wrapper.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -3399,19 +3400,17 @@ void os::Linux::rebuild_cpu_to_node_map() {
 }
 
 int os::Linux::numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen) {
+
+  if (!LibNumaInterface::enabled()) {
+    return -1;
+  }
+
   // use the latest version of numa_node_to_cpus if available
-  if (_numa_node_to_cpus_v2 != nullptr) {
-
-    // libnuma bitmask struct
-    struct bitmask {
-      unsigned long size; /* number of bits in the map */
-      unsigned long *maskp;
-    };
-
-    struct bitmask mask;
+  if (LibNuma::numa_node_to_cpus_v2_func() != nullptr) {
+    struct LibNuma::bitmask mask;
     mask.maskp = (unsigned long *)buffer;
     mask.size = bufferlen * 8;
-    return _numa_node_to_cpus_v2(node, &mask);
+    return LibNuma::numa_node_to_cpus_v2_func()(node, &mask);
   } else if (_numa_node_to_cpus != nullptr) {
     return _numa_node_to_cpus(node, buffer, bufferlen);
   }

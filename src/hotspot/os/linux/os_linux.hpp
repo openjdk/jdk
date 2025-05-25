@@ -129,10 +129,6 @@ class os::Linux {
 
   static void libpthread_init();
   static void sched_getcpu_init();
-  static bool libnuma_init();
-  static void* libnuma_dlsym(void* handle, const char* name);
-  // libnuma v2 (libnuma_1.2) symbols
-  static void* libnuma_v2_dlsym(void* handle, const char* name);
 
   // Return default guard size for the specified thread type
   static size_t default_guard_size(os::ThreadType thr_type);
@@ -201,70 +197,13 @@ class os::Linux {
 
   static void disable_numa(const char* reason, bool warning);
   typedef int (*sched_getcpu_func_t)(void);
-  typedef int (*numa_node_to_cpus_func_t)(int node, unsigned long *buffer, int bufferlen);
-  typedef int (*numa_node_to_cpus_v2_func_t)(int node, void *mask);
-  typedef int (*numa_max_node_func_t)(void);
-  typedef int (*numa_num_configured_nodes_func_t)(void);
-  typedef int (*numa_available_func_t)(void);
-  typedef int (*numa_tonode_memory_func_t)(void *start, size_t size, int node);
-  typedef void (*numa_interleave_memory_func_t)(void *start, size_t size, unsigned long *nodemask);
-  typedef void (*numa_interleave_memory_v2_func_t)(void *start, size_t size, struct bitmask* mask);
-  typedef struct bitmask* (*numa_get_membind_func_t)(void);
-  typedef struct bitmask* (*numa_get_interleave_mask_func_t)(void);
-  typedef struct bitmask* (*numa_get_run_node_mask_func_t)(void);
-  typedef long (*numa_move_pages_func_t)(int pid, unsigned long count, void **pages, const int *nodes, int *status, int flags);
-  typedef void (*numa_set_preferred_func_t)(int node);
-  typedef void (*numa_set_bind_policy_func_t)(int policy);
-  typedef int (*numa_bitmask_isbitset_func_t)(struct bitmask *bmp, unsigned int n);
-  typedef int (*numa_bitmask_equal_func_t)(struct bitmask *bmp1, struct bitmask *bmp2);
-  typedef int (*numa_distance_func_t)(int node1, int node2);
 
   static sched_getcpu_func_t _sched_getcpu;
-  static numa_node_to_cpus_func_t _numa_node_to_cpus;
-  static numa_node_to_cpus_v2_func_t _numa_node_to_cpus_v2;
-  static numa_max_node_func_t _numa_max_node;
-  static numa_num_configured_nodes_func_t _numa_num_configured_nodes;
-  static numa_available_func_t _numa_available;
-  static numa_tonode_memory_func_t _numa_tonode_memory;
-  static numa_interleave_memory_func_t _numa_interleave_memory;
-  static numa_interleave_memory_v2_func_t _numa_interleave_memory_v2;
-  static numa_set_bind_policy_func_t _numa_set_bind_policy;
-  static numa_bitmask_isbitset_func_t _numa_bitmask_isbitset;
-  static numa_bitmask_equal_func_t _numa_bitmask_equal;
-  static numa_distance_func_t _numa_distance;
-  static numa_get_membind_func_t _numa_get_membind;
-  static numa_get_run_node_mask_func_t _numa_get_run_node_mask;
-  static numa_get_interleave_mask_func_t _numa_get_interleave_mask;
-  static numa_move_pages_func_t _numa_move_pages;
-  static numa_set_preferred_func_t _numa_set_preferred;
-  static unsigned long* _numa_all_nodes;
-  static struct bitmask* _numa_all_nodes_ptr;
-  static struct bitmask* _numa_nodes_ptr;
   static struct bitmask* _numa_interleave_bitmask;
   static struct bitmask* _numa_membind_bitmask;
   static struct bitmask* _numa_cpunodebind_bitmask;
 
   static void set_sched_getcpu(sched_getcpu_func_t func) { _sched_getcpu = func; }
-  static void set_numa_node_to_cpus(numa_node_to_cpus_func_t func) { _numa_node_to_cpus = func; }
-  static void set_numa_node_to_cpus_v2(numa_node_to_cpus_v2_func_t func) { _numa_node_to_cpus_v2 = func; }
-  static void set_numa_max_node(numa_max_node_func_t func) { _numa_max_node = func; }
-  static void set_numa_num_configured_nodes(numa_num_configured_nodes_func_t func) { _numa_num_configured_nodes = func; }
-  static void set_numa_available(numa_available_func_t func) { _numa_available = func; }
-  static void set_numa_tonode_memory(numa_tonode_memory_func_t func) { _numa_tonode_memory = func; }
-  static void set_numa_interleave_memory(numa_interleave_memory_func_t func) { _numa_interleave_memory = func; }
-  static void set_numa_interleave_memory_v2(numa_interleave_memory_v2_func_t func) { _numa_interleave_memory_v2 = func; }
-  static void set_numa_set_bind_policy(numa_set_bind_policy_func_t func) { _numa_set_bind_policy = func; }
-  static void set_numa_bitmask_isbitset(numa_bitmask_isbitset_func_t func) { _numa_bitmask_isbitset = func; }
-  static void set_numa_bitmask_equal(numa_bitmask_equal_func_t func) { _numa_bitmask_equal = func; }
-  static void set_numa_distance(numa_distance_func_t func) { _numa_distance = func; }
-  static void set_numa_get_membind(numa_get_membind_func_t func) { _numa_get_membind = func; }
-  static void set_numa_get_run_node_mask(numa_get_run_node_mask_func_t func) { _numa_get_run_node_mask = func; }
-  static void set_numa_get_interleave_mask(numa_get_interleave_mask_func_t func) { _numa_get_interleave_mask = func; }
-  static void set_numa_move_pages(numa_move_pages_func_t func) { _numa_move_pages = func; }
-  static void set_numa_set_preferred(numa_set_preferred_func_t func) { _numa_set_preferred = func; }
-  static void set_numa_all_nodes(unsigned long* ptr) { _numa_all_nodes = ptr; }
-  static void set_numa_all_nodes_ptr(struct bitmask **ptr) { _numa_all_nodes_ptr = (ptr == nullptr ? nullptr : *ptr); }
-  static void set_numa_nodes_ptr(struct bitmask **ptr) { _numa_nodes_ptr = (ptr == nullptr ? nullptr : *ptr); }
   static void set_numa_interleave_bitmask(struct bitmask* ptr)     { _numa_interleave_bitmask = ptr ;   }
   static void set_numa_membind_bitmask(struct bitmask* ptr)        { _numa_membind_bitmask = ptr ;      }
   static void set_numa_cpunodebind_bitmask(struct bitmask* ptr)        { _numa_cpunodebind_bitmask = ptr ;      }
