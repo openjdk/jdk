@@ -1226,7 +1226,7 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
   }
   // Mod by zero?  Throw exception at runtime!
   if (i2->is_con() && i2->get_con() == 0) {
-    return TypeInt::ZERO;
+    return TypeInt::TOP;
   }
   if (i1->is_con() && i2->is_con()) {
     // We must be modulo'ing 2 int constants.
@@ -1520,7 +1520,7 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
 
   // Mod by zero?  Throw exception at runtime!
   if (i2->is_con() && i2->get_con() == 0) {
-    return TypeLong::ZERO;
+    return TypeLong::TOP;
   }
   if (i1->is_con() && i2->is_con()) {
     // We must be modulo'ing 2 long constants.
@@ -1554,7 +1554,7 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
     // if the dividend is known to be closer to zero, use that as an upper limit
     hi = MIN2(hi, i1->_hi);
   } else {
-    // Mixed signs, so  we don't know the sign of the result, but the result is
+    // Mixed signs, so we don't know the sign of the result, but the result is
     // either the dividend itself or a value closer to zero than the dividend,
     // and it is closer to zero than the divisor.
     // As we know i1->_lo < 0 and i1->_hi > 0, we can use these bounds directly.
