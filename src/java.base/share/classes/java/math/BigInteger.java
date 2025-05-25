@@ -1304,6 +1304,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private static volatile BigInteger[][] powerCache;
 
     /** The cache of logarithms of radices for base conversion. */
+    @Stable
     private static final double[] logCache;
 
     /** The natural log of 2.  This is used in computing cache indices. */
