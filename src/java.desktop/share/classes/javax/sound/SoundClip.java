@@ -35,8 +35,13 @@ import com.sun.media.sound.JavaSoundAudioClip;
  * It will play any format that is recognized by the {@code javax.sound} API,
  * and for which it has support. This includes midi data.
  * <p>
- * This class is intended for easy playback of short clips
- * or snippets of sound. Applications needing more precise control or advanced
+ * This class is intended for easy playback of short clips or snippets of sound.
+ * Examples of when this might be used is to play an audible alert or effect in a UI app,
+ * or to make a short announcement or to provide audible feedback such announcing as the
+ * function of a button or control.
+ * The application will typically let such clips play once to completion.
+ * <p>
+ * Applications needing more precise control or advanced
  * features should look into other parts of the {@code javax.sound} API.
  * Playing sound requires that the environment grants access to audio devices.
  * Typically this means running the application in a desktop environment.
@@ -96,9 +101,15 @@ public final class SoundClip {
      * Each time this method is called, the clip is restarted from the beginning.
      * This method will return immediately whether or not sound is played,
      * and possibly before the sound has started playing.
-     * The application can call the {@code stop()} method to stop it early.
-     * This should be done if the application needs to guarantee exit before the clip
-     * has finished playing.
+     * <p>
+     * Threading notes : Most applications will not need to do anything except call {@code play()}.
+     * The following is therefore something most applications need not be concerned about.
+     * Play back is managed in a background thread, which is ususally a daemon thread.
+     * Running daemon threads do not prevent the VM from exiting.
+     * So at least one thread must be alive to prevent the VM from terminating.
+     * A UI application with any window displayed automatically satisfies this requirement.
+     * Conversely, if the application wants to guarantee VM exit before the play() has completed, 
+     * it should call the {@code stop()} method.
      */
     public void play() {
         clip.play();
@@ -109,8 +120,15 @@ public final class SoundClip {
      * Each time this method is called, the clip is restarted from the beginning.
      * This method will return immediately whether or not sound is played,
      * and possibly before the sound has started playing.
-     * The application should call the {@code stop()} method to stop it.
-     * Failure to do so may mean the application does not terminate.
+     * <p>
+     * Threading notes : Most applications will not need to do anything except call {@code loop()}.
+     * The following is therefore something most applications need not be concerned about.
+     * Play back is managed in a background thread, which is ususally a daemon thread.
+     * Running daemon threads do not prevent the VM from exiting.
+     * So at least one thread must be alive to prevent the VM from terminating.
+     * A UI application with any window displayed automatically satisfies this requirement.
+     * Conversely, if the application wants to guarantee VM exit before the play() has completed,
+     * it should call the {@code stop()} method.
      */
     public void loop() {
         clip.loop();
@@ -120,7 +138,7 @@ public final class SoundClip {
      * Stops playing this sound clip.
      * Call this if the clip is playing and the application needs to stop
      * it early, for example so that the application can ensure the clip
-     * playing does not block exit.
+     * playing does not block exit. It is also required to stop a {@code loop()}.
      */
     public void stop() {
         clip.stop();
