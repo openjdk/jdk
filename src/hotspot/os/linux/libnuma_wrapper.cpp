@@ -128,33 +128,33 @@ void LibNuma::initialize_real() {
 
 }
 
-// Initialize in fake mode
-void LibNuma::initialize_fake() {
-  assert(_state == State::unknown, "Only once");
-  _state = State::off;
-}
-
 template <typename FNPTR>
 static void print_fnptr(outputStream* st, const char* name, FNPTR p) {
   st->print("_%s_func: ", name);
   st->fill_to(40);
   st->print(PTR_FORMAT " ", (intptr_t)p);
-  os::print_function_and_library_name(st, (address)p, nullptr, 0, true, false, false);
+  os::print_function_and_library_name(st, (address)p, nullptr, 0, false, false, false);
   st->cr();
 }
 
 void LibNuma::print_on(outputStream* st) const {
+  st->print("State: ");
+  st->fill_to(40);
+  st->print_cr("%s", _state == State::unknown ? "unknown" : (_state == State::off ? "off" : "on"));
   char tmp[256];
   stringStream ss(tmp, sizeof(tmp));
-#define PRINTFUNC(name) { \
-		print_fnptr(st, #name, _ ## name ## _func); \
-  }
-  ALL_V1_FUNCTIONS_DO(PRINTFUNC)
-  ALL_V2_FUNCTIONS_DO(PRINTFUNC)
+#define PRINTFUNC(name) print_fnptr(st, #name, _ ## name ## _func);
+  ALL_FUNCTIONS_DO(PRINTFUNC)
 #undef PRINTFUNC
-  st->print_cr("_numa_all_nodes: " PTR_FORMAT, p2i(_numa_all_nodes));
-  st->print_cr("_numa_all_nodes_ptr: " PTR_FORMAT, p2i(_numa_all_nodes_ptr));
-  st->print_cr("_numa_nodes_ptr: " PTR_FORMAT, p2i(_numa_nodes_ptr));
+  st->print("_numa_all_nodes: ");
+  st->fill_to(40);
+  st->print_cr(PTR_FORMAT, p2i(_numa_all_nodes));
+  st->print("_numa_all_nodes_ptr: ");
+  st->fill_to(40);
+  st->print_cr(PTR_FORMAT, p2i(_numa_all_nodes_ptr));
+  st->print("_numa_nodes_ptr: ");
+  st->fill_to(40);
+  st->print_cr(PTR_FORMAT, p2i(_numa_nodes_ptr));
 }
 
 // Initialize
@@ -234,5 +234,16 @@ int LibNuma::numa_node_to_cpus_v2(int node, void *mask) {
 
 void LibNuma::numa_interleave_memory_v2(void *start, size_t size, struct bitmask* mask) {
   return _the_interface._numa_interleave_memory_v2_func(start, size, mask);
+}
+
+//
+// FakeNUMA
+//
+
+
+// Initialize in fake mode
+void LibNuma::initialize_fake() {
+  assert(_state == State::unknown, "Only once");
+  _state = State::off;
 }
 
