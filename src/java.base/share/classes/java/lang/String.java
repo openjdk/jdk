@@ -563,7 +563,7 @@ public final class String
         } else if (charset == US_ASCII.INSTANCE) {
             str = ascii(bytes, offset, length);
         } else {
-            str = create(charset, bytes, offset, length);
+            str = decode(charset, bytes, offset, length);
         }
         this(str);
     }
@@ -642,7 +642,7 @@ public final class String
         }
     }
 
-    private static String create(Charset charset, byte[] bytes, int offset, int length) {
+    private static String decode(Charset charset, byte[] bytes, int offset, int length) {
         // (1)We never cache the "external" cs, the only benefit of creating
         // an additional StringDe/Encoder object to wrap it is to share the
         // de/encode() method. These SD/E objects are short-lived, the young-gen
