@@ -173,7 +173,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   ThreadInVMfromNative __tiv(thread);                             \
   HandleMarkCleaner __hm(thread);                                 \
   JavaThread* THREAD = thread;                                    \
-  debug_only(VMNativeEntryWrapper __vew;)
+  DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
 // Native method block that transitions current thread to '_thread_in_vm'.
 // Note: CompilerThreadCanCallJava must precede JVMCIENV_FROM_JNI so that
@@ -3231,7 +3231,11 @@ C2V_END
 
 C2V_VMENTRY_0(jint, getCompilationActivityMode, (JNIEnv* env, jobject))
   return CompileBroker::get_compilation_activity_mode();
-}
+C2V_END
+
+C2V_VMENTRY_0(jboolean, isCompilerThread, (JNIEnv* env, jobject))
+  return thread->is_Compiler_thread();
+C2V_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
@@ -3396,6 +3400,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getOopMapAt",                                  CC "(" HS_METHOD2 "I[J)V",                                                            FN_PTR(getOopMapAt)},
   {CC "updateCompilerThreadCanCallJava",              CC "(Z)Z",                                                                            FN_PTR(updateCompilerThreadCanCallJava)},
   {CC "getCompilationActivityMode",                   CC "()I",                                                                             FN_PTR(getCompilationActivityMode)},
+  {CC "isCompilerThread",                             CC "()Z",                                                                             FN_PTR(isCompilerThread)},
 };
 
 int CompilerToVM::methods_count() {

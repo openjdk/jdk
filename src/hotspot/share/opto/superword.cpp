@@ -158,7 +158,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
     // Ignore nodes with non-primitive type.
     BasicType bt;
     if (n->is_Mem()) {
-      bt = n->as_Mem()->memory_type();
+      bt = n->as_Mem()->value_basic_type();
     } else {
       bt = n->bottom_type()->basic_type();
     }
@@ -191,7 +191,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       BasicType bt;
       Node* n = lpt->_body.at(i);
       if (n->is_Mem()) {
-        bt = n->as_Mem()->memory_type();
+        bt = n->as_Mem()->value_basic_type();
       } else {
         bt = n->bottom_type()->basic_type();
       }
@@ -564,7 +564,7 @@ void SuperWord::collect_valid_memops(GrowableArray<MemOp>& memops) const {
     const VPointer& p = vpointer(mem);
     if (p.is_valid() &&
         !mem->is_LoadStore() &&
-        is_java_primitive(mem->memory_type())) {
+        is_java_primitive(mem->value_basic_type())) {
       memops.append(MemOp(mem, &p, original_index++));
     }
   });
@@ -764,8 +764,8 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) const {
   if (!in_bb(s1)    || !in_bb(s2))    return false;
 
   // Do not use superword for non-primitives
-  if (!is_java_primitive(s1->as_Mem()->memory_type()) ||
-      !is_java_primitive(s2->as_Mem()->memory_type())) {
+  if (!is_java_primitive(s1->as_Mem()->value_basic_type()) ||
+      !is_java_primitive(s2->as_Mem()->value_basic_type())) {
     return false;
   }
 
@@ -2593,7 +2593,7 @@ void VLoopTypes::compute_vector_element_type() {
 const Type* VLoopTypes::container_type(Node* n) const {
   int opc = n->Opcode();
   if (n->is_Mem()) {
-    BasicType bt = n->as_Mem()->memory_type();
+    BasicType bt = n->as_Mem()->value_basic_type();
     if (n->is_Store() && (bt == T_CHAR)) {
       // Use T_SHORT type instead of T_CHAR for stored values because any
       // preceding arithmetic operation extends values to signed Int.
@@ -2665,7 +2665,18 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     MemNode* p0 = vtn->nodes().at(0)->as_Mem();
 
     int vw = p0->memory_size() * vtn->nodes().length();
-    if (vw > max_aw) {
+    // Generally, we prefer to align with the largest memory op (load or store).
+    // If there are multiple, then SuperWordAutomaticAlignment determines if we
+    // prefer loads or stores.
+    // When a load or store is misaligned, this can lead to the load or store
+    // being split, when it goes over a cache line. Most CPUs can schedule
+    // more loads than stores per cycle (often 2 loads and 1 store). Hence,
+    // it is worse if a store is split, and less bad if a load is split.
+    // By default, we have SuperWordAutomaticAlignment=1, i.e. we align with a
+    // store if possible, to avoid splitting that store.
+    bool prefer_store = mem_ref != nullptr && SuperWordAutomaticAlignment == 1 && mem_ref->is_Load() && p0->is_Store();
+    bool prefer_load  = mem_ref != nullptr && SuperWordAutomaticAlignment == 2 && mem_ref->is_Store() && p0->is_Load();
+    if (vw > max_aw || (vw == max_aw && (prefer_load || prefer_store))) {
       max_aw = vw;
       mem_ref = p0;
     }
@@ -2692,6 +2703,16 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   determine_mem_ref_and_aw_for_main_loop_alignment();
   const MemNode* align_to_ref = _mem_ref_for_main_loop_alignment;
   const int aw                = _aw_for_main_loop_alignment;
+
+  if (!VLoop::vectors_should_be_aligned() && SuperWordAutomaticAlignment == 0) {
+#ifdef ASSERT
+    if (_trace._align_vector) {
+      tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: disabled.");
+    }
+#endif
+    return;
+  }
+
   assert(align_to_ref != nullptr && aw > 0, "must have alignment reference and aw");
   assert(cl()->is_main_loop(), "can only do alignment for main loop");
 
@@ -2912,6 +2933,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   p.for_each_invar_summand([&] (const MemPointerSummand& s) {
     Node* invar_variable = s.variable();
     jint  invar_scale    = s.scale().value();
+    TRACE_ALIGN_VECTOR_NODE(invar_variable);
     if (igvn().type(invar_variable)->isa_long()) {
       // Computations are done % (vector width/element size) so it's
       // safe to simply convert invar to an int and loose the upper 32
@@ -2921,6 +2943,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       TRACE_ALIGN_VECTOR_NODE(invar_variable);
     }
     Node* invar_scale_con = igvn().intcon(invar_scale);
+    TRACE_ALIGN_VECTOR_NODE(invar_scale_con);
     Node* invar_summand = new MulINode(invar_variable, invar_scale_con);
     phase()->register_new_node(invar_summand, pre_ctrl);
     TRACE_ALIGN_VECTOR_NODE(invar_summand);

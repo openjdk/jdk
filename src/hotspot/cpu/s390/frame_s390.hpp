@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -330,6 +330,10 @@
 #define _z_ijava_state_neg(_component) \
          (int) (-frame::z_ijava_state_size + offset_of(frame::z_ijava_state, _component))
 
+// Frame slot index relative to fp
+#define _z_ijava_idx(_component) \
+        (_z_ijava_state_neg(_component) >> LogBytesPerWord)
+
   // ENTRY_FRAME
 
   struct z_entry_frame_locals {
@@ -494,14 +498,12 @@
 
   inline z_ijava_state* ijava_state() const;
 
-  // Where z_ijava_state.monitors is saved.
-  inline BasicObjectLock**  interpreter_frame_monitors_addr() const;
-  // Where z_ijava_state.esp is saved.
-  inline intptr_t** interpreter_frame_esp_addr() const;
-
  public:
+
+  inline intptr_t* interpreter_frame_esp() const;
+  // Where z_ijava_state.esp is saved.
+  inline void interpreter_frame_set_esp(intptr_t* esp);
   inline intptr_t* interpreter_frame_top_frame_sp();
-  inline void interpreter_frame_set_tos_address(intptr_t* x);
   inline void interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp);
   inline void interpreter_frame_set_sender_sp(intptr_t* sender_sp);
 #ifdef ASSERT
@@ -513,6 +515,8 @@
   // Next two functions read and write z_ijava_state.monitors.
  private:
   inline BasicObjectLock* interpreter_frame_monitors() const;
+
+  // Where z_ijava_state.monitors is saved.
   inline void interpreter_frame_set_monitors(BasicObjectLock* monitors);
 
  public:

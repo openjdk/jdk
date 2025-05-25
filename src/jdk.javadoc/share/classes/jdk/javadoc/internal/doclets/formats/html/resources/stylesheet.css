@@ -23,11 +23,11 @@
     /* Base font sizes for body and code elements */
     --body-font-size: 14.2px;
     --block-font-size: 14.4px;
-    --code-font-size: 14px;
+    --code-font-size: 13.9px;
     --nav-font-size: 13.4px;
     /* Line height for continuous text blocks */
     --block-line-height: 1.5;
-    --code-line-height: 1.55;
+    --code-line-height: 1.6;
     /* Text colors for body and block elements */
     --body-text-color: #282828;
     --block-text-color: #282828;
@@ -63,10 +63,10 @@
     --toc-highlight-color: var(--subnav-background-color);
     --toc-hover-color: #e9ecf0;
     /* Snippet and pre colors */
-    --snippet-background-color: #f0f0f2;
+    --snippet-background-color: #f2f2f4;
     --snippet-text-color: var(--block-text-color);
     --snippet-highlight-color: #f7c590;
-    --pre-background-color: #f3f3f5;
+    --pre-background-color: var(--snippet-background-color);
     --pre-text-color: var(--snippet-text-color);
     /* Border colors for structural elements and user defined tables */
     --border-color: #e6e6e6;
@@ -167,9 +167,6 @@ tt {
 code {
     font-family:var(--code-font-family);
     font-size:var(--code-font-size);
-    background-color: var(--code-background-color);
-    padding: 1px 2px;
-    border-radius: 3px;
 }
 button {
     font-family: var(--body-font-family);
@@ -565,9 +562,6 @@ ul.horizontal li {
     display:inline;
     font-size:0.9em;
 }
-div.inheritance {
-    font-size: 0.99em;
-}
 div.inheritance div.inheritance {
     margin-left:2em;
 }
@@ -849,12 +843,6 @@ div.block {
 [style*=font-size] code {
     font-size: inherit;
 }
-:is(pre, table, sup, sub) code,
-section[id$=-description] > dl.notes code,
-div.summary-table code {
-    background-color: inherit;
-    padding: initial;
-}
 .doc-file-page main {
     font-family: var(--block-font-family);
     font-size: var(--block-font-size);
@@ -915,8 +903,6 @@ sup.restricted-mark > a:link {
 }
 .deprecation-block code, .preview-block code, .restricted-block code {
     font-size: 0.97em;
-    background-color: inherit;
-    padding: 0;
 }
 div.block div.deprecation-comment {
     font-style:normal;
@@ -1389,8 +1375,8 @@ button#page-search-copy span {
 /* snippet copy button */
 button.snippet-copy {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: 4px;
+    right: 1px;
     height: 32px;
 }
 button.snippet-copy img {
@@ -1653,7 +1639,7 @@ table.striped > tbody > tr > th {
 pre.snippet {
     background-color: var(--snippet-background-color);
     color: var(--snippet-text-color);
-    padding: 10px;
+    padding: 12px;
 }
 div.snippet-container {
     position: relative;

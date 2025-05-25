@@ -55,7 +55,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
@@ -114,9 +113,6 @@
 
 #define MAX_PATH    (2 * K)
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
 julong os::Bsd::_physical_memory = 0;
@@ -146,7 +142,9 @@ julong os::free_memory() {
   return Bsd::available_memory();
 }
 
-// available here means free
+// Available here means free. Note that this number is of no much use. As an estimate
+// for future memory pressure it is far too conservative, since MacOS will use a lot
+// of unused memory for caches, and return it willingly in case of needs.
 julong os::Bsd::available_memory() {
   uint64_t available = physical_memory() >> 2;
 #ifdef __APPLE__
@@ -647,10 +645,23 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     ResourceMark rm;
     pthread_t tid;
     int ret = 0;
-    int limit = 3;
-    do {
+    int trials_remaining = 4;
+    useconds_t next_delay = 1000;
+    while (true) {
       ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
-    } while (ret == EAGAIN && limit-- > 0);
+
+      if (ret != EAGAIN) {
+        break;
+      }
+
+      if (--trials_remaining <= 0) {
+        break;
+      }
+
+      log_debug(os, thread)("Failed to start native thread (%s), retrying after %dus.", os::errno_name(ret), next_delay);
+      ::usleep(next_delay);
+      next_delay *= 2;
+    }
 
     char buf[64];
     if (ret == 0) {
@@ -815,7 +826,7 @@ jlong os::javaTimeNanos() {
 }
 
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->max_value = all_bits_jlong;
   info_ptr->may_skip_backward = false;      // not subject to resetting or drifting
   info_ptr->may_skip_forward = false;       // not subject to resetting or drifting
   info_ptr->kind = JVMTI_TIMER_ELAPSED;     // elapsed not CPU time
@@ -2423,14 +2434,14 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time
   info_ptr->may_skip_forward = false;      // elapsed time not wall time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned
 }
 
 void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time
   info_ptr->may_skip_forward = false;      // elapsed time not wall time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned

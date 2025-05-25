@@ -205,6 +205,24 @@ public class BigDecimals {
         }
     }
 
+    /** Invokes the valueOf(double) of BigDecimal with various different values. */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testValueOfWithDouble(Blackhole bh) {
+        for (double s : doubleInputs) {
+            bh.consume(BigDecimal.valueOf(s));
+        }
+    }
+
+    /** Create BigDecimal from double with Double.toString on different values. */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testValueOfWithDoubleString(Blackhole bh) {
+        for (double s : doubleInputs) {
+            bh.consume(new BigDecimal(Double.toString(s)));
+        }
+    }
+
     /** Test BigDecimal.toString() with large numbers (scale 2) less than MAX_LONG but larger than MAX_INT */
     @Benchmark
     @OperationsPerInvocation(TEST_SIZE)

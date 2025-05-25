@@ -81,7 +81,6 @@
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threadIdentifier.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
@@ -553,7 +552,7 @@ void JavaThread::interrupt() {
   // All callers should have 'this' thread protected by a
   // ThreadsListHandle so that it cannot terminate and deallocate
   // itself.
-  debug_only(check_for_dangling_thread_pointer(this);)
+  DEBUG_ONLY(check_for_dangling_thread_pointer(this);)
 
   // For Windows _interrupt_event
   WINDOWS_ONLY(osthread()->set_interrupted(true);)
@@ -569,7 +568,7 @@ void JavaThread::interrupt() {
 }
 
 bool JavaThread::is_interrupted(bool clear_interrupted) {
-  debug_only(check_for_dangling_thread_pointer(this);)
+  DEBUG_ONLY(check_for_dangling_thread_pointer(this);)
 
   if (_threadObj.peek() == nullptr) {
     // If there is no j.l.Thread then it is impossible to have
@@ -969,7 +968,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   _stack_overflow_state.remove_stack_guard_pages();
 
   if (UseTLAB) {
-    tlab().retire();
+    retire_tlab();
   }
 
   if (JvmtiEnv::environments_might_exist()) {
@@ -1043,7 +1042,7 @@ void JavaThread::cleanup_failed_attach_current_thread(bool is_daemon) {
   _stack_overflow_state.remove_stack_guard_pages();
 
   if (UseTLAB) {
-    tlab().retire();
+    retire_tlab();
   }
 
   Threads::remove(this, is_daemon);
@@ -1193,7 +1192,7 @@ void JavaThread::set_is_VTMS_transition_disabler(bool val) {
 //   - Target thread will not execute any new bytecode.
 //   - Target thread will not enter any new monitors.
 //
-bool JavaThread::java_suspend() {
+bool JavaThread::java_suspend(bool register_vthread_SR) {
 #if INCLUDE_JVMTI
   // Suspending a JavaThread in VTMS transition or disabling VTMS transitions can cause deadlocks.
   assert(!is_in_VTMS_transition(), "no suspend allowed in VTMS transition");
@@ -1202,13 +1201,13 @@ bool JavaThread::java_suspend() {
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");
-  return this->handshake_state()->suspend();
+  return this->handshake_state()->suspend(register_vthread_SR);
 }
 
-bool JavaThread::java_resume() {
+bool JavaThread::java_resume(bool register_vthread_SR) {
   guarantee(Thread::is_JavaThread_protected_by_TLH(/* target */ this),
             "missing ThreadsListHandle in calling context.");
-  return this->handshake_state()->resume();
+  return this->handshake_state()->resume(register_vthread_SR);
 }
 
 // Wait for another thread to perform object reallocation and relocking on behalf of

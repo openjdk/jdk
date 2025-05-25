@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,16 +91,6 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             flushOldDelegateIfNeeded(delegate);
 
             return this;
-        }
-
-        @Override
-        public String readln(String prompt) {
-            return getDelegate(true).readln(prompt);
-        }
-
-        @Override
-        public String readln() {
-            return getDelegate(true).readln();
         }
 
         @Override
@@ -220,21 +210,6 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         }
 
         @Override
-        public String readln(String prompt) {
-            try {
-                initJLineIfNeeded();
-                return jline.readLine(prompt == null ? "null" : prompt.replace("%", "%%"));
-            } catch (EndOfFileException eofe) {
-                return null;
-            }
-        }
-
-        @Override
-        public String readln() {
-            return readLine();
-        }
-
-        @Override
         public JdkConsole format(Locale locale, String format, Object ... args) {
             writer().format(locale, format, args).flush();
             return this;
@@ -298,7 +273,10 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
                 synchronized (this) {
                     jline = this.jline;
                     if (jline == null) {
-                        jline = LineReaderBuilder.builder().terminal(terminal).build();
+                        jline = LineReaderBuilder.builder()
+                                                 .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
+                                                 .terminal(terminal)
+                                                 .build();
                         this.jline = jline;
                     }
                 }

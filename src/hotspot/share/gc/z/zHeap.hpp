@@ -33,6 +33,7 @@
 #include "gc/z/zPageTable.hpp"
 #include "gc/z/zPageType.hpp"
 #include "gc/z/zServiceability.hpp"
+#include "gc/z/zTLABUsage.hpp"
 
 class OopFieldClosure;
 
@@ -55,7 +56,13 @@ private:
   ZGenerationOld          _old;
   ZGenerationYoung        _young;
 
+  ZTLABUsage              _tlab_usage;
+
   bool                    _initialized;
+
+  // Page allocation accounting
+  void account_alloc_page(ZPage* page);
+  void account_undo_alloc_page(ZPage* page);
 
 public:
   static ZHeap* heap();
@@ -81,6 +88,7 @@ public:
   size_t tlab_used() const;
   size_t max_tlab_size() const;
   size_t unsafe_max_tlab_alloc() const;
+  void reset_tlab_used();
 
   bool is_in(uintptr_t addr) const;
   bool is_in_page_relaxed(const ZPage* page, zaddress addr) const;
@@ -130,8 +138,8 @@ public:
   ZServiceabilityCounters* serviceability_counters();
 
   // Printing
-  void print_on(outputStream* st) const;
-  void print_on_error(outputStream* st) const;
+  void print_usage_on(outputStream* st) const;
+  void print_gc_on(outputStream* st) const;
   void print_globals_on(outputStream* st) const;
   void print_page_table_on(outputStream* st) const;
   bool print_location(outputStream* st, uintptr_t addr) const;
