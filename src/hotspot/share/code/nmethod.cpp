@@ -2118,28 +2118,30 @@ void nmethod::unlink() {
 }
 
 void nmethod::purge(bool unregister_nmethod) {
-  MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  ResourceMark rm;
+  Events::log_nmethod_flush(Thread::current(), "Flushing %s nmethod " INTPTR_FORMAT,  is_osr_method() ? "osr" : "", p2i(this));
 
-  const char* name = method()->name()->as_C_string();
-  const char* is_jvmci = "";
-  const char* is_osr = is_osr_method() ? "osr" : "";
-  const size_t codecache_capacity = CodeCache::capacity()/1024;
-  const size_t codecache_free_space = CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024;
+  LogTarget(Debug, codecache) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    const char* name = method()->name()->as_C_string();
+    const char* is_jvmci = "";
+    const size_t codecache_capacity = CodeCache::capacity()/1024;
+    const size_t codecache_free_space = CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024;
 #if INCLUDE_JVMCI
-  if (is_compiled_by_jvmci()) {
-    if (jvmci_name() != nullptr) {
-      name = jvmci_name();
+    if (is_compiled_by_jvmci()) {
+      if (jvmci_name() != nullptr) {
+        name = jvmci_name();
+      }
+      is_jvmci = "JVMCI compiled ";
     }
-    is_jvmci = "JVMCI compiled ";
-  }
 #endif
-  Events::log_nmethod_flush(Thread::current(), "Flushing %s nmethod " INTPTR_FORMAT, is_osr, p2i(this));
-
-  log_debug(codecache)("Flushing nmethod %3d/" INTPTR_FORMAT ", level=%d, osr=%d, cold=%d, epoch=" UINT64_FORMAT ", cold_count=" UINT64_FORMAT ". "
+    log_debug(codecache)("Flushing nmethod %3d/" INTPTR_FORMAT ", level=%d, osr=%d, cold=%d, epoch=" UINT64_FORMAT ", cold_count=" UINT64_FORMAT ". "
                        "Cache capacity: %zuKb, free space: %zuKb. %smethod %s",
                        _compile_id, p2i(this), _comp_level, is_osr_method(), is_cold(), _gc_epoch, CodeCache::cold_gc_count(),
                        codecache_capacity, codecache_free_space, is_jvmci, name);
+  }
+
+  MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // We need to deallocate any ExceptionCache data.
   // Note that we do not need to grab the nmethod lock for this, it
