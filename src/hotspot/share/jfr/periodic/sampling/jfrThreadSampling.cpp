@@ -34,6 +34,7 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/stackFrameStream.inline.hpp"

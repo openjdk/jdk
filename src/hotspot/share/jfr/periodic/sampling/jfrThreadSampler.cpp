@@ -281,7 +281,7 @@ class OSThreadSampler : public SuspendedThreadTask {
     if (jt->thread_state() == _thread_in_Java) {
       JfrThreadLocal* const tl = jt->jfr_thread_local();
       if (tl->sample_state() == NO_SAMPLE) {
-        _result = JfrSampleRequestBuilder::build_java_sample_request(context, tl, jt);
+        _result = JfrSampleRequestBuilder::build_java_sample_request(context.ucontext(), tl, jt);
       }
     }
   }
