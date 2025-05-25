@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, Arm Limited. All rights reserved.
+ * Copyright (c) 2019, 2025 Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,7 +289,7 @@ void DowncallLinker::StubGenerator::generate() {
 
     __ verify_sve_vector_length(tmp1);
 
-    __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, true /* acquire */, false /* in_nmethod */, tmp1);
+    __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, false /* in_nmethod */, tmp1);
 
     __ ldrw(tmp1, Address(rthread, JavaThread::suspend_flags_offset()));
     __ cbnzw(tmp1, L_safepoint_poll_slow_path);
