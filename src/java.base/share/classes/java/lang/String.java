@@ -565,8 +565,7 @@ public final class String
         } else {
             str = create(charset, bytes, offset, length);
         }
-        this.value = str.value;
-        this.coder = str.coder;
+        this(str);
     }
 
     private static String utf8(byte[] bytes, int offset, int length) {
