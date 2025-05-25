@@ -101,7 +101,8 @@ public final class Integer extends Number
     /**
      * All possible chars for representing a number as a String
      */
-    static final char[] digits = {
+    @Stable
+    static final byte[] digits = {
         '0' , '1' , '2' , '3' , '4' , '5' ,
         '6' , '7' , '8' , '9' , 'a' , 'b' ,
         'c' , 'd' , 'e' , 'f' , 'g' , 'h' ,
@@ -173,10 +174,10 @@ public final class Integer extends Number
             }
 
             while (i <= -radix) {
-                buf[charPos--] = (byte)digits[-(i % radix)];
+                buf[charPos--] = digits[-(i % radix)];
                 i = i / radix;
             }
-            buf[charPos] = (byte)digits[-i];
+            buf[charPos] = digits[-i];
 
             if (negative) {
                 buf[--charPos] = '-';
@@ -410,7 +411,7 @@ public final class Integer extends Number
         int radix = 1 << shift;
         int mask = radix - 1;
         do {
-            buf[--charPos] = (byte)Integer.digits[val & mask];
+            buf[--charPos] = Integer.digits[val & mask];
             val >>>= shift;
         } while (charPos > 0);
     }
