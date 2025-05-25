@@ -27,6 +27,7 @@
 #include "libnuma_wrapper.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -49,8 +50,16 @@ static void* libnuma_v2_dlsym(void* handle, const char* name) {
   return dlvsym(handle, name, "libnuma_1.2");
 }
 
-static struct bitmask* resolve_external_bitmask_pointer(void* libhandle, const char* name) {
-  struct bitmask** p = (struct bitmask**) libnuma_dlsym(libhandle, name);
+template <typename FNPTR>
+FNPTR libnuma_resolve_function(void* handle, const char* name, bool v1) {
+  void* const f =
+      v1 ? libnuma_dlsym(handle, name) : libnuma_v2_dlsym(handle, name);
+  FNPTR p = CAST_TO_FN_PTR(FNPTR, f);
+  return p;
+}
+
+static struct LibNuma::bitmask* resolve_external_bitmask_pointer(void* libhandle, const char* name) {
+  struct LibNuma::bitmask** p = (struct LibNuma::bitmask**) libnuma_dlsym(libhandle, name);
   if (p != nullptr) {
     return *p;
   }
@@ -61,9 +70,9 @@ LibNuma::LibNuma() : _state(State::unknown),
 #define XX(name) _ ## name ## _func(nullptr),
 ALL_FUNCTIONS_DO(XX)
 #undef XX
-  _numa_all_nodes(nullptr),
   _numa_all_nodes_ptr(nullptr),
-  _numa_nodes_ptr(nullptr)
+  _numa_nodes_ptr(nullptr),
+  _numa_all_nodes(nullptr)
 {}
 
 // Initialize from the real libnuma
@@ -79,9 +88,10 @@ void LibNuma::initialize_real() {
     return;
   }
 
-#define RESOLVE_FUNCTION(name, resolve_function) _ ## name ## _func = resolve_function ( libhandle, #name );
-#define RESOLVE_V1_FUNCTION(name) RESOLVE_FUNCTION(name, libnuma_dlsym)
-#define RESOLVE_V2_FUNCTION(name) RESOLVE_FUNCTION(name, libnuma_v2_dlsym)
+#define RESOLVE_FUNCTION(name, is_v1) \
+  _ ## name ## _func = libnuma_resolve_function<name ## _func_t>(libhandle, #name, is_v1);
+#define RESOLVE_V1_FUNCTION(name) RESOLVE_FUNCTION(name, true)
+#define RESOLVE_V2_FUNCTION(name) RESOLVE_FUNCTION(name, false)
 
   // Call numa_available() right away. No need to proceed if that fails.
   RESOLVE_V1_FUNCTION(numa_available);
@@ -124,8 +134,21 @@ void LibNuma::initialize_fake() {
   _state = State::off;
 }
 
+template <typename FNPTR>
+static void print_fnptr(outputStream* st, const char* name, FNPTR p) {
+  st->print("_%s_func: ", name);
+  st->fill_to(40);
+  st->print(PTR_FORMAT " ", (intptr_t)p);
+  os::print_function_and_library_name(st, (address)p, nullptr, 0, true, false, false);
+  st->cr();
+}
+
 void LibNuma::print_on(outputStream* st) const {
-#define PRINTFUNC(name) st->print_cr("_%40s_func: " PTR_FORMAT, #name, p2i(_ ## name ## _func));
+  char tmp[256];
+  stringStream ss(tmp, sizeof(tmp));
+#define PRINTFUNC(name) { \
+		print_fnptr(st, #name, _ ## name ## _func); \
+  }
   ALL_V1_FUNCTIONS_DO(PRINTFUNC)
   ALL_V2_FUNCTIONS_DO(PRINTFUNC)
 #undef PRINTFUNC
@@ -143,13 +166,13 @@ void LibNuma::initialize(bool fakemode) {
   }
 }
 
-void LibNuma::print_state(outputStream* st) const {
+void LibNuma::print_state(outputStream* st) {
   _the_interface.print_on(st);
 }
 
 // V1.1
 int LibNuma::numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen) {
-  return _numa_node_to_cpus_func(node, buffer, bufferlen);
+  return _the_interface._numa_node_to_cpus_func(node, buffer, bufferlen);
 }
 
 int LibNuma::numa_max_node(void) {
@@ -206,7 +229,7 @@ int LibNuma::numa_distance(int node1, int node2) {
 
 // V1.2
 int LibNuma::numa_node_to_cpus_v2(int node, void *mask) {
-  return _the_interface._numa_node_to_cpus_func(node, mask);
+  return _the_interface._numa_node_to_cpus_v2_func(node, mask);
 }
 
 void LibNuma::numa_interleave_memory_v2(void *start, size_t size, struct bitmask* mask) {

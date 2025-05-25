@@ -206,9 +206,6 @@ class os::Linux {
   static struct LibNuma::bitmask* _numa_cpunodebind_bitmask;
 
   static void set_sched_getcpu(sched_getcpu_func_t func) { _sched_getcpu = func; }
-  static void set_numa_interleave_bitmask(struct bitmask* ptr)     { _numa_interleave_bitmask = ptr ;   }
-  static void set_numa_membind_bitmask(struct bitmask* ptr)        { _numa_membind_bitmask = ptr ;      }
-  static void set_numa_cpunodebind_bitmask(struct bitmask* ptr)    { _numa_cpunodebind_bitmask = ptr ;      }
   static int sched_getcpu_syscall(void);
 
   enum NumaAllocationPolicy{
@@ -226,7 +223,7 @@ class os::Linux {
     return LibNuma::has_numa_num_configured_nodes() ? LibNuma::numa_num_configured_nodes() : -1;
   }
   static int numa_tonode_memory(void *start, size_t size, int node) {
-    return LibNuma::has_numa_tonode_memory() != nullptr ? LibNuma::numa_tonode_memory(start, size, node) : -1;
+    return LibNuma::has_numa_tonode_memory() ? LibNuma::numa_tonode_memory(start, size, node) : -1;
   }
 
   static bool is_running_in_interleave_mode() {

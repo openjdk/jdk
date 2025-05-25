@@ -46,9 +46,6 @@ private:
   typedef int (*numa_num_configured_nodes_func_t)(void);
   typedef int (*numa_tonode_memory_func_t)(void *start, size_t size, int node);
   typedef void (*numa_interleave_memory_func_t)(void *start, size_t size, unsigned long *nodemask);
-  typedef struct bitmask* (*numa_get_membind_func_t)(void);
-  typedef struct bitmask* (*numa_get_interleave_mask_func_t)(void);
-  typedef struct bitmask* (*numa_get_run_node_mask_func_t)(void);
   typedef long (*numa_move_pages_func_t)(int pid, unsigned long count, void **pages, const int *nodes, int *status, int flags);
   typedef void (*numa_set_preferred_func_t)(int node);
   typedef void (*numa_set_bind_policy_func_t)(int policy);
@@ -57,6 +54,9 @@ private:
   typedef int (*numa_distance_func_t)(int node1, int node2);
 
   // V1.2
+  typedef struct bitmask* (*numa_get_membind_func_t)(void);
+  typedef struct bitmask* (*numa_get_interleave_mask_func_t)(void);
+  typedef struct bitmask* (*numa_get_run_node_mask_func_t)(void);
   typedef int (*numa_node_to_cpus_v2_func_t)(int node, void *mask);
   typedef void (*numa_interleave_memory_v2_func_t)(void *start, size_t size, struct bitmask* mask);
 
@@ -64,23 +64,23 @@ private:
   State _state;
 
 #define ALL_V1_FUNCTIONS_DO(XX) \
-	  XX(numa_available) \
-	  XX(numa_node_to_cpus) \
-	  XX(numa_max_node) \
-	  XX(numa_num_configured_nodes) \
-	  XX(numa_tonode_memory) \
-	  XX(numa_interleave_memory) \
-	  XX(numa_get_membind) \
-	  XX(numa_get_interleave_mask) \
-	  XX(numa_get_run_node_mask) \
-	  XX(numa_move_pages) \
-	  XX(numa_set_preferred) \
-	  XX(numa_set_bind_policy) \
-	  XX(numa_bitmask_isbitset) \
-	  XX(numa_bitmask_equal) \
-	  XX(numa_distance)
+  XX(numa_available) \
+  XX(numa_node_to_cpus) \
+  XX(numa_max_node) \
+  XX(numa_num_configured_nodes) \
+  XX(numa_tonode_memory) \
+  XX(numa_interleave_memory) \
+  XX(numa_move_pages) \
+  XX(numa_set_preferred) \
+  XX(numa_set_bind_policy) \
+  XX(numa_bitmask_isbitset) \
+  XX(numa_bitmask_equal) \
+  XX(numa_distance)
 
 #define ALL_V2_FUNCTIONS_DO(XX) \
+  XX(numa_get_membind) \
+  XX(numa_get_interleave_mask) \
+  XX(numa_get_run_node_mask) \
   XX(numa_node_to_cpus_v2) \
   XX(numa_interleave_memory_v2)
 
@@ -113,7 +113,8 @@ public:
   LibNuma();
 
   // have_xxx
-#define XX(name) static bool has_ ## name() const { return _the_interface._ ## name ## _func != nullptr; }
+#define XX(name) static bool has_ ## name() \
+  { return _the_interface._ ## name ## _func != nullptr; }
   ALL_FUNCTIONS_DO(XX)
 #undef XX
 
@@ -138,20 +139,15 @@ public:
   static void numa_interleave_memory_v2(void *start, size_t size, struct bitmask* mask);
 
   // Get pointers to external data
-  static struct bitmask* numa_all_nodes_ptr() const { return _the_interface._numa_all_nodes_ptr; }
-  static struct bitmask* numa_nodes_ptr() const     { return _the_interface._numa_nodes_ptr; }
-  static unsigned long* numa_all_nodes() const            { return _the_interface._numa_all_nodes; }
+  static struct bitmask* numa_all_nodes_ptr() { return _the_interface._numa_all_nodes_ptr; }
+  static struct bitmask* numa_nodes_ptr()     { return _the_interface._numa_nodes_ptr; }
+  static unsigned long* numa_all_nodes()      { return _the_interface._numa_all_nodes; }
 
   // Initialize
   static void initialize(bool fakemode);
   static bool enabled() { return _the_interface._state == State::on; }
 
-  static void print_state(outputStream* st) const;
-
-  static int numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen);
-
-
-
+  static void print_state(outputStream* st);
 };
 
 #endif // OS_LINUX_LIBNUMA_HPP

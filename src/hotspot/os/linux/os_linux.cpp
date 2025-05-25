@@ -3206,8 +3206,11 @@ bool os::Linux::libnuma_init() {
     LibNuma::initialize(false);
     if (LibNuma::enabled()) {
       _numa_interleave_bitmask = LibNuma::numa_get_interleave_mask();
+      log_debug(os, numa)("_numa_interleave_bitmask = " PTR_FORMAT, p2i(_numa_interleave_bitmask));
       _numa_membind_bitmask = LibNuma::numa_get_membind();
+      log_debug(os, numa)("_numa_membind_bitmask = " PTR_FORMAT, p2i(_numa_membind_bitmask));
       _numa_cpunodebind_bitmask = LibNuma::numa_get_run_node_mask();
+      log_debug(os, numa)("_numa_cpunodebind_bitmask = " PTR_FORMAT, p2i(_numa_cpunodebind_bitmask));
       // Create an index -> node mapping, since nodes are not always consecutive
       _nindex_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
       rebuild_nindex_to_node_map();
@@ -3371,9 +3374,10 @@ int os::Linux::get_node_by_cpu(int cpu_id) {
 GrowableArray<int>* os::Linux::_cpu_to_node;
 GrowableArray<int>* os::Linux::_nindex_to_node;
 os::Linux::sched_getcpu_func_t os::Linux::_sched_getcpu;
-struct bitmask* os::Linux::_numa_interleave_bitmask;
-struct bitmask* os::Linux::_numa_membind_bitmask;
-struct bitmask* os::Linux::_numa_cpunodebind_bitmask;
+os::Linux::NumaAllocationPolicy os::Linux::_current_numa_policy;
+struct LibNuma::bitmask* os::Linux::_numa_interleave_bitmask;
+struct LibNuma::bitmask* os::Linux::_numa_membind_bitmask;
+struct LibNuma::bitmask* os::Linux::_numa_cpunodebind_bitmask;
 
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
