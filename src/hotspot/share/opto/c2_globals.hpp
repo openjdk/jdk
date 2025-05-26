@@ -378,9 +378,9 @@
   product(uint, AutoVectorizationOverrideProfitability, 1, DIAGNOSTIC,      \
           "Override the auto vectorization profitability heuristics."       \
           "0 = Run auto vectorizer, but abort just before applying"         \
-          "    vectrorization, as though it was not profitable."            \
+          "    vectorization, as though it was not profitable."             \
           "1 = Run auto vectorizer with the default profitability"          \
-          "    heuristics. This is is the default, and hopefully"           \
+          "    heuristics. This is the default, and hopefully"              \
           "    delivers the best performance."                              \
           "2 = Run auto vectorizer, and vectorize even if the"              \
           "    profitability heuristics predict that vectorization"         \
