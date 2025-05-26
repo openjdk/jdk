@@ -126,7 +126,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   static CompileTask* allocate();
   static void         free(CompileTask* task);
 
-  inline Method* method();
+  inline Method* method() const;
 
   int          compile_id() const                { return _compile_id; }
   int          osr_bci() const                   { return _osr_bci; }
@@ -211,7 +211,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         set_prev(CompileTask* prev)       { _prev = prev; }
   bool         is_free() const                   { return _is_free; }
   void         set_is_free(bool val)             { _is_free = val; }
-  bool         is_unloaded();
+  bool         is_unloaded() const;
 
   // RedefineClasses support
   void         metadata_do(MetadataClosure* f);

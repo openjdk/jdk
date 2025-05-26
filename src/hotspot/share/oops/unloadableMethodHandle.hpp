@@ -89,24 +89,17 @@ private:
   // There are lots of writes to this field in common (WEAK) state.
   // Protect the adjacent fields from false sharing to optimize state queries.
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
-  volatile int _spin_lock;
-  DEBUG_ONLY(volatile Thread* _spin_lock_owner;)
+  mutable volatile int _spin_lock;
+  DEBUG_ONLY(mutable volatile Thread* _spin_lock_owner;)
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, 0);
-
-  void spin_lock();
-  void spin_unlock();
 
   class SpinLocker : StackObj {
   private:
-    UnloadableMethodHandle* const _handle;
+    const UnloadableMethodHandle* const _handle;
 
   public:
-    SpinLocker(UnloadableMethodHandle* handle) : _handle(handle) {
-      _handle->spin_lock();
-    }
-    ~SpinLocker() {
-      _handle->spin_unlock();
-    }
+    SpinLocker(const UnloadableMethodHandle* handle);
+    ~SpinLocker();
   };
 
   Method* _method;
@@ -122,10 +115,10 @@ public:
   UnloadableMethodHandle(Method* method);
   inline void release();
 
-  inline Method* method();
-  inline Method* method_unsafe();
+  inline Method* method() const;
+  inline Method* method_unsafe() const;
 
-  inline bool is_safe();
+  inline bool is_safe() const;
   void make_always_safe();
 };
 

@@ -134,7 +134,7 @@ CompileTask* CompileTask::select_for_compilation() {
   return nullptr;
 }
 
-bool CompileTask::is_unloaded() {
+bool CompileTask::is_unloaded() const {
   return !_method_handle.is_safe();
 }
 

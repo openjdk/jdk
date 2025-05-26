@@ -253,7 +253,7 @@ bool FullMethodName::is_test_class() const {
 }
 #endif // ASSERT
 
-ArenaStatCounter::ArenaStatCounter(CompileTask* task, size_t limit) :
+ArenaStatCounter::ArenaStatCounter(const CompileTask* task, size_t limit) :
     _fmn(task->method()),
     _should_print_memstat(task->directive()->should_print_memstat()),
     _should_crash_on_memlimit(task->directive()->should_crash_at_mem_limit()),

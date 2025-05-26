@@ -60,17 +60,6 @@ inline void UnloadableMethodHandle::set_state(State s) {
   Atomic::release_store_fence(&_state, s);
 }
 
-inline void UnloadableMethodHandle::spin_lock() {
-  assert(_spin_lock_owner != Thread::current(), "Re-entering already owned lock, about to deadlock");
-  Thread::SpinAcquire(&_spin_lock);
-  DEBUG_ONLY(_spin_lock_owner = Thread::current();)
-}
-
-inline void UnloadableMethodHandle::spin_unlock() {
-  DEBUG_ONLY(_spin_lock_owner = nullptr;)
-  Thread::SpinRelease(&_spin_lock);
-}
-
 oop UnloadableMethodHandle::get_unload_blocker(Method* method) {
   assert(method != nullptr, "Should be");
 
@@ -125,7 +114,7 @@ void UnloadableMethodHandle::release() {
   assert(!is_safe(), "Should not be");
 }
 
-bool UnloadableMethodHandle::is_safe() {
+bool UnloadableMethodHandle::is_safe() const {
   switch (get_state()) {
     case EMPTY:
     case PERMANENT:
@@ -194,13 +183,24 @@ inline void UnloadableMethodHandle::make_always_safe() {
   assert(is_safe(), "Should be");
 }
 
-inline Method* UnloadableMethodHandle::method() {
+inline Method* UnloadableMethodHandle::method() const {
   assert(is_safe(), "Should be");
   return _method;
 }
 
-inline Method* UnloadableMethodHandle::method_unsafe() {
+inline Method* UnloadableMethodHandle::method_unsafe() const {
   return _method;
+}
+
+inline UnloadableMethodHandle::SpinLocker::SpinLocker(const UnloadableMethodHandle* handle) : _handle(handle) {
+  assert(_handle->_spin_lock_owner != Thread::current(), "Re-entering already owned lock, about to deadlock");
+  Thread::SpinAcquire(&_handle->_spin_lock);
+  DEBUG_ONLY(_handle->_spin_lock_owner = Thread::current();)
+}
+
+inline UnloadableMethodHandle::SpinLocker::~SpinLocker() {
+  DEBUG_ONLY(_handle->_spin_lock_owner = nullptr;)
+  Thread::SpinRelease(&_handle->_spin_lock);
 }
 
 #endif // SHARE_OOPS_UNLOADABLE_METHOD_HANDLE_INLINE_HPP
