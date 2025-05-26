@@ -31,7 +31,6 @@
 
 class JavaThread;
 class JfrThreadLocal;
-class SuspendedThreadTaskContext;
 
 enum JfrSampleResult {
   THREAD_SUSPENSION_ERROR,
@@ -78,7 +77,7 @@ typedef GrowableArrayCHeap<JfrSampleRequest, mtTracing> JfrSampleRequestQueue;
 
 class JfrSampleRequestBuilder : AllStatic {
  public:
-  static JfrSampleResult build_java_sample_request(const SuspendedThreadTaskContext& context,
+  static JfrSampleResult build_java_sample_request(const void* ucontext,
                                                    JfrThreadLocal* tl,
                                                    JavaThread* jt);
   static void build_cpu_time_sample_request(JfrSampleRequest &request,

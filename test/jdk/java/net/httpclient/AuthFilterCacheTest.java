@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import javax.net.ssl.SSLContext;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 
-/**
+/*
  * @test
  * @bug 8232853
  * @summary AuthenticationFilter.Cache::remove may throw ConcurrentModificationException
@@ -54,7 +54,6 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DigestEchoServer jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run testng/othervm -Dtest.requiresHost=true
- * -Djdk.tracePinnedThreads=full
  * -Djdk.httpclient.HttpClient.log=headers
  * -Djdk.internal.httpclient.debug=false
  * AuthFilterCacheTest

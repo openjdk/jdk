@@ -37,6 +37,7 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
@@ -174,7 +175,6 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
   }
 
   void* const sampled_pc = request._sample_pc;
-
   CodeBlob* sampled_cb;
   if (sampled_pc == nullptr || (sampled_cb = CodeCache::find_blob(sampled_pc)) == nullptr) {
     // A biased sample is requested or no code blob.
@@ -244,6 +244,7 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
       // Another instance of safepoint bias.
       top_frame = *current;
       biased = true;
+      break;
     }
 
     // Check for a matching compiled method.
