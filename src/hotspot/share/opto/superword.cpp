@@ -2486,6 +2486,16 @@ VStatus VLoopBody::construct() {
   return VStatus::make_success();
 }
 
+static bool can_subword_truncate(Node* in) {
+  if (in->is_Load() || in->is_Store() || in->is_Convert()) {
+    return true;
+  }
+
+  int opc = in->Opcode();
+  return opc == Op_AddI || opc == Op_SubI || opc == Op_MulI || opc == Op_AndI || opc == Op_OrI || opc == Op_XorI
+    || opc == Op_ReverseBytesS || opc == Op_ReverseBytesUS;
+}
+
 void VLoopTypes::compute_vector_element_type() {
 #ifndef PRODUCT
   if (_vloop.is_trace_vector_element_type()) {
@@ -2540,9 +2550,9 @@ void VLoopTypes::compute_vector_element_type() {
             // be vectorized if the higher order bits info is imprecise.
             const Type* vt = vtn;
             int op = in->Opcode();
-            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
+            if (!can_subword_truncate(in)) {
               Node* load = in->in(1);
-              if (load->is_Load() &&
+              if (VectorNode::is_shift_opcode(op) && load->is_Load() &&
                   _vloop.in_bb(load) &&
                   (velt_type(load)->basic_type() == T_INT)) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
