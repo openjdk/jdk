@@ -34,7 +34,7 @@ import java.net.URL;
 
 public class GifSavedImageTransparentTest {
     public static void main(String[] args) throws Throwable {
-        URL srcURL = GifEmptyBackgroundTest.class.getResource("ukraine-flag.gif");
+        URL srcURL = GifSavedImageTransparentTest.class.getResource("ukraine-flag.gif");
         BufferedImage bi = GifComparison.run(srcURL);
 
         Color topLeftPixel = new Color(bi.getRGB(3, 3), true);
