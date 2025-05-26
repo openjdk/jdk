@@ -70,16 +70,15 @@ class PSOldGen : public CHeapObj<mtGC> {
 
   void post_resize();
 
-  void initialize(ReservedSpace rs, size_t initial_size, size_t alignment,
-                  const char* perf_data_name, int level);
+  void initialize(ReservedSpace rs, size_t initial_size, size_t alignment);
   void initialize_virtual_space(ReservedSpace rs, size_t initial_size, size_t alignment);
-  void initialize_work(const char* perf_data_name, int level);
-  void initialize_performance_counters(const char* perf_data_name, int level);
+  void initialize_work();
+  void initialize_performance_counters();
 
  public:
   // Initialize the generation.
   PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
-           size_t max_size, const char* perf_data_name, int level);
+           size_t max_size);
 
   MemRegion reserved() const {
     return MemRegion((HeapWord*)(_virtual_space->low_boundary()),
