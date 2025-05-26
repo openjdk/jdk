@@ -81,6 +81,7 @@ requires.properties= \
     vm.cds \
     vm.cds.custom.loaders \
     vm.cds.supports.aot.class.linking \
+    vm.cds.supports.aot.code.caching \
     vm.cds.write.archived.java.heap \
     vm.continuations \
     vm.jvmti \

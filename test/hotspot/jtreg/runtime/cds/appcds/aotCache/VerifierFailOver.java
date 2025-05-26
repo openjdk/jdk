@@ -41,7 +41,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class VerifierFailOver {
     public static void main(String... args) throws Exception {
         SimpleCDSAppTester.of("VerifierFailOver")
-            .addVmArgs("-Xlog:cds+class=debug")
+            .addVmArgs("-Xlog:aot+class=debug")
             .classpath("app.jar")
             .appCommandLine("VerifierFailOverApp")
             .setTrainingChecker((OutputAnalyzer out) -> {
