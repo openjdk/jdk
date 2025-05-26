@@ -95,13 +95,13 @@ class JfrThreadLocal {
     ENQUEUE,
     // locked for dequeuing
     DEQUEUE,
-    // locked for writing native event out of safepoint
+    // locked for sampling a thread in native state
     NATIVE
   };
   volatile CPUTimeLockState _cpu_time_jfr_locked = UNLOCKED;
   volatile bool _has_cpu_time_jfr_requests = false;
   JfrCPUTimeTraceQueue _cpu_time_jfr_queue{0};
-  volatile bool _wants_out_of_safepoint_sampling = false;
+  volatile bool _wants_thread_in_native_sampling = false;
 #endif
 
   JfrBuffer* install_native_buffer() const;
@@ -377,7 +377,7 @@ class JfrThreadLocal {
   // The CPU time JFR lock has four different states:
   // - ENQUEUE: lock for enqueuing CPU time requests
   // - DEQUEUE: lock for dequeuing CPU time requests
-  // - NATIVE: lock for writing native events out of safepoint
+  // - NATIVE: lock for writing events for threads in native state
   // - UNLOCKED: no lock held
   // This ensures that we can safely enqueue and dequeue CPU time requests,
   // without interleaving
@@ -396,8 +396,8 @@ class JfrThreadLocal {
   JfrCPUTimeTraceQueue& cpu_time_jfr_queue();
   void disable_cpu_time_jfr_queue();
 
-  void set_wants_out_of_safepoint_sampling(bool wants);
-  bool wants_out_of_safepoint_sampling();
+  void set_wants_thread_in_native_sampling(bool wants);
+  bool wants_thread_in_native_sampling();
 #else
   bool has_cpu_time_jfr_requests() { return false; }
 #endif

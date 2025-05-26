@@ -602,12 +602,12 @@ void JfrThreadLocal::disable_cpu_time_jfr_queue() {
   cpu_time_jfr_queue().ensure_capacity(0);
 }
 
-void JfrThreadLocal::set_wants_out_of_safepoint_sampling(bool wants) {
-  Atomic::release_store(&_wants_out_of_safepoint_sampling, wants);
+void JfrThreadLocal::set_wants_thread_in_native_sampling(bool wants) {
+  Atomic::release_store(&_wants_thread_in_native_sampling, wants);
 }
 
-bool JfrThreadLocal::wants_out_of_safepoint_sampling() {
-  return Atomic::load(&_wants_out_of_safepoint_sampling);
+bool JfrThreadLocal::wants_thread_in_native_sampling() {
+  return Atomic::load(&_wants_thread_in_native_sampling);
 }
 
 #endif
