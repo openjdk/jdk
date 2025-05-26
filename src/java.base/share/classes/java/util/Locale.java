@@ -1691,37 +1691,37 @@ public final class Locale implements Cloneable, Serializable {
         LanguageTag tag = LanguageTag.parseLocale(baseLocale, localeExtensions);
         StringBuilder buf = new StringBuilder();
 
-        String subtag = tag.getLanguage();
+        String subtag = tag.language();
         if (!subtag.isEmpty()) {
             buf.append(LanguageTag.canonicalizeLanguage(subtag));
         }
 
-        subtag = tag.getScript();
+        subtag = tag.script();
         if (!subtag.isEmpty()) {
             buf.append(LanguageTag.SEP);
             buf.append(LanguageTag.canonicalizeScript(subtag));
         }
 
-        subtag = tag.getRegion();
+        subtag = tag.region();
         if (!subtag.isEmpty()) {
             buf.append(LanguageTag.SEP);
             buf.append(LanguageTag.canonicalizeRegion(subtag));
         }
 
-        List<String>subtags = tag.getVariants();
+        List<String>subtags = tag.variants();
         for (String s : subtags) {
             buf.append(LanguageTag.SEP);
             // preserve casing
             buf.append(s);
         }
 
-        subtags = tag.getExtensions();
+        subtags = tag.extensions();
         for (String s : subtags) {
             buf.append(LanguageTag.SEP);
             buf.append(LanguageTag.canonicalizeExtension(s));
         }
 
-        subtag = tag.getPrivateuse();
+        subtag = tag.privateuse();
         if (!subtag.isEmpty()) {
             if (buf.length() > 0) {
                 buf.append(LanguageTag.SEP);
