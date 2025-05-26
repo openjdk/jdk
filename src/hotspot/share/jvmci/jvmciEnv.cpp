@@ -251,12 +251,9 @@ void JVMCIEnv::check_init(TRAPS) {
   if (_init_error == JNI_OK) {
     return;
   }
-  if (_init_error == JNI_ENOMEM) {
-    THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "JNI_ENOMEM creating or attaching to libjvmci");
-  }
   stringStream st;
   st.print("Error creating or attaching to libjvmci (err: %d, description: %s)",
-           _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg);
+            _init_error, _init_error_msg != nullptr ? _init_error_msg : (_init_error == JNI_ENOMEM ? "JNI_ENOMEM" : "none"));
   THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), st.freeze());
 }
 
