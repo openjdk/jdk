@@ -5254,7 +5254,7 @@ instruct compareAndSwapB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval, rFlagsReg cr)
+instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate(UseZabha && UseZacas);
 
@@ -5301,7 +5301,7 @@ instruct compareAndSwapS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval, rFlagsReg cr)
+instruct compareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate(UseZabha && UseZacas);
 
@@ -5620,7 +5620,7 @@ instruct compareAndExchangeB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval, rFlagsReg cr)
+instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate(UseZabha && UseZacas);
 
@@ -5664,7 +5664,7 @@ instruct compareAndExchangeS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval, rFlagsReg cr)
+instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate(UseZabha && UseZacas);
 
@@ -5953,7 +5953,7 @@ instruct weakCompareAndSwapB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
   ins_pipe(pipe_slow);
 %}
 
-instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval, rFlagsReg cr)
+instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate(UseZabha && UseZacas);
 
@@ -5999,7 +5999,7 @@ instruct weakCompareAndSwapS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
   ins_pipe(pipe_slow);
 %}
 
-instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval, rFlagsReg cr)
+instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate(UseZabha && UseZacas);
 
