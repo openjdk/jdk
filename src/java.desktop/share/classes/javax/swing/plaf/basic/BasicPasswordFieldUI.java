@@ -91,23 +91,4 @@ public class BasicPasswordFieldUI extends BasicTextFieldUI {
     public View create(Element elem) {
         return new PasswordView(elem);
     }
-
-    /**
-     * Create the action map for Password Field.  This map provides
-     * same actions for double mouse click and
-     * and for triple mouse click (see bug 4231444).
-     */
-
-    ActionMap createActionMap() {
-        ActionMap map = super.createActionMap();
-        if (map.get(DefaultEditorKit.selectWordAction) != null) {
-            Action a = map.get(DefaultEditorKit.selectLineAction);
-            if (a != null) {
-                map.remove(DefaultEditorKit.selectWordAction);
-                map.put(DefaultEditorKit.selectWordAction, a);
-            }
-        }
-        return map;
-    }
-
 }

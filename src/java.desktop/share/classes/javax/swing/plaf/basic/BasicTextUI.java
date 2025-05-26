@@ -647,6 +647,21 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                 TransferHandler.getCopyAction());
         map.put(TransferHandler.getPasteAction().getValue(Action.NAME),
                 TransferHandler.getPasteAction());
+
+        if (getComponent() instanceof JPasswordField) {
+            // Create the action map for Password Field.  This map provides
+            // same actions for double mouse click and
+            // and for triple mouse click (see bugs 4231444, 8354646).
+
+            if (map.get(DefaultEditorKit.selectWordAction) != null) {
+                Action a = map.get(DefaultEditorKit.selectLineAction);
+                if (a != null) {
+                    map.remove(DefaultEditorKit.selectWordAction);
+                    map.put(DefaultEditorKit.selectWordAction, a);
+                }
+            }
+        }
+
         return map;
     }
 
