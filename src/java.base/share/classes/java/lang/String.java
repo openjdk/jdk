@@ -699,13 +699,7 @@ public final class String
                 // Substitution is enabled, so this shouldn't happen
                 throw new Error(x);
             }
-            if (COMPACT_STRINGS) {
-                value = StringUTF16.compress(ca, 0, caLen);
-                coder = StringUTF16.coderFromArrayLen(value, caLen);
-            } else {
-                value = StringUTF16.toBytes(ca, 0, caLen);
-                coder = UTF16;
-            }
+            return new String(ca, 0, caLen, null);
         }
         return new String(value, coder);
     }
