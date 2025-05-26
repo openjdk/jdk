@@ -1605,8 +1605,8 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
     int opc = p0->Opcode();
     if (is_marked_reduction(p0)) {
       const Type *arith_type = p0->bottom_type();
-      // This heuristic predicts 2-element reductions for INT/LONG, predicting
-      // that they are not profitable. This was added in JDK-8078563. The argument
+      // This heuristic predicts that 2-element reductions for INT/LONG are not
+      // profitable. This heuristic was added in JDK-8078563. The argument
       // was that reductions are not just a single instruction, but multiple, and
       // hence it is not directly clear that they are profitable. If we only have
       // two elements per vector, then the performance gains from non-reduction
