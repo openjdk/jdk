@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zNUMA.hpp"
+#include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
@@ -143,6 +143,18 @@ inline ZValue<S, T>::ZValue(const T& value)
 }
 
 template <typename S, typename T>
+template <typename... Args>
+inline ZValue<S, T>::ZValue(ZValueIdTagType, Args&&... args)
+  : _addr(S::alloc(sizeof(T))) {
+  // Initialize all instances
+  uint32_t value_id;
+  ZValueIterator<S, T> iter(this);
+  for (T* addr; iter.next(&addr, &value_id);) {
+    ::new (addr) T(value_id, args...);
+  }
+}
+
+template <typename S, typename T>
 inline const T* ZValue<S, T>::addr(uint32_t value_id) const {
   return reinterpret_cast<const T*>(value_addr(value_id));
 }
@@ -175,6 +187,11 @@ inline void ZValue<S, T>::set_all(const T& value) {
   }
 }
 
+template <typename S, typename T>
+uint32_t ZValue<S, T>::count() const {
+  return S::count();
+}
+
 //
 // Iterator
 //
@@ -192,11 +209,25 @@ inline bool ZValueIterator<S, T>::next(T** value) {
   }
   return false;
 }
+template <typename S, typename T>
+inline bool ZValueIterator<S, T>::next(T** value, uint32_t* value_id) {
+  if (_value_id < S::count()) {
+    *value_id = _value_id;
+    *value = _value->addr(_value_id++);
+    return true;
+  }
+  return false;
+}
 
 template <typename S, typename T>
 inline ZValueConstIterator<S, T>::ZValueConstIterator(const ZValue<S, T>* value)
   : _value(value),
     _value_id(0) {}
+
+template <typename S, typename T>
+inline ZValueConstIterator<S, T>::ZValueConstIterator(const ZValueIterator<S, T>& other)
+  : _value(other._value),
+    _value_id(other._value_id) {}
 
 template <typename S, typename T>
 inline bool ZValueConstIterator<S, T>::next(const T** value) {

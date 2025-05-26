@@ -111,9 +111,14 @@ class CompilerToVM {
 #if INCLUDE_ZGC
     static int sizeof_ZStoreBarrierEntry;
 #endif
+#if INCLUDE_SHENANDOAHGC
+    static address shenandoah_in_cset_fast_test_addr;
+    static int shenandoah_region_size_bytes_shift;
+#endif
 
 #ifdef X86
     static int L1_line_size;
+    static bool supports_avx512_simd_sort;
 #endif
 
     static address dsin;

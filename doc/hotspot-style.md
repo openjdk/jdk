@@ -8,6 +8,24 @@ HotSpot code, making it easier to read and maintain.  Failure to
 follow these guidelines may lead to discussion during code reviews, if
 not outright rejection of a change.
 
+### Changing this Document
+
+Proposed changes should be discussed on the
+[HotSpot Developers](mailto:hotspot-dev@openjdk.org) mailing
+list.  Changes are likely to be cautious and incremental, since HotSpot
+coders have been using these guidelines for years.
+
+Substantive changes are approved by
+[rough consensus](https://www.rfc-editor.org/rfc/rfc7282.html) of
+the [HotSpot Group](https://openjdk.org/census#hotspot) Members.
+The Group Lead determines whether consensus has been reached.
+
+Editorial changes (changes that only affect the description of HotSpot
+style, not its substance) do not require the full consensus gathering
+process.  The normal HotSpot pull request process may be used for
+editorial changes, with the additional requirement that the requisite
+reviewers are also HotSpot Group Members.
+
 ### Why Care About Style?
 
 Some programmers seem to have lexers and even C preprocessors
@@ -38,7 +56,7 @@ reformatting the whole thing.  Also consider separating changes that
 make extensive stylistic updates from those which make functional
 changes.
 
-### Counterexamples and Updates
+### Counterexamples
 
 Many of the guidelines mentioned here have (sometimes widespread)
 counterexamples in the HotSpot code base. Finding a counterexample is
@@ -53,22 +71,6 @@ bring it up for discussion and possible change. The architectural
 rule, of course, is "When in Rome do as the Romans". Sometimes in the
 suburbs of Rome the rules are a little different; these differences
 can be pointed out here.
-
-Proposed changes should be discussed on the
-[HotSpot Developers](mailto:hotspot-dev@openjdk.org) mailing
-list.  Changes are likely to be cautious and incremental, since HotSpot
-coders have been using these guidelines for years.
-
-Substantive changes are approved by
-[rough consensus](https://www.rfc-editor.org/rfc/rfc7282.html) of
-the [HotSpot Group](https://openjdk.org/census#hotspot) Members.
-The Group Lead determines whether consensus has been reached.
-
-Editorial changes (changes that only affect the description of HotSpot
-style, not its substance) do not require the full consensus gathering
-process.  The normal HotSpot pull request process may be used for
-editorial changes, with the additional requirement that the requisite
-reviewers are also HotSpot Group Members.
 
 ## Structure and Formatting
 
@@ -138,7 +140,10 @@ change should be done with a "setter" accessor matched to the simple
 * All source files must have a globally unique basename. The build
 system depends on this uniqueness.
 
-* Keep the include lines within a section alphabetically sorted.
+* Keep the include lines within a section alphabetically sorted by their
+lowercase value. If an include must be out of order for correctness,
+suffix with it a comment such as `// do not reorder`. Source code
+processing tools can also use this hint.
 
 * Put conditional inclusions (`#if ...`) at the end of the section of HotSpot
 include lines. This also applies to macro-expanded includes of platform

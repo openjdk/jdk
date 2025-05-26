@@ -607,24 +607,11 @@ void SerialHeap::collect(GCCause::Cause cause) {
   bool should_run_young_gc =  (cause == GCCause::_wb_young_gc)
                 DEBUG_ONLY(|| (cause == GCCause::_scavenge_alot));
 
-  while (true) {
-    VM_SerialGCCollect op(!should_run_young_gc,
-                          gc_count_before,
-                          full_gc_count_before,
-                          cause);
-    VMThread::execute(&op);
-    if (!GCCause::is_explicit_full_gc(cause)) {
-      return;
-    }
-
-    {
-      MutexLocker ml(Heap_lock);
-      // Read the GC count while holding the Heap_lock
-      if (full_gc_count_before != total_full_collections()) {
-        return;
-      }
-    }
-  }
+  VM_SerialGCCollect op(!should_run_young_gc,
+                        gc_count_before,
+                        full_gc_count_before,
+                        cause);
+  VMThread::execute(&op);
 }
 
 void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
@@ -800,14 +787,19 @@ void SerialHeap::verify(VerifyOption option /* ignored */) {
   rem_set()->verify();
 }
 
-void SerialHeap::print_on(outputStream* st) const {
+void SerialHeap::print_heap_on(outputStream* st) const {
   assert(_young_gen != nullptr, "precondition");
   assert(_old_gen   != nullptr, "precondition");
 
   _young_gen->print_on(st);
   _old_gen->print_on(st);
+}
 
-  MetaspaceUtils::print_on(st);
+void SerialHeap::print_gc_on(outputStream* st) const {
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if (bs != nullptr) {
+    bs->print_on(st);
+  }
 }
 
 void SerialHeap::gc_threads_do(ThreadClosure* tc) const {

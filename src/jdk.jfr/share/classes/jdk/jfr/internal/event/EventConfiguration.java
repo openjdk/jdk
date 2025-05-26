@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,38 +26,17 @@
 package jdk.jfr.internal.event;
 
 import jdk.jfr.EventType;
+import jdk.jfr.SettingControl;
 import jdk.jfr.internal.EventControl;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.PlatformEventType;
-import jdk.jfr.internal.PrivateAccess;
-import jdk.jfr.SettingControl;
 
-// Users should not be able to subclass or instantiate for security reasons.
-public final class EventConfiguration {
-    private final PlatformEventType platformEventType;
-    private final EventType eventType;
-    private final EventControl eventControl;
-    private final SettingControl[] settings;
-
-    // Private constructor so user code can't instantiate
-    private EventConfiguration(EventType eventType, EventControl eventControl) {
-        this.eventType = eventType;
-        this.platformEventType = PrivateAccess.getInstance().getPlatformEventType(eventType);
-        this.eventControl = eventControl;
-        this.settings = eventControl.getSettingControls().toArray(new SettingControl[0]);
-    }
-
-    // Class jdk.jfr.internal.PlatformEventType is not
-    // accessible from event class by design
-    public PlatformEventType getPlatformEventType() {
-        return platformEventType;
-    }
-
-    // Class jdk.jfr.internal.EventControl is not
-    // accessible from event class by design
-    public EventControl getEventControl() {
-        return eventControl;
-    }
+public record EventConfiguration(
+    PlatformEventType platformEventType,
+    EventType eventType,
+    EventControl eventControl,
+    SettingControl[] settings,
+    long id) {
 
     // Accessed by generated code in event class
     public boolean shouldCommit(long duration) {
@@ -72,11 +51,6 @@ public final class EventConfiguration {
     // Accessed by generated code in event class
     public boolean isEnabled() {
         return platformEventType.isCommittable();
-    }
-
-    // Accessed by generated code in event class
-    public EventType getEventType() {
-        return eventType;
     }
 
     // Not really part of the configuration, but the method
@@ -99,9 +73,5 @@ public final class EventConfiguration {
 
     public boolean isRegistered() {
         return platformEventType.isRegistered();
-    }
-
-    public long getId() {
-        return eventType.getId();
     }
 }

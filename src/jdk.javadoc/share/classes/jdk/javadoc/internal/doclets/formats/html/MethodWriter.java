@@ -238,12 +238,10 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
     protected void addComments(TypeMirror holderType, ExecutableElement method, Content methodContent) {
         TypeElement holder = utils.asTypeElement(holderType);
         if (!utils.getFullBody(method).isEmpty()) {
-            if (holder.equals(typeElement) ||
-                    !(utils.isPublic(holder) ||
-                    utils.isLinkable(holder))) {
+            if (holder.equals(typeElement) || !utils.isVisible(holder)) {
                 writer.addInlineComment(method, methodContent);
             } else {
-                if (!utils.hasHiddenTag(holder) && !utils.hasHiddenTag(method)) {
+                if (!utils.isHidden(holder) && !utils.isHidden(method)) {
                     Content link =
                             writer.getDocLink(HtmlLinkInfo.Kind.PLAIN,
                                     holder, method,
@@ -349,16 +347,13 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
         }
         Utils utils = writer.utils;
         TypeElement holder = utils.getEnclosingTypeElement(method);
-        if (!(utils.isPublic(holder) || utils.isLinkable(holder))) {
+        if (!utils.isVisible(holder) || utils.isHidden(method)) {
             //This is an implementation detail that should not be documented.
             return;
         }
         if (utils.isIncluded(holder) && !utils.isIncluded(method)) {
             //The class is included but the method is not.  That means that it
             //is not visible so don't document this.
-            return;
-        }
-        if (utils.hasHiddenTag(holder) || utils.hasHiddenTag(method)) {
             return;
         }
 

@@ -29,6 +29,7 @@
 #include "opto/node.hpp"
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
+#include "runtime/deoptimization.hpp"
 
 // Walk over all Initialized Assertion Predicates and return the entry into the first Initialized Assertion Predicate
 // (i.e. not belonging to an Initialized Assertion Predicate anymore)
@@ -757,7 +758,7 @@ void AssertionPredicateIfCreator::create_halt_node(IfFalseNode* fail_proj, Ideal
 }
 
 OpaqueLoopInitNode* TemplateAssertionPredicateCreator::create_opaque_init(Node* new_control) const {
-  OpaqueLoopInitNode* opaque_init = new OpaqueLoopInitNode(_phase->C, _loop_head->init_trip());
+  OpaqueLoopInitNode* opaque_init = new OpaqueLoopInitNode(_phase->C, _loop_head->uncasted_init_trip(_loop_head->is_main_loop()));
   _phase->register_new_node(opaque_init, new_control);
   return opaque_init;
 }
@@ -983,15 +984,16 @@ void CreateAssertionPredicatesVisitor::visit(const TemplateAssertionPredicate& t
 
 // Create an Initialized Assertion Predicate from the provided Template Assertion Predicate.
 InitializedAssertionPredicate CreateAssertionPredicatesVisitor::initialize_from_template(
-    const TemplateAssertionPredicate& template_assertion_predicate, Node* new_control) const {
+  const TemplateAssertionPredicate& template_assertion_predicate, IfTrueNode* cloned_template_predicate_tail) const {
   DEBUG_ONLY(template_assertion_predicate.verify();)
   IfNode* template_head = template_assertion_predicate.head();
   InitializedAssertionPredicateCreator initialized_assertion_predicate_creator(_phase);
   InitializedAssertionPredicate initialized_assertion_predicate =
-      initialized_assertion_predicate_creator.create_from_template(template_head, new_control, _init, _stride);
+      initialized_assertion_predicate_creator.create_from_template(template_head, cloned_template_predicate_tail, _init,
+                                                                   _stride);
 
   DEBUG_ONLY(initialized_assertion_predicate.verify();)
-  template_assertion_predicate.rewire_loop_data_dependencies(initialized_assertion_predicate.tail(),
+  template_assertion_predicate.rewire_loop_data_dependencies(cloned_template_predicate_tail,
                                                              _node_in_loop_body, _phase);
   rewire_to_old_predicate_chain_head(initialized_assertion_predicate.tail());
   return initialized_assertion_predicate;
@@ -1093,11 +1095,19 @@ CloneUnswitchedLoopPredicatesVisitor::CloneUnswitchedLoopPredicatesVisitor(
     PhaseIdealLoop* phase)
     : _clone_predicate_to_true_path_loop(true_path_loop_head, node_in_true_path_loop_body, phase),
       _clone_predicate_to_false_path_loop(false_path_loop_head, node_in_false_path_loop_body, phase),
-      _phase(phase) {}
+      _phase(phase),
+      _is_counted_loop(true_path_loop_head->is_CountedLoop()) {}
 
-// Keep track of whether we are in the correct Predicate Block where Template Assertion Predicates can be found.
 // The PredicateIterator will always start at the loop entry and first visits the Loop Limit Check Predicate Block.
+// Does not clone a Loop Limit Check Parse Predicate if a counted loop is unswitched, because it most likely will not be
+// used anymore (it could only be used when both unswitched loop versions die and the Loop Limit Check Parse Predicate
+// ends up at a LoopNode without Loop Limit Check Parse Predicate directly following the unswitched loop that can then
+// be speculatively converted to a counted loop - this is rather rare).
 void CloneUnswitchedLoopPredicatesVisitor::visit(const ParsePredicate& parse_predicate) {
+  Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
+  if (_is_counted_loop && deopt_reason == Deoptimization::Reason_loop_limit_check) {
+    return;
+  }
   _clone_predicate_to_true_path_loop.clone_parse_predicate(parse_predicate, false);
   _clone_predicate_to_false_path_loop.clone_parse_predicate(parse_predicate, true);
   parse_predicate.kill(_phase->igvn());
@@ -1240,7 +1250,45 @@ void EliminateUselessPredicates::mark_useful_predicates_for_loop(IdealLoopTree* 
 void EliminateUselessPredicates::mark_maybe_useful_predicates_useless() const {
   mark_maybe_useful_predicates_on_list_useless(_parse_predicates);
   mark_maybe_useful_predicates_on_list_useless(_template_assertion_predicate_opaques);
+  DEBUG_ONLY(verify_loop_nodes_of_useless_templates_assertion_predicates_are_dead();)
 }
+
+#ifdef ASSERT
+// All now useless Template Assertion Predicates should not refer to any CountedLoopNode that can still be found in the
+// graph (otherwise, they would have been marked useful instead). This is verified in this method.
+void EliminateUselessPredicates::verify_loop_nodes_of_useless_templates_assertion_predicates_are_dead() const {
+  ResourceMark rm;
+  Unique_Node_List loop_nodes_of_useless_template_assertion_predicates =
+       collect_loop_nodes_of_useless_template_assertion_predicates();
+  verify_associated_loop_nodes_are_dead(loop_nodes_of_useless_template_assertion_predicates);
+}
+
+Unique_Node_List EliminateUselessPredicates::collect_loop_nodes_of_useless_template_assertion_predicates() const {
+  Unique_Node_List loop_nodes_of_useless_template_assertion_predicates;
+  for (int i = 0; i < _template_assertion_predicate_opaques.length(); i++) {
+    OpaqueTemplateAssertionPredicateNode* opaque_node = _template_assertion_predicate_opaques.at(i);
+    if (opaque_node->is_useless()) {
+      loop_nodes_of_useless_template_assertion_predicates.push(opaque_node->loop_node());
+    }
+  }
+  return loop_nodes_of_useless_template_assertion_predicates;
+}
+
+void EliminateUselessPredicates::verify_associated_loop_nodes_are_dead(
+    const Unique_Node_List& loop_nodes_of_useless_template_assertion_predicates) const {
+  if (loop_nodes_of_useless_template_assertion_predicates.size() == 0) {
+    return;
+  }
+  for (LoopTreeIterator iterator(_ltree_root); !iterator.done(); iterator.next()) {
+    IdealLoopTree* loop = iterator.current();
+    Node* loop_head = loop->head();
+    if (loop_head->is_CountedLoop()) {
+      assert(!loop_nodes_of_useless_template_assertion_predicates.member(loop_head),
+             "CountedLoopNode should be dead when found in OpaqueTemplateAssertionPredicateNode being marked useless");
+    }
+  }
+}
+#endif // ASSERT
 
 template<class PredicateList>
 void EliminateUselessPredicates::mark_maybe_useful_predicates_on_list_useless(

@@ -319,14 +319,7 @@ void TemplateTable::fast_aldc(LdcType type) {
   __ ld(R31, simm16_rest, R11_scratch1);
   __ resolve_oop_handle(R31, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_NONE);
   __ cmpld(CR0, R17_tos, R31);
-  if (VM_Version::has_isel()) {
-    __ isel_0(R17_tos, CR0, Assembler::equal);
-  } else {
-    Label not_sentinel;
-    __ bne(CR0, not_sentinel);
-    __ li(R17_tos, 0);
-    __ bind(not_sentinel);
-  }
+  __ isel_0(R17_tos, CR0, Assembler::equal);
   __ verify_oop(R17_tos);
   __ dispatch_epilog(atos, Bytecodes::length_for(bytecode()));
 
@@ -386,7 +379,7 @@ void TemplateTable::condy_helper(Label& Done) {
   const Register rarg  = R4_ARG2;
   __ li(rarg, (int)bytecode());
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rarg);
-  __ get_vm_result_2(flags);
+  __ get_vm_result_metadata(flags);
 
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
@@ -1534,25 +1527,12 @@ void TemplateTable::convert() {
     case Bytecodes::_i2f:
       __ extsw(R17_tos, R17_tos);
       __ move_l_to_d();
-      if (VM_Version::has_fcfids()) { // fcfids is >= Power7 only
-        // Comment: alternatively, load with sign extend could be done by lfiwax.
-        __ fcfids(F15_ftos, F15_ftos);
-      } else {
-        __ fcfid(F15_ftos, F15_ftos);
-        __ frsp(F15_ftos, F15_ftos);
-      }
+      __ fcfids(F15_ftos, F15_ftos);
       break;
 
     case Bytecodes::_l2f:
-      if (VM_Version::has_fcfids()) { // fcfids is >= Power7 only
-        __ move_l_to_d();
-        __ fcfids(F15_ftos, F15_ftos);
-      } else {
-        // Avoid rounding problem when result should be 0x3f800001: need fixup code before fcfid+frsp.
-        __ mr(R3_ARG1, R17_tos);
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::l2f));
-        __ fmr(F15_ftos, F1_RET);
-      }
+      __ move_l_to_d();
+      __ fcfids(F15_ftos, F15_ftos);
       break;
 
     case Bytecodes::_f2d:
@@ -3964,7 +3944,7 @@ void TemplateTable::checkcast() {
   // Call into the VM to "quicken" instanceof.
   __ push_ptr();  // for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ get_vm_result_2(RspecifiedKlass);
+  __ get_vm_result_metadata(RspecifiedKlass);
   __ pop_ptr();   // Restore receiver.
   __ b(Lresolved);
 
@@ -4026,7 +4006,7 @@ void TemplateTable::instanceof() {
   // Call into the VM to "quicken" instanceof.
   __ push_ptr();  // for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ get_vm_result_2(RspecifiedKlass);
+  __ get_vm_result_metadata(RspecifiedKlass);
   __ pop_ptr();   // Restore receiver.
   __ b(Lresolved);
 
