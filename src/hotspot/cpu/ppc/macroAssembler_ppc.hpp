@@ -731,6 +731,7 @@ class MacroAssembler: public Assembler {
 
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);
+  void jump_to_polling_page_return_handler_blob(int safepoint_offset, bool fixed_size = false);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2,
                        MacroAssembler::PreservationLevel preservation_level);
