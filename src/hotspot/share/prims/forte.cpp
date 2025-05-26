@@ -585,8 +585,6 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     return;
   }
 
-  NoResourceMark rm;
-
   if (thread->in_deopt_handler()) {
     // thread is in the deoptimization handler so return no frames
     trace->num_frames = ticks_deopt; // -9

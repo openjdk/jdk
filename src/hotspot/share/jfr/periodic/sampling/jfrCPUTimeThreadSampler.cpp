@@ -582,7 +582,6 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
     return;
   }
 
-  NoResourceMark rm;
   JfrCPUTimeSampleRequest request;
   // the sampling period might be too low for the current Linux configuration
   // so samples might be skipped and we have to compute the actual period

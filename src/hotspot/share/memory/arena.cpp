@@ -149,13 +149,6 @@ static bool on_compiler_thread() {
 }
 
 Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode) {
-  #ifdef ASSERT
-  Thread* t = Thread::current_or_null_safe();
-  if (t != nullptr && t->resource_area() != nullptr) {
-    // Just to make sure that we're allowed to allocate
-    t->resource_area()->verify_no_NoResourceMark();
-  }
-  #endif
   // - requested_size = sizeof(Chunk)
   // - length = payload size
   // We must ensure that the boundaries of the payload (C and D) are aligned to 64-bit:
