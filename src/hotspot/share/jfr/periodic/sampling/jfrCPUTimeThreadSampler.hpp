@@ -127,6 +127,7 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void send_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased);
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 
+  // Trigger sampling while a thread is not in a safepoint, from a seperate thread
   static void trigger_out_of_safepoint_sampling();
 };
 

@@ -969,10 +969,10 @@
     <Field type="Thread" name="eventThread" label="Thread" />
     <Field type="boolean" name="failed" label="Failed" description="Failed to obtain the stack trace" />
     <Field type="Tickspan" name="samplingPeriod" label="CPU Time Sampling Period"/>
-    <Field type="boolean" name="biased" label="Biased" description="The sample is biased towards the frame at safepoint" />
+    <Field type="boolean" name="biased" label="Biased" description="The sample is safepoint-biased" />
   </Event>
 
-  <Event name="CPUTimeSampleLoss" category="Java Virtual Machine, Profiling" label="CPU Time Method Profiling Lost Samples" description="Records that the CPU time sampler lost samples because of internal throttling"
+  <Event name="CPUTimeSampleLoss" category="Java Virtual Machine, Profiling" label="CPU Time Method Profiling Lost Samples" description="Records that the CPU time sampler lost samples"
     thread="false" stackTrace="false" startTime="true" experimental="true">
     <Field type="int" name="lostSamples" label="Lost Samples" />
     <Field type="Thread" name="eventThread" label="Thread" />
@@ -1258,7 +1258,7 @@
     <Field type="ulong" name="regionsImmediate" label="Regions Immediate" />
     <Field type="ulong" contentType="bytes" name="immediateBytes" label="Immediate Bytes" />
   </Event>
-  
+
   <Event name="Flush" category="Flight Recorder" label="Flush" thread="false" experimental="true">
     <Field type="ulong" name="flushId" label="Flush Identifier" relation="FlushId" />
     <Field type="ulong" name="elements" label="Elements Written" />

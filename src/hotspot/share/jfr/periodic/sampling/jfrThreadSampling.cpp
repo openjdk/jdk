@@ -165,8 +165,6 @@ static inline bool is_valid(const PcDesc* pc_desc) {
 static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame, bool& in_continuation, JavaThread* jt, bool& biased) {
   assert(jt != nullptr, "invariant");
 
-  biased = false;
-
   if (!jt->has_last_Java_frame()) {
     return false;
   }
@@ -276,7 +274,7 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
   assert(current != nullptr, "invariant");
 
   frame top_frame;
-  bool biased;
+  bool biased = false;
   bool in_continuation;
   if (!compute_top_frame(request, top_frame, in_continuation, jt, biased)) {
     return;
@@ -359,7 +357,6 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
   drain_enqueued_requests(now, tl, jt, current);
 #ifdef LINUX
   if (tl->has_cpu_time_jfr_requests()) {
-    JfrTicks now = JfrTicks::now();
     tl->acquire_cpu_time_jfr_dequeue_lock();
     JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
     for (u4 i = 0; i < queue.size(); i++) {

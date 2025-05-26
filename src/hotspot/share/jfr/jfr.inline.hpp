@@ -32,7 +32,8 @@
 
 inline bool Jfr::has_sample_request(JavaThread* jt) {
   assert(jt != nullptr, "invariant");
-  return jt->jfr_thread_local()->has_sample_request() || jt->jfr_thread_local()->has_cpu_time_jfr_requests();
+  JfrThreadLocal* tl = jt->jfr_thread_local();
+  return tl->has_sample_request() || tl->has_cpu_time_jfr_requests();
 }
 
 inline void Jfr::check_and_process_sample_request(JavaThread* jt) {

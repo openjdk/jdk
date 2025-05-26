@@ -369,25 +369,21 @@ class JfrThreadLocal {
 
   // CPU time sampling
 #ifdef LINUX
-  void set_cpu_timer(timer_t timer) {
-    _has_cpu_timer = true;
-    _cpu_timer = timer;
-  }
+  void set_cpu_timer(timer_t timer);
+  void unset_cpu_timer();
+  timer_t cpu_timer() const;
+  bool has_cpu_timer() const;
 
-  void unset_cpu_timer() {
-    _has_cpu_timer = false;
-  }
+  // The CPU time JFR lock has four different states:
+  // - ENQUEUE: lock for enqueuing CPU time requests
+  // - DEQUEUE: lock for dequeuing CPU time requests
+  // - NATIVE: lock for writing native events out of safepoint
+  // - UNLOCKED: no lock held
+  // This ensures that we can safely enqueue and dequeue CPU time requests,
+  // without interleaving
 
-  timer_t cpu_timer() const {
-    return _cpu_timer;
-  }
-
-  bool has_cpu_timer() const {
-    return _has_cpu_timer;
-  }
-
-  bool is_cpu_time_jfr_enqueue_locked() { return Atomic::load(&_cpu_time_jfr_locked) == ENQUEUE; }
-  bool is_cpu_time_jfr_dequeue_locked() { return Atomic::load(&_cpu_time_jfr_locked) == DEQUEUE; }
+  bool is_cpu_time_jfr_enqueue_locked();
+  bool is_cpu_time_jfr_dequeue_locked();
 
   bool acquire_cpu_time_jfr_enqueue_lock();
   bool acquire_cpu_time_jfr_native_lock();

@@ -545,6 +545,31 @@ Arena* JfrThreadLocal::dcmd_arena(JavaThread* jt) {
 
 #ifdef LINUX
 
+void JfrThreadLocal::set_cpu_timer(timer_t timer) {
+  _has_cpu_timer = true;
+  _cpu_timer = timer;
+}
+
+void JfrThreadLocal::unset_cpu_timer() {
+  _has_cpu_timer = false;
+}
+
+timer_t JfrThreadLocal::cpu_timer() const {
+  return _cpu_timer;
+}
+
+bool JfrThreadLocal::has_cpu_timer() const {
+  return _has_cpu_timer;
+}
+
+bool JfrThreadLocal::is_cpu_time_jfr_enqueue_locked() {
+  return Atomic::load(&_cpu_time_jfr_locked) == ENQUEUE;
+}
+
+bool JfrThreadLocal::is_cpu_time_jfr_dequeue_locked() {
+  return Atomic::load(&_cpu_time_jfr_locked) == DEQUEUE;
+}
+
 bool JfrThreadLocal::acquire_cpu_time_jfr_enqueue_lock() {
   return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
 }
@@ -561,8 +586,8 @@ void JfrThreadLocal::release_cpu_time_jfr_queue_lock() {
   Atomic::store(&_cpu_time_jfr_locked, UNLOCKED);
 }
 
-void JfrThreadLocal::set_has_cpu_time_jfr_requests(bool has_events) {
-  Atomic::release_store(&_has_cpu_time_jfr_requests, has_events);
+void JfrThreadLocal::set_has_cpu_time_jfr_requests(bool has_requests) {
+  Atomic::release_store(&_has_cpu_time_jfr_requests, has_requests);
 }
 
 bool JfrThreadLocal::has_cpu_time_jfr_requests() {

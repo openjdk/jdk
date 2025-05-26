@@ -22,32 +22,25 @@
  *
  */
 
-#include "gc/shared/barrierSet.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/ticks.hpp"
-#include "utilities/utf8.hpp"
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 
 #if defined(LINUX)
 
-#include "jfr/recorder/service/jfrOptionSet.hpp"
-#include "jfr/recorder/service/jfrEvent.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
+#include "jfr/recorder/service/jfrRecorderService.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/recorder/storage/jfrBuffer.hpp"
-#include "jfr/recorder/service/jfrRecorderService.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/threadCrashProtection.hpp"
-#include "runtime/osThread.hpp"
 #include "runtime/vmOperation.hpp"
 #include "runtime/vmThread.hpp"
 
@@ -182,7 +175,6 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
   volatile bool _is_out_of_safepoint_sampling_triggered = false;
 
   JfrCPUTimeThreadSampler(double rate, bool autoadapt);
-  ~JfrCPUTimeThreadSampler();
 
   void start_thread();
 
@@ -228,9 +220,6 @@ JfrCPUTimeThreadSampler::JfrCPUTimeThreadSampler(double rate, bool autoadapt) :
   _current_sampling_period_ns(compute_sampling_period(rate)),
   _disenrolled(true) {
   assert(rate >= 0, "invariant");
-}
-
-JfrCPUTimeThreadSampler::~JfrCPUTimeThreadSampler() {
 }
 
 void JfrCPUTimeThreadSampler::trigger_out_of_safepoint_sampling() {
@@ -351,8 +340,8 @@ static inline bool is_in_continuation(const frame& frame, JavaThread* jt) {
 }
 
 void JfrCPUTimeThreadSampler::sample_out_of_safepoint(JavaThread* thread) {
-  assert(thread->jfr_thread_local() != nullptr, "invariant");
   JfrThreadLocal* tl = thread->jfr_thread_local();
+  assert(tl != nullptr, "invariant");
   JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
   assert(!queue.is_empty(), "invariant");
   if (queue.is_empty()) {
@@ -558,7 +547,6 @@ static bool check_state(JavaThread* thread) {
     case _thread_in_Java:
     case _thread_in_native:
       return true;
-    case _thread_in_vm:
     default:
       return false;
   }
@@ -626,9 +614,6 @@ static void set_timer_time(timer_t timerid, int64_t period_nanos) {
 }
 
 bool JfrCPUTimeThreadSampler::create_timer_for_thread(JavaThread* thread, timer_t& timerid) {
-  if (thread->osthread() == nullptr || thread->osthread()->thread_id() == 0){
-    return false;
-  }
   timer_t t;
   struct sigevent sev;
   sev.sigev_notify = SIGEV_THREAD_ID;
@@ -691,7 +676,7 @@ class VM_CPUTimeSamplerThreadTerminator : public VM_Operation {
     while (iter.has_next()) {
       JavaThread *thread = iter.next();
       JfrThreadLocal* tl = thread->jfr_thread_local();
-      if (tl != nullptr && tl->has_cpu_timer()) {
+      if (tl->has_cpu_timer()) {
         timer_delete(tl->cpu_timer());
         tl->disable_cpu_time_jfr_queue();
         tl->unset_cpu_timer();
