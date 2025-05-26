@@ -651,39 +651,25 @@ public final class String
         // (2)The defensive copy of the input byte/char[] has a big performance
         // impact, as well as the outgoing result byte/char[]. Need to do the
         // optimization check of (sm==null && classLoader0==null) for both.
-        byte[] value;
-        byte coder;
         CharsetDecoder cd = charset.newDecoder();
         // ArrayDecoder fastpaths
         if (cd instanceof ArrayDecoder ad) {
             // ascii
             if (ad.isASCIICompatible() && !StringCoding.hasNegatives(bytes, offset, length)) {
-                if (COMPACT_STRINGS) {
-                    value = Arrays.copyOfRange(bytes, offset, offset + length);
-                    coder = LATIN1;
-                } else {
-                    value = StringLatin1.inflate(bytes, offset, length);
-                    coder = UTF16;
-                }
+                return iso88591(bytes, offset, length);
             } else {
                 // fastpath for always Latin1 decodable single byte
                 if (COMPACT_STRINGS && ad.isLatin1Decodable()) {
-                    value = new byte[length];
-                    ad.decodeToLatin1(bytes, offset, length, value);
-                    coder = LATIN1;
+                    byte[] dst = new byte[length];
+                    ad.decodeToLatin1(bytes, offset, length, dst);
+                    return new String(dst, LATIN1);
                 } else {
                     int en = scale(length, cd.maxCharsPerByte());
                     cd.onMalformedInput(CodingErrorAction.REPLACE)
                             .onUnmappableCharacter(CodingErrorAction.REPLACE);
                     char[] ca = new char[en];
                     int clen = ad.decode(bytes, offset, length, ca);
-                    if (COMPACT_STRINGS) {
-                        value = StringUTF16.compress(ca, 0, clen);
-                        coder = StringUTF16.coderFromArrayLen(value, clen);
-                    } else {
-                        value = StringUTF16.toBytes(ca, 0, clen);
-                        coder = UTF16;
-                    }
+                    return new String(ca, 0, clen, null);
                 }
             }
         } else {
@@ -701,7 +687,6 @@ public final class String
             }
             return new String(ca, 0, caLen, null);
         }
-        return new String(value, coder);
     }
 
     /*
