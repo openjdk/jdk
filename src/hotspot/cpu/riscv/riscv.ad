@@ -5230,7 +5230,7 @@ instruct prefetchalloc( memory mem ) %{
 // standard CompareAndSwapX when we are using barriers
 // these have higher priority than the rules selected by a predicate
 instruct compareAndSwapB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                         iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
+                                iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate(!UseZabha || !UseZacas);
 
@@ -5277,7 +5277,7 @@ instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R1
 %}
 
 instruct compareAndSwapS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                         iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
+                                iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate(!UseZabha || !UseZacas);
 
@@ -5409,7 +5409,7 @@ instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval
 
 // alternative CompareAndSwapX when we are eliding barriers
 instruct compareAndSwapBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                            iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
+                                   iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate((!UseZabha || !UseZacas) && needs_acquiring_load_reserved(n));
 
@@ -5456,7 +5456,7 @@ instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI
 %}
 
 instruct compareAndSwapSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                         iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
+                                   iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate((!UseZabha || !UseZacas) && needs_acquiring_load_reserved(n));
 
@@ -5597,7 +5597,7 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN new
 // can't check the type of memory ordering here, so we always emit a
 // sc_d(w) with rl bit set.
 instruct compareAndExchangeB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                             iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
+                                    iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate(!UseZabha || !UseZacas);
 
@@ -5641,7 +5641,7 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
 %}
 
 instruct compareAndExchangeS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                             iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
+                                    iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate(!UseZabha || !UseZacas);
 
@@ -5805,7 +5805,7 @@ instruct compareAndExchangeBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
 %}
 
 instruct compareAndExchangeSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                                iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
+                                       iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate((!UseZabha || !UseZacas) && needs_acquiring_load_reserved(n));
 
@@ -5929,7 +5929,7 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
 %}
 
 instruct weakCompareAndSwapB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                             iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
+                                    iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate(!UseZabha || !UseZacas);
 
@@ -5975,7 +5975,7 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
 %}
 
 instruct weakCompareAndSwapS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                             iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
+                                    iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate(!UseZabha || !UseZacas);
 
@@ -6101,7 +6101,7 @@ instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
 %}
 
 instruct weakCompareAndSwapBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                                iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
+                                       iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate((!UseZabha || !UseZacas) && needs_acquiring_load_reserved(n));
 
@@ -6147,7 +6147,7 @@ instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
 %}
 
 instruct weakCompareAndSwapSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                                iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
+                                       iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate((!UseZabha || !UseZacas) && needs_acquiring_load_reserved(n));
 
