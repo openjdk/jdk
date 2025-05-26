@@ -332,22 +332,3 @@ void JfrSampleRequestBuilder::build_cpu_time_sample_request(JfrSampleRequest& re
   }
   request._sample_ticks = JfrTicks::now();
 }
-
-  git add src/hotspot/os_cpu/aix_ppc/os_aix_ppc.cpp
-  git add src/hotspot/os_cpu/linux_ppc/os_linux_ppc.cpp
-  git add src/hotspot/os_cpu/linux_riscv/os_linux_riscv.cpp
-  git add src/hotspot/share/jfr/jfr.inline.hpp
-  git add src/hotspot/share/jfr/periodic/sampling/jfrSampleRequest.cpp
-  git add src/hotspot/share/jfr/periodic/sampling/jfrSampleRequest.hpp
-  git add src/hotspot/share/jfr/periodic/sampling/jfrThreadSampler.cpp
-  git add src/hotspot/share/jfr/periodic/sampling/jfrThreadSampling.cpp
-  git add src/hotspot/share/jfr/recorder/jfrRecorder.cpp
-  git add src/hotspot/share/jfr/recorder/jfrRecorder.hpp
-  git add src/hotspot/share/jfr/recorder/service/jfrEventThrottler.cpp
-  git add src/hotspot/share/jfr/recorder/stacktrace/jfrStackTrace.hpp
-  git add src/hotspot/share/jfr/support/jfrThreadLocal.hpp
-  git add src/hotspot/share/runtime/suspendedThreadTask.cpp
-  git add src/jdk.jfr/share/conf/jfr/default.jfc
-  git add src/jdk.jfr/share/conf/jfr/profile.jfc
-  git add test/jdk/jdk/jfr/event/profiling/TestCPUTimeSampleFullStackTrace.java
-  git add test/langtools/tools/javac/diags/examples/SubtypeDoesntImplementSealed.java
