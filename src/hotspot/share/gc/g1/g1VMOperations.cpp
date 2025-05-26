@@ -51,7 +51,8 @@ void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
   g1h->do_full_collection(false /* clear_all_soft_refs */,
-                          false /* do_maximal_compaction */);
+                          false /* do_maximal_compaction */,
+                          size_t(0) /* allocation_word_size */);
 }
 
 VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
@@ -101,34 +102,32 @@ void VM_G1TryInitiateConcMark::doit() {
     // we've rejected this request.
     _whitebox_attached = true;
   } else {
-    _gc_succeeded = g1h->do_collection_pause_at_safepoint();
-    assert(_gc_succeeded, "No reason to fail");
+    g1h->do_collection_pause_at_safepoint();
+    _gc_succeeded = true;
   }
 }
 
 VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
                                                      uint           gc_count_before,
                                                      GCCause::Cause gc_cause) :
-  VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
-  _gc_succeeded(false) {}
+  VM_CollectForAllocation(word_size, gc_count_before, gc_cause) {}
 
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
-  _gc_succeeded = g1h->do_collection_pause_at_safepoint();
-  assert(_gc_succeeded, "no reason to fail");
+  g1h->do_collection_pause_at_safepoint();
 
   if (_word_size > 0) {
     // An allocation had been requested. Do it, eventually trying a stronger
     // kind of GC.
-    _result = g1h->satisfy_failed_allocation(_word_size, &_gc_succeeded);
+    _result = g1h->satisfy_failed_allocation(_word_size);
   } else if (g1h->should_upgrade_to_full_gc()) {
     // There has been a request to perform a GC to free some space. We have no
     // information on how much memory has been asked for. In case there are
     // absolutely no regions left to allocate into, do a full compaction.
-    _gc_succeeded = g1h->upgrade_to_full_collection();
+    g1h->upgrade_to_full_collection();
   }
 }
 

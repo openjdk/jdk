@@ -403,6 +403,8 @@ class Thread: public ThreadShadow {
   // Thread-Local Allocation Buffer (TLAB) support
   ThreadLocalAllocBuffer& tlab()                 { return _tlab; }
   void initialize_tlab();
+  void retire_tlab(ThreadLocalAllocStats* stats = nullptr);
+  void fill_tlab(HeapWord* start, size_t pre_reserved, size_t new_size);
 
   jlong allocated_bytes()               { return _allocated_bytes; }
   void set_allocated_bytes(jlong value) { _allocated_bytes = value; }
