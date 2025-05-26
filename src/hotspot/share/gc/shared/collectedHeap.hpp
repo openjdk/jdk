@@ -179,7 +179,7 @@ protected:
   virtual void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
   // Verification functions
-  debug_only(static void check_for_valid_allocation_state();)
+  DEBUG_ONLY(static void check_for_valid_allocation_state();)
 
  public:
   enum Name {
