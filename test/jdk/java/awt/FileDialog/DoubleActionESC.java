@@ -66,7 +66,7 @@ public class DoubleActionESC {
             });
 
             robot.waitForIdle();
-            robot.delay(1000);
+            robot.delay(500);
 
             EventQueue.invokeAndWait(() -> {
                 p = showBtn.getLocationOnScreen();
@@ -78,18 +78,25 @@ public class DoubleActionESC {
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
                 robot.waitForIdle();
-                robot.delay(1000);
+                robot.delay(500);
 
                 robot.keyPress(KeyEvent.VK_ESCAPE);
                 robot.keyRelease(KeyEvent.VK_ESCAPE);
                 robot.waitForIdle();
-                robot.delay(1000);
+                robot.delay(500);
             }
 
-            latch.await(LATCH_TIMEOUT, SECONDS);
-            if (fd.isVisible()) {
-                throw new RuntimeException("File Dialog is not closed");
+            if (!latch.await(LATCH_TIMEOUT, SECONDS))
+            {
+                System.out.println("Latch timout reached");
             }
+            EventQueue.invokeAndWait(() -> {
+                if (fd.isVisible())
+                {
+                    throw new RuntimeException("File Dialog is not closed");
+                }
+
+            });
         } finally {
             EventQueue.invokeAndWait(() -> {
                 if (f != null) {
