@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
+import java.util.List;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -79,9 +80,7 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
         if (x.compressed != y.compressed) {
             return false;
         }
-        if (x instanceof DirectHotSpotObjectConstantImpl && y instanceof DirectHotSpotObjectConstantImpl) {
-            DirectHotSpotObjectConstantImpl xd = (DirectHotSpotObjectConstantImpl) x;
-            DirectHotSpotObjectConstantImpl yd = (DirectHotSpotObjectConstantImpl) y;
+        if (x instanceof DirectHotSpotObjectConstantImpl xd && y instanceof DirectHotSpotObjectConstantImpl yd) {
             return (xd.object == yd.object);
         }
         if (x instanceof DirectHotSpotObjectConstantImpl || y instanceof DirectHotSpotObjectConstantImpl) {
@@ -110,13 +109,13 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
     }
 
     @Override
-    Annotation[] getAnnotations(HotSpotResolvedObjectTypeImpl holder) {
+    List<Annotation> getAnnotations(HotSpotResolvedObjectTypeImpl holder) {
         Annotation[] annotations = getClassAnnotations(holder.getName());
-        return annotations == null ? new Annotation[0] : annotations;
+        return annotations == null ? List.of() : List.of(annotations);
     }
 
     @Override
-    Annotation[] getDeclaredAnnotations(HotSpotResolvedObjectTypeImpl holder) {
+    List<Annotation> getDeclaredAnnotations(HotSpotResolvedObjectTypeImpl holder) {
         throw new HotSpotJVMCIUnsupportedOperationError("unimplemented");
     }
 
@@ -212,10 +211,8 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
 
     @Override
     ResolvedJavaType asJavaType(HotSpotObjectConstantImpl object) {
-        if (object instanceof DirectHotSpotObjectConstantImpl) {
-            DirectHotSpotObjectConstantImpl direct = (DirectHotSpotObjectConstantImpl) object;
-            if (direct.object instanceof Class) {
-                Class<?> javaClass = (Class<?>) direct.object;
+        if (object instanceof DirectHotSpotObjectConstantImpl direct) {
+            if (direct.object instanceof Class<?> javaClass) {
                 return runtime().fromClass(javaClass);
             }
             if (direct.object instanceof ResolvedJavaType) {
@@ -251,8 +248,7 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
 
     @Override
     String formatString(HotSpotObjectConstantImpl object) {
-        if (object instanceof DirectHotSpotObjectConstantImpl) {
-            DirectHotSpotObjectConstantImpl direct = (DirectHotSpotObjectConstantImpl) object;
+        if (object instanceof DirectHotSpotObjectConstantImpl direct) {
             return "CompilerObject<" + direct.object.getClass().getName() + ">";
         }
         IndirectHotSpotObjectConstantImpl indirect = (IndirectHotSpotObjectConstantImpl) object;
@@ -264,8 +260,7 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
 
     @Override
     Integer getLength(HotSpotObjectConstantImpl object) {
-        if (object instanceof DirectHotSpotObjectConstantImpl) {
-            DirectHotSpotObjectConstantImpl direct = (DirectHotSpotObjectConstantImpl) object;
+        if (object instanceof DirectHotSpotObjectConstantImpl direct) {
             if (direct.object.getClass().isArray()) {
                 return Array.getLength(direct.object);
             }
@@ -296,7 +291,7 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
 
     @Override
     JavaConstant forObject(Object value) {
-        return DirectHotSpotObjectConstantImpl.forObject(value, false);
+        return DirectHotSpotObjectConstantImpl.forObject(value);
     }
 
     @Override

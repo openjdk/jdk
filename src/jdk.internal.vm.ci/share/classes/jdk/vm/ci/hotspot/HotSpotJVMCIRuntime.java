@@ -170,7 +170,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * Gets the singleton {@link HotSpotJVMCIRuntime} object.
      */
     @VMEntryPoint
-    @SuppressWarnings("try")
     public static HotSpotJVMCIRuntime runtime() {
         HotSpotJVMCIRuntime result = instance;
         if (result == null) {
@@ -180,7 +179,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             synchronized (JVMCI.class) {
                 result = instance;
                 if (result == null) {
-                    try (InitTimer t = timer("HotSpotJVMCIRuntime.<init>")) {
+                    try (InitTimer _ = timer("HotSpotJVMCIRuntime.<init>")) {
                         instance = result = new HotSpotJVMCIRuntime();
 
                         // Can only do eager initialization of the JVMCI compiler
@@ -556,11 +555,10 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
 
     private final List<HotSpotVMEventListener> vmEventListeners;
 
-    @SuppressWarnings("try")
     private HotSpotJVMCIRuntime() {
         compilerToVm = new CompilerToVM();
 
-        try (InitTimer t = timer("HotSpotVMConfig<init>")) {
+        try (InitTimer _ = timer("HotSpotVMConfig<init>")) {
             configStore = new HotSpotVMConfigStore(compilerToVm);
             config = new HotSpotVMConfig(configStore);
         }
@@ -578,7 +576,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         // Initialize the Option values.
         Option.parse(this);
 
-        try (InitTimer t = timer("create JVMCI backend:", backendFactory.getArchitecture())) {
+        try (InitTimer _ = timer("create JVMCI backend:", backendFactory.getArchitecture())) {
             hostBackend = registerBackend(backendFactory.createJVMCIBackend(this, null));
         }
 

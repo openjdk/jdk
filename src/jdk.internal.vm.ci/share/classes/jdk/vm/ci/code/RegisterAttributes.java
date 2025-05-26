@@ -52,7 +52,7 @@ public class RegisterAttributes {
      *
      * @param registerConfig a register configuration
      * @param registers a set of registers
-     * @return an array whose length is the max register number in {@code registers} plus 1. An
+     * @return a list whose length is the max register number in {@code registers} plus 1. An
      *         element at index i holds the attributes of the register whose number is i.
      */
     public static List<RegisterAttributes> createMap(RegisterConfig registerConfig, List<Register> registers) {

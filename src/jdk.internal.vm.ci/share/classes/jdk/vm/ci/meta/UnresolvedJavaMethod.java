@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,9 @@ public final class UnresolvedJavaMethod implements JavaMethod {
         if (this == obj) {
             return true;
         }
-        if (obj == null || !(obj instanceof UnresolvedJavaMethod)) {
+        if (!(obj instanceof UnresolvedJavaMethod that)) {
             return false;
         }
-        UnresolvedJavaMethod that = (UnresolvedJavaMethod) obj;
         return this.name.equals(that.name) && this.signature.equals(that.signature) && this.holder.equals(that.holder);
     }
 }

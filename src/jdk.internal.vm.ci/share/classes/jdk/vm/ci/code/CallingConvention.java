@@ -123,8 +123,7 @@ public class CallingConvention {
     }
 
     private boolean verify() {
-        for (int i = 0; i < argumentLocations.size(); i++) {
-            Value location = argumentLocations.get(i);
+        for (Value location : argumentLocations) {
             assert isStackSlot(location) || isAllocatableValue(location);
         }
         return true;

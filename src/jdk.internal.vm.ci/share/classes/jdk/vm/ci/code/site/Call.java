@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,11 +61,8 @@ public final class Call extends Infopoint {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof Call && super.equals(obj)) {
-            Call that = (Call) obj;
-            if (this.size == that.size && this.direct == that.direct && Objects.equals(this.target, that.target)) {
-                return true;
-            }
+        if (obj instanceof Call that && super.equals(obj)) {
+            return this.size == that.size && this.direct == that.direct && Objects.equals(this.target, that.target);
         }
         return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,8 +165,7 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
     public boolean equals(Object o) {
         if (o == this) {
             return true;
-        } else if (o instanceof HotSpotObjectConstantImpl) {
-            HotSpotObjectConstantImpl other = (HotSpotObjectConstantImpl) o;
+        } else if (o instanceof HotSpotObjectConstantImpl other) {
             return runtime().reflection.equals(this, other);
         }
         return false;

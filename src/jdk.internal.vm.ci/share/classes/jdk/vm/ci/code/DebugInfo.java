@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.code;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -40,7 +41,7 @@ public final class DebugInfo {
 
     private final BytecodePosition bytecodePosition;
     private ReferenceMap referenceMap;
-    private final VirtualObject[] virtualObjectMapping;
+    private final List<VirtualObject> virtualObjectMapping;
     private RegisterSaveLayout calleeSaveInfo;
 
     /**
@@ -51,8 +52,7 @@ public final class DebugInfo {
      * @param virtualObjectMapping the mapping of {@link VirtualObject}s to their real values. This
      *            array is now owned by this object and must not be mutated by the caller.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `virtualObjectMapping`")
-    public DebugInfo(BytecodePosition codePos, VirtualObject[] virtualObjectMapping) {
+    public DebugInfo(BytecodePosition codePos, List<VirtualObject> virtualObjectMapping) {
         this.bytecodePosition = codePos;
         this.virtualObjectMapping = virtualObjectMapping;
     }
@@ -102,7 +102,7 @@ public final class DebugInfo {
         return referenceMap;
     }
 
-    public VirtualObject[] getVirtualObjectMapping() {
+    public List<VirtualObject> getVirtualObjectMapping() {
         return virtualObjectMapping;
     }
 
@@ -132,11 +132,8 @@ public final class DebugInfo {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof DebugInfo) {
-            DebugInfo that = (DebugInfo) obj;
-            if (Objects.equals(this.bytecodePosition, that.bytecodePosition) && Objects.equals(this.calleeSaveInfo, that.calleeSaveInfo) && Objects.equals(this.referenceMap, that.referenceMap)) {
-                return true;
-            }
+        if (obj instanceof DebugInfo that) {
+            return Objects.equals(this.bytecodePosition, that.bytecodePosition) && Objects.equals(this.calleeSaveInfo, that.calleeSaveInfo) && Objects.equals(this.referenceMap, that.referenceMap);
         }
         return false;
     }

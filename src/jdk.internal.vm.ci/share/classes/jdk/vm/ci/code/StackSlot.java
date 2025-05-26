@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,7 @@ public final class StackSlot extends AllocatableValue {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof StackSlot) {
-            StackSlot other = (StackSlot) obj;
+        if (obj instanceof StackSlot other) {
             return super.equals(obj) && addFrameSize == other.addFrameSize && offset == other.offset;
         }
         return false;
