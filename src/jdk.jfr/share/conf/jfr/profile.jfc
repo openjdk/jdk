@@ -214,7 +214,6 @@
 
     <event name="jdk.CPUTimeSampleLoss">
       <setting name="enabled">true</setting>
-      <setting name="threshold">0</setting>
     </event>
 
     <event name="jdk.SafepointLatency">
