@@ -171,7 +171,6 @@ static bool build(JfrSampleRequest& request, intptr_t* fp, JavaThread* jt) {
   assert(request._sample_sp != nullptr, "invariant");
   assert(request._sample_pc != nullptr, "invariant");
   assert(jt != nullptr, "invariant");
-  assert(jt->thread_state() == _thread_in_Java, "invariant");
 
   // 1. Interpreter frame?
   if (is_interpreter(request)) {
