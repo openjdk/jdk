@@ -111,6 +111,7 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             String consoleModule = console.isPresent() ? "jdk.jshell" : "java.base";
             List<String> augmentedremoteVMOptions = new ArrayList<>();
 
+            //the stdin/out/err.encoding properties are always defined, and can be copied:
             FORWARD_SYSTEM_PROPERTIES.forEach(
                     prop -> augmentedremoteVMOptions.add("-D" + prop + "=" +
                                                          System.getProperty(prop)));
