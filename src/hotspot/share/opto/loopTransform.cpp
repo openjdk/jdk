@@ -1907,8 +1907,10 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
         "odd trip count for maximally unroll");
     // Don't need to adjust limit for maximally unroll since trip count is even.
   } else if (loop_head->has_exact_trip_count() && init->is_Con()) {
-    // We should not be here if we have old_trip_count == max_juint
-    // it would be an overall weird situation:
+    // We should not be here if we have old_trip_count == max_juint, indeed, we enter this branch
+    // only if the trip count is exact, which happens only in compute_trip_count, and it is set only
+    // if trip_count < (jlong)max_juint. So, the assert should pass.
+    // We really need the asserted property: it would be an overall weird situation otherwise:
     // - the case that would make old_trip_count not smaller than max_juint would make
     //   the new trip_count as big as 2^31 (due to the ceiling involving stride_m)
     //   which makes the multiplication in the rhs of adjust_min_trip's assignment would overflow
