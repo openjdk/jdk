@@ -266,7 +266,6 @@ public final class TestActiveSettingEvent {
         settingValues.put(EventNames.VirtualThreadEnd + "#threshold", "0 ns");
         settingValues.put(EventNames.VirtualThreadSubmitFailed + "#threshold", "0 ns");
         settingValues.put(EventNames.SecurityProviderService + "#threshold", "0 ns");
-        settingValues.put(EventNames.CPUTimeSampleLoss + "#threshold", "0 ns");
 
         try (Recording recording = new Recording(c)) {
             Map<Long, EventType> eventTypes = new HashMap<>();

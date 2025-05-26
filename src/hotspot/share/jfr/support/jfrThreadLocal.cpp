@@ -598,7 +598,7 @@ JfrCPUTimeTraceQueue& JfrThreadLocal::cpu_time_jfr_queue() {
   return _cpu_time_jfr_queue;
 }
 
-void JfrThreadLocal::disable_cpu_time_jfr_queue() {
+void JfrThreadLocal::deallocate_cpu_time_jfr_queue() {
   cpu_time_jfr_queue().ensure_capacity(0);
 }
 

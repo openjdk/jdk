@@ -123,8 +123,8 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void on_javathread_terminate(JavaThread* thread);
   void handle_timer_signal(siginfo_t* info, void* context);
 
-  static void send_empty_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid tid, Tickspan cpu_time_period);
-  static void send_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased);
+  static void send_empty_event(const JfrTicks& start_time, traceid tid, Tickspan cpu_time_period);
+  static void send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased);
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 
   // Trigger sampling while a thread is not in a safepoint, from a seperate thread

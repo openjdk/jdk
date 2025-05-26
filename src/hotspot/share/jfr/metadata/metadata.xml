@@ -964,7 +964,7 @@
 
   <Event name="CPUTimeSample" category="Java Virtual Machine, Profiling" label="CPU Time Method Sample"
     description="Snapshot of a threads state from the CPU time sampler. The throttle can be either an upper bound for the event emission rate, e.g. 100/s, or the cpu-time period, e.g. 10ms, with s, ms, us and ns supported as time units."
-    throttle="true" thread="false" experimental="true">
+    throttle="true" thread="false" experimental="true" startTime="false">
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
     <Field type="Thread" name="eventThread" label="Thread" />
     <Field type="boolean" name="failed" label="Failed" description="Failed to obtain the stack trace" />
@@ -973,7 +973,7 @@
   </Event>
 
   <Event name="CPUTimeSampleLoss" category="Java Virtual Machine, Profiling" label="CPU Time Method Profiling Lost Samples" description="Records that the CPU time sampler lost samples"
-    thread="false" stackTrace="false" startTime="true" experimental="true">
+    thread="false" stackTrace="false" startTime="false" experimental="true">
     <Field type="int" name="lostSamples" label="Lost Samples" />
     <Field type="Thread" name="eventThread" label="Thread" />
   </Event>

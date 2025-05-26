@@ -254,7 +254,7 @@ void JfrCPUTimeThreadSampler::on_javathread_terminate(JavaThread* thread) {
   if (tl->has_cpu_timer()) {
     timer_delete(tl->cpu_timer());
     tl->unset_cpu_timer();
-    tl->disable_cpu_time_jfr_queue();
+    tl->deallocate_cpu_time_jfr_queue();
     s4 lost_samples = tl->cpu_time_jfr_queue().lost_samples();
     if (lost_samples > 0) {
       JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), JfrThreadLocal::thread_id(thread), lost_samples);
@@ -374,16 +374,15 @@ void JfrCPUTimeThreadSampler::stackwalk_thread_in_native(JavaThread* thread) {
 
   const frame top_frame = thread->last_frame();
   for (u4 i = first_index; i < queue.size(); i++) {
-    const JfrTicks now = JfrTicks::now();
     JfrCPUTimeSampleRequest& request = queue.at(i);
     JfrStackTrace stacktrace;
     traceid tid = JfrThreadLocal::thread_id(thread);
     if (!stacktrace.record_inner(thread, top_frame, is_in_continuation(top_frame, thread), 0)) {
       log_info(jfr)("Unable to record native stacktrace for thread %s in CPU time sampler", thread->name());
-      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, now, tid, request._cpu_time_period);
+      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
     } else {
       traceid sid = JfrStackTraceRepository::add(stacktrace);
-      JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, now, sid, tid, request._cpu_time_period, false);
+      JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, false);
     }
   }
   if (queue.lost_samples() > 0) {
@@ -396,11 +395,10 @@ void JfrCPUTimeThreadSampler::stackwalk_thread_in_native(JavaThread* thread) {
 
 static volatile size_t count = 0;
 
-void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, const JfrTicks &end_time, traceid tid, Tickspan cpu_time_period) {
+void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, traceid tid, Tickspan cpu_time_period) {
   EventCPUTimeSample event(UNTIMED);
   event.set_failed(true);
   event.set_starttime(start_time);
-  event.set_endtime(end_time);
   event.set_eventThread(tid);
   event.set_stackTrace(0);
   event.set_samplingPeriod(cpu_time_period);
@@ -411,11 +409,10 @@ void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, cons
 
 static volatile size_t biased_count = 0;
 
-void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, const JfrTicks &end_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased) {
+void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased) {
   EventCPUTimeSample event(UNTIMED);
   event.set_failed(false);
   event.set_starttime(start_time);
-  event.set_endtime(end_time);
   event.set_eventThread(tid);
   event.set_stackTrace(sid);
   event.set_samplingPeriod(cpu_time_period);
@@ -686,7 +683,7 @@ class VM_CPUTimeSamplerThreadTerminator : public VM_Operation {
       JfrThreadLocal* tl = thread->jfr_thread_local();
       if (tl->has_cpu_timer()) {
         timer_delete(tl->cpu_timer());
-        tl->disable_cpu_time_jfr_queue();
+        tl->deallocate_cpu_time_jfr_queue();
         tl->unset_cpu_timer();
       }
     }
@@ -771,10 +768,10 @@ void JfrCPUTimeThreadSampling::on_javathread_create(JavaThread* thread) {
 void JfrCPUTimeThreadSampling::on_javathread_terminate(JavaThread* thread) {
 }
 
-void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid tid, Tickspan cpu_time_period) {
+void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks& start_time, traceid tid, Tickspan cpu_time_period) {
 }
 
-void JfrCPUTimeThreadSampling::send_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased) {
+void JfrCPUTimeThreadSampling::send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased) {
 }
 
 #endif // defined(LINUX) && defined(INCLUDE_JFR)

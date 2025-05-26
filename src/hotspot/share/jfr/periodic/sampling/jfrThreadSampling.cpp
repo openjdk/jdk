@@ -310,7 +310,7 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
   const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
 
   if (!could_compute_top_frame) {
-    JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, now, tid, request._cpu_time_period);
+    JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
     return;
   }
   traceid sid;
@@ -319,7 +319,7 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
     JfrStackTrace stacktrace;
     if (!stacktrace.record(jt, top_frame, in_continuation, request._request)) {
       // Unable to record stacktrace. Fail.
-      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, now, tid, request._cpu_time_period);
+      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, tid, request._cpu_time_period);
       return;
     }
     sid = JfrStackTraceRepository::add(stacktrace);
@@ -327,7 +327,7 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
   assert(sid != 0, "invariant");
 
 
-  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, now, sid, tid, request._cpu_time_period, biased);
+  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, sid, tid, request._cpu_time_period, biased);
   if (current == jt) {
     send_safepoint_latency_event(request._request, now, sid, jt);
   }
@@ -362,13 +362,12 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
     for (u4 i = 0; i < queue.size(); i++) {
       record_cpu_time_thread(queue.at(i), now, tl, jt, current);
     }
-    queue.set_size(0);
+    queue.clear();
     assert(queue.is_empty(), "invariant");
     tl->set_has_cpu_time_jfr_requests(false);
     if (queue.lost_samples() > 0) {
       JfrCPUTimeThreadSampling::send_lost_event( now, JfrThreadLocal::thread_id(jt), queue.get_and_reset_lost_samples());
     }
-    queue.clear();
     tl->release_cpu_time_jfr_queue_lock();
   }
 #endif

@@ -394,7 +394,7 @@ class JfrThreadLocal {
   bool has_cpu_time_jfr_requests();
 
   JfrCPUTimeTraceQueue& cpu_time_jfr_queue();
-  void disable_cpu_time_jfr_queue();
+  void deallocate_cpu_time_jfr_queue();
 
   void set_wants_is_thread_in_native_stackwalking(bool wants);
   bool wants_is_thread_in_native_stackwalking();
