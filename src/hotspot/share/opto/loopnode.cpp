@@ -1225,13 +1225,13 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     //
     //        Existing Hoisted
     //        Check Predicates
-    //              |
+    //               |
     //     New Short Running Long
     //         Loop Predicate
-    //              |
+    //               |
     //   Cloned Parse Predicates and
     //  Template Assertion Predicates
-    //              |
+    //               |
     //             Loop
     const Predicates predicates_before_cloning(entry_control);
     const PredicateBlock* short_running_long_loop_predicate_block = predicates_before_cloning.short_running_long_loop_predicate_block();
