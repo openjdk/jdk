@@ -35,6 +35,7 @@
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/support/jfrThreadId.inline.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "logging/log.hpp"
@@ -546,20 +547,21 @@ Arena* JfrThreadLocal::dcmd_arena(JavaThread* jt) {
 #ifdef LINUX
 
 void JfrThreadLocal::set_cpu_timer(timer_t timer) {
-  _has_cpu_timer = true;
-  _cpu_timer = timer;
+  if (_cpu_timer == nullptr) {
+    _cpu_timer = JfrCHeapObj::new_array<timer_t>(1);
+  }
+  *_cpu_timer = timer;
 }
 
 void JfrThreadLocal::unset_cpu_timer() {
-  _has_cpu_timer = false;
+  if (_cpu_timer != nullptr) {
+    JfrCHeapObj::free(_cpu_timer, sizeof(timer_t));
+    _cpu_timer = nullptr;
+  }
 }
 
-timer_t JfrThreadLocal::cpu_timer() const {
+timer_t* JfrThreadLocal::cpu_timer() const {
   return _cpu_timer;
-}
-
-bool JfrThreadLocal::has_cpu_timer() const {
-  return _has_cpu_timer;
 }
 
 bool JfrThreadLocal::is_cpu_time_jfr_enqueue_locked() {

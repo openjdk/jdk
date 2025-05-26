@@ -86,8 +86,7 @@ class JfrThreadLocal {
   bool _sampling_critical_section;
 
 #ifdef LINUX
-  bool _has_cpu_timer = false;
-  timer_t _cpu_timer;
+  timer_t* _cpu_timer = nullptr;
 
   enum CPUTimeLockState {
     UNLOCKED,
@@ -371,8 +370,7 @@ class JfrThreadLocal {
 #ifdef LINUX
   void set_cpu_timer(timer_t timer);
   void unset_cpu_timer();
-  timer_t cpu_timer() const;
-  bool has_cpu_timer() const;
+  timer_t* cpu_timer() const;
 
   // The CPU time JFR lock has four different states:
   // - ENQUEUE: lock for enqueuing CPU time requests

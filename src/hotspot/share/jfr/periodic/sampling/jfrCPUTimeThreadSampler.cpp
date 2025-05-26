@@ -260,14 +260,16 @@ void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
 void JfrCPUTimeThreadSampler::on_javathread_terminate(JavaThread* thread) {
   JfrThreadLocal* tl = thread->jfr_thread_local();
   assert(tl != nullptr, "invariant");
-  if (tl->has_cpu_timer()) {
-    timer_delete(tl->cpu_timer());
-    tl->unset_cpu_timer();
-    tl->deallocate_cpu_time_jfr_queue();
-    s4 lost_samples = tl->cpu_time_jfr_queue().lost_samples();
-    if (lost_samples > 0) {
-      JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), JfrThreadLocal::thread_id(thread), lost_samples);
-    }
+  timer_t* timer = tl->cpu_timer();
+  if (timer == nullptr) {
+    return; // no timer was created for this thread
+  }
+  timer_delete(*timer);
+  tl->unset_cpu_timer();
+  tl->deallocate_cpu_time_jfr_queue();
+  s4 lost_samples = tl->cpu_time_jfr_queue().lost_samples();
+  if (lost_samples > 0) {
+    JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), JfrThreadLocal::thread_id(thread), lost_samples);
   }
 }
 
@@ -684,11 +686,13 @@ class VM_CPUTimeSamplerThreadTerminator : public VM_Operation {
     while (iter.has_next()) {
       JavaThread *thread = iter.next();
       JfrThreadLocal* tl = thread->jfr_thread_local();
-      if (tl->has_cpu_timer()) {
-        timer_delete(tl->cpu_timer());
-        tl->deallocate_cpu_time_jfr_queue();
-        tl->unset_cpu_timer();
+      timer_t* timer = tl->cpu_timer();
+      if (timer == nullptr) {
+        continue;
       }
+      timer_delete(*timer);
+      tl->deallocate_cpu_time_jfr_queue();
+      tl->unset_cpu_timer();
     }
   };
 };
@@ -725,9 +729,11 @@ void JfrCPUTimeThreadSampler::update_all_thread_timers() {
   ThreadsListHandle tlh;
   for (size_t i = 0; i < tlh.length(); i++) {
     JavaThread* thread = tlh.thread_at(i);
-    JfrThreadLocal* jfr_thread_local = thread->jfr_thread_local();
-    if (jfr_thread_local != nullptr && jfr_thread_local->has_cpu_timer()) {
-      set_timer_time(jfr_thread_local->cpu_timer(), period_millis);
+    JfrThreadLocal* tl = thread->jfr_thread_local();
+    assert(tl != nullptr, "invariant");
+    timer_t* timer = tl->cpu_timer();
+    if (timer != nullptr) {
+      set_timer_time(*timer, period_millis);
     }
   }
 }
