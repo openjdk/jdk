@@ -434,6 +434,17 @@ relativeError));
         }
     }
 
+    static void assertArraysEquals(double[] r, double[] a, double b, FBinOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i], b));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], f.apply(a[i], b), "(" + a[i] + ", " + b + ") at index #" + i);
+        }
+    }
+
     static void assertBroadcastArraysEquals(double[] r, double[] a, double[] b, FBinOp f) {
         int i = 0;
         try {
@@ -470,6 +481,21 @@ relativeError));
             }
         } catch (AssertionError err) {
             Assert.assertEquals(r[i], f.apply(a[i], b[i], mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", mask = " + mask[i % SPECIES.length()]);
+        }
+    }
+
+    static void assertArraysEquals(double[] r, double[] a, double b, boolean[] mask, FBinOp f) {
+        assertArraysEquals(r, a, b, mask, FBinMaskOp.lift(f));
+    }
+
+    static void assertArraysEquals(double[] r, double[] a, double b, boolean[] mask, FBinMaskOp f) {
+        int i = 0;
+        try {
+            for (; i < a.length; i++) {
+                Assert.assertEquals(r[i], f.apply(a[i], b, mask[i % SPECIES.length()]));
+            }
+        } catch (AssertionError err) {
+            Assert.assertEquals(r[i], f.apply(a[i], b, mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b + ", mask = " + mask[i % SPECIES.length()]);
         }
     }
 
@@ -2022,6 +2048,112 @@ relativeError));
         }
 
         assertBroadcastLongArraysEquals(r, a, b, mask, Double128VectorTests::ADD);
+    }
+
+    static DoubleVector bv_MIN = DoubleVector.broadcast(SPECIES, (double)10);
+
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void MINDouble128VectorTestsWithMemOp(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (double)10, Double128VectorTests::MIN);
+    }
+
+    static DoubleVector bv_min = DoubleVector.broadcast(SPECIES, (double)10);
+
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void minDouble128VectorTestsWithMemOp(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                av.min(bv_min).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (double)10, Double128VectorTests::min);
+    }
+
+    static DoubleVector bv_MIN_M = DoubleVector.broadcast(SPECIES, (double)10);
+
+    @Test(dataProvider = "doubleUnaryOpMaskProvider")
+    static void MINDouble128VectorTestsMaskedWithMemOp(IntFunction<double[]> fa, IntFunction<boolean[]> fm) {
+        double[] a = fa.apply(SPECIES.length());
+        double[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MIN, bv_MIN_M, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (double)10, mask, Double128VectorTests::MIN);
+    }
+
+    static DoubleVector bv_MAX = DoubleVector.broadcast(SPECIES, (double)10);
+
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void MAXDouble128VectorTestsWithMemOp(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (double)10, Double128VectorTests::MAX);
+    }
+
+    static DoubleVector bv_max = DoubleVector.broadcast(SPECIES, (double)10);
+
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void maxDouble128VectorTestsWithMemOp(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                av.max(bv_max).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (double)10, Double128VectorTests::max);
+    }
+
+    static DoubleVector bv_MAX_M = DoubleVector.broadcast(SPECIES, (double)10);
+
+    @Test(dataProvider = "doubleUnaryOpMaskProvider")
+    static void MAXDouble128VectorTestsMaskedWithMemOp(IntFunction<double[]> fa, IntFunction<boolean[]> fm) {
+        double[] a = fa.apply(SPECIES.length());
+        double[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.MAX, bv_MAX_M, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, (double)10, mask, Double128VectorTests::MAX);
     }
 
     static double MIN(double a, double b) {
