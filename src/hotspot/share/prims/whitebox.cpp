@@ -728,11 +728,11 @@ WB_ENTRY(void, WB_NMTFree(JNIEnv* env, jobject o, jlong mem))
 WB_END
 
 WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
-  return (jlong)(uintptr_t)os::reserve_memory(size, false, mtTest);
+  return (jlong)(uintptr_t)os::reserve_memory(size, mtTest);
 WB_END
 
 WB_ENTRY(jlong, WB_NMTAttemptReserveMemoryAt(JNIEnv* env, jobject o, jlong addr, jlong size))
-  return (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size, false, mtTest);
+  return (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size, mtTest);
 WB_END
 
 WB_ENTRY(void, WB_NMTCommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
@@ -1085,12 +1085,13 @@ WB_ENTRY(jboolean, WB_TestSetForceInlineMethod(JNIEnv* env, jobject o, jobject m
 WB_END
 
 #ifdef LINUX
-bool WhiteBox::validate_cgroup(const char* proc_cgroups,
+bool WhiteBox::validate_cgroup(bool cgroups_v2_enabled,
+                               const char* controllers_file,
                                const char* proc_self_cgroup,
                                const char* proc_self_mountinfo,
                                u1* cg_flags) {
   CgroupInfo cg_infos[CG_INFO_LENGTH];
-  return CgroupSubsystemFactory::determine_type(cg_infos, proc_cgroups,
+  return CgroupSubsystemFactory::determine_type(cg_infos, cgroups_v2_enabled, controllers_file,
                                                     proc_self_cgroup,
                                                     proc_self_mountinfo, cg_flags);
 }
@@ -1123,7 +1124,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   DirectivesStack::release(directive);
 
   // Compile method and check result
-  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
+  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
   MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != nullptr) {
@@ -1523,7 +1524,7 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
   static char c;
   static volatile char* p;
 
-  p = os::reserve_memory(os::vm_allocation_granularity());
+  p = os::reserve_memory(os::vm_allocation_granularity(), mtTest);
   if (p == nullptr) {
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "Failed to reserve memory");
   }
@@ -1532,7 +1533,7 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
-  const char* features = VM_Version::features_string();
+  const char* features = VM_Version::cpu_info_string();
   ThreadToNativeFromVM ttn(thread);
   jstring features_string = env->NewStringUTF(features);
 
@@ -2510,6 +2511,11 @@ WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
   return os::physical_memory();
 WB_END
 
+// Available memory of the host machine (container-aware)
+WB_ENTRY(jlong, WB_HostAvailableMemory(JNIEnv* env, jobject o))
+  return os::available_memory();
+WB_END
+
 // Physical swap of the host machine (including containers), Linux only.
 WB_ENTRY(jlong, WB_HostPhysicalSwap(JNIEnv* env, jobject o))
   LINUX_ONLY(return (jlong)os::Linux::host_swap();)
@@ -2518,13 +2524,14 @@ WB_END
 
 WB_ENTRY(jint, WB_ValidateCgroup(JNIEnv* env,
                                     jobject o,
-                                    jstring proc_cgroups,
+                                    jboolean cgroups_v2_enabled,
+                                    jstring controllers_file,
                                     jstring proc_self_cgroup,
                                     jstring proc_self_mountinfo))
   jint ret = 0;
 #ifdef LINUX
   ThreadToNativeFromVM ttnfv(thread);
-  const char* p_cgroups = env->GetStringUTFChars(proc_cgroups, nullptr);
+  const char* c_file = env->GetStringUTFChars(controllers_file, nullptr);
   CHECK_JNI_EXCEPTION_(env, 0);
   const char* p_s_cgroup = env->GetStringUTFChars(proc_self_cgroup, nullptr);
   CHECK_JNI_EXCEPTION_(env, 0);
@@ -2532,9 +2539,9 @@ WB_ENTRY(jint, WB_ValidateCgroup(JNIEnv* env,
   CHECK_JNI_EXCEPTION_(env, 0);
   u1 cg_type_flags = 0;
   // This sets cg_type_flags
-  WhiteBox::validate_cgroup(p_cgroups, p_s_cgroup, p_s_mountinfo, &cg_type_flags);
+  WhiteBox::validate_cgroup(cgroups_v2_enabled, c_file, p_s_cgroup, p_s_mountinfo, &cg_type_flags);
   ret = (jint)cg_type_flags;
-  env->ReleaseStringUTFChars(proc_cgroups, p_cgroups);
+  env->ReleaseStringUTFChars(controllers_file, c_file);
   env->ReleaseStringUTFChars(proc_self_cgroup, p_s_cgroup);
   env->ReleaseStringUTFChars(proc_self_mountinfo, p_s_mountinfo);
 #endif
@@ -2974,10 +2981,11 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_CheckLibSpecifiesNoexecstack},
   {CC"isContainerized",           CC"()Z",            (void*)&WB_IsContainerized },
   {CC"validateCgroup",
-      CC"(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I",
+      CC"(ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)I",
                                                       (void*)&WB_ValidateCgroup },
   {CC"hostPhysicalMemory",        CC"()J",            (void*)&WB_HostPhysicalMemory },
   {CC"hostPhysicalSwap",          CC"()J",            (void*)&WB_HostPhysicalSwap },
+  {CC"hostAvailableMemory",       CC"()J",            (void*)&WB_HostAvailableMemory },
   {CC"hostCPUs",                  CC"()I",            (void*)&WB_HostCPUs },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },

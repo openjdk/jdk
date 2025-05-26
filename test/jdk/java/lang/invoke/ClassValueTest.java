@@ -23,20 +23,37 @@
 
 /*
  * @test
- * @bug 8351045
+ * @bug 8351045 8351996
+ * @enablePreview
+ * @comment Remove preview if ScopedValue is finalized
  * @summary tests for class-specific values
+ * @library /test/lib
  * @run junit ClassValueTest
  */
 
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.invoke.MethodHandles;
+import java.lang.ref.WeakReference;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
+import jdk.test.lib.util.ForceGC;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author jrose
@@ -158,56 +175,308 @@ final class ClassValueTest {
         }
     }
 
-    private static final int RUNS = 16;
     private static final long COMPUTE_TIME_MILLIS = 100;
+    // Adjust this timeout to fail faster for test stalls
+    private static final Duration TIMEOUT = Duration.ofNanos((long) (
+            Duration.of(1, ChronoUnit.MINUTES).toNanos()
+                    * Double.parseDouble(System.getProperty("test.timeout.factor", "1.0"))));
 
-    @Test
-    void testRemoveOnComputeCases() {
-        try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
-            var tasks = new ArrayList<Future<?>>(RUNS);
-            for (int i = 0; i < RUNS; i++) {
-                tasks.add(exec.submit(this::testRemoveOnCompute));
+    private static void await(CountDownLatch latch) {
+        try {
+            if (!latch.await(TIMEOUT.toNanos(), TimeUnit.NANOSECONDS)) {
+                fail("No signal received");
             }
-            for (var task : tasks) {
-                try {
-                    task.get();
-                } catch (InterruptedException | ExecutionException ex) {
-                    var cause = ex.getCause();
-                    if (cause instanceof AssertionError ae)
-                        throw ae;
-                    throw new RuntimeException(ex);
+        } catch (InterruptedException e) {
+            fail(e);
+        }
+    }
+
+    private static void awaitThreads(Thread... threads) {
+        awaitThreads(Arrays.asList(threads));
+    }
+
+    private static void awaitThreads(Iterable<Thread> threads) {
+        for (var t : threads) {
+            try {
+                if (!t.join(TIMEOUT)) {
+                    fail("Thread not stopping " + t);
                 }
+            } catch (InterruptedException ex) {
+                fail(ex);
             }
         }
     }
 
-    void testRemoveOnCompute() {
+    /**
+     * Tests that get() + remove() can prevent stale value from being installed.
+     * Uses junit to do basic stress.
+     */
+    @Test
+    void testRemoveStale() throws InterruptedException {
+        CountDownLatch oldInputUsed = new CountDownLatch(1);
+        CountDownLatch inputUpdated = new CountDownLatch(1);
         AtomicInteger input = new AtomicInteger(0);
         ClassValue<Integer> cv = new ClassValue<>() {
             @Override
             protected Integer computeValue(Class<?> type) {
                 // must get early to represent using outdated input
                 int v = input.get();
-                try {
-                    Thread.sleep(COMPUTE_TIME_MILLIS);
-                } catch (InterruptedException ex) {
-                    throw new RuntimeException(ex);
-                }
+                oldInputUsed.countDown();
+                // ensure input is updated when we return
+                await(inputUpdated);
                 return v;
             }
         };
         var innocuous = Thread.startVirtualThread(() -> cv.get(int.class));
         var refreshInput = Thread.startVirtualThread(() -> {
+            await(oldInputUsed);
             input.incrementAndGet();
             cv.remove(int.class); // Let's recompute with updated inputs!
+            inputUpdated.countDown();
         });
-        try {
-            innocuous.join();
-            refreshInput.join();
-        } catch (InterruptedException ex) {
-            throw new RuntimeException(ex);
-        }
+        awaitThreads(innocuous, refreshInput);
         assertEquals(1, input.get(), "input not updated");
         assertEquals(1, cv.get(int.class), "CV not using up-to-date input");
+    }
+
+    /**
+     * Tests that calling get() from computeValue() terminates.
+     */
+    @Test
+    void testGetInCompute() {
+        ClassValue<Object> cv = new ClassValue<>() {
+            @Override
+            protected Object computeValue(Class<?> type) {
+                get(type);
+                get(type);
+                get(type);
+                return Boolean.TRUE;
+            }
+        };
+        try {
+            cv.get(int.class);
+        } catch (Throwable ex) {
+            // swallow if any
+        }
+    }
+
+    /**
+     * Tests that calling remove() from computeValue() terminates.
+     */
+    @Test
+    void testRemoveInCompute() {
+        ClassValue<Boolean> cv = new ClassValue<>() {
+            @Override
+            protected Boolean computeValue(Class<?> type) {
+                remove(type);
+                remove(type);
+                remove(type);
+                return Boolean.TRUE;
+            }
+        };
+        assertTrue(cv.get(int.class));
+    }
+
+    private static Class<?> createWeakClass() {
+        var bytes = ClassFile.of().build(ClassDesc.of("WeakTest"), _ -> {});
+        try {
+            return MethodHandles.lookup().defineHiddenClass(bytes, true).lookupClass();
+        } catch (IllegalAccessException ex) {
+            return fail(ex);
+        }
+    }
+
+    @Test
+    void testWeakAgainstClass() {
+        Class<?> hidden = createWeakClass();
+        ClassValue<int[]> cv = new ClassValue<>() {
+            @Override
+            protected int[] computeValue(Class<?> type) {
+                return new int[23];
+            }
+        };
+
+        WeakReference<?> ref = new WeakReference<>(cv.get(hidden));
+        hidden = null; // Remove reference for interpreter
+        if (!ForceGC.wait(() -> ref.refersTo(null))) {
+            fail("Timeout");
+        }
+    }
+
+    @Test
+    @Disabled // JDK-8352622
+    void testWeakAgainstClassValue() {
+        ClassValue<int[]> cv = new ClassValue<>() {
+            @Override
+            protected int[] computeValue(Class<?> type) {
+                return new int[23];
+            }
+        };
+
+        WeakReference<?> ref = new WeakReference<>(cv.get(int.class));
+        cv = null; // Remove reference for interpreter
+        if (!ForceGC.wait(() -> {
+            CV1.get(int.class); // flush the weak maps
+            return ref.refersTo(null);
+        })) {
+            fail("Timeout");
+        }
+    }
+
+    @Test
+    void testSingletonWinner() {
+        CountDownLatch raceStart = new CountDownLatch(1);
+        ClassValue<int[]> cv = new ClassValue<>() {
+            @Override
+            protected int[] computeValue(Class<?> type) {
+                await(raceStart);
+                return new int[] {ThreadLocalRandom.current().nextInt()};
+            }
+        };
+        AtomicReference<int[]> truth = new AtomicReference<>(null);
+        AtomicInteger truthSwapCount = new AtomicInteger(0);
+
+        List<Thread> threads = new ArrayList<>(100);
+        Runnable job = () -> {
+            var res = cv.get(ClassValueTest.class);
+            var item = truth.compareAndExchange(null, res);
+            if (item != null) {
+                assertSame(item, res);
+            } else {
+                truthSwapCount.incrementAndGet();
+            }
+        };
+        for (int i = 0; i < 100; i++) {
+            threads.add(Thread.startVirtualThread(job));
+        }
+        raceStart.countDown();
+        awaitThreads(threads);
+        assertEquals(1, truthSwapCount.get());
+    }
+
+    @Test
+    void testRacyRemoveInCompute() {
+        ClassValue<Object> cv = new ClassValue<>() {
+            @Override
+            protected Object computeValue(Class<?> type) {
+                remove(type);
+                try {
+                    Thread.sleep(COMPUTE_TIME_MILLIS);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+                remove(type);
+                return Boolean.TRUE;
+            }
+        };
+
+        var threads = Arrays.stream(CLASSES)
+                .map(clz -> Thread.startVirtualThread(() -> cv.get(clz)))
+                .toList();
+        awaitThreads(threads);
+    }
+
+    @Test
+    void testRecursiveInitialization() {
+        record Holder() {
+            static final ClassValue<Object> clv = new ClassValue<>() {
+                @Override
+                protected Object computeValue(Class<?> type) {
+                    return new One();
+                }
+            };
+
+            record One() {
+                static {
+                    Holder.clv.get(One.class);
+                }
+            }
+
+        }
+
+        Holder.clv.get(Holder.One.class);
+    }
+
+    private static final ScopedValue<Integer> THREAD_ID = ScopedValue.newInstance();
+
+    @Test
+    void testNoRecomputeOnUnrelatedRemoval() throws InterruptedException {
+        CountDownLatch t1Started = new CountDownLatch(1);
+        CountDownLatch removeTamper = new CountDownLatch(1);
+        CountDownLatch t2Started = new CountDownLatch(1);
+        CountDownLatch t1Returned = new CountDownLatch(1);
+        AtomicInteger t1Tries = new AtomicInteger();
+        ClassValue<Object> clv = new ClassValue<>() {
+            @Override
+            protected Object computeValue(Class<?> type) {
+                int id = THREAD_ID.get();
+                if (id == 1) {
+                    t1Tries.incrementAndGet();
+                    t1Started.countDown();
+                    await(t2Started); // implies unrelated changes
+                } else if (id == 2) {
+                    t2Started.countDown();
+                    // Don't race to install - we want to check computeValue tampers
+                    await(t1Returned);
+                } else if (id != -1) {
+                    fail("Id: " + id);
+                }
+                return "";
+            }
+        };
+
+        ScopedValue.where(THREAD_ID, -1).run(() -> clv.get(long.class)); // set up unrelated class
+        var t1 = Thread.startVirtualThread(() ->
+                ScopedValue.where(THREAD_ID, 1).run(() -> {
+                    clv.get(int.class);
+                    t1Returned.countDown(); // returned after x calls to computeValue
+                }));
+        var t2 = Thread.startVirtualThread(() ->
+                ScopedValue.where(THREAD_ID, 2).run(() -> {
+                    await(removeTamper);
+                    clv.get(int.class); // clv version diff from that of promise
+                }));
+        await(t1Started);
+        clv.remove(long.class);
+        removeTamper.countDown(); // removed unrelated class
+        awaitThreads(t1, t2);
+        assertEquals(1, t1Tries.get(), "Redundant computeValue retries");
+    }
+
+    @Test
+    void testNoObsoleteInstallation() throws InterruptedException {
+        CountDownLatch slowComputationStart = new CountDownLatch(1);
+        CountDownLatch slowComputationContinue = new CountDownLatch(1);
+        ClassValue<Integer> clv = new ClassValue<>() {
+            @Override
+            protected Integer computeValue(Class<?> type) {
+                if (!THREAD_ID.isBound()) {
+                    return 5;
+                }
+                int threadId = THREAD_ID.get();
+                if (threadId == 1) {
+                    if (slowComputationContinue.getCount() == 0) {
+                        return 42;
+                    } else {
+                        // First invocation
+                        slowComputationStart.countDown();
+                        await(slowComputationContinue);
+                        return -1;
+                    }
+                } else {
+                    return fail("Unknown thread " + threadId);
+                }
+            }
+        };
+        var t = Thread.startVirtualThread(() -> ScopedValue.where(THREAD_ID, 1).run(() -> {
+            int v = clv.get(int.class);
+            assertEquals(42, v, "recomputed value");
+        }));
+        await(slowComputationStart);
+        assertEquals(5, clv.get(int.class), "fast computation installed value");
+        clv.remove(int.class);
+        slowComputationContinue.countDown();
+        awaitThreads(t);
+        assertEquals(42, clv.get(int.class), "slow computation reinstalled value");
     }
 }

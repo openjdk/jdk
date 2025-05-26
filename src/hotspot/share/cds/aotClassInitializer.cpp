@@ -219,7 +219,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   //
   // Then run the following:
   //    java -XX:AOTMode=record -XX:AOTConfiguration=jc.aotconfig com.sun.tools.javac.Main
-  //    java -XX:AOTMode=create -Xlog:cds -XX:AOTCache=jc.aot -XX:AOTConfiguration=jc.aotconfig
+  //    java -XX:AOTMode=create -Xlog:aot -XX:AOTCache=jc.aot -XX:AOTConfiguration=jc.aotconfig
   //
   // You will see an error like this:
   //
@@ -303,6 +303,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
       {"java/lang/invoke/MethodHandles"},
       {"java/lang/invoke/SimpleMethodHandle"},
       {"java/lang/invoke/StringConcatFactory"},
+      {"java/lang/invoke/VarHandleGuards"},
       {"java/util/Collections"},
       {"java/util/stream/Collectors"},
       {"jdk/internal/constant/ConstantUtils"},
@@ -318,6 +319,10 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
       {nullptr}
     };
     if (is_allowed(indy_specs, ik)) {
+      return true;
+    }
+
+    if (ik->name()->starts_with("java/lang/invoke/MethodHandleImpl")) {
       return true;
     }
   }
@@ -337,15 +342,17 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
 bool AOTClassInitializer::is_runtime_setup_required(InstanceKlass* ik) {
   return ik == vmClasses::Class_klass() ||
          ik == vmClasses::internal_Unsafe_klass() ||
-         ik == vmClasses::ConcurrentHashMap_klass();
+         ik == vmClasses::ConcurrentHashMap_klass() ||
+         ik == vmClasses::MethodHandleImpl_klass() ||
+         ik == vmClasses::Reference_klass();
 }
 
 void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass* ik) {
   assert(ik->has_aot_initialized_mirror(), "sanity");
   if (ik->is_runtime_setup_required()) {
-    if (log_is_enabled(Info, cds, init)) {
+    if (log_is_enabled(Info, aot, init)) {
       ResourceMark rm;
-      log_info(cds, init)("Calling %s::runtimeSetup()", ik->external_name());
+      log_info(aot, init)("Calling %s::runtimeSetup()", ik->external_name());
     }
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result, ik,
@@ -368,7 +375,7 @@ void AOTClassInitializer::init_test_class(TRAPS) {
   // -XX:AOTInitTestClass is NOT a general mechanism for including user-defined objects into
   // the AOT cache. Therefore, this option is NOT available in product JVM.
   if (AOTInitTestClass != nullptr && CDSConfig::is_initing_classes_at_dump_time()) {
-    log_info(cds)("Debug build only: force initialization of AOTInitTestClass %s", AOTInitTestClass);
+    log_info(aot)("Debug build only: force initialization of AOTInitTestClass %s", AOTInitTestClass);
     TempNewSymbol class_name = SymbolTable::new_symbol(AOTInitTestClass);
     Handle app_loader(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_null(class_name, app_loader, CHECK);

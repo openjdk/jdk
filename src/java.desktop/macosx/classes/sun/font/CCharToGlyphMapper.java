@@ -138,6 +138,12 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
         }
     }
 
+    // Matches behavior in e.g. CMap.getControlCodeGlyph(int, boolean)
+    // and RasterPrinterJob.removeControlChars(String)
+    private static boolean isIgnorableWhitespace(int code) {
+        return code == 0x0009 || code == 0x000a || code == 0x000d;
+    }
+
     // This mapper returns either the glyph code, or if the character can be
     // replaced on-the-fly using CoreText substitution; the negative unicode
     // value. If this "glyph code int" is treated as an opaque code, it will
@@ -162,7 +168,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
         }
 
         public synchronized int get(final int index, final boolean raw) {
-            if (!raw && FontUtilities.isDefaultIgnorable(index)) {
+            if (!raw && (FontUtilities.isDefaultIgnorable(index) || isIgnorableWhitespace(index))) {
                 return INVISIBLE_GLYPH_ID;
             }
 

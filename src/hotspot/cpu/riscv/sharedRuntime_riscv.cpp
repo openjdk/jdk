@@ -596,12 +596,13 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
 }
 
 // ---------------------------------------------------------------
-AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
-                                                            int total_args_passed,
-                                                            int comp_args_on_stack,
-                                                            const BasicType *sig_bt,
-                                                            const VMRegPair *regs,
-                                                            AdapterFingerPrint* fingerprint) {
+
+void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
+                                            int total_args_passed,
+                                            int comp_args_on_stack,
+                                            const BasicType *sig_bt,
+                                            const VMRegPair *regs,
+                                            AdapterHandlerEntry* handler) {
   address i2c_entry = __ pc();
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
 
@@ -658,7 +659,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
-  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  return;
 }
 
 int SharedRuntime::vector_calling_convention(VMRegPair *regs,
@@ -1323,7 +1325,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // First instruction must be a nop as it may need to be patched on deoptimisation
     {
-      Assembler::IncompressibleRegion ir(masm);  // keep the nop as 4 bytes for patching.
+      Assembler::IncompressibleScope scope(masm); // keep the nop as 4 bytes for patching.
       MacroAssembler::assert_alignment(__ pc());
       __ nop();  // 4 bytes
     }
@@ -1466,7 +1468,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // If we have to make this method not-entrant we'll overwrite its
   // first instruction with a jump.
   {
-    Assembler::IncompressibleRegion ir(masm);  // keep the nop as 4 bytes for patching.
+    Assembler::IncompressibleScope scope(masm); // keep the nop as 4 bytes for patching.
     MacroAssembler::assert_alignment(__ pc());
     __ nop();  // 4 bytes
   }
@@ -1891,6 +1893,24 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ sd(zr, Address(x12, JNIHandleBlock::top_offset()));
 
   __ leave();
+
+  #if INCLUDE_JFR
+  // We need to do a poll test after unwind in case the sampler
+  // managed to sample the native frame after returning to Java.
+  Label L_return;
+  __ ld(t0, Address(xthread, JavaThread::polling_word_offset()));
+  address poll_test_pc = __ pc();
+  __ relocate(relocInfo::poll_return_type);
+  __ test_bit(t0, t0, log2i_exact(SafepointMechanism::poll_bit()));
+  __ beqz(t0, L_return);
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
+         "polling page return stub not created yet");
+  address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+  __ la(t0, InternalAddress(poll_test_pc));
+  __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
+  __ far_jump(RuntimeAddress(stub));
+  __ bind(L_return);
+#endif // INCLUDE_JFR
 
   // Any exception pending?
   Label exception_pending;
@@ -2646,7 +2666,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   __ bnez(t1, pending);
 
   // get the returned Method*
-  __ get_vm_result_2(xmethod, xthread);
+  __ get_vm_result_metadata(xmethod, xthread);
   __ sd(xmethod, Address(sp, reg_saver.reg_offset_in_bytes(xmethod)));
 
   // x10 is where we want to jump, overwrite t1 which is saved and temporary
@@ -2664,7 +2684,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   // exception pending => remove activation and forward to exception handler
 
-  __ sd(zr, Address(xthread, JavaThread::vm_result_offset()));
+  __ sd(zr, Address(xthread, JavaThread::vm_result_oop_offset()));
 
   __ ld(x10, Address(xthread, Thread::pending_exception_offset()));
   __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));

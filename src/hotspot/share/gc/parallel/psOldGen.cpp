@@ -262,8 +262,9 @@ bool PSOldGen::expand_to_reserved() {
 }
 
 void PSOldGen::shrink(size_t bytes) {
-  assert_lock_strong(PSOldGenExpand_lock);
-  assert_locked_or_safepoint(Heap_lock);
+  assert(Thread::current()->is_VM_thread(), "precondition");
+  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+  assert(bytes > 0, "precondition");
 
   size_t size = align_down(bytes, virtual_space()->alignment());
   if (size > 0) {
@@ -314,11 +315,9 @@ void PSOldGen::resize(size_t desired_free_space) {
   }
   if (new_size > current_size) {
     size_t change_bytes = new_size - current_size;
-    MutexLocker x(PSOldGenExpand_lock);
     expand(change_bytes);
   } else {
     size_t change_bytes = current_size - new_size;
-    MutexLocker x(PSOldGenExpand_lock);
     shrink(change_bytes);
   }
 
@@ -359,15 +358,12 @@ void PSOldGen::post_resize() {
 
 void PSOldGen::print() const { print_on(tty);}
 void PSOldGen::print_on(outputStream* st) const {
-  st->print(" %-15s", name());
-  st->print(" total %zuK, used %zuK",
-              capacity_in_bytes()/K, used_in_bytes()/K);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-                p2i(virtual_space()->low_boundary()),
-                p2i(virtual_space()->high()),
-                p2i(virtual_space()->high_boundary()));
+  st->print("%-15s", name());
+  st->print(" total %zuK, used %zuK ", capacity_in_bytes() / K, used_in_bytes() / K);
+  virtual_space()->print_space_boundaries_on(st);
 
-  st->print("  object"); object_space()->print_on(st);
+  StreamIndentor si(st, 1);
+  object_space()->print_on(st, "object ");
 }
 
 void PSOldGen::update_counters() {

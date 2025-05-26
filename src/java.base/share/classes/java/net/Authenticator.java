@@ -426,12 +426,12 @@ class Authenticator {
     }
 
     /**
-     * Returns the URL that resulted in this
-     * request for authentication.
+     * Returns the URL that resulted in this request for authentication.
+     * If the corresponding request does not specify a URL, this method returns null.
      *
      * @since 1.5
      *
-     * @return the requesting URL
+     * @return the requesting URL, or null if not available.
      *
      */
     protected URL getRequestingURL () {

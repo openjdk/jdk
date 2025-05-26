@@ -204,10 +204,10 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   }
 
    if (JvmtiExport::can_pop_frame()) {
-     __ check_and_handle_popframe(r15_thread);
+     __ check_and_handle_popframe();
    }
    if (JvmtiExport::can_force_early_return()) {
-     __ check_and_handle_earlyret(r15_thread);
+     __ check_and_handle_earlyret();
    }
 
   __ dispatch_next(state, step);
@@ -561,32 +561,42 @@ void TemplateInterpreterGenerator::lock_method() {
 //      rdx: cp cache
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // initialize fixed part of activation frame
-  __ push(rax);        // save return address
-  __ enter();          // save old & set new rbp
+  __ push(rax);         // save return address
+  __ enter();           // save old & set new rbp
   __ push(rbcp);        // set sender sp
-  __ push(NULL_WORD); // leave last_sp as null
-  __ movptr(rbcp, Address(rbx, Method::const_offset()));      // get ConstMethod*
-  __ lea(rbcp, Address(rbcp, ConstMethod::codes_offset())); // get codebase
+
+  // Resolve ConstMethod* -> ConstantPool*.
+  // Get codebase, while we still have ConstMethod*.
+  // Save ConstantPool* in rax for later use.
+  __ movptr(rax, Address(rbx, Method::const_offset()));
+  __ lea(rbcp, Address(rax, ConstMethod::codes_offset()));
+  __ movptr(rax, Address(rax, ConstMethod::constants_offset()));
+
+  __ push(NULL_WORD);  // leave last_sp as null
   __ push(rbx);        // save Method*
-  // Get mirror and store it in the frame as GC root for this Method*
-  __ load_mirror(rdx, rbx, rscratch2);
+
+  // Get mirror and store it in the frame as GC root for this Method*.
+  // rax is still ConstantPool*, resolve ConstantPool* -> InstanceKlass* -> Java mirror.
+  __ movptr(rdx, Address(rax, ConstantPool::pool_holder_offset()));
+  __ movptr(rdx, Address(rdx, in_bytes(Klass::java_mirror_offset())));
+  __ resolve_oop_handle(rdx, rscratch2);
   __ push(rdx);
+
   if (ProfileInterpreter) {
     Label method_data_continue;
     __ movptr(rdx, Address(rbx, in_bytes(Method::method_data_offset())));
     __ testptr(rdx, rdx);
-    __ jcc(Assembler::zero, method_data_continue);
+    __ jccb(Assembler::zero, method_data_continue);
     __ addptr(rdx, in_bytes(MethodData::data_offset()));
     __ bind(method_data_continue);
     __ push(rdx);      // set the mdp (method data pointer)
   } else {
-    __ push(0);
+    __ push(NULL_WORD);
   }
 
-  __ movptr(rdx, Address(rbx, Method::const_offset()));
-  __ movptr(rdx, Address(rdx, ConstMethod::constants_offset()));
-  __ movptr(rdx, Address(rdx, ConstantPool::cache_offset()));
-  __ push(rdx); // set constant pool cache
+  // rax is still ConstantPool*, set the constant pool cache
+  __ movptr(rdx, Address(rax, ConstantPool::cache_offset()));
+  __ push(rdx);
 
   __ movptr(rax, rlocals);
   __ subptr(rax, rbp);
@@ -594,7 +604,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ push(rax); // set relativized rlocals, see frame::interpreter_frame_locals()
 
   if (native_call) {
-    __ push(0); // no bcp
+    __ push(NULL_WORD); // no bcp
   } else {
     __ push(rbcp); // set bcp
   }
@@ -644,7 +654,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 
   // Load the value of the referent field.
   const Address field_address(rax, referent_offset);
-  __ load_heap_oop(rax, field_address, /*tmp1*/ rbx, /*tmp_thread*/ rdx, ON_WEAK_OOP_REF);
+  __ load_heap_oop(rax, field_address, /*tmp1*/ rbx, ON_WEAK_OOP_REF);
 
   // _areturn
   __ pop(rdi);                // get return address
@@ -981,7 +991,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label Continue;
     Label slow_path;
 
-    __ safepoint_poll(slow_path, thread, true /* at_return */, false /* in_nmethod */);
+    __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
 
     __ cmpl(Address(thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::equal, Continue);
@@ -1024,7 +1034,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 
   // reset_last_Java_frame
-  __ reset_last_Java_frame(thread, true);
+  __ reset_last_Java_frame(true);
 
   if (CheckJNICalls) {
     // clear_pending_jni_exception_check
@@ -1047,7 +1057,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ pop(ltos);
     // Unbox oop result, e.g. JNIHandles::resolve value.
     __ resolve_jobject(rax /* value */,
-                       thread /* thread */,
                        t /* tmp */);
     __ movptr(Address(rbp, frame::interpreter_frame_oop_temp_offset*wordSize), rax);
     // keep stack depth as expected by pushing oop which will eventually be discarded
@@ -1138,6 +1147,30 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(L);
   }
 
+#if INCLUDE_JFR
+  __ enter_jfr_critical_section();
+
+  // This poll test is to uphold the invariant that a JFR sampled frame
+  // must not return to its caller without a prior safepoint poll check.
+  // The earlier poll check in this routine is insufficient for this purpose
+  // because the thread has transitioned back to Java.
+
+  Label slow_path;
+  Label fast_path;
+  __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
+  __ jmp(fast_path);
+  __ bind(slow_path);
+  __ push(dtos);
+  __ push(ltos);
+  __ set_last_Java_frame(noreg, rbp, (address)__ pc(), rscratch1);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), r15_thread);
+  __ reset_last_Java_frame(true);
+  __ pop(ltos);
+  __ pop(dtos);
+  __ bind(fast_path);
+
+#endif // INCLUDE_JFR
+
   // jvmti support
   // Note: This must happen _after_ handling/throwing any exceptions since
   //       the exception handler code notifies the runtime of method exits
@@ -1160,8 +1193,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                        frame::interpreter_frame_sender_sp_offset *
                        wordSize)); // get sender sp
   __ leave();                                // remove frame anchor
+
+  JFR_ONLY(__ leave_jfr_critical_section();)
+
   __ pop(rdi);                               // get return address
   __ mov(rsp, t);                            // set sp to sender sp
+
   __ jmp(rdi);
 
   if (inc_counter) {
@@ -1242,11 +1279,11 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   {
     Label exit, loop;
     __ testl(rdx, rdx);
-    __ jcc(Assembler::lessEqual, exit); // do nothing if rdx <= 0
+    __ jccb(Assembler::lessEqual, exit); // do nothing if rdx <= 0
     __ bind(loop);
     __ push(NULL_WORD); // initialize local variables
     __ decrementl(rdx); // until everything initialized
-    __ jcc(Assembler::greater, loop);
+    __ jccb(Assembler::greater, loop);
     __ bind(exit);
   }
 
@@ -1485,7 +1522,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // PC must point into interpreter here
   __ set_last_Java_frame(noreg, rbp, __ pc(), rscratch1);
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), r15_thread, c_rarg1, c_rarg2);
-  __ reset_last_Java_frame(thread, true);
+  __ reset_last_Java_frame(true);
 
   // Restore the last_sp and null it out
   __ movptr(rcx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
@@ -1534,11 +1571,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(rax);
-  __ movptr(Address(thread, JavaThread::vm_result_offset()), rax);
+  __ movptr(Address(thread, JavaThread::vm_result_oop_offset()), rax);
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, rdx, false, true, false);
   // restore exception
-  __ get_vm_result(rax, thread);
+  __ get_vm_result_oop(rax);
 
   // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects the

@@ -37,6 +37,7 @@
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/ostream.hpp"
 
 jint EpsilonHeap::initialize() {
   size_t align = HeapAlignment;
@@ -297,17 +298,19 @@ void EpsilonHeap::object_iterate(ObjectClosure *cl) {
   _space->object_iterate(cl);
 }
 
-void EpsilonHeap::print_on(outputStream *st) const {
+void EpsilonHeap::print_heap_on(outputStream *st) const {
   st->print_cr("Epsilon Heap");
+
+  StreamIndentor si(st, 1);
 
   _virtual_space.print_on(st);
 
   if (_space != nullptr) {
     st->print_cr("Allocation space:");
-    _space->print_on(st);
-  }
 
-  MetaspaceUtils::print_on(st);
+    StreamIndentor si(st, 1);
+    _space->print_on(st, "");
+  }
 }
 
 bool EpsilonHeap::print_location(outputStream* st, void* addr) const {

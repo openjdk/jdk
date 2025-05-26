@@ -22,7 +22,5 @@
  */
 
 // key: compiler.err.import.module.does.not.read
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --release ${jdk.version} --enable-preview
+
 module m {}

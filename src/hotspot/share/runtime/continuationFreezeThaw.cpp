@@ -70,6 +70,9 @@
 #if INCLUDE_ZGC
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #endif
+#if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
+#endif
 
 #include <type_traits>
 
@@ -565,10 +568,51 @@ void FreezeBase::copy_to_chunk(intptr_t* from, intptr_t* to, int size) {
 #endif
 }
 
+static void assert_frames_in_continuation_are_safe(JavaThread* thread) {
+#ifdef ASSERT
+  StackWatermark* watermark = StackWatermarkSet::get(thread, StackWatermarkKind::gc);
+  if (watermark == nullptr) {
+    return;
+  }
+  ContinuationEntry* ce = thread->last_continuation();
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
+  map.set_include_argument_oops(false);
+  for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
+    watermark->assert_is_frame_safe(f);
+  }
+#endif // ASSERT
+}
+
+#ifdef ASSERT
+static bool monitors_on_stack(JavaThread* thread) {
+  assert_frames_in_continuation_are_safe(thread);
+  ContinuationEntry* ce = thread->last_continuation();
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
+  map.set_include_argument_oops(false);
+  for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
+    if ((f.is_interpreted_frame() && ContinuationHelper::InterpretedFrame::is_owning_locks(f)) ||
+        (f.is_compiled_frame() && ContinuationHelper::CompiledFrame::is_owning_locks(map.thread(), &map, f)) ||
+        (f.is_native_frame() && ContinuationHelper::NativeFrame::is_owning_locks(map.thread(), f))) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif // ASSERT
+
 // Called _after_ the last possible safepoint during the freeze operation (chunk allocation)
 void FreezeBase::unwind_frames() {
   ContinuationEntry* entry = _cont.entry();
   entry->flush_stack_processing(_thread);
+  assert_frames_in_continuation_are_safe(_thread);
+  JFR_ONLY(Jfr::check_and_process_sample_request(_thread);)
+  assert(LockingMode != LM_LEGACY || !monitors_on_stack(_thread), "unexpected monitors on stack");
   set_anchor_to_entry(_thread, entry);
 }
 
@@ -1621,23 +1665,6 @@ static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, fram
 #endif // INCLUDE_JVMTI
 
 #ifdef ASSERT
-static bool monitors_on_stack(JavaThread* thread) {
-  ContinuationEntry* ce = thread->last_continuation();
-  RegisterMap map(thread,
-                  RegisterMap::UpdateMap::include,
-                  RegisterMap::ProcessFrames::include,
-                  RegisterMap::WalkContinuation::skip);
-  map.set_include_argument_oops(false);
-  for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
-    if ((f.is_interpreted_frame() && ContinuationHelper::InterpretedFrame::is_owning_locks(f)) ||
-        (f.is_compiled_frame() && ContinuationHelper::CompiledFrame::is_owning_locks(map.thread(), &map, f)) ||
-        (f.is_native_frame() && ContinuationHelper::NativeFrame::is_owning_locks(map.thread(), f))) {
-      return true;
-    }
-  }
-  return false;
-}
-
 // There are no interpreted frames if we're not called from the interpreter and we haven't ancountered an i2c
 // adapter or called Deoptimization::unpack_frames. As for native frames, upcalls from JNI also go through the
 // interpreter (see JavaCalls::call_helper), while the UpcallLinker explicitly sets cont_fastpath.
@@ -1714,8 +1741,6 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
 
   assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert(LockingMode != LM_LEGACY || (monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0)),
-         "Held monitor count and locks on stack invariant: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
   assert(LockingMode == LM_LEGACY || (current->held_monitor_count() == 0 && current->jni_monitor_count() == 0),
          "Held monitor count should only be used for LM_LEGACY: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
 
