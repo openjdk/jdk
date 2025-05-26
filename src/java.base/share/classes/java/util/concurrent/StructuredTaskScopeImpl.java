@@ -64,10 +64,10 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
     private StructuredTaskScopeImpl(Joiner<? super T, ? extends R> joiner,
                                     ThreadFactory threadFactory,
                                     String name) {
-        this.state = ST_NEW;
         this.joiner = joiner;
         this.threadFactory = threadFactory;
         this.flock = ThreadFlock.open((name != null) ? name : Objects.toIdentityString(this));
+        this.state = ST_NEW;
     }
 
     /**
