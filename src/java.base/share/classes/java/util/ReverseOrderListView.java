@@ -40,13 +40,14 @@ import jdk.internal.vm.annotation.Stable;
  */
 class ReverseOrderListView<E> implements List<E> {
 
-    // Values for modifiable field. "0" is reserved for default,
-    // non-foldable @Stable value.
-    static final byte MODIFIABLE_TRUE  = 1;
-    static final byte MODIFIABLE_FALSE = 2;
-
     @Stable
     final List<E> base;
+
+    /**
+     * This view is modifiable if positive, and not modifiable if negative.
+     * This field is actually boolean, but represented as byte to allow
+     * constant-folding both cases by avoiding the default "0" value.
+     */
     @Stable
     final byte modifiable;
 
@@ -64,9 +65,13 @@ class ReverseOrderListView<E> implements List<E> {
         }
     }
 
-    private ReverseOrderListView(List<E> list, boolean modifiable) {
+    private ReverseOrderListView(List<E> list, byte modifiable) {
         this.base = list;
-        this.modifiable = (byte)(modifiable ? MODIFIABLE_TRUE : MODIFIABLE_FALSE);
+        this.modifiable = modifiable;
+    }
+
+    private ReverseOrderListView(List<E> list, boolean modifiable) {
+        this(list, (byte)(modifiable ? 1 : -1));
     }
 
     /**
@@ -79,7 +84,7 @@ class ReverseOrderListView<E> implements List<E> {
      * behavior if every mutator of this class always checks.
      */
     void checkModifiable() {
-        if (modifiable != MODIFIABLE_TRUE) {
+        if (modifiable < 0) {
             throw new UnsupportedOperationException();
         }
     }
@@ -398,7 +403,7 @@ class ReverseOrderListView<E> implements List<E> {
     public List<E> subList(int fromIndex, int toIndex) {
         int size = base.size();
         Objects.checkFromToIndex(fromIndex, toIndex, size);
-        return new ReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex), modifiable == MODIFIABLE_TRUE);
+        return new ReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex), modifiable);
     }
 
     public List<E> reversed() {
