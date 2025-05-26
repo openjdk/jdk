@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,11 +93,11 @@ public class TerminatingThreadLocal<T> extends CarrierThreadLocal<T> {
     }
 
     /**
-     * a per-carrier-thread registry of TerminatingThreadLocal(s) that have been registered
-     * but later not unregistered in a particular carrier-thread.
+     * A per-terminating-thread registry of TerminatingThreadLocal(s) that have been
+     * registered but later not unregistered in a particular terminating-thread.
      */
-    public static final CarrierThreadLocal<Collection<TerminatingThreadLocal<?>>> REGISTRY =
-        new CarrierThreadLocal<>() {
+    public static final TerminatingThreadLocal<Collection<TerminatingThreadLocal<?>>> REGISTRY =
+        new TerminatingThreadLocal<>() {
             @Override
             protected Collection<TerminatingThreadLocal<?>> initialValue() {
                 return Collections.newSetFromMap(new IdentityHashMap<>(4));
