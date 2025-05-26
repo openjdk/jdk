@@ -27,17 +27,9 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 
-// PSVirtualSpace
-
 PSVirtualSpace::PSVirtualSpace(ReservedSpace rs, size_t alignment) :
   _alignment(alignment)
 {
-  set_reserved(rs);
-  set_committed(reserved_low_addr(), reserved_low_addr());
-  DEBUG_ONLY(verify());
-}
-
-void PSVirtualSpace::initialize(ReservedSpace rs) {
   set_reserved(rs);
   set_committed(reserved_low_addr(), reserved_low_addr());
   DEBUG_ONLY(verify());
