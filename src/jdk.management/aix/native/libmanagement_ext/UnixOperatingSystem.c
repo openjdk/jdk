@@ -35,7 +35,7 @@
 perfstat_process_t prev_stats = {0};
 static unsigned long long prev_timebase = 0;
 static int initialized = 0;
- 
+
 #define HTIC2SEC(x) (((double)(x) * XINTFRAC) / 1000000000.0)
 
 static perfstat_cpu_total_t cpu_total_old;
@@ -54,7 +54,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getCpuLoad0
     }
 
     ret = perfstat_cpu_total(NULL, &cpu_total, sizeof(perfstat_cpu_total_t), 1);
-    if (ret <= 0) {
+    if (ret < 0) {
         return -1.0;
     }
 
@@ -75,15 +75,21 @@ Java_com_sun_management_internal_OperatingSystemImpl_getCpuLoad0
         return -1.0;
     }
 
+    printf("User diff: %lld\n", user_diff);
+    printf("Sys diff: %lld\n", sys_diff);
+    printf("Idle diff: %lld\n", idle_diff);
+    printf("Wait diff: %lld\n", wait_diff);
+
+
     double load = (double)(user_diff + sys_diff) / total;
+    printf("load:%.4f\n",load);    
+    fflush(stdout);
     last_cpu_load = load;
     last_sample_time = now;
     cpu_total_old = cpu_total;
 
     return load;
 }
-
-
 
 JNIEXPORT jdouble JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getProcessCpuLoad0
@@ -93,13 +99,11 @@ Java_com_sun_management_internal_OperatingSystemImpl_getProcessCpuLoad0
     perfstat_id_t id;
     unsigned long long curr_timebase, timebase_diff;
     double user_diff, sys_diff, delta_time;
-    
 
-    if (perfstat_process(&id, &curr_stats, sizeof(perfstat_process_t), 1) == -1) {
-        return -1.0;  // Unable to get stats
+    if (perfstat_process(&id, &curr_stats, sizeof(perfstat_process_t), 1) < 0) {
+        return -1.0;  
     }
     if (!initialized) {
-        // First call: just store and return -1.0
         prev_stats = curr_stats;
         prev_timebase = curr_stats.last_timebase;
         initialized = 1;
