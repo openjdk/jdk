@@ -994,9 +994,10 @@ bool StringConcat::validate_control_flow() {
       if (otherproj->outcnt() == 1) {
         CallStaticJavaNode* call = otherproj->unique_out()->isa_CallStaticJava();
         if (call != nullptr && call->_name != nullptr && strcmp(call->_name, "uncommon_trap") == 0) {
-          // first check for dependency on a toString that is going away during stacked concats.
-          if (_multiple && ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0)))
-                            || (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
+          // First check for dependency on a toString that is going away during stacked concats.
+          if (_multiple &&
+              ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
+               (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
             // iftrue -> if -> bool -> cmpp -> resproj -> tostring
             fail = true;
             break;
