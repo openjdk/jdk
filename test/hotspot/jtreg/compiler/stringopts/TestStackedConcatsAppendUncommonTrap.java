@@ -28,6 +28,9 @@
  *          of the first StringBuilder chain is wired into an uncommon trap
  *          located in the second one.
  * @run main/othervm compiler.stringopts.TestStackedConcatsAppendUncommonTrap
+ * @run main/othervm -XX:-TieredCompilation -Xbatch
+ *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsAppendUncommonTrap::*
+ *                   compiler.stringopts.TestStackedConcatsAppendUncommonTrap
  */
 
 package compiler.stringopts;
@@ -35,15 +38,18 @@ package compiler.stringopts;
 public class TestStackedConcatsAppendUncommonTrap {
 
     public static void main (String... args) {
-        for (int i = 0; i < 1_000_000; i ++) {
-            f(" ");
+        for (int i = 0; i < 10000; i++) {
+            String s = f(" ");
+            if (!s.equals("    ")) {
+                throw new RuntimeException("wrong result.");
+            }
         }
     }
 
     static String f(String c) {
         String s = " ";
         s = new StringBuilder().append(s).append(s).toString();
-        s = new StringBuilder().append(s).append(s == c ? s : " ").toString();
+        s = new StringBuilder().append(s).append(s == c ? s : "  ").toString();
         return s;
     }
 }
