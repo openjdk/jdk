@@ -3468,11 +3468,13 @@ public class ForkJoinPool extends AbstractExecutorService
                         ctr.start(ds);
                     else
                         ds.start();
-                } catch (RuntimeException rex) { // back out
+                } catch (RuntimeException | Error ex) { // back out
                     lockRunState();
                     ds = delayScheduler = null;
                     unlockRunState();
                     tryTerminate(false, false);
+                    if (ex instanceof Error)
+                        throw ex;
                 }
             }
         }
