@@ -77,14 +77,15 @@ public class GifComparison {
             }
         });
 
-        System.out.println("Done. Successes = " + successCtr.get() + " Failures = "+ failureCtr.get());
+        System.out.println("Done. Successes = " + successCtr.get() +
+                " Failures = " + failureCtr.get());
     }
 
     /**
      * This iterates over every frame a gif and throws an Error / Exception
      * if ImageIO and ToolkitImage produce different BufferedImage renderings.
      *
-     * @param srcURL the URL of the image to study
+     * @param srcURL the URL of the image to inspect
      *
      * @return the last frame encoded as a TYPE_INT_ARGB image.
      *         <p>
@@ -104,7 +105,7 @@ public class GifComparison {
 
             // We could make this method much faster if we only iterated
             // through the gif file once (for each model). But this
-            // slow implementation is probably more readable for devs.
+            // slow implementation is probably more readable for developers.
 
             lastImage = awtImage;
 
@@ -114,7 +115,7 @@ public class GifComparison {
                         ioImg.getWidth() + "x" + ioImg.getHeight() + " vs " +
                         awtImage.getWidth() + "x" + awtImage.getHeight());
 
-            for (int y = 0; y  < ioImg.getHeight(); y++) {
+            for (int y = 0; y < ioImg.getHeight(); y++) {
                 for (int x = 0; x < ioImg.getWidth(); x++) {
                     int argb1 = ioImg.getRGB(x, y);
                     int argb2 = awtImage.getRGB(x, y);
