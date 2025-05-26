@@ -75,33 +75,37 @@ public enum LogTag {
      */
     JFR_SYSTEM_PERIODIC(9),
     /**
+     *  Covers sampling work (for Hotspot developer)
+     */
+    JFR_SYSTEM_SAMPLING(10),
+    /**
      *  Covers periodic event work (for users of the JDK)
      */
-    JFR_PERIODIC(10),
+    JFR_PERIODIC(11),
     /**
      *  Covers metadata for Java user (for Hotspot developers)
      */
-    JFR_METADATA(11),
+    JFR_METADATA(12),
     /**
      * Covers events (for users of the JDK)
      */
-    JFR_EVENT(12),
+    JFR_EVENT(13),
     /**
      * Covers setting (for users of the JDK)
      */
-    JFR_SETTING(13),
+    JFR_SETTING(14),
     /**
      * Covers usage of jcmd with JFR
      */
-    JFR_DCMD(14),
+    JFR_DCMD(15),
     /**
      * -XX:StartFlightRecording
      */
-    JFR_START(15),
+    JFR_START(16),
     /**
      *  Covers usage of MethodTiming and MethodTrace events
      */
-    JFR_METHODTRACE(16),
+    JFR_METHODTRACE(17),
     ;
 
     /* set from native side */

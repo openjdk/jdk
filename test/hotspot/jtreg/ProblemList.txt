@@ -91,12 +91,6 @@ gc/TestAllocHumongousFragment.java#adaptive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
-gc/TestAlwaysPreTouchBehavior.java#ParallelCollector 8334513 generic-all
-gc/TestAlwaysPreTouchBehavior.java#SerialCollector 8334513 generic-all
-gc/TestAlwaysPreTouchBehavior.java#Shenandoah 8334513 generic-all
-gc/TestAlwaysPreTouchBehavior.java#G1 8334513 generic-all
-gc/TestAlwaysPreTouchBehavior.java#Z 8334513 generic-all
-gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
 gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
 gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
 

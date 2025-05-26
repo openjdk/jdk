@@ -679,7 +679,7 @@ public class Socket implements java.io.Closeable {
      *          SocketAddress subclass not supported by this socket
      *
      * @since   1.4
-     * @see #isBound
+     * @see #isBound()
      */
     public void bind(SocketAddress bindpoint) throws IOException {
         int s = state;
@@ -1612,7 +1612,7 @@ public class Socket implements java.io.Closeable {
      * as well.
      *
      * @throws     IOException  if an I/O error occurs when closing this socket.
-     * @see #isClosed
+     * @see #isClosed()
      */
     public void close() throws IOException {
         synchronized (socketLock) {
@@ -1642,7 +1642,7 @@ public class Socket implements java.io.Closeable {
      * @see java.net.Socket#shutdownOutput()
      * @see java.net.Socket#close()
      * @see java.net.Socket#setSoLinger(boolean, int)
-     * @see #isInputShutdown
+     * @see #isInputShutdown()
      */
     public void shutdownInput() throws IOException {
         int s = state;
@@ -1672,7 +1672,7 @@ public class Socket implements java.io.Closeable {
      * @see java.net.Socket#shutdownInput()
      * @see java.net.Socket#close()
      * @see java.net.Socket#setSoLinger(boolean, int)
-     * @see #isOutputShutdown
+     * @see #isOutputShutdown()
      */
     public void shutdownOutput() throws IOException {
         int s = state;

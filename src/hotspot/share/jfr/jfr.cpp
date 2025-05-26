@@ -40,6 +40,7 @@
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
 
 bool Jfr::is_enabled() {
   return JfrRecorder::is_enabled();
