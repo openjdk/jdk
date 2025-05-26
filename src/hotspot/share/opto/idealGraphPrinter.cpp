@@ -474,6 +474,10 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         // Enforce dots as decimal separators, as required by IGV.
         StringUtils::replace_no_expand(buffer, ",", ".");
         print_prop("frequency", buffer);
+        // Print block index for nodes that are placed in blocks and scheduled locally.
+        if (block->contains(node)) {
+          print_prop("block_index", block->find_node(node));
+        }
       }
     }
 
