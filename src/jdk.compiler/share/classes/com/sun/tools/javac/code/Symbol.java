@@ -333,7 +333,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return location();
         }
         if (owner.type.hasTag(CLASS)) {
-            Type ownertype = types.asOuterSuper(site, owner);
+            Type ownertype = types.asEnclosingSuper(site, owner);
             if (ownertype != null) return ownertype.tsym;
         }
         return owner;
