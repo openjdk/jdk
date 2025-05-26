@@ -56,7 +56,6 @@ private:
   size_t    _desired_size;                       // desired size   (including alignment_reserve)
   size_t    _refill_waste_limit;                 // hold onto tlab if free() is larger than this
   size_t    _allocated_before_last_gc;           // total bytes allocated up until the last gc
-  size_t    _bytes_since_last_sample_point;      // bytes since last sample point.
 
   static size_t   _max_size;                          // maximum size of any TLAB
   static int      _reserve_for_allocation_prefetch;   // Reserve at the end of the TLAB
@@ -124,7 +123,6 @@ public:
   size_t free() const                            { return pointer_delta(end(), top()); }
   // Don't discard tlab if remaining space is larger than this.
   size_t refill_waste_limit() const              { return _refill_waste_limit; }
-  size_t bytes_since_last_sample_point() const   { return _bytes_since_last_sample_point; }
 
   // For external inspection.
   const HeapWord* start_relaxed() const;
@@ -158,8 +156,8 @@ public:
   // Retire an in-use tlab and optionally collect statistics.
   void retire(ThreadLocalAllocStats* stats = nullptr);
 
-  // Retire in-use tlab before allocation of a new tlab
-  void retire_before_allocation();
+  // Record refill waste before allocating (refilling) with a new TLAB.
+  void record_refill_waste();
 
   // Resize based on amount of allocation, etc.
   void resize();
@@ -167,8 +165,9 @@ public:
   void fill(HeapWord* start, HeapWord* top, size_t new_size);
   void initialize();
 
+  // Support for TLAB sampling
   void set_back_allocation_end();
-  void set_sample_end(bool reset_byte_accumulation);
+  void set_sampling_point(HeapWord* sampling_point);
 
   static size_t refill_waste_limit_increment();
 
