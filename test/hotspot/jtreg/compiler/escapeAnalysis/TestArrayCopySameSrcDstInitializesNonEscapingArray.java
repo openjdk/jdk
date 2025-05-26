@@ -56,6 +56,5 @@
         public A() {
             field = null;
         }
-
     }
 }
