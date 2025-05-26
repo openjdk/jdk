@@ -5433,7 +5433,7 @@ instruct compareAndSwapBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval, rFlagsReg cr)
+instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate((UseZabha && UseZacas) && needs_acquiring_load_reserved(n));
 
@@ -5480,7 +5480,7 @@ instruct compareAndSwapSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval, rFlagsReg cr)
+instruct compareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate((UseZabha && UseZacas) && needs_acquiring_load_reserved(n));
 
@@ -5784,7 +5784,7 @@ instruct compareAndExchangeBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchangeBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval, rFlagsReg cr)
+instruct compareAndExchangeBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate((UseZabha && UseZacas) && needs_acquiring_load_reserved(n));
 
@@ -5828,7 +5828,7 @@ instruct compareAndExchangeSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchangeSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval, rFlagsReg cr)
+instruct compareAndExchangeSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate((UseZabha && UseZacas) && needs_acquiring_load_reserved(n));
 
@@ -6125,7 +6125,7 @@ instruct weakCompareAndSwapBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
   ins_pipe(pipe_slow);
 %}
 
-instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval, rFlagsReg cr)
+instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate((UseZabha && UseZacas) && needs_acquiring_load_reserved(n));
 
@@ -6171,7 +6171,7 @@ instruct weakCompareAndSwapSAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 ol
   ins_pipe(pipe_slow);
 %}
 
-instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval, rFlagsReg cr)
+instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate((UseZabha && UseZacas) && needs_acquiring_load_reserved(n));
 
