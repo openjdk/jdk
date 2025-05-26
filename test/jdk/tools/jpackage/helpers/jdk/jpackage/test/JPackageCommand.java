@@ -851,6 +851,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }
 
+        if (expectedExitCode == 0 && !isImagePackageType()) {
+            ConfigFilesStasher.INSTANCE.accept(this);
+        }
+
         final var copy = new JPackageCommand(this).adjustArgumentsBeforeExecution();
 
         final var directoriesAssert = new ReadOnlyPathsAssert(copy);
@@ -858,6 +862,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         Executor.Result result = copy.createExecutor().execute(expectedExitCode);
 
         directoriesAssert.updateAndAssert();
+
+        if (expectedExitCode == 0 && isImagePackageType()) {
+            ConfigFilesStasher.INSTANCE.accept(this);
+        }
 
         for (final var outputValidator: outputValidators) {
             outputValidator.accept(result.getOutput().iterator());

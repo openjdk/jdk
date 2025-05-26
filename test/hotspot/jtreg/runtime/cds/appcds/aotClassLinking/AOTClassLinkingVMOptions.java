@@ -124,12 +124,14 @@ public class AOTClassLinkingVMOptions {
                             "--module-path", modulePath,
                             "-XX:+AOTClassLinking",
                             "-m", MAIN_MODULE);
-        TestCommon.run("-Xlog:cds",
+        TestCommon.run("-Xlog:aot",
+                       "-Xlog:cds",
                        "--module-path", modulePath,
                        "-m", MAIN_MODULE)
             .assertNormalExit("Using AOT-linked classes: true");
 
-        TestCommon.run("-Xlog:cds",
+        TestCommon.run("-Xlog:aot",
+                       "-Xlog:cds",
                        "--module-path", modulePath + "/bad",
                        "-m", MAIN_MODULE)
             .assertAbnormalExit("shared archive file has aot-linked classes. It cannot be used when archived full module graph is not used.");
@@ -139,7 +141,8 @@ public class AOTClassLinkingVMOptions {
                             "--module-path", modulePath,
                             "-XX:+AOTClassLinking",
                             "--add-modules", MAIN_MODULE);
-        TestCommon.run("-Xlog:cds",
+        TestCommon.run("-Xlog:aot",
+                       "-Xlog:cds",
                        "--module-path", modulePath,
                        "--add-modules", MAIN_MODULE,
                        MAIN_CLASS)

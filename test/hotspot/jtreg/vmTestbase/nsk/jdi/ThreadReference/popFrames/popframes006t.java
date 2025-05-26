@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class popframes006t {
+    static Thread testThread = null;
+
     private Log log;
     private IOPipe pipe;
     volatile boolean wasPopped = false;
@@ -51,7 +53,8 @@ public class popframes006t {
         log = argHandler.createDebugeeLog();
         pipe = argHandler.createDebugeeIOPipe();
 
-        Thread.currentThread().setName(popframes006.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(popframes006.DEBUGGEE_THRNAME);
 
         pipe.println(popframes006.COMMAND_READY);
         String cmd = pipe.readln();
