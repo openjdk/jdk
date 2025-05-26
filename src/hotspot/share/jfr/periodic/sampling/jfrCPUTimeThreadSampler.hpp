@@ -58,6 +58,10 @@ class JfrCPUTimeTraceQueue {
 
   volatile s4 _lost_samples;
 
+  // index of the first request of the thread in native state
+  // -1 if no native request is in the queue
+  volatile s4 _first_native_request_index;
+
 public:
   JfrCPUTimeTraceQueue(u4 capacity);
 
@@ -93,6 +97,10 @@ public:
   void ensure_capacity_for_period(u4 period_millis);
 
   void clear();
+
+  void set_first_native_request_index(s4 index);
+
+  s4 first_native_request_index() const;
 };
 
 
