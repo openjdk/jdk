@@ -1552,57 +1552,27 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
                                                    Register addr_base, Register tmp1, Register tmp2, Register tmp3,
                                                    bool cmpxchgx_hint, bool is_add, int size) {
   // Sub-word instructions are available since Power 8.
-  // For older processors, instruction_type != size holds, and we
-  // emulate the sub-word instructions by constructing a 4-byte value
-  // that leaves the other bytes unchanged.
-  const int instruction_type = VM_Version::has_lqarx() ? size : 4;
 
   Label retry;
   Register shift_amount = noreg,
            val32 = dest_current_value,
            modval = is_add ? tmp1 : exchange_value;
 
-  if (instruction_type != size) {
-    assert_different_registers(tmp1, tmp2, tmp3, dest_current_value, exchange_value, addr_base);
-    modval = tmp1;
-    shift_amount = tmp2;
-    val32 = tmp3;
-    // Need some preparation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
-#ifdef VM_LITTLE_ENDIAN
-    rldic(shift_amount, addr_base, 3, 64-5); // (dest & 3) * 8;
-    clrrdi(addr_base, addr_base, 2);
-#else
-    xori(shift_amount, addr_base, (size == 1) ? 3 : 2);
-    clrrdi(addr_base, addr_base, 2);
-    rldic(shift_amount, shift_amount, 3, 64-5); // byte: ((3-dest) & 3) * 8; short: ((1-dest/2) & 1) * 16;
-#endif
-  }
 
   // atomic emulation loop
   bind(retry);
 
-  switch (instruction_type) {
+  switch (size) {
     case 4: lwarx(val32, addr_base, cmpxchgx_hint); break;
     case 2: lharx(val32, addr_base, cmpxchgx_hint); break;
     case 1: lbarx(val32, addr_base, cmpxchgx_hint); break;
     default: ShouldNotReachHere();
   }
 
-  if (instruction_type != size) {
-    srw(dest_current_value, val32, shift_amount);
-  }
-
   if (is_add) { add(modval, dest_current_value, exchange_value); }
 
-  if (instruction_type != size) {
-    // Transform exchange value such that the replacement can be done by one xor instruction.
-    xorr(modval, dest_current_value, is_add ? modval : exchange_value);
-    clrldi(modval, modval, (size == 1) ? 56 : 48);
-    slw(modval, modval, shift_amount);
-    xorr(modval, val32, modval);
-  }
 
-  switch (instruction_type) {
+  switch (size) {
     case 4: stwcx_(modval, addr_base); break;
     case 2: sthcx_(modval, addr_base); break;
     case 1: stbcx_(modval, addr_base); break;
@@ -1627,51 +1597,22 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
 // Only signed types are supported with size < 4.
 void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
                                        RegisterOrConstant compare_value, Register exchange_value,
-                                       Register addr_base, Register tmp1, Register tmp2,
-                                       Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
+                                       Register addr_base, Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
   // Sub-word instructions are available since Power 8.
-  // For older processors, instruction_type != size holds, and we
-  // emulate the sub-word instructions by constructing a 4-byte value
-  // that leaves the other bytes unchanged.
-  const int instruction_type = VM_Version::has_lqarx() ? size : 4;
-
   Register shift_amount = noreg,
            val32 = dest_current_value,
            modval = exchange_value;
 
-  if (instruction_type != size) {
-    assert_different_registers(tmp1, tmp2, dest_current_value, compare_value.register_or_noreg(), exchange_value, addr_base);
-    shift_amount = tmp1;
-    val32 = tmp2;
-    modval = tmp2;
-    // Need some preparation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
-#ifdef VM_LITTLE_ENDIAN
-    rldic(shift_amount, addr_base, 3, 64-5); // (dest & 3) * 8;
-    clrrdi(addr_base, addr_base, 2);
-#else
-    xori(shift_amount, addr_base, (size == 1) ? 3 : 2);
-    clrrdi(addr_base, addr_base, 2);
-    rldic(shift_amount, shift_amount, 3, 64-5); // byte: ((3-dest) & 3) * 8; short: ((1-dest/2) & 1) * 16;
-#endif
-    // Transform exchange value such that the replacement can be done by one xor instruction.
-    xorr(exchange_value, compare_value, exchange_value);
-    clrldi(exchange_value, exchange_value, (size == 1) ? 56 : 48);
-    slw(exchange_value, exchange_value, shift_amount);
-  }
-
   // atomic emulation loop
   bind(retry);
 
-  switch (instruction_type) {
+  switch (size) {
     case 4: lwarx(val32, addr_base, cmpxchgx_hint); break;
     case 2: lharx(val32, addr_base, cmpxchgx_hint); break;
     case 1: lbarx(val32, addr_base, cmpxchgx_hint); break;
     default: ShouldNotReachHere();
   }
 
-  if (instruction_type != size) {
-    srw(dest_current_value, val32, shift_amount);
-  }
   if (size == 1) {
     extsb(dest_current_value, dest_current_value);
   } else if (size == 2) {
@@ -1687,11 +1628,7 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
   // branch to done  => (flag == ne), (dest_current_value != compare_value)
   // fall through    => (flag == eq), (dest_current_value == compare_value)
 
-  if (instruction_type != size) {
-    xorr(modval, val32, exchange_value);
-  }
-
-  switch (instruction_type) {
+  switch (size) {
     case 4: stwcx_(modval, addr_base); break;
     case 2: sthcx_(modval, addr_base); break;
     case 1: stbcx_(modval, addr_base); break;
@@ -1702,8 +1639,7 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
 // CmpxchgX sets condition register to cmpX(current, compare).
 void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_current_value,
                                      RegisterOrConstant compare_value, Register exchange_value,
-                                     Register addr_base, Register tmp1, Register tmp2,
-                                     int semantics, bool cmpxchgx_hint, Register int_flag_success,
+                                     Register addr_base, int semantics, bool cmpxchgx_hint, Register int_flag_success,
                                      Label* failed_ext, bool contention_hint, bool weak, int size) {
   Label retry;
   Label failed_int;
@@ -1714,8 +1650,7 @@ void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_curre
   // result register is different from the other ones.
   bool use_result_reg    = (int_flag_success != noreg);
   bool preset_result_reg = (int_flag_success != dest_current_value && int_flag_success != compare_value.register_or_noreg() &&
-                            int_flag_success != exchange_value && int_flag_success != addr_base &&
-                            int_flag_success != tmp1 && int_flag_success != tmp2);
+                            int_flag_success != exchange_value && int_flag_success != addr_base);
   assert(!weak || flag == CR0, "weak only supported with CR0");
   assert(int_flag_success == noreg || failed_ext == nullptr, "cannot have both");
   assert(size == 1 || size == 2 || size == 4, "unsupported");
@@ -1741,7 +1676,7 @@ void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_curre
     release();
   }
 
-  cmpxchg_loop_body(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
+  cmpxchg_loop_body(flag, dest_current_value, compare_value, exchange_value, addr_base,
                     retry, failed, cmpxchgx_hint, size);
   if (!weak || use_result_reg || failed_ext) {
     if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
@@ -3717,7 +3652,6 @@ void MacroAssembler::load_reverse_32(Register dst, Register src) {
 // Due to register shortage, setting tc3 may overwrite table. With the return offset
 // at hand, the original table address can be easily reconstructed.
 int MacroAssembler::crc32_table_columns(Register table, Register tc0, Register tc1, Register tc2, Register tc3) {
-  assert(!VM_Version::has_vpmsumb(), "Vector version should be used instead!");
 
   // Point to 4 byte folding tables (byte-reversed version for Big Endian)
   // Layout: See StubRoutines::ppc::generate_crc_constants.
@@ -3850,103 +3784,6 @@ void MacroAssembler::update_1word_crc32(Register crc, Register buf, Register tab
   xorr(crc, t0, t2);  // Now crc contains the final checksum value.
 }
 
-/**
- * @param crc   register containing existing CRC (32-bit)
- * @param buf   register pointing to input byte buffer (byte*)
- * @param len   register containing number of bytes
- * @param table register pointing to CRC table
- *
- * uses R9..R12 as work register. Must be saved/restored by caller!
- */
-void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len, Register table,
-                                        Register t0,  Register t1,  Register t2,  Register t3,
-                                        Register tc0, Register tc1, Register tc2, Register tc3,
-                                        bool invertCRC) {
-  assert_different_registers(crc, buf, len, table);
-
-  Label L_mainLoop, L_tail;
-  Register  tmp          = t0;
-  Register  data         = t0;
-  Register  tmp2         = t1;
-  const int mainLoop_stepping  = 4;
-  const int tailLoop_stepping  = 1;
-  const int log_stepping       = exact_log2(mainLoop_stepping);
-  const int mainLoop_alignment = 32; // InputForNewCode > 4 ? InputForNewCode : 32;
-  const int complexThreshold   = 2*mainLoop_stepping;
-
-  // Don't test for len <= 0 here. This pathological case should not occur anyway.
-  // Optimizing for it by adding a test and a branch seems to be a waste of CPU cycles
-  // for all well-behaved cases. The situation itself is detected and handled correctly
-  // within update_byteLoop_crc32.
-  assert(tailLoop_stepping == 1, "check tailLoop_stepping!");
-
-  BLOCK_COMMENT("kernel_crc32_1word {");
-
-  if (invertCRC) {
-    nand(crc, crc, crc);                      // 1s complement of crc
-  }
-
-  // Check for short (<mainLoop_stepping) buffer.
-  cmpdi(CR0, len, complexThreshold);
-  blt(CR0, L_tail);
-
-  // Pre-mainLoop alignment did show a slight (1%) positive effect on performance.
-  // We leave the code in for reference. Maybe we need alignment when we exploit vector instructions.
-  {
-    // Align buf addr to mainLoop_stepping boundary.
-    neg(tmp2, buf);                              // Calculate # preLoop iterations for alignment.
-    rldicl(tmp2, tmp2, 0, 64-log_stepping);      // Rotate tmp2 0 bits, insert into tmp2, anding with mask with 1s from 62..63.
-
-    if (complexThreshold > mainLoop_stepping) {
-      sub(len, len, tmp2);                       // Remaining bytes for main loop (>=mainLoop_stepping is guaranteed).
-    } else {
-      sub(tmp, len, tmp2);                       // Remaining bytes for main loop.
-      cmpdi(CR0, tmp, mainLoop_stepping);
-      blt(CR0, L_tail);                         // For less than one mainloop_stepping left, do only tail processing
-      mr(len, tmp);                              // remaining bytes for main loop (>=mainLoop_stepping is guaranteed).
-    }
-    update_byteLoop_crc32(crc, buf, tmp2, table, data, false);
-  }
-
-  srdi(tmp2, len, log_stepping);                 // #iterations for mainLoop
-  andi(len, len, mainLoop_stepping-1);           // remaining bytes for tailLoop
-  mtctr(tmp2);
-
-#ifdef VM_LITTLE_ENDIAN
-  Register crc_rv = crc;
-#else
-  Register crc_rv = tmp;                         // Load_reverse needs separate registers to work on.
-                                                 // Occupies tmp, but frees up crc.
-  load_reverse_32(crc_rv, crc);                  // Revert byte order because we are dealing with big-endian data.
-  tmp = crc;
-#endif
-
-  int reconstructTableOffset = crc32_table_columns(table, tc0, tc1, tc2, tc3);
-
-  align(mainLoop_alignment);                     // Octoword-aligned loop address. Shows 2% improvement.
-  BIND(L_mainLoop);
-    update_1word_crc32(crc_rv, buf, table, 0, mainLoop_stepping, crc_rv, t1, t2, t3, tc0, tc1, tc2, tc3);
-    bdnz(L_mainLoop);
-
-#ifndef VM_LITTLE_ENDIAN
-  load_reverse_32(crc, crc_rv);                  // Revert byte order because we are dealing with big-endian data.
-  tmp = crc_rv;                                  // Tmp uses it's original register again.
-#endif
-
-  // Restore original table address for tailLoop.
-  if (reconstructTableOffset != 0) {
-    addi(table, table, -reconstructTableOffset);
-  }
-
-  // Process last few (<complexThreshold) bytes of buffer.
-  BIND(L_tail);
-  update_byteLoop_crc32(crc, buf, len, table, data, false);
-
-  if (invertCRC) {
-    nand(crc, crc, crc);                      // 1s complement of crc
-  }
-  BLOCK_COMMENT("} kernel_crc32_1word");
-}
 
 /**
  * @param crc             register containing existing CRC (32-bit)
@@ -4061,11 +3898,9 @@ void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Reg
   // We have at least 1 iteration (ensured by caller).
   Label L_outer_loop, L_inner_loop, L_last;
 
-  // If supported set DSCR pre-fetch to deepest.
-  if (VM_Version::has_mfdscr()) {
-    load_const_optimized(t0, VM_Version::_dscr_val | 7);
-    mtdscr(t0);
-  }
+  // Set DSCR pre-fetch to deepest.
+  load_const_optimized(t0, VM_Version::_dscr_val | 7);
+  mtdscr(t0);
 
   mtvrwz(VCRC, crc); // crc lives in VCRC, now
 
@@ -4209,10 +4044,8 @@ void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Reg
   // ********** Main loop end **********
 
   // Restore DSCR pre-fetch value.
-  if (VM_Version::has_mfdscr()) {
-    load_const_optimized(t0, VM_Version::_dscr_val);
-    mtdscr(t0);
-  }
+  load_const_optimized(t0, VM_Version::_dscr_val);
+  mtdscr(t0);
 
   // ********** Simple loop for remaining 16 byte blocks **********
   {
@@ -4284,11 +4117,7 @@ void MacroAssembler::crc32(Register crc, Register buf, Register len, Register t0
   load_const_optimized(t0, is_crc32c ? StubRoutines::crc32c_table_addr()
                                      : StubRoutines::crc_table_addr()   , R0);
 
-  if (VM_Version::has_vpmsumb()) {
-    kernel_crc32_vpmsum(crc, buf, len, t0, t1, t2, t3, t4, t5, t6, t7, !is_crc32c);
-  } else {
-    kernel_crc32_1word(crc, buf, len, t0, t1, t2, t3, t4, t5, t6, t7, t0, !is_crc32c);
-  }
+  kernel_crc32_vpmsum(crc, buf, len, t0, t1, t2, t3, t4, t5, t6, t7, !is_crc32c);
 }
 
 void MacroAssembler::kernel_crc32_singleByteReg(Register crc, Register val, Register table, bool invertCRC) {

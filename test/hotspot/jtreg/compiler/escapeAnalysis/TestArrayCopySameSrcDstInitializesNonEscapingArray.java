@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,42 +21,40 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8343580
- * @summary Type error with inner classes of generic classes in functions generic by outer
- * @compile T8343580.java
+ * @bug 8356989
+ * @summary Unexpected null in C2 compiled code
+ * @run main/othervm -XX:-BackgroundCompilation TestArrayCopySameSrcDstInitializesNonEscapingArray
+ * @run main TestArrayCopySameSrcDstInitializesNonEscapingArray
  */
 
-class T8343580 {
-   static abstract class Getters<T> {
-      abstract class Getter {
-         abstract T get();
-      }
-   }
+ public class TestArrayCopySameSrcDstInitializesNonEscapingArray {
+    private static volatile int volatileField;
 
-   static class Usage1<T, G extends Getters<T>> {
-      public T test(G.Getter getter) {
-         return getter.get();
-      }
-   }
+    public static void main(String[] args) {
+        Object obj = new Object();
+        for (int i = 0; i < 20_000; i++) {
+            test1(obj);
+        }
+    }
 
-   static class Usage2<T, U extends Getters<T>, G extends U> {
-      public T test(G.Getter getter) {
-         return getter.get();
-      }
-   }
+    private static void test1(Object obj) {
+        A a = new A();
+        Object[] array = new Object[2];
+        array[0] = obj;
+        a.field = array;
+        System.arraycopy(array, 0, array, 1, 1);
+        if (a.field[1] == null) {
+            throw new RuntimeException("Can't be null");
+        }
+    }
 
-   static class Usage3<T, U extends T, G extends Getters<T>> {
-      public T test(G.Getter getter) {
-         return getter.get();
-      }
-   }
+    private static class A {
+        Object[] field;
 
-   class G2<K> extends Getters<K> {}
-   static class Usage4<M, L extends G2<M>> {
-      M test(L.Getter getter) {
-         return getter.get();
-      }
-   }
+        public A() {
+            field = null;
+        }
+    }
 }
