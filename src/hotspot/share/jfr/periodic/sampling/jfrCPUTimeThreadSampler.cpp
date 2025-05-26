@@ -777,10 +777,4 @@ void JfrCPUTimeThreadSampling::on_javathread_create(JavaThread* thread) {
 void JfrCPUTimeThreadSampling::on_javathread_terminate(JavaThread* thread) {
 }
 
-void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks& start_time, traceid tid, Tickspan cpu_time_period) {
-}
-
-void JfrCPUTimeThreadSampling::send_event(const JfrTicks& start_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased) {
-}
-
 #endif // defined(LINUX) && defined(INCLUDE_JFR)
