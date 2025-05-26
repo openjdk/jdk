@@ -166,7 +166,7 @@ abstract class UnixUserDefinedFileAttributeView
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        if (dst instanceof sun.nio.ch.DirectBuffer) {
+        if (dst.isDirect()) {
             NIO_ACCESS.acquireSession(dst);
             try {
                 long address = NIO_ACCESS.getBufferAddress(dst) + pos;
@@ -225,7 +225,7 @@ abstract class UnixUserDefinedFileAttributeView
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        if (src instanceof sun.nio.ch.DirectBuffer) {
+        if (src.isDirect()) {
             NIO_ACCESS.acquireSession(src);
             try {
                 long address = NIO_ACCESS.getBufferAddress(src) + pos;

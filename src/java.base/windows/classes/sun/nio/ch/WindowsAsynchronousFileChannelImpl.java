@@ -38,8 +38,6 @@ import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.event.FileForceEvent;
 import jdk.internal.invoke.MhUtil;
 
-import static sun.nio.ch.Util.NIO_ACCESS;
-
 /**
  * Windows implementation of AsynchronousFileChannel using overlapped I/O.
  */
@@ -446,7 +444,7 @@ public class WindowsAsynchronousFileChannelImpl
             long address;
 
             // Substitute a native buffer if not direct
-            if (dst instanceof DirectBuffer) {
+            if (dst.isDirect()) {
                 buf = dst;
                 address = IOUtil.bufferAddress(dst) + pos;
             } else {
@@ -629,7 +627,7 @@ public class WindowsAsynchronousFileChannelImpl
             long address;
 
             // Substitute a native buffer if not direct
-            if (src instanceof DirectBuffer) {
+            if (src.isDirect()) {
                 buf = src;
                 address = IOUtil.bufferAddress(src) + pos;
             } else {
