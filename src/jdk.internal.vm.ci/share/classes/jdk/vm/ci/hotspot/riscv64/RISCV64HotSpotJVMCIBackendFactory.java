@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,39 +52,11 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, emptyMap());
     }
 
-    private static EnumSet<RISCV64.Flag> computeFlags(RISCV64HotSpotVMConfig config) {
-        EnumSet<RISCV64.Flag> flags = EnumSet.noneOf(RISCV64.Flag.class);
-
-        if (config.useConservativeFence) {
-            flags.add(RISCV64.Flag.UseConservativeFence);
-        }
-        if (config.avoidUnalignedAccesses) {
-            flags.add(RISCV64.Flag.AvoidUnalignedAccesses);
-        }
-        if (config.traceTraps) {
-            flags.add(RISCV64.Flag.TraceTraps);
-        }
-        if (config.useRVV) {
-            flags.add(RISCV64.Flag.UseRVV);
-        }
-        if (config.useRVC) {
-            flags.add(RISCV64.Flag.UseRVC);
-        }
-        if (config.useZba) {
-            flags.add(RISCV64.Flag.UseZba);
-        }
-        if (config.useZbb) {
-            flags.add(RISCV64.Flag.UseZbb);
-        }
-
-        return flags;
-    }
-
     private static TargetDescription createTarget(RISCV64HotSpotVMConfig config) {
         final int stackFrameAlignment = 16;
         final int implicitNullCheckLimit = 4096;
         final boolean inlineObjects = true;
-        Architecture arch = new RISCV64(computeFeatures(config), computeFlags(config));
+        Architecture arch = new RISCV64(computeFeatures(config));
         return new TargetDescription(arch, true, stackFrameAlignment, implicitNullCheckLimit, inlineObjects);
     }
 
@@ -115,7 +87,6 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     }
 
     @Override
-    @SuppressWarnings("try")
     public JVMCIBackend createJVMCIBackend(HotSpotJVMCIRuntime runtime, JVMCIBackend host) {
         assert host == null;
         RISCV64HotSpotVMConfig config = new RISCV64HotSpotVMConfig(runtime.getConfigStore());
@@ -126,24 +97,24 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         ConstantReflectionProvider constantReflection;
         HotSpotMetaAccessProvider metaAccess;
         StackIntrospection stackIntrospection;
-        try (InitTimer t = timer("create providers")) {
-            try (InitTimer rt = timer("create MetaAccess provider")) {
+        try (InitTimer _ = timer("create providers")) {
+            try (InitTimer _ = timer("create MetaAccess provider")) {
                 metaAccess = createMetaAccess(runtime);
             }
-            try (InitTimer rt = timer("create RegisterConfig")) {
+            try (InitTimer _ = timer("create RegisterConfig")) {
                 regConfig = createRegisterConfig(config, target);
             }
-            try (InitTimer rt = timer("create CodeCache provider")) {
+            try (InitTimer _ = timer("create CodeCache provider")) {
                 codeCache = createCodeCache(runtime, target, regConfig);
             }
-            try (InitTimer rt = timer("create ConstantReflection provider")) {
+            try (InitTimer _ = timer("create ConstantReflection provider")) {
                 constantReflection = createConstantReflection(runtime);
             }
-            try (InitTimer rt = timer("create StackIntrospection provider")) {
+            try (InitTimer _ = timer("create StackIntrospection provider")) {
                 stackIntrospection = new HotSpotStackIntrospection(runtime);
             }
         }
-        try (InitTimer rt = timer("instantiate backend")) {
+        try (InitTimer _ = timer("instantiate backend")) {
             return createBackend(metaAccess, codeCache, constantReflection, stackIntrospection);
         }
     }
