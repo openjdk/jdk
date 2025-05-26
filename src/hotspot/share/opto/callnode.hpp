@@ -737,7 +737,7 @@ public:
   // Collect all the interesting edges from a call for use in
   // replacing the call by something else.  Used by macro expansion
   // and the late inlining support.
-  void extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts = true);
+  void extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts = true) const;
 
   virtual uint match_edge(uint idx) const;
 
@@ -911,6 +911,21 @@ public:
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
 #endif
+};
+
+class CallLeafPureNode : public CallLeafNode {
+protected:
+  bool is_unused() const;
+  TupleNode* make_tuple_of_input_state_and_top_return_values(const Compile* C) const;
+
+public:
+  CallLeafPureNode(const TypeFunc* tf, address addr, const char* name,
+                   const TypePtr* adr_type)
+      : CallLeafNode(tf, addr, name, adr_type) {
+    init_class_id(Class_CallLeafPure);
+  }
+  int Opcode() const override;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
 };
 
 //------------------------------CallLeafNoFPNode-------------------------------
