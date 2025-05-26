@@ -131,19 +131,18 @@ class MacroAssembler: public Assembler {
   // Whether materializing the given address for a LDR/STR requires an
   // additional lea instruction.
   static bool legitimize_address_requires_lea(const Address &a, int size) {
-    return !Address::offset_ok_for_immed(a.offset(), exact_log2(size));
+    return a.getMode() == Address::base_plus_offset &&
+           !Address::offset_ok_for_immed(a.offset(), exact_log2(size));
   }
 
   /* Sometimes we get misaligned loads and stores, usually from Unsafe
      accesses, and these can exceed the offset range. */
   Address legitimize_address(const Address &a, int size, Register scratch) {
-    if (a.getMode() == Address::base_plus_offset) {
-      if (legitimize_address_requires_lea(a, size)) {
-        block_comment("legitimize_address {");
-        lea(scratch, a);
-        block_comment("} legitimize_address");
-        return Address(scratch);
-      }
+    if (legitimize_address_requires_lea(a, size)) {
+      block_comment("legitimize_address {");
+      lea(scratch, a);
+      block_comment("} legitimize_address");
+      return Address(scratch);
     }
     return a;
   }
