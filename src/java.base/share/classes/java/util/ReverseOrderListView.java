@@ -40,10 +40,15 @@ import jdk.internal.vm.annotation.Stable;
  */
 class ReverseOrderListView<E> implements List<E> {
 
+    // Values for modifiable field. "0" is reserved for default,
+    // non-foldable @Stable value.
+    static final byte MODIFIABLE_TRUE  = 1;
+    static final byte MODIFIABLE_FALSE = 2;
+
     @Stable
     final List<E> base;
     @Stable
-    final Boolean modifiable;
+    final byte modifiable;
 
     public static <T> List<T> of(List<T> list, boolean modifiable) {
         if (list instanceof RandomAccess) {
@@ -61,7 +66,7 @@ class ReverseOrderListView<E> implements List<E> {
 
     private ReverseOrderListView(List<E> list, boolean modifiable) {
         this.base = list;
-        this.modifiable = modifiable;
+        this.modifiable = (byte)(modifiable ? MODIFIABLE_TRUE : MODIFIABLE_FALSE);
     }
 
     /**
@@ -74,7 +79,7 @@ class ReverseOrderListView<E> implements List<E> {
      * behavior if every mutator of this class always checks.
      */
     void checkModifiable() {
-        if (! modifiable) {
+        if (modifiable != MODIFIABLE_TRUE) {
             throw new UnsupportedOperationException();
         }
     }
@@ -393,7 +398,7 @@ class ReverseOrderListView<E> implements List<E> {
     public List<E> subList(int fromIndex, int toIndex) {
         int size = base.size();
         Objects.checkFromToIndex(fromIndex, toIndex, size);
-        return new ReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex), modifiable);
+        return new ReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex), modifiable == MODIFIABLE_TRUE);
     }
 
     public List<E> reversed() {
