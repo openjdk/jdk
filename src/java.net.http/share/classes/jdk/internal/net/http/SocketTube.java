@@ -956,12 +956,12 @@ final class SocketTube implements FlowTube {
             boolean handlePending() {
                 ReadSubscription pending;
                 boolean subscribed = false;
+                ReadSubscription current = subscription;
                 while ((pending = pendingSubscriptions.poll()) != null) {
                     subscribed = true;
                     if (debug.on())
                         debug.log("handling pending subscription for %s",
                             pending.subscriber);
-                    ReadSubscription current = subscription;
                     if (current != null && current != pending && !completed) {
                         debug.log("dropping pending subscription for current %s",
                                 current.subscriber);
@@ -971,7 +971,7 @@ final class SocketTube implements FlowTube {
                     subscriptionImpl.demand.reset(); // subscriber will increase demand if it needs to.
                     pending.errorRef.compareAndSet(null, errorRef.get());
                     if (!readScheduler.isStopped()) {
-                        subscription = pending;
+                        current = subscription = pending;
                     } else {
                         if (debug.on()) debug.log("socket tube is already stopped");
                     }
