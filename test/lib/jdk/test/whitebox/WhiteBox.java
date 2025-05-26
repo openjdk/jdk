@@ -569,7 +569,7 @@ public class WhiteBox {
       try {
         wfrp = Reference.class.getDeclaredMethod("waitForReferenceProcessing");
         wfrp.setAccessible(true);
-        assert wfrp.getReturnType() == Boolean.class;
+        assert wfrp.getReturnType().equals(boolean.class);
         Class<?>[] ev = wfrp.getExceptionTypes();
         assert ev.length == 1;
         assert ev[0] == InterruptedException.class;
@@ -816,6 +816,7 @@ public class WhiteBox {
                                    String procSelfMountinfo);
   public native void printOsInfo();
   public native long hostPhysicalMemory();
+  public native long hostAvailableMemory();
   public native long hostPhysicalSwap();
   public native int hostCPUs();
 

@@ -110,6 +110,7 @@ public class BulkLoaderTest {
 
         // Run without archived FMG -- fail to load
         {
+            final String archiveType = (args[0].equals("AOT")) ? "AOT cache" : "shared archive file";
             String extraVmArgs[] = {
                 "-Xlog:cds",
                 "-Djdk.module.showModuleResolution=true"
@@ -117,7 +118,7 @@ public class BulkLoaderTest {
             t.setCheckExitValue(false);
             OutputAnalyzer out = t.productionRun(extraVmArgs);
             out.shouldHaveExitValue(1);
-            out.shouldContain("CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used.");
+            out.shouldContain(archiveType + " has aot-linked classes. It cannot be used when archived full module graph is not used.");
             t.setCheckExitValue(true);
         }
     }
@@ -136,7 +137,7 @@ public class BulkLoaderTest {
         @Override
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
-                "-Xlog:cds,cds+aot+load,cds+class=debug",
+                "-Xlog:cds,aot+load,cds+class=debug,aot+class=debug",
                 "-XX:+AOTClassLinking",
             };
         }
@@ -157,7 +158,7 @@ public class BulkLoaderTest {
 
             if (isDumping(runMode)) {
                 // Check that we are archiving classes for custom class loaders.
-                out.shouldMatch("cds,class.* SimpleCusty");
+                out.shouldMatch(",class.* SimpleCusty");
             }
         }
     }

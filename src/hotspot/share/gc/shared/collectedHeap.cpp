@@ -112,7 +112,7 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
                  heap->total_full_collections());
 
   {
-    StreamAutoIndentor indentor(&st, 1);
+    StreamIndentor si(&st, 1);
     heap->print_heap_on(&st);
     MetaspaceUtils::print_on(&st);
   }
@@ -169,7 +169,7 @@ void CollectedHeap::print_heap_before_gc() {
     LogStream ls(lt);
     ls.print_cr("Heap before GC invocations=%u (full %u):", total_collections(), total_full_collections());
 
-    StreamAutoIndentor indentor(&ls, 1);
+    StreamIndentor si(&ls, 1);
     print_heap_on(&ls);
     MetaspaceUtils::print_on(&ls);
   }
@@ -185,7 +185,7 @@ void CollectedHeap::print_heap_after_gc() {
     LogStream ls(lt);
     ls.print_cr("Heap after GC invocations=%u (full %u):", total_collections(), total_full_collections());
 
-    StreamAutoIndentor indentor(&ls, 1);
+    StreamIndentor si(&ls, 1);
     print_heap_on(&ls);
     MetaspaceUtils::print_on(&ls);
   }
@@ -517,8 +517,8 @@ void CollectedHeap::ensure_parsability(bool retire_tlabs) {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next();) {
     BarrierSet::barrier_set()->make_parsable(thread);
     if (UseTLAB) {
-      if (retire_tlabs) {
-        thread->tlab().retire(&stats);
+      if (retire_tlabs || ZeroTLAB) {
+        thread->retire_tlab(&stats);
       } else {
         thread->tlab().make_parsable();
       }
