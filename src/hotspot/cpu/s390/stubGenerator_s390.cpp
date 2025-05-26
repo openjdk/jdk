@@ -1468,77 +1468,6 @@ class StubGenerator: public StubCodeGenerator {
     return __ addr_at(start_off);
   }
 
-
-  // Helper for generate_unsafe_setmemory
-  //
-  // Non-atomically fill an array of memory using 1 byte chunk and return.
-  // We don't care about atomicity because the address and size are not aligned, So we are
-  // free to fill the memory with best possible ways.
-  static void do_setmemory_atomic_loop_mvc(Register dest, Register size, Register byteVal,
-                                           MacroAssembler *_masm) {
-    NearLabel L_loop, L_tail, L_mvc;
-
-    __ z_aghi(size, -1); // -1 because first byte is preset by stc
-    __ z_bcr(Assembler::bcondLow, Z_R14);   // result  < 0 means size == 0 => return
-    __ z_stc(byteVal, Address(dest));       // initialize first byte
-    __ z_bcr(Assembler::bcondEqual, Z_R14); // result == 0 means size == 1 => return
-
-    // handle complete 256 byte blocks
-    __ bind(L_loop);
-    __ z_aghi(size, -256);            // decrement remaining #bytes
-    __ z_brl(L_tail);                 // skip loop if no full 256 byte block left
-
-    __ z_mvc(1, 255, dest, 0, dest);  // propagate byte from dest[0+i*256] to dest[1+i*256]
-    __ z_bcr(Assembler::bcondEqual, Z_R14); // remaining size == 0 => return (mvc does not touch CC)
-
-    __ z_aghi(dest, 256);             // increment target address
-    __ z_bru(L_loop);
-
-    // handle remaining bytes. We know 0 < size < 256
-    __ bind(L_tail);
-    __ z_aghi(size, +256-1);         // prepare size value for mvc via exrl
-    __ z_exrl(size, L_mvc);
-    __ z_br(Z_R14);
-
-    __ bind(L_mvc);
-    __ z_mvc(1, 0, dest, 0, dest);   // mvc template, needs to be generated, not executed
-  }
-
-  static void do_setmemory_atomic_loop(int elem_size, Register dest, Register size, Register byteVal,
-                                       MacroAssembler *_masm) {
-
-    NearLabel L_Loop, L_Tail; // 2x unrolled loop
-    Register tmp = Z_R1; // R1 is free at this point
-
-    if (elem_size > 1) {
-      __ rotate_then_insert(byteVal, byteVal, 64 - 2 * 8 , 63 - 8,  8, false);
-    }
-
-    if (elem_size > 2) {
-      __ rotate_then_insert(byteVal, byteVal, 64 - 2 * 16, 63 - 16, 16, false);
-    }
-
-    if (elem_size > 4) {
-      __ rotate_then_insert(byteVal, byteVal, 64 - 2 * 32, 63 - 32, 32, false);
-    }
-
-    __ z_risbg(tmp, size, 32, 63, 64 - exact_log2(2 * elem_size), /* zero_rest */ true); // just do the right shift and set cc
-    __ z_bre(L_Tail);
-
-    __ align(32); // loop alignment
-    __ bind(L_Loop);
-    __ store_sized_value(byteVal, Address(dest, 0), elem_size);
-    __ store_sized_value(byteVal, Address(dest, elem_size), elem_size);
-    __ z_aghi(dest, 2 * elem_size);
-    __ z_brct(tmp, L_Loop);
-
-    __ bind(L_Tail);
-    __ z_nilf(size, elem_size);
-    __ z_bcr(Assembler::bcondEqual, Z_R14);
-    __ store_sized_value(byteVal, Address(dest, 0), elem_size);
-    __ z_br(Z_R14);
-  }
-
   //
   //  Generate 'unsafe' set memory stub
   //  Though just as safe as the other stubs, it takes an unscaled
@@ -1557,46 +1486,83 @@ class StubGenerator: public StubCodeGenerator {
     // bump this on entry, not on exit:
     // inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
 
+    const Register dest = Z_ARG1;
+    const Register size = Z_ARG2;
+    const Register byteVal = Z_ARG3;
+    NearLabel tail, finished;
+    // fill_to_memory_atomic(unsigned char*, unsigned long, unsigned char)
+
+    // Mark remaining code as such which performs Unsafe accesses.
+    UnsafeMemoryAccessMark umam(this, true, false);
+
+    __ z_vlvgb(Z_V0, byteVal, 0);
+    __ z_vrepb(Z_V0, Z_V0, 0);
+
+    __ z_aghi(size, -32);
+    __ z_brl(tail);
+
     {
-      const Register dest = Z_ARG1;
-      const Register size = Z_ARG2;
-      const Register byteVal = Z_ARG3;
-      const Register rScratch1 = Z_R1_scratch;
-      NearLabel L_fill8Bytes, L_fill4Bytes, L_fillBytes;
-      // fill_to_memory_atomic(unsigned char*, unsigned long, unsigned char)
-
-      // Check for pointer & size alignment
-      __ z_ogrk(rScratch1, dest, size);
-
-      __ z_nill(rScratch1, 7);
-      __ z_braz(L_fill8Bytes); // branch if 0
-
-      __ z_nill(rScratch1, 3);
-      __ z_braz(L_fill4Bytes); // branch if 0
-
-      __ z_nill(rScratch1, 1);
-      __ z_brnaz(L_fillBytes); // branch if not 0
-
-      // Mark remaining code as such which performs Unsafe accesses.
-      UnsafeMemoryAccessMark umam(this, true, false);
-
-      // At this point, we know the lower bit of size is zero and a
-      // multiple of 2
-      do_setmemory_atomic_loop(2, dest, size, byteVal, _masm);
-
-      __ bind(L_fill8Bytes);
-      // At this point, we know the lower 3 bits of size are zero and a
-      // multiple of 8
-      do_setmemory_atomic_loop(8, dest, size, byteVal, _masm);
-
-      __ bind(L_fill4Bytes);
-      // At this point, we know the lower 2 bits of size are zero and a
-      // multiple of 4
-      do_setmemory_atomic_loop(4, dest, size, byteVal, _masm);
-
-      __ bind(L_fillBytes);
-      do_setmemory_atomic_loop_mvc(dest, size, byteVal, _masm);
+      NearLabel again;
+      __ bind(again);
+      __ z_vst(Z_V0, Address(dest, 0));
+      __ z_vst(Z_V0, Address(dest, 16));
+      __ z_aghi(dest, 32);
+      __ z_aghi(size, -32);
+      __ z_brnl(again);
     }
+
+    __ bind(tail);
+
+    {
+      NearLabel dont;
+      __ testbit(size, 4);
+      __ z_brz(dont);
+      __ z_vst(Z_V0, Address(dest, 0));
+      __ z_aghi(dest, 16);
+      __ bind(dont);
+    }
+
+    {
+      NearLabel dont;
+      __ testbit(size, 3);
+      __ z_brz(dont);
+      __ z_vsteg(Z_V0, 0, Z_R0, dest, 0);
+      __ z_aghi(dest, 8);
+      __ bind(dont);
+    }
+
+    __ z_tmll(size, 7);
+    __ z_brc(Assembler::bcondAllZero, finished);
+
+    {
+      NearLabel dont;
+      __ testbit(size, 2);
+      __ z_brz(dont);
+      __ z_vstef(Z_V0, 0, Z_R0, dest, 0);
+      __ z_aghi(dest, 4);
+      __ bind(dont);
+    }
+
+    {
+      NearLabel dont;
+      __ testbit(size, 1);
+      __ z_brz(dont);
+      __ z_vsteh(Z_V0, 0, Z_R0, dest, 0);
+      __ z_aghi(dest, 2);
+      __ bind(dont);
+    }
+
+    {
+      NearLabel dont;
+      __ testbit(size, 0);
+      __ z_brz(dont);
+      __ z_vsteb(Z_V0, 0, Z_R0, dest, 0);
+      __ bind(dont);
+    }
+
+    __ bind(finished);
+    __ z_br(Z_R14);
+
     return __ addr_at(start_off);
   }
 
@@ -1645,7 +1611,9 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_oop_arraycopy_uninit = generate_conjoint_oop_copy(StubGenStubId::arrayof_oop_arraycopy_uninit_id);
 
 #ifdef COMPILER2
-    StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory(StubRoutines::_jbyte_fill);
+    StubRoutines::_unsafe_setmemory =
+             VM_Version::has_VectorFacility() ? generate_unsafe_setmemory(StubRoutines::_jbyte_fill) : nullptr;
+
 #endif // COMPILER2
   }
 
