@@ -77,7 +77,9 @@ public class TestImplicitNullChecks {
     @Test
     // On aarch64, volatile loads always use indirect memory operands, which
     // leads to a pattern that cannot be exploited by the current C2 analysis.
-    @IR(applyIfPlatform = {"aarch64", "false"},
+    // On PPC64, volatile loads are preceded by membar_volatile instructions,
+    // which also inhibits the current C2 analysis.
+    @IR(applyIfPlatformAnd = {"aarch64", "false", "ppc", "false"},
         applyIfOr = {"UseZGC", "true", "UseG1GC", "true"},
         counts = {IRNode.NULL_CHECK, "1"},
         phase = CompilePhase.FINAL_CODE)
