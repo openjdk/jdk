@@ -101,7 +101,7 @@ class JfrThreadLocal {
   volatile CPUTimeLockState _cpu_time_jfr_locked = UNLOCKED;
   volatile bool _has_cpu_time_jfr_requests = false;
   JfrCPUTimeTraceQueue _cpu_time_jfr_queue{0};
-  volatile bool _wants_thread_in_native_sampling = false;
+  volatile bool _wants_is_thread_in_native_stackwalking = false;
 #endif
 
   JfrBuffer* install_native_buffer() const;
@@ -396,8 +396,8 @@ class JfrThreadLocal {
   JfrCPUTimeTraceQueue& cpu_time_jfr_queue();
   void disable_cpu_time_jfr_queue();
 
-  void set_wants_thread_in_native_sampling(bool wants);
-  bool wants_thread_in_native_sampling();
+  void set_wants_is_thread_in_native_stackwalking(bool wants);
+  bool wants_is_thread_in_native_stackwalking();
 #else
   bool has_cpu_time_jfr_requests() { return false; }
 #endif
