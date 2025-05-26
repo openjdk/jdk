@@ -1689,7 +1689,8 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_OpaqueNotNull() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_OpaqueTemplateAssertionPredicate() &&
-      !is_raw_to_oop_cast // don't extend live ranges of raw oops
+      !is_raw_to_oop_cast &&// don't extend live ranges of raw oops
+      (KillPathsReachableByDeadTypeNode || !n->is_Type())
       ) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
