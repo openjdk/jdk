@@ -276,10 +276,10 @@ public class Exchanger<V> {
         int index;              // Arena index
         Object item;            // This thread's current item
         volatile Object match;  // Item provided by releasing thread
-        volatile Thread parked; // Set to this thread when parked, else null
+        final Thread thread;
         Node() {
             index = -1;         // initialize on first use
-            seed = Thread.currentThread().threadId();
+            seed = (thread = Thread.currentThread()).threadId();
         }
     }
 
@@ -329,10 +329,10 @@ public class Exchanger<V> {
         Participant ps = participant;
         Object item = (x == null) ? ps : x;      // translate nulls
         Node p = ps.get();
+        p.item = item;
         int i = p.index;                         // if < 0, move
         int misses = 0;                          // ++ on collide, -- on spinout
-        Object offered = null;                   // for cleanup
-        Object v = null;
+        Object v;                                // the match
         outer: for (;;) {
             int b, m; Slot s; Node q;
             if ((m = (b = bound) & MMASK) == 0)  // volatile read
@@ -344,11 +344,10 @@ public class Exchanger<V> {
             }
             else if ((q = s.entry) != null) {    // try release
                 if (ENTRY.compareAndSet(s, q, null)) {
-                    Thread w;
                     v = q.item;
                     q.match = item;
-                    if (i == 0 && (w = q.parked) != null)
-                        LockSupport.unpark(w);
+                    if (i == 0)
+                        LockSupport.unpark(q.thread);
                     break;
                 }
                 else {                           // collision
@@ -366,47 +365,39 @@ public class Exchanger<V> {
                     }
                 }
             }
-            else {                               // try offer
-                if (offered == null)
-                    offered = p.item = item;
-                if (ENTRY.compareAndSet(s, null, p)) {
-                    boolean tryCancel;           // true if interrupted
-                    Thread t = Thread.currentThread();
-                    if (!(tryCancel = t.isInterrupted()) && ncpu > 1 &&
-                        (i != 0 ||               // check for busy VTs
-                         (!ForkJoinWorkerThread.hasKnownQueuedWork()))) {
-                        for (int j = SPINS; j > 0; --j) {
-                            if ((v = p.match) != null) {
-                                MATCH.set(p, null);
-                                break outer;     // spin wait
-                            }
-                            Thread.onSpinWait();
+            else if (ENTRY.compareAndSet(s, null, p)) { // try offer
+                boolean tryCancel = false;
+                for (long ns = 1L;;) {
+                    if (p.match == null && !tryCancel) {
+                        if ((deadline != 0L &&
+                             (ns = deadline - System.nanoTime()) <= 0L) ||
+                            Thread.currentThread().isInterrupted())
+                            tryCancel = true;    // cancel unless match
+                        else if (ncpu > 1 &&
+                                 (i != 0 ||      // check for busy VTs
+                                  (!ForkJoinWorkerThread.hasKnownQueuedWork()))) {
+                            for (int j = SPINS; p.match == null && j > 0; --j)
+                                Thread.onSpinWait();
                         }
                     }
-                    for (long ns = 1L;;) {       // block or cancel offer
-                        if ((v = p.match) != null) {
-                            MATCH.set(p, null);
-                            break outer;
-                        }
-                        if (i == 0 && !tryCancel &&
-                            (deadline == 0L ||
-                             ((ns = deadline - System.nanoTime()) > 0L))) {
-                            p.parked = t;        // emable unpark and recheck
-                            if (p.match == null) {
-                                if (deadline == 0L)
-                                    LockSupport.park(this);
-                                else
-                                    LockSupport.parkNanos(this, ns);
-                                tryCancel = t.isInterrupted();
-                            }
-                            p.parked = null;
-                        }
-                        else if (ENTRY.compareAndSet(s, p, null)) { // cancel
-                            offered = p.item = null;
-                            if (Thread.interrupted())
+                    if ((v = MATCH.getAndSet(p, null)) != null)
+                        break outer;
+                    else if (!tryCancel && i == 0) {
+                        if (deadline == 0L)
+                            LockSupport.park(this);
+                        else
+                            LockSupport.parkNanos(this, ns);
+                    }
+                    else if (ENTRY.compareAndSet(s, p, null)) { // cancel
+                        boolean interrupted = Thread.interrupted();
+                        if (interrupted || ns <= 0L) {
+                            p.item = null;
+                            if (interrupted)
                                 throw new InterruptedException();
-                            if (deadline != 0L && ns <= 0L)
+                            else
                                 throw new TimeoutException();
+                        }
+                        else {
                             i = -1;              // move and restart
                             if (bound != b)
                                 misses = 0;      // stale
@@ -416,14 +407,13 @@ public class Exchanger<V> {
                                 misses = 0;      // try to shrink
                                 BOUND.compareAndSet(this, b, b - 1 + SEQ);
                             }
-                            continue outer;
+                            break;
                         }
                     }
                 }
             }
         }
-        if (offered != null)                     // cleanup
-            p.item = null;
+        p.item = null;                           // cleanup
         @SuppressWarnings("unchecked") V ret = (v == participant) ? null : (V)v;
         return ret;
     }
