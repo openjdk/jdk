@@ -83,7 +83,7 @@ ParsePredicateNode* ParsePredicate::init_parse_predicate(const Node* parse_predi
 }
 
 ParsePredicate ParsePredicate::clone_to_loop(Node* new_control, const bool rewire_uncommon_proj_phi_inputs,
-                                                        PhaseIdealLoop* phase) const {
+                                             PhaseIdealLoop* phase) const {
   ParsePredicateSuccessProj* success_proj = phase->create_new_if_for_predicate(_success_proj, new_control,
                                                                                _parse_predicate_node->deopt_reason(),
                                                                                Op_ParsePredicate, rewire_uncommon_proj_phi_inputs);
