@@ -422,7 +422,7 @@ void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, traceid si
     Atomic::inc(&biased_count);
   }
   if (Atomic::load(&count) % 1000 == 0) {
-    log_info(jfr)("CPU thread sampler sent %ld events, lost %d, biased %ld\n", Atomic::load(&count), Atomic::load(&_lost_samples_sum), Atomic::load(&biased_count));
+    log_info(jfr)("CPU thread sampler sent %zu events, lost %d, biased %ld\n", Atomic::load(&count), Atomic::load(&_lost_samples_sum), Atomic::load(&biased_count));
   }
 }
 
