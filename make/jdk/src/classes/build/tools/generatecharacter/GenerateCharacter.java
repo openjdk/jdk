@@ -1347,7 +1347,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
     }
 
     static void genCaseMapTableDeclaration(StringBuffer result) {
-        result.append("    static final char[][][] charMap;\n");
+        result.append("    @Stable static final char[][][] charMap;\n");
     }
 
     static void genCaseMapTable(StringBuffer result, SpecialCaseMap[] specialCaseMaps){
