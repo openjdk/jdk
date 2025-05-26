@@ -1728,16 +1728,18 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     const Register osr_nmethod = R31;
     __ mr(osr_nmethod, R3_RET);
     __ set_top_ijava_frame_at_SP_as_last_Java_frame(R1_SP, R11_scratch1);
+    JFR_ONLY(__ enter_jfr_critical_section();)
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin), R16_thread);
     __ reset_last_Java_frame();
     // OSR buffer is in ARG1.
 
     // Remove the interpreter frame.
-    __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
+    __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R12_scratch2, R11_scratch1, R0);
+    JFR_ONLY(__ leave_jfr_critical_section();)
 
     // Jump to the osr code.
     __ ld(R11_scratch1, nmethod::osr_entry_point_offset(), osr_nmethod);
-    __ mtlr(R0);
+    __ mtlr(R12_scratch2);
     __ mtctr(R11_scratch1);
     __ bctr();
 

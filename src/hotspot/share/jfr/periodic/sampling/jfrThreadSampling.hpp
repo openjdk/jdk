@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +22,21 @@
  *
  */
 
-#include "opto/c2_MacroAssembler.hpp"
-#include "opto/c2_CodeStubs.hpp"
-#include "runtime/sharedRuntime.hpp"
+#ifndef SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
+#define SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
 
-#define __ masm.
+#include "memory/allocation.hpp"
 
-int C2SafepointPollStub::max_size() const {
-  return 56;
-}
+class JavaThread;
+class JfrThreadLocal;
+class Thread;
 
-void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
-  __ bind(entry());
-  // Code size should not depend on offset: see _stub_size computation in output.cpp
-  __ jump_to_polling_page_return_handler_blob(_safepoint_offset, true);
-}
-#undef __
+class JfrThreadSampling : AllStatic {
+  friend class JfrSamplerThread;
+ private:
+  static bool process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread);
+ public:
+  static void process_sample_request(JavaThread* jt);
+};
+
+#endif // SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
