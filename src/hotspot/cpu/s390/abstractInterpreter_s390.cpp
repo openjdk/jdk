@@ -176,12 +176,19 @@ void AbstractInterpreter::layout_activation(Method* method,
   intptr_t* monitor_base = (intptr_t*)((address)interpreter_frame->fp() - frame::z_ijava_state_size);
   intptr_t* monitor      = monitor_base - (moncount * frame::interpreter_frame_monitor_size());
   intptr_t* operand_stack_base = monitor;
-  intptr_t* tos          = operand_stack_base - tempcount - popframe_extra_args;
+  intptr_t* esp          = operand_stack_base - tempcount - popframe_extra_args - 1;
   intptr_t* top_frame_sp =
     operand_stack_base - method->max_stack() - frame::z_top_ijava_frame_abi_size / Interpreter::stackElementSize;
   intptr_t* sender_sp;
   if (caller->is_interpreted_frame()) {
     sender_sp = caller->interpreter_frame_top_frame_sp();
+#ifdef ASSERT
+    assert(locals_base <= caller->interpreter_frame_expression_stack(), "bad placement");
+    // Test caller-aligned placement vs callee-aligned
+    intptr_t* l2 = (caller->sp() + method->max_locals() - 1 +
+      frame::z_parent_ijava_frame_abi_size / Interpreter::stackElementSize);
+    assert(locals_base >= l2, "bad placement");
+#endif
   } else if (caller->is_compiled_frame()) {
     sender_sp = caller->fp() - caller->cb()->frame_size();
     // The bottom frame's sender_sp is its caller's unextended_sp.
@@ -199,7 +206,7 @@ void AbstractInterpreter::layout_activation(Method* method,
   interpreter_frame->interpreter_frame_set_locals(locals_base);
   interpreter_frame->interpreter_frame_set_monitor_end((BasicObjectLock *)monitor);
   *interpreter_frame->interpreter_frame_cache_addr() = method->constants()->cache();
-  interpreter_frame->interpreter_frame_set_tos_address(tos);
+  interpreter_frame->interpreter_frame_set_esp(esp);
   if (!is_bottom_frame) {
     interpreter_frame->interpreter_frame_set_sender_sp(sender_sp);
   }

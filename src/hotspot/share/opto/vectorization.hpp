@@ -256,7 +256,7 @@ private:
 
 public:
   VSharedData() :
-    _arena(mtCompiler),
+    _arena(mtCompiler, Arena::Tag::tag_superword),
     _node_idx_to_loop_body_idx(&_arena, estimated_node_count(), 0, 0)
   {
   }
@@ -445,7 +445,7 @@ private:
 // types (byte, char, short). In the C2 IR, their operations are
 // done with full int type with 4 byte precision (e.g. AddI, MulI).
 // Example:  char a,b,c;  a = (char)(b + c);
-// However, if we can prove the the upper bits are only truncated,
+// However, if we can prove the upper bits are only truncated,
 // and the lower bits for the narrower type computed correctly, we
 // can compute the operations in the narrower type directly (e.g we
 // perform the AddI or MulI with 1 or 2 bytes). This allows us to
@@ -648,6 +648,7 @@ public:
     const DependencyNode* _dependency_node;
 
     Node* _current;
+    bool _is_current_memory_edge;
 
     // Iterate in node->in(i)
     int _next_pred;
@@ -664,6 +665,10 @@ public:
     Node* current() const {
       assert(!done(), "not done yet");
       return _current;
+    }
+    bool is_current_memory_edge() const {
+      assert(!done(), "not done yet");
+      return _is_current_memory_edge;
     }
   };
 };
@@ -696,7 +701,7 @@ private:
 public:
   VLoopAnalyzer(const VLoop& vloop, VSharedData& vshared) :
     _vloop(vloop),
-    _arena(mtCompiler),
+    _arena(mtCompiler, Arena::Tag::tag_superword),
     _success(false),
     _reductions      (&_arena, vloop),
     _memory_slices   (&_arena, vloop),

@@ -42,8 +42,8 @@
 #include "compiler/compilationLog.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
-#include "compiler/compilerEvent.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -106,7 +106,7 @@ static bool firstEnv = true;
 // ------------------------------------------------------------------
 // ciEnv::ciEnv
 ciEnv::ciEnv(CompileTask* task)
-  : _ciEnv_arena(mtCompiler) {
+  : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   VM_ENTRY_MARK;
 
   // Set up ciEnv::current immediately, for the sake of ciObjectFactory, etc.
@@ -238,7 +238,7 @@ public:
   }
 };
 
-ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
+ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   ASSERT_IN_VM;
 
   // Set up ciEnv::current immediately, for the sake of ciObjectFactory, etc.
@@ -1170,6 +1170,15 @@ int ciEnv::num_inlined_bytecodes() const {
 // ------------------------------------------------------------------
 // ciEnv::record_failure()
 void ciEnv::record_failure(const char* reason) {
+  // record the bailout for hserr envlog
+  if (reason != nullptr) {
+    if (CompilationLog::log() != nullptr) {
+      CompilerThread* thread = CompilerThread::current();
+      CompileTask* task = thread->task();
+      CompilationLog::log()->log_failure(thread, task, reason, nullptr);
+    }
+  }
+
   if (_failure_reason.get() == nullptr) {
     // Record the first failure reason.
     _failure_reason.set(reason);

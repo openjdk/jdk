@@ -113,6 +113,7 @@ enum class OptoStubId :int {
 
 class OptoRuntime : public AllStatic {
   friend class Matcher;  // allow access to stub names
+  friend class AOTCodeAddressTable;
 
  private:
   // declare opto stub address/blob holder static fields
@@ -170,6 +171,7 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _digestBase_implCompress_without_sha3_Type;
   static const TypeFunc* _digestBase_implCompressMB_with_sha3_Type;
   static const TypeFunc* _digestBase_implCompressMB_without_sha3_Type;
+  static const TypeFunc* _double_keccak_Type;
   static const TypeFunc* _multiplyToLen_Type;
   static const TypeFunc* _montgomeryMultiply_Type;
   static const TypeFunc* _montgomerySquare_Type;
@@ -179,6 +181,18 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _vectorizedMismatch_Type;
   static const TypeFunc* _ghash_processBlocks_Type;
   static const TypeFunc* _chacha20Block_Type;
+  static const TypeFunc* _kyberNtt_Type;
+  static const TypeFunc* _kyberInverseNtt_Type;
+  static const TypeFunc* _kyberNttMult_Type;
+  static const TypeFunc* _kyberAddPoly_2_Type;
+  static const TypeFunc* _kyberAddPoly_3_Type;
+  static const TypeFunc* _kyber12To16_Type;
+  static const TypeFunc* _kyberBarrettReduce_Type;
+  static const TypeFunc* _dilithiumAlmostNtt_Type;
+  static const TypeFunc* _dilithiumAlmostInverseNtt_Type;
+  static const TypeFunc* _dilithiumNttMult_Type;
+  static const TypeFunc* _dilithiumMontMulByConstant_Type;
+  static const TypeFunc* _dilithiumDecomposePoly_Type;
   static const TypeFunc* _base64_encodeBlock_Type;
   static const TypeFunc* _base64_decodeBlock_Type;
   static const TypeFunc* _string_IndexOf_Type;
@@ -203,7 +217,7 @@ class OptoRuntime : public AllStatic {
   static const char *_stub_names[];
 
   // define stubs
-  static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char* name, int is_fancy_jump, bool pass_tls, bool return_pc);
+  static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char* name, int stub_id, int is_fancy_jump, bool pass_tls, bool return_pc);
 
   //
   // Implementation of runtime methods
@@ -251,8 +265,8 @@ private:
   // CodeBlob support
   // ===================================================================
 
-  static void generate_uncommon_trap_blob(void);
-  static void generate_exception_blob();
+  static UncommonTrapBlob* generate_uncommon_trap_blob(void);
+  static ExceptionBlob* generate_exception_blob();
 
   static void register_finalizer_C(oopDesc* obj, JavaThread* current);
 
@@ -462,6 +476,10 @@ private:
     return _unsafe_setmemory_Type;
   }
 
+//  static const TypeFunc* digestBase_implCompress_Type(bool is_sha3);
+//  static const TypeFunc* digestBase_implCompressMB_Type(bool is_sha3);
+//  static const TypeFunc* double_keccak_Type();
+
   static inline const TypeFunc* array_fill_Type() {
     assert(_array_fill_Type != nullptr, "should be initialized");
     return _array_fill_Type;
@@ -525,6 +543,11 @@ private:
     return is_sha3 ? _digestBase_implCompressMB_with_sha3_Type : _digestBase_implCompressMB_without_sha3_Type;
   }
 
+  static inline const TypeFunc* double_keccak_Type() {
+    assert(_double_keccak_Type != nullptr, "should be initialized");
+    return _double_keccak_Type;
+  }
+
   static inline const TypeFunc* multiplyToLen_Type() {
     assert(_multiplyToLen_Type != nullptr, "should be initialized");
     return _multiplyToLen_Type;
@@ -571,6 +594,66 @@ private:
   static inline const TypeFunc* chacha20Block_Type() {
     assert(_chacha20Block_Type != nullptr, "should be initialized");
     return _chacha20Block_Type;
+  }
+
+  static inline const TypeFunc* kyberNtt_Type() {
+    assert(_kyberNtt_Type != nullptr, "should be initialized");
+    return _kyberNtt_Type;
+  }
+
+  static inline const TypeFunc* kyberInverseNtt_Type() {
+    assert(_kyberInverseNtt_Type != nullptr, "should be initialized");
+    return _kyberInverseNtt_Type;
+  }
+
+  static inline const TypeFunc* kyberNttMult_Type() {
+    assert(_kyberNttMult_Type != nullptr, "should be initialized");
+    return _kyberNttMult_Type;
+  }
+
+  static inline const TypeFunc* kyberAddPoly_2_Type() {
+    assert(_kyberAddPoly_2_Type != nullptr, "should be initialized");
+    return _kyberAddPoly_2_Type;
+  }
+
+  static inline const TypeFunc* kyberAddPoly_3_Type() {
+    assert(_kyberAddPoly_3_Type != nullptr, "should be initialized");
+    return _kyberAddPoly_3_Type;
+  }
+
+  static inline const TypeFunc* kyber12To16_Type() {
+    assert(_kyber12To16_Type != nullptr, "should be initialized");
+    return _kyber12To16_Type;
+  }
+
+  static inline const TypeFunc* kyberBarrettReduce_Type() {
+    assert(_kyberBarrettReduce_Type != nullptr, "should be initialized");
+    return _kyberBarrettReduce_Type;
+  }
+
+  static inline const TypeFunc* dilithiumAlmostNtt_Type() {
+    assert(_dilithiumAlmostNtt_Type != nullptr, "should be initialized");
+    return _dilithiumAlmostNtt_Type;
+  }
+
+  static inline const TypeFunc* dilithiumAlmostInverseNtt_Type() {
+    assert(_dilithiumAlmostInverseNtt_Type != nullptr, "should be initialized");
+    return _dilithiumAlmostInverseNtt_Type;
+  }
+
+  static inline const TypeFunc* dilithiumNttMult_Type() {
+    assert(_dilithiumNttMult_Type != nullptr, "should be initialized");
+    return _dilithiumNttMult_Type;
+  }
+
+  static inline const TypeFunc* dilithiumMontMulByConstant_Type() {
+    assert(_dilithiumMontMulByConstant_Type != nullptr, "should be initialized");
+    return _dilithiumMontMulByConstant_Type;
+  }
+
+  static inline const TypeFunc* dilithiumDecomposePoly_Type() {
+    assert(_dilithiumDecomposePoly_Type != nullptr, "should be initialized");
+    return _dilithiumDecomposePoly_Type;
   }
 
   // Base64 encode function

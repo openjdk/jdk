@@ -32,11 +32,13 @@
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 class ZIndexDistributorStriped : public CHeapObj<mtGC> {
   static const int MemSize = 4096;
+  static const int StripeCount = MemSize / ZCacheLineSize;
 
-  const int _max_index;
+  const int _count;
   // For claiming a stripe
   volatile int _claim_stripe;
   // For claiming inside a stripe
@@ -51,8 +53,8 @@ class ZIndexDistributorStriped : public CHeapObj<mtGC> {
   }
 
 public:
-  ZIndexDistributorStriped(int max_index)
-    : _max_index(max_index),
+  ZIndexDistributorStriped(int count)
+    : _count(count),
       _claim_stripe(0),
       _mem() {
     memset(_mem, 0, MemSize + ZCacheLineSize);
@@ -60,11 +62,10 @@ public:
 
   template <typename Function>
   void do_indices(Function function) {
-    const int count = MemSize / ZCacheLineSize;
-    const int stripe_max = _max_index / count;
+    const int stripe_max = _count / StripeCount;
 
     // Use claiming
-    for (int i; (i = claim_stripe()) < count;) {
+    for (int i; (i = claim_stripe()) < StripeCount;) {
       for (int index; (index = Atomic::fetch_then_add(claim_addr(i), 1, memory_order_relaxed)) < stripe_max;) {
         if (!function(i * stripe_max + index)) {
           return;
@@ -73,13 +74,18 @@ public:
     }
 
     // Use stealing
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < StripeCount; i++) {
       for (int index; (index = Atomic::fetch_then_add(claim_addr(i), 1, memory_order_relaxed)) < stripe_max;) {
         if (!function(i * stripe_max + index)) {
           return;
         }
       }
     }
+  }
+
+  static size_t get_count(size_t max_count) {
+    // Must be multiple of the StripeCount
+    return align_up(max_count, StripeCount);
   }
 };
 
@@ -290,6 +296,12 @@ public:
     claim_and_do(function, indices, 0 /* level */);
     steal_and_do(function, indices, 0 /* level */);
   }
+
+  static size_t get_count(size_t max_count) {
+    // Must be at least claim_level_size(ClaimLevels) and a power of two
+    const size_t min_count = claim_level_size(ClaimLevels);
+    return round_up_power_of_2(MAX2(max_count, min_count));
+  }
 };
 
 // Using dynamically allocated objects just to be able to evaluate
@@ -326,6 +338,19 @@ inline void ZIndexDistributor::do_indices(Function function) {
   case 1: strategy<ZIndexDistributorStriped>()->do_indices(function); break;
   default: fatal("Unknown ZIndexDistributorStrategy");
   };
+}
+
+inline size_t ZIndexDistributor::get_count(size_t max_count) {
+  size_t required_count;
+  switch (ZIndexDistributorStrategy) {
+  case 0: required_count = ZIndexDistributorClaimTree::get_count(max_count); break;
+  case 1: required_count = ZIndexDistributorStriped::get_count(max_count); break;
+  default: fatal("Unknown ZIndexDistributorStrategy");
+  };
+
+  assert(max_count <= required_count, "unsupported max_count: %zu", max_count);
+
+  return required_count;
 }
 
 #endif // SHARE_GC_Z_ZINDEXDISTRIBUTOR_INLINE_HPP

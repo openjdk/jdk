@@ -29,15 +29,15 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gcWhen.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memAllocator.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -45,7 +45,6 @@
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/reservedSpace.hpp"
-#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -59,6 +58,7 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#include "utilities/ostream.hpp"
 
 class ClassLoaderData;
 
@@ -111,7 +111,12 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
                  heap->total_collections(),
                  heap->total_full_collections());
 
-  heap->print_on(&st);
+  {
+    StreamIndentor si(&st, 1);
+    heap->print_heap_on(&st);
+    MetaspaceUtils::print_on(&st);
+  }
+
   st.print_cr("}");
 }
 
@@ -163,8 +168,10 @@ void CollectedHeap::print_heap_before_gc() {
   if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("Heap before GC invocations=%u (full %u):", total_collections(), total_full_collections());
-    ResourceMark rm;
-    print_on(&ls);
+
+    StreamIndentor si(&ls, 1);
+    print_heap_on(&ls);
+    MetaspaceUtils::print_on(&ls);
   }
 
   if (_gc_heap_log != nullptr) {
@@ -177,8 +184,10 @@ void CollectedHeap::print_heap_after_gc() {
   if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("Heap after GC invocations=%u (full %u):", total_collections(), total_full_collections());
-    ResourceMark rm;
-    print_on(&ls);
+
+    StreamIndentor si(&ls, 1);
+    print_heap_on(&ls);
+    MetaspaceUtils::print_on(&ls);
   }
 
   if (_gc_heap_log != nullptr) {
@@ -186,17 +195,9 @@ void CollectedHeap::print_heap_after_gc() {
   }
 }
 
-void CollectedHeap::print() const { print_on(tty); }
-
-void CollectedHeap::print_on_error(outputStream* st) const {
-  st->print_cr("Heap:");
-  print_extended_on(st);
-  st->cr();
-
-  BarrierSet* bs = BarrierSet::barrier_set();
-  if (bs != nullptr) {
-    bs->print_on(st);
-  }
+void CollectedHeap::print() const {
+  print_heap_on(tty);
+  print_gc_on(tty);
 }
 
 void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
@@ -516,8 +517,8 @@ void CollectedHeap::ensure_parsability(bool retire_tlabs) {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next();) {
     BarrierSet::barrier_set()->make_parsable(thread);
     if (UseTLAB) {
-      if (retire_tlabs) {
-        thread->tlab().retire(&stats);
+      if (retire_tlabs || ZeroTLAB) {
+        thread->retire_tlab(&stats);
       } else {
         thread->tlab().make_parsable();
       }
@@ -560,7 +561,6 @@ void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
   LogTarget(Trace, gc, classhisto) lt;
   if (lt.is_enabled()) {
     GCTraceTime(Trace, gc, classhisto) tm(before ? "Class Histogram (before full gc)" : "Class Histogram (after full gc)", timer);
-    ResourceMark rm;
     LogStream ls(lt);
     VM_GC_HeapInspection inspector(&ls, false /* ! full gc */);
     inspector.doit();

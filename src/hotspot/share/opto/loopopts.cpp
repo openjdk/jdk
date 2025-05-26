@@ -791,7 +791,16 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     // Ignore Template Assertion Predicates with OpaqueTemplateAssertionPredicate nodes.
     return nullptr;
   }
-  assert(bol->Opcode() == Op_Bool, "Unexpected node");
+  if (bol->is_OpaqueMultiversioning()) {
+    assert(bol->as_OpaqueMultiversioning()->is_useless(), "Must be useless, i.e. fast main loop has already disappeared.");
+    // Ignore multiversion_if that just lost its loops. The OpaqueMultiversioning is marked useless,
+    // and will make the multiversion_if constant fold in the next IGVN round.
+    return nullptr;
+  }
+  if (!bol->is_Bool()) {
+    assert(false, "Expected Bool, but got %s", NodeClassNames[bol->Opcode()]);
+    return nullptr;
+  }
   int cmp_op = bol->in(1)->Opcode();
   if (cmp_op == Op_SubTypeCheck) { // SubTypeCheck expansion expects an IfNode
     return nullptr;
@@ -834,10 +843,9 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
         break;
       }
     }
-    if (phi == nullptr || _igvn.type(phi) == Type::TOP) {
+    if (phi == nullptr || _igvn.type(phi) == Type::TOP || !CMoveNode::supported(_igvn.type(phi))) {
       break;
     }
-    if (PrintOpto && VerifyLoopOptimizations) { tty->print_cr("CMOV"); }
     // Move speculative ops
     wq.push(phi);
     while (wq.size() > 0) {
@@ -845,12 +853,6 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
       for (uint j = 1; j < n->req(); j++) {
         Node* m = n->in(j);
         if (m != nullptr && !is_dominator(get_ctrl(m), cmov_ctrl)) {
-#ifndef PRODUCT
-          if (PrintOpto && VerifyLoopOptimizations) {
-            tty->print("  speculate: ");
-            m->dump();
-          }
-#endif
           set_ctrl(m, cmov_ctrl);
           wq.push(m);
         }
@@ -1087,25 +1089,6 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
   }
 }
 
-// Split some nodes that take a counted loop phi as input at a counted
-// loop can cause vectorization of some expressions to fail
-bool PhaseIdealLoop::split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk) {
-  if (!n_blk->is_CountedLoop()) {
-    return false;
-  }
-
-  int opcode = n->Opcode();
-
-  if (opcode != Op_AndI &&
-      opcode != Op_MulI &&
-      opcode != Op_RotateRight &&
-      opcode != Op_RShiftI) {
-    return false;
-  }
-
-  return n->in(1) == n_blk->as_BaseCountedLoop()->phi();
-}
-
 //------------------------------split_if_with_blocks_pre-----------------------
 // Do the real work in a non-recursive function.  Data nodes want to be
 // cloned in the pre-order so they can feed each other nicely.
@@ -1189,10 +1172,6 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   // Pushing a shift through the iv Phi can get in the way of addressing optimizations or range check elimination
   if (n_blk->is_BaseCountedLoop() && n->Opcode() == Op_LShift(n_blk->as_BaseCountedLoop()->bt()) &&
       n->in(1) == n_blk->as_BaseCountedLoop()->phi()) {
-    return n;
-  }
-
-  if (split_thru_phi_could_prevent_vectorization(n, n_blk)) {
     return n;
   }
 
@@ -1482,7 +1461,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // Now split the IF
     C->print_method(PHASE_BEFORE_SPLIT_IF, 4, iff);
-    if ((PrintOpto && VerifyLoopOptimizations) || TraceLoopOpts) {
+    if (TraceLoopOpts) {
       tty->print_cr("Split-If");
     }
     do_split_if(iff);
@@ -3412,7 +3391,7 @@ void PhaseIdealLoop::clone_for_special_use_inside_loop( IdealLoopTree *loop, Nod
   for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
     Node* use = n->fast_out(j);
     if ( not_peel.test(use->_idx) &&
-         (use->is_If() || use->is_CMove() || use->is_Bool()) &&
+         (use->is_If() || use->is_CMove() || use->is_Bool() || use->is_OpaqueInitializedAssertionPredicate()) &&
          use->in(1) == n)  {
       worklist.push(use);
     }
@@ -4482,7 +4461,7 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   return AutoVectorizeStatus::Success;
 }
 
-// Just before insert_pre_post_loops, we can multi-version the loop:
+// Just before insert_pre_post_loops, we can multiversion the loop:
 //
 //              multiversion_if
 //               |       |

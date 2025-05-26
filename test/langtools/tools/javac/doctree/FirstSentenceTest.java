@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8078320 8132096 8273244
+ * @bug 7021614 8078320 8132096 8273244 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -78,18 +78,18 @@ DocComment[DOC_COMMENT, pos:0
      */
     void no_body() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_def_ghi.]
+    Text[TEXT, pos:0, abc_def_ghi.]
   body: empty
   block tags: empty
 ]
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_def_ghi.]
+    Text[TEXT, pos:0, abc_def_ghi.]
   body: empty
   block tags: empty
 ]
@@ -99,19 +99,19 @@ DocComment[DOC_COMMENT, pos:1
      */
     void dot_space() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_def_ghi.]
+    Text[TEXT, pos:0, abc_def_ghi.]
   body: 1
-    Text[TEXT, pos:14, jkl_mno_pqr.]
+    Text[TEXT, pos:13, jkl_mno_pqr.]
   block tags: empty
 ]
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_def_ghi._jkl_mno_pqr.]
+    Text[TEXT, pos:0, abc_def_ghi._jkl_mno_pqr.]
   body: empty
   block tags: empty
 ]
@@ -122,21 +122,44 @@ DocComment[DOC_COMMENT, pos:1
      */
     void dot_newline() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_def_ghi.]
+    Text[TEXT, pos:0, abc_def_ghi.]
   body: 1
-    Text[TEXT, pos:15, jkl_mno_pqr]
+    Text[TEXT, pos:13, jkl_mno_pqr]
   block tags: empty
 ]
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_def_ghi.]
+    Text[TEXT, pos:0, abc_def_ghi.|jkl_mno_pqr]
+  body: empty
+  block tags: empty
+]
+*/
+    /**
+     * abc def ghi.
+     * Jkl mno pqr
+     */
+    void dot_newline_upper() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    Text[TEXT, pos:0, abc_def_ghi.]
   body: 1
-    Text[TEXT, pos:15, jkl_mno_pqr]
+    Text[TEXT, pos:13, Jkl_mno_pqr]
+  block tags: empty
+]
+*/
+/*
+BREAK_ITERATOR
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    Text[TEXT, pos:0, abc_def_ghi.]
+  body: 1
+    Text[TEXT, pos:13, Jkl_mno_pqr]
   block tags: empty
 ]
 */
@@ -146,29 +169,29 @@ DocComment[DOC_COMMENT, pos:1
      */
     void dot_p() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_def_ghi]
+    Text[TEXT, pos:0, abc_def_ghi]
   body: 2
-    StartElement[START_ELEMENT, pos:14
+    StartElement[START_ELEMENT, pos:12
       name:p
       attributes: empty
     ]
-    Text[TEXT, pos:17, jkl_mno_pqr]
+    Text[TEXT, pos:15, jkl_mno_pqr]
   block tags: empty
 ]
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_def_ghi]
+    Text[TEXT, pos:0, abc_def_ghi]
   body: 2
-    StartElement[START_ELEMENT, pos:14
+    StartElement[START_ELEMENT, pos:12
       name:p
       attributes: empty
     ]
-    Text[TEXT, pos:17, jkl_mno_pqr]
+    Text[TEXT, pos:15, jkl_mno_pqr]
   block tags: empty
 ]
 */
@@ -179,29 +202,61 @@ DocComment[DOC_COMMENT, pos:1
      */
     void newline_p() { }
 /*
-DocComment[DOC_COMMENT, pos:2
+DocComment[DOC_COMMENT, pos:1
   firstSentence: 2
-    StartElement[START_ELEMENT, pos:2
+    StartElement[START_ELEMENT, pos:1
       name:p
       attributes: empty
     ]
-    Text[TEXT, pos:5, abc_def_ghi.]
+    Text[TEXT, pos:4, abc_def_ghi.]
   body: 1
-    Text[TEXT, pos:19, jdl_mno_pqf]
+    Text[TEXT, pos:17, jdl_mno_pqf]
   block tags: empty
 ]
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:2
+DocComment[DOC_COMMENT, pos:1
   firstSentence: 2
-    StartElement[START_ELEMENT, pos:2
+    StartElement[START_ELEMENT, pos:1
       name:p
       attributes: empty
     ]
-    Text[TEXT, pos:5, abc_def_ghi.]
+    Text[TEXT, pos:4, abc_def_ghi.|jdl_mno_pqf]
+  body: empty
+  block tags: empty
+]
+*/
+    /**
+     *
+     * <p>abc def ghi.
+     * Jdl mno pqf
+     */
+    void newline_p_upper() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:1
+      name:p
+      attributes: empty
+    ]
+    Text[TEXT, pos:4, abc_def_ghi.]
   body: 1
-    Text[TEXT, pos:19, jdl_mno_pqf]
+    Text[TEXT, pos:17, Jdl_mno_pqf]
+  block tags: empty
+]
+*/
+/*
+BREAK_ITERATOR
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:1
+      name:p
+      attributes: empty
+    ]
+    Text[TEXT, pos:4, abc_def_ghi.]
+  body: 1
+    Text[TEXT, pos:17, Jdl_mno_pqf]
   block tags: empty
 ]
 */
@@ -211,23 +266,23 @@ DocComment[DOC_COMMENT, pos:2
      */
     void dot_end_p() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_def_ghi]
+    Text[TEXT, pos:0, abc_def_ghi]
   body: 2
-    EndElement[END_ELEMENT, pos:14, p]
-    Text[TEXT, pos:18, jkl_mno_pqr]
+    EndElement[END_ELEMENT, pos:12, p]
+    Text[TEXT, pos:16, jkl_mno_pqr]
   block tags: empty
 ]
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_def_ghi]
+    Text[TEXT, pos:0, abc_def_ghi]
   body: 2
-    EndElement[END_ELEMENT, pos:14, p]
-    Text[TEXT, pos:18, jkl_mno_pqr]
+    EndElement[END_ELEMENT, pos:12, p]
+    Text[TEXT, pos:16, jkl_mno_pqr]
   block tags: empty
 ]
 */
@@ -236,23 +291,23 @@ DocComment[DOC_COMMENT, pos:1
      */
     void entity() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Entity[ENTITY, pos:5, lt]
-    Text[TEXT, pos:9, _ghi.]
+    Text[TEXT, pos:0, abc_]
+    Entity[ENTITY, pos:4, lt]
+    Text[TEXT, pos:8, _ghi.]
   body: 1
-    Text[TEXT, pos:15, jkl_mno_pqr.]
+    Text[TEXT, pos:14, jkl_mno_pqr.]
   block tags: empty
 ]
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Entity[ENTITY, pos:5, lt]
-    Text[TEXT, pos:9, _ghi._jkl_mno_pqr.]
+    Text[TEXT, pos:0, abc_]
+    Entity[ENTITY, pos:4, lt]
+    Text[TEXT, pos:8, _ghi._jkl_mno_pqr.]
   body: empty
   block tags: empty
 ]
@@ -262,23 +317,23 @@ DocComment[DOC_COMMENT, pos:1
      */
     void inline_tag() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Literal[CODE, pos:5, code]
-    Text[TEXT, pos:17, _ghi.]
+    Text[TEXT, pos:0, abc_]
+    Literal[CODE, pos:4, code]
+    Text[TEXT, pos:16, _ghi.]
   body: 1
-    Text[TEXT, pos:23, jkl_mno_pqr.]
+    Text[TEXT, pos:22, jkl_mno_pqr.]
   block tags: empty
 ]
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Literal[CODE, pos:5, code]
-    Text[TEXT, pos:17, _ghi._jkl_mno_pqr.]
+    Text[TEXT, pos:0, abc_]
+    Literal[CODE, pos:4, code]
+    Text[TEXT, pos:16, _ghi._jkl_mno_pqr.]
   body: empty
   block tags: empty
 ]
@@ -289,27 +344,27 @@ DocComment[DOC_COMMENT, pos:1
      */
     void block_tag() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_def_ghi]
+    Text[TEXT, pos:0, abc_def_ghi]
   body: empty
   block tags: 1
-    Author[AUTHOR, pos:14
+    Author[AUTHOR, pos:12
       name: 1
-        Text[TEXT, pos:22, jjg]
+        Text[TEXT, pos:20, jjg]
     ]
 ]
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc_def_ghi]
+    Text[TEXT, pos:0, abc_def_ghi]
   body: empty
   block tags: 1
-    Author[AUTHOR, pos:14
+    Author[AUTHOR, pos:12
       name: 1
-        Text[TEXT, pos:22, jjg]
+        Text[TEXT, pos:20, jjg]
     ]
 ]
 */
@@ -318,25 +373,25 @@ DocComment[DOC_COMMENT, pos:1
      */
     void just_tag() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    Author[AUTHOR, pos:1
+    Author[AUTHOR, pos:0
       name: 1
-        Text[TEXT, pos:9, jjg]
+        Text[TEXT, pos:8, jjg]
     ]
 ]
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    Author[AUTHOR, pos:1
+    Author[AUTHOR, pos:0
       name: 1
-        Text[TEXT, pos:9, jjg]
+        Text[TEXT, pos:8, jjg]
     ]
 ]
 */
@@ -346,29 +401,60 @@ DocComment[DOC_COMMENT, pos:1
      */
     void p_at_zero() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    StartElement[START_ELEMENT, pos:1
+    StartElement[START_ELEMENT, pos:0
       name:p
       attributes: empty
     ]
-    Text[TEXT, pos:4, _abc_def.]
+    Text[TEXT, pos:3, _abc_def.]
   body: 1
-    Text[TEXT, pos:15, ghi_jkl]
+    Text[TEXT, pos:13, ghi_jkl]
   block tags: empty
 ]
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    StartElement[START_ELEMENT, pos:1
+    StartElement[START_ELEMENT, pos:0
       name:p
       attributes: empty
     ]
-    Text[TEXT, pos:4, _abc_def.]
+    Text[TEXT, pos:3, _abc_def.|ghi_jkl]
+  body: empty
+  block tags: empty
+]
+*/
+    /**
+     * <p> abc def.
+     * Ghi jkl
+     */
+    void p_at_zero_upper() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:0
+      name:p
+      attributes: empty
+    ]
+    Text[TEXT, pos:3, _abc_def.]
   body: 1
-    Text[TEXT, pos:15, ghi_jkl]
+    Text[TEXT, pos:13, Ghi_jkl]
+  block tags: empty
+]
+*/
+/*
+BREAK_ITERATOR
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:0
+      name:p
+      attributes: empty
+    ]
+    Text[TEXT, pos:3, _abc_def.]
+  body: 1
+    Text[TEXT, pos:13, Ghi_jkl]
   block tags: empty
 ]
 */
@@ -378,29 +464,29 @@ DocComment[DOC_COMMENT, pos:1
      */
     void p_at_nonzero() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc]
+    Text[TEXT, pos:0, abc]
   body: 2
-    StartElement[START_ELEMENT, pos:5
+    StartElement[START_ELEMENT, pos:4
       name:p
       attributes: empty
     ]
-    Text[TEXT, pos:8, _def._ghi_jkl]
+    Text[TEXT, pos:7, _def._ghi_jkl]
   block tags: empty
 ]
 */
 /*
 BREAK_ITERATOR
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc]
+    Text[TEXT, pos:0, abc]
   body: 2
-    StartElement[START_ELEMENT, pos:5
+    StartElement[START_ELEMENT, pos:4
       name:p
       attributes: empty
     ]
-    Text[TEXT, pos:8, _def._ghi_jkl]
+    Text[TEXT, pos:7, _def._ghi_jkl]
   block tags: empty
 ]
 */

@@ -119,12 +119,13 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   const FloatRegister floatSlot = F0;
 
   address entry = __ function_entry();
+  int save_nonvolatile_registers_size = __ save_nonvolatile_registers_size(false, false);
 
   __ save_LR(R0);
-  __ save_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
+  __ save_nonvolatile_registers(R1_SP, -save_nonvolatile_registers_size, false, false);
   // We use target_sp for storing arguments in the C frame.
   __ mr(target_sp, R1_SP);
-  __ push_frame_reg_args_nonvolatiles(0, R11_scratch1);
+  __ push_frame(frame::native_abi_reg_args_size + save_nonvolatile_registers_size, R11_scratch1);
 
   __ mr(arg_java, R3_ARG1);
 
@@ -309,7 +310,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   __ bind(loop_end);
 
   __ pop_frame();
-  __ restore_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
+  __ restore_nonvolatile_registers(R1_SP, -save_nonvolatile_registers_size, false, false);
   __ restore_LR(R0);
 
   __ blr();
@@ -1077,7 +1078,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   // PPC64 specific:
   switch (kind) {
-    case Interpreter::java_lang_math_sqrt: use_instruction = VM_Version::has_fsqrt(); break;
+    case Interpreter::java_lang_math_sqrt: use_instruction = true; break;
     case Interpreter::java_lang_math_abs:  use_instruction = true; break;
     case Interpreter::java_lang_math_fmaF:
     case Interpreter::java_lang_math_fmaD: use_instruction = UseFMA; break;
@@ -1090,7 +1091,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
     case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
-    case Interpreter::java_lang_math_sqrt : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);  break;
+    case Interpreter::java_lang_math_sqrt : /* run interpreted */  break;
     case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;
     case Interpreter::java_lang_math_log10: runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10); break;
     case Interpreter::java_lang_math_pow  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dpow); num_args = 2; break;
@@ -1996,12 +1997,18 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   return start;
 }
 
-// Not supported
-address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_currentThread() {
+  address entry_point = __ pc();
+
+  __ ld(R3_RET, JavaThread::vthread_offset(), R16_thread);
+  __ resolve_oop_handle(R3_RET, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_FRAME_LR);
+
+  // restore caller sp for c2i case (from compiled) and for resized sender frame (from interpreted).
+  __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
+  __ blr();
+
+  return entry_point;
+}
 
 // =============================================================================
 // Exceptions
@@ -2154,12 +2161,12 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   {
     __ pop_ptr(Rexception);
     __ verify_oop(Rexception);
-    __ std(Rexception, in_bytes(JavaThread::vm_result_offset()), R16_thread);
+    __ std(Rexception, in_bytes(JavaThread::vm_result_oop_offset()), R16_thread);
 
     __ unlock_if_synchronized_method(vtos, /* throw_monitor_exception */ false, true);
     __ notify_method_exit(false, vtos, InterpreterMacroAssembler::SkipNotifyJVMTI, false);
 
-    __ get_vm_result(Rexception);
+    __ get_vm_result_oop(Rexception);
 
     // We are done with this activation frame; find out where to go next.
     // The continuation point will be an exception handler, which expects
@@ -2316,11 +2323,11 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
   // Support short-cut for TraceBytecodesAt.
   // Don't call into the VM if we don't want to trace to speed up things.
   Label Lskip_vm_call;
-  if (TraceBytecodesAt > 0 && TraceBytecodesAt < max_intx) {
+  if (TraceBytecodesAt > 0) {
     int offs1 = __ load_const_optimized(R11_scratch1, (address) &TraceBytecodesAt, R0, true);
     int offs2 = __ load_const_optimized(R12_scratch2, (address) &BytecodeCounter::_counter_value, R0, true);
     __ ld(R11_scratch1, offs1, R11_scratch1);
-    __ lwa(R12_scratch2, offs2, R12_scratch2);
+    __ ld(R12_scratch2, offs2, R12_scratch2);
     __ cmpd(CR0, R12_scratch2, R11_scratch1);
     __ blt(CR0, Lskip_vm_call);
   }
@@ -2334,7 +2341,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
   __ mtlr(R31);
   __ pop(state);
 
-  if (TraceBytecodesAt > 0 && TraceBytecodesAt < max_intx) {
+  if (TraceBytecodesAt > 0) {
     __ bind(Lskip_vm_call);
   }
   __ blr();
@@ -2344,9 +2351,9 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 
 void TemplateInterpreterGenerator::count_bytecode() {
   int offs = __ load_const_optimized(R11_scratch1, (address) &BytecodeCounter::_counter_value, R12_scratch2, true);
-  __ lwz(R12_scratch2, offs, R11_scratch1);
+  __ ld(R12_scratch2, offs, R11_scratch1);
   __ addi(R12_scratch2, R12_scratch2, 1);
-  __ stw(R12_scratch2, offs, R11_scratch1);
+  __ std(R12_scratch2, offs, R11_scratch1);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
@@ -2395,7 +2402,7 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   int offs1 = __ load_const_optimized(R11_scratch1, (address) &StopInterpreterAt, R0, true);
   int offs2 = __ load_const_optimized(R12_scratch2, (address) &BytecodeCounter::_counter_value, R0, true);
   __ ld(R11_scratch1, offs1, R11_scratch1);
-  __ lwa(R12_scratch2, offs2, R12_scratch2);
+  __ ld(R12_scratch2, offs2, R12_scratch2);
   __ cmpd(CR0, R12_scratch2, R11_scratch1);
   __ bne(CR0, L);
   __ illtrap();

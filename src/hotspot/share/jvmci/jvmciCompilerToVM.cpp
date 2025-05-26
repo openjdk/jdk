@@ -173,7 +173,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   ThreadInVMfromNative __tiv(thread);                             \
   HandleMarkCleaner __hm(thread);                                 \
   JavaThread* THREAD = thread;                                    \
-  debug_only(VMNativeEntryWrapper __vew;)
+  DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
 // Native method block that transitions current thread to '_thread_in_vm'.
 // Note: CompilerThreadCanCallJava must precede JVMCIENV_FROM_JNI so that
@@ -1369,7 +1369,7 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 
   nmethod* code = method->code();
   if (code != nullptr) {
-    code->make_not_entrant();
+    code->make_not_entrant("JVMCI reprofile");
   }
 
   MethodData* method_data = method->method_data();
@@ -1809,7 +1809,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     if (!fst.current()->is_compiled_frame()) {
       JVMCI_THROW_MSG(IllegalStateException, "compiled stack frame expected");
     }
-    fst.current()->cb()->as_nmethod()->make_not_entrant();
+    fst.current()->cb()->as_nmethod()->make_not_entrant("JVMCI materialize virtual objects");
   }
   Deoptimization::deoptimize(thread, *fst.current(), Deoptimization::Reason_none);
   // look for the frame again as it has been updated by deopt (pc, deopt state...)
@@ -2253,13 +2253,20 @@ static jobject read_field_value(Handle obj, long displacement, jchar type_char, 
   if (!aligned) {
     JVMCI_THROW_MSG_NULL(IllegalArgumentException, "read is unaligned");
   }
+  if (obj->is_array()) {
+    // Disallow reading after the last element of an array
+    size_t array_length = arrayOop(obj())->length();
+    int lh = obj->klass()->layout_helper();
+    size_t size_in_bytes = array_length << Klass::layout_helper_log2_element_size(lh);
+    size_in_bytes += Klass::layout_helper_header_size(lh);
+    if ((size_t) displacement + basic_type_elemsize > size_in_bytes) {
+      JVMCI_THROW_MSG_NULL(IllegalArgumentException, "reading after last array element");
+    }
+  }
   if (basic_type == T_OBJECT) {
     if (obj->is_objArray()) {
       if (displacement < arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
         JVMCI_THROW_MSG_NULL(IllegalArgumentException, "reading from array header");
-      }
-      if (displacement + heapOopSize > arrayOopDesc::base_offset_in_bytes(T_OBJECT) + arrayOop(obj())->length() * heapOopSize) {
-        JVMCI_THROW_MSG_NULL(IllegalArgumentException, "reading after last array element");
       }
       if (((displacement - arrayOopDesc::base_offset_in_bytes(T_OBJECT)) % heapOopSize) != 0) {
         JVMCI_THROW_MSG_NULL(IllegalArgumentException, "misaligned object read from array");
@@ -3224,7 +3231,11 @@ C2V_END
 
 C2V_VMENTRY_0(jint, getCompilationActivityMode, (JNIEnv* env, jobject))
   return CompileBroker::get_compilation_activity_mode();
-}
+C2V_END
+
+C2V_VMENTRY_0(jboolean, isCompilerThread, (JNIEnv* env, jobject))
+  return thread->is_Compiler_thread();
+C2V_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
@@ -3389,6 +3400,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getOopMapAt",                                  CC "(" HS_METHOD2 "I[J)V",                                                            FN_PTR(getOopMapAt)},
   {CC "updateCompilerThreadCanCallJava",              CC "(Z)Z",                                                                            FN_PTR(updateCompilerThreadCanCallJava)},
   {CC "getCompilationActivityMode",                   CC "()I",                                                                             FN_PTR(getCompilationActivityMode)},
+  {CC "isCompilerThread",                             CC "()Z",                                                                             FN_PTR(isCompilerThread)},
 };
 
 int CompilerToVM::methods_count() {

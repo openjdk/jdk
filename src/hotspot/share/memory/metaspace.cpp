@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
- * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/internalStats.hpp"
+#include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/metaspaceReporter.hpp"
@@ -62,6 +63,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 using metaspace::ChunkManager;
 using metaspace::CommitLimiter;
@@ -213,10 +215,11 @@ void MetaspaceUtils::print_report(outputStream* out, size_t scale) {
 
 void MetaspaceUtils::print_on(outputStream* out) {
 
-  // Used from all GCs. It first prints out totals, then, separately, the class space portion.
+  // First prints out totals, then, separately, the class space portion.
   MetaspaceCombinedStats stats = get_combined_statistics();
-  out->print_cr(" Metaspace       "
-                "used %zuK, "
+  out->print("Metaspace ");
+  out->fill_to(17);
+  out->print_cr("used %zuK, "
                 "committed %zuK, "
                 "reserved %zuK",
                 stats.used()/K,
@@ -224,8 +227,10 @@ void MetaspaceUtils::print_on(outputStream* out) {
                 stats.reserved()/K);
 
   if (Metaspace::using_class_space()) {
-    out->print_cr("  class space    "
-                  "used %zuK, "
+    StreamIndentor si(out, 1);
+    out->print("class space ");
+    out->fill_to(17);
+    out->print_cr("used %zuK, "
                   "committed %zuK, "
                   "reserved %zuK",
                   stats.class_space_stats().used()/K,
@@ -593,7 +598,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   if (result == nullptr) {
     // Fallback: reserve anywhere
     log_debug(metaspace, map)("Trying anywhere...");
-    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
+    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), mtClass);
   }
 
   // Wrap resulting range in ReservedSpace
@@ -766,7 +771,8 @@ void Metaspace::global_initialize() {
       rs = MemoryReserver::reserve((char*)base,
                                    size,
                                    Metaspace::reserve_alignment(),
-                                   os::vm_page_size());
+                                   os::vm_page_size(),
+                                   mtClass);
 
       if (rs.is_reserved()) {
         log_info(metaspace)("Successfully forced class space address to " PTR_FORMAT, p2i(base));
@@ -796,7 +802,7 @@ void Metaspace::global_initialize() {
     }
 
     // Mark class space as such
-    MemTracker::record_virtual_memory_tag((address)rs.base(), mtClass);
+    MemTracker::record_virtual_memory_tag(rs, mtClass);
 
     // Initialize space
     Metaspace::initialize_class_space(rs);
@@ -804,35 +810,42 @@ void Metaspace::global_initialize() {
     // Set up compressed class pointer encoding.
     // In CDS=off mode, we give the JVM some leeway to choose a favorable base/shift combination.
     CompressedKlassPointers::initialize((address)rs.base(), rs.size());
+
+    // After narrowKlass encoding scheme is decided: if the encoding base points to class space start,
+    // establish a protection zone. Accidentally decoding a zero nKlass ID and then using it will result
+    // in an immediate segmentation fault instead of a delayed error much later.
+    if (CompressedKlassPointers::base() == (address)rs.base()) {
+      // Let the protection zone be a whole commit granule. Otherwise, buddy allocator may later place neighboring
+      // chunks in the same granule, see that the granule is not yet committed, and commit it, which would replace
+      // the protection mapping and make the zone readable.
+      // Alternatively, we could commit the chunk right now, but that is a tiny bit more fiddly, since we are not
+      // fully set up yet at this point.
+      const size_t protzone_size = metaspace::Settings::commit_granule_bytes(); // granule size >= page size
+      const size_t protzone_wordsize = protzone_size / BytesPerWord;
+      const metaspace::chunklevel_t lvl = metaspace::chunklevel::level_fitting_word_size(protzone_wordsize);
+      metaspace::Metachunk* const chunk = MetaspaceContext::context_class()->cm()->get_chunk(lvl);
+      const address protzone = (address) chunk->base();
+      assert(protzone == (address)rs.base(), "The very first chunk should be located at the class space start?");
+      assert(chunk->word_size() == protzone_wordsize, "Weird chunk size");
+      CompressedKlassPointers::establish_protection_zone(protzone, protzone_size);
+    } else {
+      assert(CompressedKlassPointers::base() == nullptr, "Zero-based encoding expected");
+    }
+
   }
 
-#endif
+#endif // _LP64
 
   // Initialize non-class virtual space list, and its chunk manager:
   MetaspaceContext::initialize_nonclass_space_context();
 
   _tracer = new MetaspaceTracer();
 
-  // We must prevent the very first address of the ccs from being used to store
-  // metadata, since that address would translate to a narrow pointer of 0, and the
-  // VM does not distinguish between "narrow 0 as in null" and "narrow 0 as in start
-  //  of ccs".
-  // Before Elastic Metaspace that did not happen due to the fact that every Metachunk
-  // had a header and therefore could not allocate anything at offset 0.
-#ifdef _LP64
-  if (using_class_space()) {
-    // The simplest way to fix this is to allocate a tiny dummy chunk right at the
-    // start of ccs and do not use it for anything.
-    MetaspaceContext::context_class()->cm()->get_chunk(metaspace::chunklevel::HIGHEST_CHUNK_LEVEL);
-  }
-#endif
-
 #ifdef _LP64
   if (UseCompressedClassPointers) {
     // Note: "cds" would be a better fit but keep this for backward compatibility.
     LogTarget(Info, gc, metaspace) lt;
     if (lt.is_enabled()) {
-      ResourceMark rm;
       LogStream ls(lt);
       CDS_ONLY(MetaspaceShared::print_on(&ls);)
       Metaspace::print_compressed_class_space(&ls);

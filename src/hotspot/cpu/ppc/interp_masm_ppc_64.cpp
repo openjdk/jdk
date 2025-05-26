@@ -308,21 +308,11 @@ void InterpreterMacroAssembler::push_2ptrs(Register first, Register second) {
 }
 
 void InterpreterMacroAssembler::move_l_to_d(Register l, FloatRegister d) {
-  if (VM_Version::has_mtfprd()) {
-    mtfprd(d, l);
-  } else {
-    std(l, 0, R15_esp);
-    lfd(d, 0, R15_esp);
-  }
+  mtfprd(d, l);
 }
 
 void InterpreterMacroAssembler::move_d_to_l(FloatRegister d, Register l) {
-  if (VM_Version::has_mtfprd()) {
-    mffprd(l, d);
-  } else {
-    stfd(d, 0, R15_esp);
-    ld(l, 0, R15_esp);
-  }
+  mffprd(l, d);
 }
 
 void InterpreterMacroAssembler::push(TosState state) {
@@ -958,17 +948,18 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     // markWord displaced_header = obj->mark().set_unlocked();
 
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(tmp, object);
-      lbz(tmp, in_bytes(Klass::misc_flags_offset()), tmp);
-      testbitdi(CR0, R0, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
-      bne(CR0, slow_case);
-    }
-
     if (LockingMode == LM_LIGHTWEIGHT) {
       lightweight_lock(monitor, object, header, tmp, slow_case);
       b(done);
     } else if (LockingMode == LM_LEGACY) {
+
+      if (DiagnoseSyncOnValueBasedClasses != 0) {
+        load_klass(tmp, object);
+        lbz(tmp, in_bytes(Klass::misc_flags_offset()), tmp);
+        testbitdi(CR0, R0, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
+        bne(CR0, slow_case);
+      }
+
       // Load markWord from object into header.
       ld(header, oopDesc::mark_offset_in_bytes(), object);
 
@@ -2379,12 +2370,6 @@ static bool verify_return_address(Method* m, int bci) {
   if (*jsr_pc == Bytecodes::_jsr_w && jsr_pc >= m->code_base())    return true;
 #endif // PRODUCT
   return false;
-}
-
-void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
-  if (VerifyFPU) {
-    unimplemented("verfiyFPU");
-  }
 }
 
 void InterpreterMacroAssembler::verify_oop_or_return_address(Register reg, Register Rtmp) {

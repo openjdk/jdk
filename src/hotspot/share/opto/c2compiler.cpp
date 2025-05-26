@@ -633,6 +633,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_max:
   case vmIntrinsics::_min_strict:
   case vmIntrinsics::_max_strict:
+  case vmIntrinsics::_maxL:
+  case vmIntrinsics::_minL:
   case vmIntrinsics::_arraycopy:
   case vmIntrinsics::_arraySort:
   case vmIntrinsics::_arrayPartition:
@@ -780,6 +782,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_sha2_implCompress:
   case vmIntrinsics::_sha5_implCompress:
   case vmIntrinsics::_sha3_implCompress:
+  case vmIntrinsics::_double_keccak:
   case vmIntrinsics::_digestBase_implCompressMB:
   case vmIntrinsics::_multiplyToLen:
   case vmIntrinsics::_squareToLen:
@@ -789,6 +792,18 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_ghash_processBlocks:
   case vmIntrinsics::_chacha20Block:
+  case vmIntrinsics::_kyberNtt:
+  case vmIntrinsics::_kyberInverseNtt:
+  case vmIntrinsics::_kyberNttMult:
+  case vmIntrinsics::_kyberAddPoly_2:
+  case vmIntrinsics::_kyberAddPoly_3:
+  case vmIntrinsics::_kyber12To16:
+  case vmIntrinsics::_kyberBarrettReduce:
+  case vmIntrinsics::_dilithiumAlmostNtt:
+  case vmIntrinsics::_dilithiumAlmostInverseNtt:
+  case vmIntrinsics::_dilithiumNttMult:
+  case vmIntrinsics::_dilithiumMontMulByConstant:
+  case vmIntrinsics::_dilithiumDecomposePoly:
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
   case vmIntrinsics::_poly1305_processBlocks:
@@ -833,6 +848,9 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_IndexVector:
   case vmIntrinsics::_IndexPartiallyInUpperRange:
     return EnableVectorSupport;
+  case vmIntrinsics::_VectorUnaryLibOp:
+  case vmIntrinsics::_VectorBinaryLibOp:
+    return EnableVectorSupport && Matcher::supports_vector_calling_convention();
   case vmIntrinsics::_blackhole:
 #if INCLUDE_JVMTI
   case vmIntrinsics::_notifyJvmtiVThreadStart:

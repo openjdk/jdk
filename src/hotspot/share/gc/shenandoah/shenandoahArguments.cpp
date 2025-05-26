@@ -29,6 +29,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shenandoah/shenandoahArguments.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -185,6 +186,11 @@ void ShenandoahArguments::initialize() {
   // to converge faster over smaller number of resizing decisions.
   if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
+  }
+
+  if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
+    vm_exit_during_initialization(
+      err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes));
   }
 
   FullGCForwarding::initialize_flags(MaxHeapSize);

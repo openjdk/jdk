@@ -25,20 +25,20 @@
 #include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_IR.hpp"
-#include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_LinearScan.hpp"
+#include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_RangeCheckElimination.hpp"
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compilationFailureInfo.hpp"
+#include "compiler/compilationLog.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
-#include "compiler/compilerDirectives.hpp"
 #include "compiler/compileLog.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/compileTask.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/timerTrace.hpp"
@@ -410,6 +410,8 @@ int Compilation::compile_java_method() {
     env()->dump_replay_data(env()->compile_id());
   }
 
+  DEBUG_ONLY(CompilationMemoryStatistic::do_test_allocations();)
+
   {
     PhaseTraceTime timeit(_t_codeemit);
     return emit_code_body();
@@ -645,6 +647,13 @@ void Compilation::notice_inlined_method(ciMethod* method) {
 
 void Compilation::bailout(const char* msg) {
   assert(msg != nullptr, "bailout message must exist");
+  // record the bailout for hserr envlog
+  if (CompilationLog::log() != nullptr) {
+    CompilerThread* thread = CompilerThread::current();
+    CompileTask* task = thread->task();
+    CompilationLog::log()->log_failure(thread, task, msg, nullptr);
+  }
+
   if (!bailed_out()) {
     // keep first bailout message
     if (PrintCompilation || PrintBailouts) tty->print_cr("compilation bailout: %s", msg);

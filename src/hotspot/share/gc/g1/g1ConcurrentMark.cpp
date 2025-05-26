@@ -52,8 +52,8 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "jvm.h"
@@ -1273,7 +1273,8 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
         // The liveness of this humongous obj decided by either its allocation
         // time (allocated after conc-mark-start, i.e. live) or conc-marking.
         const bool is_live = _cm->top_at_mark_start(hr) == hr->bottom()
-                             || _cm->contains_live_object(hr->hrm_index());
+                          || _cm->contains_live_object(hr->hrm_index())
+                          || hr->has_pinned_objects();
         if (is_live) {
           const bool selected_for_rebuild = tracker->update_humongous_before_rebuild(hr);
           auto on_humongous_region = [&] (G1HeapRegion* hr) {
@@ -1288,9 +1289,12 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
           reclaim_empty_humongous_region(hr);
         }
       } else if (hr->is_old()) {
-        hr->note_end_of_marking(_cm->top_at_mark_start(hr), _cm->live_bytes(hr->hrm_index()));
+        uint region_idx = hr->hrm_index();
+        hr->note_end_of_marking(_cm->top_at_mark_start(hr), _cm->live_bytes(region_idx), _cm->incoming_refs(region_idx));
 
-        if (hr->live_bytes() != 0) {
+        const bool is_live = hr->live_bytes() != 0
+                          || hr->has_pinned_objects();
+        if (is_live) {
           if (tracker->update_old_before_rebuild(hr)) {
             _num_selected_for_rebuild++;
           }
@@ -1457,7 +1461,7 @@ void G1ConcurrentMark::remark() {
     // GC pause.
     _g1h->increment_total_collections();
 
-    _g1h->resize_heap_if_necessary();
+    _g1h->resize_heap_if_necessary(size_t(0) /* allocation_word_size */);
     _g1h->uncommit_regions_if_necessary();
 
     compute_new_sizes();
@@ -2122,9 +2126,9 @@ void G1ConcurrentMark::threads_do(ThreadClosure* tc) const {
   _concurrent_workers->threads_do(tc);
 }
 
-void G1ConcurrentMark::print_on_error(outputStream* st) const {
+void G1ConcurrentMark::print_on(outputStream* st) const {
   st->print_cr("Marking Bits: (CMBitMap*) " PTR_FORMAT, p2i(mark_bitmap()));
-  _mark_bitmap.print_on_error(st, " Bits: ");
+  _mark_bitmap.print_on(st, " Bits: ");
 }
 
 static ReferenceProcessor* get_cm_oop_closure_ref_processor(G1CollectedHeap* g1h) {

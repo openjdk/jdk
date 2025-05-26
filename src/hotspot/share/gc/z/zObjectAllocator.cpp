@@ -43,8 +43,6 @@ static const ZStatCounter ZCounterUndoObjectAllocationFailed("Memory", "Undo Obj
 ZObjectAllocator::ZObjectAllocator(ZPageAge age)
   : _age(age),
     _use_per_cpu_shared_small_pages(ZHeuristics::use_per_cpu_shared_small_pages()),
-    _used(0),
-    _undone(0),
     _shared_small_page(nullptr),
     _shared_medium_page(nullptr),
     _medium_page_alloc_lock() {}
@@ -58,13 +56,7 @@ ZPage* const* ZObjectAllocator::shared_small_page_addr() const {
 }
 
 ZPage* ZObjectAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags) {
-  ZPage* const page = ZHeap::heap()->alloc_page(type, size, flags, _age);
-  if (page != nullptr) {
-    // Increment used bytes
-    Atomic::add(_used.addr(), size);
-  }
-
-  return page;
+  return ZHeap::heap()->alloc_page(type, size, flags, _age);
 }
 
 ZPage* ZObjectAllocator::alloc_page_for_relocation(ZPageType type, size_t size, ZAllocationFlags flags) {
@@ -72,9 +64,6 @@ ZPage* ZObjectAllocator::alloc_page_for_relocation(ZPageType type, size_t size, 
 }
 
 void ZObjectAllocator::undo_alloc_page(ZPage* page) {
-  // Increment undone bytes
-  Atomic::add(_undone.addr(), page->size());
-
   ZHeap::heap()->undo_alloc_page(page);
 }
 
@@ -138,10 +127,10 @@ zaddress ZObjectAllocator::alloc_object_in_medium_page(size_t size,
   }
 
   if (is_null(addr)) {
-    // When a new medium page is required, we synchronize the allocation
-    // of the new page using a lock. This is to avoid having multiple
-    // threads requesting a medium page from the page cache when we know
-    // only one of the will succeed in installing the page at this layer.
+    // When a new medium page is required, we synchronize the allocation of the
+    // new page using a lock. This is to avoid having multiple threads allocate
+    // medium pages when we know only one of them will succeed in installing
+    // the page at this layer.
     ZLocker<ZLock> locker(&_medium_page_alloc_lock);
 
     // When holding the lock we can't allow the page allocator to stall,
@@ -229,23 +218,6 @@ ZPageAge ZObjectAllocator::age() const {
   return _age;
 }
 
-size_t ZObjectAllocator::used() const {
-  size_t total_used = 0;
-  size_t total_undone = 0;
-
-  ZPerCPUConstIterator<size_t> iter_used(&_used);
-  for (const size_t* cpu_used; iter_used.next(&cpu_used);) {
-    total_used += *cpu_used;
-  }
-
-  ZPerCPUConstIterator<size_t> iter_undone(&_undone);
-  for (const size_t* cpu_undone; iter_undone.next(&cpu_undone);) {
-    total_undone += *cpu_undone;
-  }
-
-  return total_used - total_undone;
-}
-
 size_t ZObjectAllocator::remaining() const {
   assert(Thread::current()->is_Java_thread(), "Should be a Java thread");
 
@@ -259,10 +231,6 @@ size_t ZObjectAllocator::remaining() const {
 
 void ZObjectAllocator::retire_pages() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-
-  // Reset used and undone bytes
-  _used.set_all(0);
-  _undone.set_all(0);
 
   // Reset allocation pages
   _shared_medium_page.set(nullptr);

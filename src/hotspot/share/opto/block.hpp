@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,8 @@ struct Tarjan;
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
 class Block_Array : public ArenaObj {
-  friend class VMStructs;
   uint _size;                   // allocated size, as opposed to formal limit
-  debug_only(uint _limit;)      // limit to formal domain
+  DEBUG_ONLY(uint _limit;)      // limit to formal domain
   Arena *_arena;                // Arena to allocate in
   ReallocMark _nesting;         // Safety checks for arena reallocation
 protected:
@@ -58,7 +57,7 @@ protected:
 
 public:
   Block_Array(Arena *a) : _size(OptoBlockListSize), _arena(a) {
-    debug_only(_limit=0);
+    DEBUG_ONLY(_limit=0);
     _blocks = NEW_ARENA_ARRAY( a, Block *, OptoBlockListSize );
     for( int i = 0; i < OptoBlockListSize; i++ ) {
       _blocks[i] = nullptr;
@@ -70,12 +69,11 @@ public:
   { assert( i < Max(), "oob" ); return _blocks[i]; }
   // Extend the mapping: index i maps to Block *n.
   void map( uint i, Block *n ) { grow(i); _blocks[i] = n; }
-  uint Max() const { debug_only(return _limit); return _size; }
+  uint Max() const { DEBUG_ONLY(return _limit); return _size; }
 };
 
 
 class Block_List : public Block_Array {
-  friend class VMStructs;
 public:
   uint _cnt;
   Block_List() : Block_List(Thread::current()->resource_area()) { }
@@ -93,7 +91,6 @@ public:
 
 
 class CFGElement : public AnyObj {
-  friend class VMStructs;
  public:
   double _freq; // Execution frequency (estimate)
 
@@ -109,7 +106,6 @@ class CFGElement : public AnyObj {
 // Basic blocks are used during the output routines, and are not used during
 // any optimization pass.  They are created late in the game.
 class Block : public CFGElement {
-  friend class VMStructs;
 
 private:
   // Nodes in this block, in order
@@ -214,7 +210,7 @@ public:
   uint _freg_pressure;
   uint _fhrp_index;
 
-  // Mark and visited bits for an LCA calculation in insert_anti_dependences.
+  // Mark and visited bits for an LCA calculation in raise_above_anti_dependences.
   // Since they hold unique node indexes, they do not need reinitialization.
   node_idx_t _raise_LCA_mark;
   void    set_raise_LCA_mark(node_idx_t x)    { _raise_LCA_mark = x; }
@@ -372,7 +368,6 @@ public:
 //------------------------------PhaseCFG---------------------------------------
 // Build an array of Basic Block pointers, one per Node.
 class PhaseCFG : public Phase {
-  friend class VMStructs;
  private:
   // Root of whole program
   RootNode* _root;
@@ -492,10 +487,10 @@ class PhaseCFG : public Phase {
   // Used when building the CFG and creating end nodes for blocks.
   MachNode* _goto;
 
-  Block* insert_anti_dependences(Block* LCA, Node* load, bool verify = false);
+  Block* raise_above_anti_dependences(Block* LCA, Node* load, bool verify = false);
   void verify_anti_dependences(Block* LCA, Node* load) const {
     assert(LCA == get_block_for_node(load), "should already be scheduled");
-    const_cast<PhaseCFG*>(this)->insert_anti_dependences(LCA, load, true);
+    const_cast<PhaseCFG*>(this)->raise_above_anti_dependences(LCA, load, true);
   }
 
   bool move_to_next(Block* bx, uint b_index);
@@ -703,7 +698,6 @@ public:
 
 //------------------------------CFGLoop-------------------------------------------
 class CFGLoop : public CFGElement {
-  friend class VMStructs;
   int _id;
   int _depth;
   CFGLoop *_parent;      // root of loop tree is the method level "pseudo" loop, it's parent is null
@@ -756,7 +750,6 @@ class CFGLoop : public CFGElement {
 // A edge between two basic blocks that will be embodied by a branch or a
 // fall-through.
 class CFGEdge : public ResourceObj {
-  friend class VMStructs;
  private:
   Block * _from;        // Source basic block
   Block * _to;          // Destination basic block
@@ -892,7 +885,6 @@ class Trace : public ResourceObj {
 //------------------------------PhaseBlockLayout-------------------------------
 // Rearrange blocks into some canonical order, based on edges and their frequencies
 class PhaseBlockLayout : public Phase {
-  friend class VMStructs;
   PhaseCFG &_cfg;               // Control flow graph
 
   GrowableArray<CFGEdge *> *edges;
