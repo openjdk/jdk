@@ -26,7 +26,7 @@
  * @bug 8356989
  * @summary Unexpected null in C2 compiled code
  * @run main/othervm -XX:-BackgroundCompilation TestArrayCopySameSrcDstInitializesNonEscapingArray
- * @run main/othervm TestArrayCopySameSrcDstInitializesNonEscapingArray
+ * @run main TestArrayCopySameSrcDstInitializesNonEscapingArray
  */
 
  public class TestArrayCopySameSrcDstInitializesNonEscapingArray {
