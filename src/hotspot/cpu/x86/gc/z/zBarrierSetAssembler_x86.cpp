@@ -188,10 +188,10 @@ private:
       // Re-instantiate original stack pointer.
       __ movptr(rsp, Address(rsp));
       __ popp(rcx);
-      if (_result == noreg) {
-        __ popp(rax);
-      } else if (_result != rax) {
-        __ movptr(_result, rax);
+      if (_result != rax) {
+        if (_result != noreg) {
+          __ movptr(_result, rax);
+        }
         __ popp(rax);
       }
     } else {
@@ -203,10 +203,10 @@ private:
       __ pop(rdi);
       __ pop(rdx);
       __ pop(rcx);
-      if (_result == noreg) {
-        __ pop(rax);
-      } else if (_result != rax) {
-        __ movptr(_result, rax);
+      if (_result != rax) {
+        if (_result != noreg) {
+          __ movptr(_result, rax);
+        }
         __ pop(rax);
       }
     }
