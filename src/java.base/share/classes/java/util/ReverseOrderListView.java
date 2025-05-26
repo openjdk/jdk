@@ -44,9 +44,10 @@ class ReverseOrderListView<E> implements List<E> {
     final List<E> base;
 
     /**
-     * This view is modifiable if positive, and not modifiable if negative.
-     * This field is actually boolean, but represented as byte to allow
-     * constant-folding both cases by avoiding the default "0" value.
+     * This view is modifiable if this field value is positive, and
+     * not modifiable if value is negative. This field is actually boolean,
+     * but represented as byte to allow constant-folding both cases
+     * by avoiding the default "0"/"false" value.
      */
     @Stable
     final byte modifiable;
