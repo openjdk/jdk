@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,25 @@
 /* @test
    @bug 4167472 5097703 6216563 6284003 6728842 6464744
    @summary Basic test for setWritable/Readable/Executable methods
+   @library /test/lib
    @build SetAccess Util
    @run main SetAccess
  */
 
-import java.io.*;
-import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermissions;
+
+import jtreg.SkippedException;
 
 public class SetAccess {
     public static void main(String[] args) throws Exception {
         if (Util.isPrivileged()) {
-            System.out.println("Unable to test file permissions when running with privileges");
-            return;
+            throw new SkippedException("Unable to test file permissions when running with privileges");
         }
 
         File d = new File(System.getProperty("test.dir", "."));
@@ -64,7 +70,7 @@ public class SetAccess {
             if (!f.setWritable(true, true) ||
                 !f.canWrite() ||
                 permission(f).charAt(2) != 'w')
-                throw new Exception(f + ": setWritable(true, ture) Failed");
+                throw new Exception(f + ": setWritable(true, true) Failed");
             if (!f.setWritable(false, true) ||
                 f.canWrite() ||
                 permission(f).charAt(2) != '-')
@@ -79,7 +85,7 @@ public class SetAccess {
                 throw new Exception(f + ": setWritable(false, true) Failed");
             if (!f.setWritable(true) || !f.canWrite() ||
                 permission(f).charAt(2) != 'w')
-                throw new Exception(f + ": setWritable(true, ture) Failed");
+                throw new Exception(f + ": setWritable(true, true) Failed");
             if (!f.setWritable(false) || f.canWrite() ||
                 permission(f).charAt(2) != '-')
                 throw new Exception(f + ": setWritable(false, true) Failed");
@@ -128,16 +134,16 @@ public class SetAccess {
                 permission(f).charAt(1) != '-')
                 throw new Exception(f + ": setReadable(false, true) Failed");
         } else {
-            //Windows platform
+            // Windows platform
             if (f.isFile()) {
                 if (!f.setReadOnly())
                     throw new Exception(f + ": setReadOnly Failed");
                 if (!f.setWritable(true, true) || !f.canWrite())
-                    throw new Exception(f + ": setWritable(true, ture) Failed");
+                    throw new Exception(f + ": setWritable(true, true) Failed");
                 if (!f.setWritable(true, false) || !f.canWrite())
                     throw new Exception(f + ": setWritable(true, false) Failed");
                 if (!f.setWritable(true) || !f.canWrite())
-                    throw new Exception(f + ": setWritable(true, ture) Failed");
+                    throw new Exception(f + ": setWritable(true, true) Failed");
                 if (!f.setExecutable(true, true) || !f.canExecute())
                     throw new Exception(f + ": setExecutable(true, true) Failed");
                 if (!f.setExecutable(true, false) || !f.canExecute())
@@ -152,8 +158,8 @@ public class SetAccess {
                     throw new Exception(f + ": setReadable(true, true) Failed");
             }
             if (f.isDirectory()) {
-                // setWritable should fail on directories because the DOS readonly
-                // attribute prevents a directory from being deleted.
+                // setWritable should fail on directories because the DOS
+                // readonly attribute prevents a directory from being deleted.
                 if (f.setWritable(false, true))
                     throw new Exception(f + ": setWritable(false, true) Succeeded");
                 if (f.setWritable(false, false))
@@ -180,6 +186,12 @@ public class SetAccess {
                 throw new Exception(f + ": setReadable(false, false) Failed");
             if (f.setReadable(false))
                 throw new Exception(f + ": setReadable(false, true) Failed");
+            if (f.isFile() && !f.canWrite()) {
+                // Files must not be left in a read-only state as the
+                // jdk.io.File.deleteReadOnly property is not set
+                if (!f.setWritable(true))
+                    throw new Exception(f + ": setWritable(true, true) Failed");
+            }
         }
         if (f.exists() && !f.delete())
             throw new Exception("Can't delete test dir: " + f);
