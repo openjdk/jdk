@@ -203,26 +203,26 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
   }
   static MemTag tag(const char* name) {
     NmtVirtualMemoryLocker nvml;
-    return _instance.tag(name);
+    return _instance->tag(name);
   }
 
   static const char* name_of(MemTag tag) {
     NmtVirtualMemoryLocker nvml;
-    return _instance.name_of(tag);
+    return _instance->name_of(tag);
   }
 
   static const char* human_readable_name_of(MemTag tag) {
     NmtVirtualMemoryLocker nvml;
-    return _instance.human_readable_name_of(tag);
+    return _instance->human_readable_name_of(tag);
   }
 
   static void set_human_readable_name_of(MemTag tag, const char* hrn) {
     NmtVirtualMemoryLocker nvml;
-    return _instance.set_human_readable_name_of(tag, hrn);
+    return _instance->set_human_readable_name_of(tag, hrn);
   }
 
   static int number_of_tags() {
-    return _instance.number_of_tags();
+    return _instance->number_of_tags();
   }
 };
 
