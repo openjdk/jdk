@@ -1631,6 +1631,19 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
     case Op_LShiftL:
       return false;
+
+    // LShiftINode::Ideal
+    // pattern: ((x + con1) << con2) -> x << con2 + con1 << con2
+    // Could be issue with notification of inputs of inputs
+    //
+    // Side-note: should cases like these not be shared between
+    //            LShiftI and LShiftL?
+    //
+    // Found with:
+    //   compiler/escapeAnalysis/Test6689060.java
+    //   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110 -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    case Op_LShiftI:
+      return false;
   }
 
   if (n->is_Load()) {
