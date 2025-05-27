@@ -48,7 +48,7 @@
                                                                               \
   nonstatic_field(G1HeapRegionTable, _base,             address)              \
   nonstatic_field(G1HeapRegionTable, _length,           size_t)               \
-  nonstatic_field(G1HeapRegionTable, _biased_base,      size_t)               \
+  nonstatic_field(G1HeapRegionTable, _biased_base,      uintptr_t)            \
   nonstatic_field(G1HeapRegionTable, _bias,             size_t)               \
   nonstatic_field(G1HeapRegionTable, _shift_by,         uint)                 \
                                                                               \
