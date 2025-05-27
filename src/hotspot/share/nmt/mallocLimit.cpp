@@ -89,7 +89,7 @@ public:
     }
     stringStream ss;
     ss.print("%.*s", (int)(end - _p), _p);
-    MemTag mem_tag = NMTUtil::string_to_mem_tag(ss.base());
+    MemTag mem_tag = MemTagFactory::tag(ss.freeze());
     if (mem_tag != mtNone) {
       *out = mem_tag;
       _p = end;
@@ -138,7 +138,7 @@ void MallocLimitSet::set_category_limit(MemTag mem_tag, size_t s, MallocLimitMod
 void MallocLimitSet::reset() {
   set_global_limit(0, MallocLimitMode::trigger_fatal);
   _glob.sz = 0; _glob.mode = MallocLimitMode::trigger_fatal;
-  for (int i = 0; i < mt_number_of_tags; i++) {
+  for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
     set_category_limit(NMTUtil::index_to_tag(i), 0, MallocLimitMode::trigger_fatal);
   }
 }
@@ -149,7 +149,7 @@ void MallocLimitSet::print_on(outputStream* st) const {
     st->print_cr("MallocLimit: total limit: " PROPERFMT " (%s)", PROPERFMTARGS(_glob.sz),
                  mode_to_name(_glob.mode));
   } else {
-    for (int i = 0; i < mt_number_of_tags; i++) {
+    for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
       if (_cat[i].sz > 0) {
         st->print_cr("MallocLimit: category \"%s\" limit: " PROPERFMT " (%s)",
                      NMTUtil::tag_to_enum_name(NMTUtil::index_to_tag(i)),

@@ -32,7 +32,7 @@
 
 class MemTagBitmap {
   uint32_t _v;
-  STATIC_ASSERT(sizeof(_v) * BitsPerByte >= mt_number_of_tags);
+  STATIC_ASSERT(sizeof(_v) * BitsPerByte >= MemTagFactory::number_of_tags());
 
 public:
   MemTagBitmap(uint32_t v = 0) : _v(v) {}

@@ -72,7 +72,7 @@ void MallocMemorySnapshot::copy_to(MallocMemorySnapshot** result) {
   s->_all_mallocs = _all_mallocs;
   size_t total_size = 0;
   size_t total_count = 0;
-  for (int index = 0; index < mt_number_of_tags; index ++) {
+  for (int index = 0; index <MemTagFactory::number_of_tags(); index ++) {
     s->_malloc[index] = _malloc[index];
     total_size += s->_malloc[index].malloc_size();
     total_count += s->_malloc[index].malloc_count();
@@ -85,7 +85,7 @@ void MallocMemorySnapshot::copy_to(MallocMemorySnapshot** result) {
 // Total malloc'd memory used by arenas
 size_t MallocMemorySnapshot::total_arena() const {
   size_t amount = 0;
-  for (int index = 0; index < mt_number_of_tags; index ++) {
+  for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
     amount += _malloc[index].arena_size();
   }
   return amount;

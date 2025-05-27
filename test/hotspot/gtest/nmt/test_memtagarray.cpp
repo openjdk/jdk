@@ -36,10 +36,10 @@ TEST_VM_F(NMTMemTagArrayTest, AllocatingTagTest) {
     MTArray mta;
     ASSERT_TRUE(mta.is_valid()) << "must";
     EXPECT_EQ(0, mta.number_of_tags_allocated());
-    for (int i = 0; i < mt_number_of_tags; i++) {
+    for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
       mta.at((MemTag)i);
     }
-    EXPECT_EQ(mt_number_of_tags, mta.number_of_tags_allocated());
+    EXPECT_EQ(MemTagFactory::number_of_tags(), mta.number_of_tags_allocated());
   }
 
   { // Allocating a tag in the middle also allocates all preceding tags.

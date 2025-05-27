@@ -85,7 +85,7 @@ public:
 
   // Check if index is a valid MemTag enum value (including mtNone)
   static inline bool tag_index_is_valid(int index) {
-    return index >= 0 && index < mt_number_of_tags;
+    return index >= 0 && index < MemTagFactory::number_of_tags();
   }
 
   // Check if tag value is a valid MemTag enum value (including mtNone)
@@ -129,9 +129,6 @@ public:
   // string is not a valid level.
   static NMT_TrackingLevel parse_tracking_level(const char* s);
 
-  // Given a string, return associated mem_tag. mtNone if name is invalid.
-  // String can be either the human readable name or the
-  // stringified enum (with or without leading "mt". In all cases, case is ignored.
   static MemTag string_to_mem_tag(const char* name);
 
   // Returns textual representation of a tracking level.

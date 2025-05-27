@@ -113,7 +113,7 @@ class VirtualMemorySnapshot {
 
   inline size_t total_reserved() const {
     size_t amount = 0;
-    for (int index = 0; index < mt_number_of_tags; index ++) {
+    for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
       amount += _virtual_memory[index].reserved();
     }
     return amount;
@@ -121,14 +121,14 @@ class VirtualMemorySnapshot {
 
   inline size_t total_committed() const {
     size_t amount = 0;
-    for (int index = 0; index < mt_number_of_tags; index ++) {
+    for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
       amount += _virtual_memory[index].committed();
     }
     return amount;
   }
 
   void copy_to(VirtualMemorySnapshot* s) {
-    for (int index = 0; index < mt_number_of_tags; index ++) {
+    for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
       s->_virtual_memory[index] = _virtual_memory[index];
     }
   }

@@ -142,6 +142,10 @@ struct NameToTagTable {
     const char*& ref = human_readable_names.at_grow(i, nullptr);
     ref = copy;
   }
+
+  int number_of_tags() {
+    return entries.length();
+  }
 };
 
 struct MemTagFactory {
@@ -156,6 +160,7 @@ struct MemTagFactory {
   MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
 
   }
+
   static MemTag tag(const char* name) {
     NmtVirtualMemoryLocker nvml;
     MemTag found = table.get(name);
@@ -181,6 +186,10 @@ struct MemTagFactory {
   static void set_human_readable_name_of(MemTag tag, const char* hrn) {
     NmtVirtualMemoryLocker nvml;
     return table.set_human_readable_name_of(tag, hrn);
+  }
+
+  static int number_of_tags() {
+    return entries.length();
   }
 };
 

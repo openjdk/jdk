@@ -90,7 +90,7 @@ NMT_TrackingLevel NMTUtil::parse_tracking_level(const char* s) {
 }
 
 MemTag NMTUtil::string_to_mem_tag(const char* s) {
-  for (int i = 0; i < mt_number_of_tags; i ++) {
+  for (int i = 0; i < MemTagFactory::number_of_tags(); i ++) {
     assert(::strlen(_strings[i].enum_s) > 2, "Sanity"); // should always start with "mt"
     if (::strcasecmp(_strings[i].human_readable, s) == 0 ||
         ::strcasecmp(_strings[i].enum_s, s) == 0 ||

@@ -177,7 +177,7 @@ void MemSummaryReporter::report() {
   out->cr();
 
   // Summary by memory tag
-  for (int index = 0; index < mt_number_of_tags; index ++) {
+  for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
     MemTag mem_tag = NMTUtil::index_to_tag(index);
     // thread stack is reported as part of thread category
     if (mem_tag == mtThreadStack) continue;
@@ -520,7 +520,7 @@ void MemSummaryDiffReporter::report_diff() {
   out->cr();
 
   // Summary diff by memory tag
-  for (int index = 0; index < mt_number_of_tags; index ++) {
+  for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
     MemTag mem_tag = NMTUtil::index_to_tag(index);
     // thread stack is reported as part of thread category
     if (mem_tag == mtThreadStack) continue;
