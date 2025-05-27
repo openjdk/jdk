@@ -268,16 +268,9 @@ class FieldInfoStream : AllStatic {
   friend class FieldStreamBase;
   friend class ClassFileParser;
   friend class FieldInfoReader;
+  friend class FieldInfoComparator;
 
  private:
-  static inline unsigned int search_table_position_width(int stream_length) {
-    assert(stream_length >= 0 && stream_length <= (1 << 24), "stream too long");
-    return stream_length > UINT16_MAX + 1 ? 3 : 2;
-  }
-  static inline unsigned int search_table_index_width(int java_fields) {
-    assert(java_fields >= 0 && java_fields <= (1 << 16), "too many fields");
-    return java_fields > UINT8_MAX + 1 ? 2 : 1;
-  }
   static int compare_name_and_sig(const Symbol* n1, const Symbol* s1, const Symbol* n2, const Symbol* s2);
 
  public:
