@@ -110,6 +110,8 @@ void ZUncommitter::run_thread() {
       // Update uncommitted counter
       uncommitted_since_last_timeout += uncommitted;
 
+      // 'uncommitted == 0' is a proxy for uncommit_cycle_is_canceled() without
+      // having to take the page allocator lock
       if (uncommitted == 0 || uncommit_cycle_is_finished()) {
         // Done
         break;
