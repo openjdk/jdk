@@ -259,11 +259,6 @@ protected:
   size_t used_at_last_gc() const { return _used_at_last_gc; }
   void update_capacity_and_used_at_gc();
 
-  // Return "true" if the part of the heap that allocates Java
-  // objects has reached the maximal committed limit that it can
-  // reach, without a garbage collection.
-  virtual bool is_maximal_no_gc() const = 0;
-
   // Support for java.lang.Runtime.maxMemory():  return the maximum amount of
   // memory that the vm could make available for storing 'normal' java objects.
   // This is based on the reserved address space, but should not include space

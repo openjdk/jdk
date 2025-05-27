@@ -126,12 +126,6 @@ size_t ZCollectedHeap::unused() const {
   return _heap.unused();
 }
 
-bool ZCollectedHeap::is_maximal_no_gc() const {
-  // Not supported
-  ShouldNotReachHere();
-  return false;
-}
-
 bool ZCollectedHeap::is_in(const void* p) const {
   return _heap.is_in((uintptr_t)p);
 }

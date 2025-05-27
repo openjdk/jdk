@@ -966,7 +966,7 @@ public:
   // end fields defining the extent of the contiguous allocation region.)
   // But G1CollectedHeap doesn't yet support this.
 
-  bool is_maximal_no_gc() const override {
+  bool is_maximal_no_gc() const {
     return _hrm.num_inactive_regions() == 0;
   }
 

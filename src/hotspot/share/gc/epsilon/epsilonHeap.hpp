@@ -80,11 +80,6 @@ public:
 
   bool requires_barriers(stackChunkOop obj) const override { return false; }
 
-  bool is_maximal_no_gc() const override {
-    // No GC is going to happen. Return "we are at max", when we are about to fail.
-    return used() == capacity();
-  }
-
   // Allocation
   HeapWord* allocate_work(size_t size, bool verbose = true);
   HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) override;

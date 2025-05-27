@@ -208,12 +208,6 @@ size_t ParallelScavengeHeap::used() const {
   return value;
 }
 
-bool ParallelScavengeHeap::is_maximal_no_gc() const {
-  // We don't expand young-gen except at a GC.
-  return old_gen()->is_maximal_no_gc();
-}
-
-
 size_t ParallelScavengeHeap::max_capacity() const {
   size_t estimated = reserved_region().byte_size();
   if (UseAdaptiveSizePolicy) {

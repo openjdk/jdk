@@ -110,10 +110,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   size_t capacity_in_bytes() const        { return object_space()->capacity_in_bytes(); }
   size_t used_in_bytes() const            { return object_space()->used_in_bytes(); }
 
-  bool is_maximal_no_gc() const {
-    return virtual_space()->uncommitted_size() == 0;
-  }
-
   void complete_loaded_archive_space(MemRegion archive_space);
 
   // Calculating new sizes

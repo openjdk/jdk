@@ -216,11 +216,6 @@ public:
 
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
 
-  // Return "true" if all generations have reached the
-  // maximal committed limit that they can reach, without a garbage
-  // collection.
-  virtual bool is_maximal_no_gc() const override;
-
   // This function returns the CardTableRS object that allows us to scan
   // generations in a fully generational heap.
   CardTableRS* rem_set() { return _rem_set; }
