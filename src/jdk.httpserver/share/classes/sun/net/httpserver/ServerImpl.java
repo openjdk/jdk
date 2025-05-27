@@ -247,7 +247,7 @@ class ServerImpl {
         // before the timeout in this method
         terminating = true;
 
-        addEvent(new StopRequestedEvent());
+        addEvent(new Event.StopRequested());
 
         try { schan.close(); } catch (IOException e) {}
         selector.wakeup();
@@ -412,7 +412,7 @@ class ServerImpl {
 
             // Stopping marking the state as finished if stop is requested,
             // termination is in progress and exchange count is 0
-            if (r instanceof StopRequestedEvent) {
+            if (r instanceof Event.StopRequested) {
                 logger.log(Level.TRACE, "Handling Stop Requested Event");
 
                 // checking if terminating is set to true
@@ -431,7 +431,7 @@ class ServerImpl {
             HttpConnection c = t.getConnection();
 
             try {
-                if (r instanceof WriteFinishedEvent) {
+                if (r instanceof Event.WriteFinished) {
 
                     logger.log(Level.TRACE, "Write Finished");
                     int exchanges = endExchange();
