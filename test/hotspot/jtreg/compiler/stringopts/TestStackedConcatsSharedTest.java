@@ -24,25 +24,30 @@
 /*
  * @test
  * @bug 8356246
- * @summary Test stacked string concatenations where the toString of the first chain
- *          is subjected to two null checks using a shared test in the second chain.
- * @run main/othervm -Xcomp -XX:-TieredCompilation
- *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsSharedNullCheck::*
- *                   compiler.stringopts.TestStackedConcatsSharedNullCheck
+ * @summary Test stacked string concatenations where the toString of the first StringBuilder
+ *          is used as a shared test by two diamond Ifs in the second StringBuilder. 
+ * @run main/othervm compiler.stringopts.TestStackedConcatsSharedTest
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -Xcomp
+ *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsSharedTest::*
+ *                   compiler.stringopts.TestStackedConcatsSharedTest
  */
 
 package compiler.stringopts;
 
-public class TestStackedConcatsSharedNullCheck {
+public class TestStackedConcatsSharedTest {
 
     public static void main(String... args) {
-      f();
-      f();
+        f(); // one warmup call
+        String s = f();
+        if (!s.equals("")) {
+            throw new RuntimeException("wrong result"); 
+        }
     }
 
-    static void f() {
+    static String f() {
         String s = "";
         s = new StringBuilder().toString();
         s = new StringBuilder(String.valueOf(s)).append(String.valueOf(s)).toString();
+        return s;
     }
 }
