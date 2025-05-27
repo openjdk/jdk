@@ -50,6 +50,7 @@ public class MouseMoveOffScreen {
 
         for (int i = 0; i < gs.length; i++) {
             r[i] = gs[i].getDefaultConfiguration().getBounds();
+            System.out.println("Screen: "+ gs[i].getIDstring() + "  Bounds: " + r[i]);
         }
 
         Point offsc = validateOffScreen(OFF_SCREEN_LOC);
