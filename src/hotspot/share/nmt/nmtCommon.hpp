@@ -94,16 +94,6 @@ public:
     return static_cast<int>(mem_tag);
   }
 
-  // Map memory tag to human readable name
-  static const char* tag_to_name(MemTag mem_tag) {
-    return _strings[tag_to_index(mem_tag)].human_readable;
-  }
-
-  // Map memory tag to literalized enum name (e.g. "mtTest")
-  static const char* tag_to_enum_name(MemTag mem_tag) {
-    return _strings[tag_to_index(mem_tag)].enum_s;
-  }
-
   // Map an index to memory tag
   static MemTag index_to_tag(int index) {
     assert(tag_index_is_valid(index), "Invalid tag index (%d)", index);
@@ -123,17 +113,8 @@ public:
   // string is not a valid level.
   static NMT_TrackingLevel parse_tracking_level(const char* s);
 
-  static MemTag string_to_mem_tag(const char* name);
-
   // Returns textual representation of a tracking level.
   static const char* tracking_level_to_string(NMT_TrackingLevel level);
-
-private:
-  struct S {
-    const char* enum_s; // e.g. "mtNMT"
-    const char* human_readable; // e.g. "Native Memory Tracking"
-  };
-  static S _strings[mt_number_of_tags];
 };
 
 
