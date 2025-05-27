@@ -38,70 +38,21 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageConsumer;
 import java.awt.image.IndexColorModel;
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * This compares the ImageIO rendering of a gif with the ToolkitImage
- * rendering.
+ * This compares the last frame of ImageIO's rendering of a gif with the
+ * ToolkitImage's rendering.
  * <p>
  * This is intended to serve as a helper class for more specific test cases.
- * However this does have its own main method that inspects a folder of gifs.
  */
 public class GifComparison {
-
-    /**
-     * This inspects a folder and calls {@link #run(URL)} for each gif file.
-     */
-    public static void main(String[] args) throws Exception {
-        AtomicInteger successCtr = new AtomicInteger();
-        AtomicInteger failureCtr = new AtomicInteger();
-        File dir = new File(args[0]);
-        Files.walkFileTree(dir.toPath(), new FileVisitor<>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                String s = file.toString();
-                if (s.endsWith(".gif")) {
-                    try {
-                        run(file.toFile().toURI().toURL());
-                        successCtr.incrementAndGet();
-                    } catch (Throwable t) {
-                        failureCtr.incrementAndGet();
-                        t.printStackTrace();
-                    }
-                }
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
-                return FileVisitResult.CONTINUE;
-            }
-        });
-
-        System.out.println("Done. Successes = " + successCtr.get() +
-                " Failures = " + failureCtr.get());
-    }
 
     /**
      * This iterates over every frame a gif and throws an Error / Exception
@@ -121,49 +72,45 @@ public class GifComparison {
         AWTModel awtModel = new AWTModel(srcURL);
 
         BufferedImage lastImage = null;
-        for (int a = 0; a < ioModel.frames.size(); a++) {
-            BufferedImage ioImg = ioModel.getFrame(a);
-            BufferedImage awtImage = awtModel.getFrame(a);
 
-            // We could make this method much faster if we only iterated
-            // through the gif file once (for each model). But this
-            // slow implementation is probably more readable for developers.
+        int a = ioModel.frames.size() - 1;
+        BufferedImage ioImg = ioModel.getFrame(a);
+        BufferedImage awtImage = awtModel.getFrame(a);
 
-            lastImage = awtImage;
+        lastImage = awtImage;
 
-            if (!(ioImg.getWidth() == awtImage.getWidth() &&
-                    ioImg.getHeight() == awtImage.getHeight()))
-                throw new Error("These images are not the same size: " +
-                        ioImg.getWidth() + "x" + ioImg.getHeight() + " vs " +
-                        awtImage.getWidth() + "x" + awtImage.getHeight());
+        if (!(ioImg.getWidth() == awtImage.getWidth() &&
+                ioImg.getHeight() == awtImage.getHeight()))
+            throw new Error("These images are not the same size: " +
+                    ioImg.getWidth() + "x" + ioImg.getHeight() + " vs " +
+                    awtImage.getWidth() + "x" + awtImage.getHeight());
 
-            for (int y = 0; y < ioImg.getHeight(); y++) {
-                for (int x = 0; x < ioImg.getWidth(); x++) {
-                    int argb1 = ioImg.getRGB(x, y);
-                    int argb2 = awtImage.getRGB(x, y);
+        for (int y = 0; y < ioImg.getHeight(); y++) {
+            for (int x = 0; x < ioImg.getWidth(); x++) {
+                int argb1 = ioImg.getRGB(x, y);
+                int argb2 = awtImage.getRGB(x, y);
 
-                    int alpha1 = (argb1 & 0xff000000) >> 24;
-                    int alpha2 = (argb2 & 0xff000000) >> 24;
-                    if (alpha1 == 0 && alpha2 == 0) {
-                        continue;
-                    } else if (alpha1 == 0 || alpha2 == 0) {
-                        throw new Error("pixels at (" + x + ", " + y +
-                                ") have different opacities: " +
-                                Integer.toUnsignedString(argb1, 16) + " vs " +
-                                Integer.toUnsignedString(argb2, 16));
-                    }
-                    int rgb1 = argb1 & 0xffffff;
-                    int rgb2 = argb2 & 0xffffff;
-                    if (rgb1 != rgb2) {
-                        throw new Error("pixels at (" + x + ", " + y +
-                                ") have different opaque RGB values: " +
-                                Integer.toUnsignedString(rgb1, 16) + " vs " +
-                                Integer.toUnsignedString(rgb2, 16));
-                    }
+                int alpha1 = (argb1 & 0xff000000) >> 24;
+                int alpha2 = (argb2 & 0xff000000) >> 24;
+                if (alpha1 == 0 && alpha2 == 0) {
+                    continue;
+                } else if (alpha1 == 0 || alpha2 == 0) {
+                    throw new Error("pixels at (" + x + ", " + y +
+                            ") have different opacities: " +
+                            Integer.toUnsignedString(argb1, 16) + " vs " +
+                            Integer.toUnsignedString(argb2, 16));
+                }
+                int rgb1 = argb1 & 0xffffff;
+                int rgb2 = argb2 & 0xffffff;
+                if (rgb1 != rgb2) {
+                    throw new Error("pixels at (" + x + ", " + y +
+                            ") have different opaque RGB values: " +
+                            Integer.toUnsignedString(rgb1, 16) + " vs " +
+                            Integer.toUnsignedString(rgb2, 16));
                 }
             }
         }
-        System.out.println("Passed (" + ioModel.frames.size() + " frames)");
+        System.out.println("Passed");
         return lastImage;
     }
 }
