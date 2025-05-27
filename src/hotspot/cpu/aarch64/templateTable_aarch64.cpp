@@ -1890,6 +1890,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
 
     __ mov(r19, r0);                             // save the nmethod
 
+    JFR_ONLY(__ enter_jfr_critical_section();)
+
     call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
 
     // r0 is OSR buffer, move it to expected parameter location
@@ -1901,6 +1903,9 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
         Address(rfp, frame::interpreter_frame_sender_sp_offset * wordSize));
     // remove frame anchor
     __ leave();
+
+    JFR_ONLY(__ leave_jfr_critical_section();)
+
     // Ensure compiled code always sees stack at proper alignment
     __ andr(sp, esp, -16);
 

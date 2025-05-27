@@ -138,7 +138,6 @@ extern Mutex*   FinalImageRecipes_lock;          // Protecting the tables used b
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
-extern Monitor* JfrThreadSampler_lock;           // used to suspend/resume JFR thread sampler
 #endif
 
 extern Mutex*   Metaspace_lock;                  // protects Metaspace virtualspace and chunk expansions
