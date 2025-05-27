@@ -52,15 +52,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Block size for parallel iteration
   static const size_t IterateBlockSize = 1024 * 1024;
 
-  HeapWord* cas_allocate_noexpand(size_t word_size) {
-    assert_locked_or_safepoint(Heap_lock);
-    HeapWord* res = object_space()->cas_allocate(word_size);
-    if (res != nullptr) {
-      _start_array->update_for_block(res, res + word_size);
-    }
-    return res;
-  }
-
   bool expand_for_allocate(size_t word_size);
   bool expand(size_t bytes);
   bool expand_by(size_t bytes);
@@ -137,7 +128,7 @@ class PSOldGen : public CHeapObj<mtGC> {
     assert_locked_or_safepoint(Heap_lock);
     HeapWord* res = object_space()->cas_allocate(word_size);
     if (res != nullptr) {
-      _start_array.update_for_block(res, res + word_size);
+      _start_array->update_for_block(res, res + word_size);
     }
     return res;
   }
