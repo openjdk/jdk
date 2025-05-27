@@ -25,8 +25,7 @@
 /**
  * @test
  * @bug 8324837
- * @summary Triggered a stack overflow in PhaseCFG::set_next_call. The graph is legitimately big (mostly deep and not wide)
- *          which makes the old version of PhaseCFG::set_next_call crash.
+ * @summary Triggered a stack overflow in PhaseCFG::set_next_call due to a legitimately big (mostly deep and not wide) graph.
  *
  * @run main/othervm -Xcomp -XX:LoopUnrollLimit=8192 -XX:CompileCommand=compileonly,StackOverflowInSetNextCall::test StackOverflowInSetNextCall
  * @run main StackOverflowInSetNextCall
@@ -63,7 +62,7 @@ public class StackOverflowInSetNextCall {
 
     public static void main(String[] args) {
         for (int i = 0; i < 400; ++i) {
-            test ();
+            test();
         }
     }
 }

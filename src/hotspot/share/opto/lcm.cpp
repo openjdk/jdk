@@ -802,9 +802,9 @@ void PhaseCFG::set_next_call(const Block* block, Node* init, VectorSet& next_cal
   while (worklist.size() > 0) {
     Node* n = worklist.pop();
     if (next_call.test_set(n->_idx)) continue;
-    for (uint i=0; i < n->len(); i++) {
+    for (uint i = 0; i < n->len(); i++) {
       Node* m = n->in(i);
-      if(m == nullptr) continue;  // must see all nodes in block that precede call
+      if (m == nullptr) continue;  // must see all nodes in block that precede call
       if (get_block_for_node(m) == block) {
         worklist.push(m);
       }
