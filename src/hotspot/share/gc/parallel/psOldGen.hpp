@@ -38,7 +38,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
   PSVirtualSpace*          _virtual_space;     // Controls mapping and unmapping of virtual mem
-  ObjectStartArray         _start_array;       // Keeps track of where objects start in a 512b block
+  ObjectStartArray*        _start_array;       // Keeps track of where objects start in a 512b block
   MutableSpace*            _object_space;      // Where all the objects live
 
   // Performance Counters
@@ -51,6 +51,15 @@ class PSOldGen : public CHeapObj<mtGC> {
 
   // Block size for parallel iteration
   static const size_t IterateBlockSize = 1024 * 1024;
+
+  HeapWord* cas_allocate_noexpand(size_t word_size) {
+    assert_locked_or_safepoint(Heap_lock);
+    HeapWord* res = object_space()->cas_allocate(word_size);
+    if (res != nullptr) {
+      _start_array->update_for_block(res, res + word_size);
+    }
+    return res;
+  }
 
   bool expand_for_allocate(size_t word_size);
   bool expand(size_t bytes);
@@ -94,7 +103,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   }
 
   MutableSpace*         object_space() const      { return _object_space; }
-  ObjectStartArray*     start_array()             { return &_start_array; }
+  ObjectStartArray*     start_array()             { return _start_array;  }
   PSVirtualSpace*       virtual_space() const     { return _virtual_space;}
 
   // Size info
