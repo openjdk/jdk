@@ -377,7 +377,7 @@ public class TestDynamicConstant implements Opcodes {
         ConstantPool cp = concat.getConstantPool();
 
         // Contains a map of (bootstrap method names, resolvable) values.
-        Map<String, Boolean> expectedBSMs = Map.of(
+        Map<String, Boolean> expectedIndyBSMs = Map.of(
             "jdk.vm.ci.hotspot.test.TestDynamicConstant.shouldNotBeCalledBSM", false,
             "java.lang.invoke.StringConcatFactory.makeConcatWithConstants", true
         );
@@ -390,11 +390,10 @@ public class TestDynamicConstant implements Opcodes {
                 String bsm = bsmi.getMethod().format("%H.%n");
                 if (tag.equals("InvokeDynamic")) {
                     Assert.assertTrue(bsmi.isInvokeDynamic());
-                    Assert.assertTrue(expectedBSMs.containsKey(bsm), expectedBSMs.toString());
+                    Assert.assertTrue(expectedIndyBSMs.containsKey(bsm), expectedIndyBSMs.toString());
                 } else {
                     Assert.assertFalse(bsmi.isInvokeDynamic());
-                    bsmi.resolveInvokeDynamic();
-                    Assert.assertNull(bsmi.lookupInvokeDynamicAppendix());
+                    Assert.assertNull(bsmi.lookup());
                     checkBsmName(condyType, bsm);
                     List<JavaConstant> staticArguments = bsmi.getStaticArguments();
                     for (int i = 0; i < staticArguments.size(); ++i) {
@@ -427,26 +426,39 @@ public class TestDynamicConstant implements Opcodes {
 
         testLoadReferencedType(concat, cp);
 
-        testLookupAllIndyBootstrapMethodInvocations(cp, expectedBSMs);
+        testLookupBootstrapMethodInvocations(condyType, cp, expectedIndyBSMs);
     }
 
-    private static void testLookupAllIndyBootstrapMethodInvocations(ConstantPool cp, Map<String, Boolean> expectedBSMs) {
-        List<BootstrapMethodInvocation> allIndyInvocations = cp.lookupAllIndyBootstrapMethodInvocations();
-        Assert.assertEquals(allIndyInvocations.size(), 2);
-        for (var bsmi : allIndyInvocations) {
+    private static void testLookupBootstrapMethodInvocations(CondyType condyType, ConstantPool cp, Map<String, Boolean> expectedIndyBSMs) {
+        List<BootstrapMethodInvocation> indyBSMs = cp.lookupBootstrapMethodInvocations(true);
+        Assert.assertEquals(indyBSMs.size(), 2);
+        for (var bsmi : indyBSMs) {
             String bsm = bsmi.getMethod().format("%H.%n");
-            Assert.assertTrue(expectedBSMs.containsKey(bsm), expectedBSMs.toString());
-            if (expectedBSMs.get(bsm)) {
-                bsmi.resolveInvokeDynamic();
-                Assert.assertNotNull(bsmi.lookupInvokeDynamicAppendix());
+            Assert.assertTrue(expectedIndyBSMs.containsKey(bsm), expectedIndyBSMs.toString());
+            Assert.assertTrue(bsmi.isInvokeDynamic());
+            if (expectedIndyBSMs.get(bsm)) {
+                bsmi.resolve();
+                Assert.assertNotNull(bsmi.lookup());
             } else {
                 try {
-                    bsmi.resolveInvokeDynamic();
+                    bsmi.resolve();
                 } catch (BootstrapMethodError bme) {
                     // expected error
                 }
-                Assert.assertNull(bsmi.lookupInvokeDynamicAppendix());
+                Assert.assertNull(bsmi.lookup());
             }
+        }
+
+        List<BootstrapMethodInvocation> condyBSMs = cp.lookupBootstrapMethodInvocations(false);
+        int expectedNumCondys = switch(condyType) {
+            case CALL_DIRECT_BSM, CALL_INDIRECT_BSM -> 1;
+            case CALL_DIRECT_WITH_ARGS_BSM, CALL_INDIRECT_WITH_ARGS_BSM -> 2;
+        };
+        Assert.assertEquals(condyBSMs.size(), expectedNumCondys);
+        for (var bsmi : condyBSMs) {
+            Assert.assertTrue(!bsmi.isInvokeDynamic());
+            bsmi.resolve();
+            Assert.assertNotNull(bsmi.lookup());
         }
     }
 

@@ -193,22 +193,20 @@ public interface ConstantPool {
         List<JavaConstant> getStaticArguments();
 
         /**
-         * If this bootstrap method invocation is for a {@code
-         * CONSTANT_InvokeDynamic_info} instance, then this method ensures the invoke
-         * dynamic is resolved. If the bootstrap method is for a
-         * {@code CONSTANT_Dynamic_info} entry, then no action is performed
+         * Resolves the element corresponding to this bootstrap. If {@code isInvokeDynamic()}, then the
+         * corresponding invoke dynamic is resolved. If {@code !isInvokeDynamic()}, then the dynamic constant
+         * pool entry will be resolved.
          *
          * @jvms 5.4.3.6
          */
-        void resolveInvokeDynamic();
+        void resolve();
 
         /**
-         * If this bootstrap method invocation is for a {@code
-         * CONSTANT_InvokeDynamic_info} instance, then this method looks up the
-         * corresponding invoke dynamic's appendix. If the bootstrap method is for a
-         * {@code CONSTANT_Dynamic_info} entry, then null is returned.
+         * If {@code isInvokeDynamic()}, then this method looks up the
+         * corresponding invoke dynamic's appendix. If {@code !isInvokeDynamic()},
+         * then this will return the constant pool entry's value.
          */
-        JavaConstant lookupInvokeDynamicAppendix();
+        JavaConstant lookup();
     }
 
     /**
@@ -222,7 +220,7 @@ public interface ConstantPool {
      * @param opcode must be {@code Bytecodes.INVOKEDYNAMIC}, or -1 if
      *            {@code index} was not decoded from a bytecode stream
      * @return the bootstrap method invocation details or {@code null} if the entry specified by {@code index}
-     *         is not a {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info}
+     *         is not a {@code CONSTANT_Dynamic_info} or {@code CONSTANT_InvokeDynamic_info}
      * @jvms 4.7.23 The {@code BootstrapMethods} Attribute
      */
     default BootstrapMethodInvocation lookupBootstrapMethodInvocation(int index, int opcode) {
@@ -230,10 +228,16 @@ public interface ConstantPool {
     }
 
     /**
-     * Returns the BootstrapMethodInvocation instances for all invokedynamic
-     * bytecodes which reference this constant pool.
+     * Returns either the BootstrapMethodInvocation instances for all invokedynamic
+     * bytecodes which reference this constant pool, or all {@code CONSTANT_Dynamic_info}
+     * BootstrapMethodInvocations within this constant pool.
+     * The returned List is unmodifiable; calls to any mutator method
+     * will always cause {@code UnsupportedOperationException} to be thrown.
+     *
+     * @param invokeDynamic when true, return all invokedynamic BootstrapMethodInvocations;
+     * otherwise, return all {@code CONSTANT_Dynamic_info} BootstrapMethodInvocations.
      */
-    List<BootstrapMethodInvocation> lookupAllIndyBootstrapMethodInvocations();
+    List<BootstrapMethodInvocation> lookupBootstrapMethodInvocations(boolean invokeDynamic);
 
     /**
      * Looks up a reference to a type. If {@code opcode} is non-negative, then resolution checks

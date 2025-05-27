@@ -23,7 +23,6 @@
 package jdk.vm.ci.hotspot;
 
 import java.util.AbstractList;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -538,15 +537,16 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         private final String name;
         private final JavaConstant type;
         private final List<JavaConstant> staticArguments;
-        private final int indyIndex;
+        private final int index;
 
-        BootstrapMethodInvocationImpl(boolean indy, ResolvedJavaMethod method, String name, JavaConstant type, List<JavaConstant> staticArguments, int indyIndex) {
+        BootstrapMethodInvocationImpl(boolean indy, ResolvedJavaMethod method, String name, JavaConstant type, List<JavaConstant> staticArguments, int index) {
             this.indy = indy;
             this.method = method;
             this.name = name;
             this.type = type;
             this.staticArguments = staticArguments;
-            this.indyIndex = indyIndex;
+            // for indys this holds the indyIndex; otherwise holds the cpi
+            this.index = index;
         }
 
         @Override
@@ -575,18 +575,21 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         }
 
         @Override
-        public void resolveInvokeDynamic() {
+        public void resolve() {
             if (isInvokeDynamic()) {
-                loadReferencedType(indyIndex, Bytecodes.INVOKEDYNAMIC);
+                loadReferencedType(index, Bytecodes.INVOKEDYNAMIC);
+            } else {
+                lookupConstant(index, true);
             }
         }
 
         @Override
-        public JavaConstant lookupInvokeDynamicAppendix() {
+        public JavaConstant lookup() {
             if (isInvokeDynamic()) {
-                return lookupAppendix(indyIndex, Bytecodes.INVOKEDYNAMIC);
+                return lookupAppendix(index, Bytecodes.INVOKEDYNAMIC);
+            } else {
+                return (JavaConstant) lookupConstant(index, false);
             }
-            return null;
         }
 
         @Override
@@ -632,21 +635,31 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                     staticArgumentsList = new CachedBSMArgs(this, bss_index, argCount);
                 }
                 boolean isIndy = tag.name.equals("InvokeDynamic");
-                int indyIndex = isIndy ? index : -1;
-                return new BootstrapMethodInvocationImpl(isIndy, method, name, type, staticArgumentsList, indyIndex);
+                return new BootstrapMethodInvocationImpl(isIndy, method, name, type, staticArgumentsList, isIndy ? index : cpi);
             default:
                 return null;
         }
     }
 
     @Override
-    public List<BootstrapMethodInvocation> lookupAllIndyBootstrapMethodInvocations() {
-        int numIndys = compilerToVM().getNumIndyEntries(this);
-        if (numIndys == 0) {
-            return List.of();
+    public List<BootstrapMethodInvocation> lookupBootstrapMethodInvocations(boolean invokeDynamic){
+        if (invokeDynamic) {
+            int numIndys = compilerToVM().getNumIndyEntries(this);
+            if (numIndys == 0) {
+                return List.of();
+            }
+            return IntStream.range(0, numIndys).mapToObj(i -> lookupBootstrapMethodInvocation(i, Bytecodes.INVOKEDYNAMIC))
+                    .toList();
+        } else {
+            return IntStream.range(1, length()).filter(cpi -> {
+                JvmConstant tagAt = getTagAt(cpi);
+                if (tagAt != null && tagAt.name.equals("Dynamic")) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }).mapToObj(cpi -> lookupBootstrapMethodInvocation(cpi, -1)).toList();
         }
-        return IntStream.range(0, numIndys).mapToObj(i -> lookupBootstrapMethodInvocation(i, Bytecodes.INVOKEDYNAMIC))
-                .toList();
     }
 
     /**
