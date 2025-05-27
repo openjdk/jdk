@@ -181,7 +181,7 @@ class ServerImpl {
     }
 
     public void start () {
-        if (!bound || started || isFinishing()) {
+        if (!bound || started || finished()) {
             throw new IllegalStateException ("server in wrong state");
         }
         if (executor == null) {
@@ -224,8 +224,13 @@ class ServerImpl {
         return httpsConfig;
     }
 
-    public final boolean isFinishing() {
+    private final boolean finished(){
+        // if the latch is 0, the server is finished
         return finishedLatch.getCount() == 0;
+    }
+
+    public final boolean isFinishing() {
+        return finished();
     }
 
     /**
@@ -486,8 +491,8 @@ class ServerImpl {
         }
 
         public void run() {
-            // isFinishing() will be true when there are no active exchange after terminating
-             while (!isFinishing()) {
+            // finished() will be true when there are no active exchange after terminating
+             while (!finished()) {
                 try {
                     List<Event> list = null;
                     synchronized (lolock) {

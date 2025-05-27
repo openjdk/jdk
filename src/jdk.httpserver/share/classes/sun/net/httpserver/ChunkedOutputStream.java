@@ -155,7 +155,7 @@ class ChunkedOutputStream extends FilterOutputStream
             closed = true;
         }
 
-        Event.WriteFinished e = new Event.WriteFinished(t);
+        Event e = new Event.WriteFinished(t);
         t.getHttpContext().getServerImpl().addEvent (e);
     }
 

@@ -25,11 +25,13 @@
 
 package sun.net.httpserver;
 
-class Event {
+import java.util.Objects;
 
-    ExchangeImpl exchange;
+abstract sealed class Event {
 
-    protected Event (ExchangeImpl t) {
+    final ExchangeImpl exchange;
+
+    protected Event(ExchangeImpl t) {
         this.exchange = t;
     }
 
@@ -38,18 +40,18 @@ class Event {
      * The event applies to the whole server and is not tied to any particular
      * exchange.
      */
-    public static class StopRequested extends Event {
+    static final class StopRequested extends Event {
         StopRequested() {
             super(null);
         }
     }
 
     /**
-     * Event indicating that writing is finished.
+     * Event indicating that writing is finished for a given exchange.
      */
-    public static class WriteFinished extends Event {
+    static final class WriteFinished extends Event {
         WriteFinished(ExchangeImpl t) {
-            super (t);
+            super(Objects.requireNonNull(t));
             assert !t.writefinished;
             t.writefinished = true;
         }

@@ -75,7 +75,7 @@ class UndefLengthOutputStream extends FilterOutputStream
                 is.close();
             } catch (IOException e) {}
         }
-        Event.WriteFinished e = new Event.WriteFinished(t);
+        Event e = new Event.WriteFinished(t);
         t.getHttpContext().getServerImpl().addEvent (e);
     }
 
