@@ -27,8 +27,8 @@
 #include "gc/z/zAllocator.hpp"
 
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zHeap.hpp"
+#include "gc/z/zPageAge.inline.hpp"
 
 inline ZAllocatorEden* ZAllocator::eden() {
   return _eden;
