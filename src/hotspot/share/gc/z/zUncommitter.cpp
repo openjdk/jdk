@@ -103,6 +103,11 @@ void ZUncommitter::run_thread() {
     size_t uncommitted_since_last_timeout = 0;
     Tickspan accumulated_time;
 
+    if (!activate_uncommit_cycle()) {
+      // We failed activating a new cycle, continue until next cycle
+      continue;
+    }
+
     while (should_continue()) {
       // Uncommit chunk
       const size_t uncommitted = uncommit();
@@ -167,25 +172,7 @@ void ZUncommitter::terminate() {
   _lock.notify_all();
 }
 
-void ZUncommitter::deactivate_uncommit_cycle() {
-  if (!should_continue()) {
-    // We are stopping
-    return;
-  }
-
-  ZLocker<ZLock> locker(&_partition->_page_allocator->_lock);
-
-  precond(uncommit_cycle_is_active() || uncommit_cycle_is_canceled());
-  precond(uncommit_cycle_is_finished() || uncommit_cycle_is_canceled());
-
-  // Update the next timeout
-  if (uncommit_cycle_is_canceled()) {
-    update_next_cycle_timeout_on_cancel();
-  } else {
-    update_next_cycle_timeout_on_finish();
-  }
-
-  // Reset the cycle
+void ZUncommitter::reset_uncommit_cycle() {
   _to_uncommit = 0;
   _uncommitted = 0;
   _cycle_start = 0.0;
@@ -196,10 +183,49 @@ void ZUncommitter::deactivate_uncommit_cycle() {
   postcond(!uncommit_cycle_is_active());
 }
 
-void ZUncommitter::activate_uncommit_cycle() {
+void ZUncommitter::deactivate_uncommit_cycle() {
+  if (!should_continue()) {
+    // We are stopping
+    return;
+  }
+
+  ZLocker<ZLock> locker(&_partition->_page_allocator->_lock);
+
+  precond(uncommit_cycle_is_active());
+  precond(uncommit_cycle_is_finished() || uncommit_cycle_is_canceled());
+
+  // Update the next timeout
+  if (uncommit_cycle_is_canceled()) {
+    update_next_cycle_timeout_on_cancel();
+  } else {
+    update_next_cycle_timeout_on_finish();
+  }
+
+  // Reset the cycle
+  reset_uncommit_cycle();
+}
+
+bool ZUncommitter::activate_uncommit_cycle() {
+  if (!should_continue()) {
+    // We are stopping
+    return false;
+  }
+
+  // Lock
+  ZLocker<ZLock> locker(&_partition->_page_allocator->_lock);
+
   precond(uncommit_cycle_is_finished());
   precond(!uncommit_cycle_is_active());
-  precond(!uncommit_cycle_is_canceled());
+
+  if (uncommit_cycle_is_canceled()) {
+    // We were canceled before we managed to activate, update the timeout
+    update_next_cycle_timeout_on_cancel();
+
+    // Reset the cycle
+    reset_uncommit_cycle();
+
+    return false;
+  }
 
   ZMappedCache* const cache = &_partition->_cache;
 
@@ -222,6 +248,8 @@ void ZUncommitter::activate_uncommit_cycle() {
   cache->reset_uncommit_cycle();
 
   postcond(is_aligned(_to_uncommit, ZGranuleSize));
+
+  return true;
 }
 
 uint64_t ZUncommitter::to_millis(double seconds) const {
@@ -331,6 +359,8 @@ bool ZUncommitter::uncommit_cycle_is_canceled() const {
 }
 
 size_t ZUncommitter::uncommit() {
+  precond(uncommit_cycle_is_active());
+
   ZArray<ZVirtualMemory> flushed_vmems;
   size_t flushed = 0;
 
@@ -356,11 +386,6 @@ size_t ZUncommitter::uncommit() {
       // This may occur if the current max capacity for this partition is 0
       cancel_uncommit_cycle();
       return 0;
-    }
-
-    if (!uncommit_cycle_is_active()) {
-      // We are activating a new cycle
-      activate_uncommit_cycle();
     }
 
     // Never uncommit below min capacity.

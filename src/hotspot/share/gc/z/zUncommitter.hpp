@@ -51,8 +51,9 @@ private:
   void update_next_cycle_timeout_on_cancel();
   void update_next_cycle_timeout_on_finish();
 
+  void reset_uncommit_cycle();
   void deactivate_uncommit_cycle();
-  void activate_uncommit_cycle();
+  bool activate_uncommit_cycle();
   void register_uncommit(size_t size);
 
   bool uncommit_cycle_is_finished() const;
