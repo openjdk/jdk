@@ -27,6 +27,6 @@
 
 # Instruct SetupJavaCompilation for the jdk.jlink module to include
 # upgrade_files_<module-name>.conf files
-COPY += .conf
+COPY += .conf .txt
 
 ################################################################################

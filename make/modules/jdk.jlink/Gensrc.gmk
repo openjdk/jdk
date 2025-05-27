@@ -48,7 +48,28 @@ $(eval $(call SetupCompileProperties, JIMAGE_PROPERTIES, \
     CLASS := ListResourceBundle, \
 ))
 
-
 TARGETS += $(JLINK_PROPERTIES) $(JMOD_PROPERTIES) $(JIMAGE_PROPERTIES)
+
+################################################################################
+
+RELEASE_FILE_TEMPLATE := $(TOPDIR)/src/jdk.jlink/share/classes/jdk/tools/jlink/resources/release.txt.template
+RELEASE_FILE_TARGET := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/jdk/tools/jlink/resources/release.txt
+
+RELEASE_FILE_VARDEPS := $(COMPANY_NAME) $(VERSION_STRING) $(VERSION_DATE)
+RELEASE_FILE_VARDEPS_FILE := $(call DependOnVariable, RELEASE_FILE_VARDEPS, \
+  $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/jlink_release_txt.vardeps)
+
+$(eval $(call SetupTextFileProcessing, BUILD_RELEASE_FILE, \
+  SOURCE_FILES := $(RELEASE_FILE_TEMPLATE), \
+  OUTPUT_FILE := $(RELEASE_FILE_TARGET), \
+  REPLACEMENTS := \
+      @@COMPANY_NAME@@ => $(COMPANY_NAME) ; \
+      @@VERSION_STRING@@ => $(VERSION_STRING) ; \
+      @@VERSION_DATE@@ => $(VERSION_DATE) , \
+))
+
+$(OUTPUT_FILE): $(RELEASE_FILE_VARDEPS_FILE)
+
+TARGETS += $(BUILD_RELEASE_FILE)
 
 ################################################################################
