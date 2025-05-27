@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_GUARDEDMEMORY_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/safefetch.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 /**
@@ -115,7 +116,11 @@ protected:
       u_char* c = (u_char*) _guard;
       u_char* end = c + GUARD_SIZE;
       while (c < end) {
-        if (*c != badResourceValue) {
+        // We may not be able to dereference directly so use
+        // SafeFetch. It doesn't matter if the value read happens
+        // to be 0xFF as that is not what we expect anyway.
+        u_char val = (u_char) SafeFetch32((int*)c, 0xFF);
+        if (val != badResourceValue) {
           return false;
         }
         c++;
