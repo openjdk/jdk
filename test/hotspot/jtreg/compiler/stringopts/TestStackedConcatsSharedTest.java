@@ -27,7 +27,7 @@
  * @summary Test stacked string concatenations where the toString of the first StringBuilder
  *          is used as a shared test by two diamond Ifs in the second StringBuilder.
  * @run main/othervm compiler.stringopts.TestStackedConcatsSharedTest
- * @run main/othervm -Xbatch -XX:-TieredCompilation -Xcomp
+ * @run main/othervm -XX:-TieredCompilation -Xcomp
  *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsSharedTest::*
  *                   compiler.stringopts.TestStackedConcatsSharedTest
  */

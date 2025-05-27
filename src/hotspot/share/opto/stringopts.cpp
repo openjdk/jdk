@@ -260,7 +260,7 @@ void StringConcat::eliminate_unneeded_control() {
         // A BoolNode shared by two diamond Region/If sub-graphs
         // was replaced by a constant zero in a previous call to this method.
         // Do nothing as the transformation in the previous call ensures both are folded away.
-        assert(bol == _stringopts->gvn()->intcon(0), "set below.");
+        assert(bol == _stringopts->gvn()->intcon(0), "shared condition should have been set to false");
         continue;
       }
       assert(bol->is_Bool(), "unexpected if shape");
