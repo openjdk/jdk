@@ -98,6 +98,8 @@
 #define context_cpsr uc_mcontext->DU3_PREFIX(ss,cpsr)
 #define context_esr  uc_mcontext->DU3_PREFIX(es,esr)
 
+#define REG_BCP context_x[22]
+
 address os::current_stack_pointer() {
 #if defined(__clang__) || defined(__llvm__)
   void *sp;
@@ -177,6 +179,13 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   address pc = (address)(uc->context_lr
                          - NativeInstruction::instruction_size);
   return frame(sp, fp, pc);
+}
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->REG_BCP);
 }
 
 // JVM compiled with -fno-omit-frame-pointer, so RFP is saved on the stack.

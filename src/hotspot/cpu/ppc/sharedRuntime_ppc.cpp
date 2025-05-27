@@ -243,7 +243,19 @@ static const RegisterSaver::LiveRegType RegisterSaver_LiveVSRegs[] = {
   RegisterSaver_LiveVSReg( VSR48 ),
   RegisterSaver_LiveVSReg( VSR49 ),
   RegisterSaver_LiveVSReg( VSR50 ),
-  RegisterSaver_LiveVSReg( VSR51 )
+  RegisterSaver_LiveVSReg( VSR51 ),
+  RegisterSaver_LiveVSReg( VSR52 ),
+  RegisterSaver_LiveVSReg( VSR53 ),
+  RegisterSaver_LiveVSReg( VSR54 ),
+  RegisterSaver_LiveVSReg( VSR55 ),
+  RegisterSaver_LiveVSReg( VSR56 ),
+  RegisterSaver_LiveVSReg( VSR57 ),
+  RegisterSaver_LiveVSReg( VSR58 ),
+  RegisterSaver_LiveVSReg( VSR59 ),
+  RegisterSaver_LiveVSReg( VSR60 ),
+  RegisterSaver_LiveVSReg( VSR61 ),
+  RegisterSaver_LiveVSReg( VSR62 ),
+  RegisterSaver_LiveVSReg( VSR63 )
 };
 
 
@@ -336,26 +348,50 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
     }
 
     if (generate_oop_map) {
-      map->set_callee_saved(VMRegImpl::stack2reg(offset>>2),
+      map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
                             RegisterSaver_LiveRegs[i].vmreg);
-      map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size)>>2),
-                            RegisterSaver_LiveRegs[i].vmreg->next());
     }
     offset += reg_size;
   }
 
-  for (int i = 0; i < vsregstosave_num; i++) {
-    int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
-    int reg_type = RegisterSaver_LiveVSRegs[i].reg_type;
+  // Note that generate_oop_map in the following loop is only used for the
+  // polling_page_vectors_safepoint_handler_blob.
+  // The order in which the vector contents are stored depends on Endianess and
+  // the utilized instructions (PowerArchitecturePPC64).
+  assert(is_aligned(offset, StackAlignmentInBytes), "should be");
+  if (PowerArchitecturePPC64 >= 10) {
+    assert(is_even(vsregstosave_num), "expectation");
+    for (int i = 0; i < vsregstosave_num; i += 2) {
+      int reg_num = RegisterSaver_LiveVSRegs[i].reg_num;
+      assert(RegisterSaver_LiveVSRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
 
-    __ li(R30, offset);
-    __ stxvd2x(as_VectorSRegister(reg_num), R30, R1_SP);
-
-    if (generate_oop_map) {
-      map->set_callee_saved(VMRegImpl::stack2reg(offset>>2),
-                            RegisterSaver_LiveVSRegs[i].vmreg);
+      __ stxvp(as_VectorSRegister(reg_num), offset, R1_SP);
+      // Note: The contents were read in the same order (see loadV16_Power9 node in ppc.ad).
+      if (generate_oop_map) {
+        map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
+                              RegisterSaver_LiveVSRegs[i LITTLE_ENDIAN_ONLY(+1) ].vmreg);
+        map->set_callee_saved(VMRegImpl::stack2reg((offset + vs_reg_size) >> 2),
+                              RegisterSaver_LiveVSRegs[i BIG_ENDIAN_ONLY(+1) ].vmreg);
+      }
+      offset += (2 * vs_reg_size);
     }
-    offset += vs_reg_size;
+  } else {
+    for (int i = 0; i < vsregstosave_num; i++) {
+      int reg_num = RegisterSaver_LiveVSRegs[i].reg_num;
+
+      if (PowerArchitecturePPC64 >= 9) {
+        __ stxv(as_VectorSRegister(reg_num), offset, R1_SP);
+      } else {
+        __ li(R31, offset);
+        __ stxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
+      }
+      // Note: The contents were read in the same order (see loadV16_Power8 / loadV16_Power9 node in ppc.ad).
+      if (generate_oop_map) {
+        VMReg vsr = RegisterSaver_LiveVSRegs[i].vmreg;
+        map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2), vsr);
+      }
+      offset += vs_reg_size;
+    }
   }
 
   assert(offset == frame_size_in_bytes, "consistency check");
@@ -418,14 +454,29 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
     offset += reg_size;
   }
 
-  for (int i = 0; i < vsregstosave_num; i++) {
-    int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
-    int reg_type = RegisterSaver_LiveVSRegs[i].reg_type;
+  assert(is_aligned(offset, StackAlignmentInBytes), "should be");
+  if (PowerArchitecturePPC64 >= 10) {
+    for (int i = 0; i < vsregstosave_num; i += 2) {
+      int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
+      assert(RegisterSaver_LiveVSRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
 
-    __ li(R31, offset);
-    __ lxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
+      __ lxvp(as_VectorSRegister(reg_num), offset, R1_SP);
 
-    offset += vs_reg_size;
+      offset += (2 * vs_reg_size);
+    }
+  } else {
+    for (int i = 0; i < vsregstosave_num; i++) {
+      int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
+
+      if (PowerArchitecturePPC64 >= 9) {
+        __ lxv(as_VectorSRegister(reg_num), offset, R1_SP);
+      } else {
+        __ li(R31, offset);
+        __ lxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
+      }
+
+      offset += vs_reg_size;
+    }
   }
 
   assert(offset == frame_size_in_bytes, "consistency check");
@@ -2689,6 +2740,21 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ li(r_temp_2, 0);
   __ stw(r_temp_2, in_bytes(JNIHandleBlock::top_offset()), r_temp_1);
 
+  // Prepare for return
+  // --------------------------------------------------------------------------
+  __ pop_frame();
+  __ restore_LR(R11);
+
+#if INCLUDE_JFR
+  // We need to do a poll test after unwind in case the sampler
+  // managed to sample the native frame after returning to Java.
+  Label L_stub;
+  int safepoint_offset = __ offset();
+  if (!UseSIGTRAP) {
+    __ relocate(relocInfo::poll_return_type);
+  }
+  __ safepoint_poll(L_stub, r_temp_2, true /* at_return */, true /* in_nmethod: frame already popped */);
+#endif // INCLUDE_JFR
 
   // Check for pending exceptions.
   // --------------------------------------------------------------------------
@@ -2696,13 +2762,16 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ cmpdi(CR0, r_temp_2, 0);
   __ bne(CR0, handle_pending_exception);
 
-  // Return
-  // --------------------------------------------------------------------------
-
-  __ pop_frame();
-  __ restore_LR(R11);
+  // Return.
   __ blr();
 
+  // Handler for return safepoint (out-of-line).
+#if INCLUDE_JFR
+  if (!UseSIGTRAP) {
+    __ bind(L_stub);
+    __ jump_to_polling_page_return_handler_blob(safepoint_offset);
+  }
+#endif // INCLUDE_JFR
 
   // Handler for pending exceptions (out-of-line).
   // --------------------------------------------------------------------------
@@ -2710,9 +2779,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // is the empty function. We just pop this frame and then jump to
   // forward_exception_entry.
   __ bind(handle_pending_exception);
-
-  __ pop_frame();
-  __ restore_LR(R11);
   __ b64_patchable((address)StubRoutines::forward_exception_entry(),
                        relocInfo::runtime_call_type);
 
