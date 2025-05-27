@@ -236,8 +236,6 @@ class EnumRange {
     assert(size() > 0, "empty range");
   }
 
-private:
-
   struct ConstExprConstructTag {};
 
   constexpr EnumRange(T start, T end, ConstExprConstructTag) :
