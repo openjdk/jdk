@@ -152,9 +152,9 @@ void ZUncommitter::run_thread() {
         accumulated_time += end - start;
       }
 
-      log_info(gc, heap)("Uncommitter (%u) Uncommitted: %zuM(%.0f%%) in %fs",
+      log_info(gc, heap)("Uncommitter (%u) Uncommitted: %zuM(%.0f%%) in %.3fms",
                          _id, _uncommitted / M, percent_of(_uncommitted, ZHeap::heap()->max_capacity()),
-                         accumulated_time.seconds());
+                         accumulated_time.seconds() * MILLIUNITS);
     }
 
     deactivate_uncommit_cycle();
