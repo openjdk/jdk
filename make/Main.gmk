@@ -43,7 +43,7 @@ include $(TOPDIR)/make/MainSupport.gmk
 
 include FindTests.gmk
 
-ifneq ($(UPDATE_MODULE_DEPS), )
+ifeq ($(UPDATE_MODULE_DEPS), true)
   # Update module-deps.gmk if requested. This is read in Modules.gmk.
   GENERATE_MODULE_DEPS_FILE := true
 endif
