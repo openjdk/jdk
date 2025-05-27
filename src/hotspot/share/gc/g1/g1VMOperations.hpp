@@ -31,8 +31,6 @@
 // VM_operations for the G1 collector.
 
 class VM_G1CollectFull : public VM_GC_Operation {
-  bool _gc_succeeded;
-
 protected:
   bool skip_operation() const override;
 
@@ -40,11 +38,10 @@ public:
   VM_G1CollectFull(uint gc_count_before,
                    uint full_gc_count_before,
                    GCCause::Cause cause) :
-    VM_GC_Operation(gc_count_before, cause, full_gc_count_before, true),
-    _gc_succeeded(false) { }
+    VM_GC_Operation(gc_count_before, cause, full_gc_count_before, true) { }
   VMOp_Type type() const override { return VMOp_G1CollectFull; }
   void doit() override;
-  bool gc_succeeded() const { return _gc_succeeded; }
+  bool gc_succeeded() const { return prologue_succeeded(); }
 };
 
 class VM_G1TryInitiateConcMark : public VM_GC_Operation {
@@ -52,6 +49,8 @@ class VM_G1TryInitiateConcMark : public VM_GC_Operation {
   bool _cycle_already_in_progress;
   bool _whitebox_attached;
   bool _terminating;
+  // The concurrent start pause may be cancelled for some reasons. Keep track of
+  // this.
   bool _gc_succeeded;
 
 public:
@@ -68,7 +67,6 @@ public:
 };
 
 class VM_G1CollectForAllocation : public VM_CollectForAllocation {
-  bool _gc_succeeded;
 
 public:
   VM_G1CollectForAllocation(size_t         word_size,
@@ -76,7 +74,7 @@ public:
                             GCCause::Cause gc_cause);
   virtual VMOp_Type type() const { return VMOp_G1CollectForAllocation; }
   virtual void doit();
-  bool gc_succeeded() const { return _gc_succeeded; }
+  bool gc_succeeded() const { return prologue_succeeded(); }
 };
 
 // Concurrent G1 stop-the-world operations such as remark and cleanup.

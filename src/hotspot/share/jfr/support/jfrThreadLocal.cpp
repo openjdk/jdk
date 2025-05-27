@@ -46,6 +46,9 @@
 #include "utilities/sizes.hpp"
 
 JfrThreadLocal::JfrThreadLocal() :
+  _sample_request(),
+  _sample_request_queue(8),
+  _sample_monitor(Monitor::nosafepoint, "jfr thread sample monitor"),
   _java_event_writer(nullptr),
   _java_buffer(nullptr),
   _native_buffer(nullptr),
@@ -54,7 +57,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _load_barrier_buffer_epoch_1(nullptr),
   _checkpoint_buffer_epoch_0(nullptr),
   _checkpoint_buffer_epoch_1(nullptr),
-  _stackframes(nullptr),
+  _sample_state(0),
   _dcmd_arena(nullptr),
   _thread(),
   _vthread_id(0),
@@ -68,12 +71,11 @@ JfrThreadLocal::JfrThreadLocal() :
   _user_time(0),
   _cpu_time(0),
   _wallclock_time(os::javaTimeNanos()),
-  _stackdepth(0),
-  _entering_suspend_flag(0),
   _non_reentrant_nesting(0),
   _vthread_epoch(0),
   _vthread_excluded(false),
   _jvm_thread_excluded(false),
+  _enqueued_requests(false),
   _vthread(false),
   _notified(false),
   _dead(false) {
@@ -165,10 +167,6 @@ void JfrThreadLocal::release(Thread* t) {
     JfrStorage::release_thread_local(java_buffer(), t);
     _java_buffer = nullptr;
   }
-  if (_stackframes != nullptr) {
-    FREE_C_HEAP_ARRAY(JfrStackFrame, _stackframes);
-    _stackframes = nullptr;
-  }
   if (_load_barrier_buffer_epoch_0 != nullptr) {
     _load_barrier_buffer_epoch_0->set_retired();
     _load_barrier_buffer_epoch_0 = nullptr;
@@ -245,12 +243,6 @@ JfrBuffer* JfrThreadLocal::install_java_buffer() const {
   return _java_buffer;
 }
 
-JfrStackFrame* JfrThreadLocal::install_stackframes() const {
-  assert(_stackframes == nullptr, "invariant");
-  _stackframes = NEW_C_HEAP_ARRAY(JfrStackFrame, stackdepth(), mtTracing);
-  return _stackframes;
-}
-
 ByteSize JfrThreadLocal::java_event_writer_offset() {
   return byte_offset_of(JfrThreadLocal, _java_event_writer);
 }
@@ -277,6 +269,14 @@ ByteSize JfrThreadLocal::vthread_excluded_offset() {
 
 ByteSize JfrThreadLocal::notified_offset() {
   return byte_offset_of(JfrThreadLocal, _notified);
+}
+
+ByteSize JfrThreadLocal::sample_state_offset() {
+  return byte_offset_of(JfrThreadLocal, _sample_state);
+}
+
+ByteSize JfrThreadLocal::sampling_critical_section_offset() {
+  return byte_offset_of(JfrThreadLocal, _sampling_critical_section);
 }
 
 void JfrThreadLocal::set(bool* exclusion_field, bool state) {
@@ -337,10 +337,6 @@ bool JfrThreadLocal::is_included(const Thread* t) {
   return t->jfr_thread_local()->is_included();
 }
 
-u4 JfrThreadLocal::stackdepth() const {
-  return _stackdepth != 0 ? _stackdepth : (u4)JfrOptionSet::stackdepth();
-}
-
 bool JfrThreadLocal::is_impersonating(const Thread* t) {
   return t->jfr_thread_local()->_thread_id_alias != max_julong;
 }
@@ -397,6 +393,19 @@ traceid JfrThreadLocal::vthread_id(const Thread* t) {
   return Atomic::load(&t->jfr_thread_local()->_vthread_id);
 }
 
+traceid JfrThreadLocal::vthread_id_with_epoch_update(const JavaThread* jt) const {
+  assert(is_vthread(jt), "invariant");
+  const traceid tid = vthread_id(jt);
+  assert(tid != 0, "invariant");
+  if (!is_vthread_excluded()) {
+    const u2 current_epoch = AccessThreadTraceId::current_epoch();
+    if (vthread_epoch(jt) != current_epoch) {
+      set_vthread_epoch_checked(jt, tid, current_epoch);
+    }
+  }
+  return tid;
+}
+
 u2 JfrThreadLocal::vthread_epoch(const JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   return Atomic::load(&jt->jfr_thread_local()->_vthread_epoch);
@@ -412,19 +421,7 @@ traceid JfrThreadLocal::thread_id(const Thread* t) {
     return jvm_thread_id(tl);
   }
   const JavaThread* jt = JavaThread::cast(t);
-  if (!is_vthread(jt)) {
-    return jvm_thread_id(tl);
-  }
-  // virtual thread
-  const traceid tid = vthread_id(jt);
-  assert(tid != 0, "invariant");
-  if (!tl->is_vthread_excluded()) {
-    const u2 current_epoch = AccessThreadTraceId::current_epoch();
-    if (vthread_epoch(jt) != current_epoch) {
-      set_vthread_epoch_checked(jt, tid, current_epoch);
-    }
-  }
-  return tid;
+  return is_vthread(jt) ? tl->vthread_id_with_epoch_update(jt) : jvm_thread_id(tl);
 }
 
 // When not recording, there is no checkpoint system

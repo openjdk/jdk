@@ -108,10 +108,12 @@ const char* CDSConfig::default_archive_path() {
   // before CDSConfig::ergo_initialize() is called.
   assert(_cds_ergo_initialize_started, "sanity");
   if (_default_archive_path == nullptr) {
+    char jvm_path[JVM_MAXPATHLEN];
+    os::jvm_path(jvm_path, sizeof(jvm_path));
+    char *end = strrchr(jvm_path, *os::file_separator());
+    if (end != nullptr) *end = '\0';
     stringStream tmp;
-    const char* subdir = WINDOWS_ONLY("bin") NOT_WINDOWS("lib");
-    tmp.print("%s%s%s%s%s%sclasses", Arguments::get_java_home(), os::file_separator(), subdir,
-              os::file_separator(), Abstract_VM_Version::vm_variant(), os::file_separator());
+    tmp.print("%s%sclasses", jvm_path, os::file_separator());
 #ifdef _LP64
     if (!UseCompressedOops) {
       tmp.print_raw("_nocoops");
@@ -892,4 +894,8 @@ void CDSConfig::disable_dumping_aot_code() {
 
 void CDSConfig::enable_dumping_aot_code() {
   _is_dumping_aot_code = true;
+}
+
+bool CDSConfig::is_dumping_adapters() {
+  return (AOTAdapterCaching && is_dumping_final_static_archive());
 }
