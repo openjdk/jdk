@@ -272,8 +272,11 @@ void ZUncommitter::update_next_cycle_timeout_on_cancel() {
 
   update_next_cycle_timeout(_cancel_time);
 
-  log_debug(gc, heap)("Uncommitter (%u) Cancel Next Cycle Timeout: " UINT64_FORMAT "ms",
-                      _id, _next_cycle_timeout);
+  // Skip logging if there is no delay
+  if (ZUncommitDelay > 0) {
+    log_debug(gc, heap)("Uncommitter (%u) Cancel Next Cycle Timeout: " UINT64_FORMAT "ms",
+                        _id, _next_cycle_timeout);
+  }
 }
 
 void ZUncommitter::update_next_cycle_timeout_on_finish() {
@@ -282,8 +285,11 @@ void ZUncommitter::update_next_cycle_timeout_on_finish() {
 
   update_next_cycle_timeout(_cycle_start);
 
-  log_debug(gc, heap)("Uncommitter (%u) Finish Next Cycle Timeout: " UINT64_FORMAT "ms",
-                      _id, _next_cycle_timeout);
+  // Skip logging if there is no delay
+  if (ZUncommitDelay > 0) {
+    log_debug(gc, heap)("Uncommitter (%u) Finish Next Cycle Timeout: " UINT64_FORMAT "ms",
+                        _id, _next_cycle_timeout);
+  }
 }
 
 void ZUncommitter::cancel_uncommit_cycle() {
