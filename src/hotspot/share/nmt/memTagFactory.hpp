@@ -194,7 +194,7 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
     int number_of_tags() {
       return entries.length();
     }
-  }
+  };
 
   static Deferred<Instance> _instance;
 
