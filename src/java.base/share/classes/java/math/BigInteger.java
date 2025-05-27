@@ -401,7 +401,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             mag = makePositive(val);
             signum = -1;
         } else {
-            mag = stripLeadingZeroInts(val, true);
+            mag = trustedStripLeadingZeroInts(val);
             signum = (mag.length == 0 ? 0 : 1);
         }
         if (mag.length >= MAX_MAG_LENGTH) {
@@ -595,7 +595,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             destructiveMulAdd(magnitude, superRadix, groupVal);
         }
         // Required for cases where the array was overallocated.
-        mag = stripLeadingZeroInts(magnitude, true);
+        mag = trustedStripLeadingZeroInts(magnitude);
         if (mag.length >= MAX_MAG_LENGTH) {
             checkRange();
         }
@@ -646,7 +646,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             int groupVal = parseInt(val, cursor, cursor += digitsPerInt[10]);
             destructiveMulAdd(magnitude, intRadix[10], groupVal);
         }
-        mag = stripLeadingZeroInts(magnitude, true);
+        mag = trustedStripLeadingZeroInts(magnitude);
         if (mag.length >= MAX_MAG_LENGTH) {
             checkRange();
         }
@@ -1393,7 +1393,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return ZERO;
         int[] resultMag = (cmp > 0 ? subtract(mag, val.mag)
                            : subtract(val.mag, mag));
-        resultMag = stripLeadingZeroInts(resultMag, true);
+        resultMag = trustedStripLeadingZeroInts(resultMag);
 
         return new BigInteger(resultMag, cmp == signum ? 1 : -1);
     }
@@ -1413,7 +1413,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (cmp == 0)
             return ZERO;
         int[] resultMag = (cmp > 0 ? subtract(mag, Math.abs(val)) : subtract(Math.abs(val), mag));
-        resultMag = stripLeadingZeroInts(resultMag, true);
+        resultMag = trustedStripLeadingZeroInts(resultMag);
         return new BigInteger(resultMag, cmp == signum ? 1 : -1);
     }
 
@@ -1595,7 +1595,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return ZERO;
         int[] resultMag = (cmp > 0 ? subtract(mag, val.mag)
                            : subtract(val.mag, mag));
-        resultMag = stripLeadingZeroInts(resultMag, true);
+        resultMag = trustedStripLeadingZeroInts(resultMag);
         return new BigInteger(resultMag, cmp == signum ? 1 : -1);
     }
 
@@ -1699,7 +1699,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             }
             int[] result = multiplyToLen(mag, xlen,
                                          val.mag, ylen, null);
-            result = stripLeadingZeroInts(result, true);
+            result = trustedStripLeadingZeroInts(result);
             return new BigInteger(result, resultSign);
         } else {
             if ((xlen < TOOM_COOK_THRESHOLD) && (ylen < TOOM_COOK_THRESHOLD)) {
@@ -2155,7 +2155,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         int intSlice[] = new int[sliceSize];
         System.arraycopy(mag, start, intSlice, 0, sliceSize);
 
-        return new BigInteger(stripLeadingZeroInts(intSlice, true), 1);
+        return new BigInteger(trustedStripLeadingZeroInts(intSlice), 1);
     }
 
     /**
@@ -2194,7 +2194,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     borrow++;
             }
         }
-        result = stripLeadingZeroInts(result, true);
+        result = trustedStripLeadingZeroInts(result);
         return new BigInteger(result, signum);
     }
 
@@ -4551,6 +4551,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         for (keep = 0; keep < val.length && val[keep] == 0; keep++)
             ;
         return trusted && keep == 0 ? val : Arrays.copyOfRange(val, keep, val.length);
+    }
+
+    /**
+     * Returns the input array stripped of any leading zero ints.
+     * Since the source is trusted the copying may be skipped.
+     */
+    private static int[] trustedStripLeadingZeroInts(int[] val) {
+        return stripLeadingZeroInts(val, true);
     }
 
     private static int[] stripLeadingZeroBytes(byte[] a, int from, int len) {
