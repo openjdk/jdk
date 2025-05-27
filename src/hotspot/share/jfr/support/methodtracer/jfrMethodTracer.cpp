@@ -215,7 +215,7 @@ void JfrMethodTracer::add_timing_entry(const InstanceKlass* ik, traceid klass_id
 // At this point we have installed our new retransformed methods into the original klass, which is ik.
 // jvmtiRedefineClassses::redefine_single_class() has finished so we are still at a safepoint.
 // If the original klass is not already in the list, add it and also dynamically tag all
-// artifacts that have the sticky bit set. If the klass represents has an associated TimedClass,
+// artifacts that have the sticky bit set. if the klass has an associated TimedClass,
 // also add the klass to the list of _timing_entries for publication.
 void JfrMethodTracer::on_klass_redefinition(const InstanceKlass* ik, Thread* thread) {
   assert(ik != nullptr, "invariant");
