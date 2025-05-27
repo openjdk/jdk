@@ -452,8 +452,7 @@ ZMappedCache::ZMappedCache()
     _entry_count(0),
     _size_class_lists{},
     _size(0),
-    _min_size_watermark(_size),
-    _removed_last_uncommit_cycle(0) {}
+    _min_size_watermark(_size) {}
 
 void ZMappedCache::insert(const ZVirtualMemory& vmem) {
   _size += vmem.size();
@@ -552,8 +551,7 @@ size_t ZMappedCache::remove_discontiguous(size_t size, ZArray<ZVirtualMemory>* o
   return remove_discontiguous_with_strategy<RemovalStrategy::SizeClasses>(size, out);
 }
 
-void ZMappedCache::reset_uncommit_cycle() {
-  _removed_last_uncommit_cycle = 0;
+void ZMappedCache::reset_uncommit_watermark() {
   _min_size_watermark = _size;
 }
 
@@ -561,21 +559,12 @@ size_t ZMappedCache::uncommit_watermark() {
   return _min_size_watermark;
 }
 
-size_t ZMappedCache::remove_for_uncommit(size_t max_size, ZArray<ZVirtualMemory>* out) {
-  const size_t remove_allowed =
-      _min_size_watermark < _removed_last_uncommit_cycle
-          ? 0
-          : _min_size_watermark - _removed_last_uncommit_cycle;
-  const size_t size = MIN2(remove_allowed, max_size);
-
+size_t ZMappedCache::remove_for_uncommit(size_t size, ZArray<ZVirtualMemory>* out) {
   if (size == 0) {
     return 0;
   }
 
-  const size_t removed = remove_discontiguous_with_strategy<RemovalStrategy::HighestAddress>(size, out);
-  _removed_last_uncommit_cycle += removed;
-
-  return removed;
+  return remove_discontiguous_with_strategy<RemovalStrategy::HighestAddress>(size, out);
 }
 
 void ZMappedCache::print_on(outputStream* st) const {

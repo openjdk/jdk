@@ -64,7 +64,6 @@ private:
   SizeClassList _size_class_lists[NumSizeClasses];
   size_t        _size;
   size_t        _min_size_watermark;
-  size_t        _removed_last_uncommit_cycle;
 
   static int size_class_index(size_t size);
   static int guaranteed_size_class_index(size_t size);
@@ -103,9 +102,9 @@ public:
   ZVirtualMemory remove_contiguous(size_t size);
   size_t remove_discontiguous(size_t size, ZArray<ZVirtualMemory>* out);
 
-  void reset_uncommit_cycle();
+  void reset_uncommit_watermark();
   size_t uncommit_watermark();
-  size_t remove_for_uncommit(size_t max_size, ZArray<ZVirtualMemory>* out);
+  size_t remove_for_uncommit(size_t size, ZArray<ZVirtualMemory>* out);
 
   void print_on(outputStream* st) const;
   void print_extended_on(outputStream* st) const;

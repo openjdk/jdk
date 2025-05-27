@@ -245,7 +245,7 @@ bool ZUncommitter::activate_uncommit_cycle() {
   _uncommitted = 0;
 
   // Reset cache for next uncommit cycle
-  cache->reset_uncommit_cycle();
+  cache->reset_uncommit_watermark();
 
   postcond(is_aligned(_to_uncommit, ZGranuleSize));
 
@@ -288,7 +288,7 @@ void ZUncommitter::update_next_cycle_timeout_on_finish() {
 
 void ZUncommitter::cancel_uncommit_cycle() {
   // Reset the cache cycle tracking and register the cancel time.
-  _partition->_cache.reset_uncommit_cycle();
+  _partition->_cache.reset_uncommit_watermark();
   _cancel_time = os::elapsedTime();
 }
 
@@ -382,19 +382,20 @@ size_t ZUncommitter::uncommit() {
     const size_t limit_upper_bound = MAX2(ZGranuleSize, align_down(256 * M / ZNUMA::count(), ZGranuleSize));
     const size_t limit = MIN2(align_up(current_max_capacity >> 7, ZGranuleSize), limit_upper_bound);
 
-    if (limit == 0) {
-      // This may occur if the current max capacity for this partition is 0
-      cancel_uncommit_cycle();
-      return 0;
-    }
+    ZMappedCache& cache = _partition->_cache;
+
+    // Never uncommit more than the current uncommit watermark,
+    // (adjusted by what has already been uncommitted).
+    const size_t allowed_to_uncommit = MAX2(cache.uncommit_watermark(), _uncommitted) - _uncommitted;
+    const size_t to_uncommit = MIN2(_to_uncommit, allowed_to_uncommit);
 
     // Never uncommit below min capacity.
     const size_t retain = MAX2(_partition->_used, _partition->_min_capacity);
     const size_t release = _partition->_capacity - retain;
-    const size_t flush = MIN3(release, limit, _to_uncommit);
+    const size_t flush = MIN3(release, limit, to_uncommit);
 
     // Flush memory from the mapped cache for uncommit
-    flushed = _partition->_cache.remove_for_uncommit(flush, &flushed_vmems);
+    flushed = cache.remove_for_uncommit(flush, &flushed_vmems);
     if (flushed == 0) {
       // Nothing flushed
       cancel_uncommit_cycle();
