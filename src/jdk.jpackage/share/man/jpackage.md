@@ -423,7 +423,7 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
 :   Menu group this application is placed in
 
-<a id="option-linux-package-deps">`--linux-package-deps *package-dep-string*`</a>
+<a id="option-linux-package-deps">`--linux-package-deps` *package-dep-string*</a>
 
 :   Required packages or capabilities for the application
 
