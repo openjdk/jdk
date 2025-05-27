@@ -2002,6 +2002,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseThreadsLockThrottleLock, true, DIAGNOSTIC,               \
           "Use an extra lock during Thread start and exit to alleviate"     \
           "contention on Threads_lock.")                                    \
+                                                                            \
+  develop(uint, BinarySearchThreshold, 16,                                  \
+          "Minimal number of elements in a sorted collection to prefer"     \
+          "binary search over simple linear search." )                      \
 
 // end of RUNTIME_FLAGS
 

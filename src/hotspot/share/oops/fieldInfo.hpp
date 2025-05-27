@@ -236,6 +236,7 @@ public:
   int has_next() const { return _r.position() < _r.limit(); }
   int position() const { return _r.position(); }
   int next_index() const { return _next_index; }
+  void read_name_and_signature(u2 *name_index, u2 *signature_index);
   void read_field_info(FieldInfo& fi);
 
   int search_table_lookup(const Array<u1> *search_table, const Symbol *name, const Symbol *signature, ConstantPool *cp, int java_fields);
@@ -269,15 +270,12 @@ class FieldInfoStream : AllStatic {
   friend class FieldInfoReader;
 
  private:
-  // Don't generate the table for small classes at all.
-  static const int SEARCH_TABLE_THRESHOLD = 16;
-
-  static inline int search_table_position_width(int stream_length) {
-    assert(stream_length <= (1 << 24), "stream too long");
+  static inline unsigned int search_table_position_width(int stream_length) {
+    assert(stream_length >= 0 && stream_length <= (1 << 24), "stream too long");
     return stream_length > UINT16_MAX + 1 ? 3 : 2;
   }
-  static inline int search_table_index_width(int java_fields) {
-    assert(java_fields <= (1 << 16), "too many fields");
+  static inline unsigned int search_table_index_width(int java_fields) {
+    assert(java_fields >= 0 && java_fields <= (1 << 16), "too many fields");
     return java_fields > UINT8_MAX + 1 ? 2 : 1;
   }
   static int compare_name_and_sig(const Symbol* n1, const Symbol* s1, const Symbol* n2, const Symbol* s2);

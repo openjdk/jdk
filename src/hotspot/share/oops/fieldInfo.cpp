@@ -129,7 +129,8 @@ Array<u1>* FieldInfoStream::create_search_table(ConstantPool* cp, const Array<u1
   int java_fields;
   int injected_fields;
   r.read_field_counts(&java_fields, &injected_fields);
-  if (java_fields <= SEARCH_TABLE_THRESHOLD) {
+  assert(java_fields >= 0, "must be");
+  if (static_cast<uint>(java_fields) < BinarySearchThreshold) {
     return nullptr;
   }
 
@@ -222,21 +223,27 @@ void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* f
   if (search_table == nullptr) {
     return;
   }
-  UNSIGNED5::Reader<const u1*, int> reader(fis->data(), fis->length());
-  int java_fields = reader.next_uint();
-  int position_width = search_table_position_width(fis->length());
-  int item_width = position_width  + search_table_index_width(java_fields);
+  FieldInfoReader reader(fis);
+  int java_fields, injected_fields;
+  reader.read_field_counts(&java_fields, &injected_fields);
+  unsigned int position_width = search_table_position_width(fis->length());
+  unsigned int item_width = position_width + search_table_index_width(java_fields);
+  assert(item_width * java_fields == static_cast<unsigned int>(search_table->length()), "size matches");
   auto read_position = position_width == 3 ?
     [](const u1 *ptr) { return (int) ptr[0] + (((int) ptr[1] << 8)) + (((int) ptr[2]) << 16); } :
     [](const u1 *ptr) { return (int) *reinterpret_cast<const u2 *>(ptr); };
 
+  // Check 1: assert that elements have the correct order based on the comparison function
   const Symbol* prev_name = nullptr;
   const Symbol* prev_sig = nullptr;
   const u1* ptr = search_table->data();
   for (int i = 0; i < java_fields; ++i, ptr += item_width) {
-    reader.set_position(read_position(ptr));
-    const Symbol* name = cp->symbol_at(reader.next_uint());
-    const Symbol* signature = cp->symbol_at(reader.next_uint());
+    int position = read_position(ptr);
+    reader.set_position_and_next_index(position, -1);
+    FieldInfo fi;
+    reader.read_field_info(fi);
+    const Symbol* name = fi.name(cp);
+    const Symbol* signature = fi.signature(cp);
 
     if (prev_name != nullptr && prev_sig != nullptr) {
       assert(compare_name_and_sig(name, signature, prev_name, prev_sig) > 0, "not sorted");
@@ -244,33 +251,63 @@ void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* f
     prev_name = name;
     prev_sig = signature;
   }
+
+  // Check 2: Iterate through the original stream (not just search_table) and try if lookup works as expected
+  reader.set_position_and_next_index(0, 0);
+  reader.read_field_counts(&java_fields, &injected_fields);
+  while (reader.has_next()) {
+    int field_start = reader.position();
+    FieldInfo fi;
+    reader.read_field_info(fi);
+    if (fi.field_flags().is_injected()) {
+      // checking only java fields that precede injected ones
+      break;
+    }
+
+    FieldInfoReader r2(fis);
+    int index = r2.search_table_lookup(search_table, fi.name(cp), fi.signature(cp), cp, java_fields);
+    assert(index == static_cast<int>(fi.index()), "wrong index: %d != %u", index, fi.index());
+    assert(index == r2.next_index(), "index should match");
+    assert(field_start == r2.position(), "must find the same position");
+  }
 }
 #endif
 
 int FieldInfoReader::search_table_lookup(const Array<u1> *search_table, const Symbol *name, const Symbol *signature, ConstantPool *cp, int java_fields) {
-  UNSIGNED5::Reader<const u1*, int> r2(_r.array());
-  int low = 0, high = java_fields - 1;
-  int position_width = FieldInfoStream::search_table_position_width(_r.limit());
-  int item_width = position_width  + FieldInfoStream::search_table_index_width(java_fields);
+  assert(java_fields >= 0, "must be");
+  if (java_fields == 0) {
+    return -1;
+  }
+  FieldInfoReader r2(*this);
+  unsigned int low = 0, high = java_fields;
+  assert(low < high, "must be");
+  unsigned int position_width = FieldInfoStream::search_table_position_width(_r.limit());
+  unsigned int index_width = FieldInfoStream::search_table_index_width(java_fields);
+  unsigned int item_width = position_width + index_width;
   auto read_position = position_width == 3 ?
     [](const u1 *ptr) { return (int) ptr[0] + (((int) ptr[1] << 8)) + (((int) ptr[2]) << 16); } :
     [](const u1 *ptr) { return (int) *reinterpret_cast<const u2 *>(ptr); };
-  while (low <= high) {
-    int mid = low + (high - low) / 2;
+  while (low < high) {
+    unsigned int mid = low + (high - low) / 2;
+    assert(mid >= low && mid < high, "integer overflow?");
     const u1 *ptr = search_table->data() + item_width * mid;
+
     int position = read_position(ptr);
-    r2.set_position(position);
-    Symbol *mid_name = cp->symbol_at(checked_cast<u2>(r2.next_uint()));
-    Symbol *mid_sig = cp->symbol_at(checked_cast<u2>(r2.next_uint()));
+    assert(position >= 0 && position < _r.limit(), "position out of bounds");
+    r2.set_position_and_next_index(position, -1);
+    u2 name_index, sig_index;
+    r2.read_name_and_signature(&name_index, &sig_index);
+    Symbol *mid_name = cp->symbol_at(name_index);
+    Symbol *mid_sig = cp->symbol_at(sig_index);
 
     int cmp = FieldInfoStream::compare_name_and_sig(name, signature, mid_name, mid_sig);
     if (cmp == 0) {
       _r.set_position(position);
-      _next_index = item_width == 2 ?
+      _next_index = index_width == 2 ?
         *reinterpret_cast<const u2 *>(ptr + position_width) : ptr[position_width];
       return _next_index;
     } else if (cmp < 0) {
-      high = mid - 1;
+      high = mid;
     } else {
       low = mid + 1;
     }

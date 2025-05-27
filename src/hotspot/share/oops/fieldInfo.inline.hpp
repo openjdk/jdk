@@ -113,10 +113,14 @@ inline void FieldInfoReader::read_field_counts(int *java_fields, int *injected_f
   *injected_fields = _r.next_uint();
 }
 
+inline void FieldInfoReader::read_name_and_signature(u2 *name_index, u2 *signature_index) {
+  *name_index = checked_cast<u2>(_r.next_uint());
+  *signature_index = checked_cast<u2>(_r.next_uint());
+}
+
 inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
   fi._index = _next_index++;
-  fi._name_index = checked_cast<u2>(_r.next_uint());
-  fi._signature_index = checked_cast<u2>(_r.next_uint());
+  read_name_and_signature(&fi._name_index, &fi._signature_index);
   fi._offset = _r.next_uint();
   fi._access_flags = AccessFlags(checked_cast<u2>(_r.next_uint()));
   fi._field_flags = FieldInfo::FieldFlags(_r.next_uint());
