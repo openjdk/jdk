@@ -372,7 +372,7 @@ bool AOTLinkedClassBulkLoader::is_pending_aot_linked_class(Klass* k) {
   // the four AOTLinkedClassCategory of classes that can be aot-linked.
 
   InstanceKlass* ik = InstanceKlass::cast(k);
-  if (ik->is_shared_boot_class()) {
+  if (ik->defined_by_boot_loader()) {
     if (ik->module() != nullptr && ik->in_javabase_module()) {
       // AOTLinkedClassCategory::BOOT1 -- all aot-linked classes in
       // java.base must have been loaded before a GC can ever happen.
@@ -382,11 +382,11 @@ bool AOTLinkedClassBulkLoader::is_pending_aot_linked_class(Klass* k) {
       // module system is ready.
       return !_boot2_completed;
     }
-  } else if (ik->is_shared_platform_class()) {
+  } else if (ik->defined_by_platform_loader()) {
     // AOTLinkedClassCategory::PLATFORM classes cannot be loaded until
     // the platform class loader is initialized.
     return !_platform_completed;
-  } else if (ik->is_shared_app_class()) {
+  } else if (ik->defined_by_app_loader()) {
     // AOTLinkedClassCategory::APP cannot be loaded until the app class loader
     // is initialized.
     return !_app_completed;

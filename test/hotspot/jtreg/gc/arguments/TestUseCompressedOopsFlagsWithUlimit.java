@@ -54,6 +54,11 @@ public class TestUseCompressedOopsFlagsWithUlimit {
     args.add("-XX:MaxRAM=" + maxram);
     args.add("-XX:MaxRAMPercentage=" + maxrampercent);
     args.add("-XX:+PrintFlagsFinal");
+
+    // Avoid issues with libjvmci failing to reserve
+    // a large virtual address space for its heap
+    args.add("-Xint");
+
     args.add("-version");
 
     // Convert bytes to kbytes for ulimit -v
