@@ -149,8 +149,10 @@ struct NameToTagTable {
 };
 
 struct MemTagFactory {
+  using MemTagI = std::underlying_type_t<MemTag>;
+
   NameToTagTable table;
-  MemTag current_index;
+  MemTagI current_index;
 
   MemTagFactory() : table(), current_index(0) {
 #define MEMORY_TAG_ADD_TO_TABLE(mem_tag, human_readable) \
