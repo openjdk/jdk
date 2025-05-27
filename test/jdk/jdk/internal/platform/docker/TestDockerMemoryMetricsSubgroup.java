@@ -27,6 +27,7 @@ import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerfileConfig;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
+import jdk.test.lib.containers.docker.ContainerRuntimeVersionTestUtils;
 
 import java.util.ArrayList;
 
@@ -59,6 +60,9 @@ public class TestDockerMemoryMetricsSubgroup {
             System.out.println("Unable to run docker tests.");
             return;
         }
+
+        ContainerRuntimeVersionTestUtils.checkContainerVersionSupported();
+
         if ("cgroupv1".equals(metrics.getProvider())) {
             testMemoryLimitSubgroupV1("200m", "400m", false);
             testMemoryLimitSubgroupV1("500m", "1G", false);
