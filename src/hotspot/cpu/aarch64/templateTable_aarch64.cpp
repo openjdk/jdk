@@ -3072,12 +3072,12 @@ void TemplateTable::fast_storefield(TosState state)
   // access constant pool cache
   __ load_field_entry(r2, r1);
 
-  // R1: field offset, R2: field holder, R3: flags
-  load_resolved_field_entry(r2, r2, noreg, r1, r3);
+  // R1: field offset, R2: field holder, R5: flags
+  load_resolved_field_entry(r2, r2, noreg, r1, r5);
 
   {
     Label notVolatile;
-    __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
+    __ tbz(r5, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::StoreStore | MacroAssembler::LoadStore);
     __ bind(notVolatile);
   }
@@ -3125,7 +3125,7 @@ void TemplateTable::fast_storefield(TosState state)
 
   {
     Label notVolatile;
-    __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
+    __ tbz(r5, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::StoreLoad | MacroAssembler::StoreStore);
     __ bind(notVolatile);
   }
