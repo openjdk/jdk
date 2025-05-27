@@ -268,10 +268,10 @@ define DefineMainTargets
 
   $$(main_targets_file):
 	@( cd $$(TOPDIR) && \
-	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(TOPDIR)/make/GenerateFindTests.gmk \
+	$$(MAKE) $$(MAKE_LOG_FLAGS) -s -r -R -f $$(TOPDIR)/make/GenerateFindTests.gmk \
 	    -I $$(TOPDIR)/make/common SPEC=$$(SPEC_FILE) TOPDIR_ALT=$$(TOPDIR))
 	@( cd $$(TOPDIR) && \
-	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(TOPDIR)/make/Main.gmk \
+	$$(MAKE) $$(MAKE_LOG_FLAGS) -s -r -R -f $$(TOPDIR)/make/Main.gmk \
 	    -I $$(TOPDIR)/make/common SPEC=$$(SPEC_FILE) TOPDIR_ALT=$$(TOPDIR) \
 	    UPDATE_MODULE_DEPS=true NO_RECIPES=true \
 	    $$(MAKE_LOG_VARS) \
