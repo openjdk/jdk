@@ -25,13 +25,17 @@
 #ifndef SHARE_JFR_SUPPORT_JFRTHREADLOCAL_HPP
 #define SHARE_JFR_SUPPORT_JFRTHREADLOCAL_HPP
 
+#include "jfr/periodic/sampling/jfrSampleRequest.hpp"
+#include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrBlob.hpp"
+#include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/mutexLocker.hpp"
 
 class Arena;
 class JavaThread;
 class JfrBuffer;
-class JfrStackFrame;
 class Thread;
 
 class JfrThreadLocal {
@@ -40,6 +44,9 @@ class JfrThreadLocal {
   friend class JfrJavaSupport;
   friend class JVMCIVMStructs;
  private:
+  mutable JfrSampleRequest _sample_request;
+  JfrSampleRequestQueue _sample_request_queue;
+  Monitor _sample_monitor;
   jobject _java_event_writer;
   mutable JfrBuffer* _java_buffer;
   mutable JfrBuffer* _native_buffer;
@@ -48,7 +55,7 @@ class JfrThreadLocal {
   JfrBuffer* _load_barrier_buffer_epoch_1;
   JfrBuffer* _checkpoint_buffer_epoch_0;
   JfrBuffer* _checkpoint_buffer_epoch_1;
-  mutable JfrStackFrame* _stackframes;
+  volatile int _sample_state;
   Arena* _dcmd_arena;
   JfrBlobHandle _thread;
   mutable traceid _vthread_id;
@@ -62,19 +69,18 @@ class JfrThreadLocal {
   jlong _user_time;
   jlong _cpu_time;
   jlong _wallclock_time;
-  mutable u4 _stackdepth;
-  volatile jint _entering_suspend_flag;
   int32_t _non_reentrant_nesting;
   u2 _vthread_epoch;
   bool _vthread_excluded;
   bool _jvm_thread_excluded;
+  volatile bool _enqueued_requests;
   bool _vthread;
   bool _notified;
   bool _dead;
+  bool _sampling_critical_section;
 
   JfrBuffer* install_native_buffer() const;
   JfrBuffer* install_java_buffer() const;
-  JfrStackFrame* install_stackframes() const;
   void release(Thread* t);
   static void release(JfrThreadLocal* tl, Thread* t);
   static void initialize_main_thread(JavaThread* jt);
@@ -140,18 +146,78 @@ class JfrThreadLocal {
     _java_event_writer = java_event_writer;
   }
 
-  JfrStackFrame* stackframes() const {
-    return _stackframes != nullptr ? _stackframes : install_stackframes();
+
+  int sample_state() const {
+    return Atomic::load_acquire(&_sample_state);
   }
 
-  void set_stackframes(JfrStackFrame* frames) {
-    _stackframes = frames;
+  void set_sample_state(int state) {
+    Atomic::release_store(&_sample_state, state);
   }
 
-  u4 stackdepth() const;
+  Monitor* sample_monitor() {
+    return &_sample_monitor;
+  }
 
-  void set_stackdepth(u4 depth) {
-    _stackdepth = depth;
+  JfrSampleRequestQueue* sample_requests() {
+    return &_sample_request_queue;
+  }
+
+  JfrSampleRequest sample_request() const {
+    return _sample_request;
+  }
+
+  void set_sample_request(JfrSampleRequest request) {
+    _sample_request = request;
+  }
+
+  void set_sample_ticks() {
+    _sample_request._sample_ticks = JfrTicks::now();
+  }
+
+  void set_sample_ticks(const JfrTicks& ticks) {
+    _sample_request._sample_ticks = ticks;
+  }
+
+  bool has_sample_ticks() const {
+    return _sample_request._sample_ticks.value() != 0;
+  }
+
+  const JfrTicks& sample_ticks() const {
+    return _sample_request._sample_ticks;
+  }
+
+  bool has_enqueued_requests() const {
+    return Atomic::load_acquire(&_enqueued_requests);
+  }
+
+  void enqueue_request() {
+    assert_lock_strong(sample_monitor());
+    assert(sample_state() == JAVA_SAMPLE, "invariant");
+    if (_sample_request_queue.append(_sample_request) == 0) {
+      Atomic::release_store(&_enqueued_requests, true);
+    }
+    set_sample_state(NO_SAMPLE);
+  }
+
+  void clear_enqueued_requests() {
+    assert_lock_strong(sample_monitor());
+    assert(has_enqueued_requests(), "invariant");
+    assert(_sample_request_queue.is_nonempty(), "invariant");
+    _sample_request_queue.clear();
+    Atomic::release_store(&_enqueued_requests, false);
+  }
+
+  bool has_native_sample_request() const {
+    return sample_state() == NATIVE_SAMPLE;
+  }
+
+  bool has_java_sample_request() const {
+    return sample_state() == JAVA_SAMPLE || has_enqueued_requests();
+  }
+
+  bool has_sample_request() const {
+    return sample_state() != NO_SAMPLE || has_enqueued_requests();
   }
 
   int64_t last_allocated_bytes() const {
@@ -171,6 +237,7 @@ class JfrThreadLocal {
   static traceid thread_id(const Thread* t);
   static bool is_vthread(const JavaThread* jt);
   static u2 vthread_epoch(const JavaThread* jt);
+  traceid vthread_id_with_epoch_update(const JavaThread* jt) const;
 
   // Exposed to external code that use a thread id unconditionally.
   // Jfr might not even be running.
@@ -209,18 +276,6 @@ class JfrThreadLocal {
 
   traceid cached_stack_trace_hash() const {
     return _stack_trace_hash;
-  }
-
-  void set_trace_block() {
-    _entering_suspend_flag = 1;
-  }
-
-  void clear_trace_block() {
-    _entering_suspend_flag = 0;
-  }
-
-  bool is_trace_block() const {
-    return _entering_suspend_flag != 0;
   }
 
   u8 data_lost() const {
@@ -269,6 +324,10 @@ class JfrThreadLocal {
     return _dead;
   }
 
+  bool in_sampling_critical_section() const {
+    return _sampling_critical_section;
+  }
+
   static int32_t make_non_reentrant(Thread* thread);
   static void make_reentrant(Thread* thread, int32_t previous_nesting);
 
@@ -297,6 +356,8 @@ class JfrThreadLocal {
   static ByteSize vthread_epoch_offset();
   static ByteSize vthread_excluded_offset();
   static ByteSize notified_offset();
+  static ByteSize sample_state_offset();
+  static ByteSize sampling_critical_section_offset();
 
   friend class JfrJavaThread;
   friend class JfrCheckpointManager;

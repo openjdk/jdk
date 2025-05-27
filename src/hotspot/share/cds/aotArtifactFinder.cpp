@@ -240,7 +240,7 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
       add_cached_instance_class(intf);
     }
 
-    if (CDSConfig::is_dumping_final_static_archive() && ik->is_shared_unregistered_class()) {
+    if (CDSConfig::is_dumping_final_static_archive() && ik->defined_by_other_loaders()) {
       // The following are not appliable to unregistered classes
       return;
     }

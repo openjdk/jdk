@@ -137,7 +137,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   }
 
   if (ik->is_hidden()) {
-    assert(ik->shared_class_loader_type() != ClassLoader::OTHER, "must have been set");
+    assert(!ik->defined_by_other_loaders(), "hidden classes are archived only for builtin loaders");
     if (!CDSConfig::is_dumping_method_handles()) {
       return false;
     }
