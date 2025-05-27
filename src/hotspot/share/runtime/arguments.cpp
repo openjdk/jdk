@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotLogging.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoader.hpp"
@@ -85,6 +86,9 @@ int    Arguments::_num_jvm_flags                = 0;
 char** Arguments::_jvm_args_array               = nullptr;
 int    Arguments::_num_jvm_args                 = 0;
 unsigned int Arguments::_addmods_count          = 0;
+#if INCLUDE_JVMCI
+bool   Arguments::_jvmci_module_added           = false;
+#endif
 char*  Arguments::_java_command                 = nullptr;
 SystemProperty* Arguments::_system_properties   = nullptr;
 size_t Arguments::_conservative_max_heap_alignment = 0;
@@ -331,8 +335,7 @@ bool Arguments::is_incompatible_cds_internal_module_property(const char* propert
 bool Arguments::internal_module_property_helper(const char* property, bool check_for_cds) {
   if (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
     const char* property_suffix = property + MODULE_PROPERTY_PREFIX_LEN;
-    if (matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
-        matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
+    if (matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
         matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
         matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN) ||
         matches_property_suffix(property_suffix, ILLEGAL_NATIVE_ACCESS, ILLEGAL_NATIVE_ACCESS_LEN)) {
@@ -343,6 +346,7 @@ bool Arguments::internal_module_property_helper(const char* property, bool check
       // CDS notes: these properties are supported by CDS archived full module graph.
       if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
           matches_property_suffix(property_suffix, ADDOPENS, ADDOPENS_LEN) ||
+          matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
           matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
           matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
           matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
@@ -1362,7 +1366,7 @@ void Arguments::set_mode_flags(Mode mode) {
 // incompatible command line options were chosen.
 void Arguments::no_shared_spaces(const char* message) {
   if (RequireSharedSpaces) {
-    log_error(cds)("%s is incompatible with other specified options.",
+    aot_log_error(aot)("%s is incompatible with other specified options.",
                    CDSConfig::new_aot_flags_used() ? "AOT cache" : "CDS");
     if (CDSConfig::new_aot_flags_used()) {
       vm_exit_during_initialization("Unable to use AOT cache", message);
@@ -1371,9 +1375,9 @@ void Arguments::no_shared_spaces(const char* message) {
     }
   } else {
     if (CDSConfig::new_aot_flags_used()) {
-      log_warning(cds)("Unable to use AOT cache: %s", message);
+      log_warning(aot)("Unable to use AOT cache: %s", message);
     } else {
-      log_info(cds)("Unable to use shared archive: %s", message);
+      aot_log_info(aot)("Unable to use shared archive: %s", message);
     }
     UseSharedSpaces = false;
   }
@@ -1562,7 +1566,7 @@ void Arguments::set_heap_size() {
       // was not specified.
       if (reasonable_max > max_coop_heap) {
         if (FLAG_IS_ERGO(UseCompressedOops) && override_coop_limit) {
-          log_info(cds)("UseCompressedOops and UseCompressedClassPointers have been disabled due to"
+          aot_log_info(aot)("UseCompressedOops and UseCompressedClassPointers have been disabled due to"
             " max heap %zu > compressed oop heap %zu. "
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
@@ -1798,9 +1802,9 @@ bool Arguments::check_vm_args_consistency() {
   status = CompilerConfig::check_args_consistency(status);
 #if INCLUDE_JVMCI
   if (status && EnableJVMCI) {
-    PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
-        AddProperty, UnwriteableProperty, InternalProperty);
-    if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
+    // Add the JVMCI module if not using libjvmci or EnableJVMCI
+    // was explicitly set on the command line or in the jimage.
+    if ((!UseJVMCINativeLibrary || FLAG_IS_CMDLINE(EnableJVMCI) || FLAG_IS_JIMAGE_RESOURCE(EnableJVMCI)) && ClassLoader::is_module_observable("jdk.internal.vm.ci") && !_jvmci_module_added) {
       if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
         return false;
       }
@@ -2247,6 +2251,19 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       if (!create_numbered_module_property("jdk.module.addmods", tail, _addmods_count++)) {
         return JNI_ENOMEM;
       }
+#if INCLUDE_JVMCI
+      if (!_jvmci_module_added) {
+        const char *jvmci_module = strstr(tail, "jdk.internal.vm.ci");
+        if (jvmci_module != nullptr) {
+          char before = *(jvmci_module - 1);
+          char after  = *(jvmci_module + strlen("jdk.internal.vm.ci"));
+          if ((before == '=' || before == ',') && (after == '\0' || after == ',')) {
+            FLAG_SET_DEFAULT(EnableJVMCI, true);
+            _jvmci_module_added = true;
+          }
+        }
+      }
+#endif
     } else if (match_option(option, "--enable-native-access=", &tail)) {
       if (!create_numbered_module_property("jdk.module.enable.native.access", tail, enable_native_access_count++)) {
         return JNI_ENOMEM;
@@ -3615,10 +3632,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     return JNI_ERR;
   }
   if ((CDSConfig::is_using_archive() && xshare_auto_cmd_line) ||
-      log_is_enabled(Info, cds)) {
+      log_is_enabled(Info, cds) || log_is_enabled(Info, aot)) {
     warning("Shared spaces are not supported in this VM");
     UseSharedSpaces = false;
     LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(cds));
+    LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(aot));
   }
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS

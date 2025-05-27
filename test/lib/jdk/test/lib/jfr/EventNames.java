@@ -90,6 +90,7 @@ public class EventNames {
     public static final String JavaAgent = PREFIX + "JavaAgent";
     public static final String NativeAgent = PREFIX + "NativeAgent";
     public static final String DeprecatedInvocation = PREFIX + "DeprecatedInvocation";
+    public static final String SafepointLatency = PREFIX + "SafepointLatency";
 
     // This event is hard to test
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";

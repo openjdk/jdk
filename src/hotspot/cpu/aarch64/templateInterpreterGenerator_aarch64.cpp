@@ -1593,6 +1593,30 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(L);
   }
 
+  #if INCLUDE_JFR
+  __ enter_jfr_critical_section();
+
+  // This poll test is to uphold the invariant that a JFR sampled frame
+  // must not return to its caller without a prior safepoint poll check.
+  // The earlier poll check in this routine is insufficient for this purpose
+  // because the thread has transitioned back to Java.
+
+  Label slow_path;
+  Label fast_path;
+  __ safepoint_poll(slow_path, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+  __ br(Assembler::AL, fast_path);
+  __ bind(slow_path);
+  __ push(dtos);
+  __ push(ltos);
+  __ set_last_Java_frame(esp, rfp, __ pc(), rscratch1);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
+  __ reset_last_Java_frame(true);
+  __ pop(ltos);
+  __ pop(dtos);
+  __ bind(fast_path);
+
+#endif // INCLUDE_JFR
+
   // jvmti support
   // Note: This must happen _after_ handling/throwing any exceptions since
   //       the exception handler code notifies the runtime of method exits
@@ -1614,6 +1638,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                     wordSize)); // get sender sp
   // remove frame anchor
   __ leave();
+
+  JFR_ONLY(__ leave_jfr_critical_section();)
 
   // restore sender sp
   __ mov(sp, esp);

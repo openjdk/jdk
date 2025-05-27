@@ -480,7 +480,7 @@ void before_exit(JavaThread* thread, bool halt) {
   Universe::heap()->stop();
 
   // Print GC/heap related information.
-  Log(gc, heap, exit) log;
+  Log(gc, exit) log;
   if (log.is_info()) {
     LogStream ls_info(log.info());
     Universe::print_on(&ls_info);
