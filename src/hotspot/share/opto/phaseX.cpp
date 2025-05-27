@@ -1822,10 +1822,13 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     // Converts (x-y)+y to x
     // Could be issue with notification
     //
+    // Turns out AddL does the same.
+    //
     // Found with:
     //  compiler/c2/Test6792161.java
     //  -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
     case Op_AddI:
+    case Op_AddL:
       return false;
   }
 
