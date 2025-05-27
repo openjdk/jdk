@@ -354,7 +354,6 @@ size_t ZUncommitter::uncommit() {
 
     if (limit == 0) {
       // This may occur if the current max capacity for this partition is 0
-
       cancel_uncommit_cycle();
       return 0;
     }
