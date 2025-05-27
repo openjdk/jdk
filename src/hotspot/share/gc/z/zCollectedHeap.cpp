@@ -53,6 +53,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/align.hpp"
+#include "utilities/ostream.hpp"
 
 ZCollectedHeap* ZCollectedHeap::heap() {
   return named_heap<ZCollectedHeap>(CollectedHeap::Z);
@@ -237,7 +238,7 @@ size_t ZCollectedHeap::tlab_used(Thread* ignored) const {
 }
 
 size_t ZCollectedHeap::max_tlab_size() const {
-  return _heap.max_tlab_size();
+  return _heap.max_tlab_size() / HeapWordSize;
 }
 
 size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
@@ -245,7 +246,7 @@ size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
 }
 
 MemoryUsage ZCollectedHeap::memory_usage() {
-  const size_t initial_size = ZHeap::heap()->initial_capacity();
+  const size_t initial_size = InitialHeapSize;
   const size_t committed    = ZHeap::heap()->capacity();
   const size_t used         = MIN2(ZHeap::heap()->used(), committed);
   const size_t max_size     = ZHeap::heap()->max_capacity();
@@ -354,38 +355,12 @@ void ZCollectedHeap::prepare_for_verify() {
   // Does nothing
 }
 
-void ZCollectedHeap::print_on(outputStream* st) const {
-  _heap.print_on(st);
+void ZCollectedHeap::print_heap_on(outputStream* st) const {
+  _heap.print_usage_on(st);
 }
 
-void ZCollectedHeap::print_on_error(outputStream* st) const {
-  st->print_cr("ZGC Globals:");
-  st->print_cr(" Young Collection:   %s/%u", ZGeneration::young()->phase_to_string(), ZGeneration::young()->seqnum());
-  st->print_cr(" Old Collection:     %s/%u", ZGeneration::old()->phase_to_string(), ZGeneration::old()->seqnum());
-  st->print_cr(" Offset Max:         " EXACTFMT " (" PTR_FORMAT ")", EXACTFMTARGS(ZAddressOffsetMax), ZAddressOffsetMax);
-  st->print_cr(" Page Size Small:    %zuM", ZPageSizeSmall / M);
-  st->print_cr(" Page Size Medium:   %zuM", ZPageSizeMedium / M);
-  st->cr();
-  st->print_cr("ZGC Metadata Bits:");
-  st->print_cr(" LoadGood:           " PTR_FORMAT, ZPointerLoadGoodMask);
-  st->print_cr(" LoadBad:            " PTR_FORMAT, ZPointerLoadBadMask);
-  st->print_cr(" MarkGood:           " PTR_FORMAT, ZPointerMarkGoodMask);
-  st->print_cr(" MarkBad:            " PTR_FORMAT, ZPointerMarkBadMask);
-  st->print_cr(" StoreGood:          " PTR_FORMAT, ZPointerStoreGoodMask);
-  st->print_cr(" StoreBad:           " PTR_FORMAT, ZPointerStoreBadMask);
-  st->print_cr(" ------------------- ");
-  st->print_cr(" Remapped:           " PTR_FORMAT, ZPointerRemapped);
-  st->print_cr(" RemappedYoung:      " PTR_FORMAT, ZPointerRemappedYoungMask);
-  st->print_cr(" RemappedOld:        " PTR_FORMAT, ZPointerRemappedOldMask);
-  st->print_cr(" MarkedYoung:        " PTR_FORMAT, ZPointerMarkedYoung);
-  st->print_cr(" MarkedOld:          " PTR_FORMAT, ZPointerMarkedOld);
-  st->print_cr(" Remembered:         " PTR_FORMAT, ZPointerRemembered);
-  st->cr();
-  CollectedHeap::print_on_error(st);
-}
-
-void ZCollectedHeap::print_extended_on(outputStream* st) const {
-  _heap.print_extended_on(st);
+void ZCollectedHeap::print_gc_on(outputStream* st) const {
+  _heap.print_gc_on(st);
 }
 
 void ZCollectedHeap::print_tracing_info() const {

@@ -117,10 +117,6 @@ class ParkEvent : public PlatformEvent {
     // Current association
     Thread * AssociatedWith ;
 
-  public:
-    volatile int TState ;
-    volatile int Notified ;             // for native monitor construct
-
   private:
     static ParkEvent * volatile FreeList ;
     static volatile int ListLock ;
@@ -137,8 +133,6 @@ class ParkEvent : public PlatformEvent {
     ParkEvent() : PlatformEvent() {
        AssociatedWith = nullptr ;
        FreeNext       = nullptr ;
-       TState         = 0 ;
-       Notified       = 0 ;
     }
 
     // We use placement-new to force ParkEvent instances to be

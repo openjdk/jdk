@@ -296,7 +296,6 @@ void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
 }
 
 void InterpreterMacroAssembler::call_VM_base(Register oop_result,
-                                             Register java_thread,
                                              Register last_java_sp,
                                              address  entry_point,
                                              int      number_of_arguments,
@@ -319,7 +318,7 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
   }
 #endif /* ASSERT */
   // super call
-  MacroAssembler::call_VM_base(oop_result, noreg, last_java_sp,
+  MacroAssembler::call_VM_base(oop_result, last_java_sp,
                                entry_point, number_of_arguments,
                                check_exceptions);
   // interpreter specific
@@ -379,7 +378,7 @@ void InterpreterMacroAssembler::restore_after_resume(bool is_native) {
   }
 }
 
-void InterpreterMacroAssembler::check_and_handle_popframe(Register java_thread) {
+void InterpreterMacroAssembler::check_and_handle_popframe() {
   if (JvmtiExport::can_pop_frame()) {
     Label L;
     // Initiate popframe handling only if it is not already being
@@ -389,7 +388,7 @@ void InterpreterMacroAssembler::check_and_handle_popframe(Register java_thread) 
     // This method is only called just after the call into the vm in
     // call_VM_base, so the arg registers are available.
     Register pop_cond = c_rarg0;
-    movl(pop_cond, Address(java_thread, JavaThread::popframe_condition_offset()));
+    movl(pop_cond, Address(r15_thread, JavaThread::popframe_condition_offset()));
     testl(pop_cond, JavaThread::popframe_pending_bit);
     jcc(Assembler::zero, L);
     testl(pop_cond, JavaThread::popframe_processing_bit);
@@ -418,8 +417,8 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
     case ctos:                                   // fall through
     case stos:                                   // fall through
     case itos: movl(rax, val_addr);                 break;
-    case ftos: load_float(val_addr);                break;
-    case dtos: load_double(val_addr);               break;
+    case ftos: movflt(xmm0, val_addr);              break;
+    case dtos: movdbl(xmm0, val_addr);              break;
     case vtos: /* nothing to do */                  break;
     default  : ShouldNotReachHere();
   }
@@ -430,7 +429,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
 }
 
 
-void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) {
+void InterpreterMacroAssembler::check_and_handle_earlyret() {
   if (JvmtiExport::can_force_early_return()) {
     Label L;
     Register tmp = c_rarg0;
@@ -779,9 +778,10 @@ void InterpreterMacroAssembler::narrow(Register result) {
 
 // remove activation
 //
-// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from synchronized blocks.
+// Apply stack watermark barrier.
+// Notify JVMTI.
 // Remove the activation from the stack.
 //
 // If there are locked Java monitors
@@ -791,12 +791,11 @@ void InterpreterMacroAssembler::narrow(Register result) {
 //       installs IllegalMonitorStateException
 //    Else
 //       no error processing
-void InterpreterMacroAssembler::remove_activation(
-        TosState state,
-        Register ret_addr,
-        bool throw_monitor_exception,
-        bool install_monitor_exception,
-        bool notify_jvmdi) {
+void InterpreterMacroAssembler::remove_activation(TosState state,
+                                                  Register ret_addr,
+                                                  bool throw_monitor_exception,
+                                                  bool install_monitor_exception,
+                                                  bool notify_jvmdi) {
   // Note: Registers rdx xmm0 may be in use for the
   // result check if synchronized method
   Label unlocked, unlock, no_unlock;
@@ -804,21 +803,6 @@ void InterpreterMacroAssembler::remove_activation(
   const Register rthread = r15_thread;
   const Register robj    = c_rarg1;
   const Register rmon    = c_rarg1;
-
-  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
-  // that would normally not be safe to use. Such bad returns into unsafe territory of
-  // the stack, will call InterpreterRuntime::at_unwind.
-  Label slow_path;
-  Label fast_path;
-  safepoint_poll(slow_path, rthread, true /* at_return */, false /* in_nmethod */);
-  jmp(fast_path);
-  bind(slow_path);
-  push(state);
-  set_last_Java_frame(rthread, noreg, rbp, (address)pc(), rscratch1);
-  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
-  reset_last_Java_frame(rthread, true);
-  pop(state);
-  bind(fast_path);
 
   // get the value of _do_not_unlock_if_synchronized into rdx
   const Address do_not_unlock_if_synchronized(rthread,
@@ -941,7 +925,24 @@ void InterpreterMacroAssembler::remove_activation(
 
   bind(no_unlock);
 
-  // jvmti support
+  JFR_ONLY(enter_jfr_critical_section();)
+
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  Label slow_path;
+  Label fast_path;
+  safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
+  jmp(fast_path);
+  bind(slow_path);
+  push(state);
+  set_last_Java_frame(noreg, rbp, (address)pc(), rscratch1);
+  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), r15_thread);
+  reset_last_Java_frame(true);
+  pop(state);
+  bind(fast_path);
+
+  // JVMTI support. Make sure the safepoint poll test is issued prior.
   if (notify_jvmdi) {
     notify_method_exit(state, NotifyJVMTI);    // preserve TOSCA
   } else {
@@ -965,6 +966,8 @@ void InterpreterMacroAssembler::remove_activation(
     cmpptr(rbx, Address(rthread, JavaThread::reserved_stack_activation_offset()));
     jcc(Assembler::lessEqual, no_reserved_zone_enabling);
 
+    JFR_ONLY(leave_jfr_critical_section();)
+
     call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), rthread);
     call_VM(noreg, CAST_FROM_FN_PTR(address,
@@ -973,11 +976,28 @@ void InterpreterMacroAssembler::remove_activation(
 
     bind(no_reserved_zone_enabling);
   }
+
   leave();                           // remove frame anchor
+
+  JFR_ONLY(leave_jfr_critical_section();)
+
   pop(ret_addr);                     // get return address
   mov(rsp, rbx);                     // set sp to sender sp
   pop_cont_fastpath();
+
 }
+
+#if INCLUDE_JFR
+void InterpreterMacroAssembler::enter_jfr_critical_section() {
+  const Address sampling_critical_section(r15_thread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
+  movbool(sampling_critical_section, true);
+}
+
+void InterpreterMacroAssembler::leave_jfr_critical_section() {
+  const Address sampling_critical_section(r15_thread, in_bytes(SAMPLING_CRITICAL_SECTION_OFFSET_JFR));
+  movbool(sampling_critical_section, false);
+}
+#endif // INCLUDE_JFR
 
 void InterpreterMacroAssembler::get_method_counters(Register method,
                                                     Register mcs, Label& skip) {
@@ -1024,16 +1044,15 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     // Load object pointer into obj_reg
     movptr(obj_reg, Address(lock_reg, obj_offset));
 
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(tmp_reg, obj_reg, rklass_decode_tmp);
-      testb(Address(tmp_reg, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-      jcc(Assembler::notZero, slow_case);
-    }
-
     if (LockingMode == LM_LIGHTWEIGHT) {
-      const Register thread = r15_thread;
-      lightweight_lock(lock_reg, obj_reg, swap_reg, thread, tmp_reg, slow_case);
+      lightweight_lock(lock_reg, obj_reg, swap_reg, tmp_reg, slow_case);
     } else if (LockingMode == LM_LEGACY) {
+      if (DiagnoseSyncOnValueBasedClasses != 0) {
+        load_klass(tmp_reg, obj_reg, rklass_decode_tmp);
+        testb(Address(tmp_reg, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
+        jcc(Assembler::notZero, slow_case);
+      }
+
       // Load immediate 1 into swap_reg %rax
       movl(swap_reg, 1);
 
@@ -1141,7 +1160,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     movptr(Address(lock_reg, BasicObjectLock::obj_offset()), NULL_WORD);
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_unlock(obj_reg, swap_reg, r15_thread, header_reg, slow_case);
+      lightweight_unlock(obj_reg, swap_reg, header_reg, slow_case);
     } else if (LockingMode == LM_LEGACY) {
       // Load the old header from BasicLock structure
       movptr(header_reg, Address(swap_reg,
@@ -1256,46 +1275,19 @@ void InterpreterMacroAssembler::set_mdp_data_at(Register mdp_in,
 
 
 void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
-                                                      int constant,
-                                                      bool decrement) {
-  // Counter address
-  Address data(mdp_in, constant);
-
-  increment_mdp_data_at(data, decrement);
-}
-
-void InterpreterMacroAssembler::increment_mdp_data_at(Address data,
-                                                      bool decrement) {
+                                                      int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  // %%% this does 64bit counters at best it is wasting space
-  // at worst it is a rare bug when counters overflow
-
-  if (decrement) {
-    // Decrement the register.  Set condition codes.
-    addptr(data, -DataLayout::counter_increment);
-    // If the decrement causes the counter to overflow, stay negative
-    Label L;
-    jcc(Assembler::negative, L);
-    addptr(data, DataLayout::counter_increment);
-    bind(L);
-  } else {
-    assert(DataLayout::counter_increment == 1,
-           "flow-free idiom only works with 1");
-    // Increment the register.  Set carry flag.
-    addptr(data, DataLayout::counter_increment);
-    // If the increment causes the counter to overflow, pull back by 1.
-    sbbptr(data, 0);
-  }
+  Address data(mdp_in, constant);
+  addptr(data, DataLayout::counter_increment);
 }
 
 
 void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
-                                                      Register reg,
-                                                      int constant,
-                                                      bool decrement) {
-  Address data(mdp_in, reg, Address::times_1, constant);
-
-  increment_mdp_data_at(data, decrement);
+                                                      Register index,
+                                                      int constant) {
+  assert(ProfileInterpreter, "must be profiling interpreter");
+  Address data(mdp_in, index, Address::times_1, constant);
+  addptr(data, DataLayout::counter_increment);
 }
 
 void InterpreterMacroAssembler::set_mdp_flag_at(Register mdp_in,

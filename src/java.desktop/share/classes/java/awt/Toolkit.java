@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1472,8 +1472,7 @@ public abstract class Toolkit {
         Object oldValue;
 
         synchronized (this) {
-            oldValue = desktopProperties.get(name);
-            desktopProperties.put(name, newValue);
+            oldValue = desktopProperties.put(name, newValue);
         }
 
         // Don't fire change event if old and new values are null.
@@ -1633,7 +1632,7 @@ public abstract class Toolkit {
     private int[] calls = new int[LONG_BITS];
     private static volatile long enabledOnToolkitMask;
     private AWTEventListener eventListener = null;
-    private WeakHashMap<AWTEventListener, SelectiveAWTEventListener> listener2SelectiveListener = new WeakHashMap<>();
+    private final WeakHashMap<AWTEventListener, SelectiveAWTEventListener> listener2SelectiveListener = new WeakHashMap<>();
 
     /*
      * Extracts a "pure" AWTEventListener from a AWTEventListenerProxy,
@@ -1742,10 +1741,9 @@ public abstract class Toolkit {
 
         synchronized (this) {
             SelectiveAWTEventListener selectiveListener =
-                listener2SelectiveListener.get(localL);
+                listener2SelectiveListener.remove(localL);
 
             if (selectiveListener != null) {
-                listener2SelectiveListener.remove(localL);
                 int[] listenerCalls = selectiveListener.getCalls();
                 for (int i=0; i<LONG_BITS; i++) {
                     calls[i] -= listenerCalls[i];

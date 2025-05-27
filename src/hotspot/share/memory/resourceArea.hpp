@@ -143,6 +143,14 @@ public:
       assert(_max == state._max,     "Sanity check: idempotence");
     }
   }
+
+  static char* strdup(const char* src) {
+    return static_cast<Arena*>(Thread::current()->resource_area())->strdup(src);
+  }
+
+  static char* strdup(Thread* thread, const char* src) {
+    return static_cast<Arena*>(thread->resource_area())->strdup(src);
+  }
 };
 
 

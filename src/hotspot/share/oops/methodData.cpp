@@ -1257,7 +1257,6 @@ void MethodData::initialize() {
   ResourceMark rm(thread);
 
   init();
-  set_creation_mileage(mileage_of(method()));
 
   // Go through the bytecodes and allocate and initialize the
   // corresponding data cells.
@@ -1362,11 +1361,6 @@ void MethodData::init() {
 
   // Initialize escape flags.
   clear_escape_info();
-}
-
-// Get a measure of how much mileage the method has on it.
-int MethodData::mileage_of(Method* method) {
-  return MAX2(method->invocation_count(), method->backedge_count());
 }
 
 bool MethodData::is_mature() const {
@@ -1731,7 +1725,7 @@ bool MethodData::profile_parameters_for_method(const methodHandle& m) {
 }
 
 void MethodData::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(MethodData): %p", this);
+  log_trace(aot)("Iter(MethodData): %p", this);
   it->push(&_method);
 }
 
