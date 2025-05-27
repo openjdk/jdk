@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class GifComparison {
 
     /**
-     * This iterates over every frame a gif and throws an Error / Exception
+     * This inspects the last frame of a gif and throws an Error / Exception
      * if ImageIO and ToolkitImage produce different BufferedImage renderings.
      *
      * @param srcURL the URL of the image to inspect
