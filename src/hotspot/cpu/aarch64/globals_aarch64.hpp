@@ -89,6 +89,10 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use CRC32 instructions for CRC32 computation")               \
   product(bool, UseCryptoPmullForCRC32, false,                          \
           "Use Crypto PMULL instructions for CRC32 computation")        \
+  product(intx, CryptoPmullForCRC32LowLimit, 256,                       \
+          "Minimum size in bytes when Crypto PMULL will be used."       \
+          "Value must be a multiple of 128.")                           \
+          range(256, max_jint)                                          \
   product(bool, UseSIMDForMemoryOps, false,                             \
           "Use SIMD instructions in generated memory move code")        \
   product(bool, UseSIMDForArrayEquals, true,                            \
