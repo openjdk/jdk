@@ -1234,6 +1234,23 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     case Op_Region:
       return false;
 
+    // CountedLoopNode::Ideal calls RegionNode::Ideal too.
+    // But I got an issue because RegionNode::optimize_trichotomy
+    // then modifies another node, and pushes nodes to the worklist
+    // Not sure if this is ok, modifying another node like that.
+    // Maybe it is, then we need to look into what to do with
+    // the nodes that are now on the worklist, maybe just clear
+    // them out again. But maybe modifying other nodes like that
+    // is also bad design. In the end, we return nullptr for
+    // the current CountedLoop. But the extra nodes on the worklist
+    // trip the asserts later on.
+    //
+    // Found with:
+    //   compiler/eliminateAutobox/TestShortBoxing.java
+    //   -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    case Op_CountedLoop:
+      return false;
+
     // In AddNode::Ideal, we call "commute", which swaps the inputs so
     // that smaller idx are first. Tracking it back, it led me to
     // PhaseIdealLoop::remix_address_expressions which swapped the edges.
