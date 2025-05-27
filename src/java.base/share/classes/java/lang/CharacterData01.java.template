@@ -27,7 +27,7 @@ package java.lang;
 
 import jdk.internal.vm.annotation.Stable;
 
-/** The CharacterData class encapsulates the large tables once found in
+/** The CharacterData01 class encapsulates the large tables once found in
  *  java.lang.Character. 
  */
 
