@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,11 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JTextArea;
 import javax.swing.JList;
+import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
 
@@ -854,6 +856,41 @@ class CAccessibility implements PropertyChangeListener {
                 return null;
             }
         }, c);
+    }
+
+    private static Accessible getCurrentAccessiblePopupMenu(Accessible a, Component c) {
+        if (a == null) return null;
+
+        return invokeAndWait(new Callable<Accessible>() {
+            @Override
+            public Accessible call() throws Exception {
+                return traversePopupMenu(a);
+            }
+        }, c);
+    }
+
+    private static Accessible traversePopupMenu(Accessible a) {
+        // a is root level popupmenu
+        AccessibleContext ac = a.getAccessibleContext();
+        if (ac != null) {
+            Accessible aComp = null;
+            for (int i = 0; i < ac.getAccessibleChildrenCount(); i++) {
+                Accessible child = ac.getAccessibleChild(i);
+                if (child instanceof JMenu subMenu) {
+                    JPopupMenu popup = subMenu.getPopupMenu();
+                    if (popup.isVisible()) {
+                        aComp = traversePopupMenu((Accessible) popup);
+                    }
+                }
+            }
+            // all children are traversed
+            if (aComp != null) {
+                return aComp;
+            }
+            return a;
+        } else {
+            return a;
+        }
     }
 
     @Native private static final int JAVA_AX_ROWS = 1;
