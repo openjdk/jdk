@@ -64,7 +64,7 @@ void MemTracker::initialize() {
          "Invalid setting for NativeMemoryTracking (%s)", NativeMemoryTracking);
 
   if (level > NMT_off) {
-    NMTUtil::initialize();
+    MemTagFactory::initialize();
     _baseline.initialize();
     if (!MallocTracker::initialize(level) ||
         !MemoryFileTracker::Instance::initialize(level) ||

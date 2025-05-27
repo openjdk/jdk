@@ -31,6 +31,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtLocker.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/deferred.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/resourceHash.hpp"
 
@@ -151,47 +152,77 @@ struct NameToTagTable {
 struct MemTagFactory {
   using MemTagI = std::underlying_type_t<MemTag>;
 
-  NameToTagTable table;
-  MemTagI current_index;
+  struct Instance {
+    NameToTagTable table;
+    MemTagI current_index;
 
-  MemTagFactory() : table(), current_index(0) {
+      Instance() : table(), current_index(0) {
 #define MEMORY_TAG_ADD_TO_TABLE(mem_tag, human_readable) \
   MemTag mem_tag = tag(#mem_tag);                       \
   set_human_readable_name_of(mem_tag, human_readable);
 
-  MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
+MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
+#undef MEMORY_TAG_ADD_TO_TABLE
+  }
+    MemTag tag(const char* name) {
+      NmtVirtualMemoryLocker nvml;
+      MemTag found = table.get(name);
+      if (found != mtNone) {
+        return found;
+      }
+      MemTag i = current_index;
+      table.put(i, name);
+      current_index++;
+      return i;
+    }
 
+    const char* name_of(MemTag tag) {
+      NmtVirtualMemoryLocker nvml;
+      return table.name_of(tag);
+    }
+
+    const char* human_readable_name_of(MemTag tag) {
+      NmtVirtualMemoryLocker nvml;
+      return table.human_readable_name_of(tag);
+    }
+
+    void set_human_readable_name_of(MemTag tag, const char* hrn) {
+      NmtVirtualMemoryLocker nvml;
+      return table.set_human_readable_name_of(tag, hrn);
+    }
+
+    int number_of_tags() {
+      return entries.length();
+    }
   }
 
+  static Deferred<Instance> _instance;
+
+  static void initialize() {
+    _instance.initialize();
+  }
   static MemTag tag(const char* name) {
     NmtVirtualMemoryLocker nvml;
-    MemTag found = table.get(name);
-    if (found != mtNone) {
-      return found;
-    }
-    MemTag i = current_index;
-    table.put(i, name);
-    current_index++;
-    return i;
+    return _instance.tag(name);
   }
 
   static const char* name_of(MemTag tag) {
     NmtVirtualMemoryLocker nvml;
-    return table.name_of(tag);
+    return _instance.name_of(tag);
   }
 
   static const char* human_readable_name_of(MemTag tag) {
     NmtVirtualMemoryLocker nvml;
-    return table.human_readable_name_of(tag);
+    return _instance.human_readable_name_of(tag);
   }
 
   static void set_human_readable_name_of(MemTag tag, const char* hrn) {
     NmtVirtualMemoryLocker nvml;
-    return table.set_human_readable_name_of(tag, hrn);
+    return _instance.set_human_readable_name_of(tag, hrn);
   }
 
   static int number_of_tags() {
-    return entries.length();
+    return _instance.number_of_tags();
   }
 };
 
