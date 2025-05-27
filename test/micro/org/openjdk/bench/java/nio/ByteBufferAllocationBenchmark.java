@@ -36,7 +36,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
 @Measurement(iterations = 5)
 @Warmup(iterations = 5)
@@ -46,7 +46,7 @@ public class ByteBufferAllocationBenchmark {
             "128", // 128 bytes
             "1024", // 1KB
             "1048576", // 1 MB
-            "2000000000" // ~2 GB
+            "2147483647" // ~2 GB
     })
     public int bytes;
 
