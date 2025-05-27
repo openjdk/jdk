@@ -244,7 +244,7 @@ bool ZUncommitter::activate_uncommit_cycle() {
   _to_uncommit = MIN2(uncommit_limit, to_uncommit);
   _uncommitted = 0;
 
-  // Reset cache for next uncommit cycle
+  // Reset watermark for next uncommit cycle
   cache->reset_uncommit_watermark();
 
   postcond(is_aligned(_to_uncommit, ZGranuleSize));
