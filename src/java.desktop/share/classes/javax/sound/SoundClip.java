@@ -108,7 +108,7 @@ public final class SoundClip {
      * Running daemon threads do not prevent the VM from exiting.
      * So at least one thread must be alive to prevent the VM from terminating.
      * A UI application with any window displayed automatically satisfies this requirement.
-     * Conversely, if the application wants to guarantee VM exit before the play() has completed, 
+     * Conversely, if the application wants to guarantee VM exit before the play() has completed,
      * it should call the {@code stop()} method.
      */
     public void play() {
