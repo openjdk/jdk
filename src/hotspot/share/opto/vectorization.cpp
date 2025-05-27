@@ -488,7 +488,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //
 // This would allow situations where for some iv p1 is lower than p2, and for
 // other iv p1 is higher than p2. This is not very useful inpractice. We can
-// the condition, which will make the check simpler later:
+// strengthen the condition, which will make the check simpler later:
 //
 //   for all iv in r: p1(iv) + size1 <= p2(iv)                    (P1-BEFORE-P2)
 //   OR
@@ -501,6 +501,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //   (c1) with v = iv and scale_v = iv_scale
 //   (C2) with r = [init, init + stride_iv, .. limit] which is the set of possible
 //        iv values in the loop.
+//        TODO: range at the top does not go to limit! But what is it?
 //   (C3) the memory accesses for every iv value in the loop must be in bounds, otherwise
 //        the program has undefined behaviour already.
 //   (C4) abs(iv_scale * stride_iv) < 2^31 is given by the checks in
@@ -518,6 +519,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
 // With the (Alternative Corrolary P) we get the alternative linar form:
 //   p1(iv)  = p1(limit) - limit * iv_scale1 + iv * iv_scale1
 //   p2(iv)  = p2(limit) - limit * iv_scale2 + iv * iv_scale2
+//   TODO: problematic now
 //
 //
 // We can now use this linearity to construct aliasing runtime checks, depending on the
@@ -573,10 +575,12 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //   If iv_stride <= 0, i.e. limit <= iv <= init:
 //     (iv - init ) * scale_1 >= (iv - init ) * iv_scale
 //     (iv - limit) * scale_1 <= (iv - limit) * iv_scale                   (NEG-STRIDE)
+//     TODO: problematic now?
 //
 //   We define:
 //     span1 = p1(limit) - p1(init) = (limit - init) * iv_scale1
 //     span2 = p2(limit) - p2(init) = (limit - init) * iv_scale2
+//     TODO: pX(limit) problematic?
 //
 //   Below, we show that these conditions are equivalent:
 //
