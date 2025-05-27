@@ -276,7 +276,7 @@ import java.util.Set;
  *       <em>read-only</em> access.
  *       <ul>
  *           <li>
- *               If no value is set, the file system is created <em>read-write</em>
+ *               If no value is set, the file system is created as <em>read-write</em>
  *               if possible. Use {@link java.nio.file.FileSystem#isReadOnly()
  *               isReadOnly()} to determine the actual access mode.
  *           </li>
