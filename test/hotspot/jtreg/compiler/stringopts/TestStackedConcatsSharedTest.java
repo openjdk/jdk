@@ -25,7 +25,7 @@
  * @test
  * @bug 8356246
  * @summary Test stacked string concatenations where the toString of the first StringBuilder
- *          is used as a shared test by two diamond Ifs in the second StringBuilder. 
+ *          is used as a shared test by two diamond Ifs in the second StringBuilder.
  * @run main/othervm compiler.stringopts.TestStackedConcatsSharedTest
  * @run main/othervm -Xbatch -XX:-TieredCompilation -Xcomp
  *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsSharedTest::*
@@ -40,7 +40,7 @@ public class TestStackedConcatsSharedTest {
         f(); // one warmup call
         String s = f();
         if (!s.equals("")) {
-            throw new RuntimeException("wrong result"); 
+            throw new RuntimeException("wrong result");
         }
     }
 
