@@ -4244,6 +4244,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             info.maxLength += buffer.length;
             return next.study(info);
         }
+
+        int length() {
+            return buffer.length;
+        }
     }
 
     /**
@@ -4530,6 +4534,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             this.type = type;
             this.cmin = cmin;
             this.cmax = cmax;
+            if (node instanceof SliceNode s && s.length() <= 0) {
+                //We are dealing with a zero length match
+                //Tune quantifier attempts downward
+                this.cmin = 0;
+                this.cmax = 1;
+            }
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
             int j;
@@ -4680,6 +4690,13 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             this.localIndex = local;
             this.groupIndex = group;
             this.capture = capture;
+
+            if (node instanceof SliceNode s && s.length() <= 0) {
+                //We are dealing with a zero length match
+                //Tune quantifier attempts downward
+                this.cmin = 0;
+                this.cmax = 1;
+            }
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
             int[] groups = matcher.groups;
