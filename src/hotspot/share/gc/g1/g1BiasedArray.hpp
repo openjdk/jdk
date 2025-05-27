@@ -102,9 +102,9 @@ public:
 template<class T>
 class G1BiasedMappedArray : public G1BiasedMappedArrayBase {
 protected:
-  T* base() const { return (T*)G1BiasedMappedArrayBase::_base; }
+  T* base() const { return (T*)this->_base; }
 
-  T* biased_base_at(idx_t index) const { return (T*)(G1BiasedMappedArrayBase::_biased_base + index * sizeof(T)); }
+  T* biased_base_at(idx_t index) const { return (T*)(this->_biased_base + index * sizeof(T)); }
 
 public:
   typedef G1BiasedMappedArrayBase::idx_t idx_t;
@@ -179,7 +179,7 @@ public:
   // Allocate and initialize this array to cover the heap addresses in the given MemRegion.
   void initialize(MemRegion region, size_t mapping_granularity) {
     G1BiasedMappedArrayBase::initialize(region.start(), region.end(), sizeof(T), mapping_granularity);
-    this->clear();
+    clear();
   }
 };
 
