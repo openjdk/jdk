@@ -1583,9 +1583,13 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 }
 
 bool nmethod::is_relocatable() {
-  if (is_compiled_by_jvmci()) {
-    return false;
+#if INCLUDE_JVMCI
+  if (jvmci_nmethod_data() != nullptr) {
+    if (jvmci_nmethod_data()->get_nmethod_mirror(this, false) != nullptr) {
+      return false;
+    }
   }
+#endif
 
   if (is_marked_for_deoptimization()) {
     return false;
