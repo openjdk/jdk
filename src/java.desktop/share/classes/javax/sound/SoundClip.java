@@ -104,7 +104,7 @@ public final class SoundClip {
      * <p>
      * Threading notes : Most applications will not need to do anything except call {@code play()}.
      * The following is therefore something most applications need not be concerned about.
-     * Play back is managed in a background thread, which is ususally a daemon thread.
+     * Play back is managed in a background thread, which is usually a daemon thread.
      * Running daemon threads do not prevent the VM from exiting.
      * So at least one thread must be alive to prevent the VM from terminating.
      * A UI application with any window displayed automatically satisfies this requirement.
