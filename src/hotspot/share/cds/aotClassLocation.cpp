@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotLogging.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -250,7 +251,7 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
     // We allow the file to not exist, as long as it also doesn't exist during runtime.
     type = FileType::NOT_EXIST;
   } else {
-    log_error(cds)("Unable to open file %s.", path);
+    aot_log_error(aot)("Unable to open file %s.", path);
     MetaspaceShared::unrecoverable_loading_error();
   }
 
@@ -359,7 +360,7 @@ char* AOTClassLocation::get_cpattr() const {
       if (found != nullptr) {
         // Same behavior as jdk/src/share/classes/java/util/jar/Attributes.java
         // If duplicated entries are found, the last one is used.
-        log_warning(cds)("Warning: Duplicate name in Manifest: %s.\n"
+        log_warning(aot)("Warning: Duplicate name in Manifest: %s.\n"
                          "Ensure that the manifest does not have duplicate entries, and\n"
                          "that blank lines separate individual sections in both your\n"
                          "manifest and in the META-INF/MANIFEST.MF entry in the jar file:\n%s\n", tag, path());
@@ -392,31 +393,31 @@ bool AOTClassLocation::check(const char* runtime_path, bool has_aot_linked_class
   struct stat st;
   if (os::stat(runtime_path, &st) != 0) {
     if (_file_type != FileType::NOT_EXIST) {
-      log_warning(cds)("Required classpath entry does not exist: %s", runtime_path);
+      aot_log_warning(aot)("Required classpath entry does not exist: %s", runtime_path);
       return false;
     }
   } else if ((st.st_mode & S_IFMT) == S_IFDIR) {
     if (_file_type == FileType::NOT_EXIST) {
-      log_warning(cds)("'%s' must not exist", runtime_path);
+      aot_log_warning(aot)("'%s' must not exist", runtime_path);
       return false;
     }
     if (_file_type == FileType::NORMAL) {
-      log_warning(cds)("'%s' must be a file", runtime_path);
+      aot_log_warning(aot)("'%s' must be a file", runtime_path);
       return false;
     }
     if (!os::dir_is_empty(runtime_path)) {
-      log_warning(cds)("directory is not empty: '%s'", runtime_path);
+      aot_log_warning(aot)("directory is not empty: '%s'", runtime_path);
       return false;
     }
   } else {
     if (_file_type == FileType::NOT_EXIST) {
-      log_warning(cds)("'%s' must not exist", runtime_path);
+      aot_log_warning(aot)("'%s' must not exist", runtime_path);
       if (has_aot_linked_classes) {
-        log_error(cds)("CDS archive has aot-linked classes. It cannot be used because the "
+        aot_log_error(aot)("CDS archive has aot-linked classes. It cannot be used because the "
                        "file %s exists", runtime_path);
         return false;
       } else {
-        log_warning(cds)("Archived non-system classes are disabled because the "
+        aot_log_warning(aot)("Archived non-system classes are disabled because the "
                          "file %s exists", runtime_path);
         FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
         if (DynamicArchive::is_mapped()) {
@@ -425,13 +426,13 @@ bool AOTClassLocation::check(const char* runtime_path, bool has_aot_linked_class
       }
     }
     if (_file_type == FileType::DIR) {
-      log_warning(cds)("'%s' must be a directory", runtime_path);
+      aot_log_warning(aot)("'%s' must be a directory", runtime_path);
       return false;
     }
     bool size_differs = _filesize != st.st_size;
     bool time_differs = _check_time && (_timestamp != st.st_mtime);
     if (size_differs || time_differs) {
-      log_warning(cds)("This file is not the one used while building the shared archive file: '%s'%s%s",
+      aot_log_warning(aot)("This file is not the one used while building the shared archive file: '%s'%s%s",
                        runtime_path,
                        time_differs ? ", timestamp has changed" : "",
                        size_differs ? ", size has changed" : "");
@@ -489,8 +490,8 @@ void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
 
   const char* lcp = find_lcp(all_css.boot_and_app_cp(), _dumptime_lcp_len);
   if (_dumptime_lcp_len > 0) {
-    os::free((void*)lcp);
     log_info(class, path)("Longest common prefix = %s (%zu chars)", lcp, _dumptime_lcp_len);
+    os::free((void*)lcp);
   } else {
     assert(_dumptime_lcp_len == 0, "sanity");
     log_info(class, path)("Longest common prefix = <none> (0 chars)");
@@ -689,7 +690,7 @@ void AOTClassLocationConfig::check_nonempty_dirs() const {
     }
     if (cs->is_dir()) {
       if (!os::dir_is_empty(cs->path())) {
-        log_error(cds)("Error: non-empty directory '%s'", cs->path());
+        aot_log_error(aot)("Error: non-empty directory '%s'", cs->path());
         has_nonempty_dir = true;
       }
     }
@@ -714,7 +715,7 @@ bool AOTClassLocationConfig::is_valid_classpath_index(int classpath_index, Insta
       const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                           ik->name()->utf8_length());
       if (!zip->has_entry(current, file_name)) {
-        log_warning(cds)("class %s cannot be archived because it was not defined from %s as claimed",
+        aot_log_warning(aot)("class %s cannot be archived because it was not defined from %s as claimed",
                          class_name, zip->name());
         return false;
       }
@@ -776,7 +777,7 @@ bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_a
                           cs->from_cpattr() ? " (from JAR manifest ClassPath attribute)" : "");
     if (!cs->from_cpattr() && file_exists(effective_dumptime_path)) {
       if (!runtime_css.has_next()) {
-        log_warning(cds)("%s classpath has fewer elements than expected", which);
+        aot_log_warning(aot)("%s classpath has fewer elements than expected", which);
         return false;
       }
       const char* runtime_path = runtime_css.get_next();
@@ -784,7 +785,7 @@ bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_a
         runtime_path = runtime_css.get_next();
       }
       if (!os::same_files(effective_dumptime_path, runtime_path)) {
-        log_warning(cds)("The name of %s classpath [%d] does not match: expected '%s', got '%s'",
+        aot_log_warning(aot)("The name of %s classpath [%d] does not match: expected '%s', got '%s'",
                          which, runtime_css.current(), effective_dumptime_path, runtime_path);
         return false;
       }
@@ -800,7 +801,7 @@ bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_a
   if (is_boot_classpath && runtime_css.has_next() && (need_to_check_app_classpath() || num_module_paths() > 0)) {
     // the check passes if all the extra runtime boot classpath entries are non-existent
     if (check_paths_existence(runtime_css)) {
-      log_warning(cds)("boot classpath is longer than expected");
+      aot_log_warning(aot)("boot classpath is longer than expected");
       return false;
     }
   }
@@ -869,7 +870,7 @@ bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, int
 
     while (true) {
       if (!runtime_css.has_next()) {
-        log_warning(cds)("module path has fewer elements than expected");
+        aot_log_warning(aot)("module path has fewer elements than expected");
         *has_extra_module_paths = true;
         return true;
       }
@@ -1021,17 +1022,51 @@ bool AOTClassLocationConfig::validate(bool has_aot_linked_classes, bool* has_ext
         "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
     if (RequireSharedSpaces && !PrintSharedArchiveAndExit) {
       if (CDSConfig::is_dumping_final_static_archive()) {
-        log_error(cds)("class path and/or module path are not compatible with the "
+        aot_log_error(aot)("class path and/or module path are not compatible with the "
                        "ones specified when the AOTConfiguration file was recorded%s", hint_msg);
         vm_exit_during_initialization("Unable to use create AOT cache.", nullptr);
       } else {
-        log_error(cds)("%s%s", mismatch_msg, hint_msg);
+        aot_log_error(aot)("%s%s", mismatch_msg, hint_msg);
         MetaspaceShared::unrecoverable_loading_error();
       }
     } else {
-      log_warning(cds)("%s%s", mismatch_msg, hint_msg);
-      MetaspaceShared::report_loading_error(nullptr);
+      MetaspaceShared::report_loading_error("%s%s", mismatch_msg, hint_msg);
     }
   }
   return success;
+}
+
+void AOTClassLocationConfig::print() {
+  if (CDSConfig::is_dumping_archive()) {
+    tty->print_cr("AOTClassLocationConfig::_dumptime_instance = %p", _dumptime_instance);
+    if (_dumptime_instance != nullptr) {
+      _dumptime_instance->print_on(tty);
+    }
+  }
+  if (CDSConfig::is_using_archive()) {
+    tty->print_cr("AOTClassLocationConfig::_runtime_instance = %p", _runtime_instance);
+    if (_runtime_instance != nullptr) {
+      _runtime_instance->print_on(tty);
+    }
+  }
+}
+
+void AOTClassLocationConfig::print_on(outputStream* st) const {
+  int n = class_locations()->length();
+  for (int i = 0; i < n; i++) {
+    const AOTClassLocation* cs = class_location_at(i);
+    const char* path;
+    if (i == 0) {
+      path = ClassLoader::get_jrt_entry()->name();
+    } else {
+      path = cs->path();
+    }
+    st->print_cr("[%d] = %s", i, path);
+    if (i == boot_cp_end_index() && i < n) {
+      st->print_cr("--- end of boot");
+    }
+    if (i == app_cp_end_index() && i < n) {
+      st->print_cr("--- end of app");
+    }
+  }
 }

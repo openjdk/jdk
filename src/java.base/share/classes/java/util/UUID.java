@@ -31,7 +31,7 @@ import java.security.*;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.HexDigits;
+import jdk.internal.util.ByteArrayLittleEndian;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).
@@ -76,7 +76,6 @@ import jdk.internal.util.HexDigits;
  * @since   1.5
  */
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
-
     /**
      * Explicit serialVersionUID for interoperability.
      */
@@ -462,29 +461,106 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      */
     @Override
     public String toString() {
-        int i0 = (int) (mostSigBits >> 32);
-        int i1 = (int) mostSigBits;
-        int i2 = (int) (leastSigBits >> 32);
-        int i3 = (int) leastSigBits;
-
         byte[] buf = new byte[36];
-        HexDigits.put4(buf, 0, i0 >> 16);
-        HexDigits.put4(buf, 4, i0);
         buf[8] = '-';
-        HexDigits.put4(buf, 9, i1 >> 16);
         buf[13] = '-';
-        HexDigits.put4(buf, 14, i1);
         buf[18] = '-';
-        HexDigits.put4(buf, 19, i2 >> 16);
         buf[23] = '-';
-        HexDigits.put4(buf, 24, i2);
-        HexDigits.put4(buf, 28, i3 >> 16);
-        HexDigits.put4(buf, 32, i3);
+
+        // Although the UUID byte ordering is defined to be big-endian, ByteArrayLittleEndian is used here to optimize
+        // for the most common architectures. hex8 reverses the order internally.
+        ByteArrayLittleEndian.setLong(buf, 0, hex8(mostSigBits >>> 32));
+        long x0 = hex8(mostSigBits);
+        ByteArrayLittleEndian.setInt(buf, 9, (int) x0);
+        ByteArrayLittleEndian.setInt(buf, 14, (int) (x0 >>> 32));
+
+        long x1 = hex8(leastSigBits >>> 32);
+        ByteArrayLittleEndian.setInt(buf, 19, (int) (x1));
+        ByteArrayLittleEndian.setInt(buf, 24, (int) (x1 >>> 32));
+        ByteArrayLittleEndian.setLong(buf, 28, hex8(leastSigBits));
+
         try {
-            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+            return jla.uncheckedNewStringNoRepl(buf, StandardCharsets.ISO_8859_1);
         } catch (CharacterCodingException cce) {
             throw new AssertionError(cce);
         }
+    }
+
+    /**
+     * Efficiently converts 8 hexadecimal digits to their ASCII representation using SIMD-style vector operations.
+     * This method processes multiple digits in parallel by treating a long value as eight 8-bit lanes,
+     * achieving significantly better performance compared to traditional loop-based conversion.
+     *
+     * <p>The conversion algorithm works as follows:
+     * <pre>
+     * 1. Input expansion: Each 4-bit hex digit is expanded to 8 bits
+     * 2. Vector processing:
+     *    - Add 6 to each digit: triggers carry flag for a-f digits
+     *    - Mask with 0x10 pattern to isolate carry flags
+     *    - Calculate ASCII adjustment: (carry << 1) + (carry >> 1) - (carry >> 4)
+     *    - Add ASCII '0' base (0x30) and original value
+     * 3. Byte order adjustment for final output
+     * </pre>
+     *
+     * <p>Performance characteristics:
+     * <ul>
+     *   <li>Processes 8 digits in parallel using vector operations
+     *   <li>Avoids branching and loops completely
+     *   <li>Uses only integer arithmetic and bit operations
+     *   <li>Constant time execution regardless of input values
+     * </ul>
+     *
+     * <p>ASCII conversion mapping:
+     * <ul>
+     *   <li>Digits 0-9 → ASCII '0'-'9' (0x30-0x39)
+     *   <li>Digits a-f → ASCII 'a'-'f' (0x61-0x66)
+     * </ul>
+     *
+     * @param input A long containing 8 hex digits (each digit must be 0-15)
+     * @return A long containing 8 ASCII bytes representing the hex digits
+     *
+     * @implNote The implementation leverages CPU vector processing capabilities through
+     *           long integer operations. The algorithm is based on the observation that
+     *           ASCII hex digits have a specific pattern that can be computed efficiently
+     *           using carry flag manipulation.
+     *
+     * @example
+     * <pre>
+     * Input:  0xABCDEF01
+     * Output: 3130666564636261 ('1','0','f','e','d','c','b','a' in ASCII)
+     * </pre>
+     *
+     * @see Long#reverseBytes(long)
+     */
+    private static long hex8(long i) {
+        // Expand each 4-bit group into 8 bits, spreading them out in the long value: 0xAABBCCDD -> 0xA0A0B0B0C0C0D0D
+        i = Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL);
+
+        /*
+         * This method efficiently converts 8 hexadecimal digits simultaneously using vector operations
+         * The algorithm works as follows:
+         *
+         * For input values 0-15:
+         * - For digits 0-9: converts to ASCII '0'-'9' (0x30-0x39)
+         * - For digits 10-15: converts to ASCII 'a'-'f' (0x61-0x66)
+         *
+         * The conversion process:
+         * 1. Add 6 to each 4-bit group: i + 0x0606_0606_0606_0606L
+         * 2. Mask to get the adjustment flags: & 0x1010_1010_1010_1010L
+         * 3. Calculate the offset: (m << 1) + (m >> 1) - (m >> 4)
+         *    - For 0-9: offset = 0
+         *    - For a-f: offset = 39 (to bridge the gap between '9' and 'a' in ASCII)
+         * 4. Add ASCII '0' base (0x30) and the original value
+         * 5. Reverse byte order for correct positioning
+         */
+        long m = (i + 0x0606_0606_0606_0606L) & 0x1010_1010_1010_1010L;
+
+        // Calculate final ASCII values and reverse bytes for proper ordering
+        return Long.reverseBytes(
+                ((m << 1) + (m >> 1) - (m >> 4))
+                + 0x3030_3030_3030_3030L // Add ASCII '0' base to all digits
+                + i                      // Add original values
+        );
     }
 
     /**

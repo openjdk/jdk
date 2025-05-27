@@ -44,7 +44,7 @@ class MacroAssembler: public Assembler {
 
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
-  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
+  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp_reg = t0);
 
   // Alignment
   int align(int modulus, int extra_offset = 0);
@@ -749,7 +749,7 @@ class MacroAssembler: public Assembler {
     guarantee(rtype == relocInfo::internal_word_type,                       \
               "only internal_word_type relocs make sense here");            \
     relocate(InternalAddress(dest).rspec());                                \
-    IncompressibleRegion ir(this);  /* relocations */
+    IncompressibleScope scope(this);  /* relocations */
 
 #define INSN(NAME)                                                                                       \
   void NAME(Register Rs1, Register Rs2, const address dest) {                                            \
@@ -970,7 +970,7 @@ public:
     guarantee(rtype == relocInfo::internal_word_type,                       \
               "only internal_word_type relocs make sense here");            \
     relocate(InternalAddress(dest).rspec());                                \
-    IncompressibleRegion ir(this);  /* relocations */
+    IncompressibleScope scope(this);  /* relocations */
 
 #define INSN(NAME)                                                                                 \
   void NAME(Register Rd, address dest) {                                                           \

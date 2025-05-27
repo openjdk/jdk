@@ -678,6 +678,7 @@ public class TestFloat16ScalarOperations {
     }
 
     @Test
+    @Warmup(value = 10000)
     @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ",
                   IRNode.DIV_HF, " >0 ", IRNode.SQRT_HF, " >0 ", IRNode.FMA_HF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
