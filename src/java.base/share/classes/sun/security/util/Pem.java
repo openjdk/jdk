@@ -274,7 +274,11 @@ public class Pem {
             }
         } while (hyphen < 5);
 
-        while ((c = is.read()) != eol && c != -1 && c != '\r' && c != WS) {
+        while ((c = is.read()) != eol && c != -1 && c != WS) {
+            // skip when eol is '\n', the line separator is likely "\r\n".
+            if (c == '\r') {
+                continue;
+            }
             throw new IOException("Invalid PEM format:  " +
                 "No EOL char found in footer:  0x" +
                 HexFormat.of().toHexDigits((byte) c));

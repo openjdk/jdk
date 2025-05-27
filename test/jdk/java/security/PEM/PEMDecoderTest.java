@@ -35,6 +35,7 @@
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.io.*;
 import java.lang.Class;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
@@ -137,29 +138,47 @@ public class PEMDecoderTest {
         testPEMRecordDecode(PEMData.ecCSRWithData);
 
         d = PEMDecoder.of();
+        System.out.println("Check leadingData is null with back-to-back PEMs: ");
+        String s = new PEMRecord("ONE", "1212").toString()
+            + new PEMRecord("TWO", "3434").toString();
+        var ins = new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
+        if (d.decode(ins, PEMRecord.class).leadingData() != null) {
+            throw new AssertionError("leading data not null on first pem");
+        }
+        if (d.decode(ins, PEMRecord.class).leadingData() != null) {
+            throw new AssertionError("leading data not null on second pem");
+        }
+        System.out.println("PASS");
+
+        System.out.println("Decode to EncryptedPrivateKeyInfo: ");
         EncryptedPrivateKeyInfo ekpi =
             d.decode(PEMData.ed25519ep8.pem(), EncryptedPrivateKeyInfo.class);
         PrivateKey privateKey;
         try {
             privateKey = ekpi.getKey(PEMData.ed25519ep8.password());
+            System.out.println("PASS");
         } catch (GeneralSecurityException e) {
             throw new AssertionError("ed25519ep8 error", e);
         }
 
         // PBE
+        System.out.println("EncryptedPrivateKeyInfo.encryptKey with PBE: ");
         ekpi = EncryptedPrivateKeyInfo.encryptKey(privateKey,
             "password".toCharArray(),"PBEWithMD5AndDES", null, null);
         try {
             ekpi.getKey("password".toCharArray());
+            System.out.println("PASS");
         } catch (Exception e) {
             throw new AssertionError("error getting key", e);
         }
 
         // PBES2
+        System.out.println("EncryptedPrivateKeyInfo.encryptKey with default: ");
         ekpi = EncryptedPrivateKeyInfo.encryptKey(privateKey
             , "password".toCharArray());
         try {
             ekpi.getKey("password".toCharArray());
+            System.out.println("PASS");
         } catch (Exception e) {
             throw new AssertionError("error getting key", e);
         }

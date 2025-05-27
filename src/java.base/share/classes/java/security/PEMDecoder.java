@@ -114,12 +114,12 @@ import java.util.Objects;
  *     PrivateKey priKey = pd.decode(priKeyPEM, PrivateKey.class);
  * }
  *
- * <p> Here is an example of a {@code PEMEncoder} configured with decryption
+ * <p> Here is an example of a {@code PEMDecoder} configured with decryption
  * and a factory provider:
  * {@snippet lang = java:
- *     PEMEncoder pe = PEMEncoder.of().withDecryption(password).
+ *     PEMDecoder pe = PEMDecoder.of().withDecryption(password).
  *         withFactory(provider);
- *     byte[] pemData = pe.encode(privKey);
+ *     byte[] pemData = pe.decode(privKey);
  * }
  *
  * @implNote An implementation may support other PEM types and
