@@ -47,6 +47,8 @@ public class TestStackedConcatsSharedTest {
     static String f() {
         String s = "";
         s = new StringBuilder().toString();
+        // Warming up with many iterations invalidated the optimization due to an unstable If
+        // associated with the valueOf calls below. Using -Xcomp for the test.
         s = new StringBuilder(String.valueOf(s)).append(String.valueOf(s)).toString();
         return s;
     }
