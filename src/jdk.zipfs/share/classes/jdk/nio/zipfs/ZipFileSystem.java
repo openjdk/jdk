@@ -1447,24 +1447,15 @@ class ZipFileSystem extends FileSystem {
         if (o == null || !isMultiReleaseJar()) {
             return Optional.empty();
         }
-        int version;
-        if (o instanceof String) {
-            String s = (String) o;
-            if (s.equals("runtime")) {
-                version = Runtime.version().feature();
-            } else if (s.matches("^[1-9][0-9]*$")) {
-                version = Version.parse(s).feature();
-            } else {
-                throw new IllegalArgumentException("Invalid runtime version");
-            }
-        } else if (o instanceof Integer) {
-            version = Version.parse(((Integer) o).toString()).feature();
-        } else if (o instanceof Version) {
-            version = ((Version) o).feature();
-        } else {
-            throw new IllegalArgumentException("env parameter must be String, " +
+        int version = switch (o) {
+            case String s when s.equals("runtime") -> Runtime.version().feature();
+            case String s when s.matches("^[1-9][0-9]*$") -> Version.parse(s).feature();
+            case Integer i -> Version.parse(i.toString()).feature();
+            case Version v -> v.feature();
+            case String s -> throw new IllegalArgumentException("Invalid runtime version: " + s);
+            default -> throw new IllegalArgumentException("env parameter must be String, " +
                     "Integer, or Version");
-        }
+        };
         return Optional.of(Math.max(version, 0));
     }
 
