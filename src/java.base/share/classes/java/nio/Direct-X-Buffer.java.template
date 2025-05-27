@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,17 @@ class Direct$Type$Buffer$RW$$BO$
             Bits.unreserveMemory(size, cap);
             throw x;
         }
-        UNSAFE.setMemory(base, size, (byte) 0);
+
+        long chunkSize = 1024 * 1024; // 1MB per chunk
+        long offset = 0;
+
+        while (offset < size) {
+            long len = Math.min(chunkSize, size - offset);
+            UNSAFE.setMemory(base + offset, len, (byte) 0);
+            offset += len;
+        }
+
+
         if (pa && (base % ps != 0)) {
             // Round up to page boundary
             address = base + ps - (base & (ps - 1));
