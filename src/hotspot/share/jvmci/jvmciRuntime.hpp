@@ -117,6 +117,11 @@ public:
   // Gets the JVMCI name of the nmethod (which may be null).
   const char* name() { return _has_name ? (char*)(((address) this) + sizeof(JVMCINMethodData)) : nullptr; }
 
+  // Returns true if this nmethod has a mirror
+  bool has_mirror() const {
+    return _nmethod_mirror_index != -1;
+  }
+
   // Clears the HotSpotNmethod.address field in the  mirror. If nm
   // is dead, the HotSpotNmethod.entryPoint field is also cleared.
   void invalidate_nmethod_mirror(nmethod* nm);

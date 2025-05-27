@@ -1584,10 +1584,8 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 
 bool nmethod::is_relocatable() {
 #if INCLUDE_JVMCI
-  if (jvmci_nmethod_data() != nullptr) {
-    if (jvmci_nmethod_data()->get_nmethod_mirror(this, false) != nullptr) {
+  if (jvmci_nmethod_data() != nullptr && jvmci_nmethod_data()->has_mirror()) {
       return false;
-    }
   }
 #endif
 
