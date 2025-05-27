@@ -4729,7 +4729,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         /* Allocate output array.  If all non-sign ints are 0x00, we must
          * allocate space for one extra output int. */
-        for (i = a.length - 1; i >= keep && a[i] == 0; i--) // Skip trailing zeros
+        for (i = a.length - 1; a[i] == 0; i--) // Skip trailing zeros
             ;
         int[] result;
         if (i < keep) {
