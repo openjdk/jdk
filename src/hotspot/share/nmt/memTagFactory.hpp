@@ -170,7 +170,7 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
       if (found != mtNone) {
         return found;
       }
-      MemTag i = current_index;
+      MemTag i = static_cast<MemTag>(current_index);
       table.put(i, name);
       current_index++;
       return i;
