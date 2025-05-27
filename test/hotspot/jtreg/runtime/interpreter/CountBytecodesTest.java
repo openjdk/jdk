@@ -25,6 +25,7 @@
 /*
  * @test
  * @bug 8350642
+ * @requires vm.debug & vm.bits == "64"
  * @requires vm.flagless
  * @summary Test the output for CountBytecodes and validate that the counter
  *          does not overflow for more than 2^32 bytecodes counted.
