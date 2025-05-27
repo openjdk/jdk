@@ -984,15 +984,16 @@ void CreateAssertionPredicatesVisitor::visit(const TemplateAssertionPredicate& t
 
 // Create an Initialized Assertion Predicate from the provided Template Assertion Predicate.
 InitializedAssertionPredicate CreateAssertionPredicatesVisitor::initialize_from_template(
-    const TemplateAssertionPredicate& template_assertion_predicate, Node* new_control) const {
+  const TemplateAssertionPredicate& template_assertion_predicate, IfTrueNode* cloned_template_predicate_tail) const {
   DEBUG_ONLY(template_assertion_predicate.verify();)
   IfNode* template_head = template_assertion_predicate.head();
   InitializedAssertionPredicateCreator initialized_assertion_predicate_creator(_phase);
   InitializedAssertionPredicate initialized_assertion_predicate =
-      initialized_assertion_predicate_creator.create_from_template(template_head, new_control, _init, _stride);
+      initialized_assertion_predicate_creator.create_from_template(template_head, cloned_template_predicate_tail, _init,
+                                                                   _stride);
 
   DEBUG_ONLY(initialized_assertion_predicate.verify();)
-  template_assertion_predicate.rewire_loop_data_dependencies(initialized_assertion_predicate.tail(),
+  template_assertion_predicate.rewire_loop_data_dependencies(cloned_template_predicate_tail,
                                                              _node_in_loop_body, _phase);
   rewire_to_old_predicate_chain_head(initialized_assertion_predicate.tail());
   return initialized_assertion_predicate;

@@ -59,7 +59,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"

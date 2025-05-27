@@ -31,6 +31,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -385,13 +386,14 @@ Symbol* Method::klass_name() const {
 }
 
 void Method::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(Method): %p", this);
+  log_trace(aot)("Iter(Method): %p", this);
 
   if (!method_holder()->is_rewritten()) {
     it->push(&_constMethod, MetaspaceClosure::_writable);
   } else {
     it->push(&_constMethod);
   }
+  it->push(&_adapter);
   it->push(&_method_data);
   it->push(&_method_counters);
   NOT_PRODUCT(it->push(&_name);)
@@ -405,11 +407,18 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void Method::remove_unshareable_info() {
   unlink_method();
+  if (AOTCodeCache::is_dumping_adapter() && _adapter != nullptr) {
+    _adapter->remove_unshareable_info();
+  }
   JFR_ONLY(REMOVE_METHOD_ID(this);)
 }
 
 void Method::restore_unshareable_info(TRAPS) {
   assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
+  if (_adapter != nullptr) {
+    assert(_adapter->is_linked(), "must be");
+    _from_compiled_entry = _adapter->get_c2i_entry();
+  }
   assert(!queued_for_compilation(), "method's queued_for_compilation flag should not be set");
 }
 #endif
@@ -1137,7 +1146,9 @@ void Method::unlink_code() {
 void Method::unlink_method() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   _code = nullptr;
-  _adapter = nullptr;
+  if (!AOTCodeCache::is_dumping_adapter() || AdapterHandlerLibrary::is_abstract_method_adapter(_adapter)) {
+    _adapter = nullptr;
+  }
   _i2i_entry = nullptr;
   _from_compiled_entry = nullptr;
   _from_interpreted_entry = nullptr;
@@ -1178,14 +1189,18 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
   if (adapter() != nullptr) {
-    return;
+    if (adapter()->is_shared()) {
+      assert(adapter()->is_linked(), "Adapter is shared but not linked");
+    } else {
+      return;
+    }
   }
   assert( _code == nullptr, "nothing compiled yet" );
 
   // Setup interpreter entrypoint
   assert(this == h_method(), "wrong h_method()" );
 
-  assert(adapter() == nullptr, "init'd to null");
+  assert(adapter() == nullptr || adapter()->is_linked(), "init'd to null or restored from cache");
   address entry = Interpreter::entry_for_method(h_method);
   assert(entry != nullptr, "interpreter entry must be non-null");
   // Sets both _i2i_entry and _from_interpreted_entry
@@ -1206,7 +1221,10 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // called from the vtable.  We need adapters on such methods that get loaded
   // later.  Ditto for mega-morphic itable calls.  If this proves to be a
   // problem we'll make these lazily later.
-  (void) make_adapters(h_method, CHECK);
+  if (_adapter == nullptr) {
+    (void) make_adapters(h_method, CHECK);
+    assert(adapter()->is_linked(), "Adapter must have been linked");
+  }
 
   // ONLY USE the h_method now as make_adapter may have blocked
 
@@ -1482,6 +1500,9 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
 
 #if INCLUDE_CDS
 void Method::restore_archived_method_handle_intrinsic(methodHandle m, TRAPS) {
+  if (m->adapter() != nullptr) {
+    m->set_from_compiled_entry(m->adapter()->get_c2i_entry());
+  }
   m->link_method(m, CHECK);
 
   if (m->intrinsic_id() == vmIntrinsics::_linkToNative) {

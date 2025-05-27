@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc.
+ * Copyright (c) 2023, 2025, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package sun.security.pkcs11;
 
 import java.security.AlgorithmParameters;
@@ -39,7 +38,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
 
 import sun.security.jca.JCAUtil;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
@@ -128,46 +126,23 @@ final class P11PBECipher extends CipherSpi {
             AlgorithmParameterSpec params, SecureRandom random)
                     throws InvalidKeyException,
                     InvalidAlgorithmParameterException {
-        if (key instanceof P11Key) {
-            // If the key is a P11Key, it must come from a PBE derivation
-            // because this is a PBE Cipher service. In addition to checking the
-            // key, check that params (if passed) are consistent.
-            PBEUtil.checkKeyAndParams(key, params, pbeAlg);
-            // At this point, we know that the key is a P11PBEKey.
-            P11Key.P11PBEKey p11PBEKey = (P11Key.P11PBEKey) key;
-            // PBE services require a PBE key of the same algorithm and the
-            // underlying service (non-PBE) won't check it.
-            if (!pbeAlg.equals(p11PBEKey.getAlgorithm())) {
-                throw new InvalidKeyException("Cannot use a " +
-                        p11PBEKey.getAlgorithm() + " key for a " + pbeAlg +
-                        " service");
-            }
-            if (params instanceof PBEParameterSpec pbeParams) {
-                params = pbeParams.getParameterSpec();
-            }
-            pbes2Params.initialize(blkSize, opmode,
-                    p11PBEKey.getIterationCount(), p11PBEKey.getSalt(), params,
-                    random);
-        } else {
-            // If the key is not a P11Key, a derivation is needed. Data for
-            // derivation has to be carried either as part of the key or params.
-            // Use SunPKCS11 PBE key derivation to obtain a P11Key.
-            PBEKeySpec pbeSpec = pbes2Params.getPBEKeySpec(
-                    blkSize, svcPbeKi.keyLen, opmode, key, params, random);
-            try {
-                P11Key.P11PBEKey p11PBEKey = P11SecretKeyFactory.derivePBEKey(
-                        token, pbeSpec, svcPbeKi);
-                // The internal Cipher service uses the token where the
-                // derived key lives so there won't be any need to re-derive
-                // and use the password. The key cannot be accessed out of this
-                // class.
-                p11PBEKey.clearPassword();
-                key = p11PBEKey;
-            } catch (InvalidKeySpecException e) {
-                throw new InvalidKeyException(e);
-            } finally {
-                pbeSpec.clearPassword();
-            }
+        // do key derivation, use P11SecretKeyFactory
+        PBEKeySpec pbeSpec = pbes2Params.getPBEKeySpec(
+                blkSize, svcPbeKi.keyLen, opmode, key, params, random);
+        try {
+            P11Key.P11PBKDFKey derivedKey =
+                    P11SecretKeyFactory.derivePBEKey(
+                    token, pbeSpec, svcPbeKi);
+            // The internal Cipher service uses the token where the
+            // derived key lives so there won't be any need to re-derive
+            // and use the password. The key cannot be accessed out of this
+            // class.
+            derivedKey.clearPassword();
+            key = derivedKey;
+        } catch (InvalidKeySpecException e) {
+            throw new InvalidKeyException(e);
+        } finally {
+            pbeSpec.clearPassword();
         }
         cipher.engineInit(opmode, key, pbes2Params.getIvSpec(), random);
     }

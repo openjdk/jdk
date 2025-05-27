@@ -58,7 +58,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timer.hpp"
@@ -1057,10 +1056,23 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     ResourceMark rm;
     pthread_t tid;
     int ret = 0;
-    int limit = 3;
-    do {
+    int trials_remaining = 4;
+    useconds_t next_delay = 1000;
+    while (true) {
       ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
-    } while (ret == EAGAIN && limit-- > 0);
+
+      if (ret != EAGAIN) {
+        break;
+      }
+
+      if (--trials_remaining <= 0) {
+        break;
+      }
+
+      log_debug(os, thread)("Failed to start native thread (%s), retrying after %dus.", os::errno_name(ret), next_delay);
+      ::usleep(next_delay);
+      next_delay *= 2;
+    }
 
     char buf[64];
     if (ret == 0) {
@@ -4568,7 +4580,7 @@ static void workaround_expand_exec_shield_cs_limit() {
    */
   char* hint = (char*)(os::Linux::initial_thread_stack_bottom() -
                        (StackOverflow::stack_guard_zone_size() + page_size));
-  char* codebuf = os::attempt_reserve_memory_at(hint, page_size, false, mtThread);
+  char* codebuf = os::attempt_reserve_memory_at(hint, page_size, mtThread);
 
   if (codebuf == nullptr) {
     // JDK-8197429: There may be a stack gap of one megabyte between
@@ -4576,7 +4588,7 @@ static void workaround_expand_exec_shield_cs_limit() {
     // Linux kernel workaround for CVE-2017-1000364.  If we failed to
     // map our codebuf, try again at an address one megabyte lower.
     hint -= 1 * M;
-    codebuf = os::attempt_reserve_memory_at(hint, page_size, false, mtThread);
+    codebuf = os::attempt_reserve_memory_at(hint, page_size, mtThread);
   }
 
   if ((codebuf == nullptr) || (!os::commit_memory(codebuf, page_size, true))) {

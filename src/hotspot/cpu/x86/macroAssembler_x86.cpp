@@ -24,6 +24,7 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
@@ -366,7 +367,9 @@ void MacroAssembler::stop(const char* msg) {
     lea(c_rarg1, InternalAddress(rip));
     movq(c_rarg2, rsp); // pass pointer to regs array
   }
-  lea(c_rarg0, ExternalAddress((address) msg));
+  // Skip AOT caching C strings in scratch buffer.
+  const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+  lea(c_rarg0, ExternalAddress((address) str));
   andq(rsp, -16); // align stack as required by ABI
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::debug64)));
   hlt();
@@ -5401,7 +5404,11 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
 void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
   assert_different_registers(r, tmp);
   if (CompressedKlassPointers::base() != nullptr) {
-    mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    if (AOTCodeCache::is_on_for_dump()) {
+      movptr(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+    } else {
+      mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    }
     subq(r, tmp);
   }
   if (CompressedKlassPointers::shift() != 0) {
@@ -5433,7 +5440,11 @@ void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
     shlq(r, CompressedKlassPointers::shift());
   }
   if (CompressedKlassPointers::base() != nullptr) {
-    mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    if (AOTCodeCache::is_on_for_dump()) {
+      movptr(tmp, ExternalAddress(CompressedKlassPointers::base_addr()));
+    } else {
+      mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    }
     addq(r, tmp);
   }
 }
