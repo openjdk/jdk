@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class ISO_8859_1
             int dl = doff + dst.limit();
 
             int decodeLen = Math.min(sl - sp, dl - dp);
-            JLA.inflateBytesToChars(sa, sp, da, dp, decodeLen);
+            JLA.uncheckedInflateBytesToChars(sa, sp, da, dp, decodeLen);
             sp += decodeLen;
             dp += decodeLen;
             src.position(sp - soff);

@@ -1124,7 +1124,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   DirectivesStack::release(directive);
 
   // Compile method and check result
-  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
+  nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
   MutexLocker mu(THREAD, Compile_lock);
   bool is_queued = mh->queued_for_compilation();
   if ((!is_blocking && is_queued) || nm != nullptr) {
@@ -2511,6 +2511,11 @@ WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
   return os::physical_memory();
 WB_END
 
+// Available memory of the host machine (container-aware)
+WB_ENTRY(jlong, WB_HostAvailableMemory(JNIEnv* env, jobject o))
+  return os::available_memory();
+WB_END
+
 // Physical swap of the host machine (including containers), Linux only.
 WB_ENTRY(jlong, WB_HostPhysicalSwap(JNIEnv* env, jobject o))
   LINUX_ONLY(return (jlong)os::Linux::host_swap();)
@@ -2980,6 +2985,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_ValidateCgroup },
   {CC"hostPhysicalMemory",        CC"()J",            (void*)&WB_HostPhysicalMemory },
   {CC"hostPhysicalSwap",          CC"()J",            (void*)&WB_HostPhysicalSwap },
+  {CC"hostAvailableMemory",       CC"()J",            (void*)&WB_HostAvailableMemory },
   {CC"hostCPUs",                  CC"()I",            (void*)&WB_HostCPUs },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },

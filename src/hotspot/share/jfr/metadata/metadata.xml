@@ -710,6 +710,11 @@
     <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
   </Event>
 
+  <Event name="SafepointLatency" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Latency"
+    description="The delay for a thread to reach its next safepoint poll instruction after receiving an asynchronous sampling interrupt" thread="true" stackTrace="true" throttle="true">
+    <Field type="VMThreadState" name="threadState" label="VM Thread State" />
+  </Event>
+
   <Event name="ExecuteVMOperation" category="Java Virtual Machine, Runtime" label="VM Operation" description="Execution of a VM Operation" thread="true">
     <Field type="VMOperationType" name="operation" label="Operation" />
     <Field type="boolean" name="safepoint" label="At Safepoint" description="If the operation occurred at a safepoint" />
@@ -1293,6 +1298,10 @@
 
   <Type name="DeoptimizationAction" label="Deoptimization Action">
     <Field type="string" name="action" label="Action" />
+  </Type>
+
+  <Type name="VMThreadState" label="JVM Thread State">
+    <Field type="string" name="state" label="State" />
   </Type>
 
   <Type name="Bytecode" label="Bytecode Instruction">
