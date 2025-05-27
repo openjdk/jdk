@@ -248,7 +248,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void set_mdp_data_at(Register mdp_in, int constant, Register value);
   void increment_mdp_data_at(Register mdp_in, int constant);
-  void increment_mdp_data_at(Register mdp_in, Register reg, int constant);
+  void increment_mdp_data_at(Register mdp_in, Register index, int constant);
   void increment_mask_and_jump(Address counter_addr,
                                int increment, Address mask,
                                Register scratch, Register scratch2,

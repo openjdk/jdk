@@ -931,16 +931,16 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
 }
 
 void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
-                                                      Register reg,
+                                                      Register index,
                                                       int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
 
-  assert_different_registers(rscratch2, rscratch1, mdp_in, reg);
+  assert_different_registers(rscratch2, rscratch1, mdp_in, index);
 
   Address addr1(mdp_in, constant);
-  Address addr2(rscratch2, reg, Address::lsl(0));
+  Address addr2(rscratch2, index, Address::lsl(0));
   Address &addr = addr1;
-  if (reg != noreg) {
+  if (index != noreg) {
     lea(rscratch2, addr1);
     addr = addr2;
   }
