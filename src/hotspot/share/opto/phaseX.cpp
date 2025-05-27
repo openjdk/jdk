@@ -1676,6 +1676,25 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     return false;
   }
 
+  if (n->is_Vector()) {
+    // VectorNode::Ideal swaps edges, but only for ops
+    // that are deemed commutable. But swap_edges
+    // requires the hash to be invariant when the edges
+    // are swapped, which is not implemented for these
+    // vector nodes. This seems not to create any trouble
+    // usually, but we can also get graphs where in the
+    // end the nodes are not all commuted, so there is
+    // definitively an issue here.
+    //
+    // Probably we have two options: kill the hash, or
+    // properly make the hash commutation friendly.
+    //
+    // Found with:
+    //   compiler/vectorapi/TestMaskedMacroLogicVector.java
+    //   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110 -XX:+UseParallelGC -XX:+UseNUMA
+    return false;
+  }
+
   Node* i = n->Ideal(this, can_reshape);
   // If there was no new Idealization, we are happy.
   if (i == nullptr) {
