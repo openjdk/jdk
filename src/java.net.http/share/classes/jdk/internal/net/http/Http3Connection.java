@@ -526,7 +526,14 @@ public final class Http3Connection implements AutoCloseable {
     }
 
     private boolean allowsQuicIdleTermination() {
-        if (!isOpen()) {
+        // the connection state(s) for which it is OK to idle terminate the
+        // QUIC connection
+        final int cstate = closedState;
+        if ((cstate & CLOSED) == CLOSED) {
+            if (debug.on()) {
+                debug.log("connection state=" + cstate + ", allowing QUIC connection"
+                        + " to idle timeout");
+            }
             return true;
         }
         lock();
