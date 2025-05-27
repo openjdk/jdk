@@ -845,6 +845,12 @@ define SetupRunJtregTestBody
     endif
   endif
 
+  ifeq ($$(JTREG_RUN_PROBLEM_LISTS), true)
+    JTREG_PROBLEM_LIST_PREFIX := -match:
+  else
+    JTREG_PROBLEM_LIST_PREFIX := -exclude:
+  endif
+
   ifneq ($$(JTREG_TEST_THREAD_FACTORY), )
     $1_JTREG_BASIC_OPTIONS += -testThreadFactoryPath:$$(JTREG_TEST_THREAD_FACTORY_JAR)
     $1_JTREG_BASIC_OPTIONS += -testThreadFactory:$$(JTREG_TEST_THREAD_FACTORY)
@@ -904,12 +910,6 @@ define SetupRunJtregTestBody
 
   ifneq ($$($1_JTREG_NATIVEPATH), )
     $1_JTREG_BASIC_OPTIONS += -nativepath:$$($1_JTREG_NATIVEPATH)
-  endif
-
-  ifeq ($$(JTREG_RUN_PROBLEM_LISTS), true)
-    JTREG_PROBLEM_LIST_PREFIX := -match:
-  else
-    JTREG_PROBLEM_LIST_PREFIX := -exclude:
   endif
 
   ifneq ($$($1_JTREG_PROBLEM_LIST), )
