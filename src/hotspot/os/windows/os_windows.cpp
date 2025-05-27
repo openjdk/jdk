@@ -5840,61 +5840,34 @@ ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 
-// returns true if thread could be suspended,
-// false otherwise
-static bool do_suspend(HANDLE* h) {
-  if (h != nullptr) {
-    if (SuspendThread(*h) != ~0) {
-      return true;
-    }
-  }
-  return false;
-}
+// WINDOWS CONTEXT Flags for THREAD_SAMPLING
+#if defined(AMD64) || defined(_M_ARM64)
+  #define sampling_context_flags (CONTEXT_FULL | CONTEXT_FLOATING_POINT)
+#endif
 
-// resume the thread
-// calling resume on an active thread is a no-op
-static void do_resume(HANDLE* h) {
-  if (h != nullptr) {
-    ResumeThread(*h);
-  }
-}
-
-// retrieve a suspend/resume context capable handle
-// from the tid. Caller validates handle return value.
-void get_thread_handle_for_extended_context(HANDLE* h,
-                                            DWORD tid) {
-  if (h != nullptr) {
-    *h = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
-  }
+// Retrieve a suspend/resume context capable handle for the tid.
+// Caller validates handle return value.
+static inline HANDLE get_thread_handle_for_extended_context(DWORD tid) {
+  return OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
 }
 
 // Thread sampling implementation
 //
 void SuspendedThreadTask::internal_do_task() {
-  CONTEXT    ctxt;
-  HANDLE     h = nullptr;
-
-  // get context capable handle for thread
-  get_thread_handle_for_extended_context(&h, _thread->osthread()->thread_id());
-
-  // sanity
-  if (h == nullptr || h == INVALID_HANDLE_VALUE) {
+  const HANDLE h = get_thread_handle_for_extended_context(_thread->osthread()->thread_id());
+  if (h == nullptr) {
     return;
   }
-
-  // suspend the thread
-  if (do_suspend(&h)) {
-    ctxt.ContextFlags = (CONTEXT_FULL | CONTEXT_FLOATING_POINT);
-    // get thread context
-    GetThreadContext(h, &ctxt);
-    SuspendedThreadTaskContext context(_thread, &ctxt);
-    // pass context to Thread Sampling impl
-    do_task(context);
-    // resume thread
-    do_resume(&h);
+  CONTEXT ctxt;
+  ctxt.ContextFlags = sampling_context_flags;
+  if (SuspendThread(h) != OS_ERR) {
+    if (GetThreadContext(h, &ctxt)) {
+      const SuspendedThreadTaskContext context(_thread, &ctxt);
+      // Pass context to Thread Sampling implementation.
+      do_task(context);
+    }
+    ResumeThread(h);
   }
-
-  // close handle
   CloseHandle(h);
 }
 
