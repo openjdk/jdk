@@ -339,7 +339,7 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
 
     VM_SerialCollectForAllocation op(size, is_tlab, gc_count_before);
     VMThread::execute(&op);
-    if (op.prologue_succeeded()) {
+    if (op.gc_succeeded()) {
       result = op.result();
 
       assert(result == nullptr || is_in_reserved(result),
