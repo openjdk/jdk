@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 #import "MTLSurfaceData.h"
 #import "JNIUtilities.h"
 #define KEEP_ALIVE_INC 4
+#define CV_DISPLAYLINK_FAIL_DELAY 1.0
+#define MAX_DISPLAYLINK_FAIL_COUNT 5
 
 @implementation MTLLayer
 
@@ -44,11 +46,27 @@
 @synthesize nextDrawableCount;
 @synthesize displayLink;
 @synthesize displayLinkCount;
+@synthesize displayLinkFailCount;
 
 - (void) createDisplayLink {
-    CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-    CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
-    self.displayLinkCount = 0;
+    CVReturn r = CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
+    if (r != kCVReturnSuccess) {
+        if (self.displayLinkFailCount >= MAX_DISPLAYLINK_FAIL_COUNT) {
+            J2dTraceLn(J2D_TRACE_ERROR,
+                "MTLLayer.createDisplayLink --- unable to create CVDisplayLink.");
+            self.displayLinkFailCount = 0;
+            return;
+        }
+        self.displayLinkFailCount++;
+        [self performSelector:@selector(createDisplayLink)
+                   withObject:nil
+                   afterDelay:CV_DISPLAYLINK_FAIL_DELAY];
+        return;
+    } else {
+        CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
+        self.displayLinkCount = 0;
+        self.displayLinkFailCount = 0;
+    }
 }
 
 - (id) initWithJavaLayer:(jobject)layer
