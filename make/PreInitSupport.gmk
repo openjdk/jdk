@@ -272,7 +272,8 @@ define DefineMainTargets
 	    -I $$(TOPDIR)/make/common SPEC=$$(SPEC_FILE) TOPDIR_ALT=$$(TOPDIR))
 	@( cd $$(TOPDIR) && \
 	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(TOPDIR)/make/Main.gmk \
-	    -I $$(TOPDIR)/make/common SPEC=$$(SPEC_FILE) TOPDIR_ALT=$$(TOPDIR) NO_RECIPES=true \
+	    -I $$(TOPDIR)/make/common SPEC=$$(SPEC_FILE) TOPDIR_ALT=$$(TOPDIR) \
+	    UPDATE_MODULE_DEPS=true NO_RECIPES=true \
 	    $$(MAKE_LOG_VARS) \
 	    create-main-targets-include )
 

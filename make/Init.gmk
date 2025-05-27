@@ -140,6 +140,14 @@ main: $(INIT_TARGETS)
 	    ( cd $(TOPDIR) && \
 	        $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
 	        $(SEQUENTIAL_TARGETS) )
+            # We might have cleaned away essential files, recreate them.
+	    ( cd $(TOPDIR) && \
+	        $(MAKE) $(MAKE_ARGS) -j 1 -f make/GenerateFindTests.gmk \
+	        $(USER_MAKE_VARS) )
+	    ( cd $(TOPDIR) && \
+	        $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
+	        UPDATE_MODULE_DEPS=true NO_RECIPES=true \
+	        create-main-targets-include )
           endif
           ifneq ($(PARALLEL_TARGETS), )
 	    $(call PrepareFailureLogs)

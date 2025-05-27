@@ -43,8 +43,8 @@ include $(TOPDIR)/make/MainSupport.gmk
 
 include FindTests.gmk
 
-ifneq ($(NO_RECIPES), )
-  # If we are being called in a preparatory mode, update module-deps.gmk
+ifneq ($(UPDATE_MODULE_DEPS), )
+  # Update module-deps.gmk if requested. This is read in Modules.gmk.
   GENERATE_MODULE_DEPS_FILE := true
 endif
 
