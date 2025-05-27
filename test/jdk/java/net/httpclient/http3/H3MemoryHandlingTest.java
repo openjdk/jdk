@@ -132,9 +132,8 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
         HttpClient client = getHttpClient();
         try {
             HttpRequest request = getRequest();
-            final HttpResponse<InputStream> response1 = client.sendAsync(
-                    request, BodyHandlers.ofInputStream())
-                    .get(10, TimeUnit.SECONDS);
+            final HttpResponse<InputStream> response1 = client.send(
+                    request, BodyHandlers.ofInputStream());
             assertEquals(response1.statusCode(), 200);
             assertFalse(errorCF.isDone(), "Expected the connection to be open");
             assertFalse(serverAllWritesDone.isDone());
@@ -184,9 +183,8 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
         HttpClient client = getHttpClient();
         try {
             HttpRequest request = getRequest();
-            final HttpResponse<InputStream> response1 = client.sendAsync(
-                            request, BodyHandlers.ofInputStream())
-                    .get(10, TimeUnit.SECONDS);
+            final HttpResponse<InputStream> response1 = client.send(
+                            request, BodyHandlers.ofInputStream());
             assertEquals(response1.statusCode(), 200);
             assertFalse(errorCF.isDone(), "Expected the connection to be open");
             assertFalse(handlerCF.isDone());
