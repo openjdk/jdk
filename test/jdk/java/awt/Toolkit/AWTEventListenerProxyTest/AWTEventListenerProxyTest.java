@@ -168,7 +168,7 @@ public class AWTEventListenerProxyTest {
         if (array == null || array.length != expected) {
             System.out.println("[Simple test failed!!]");
             throw new RuntimeException(
-                    "Test failed didn't return " + expected + "-sized array");
+                    "Test didn't return " + expected + "-sized array");
         }
     }
 
