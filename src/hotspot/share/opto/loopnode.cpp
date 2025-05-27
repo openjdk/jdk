@@ -568,7 +568,6 @@ void PhaseIdealLoop::add_parse_predicate(Deoptimization::DeoptReason reason, Nod
     int trap_request = Deoptimization::make_trap_request(reason, Deoptimization::Action_maybe_recompile);
     address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
     const TypePtr* no_memory_effects = nullptr;
-    JVMState* jvms = sfpt->jvms();
     CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap",
                                            no_memory_effects);
 
@@ -888,7 +887,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     }
   }
 
-  if (short_running_loop(loop, stride_con, range_checks, iters_limit)) {
+  if (try_make_short_running_loop(loop, stride_con, range_checks, iters_limit)) {
     C->set_major_progress();
     return true;
   }
@@ -1123,14 +1122,14 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   return true;
 }
 
-class NodeInShortLoopBody : public NodeInLoopBody {
+class NodeInSingleLoopBody : public NodeInLoopBody {
   PhaseIdealLoop* const _phase;
   IdealLoopTree* const _ilt;
 
 public:
-  NodeInShortLoopBody(PhaseIdealLoop* phase, IdealLoopTree* ilt) : _phase(phase), _ilt(ilt) {
+  NodeInSingleLoopBody(PhaseIdealLoop* phase, IdealLoopTree* ilt) : _phase(phase), _ilt(ilt) {
   }
-  NONCOPYABLE(NodeInShortLoopBody);
+  NONCOPYABLE(NodeInSingleLoopBody);
 
   bool check_node_in_loop_body(Node* node) const override {
     return _phase->is_member(_ilt, _phase->get_ctrl(node));
@@ -1138,18 +1137,18 @@ public:
 };
 
 // Make a copy of Parse/Template Assertion predicates below existing predicates at the loop passed as argument
-class CloneShortLoopPredicatesVisitor : public PredicateVisitor {
+class CloneShortLoopPredicateVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_loop;
   PhaseIdealLoop* const _phase;
 
 public:
-  CloneShortLoopPredicatesVisitor(LoopNode* target_loop_head,
-                                  const NodeInShortLoopBody& node_in_loop_body,
+  CloneShortLoopPredicateVisitor(LoopNode* target_loop_head,
+                                  const NodeInSingleLoopBody& node_in_loop_body,
                                   PhaseIdealLoop* phase)
     : _clone_predicate_to_loop(target_loop_head, node_in_loop_body, phase),
       _phase(phase) {
   }
-  NONCOPYABLE(CloneShortLoopPredicatesVisitor);
+  NONCOPYABLE(CloneShortLoopPredicateVisitor);
 
   using PredicateVisitor::visit;
 
@@ -1174,8 +1173,8 @@ public:
 // - LongCountedLoop: Create LoopNode but keep the loop limit type with a CastLL node to avoid that we later try to
 //                    create a Loop Limit Check when turning the LoopNode into a CountedLoopNode.
 // - CountedLoop: Can be reused.
-bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List &range_checks,
-                                        uint iters_limit) {
+bool PhaseIdealLoop::try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List &range_checks,
+                                                 const uint iters_limit) {
   if (!ShortRunningLongLoop) {
     return false;
   }
@@ -1184,9 +1183,10 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
   Node* entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
 
   loop->compute_trip_count(this, bt);
-  // Loop must run for no more than iter_limits as it guarantees no overflow of scale * iv in long range checks.
+  // Loop must run for no more than iter_limits as it guarantees no overflow of scale * iv in long range checks (see
+  // comment above PhaseIdealLoop::transform_long_range_checks()).
   // iters_limit / ABS(stride_con) is the largest trip count for which we know it's correct to not create a loop nest:
-  // it's always benificial to have a single loop rather than a loop nest, so we try to apply this transformation as
+  // it's always beneficial to have a single loop rather than a loop nest, so we try to apply this transformation as
   // often as possible.
   bool known_short_running_loop = head->trip_count() <= iters_limit / ABS(stride_con);
   bool profile_short_running_loop = false;
@@ -1231,6 +1231,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     //               |
     //   Cloned Parse Predicates and
     //  Template Assertion Predicates
+    //  (future predicates added here)
     //               |
     //             Loop
     const Predicates predicates_before_cloning(entry_control);
@@ -1239,8 +1240,8 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
       return false;
     }
     PredicateIterator predicate_iterator(entry_control);
-    NodeInShortLoopBody node_in_short_loop_body(this, loop);
-    CloneShortLoopPredicatesVisitor clone_short_loop_predicates_visitor(head, node_in_short_loop_body, this);
+    NodeInSingleLoopBody node_in_short_loop_body(this, loop);
+    CloneShortLoopPredicateVisitor clone_short_loop_predicates_visitor(head, node_in_short_loop_body, this);
     predicate_iterator.for_each(clone_short_loop_predicates_visitor);
 
     entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
@@ -1252,8 +1253,8 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
         parse_predicate_success_proj();
     assert(short_running_loop_predicate_proj->in(0)->is_ParsePredicate(), "must be parse predicate");
 
-    jlong limit_long = iters_limit;
-    Node* cmp_limit = CmpNode::make(new_limit, _igvn.integercon(limit_long, bt), bt);
+    const jlong iters_limit_long = iters_limit;
+    Node* cmp_limit = CmpNode::make(new_limit, _igvn.integercon(iters_limit_long, bt), bt);
     Node* bol = new BoolNode(cmp_limit, BoolTest::le);
     Node* new_predicate_proj = create_new_if_for_predicate(short_running_loop_predicate_proj,
                                                            nullptr,
@@ -1264,7 +1265,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     register_new_node(cmp_limit, iff->in(0));
     register_new_node(bol, iff->in(0));
     new_limit = ConstraintCastNode::make_cast_for_basic_type(new_predicate_proj, new_limit,
-                                                             TypeInteger::make(1, limit_long, Type::WidenMin, bt),
+                                                             TypeInteger::make(1, iters_limit_long, Type::WidenMin, bt),
                                                              ConstraintCastNode::UnconditionalDependency, bt);
     register_new_node(new_limit, new_predicate_proj);
 
@@ -1276,20 +1277,23 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
 #endif
     entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
   } else if (bt == T_LONG) {
-    // We're turning a long counted loop into a regular loop that will be converted into an int count loop. That loop
-    // won't need loop limit checks (iters_limit guarantees that). Add a cast to make sure that, whatever transformation
-    // happens by the time the counted loop is created, C2 knows enough about the loop's limit that it doesn't try to
-    // add loop limit checks.
+    // We're turning a long counted loop into a regular loop that will be converted into an int counted loop. That loop
+    // won't need loop limit check predicates (iters_limit guarantees that). Add a cast to make sure that, whatever
+    // transformation happens by the time the counted loop is created (in a subsequent pass of loop opts), C2 knows
+    // enough about the loop's limit that it doesn't try to add loop limit check predicates.
     const Predicates predicates(entry_control);
     const TypeLong* new_limit_t = new_limit->Value(&_igvn)->is_long();
     new_limit = ConstraintCastNode::make_cast_for_basic_type(predicates.entry(), new_limit,
                                                              TypeLong::make(0, new_limit_t->_hi, new_limit_t->_widen),
                                                              ConstraintCastNode::UnconditionalDependency, bt);
     register_new_node(new_limit, predicates.entry());
+  } else {
+    assert(bt == T_INT && known_short_running_loop, "only CountedLoop statically known to be short running");
   }
   IfNode* exit_test = head->loopexit();
 
   if (bt == T_LONG) {
+    // The loop is short running so new_limit fits into an int: either we determined that statically or added a guard
     new_limit = new ConvL2INode(new_limit);
     register_new_node(new_limit, entry_control);
   }
@@ -1512,7 +1516,6 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
 
   for (uint i = 0; i < range_checks.size(); i++) {
     ProjNode* proj = range_checks.at(i)->as_Proj();
-    ProjNode* unc_proj = proj->other_if_proj();
     RangeCheckNode* rc = proj->in(0)->as_RangeCheck();
     jlong scale = 0;
     Node* offset = nullptr;

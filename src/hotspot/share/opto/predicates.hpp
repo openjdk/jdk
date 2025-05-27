@@ -73,7 +73,7 @@ class TemplateAssertionPredicate;
  *                           counted loop to avoid these overflow problems.
  *                           The predicate does not replace an actual check inside the loop. This predicate can only
  *                           be added once above the Loop Limit Check Parse Predicate for a loop.
- *     - Short Short:        This predicate is created when a long counted loop is transformed into an int counted
+ *     - Short:              This predicate is created when a long counted loop is transformed into an int counted
  *       Running Long        loop. In general, that transformation requires an outer loop to guarantee that the new
  *       Loop                loop nest iterates over the entire range of the loop before transformation. However, if the
  *       Predicate           loop is speculated to run for a small enough number of iterations, the outer loop is not

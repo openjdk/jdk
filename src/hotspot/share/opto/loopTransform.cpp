@@ -123,7 +123,16 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
     const TypeInteger* init_type = phase->_igvn.type(init_n)->is_integer(loop_bt);
     const TypeInteger* limit_type = phase->_igvn.type(limit_n)->is_integer(loop_bt);
 
-    // Use unsigned longs to avoid overflow
+    // compute trip count
+    // It used to be computed as:
+    // max(1, limit_con - init_con + stride_m) / stride_con
+    // with stride_m = stride_con - (stride_con > 0 ? 1 : -1)
+    // for int counted loops only and by promoting all values to long to avoid overflow
+    // This implements the computation for int and long counted loops in a way that promotion to the next larger integer
+    // type is not needed to protect against overflow.
+    //
+    // Use unsigned longs to avoid overflow: number of iteration is a positive number but can be really large for
+    // instance if init_con = min_jint, limit_con = max_jint
     jlong init_con = (stride_con > 0) ? init_type->lo_as_long() : init_type->hi_as_long();
     julong uinit_con = init_con;
     jlong limit_con = (stride_con > 0) ? limit_type->hi_as_long() : limit_type->lo_as_long();
@@ -140,8 +149,8 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
     // init + k * stride + small_value, 0 < small_value < stride
     julong utrip_count = udiff / ABS(stride_con);
     if (utrip_count * ABS(stride_con) != udiff) {
-      // Guaranteed to not overflow because it can only happen for stride > 1 in which case, utrip_count can't be
-      // max_juint
+      // Guaranteed to not overflow because it can only happen for ABS(stride) > 1 in which case, utrip_count can't be
+      // max_juint/max_julong
       utrip_count++;
     }
 

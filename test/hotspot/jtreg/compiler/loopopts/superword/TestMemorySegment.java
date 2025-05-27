@@ -49,7 +49,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-array-NoShortRunningLongLoop
- * @bug 8329273
+ * @bug 8329273 8342692
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray NoShortRunningLongLoop
@@ -57,7 +57,7 @@ import java.lang.foreign.*;
 
 /*
  * @test id=byte-array-AlignVector-NoShortRunningLongLoop
- * @bug 8329273 8348263
+ * @bug 8329273 8348263 8342692
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegment ByteArray AlignVector NoShortRunningLongLoop

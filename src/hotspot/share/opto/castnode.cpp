@@ -324,7 +324,7 @@ const Type* CastLLNode::Value(PhaseGVN* phase) const {
   return widen_type(phase, res, T_LONG);
 }
 
-bool CastLLNode::inner_loop_backedge(Node* proj) {
+bool CastLLNode::is_inner_loop_backedge(ProjNode* proj) {
   if (proj != nullptr) {
     Node* ctrl_use = proj->unique_ctrl_out_or_null();
     if (ctrl_use != nullptr && ctrl_use->Opcode() == Op_Loop &&
@@ -336,16 +336,16 @@ bool CastLLNode::inner_loop_backedge(Node* proj) {
   return false;
 }
 
-bool CastLLNode::cmp_used_at_inner_loop_exit_test(Node* cmp) {
+bool CastLLNode::cmp_used_at_inner_loop_exit_test(CmpNode* cmp) {
   for (DUIterator_Fast imax, i = cmp->fast_outs(imax); i < imax; i++) {
     Node* bol = cmp->fast_out(i);
     if (bol->Opcode() == Op_Bool) {
       for (DUIterator_Fast jmax, j = bol->fast_outs(jmax); j < jmax; j++) {
         Node* iff = bol->fast_out(j);
         if (iff->Opcode() == Op_If) {
-          Node* true_proj = iff->as_If()->proj_out_or_null(true);
-          Node* false_proj = iff->as_If()->proj_out_or_null(false);
-          if (inner_loop_backedge(true_proj) || inner_loop_backedge(false_proj)) {
+          ProjNode* true_proj = iff->as_If()->proj_out_or_null(true);
+          ProjNode* false_proj = iff->as_If()->proj_out_or_null(false);
+          if (is_inner_loop_backedge(true_proj) || is_inner_loop_backedge(false_proj)) {
             return true;
           }
         }
@@ -364,14 +364,16 @@ bool CastLLNode::used_at_inner_loop_exit_test() const {
       for (DUIterator_Fast jmax, j = convl2i->fast_outs(jmax); j < jmax; j++) {
         Node* cmp_or_sub = convl2i->fast_out(j);
         if (cmp_or_sub->Opcode() == Op_CmpI) {
-          if (cmp_used_at_inner_loop_exit_test(cmp_or_sub)) {
+          if (cmp_used_at_inner_loop_exit_test(cmp_or_sub->as_Cmp())) {
+            // (Loop .. .. (IfProj (If (Bool (CmpI (ConvL2I (CastLL )))))))
             return true;
           }
         } else if (cmp_or_sub->Opcode() == Op_SubI && cmp_or_sub->in(1)->find_int_con(-1) == 0) {
           for (DUIterator_Fast kmax, k = cmp_or_sub->fast_outs(kmax); k < kmax; k++) {
             Node* cmp = cmp_or_sub->fast_out(k);
             if (cmp->Opcode() == Op_CmpI) {
-              if (cmp_used_at_inner_loop_exit_test(cmp)) {
+              if (cmp_used_at_inner_loop_exit_test(cmp->as_Cmp())) {
+                // (Loop .. .. (IfProj (If (Bool (CmpI (SubI 0 (ConvL2I (CastLL ))))))))
                 return true;
               }
             }
