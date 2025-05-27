@@ -816,7 +816,7 @@ void Klass::remove_unshareable_info() {
     // output buffer, so they should have deterministic values. If we rehash
     // _secondary_supers, its elements will appear in a deterministic order.
     //
-    // Note that the bitmap is guatanteed to be deterministic, regardless of the
+    // Note that the bitmap is guaranteed to be deterministic, regardless of the
     // actual addresses of the elements in _secondary_supers. So rehashing shouldn't
     // change it.
     uintx bitmap = hash_secondary_supers(secondary_supers(), true);
