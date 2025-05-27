@@ -31,6 +31,7 @@
  */
 package sun.awt.image;
 
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.io.InputStream;
 import java.io.IOException;
@@ -411,15 +412,6 @@ public class GifImageDecoder extends ImageDecoder {
                 // in order to avoid artefacts in case of animated images.
                 int runstart = -1;
                 int count = 1;
-
-                // the saved_image is initially filled with zeroes.
-                // If this is our first time updating it, and if zeroes
-                // are NOT the transparent pixel: we need to replace it
-                // with the appropriate transparent pixel.
-                boolean replaceTransPixelsInSavedImage = save &&
-                        saved_model == null &&
-                        trans_pixel > 0;
-
                 for (int i = rasbeg; i < rasend; i++, off++) {
                     byte pixel = rasline[i];
                     if ((pixel & 0xff) == trans_pixel) {
@@ -433,9 +425,6 @@ public class GifImageDecoder extends ImageDecoder {
                             }
                         }
                         runstart = -1;
-                        if (replaceTransPixelsInSavedImage) {
-                            saved_image[off] = pixel;
-                        }
                     } else {
                         if (runstart < 0) {
                             runstart = i;
@@ -580,6 +569,9 @@ public class GifImageDecoder extends ImageDecoder {
                               global_height-height-y, model, trans_rasline,
                               0, 0);
                 }
+            }
+            if (model.getTransparentPixel() > 0) {
+                Arrays.fill(saved_image, (byte) model.getTransparentPixel());
             }
         }
 
