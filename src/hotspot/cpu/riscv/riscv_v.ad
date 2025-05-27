@@ -134,7 +134,7 @@ source %{
       // regression for double when vlen == 8. So only enable this intrinsic when vlen >= 8.
       case Op_RoundVF:
       case Op_RoundVD:
-        return vlen >= 8
+        return vlen >= 8;
 
       default:
         break;
