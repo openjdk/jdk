@@ -314,6 +314,9 @@ public final class IdleTimeoutManager {
                 this.nextDeadline = p;
                 return p;
             }
+            if (debug.on()) {
+                debug.log("idle termination approved by " + approver);
+            }
             // the connection has been idle for the pre idle timeout duration
             // and has been approved to be terminated by the higher layer.
             // we now schedule a idle timeout event that will terminate the connection
@@ -332,9 +335,9 @@ public final class IdleTimeoutManager {
             if (inactivityMs >= expectedIdleDurationMs) {
                 final QuicConnectionStreams connStreams = connection.streams;
                 if (!connStreams.hasBlockedStreams()) {
-                    // has been idle long enough and there aren't any streams that could have
-                    // generated traffic on the connection but couldn't due to being blocked by
-                    // flow control limits.
+                    // the connection has been idle long enough and there aren't any streams blocked
+                    // due to flow control, so this is a genuine idle connection. don't postpone
+                    // the timeout.
                     return null;
                 }
                 // has been idle long enough, but there are streams that are blocked due to
