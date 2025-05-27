@@ -32,8 +32,8 @@ import javax.sound.sampled.Mixer;
  * @bug 8356049
  * @key sound headful
  * @summary basic testing of javax.sound.SoundClip
- * @run main/othervm SoundClipTest javasound.wav good
- * @run main/othervm SoundClipTest badsound.wav bad
+ * @run main/othervm/timeout=60 SoundClipTest javasound.wav good
+ * @run main/othervm/timeout=60 SoundClipTest badsound.wav bad
  */
 
 public class SoundClipTest {
@@ -107,7 +107,9 @@ public class SoundClipTest {
         Thread.sleep(1000);
         System.out.println("Call stop()");
         clip.stop();
-        System.out.println("Called stop(), test should exit now.");
+        System.out.println("Called stop()");
+        clip.loop(); // Looping should not prevent exit
+        System.out.println("Test should exit now.");
     }
 
     /**
