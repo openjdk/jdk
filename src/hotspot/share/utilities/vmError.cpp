@@ -530,7 +530,8 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                  "", "",
 #endif
                  UseCompressedOops ? ", compressed oops" : "",
-                 UseCompressedClassPointers ? ", compressed class ptrs" : "",
+                 UseCompactObjectHeaders ? ", compact obj headers"
+                                         : (UseCompressedClassPointers ? ", compressed class ptrs" : ""),
                  GCConfig::hs_err_name(),
                  VM_Version::vm_platform_string()
                );
@@ -1200,9 +1201,8 @@ void VMError::report(outputStream* st, bool _verbose) {
 
     if (Universe::heap() != nullptr) {
       st->print_cr("Heap:");
-      StreamAutoIndentor indentor(st, 1);
+      StreamIndentor si(st, 1);
       Universe::heap()->print_heap_on(st);
-      MetaspaceUtils::print_on(st);
       st->cr();
     }
 
@@ -1219,6 +1219,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP_IF("printing metaspace information", _verbose && Universe::is_fully_initialized())
     st->print_cr("Metaspace:");
+    MetaspaceUtils::print_on(st);
     MetaspaceUtils::print_basic_report(st, 0);
 
   STEP_IF("printing code cache information", _verbose && Universe::is_fully_initialized())
@@ -1390,38 +1391,34 @@ void VMError::print_vm_info(outputStream* st) {
   }
 #endif
 
-  // Take heap lock over both heap and GC printing so that information is
-  // consistent.
-  {
+  // Take heap lock over heap, GC and metaspace printing so that information
+  // is consistent.
+  if (Universe::is_fully_initialized()) {
     MutexLocker ml(Heap_lock);
 
     // STEP("printing heap information")
 
-    if (Universe::is_fully_initialized()) {
-      GCLogPrecious::print_on_error(st);
+    GCLogPrecious::print_on_error(st);
 
+    {
       st->print_cr("Heap:");
-      StreamAutoIndentor indentor(st, 1);
+      StreamIndentor si(st, 1);
       Universe::heap()->print_heap_on(st);
-      MetaspaceUtils::print_on(st);
       st->cr();
     }
 
     // STEP("printing GC information")
 
-    if (Universe::is_fully_initialized()) {
-      Universe::heap()->print_gc_on(st);
-      st->cr();
+    Universe::heap()->print_gc_on(st);
+    st->cr();
 
-      st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
-      st->cr();
-    }
-  }
+    st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
+    st->cr();
 
-  // STEP("printing metaspace information")
+    // STEP("printing metaspace information")
 
-  if (Universe::is_fully_initialized()) {
     st->print_cr("Metaspace:");
+    MetaspaceUtils::print_on(st);
     MetaspaceUtils::print_basic_report(st, 0);
   }
 

@@ -27,8 +27,9 @@
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/machnode.hpp"
 #include "opto/parse.hpp"
-#include "runtime/threadCritical.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/decoder.hpp"
 #include "utilities/stringUtils.hpp"
 
 #ifndef PRODUCT
@@ -49,6 +50,13 @@ const char *IdealGraphPrinter::REMOVE_EDGE_ELEMENT = "removeEdge";
 const char *IdealGraphPrinter::REMOVE_NODE_ELEMENT = "removeNode";
 const char *IdealGraphPrinter::COMPILATION_ID_PROPERTY = "compilationId";
 const char *IdealGraphPrinter::COMPILATION_OSR_PROPERTY = "osr";
+const char *IdealGraphPrinter::COMPILATION_ARGUMENTS_PROPERTY = "arguments";
+const char *IdealGraphPrinter::COMPILATION_MACHINE_PROPERTY = "machine";
+const char *IdealGraphPrinter::COMPILATION_CPU_FEATURES_PROPERTY = "cpuFeatures";
+const char *IdealGraphPrinter::COMPILATION_VM_VERSION_PROPERTY = "vm";
+const char *IdealGraphPrinter::COMPILATION_DATE_TIME_PROPERTY = "dateTime";
+const char *IdealGraphPrinter::COMPILATION_PROCESS_ID_PROPERTY = "processId";
+const char *IdealGraphPrinter::COMPILATION_THREAD_ID_PROPERTY = "threadId";
 const char *IdealGraphPrinter::METHOD_NAME_PROPERTY = "name";
 const char *IdealGraphPrinter::METHOD_IS_PUBLIC_PROPERTY = "public";
 const char *IdealGraphPrinter::METHOD_IS_STATIC_PROPERTY = "static";
@@ -336,6 +344,42 @@ void IdealGraphPrinter::begin_method() {
 
   print_prop(COMPILATION_ID_PROPERTY, C->compile_id());
 
+  stringStream args;
+  Arguments::print_jvm_args_on(&args);
+  print_prop(COMPILATION_ARGUMENTS_PROPERTY, args.freeze());
+
+  stringStream machine;
+  buffer[0] = 0;
+  os::print_summary_info(&machine, buffer, sizeof(buffer) - 1);
+  print_prop(COMPILATION_MACHINE_PROPERTY, machine.freeze());
+
+  print_prop(COMPILATION_CPU_FEATURES_PROPERTY, VM_Version::features_string());
+
+  stringStream version;
+  buffer[0] = 0;
+  JDK_Version::current().to_string(buffer, sizeof(buffer) - 1);
+  const char* runtime_name = JDK_Version::runtime_name() != nullptr ?
+    JDK_Version::runtime_name() : "";
+  const char* runtime_version = JDK_Version::runtime_version() != nullptr ?
+    JDK_Version::runtime_version() : "";
+  const char* vendor_version = JDK_Version::runtime_vendor_version() != nullptr ?
+    JDK_Version::runtime_vendor_version() : "";
+  const char* jdk_debug_level = VM_Version::printable_jdk_debug_level() != nullptr ?
+    VM_Version::printable_jdk_debug_level() : "";
+
+  version.print_cr("%s%s%s (%s) (%sbuild %s)", runtime_name,
+                   (*vendor_version != '\0') ? " " : "", vendor_version,
+                   buffer, jdk_debug_level, runtime_version);
+  print_prop(COMPILATION_VM_VERSION_PROPERTY, version.freeze());
+
+  stringStream time;
+  buffer[0] = 0;
+  os::print_date_and_time(&time, buffer, sizeof(buffer) - 1);
+  print_prop(COMPILATION_DATE_TIME_PROPERTY, time.freeze());
+
+  print_prop(COMPILATION_PROCESS_ID_PROPERTY, os::current_process_id());
+  print_prop(COMPILATION_THREAD_ID_PROPERTY, os::current_thread_id());
+
   tail(PROPERTIES_ELEMENT);
 
   _should_send_method = true;
@@ -430,6 +474,10 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         // Enforce dots as decimal separators, as required by IGV.
         StringUtils::replace_no_expand(buffer, ",", ".");
         print_prop("frequency", buffer);
+        // Print block index for nodes that are placed in blocks and scheduled locally.
+        if (block->contains(node)) {
+          print_prop("block_index", block->find_node(node));
+        }
       }
     }
 
@@ -582,12 +630,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     const char *short_name = "short_name";
     if (strcmp(node->Name(), "Parm") == 0 && node->as_Proj()->_con >= TypeFunc::Parms) {
       int index = node->as_Proj()->_con - TypeFunc::Parms;
-      if (index >= 10) {
-        print_prop(short_name, "PA");
-      } else {
-        os::snprintf_checked(buffer, sizeof(buffer), "P%d", index);
-        print_prop(short_name, buffer);
-      }
+      os::snprintf_checked(buffer, sizeof(buffer), "P%d", index);
+      print_prop(short_name, buffer);
     } else if (strcmp(node->Name(), "IfTrue") == 0) {
       print_prop(short_name, "T");
     } else if (strcmp(node->Name(), "IfFalse") == 0) {
@@ -599,9 +643,9 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         assert(typeInt->is_con(), "must be constant");
         jint value = typeInt->get_con();
 
-        // max. 2 chars allowed
-        if (value >= -9 && value <= 99) {
-          os::snprintf_checked(buffer, sizeof(buffer), "%d", value);
+        // Only use up to 4 chars and fall back to a generic "I" to keep it short.
+        int written_chars = os::snprintf_checked(buffer, sizeof(buffer), "%d", value);
+        if (written_chars <= 4) {
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "I");
@@ -613,9 +657,9 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         assert(typeLong->is_con(), "must be constant");
         jlong value = typeLong->get_con();
 
-        // max. 2 chars allowed
-        if (value >= -9 && value <= 99) {
-          os::snprintf_checked(buffer, sizeof(buffer), JLONG_FORMAT, value);
+        // Only use up to 4 chars and fall back to a generic "L" to keep it short.
+        int written_chars = os::snprintf_checked(buffer, sizeof(buffer), JLONG_FORMAT, value);
+        if (written_chars <= 4) {
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "L");
@@ -632,11 +676,17 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       } else if (t->base() == Type::Return_Address) {
         print_prop(short_name, "RA");
       } else if (t->base() == Type::AnyPtr) {
-        print_prop(short_name, "P");
+        if (t->is_ptr()->ptr() == TypePtr::Null) {
+          print_prop(short_name, "Null");
+        } else {
+          print_prop(short_name, "P");
+        }
       } else if (t->base() == Type::RawPtr) {
         print_prop(short_name, "RP");
       } else if (t->base() == Type::AryPtr) {
         print_prop(short_name, "AP");
+      } else if (t->base() == Type::NarrowOop && t->is_narrowoop() == TypeNarrowOop::NULL_PTR) {
+        print_prop(short_name, "Null");
       }
     }
 
@@ -862,23 +912,90 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges) {
   }
 }
 
-void IdealGraphPrinter::print_graph(const char* name) {
+// Whether the stack walk should skip the given frame when producing a C2 stack
+// trace. We consider IGV- and debugger-specific frames uninteresting.
+static bool should_skip_frame(const char* name) {
+  return strstr(name, "IdealGraphPrinter") != nullptr ||
+         strstr(name, "Compile::print_method") != nullptr ||
+         strstr(name, "Compile::igv_print_graph") != nullptr ||
+         strstr(name, "PrintBFS") != nullptr ||
+         strstr(name, "Node::dump_bfs") != nullptr;
+}
+
+// Whether the stack walk should be considered done when visiting a certain
+// frame. The purpose of walking the stack is producing a C2 trace, so we
+// consider all frames below (and including) C2Compiler::compile_method(..)
+// uninteresting.
+static bool should_end_stack_walk(const char* name) {
+  return strstr(name, "C2Compiler::compile_method") != nullptr;
+}
+
+void IdealGraphPrinter::print_stack(const frame* initial_frame, outputStream* graph_name) {
+  char buf[O_BUFLEN];
+  frame fr = initial_frame == nullptr ? os::current_frame() : *initial_frame;
+  int frame = 0;
+  for (int count = 0; count < StackPrintLimit && fr.pc() != nullptr; count++) {
+    int offset;
+    buf[0] = '\0';
+    bool found = os::dll_address_to_function_name(fr.pc(), buf, sizeof(buf), &offset);
+    if (!found || should_end_stack_walk(buf)) {
+      break;
+    }
+    if (!should_skip_frame(buf)) {
+      stringStream frame_loc;
+      frame_loc.print("%s", buf);
+      buf[0] = '\0';
+      int line_no;
+      if (Decoder::get_source_info(fr.pc(), buf, sizeof(buf), &line_no, count != 1)) {
+        frame_loc.print(" (%s:%d)", buf, line_no);
+        if (graph_name != nullptr) {
+          // Extract a debug graph name and return.
+          graph_name->print("%s:%d", buf, line_no);
+          return;
+        }
+      }
+      if (graph_name == nullptr) {
+        // Print frame as IGV property and continue to the next frame.
+        stringStream frame_number_str;
+        frame_number_str.print("frame %d:", frame);
+        print_prop(frame_number_str.freeze(), frame_loc.freeze());
+        frame++;
+      }
+    }
+    fr = frame::next_frame(fr, Thread::current_or_null());
+  }
+}
+
+void IdealGraphPrinter::print_graph(const char* name, const frame* fr) {
   ResourceMark rm;
   GrowableArray<const Node*> empty_list;
-  print(name, (Node*) C->root(), empty_list);
+  print(name, (Node*) C->root(), empty_list, fr);
 }
 
 // Print current ideal graph
-void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes) {
+void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes, const frame* fr) {
 
   if (!_current_method || !_should_send_method || node == nullptr) return;
+
+  if (name == nullptr) {
+    stringStream graph_name;
+    print_stack(fr, &graph_name);
+    name = graph_name.freeze();
+    if (strlen(name) == 0) {
+      name = "Debug";
+    }
+  }
 
   // Warning, unsafe cast?
   _chaitin = (PhaseChaitin *)C->regalloc();
 
   begin_head(GRAPH_ELEMENT);
-  print_attr(GRAPH_NAME_PROPERTY, (const char *)name);
+  print_attr(GRAPH_NAME_PROPERTY, name);
   end_head();
+
+  head(PROPERTIES_ELEMENT);
+  print_stack(fr, nullptr);
+  tail(PROPERTIES_ELEMENT);
 
   head(NODES_ELEMENT);
   if (C->cfg() != nullptr) {
@@ -1047,7 +1164,6 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
 }
 
 void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multiple_files) {
-  ThreadCritical tc;
   if (use_multiple_files && _file_count != 0) {
     assert(!_append, "append should only be used for debugging with a single file");
     ResourceMark rm;

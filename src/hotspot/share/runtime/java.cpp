@@ -332,6 +332,13 @@ void print_statistics() {
 
   print_bytecode_count();
 
+  if (PrintVMInfoAtExit) {
+    // Use an intermediate stream to prevent deadlocking on tty_lock
+    stringStream ss;
+    VMError::print_vm_info(&ss);
+    tty->print_raw(ss.base());
+  }
+
   if (PrintSystemDictionaryAtExit) {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
@@ -473,7 +480,7 @@ void before_exit(JavaThread* thread, bool halt) {
   Universe::heap()->stop();
 
   // Print GC/heap related information.
-  Log(gc, heap, exit) log;
+  Log(gc, exit) log;
   if (log.is_info()) {
     LogStream ls_info(log.info());
     Universe::print_on(&ls_info);
