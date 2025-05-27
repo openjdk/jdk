@@ -23,8 +23,10 @@
 package jdk.vm.ci.hotspot;
 
 import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import jdk.vm.ci.common.JVMCIError;
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
@@ -638,16 +640,13 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     }
 
     @Override
-    public BootstrapMethodInvocation[] lookupAllIndyBootstrapMethodInvocations() {
+    public List<BootstrapMethodInvocation> lookupAllIndyBootstrapMethodInvocations() {
         int numIndys = compilerToVM().getNumIndyEntries(this);
         if (numIndys == 0) {
-            return null;
+            return List.of();
         }
-        BootstrapMethodInvocation[] bmis = new BootstrapMethodInvocation[numIndys];
-        for(int i = 0; i < numIndys; i++) {
-            bmis[i] = lookupBootstrapMethodInvocation(i, Bytecodes.INVOKEDYNAMIC);
-        }
-        return bmis;
+        return IntStream.range(0, numIndys).mapToObj(i -> lookupBootstrapMethodInvocation(i, Bytecodes.INVOKEDYNAMIC))
+                .toList();
     }
 
     /**

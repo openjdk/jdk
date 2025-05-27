@@ -431,8 +431,8 @@ public class TestDynamicConstant implements Opcodes {
     }
 
     private static void testLookupAllIndyBootstrapMethodInvocations(ConstantPool cp, Map<String, Boolean> expectedBSMs) {
-        BootstrapMethodInvocation[] allIndyInvocations = cp.lookupAllIndyBootstrapMethodInvocations();
-        Assert.assertTrue(allIndyInvocations != null && allIndyInvocations.length == 2);
+        List<BootstrapMethodInvocation> allIndyInvocations = cp.lookupAllIndyBootstrapMethodInvocations();
+        Assert.assertEquals(allIndyInvocations.size(), 2);
         for (var bsmi : allIndyInvocations) {
             String bsm = bsmi.getMethod().format("%H.%n");
             Assert.assertTrue(expectedBSMs.containsKey(bsm), expectedBSMs.toString());
