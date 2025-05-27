@@ -108,7 +108,7 @@ public class TestZMediumPageSizes {
         return oa;
     }
 
-    private static void runTestDefault() throws Exception  {
+    private static void runTestDefault() throws Exception {
         var oa = createAndExecuteJava(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+ZUseMediumPageSizeRange");
