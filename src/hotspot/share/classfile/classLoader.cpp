@@ -1195,7 +1195,6 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     if (loader == nullptr) {
       // JFR classes
       ik->set_shared_classpath_index(0);
-      ik->set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
     }
     return;
   }
@@ -1290,25 +1289,10 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
 void ClassLoader::record_hidden_class(InstanceKlass* ik) {
   assert(ik->is_hidden(), "must be");
 
-  s2 classloader_type;
-  if (HeapShared::is_lambda_form_klass(ik)) {
-    classloader_type = ClassLoader::BOOT_LOADER;
-  } else {
-    oop loader = ik->class_loader();
-
-    if (loader == nullptr) {
-      classloader_type = ClassLoader::BOOT_LOADER;
-    } else if (SystemDictionary::is_platform_class_loader(loader)) {
-      classloader_type = ClassLoader::PLATFORM_LOADER;
-    } else if (SystemDictionary::is_system_class_loader(loader)) {
-      classloader_type = ClassLoader::APP_LOADER;
-    } else {
-      // This class won't be archived, so no need to update its
-      // classloader_type/classpath_index.
-      return;
-    }
+  if (ik->defined_by_other_loaders()) {
+    // We don't archive hidden classes for non-builtin loaders.
+    return;
   }
-  ik->set_shared_class_loader_type(classloader_type);
 
   if (HeapShared::is_lambda_proxy_klass(ik)) {
     InstanceKlass* nest_host = ik->nest_host_not_null();
@@ -1317,7 +1301,7 @@ void ClassLoader::record_hidden_class(InstanceKlass* ik) {
     ik->set_shared_classpath_index(0);
   } else {
     // Generated invoker classes.
-    if (classloader_type == ClassLoader::APP_LOADER) {
+    if (ik->defined_by_app_loader()) {
       ik->set_shared_classpath_index(AOTClassLocationConfig::dumptime()->app_cp_start_index());
     } else {
       ik->set_shared_classpath_index(0);

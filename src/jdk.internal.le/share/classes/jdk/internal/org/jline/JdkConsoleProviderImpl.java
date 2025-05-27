@@ -273,7 +273,10 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
                 synchronized (this) {
                     jline = this.jline;
                     if (jline == null) {
-                        jline = LineReaderBuilder.builder().terminal(terminal).build();
+                        jline = LineReaderBuilder.builder()
+                                                 .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
+                                                 .terminal(terminal)
+                                                 .build();
                         this.jline = jline;
                     }
                 }

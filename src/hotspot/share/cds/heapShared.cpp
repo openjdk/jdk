@@ -803,7 +803,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   } else if (orig_k->is_objArray_klass()) {
     Klass* abk = ObjArrayKlass::cast(orig_k)->bottom_klass();
     if (abk->is_instance_klass()) {
-      assert(InstanceKlass::cast(abk)->is_shared_boot_class(),
+      assert(InstanceKlass::cast(abk)->defined_by_boot_loader(),
             "must be boot class");
       check_allowed_klass(InstanceKlass::cast(ObjArrayKlass::cast(orig_k)->bottom_klass()));
     }
@@ -1097,7 +1097,7 @@ void HeapShared::resolve_classes_for_subgraphs(JavaThread* current, ArchivableSt
     ArchivableStaticFieldInfo* info = &fields[i];
     TempNewSymbol klass_name = SymbolTable::new_symbol(info->klass_name);
     InstanceKlass* k = SystemDictionaryShared::find_builtin_class(klass_name);
-    assert(k != nullptr && k->is_shared_boot_class(), "sanity");
+    assert(k != nullptr && k->defined_by_boot_loader(), "sanity");
     resolve_classes_for_subgraph_of(current, k);
   }
 }
@@ -1284,7 +1284,7 @@ void HeapShared::resolve_or_init(const char* klass_name, bool do_init, TRAPS) {
   if (k == nullptr) {
     return;
   }
-  assert(k->is_shared_boot_class(), "sanity");
+  assert(k->defined_by_boot_loader(), "sanity");
   resolve_or_init(k, false, CHECK);
   if (do_init) {
     resolve_or_init(k, true, CHECK);
@@ -1644,7 +1644,7 @@ void HeapShared::archive_reachable_objects_from_static_field(InstanceKlass *k,
                                                              int field_offset,
                                                              const char* field_name) {
   assert(CDSConfig::is_dumping_heap(), "dump time only");
-  assert(k->is_shared_boot_class(), "must be boot class");
+  assert(k->defined_by_boot_loader(), "must be boot class");
 
   oop m = k->java_mirror();
 
@@ -1695,7 +1695,7 @@ class VerifySharedOopClosure: public BasicOopIterateClosure {
 
 void HeapShared::verify_subgraph_from_static_field(InstanceKlass* k, int field_offset) {
   assert(CDSConfig::is_dumping_heap(), "dump time only");
-  assert(k->is_shared_boot_class(), "must be boot class");
+  assert(k->defined_by_boot_loader(), "must be boot class");
 
   oop m = k->java_mirror();
   oop f = m->obj_field(field_offset);
@@ -1869,7 +1869,7 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     }
 
     InstanceKlass* ik = InstanceKlass::cast(k);
-    assert(InstanceKlass::cast(ik)->is_shared_boot_class(),
+    assert(InstanceKlass::cast(ik)->defined_by_boot_loader(),
            "Only support boot classes");
 
     if (is_test_class) {
