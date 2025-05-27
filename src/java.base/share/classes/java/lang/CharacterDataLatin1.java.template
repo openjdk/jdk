@@ -244,7 +244,7 @@ class CharacterDataLatin1 extends CharacterData {
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
     int digit(int ch, int radix) {
-        int value = DIGITS[ch];
+        int value = DIGITS[ch & 0xff];
         return (value >= 0 && value < radix && radix >= Character.MIN_RADIX
                 && radix <= Character.MAX_RADIX) ? value : -1;
     }
