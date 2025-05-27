@@ -2212,7 +2212,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         int lowerInts[] = new int[n];
         System.arraycopy(mag, len-n, lowerInts, 0, n);
 
-        return new BigInteger(stripLeadingZeroInts(lowerInts, true), 1);
+        return new BigInteger(trustedStripLeadingZeroInts(lowerInts), 1);
     }
 
     /**
@@ -2231,7 +2231,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         int upperInts[] = new int[upperLen];
         System.arraycopy(mag, 0, upperInts, 0, upperLen);
 
-        return new BigInteger(stripLeadingZeroInts(upperInts, true), 1);
+        return new BigInteger(trustedStripLeadingZeroInts(upperInts), 1);
     }
 
     // Squaring
@@ -2260,7 +2260,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         if (len < KARATSUBA_SQUARE_THRESHOLD) {
             int[] z = squareToLen(mag, len, null);
-            return new BigInteger(stripLeadingZeroInts(z, true), 1);
+            return new BigInteger(trustedStripLeadingZeroInts(z), 1);
         } else {
             if (len < TOOM_COOK_SQUARE_THRESHOLD) {
                 return squareKaratsuba();
