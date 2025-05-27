@@ -444,17 +444,15 @@ public class WindowsAsynchronousFileChannelImpl
             long address;
 
             // Substitute a native buffer if not direct
-            if (dst.isDirect()) {
+            if (dst instanceof DirectBuffer) {
                 buf = dst;
-                address = IOUtil.bufferAddress(dst) + pos;
+                address = ((DirectBuffer)dst).address() + pos;
             } else {
-                // buf can never be backed by a memory segment
                 buf = Util.getTemporaryDirectBuffer(rem);
-                address = IOUtil.bufferAddress(buf);
+                address = ((DirectBuffer)buf).address();
             }
 
             boolean pending = false;
-            IOUtil.acquireScope(buf, true);
             try {
                 begin();
 
@@ -479,7 +477,6 @@ public class WindowsAsynchronousFileChannelImpl
                 if (overlapped != 0L)
                     ioCache.remove(overlapped);
             } finally {
-                IOUtil.releaseScope(buf);
                 if (!pending)
                     // release resources
                     releaseBufferIfSubstituted();
@@ -627,9 +624,9 @@ public class WindowsAsynchronousFileChannelImpl
             long address;
 
             // Substitute a native buffer if not direct
-            if (src.isDirect()) {
+            if (src instanceof DirectBuffer) {
                 buf = src;
-                address = IOUtil.bufferAddress(src) + pos;
+                address = ((DirectBuffer)src).address() + pos;
             } else {
                 buf = Util.getTemporaryDirectBuffer(rem);
                 buf.put(src);
@@ -637,10 +634,9 @@ public class WindowsAsynchronousFileChannelImpl
                 // temporarily restore position as we don't know how many bytes
                 // will be written
                 src.position(pos);
-                address = IOUtil.bufferAddress(buf);
+                address = ((DirectBuffer)buf).address();
             }
 
-            IOUtil.acquireScope(buf, true);
             try {
                 begin();
 
@@ -666,7 +662,6 @@ public class WindowsAsynchronousFileChannelImpl
                     ioCache.remove(overlapped);
 
             } finally {
-                IOUtil.releaseScope(buf);
                 end();
             }
 
