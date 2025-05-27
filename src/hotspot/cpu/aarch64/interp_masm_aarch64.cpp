@@ -926,18 +926,14 @@ void InterpreterMacroAssembler::set_mdp_data_at(Register mdp_in,
 
 
 void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
-                                                      int constant,
-                                                      bool decrement) {
-  increment_mdp_data_at(mdp_in, noreg, constant, decrement);
+                                                      int constant) {
+  increment_mdp_data_at(mdp_in, noreg, constant);
 }
 
 void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
                                                       Register reg,
-                                                      int constant,
-                                                      bool decrement) {
+                                                      int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  // %%% this does 64bit counters at best it is wasting space
-  // at worst it is a rare bug when counters overflow
 
   assert_different_registers(rscratch2, rscratch1, mdp_in, reg);
 
@@ -949,37 +945,12 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
     addr = addr2;
   }
 
-  if (decrement) {
-    // Decrement the register.  Set condition codes.
-    // Intel does this
-    // addptr(data, (int32_t) -DataLayout::counter_increment);
-    // If the decrement causes the counter to overflow, stay negative
-    // Label L;
-    // jcc(Assembler::negative, L);
-    // addptr(data, (int32_t) DataLayout::counter_increment);
-    // so we do this
-    ldr(rscratch1, addr);
-    subs(rscratch1, rscratch1, (unsigned)DataLayout::counter_increment);
-    Label L;
-    br(Assembler::LO, L);       // skip store if counter underflow
-    str(rscratch1, addr);
-    bind(L);
-  } else {
-    assert(DataLayout::counter_increment == 1,
-           "flow-free idiom only works with 1");
-    // Intel does this
-    // Increment the register.  Set carry flag.
-    // addptr(data, DataLayout::counter_increment);
-    // If the increment causes the counter to overflow, pull back by 1.
-    // sbbptr(data, (int32_t)0);
-    // so we do this
-    ldr(rscratch1, addr);
-    adds(rscratch1, rscratch1, DataLayout::counter_increment);
-    Label L;
-    br(Assembler::CS, L);       // skip store if counter overflow
-    str(rscratch1, addr);
-    bind(L);
-  }
+  assert(DataLayout::counter_increment == 1,
+          "flow-free idiom only works with 1");
+
+  ldr(rscratch1, addr);
+  add(rscratch1, rscratch1, DataLayout::counter_increment);
+  str(rscratch1, addr);
 }
 
 void InterpreterMacroAssembler::set_mdp_flag_at(Register mdp_in,
