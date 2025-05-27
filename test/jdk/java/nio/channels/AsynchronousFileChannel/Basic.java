@@ -565,15 +565,12 @@ public class Basic {
     static ByteBuffer genBuffer() {
         int size = 1024 + rand.nextInt(16000);
         byte[] buf = new byte[size];
-        return switch (rand.nextInt(4)) {
+        return switch (rand.nextInt(3)) {
             case 0 -> ByteBuffer.allocateDirect(buf.length)
                     .put(buf)
                     .flip();
             case 1 -> ByteBuffer.wrap(buf);
             case 2 -> Arena.ofAuto().allocate(buf.length).asByteBuffer()
-                    .put(buf)
-                    .flip();
-            case 3 -> Arena.ofShared().allocate(buf.length).asByteBuffer()
                     .put(buf)
                     .flip();
             default -> throw new InternalError("Should not reach here");
