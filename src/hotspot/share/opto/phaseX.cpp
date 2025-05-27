@@ -1786,6 +1786,17 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     case Op_MaxD:
     case Op_MinD:
       return false;
+
+
+    // AddINode::Identity
+    // Converts (x-y)+y to x
+    // Could be issue with notification
+    //
+    // Found with:
+    //  compiler/c2/Test6792161.java
+    //  -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    case Op_AddI:
+      return false;
   }
 
   if (n->is_Load()) {
