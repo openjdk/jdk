@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgs = { "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED","--add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED"})
+@Fork(value = 3, jvmArgs = {"--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED", "--add-opens=java.base/jdk.internal.foreign=ALL-UNNAMED"})
 public class SegmentBulkFill {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
