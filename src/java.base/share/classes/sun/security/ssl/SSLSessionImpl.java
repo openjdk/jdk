@@ -24,9 +24,6 @@
  */
 package sun.security.ssl;
 
-import java.util.zip.Adler32;
-import sun.security.provider.X509Factory;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
@@ -35,13 +32,14 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Queue;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.zip.Adler32;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.ExtendedSSLSession;
@@ -51,6 +49,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLSessionBindingListener;
 import javax.net.ssl.SSLSessionContext;
+import sun.security.provider.X509Factory;
 import sun.security.ssl.X509Authentication.X509Possession;
 
 /**
@@ -256,7 +255,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     /**
-     * Re-assemble new session ticket.
+     * Reassemble new session ticket.
      * <p>
      * < 2 bytes > protocolVersion
      * < 2 bytes > cipherSuite
@@ -316,7 +315,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.localSupportedSignAlgs = Collections.unmodifiableCollection(list);
 
         if (protocolVersion.useTLS13PlusSpec()) {
-            // Pre-shared key algorithm
+            // PSK
             b = Record.getBytes16(buf);
             if (b.length > 0) {
                 this.preSharedKey = new SecretKeySpec(b, "TlsMasterSecret");
@@ -326,7 +325,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
             this.useExtendedMasterSecret = false;
         } else {
-            // Master secret key algorithm
+            // Master secret
             b = Record.getBytes16(buf);
             if (b.length > 0) {
                 this.masterSecret = new SecretKeySpec(b, "TlsMasterSecret");
@@ -504,6 +503,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             hos.putInt16(s.id);
         }
 
+        // PreSharedKey is only needed by TLSv1.3,
+        // masterSecret is only needed by pre-TLSv1.3.
         if (protocolVersion.useTLS13PlusSpec()) {
             // PSK
             if (preSharedKey == null) {
@@ -554,11 +555,11 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         hos.putInt32(maximumPacketSize);
         hos.putInt32(negotiatedMaxFragLen);
 
-        // creation time
+        // Creation time
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         hos.writeBytes(buffer.putLong(creationTime).array());
 
-        // peer Host & Port
+        // Peer Host & Port
         if (host == null || host.length() == 0) {
             hos.putInt8(0);
         } else {
