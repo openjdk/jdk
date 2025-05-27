@@ -33,6 +33,7 @@ import java.awt.Robot;
  * @test
  * @bug 8345538
  * @summary Tests mouseMove clamping to screen bounds when set to move offscreen
+ * @requires (os.family == "mac")
  * @key headful
  * @run main MouseMoveOffScreen
  */

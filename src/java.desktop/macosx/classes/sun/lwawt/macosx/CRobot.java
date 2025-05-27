@@ -98,8 +98,8 @@ final class CRobot implements RobotPeer {
     }
 
     private Point calcClosestPoint(int x, int y, Rectangle screenBounds) {
-        return new Point(Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width-1),
-                Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height-1));
+        return new Point(Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width - 1),
+                Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height - 1));
     }
 
     /**
