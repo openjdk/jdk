@@ -372,8 +372,6 @@ public final class FileSystems {
      *          when an error occurs while loading a service provider
      * @throws  IOException
      *          if an I/O error occurs
-     *
-     * @since 13
      */
     public static FileSystem newFileSystem(Path path,
                                            ClassLoader loader)
