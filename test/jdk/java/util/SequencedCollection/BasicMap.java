@@ -563,12 +563,12 @@ public class BasicMap {
         SequencedMap<Object, Object> objMap = (SequencedMap<Object, Object>)(SequencedMap)map;
         assertThrows(CCE, () -> { objMap.put(new Object(), 99); });
         assertThrows(CCE, () -> { objMap.put("x", new Object()); });
-        assertThrows(CCE, () -> { objMap.sequencedEntrySet().getFirst().setValue(new Object()); });
-        assertThrows(CCE, () -> { objMap.sequencedEntrySet().reversed().getFirst().setValue(new Object()); });
+        assertThrows(CCE, () -> { objMap.sequencedEntrySet().iterator().next().setValue(new Object()); });
+        assertThrows(CCE, () -> { objMap.sequencedEntrySet().reversed().iterator().next().setValue(new Object()); });
         assertThrows(CCE, () -> { objMap.reversed().put(new Object(), 99); });
         assertThrows(CCE, () -> { objMap.reversed().put("x", new Object()); });
-        assertThrows(CCE, () -> { objMap.reversed().sequencedEntrySet().getFirst().setValue(new Object()); });
-        assertThrows(CCE, () -> { objMap.reversed().sequencedEntrySet().reversed().getFirst().setValue(new Object()); });
+        assertThrows(CCE, () -> { objMap.reversed().sequencedEntrySet().iterator().next().setValue(new Object()); });
+        assertThrows(CCE, () -> { objMap.reversed().sequencedEntrySet().reversed().iterator().next().setValue(new Object()); });
     }
 
     public void checkEntry(Map.Entry<String, Integer> entry, String key, Integer value) {
