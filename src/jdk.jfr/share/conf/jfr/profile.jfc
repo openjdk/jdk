@@ -206,6 +206,13 @@
       <setting name="period" control="method-sampling-native-interval">20 ms</setting>
     </event>
 
+    <event name="jdk.SafepointLatency">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">false</setting>
+      <setting name="threshold">0 ms</setting>
+      <setting name="throttle">off</setting>
+    </event>
+
     <event name="jdk.SafepointBegin">
       <setting name="enabled">true</setting>
       <setting name="threshold">0 ms</setting>
@@ -879,11 +886,6 @@
     </event>
 
     <event name="jdk.ZUncommit">
-      <setting name="enabled">true</setting>
-      <setting name="threshold">0 ms</setting>
-    </event>
-
-    <event name="jdk.ZUnmap">
       <setting name="enabled">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>

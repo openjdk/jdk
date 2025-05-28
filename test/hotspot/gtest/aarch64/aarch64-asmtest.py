@@ -14,10 +14,9 @@ immediates8 \
 
 immediates16 \
      = [0x1, 0x38, 0x7e, 0xff, 0x1fc, 0x1ff, 0x3f0,
-        0x7e0, 0xfc0, 0x1f80, 0x3ff0, 0x7e00, 0x7e00,
-        0x8000, 0x81ff, 0xc1ff, 0xc003, 0xc7ff, 0xdfff,
-        0xe03f, 0xe10f, 0xe1ff, 0xf801, 0xfc00, 0xfc07,
-        0xff03, 0xfffe]
+        0x7e0, 0xfc0, 0x1f80, 0x3ff0, 0x7e00, 0x8000,
+        0x81ff, 0xc1ff, 0xc003, 0xc7ff, 0xdfff, 0xe03f,
+        0xe1ff, 0xf801, 0xfc00, 0xfc07, 0xff03, 0xfffe]
 
 immediates32 \
      = [0x1, 0x3f, 0x1f0, 0x7e0,
@@ -1065,7 +1064,7 @@ class FloatInstruction(Instruction):
     def aname(self):
         if (self._name in ["fcvtsh", "fcvths"]):
             return self._name[:len(self._name)-2]
-        elif (self._name.endswith("s") | self._name.endswith("d")):
+        elif (self._name.endswith("h") | self._name.endswith("s") | self._name.endswith("d")):
             return self._name[:len(self._name)-1]
         else:
             return self._name
@@ -1684,19 +1683,24 @@ generate(FourRegMulOp,
          ["maddw", "msubw", "madd", "msub", "smaddl", "smsubl", "umaddl", "umsubl"])
 
 generate(ThreeRegFloatOp,
-         [["fabds", "sss"], ["fmuls", "sss"], ["fdivs", "sss"], ["fadds", "sss"], ["fsubs", "sss"],
+         [["fabdh", "hhh"], ["fmulh", "hhh"], ["fdivh", "hhh"], ["faddh", "hhh"], ["fsubh", "hhh"],
+          ["fmaxh", "hhh"], ["fminh", "hhh"], ["fnmulh", "hhh"],
+          ["fabds", "sss"], ["fmuls", "sss"], ["fdivs", "sss"], ["fadds", "sss"], ["fsubs", "sss"],
+          ["fmaxs", "sss"], ["fmins", "sss"], ["fnmuls", "sss"],
           ["fabdd", "ddd"], ["fmuld", "ddd"], ["fdivd", "ddd"], ["faddd", "ddd"], ["fsubd", "ddd"],
+          ["fmaxd", "ddd"], ["fmind", "ddd"], ["fnmuld", "ddd"]
           ])
 
 generate(FourRegFloatOp,
-         [["fmadds", "ssss"], ["fmsubs", "ssss"], ["fnmadds", "ssss"], ["fnmadds", "ssss"],
-          ["fmaddd", "dddd"], ["fmsubd", "dddd"], ["fnmaddd", "dddd"], ["fnmaddd", "dddd"],])
+         [["fmaddh", "hhhh"], ["fmadds", "ssss"], ["fmsubs", "ssss"], ["fnmadds", "ssss"],
+          ["fnmadds", "ssss"], ["fmaddd", "dddd"], ["fmsubd", "dddd"], ["fnmaddd", "dddd"],
+          ["fnmaddd", "dddd"],])
 
 generate(TwoRegFloatOp,
          [["fmovs", "ss"], ["fabss", "ss"], ["fnegs", "ss"], ["fsqrts", "ss"],
           ["fcvts", "ds"], ["fcvtsh", "hs"], ["fcvths", "sh"],
           ["fmovd", "dd"], ["fabsd", "dd"], ["fnegd", "dd"], ["fsqrtd", "dd"],
-          ["fcvtd", "sd"],
+          ["fcvtd", "sd"], ["fsqrth", "hh"]
           ])
 
 generate(FloatConvertOp, [["fcvtzsw", "fcvtzs", "ws"], ["fcvtzs", "fcvtzs", "xs"],
@@ -1776,11 +1780,14 @@ generate(TwoRegNEONOp,
           ["absr", "abs", "2S"], ["absr", "abs", "4S"],
           ["absr", "abs", "2D"],
           ["fabs", "fabs", "2S"], ["fabs", "fabs", "4S"],
-          ["fabs", "fabs", "2D"],
+          ["fabs", "fabs", "2D"], ["fabs", "fabs", "4H"],
+          ["fabs", "fabs", "8H"],
           ["fneg", "fneg", "2S"], ["fneg", "fneg", "4S"],
-          ["fneg", "fneg", "2D"],
+          ["fneg", "fneg", "2D"], ["fneg", "fneg", "4H"],
+          ["fneg", "fneg", "8H"],
           ["fsqrt", "fsqrt", "2S"], ["fsqrt", "fsqrt", "4S"],
-          ["fsqrt", "fsqrt", "2D"],
+          ["fsqrt", "fsqrt", "2D"], ["fsqrt", "fsqrt", "4H"],
+          ["fsqrt", "fsqrt", "8H"],
           ["notr", "not", "8B"], ["notr", "not", "16B"],
           ])
 
@@ -1801,7 +1808,8 @@ generate(ThreeRegNEONOp,
           ["uqaddv", "uqadd", "2S"], ["uqaddv", "uqadd", "4S"],
           ["uqaddv", "uqadd", "2D"],
           ["fadd", "fadd", "2S"], ["fadd", "fadd", "4S"],
-          ["fadd", "fadd", "2D"],
+          ["fadd", "fadd", "2D"], ["fadd", "fadd", "4H"],
+          ["fadd", "fadd", "8H"],
           ["subv", "sub", "8B"], ["subv", "sub", "16B"],
           ["subv", "sub", "4H"], ["subv", "sub", "8H"],
           ["subv", "sub", "2S"], ["subv", "sub", "4S"],
@@ -1815,26 +1823,33 @@ generate(ThreeRegNEONOp,
           ["uqsubv", "uqsub", "2S"], ["uqsubv", "uqsub", "4S"],
           ["uqsubv", "uqsub", "2D"],
           ["fsub", "fsub", "2S"], ["fsub", "fsub", "4S"],
-          ["fsub", "fsub", "2D"],
+          ["fsub", "fsub", "2D"], ["fsub", "fsub", "4H"],
+          ["fsub", "fsub", "8H"],
           ["mulv", "mul", "8B"], ["mulv", "mul", "16B"],
           ["mulv", "mul", "4H"], ["mulv", "mul", "8H"],
           ["mulv", "mul", "2S"], ["mulv", "mul", "4S"],
           ["fabd", "fabd", "2S"], ["fabd", "fabd", "4S"],
-          ["fabd", "fabd", "2D"],
+          ["fabd", "fabd", "2D"], ["fabd", "fabd", "4H"],
+          ["fabd", "fabd", "8H"],
           ["faddp", "faddp", "2S"], ["faddp", "faddp", "4S"],
-          ["faddp", "faddp", "2D"],
+          ["faddp", "faddp", "2D"], ["faddp", "faddp", "4H"],
+          ["faddp", "faddp", "8H"],
           ["fmul", "fmul", "2S"], ["fmul", "fmul", "4S"],
-          ["fmul", "fmul", "2D"],
+          ["fmul", "fmul", "2D"], ["fmul", "fmul", "4H"],
+          ["fmul", "fmul", "8H"],
           ["mlav", "mla", "4H"], ["mlav", "mla", "8H"],
           ["mlav", "mla", "2S"], ["mlav", "mla", "4S"],
           ["fmla", "fmla", "2S"], ["fmla", "fmla", "4S"],
-          ["fmla", "fmla", "2D"],
+          ["fmla", "fmla", "2D"], ["fmla", "fmla", "4H"],
+          ["fmla", "fmla", "8H"],
           ["mlsv", "mls", "4H"], ["mlsv", "mls", "8H"],
           ["mlsv", "mls", "2S"], ["mlsv", "mls", "4S"],
           ["fmls", "fmls", "2S"], ["fmls", "fmls", "4S"],
-          ["fmls", "fmls", "2D"],
+          ["fmls", "fmls", "2D"], ["fmls", "fmls", "4H"],
+          ["fmls", "fmls", "8H"],
           ["fdiv", "fdiv", "2S"], ["fdiv", "fdiv", "4S"],
-          ["fdiv", "fdiv", "2D"],
+          ["fdiv", "fdiv", "2D"], ["fdiv", "fdiv", "4H"],
+          ["fdiv", "fdiv", "8H"],
           ["maxv", "smax", "8B"], ["maxv", "smax", "16B"],
           ["maxv", "smax", "4H"], ["maxv", "smax", "8H"],
           ["maxv", "smax", "2S"], ["maxv", "smax", "4S"],
@@ -1845,7 +1860,8 @@ generate(ThreeRegNEONOp,
           ["smaxp", "smaxp", "4H"], ["smaxp", "smaxp", "8H"],
           ["smaxp", "smaxp", "2S"], ["smaxp", "smaxp", "4S"],
           ["fmax", "fmax", "2S"], ["fmax", "fmax", "4S"],
-          ["fmax", "fmax", "2D"],
+          ["fmax", "fmax", "2D"], ["fmax", "fmax", "4H"],
+          ["fmax", "fmax", "8H"],
           ["minv", "smin", "8B"], ["minv", "smin", "16B"],
           ["minv", "smin", "4H"], ["minv", "smin", "8H"],
           ["minv", "smin", "2S"], ["minv", "smin", "4S"],
@@ -1861,9 +1877,11 @@ generate(ThreeRegNEONOp,
           ["shsubv", "shsub", "4H"], ["shsubv", "shsub", "8H"],
           ["shsubv", "shsub", "2S"], ["shsubv", "shsub", "4S"],
           ["fmin", "fmin", "2S"], ["fmin", "fmin", "4S"],
-          ["fmin", "fmin", "2D"],
+          ["fmin", "fmin", "2D"], ["fmin", "fmin", "4H"],
+          ["fmin", "fmin", "8H"],
           ["facgt", "facgt", "2S"], ["facgt", "facgt", "4S"],
-          ["facgt", "facgt", "2D"],
+          ["facgt", "facgt", "2D"], ["facgt", "facgt", "4H"],
+          ["facgt", "facgt", "8H"],
           ])
 
 generate(VectorScalarNEONInstruction,
@@ -1924,8 +1942,14 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["fmov",   "__ fmovd(v14, __ T2D, 0.5f);",                       "fmov\tv14.2d, 0.5"],
                         ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"],
                         ["fcvtzs", "__ fcvtzs(v0, __ T2S, v1);",                         "fcvtzs\tv0.2s, v1.2s"],
+                        ["fcvtzs", "__ fcvtzs(v0, __ T4H, v1);",                         "fcvtzs\tv0.4h, v1.4h"],
+                        ["fcvtzs", "__ fcvtzs(v0, __ T8H, v1);",                         "fcvtzs\tv0.8h, v1.8h"],
                         ["fcvtas", "__ fcvtas(v2, __ T4S, v3);",                         "fcvtas\tv2.4s, v3.4s"],
+                        ["fcvtas", "__ fcvtas(v2, __ T4H, v3);",                         "fcvtas\tv2.4h, v3.4h"],
+                        ["fcvtas", "__ fcvtas(v2, __ T8H, v3);",                         "fcvtas\tv2.8h, v3.8h"],
                         ["fcvtms", "__ fcvtms(v4, __ T2D, v5);",                         "fcvtms\tv4.2d, v5.2d"],
+                        ["fcvtms", "__ fcvtms(v4, __ T4H, v5);",                         "fcvtms\tv4.4h, v5.4h"],
+                        ["fcvtms", "__ fcvtms(v4, __ T8H, v5);",                         "fcvtms\tv4.8h, v5.8h"],
                         # SVE instructions
                         ["cpy",      "__ sve_cpy(z0, __ S, p0, v1);",                      "mov\tz0.s, p0/m, s1"],
                         ["cpy",      "__ sve_cpy(z0, __ B, p0, 127, true);",               "mov\tz0.b, p0/m, 127"],

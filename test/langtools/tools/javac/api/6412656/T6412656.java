@@ -25,7 +25,7 @@
  * @test
  * @bug     6412656 6443062
  * @summary JSR 199: pass annotation processor instances to compiler
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler

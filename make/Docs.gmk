@@ -92,20 +92,16 @@ REFERENCE_TAGS := $(JAVADOC_TAGS)
 JAVADOC_DISABLED_DOCLINT_WARNINGS := missing
 JAVADOC_DISABLED_DOCLINT_PACKAGES := org.w3c.* javax.smartcardio
 
-# Allow overriding on the command line
-# (intentionally sharing name with the javac option)
-JAVA_WARNINGS_ARE_ERRORS ?= -Werror
-
 # The initial set of options for javadoc
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
-    -serialwarn -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
+    -serialwarn -encoding utf-8 -docencoding utf-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
     --override-methods=summary
 
 # The reference options must stay stable to allow for comparisons across the
 # development cycle.
 REFERENCE_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
-    -serialwarn -encoding ISO-8859-1 -breakiterator -splitIndex --system none \
+    -serialwarn -encoding utf-8 -breakiterator -splitIndex --system none \
     -html5 -javafx --expand-requires transitive
 
 # Should we add DRAFT stamps to the generated javadoc?
@@ -264,7 +260,7 @@ define create_overview_file
   $$($1_OVERVIEW): $$($1_OVERVIEW_VARDEPS_FILE)
 	$$(call LogInfo, Creating overview.html for $1)
 	$$(call MakeDir, $$(@D))
-	$$(PRINTF) > $$@ '$$($1_OVERVIEW_TEXT)'
+	$$(PRINTF) "%s" '$$($1_OVERVIEW_TEXT)' > $$@
 endef
 
 ################################################################################
@@ -322,7 +318,9 @@ define SetupApiDocsGenerationBody
   # Ignore the doclint warnings in certain packages
   $1_OPTIONS += -Xdoclint/package:$$(call CommaList, $$(addprefix -, \
       $$(JAVADOC_DISABLED_DOCLINT_PACKAGES)))
-  $1_OPTIONS += $$(JAVA_WARNINGS_ARE_ERRORS)
+  ifeq ($$(JAVA_WARNINGS_AS_ERRORS), true)
+    $1_OPTIONS += -Werror
+  endif
 
   $1_DOC_TITLE := $$($1_LONG_NAME)<br>Version $$(VERSION_SPECIFICATION) API \
       Specification
@@ -542,7 +540,9 @@ $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
 # Format: space-delimited list of names, including at most one '%' as a
 # wildcard. Spec source files match if their filename or any enclosing folder
 # name matches one of the items in SPEC_FILTER.
-SPEC_FILTER := %
+ifeq ($(SPEC_FILTER), )
+  SPEC_FILTER := %
+endif
 
 ApplySpecFilter = \
     $(strip $(foreach file, $(1), \

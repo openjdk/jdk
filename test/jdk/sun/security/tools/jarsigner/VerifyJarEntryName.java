@@ -96,22 +96,6 @@ public class VerifyJarEntryName {
     }
 
     /*
-     * Modify a single byte in signature filename in LOC, and
-     * validate that jarsigner -verify emits a warning message.
-     */
-    @Test
-    void verifySignatureEntryName() throws Exception {
-        modifyJarEntryName(ORIGINAL_JAR, MODIFIED_JAR, "MYKEY.SF");
-        SecurityTools.jarsigner("-verify -verbose " + MODIFIED_JAR)
-                .shouldContain("This JAR file contains internal " +
-                        "inconsistencies that may result in different " +
-                        "contents when reading via JarFile and JarInputStream:")
-                .shouldContain("- Entry XETA-INF/MYKEY.SF is present when reading " +
-                        "via JarInputStream but missing when reading via JarFile")
-                .shouldHaveExitValue(0);
-    }
-
-    /*
      * Validate that jarsigner -verify on a valid JAR works without
      * emitting warnings about internal inconsistencies.
      */

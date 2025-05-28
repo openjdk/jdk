@@ -257,8 +257,8 @@ public:
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3);
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3, Register arg_4);
 
-  void get_vm_result(Register oop_result, Register tmp);
-  void get_vm_result_2(Register metadata_result, Register tmp);
+  void get_vm_result_oop(Register oop_result, Register tmp);
+  void get_vm_result_metadata(Register metadata_result, Register tmp);
 
   // Always sets/resets sp, which default to SP if (last_sp == noreg)
   // Optionally sets/resets fp (use noreg to avoid setting it)

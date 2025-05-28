@@ -32,7 +32,9 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/instanceStackChunkKlass.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
+#include "oops/trainingData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/arguments.hpp"
@@ -60,8 +62,13 @@
   f(InstanceRefKlass) \
   f(InstanceStackChunkKlass) \
   f(Method) \
+  f(MethodData) \
+  f(MethodCounters) \
   f(ObjArrayKlass) \
-  f(TypeArrayKlass)
+  f(TypeArrayKlass) \
+  f(KlassTrainingData) \
+  f(MethodTrainingData) \
+  f(CompileTrainingData)
 
 class CppVtableInfo {
   intptr_t _vtable_size;
@@ -116,7 +123,7 @@ void CppVtableCloner<T>::initialize(const char* name, CppVtableInfo* info) {
 
   // We already checked (and, if necessary, adjusted n) when the vtables were allocated, so we are
   // safe to do memcpy.
-  log_debug(cds, vtables)("Copying %3d vtable entries for %s", n, name);
+  log_debug(aot, vtables)("Copying %3d vtable entries for %s", n, name);
   memcpy(dstvtable, srcvtable, sizeof(intptr_t) * n);
 }
 
@@ -166,7 +173,7 @@ int CppVtableCloner<T>::get_vtable_length(const char* name) {
       break;
     }
   }
-  log_debug(cds, vtables)("Found   %3d vtable entries for %s", vtable_len, name);
+  log_debug(aot, vtables)("Found   %3d vtable entries for %s", vtable_len, name);
 
   return vtable_len;
 }
@@ -279,13 +286,10 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
   case MetaspaceObj::ConstMethodType:
   case MetaspaceObj::ConstantPoolCacheType:
   case MetaspaceObj::AnnotationsType:
-  case MetaspaceObj::MethodCountersType:
   case MetaspaceObj::RecordComponentType:
+  case MetaspaceObj::AdapterHandlerEntryType:
+  case MetaspaceObj::AdapterFingerPrintType:
     // These have no vtables.
-    break;
-  case MetaspaceObj::MethodDataType:
-    // We don't archive MethodData <-- should have been removed in removed_unsharable_info
-    ShouldNotReachHere();
     break;
   default:
     for (kind = 0; kind < _num_cloned_vtable_kinds; kind ++) {

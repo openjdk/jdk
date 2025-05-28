@@ -28,14 +28,15 @@
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodBlocks.hpp"
 #include "ci/ciMethodData.hpp"
+#include "ci/ciReplay.hpp"
 #include "ci/ciStreams.hpp"
 #include "ci/ciSymbol.hpp"
-#include "ci/ciReplay.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "compiler/compileTask.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -47,6 +48,7 @@
 #include "oops/generateOopMap.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
@@ -914,8 +916,14 @@ int ciMethod::scale_count(int count, float prof_factor) {
       method_life = counter_life;
     }
     if (counter_life > 0) {
-      count = (int)((double)count * prof_factor * method_life / counter_life + 0.5);
-      count = (count > 0) ? count : 1;
+      double count_d = (double)count * prof_factor * method_life / counter_life + 0.5;
+      if (count_d >= static_cast<double>(INT_MAX)) {
+        // Clamp in case of overflowing int range.
+        count = INT_MAX;
+      } else {
+        count = int(count_d);
+        count = (count > 0) ? count : 1;
+      }
     } else {
       count = 1;
     }
@@ -1143,6 +1151,28 @@ int ciMethod::code_size_for_inlining() {
 // heuristic (e.g. post call nop instructions; see InlineSkippedInstructionsCounter)
 int ciMethod::inline_instructions_size() {
   if (_inline_instructions_size == -1) {
+    if (TrainingData::have_data()) {
+      GUARDED_VM_ENTRY(
+        CompLevel level = static_cast<CompLevel>(CURRENT_ENV->comp_level());
+        methodHandle top_level_mh(Thread::current(), CURRENT_ENV->task()->method());
+        MethodTrainingData* mtd = MethodTrainingData::find(top_level_mh);
+        if (mtd != nullptr) {
+          CompileTrainingData* ctd = mtd->last_toplevel_compile(level);
+          if (ctd != nullptr) {
+            methodHandle mh(Thread::current(), get_Method());
+            MethodTrainingData* this_mtd = MethodTrainingData::find(mh);
+            if (this_mtd != nullptr) {
+              auto r = ctd->ci_records().ciMethod__inline_instructions_size.find(this_mtd);
+              if (r.is_valid()) {
+                _inline_instructions_size = r.result();
+              }
+            }
+          }
+        }
+      );
+    }
+  }
+  if (_inline_instructions_size == -1) {
     GUARDED_VM_ENTRY(
       nmethod* code = get_Method()->code();
       if (code != nullptr && (code->comp_level() == CompLevel_full_optimization)) {
@@ -1150,6 +1180,14 @@ int ciMethod::inline_instructions_size() {
         _inline_instructions_size = isize > 0 ? isize : 0;
       } else {
         _inline_instructions_size = 0;
+      }
+      if (TrainingData::need_data()) {
+        CompileTrainingData* ctd = CURRENT_ENV->task()->training_data();
+        if (ctd != nullptr) {
+          methodHandle mh(Thread::current(), get_Method());
+          MethodTrainingData* this_mtd = MethodTrainingData::make(mh);
+          ctd->ci_records().ciMethod__inline_instructions_size.append_if_missing(_inline_instructions_size, this_mtd);
+        }
       }
     );
   }

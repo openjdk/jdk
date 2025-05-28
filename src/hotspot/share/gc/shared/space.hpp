@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public:
   size_t free()     const { return byte_size(top(),    end()); }
 
   void print() const;
-  void print_on(outputStream* st) const;
+  void print_on(outputStream* st, const char* prefix) const;
 
   // Initialization.
   // "initialize" should be called once on a space, before it is used for

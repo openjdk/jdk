@@ -30,8 +30,8 @@
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
-#include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
+#include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "logging/log.hpp"
@@ -96,7 +96,7 @@ static void deopt_caller() {
 // call is of the variety where allocation failure returns null without an
 // exception, the following action is taken:
 //   1. The pending OutOfMemoryError is cleared
-//   2. null is written to JavaThread::_vm_result
+//   2. null is written to JavaThread::_vm_result_oop
 class RetryableAllocationMark {
  private:
    InternalOOMEMark _iom;
@@ -107,7 +107,7 @@ class RetryableAllocationMark {
     if (THREAD != nullptr) {
       if (HAS_PENDING_EXCEPTION) {
         oop ex = PENDING_EXCEPTION;
-        THREAD->set_vm_result(nullptr);
+        THREAD->set_vm_result_oop(nullptr);
         if (ex->is_a(vmClasses::OutOfMemoryError_klass())) {
           CLEAR_PENDING_EXCEPTION;
         }
@@ -127,12 +127,12 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_instance_or_null(JavaThread* current, Kl
     if (!h->is_initialized()) {
       // Cannot re-execute class initialization without side effects
       // so return without attempting the initialization
-      current->set_vm_result(nullptr);
+      current->set_vm_result_oop(nullptr);
       return;
     }
     // allocate instance and return via TLS
     oop obj = h->allocate_instance(CHECK);
-    current->set_vm_result(obj);
+    current->set_vm_result_oop(obj);
   }
   JRT_BLOCK_END;
   SharedRuntime::on_slowpath_allocation_exit(current);
@@ -166,7 +166,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_or_null(JavaThread* current, Klass
       deopt_caller();
     }
   }
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
   JRT_BLOCK_END;
   SharedRuntime::on_slowpath_allocation_exit(current);
 JRT_END
@@ -177,13 +177,13 @@ JRT_ENTRY(void, JVMCIRuntime::new_multi_array_or_null(JavaThread* current, Klass
   Handle holder(current, klass->klass_holder()); // keep the klass alive
   RetryableAllocationMark ram(current);
   oop obj = ArrayKlass::cast(klass)->multi_allocate(rank, dims, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 JRT_ENTRY(void, JVMCIRuntime::dynamic_new_array_or_null(JavaThread* current, oopDesc* element_mirror, jint length))
   RetryableAllocationMark ram(current);
   oop obj = Reflection::reflect_new_array(element_mirror, length, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance_or_null(JavaThread* current, oopDesc* type_mirror))
@@ -201,12 +201,12 @@ JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance_or_null(JavaThread* current, 
   if (!klass->is_initialized()) {
     // Cannot re-execute class initialization without side effects
     // so return without attempting the initialization
-    current->set_vm_result(nullptr);
+    current->set_vm_result_oop(nullptr);
     return;
   }
 
   oop obj = klass->allocate_instance(CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 extern void vm_exit(int code);
@@ -533,7 +533,7 @@ JRT_ENTRY(jlong, JVMCIRuntime::invoke_static_method_one_arg(JavaThread* current,
   if (return_type == T_VOID) {
     return 0;
   } else if (return_type == T_OBJECT || return_type == T_ARRAY) {
-    current->set_vm_result(result.get_oop());
+    current->set_vm_result_oop(result.get_oop());
     return 0;
   } else {
     jvalue *value = (jvalue *) result.get_value_addr();
@@ -720,7 +720,7 @@ JRT_END
 JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *libjvmciOrHotspotEnv, jclass c))
   JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
   if (!EnableJVMCI) {
-    JVMCI_THROW_MSG_NULL(InternalError, "JVMCI is not enabled");
+    JVMCI_THROW_MSG_NULL(InternalError, JVMCI_NOT_ENABLED_ERROR_MESSAGE);
   }
   JVMCIENV->runtime()->initialize_HotSpotJVMCIRuntime(JVMCI_CHECK_NULL);
   JVMCIObject runtime = JVMCIENV->runtime()->get_HotSpotJVMCIRuntime(JVMCI_CHECK_NULL);
@@ -732,7 +732,7 @@ JVM_END
 JVM_ENTRY_NO_ENV(jlong, JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets_handle))
   JVMCIENV_FROM_JNI(thread, env);
   if (!EnableJVMCI) {
-    JVMCI_THROW_MSG_0(InternalError, "JVMCI is not enabled");
+    JVMCI_THROW_MSG_0(InternalError, JVMCI_NOT_ENABLED_ERROR_MESSAGE);
   }
   JVMCIPrimitiveArray offsets = JVMCIENV->wrap(offsets_handle);
   JVMCIENV->put_int_at(offsets, 0, SystemProperty::next_offset_in_bytes());
@@ -742,14 +742,6 @@ JVM_ENTRY_NO_ENV(jlong, JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jint
   return (jlong) Arguments::system_properties();
 JVM_END
 
-
-void JVMCIRuntime::call_getCompiler(TRAPS) {
-  JVMCIENV_FROM_THREAD(THREAD);
-  JVMCIENV->check_init(CHECK);
-  JVMCIObject jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_CHECK);
-  initialize(JVMCI_CHECK);
-  JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
-}
 
 void JVMCINMethodData::initialize(int nmethod_mirror_index,
                                   int nmethod_entry_patch_offset,
@@ -1515,7 +1507,7 @@ JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *libjvmciOrHotspotEnv, jc
   JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
 
   if (!EnableJVMCI) {
-    JVMCI_THROW_MSG(InternalError, "JVMCI is not enabled");
+    JVMCI_THROW_MSG(InternalError, JVMCI_NOT_ENABLED_ERROR_MESSAGE);
   }
 
   JVMCIENV->runtime()->initialize(JVMCIENV);

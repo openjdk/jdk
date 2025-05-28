@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ class UnixSecureDirectoryStream
      * Deletes file/directory in this directory. Works in a race-free manner
      * when invoked with flags.
      */
-    private void implDelete(Path obj, boolean haveFlags, int flags)
+    private void implDelete(Path obj, int flags)
         throws IOException
     {
         UnixPath file = getName(obj);
@@ -167,20 +167,6 @@ class UnixSecureDirectoryStream
         try {
             if (!ds.isOpen())
                 throw new ClosedDirectoryStreamException();
-
-            if (!haveFlags) {
-                // need file attribute to know if file is directory. This creates
-                // a race in that the file may be replaced by a directory or a
-                // directory replaced by a file between the time we query the
-                // file type and unlink it.
-                UnixFileAttributes attrs = null;
-                try {
-                    attrs = UnixFileAttributes.get(dfd, file, false);
-                } catch (UnixException x) {
-                    x.rethrowAsIOException(file);
-                }
-                flags = (attrs.isDirectory()) ? AT_REMOVEDIR : 0;
-            }
 
             try {
                 unlinkat(dfd, file.asByteArray(), flags);
@@ -199,12 +185,12 @@ class UnixSecureDirectoryStream
 
     @Override
     public void deleteFile(Path file) throws IOException {
-        implDelete(file, true, 0);
+        implDelete(file, 0);
     }
 
     @Override
     public void deleteDirectory(Path dir) throws IOException {
-        implDelete(dir, true, AT_REMOVEDIR);
+        implDelete(dir, AT_REMOVEDIR);
     }
 
     /**

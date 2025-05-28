@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
-import jdk.internal.javac.PreviewFeature;
 import sun.nio.cs.UTF_8;
 
 /**
@@ -59,6 +58,13 @@ import sun.nio.cs.UTF_8;
  * {@link #printf printf()} as well as the read, format and write operations
  * on the objects returned by {@link #reader()} and {@link #writer()} may
  * block in multithreaded scenarios.
+ * <p>
+ * Read and write operations use the {@code Charset}s specified by
+ * {@link System##stdin.encoding stdin.encoding} and {@link
+ * System##stdout.encoding stdout.encoding}, respectively. The
+ * {@code Charset} used for write operations can also be retrieved using
+ * the {@link #charset()} method. Since {@code Console} is intended for
+ * interactive use on a terminal, these charsets are typically the same.
  * <p>
  * Operations that format strings are locale sensitive, using either the
  * specified {@code Locale}, or the
@@ -145,100 +151,6 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * @return  The reader associated with this console
      */
     public Reader reader() {
-        throw newUnsupportedOperationException();
-    }
-
-    /**
-     * Writes a string representation of the specified object to this console's
-     * output stream, terminates the line using {@link System#lineSeparator()}
-     * and then flushes the console.
-     *
-     * <p> The string representation of the specified object is obtained as if
-     * by calling {@link String#valueOf(Object)}.
-     *
-     * @param  obj
-     *         An object whose string representation is to be written,
-     *         may be {@code null}.
-     *
-     * @return  This console
-     *
-     * @since 23
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public Console println(Object obj) {
-        throw newUnsupportedOperationException();
-    }
-
-    /**
-     * Terminates the current line in this console's output stream using
-     * {@link System#lineSeparator()} and then flushes the console.
-     *
-     * @return  This console
-     *
-     * @since 24
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public Console println() {
-        return println("");
-    }
-
-    /**
-     * Writes a string representation of the specified object to this console's
-     * output stream and then flushes the console.
-     *
-     * <p> The string representation of the specified object is obtained as if
-     * by calling {@link String#valueOf(Object)}.
-     *
-     * @param  obj
-     *         An object whose string representation is to be written,
-     *         may be {@code null}.
-     *
-     * @return  This console
-     *
-     * @since 23
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public Console print(Object obj) {
-        throw newUnsupportedOperationException();
-    }
-
-    /**
-     * Writes a prompt as if by calling {@code print}, then reads a single line
-     * of text from this console.
-     *
-     * @param  prompt
-     *         A prompt string, may be {@code null}.
-     *
-     * @throws IOError
-     *         If an I/O error occurs.
-     *
-     * @return  A string containing the line read from the console, not
-     *          including any line-termination characters, or {@code null}
-     *          if an end of stream has been reached without having read
-     *          any characters.
-     *
-     * @since 23
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public String readln(String prompt) {
-        throw newUnsupportedOperationException();
-    }
-
-    /**
-     * Reads a single line of text from this console.
-     *
-     * @throws IOError
-     *         If an I/O error occurs.
-     *
-     * @return  A string containing the line read from the console, not
-     *          including any line-termination characters, or {@code null}
-     *          if an end of stream has been reached without having read
-     *          any characters.
-     *
-     * @since 24
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
-    public String readln() {
         throw newUnsupportedOperationException();
     }
 
@@ -604,17 +516,15 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * Returns the {@link java.nio.charset.Charset Charset} object used for
-     * the {@code Console}.
+     * {@return the {@link java.nio.charset.Charset Charset} object used for
+     * the write operations on this {@code Console}}
      * <p>
-     * The returned charset corresponds to the input and output source
-     * (e.g., keyboard and/or display) specified by the host environment or user,
-     * which defaults to the one based on {@link System##stdout.encoding stdout.encoding}.
-     * It may not necessarily be the same as the default charset returned from
+     * The returned charset is used for encoding the data that is sent to
+     * the output (e.g., display), specified by the host environment or user.
+     * It defaults to the one based on {@link System##stdout.encoding stdout.encoding},
+     * and may not necessarily be the same as the default charset returned from
      * {@link java.nio.charset.Charset#defaultCharset() Charset.defaultCharset()}.
      *
-     * @return a {@link java.nio.charset.Charset Charset} object used for the
-     *          {@code Console}
      * @since 17
      */
     public Charset charset() {
@@ -644,7 +554,9 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     private static final boolean istty = istty();
-    static final Charset CHARSET =
+    private static final Charset STDIN_CHARSET =
+        Charset.forName(System.getProperty("stdin.encoding"), UTF_8.INSTANCE);
+    private static final Charset STDOUT_CHARSET =
         Charset.forName(System.getProperty("stdout.encoding"), UTF_8.INSTANCE);
     private static final Console cons = instantiateConsole();
     static {
@@ -674,7 +586,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
             for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
                 if (consModName.equals(jcp.getClass().getModule().getName())) {
-                    var jc = jcp.console(istty, CHARSET);
+                    var jc = jcp.console(istty, STDIN_CHARSET, STDOUT_CHARSET);
                     if (jc != null) {
                         c = new ProxyingConsole(jc);
                     }
@@ -686,7 +598,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
         // If not found, default to built-in Console
         if (istty && c == null) {
-            c = new ProxyingConsole(new JdkConsoleImpl(CHARSET));
+            c = new ProxyingConsole(new JdkConsoleImpl(STDIN_CHARSET, STDOUT_CHARSET));
         }
 
         return c;

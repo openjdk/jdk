@@ -145,6 +145,17 @@ private:
   size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
   size_t _rw_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the rw region
   size_t _ro_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the ro region
+
+  // The following are parameters that affect MethodData layout.
+  uint    _type_profile_level;
+  int     _type_profile_args_limit;
+  int     _type_profile_parms_limit;
+  intx    _type_profile_width;
+  intx    _bci_profile_width;
+  bool    _profile_traps;
+  bool    _type_profile_casts;
+  int     _spec_trap_limit_extra_entries;
+
   template <typename T> T from_mapped_offset(size_t offset) const {
     return (T)(mapped_base_address() + offset);
   }
@@ -268,7 +279,7 @@ private:
 public:
   FileMapHeader *header() const       { return _header; }
   static bool get_base_archive_name_from_header(const char* archive_name,
-                                                char** base_archive_name);
+                                                const char** base_archive_name);
   static bool is_preimage_static_archive(const char* file);
 
   bool init_from_file(int fd);
@@ -346,9 +357,8 @@ public:
   static void assert_mark(bool check);
 
   // File manipulation.
-  bool  initialize() NOT_CDS_RETURN_(false);
-  bool  open_for_read();
-  void  open_for_write();
+  bool  open_as_input() NOT_CDS_RETURN_(false);
+  void  open_as_output();
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
@@ -369,6 +379,7 @@ public:
   MemRegion get_heap_region_requested_range() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
+  bool  map_aot_code_region(ReservedSpace rs);
   void  unmap_region(int i);
   void  close();
   bool  is_open() { return _file_open; }
@@ -425,6 +436,7 @@ public:
   }
 
  private:
+  bool  open_for_read();
   void  seek_to_position(size_t pos);
   bool  map_heap_region_impl() NOT_CDS_JAVA_HEAP_RETURN_(false);
   void  dealloc_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
