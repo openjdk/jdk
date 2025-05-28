@@ -1068,11 +1068,11 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    public List<ResolvedJavaMethod> getNonStaticMethods(boolean forceLink) {
+    public List<ResolvedJavaMethod> getNonInitializerMethods(boolean forceLink) {
         if (forceLink) {
             link();
         }
-        ResolvedJavaMethod[] instanceMethods = runtime().compilerToVm.getInstanceMethods(this);
+        ResolvedJavaMethod[] instanceMethods = runtime().compilerToVm.getNonInitializerMethods(this);
         if (instanceMethods.length == 0) {
             return List.of();
         }

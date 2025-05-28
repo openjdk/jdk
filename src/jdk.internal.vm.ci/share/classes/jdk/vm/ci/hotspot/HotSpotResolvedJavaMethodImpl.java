@@ -580,10 +580,10 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
      */
     @Override
     public boolean isDeclared() {
-        if (isConstructor() || isStatic()) {
+        if (isConstructor() || isClassInitializer()) {
             return false;
         }
-        return !compilerToVM().isOverpass(this);
+        return (getConstMethodFlags() & config().constMethodFlagsIsOverpass) == 0;
     }
 
     @Override

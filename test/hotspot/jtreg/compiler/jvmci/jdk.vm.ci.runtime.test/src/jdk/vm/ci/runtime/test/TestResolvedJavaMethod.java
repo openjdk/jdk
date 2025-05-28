@@ -429,8 +429,7 @@ public class TestResolvedJavaMethod extends MethodUniverse {
     public void isDeclaredTest() {
         for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
             ResolvedJavaMethod m = e.getValue();
-            Method k = e.getKey();
-            boolean expectedDeclared = !Modifier.isStatic(k.getModifiers());
+            boolean expectedDeclared = Arrays.stream(m.getDeclaringClass().getDeclaredMethods()).anyMatch(i -> i.equals(m));
             assertEquals(expectedDeclared, m.isDeclared());
         }
         for (Map.Entry<Constructor<?>, ResolvedJavaMethod> e : constructors.entrySet()) {

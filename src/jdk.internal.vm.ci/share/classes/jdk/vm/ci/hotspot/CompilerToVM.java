@@ -177,17 +177,6 @@ final class CompilerToVM {
     private native boolean isCompilable(HotSpotResolvedJavaMethodImpl method, long methodPointer);
 
     /**
-     * Returns whether {@code method} is an overpass method.
-     * Overpass methods are instance methods which are created when otherwise a valid candidate
-     * for method resolution would not be found.
-     */
-    boolean isOverpass(HotSpotResolvedJavaMethodImpl method) {
-        return isOverpass(method, method.getMethodPointer());
-    }
-
-    private native boolean isOverpass(HotSpotResolvedJavaMethodImpl method, long methodPointer);
-
-    /**
      * Determines if {@code method} is targeted by a VM directive (e.g.,
      * {@code -XX:CompileCommand=dontinline,<pattern>}) or annotation (e.g.,
      * {@code jdk.internal.vm.annotation.DontInline}) that specifies it should not be inlined.
@@ -1159,7 +1148,7 @@ final class CompilerToVM {
     native ResolvedJavaMethod[] getDeclaredConstructors(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
-     * Gets the {@link ResolvedJavaMethod}s for all non-overpass instance methods of {@code klass}.
+     * Gets the {@link ResolvedJavaMethod}s for all non-overpass and non-initializer methods of {@code klass}.
      */
     ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass) {
         return getDeclaredMethods(klass, klass.getKlassPointer());
@@ -1168,13 +1157,13 @@ final class CompilerToVM {
     native ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
-     * Gets the {@link ResolvedJavaMethod}s for all instance methods of {@code klass}.
+     * Gets the {@link ResolvedJavaMethod}s for all non-initializer methods of {@code klass}.
      */
-    ResolvedJavaMethod[] getInstanceMethods(HotSpotResolvedObjectTypeImpl klass) {
-        return getInstanceMethods(klass, klass.getKlassPointer());
+    ResolvedJavaMethod[] getNonInitializerMethods(HotSpotResolvedObjectTypeImpl klass) {
+        return getNonInitializerMethods(klass, klass.getKlassPointer());
     }
 
-    native ResolvedJavaMethod[] getInstanceMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
+    native ResolvedJavaMethod[] getNonInitializerMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     HotSpotResolvedObjectTypeImpl.FieldInfo[] getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass) {
         return getDeclaredFieldsInfo(klass, klass.getKlassPointer());

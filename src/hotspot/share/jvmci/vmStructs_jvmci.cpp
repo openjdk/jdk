@@ -691,6 +691,7 @@
   declare_constant(ConstMethodFlags::_misc_reserved_stack_access)         \
   declare_constant(ConstMethodFlags::_misc_changes_current_thread)        \
   declare_constant(ConstMethodFlags::_misc_is_scoped)                     \
+  declare_constant(ConstMethodFlags::_misc_is_overpass)                   \
                                                                           \
   declare_constant(CounterData::count_off)                                \
                                                                           \

@@ -1020,7 +1020,7 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
-    public void getNonStaticMethodsTest() {
+    public void getNonInitializerMethodsTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             Method[] raw = c.getDeclaredMethods();
@@ -1030,7 +1030,7 @@ public class TestResolvedJavaType extends TypeUniverse {
                 assertNotNull(resolvedMethod);
                 expected.add(resolvedMethod);
             }
-            Set<ResolvedJavaMethod> actual = new HashSet<>(type.getNonStaticMethods(false));
+            Set<ResolvedJavaMethod> actual = new HashSet<>(type.getNonInitializerMethods(false));
             assertTrue(actual.size() >= expected.size());
             assertTrue(actual.containsAll(expected));
         }
