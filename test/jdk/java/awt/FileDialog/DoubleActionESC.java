@@ -57,8 +57,6 @@ public class DoubleActionESC {
     private static final CountDownLatch latch = new CountDownLatch(REPEAT_COUNT);
 
     public static void main(String[] args) throws Exception {
-        latch = new CountDownLatch(REPEAT_COUNT);
-
         robot = new Robot();
         robot.setAutoDelay(50);
         try {
