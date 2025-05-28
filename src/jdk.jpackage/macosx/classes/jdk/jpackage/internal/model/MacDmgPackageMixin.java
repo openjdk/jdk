@@ -33,6 +33,14 @@ public interface MacDmgPackageMixin {
     Optional<Path> icon();
 
     /**
+     * Will be set to root of created install dir for deletion once it is no
+     * longer needed.
+     *
+     * @return Root of created install dir
+     */
+    Optional<Path> installDirDeleteRoot();
+
+    /**
      * Returns additional top=level content for DMG package.
      * <p>
      * Each item in the list can be a directory or a file.
@@ -41,6 +49,7 @@ public interface MacDmgPackageMixin {
      */
     List<Path> content();
 
-    record Stub(Optional<Path> icon, List<Path> content) implements MacDmgPackageMixin {
+    record Stub(Optional<Path> icon, Optional<Path> installDirDeleteRoot,
+                List<Path> content) implements MacDmgPackageMixin {
     }
 }

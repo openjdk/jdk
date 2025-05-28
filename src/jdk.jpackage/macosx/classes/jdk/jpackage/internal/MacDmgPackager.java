@@ -424,6 +424,14 @@ record MacDmgPackager(MacDmgPackage pkg, BuildEnv env, Path hdiutil, Path output
             }
 
         } finally {
+            // Delete root of install dir if set (jpackage created)
+            pkg.installDirDeleteRoot().ifPresent(path -> {
+                try {
+                    FileUtils.deleteRecursive(path);
+                } catch (IOException e) {
+                    Log.verbose(e.getMessage());
+                }
+            });
             // Detach the temporary image
             pb = new ProcessBuilder(
                     hdiutil.toString(),

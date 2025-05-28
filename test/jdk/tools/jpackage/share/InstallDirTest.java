@@ -113,115 +113,56 @@ public class InstallDirTest {
         .run();
     }
 
-    record DmgTestSpec(Path installDir, boolean installDirIgnored, boolean runtimeInstaller) {
-
-        DmgTestSpec {
-            Objects.requireNonNull(installDir);
-        }
-
-        static Builder build() {
-            return new Builder();
-        }
-
-        static final class Builder {
-
-            Builder ignoredInstallDir(String v) {
-                installDir = Path.of(v);
-                installDirIgnored = true;
-                return this;
-            }
-
-            Builder acceptedInstallDir(String v) {
-                installDir = Path.of(v);
-                installDirIgnored = false;
-                return this;
-            }
-
-            Builder runtimeInstaller() {
-                runtimeInstaller = true;
-                return this;
-            }
-
-            DmgTestSpec create() {
-                return new DmgTestSpec(installDir, installDirIgnored, runtimeInstaller);
-            }
-
-            private Path installDir;
-            private boolean installDirIgnored;
-            private boolean runtimeInstaller;
-        }
-
-        @Override
-        public String toString() {
-            final var sb = new StringBuilder();
-            sb.append(installDir);
-            if (installDirIgnored) {
-                sb.append(", ignore");
-            }
-            if (runtimeInstaller) {
-                sb.append(", runtime");
-            }
-            return sb.toString();
-        }
-
-        void run() {
-            final var test = new PackageTest().forTypes(PackageType.MAC_DMG).ignoreBundleOutputDir();
-            if (runtimeInstaller) {
-                test.addInitializer(cmd -> {
-                    cmd.removeArgumentWithValue("--input");
-                });
-            } else {
-                test.configureHelloApp();
-            }
-
-            test.addInitializer(JPackageCommand::setFakeRuntime).addInitializer(cmd -> {
-                cmd.addArguments("--install-dir", installDir);
-                cmd.validateOutput(createInstallDirWarningVerifier());
-            }).run(Action.CREATE_AND_UNPACK);
-        }
-
-        private TextStreamVerifier createInstallDirWarningVerifier() {
-            final var verifier = TKit.assertTextStream(
-                    JPackageStringBundle.MAIN.cannedFormattedString("message.install-dir-ignored", defaultDmgInstallDir()).getValue());
-            if (installDirIgnored) {
-                return verifier;
-            } else {
-                return verifier.negate();
-            }
-        }
-
-        private String defaultDmgInstallDir() {
-            if (runtimeInstaller) {
-                return "/Library/Java/JavaVirtualMachines";
-            } else {
-                return "/Applications";
-            }
-        }
+    @Test(ifOS = OperatingSystem.MACOS)
+    @Parameter("/System/jpackage")
+    public static void testMacCreate(String installDir) {
+        new PackageTest()
+        .setExpectedExitCode(1)
+        .excludeTypes(PackageType.MAC_PKG)
+        .configureHelloApp()
+        .addInitializer(cmd -> {
+            cmd.addArguments("--install-dir", installDir);
+            cmd.saveConsoleOutput(true);
+        })
+        .addBundleVerifier((cmd, result) -> {
+            cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString("message.install-dir-create", installDir));
+        })
+        .run();
     }
 
     @Test(ifOS = OperatingSystem.MACOS)
-    @ParameterSupplier
-    public static void testDmg(DmgTestSpec testSpec) {
-        testSpec.run();
+    public static void testMacInvalid() {
+        String installDir = TKit.createTempFile("InstallDir.txt")
+                .toAbsolutePath().toString();
+
+        new PackageTest()
+        .setExpectedExitCode(1)
+        .excludeTypes(PackageType.MAC_PKG)
+        .configureHelloApp()
+        .addInitializer(cmd -> {
+            cmd.addArguments("--install-dir", installDir);
+            cmd.saveConsoleOutput(true);
+        })
+        .addBundleVerifier((cmd, result) -> {
+            cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString("message.install-dir-invalid", installDir));
+        })
+        .run();
     }
 
-    public static List<Object[]> testDmg() {
-        return Stream.of(
-                DmgTestSpec.build().ignoredInstallDir("/foo"),
-                DmgTestSpec.build().ignoredInstallDir("/foo/bar"),
-                DmgTestSpec.build().ignoredInstallDir("/foo").runtimeInstaller(),
-                DmgTestSpec.build().ignoredInstallDir("/foo/bar").runtimeInstaller(),
+    @Test(ifOS = OperatingSystem.MACOS)
+    public static void testMacValid() {
+        final Path installDirRoot = TKit.createTempDirectory("InstallDirRoot");
+        Path installDir = installDirRoot.resolve("MyCompany").resolve("MyApp");
 
-                DmgTestSpec.build().ignoredInstallDir("/Library/Java/JavaVirtualMachines"),
-                DmgTestSpec.build().ignoredInstallDir("/Applications").runtimeInstaller(),
+        new PackageTest()
+        .excludeTypes(PackageType.MAC_PKG)
+        .configureHelloApp()
+        .addInitializer(cmd -> {
+            cmd.addArguments("--install-dir", installDir.toAbsolutePath().toString());
+        })
+        .run();
 
-                DmgTestSpec.build().acceptedInstallDir("/Applications"),
-                DmgTestSpec.build().ignoredInstallDir("/Applications/foo/bar/buz"),
-
-                DmgTestSpec.build().runtimeInstaller().acceptedInstallDir("/Library/Java/JavaVirtualMachines"),
-                DmgTestSpec.build().runtimeInstaller().ignoredInstallDir("/Library/Java/JavaVirtualMachines/foo/bar/buz")
-        ).map(DmgTestSpec.Builder::create).map(testSpec -> {
-            return new Object[] { testSpec };
-        }).toList();
+        // If we have non existing install directories make sure root is empty
+        TKit.assertDirectoryEmpty(installDirRoot);
     }
 }
