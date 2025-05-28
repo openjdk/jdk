@@ -41,15 +41,16 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class ClassPathLogging {
     public static void main(String... args) throws Exception {
+        String sep = File.pathSeparator;
         SimpleCDSAppTester.of("ClassPathLogging")
             .addVmArgs("-Xlog:class+path=debug")
-            .classpath(File.pathSeparator + "app.jar")
+            .classpath(sep + "foo.jar" + sep + sep + sep + "app.jar" + sep) // all empty paths should be skipped.
             .appCommandLine("ClassPathLoggingApp")
             .setProductionChecker((OutputAnalyzer out) -> {
                     out.shouldContain("HelloWorld")
                        .shouldContain("Reading classpath(s) from ClassPathLogging.aot (size = 3)")
                        .shouldMatch("boot.*0.*=.*modules")
-                       .shouldContain("(app   ) [1] = ")
+                       .shouldContain("(app   ) [1] = foo.jar")
                        .shouldContain("(app   ) [2] = app.jar");
                 })
             .runAOTWorkflow();
