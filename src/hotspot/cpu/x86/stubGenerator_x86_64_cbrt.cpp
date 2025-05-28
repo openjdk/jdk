@@ -40,7 +40,7 @@
 // where P=p1+p2*r+..+p8*r^7
 //
 // Special cases:
-//  cbrt(NaN) = quiet NaN, and raise invalid exception
+//  cbrt(NaN) = quiet NaN
 //  cbrt(+/-INF) = +/-INF
 //  cbrt(+/-0) = +/-0
 //
