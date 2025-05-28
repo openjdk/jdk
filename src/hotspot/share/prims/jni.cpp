@@ -549,7 +549,9 @@ JNI_END
 static void jni_check_async_exceptions(JavaThread *thread) {
   assert(thread == Thread::current(), "must be itself");
   if (thread->has_async_exception_condition()) {
-    SafepointMechanism::process_if_requested_with_exit_check(thread, true /* check asyncs */);
+    ResourceHashtable<const char*, bool> operations_filter;
+    operations_filter.put("check_async_exception", true); /* check asyncs */
+    SafepointMechanism::process_if_requested_with_exit_check(thread, operations_filter);
   }
 }
 

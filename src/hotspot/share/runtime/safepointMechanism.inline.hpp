@@ -67,9 +67,11 @@ bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) 
   if (!local_poll_armed(thread)) {
     return false;
   }
-
+  ResourceHashtable<const char*, bool> operations_filter;
+  operations_filter.put("allow_suspend", allow_suspend);
+  operations_filter.put("check_async_exception", false);
   if (global_poll() || // Safepoint
-      thread->handshake_state()->has_operation(allow_suspend, false /* check_async_exception */) || // Handshake
+      thread->handshake_state()->has_operation(operations_filter) || // Handshake
       !StackWatermarkSet::processing_started(thread)) { // StackWatermark processing is not started
     return true;
   }
@@ -82,17 +84,17 @@ bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) 
   return false;
 }
 
-void SafepointMechanism::process_if_requested(JavaThread* thread, bool allow_suspend, bool check_async_exception) {
+void SafepointMechanism::process_if_requested(JavaThread* thread, ResourceHashtable<const char*, bool>& operations_filter) {
   // Check NoSafepointVerifier. This also clears unhandled oops if CheckUnhandledOops is used.
   thread->check_possible_safepoint();
-
   if (local_poll_armed(thread)) {
-    process(thread, allow_suspend, check_async_exception);
+    process(thread, operations_filter);
   }
 }
 
-void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, bool check_async_exception) {
-  process_if_requested(thread, true /* allow_suspend */, check_async_exception);
+void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, ResourceHashtable<const char*, bool> &operations_filter) {
+  operations_filter.put("allow_suspend", true);
+  process_if_requested(thread, operations_filter);
   if (thread->has_special_runtime_exit_condition()) {
     thread->handle_special_runtime_exit_condition();
   }

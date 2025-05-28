@@ -490,9 +490,13 @@ bool HandshakeState::operation_pending(HandshakeOperation* op) {
   return _queue.contains(mo);
 }
 
-HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool check_async_exception) {
+HandshakeOperation* HandshakeState::get_op_for_self(ResourceHashtable<const char*, bool>& operations_filter) {
   assert(_handshakee == Thread::current(), "Must be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
+
+  bool allow_suspend = operations_filter.get("allow_suspend") != nullptr ? *operations_filter.get("allow_suspend") : false;
+  const bool check_async_exception = operations_filter.get("check_async_exception") != nullptr ? *operations_filter.get("check_async_exception") : false;
+
   assert(allow_suspend || !check_async_exception, "invalid case");
 #if INCLUDE_JVMTI
   if (allow_suspend && _handshakee->is_disable_suspend()) {
@@ -509,7 +513,7 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool che
   }
 }
 
-bool HandshakeState::has_operation(bool allow_suspend, bool check_async_exception) {
+bool HandshakeState::has_operation(ResourceHashtable<const char*, bool>& operations_filter) {
   // We must not block here as that could lead to deadlocks if we already hold an
   // "external" mutex. If the try_lock fails then we assume that there is an operation
   // and force the caller to check more carefully in a safer context. If we can't get
@@ -517,7 +521,8 @@ bool HandshakeState::has_operation(bool allow_suspend, bool check_async_exceptio
   // happen during thread termination and destruction.
   bool ret = true;
   if (_lock.try_lock()) {
-    ret = get_op_for_self(allow_suspend, check_async_exception) != nullptr;
+
+    ret = get_op_for_self(operations_filter) != nullptr;
     _lock.unlock();
   }
   return ret;
@@ -558,7 +563,7 @@ void HandshakeState::remove_op(HandshakeOperation* op) {
   assert(ret == op, "Popped op must match requested op");
 };
 
-bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_exception) {
+bool HandshakeState::process_by_self(ResourceHashtable<const char*, bool>& operations_filter) {
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(!_handshakee->is_terminated(), "should not be a terminated thread");
 
@@ -575,7 +580,7 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
     // the asynchronous suspension and unsafe access error handshakes.
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
 
-    HandshakeOperation* op = get_op_for_self(allow_suspend, check_async_exception);
+    HandshakeOperation* op = get_op_for_self(operations_filter);
     if (op != nullptr) {
       assert(op->_target == nullptr || op->_target == Thread::current(), "Wrong thread");
       bool async = op->is_async();

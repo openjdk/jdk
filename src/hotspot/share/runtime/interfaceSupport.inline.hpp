@@ -103,14 +103,18 @@ class ThreadStateTransition : public StackObj {
     } else {
       thread->set_thread_state(_thread_in_vm);
     }
-    SafepointMechanism::process_if_requested_with_exit_check(thread, to != _thread_in_Java ? false : check_asyncs);
+    ResourceHashtable<const char*, bool> operations_filter;
+    operations_filter.put("check_async_exception", to != _thread_in_Java ? false : check_asyncs);
+    SafepointMechanism::process_if_requested_with_exit_check(thread, operations_filter);
     thread->set_thread_state(to);
   }
 
   static inline void transition_from_vm(JavaThread *thread, JavaThreadState to, bool check_asyncs = true) {
     assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
     if (to == _thread_in_Java) {
-      SafepointMechanism::process_if_requested_with_exit_check(thread, check_asyncs);
+      ResourceHashtable<const char*, bool> operations_filter;
+      operations_filter.put("check_async_exception", check_asyncs);
+      SafepointMechanism::process_if_requested_with_exit_check(thread, operations_filter);
       thread->set_thread_state(to);
     } else {
       assert(to == _thread_in_native || to == _thread_blocked, "invalid transition");
@@ -215,7 +219,10 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
 
     if (SafepointMechanism::should_process(_thread, _allow_suspend)) {
       _pr(_thread);
-      SafepointMechanism::process_if_requested(_thread, _allow_suspend, false /* check_async_exception */);
+      ResourceHashtable<const char*, bool> operations_filter;
+      operations_filter.put("allow_suspend", _allow_suspend);
+      operations_filter.put("check_async_exception", false);
+      SafepointMechanism::process_if_requested(_thread, operations_filter);
     }
   }
 };
