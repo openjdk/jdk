@@ -21,6 +21,14 @@ var activeTableTab = "active-table-tab";
 const linkIcon = "##REPLACE:doclet.Link_icon##";
 const linkToSection = "##REPLACE:doclet.Link_to_section##";
 
+if (typeof hljs !== "undefined") {
+    try {
+        hljs.highlightAll();
+    } catch (err) {
+        console.error(err)
+    }
+}
+
 function loadScripts(doc, tag) {
     createElem(doc, tag, 'script-files/search.js');
 
@@ -464,11 +472,11 @@ document.addEventListener("DOMContentLoaded", function(e) {
         });
     var sections;
     var scrollTimeout;
-    var scrollTimeoutNeeded;
     var prevHash;
     function initSectionData() {
         bodyHeight = document.body.offsetHeight;
-        sections = [{ id: "", top: 0 }].concat(Array.from(main.querySelectorAll("section[id], h2[id], h2 a[id], div[id]"))
+        sections = [{ id: "", top: 0 }].concat(Array.from(main.querySelectorAll(
+                "section[id], h2[id], h2 a[id], h3[id], h3 a[id], div[id]"))
             .filter((e) => {
                 return sidebar.querySelector("a[href=\"#" + encodeURI(e.getAttribute("id")) + "\"]") !== null
             }).map((e) => {
@@ -479,35 +487,30 @@ document.addEventListener("DOMContentLoaded", function(e) {
             }));
     }
     function setScrollTimeout() {
-        clearTimeout(scrollTimeout);
-        scrollTimeoutNeeded = false;
+        if (scrollTimeout) {
+            clearTimeout(scrollTimeout);
+        }
         scrollTimeout = setTimeout(() => {
             scrollTimeout = null;
-            handleScroll();
         }, 100);
     }
     function handleScroll() {
         if (!sidebar || !sidebar.offsetParent || sidebar.classList.contains("hide-sidebar")) {
             return;
         }
-        if (scrollTimeout || scrollTimeoutNeeded) {
+        if (scrollTimeout) {
             setScrollTimeout();
             return;
         }
         var scrollTop = document.documentElement.scrollTop;
         var scrollHeight = document.documentElement.scrollHeight;
         var currHash = null;
-        if (scrollHeight - scrollTop < window.innerHeight + 10) {
-            // Select last item if at bottom of the page
-            currHash = "#" + encodeURI(sections.at(-1).id);
-        } else {
-            for (var i = 0; i < sections.length; i++) {
-                var top = sections[i].top;
-                var bottom = sections[i + 1] ? sections[i + 1].top : scrollHeight;
-                if (top + ((bottom - top) / 2) > scrollTop || bottom > scrollTop + (window.innerHeight / 3)) {
-                    currHash = "#" + encodeURI(sections[i].id);
-                    break;
-                }
+        for (var i = 0; i < sections.length; i++) {
+            var top = sections[i].top;
+            var bottom = sections[i + 1] ? sections[i + 1].top : scrollHeight;
+            if (top + ((bottom - top) / 2) > scrollTop || bottom > scrollTop + (window.innerHeight / 3)) {
+                currHash = "#" + encodeURI(sections[i].id);
+                break;
             }
         }
         if (currHash !== prevHash) {
@@ -542,29 +545,26 @@ document.addEventListener("DOMContentLoaded", function(e) {
         document.querySelectorAll("a[href^='#']").forEach((link) => {
             link.addEventListener("click", (e) => {
                 link.blur();
-                scrollTimeoutNeeded = true;
+                setScrollTimeout();
                 setSelected(link.getAttribute("href"));
             })
         });
         sidebar.querySelector("button.hide-sidebar").addEventListener("click", hideSidebar);
         sidebar.querySelector("button.show-sidebar").addEventListener("click", showSidebar);
         window.addEventListener("hashchange", (e) => {
-            scrollTimeoutNeeded = true;
+            setScrollTimeout();
+            const hash = e.newURL.indexOf("#");
+            if (hash > -1) {
+                setSelected(e.newURL.substring(hash));
+            }
         });
         if (document.location.hash) {
-            scrollTimeoutNeeded = true;
+            setScrollTimeout();
             setSelected(document.location.hash);
         } else {
             handleScroll();
         }
         window.addEventListener("scroll", handleScroll);
-        window.addEventListener("scrollend", () => {
-            if (scrollTimeout) {
-                clearTimeout(scrollTimeout);
-                scrollTimeout = null;
-                handleScroll();
-            }
-        })
     }
     // Resize handler
     new ResizeObserver((entries) => {

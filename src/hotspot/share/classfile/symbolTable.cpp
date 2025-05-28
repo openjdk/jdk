@@ -67,12 +67,7 @@ inline bool symbol_equals_compact_hashtable_entry(Symbol* value, const char* key
 static OffsetCompactHashtable<
   const char*, Symbol*,
   symbol_equals_compact_hashtable_entry
-> _shared_table;
-
-static OffsetCompactHashtable<
-  const char*, Symbol*,
-  symbol_equals_compact_hashtable_entry
-> _dynamic_shared_table;
+> _shared_table, _dynamic_shared_table, _shared_table_for_dumping;
 
 // --------------------------------------------------------------------------
 
@@ -93,13 +88,9 @@ static volatile bool   _has_items_to_clean = false;
 
 static volatile bool _alt_hash = false;
 
-#ifdef USE_LIBRARY_BASED_TLS_ONLY
-static volatile bool _lookup_shared_first = false;
-#else
 // "_lookup_shared_first" can get highly contended with many cores if multiple threads
-// are updating "lookup success history" in a global shared variable. If built-in TLS is available, use it.
+// are updating "lookup success history" in a global shared variable, so use built-in TLS
 static THREAD_LOCAL bool _lookup_shared_first = false;
-#endif
 
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = nullptr;
@@ -708,29 +699,24 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
 void SymbolTable::write_to_archive(GrowableArray<Symbol*>* symbols) {
   CompactHashtableWriter writer(int(_items_count), ArchiveBuilder::symbol_stats());
   copy_shared_symbol_table(symbols, &writer);
-  if (CDSConfig::is_dumping_static_archive()) {
-    _shared_table.reset();
-    writer.dump(&_shared_table, "symbol");
-  } else {
-    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
-    _dynamic_shared_table.reset();
-    writer.dump(&_dynamic_shared_table, "symbol");
-  }
+  _shared_table_for_dumping.reset();
+  writer.dump(&_shared_table_for_dumping, "symbol");
 }
 
 void SymbolTable::serialize_shared_table_header(SerializeClosure* soc,
                                                 bool is_static_archive) {
   OffsetCompactHashtable<const char*, Symbol*, symbol_equals_compact_hashtable_entry> * table;
-  if (is_static_archive) {
-    table = &_shared_table;
+  if (soc->reading()) {
+    if (is_static_archive) {
+      table = &_shared_table;
+    } else {
+      table = &_dynamic_shared_table;
+    }
   } else {
-    table = &_dynamic_shared_table;
+    table = &_shared_table_for_dumping;
   }
+
   table->serialize_header(soc);
-  if (soc->writing()) {
-    // Sanity. Make sure we don't use the shared table at dump time
-    table->reset();
-  }
 }
 #endif //INCLUDE_CDS
 

@@ -95,6 +95,16 @@ ifeq ($(call isTargetOs, windows), true)
       $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
 endif
 
+# This is the object file to provide the dladdr API, which is not
+# part of AIX. It occurs several times in the jdk code base.
+# Do not include it. When statically linking the java
+# launcher with all JDK and VM static libraries, we use the
+# --whole-archive linker option. The duplicate objects in different
+# static libraries cause linking errors due to duplicate symbols.
+ifeq ($(call isTargetOs, aix), true)
+  LIBAWT_STATIC_EXCLUDE_OBJS := porting_aix.o
+endif
+
 # -fgcse-after-reload improves performance of MaskFill in Java2D by 20% for
 # some gcc
 $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
@@ -140,6 +150,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
         user32.lib uuid.lib winmm.lib winspool.lib, \
     VERSIONINFO_RESOURCE := $(LIBAWT_VERSIONINFO_RESOURCE), \
     EXTRA_RCFLAGS := $(LIBAWT_RCFLAGS), \
+    STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_STATIC_EXCLUDE_OBJS), \
 ))
 
 TARGETS += $(BUILD_LIBAWT)
@@ -220,9 +231,13 @@ ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
       common/font \
       common/java2d/opengl \
       common/java2d/x11 \
-      libpipewire/include \
       java.base:libjvm \
       #
+
+  # exclude pipewire from the AIX build, no Wayland support
+  ifeq ($(call isTargetOs, aix), false)
+    LIBAWT_XAWT_EXTRA_HEADER_DIRS += libpipewire/include
+  endif
 
   ifeq ($(call isTargetOs, linux), true)
     ifeq ($(DISABLE_XRENDER), true)
@@ -263,7 +278,6 @@ ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
       DISABLED_WARNINGS_gcc_X11TextRenderer_md.c := unused-but-set-variable, \
       DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits pointer-to-int-cast, \
       DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
-      DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
       DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
       DISABLED_WARNINGS_clang_awt_Taskbar.c := parentheses, \
       DISABLED_WARNINGS_clang_gtk3_interface.c := unused-function parentheses, \

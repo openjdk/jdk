@@ -21,11 +21,11 @@
  * questions.
  */
 
+import jdk.test.lib.Container;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerTestUtils;
+import jdk.test.lib.containers.docker.ContainerRuntimeVersionTestUtils;
 import jdk.test.lib.containers.docker.DockerRunOptions;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import jdk.internal.platform.Metrics;
 
 import java.util.ArrayList;
@@ -43,8 +43,20 @@ import jtreg.SkippedException;
  * @run main TestMemoryWithSubgroups
  */
 public class TestMemoryWithSubgroups {
-
     private static final String imageName = Common.imageName("subgroup");
+
+    static String getEngineInfo(String format) throws Exception {
+        return DockerTestUtils.execute(Container.ENGINE_COMMAND, "info", "-f", format)
+            .getStdout();
+    }
+
+    static boolean isRootless() throws Exception {
+        // Docker and Podman have different INFO structures.
+        // The node path for Podman is .Host.Security.Rootless, that also holds for
+        // Podman emulating Docker CLI. The node path for Docker is .SecurityOptions.
+        return (getEngineInfo("{{.Host.Security.Rootless}}").contains("true") ||
+                getEngineInfo("{{.SecurityOptions}}").contains("name=rootless"));
+    }
 
     public static void main(String[] args) throws Exception {
         Metrics metrics = Metrics.systemMetrics();
@@ -55,6 +67,12 @@ public class TestMemoryWithSubgroups {
         if (!DockerTestUtils.canTestDocker()) {
             System.out.println("Unable to run docker tests.");
             return;
+        }
+
+        ContainerRuntimeVersionTestUtils.checkContainerVersionSupported();
+
+        if (isRootless()) {
+            throw new SkippedException("Test skipped in rootless mode");
         }
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);

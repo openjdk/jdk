@@ -396,6 +396,11 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
         return true;
       }
 
+      if (reserved_rgn->mem_tag() == mtCode) {
+        assert(reserved_rgn->contain_region(base_addr, size), "Reserved code region should contain this mapping region");
+        return true;
+      }
+
       // Print some more details. Don't use UL here to avoid circularities.
       tty->print_cr("Error: existing region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %u.\n"
                     "       new region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %u.",
@@ -413,7 +418,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   }
 }
 
-void VirtualMemoryTracker::set_reserved_region_tag(address addr, MemTag mem_tag) {
+void VirtualMemoryTracker::set_reserved_region_type(address addr, size_t size, MemTag mem_tag) {
   assert(addr != nullptr, "Invalid address");
   assert(_reserved_regions != nullptr, "Sanity check");
   MemTracker::assert_locked();

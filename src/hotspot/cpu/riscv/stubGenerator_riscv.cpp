@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2025, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -886,7 +886,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void copy_memory_v(Register s, Register d, Register count, int step) {
     bool is_backward = step < 0;
-    int granularity = uabs(step);
+    int granularity = g_uabs(step);
 
     const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
     assert_different_registers(s, d, cnt, vl, tmp1, tmp2);
@@ -948,7 +948,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     bool is_backwards = step < 0;
-    int granularity = uabs(step);
+    int granularity = g_uabs(step);
 
     const Register src = x30, dst = x31, cnt = x15, tmp3 = x16, tmp4 = x17, tmp5 = x14, tmp6 = x13;
     const Register gct1 = x28, gct2 = x29, gct3 = t2;
@@ -1633,6 +1633,126 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("arraycopy_range_checks done");
   }
 
+  address generate_unsafecopy_common_error_exit() {
+    address start = __ pc();
+    __ mv(x10, 0);
+    __ leave();
+    __ ret();
+    return start;
+  }
+
+  //
+  //  Generate 'unsafe' set memory stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t (# bytes) argument instead of an element count.
+  //
+  //  Input:
+  //    c_rarg0   - destination array address
+  //    c_rarg1   - byte count (size_t)
+  //    c_rarg2   - byte value
+  //
+  address generate_unsafe_setmemory() {
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::unsafe_setmemory_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+
+    // bump this on entry, not on exit:
+    // inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
+
+    Label L_fill_elements;
+
+    const Register dest = c_rarg0;
+    const Register count = c_rarg1;
+    const Register value = c_rarg2;
+    const Register cnt_words = x28; // temp register
+    const Register tmp_reg   = x29; // temp register
+
+    // Mark remaining code as such which performs Unsafe accesses.
+    UnsafeMemoryAccessMark umam(this, true, false);
+
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    // if count < 8, jump to L_fill_elements
+    __ mv(tmp_reg, 8); // 8 bytes fill by element
+    __ bltu(count, tmp_reg, L_fill_elements);
+
+    // Propagate byte to 64-bit width
+    // 8 bit -> 16 bit
+    __ zext(value, value, 8);
+    __ slli(tmp_reg, value, 8);
+    __ orr(value, value, tmp_reg);
+    // 16 bit -> 32 bit
+    __ slli(tmp_reg, value, 16);
+    __ orr(value, value, tmp_reg);
+    // 32 bit -> 64 bit
+    __ slli(tmp_reg, value, 32);
+    __ orr(value, value, tmp_reg);
+
+    // Align source address at 8 bytes address boundary.
+    Label L_skip_align1, L_skip_align2, L_skip_align4;
+    // One byte misalignment happens.
+    __ test_bit(tmp_reg, dest, 0);
+    __ beqz(tmp_reg, L_skip_align1);
+    __ sb(value, Address(dest, 0));
+    __ addi(dest, dest, 1);
+    __ subi(count, count, 1);
+
+    __ bind(L_skip_align1);
+    // Two bytes misalignment happens.
+    __ test_bit(tmp_reg, dest, 1);
+    __ beqz(tmp_reg, L_skip_align2);
+    __ sh(value, Address(dest, 0));
+    __ addi(dest, dest, 2);
+    __ subi(count, count, 2);
+
+    __ bind(L_skip_align2);
+    // Four bytes misalignment happens.
+    __ test_bit(tmp_reg, dest, 2);
+    __ beqz(tmp_reg, L_skip_align4);
+    __ sw(value, Address(dest, 0));
+    __ addi(dest, dest, 4);
+    __ subi(count, count, 4);
+    __ bind(L_skip_align4);
+
+    //  Fill large chunks
+    __ srli(cnt_words, count, 3); // number of words
+    __ slli(tmp_reg, cnt_words, 3);
+    __ sub(count, count, tmp_reg);
+    {
+      __ fill_words(dest, cnt_words, value);
+    }
+
+    // Handle copies less than 8 bytes
+    __ bind(L_fill_elements);
+    Label L_fill_2, L_fill_1, L_exit;
+    __ test_bit(tmp_reg, count, 2);
+    __ beqz(tmp_reg, L_fill_2);
+    __ sb(value, Address(dest, 0));
+    __ sb(value, Address(dest, 1));
+    __ sb(value, Address(dest, 2));
+    __ sb(value, Address(dest, 3));
+    __ addi(dest, dest, 4);
+
+    __ bind(L_fill_2);
+    __ test_bit(tmp_reg, count, 1);
+    __ beqz(tmp_reg, L_fill_1);
+    __ sb(value, Address(dest, 0));
+    __ sb(value, Address(dest, 1));
+    __ addi(dest, dest, 2);
+
+    __ bind(L_fill_1);
+    __ test_bit(tmp_reg, count, 0);
+    __ beqz(tmp_reg, L_exit);
+    __ sb(value, Address(dest, 0));
+
+    __ bind(L_exit);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
   //
   //  Generate 'unsafe' array copy stub
   //  Though just as safe as the other stubs, it takes an unscaled
@@ -2029,44 +2149,40 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter();
 
-    Label L_fill_elements, L_exit1;
+    Label L_fill_elements;
 
     int shift = -1;
     switch (t) {
       case T_BYTE:
         shift = 0;
+        // Short arrays (< 8 bytes) fill by element
+        __ mv(tmp_reg, 8 >> shift);
+        __ bltu(count, tmp_reg, L_fill_elements);
 
         // Zero extend value
         // 8 bit -> 16 bit
         __ zext(value, value, 8);
-        __ mv(tmp_reg, value);
-        __ slli(tmp_reg, tmp_reg, 8);
+        __ slli(tmp_reg, value, 8);
         __ orr(value, value, tmp_reg);
 
         // 16 bit -> 32 bit
-        __ mv(tmp_reg, value);
-        __ slli(tmp_reg, tmp_reg, 16);
+        __ slli(tmp_reg, value, 16);
         __ orr(value, value, tmp_reg);
-
-        __ mv(tmp_reg, 8 >> shift); // Short arrays (< 8 bytes) fill by element
-        __ bltu(count, tmp_reg, L_fill_elements);
         break;
       case T_SHORT:
         shift = 1;
-        // Zero extend value
-        // 16 bit -> 32 bit
-        __ zext(value, value, 16);
-        __ mv(tmp_reg, value);
-        __ slli(tmp_reg, tmp_reg, 16);
-        __ orr(value, value, tmp_reg);
-
         // Short arrays (< 8 bytes) fill by element
         __ mv(tmp_reg, 8 >> shift);
         __ bltu(count, tmp_reg, L_fill_elements);
+
+        // Zero extend value
+        // 16 bit -> 32 bit
+        __ zext(value, value, 16);
+        __ slli(tmp_reg, value, 16);
+        __ orr(value, value, tmp_reg);
         break;
       case T_INT:
         shift = 2;
-
         // Short arrays (< 8 bytes) fill by element
         __ mv(tmp_reg, 8 >> shift);
         __ bltu(count, tmp_reg, L_fill_elements);
@@ -2080,8 +2196,8 @@ class StubGenerator: public StubCodeGenerator {
       switch (t) {
         case T_BYTE:
           // One byte misalignment happens only for byte arrays.
-          __ test_bit(t0, to, 0);
-          __ beqz(t0, L_skip_align1);
+          __ test_bit(tmp_reg, to, 0);
+          __ beqz(tmp_reg, L_skip_align1);
           __ sb(value, Address(to, 0));
           __ addi(to, to, 1);
           __ subiw(count, count, 1);
@@ -2089,8 +2205,8 @@ class StubGenerator: public StubCodeGenerator {
           // Fallthrough
         case T_SHORT:
           // Two bytes misalignment happens only for byte and short (char) arrays.
-          __ test_bit(t0, to, 1);
-          __ beqz(t0, L_skip_align2);
+          __ test_bit(tmp_reg, to, 1);
+          __ beqz(tmp_reg, L_skip_align2);
           __ sh(value, Address(to, 0));
           __ addi(to, to, 2);
           __ subiw(count, count, 2 >> shift);
@@ -2098,8 +2214,8 @@ class StubGenerator: public StubCodeGenerator {
           // Fallthrough
         case T_INT:
           // Align to 8 bytes, we know we are 4 byte aligned to start.
-          __ test_bit(t0, to, 2);
-          __ beqz(t0, L_skip_align4);
+          __ test_bit(tmp_reg, to, 2);
+          __ beqz(tmp_reg, L_skip_align4);
           __ sw(value, Address(to, 0));
           __ addi(to, to, 4);
           __ subiw(count, count, 4 >> shift);
@@ -2125,55 +2241,54 @@ class StubGenerator: public StubCodeGenerator {
       __ fill_words(to, cnt_words, value);
     }
 
-    // Remaining count is less than 8 bytes. Fill it by a single store.
-    // Note that the total length is no less than 8 bytes.
-    if (!AvoidUnalignedAccesses && (t == T_BYTE || t == T_SHORT)) {
-      __ beqz(count, L_exit1);
-      __ shadd(to, count, to, tmp_reg, shift); // points to the end
-      __ sd(value, Address(to, -8)); // overwrite some elements
-      __ bind(L_exit1);
-      __ leave();
-      __ ret();
-    }
-
     // Handle copies less than 8 bytes.
-    Label L_fill_2, L_fill_4, L_exit2;
+    // Address may not be heapword aligned.
+    Label L_fill_1, L_fill_2, L_exit;
     __ bind(L_fill_elements);
     switch (t) {
       case T_BYTE:
-        __ test_bit(t0, count, 0);
-        __ beqz(t0, L_fill_2);
+        __ test_bit(tmp_reg, count, 2);
+        __ beqz(tmp_reg, L_fill_2);
         __ sb(value, Address(to, 0));
-        __ addi(to, to, 1);
+        __ sb(value, Address(to, 1));
+        __ sb(value, Address(to, 2));
+        __ sb(value, Address(to, 3));
+        __ addi(to, to, 4);
+
         __ bind(L_fill_2);
-        __ test_bit(t0, count, 1);
-        __ beqz(t0, L_fill_4);
-        __ sh(value, Address(to, 0));
+        __ test_bit(tmp_reg, count, 1);
+        __ beqz(tmp_reg, L_fill_1);
+        __ sb(value, Address(to, 0));
+        __ sb(value, Address(to, 1));
         __ addi(to, to, 2);
-        __ bind(L_fill_4);
-        __ test_bit(t0, count, 2);
-        __ beqz(t0, L_exit2);
-        __ sw(value, Address(to, 0));
+
+        __ bind(L_fill_1);
+        __ test_bit(tmp_reg, count, 0);
+        __ beqz(tmp_reg, L_exit);
+        __ sb(value, Address(to, 0));
         break;
       case T_SHORT:
-        __ test_bit(t0, count, 0);
-        __ beqz(t0, L_fill_4);
+        __ test_bit(tmp_reg, count, 1);
+        __ beqz(tmp_reg, L_fill_2);
         __ sh(value, Address(to, 0));
-        __ addi(to, to, 2);
-        __ bind(L_fill_4);
-        __ test_bit(t0, count, 1);
-        __ beqz(t0, L_exit2);
-        __ sw(value, Address(to, 0));
+        __ sh(value, Address(to, 2));
+        __ addi(to, to, 4);
+
+        __ bind(L_fill_2);
+        __ test_bit(tmp_reg, count, 0);
+        __ beqz(tmp_reg, L_exit);
+        __ sh(value, Address(to, 0));
         break;
       case T_INT:
-        __ beqz(count, L_exit2);
+        __ beqz(count, L_exit);
         __ sw(value, Address(to, 0));
         break;
       default: ShouldNotReachHere();
     }
-    __ bind(L_exit2);
+    __ bind(L_exit);
     __ leave();
     __ ret();
+
     return start;
   }
 
@@ -2188,6 +2303,9 @@ class StubGenerator: public StubCodeGenerator {
 
     generate_copy_longs(StubGenStubId::copy_byte_f_id, copy_f, c_rarg0, c_rarg1, t1);
     generate_copy_longs(StubGenStubId::copy_byte_b_id, copy_b, c_rarg0, c_rarg1, t1);
+
+    address ucm_common_error_exit     = generate_unsafecopy_common_error_exit();
+    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
 
     StubRoutines::riscv::_zero_blocks = generate_zero_blocks();
 
@@ -2259,6 +2377,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jbyte_fill = generate_fill(StubGenStubId::arrayof_jbyte_fill_id);
     StubRoutines::_arrayof_jshort_fill = generate_fill(StubGenStubId::arrayof_jshort_fill_id);
     StubRoutines::_arrayof_jint_fill = generate_fill(StubGenStubId::arrayof_jint_fill_id);
+
+    StubRoutines::_unsafe_setmemory    = generate_unsafe_setmemory();
   }
 
   void generate_aes_loadkeys(const Register &key, VectorRegister *working_vregs, int rounds) {
@@ -2436,8 +2556,7 @@ class StubGenerator: public StubCodeGenerator {
                              Register strL, Register strU, Label& DIFF) {
     const Register tmp = x30, tmpLval = x12;
 
-    int base_offset = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
+    int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     assert((base_offset % (UseCompactObjectHeaders ? 4 :
                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
@@ -2495,25 +2614,21 @@ class StubGenerator: public StubCodeGenerator {
     const Register result = x10, str1 = x11, str2 = x13, cnt2 = x14,
                    tmp1 = x28, tmp2 = x29, tmp3 = x30, tmp4 = x12;
 
-    int base_offset1 = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-    int base_offset2 = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
-    assert((base_offset1 % (UseCompactObjectHeaders ? 4 :
-                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-    assert((base_offset2 % (UseCompactObjectHeaders ? 4 :
-                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+    int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+    assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
     Register strU = isLU ? str2 : str1,
              strL = isLU ? str1 : str2,
              tmpU = isLU ? tmp2 : tmp1, // where to keep U for comparison
              tmpL = isLU ? tmp1 : tmp2; // where to keep L for comparison
 
-    if (AvoidUnalignedAccesses && (base_offset1 % 8) != 0) {
+    if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
       // Load 4 bytes from strL to make sure main loop is 8-byte aligned
       // cnt2 is >= 68 here, no need to check it for >= 0
       __ lwu(tmpL, Address(strL));
       __ addi(strL, strL, wordSize / 2);
-      __ load_long_misaligned(tmpU, Address(strU), tmp4, (base_offset2 % 8) != 0 ? 4 : 8);
+      __ load_long_misaligned(tmpU, Address(strU), tmp4, (base_offset % 8) != 0 ? 4 : 8);
       __ addi(strU, strU, wordSize);
       __ inflate_lo32(tmp3, tmpL);
       __ mv(tmpL, tmp3);
@@ -6158,6 +6273,104 @@ class StubGenerator: public StubCodeGenerator {
 
 #endif // COMPILER2_OR_JVMCI
 
+  // x10 = input (float16)
+  // f10 = result (float)
+  // t1  = temporary register
+  address generate_float16ToFloat() {
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::hf2f_id;
+    StubCodeMark mark(this, stub_id);
+    address entry = __ pc();
+    BLOCK_COMMENT("float16ToFloat:");
+
+    FloatRegister dst = f10;
+    Register src = x10;
+    Label NaN_SLOW;
+
+    assert(VM_Version::supports_float16_float_conversion(), "must");
+
+    // On riscv, NaN needs a special process as fcvt does not work in that case.
+    // On riscv, Inf does not need a special process as fcvt can handle it correctly.
+    // but we consider to get the slow path to process NaN and Inf at the same time,
+    // as both of them are rare cases, and if we try to get the slow path to handle
+    // only NaN case it would sacrifise the performance for normal cases,
+    // i.e. non-NaN and non-Inf cases.
+
+    // check whether it's a NaN or +/- Inf.
+    __ mv(t0, 0x7c00);
+    __ andr(t1, src, t0);
+    // jump to stub processing NaN and Inf cases.
+    __ beq(t0, t1, NaN_SLOW);
+
+    // non-NaN or non-Inf cases, just use built-in instructions.
+    __ fmv_h_x(dst, src);
+    __ fcvt_s_h(dst, dst);
+    __ ret();
+
+    __ bind(NaN_SLOW);
+    // following instructions mainly focus on NaN, as riscv does not handle
+    // NaN well with fcvt, but the code also works for Inf at the same time.
+
+    // construct a NaN in 32 bits from the NaN in 16 bits,
+    // we need the payloads of non-canonical NaNs to be preserved.
+    __ mv(t1, 0x7f800000);
+    // sign-bit was already set via sign-extension if necessary.
+    __ slli(t0, src, 13);
+    __ orr(t1, t0, t1);
+    __ fmv_w_x(dst, t1);
+
+    __ ret();
+    return entry;
+  }
+
+  // f10 = input (float)
+  // x10 = result (float16)
+  // f11 = temporary float register
+  // t1  = temporary register
+  address generate_floatToFloat16() {
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::f2hf_id;
+    StubCodeMark mark(this, stub_id);
+    address entry = __ pc();
+    BLOCK_COMMENT("floatToFloat16:");
+
+    Register dst = x10;
+    FloatRegister src = f10, ftmp = f11;
+    Label NaN_SLOW;
+
+    assert(VM_Version::supports_float16_float_conversion(), "must");
+
+    // On riscv, NaN needs a special process as fcvt does not work in that case.
+
+    // check whether it's a NaN.
+    // replace fclass with feq as performance optimization.
+    __ feq_s(t0, src, src);
+    // jump to stub processing NaN cases.
+    __ beqz(t0, NaN_SLOW);
+
+    // non-NaN cases, just use built-in instructions.
+    __ fcvt_h_s(ftmp, src);
+    __ fmv_x_h(dst, ftmp);
+    __ ret();
+
+    __ bind(NaN_SLOW);
+    __ fmv_x_w(dst, src);
+
+    // preserve the payloads of non-canonical NaNs.
+    __ srai(dst, dst, 13);
+    // preserve the sign bit.
+    __ srai(t1, dst, 13);
+    __ slli(t1, t1, 10);
+    __ mv(t0, 0x3ff);
+    __ orr(t1, t1, t0);
+
+    // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
+    __ andr(dst, dst, t1);
+
+    __ ret();
+    return entry;
+  }
+
 #ifdef COMPILER2
 
 static const int64_t right_2_bits = right_n_bits(2);
@@ -6365,58 +6578,6 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
-  void generate_vector_math_stubs() {
-    if (!UseRVV) {
-      log_info(library)("vector is not supported, skip loading vector math (sleef) library!");
-      return;
-    }
-
-    // Get native vector math stub routine addresses
-    void* libsleef = nullptr;
-    char ebuf[1024];
-    char dll_name[JVM_MAXPATHLEN];
-    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "sleef")) {
-      libsleef = os::dll_load(dll_name, ebuf, sizeof ebuf);
-    }
-    if (libsleef == nullptr) {
-      log_info(library)("Failed to load native vector math (sleef) library, %s!", ebuf);
-      return;
-    }
-
-    // Method naming convention
-    //   All the methods are named as <OP><T>_<U><suffix>
-    //
-    //   Where:
-    //     <OP>     is the operation name, e.g. sin, cos
-    //     <T>      is to indicate float/double
-    //              "fx/dx" for vector float/double operation
-    //     <U>      is the precision level
-    //              "u10/u05" represents 1.0/0.5 ULP error bounds
-    //               We use "u10" for all operations by default
-    //               But for those functions do not have u10 support, we use "u05" instead
-    //     <suffix> rvv, indicates riscv vector extension
-    //
-    //   e.g. sinfx_u10rvv is the method for computing vector float sin using rvv instructions
-    //
-    log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "sleef" JNI_LIB_SUFFIX, p2i(libsleef));
-
-    for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
-      int vop = VectorSupport::VECTOR_OP_MATH_START + op;
-      if (vop == VectorSupport::VECTOR_OP_TANH) { // skip tanh because of performance regression
-        continue;
-      }
-
-      // The native library does not support u10 level of "hypot".
-      const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
-
-      snprintf(ebuf, sizeof(ebuf), "%sfx_%srvv", VectorSupport::mathname[op], ulf);
-      StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
-
-      snprintf(ebuf, sizeof(ebuf), "%sdx_%srvv", VectorSupport::mathname[op], ulf);
-      StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
-    }
-  }
-
 #endif // COMPILER2
 
   /**
@@ -6525,6 +6686,12 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_crc_table_adr = (address)StubRoutines::riscv::_crc_table;
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
     }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_float16ToFloat) &&
+        vmIntrinsics::is_intrinsic_available(vmIntrinsics::_floatToFloat16)) {
+      StubRoutines::_hf2f = generate_float16ToFloat();
+      StubRoutines::_f2hf = generate_floatToFloat16();
+    }
   }
 
   void generate_continuation_stubs() {
@@ -6544,10 +6711,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
-    }
+    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
 
 #ifdef COMPILER2
     if (UseSecondarySupersTable) {
@@ -6644,8 +6808,6 @@ static const int64_t right_3_bits = right_n_bits(3);
     generate_compare_long_strings();
 
     generate_string_indexof_stubs();
-
-    generate_vector_math_stubs();
 
 #endif // COMPILER2
   }

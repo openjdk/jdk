@@ -24,6 +24,7 @@
  *
  */
 
+#include "classfile/vmIntrinsics.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
@@ -127,11 +128,11 @@ void VM_Version::common_initialize() {
   }
 
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
-      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
+    FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
 
   if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
-      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
+    FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
 
   if (UseRVC && !ext_C.enabled()) {
@@ -149,8 +150,12 @@ void VM_Version::common_initialize() {
       unaligned_access.value() != MISALIGNED_FAST);
   }
 
-  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics) && !AvoidUnalignedAccesses) {
-    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+      FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+    }
+  } else if (UsePoly1305Intrinsics) {
+    warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
   }
 
   // See JDK-8026049
@@ -189,7 +194,7 @@ void VM_Version::common_initialize() {
   }
 
   if (UseRVV) {
-    if (!ext_V.enabled()) {
+    if (!ext_V.enabled() && FLAG_IS_DEFAULT(UseRVV)) {
       warning("RVV is not supported on this CPU");
       FLAG_SET_DEFAULT(UseRVV, false);
     } else {
@@ -215,18 +220,40 @@ void VM_Version::common_initialize() {
     warning("CRC32C intrinsics are not available on this CPU.");
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
+
+  // UseZvbb (depends on RVV).
+  if (UseZvbb && !UseRVV) {
+    warning("Cannot enable UseZvbb on cpu without RVV support.");
+    FLAG_SET_DEFAULT(UseZvbb, false);
+  }
+
+  // UseZvbc (depends on RVV).
+  if (UseZvbc && !UseRVV) {
+    warning("Cannot enable UseZvbc on cpu without RVV support.");
+    FLAG_SET_DEFAULT(UseZvbc, false);
+  }
+
+  // UseZvkn (depends on RVV).
+  if (UseZvkn && !UseRVV) {
+    warning("Cannot enable UseZvkn on cpu without RVV support.");
+    FLAG_SET_DEFAULT(UseZvkn, false);
+  }
+
+  // UseZvfh (depends on RVV)
+  if (UseZvfh) {
+    if (!UseRVV) {
+      warning("Cannot enable UseZvfh on cpu without RVV support.");
+      FLAG_SET_DEFAULT(UseZvfh, false);
+    }
+    if (!UseZfh) {
+      warning("Cannot enable UseZvfh on cpu without Zfh support.");
+      FLAG_SET_DEFAULT(UseZvfh, false);
+    }
+  }
 }
 
 #ifdef COMPILER2
 void VM_Version::c2_initialize() {
-  if (UseCMoveUnconditionally) {
-    FLAG_SET_DEFAULT(UseCMoveUnconditionally, false);
-  }
-
-  if (ConditionalMoveLimit > 0) {
-    FLAG_SET_DEFAULT(ConditionalMoveLimit, 0);
-  }
-
   if (!UseRVV) {
     FLAG_SET_DEFAULT(MaxVectorSize, 0);
   } else {
@@ -314,10 +341,6 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
   }
 
-  if (FLAG_IS_DEFAULT(UseMD5Intrinsics) && !AvoidUnalignedAccesses) {
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
-  }
-
   // Adler32
   if (UseRVV) {
     if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
@@ -344,18 +367,13 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
-  // UseZvbb (depends on RVV).
-  if (UseZvbb && !UseRVV) {
-    FLAG_SET_DEFAULT(UseZvbb, false);
-    warning("Cannot enable UseZvbb on cpu without RVV support.");
-  }
-
-  // UseZvbc (depends on RVV).
-  if (UseZvbc && !UseRVV) {
-    if (!FLAG_IS_DEFAULT(UseZvbc)) {
-      warning("Cannot enable UseZvbc on cpu without RVV support.");
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+      FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
     }
-    FLAG_SET_DEFAULT(UseZvbc, false);
+  } else if (UseMD5Intrinsics) {
+    warning("Intrinsics for MD5 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
   }
 
   // SHA's
@@ -364,8 +382,8 @@ void VM_Version::c2_initialize() {
   }
 
   // SHA-1, no RVV required though.
-  if (UseSHA) {
-    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics) && !AvoidUnalignedAccesses) {
+  if (UseSHA && !AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
     }
   } else if (UseSHA1Intrinsics) {
@@ -373,11 +391,6 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
-  // UseZvkn (depends on RVV) and SHA-2.
-  if (UseZvkn && !UseRVV) {
-    FLAG_SET_DEFAULT(UseZvkn, false);
-    warning("Cannot enable Zvkn on cpu without RVV support.");
-  }
   // SHA-2, depends on Zvkn.
   if (UseSHA) {
     if (UseZvkn) {
@@ -461,6 +474,21 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "RISCV64");
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", features_string());
+  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", cpu_info_string());
   _initialized = true;
+}
+
+bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch (id) {
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!supports_float16_float_conversion()) {
+      return false;
+    }
+    break;
+  default:
+    break;
+  }
+  return true;
 }

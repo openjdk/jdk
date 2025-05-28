@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,10 @@ public class EventNames {
     public static final String ThreadPark = PREFIX + "ThreadPark";
     public static final String JavaMonitorEnter = PREFIX + "JavaMonitorEnter";
     public static final String JavaMonitorWait = PREFIX + "JavaMonitorWait";
+    public static final String JavaMonitorNotify = PREFIX + "JavaMonitorNotify";
     public static final String JavaMonitorInflate = PREFIX + "JavaMonitorInflate";
+    public static final String JavaMonitorDeflate = PREFIX + "JavaMonitorDeflate";
+    public static final String JavaMonitorStatistics = PREFIX + "JavaMonitorStatistics";
     public static final String SyncOnValueBasedClass = PREFIX + "SyncOnValueBasedClass";
     public static final String ClassLoad = PREFIX + "ClassLoad";
     public static final String ClassDefine = PREFIX + "ClassDefine";
@@ -87,6 +90,7 @@ public class EventNames {
     public static final String JavaAgent = PREFIX + "JavaAgent";
     public static final String NativeAgent = PREFIX + "NativeAgent";
     public static final String DeprecatedInvocation = PREFIX + "DeprecatedInvocation";
+    public static final String SafepointLatency = PREFIX + "SafepointLatency";
 
     // This event is hard to test
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";
@@ -150,7 +154,6 @@ public class EventNames {
     public static final String ZRelocationSet = PREFIX + "ZRelocationSet";
     public static final String ZRelocationSetGroup = PREFIX + "ZRelocationSetGroup";
     public static final String ZUncommit = PREFIX + "ZUncommit";
-    public static final String ZUnmap = PREFIX + "ZUnmap";
     public static final String SystemGC = PREFIX + "SystemGC";
     public static final String GCCPUTime = PREFIX + "GCCPUTime";
 

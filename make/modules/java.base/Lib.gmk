@@ -124,6 +124,7 @@ ifeq ($(call isTargetOsType, unix), true)
       DISABLED_WARNINGS_clang_jsig.c := unused-but-set-variable, \
       LIBS_linux := $(LIBDL), \
       LIBS_aix := $(LIBDL), \
+      ONLY_EXPORTED := true, \
   ))
 
   TARGETS += $(BUILD_LIBJSIG)
@@ -157,6 +158,7 @@ endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBSYSLOOKUP, \
     NAME := syslookup, \
+    EXTRA_HEADER_DIRS := java.base:libjava, \
     LD_SET_ORIGIN := false, \
     LDFLAGS_linux := -Wl$(COMMA)--no-as-needed, \
     LDFLAGS_aix := -brtl -bexpfull, \

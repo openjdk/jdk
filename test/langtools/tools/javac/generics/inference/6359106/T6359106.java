@@ -25,7 +25,7 @@
  * @test
  * @bug     6359106
  * @summary Valid generics code does not compile
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile Orig.java T6359106.java
  */
 

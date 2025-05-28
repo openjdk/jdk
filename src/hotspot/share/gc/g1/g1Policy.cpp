@@ -28,28 +28,27 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
+#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
-#include "gc/g1/g1CollectionSetChooser.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
-#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
-
-#include "gc/shared/gcTraceTime.inline.hpp"
 
 G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _predictor((100 - G1ConfidencePercent) / 100.0),
@@ -95,7 +94,7 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
 
-  _young_gen_sizer.adjust_max_new_size(_g1h->max_regions());
+  _young_gen_sizer.adjust_max_new_size(_g1h->max_num_regions());
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
@@ -340,41 +339,47 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
                               _reserve_regions,
                               max_to_eat_into_reserve);
 
+    uint survivor_regions_count = _g1h->survivor_regions_count();
+    uint desired_eden_length = desired_young_length - survivor_regions_count;
+    uint allocated_eden_length = allocated_young_length - survivor_regions_count;
+
     if (_free_regions_at_end_of_collection <= _reserve_regions) {
       // Fully eat (or already eating) into the reserve, hand back at most absolute_min_length regions.
-      uint receiving_young = MIN3(_free_regions_at_end_of_collection,
-                                  desired_young_length,
+      uint receiving_eden = MIN3(_free_regions_at_end_of_collection,
+                                  desired_eden_length,
                                   max_to_eat_into_reserve);
+      // Ensure that we provision for at least one Eden region.
+      receiving_eden = MAX2(receiving_eden, 1u);
       // We could already have allocated more regions than what we could get
       // above.
-      receiving_additional_eden = allocated_young_length < receiving_young ?
-                                  receiving_young - allocated_young_length : 0;
+      receiving_additional_eden = allocated_eden_length < receiving_eden ?
+                                  receiving_eden - allocated_eden_length : 0;
 
       log_trace(gc, ergo, heap)("Young target length: Fully eat into reserve "
-                                "receiving young %u receiving additional eden %u",
-                                receiving_young,
-                                receiving_additional_eden);
-    } else if (_free_regions_at_end_of_collection < (desired_young_length + _reserve_regions)) {
+                                "receiving eden %u receiving additional eden %u",
+                                receiving_eden, receiving_additional_eden);
+    } else if (_free_regions_at_end_of_collection < (desired_eden_length + _reserve_regions)) {
       // Partially eat into the reserve, at most max_to_eat_into_reserve regions.
       uint free_outside_reserve = _free_regions_at_end_of_collection - _reserve_regions;
-      assert(free_outside_reserve < desired_young_length,
+      assert(free_outside_reserve < desired_eden_length,
              "must be %u %u",
-             free_outside_reserve, desired_young_length);
+             free_outside_reserve, desired_eden_length);
 
-      uint receiving_within_reserve = MIN2(desired_young_length - free_outside_reserve,
+      uint receiving_within_reserve = MIN2(desired_eden_length - free_outside_reserve,
                                            max_to_eat_into_reserve);
-      uint receiving_young = free_outside_reserve + receiving_within_reserve;
+      uint receiving_eden = free_outside_reserve + receiving_within_reserve;
+
       // Again, we could have already allocated more than we could get.
-      receiving_additional_eden = allocated_young_length < receiving_young ?
-                                  receiving_young - allocated_young_length : 0;
+      receiving_additional_eden = allocated_eden_length < receiving_eden ?
+                                  receiving_eden - allocated_eden_length : 0;
 
       log_trace(gc, ergo, heap)("Young target length: Partially eat into reserve "
                                 "free outside reserve %u "
                                 "receiving within reserve %u "
-                                "receiving young %u "
+                                "receiving eden %u "
                                 "receiving additional eden %u",
                                 free_outside_reserve, receiving_within_reserve,
-                                receiving_young, receiving_additional_eden);
+                                receiving_eden, receiving_additional_eden);
     } else {
       // No need to use the reserve.
       receiving_additional_eden = desired_young_length - allocated_young_length;
@@ -660,13 +665,6 @@ void G1Policy::record_concurrent_refinement_stats(size_t pending_cards,
 
 bool G1Policy::should_retain_evac_failed_region(uint index) const {
   size_t live_bytes = _g1h->region_at(index)->live_bytes();
-
-#ifdef ASSERT
-  G1HeapRegion* r = _g1h->region_at(index);
-  assert(live_bytes != 0,
-         "live bytes not set for %u used %zu garbage %zu cm-live %zu pinned %d",
-         index, r->used(), r->garbage_bytes(), live_bytes, r->has_pinned_objects());
-#endif
   size_t threshold = G1RetainRegionLiveThresholdPercent * G1HeapRegion::GrainBytes / 100;
   return live_bytes < threshold;
 }
@@ -678,9 +676,9 @@ void G1Policy::record_young_collection_start() {
   // every time we calculate / recalculate the target young length.
   update_survivors_policy();
 
-  assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_regions(),
+  assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_num_regions(),
          "Maximum survivor regions %u plus used regions %u exceeds max regions %u",
-         max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_regions());
+         max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_num_regions());
   assert_used_and_recalculate_used_equal(_g1h);
 
   phase_times()->record_cur_collection_start_sec(now.seconds());
@@ -1107,6 +1105,15 @@ size_t G1Policy::predict_bytes_to_copy(G1HeapRegion* hr) const {
   return bytes_to_copy;
 }
 
+double G1Policy::predict_gc_efficiency(G1HeapRegion* hr) {
+
+  double total_based_on_incoming_refs_ms = predict_merge_scan_time(hr->incoming_refs()) + // We use the number of incoming references as an estimate for remset cards.
+                                           predict_non_young_other_time_ms(1) +
+                                           predict_region_copy_time_ms(hr, false /* for_young_only_phase */);
+
+  return hr->reclaimable_bytes() / total_based_on_incoming_refs_ms;
+}
+
 double G1Policy::predict_young_region_other_time_ms(uint count) const {
   return _analytics->predict_young_other_time_ms(count);
 }
@@ -1193,7 +1200,7 @@ void G1Policy::update_survivors_policy() {
   // The real maximum survivor size is bounded by the number of regions that can
   // be allocated into.
   _max_survivor_regions = MIN2(desired_max_survivor_regions,
-                               _g1h->num_free_or_available_regions());
+                               _g1h->num_available_regions());
 }
 
 bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) {
@@ -1438,7 +1445,7 @@ uint G1Policy::calc_max_old_cset_length() const {
   // as a percentage of the heap size. I.e., it should bound the
   // number of old regions added to the CSet irrespective of how many
   // of them are available.
-  double result = (double)_g1h->num_regions() * G1OldCSetRegionThresholdPercent / 100;
+  double result = (double)_g1h->num_committed_regions() * G1OldCSetRegionThresholdPercent / 100;
   // Round up to be conservative.
   return (uint)ceil(result);
 }

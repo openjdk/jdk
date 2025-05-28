@@ -181,10 +181,6 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
 
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register tmp) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm == nullptr) {
-    return;
-  }
-
   assert_different_registers(tmp, R0);
 
   __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
@@ -215,11 +211,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1, Register tmp2, Register tmp3) {
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm == nullptr) {
-    return;
-  }
-
   assert_different_registers(tmp1, tmp2, tmp3);
 
   __ block_comment("c2i_entry_barrier (c2i_entry_barrier) {");
@@ -346,15 +337,24 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
       assert(SuperwordUseVSX, "or should not reach here");
       VectorSRegister vs_reg = vm_reg->as_VectorSRegister();
       if (vs_reg->encoding() >= VSR32->encoding() && vs_reg->encoding() <= VSR51->encoding()) {
-        reg_save_index += 2;
+        reg_save_index += (2 + (reg_save_index & 1)); // 2 slots + alignment if needed
 
         Register spill_addr = R0;
+        int spill_offset = offset - reg_save_index * BytesPerWord;
         if (action == ACTION_SAVE) {
-          _masm->addi(spill_addr, R1_SP, offset - reg_save_index * BytesPerWord);
-          _masm->stxvd2x(vs_reg, spill_addr);
+          if (PowerArchitecturePPC64 >= 9) {
+            _masm->stxv(vs_reg, spill_offset, R1_SP);
+          } else {
+            _masm->addi(spill_addr, R1_SP, spill_offset);
+            _masm->stxvd2x(vs_reg, spill_addr);
+          }
         } else if (action == ACTION_RESTORE) {
-          _masm->addi(spill_addr, R1_SP, offset - reg_save_index * BytesPerWord);
-          _masm->lxvd2x(vs_reg, spill_addr);
+          if (PowerArchitecturePPC64 >= 9) {
+            _masm->lxv(vs_reg, spill_offset, R1_SP);
+          } else {
+            _masm->addi(spill_addr, R1_SP, spill_offset);
+            _masm->lxvd2x(vs_reg, spill_addr);
+          }
         } else {
           assert(action == ACTION_COUNT_ONLY, "Sanity");
         }
