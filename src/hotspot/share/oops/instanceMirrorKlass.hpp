@@ -27,6 +27,8 @@
 
 #include "classfile/vmClasses.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
+#include "oops/klassKind.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/macros.hpp"
 
@@ -45,7 +47,7 @@ class InstanceMirrorKlass: public InstanceKlass {
   friend class InstanceKlass;
 
  public:
-  static const KlassKind Kind = InstanceMirrorKlassKind;
+  static constexpr KlassKind Kind = InstanceMirrorKlassKind;
 
  private:
   static int _offset_of_static_fields;
@@ -104,17 +106,17 @@ class InstanceMirrorKlass: public InstanceKlass {
   // Forward iteration
   // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
+  inline static void oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Reverse iteration
   // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+  inline static void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Bounded range iteration
   // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  inline static void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute);
 
  private:
 

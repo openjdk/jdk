@@ -27,8 +27,10 @@
 
 #include "oops/instanceKlass.hpp"
 
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/fieldInfo.inline.hpp"
+#include "oops/klassInfoLUTEntry.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -79,14 +81,10 @@ inline void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
   Atomic::release_store(&_methods_jmethod_ids, jmeths);
 }
 
-// The iteration over the oops in objects is a hot path in the GC code.
-// By force inlining the following functions, we get similar GC performance
-// as the previous macro based implementation.
-
 template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map(OopMapBlock* map, oop obj, OopClosureType* closure) {
-  T* p         = obj->field_addr<T>(map->offset());
-  T* const end = p + map->count();
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate_single_oop_map(oop obj, OopClosureType* closure, unsigned offset, unsigned count) {
+  T* p         = obj->field_addr<T>(offset);
+  T* const end = p + count;
 
   for (; p < end; ++p) {
     Devirtualizer::do_oop(closure, p);
@@ -94,9 +92,9 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map(OopMapBlock* map, oop o
 }
 
 template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure) {
-  T* const start = obj->field_addr<T>(map->offset());
-  T*       p     = start + map->count();
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate_single_oop_map_reverse(oop obj, OopClosureType* closure, unsigned offset, unsigned count) {
+  T* const start = obj->field_addr<T>(offset);
+  T*       p     = start + count;
 
   while (start < p) {
     --p;
@@ -105,9 +103,9 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_reverse(OopMapBlock* ma
 }
 
 template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_bounded(OopMapBlock* map, oop obj, OopClosureType* closure, MemRegion mr) {
-  T* p   = obj->field_addr<T>(map->offset());
-  T* end = p + map->count();
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate_single_oop_map_bounded(oop obj, OopClosureType* closure, MemRegion mr, unsigned offset, unsigned count) {
+  T* p   = obj->field_addr<T>(offset);
+  T* end = p + count;
 
   T* const l   = (T*)mr.start();
   T* const h   = (T*)mr.end();
@@ -133,7 +131,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps(oop obj, OopClosureTyp
   OopMapBlock* const end_map = map + nonstatic_oop_map_count();
 
   for (; map < end_map; ++map) {
-    oop_oop_iterate_oop_map<T>(map, obj, closure);
+    oop_oop_iterate_single_oop_map<T>(obj, closure, (unsigned)map->offset(), map->count());
   }
 }
 
@@ -144,7 +142,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_reverse(oop obj, OopCl
 
   while (start_map < map) {
     --map;
-    oop_oop_iterate_oop_map_reverse<T>(map, obj, closure);
+    oop_oop_iterate_single_oop_map_reverse<T>(obj, closure, (unsigned)map->offset(), map->count());
   }
 }
 
@@ -154,36 +152,101 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_bounded(oop obj, OopCl
   OopMapBlock* const end_map = map + nonstatic_oop_map_count();
 
   for (;map < end_map; ++map) {
-    oop_oop_iterate_oop_map_bounded<T>(map, obj, closure, mr);
+    oop_oop_iterate_single_oop_map_bounded<T>(obj, closure, mr, (unsigned)map->offset(), map->count());
   }
 }
 
 template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  if (Devirtualizer::do_metadata(closure)) {
-    Devirtualizer::do_klass(closure, this);
-  }
-
-  oop_oop_iterate_oop_maps<T>(obj, closure);
-}
-
-template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  assert(!Devirtualizer::do_metadata(closure),
-      "Code to handle metadata is not implemented");
-
-  oop_oop_iterate_oop_maps_reverse<T>(obj, closure);
-}
-
-template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  if (Devirtualizer::do_metadata(closure)) {
-    if (mr.contains(obj)) {
-      Devirtualizer::do_klass(closure, this);
+inline void InstanceKlass::do_cld_from_klut_or_klass(oop obj, OopClosureType* closure, klute_raw_t klute) {
+  // Call closure->do_cld. The underlying assumption here is that if a closure subscribes via do_metadata(),
+  // it is interested in the CLD. That is true for all Closures that derive from OopIterateClosure.
+  static_assert(std::is_base_of<OopIterateClosure, OopClosureType>::value,
+                "must inherit from OopIterateClosure");
+  // ... and in that case we can fetch the CLD from the KLUT cld cache instead of letting the closure pull
+  // it from Klass. We don't even have to fetch and decode the narrowKlass.
+  const unsigned cldi = KlassLUTEntry(klute).cld_index();
+  ClassLoaderData* cld = KlassInfoLUT::lookup_cld(cldi);
+  if (cld == nullptr) {
+    // Rare path
+    Klass* const k = obj->klass();
+    cld = k->class_loader_data();
+    if (cld == nullptr) {
+      // See JDK-8342429. Unfortunately, this can now happen due to AOT.
+      assert(AOTLinkedClassBulkLoader::is_pending_aot_linked_class(k), "sanity");
+      return;
     }
   }
+  Devirtualizer::do_cld(closure, cld);
+}
 
-  oop_oop_iterate_oop_maps_bounded<T>(obj, closure, mr);
+// Iterate over all oop fields and metadata.
+template <typename T, class OopClosureType>
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute) {
+  if (Devirtualizer::do_metadata(closure)) {
+    do_cld_from_klut_or_klass<T>(obj, closure, klute);
+  }
+  const KlassLUTEntry klutehelper(klute);
+  if (klutehelper.ik_carries_infos()) {
+    // klute may encode 0, 1 or 2 oop maps. Iterate those.
+    if (klutehelper.ik_omb_count_1() > 0) {
+      oop_oop_iterate_single_oop_map<T>(obj, closure, klutehelper.ik_omb_offset_1() * sizeof(T), klutehelper.ik_omb_count_1());
+      if (klutehelper.ik_omb_count_2() > 0) {
+        oop_oop_iterate_single_oop_map<T>(obj, closure, klutehelper.ik_omb_offset_2() * sizeof(T), klutehelper.ik_omb_count_2());
+      }
+    }
+  } else {
+    // Rare path
+    // Fall back to normal iteration: read OopMapBlocks from Klass
+    InstanceKlass* const ik = InstanceKlass::cast(obj->klass());
+    ik->oop_oop_iterate_oop_maps<T>(obj, closure);
+  }
+}
+
+// Iterate over all oop fields in the oop maps (no metadata traversal)
+template <typename T, class OopClosureType>
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute) {
+  assert(!Devirtualizer::do_metadata(closure),
+      "Code to handle metadata is not implemented");
+  const KlassLUTEntry klutehelper(klute);
+  if (klutehelper.ik_carries_infos()) {
+    // klute may encode 0, 1 or 2 oop maps. Iterate those (reversely).
+    if (klutehelper.ik_omb_count_1() > 0) {
+      if (klutehelper.ik_omb_count_2() > 0) {
+        oop_oop_iterate_single_oop_map_reverse<T>(obj, closure, klutehelper.ik_omb_offset_2() * sizeof(T), klutehelper.ik_omb_count_2());
+      }
+      oop_oop_iterate_single_oop_map_reverse<T>(obj, closure, klutehelper.ik_omb_offset_1() * sizeof(T), klutehelper.ik_omb_count_1());
+    }
+  } else {
+    // Rare path
+    // Fall back to normal iteration: read OopMapBlocks from Klass
+    InstanceKlass* const ik = InstanceKlass::cast(obj->klass());
+    ik->oop_oop_iterate_oop_maps_reverse<T>(obj, closure);
+  }
+}
+
+// Iterate over all oop fields and metadata.
+template <typename T, class OopClosureType>
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute) {
+  if (Devirtualizer::do_metadata(closure)) {
+    if (mr.contains(obj)) {
+      do_cld_from_klut_or_klass<T>(obj, closure, klute);
+    }
+  }
+  const KlassLUTEntry klutehelper(klute);
+  if (klutehelper.ik_carries_infos()) {
+    // klute may encode 0, 1 or 2 oop maps. Iterate those (bounded).
+    if (klutehelper.ik_omb_count_1() > 0) {
+      oop_oop_iterate_single_oop_map_bounded<T>(obj, closure, mr, klutehelper.ik_omb_offset_1() * sizeof(T), klutehelper.ik_omb_count_1());
+      if (klutehelper.ik_omb_count_2() > 0) {
+        oop_oop_iterate_single_oop_map_bounded<T>(obj, closure, mr, klutehelper.ik_omb_offset_2() * sizeof(T), klutehelper.ik_omb_count_2());
+      }
+    }
+  } else {
+    // Rare path
+    // Fall back to normal iteration: read OopMapBlocks from Klass
+    InstanceKlass* const ik = InstanceKlass::cast(obj->klass());
+    ik->oop_oop_iterate_oop_maps_bounded<T>(obj, closure, mr);
+  }
 }
 
 #endif // SHARE_OOPS_INSTANCEKLASS_INLINE_HPP

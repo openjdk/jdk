@@ -25,7 +25,9 @@
 #ifndef SHARE_OOPS_INSTANCEREFKLASS_HPP
 #define SHARE_OOPS_INSTANCEREFKLASS_HPP
 
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klassKind.hpp"
 #include "utilities/macros.hpp"
 
 class ClassFileParser;
@@ -50,7 +52,7 @@ class ClassFileParser;
 class InstanceRefKlass: public InstanceKlass {
   friend class InstanceKlass;
  public:
-  static const KlassKind Kind = InstanceRefKlassKind;
+  static constexpr KlassKind Kind = InstanceRefKlassKind;
 
  private:
   InstanceRefKlass(const ClassFileParser& parser);
@@ -66,32 +68,32 @@ class InstanceRefKlass: public InstanceKlass {
   // Forward iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
+  inline static void oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Reverse iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+  inline static void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute);
 
   // Bounded range iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  inline static void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute);
 
   private:
 
   // Reference processing part of the iterators.
 
   template <typename T, class OopClosureType, class Contains>
-  inline void oop_oop_iterate_ref_processing(oop obj, OopClosureType* closure, Contains& contains);
+  inline static void oop_oop_iterate_ref_processing(oop obj, OopClosureType* closure, Contains& contains);
 
   // Only perform reference processing if the referent object is within mr.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_ref_processing_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  inline static void oop_oop_iterate_ref_processing_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
   // Reference processing
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_ref_processing(oop obj, OopClosureType* closure);
+  inline static void oop_oop_iterate_ref_processing(oop obj, OopClosureType* closure);
 
   // Building blocks for specialized handling.
   template <typename T, class OopClosureType, class Contains>
@@ -106,7 +108,7 @@ class InstanceRefKlass: public InstanceKlass {
   // Do discovery while handling InstanceRefKlasses. Reference discovery
   // is only done if the closure provides a ReferenceProcessor.
   template <typename T, class OopClosureType, class Contains>
-  static void oop_oop_iterate_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains);
+  static void oop_oop_iterate_discovery(oop obj, OopClosureType* closure, Contains& contains);
 
   // Apply the closure to all fields. No reference discovery is done.
   template <typename T, class OopClosureType, class Contains>

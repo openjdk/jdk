@@ -79,7 +79,8 @@ bool InstanceRefKlass::try_discover(oop obj, ReferenceType type, OopClosureType*
 }
 
 template <typename T, class OopClosureType, class Contains>
-void InstanceRefKlass::oop_oop_iterate_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains) {
+void InstanceRefKlass::oop_oop_iterate_discovery(oop obj, OopClosureType* closure, Contains& contains) {
+  const ReferenceType type = InstanceKlass::cast(obj->klass())->reference_type();
   // Try to discover reference and return if it succeeds.
   if (try_discover<T>(obj, type, closure)) {
     return;
@@ -108,7 +109,7 @@ void InstanceRefKlass::oop_oop_iterate_ref_processing(oop obj, OopClosureType* c
   switch (closure->reference_iteration_mode()) {
     case OopIterateClosure::DO_DISCOVERY:
       trace_reference_gc<T>("do_discovery", obj);
-      oop_oop_iterate_discovery<T>(obj, reference_type(), closure, contains);
+      oop_oop_iterate_discovery<T>(obj, closure, contains);
       break;
     case OopIterateClosure::DO_FIELDS:
       trace_reference_gc<T>("do_fields", obj);
@@ -148,22 +149,22 @@ void InstanceRefKlass::oop_oop_iterate_ref_processing_bounded(oop obj, OopClosur
 }
 
 template <typename T, class OopClosureType>
-void InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate<T>(obj, closure);
+void InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure, klute_raw_t klute) {
+  InstanceKlass::oop_oop_iterate<T>(obj, closure, klute);
 
   oop_oop_iterate_ref_processing<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
-void InstanceRefKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure);
+void InstanceRefKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, klute_raw_t klute) {
+  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure, klute);
 
   oop_oop_iterate_ref_processing<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
-void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr);
+void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, klute_raw_t klute) {
+  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr, klute);
 
   oop_oop_iterate_ref_processing_bounded<T>(obj, closure, mr);
 }

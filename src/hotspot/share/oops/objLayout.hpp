@@ -25,6 +25,17 @@
 #ifndef SHARE_OOPS_OBJLAYOUT_HPP
 #define SHARE_OOPS_OBJLAYOUT_HPP
 
+// Be frugal with includes here to prevent circularities.
+
+enum class HeaderMode {
+  // +UseCompactObjectHeaders (implies +UseCompressedClassPointers)
+  Compact = 0,
+  // +UseCompressedClassPointers (-UseCompactObjectHeaders)
+  Compressed,
+  // -UseCompressedClassPointers (-UseCompactObjectHeaders)
+  Uncompressed
+};
+
 /*
  * This class helps to avoid loading more than one flag in some
  * operations that require checking UseCompressedClassPointers,
@@ -35,32 +46,39 @@
  * and stack-trace builders.
  */
 class ObjLayout {
-public:
-  enum Mode {
-    // +UseCompactObjectHeaders (implies +UseCompressedClassPointers)
-    Compact,
-    // +UseCompressedClassPointers (-UseCompactObjectHeaders)
-    Compressed,
-    // -UseCompressedClassPointers (-UseCompactObjectHeaders)
-    Uncompressed,
-    // Not yet initialized
-    Undefined
-  };
 
-private:
-  static Mode _klass_mode;
+  static HeaderMode _mode;
   static int  _oop_base_offset_in_bytes;
   static bool _oop_has_klass_gap;
 
+  static bool is_initialized() {
+    return _oop_base_offset_in_bytes > 0;
+  }
+
 public:
+
   static void initialize();
-  static inline Mode klass_mode();
+  static inline HeaderMode klass_mode() { return _mode; }
   static inline int oop_base_offset_in_bytes() {
     return _oop_base_offset_in_bytes;
   }
   static inline bool oop_has_klass_gap() {
     return _oop_has_klass_gap;
   }
+};
+
+// Has to be a separate class from ObjLayout
+struct ObjLayoutHelpers {
+
+  template<HeaderMode mode>
+  static constexpr inline bool oop_has_klass_gap();
+
+  template<HeaderMode mode>
+  static constexpr inline int markword_plus_klass_in_bytes();
+
+  template<HeaderMode mode, typename elemtype>
+  static constexpr inline int array_first_element_offset_in_bytes();
+
 };
 
 #endif // SHARE_OOPS_OBJLAYOUT_HPP

@@ -314,9 +314,12 @@ public:
 
 class OopIteratorClosureDispatch {
  public:
-  template <typename OopClosureType> static void oop_oop_iterate(OopClosureType* cl, oop obj, Klass* klass);
-  template <typename OopClosureType> static void oop_oop_iterate(OopClosureType* cl, oop obj, Klass* klass, MemRegion mr);
-  template <typename OopClosureType> static void oop_oop_iterate_backwards(OopClosureType* cl, oop obj, Klass* klass);
+  template <typename OopClosureType> inline static void    oop_oop_iterate              (oop obj, OopClosureType* cl);
+  template <typename OopClosureType> inline static void    oop_oop_iterate_reverse      (oop obj, OopClosureType* cl);
+  template <typename OopClosureType> inline static void    oop_oop_iterate_bounded      (oop obj, OopClosureType* cl, MemRegion mr);
+  template <typename OopClosureType> inline static size_t  oop_oop_iterate_size         (oop obj, OopClosureType* cl);
+  template <typename OopClosureType> inline static size_t  oop_oop_iterate_bounded_size (oop obj, OopClosureType* cl, MemRegion mr);
+  template <typename OopClosureType> inline static void    oop_oop_iterate_range        (objArrayOop obj, OopClosureType* cl, int start, int end);
 };
 
 #endif // SHARE_MEMORY_ITERATOR_HPP
