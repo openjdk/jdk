@@ -30,11 +30,9 @@ import build.tools.pandocfilter.json.JSONString;
 import build.tools.pandocfilter.json.JSONValue;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class PandocFilter {
@@ -114,12 +112,14 @@ public class PandocFilter {
         return createPandocNode("Str", new JSONString(string));
     }
 
-    public static JSONValue loadJson(String[] args) throws IOException {
+    public static JSONValue loadJson(String[] args) throws FileNotFoundException {
         StringBuffer input = new StringBuffer();
-        Charset charset = StandardCharsets.UTF_8;   // Fix the JSON encoding to UTF-8
-        InputStreamReader reader = args.length > 0
-                ? new FileReader(args[0], charset)
-                : new InputStreamReader(System.in, charset);
+        InputStreamReader reader;
+        if (args.length > 0)
+            reader = new FileReader(args[0]);
+        else {
+            reader = new InputStreamReader(System.in);
+        }
         new BufferedReader(reader).lines().forEach(line -> input.append(line));
 
         return JSON.parse(input.toString());
