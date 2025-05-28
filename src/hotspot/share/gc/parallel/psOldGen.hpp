@@ -38,7 +38,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
   PSVirtualSpace*          _virtual_space;     // Controls mapping and unmapping of virtual mem
-  ObjectStartArray         _start_array;       // Keeps track of where objects start in a 512b block
+  ObjectStartArray*        _start_array;       // Keeps track of where objects start in a 512b block
   MutableSpace*            _object_space;      // Where all the objects live
 
   // Performance Counters
@@ -56,7 +56,7 @@ class PSOldGen : public CHeapObj<mtGC> {
     assert_locked_or_safepoint(Heap_lock);
     HeapWord* res = object_space()->cas_allocate(word_size);
     if (res != nullptr) {
-      _start_array.update_for_block(res, res + word_size);
+      _start_array->update_for_block(res, res + word_size);
     }
     return res;
   }
@@ -70,16 +70,15 @@ class PSOldGen : public CHeapObj<mtGC> {
 
   void post_resize();
 
-  void initialize(ReservedSpace rs, size_t initial_size, size_t alignment,
-                  const char* perf_data_name, int level);
+  void initialize(ReservedSpace rs, size_t initial_size, size_t alignment);
   void initialize_virtual_space(ReservedSpace rs, size_t initial_size, size_t alignment);
-  void initialize_work(const char* perf_data_name, int level);
-  void initialize_performance_counters(const char* perf_data_name, int level);
+  void initialize_work();
+  void initialize_performance_counters();
 
  public:
   // Initialize the generation.
   PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
-           size_t max_size, const char* perf_data_name, int level);
+           size_t max_size);
 
   MemRegion reserved() const {
     return MemRegion((HeapWord*)(_virtual_space->low_boundary()),
@@ -103,7 +102,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   }
 
   MutableSpace*         object_space() const      { return _object_space; }
-  ObjectStartArray*     start_array()             { return &_start_array; }
+  ObjectStartArray*     start_array()             { return _start_array;  }
   PSVirtualSpace*       virtual_space() const     { return _virtual_space;}
 
   // Size info

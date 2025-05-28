@@ -93,8 +93,7 @@ jint ParallelScavengeHeap::initialize() {
       old_rs,
       OldSize,
       MinOldSize,
-      MaxOldSize,
-      "old", 1);
+      MaxOldSize);
 
   assert(young_gen()->max_gen_size() == young_rs.size(),"Consistency check");
   assert(old_gen()->max_gen_size() == old_rs.size(), "Consistency check");

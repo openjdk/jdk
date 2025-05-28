@@ -27,28 +27,9 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 
-// PSVirtualSpace
-
 PSVirtualSpace::PSVirtualSpace(ReservedSpace rs, size_t alignment) :
   _alignment(alignment)
 {
-  set_reserved(rs);
-  set_committed(reserved_low_addr(), reserved_low_addr());
-  DEBUG_ONLY(verify());
-}
-
-// Deprecated.
-PSVirtualSpace::PSVirtualSpace():
-  _alignment(os::vm_page_size()),
-  _reserved_low_addr(nullptr),
-  _reserved_high_addr(nullptr),
-  _committed_low_addr(nullptr),
-  _committed_high_addr(nullptr),
-  _special(false) {
-}
-
-// Deprecated.
-void PSVirtualSpace::initialize(ReservedSpace rs) {
   set_reserved(rs);
   set_committed(reserved_low_addr(), reserved_low_addr());
   DEBUG_ONLY(verify());
