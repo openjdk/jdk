@@ -246,7 +246,7 @@ public final class PlatformTracer {
         return filters;
     }
 
-    private synchronized static void reset() {
+    private static void reset() {
         timedMethods.clear();
         timedClasses.clear();
     }
