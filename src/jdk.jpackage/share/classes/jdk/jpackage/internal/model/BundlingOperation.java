@@ -22,28 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal.model;
 
-import java.io.IOException;
-import java.nio.file.Path;
-
-
 /**
- * Creates app image directory from the given {@link Application} object.
- *
- *  @ see PackageWriter
+ * Generic bundling operation.
+ * <p>
+ * Bundling operation is comprised of creating of {@link BundleSpec} instance
+ * and using it as an input for {@link BundleCreator#create()} method to create
+ * a bundle.
  */
-@FunctionalInterface
-public interface ApplicationWriter {
-
-    /**
-     * Creates app image directory from the given {@link Application} object in the given directory.
-     *
-     * @param app the source application
-     * @param dst the directory where to create app image of the source application
-     * @throws PackagerException if packaging error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    void write(Application app, Path dst) throws PackagerException, IOException;
+public interface BundlingOperation {
 }
