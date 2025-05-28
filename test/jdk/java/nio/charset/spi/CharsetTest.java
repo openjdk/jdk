@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.charset.Charset;
@@ -73,10 +72,8 @@ public class CharsetTest {
 
     public static void main(String [] args) {
 
-        for (String property : new String[]{"stdin.encoding", "stdout.encoding", "stderr.encoding"}) {
-            String name = System.getProperty(property);
-            out.printf("%s: %s (%s)%n", property, name, Charset.forName(name));
-        }
+        out.println("Default: "
+                    + new InputStreamReader(System.in).getEncoding());
 
         out.print("Available:");
         for (Iterator i = available.keySet().iterator(); i.hasNext();)
