@@ -368,16 +368,8 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
 
         Files.createDirectories(scriptsRoot);
 
-        final Map<String, String> data = new HashMap<>();
-
-        final var appLocation = pkg.asInstalledPackageApplicationLayout().orElseThrow().appDirectory();
-
-        data.put("INSTALL_LOCATION", Path.of("/").resolve(pkg.relativeInstallDir()).toString());
-        data.put("APP_LOCATION", appLocation.toString());
-
         MacPkgInstallerScripts.createAppScripts()
                 .setResourceDir(env.resourceDir().orElse(null))
-                .setSubstitutionData(data)
                 .saveInFolder(scriptsRoot);
     }
 
