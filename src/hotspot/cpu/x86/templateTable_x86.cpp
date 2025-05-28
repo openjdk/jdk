@@ -1738,7 +1738,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   if (UseLoopCounter) {
     // increment backedge counter for backward branches
     // rax: MDO
-    // rbx: MDO bumped taken-count
     // rcx: method
     // rdx: target offset
     // r13: target bcp
