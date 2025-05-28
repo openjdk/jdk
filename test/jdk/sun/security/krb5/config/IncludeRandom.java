@@ -29,6 +29,7 @@
  * @library /test/lib
  * @run main/othervm IncludeRandom
  */
+import jdk.test.lib.Asserts;
 import jdk.test.lib.security.SeededSecureRandom;
 import sun.security.krb5.Config;
 
@@ -63,17 +64,13 @@ public class IncludeRandom {
         write("f");
         if (nAssign != 0) {
             Config.refresh();
-            var j = Config.getInstance().getAll("section", "x");
-            var r = read("f", new ArrayList<String>())
+            var j = Config.getInstance().getAll("section", "sub", "x");
+            var r = readRaw("f", new ArrayList<String>())
                     .stream()
                     .collect(Collectors.joining(" "));
-            if (!j.equals(r)) {
-                System.out.println(j);
-                System.out.println(r);
-                throw new RuntimeException("Different");
-            }
+            Asserts.assertEQ(r, j);
         }
-        try (var dir = Files.newDirectoryStream(Path.of("."))) {
+        try (var dir = Files.newDirectoryStream(Path.of("."), "f*")) {
             for (var f : dir) {
                 Files.delete(f);
             }
@@ -81,13 +78,13 @@ public class IncludeRandom {
     }
 
     // read settings as raw files
-    static List<String> read(String f, List<String> list) throws IOException {
+    static List<String> readRaw(String f, List<String> list) throws IOException {
         for (var s : Files.readAllLines(Path.of(f))) {
             if (s.startsWith("include ")) {
-                read(s.substring(8), list);
+                readRaw(s.substring(8), list);
             }
-            if (s.startsWith("x = ")) {
-                list.add(s.substring(4));
+            if (s.contains("x = ")) {
+                list.add(s.substring(s.indexOf("x = ") + 4));
             }
         }
         return list;
@@ -96,19 +93,41 @@ public class IncludeRandom {
     // write krb5.conf with random include
     static void write(String f) throws IOException {
         var p = Path.of(f);
-        if (Files.exists(p)) return;
+        if (Files.exists(p)) return;    // do not overwrite, same file can be
+                                        // included twice
         var content = new ArrayList<String>();
-        content.add("[section]");
+        content.add("[section]");       // always starts with section
         for (var i = 0; i < sr.nextInt(5); i++) {
-            if (sr.nextBoolean()) content.add("[section]");
-            content.add("x = " + sr.nextInt(99999999));
-            nAssign++;
+            if (sr.nextBoolean()) {     // might have more section(s)
+                content.add("[section]");
+            }
+            if (sr.nextBoolean()) {     // style 1: { on subsection line
+                content.add("sub = {");
+            } else {
+                content.add("sub = ");
+                if (sr.nextBoolean()) {
+                    content.add("{");   // style 2: { on individual line
+                } else {
+                                        // style 3: { on key-value line
+                    content.add("{ x = " + sr.nextInt(99999999));
+                    nAssign++;
+                }
+            }
+            for (var j = 0; j < sr.nextInt(3); j++) { // might have more
+                content.add("x = " + sr.nextInt(99999999));
+                nAssign++;
+            }
+            content.add("}");
         }
+        // randomly throw in include lines
         for (var i = 0; i < sr.nextInt(3); i++) {
             if (nInc < 98) {
                 // include file name is random, so there could be dup
-                // but name length always grows, so no recursive
-                var inc = f + sr.nextInt(20);
+                // but name length always grows, so no recursive.
+                // Extra length could be 1 digit or 2 digits, so the
+                // same file can be included on 2 levels, e.g. f1 includes
+                // f12 and f123, and f12 includes f123 again.
+                var inc = f + sr.nextInt(100);
                 content.add(sr.nextInt(content.size() + 1),
                         "include " + Path.of(inc).toAbsolutePath());
                 nInc++;
