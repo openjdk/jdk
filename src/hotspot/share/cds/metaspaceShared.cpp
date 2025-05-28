@@ -72,6 +72,7 @@
 #include "memory/memoryReserver.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
@@ -81,6 +82,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
+#include "oops/trainingData.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
@@ -483,6 +485,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_dictionary_headers(soc);
   AOTLinkedClassBulkLoader::serialize(soc, true);
   FinalImageRecipes::serialize(soc);
+  TrainingData::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
@@ -569,6 +572,7 @@ public:
     SystemDictionaryShared::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
+    TrainingData::iterate_roots(it);
 
     // The above code should find all the symbols that are referenced by the
     // archived classes. We just need to add the extra symbols which
@@ -608,12 +612,15 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
   if (CDSConfig::is_dumping_preimage_static_archive()) {
     FinalImageRecipes::record_recipes();
   }
+
+  TrainingData::dump_training_data();
+
   MetaspaceShared::write_method_handle_intrinsics();
 
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
 
-  if (AOTCodeCache::is_dumping_adapter()) {
+  if (CDSConfig::is_dumping_adapters()) {
     AdapterHandlerLibrary::dump_aot_adapter_table();
   }
 
@@ -672,6 +679,9 @@ void VM_PopulateDumpSharedSpace::doit() {
     log_info(aot)("Adjust lambda proxy class dictionary");
     LambdaProxyClassDictionary::adjust_dumptime_table();
   }
+
+  log_info(cds)("Make training data shareable");
+  _builder.make_training_data_shareable();
 
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive.
@@ -733,7 +743,7 @@ bool MetaspaceShared::may_be_eagerly_linked(InstanceKlass* ik) {
     // linked/verified at runtime.
     return false;
   }
-  if (CDSConfig::is_dumping_dynamic_archive() && ik->is_shared_unregistered_class()) {
+  if (CDSConfig::is_dumping_dynamic_archive() && ik->defined_by_other_loaders()) {
     // Linking of unregistered classes at this stage may cause more
     // classes to be resolved, resulting in calls to ClassLoader.loadClass()
     // that may not be expected by custom class loaders.
@@ -791,6 +801,13 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
 void MetaspaceShared::preload_and_dump(TRAPS) {
   CDSConfig::DumperThreadMark dumper_thread_mark(THREAD);
   ResourceMark rm(THREAD);
+ HandleMark hm(THREAD);
+
+ if (CDSConfig::is_dumping_final_static_archive() && AOTPrintTrainingInfo) {
+   tty->print_cr("==================== archived_training_data ** before dumping ====================");
+   TrainingData::print_archived_training_data_on(tty);
+ }
+
   StaticArchiveBuilder builder;
   preload_and_dump_impl(builder, THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -799,8 +816,9 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
                      "%zuM", MaxHeapSize/M);
       MetaspaceShared::writing_error();
     } else {
+      oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
       aot_log_error(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
-                     java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+                         message == nullptr ? "(null)" : java_lang_String::as_utf8_string(message));
       MetaspaceShared::writing_error(err_msg("Unexpected exception, use -Xlog:aot%s,exceptions=trace for detail",
                                              CDSConfig::new_aot_flags_used() ? "" : ",cds"));
     }
@@ -811,7 +829,6 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
       // We are in the JVM that runs the training run. Continue execution,
       // so that it can finish all clean-up and return the correct exit
       // code to the OS.
-      tty->print_cr("AOTConfiguration recorded: %s", AOTConfiguration);
     } else {
       // The JLI launcher only recognizes the "old" -Xshare:dump flag.
       // When the new -XX:AOTMode=create flag is used, we can't return
@@ -955,6 +972,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   // are implemented by K are not verified.
   link_shared_classes(CHECK);
   log_info(aot)("Rewriting and linking classes: done");
+  TrainingData::init_dumptime_table(CHECK); // captures TrainingDataSetLocker
 
   if (CDSConfig::is_dumping_regenerated_lambdaform_invokers()) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);
@@ -1009,7 +1027,16 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
     CDSConfig::disable_dumping_aot_code();
   }
 
-  if (!write_static_archive(&builder, op.map_info(), op.heap_info())) {
+  bool status = write_static_archive(&builder, op.map_info(), op.heap_info());
+  if (status && CDSConfig::is_dumping_preimage_static_archive()) {
+    tty->print_cr("%s AOTConfiguration recorded: %s",
+                  CDSConfig::has_temp_aot_config_file() ? "Temporary" : "", AOTConfiguration);
+    if (CDSConfig::is_single_command_training()) {
+      fork_and_dump_final_static_archive(CHECK);
+    }
+  }
+
+  if (!status) {
     THROW_MSG(vmSymbols::java_io_IOException(), "Encountered error while dumping");
   }
 }
@@ -1032,6 +1059,132 @@ bool MetaspaceShared::write_static_archive(ArchiveBuilder* builder, FileMapInfo*
   return true;
 }
 
+static void print_java_launcher(outputStream* st) {
+  st->print("%s%sbin%sjava", Arguments::get_java_home(), os::file_separator(), os::file_separator());
+}
+
+static void append_args(GrowableArray<Handle>* args, const char* arg, TRAPS) {
+  Handle string = java_lang_String::create_from_str(arg, CHECK);
+  args->append(string);
+}
+
+// Pass all options in Arguments::jvm_args_array() to a child JVM process
+// using the JAVA_TOOL_OPTIONS environment variable.
+static int exec_jvm_with_java_tool_options(const char* java_launcher_path, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+  GrowableArray<Handle> args;
+
+  const char* cp = Arguments::get_appclasspath();
+  if (cp != nullptr && strlen(cp) > 0 && strcmp(cp, ".") != 0) {
+    // We cannot use "-cp", because "-cp" is only interpreted by the java launcher,
+    // and is not interpreter by arguments.cpp when it loads args from JAVA_TOOL_OPTIONS
+    stringStream ss;
+    ss.print("-Djava.class.path=");
+    ss.print_raw(cp);
+    append_args(&args, ss.freeze(), CHECK_0);
+    // CDS$ProcessLauncher::execWithJavaToolOptions() must unset CLASSPATH, which has
+    // a higher priority than -Djava.class.path=
+  }
+
+  // Pass all arguments. These include those from JAVA_TOOL_OPTIONS and _JAVA_OPTIONS.
+  for (int i = 0; i < Arguments::num_jvm_args(); i++) {
+    const char* arg = Arguments::jvm_args_array()[i];
+    if (strstr(arg, "-XX:AOTCacheOutput=") == arg || // arg starts with ...
+        strstr(arg, "-XX:AOTConfiguration=") == arg ||
+        strstr(arg, "-XX:AOTMode=") == arg) {
+      // Filter these out. They wiill be set below.
+    } else {
+      append_args(&args, arg, CHECK_0);
+    }
+  }
+
+  // Note: because we are running in AOTMode=record, JDK_AOT_VM_OPTIONS have not been
+  // parsed, so they are not in Arguments::jvm_args_array. If JDK_AOT_VM_OPTIONS is in
+  // the environment, it will be inherited and parsed by the child JVM process
+  // in Arguments::parse_java_tool_options_environment_variable().
+  precond(strcmp(AOTMode, "record") == 0);
+
+  // We don't pass Arguments::jvm_flags_array(), as those will be added by
+  // the child process when it loads .hotspotrc
+
+  {
+    // If AOTCacheOutput contains %p, it should have been already substituted with the
+    // pid of the training process.
+    stringStream ss;
+    ss.print("-XX:AOTCacheOutput=");
+    ss.print_raw(AOTCacheOutput);
+    append_args(&args, ss.freeze(), CHECK_0);
+  }
+  {
+    // If AOTCacheConfiguration contains %p, it should have been already substituted with the
+    // pid of the training process.
+    // If AOTCacheConfiguration was not explicitly specified, it should have been assigned a
+    // temporary file name.
+    stringStream ss;
+    ss.print("-XX:AOTConfiguration=");
+    ss.print_raw(AOTConfiguration);
+    append_args(&args, ss.freeze(), CHECK_0);
+  }
+
+  append_args(&args, "-XX:AOTMode=create", CHECK_0);
+
+  Symbol* klass_name = SymbolTable::new_symbol("jdk/internal/misc/CDS$ProcessLauncher");
+  Klass* k = SystemDictionary::resolve_or_fail(klass_name, true, CHECK_0);
+  Symbol* methodName = SymbolTable::new_symbol("execWithJavaToolOptions");
+  Symbol* methodSignature = SymbolTable::new_symbol("(Ljava/lang/String;[Ljava/lang/String;)I");
+
+  Handle launcher = java_lang_String::create_from_str(java_launcher_path, CHECK_0);
+  objArrayOop array = oopFactory::new_objArray(vmClasses::String_klass(), args.length(), CHECK_0);
+  for (int i = 0; i < args.length(); i++) {
+    array->obj_at_put(i, args.at(i)());
+  }
+  objArrayHandle launcher_args(THREAD, array);
+
+  // The following call will pass all options inside the JAVA_TOOL_OPTIONS env variable to
+  // the child process. It will also clear the _JAVA_OPTIONS and CLASSPATH env variables for
+  // the child process.
+  //
+  // Note: the env variables are set only for the child process. They are not changed
+  // for the current process. See java.lang.ProcessBuilder::environment().
+  JavaValue result(T_OBJECT);
+  JavaCallArguments javacall_args(2);
+  javacall_args.push_oop(launcher);
+  javacall_args.push_oop(launcher_args);
+  JavaCalls::call_static(&result,
+                          InstanceKlass::cast(k),
+                          methodName,
+                          methodSignature,
+                          &javacall_args,
+                          CHECK_0);
+  return result.get_jint();
+}
+
+void MetaspaceShared::fork_and_dump_final_static_archive(TRAPS) {
+  assert(CDSConfig::is_dumping_preimage_static_archive(), "sanity");
+
+  ResourceMark rm;
+  stringStream ss;
+  print_java_launcher(&ss);
+  const char* cmd = ss.freeze();
+  tty->print_cr("Launching child process %s to assemble AOT cache %s using configuration %s", cmd, AOTCacheOutput, AOTConfiguration);
+  int status = exec_jvm_with_java_tool_options(cmd, CHECK);
+  if (status != 0) {
+    log_error(aot)("Child process failed; status = %d", status);
+    // We leave the temp config file for debugging
+  } else if (CDSConfig::has_temp_aot_config_file()) {
+    const char* tmp_config = AOTConfiguration;
+    // On Windows, need WRITE permission to remove the file.
+    WINDOWS_ONLY(chmod(tmp_config, _S_IREAD | _S_IWRITE));
+    status = remove(tmp_config);
+    if (status != 0) {
+      log_error(aot)("Failed to remove temporary AOT configuration file %s", tmp_config);
+    } else {
+      tty->print_cr("Removed temporary AOT configuration file %s", tmp_config);
+    }
+  }
+}
+
 // Returns true if the class's status has changed.
 bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
@@ -1046,7 +1199,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
-    if (ik->is_shared_unregistered_class() && ik->class_loader() == nullptr) {
+    if (ik->defined_by_other_loaders() && ik->class_loader() == nullptr) {
       // The verification decision is based on BytecodeVerificationRemote
       // for non-system classes. Since we are using the null classloader
       // to load non-system classes for customized class loaders during dumping,
@@ -1858,6 +2011,8 @@ void MetaspaceShared::initialize_shared_spaces() {
       tty->print_cr("Dynamic archive version %d", dynamic_mapinfo->version());
       SystemDictionaryShared::print_shared_archive(tty, false/*dynamic*/);
     }
+
+    TrainingData::print_archived_training_data_on(tty);
 
     if (AOTCodeCache::is_on_for_use()) {
       tty->print_cr("\n\nAOT Code");

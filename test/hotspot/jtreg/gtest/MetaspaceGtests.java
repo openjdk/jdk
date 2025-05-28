@@ -58,5 +58,5 @@
  * @requires vm.bits == 64
  * @requires vm.flagless
  * @requires vm.debug
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UseCompactObjectHeaders
  */

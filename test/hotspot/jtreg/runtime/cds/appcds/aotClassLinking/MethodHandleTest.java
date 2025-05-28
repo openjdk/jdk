@@ -35,7 +35,7 @@
  *             MethodHandleTestApp MethodHandleTestApp$A MethodHandleTestApp$B
  *             UnsupportedBSMs UnsupportedBSMs$MyEnum
  *             ObjectMethodsTest ObjectMethodsTest$C
- * @run driver MethodHandleTest AOT
+ * @run driver MethodHandleTest AOT --two-step-training
  */
 
 import java.io.Serializable;

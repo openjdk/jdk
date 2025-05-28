@@ -48,6 +48,12 @@ class MetadataFactory : AllStatic {
     return array;
   }
 
+  // This API should be used for TrainingData only.
+  template <typename T>
+  static Array<T>* new_array_from_c_heap(int length, MemTag flags) {
+    return new (length, flags) Array<T>(length);
+  }
+
   template <typename T>
   static void free_array(ClassLoaderData* loader_data, Array<T>* data) {
     if (data != nullptr) {
