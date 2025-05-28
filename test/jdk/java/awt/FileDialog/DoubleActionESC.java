@@ -38,7 +38,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /*
  * @test
- * @bug 5097243
+ * @bug 5097243 8355478
  * @summary Tests that FileDialog can be closed by ESC any time
  * @key headful
  * @run main DoubleActionESC

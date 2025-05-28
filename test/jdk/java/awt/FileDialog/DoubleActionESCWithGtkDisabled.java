@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,12 @@
  * questions.
  */
 
-import java.awt.Button;
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.FileDialog;
-import java.awt.Frame;
-import java.awt.Point;
-import java.awt.Robot;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.util.concurrent.CountDownLatch;
-
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 /*
  * @test
  * @bug 5097243 8355478
- * @summary Tests that FileDialog can be closed by ESC any time
+ * @summary Tests that FileDialog can be closed by ESC any time when GtkFileDialog is disabled
  * @key headful
- * @run main DoubleActionESC
+ * @run main DoubleActionESCWithGtkDisabled
  */
 
 public class DoubleActionESCWithGtkDisabled {
