@@ -499,9 +499,11 @@ void VLoopDependencyGraph::PredsIterator::next() {
 // pointer p:
 //   (C0) is given by the construction of VPointer vp, which simply wraps a MemPointer mp.
 //   (c1) with v = iv and scale_v = iv_scale
-//   (C2) with r = [init, init + stride_iv, .. limit] which is the set of possible
-//        iv values in the loop.
-//        TODO: range at the top does not go to limit! But what is it?
+//   (C2) with r = [init, init + stride_iv, .. limX - stride_v, limX], which is the set
+//        of possible iv values in the loop, with init the first iv value, and limX
+//        the last iv value which is closest to limit.
+//        Note: stride_iv > 0  ->  limit - stride_iv <= limX < limit
+//              stride_iv < 0  ->  limit < limX <= limit + stride_iv
 //   (C3) the memory accesses for every iv value in the loop must be in bounds, otherwise
 //        the program has undefined behaviour already.
 //   (C4) abs(iv_scale * stride_iv) < 2^31 is given by the checks in
@@ -517,15 +519,14 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //   p2(iv)  = p2(init) - init * iv_scale2 + iv * iv_scale2
 //
 // With the (Alternative Corrolary P) we get the alternative linar form:
-//   p1(iv)  = p1(limit) - limit * iv_scale1 + iv * iv_scale1
-//   p2(iv)  = p2(limit) - limit * iv_scale2 + iv * iv_scale2
-//   TODO: problematic now
+//   p1(iv)  = p1(limX) - limX * iv_scale1 + iv * iv_scale1
+//   p2(iv)  = p2(limX) - limX * iv_scale2 + iv * iv_scale2
 //
 //
 // We can now use this linearity to construct aliasing runtime checks, depending on the
 // different "geometry" of the two VPointer over their iv, i.e. the "slopes" of the linear
 // functions. In the following graphs, the x-axis denotes the values of iv, from init to
-// limit. And the y-axis denotes the pointer position p(iv). Intuitively, this problem
+// limX. And the y-axis denotes the pointer position p(iv). Intuitively, this problem
 // can be seen as having two bands that should not overlap.
 //
 //       Case 1                     Case 2                     Case 3
@@ -561,28 +562,33 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //   Hence, we do not have to check the condition for every iv, but only for init.
 //
 //   p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)
-//   ---------- for -------------      ---------- for -------------
-//         (P1-BEFORE-P2)          OR        (P1-AFTER-P2)
+//   ----- is equivalent to -----      ---- is equivalent to ------
+//          (P1-BEFORE-P2)         OR         (P1-AFTER-P2)
 //
 //
 // Case 2 and 3: different slopes, i.e. iv_scale1 != iv_scale2
 //
 //   Without loss of generality, we assume iv_scale1 < iv_scale2.
+//   (Otherwise, we just swap p1 and p2).
 //
-//   If iv_stride >= 0, i.e. init <= iv <= limit:
-//     (iv - init ) * scale_1 <= (iv - init ) * iv_scale
-//     (iv - limit) * scale_1 >= (iv - limit) * iv_scale                   (POS-STRIDE)
-//   If iv_stride <= 0, i.e. limit <= iv <= init:
-//     (iv - init ) * scale_1 >= (iv - init ) * iv_scale
-//     (iv - limit) * scale_1 <= (iv - limit) * iv_scale                   (NEG-STRIDE)
-//     TODO: problematic now?
+//   If iv_stride >= 0, i.e. init <= iv <= limX:
+//     (iv - init) * scale_1 <= (iv - init) * iv_scale
+//     (iv - limX) * scale_1 >= (iv - limX) * iv_scale                   (POS-STRIDE)
+//   If iv_stride <= 0, i.e. limX <= iv <= init:
+//     (iv - init) * scale_1 >= (iv - init) * iv_scale
+//     (iv - limX) * scale_1 <= (iv - limX) * iv_scale                   (NEG-STRIDE)
 //
 //   We define:
-//     span1 = p1(limit) - p1(init) = (limit - init) * iv_scale1
-//     span2 = p2(limit) - p2(init) = (limit - init) * iv_scale2
-//     TODO: pX(limit) problematic?
+//     spanX1 = p1(limX) - p1(init) = (limX - init) * iv_scale1
+//     spanX2 = p2(limX) - p2(init) = (limX - init) * iv_scale2
+//
+//   Since computing limX is cumbersome, and we only have limit readily
+//   available, we the spans with slightly larger magnitude:
+//     span1 = (limit - init) * iv_scale1
+//     span2 = (limit - init) * iv_scale2
 //
 //   Below, we show that these conditions are equivalent:
+//   TODO: continue working here, show equivalence or what implies what exactly, and that we are not too far off.
 //
 //   p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
 //   p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
