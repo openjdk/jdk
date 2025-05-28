@@ -69,12 +69,12 @@ bool JfrTraceIdEpoch::is_synchronizing() {
 
 void JfrTraceIdEpoch::set_method_tracer_tag_state() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  Atomic::store(&_method_tracer_state, true);
+  Atomic::release_store(&_method_tracer_state, true);
 }
 
 void JfrTraceIdEpoch::reset_method_tracer_tag_state() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  Atomic::store(&_method_tracer_state, false);
+  Atomic::release_store(&_method_tracer_state, false);
 }
 
 bool JfrTraceIdEpoch::has_method_tracer_changed_tag_state() {
