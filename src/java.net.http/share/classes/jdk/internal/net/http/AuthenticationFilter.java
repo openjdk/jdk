@@ -328,7 +328,7 @@ class AuthenticationFilter implements HeaderFilter {
             req = HttpRequestImpl.newInstanceForAuthentication(req);
             addBasicCredentials(req, proxy, pw, isUTF8);
             return req;
-        } else if (au.retries > retry_limit) {
+        } else if (au.retries >= retry_limit) {
             throw new IOException("too many authentication attempts. Limit: " +
                     retry_limit);
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,11 @@
 
 package sun.nio.ch;
 
-import java.nio.channels.spi.AsynchronousChannelProvider;
+import jdk.internal.ffi.generated.kqueue.kqueue_h;
+
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
+import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,7 +53,7 @@ final class KQueuePort
     private final int kqfd;
 
     // address of the poll array passed to kqueue_wait
-    private final long address;
+    private final MemorySegment pollArrayRegions;
 
     // true if kqueue closed
     private boolean closed;
@@ -86,15 +89,15 @@ final class KQueuePort
     {
         super(provider, pool);
 
-        this.kqfd = KQueue.create();
-        this.address = KQueue.allocatePollArray(MAX_KEVENTS_TO_POLL);
+        this.kqfd = kqueue_h.kqueue();
+        this.pollArrayRegions = KQueue.allocatePollArray(MAX_KEVENTS_TO_POLL);
 
         // create socket pair for wakeup mechanism
         try {
             long fds = IOUtil.makePipe(true);
             this.sp = new int[]{(int) (fds >>> 32), (int) fds};
         } catch (IOException ioe) {
-            KQueue.freePollArray(address);
+            KQueue.freePollArray(pollArrayRegions);
             FileDispatcherImpl.closeIntFD(kqfd);
             throw ioe;
         }
@@ -126,7 +129,7 @@ final class KQueuePort
         try { FileDispatcherImpl.closeIntFD(kqfd); } catch (IOException ioe) { }
         try { FileDispatcherImpl.closeIntFD(sp[0]); } catch (IOException ioe) { }
         try { FileDispatcherImpl.closeIntFD(sp[1]); } catch (IOException ioe) { }
-        KQueue.freePollArray(address);
+        KQueue.freePollArray(pollArrayRegions);
     }
 
     private void wakeup() {
@@ -197,7 +200,7 @@ final class KQueuePort
                 for (;;) {
                     int n;
                     do {
-                        n = KQueue.poll(kqfd, address, MAX_KEVENTS_TO_POLL, -1L);
+                        n = KQueue.poll(kqfd, pollArrayRegions, MAX_KEVENTS_TO_POLL, -1L);
                     } while (n == IOStatus.INTERRUPTED);
 
                     /**
@@ -209,8 +212,8 @@ final class KQueuePort
                     fdToChannelLock.readLock().lock();
                     try {
                         while (n-- > 0) {
-                            long keventAddress = KQueue.getEvent(address, n);
-                            int fd = KQueue.getDescriptor(keventAddress);
+                            MemorySegment eventMS = KQueue.getEvent(pollArrayRegions, n);
+                            int fd = (int) KQueue.getDescriptor(eventMS);
 
                             // wakeup
                             if (fd == sp[0]) {
@@ -235,7 +238,7 @@ final class KQueuePort
 
                             PollableChannel channel = fdToChannel.get(fd);
                             if (channel != null) {
-                                int filter = KQueue.getFilter(keventAddress);
+                                int filter = KQueue.getFilter(eventMS);
                                 int events = 0;
                                 if (filter == EVFILT_READ)
                                     events = Net.POLLIN;
