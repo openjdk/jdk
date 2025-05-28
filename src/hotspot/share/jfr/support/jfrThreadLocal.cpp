@@ -80,12 +80,15 @@ JfrThreadLocal::JfrThreadLocal() :
   _enqueued_requests(false),
   _vthread(false),
   _notified(false),
-  _dead(false),
-  _cpu_timer(nullptr),
+  _dead(false)
+#ifdef LINUX
+  ,_cpu_timer(nullptr),
   _cpu_time_jfr_locked(UNLOCKED),
   _has_cpu_time_jfr_requests(false),
   _cpu_time_jfr_queue(0),
-  _wants_is_thread_in_native_stackwalking(false) {
+  _wants_is_thread_in_native_stackwalking(false)
+#endif
+  {
   Thread* thread = Thread::current_or_null();
   _parent_trace_id = thread != nullptr ? jvm_thread_id(thread) : (traceid)0;
 }
