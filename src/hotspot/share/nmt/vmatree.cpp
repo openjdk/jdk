@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (cMemTagFactory::number_of_tags()/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -302,7 +302,7 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
 
 #ifdef ASSERT
 void VMATree::SummaryDiff::print_on(outputStream* out) {
-  for (int i = 0; i < mt_number_of_tags; i++) {
+  for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
     if (tag[i].reserve == 0 && tag[i].commit == 0) {
       continue;
     }

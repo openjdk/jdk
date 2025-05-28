@@ -66,8 +66,6 @@ mem_tag,
 
 enum class MemTag : uint8_t  {
   MEMORY_TAG_DO(MEMORY_TAG_DECLARE_ENUM)
-  mt_number_of_tags    // number of memory tags (mtDontTrack
-                       // is not included as validate tag)
 };
 
 #define MEMORY_TAG_SHORTNAME(mem_tag, human_readable) \
@@ -75,8 +73,5 @@ enum class MemTag : uint8_t  {
 
 // Generate short aliases for the enum values. E.g. mtGC instead of MemTag::mtGC.
 MEMORY_TAG_DO(MEMORY_TAG_SHORTNAME)
-
-// Make an int version of the sentinel end value.
-constexpr int mt_number_of_tags = static_cast<int>(MemTag::mt_number_of_tags);
 
 #endif // SHARE_NMT_MEM_TAG_HPP

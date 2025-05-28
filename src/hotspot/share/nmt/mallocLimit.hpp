@@ -28,8 +28,10 @@
 
 #include "memory/allStatic.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 
 enum class MallocLimitMode {
   trigger_fatal = 0,
@@ -39,14 +41,23 @@ enum class MallocLimitMode {
 struct malloclimit {
   size_t sz;            // Limit size
   MallocLimitMode mode; // Behavior flags
+
+  malloclimit() : sz(0), mode(MallocLimitMode::trigger_fatal) {}
+  malloclimit& operator=(const malloclimit& other) {
+    this->sz = other.sz; this->mode = other.mode;
+    return *this;
+  }
+  malloclimit(const malloclimit& other) {
+    *this = other;
+  }
 };
 
 // forward declaration
 class outputStream;
 
 class MallocLimitSet {
-  malloclimit _glob;                    // global limit
-  malloclimit _cat[mt_number_of_tags]; // per-category limit
+  malloclimit _glob; // global limit
+  GrowableArrayCHeap<malloclimit, mtNMT> _cat; // per-category limit
 public:
   MallocLimitSet();
 
@@ -57,9 +68,12 @@ public:
   void set_category_limit(MemTag mem_tag, size_t s, MallocLimitMode mode);
 
   const malloclimit* global_limit() const             { return &_glob; }
-  const malloclimit* category_limit(MemTag mem_tag) const { return &_cat[(int)mem_tag]; }
+  const malloclimit* category_limit(MemTag mem_tag) {
+    _cat.at_grow(NMTUtil::tag_to_index(mem_tag));
+    return &_cat.at(NMTUtil::tag_to_index(mem_tag));
+  }
 
-  void print_on(outputStream* st) const;
+  void print_on(outputStream* st);
 };
 
 class MallocLimitHandler : public AllStatic {

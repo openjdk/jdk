@@ -30,6 +30,9 @@
 
 // Tests the assignment operator of ReservedMemoryRegion
 TEST_VM(NMT, ReservedRegionCopy) {
+  if (MemTracker::tracking_level() == NMT_off) {
+    VirtualMemorySummary::initialize();
+  }
   address dummy1 = (address)0x10000000;
   NativeCallStack stack1(&dummy1, 1);
   ReservedMemoryRegion region1(dummy1, os::vm_page_size(), stack1, mtThreadStack);

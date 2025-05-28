@@ -177,7 +177,7 @@ void MemSummaryReporter::report() {
   out->cr();
 
   // Summary by memory tag
-  for (int index = 0; index < mt_number_of_tags; index ++) {
+  for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
     MemTag mem_tag = NMTUtil::index_to_tag(index);
     // thread stack is reported as part of thread category
     if (mem_tag == mtThreadStack) continue;
@@ -465,7 +465,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
 void MemDetailReporter::report_memory_file_allocations() {
   stringStream st;
   {
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
     MemoryFileTracker::Instance::print_all_reports_on(&st, scale());
   }
   output()->print_raw(st.freeze());
@@ -520,7 +520,7 @@ void MemSummaryDiffReporter::report_diff() {
   out->cr();
 
   // Summary diff by memory tag
-  for (int index = 0; index < mt_number_of_tags; index ++) {
+  for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
     MemTag mem_tag = NMTUtil::index_to_tag(index);
     // thread stack is reported as part of thread category
     if (mem_tag == mtThreadStack) continue;
