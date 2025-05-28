@@ -27,8 +27,9 @@ package jdk.jpackage.internal.model;
 /**
  * Generic bundling operation.
  * <p>
- * Bundling operation is comprised of creating of {@link BundleSpec} instance and
- * using it a an input for {@link BundleCreator#create()} method to create a bundle.
+ * Bundling operation is comprised of creating of {@link BundleSpec} instance
+ * and using it as an input for {@link BundleCreator#create()} method to create
+ * a bundle.
  */
 public interface BundlingOperation {
 }
