@@ -269,7 +269,8 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
      * is slightly faster and a more compact representation of the same info.
      * @return A non-null byte array containing the nonce value for the
      * digest challenge or response.
-     * Could use SecureRandom to be more secure but it is very slow.
+     * Using JCAUtil SecureRandom to be more secure and
+     * achieve comparable performance with Random.
      */
 
     /** This array maps the characters to their 6 bit values */
