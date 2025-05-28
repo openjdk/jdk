@@ -34,6 +34,7 @@
 #include "nmt/memTag.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -1262,11 +1263,11 @@ private:
             if (mark.has_monitor()) {
               ObjectMonitor* mon = ObjectSynchronizer::read_monitor(current, monitor->owner(), mark);
               if (// if the monitor is null we must be in the process of locking
-                mon == nullptr ||
-                // we have marked ourself as pending on this monitor
-                mon == pending_moninor ||
-                // we are not the owner of this monitor
-                (_thread != nullptr && !mon->is_entered(_thread))) {
+                  mon == nullptr ||
+                  // we have marked ourself as pending on this monitor
+                  mon == pending_moninor ||
+                  // we are not the owner of this monitor
+                  (_thread != nullptr && !mon->is_entered(_thread))) {
                 _blocker = Blocker(Blocker::WAITING_TO_LOCK, OopHandle(oop_storage(), monitor->owner()));
                 continue; // go to next monitor
               }
