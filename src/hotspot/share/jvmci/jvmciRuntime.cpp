@@ -776,15 +776,11 @@ void JVMCINMethodData::add_failed_speculation(nmethod* nm, jlong speculation) {
   FailedSpeculation::add_failed_speculation(nm, _failed_speculations, data, length);
 }
 
-oop JVMCINMethodData::get_nmethod_mirror(nmethod* nm, bool phantom_ref) {
+oop JVMCINMethodData::get_nmethod_mirror(nmethod* nm) {
   if (_nmethod_mirror_index == -1) {
     return nullptr;
   }
-  if (phantom_ref) {
-    return nm->oop_at_phantom(_nmethod_mirror_index);
-  } else {
-    return nm->oop_at(_nmethod_mirror_index);
-  }
+  return nm->oop_at(_nmethod_mirror_index);
 }
 
 void JVMCINMethodData::set_nmethod_mirror(nmethod* nm, oop new_mirror) {
@@ -802,10 +798,10 @@ void JVMCINMethodData::set_nmethod_mirror(nmethod* nm, oop new_mirror) {
 }
 
 void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
-  oop nmethod_mirror = get_nmethod_mirror(nm, /* phantom_ref */ false);
-  if (nmethod_mirror == nullptr) {
+  if (_nmethod_mirror_index == -1) {
     return;
   }
+  oop nmethod_mirror = get_nmethod_mirror(nm);
 
   // Update the values in the mirror if it still refers to nm.
   // We cannot use JVMCIObject to wrap the mirror as this is called
@@ -2178,7 +2174,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
         JVMCINMethodData* data = nm->jvmci_nmethod_data();
         assert(data != nullptr, "must be");
         if (install_default) {
-          assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm, /* phantom_ref */ false) == nullptr, "must be");
+          assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm) == nullptr, "must be");
           if (entry_bci == InvocationEntryBci) {
             // If there is an old version we're done with it
             nmethod* old = method->code();
@@ -2221,7 +2217,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
             }
           }
         } else {
-          assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm, /* phantom_ref */ false) == HotSpotJVMCI::resolve(nmethod_mirror), "must be");
+          assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm) == HotSpotJVMCI::resolve(nmethod_mirror), "must be");
           MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
           if (!nm->make_in_use()) {
             result = JVMCI::nmethod_reclaimed;
