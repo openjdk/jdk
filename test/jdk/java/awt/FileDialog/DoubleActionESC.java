@@ -51,9 +51,10 @@ public class DoubleActionESC {
     private static Robot robot;
     private static volatile Point p;
     private static volatile Dimension d;
-    private static volatile CountDownLatch latch;
     private static final int REPEAT_COUNT = 2;
     private static final long LATCH_TIMEOUT = 4;
+
+        private static final CountDownLatch latch = new CountDownLatch(REPEAT_COUNT);
 
     public static void main(String[] args) throws Exception {
         latch = new CountDownLatch(REPEAT_COUNT);
