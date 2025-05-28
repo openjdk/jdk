@@ -445,8 +445,6 @@ public class ListingErrorHandler implements ErrorHandler, ErrorListener
             // Open the URL and read to our specified line
             URLConnection uc = url.openConnection();
             is = uc.getInputStream();
-            assert is != System.in
-                    : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
             br = new BufferedReader(new InputStreamReader(is));
 
             // Not the most efficient way, but it works
