@@ -31,6 +31,9 @@ package sun.font;
  * in composites will be cached there.
  */
 
+import static sun.font.FontUtilities.isDefaultIgnorable;
+import static sun.font.FontUtilities.isIgnorableWhitespace;
+
 public final class Type1GlyphMapper extends CharToGlyphMapper {
 
     Type1Font font;
@@ -78,7 +81,7 @@ public final class Type1GlyphMapper extends CharToGlyphMapper {
     }
 
     public int charToGlyph(char ch) {
-        if (FontUtilities.isDefaultIgnorable(ch) || isIgnorableWhitespace(ch)) {
+        if (isIgnorableWhitespace(ch) || isDefaultIgnorable(ch)) { // raw = false
             return INVISIBLE_GLYPH_ID;
         }
         try {
@@ -103,7 +106,7 @@ public final class Type1GlyphMapper extends CharToGlyphMapper {
         if (ch < 0 || ch > 0xffff) {
             return missingGlyph;
         } else {
-            if (!raw && (FontUtilities.isDefaultIgnorable(ch) || isIgnorableWhitespace(ch))) {
+            if (isIgnorableWhitespace(ch) || (isDefaultIgnorable(ch) && !raw)) {
                 return INVISIBLE_GLYPH_ID;
             }
             try {
@@ -113,13 +116,6 @@ public final class Type1GlyphMapper extends CharToGlyphMapper {
                 return charToGlyph(ch);
             }
         }
-    }
-
-    // Matches behavior in e.g. CMap.getControlCodeGlyph(int, boolean)
-    // and RasterPrinterJob.removeControlChars(String)
-    // and CCharToGlyphMapper.isIgnorableWhitespace(int)
-    private static boolean isIgnorableWhitespace(int code) {
-        return code == 0x0009 || code == 0x000a || code == 0x000d;
     }
 
     public void charsToGlyphs(int count, char[] unicodes, int[] glyphs) {

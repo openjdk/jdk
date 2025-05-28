@@ -28,6 +28,9 @@ package sun.font;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 
+import static sun.font.FontUtilities.isDefaultIgnorable;
+import static sun.font.FontUtilities.isIgnorableWhitespace;
+
 public class TrueTypeGlyphMapper extends CharToGlyphMapper {
 
     TrueTypeFont font;
@@ -58,7 +61,7 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
     }
 
     private char getGlyphFromCMAP(int charCode, boolean raw) {
-        if (!raw && FontUtilities.isDefaultIgnorable(charCode)) {
+        if (isIgnorableWhitespace(charCode) || (isDefaultIgnorable(charCode) && !raw)) {
             return INVISIBLE_GLYPH_ID;
         }
         try {
@@ -84,7 +87,7 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
         if (variationSelector == 0) {
             return getGlyphFromCMAP(charCode, raw);
         }
-        if (!raw && FontUtilities.isDefaultIgnorable(charCode)) {
+        if (isIgnorableWhitespace(charCode) || (isDefaultIgnorable(charCode) && !raw)) {
             return INVISIBLE_GLYPH_ID;
         }
         try {

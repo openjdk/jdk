@@ -42,6 +42,9 @@ package sun.font;
  * this appears to cause problems.
  */
 
+import static sun.font.FontUtilities.isDefaultIgnorable;
+import static sun.font.FontUtilities.isIgnorableWhitespace;
+
 public class CompositeGlyphMapper extends CharToGlyphMapper {
 
     public static final int SLOTMASK =  0xff000000;
@@ -117,7 +120,7 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
     }
 
     private int getGlyph(int unicode, boolean raw) {
-        if (!raw && FontUtilities.isDefaultIgnorable(unicode)) {
+        if (isIgnorableWhitespace(unicode) || (isDefaultIgnorable(unicode) && !raw)) {
             return INVISIBLE_GLYPH_ID;
         }
         int glyphCode = getCachedGlyphCode(unicode);

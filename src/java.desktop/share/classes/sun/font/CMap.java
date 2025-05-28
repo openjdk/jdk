@@ -546,9 +546,8 @@ abstract class CMap {
             int index = 0;
             char glyphCode = 0;
 
-            int controlGlyph = getControlCodeGlyph(charCode, true);
-            if (controlGlyph >= 0) {
-                return (char)controlGlyph;
+            if (isSurrogate(charCode)) {
+                return 0;
             }
 
             /* presence of translation array indicates that this
@@ -778,10 +777,8 @@ abstract class CMap {
         }
 
         char getGlyph(int charCode) {
-            final int origCharCode = charCode;
-            int controlGlyph = getControlCodeGlyph(charCode, true);
-            if (controlGlyph >= 0) {
-                return (char)controlGlyph;
+            if (isSurrogate(charCode)) {
+                return 0;
             }
 
             if (xlat != null) {
@@ -858,11 +855,9 @@ abstract class CMap {
          }
 
          char getGlyph(int charCode) {
-            final int origCharCode = charCode;
-            int controlGlyph = getControlCodeGlyph(charCode, true);
-            if (controlGlyph >= 0) {
-                return (char)controlGlyph;
-            }
+             if (isSurrogate(charCode)) {
+                 return 0;
+             }
 
              if (xlat != null) {
                  charCode = xlat[charCode];
@@ -1020,11 +1015,6 @@ abstract class CMap {
         }
 
         char getGlyph(int charCode) {
-            final int origCharCode = charCode;
-            int controlGlyph = getControlCodeGlyph(charCode, false);
-            if (controlGlyph >= 0) {
-                return (char)controlGlyph;
-            }
             int probe = power;
             int range = 0;
 
@@ -1060,17 +1050,8 @@ abstract class CMap {
 
     public static final NullCMapClass theNullCmap = new NullCMapClass();
 
-    final int getControlCodeGlyph(int charCode, boolean noSurrogates) {
-        if (charCode < 0x0010) {
-            switch (charCode) {
-            case 0x0009:
-            case 0x000a:
-            case 0x000d: return CharToGlyphMapper.INVISIBLE_GLYPH_ID;
-            }
-         } else if (noSurrogates && charCode >= 0xFFFF) {
-            return 0;
-        }
-        return -1;
+    private static boolean isSurrogate(int charCode) {
+        return charCode >= 0xFFFF;
     }
 
     static class UVS {
