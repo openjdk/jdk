@@ -95,7 +95,6 @@ public class DoubleActionESC {
                 {
                     throw new RuntimeException("File Dialog is not closed");
                 }
-
             });
         } finally {
             EventQueue.invokeAndWait(() -> {
