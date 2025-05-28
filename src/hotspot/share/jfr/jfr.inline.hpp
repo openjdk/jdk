@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,14 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package sun.net.httpserver;
+#ifndef SHARE_JFR_JFR_INLINE_HPP
+#define SHARE_JFR_JFR_INLINE_HPP
 
-class WriteFinishedEvent extends Event {
-    WriteFinishedEvent (ExchangeImpl t) {
-        super (t);
-        assert !t.writefinished;
-        t.writefinished = true;
-    }
+#include "jfr/jfr.hpp"
+
+#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
+#include "runtime/javaThread.hpp"
+
+inline bool Jfr::has_sample_request(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  return jt->jfr_thread_local()->has_sample_request();
 }
+
+inline void Jfr::check_and_process_sample_request(JavaThread* jt) {
+  if (has_sample_request(jt)) {
+    JfrThreadSampling::process_sample_request(jt);
+  }
+}
+
+#endif // SHARE_JFR_JFR_INLINE_HPP

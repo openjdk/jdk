@@ -1757,6 +1757,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
     __ mv(x9, x10);                             // save the nmethod
 
+    JFR_ONLY(__ enter_jfr_critical_section();)
+
     call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
 
     // x10 is OSR buffer, move it to expected parameter location
@@ -1765,9 +1767,12 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // remove activation
     // get sender esp
     __ ld(esp,
-        Address(fp, frame::interpreter_frame_sender_sp_offset * wordSize));
+          Address(fp, frame::interpreter_frame_sender_sp_offset * wordSize));
     // remove frame anchor
     __ leave();
+
+    JFR_ONLY(__ leave_jfr_critical_section();)
+
     // Ensure compiled code always sees stack at proper alignment
     __ andi(sp, esp, -16);
 
