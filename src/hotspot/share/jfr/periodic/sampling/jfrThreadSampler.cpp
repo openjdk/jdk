@@ -221,8 +221,11 @@ static inline bool is_excluded(JavaThread* jt) {
   return jt->is_Compiler_thread() || jt->is_hidden_from_external_view() || jt->is_JfrRecorder_thread() || jt->jfr_thread_local()->is_excluded();
 }
 
+static const uint MAX_NR_OF_JAVA_SAMPLES = 5;
+static const uint MAX_NR_OF_NATIVE_SAMPLES = 1;
+
 void JfrSamplerThread::task_stacktrace(JfrSampleRequestType type, JavaThread** last_thread) {
-  const uint sample_limit = JAVA_SAMPLE == type ? 5 : 1;
+  const uint sample_limit = JAVA_SAMPLE == type ? MAX_NR_OF_JAVA_SAMPLES : MAX_NR_OF_NATIVE_SAMPLES;
   uint num_samples = 0;
   JavaThread* start = nullptr;
   elapsedTimer sample_time;
@@ -235,8 +238,7 @@ void JfrSamplerThread::task_stacktrace(JfrSampleRequestType type, JavaThread** l
     _cur_index = tlh.list()->find_index_of_JavaThread(*last_thread);
     JavaThread* current = _cur_index != -1 ? *last_thread : nullptr;
 
-    // while (num_samples < sample_limit) {
-    while (true) {
+    while (num_samples < sample_limit) {
       current = next_thread(tlh.list(), start, current);
       if (current == nullptr) {
         break;
