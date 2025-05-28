@@ -184,11 +184,6 @@ void ZUncommitter::reset_uncommit_cycle() {
 }
 
 void ZUncommitter::deactivate_uncommit_cycle() {
-  if (!should_continue()) {
-    // We are stopping
-    return;
-  }
-
   ZLocker<ZLock> locker(&_partition->_page_allocator->_lock);
 
   precond(uncommit_cycle_is_active());
@@ -206,12 +201,6 @@ void ZUncommitter::deactivate_uncommit_cycle() {
 }
 
 bool ZUncommitter::activate_uncommit_cycle() {
-  if (!should_continue()) {
-    // We are stopping
-    return false;
-  }
-
-  // Lock
   ZLocker<ZLock> locker(&_partition->_page_allocator->_lock);
 
   precond(uncommit_cycle_is_finished());
