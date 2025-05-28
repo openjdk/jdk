@@ -406,7 +406,7 @@ class ZPageAllocation : public StackObj {
 
 private:
   const ZPageType            _type;
-  const size_t               _size;
+  const size_t               _requested_size;
   const ZAllocationFlags     _flags;
   const ZPageAge             _age;
   const Ticks                _start_timestamp;
@@ -422,7 +422,7 @@ private:
 public:
   ZPageAllocation(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age)
     : _type(type),
-      _size(size),
+      _requested_size(size),
       _flags(flags),
       _age(age),
       _start_timestamp(Ticks::now()),
@@ -455,7 +455,7 @@ public:
       }
     }
 
-    return _size;
+    return _requested_size;
   }
 
   ZAllocationFlags flags() const {
