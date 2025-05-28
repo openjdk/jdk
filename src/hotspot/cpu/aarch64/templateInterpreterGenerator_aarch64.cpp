@@ -867,7 +867,6 @@ void TemplateInterpreterGenerator::lock_method() {
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // Save ConstMethod* in r5_const_method for later use to avoid loading multiple times
   Register r5_const_method = r5;
-  const Register r5 = noreg;
   __ ldr(r5_const_method, Address(rmethod, Method::const_offset()));
 
   // initialize fixed part of activation frame
@@ -902,7 +901,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   // Save ConstantPool* in r11_constants for later use to avoid loading multiple times
   Register r11_constants = r11;
-  const Register r11 = noreg;
   __ ldr(r11_constants, Address(r5_const_method, ConstMethod::constants_offset()));
   __ ldr(rcpool, Address(r11_constants, ConstantPool::cache_offset()));
   __ sub(rscratch1, rlocals, rfp);
