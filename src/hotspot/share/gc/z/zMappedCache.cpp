@@ -414,6 +414,11 @@ ZVirtualMemory ZMappedCache::remove_vmem(ZMappedCacheEntry* const entry, size_t 
 template <typename SelectFunction, typename ConsumeFunction>
 bool ZMappedCache::try_remove_vmem_size_class(size_t min_size, SelectFunction select, ConsumeFunction consume) {
 new_max_size:
+  if (_size < min_size) {
+    // Not enough left in cache to satisfy the min_size
+    return false;
+  }
+
   // Query the max select size possible given the size of the cache
   const size_t max_size = select(_size);
 
@@ -644,6 +649,37 @@ ZVirtualMemory ZMappedCache::remove_contiguous(size_t size) {
     // Other sizes uses approximate best fit size classes first
     scan_remove_vmem<RemovalStrategy::SizeClasses>(size, select_size_fn, consume_vmem_fn);
   }
+
+  return result;
+}
+
+ZVirtualMemory ZMappedCache::remove_contiguous_power_of_2(size_t min_size, size_t max_size) {
+  precond(is_aligned(min_size, ZGranuleSize));
+  precond(is_power_of_2(min_size));
+  precond(is_aligned(max_size, ZGranuleSize));
+  precond(is_power_of_2(max_size));
+  precond(min_size <= max_size);
+
+  ZVirtualMemory result;
+
+  const auto select_size_fn = [&](size_t size) {
+    // Always select a power of 2 within the [min_size, max_size] interval.
+    return clamp(round_down_power_of_2(size), min_size, max_size);
+  };
+
+  const auto consume_vmem_fn = [&](ZVirtualMemory vmem) {
+    assert(result.is_null(), "only consume once");
+    assert(min_size <= vmem.size() && vmem.size() <= max_size,
+      "Must be %zu <= %zu <= %zu", min_size, vmem.size(), max_size);
+    assert(is_power_of_2(vmem.size()), "Must be power_of_2(%zu)", vmem.size());
+
+    result = vmem;
+
+    // Only require one vmem
+    return true;
+  };
+
+  scan_remove_vmem<RemovalStrategy::SizeClasses>(min_size, select_size_fn, consume_vmem_fn);
 
   return result;
 }
