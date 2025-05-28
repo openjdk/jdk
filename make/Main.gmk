@@ -42,6 +42,12 @@ include MakeFileStart.gmk
 include $(TOPDIR)/make/MainSupport.gmk
 
 include FindTests.gmk
+
+ifeq ($(UPDATE_MODULE_DEPS), true)
+  # Update module-deps.gmk if requested. This is read in Modules.gmk.
+  GENERATE_MODULE_DEPS_FILE := true
+endif
+
 include Modules.gmk
 
 # Are we requested to ignore dependencies?
