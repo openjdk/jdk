@@ -31,6 +31,7 @@
  */
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +47,8 @@ import jdk.test.lib.Platform;
 
 public class Basic {
 
-    private static Random rand = new Random();
+    // Must be indeterministic
+    private static final Random rand = new Random();
 
     private static final String ATTR_NAME = "mime_type";
     private static final String ATTR_VALUE = "text/plain";
@@ -88,8 +90,12 @@ public class Basic {
     static void test(Path file, LinkOption... options) throws IOException {
         final UserDefinedFileAttributeView view =
             Files.getFileAttributeView(file, UserDefinedFileAttributeView.class, options);
-        ByteBuffer buf = rand.nextBoolean() ?
-            ByteBuffer.allocate(100) : ByteBuffer.allocateDirect(100);
+        final ByteBuffer buf = switch (rand.nextInt(3)) {
+            case 0 -> ByteBuffer.allocate(100);
+            case 1 -> ByteBuffer.allocateDirect(100);
+            case 2 -> Arena.ofAuto().allocate(100).asByteBuffer();
+            default -> throw new InternalError("Should not reach here");
+        };
 
         // Test: write
         buf.put(ATTR_VALUE.getBytes()).flip();

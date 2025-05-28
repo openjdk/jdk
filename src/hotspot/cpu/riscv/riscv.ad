@@ -1295,7 +1295,7 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
 #endif
 
   void MachNopNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc*) const {
-    Assembler::CompressibleRegion cr(masm); // nops shall be 2-byte under RVC for alignment purposes.
+    Assembler::CompressibleScope scope(masm); // nops shall be 2-byte under RVC for alignment purposes.
     for (int i = 0; i < _count; i++) {
       __ nop();
     }
@@ -1371,7 +1371,7 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // insert a nop at the start of the prolog so we can patch in a
   // branch if we need to invalidate the method later
   {
-    Assembler::IncompressibleRegion ir(masm);  // keep the nop as 4 bytes for patching.
+    Assembler::IncompressibleScope scope(masm); // keep the nop as 4 bytes for patching.
     MacroAssembler::assert_alignment(__ pc());
     __ nop();  // 4 bytes
   }
@@ -1754,7 +1754,7 @@ void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 #endif
 
 void BoxLockNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
-  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see BoxLockNode::size()
+  Assembler::IncompressibleScope scope(masm); // Fixed length: see BoxLockNode::size()
 
   assert_cond(ra_ != nullptr);
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
@@ -1882,18 +1882,6 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_EncodeISOArray:
       return UseRVV;
 
-    // Current test shows that, it brings performance gain when MaxVectorSize >= 32, but brings
-    // regression when MaxVectorSize == 16. So only enable the intrinsic when MaxVectorSize >= 32.
-    case Op_RoundVF:
-      return UseRVV && MaxVectorSize >= 32;
-
-    // For double, current test shows that even with MaxVectorSize == 32, there is still some regression.
-    // Although there is no hardware to verify it for now, from the trend of performance data on hardwares
-    // (with vlenb == 16 and 32 respectively), it's promising to bring better performance rather than
-    // regression for double when MaxVectorSize == 64+. So only enable the intrinsic when MaxVectorSize >= 64.
-    case Op_RoundVD:
-      return UseRVV && MaxVectorSize >= 64;
-
     case Op_PopCountI:
     case Op_PopCountL:
       return UsePopCountInstruction;
@@ -1917,9 +1905,6 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_FmaF:
     case Op_FmaD:
       return UseFMA;
-    case Op_FmaVF:
-    case Op_FmaVD:
-      return UseRVV && UseFMA;
 
     case Op_ConvHF2F:
     case Op_ConvF2HF:
@@ -1933,8 +1918,8 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_MaxHF:
     case Op_MinHF:
     case Op_MulHF:
-    case Op_SubHF:
     case Op_SqrtHF:
+    case Op_SubHF:
       return UseZfh;
 
     case Op_CMoveF:
@@ -2404,7 +2389,7 @@ encode %{
   %}
 
   enc_class riscv_enc_java_static_call(method meth) %{
-    Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
+    Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset
 
     address addr = (address)$meth$$method;
     address call = nullptr;
@@ -2451,7 +2436,7 @@ encode %{
   %}
 
   enc_class riscv_enc_java_dynamic_call(method meth) %{
-    Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
+    Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset
     int method_index = resolved_method_index(masm);
     address call = __ ic_call((address)$meth$$method, method_index);
     if (call == nullptr) {
@@ -2470,7 +2455,7 @@ encode %{
   %}
 
   enc_class riscv_enc_java_to_runtime(method meth) %{
-    Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
+    Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset
 
     // Some calls to generated routines (arraycopy code) are scheduled by C2
     // as runtime calls. if so we can call them using a far call (they will be
