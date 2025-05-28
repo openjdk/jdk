@@ -53,7 +53,7 @@ public class AOTCodeFlags {
         // Run only 2 modes (0 - no AOT code, 1 - AOT adapters) until JDK-8357398 is fixed
         for (int mode = 0; mode < 2; mode++) {
             t.setTestMode(mode);
-            t.run(new String[] {"AOT"});
+            t.run(new String[] {"AOT", "--two-step-training"});
         }
     }
     static class Tester extends CDSAppTester {

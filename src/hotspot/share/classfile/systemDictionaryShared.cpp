@@ -309,7 +309,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
       return warn_excluded(k, "Unlinked class not supported by AOTClassLinking");
     } else if (CDSConfig::is_dumping_preimage_static_archive()) {
       // When dumping the final static archive, we will unconditionally load and link all
-      // classes from tje preimage. We don't want to get a VerifyError when linking this class.
+      // classes from the preimage. We don't want to get a VerifyError when linking this class.
       return warn_excluded(k, "Unlinked class not supported by AOTConfiguration");
     }
   } else {
