@@ -236,7 +236,7 @@ final class Validator {
 
         /**
          * Validation per entry observed.
-         * Each entry must appeare at least once in the CEN or LOC.
+         * Each entry must appear at least once in the CEN or LOC.
          */
         private void validateEntry(String entryName, EntryInfo entryInfo) {
             // Check invalid entry name
