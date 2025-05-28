@@ -62,4 +62,25 @@ public:
   }
 };
 
+class NmtMemTagLocker : StackObj {
+  // Returns true if it is safe to start using this locker.
+  static bool _safe_to_use;
+  ConditionalMutexLocker _cml;
+
+public:
+  NmtMemTagLocker()
+    : _cml(NmtMemTag_lock, _safe_to_use, Mutex::_no_safepoint_check_flag) {
+  }
+
+  static inline bool is_safe_to_use() {
+    return _safe_to_use;
+  }
+
+  // Set in Threads::create_vm once threads and mutexes have been initialized.
+  static inline void set_safe_to_use() {
+    _safe_to_use = true;
+  }
+};
+
+
 #endif // SHARE_NMT_NMTLOCKER_HPP

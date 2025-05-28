@@ -357,7 +357,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     return *this;
   }
 
-  const char* mem_tag_name() const { return NMTUtil::tag_to_name(_mem_tag); }
+  const char* mem_tag_name() const { return MemTagFactory::name_of(_mem_tag); }
 
  private:
   // The committed region contains the uncommitted region, subtract the uncommitted

@@ -165,7 +165,7 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
 #undef MEMORY_TAG_ADD_TO_TABLE
   }
     MemTag tag(const char* name) {
-      NmtVirtualMemoryLocker nvml;
+      NmtMemTagLocker nvml;
       MemTag found = table.tag_of(name);
       if (found != mtNone) {
         return found;
@@ -177,17 +177,17 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
     }
 
     const char* name_of(MemTag tag) {
-      NmtVirtualMemoryLocker nvml;
+      NmtMemTagLocker nvml;
       return table.name_of(tag);
     }
 
     const char* human_readable_name_of(MemTag tag) {
-      NmtVirtualMemoryLocker nvml;
+      NmtMemTagLocker nvml;
       return table.human_readable_name_of(tag);
     }
 
     void set_human_readable_name_of(MemTag tag, const char* hrn) {
-      NmtVirtualMemoryLocker nvml;
+      NmtMemTagLocker nvml;
       return table.set_human_readable_name_of(tag, hrn);
     }
 
@@ -202,22 +202,22 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
     _instance.initialize();
   }
   static MemTag tag(const char* name) {
-    NmtVirtualMemoryLocker nvml;
+    NmtMemTagLocker nvml;
     return _instance->tag(name);
   }
 
   static const char* name_of(MemTag tag) {
-    NmtVirtualMemoryLocker nvml;
+    NmtMemTagLocker nvml;
     return _instance->name_of(tag);
   }
 
   static const char* human_readable_name_of(MemTag tag) {
-    NmtVirtualMemoryLocker nvml;
+    NmtMemTagLocker nvml;
     return _instance->human_readable_name_of(tag);
   }
 
   static void set_human_readable_name_of(MemTag tag, const char* hrn) {
-    NmtVirtualMemoryLocker nvml;
+    NmtMemTagLocker nvml;
     return _instance->set_human_readable_name_of(tag, hrn);
   }
 
