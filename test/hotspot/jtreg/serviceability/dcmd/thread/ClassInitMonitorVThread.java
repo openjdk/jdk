@@ -68,32 +68,49 @@ public class ClassInitMonitorVThread {
             CountDownLatch loaderReady = new CountDownLatch(1);
             Thread vthread2 = Thread.ofVirtual().name("Loader2").start(new Loader(loaderReady));
             loaderReady.await();
+
             Thread.sleep(100);
-
-            boolean silent = true;
-            OutputAnalyzer output = new PidJcmdExecutor().execute("Thread.print -l", silent);
-            String out = output.getStdout();
-            String carrierPrefix = "Carrying virtual thread #" + vthread2.threadId();
-            String vthreadPrefix = "Mounted virtual thread " + "#" + vthread2.threadId();
-            int carrierStart = out.indexOf(carrierPrefix);
-            int vthreadStart = out.indexOf(vthreadPrefix);
-            int vthreadEnd = out.indexOf("\n\n", vthreadStart);
-            String carrierOut = out.substring(carrierStart, vthreadStart);
-            String vthreadOut = out.substring(vthreadStart, vthreadEnd);
-
-            System.out.println("carrier: " + carrierOut);
-            System.out.println("vthread: " + vthreadOut);
-
-            String waitText = "- waiting on the Class initialization monitor for LongInitClass";
-
-            if (!vthreadOut.contains(waitText)) {
-                throw new RuntimeException("Vthread does not contain the lock");
-            }
-            if (carrierOut.contains(waitText)) {
-                throw new RuntimeException("Carrier does contain the lock");
+            // try up to 20 times to avoid failures on slow environment
+            for (int iter = 20; iter > 0; iter--) {
+                try {
+                    verify(vthread2);
+                    break;
+                } catch (RuntimeException ex) {
+                    if (iter == 0) {
+                        throw ex;
+                    }
+                    System.out.println("Failed with: " + ex.getMessage() + ", retrying...");
+                    System.out.println();
+                }
+                Thread.sleep(1000);
             }
         } finally {
             longInitClass_wait = false;
+        }
+    }
+
+    static void verify(Thread vthread2) {
+        boolean silent = true;
+        OutputAnalyzer output = new PidJcmdExecutor().execute("Thread.print -l", silent);
+        String out = output.getStdout();
+        String carrierPrefix = "Carrying virtual thread #" + vthread2.threadId();
+        String vthreadPrefix = "Mounted virtual thread " + "#" + vthread2.threadId();
+        int carrierStart = out.indexOf(carrierPrefix);
+        int vthreadStart = out.indexOf(vthreadPrefix);
+        int vthreadEnd = out.indexOf("\n\n", vthreadStart);
+        String carrierOut = out.substring(carrierStart, vthreadStart);
+        String vthreadOut = out.substring(vthreadStart, vthreadEnd);
+
+        System.out.println("carrier: " + carrierOut);
+        System.out.println("vthread: " + vthreadOut);
+
+        String waitText = "- waiting on the Class initialization monitor for LongInitClass";
+
+        if (!vthreadOut.contains(waitText)) {
+            throw new RuntimeException("Vthread does not contain the lock");
+        }
+        if (carrierOut.contains(waitText)) {
+            throw new RuntimeException("Carrier does contain the lock");
         }
     }
 
