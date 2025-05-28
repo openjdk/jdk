@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.jfr.internal.jfc.model;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 
 public final class UserInterface {
 
@@ -41,8 +40,7 @@ public final class UserInterface {
 
     public String readLine() throws AbortException {
         try {
-            Charset charset = Charset.forName(System.getProperty("stdin.encoding"));
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in, charset));
+            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             String line = br.readLine();
             if (line == null || line.equalsIgnoreCase("Q")) {
                 println();

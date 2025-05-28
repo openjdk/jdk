@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,7 @@ public final class BindServer {
         }
 
         BufferedReader stdIn = new BufferedReader(
-            new InputStreamReader(System.in, System.getProperty("stdin.encoding")));
+            new InputStreamReader(System.in));
         try (ListeningThread listeningThread = new ListeningThread(this)) {
             listeningThread.bind();
             listeningThread.start();
@@ -1276,8 +1276,6 @@ public final class BindServer {
             super("StreamRedirectingThread");
             this.prefix = prefix;
             this.owner = owner;
-            assert is != System.in
-                    : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
             bin = new BufferedReader(new InputStreamReader(is));
         }
 
