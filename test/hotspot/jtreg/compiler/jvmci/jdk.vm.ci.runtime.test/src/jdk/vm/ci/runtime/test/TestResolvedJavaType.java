@@ -1019,6 +1019,23 @@ public class TestResolvedJavaType extends TypeUniverse {
         }
     }
 
+    @Test
+    public void getNonStaticMethodsTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            Method[] raw = c.getDeclaredMethods();
+            Set<ResolvedJavaMethod> expected = new HashSet<>();
+            for (Method m : raw) {
+                ResolvedJavaMethod resolvedMethod = metaAccess.lookupJavaMethod(m);
+                assertNotNull(resolvedMethod);
+                expected.add(resolvedMethod);
+            }
+            Set<ResolvedJavaMethod> actual = new HashSet<>(type.getNonStaticMethods(false));
+            assertTrue(actual.size() >= expected.size());
+            assertTrue(actual.containsAll(expected));
+        }
+    }
+
     static class A {
         static String name = "foo";
     }

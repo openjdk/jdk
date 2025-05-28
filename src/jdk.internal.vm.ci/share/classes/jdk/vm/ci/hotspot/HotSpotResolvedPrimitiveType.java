@@ -297,6 +297,11 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
+    public List<ResolvedJavaMethod> getNonStaticMethods(boolean forceLink) {
+        return List.of();
+    }
+
+    @Override
     public ResolvedJavaMethod getClassInitializer() {
         return null;
     }

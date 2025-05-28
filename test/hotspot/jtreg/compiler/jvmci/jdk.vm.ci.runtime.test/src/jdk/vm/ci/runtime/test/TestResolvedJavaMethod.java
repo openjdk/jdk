@@ -426,6 +426,20 @@ public class TestResolvedJavaMethod extends MethodUniverse {
     }
 
     @Test
+    public void isDeclaredTest() {
+        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
+            ResolvedJavaMethod m = e.getValue();
+            Method k = e.getKey();
+            boolean expectedDeclared = !Modifier.isStatic(k.getModifiers());
+            assertEquals(expectedDeclared, m.isDeclared());
+        }
+        for (Map.Entry<Constructor<?>, ResolvedJavaMethod> e : constructors.entrySet()) {
+            ResolvedJavaMethod m = e.getValue();
+            assertFalse(m.isDeclared());
+        }
+    }
+
+    @Test
     public void hasReceiverTest() {
         for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
             ResolvedJavaMethod m = e.getValue();

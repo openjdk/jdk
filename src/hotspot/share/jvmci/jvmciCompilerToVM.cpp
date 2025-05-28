@@ -577,6 +577,11 @@ C2V_VMENTRY_0(jboolean, isCompilable,(JNIEnv* env, jobject, ARGUMENT_PAIR(method
   return !method->is_not_compilable(CompLevel_full_optimization);
 C2V_END
 
+C2V_VMENTRY_0(jboolean, isOverpass,(JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
+  Method* method = UNPACK_PAIR(Method, method);
+  return method->is_overpass();
+C2V_END
+
 C2V_VMENTRY_0(jboolean, hasNeverInlineDirective,(JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   methodHandle method (THREAD, UNPACK_PAIR(Method, method));
   return !Inline || CompilerOracle::should_not_inline(method) || method->dont_inline();
@@ -2219,6 +2224,33 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, ARGUME
   return JVMCIENV->get_jobjectArray(methods);
 C2V_END
 
+C2V_VMENTRY_NULL(jobjectArray, getInstanceMethods, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
+  Klass* klass = UNPACK_PAIR(Klass, klass);
+  if (klass == nullptr) {
+    JVMCI_THROW_NULL(NullPointerException);
+  }
+  if (!klass->is_instance_klass()) {
+    JVMCIObjectArray methods = JVMCIENV->new_ResolvedJavaMethod_array(0, JVMCI_CHECK_NULL);
+    return JVMCIENV->get_jobjectArray(methods);
+  }
+
+  InstanceKlass* iklass = InstanceKlass::cast(klass);
+  GrowableArray<Method*> methods_array;
+  for (int i = 0; i < iklass->methods()->length(); i++) {
+    Method* m = iklass->methods()->at(i);
+    if (!m->is_object_initializer() && !m->is_static_initializer()) {
+      methods_array.append(m);
+    }
+  }
+  JVMCIObjectArray methods = JVMCIENV->new_ResolvedJavaMethod_array(methods_array.length(), JVMCI_CHECK_NULL);
+  for (int i = 0; i < methods_array.length(); i++) {
+    methodHandle mh(THREAD, methods_array.at(i));
+    JVMCIObject method = JVMCIENV->get_jvmci_method(mh, JVMCI_CHECK_NULL);
+    JVMCIENV->put_object_at(methods, i, method);
+  }
+  return JVMCIENV->get_jobjectArray(methods);
+C2V_END
+
 C2V_VMENTRY_NULL(jobjectArray, getDeclaredFieldsInfo, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (klass == nullptr) {
@@ -3280,6 +3312,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "methodIsIgnoredBySecurityStackWalk",           CC "(" HS_METHOD2 ")Z",                                                               FN_PTR(methodIsIgnoredBySecurityStackWalk)},
   {CC "setNotInlinableOrCompilable",                  CC "(" HS_METHOD2 ")V",                                                               FN_PTR(setNotInlinableOrCompilable)},
   {CC "isCompilable",                                 CC "(" HS_METHOD2 ")Z",                                                               FN_PTR(isCompilable)},
+  {CC "isOverpass",                                   CC "(" HS_METHOD2 ")Z",                                                               FN_PTR(isOverpass)},
   {CC "hasNeverInlineDirective",                      CC "(" HS_METHOD2 ")Z",                                                               FN_PTR(hasNeverInlineDirective)},
   {CC "shouldInlineMethod",                           CC "(" HS_METHOD2 ")Z",                                                               FN_PTR(shouldInlineMethod)},
   {CC "lookupType",                                   CC "(" STRING HS_KLASS2 "IZ)" HS_RESOLVED_TYPE,                                       FN_PTR(lookupType)},
@@ -3354,6 +3387,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "boxPrimitive",                                 CC "(" OBJECT ")" OBJECTCONSTANT,                                                     FN_PTR(boxPrimitive)},
   {CC "getDeclaredConstructors",                      CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getDeclaredConstructors)},
   {CC "getDeclaredMethods",                           CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getDeclaredMethods)},
+  {CC "getInstanceMethods",                           CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getInstanceMethods)},
   {CC "getDeclaredFieldsInfo",                        CC "(" HS_KLASS2 ")[" FIELDINFO,                                                      FN_PTR(getDeclaredFieldsInfo)},
   {CC "readStaticFieldValue",                         CC "(" HS_KLASS2 "JC)" JAVACONSTANT,                                                  FN_PTR(readStaticFieldValue)},
   {CC "readFieldValue",                               CC "(" OBJECTCONSTANT HS_KLASS2 "JC)" JAVACONSTANT,                                   FN_PTR(readFieldValue)},
