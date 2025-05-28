@@ -84,7 +84,7 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder initFromExernalApplication(ExternalApplication app,
+    ApplicationBuilder initFromExternalApplication(ExternalApplication app,
             Function<LauncherInfo, Launcher> mapper) {
         if (version == null) {
             version = app.getAppVersion();

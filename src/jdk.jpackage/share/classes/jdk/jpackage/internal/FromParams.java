@@ -103,7 +103,7 @@ final class FromParams {
 
             if (hasPredefinedAppImage(params)) {
                 final var appImageFile = PREDEFINED_APP_IMAGE_FILE.fetchFrom(params);
-                appBuilder.initFromExernalApplication(appImageFile, launcherInfo -> {
+                appBuilder.initFromExternalApplication(appImageFile, launcherInfo -> {
                     var launcherParams = mapLauncherInfo(launcherInfo);
                     return launcherMapper.apply(mergeParams(params, launcherParams));
                 });
