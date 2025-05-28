@@ -23,25 +23,19 @@
  * questions.
  */
 
-package jdk.jpackage.internal.model;
+package sun.tools.jstat;
 
-import java.io.IOException;
-import java.nio.file.Path;
+public class Timestamp extends Expression {
 
+    public Timestamp() {
+        super();
+    }
 
-/**
- * Creates native package from the given {@link jdk.jpackage.internal.model.Package} object.
- *
- * @ see ApplicationWriter
- */
-@FunctionalInterface
-public interface PackageWriter {
-    /**
-     * Creates native package from the given {@link jdk.jpackage.internal.model.Package} object in the given directory.
-     * @param pkg the source package
-     * @param dst the directory where to create a native package
-     * @throws PackagerException if packaging error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    void write(Package pkg, Path dst) throws PackagerException, IOException;
+    public Object getValue() {
+        return System.currentTimeMillis();
+    }
+
+    public String toString() {
+        return "jstat.timestamp";
+    }
 }

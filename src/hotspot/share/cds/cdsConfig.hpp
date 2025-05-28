@@ -69,6 +69,7 @@ class CDSConfig : public AllStatic {
   static void check_aotmode_auto_or_on();
   static void check_aotmode_record();
   static void check_aotmode_create();
+  static void setup_compiler_args();
   static void check_unsupported_dumping_module_options();
 
   // Called after Arguments::apply_ergo() has started

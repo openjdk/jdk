@@ -541,6 +541,7 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
+  { "PerfDataSamplingInterval",     JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::jdk(26) },
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::undefined() },
   { "ZMarkStackSpaceLimit",         JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },

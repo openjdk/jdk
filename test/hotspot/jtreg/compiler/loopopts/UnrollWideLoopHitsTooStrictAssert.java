@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,27 +21,30 @@
  * questions.
  */
 
-package jdk.jpackage.internal.model;
-
-import java.io.IOException;
-import java.nio.file.Path;
-
-
-/**
- * Creates app image directory from the given {@link Application} object.
- *
- *  @ see PackageWriter
+/*
+ * @test
+ * @bug 8356647
+ * @summary C2's unrolling code has a too strict assert when a counted loop's range is as wide as int's.
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.UnrollWideLoopHitsTooStrictAssert::test -Xcomp
+ *                   compiler.loopopts.UnrollWideLoopHitsTooStrictAssert
+ * @run main compiler.loopopts.UnrollWideLoopHitsTooStrictAssert
  */
-@FunctionalInterface
-public interface ApplicationWriter {
 
-    /**
-     * Creates app image directory from the given {@link Application} object in the given directory.
-     *
-     * @param app the source application
-     * @param dst the directory where to create app image of the source application
-     * @throws PackagerException if packaging error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    void write(Application app, Path dst) throws PackagerException, IOException;
+package compiler.loopopts;
+
+public class UnrollWideLoopHitsTooStrictAssert {
+    public static void main(String[] args) {
+        test(true);
+    }
+
+    private static long test(boolean flag) {
+        long x = 0;
+        for (int i = Integer.MIN_VALUE; i < Integer.MAX_VALUE; ++i) {
+            x += i;
+            if (flag) {
+                break;
+            }
+        }
+        return x;
+    }
 }
