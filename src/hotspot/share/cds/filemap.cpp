@@ -1655,35 +1655,34 @@ bool FileMapInfo::map_heap_region_impl() {
   // Map the archived heap data. No need to call MemTracker::record_virtual_memory_tag()
   // for mapped region as it is part of the reserved java heap, which is already recorded.
   char* addr = (char*)_mapped_heap_memregion.start();
-  char* base;
-
-  if (MetaspaceShared::use_windows_memory_mapping()) {
-    if (!read_region(MetaspaceShared::hp, addr,
-                     align_up(_mapped_heap_memregion.byte_size(), os::vm_page_size()),
-                     /* do_commit = */ true)) {
-      dealloc_heap_region();
-      aot_log_error(aot)("Failed to read archived heap region into " INTPTR_FORMAT, p2i(addr));
-      return false;
-    }
-    // Checks for VerifySharedSpaces is already done inside read_region()
-    base = addr;
-  } else {
+  char* base = nullptr;
+  if (!MetaspaceShared::use_windows_memory_mapping()) {
     base = map_memory(_fd, _full_path, r->file_offset(),
                       addr, _mapped_heap_memregion.byte_size(), r->read_only(),
                       r->allow_exec(), mtJavaHeap);
-    if (base == nullptr || base != addr) {
-      dealloc_heap_region();
-      aot_log_info(aot)("UseSharedSpaces: Unable to map at required address in java heap. "
-                    INTPTR_FORMAT ", size = %zu bytes",
-                    p2i(addr), _mapped_heap_memregion.byte_size());
-      return false;
+  }
+  if (base == nullptr) {
+    // On Linux, map_memory() can sometimes fail with -XX:+UseLargePages. If so, try to
+    // read the region instead.
+    if (read_region(MetaspaceShared::hp, addr,
+                    align_up(_mapped_heap_memregion.byte_size(), os::vm_page_size()),
+                    /* do_commit = */ true)) {
+      base = addr;
     }
+  }
 
-    if (VerifySharedSpaces && !r->check_region_crc(base)) {
-      dealloc_heap_region();
-      MetaspaceShared::report_loading_error("UseSharedSpaces: mapped heap region is corrupt");
-      return false;
-    }
+  if (base == nullptr || base != addr) {
+    dealloc_heap_region();
+    MetaspaceShared::report_loading_error("UseSharedSpaces: Unable to map at required address in java heap. "
+                                          INTPTR_FORMAT ", size = %zu bytes",
+                                          p2i(addr), _mapped_heap_memregion.byte_size());
+    return false;
+  }
+
+  if (VerifySharedSpaces && !r->check_region_crc(base)) {
+    dealloc_heap_region();
+    MetaspaceShared::report_loading_error("UseSharedSpaces: mapped heap region is corrupt");
+    return false;
   }
 
   r->set_mapped_base(base);
