@@ -4537,7 +4537,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (node instanceof SliceNode s && s.length() <= 0) {
                 //We are dealing with a zero length match
                 //Tune quantifier attempts downward
-                this.cmin = 0;
+                this.cmin = this.cmin <= 0 ? 0 : 1;
                 this.cmax = 1;
             }
         }
@@ -4693,8 +4693,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
 
             if (node instanceof SliceNode s && s.length() <= 0) {
                 //We are dealing with a zero length match
-                //Tune quantifier attempts downward
-                this.cmin = 0;
+                this.cmin = this.cmin <= 0 ? 0 : 1;
+                this.cmax = 1;
+            } else if (node instanceof GroupTail) {
+                // We are dealing with an empty group
+                this.cmin = this.cmin <= 0 ? 0 : 1;
                 this.cmax = 1;
             }
         }
