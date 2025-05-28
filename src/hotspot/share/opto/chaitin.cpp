@@ -406,6 +406,8 @@ void PhaseChaitin::Register_Allocate() {
     _live = &live;                // Mark LIVE as being available
   }
 
+  C->print_method(PHASE_INITIAL_LIVENESS, 4);
+
   // Base pointers are currently "used" by instructions which define new
   // derived pointers.  This makes base pointers live up to the where the
   // derived pointer is made, but not beyond.  Really, they need to be live
@@ -422,9 +424,8 @@ void PhaseChaitin::Register_Allocate() {
     gather_lrg_masks(false);
     live.compute(_lrg_map.max_lrg_id());
     _live = &live;
+    C->print_method(PHASE_LIVE_RANGE_STRETCHING, 4);
   }
-
-  C->print_method(PHASE_INITIAL_LIVENESS, 4);
 
   // Create the interference graph using virtual copies
   build_ifg_virtual();  // Include stack slots this time

@@ -108,6 +108,7 @@ public enum CompilePhase {
     MATCHING("After matching", RegexType.MACH),
     GLOBAL_CODE_MOTION("Global code motion", RegexType.MACH),
     INITIAL_LIVENESS("Initial liveness", RegexType.MACH),
+    LIVE_RANGE_STRETCHING("Live range stretching", RegexType.MACH),
     AGGRESSIVE_COALESCING("Aggressive coalescing", RegexType.MACH),
     INITIAL_SPILLING("Initial spilling", RegexType.MACH),
     CONSERVATIVE_COALESCING("Conservative coalescing", RegexType.MACH, ActionOnRepeat.KEEP_FIRST),
