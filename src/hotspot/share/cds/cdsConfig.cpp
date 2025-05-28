@@ -532,6 +532,8 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     FLAG_SET_ERGO_IF_DEFAULT(AOTClassLinking, true);
   }
 
+  setup_compiler_args();
+
   if (AOTClassLinking) {
     // If AOTClassLinking is specified, enable all AOT optimizations by default.
     FLAG_SET_ERGO_IF_DEFAULT(AOTInvokeDynamicLinking, true);
@@ -602,6 +604,28 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   }
 
   return true;
+}
+
+void CDSConfig::setup_compiler_args() {
+  // AOT profiles are supported only in the JEP 483 workflow.
+  bool can_dump_profiles = AOTClassLinking && new_aot_flags_used();
+
+  if (is_dumping_preimage_static_archive() && can_dump_profiles) {
+    // JEP 483 workflow -- training
+    FLAG_SET_ERGO_IF_DEFAULT(AOTRecordTraining, true);
+    FLAG_SET_ERGO(AOTReplayTraining, false);
+  } else if (is_dumping_final_static_archive() && can_dump_profiles) {
+    // JEP 483 workflow -- assembly
+    FLAG_SET_ERGO(AOTRecordTraining, false);
+    FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
+  } else if (is_using_archive() && new_aot_flags_used()) {
+    // JEP 483 workflow -- production
+    FLAG_SET_ERGO(AOTRecordTraining, false);
+    FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
+  } else {
+    FLAG_SET_ERGO(AOTReplayTraining, false);
+    FLAG_SET_ERGO(AOTRecordTraining, false);
+  }
 }
 
 void CDSConfig::prepare_for_dumping() {
