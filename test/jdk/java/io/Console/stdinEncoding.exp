@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,43 @@
 # questions.
 #
 
-set java [lrange $argv 0 0]
-set locale [lrange $argv 1 1]
-set expected [lrange $argv 2 2]
-set args [lrange $argv 3 end]
-regexp {([a-zA-Z_]*).([a-zA-Z0-9\-]*)} $locale dummy lang_region encoding
+set java [lrange $argv 0 end]
 
-eval spawn $java -Dstdout.encoding=$encoding -classpath $args CharsetTest
-expect $expected
+eval spawn $java
+
+# Console::readLine()
+send "abc\r"
+expect {
+    "ABC" { send_error "Console::readLine() received\n" }
+    timeout {
+        send_error "Error: Console::readLine() not received\n"
+        exit 1
+    }
+}
+
+# Console::readPassword()
+send "def\r"
+expect {
+    "DEF" { send_error "Console::readPassword() received\n" }
+    timeout {
+        send_error "Error: Console::readPassword() not received\n"
+        exit 1
+    }
+}
+
+# Console::reader()
+send "ghi\r"
+expect {
+    "GHI" { send_error "Console::reader() received\n" }
+    timeout {
+        send_error "Error: Console::reader() not received\n"
+        exit 1
+    }
+}
+
+# should receive eof
+send "\r"
 expect eof
+
+# success
+exit 0
