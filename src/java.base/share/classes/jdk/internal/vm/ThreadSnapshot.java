@@ -50,6 +50,8 @@ class ThreadSnapshot {
     // set by ThreadSnapshot.of()
     private ThreadBlocker blocker;
 
+    private ThreadSnapshot() {}
+
     /**
      * Take a snapshot of a Thread to get all information about the thread.
      */
@@ -188,6 +190,8 @@ class ThreadSnapshot {
 
         // set by ThreadLock.of()
         private OwnedLockType type;
+
+        private ThreadLock() {}
 
         void finishInit() {
             type = lockTypeValues[typeOrdinal];
