@@ -145,7 +145,7 @@ void MallocLimitSet::reset() {
   }
 }
 
-void MallocLimitSet::print_on(outputStream* st) const {
+void MallocLimitSet::print_on(outputStream* st) {
   static const char* flagnames[] = { MODE_FATAL, MODE_OOM };
   if (_glob.sz > 0) {
     st->print_cr("MallocLimit: total limit: " PROPERFMT " (%s)", PROPERFMTARGS(_glob.sz),

@@ -68,12 +68,12 @@ public:
   void set_category_limit(MemTag mem_tag, size_t s, MallocLimitMode mode);
 
   const malloclimit* global_limit() const             { return &_glob; }
-  const malloclimit* category_limit(MemTag mem_tag) const {
+  const malloclimit* category_limit(MemTag mem_tag) {
     _cat.at_grow(NMTUtil::tag_to_index(mem_tag));
     return &_cat.at(NMTUtil::tag_to_index(mem_tag));
   }
 
-  void print_on(outputStream* st) const;
+  void print_on(outputStream* st);
 };
 
 class MallocLimitHandler : public AllStatic {
