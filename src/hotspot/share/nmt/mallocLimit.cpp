@@ -25,6 +25,7 @@
 
 #include "nmt/mallocLimit.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/memTagFactory.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/java.hpp"
 #include "runtime/globals.hpp"
@@ -132,7 +133,8 @@ void MallocLimitSet::set_global_limit(size_t s, MallocLimitMode flag) {
 
 void MallocLimitSet::set_category_limit(MemTag mem_tag, size_t s, MallocLimitMode flag) {
   const int i = NMTUtil::tag_to_index(mem_tag);
-  _cat[i].sz = s; _cat[i].mode = flag;
+  malloclimit& tag_limit = _cat.at_grow(i);
+  tag_limit.sz = s; tag_limit.mode = flag;
 }
 
 void MallocLimitSet::reset() {
@@ -150,10 +152,10 @@ void MallocLimitSet::print_on(outputStream* st) const {
                  mode_to_name(_glob.mode));
   } else {
     for (int i = 0; i < MemTagFactory::number_of_tags(); i++) {
-      if (_cat[i].sz > 0) {
+      if (_cat.at_grow(i).sz > 0) {
         st->print_cr("MallocLimit: category \"%s\" limit: " PROPERFMT " (%s)",
-                     NMTUtil::tag_to_enum_name(NMTUtil::index_to_tag(i)),
-                     PROPERFMTARGS(_cat[i].sz), mode_to_name(_cat[i].mode));
+                     MemTagFactory::name_of(NMTUtil::index_to_tag(i)),
+                     PROPERFMTARGS(_cat.at_grow(i).sz), mode_to_name(_cat.at_grow(i).mode));
       }
     }
   }
@@ -192,7 +194,7 @@ bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
       BAIL_UNLESS(sst.match_category(&mem_tag), "Expected category name");
       BAIL_UNLESS(sst.match_char(':'), "Expected colon following category");
 
-      malloclimit* const modified_limit = &_cat[NMTUtil::tag_to_index(mem_tag)];
+      malloclimit* const modified_limit = &_cat.at_grow(NMTUtil::tag_to_index(mem_tag));
 
       // Match size
       BAIL_UNLESS(sst.match_size(&modified_limit->sz), "Expected size");
