@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,81 @@
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
 #include "oops/methodData.hpp"
+#include "oops/trainingData.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+namespace CompilationPolicyUtils {
+template<typename T>
+class Queue {
+  class QueueNode : public CHeapObj<mtCompiler> {
+    T* _value;
+    QueueNode* _next;
+  public:
+    QueueNode(T* value, QueueNode* next) : _value(value), _next(next) { }
+    T* value() const { return _value; }
+    void set_next(QueueNode* next) { _next = next; }
+    QueueNode* next() const { return _next; }
+  };
+
+  QueueNode* _head;
+  QueueNode* _tail;
+
+  void push_unlocked(T* value) {
+    QueueNode* n = new QueueNode(value, nullptr);
+    if (_tail != nullptr) {
+      _tail->set_next(n);
+    }
+    _tail = n;
+    if (_head == nullptr) {
+      _head = _tail;
+    }
+  }
+  T* pop_unlocked() {
+    QueueNode* n = _head;
+    if (_head != nullptr) {
+      _head = _head->next();
+    }
+    if (_head == nullptr) {
+      _tail = _head;
+    }
+    T* value = nullptr;
+    if (n != nullptr) {
+      value = n->value();
+      delete n;
+    }
+    return value;
+  }
+public:
+  Queue() : _head(nullptr), _tail(nullptr) { }
+  void push(T* value, Monitor* lock, TRAPS) {
+    MonitorLocker locker(THREAD, lock);
+    push_unlocked(value);
+    locker.notify_all();
+  }
+
+  bool is_empty_unlocked() const { return _head == nullptr; }
+
+  T* pop(Monitor* lock, TRAPS) {
+    MonitorLocker locker(THREAD, lock);
+    while(is_empty_unlocked() && !CompileBroker::is_compilation_disabled_forever()) {
+      locker.wait();
+    }
+    T* value = pop_unlocked();
+    return value;
+  }
+
+  T* try_pop(Monitor* lock, TRAPS) {
+    MonitorLocker locker(THREAD, lock);
+    T* value = nullptr;
+    if (!is_empty_unlocked()) {
+      value = pop_unlocked();
+    }
+    return value;
+  }
+
+  void print_on(outputStream* st);
+};
+} // namespace CompilationPolicyUtils
 
 class CompileTask;
 class CompileQueue;
@@ -173,9 +247,12 @@ class CompilationPolicy : AllStatic {
   friend class CallPredicate;
   friend class LoopPredicate;
 
-  static jlong _start_time;
+  typedef CompilationPolicyUtils::Queue<InstanceKlass> TrainingReplayQueue;
+
+  static int64_t _start_time;
   static int _c1_count, _c2_count;
   static double _increase_threshold_at_ratio;
+  static TrainingReplayQueue _training_replay_queue;
 
   // Set carry flags in the counters (in Method* and MDO).
   inline static void handle_counter_overflow(const methodHandle& method);
@@ -187,29 +264,45 @@ class CompilationPolicy : AllStatic {
   inline static CompLevel limit_level(CompLevel level);
   // Common transition function. Given a predicate determines if a method should transition to another level.
   template<typename Predicate>
-  static CompLevel common(const methodHandle& method, CompLevel cur_level, bool disable_feedback = false);
+  static CompLevel common(const methodHandle& method, CompLevel cur_level, JavaThread* THREAD, bool disable_feedback = false);
+
+  template<typename Predicate>
+  static CompLevel transition_from_none(const methodHandle& method, CompLevel cur_level, bool delay_profiling, bool disable_feedback);
+  template<typename Predicate>
+  static CompLevel transition_from_limited_profile(const methodHandle& method, CompLevel cur_level, bool delay_profiling, bool disable_feedback);
+  template<typename Predicate>
+  static CompLevel transition_from_full_profile(const methodHandle& method, CompLevel cur_level);
+  template<typename Predicate>
+  static CompLevel standard_transition(const methodHandle& method, CompLevel cur_level, bool delayprof, bool disable_feedback);
+
+  static CompLevel trained_transition_from_none(const methodHandle& method, CompLevel cur_level, MethodTrainingData* mtd, JavaThread* THREAD);
+  static CompLevel trained_transition_from_limited_profile(const methodHandle& method, CompLevel cur_level, MethodTrainingData* mtd, JavaThread* THREAD);
+  static CompLevel trained_transition_from_full_profile(const methodHandle& method, CompLevel cur_level, MethodTrainingData* mtd, JavaThread* THREAD);
+  static CompLevel trained_transition(const methodHandle& method, CompLevel cur_level, MethodTrainingData* mtd, JavaThread* THREAD);
+
   // Transition functions.
   // call_event determines if a method should be compiled at a different
   // level with a regular invocation entry.
-  static CompLevel call_event(const methodHandle& method, CompLevel cur_level, Thread* thread);
+  static CompLevel call_event(const methodHandle& method, CompLevel cur_level, JavaThread* THREAD);
   // loop_event checks if a method should be OSR compiled at a different
   // level.
-  static CompLevel loop_event(const methodHandle& method, CompLevel cur_level, Thread* thread);
-  static void print_counters(const char* prefix, const Method* m);
+  static CompLevel loop_event(const methodHandle& method, CompLevel cur_level, JavaThread* THREAD);
+  static void print_counters(const char* prefix, Method* m);
+  static void print_training_data(const char* prefix, Method* method);
   // Has a method been long around?
   // We don't remove old methods from the compile queue even if they have
   // very low activity (see select_task()).
   inline static bool is_old(const methodHandle& method);
   // Was a given method inactive for a given number of milliseconds.
   // If it is, we would remove it from the queue (see select_task()).
-  inline static bool is_stale(jlong t, jlong timeout, const methodHandle& method);
+  inline static bool is_stale(int64_t t, int64_t timeout, const methodHandle& method);
   // Compute the weight of the method for the compilation scheduling
   inline static double weight(Method* method);
   // Apply heuristics and return true if x should be compiled before y
   inline static bool compare_methods(Method* x, Method* y);
   // Compute event rate for a given method. The rate is the number of event (invocations + backedges)
   // per millisecond.
-  inline static void update_rate(jlong t, const methodHandle& method);
+  inline static void update_rate(int64_t t, const methodHandle& method);
   // Compute threshold scaling coefficient
   inline static double threshold_scale(CompLevel level, int feedback_k);
   // If a method is old enough and is still in the interpreter we would want to
@@ -224,8 +317,8 @@ class CompilationPolicy : AllStatic {
   static void set_c1_count(int x) { _c1_count = x;    }
   static void set_c2_count(int x) { _c2_count = x;    }
 
-  enum EventType { CALL, LOOP, COMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
-  static void print_event(EventType type, const Method* m, const Method* im, int bci, CompLevel level);
+  enum EventType { CALL, LOOP, COMPILE, FORCE_COMPILE, FORCE_RECOMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
+  static void print_event(EventType type, Method* m, Method* im, int bci, CompLevel level);
   // Check if the method can be compiled, change level if necessary
   static void compile(const methodHandle& mh, int bci, CompLevel level, TRAPS);
   // Simple methods are as good being compiled with C1 as C2.
@@ -242,20 +335,24 @@ class CompilationPolicy : AllStatic {
                                       int bci, CompLevel level, nmethod* nm, TRAPS);
 
   static void set_increase_threshold_at_ratio() { _increase_threshold_at_ratio = 100 / (100 - (double)IncreaseFirstTierCompileThresholdAt); }
-  static void set_start_time(jlong t) { _start_time = t;    }
-  static jlong start_time()           { return _start_time; }
+  static void set_start_time(int64_t t) { _start_time = t;    }
+  static int64_t start_time()           { return _start_time; }
 
   // m must be compiled before executing it
   static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
-public:
+  static void maybe_compile_early(const methodHandle& m, TRAPS);
+  static void replay_training_at_init_impl(InstanceKlass* klass, TRAPS);
+ public:
   static int min_invocations() { return Tier4MinInvocationThreshold; }
   static int c1_count() { return _c1_count; }
   static int c2_count() { return _c2_count; }
   static int compiler_count(CompLevel comp_level);
-
   // If m must_be_compiled then request a compilation from the CompileBroker.
   // This supports the -Xcomp option.
   static void compile_if_required(const methodHandle& m, TRAPS);
+
+  static void replay_training_at_init(InstanceKlass* klass, TRAPS);
+  static void replay_training_at_init_loop(TRAPS);
 
   // m is allowed to be compiled
   static bool can_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
@@ -269,9 +366,9 @@ public:
   static nmethod* event(const methodHandle& method, const methodHandle& inlinee,
                         int branch_bci, int bci, CompLevel comp_level, nmethod* nm, TRAPS);
   // Select task is called by CompileBroker. We should return a task or nullptr.
-  static CompileTask* select_task(CompileQueue* compile_queue);
+  static CompileTask* select_task(CompileQueue* compile_queue, JavaThread* THREAD);
   // Tell the runtime if we think a given method is adequately profiled.
-  static bool is_mature(Method* method);
+  static bool is_mature(MethodData* mdo);
   // Initialize: set compiler thread count
   static void initialize();
   static bool should_not_inline(ciEnv* env, ciMethod* callee);
@@ -280,6 +377,7 @@ public:
   static CompLevel initial_compile_level(const methodHandle& method);
   // Return highest level possible
   static CompLevel highest_compile_level();
+  static void dump();
 };
 
 #endif // SHARE_COMPILER_COMPILATIONPOLICY_HPP

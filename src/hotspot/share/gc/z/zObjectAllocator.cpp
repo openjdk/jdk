@@ -140,13 +140,26 @@ zaddress ZObjectAllocator::alloc_object_in_medium_page(size_t size,
     ZAllocationFlags non_blocking_flags = flags;
     non_blocking_flags.set_non_blocking();
 
-    addr = alloc_object_in_shared_page(shared_medium_page, ZPageType::medium, ZPageSizeMedium, size, non_blocking_flags);
+    if (ZPageSizeMediumMin != ZPageSizeMediumMax) {
+      assert(ZPageSizeMediumEnabled, "must be enabled");
+      // We attempt a fast medium allocations first. Which will only succeed
+      // if a page in the range [ZPageSizeMediumMin, ZPageSizeMediumMax] can
+      // be allocated without any expensive syscalls, directly from the cache.
+      ZAllocationFlags fast_medium_flags = non_blocking_flags;
+      fast_medium_flags.set_fast_medium();
+      addr = alloc_object_in_shared_page(shared_medium_page, ZPageType::medium, ZPageSizeMediumMax, size, fast_medium_flags);
+    }
+
+    if (is_null(addr)) {
+      addr = alloc_object_in_shared_page(shared_medium_page, ZPageType::medium, ZPageSizeMediumMax, size, non_blocking_flags);
+    }
+
   }
 
   if (is_null(addr) && !flags.non_blocking()) {
     // The above allocation attempts failed and this allocation should stall
     // until memory is available. Redo the allocation with blocking enabled.
-    addr = alloc_object_in_shared_page(shared_medium_page, ZPageType::medium, ZPageSizeMedium, size, flags);
+    addr = alloc_object_in_shared_page(shared_medium_page, ZPageType::medium, ZPageSizeMediumMax, size, flags);
   }
 
   return addr;

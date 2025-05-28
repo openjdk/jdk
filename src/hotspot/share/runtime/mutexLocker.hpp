@@ -83,6 +83,8 @@ extern Mutex*   Compile_lock;                    // a lock held when Compilation
 extern Monitor* MethodCompileQueue_lock;         // a lock held when method compilations are enqueued, dequeued
 extern Monitor* CompileThread_lock;              // a lock held by compile threads during compilation system initialization
 extern Monitor* Compilation_lock;                // a lock used to pause compilation
+extern Mutex*   TrainingData_lock;               // a lock used when accessing training records
+extern Monitor* TrainingReplayQueue_lock;        // a lock held when class are added/removed to the training replay queue
 extern Mutex*   CompileTaskAlloc_lock;           // a lock held when CompileTasks are allocated
 extern Monitor* CompileTaskWait_lock;            // a lock held when CompileTasks are waited/notified
 extern Mutex*   CompileStatistics_lock;          // a lock held when updating compilation statistics
@@ -137,7 +139,6 @@ extern Mutex*   FinalImageRecipes_lock;          // Protecting the tables used b
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
-extern Monitor* JfrThreadSampler_lock;           // used to suspend/resume JFR thread sampler
 #endif
 
 extern Mutex*   Metaspace_lock;                  // protects Metaspace virtualspace and chunk expansions

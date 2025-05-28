@@ -47,6 +47,7 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
@@ -55,7 +56,7 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 
-final class AppImageFile {
+final class AppImageFile implements ExternalApplication {
 
     AppImageFile(Application app) {
         this(new ApplicationData(app));
@@ -72,47 +73,33 @@ final class AppImageFile {
         addLauncherInfos = app.additionalLaunchers;
     }
 
-    /**
-     * Returns list of additional launchers configured for the application.
-     *
-     * Returns empty list for application without additional launchers.
-     */
-    List<LauncherInfo> getAddLaunchers() {
+    @Override
+    public List<LauncherInfo> getAddLaunchers() {
         return addLauncherInfos;
     }
 
-    /**
-     * Returns application version. Never returns null or empty value.
-     */
-    String getAppVersion() {
+    @Override
+    public String getAppVersion() {
         return appVersion;
     }
 
-    /**
-     * Returns application name. Never returns null or empty value.
-     */
-    String getAppName() {
+    @Override
+    public String getAppName() {
         return launcherName;
     }
 
-    /**
-     * Returns main application launcher name. Never returns null or empty value.
-     */
-    String getLauncherName() {
+    @Override
+    public String getLauncherName() {
         return launcherName;
     }
 
-    /**
-     * Returns main class name. Never returns null or empty value.
-     */
-    String getMainClass() {
+    @Override
+    public String getMainClass() {
         return mainClass;
     }
 
-    /**
-     * Returns additional properties. Never returns null.
-     */
-    Map<String, String> getExtra() {
+    @Override
+    public Map<String, String> getExtra() {
         return extra;
     }
 
@@ -223,7 +210,7 @@ final class AppImageFile {
         }
     }
 
-    static boolean getBooleanExtraFieldValue(String fieldId, AppImageFile appImageFile) {
+    static boolean getBooleanExtraFieldValue(String fieldId, ExternalApplication appImageFile) {
         Objects.requireNonNull(fieldId);
         Objects.requireNonNull(appImageFile);
         return Optional.ofNullable(appImageFile.getExtra().get(fieldId)).map(Boolean::parseBoolean).orElse(false);
@@ -315,16 +302,6 @@ final class AppImageFile {
             MAIN_PROPERTIES_XPATH_QUERY = String.format("%s|/jpackage-state/%s", nonEmptyMainElements,
                     xpathQueryForExtraProperties(Stream.concat(MAIN_ELEMENT_NAMES.stream(),
                             Stream.of("add-launcher")).collect(toSet())));
-        }
-    }
-
-    record LauncherInfo(String name, boolean service, Map<String, String> extra) {
-        LauncherInfo {
-            Objects.requireNonNull(name);
-            Objects.requireNonNull(extra);
-            if (name.isBlank()) {
-                throw new IllegalArgumentException();
-            }
         }
     }
 
