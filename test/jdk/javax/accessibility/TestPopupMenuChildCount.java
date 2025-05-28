@@ -32,7 +32,7 @@ import javax.swing.JPopupMenu;
 /*
  * @test
  * @bug 8341311
- * @summary Verifies that VoiceOver announces correct number of child for PopupMenu
+ * @summary Verifies that VoiceOver announces correct number of child for PopupMenu on macOS
  * @requires os.family == "mac"
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
@@ -42,6 +42,8 @@ import javax.swing.JPopupMenu;
 public class TestPopupMenuChildCount {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
+                This test is applicable only on macOS.
+
                 Test UI contains an empty JFrame. On press of left/right mouse button,
                 a PopupMenu will be visible.
 
@@ -61,7 +63,6 @@ public class TestPopupMenuChildCount {
                    else Fail""";
 
         PassFailJFrame.builder()
-                .title("TestPopupMenuChildCount Instruction")
                 .instructions(INSTRUCTIONS)
                 .columns(45)
                 .testUI(TestPopupMenuChildCount::createUI)
