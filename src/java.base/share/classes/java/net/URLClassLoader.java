@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,13 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * the URL is assumed to refer to a JAR file which will be downloaded and
      * opened as needed.
      *
+     * @apiNote If the {@code parent} is specified as {@code null} (for the
+     * bootstrap class loader) then there is no guarantee that all platform
+     * classes are visible.
+     *
      * @param      urls the URLs from which to load classes and resources
-     * @param      parent the parent class loader for delegation
+     * @param      parent the parent class loader for delegation, can be null
+     *                    for the bootstrap class loader
      * @throws     NullPointerException if {@code urls} or any of its
      *             elements is {@code null}.
      */
@@ -89,12 +94,12 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
 
     /**
      * Constructs a new URLClassLoader for the specified URLs using the
-     * default delegation parent {@code ClassLoader}. The URLs will
-     * be searched in the order specified for classes and resources after
-     * first searching in the parent class loader. Any URL that ends with
-     * a '/' is assumed to refer to a directory. Otherwise, the URL is
-     * assumed to refer to a JAR file which will be downloaded and opened
-     * as needed.
+     * {@linkplain ClassLoader#getSystemClassLoader() default delegation
+     * parent class loader}. The URLs will be searched in the order
+     * specified for classes and resources after first searching in the
+     * parent class loader. Any URL that ends with a '/' is assumed to
+     * refer to a directory. Otherwise, the URL is assumed to refer to
+     * a JAR file which will be downloaded and opened as needed.
      *
      * @param      urls the URLs from which to load classes and resources
      *
@@ -113,8 +118,13 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * factory argument will be used as the stream handler factory to
      * obtain protocol handlers when creating new jar URLs.
      *
+     * @apiNote If the {@code parent} is specified as {@code null} (for the
+     * bootstrap class loader) then there is no guarantee that all platform
+     * classes are visible.
+     *
      * @param  urls the URLs from which to load classes and resources
-     * @param  parent the parent class loader for delegation
+     * @param  parent the parent class loader for delegation, can be null
+     *                for the bootstrap class loader
      * @param  factory the URLStreamHandlerFactory to use when creating URLs
      *
      * @throws NullPointerException if {@code urls} or any of its
@@ -135,9 +145,14 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * Otherwise, the URL is assumed to refer to a JAR file which will be
      * downloaded and opened as needed.
      *
+     * @apiNote If the {@code parent} is specified as {@code null} (for the
+     * bootstrap class loader) then there is no guarantee that all platform
+     * classes are visible.
+     *
      * @param  name class loader name; or {@code null} if not named
      * @param  urls the URLs from which to load classes and resources
-     * @param  parent the parent class loader for delegation
+     * @param  parent the parent class loader for delegation, can be null
+     *                for the bootstrap class loader
      *
      * @throws IllegalArgumentException if the given name is empty.
      * @throws NullPointerException if {@code urls} or any of its
@@ -159,9 +174,14 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * The factory argument will be used as the stream handler factory to
      * obtain protocol handlers when creating new jar URLs.
      *
+     * @apiNote If the {@code parent} is specified as {@code null} (for the
+     * bootstrap class loader) then there is no guarantee that all platform
+     * classes are visible.
+     *
      * @param  name class loader name; or {@code null} if not named
      * @param  urls the URLs from which to load classes and resources
-     * @param  parent the parent class loader for delegation
+     * @param  parent the parent class loader for delegation, can be null
+     *                for the bootstrap class loader
      * @param  factory the URLStreamHandlerFactory to use when creating URLs
      *
      * @throws IllegalArgumentException if the given name is empty.
