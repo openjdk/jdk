@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 
-import java.nio.charset.Charset;
 import java.util.*;
 
 /********** target program **********/
@@ -137,8 +136,7 @@ class MultiBreakpointsTarg {
     void bkpt29() {}
 
     Thread console(final int num, final int nhits) {
-        final InputStreamReader isr = new InputStreamReader(
-                System.in, Charset.forName(System.getProperty("stdin.encoding")));
+        final InputStreamReader isr = new InputStreamReader(System.in);
         final BufferedReader    br  = new BufferedReader(isr);
 
         // Create the threads

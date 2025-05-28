@@ -806,9 +806,6 @@ public class DataFlavor implements Externalizable, Cloneable {
         }
 
         String encoding = getParameter("charset");
-        if (encoding == null && stream == System.in) {
-            encoding = System.getProperty("stdin.encoding");
-        }
         return (encoding == null)
             ? new InputStreamReader(stream)
             : new InputStreamReader(stream, encoding);
