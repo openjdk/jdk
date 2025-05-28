@@ -4314,7 +4314,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         1000000000000000000L   // 18 / 10^18
     };
 
-    @Stable
     private static volatile BigInteger[] BIG_TEN_POWERS_TABLE = {
         BigInteger.ONE,
         BigInteger.valueOf(10),
