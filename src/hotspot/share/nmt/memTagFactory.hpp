@@ -166,7 +166,7 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
   }
     MemTag tag(const char* name) {
       NmtVirtualMemoryLocker nvml;
-      MemTag found = table.get(name);
+      MemTag found = table.tag_of(name);
       if (found != mtNone) {
         return found;
       }
@@ -192,7 +192,7 @@ MEMORY_TAG_DO(MEMORY_TAG_ADD_TO_TABLE)
     }
 
     int number_of_tags() {
-      return entries.length();
+      return table.number_of_tags();
     }
   };
 
