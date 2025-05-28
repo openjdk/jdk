@@ -77,6 +77,7 @@
 
 #define REG_LR       1
 #define REG_FP       8
+#define REG_BCP      22
 
 NOINLINE address os::current_stack_pointer() {
   return (address)__builtin_frame_address(0);
@@ -155,6 +156,13 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
     return fetch_compiled_frame_from_context(ucVoid);
   }
   return frame(frame_sp, frame_fp, epc);
+}
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  assert(os::Posix::ucontext_is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->uc_mcontext.__gregs[REG_BCP]);
 }
 
 // By default, gcc always saves frame pointer rfp on this stack. This

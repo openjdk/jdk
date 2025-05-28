@@ -27,7 +27,6 @@
  * @summary make sure DPS works when non-extractable PRK is provided
  * @library /test/lib /test/jdk/security/unsignedjce
  * @build java.base/javax.crypto.ProviderVerifier
- * @enablePreview
  * @run main/othervm HKDFDelayedPRK
  */
 

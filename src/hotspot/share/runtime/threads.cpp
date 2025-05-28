@@ -82,13 +82,13 @@
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
@@ -458,6 +458,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize the os module
   os::init();
+
+  // Initialize memory pools
+  Arena::initialize_chunk_pool();
 
   MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 
@@ -832,7 +835,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
 #if INCLUDE_JVMCI
   if (force_JVMCI_initialization) {
-    JVMCI::initialize_compiler(CHECK_JNI_ERR);
+    JVMCI::initialize_compiler_in_create_vm(CHECK_JNI_ERR);
   }
 #endif
 
@@ -849,7 +852,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 #endif // INCLUDE_MANAGEMENT
 
-  StatSampler::engage();
+  if (UsePerfData)         PerfDataManager::create_misc_perfdata();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
   call_postVMInitHook(THREAD);
@@ -903,7 +906,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 //   + Call before_exit(), prepare for VM exit
 //      > run VM level shutdown hooks (they are registered through JVM_OnExit(),
 //        currently the only user of this mechanism is File.deleteOnExit())
-//      > stop StatSampler, watcher thread,
+//      > stop watcher thread,
 //        post thread end and vm death events to JVMTI,
 //        stop signal thread
 //   + Call JavaThread::exit(), it will:

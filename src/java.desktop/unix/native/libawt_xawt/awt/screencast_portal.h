@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,21 @@
 #define PORTAL_REQUEST_TEMPLATE "/org/freedesktop/portal/desktop/" \
                                 "request/%s/awtPipewire%lu"
 
+#define PORTAL_DESKTOP_BUS_NAME "org.freedesktop.portal.Desktop"
+#define PORTAL_DESKTOP_OBJECT_PATH "/org/freedesktop/portal/desktop"
+
+#define PORTAL_IFACE_REQUEST "org.freedesktop.portal.Request"
+#define PORTAL_IFACE_SESSION "org.freedesktop.portal.Session"
+#define PORTAL_IFACE_SCREENCAST "org.freedesktop.portal.ScreenCast"
+#define PORTAL_IFACE_REMOTE_DESKTOP "org.freedesktop.portal.RemoteDesktop"
+
+#define PORTAL_MIN_VERSION_SCREENCAST 4
+#define PORTAL_MIN_VERSION_REMOTE_DESKTOP 2
+
 void debug_screencast(const char *__restrict fmt, ...);
 
-int getPipewireFd(const gchar *token,
-                  GdkRectangle *affectedBounds,
-                  gint affectedBoundsLength);
+gboolean initAndStartSession(const gchar *token, int *retVal);
+int getPipewireFd(GdkRectangle *affectedBounds, gint affectedBoundsLength);
 
 void portalScreenCastCleanup();
 
@@ -48,8 +58,14 @@ gboolean initXdgDesktopPortal();
 
 void errHandle(GError *error, const gchar *functionName, int lineNum);
 
+gboolean remoteDesktopMouseMove(int x, int y);
+gboolean remoteDesktopMouseWheel(int wheelAmt);
+gboolean remoteDesktopMouse(gboolean isPress, int buttons);
+gboolean remoteDesktopKey(gboolean isPress, int key);
+
 struct XdgDesktopPortalApi {
     GDBusConnection *connection;
+    GDBusProxy *remoteDesktopProxy;
     GDBusProxy *screenCastProxy;
     gchar *senderName;
     char *screenCastSessionHandle;
@@ -66,7 +82,14 @@ typedef enum {
     RESULT_ERROR = -1,
     RESULT_DENIED = -11,
     RESULT_OUT_OF_BOUNDS = -12,
+    RESULT_NO_STREAMS = -13,
 } ScreenCastResult;
+
+typedef enum {
+    XDG_METHOD_SCREENCAST = 0,
+    XDG_METHOD_REMOTE_DESKTOP = 1,
+} XdgPortalMethod;
+
 
 struct StartHelper {
     const gchar *token;

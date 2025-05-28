@@ -187,6 +187,7 @@ public:
   static bool is_dumping_aot_code()                          NOT_CDS_RETURN_(false);
   static void disable_dumping_aot_code()                     NOT_CDS_RETURN;
   static void enable_dumping_aot_code()                      NOT_CDS_RETURN;
+  static bool is_dumping_adapters()                          NOT_CDS_RETURN_(false);
 
   // Some CDS functions assume that they are called only within a single-threaded context. I.e.,
   // they are called from:
