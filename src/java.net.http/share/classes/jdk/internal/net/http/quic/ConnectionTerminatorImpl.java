@@ -133,10 +133,14 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
     }
 
     void incomingStatelessReset() {
+        // if local endpoint is a client, then our peer is a server
+        final boolean peerIsServer = connection.isClientConnection();
         if (Log.errors()) {
-            Log.logError("{0}: stateless reset from peer", connection.logTag());
+            Log.logError("{0}: stateless reset from peer ({1})", connection.logTag(),
+                    (peerIsServer ? "server" : "client"));
         }
-        final SilentTermination st = forSilentTermination("stateless reset from peer");
+        final SilentTermination st = forSilentTermination("stateless reset from peer ("
+                + (peerIsServer ? "server" : "client") + ")");
         terminate(st);
     }
 
