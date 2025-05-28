@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Test ScopedValue API
- * @enablePreview
  * @run junit ScopedValueAPI
  */
 
@@ -175,18 +174,15 @@ class ScopedValueAPI {
     void testOrElse(ThreadFactory factory) throws Exception {
         test(factory, () -> {
             ScopedValue<String> name = ScopedValue.newInstance();
-            assertNull(name.orElse(null));
             assertEquals("default", name.orElse("default"));
 
             // where
             ScopedValue.where(name, "duke").run(() -> {
-                assertEquals("duke", name.orElse(null));
                 assertEquals("duke", name.orElse("default"));
             });
 
             // callWhere
             ScopedValue.where(name, "duke").call(() -> {
-                assertEquals("duke", name.orElse(null));
                 assertEquals("duke", name.orElse("default"));
                 return null;
             });
@@ -416,6 +412,7 @@ class ScopedValueAPI {
         assertThrows(NullPointerException.class, () -> ScopedValue.where(null, "duke").call(() -> ""));
         assertThrows(NullPointerException.class, () -> ScopedValue.where(name, "duke").call(null));
 
+        assertThrows(NullPointerException.class, () -> name.orElse(null));
         assertThrows(NullPointerException.class, () -> name.orElseThrow(null));
 
         var carrier = ScopedValue.where(name, "duke");
@@ -423,6 +420,7 @@ class ScopedValueAPI {
         assertThrows(NullPointerException.class, () -> carrier.get((ScopedValue<?>)null));
         assertThrows(NullPointerException.class, () -> carrier.run(null));
         assertThrows(NullPointerException.class, () -> carrier.call(null));
+        assertThrows(NullPointerException.class, () -> carrier.run(() -> name.orElse(null)));
     }
 
     @FunctionalInterface

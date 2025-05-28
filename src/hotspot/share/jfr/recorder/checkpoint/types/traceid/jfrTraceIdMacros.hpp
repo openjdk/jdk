@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,7 @@
 #define METHOD_FLAG_USED_THIS_EPOCH(method)       (METHOD_FLAG_PREDICATE(method, (TRANSIENT_BIT | THIS_EPOCH_BIT)))
 #define METHOD_FLAG_NOT_USED_THIS_EPOCH(method)   (!(METHOD_FLAG_USED_THIS_EPOCH(method)))
 #define METHOD_FLAG_USED_PREVIOUS_EPOCH(method)   (METHOD_FLAG_PREDICATE(method, (TRANSIENT_BIT | PREVIOUS_EPOCH_BIT)))
+#define METHOD_FLAG_USED_PREVIOUS_EPOCH_BIT(method) (METHOD_FLAG_PREDICATE(method, (PREVIOUS_EPOCH_BIT)))
 #define METHOD_FLAG_NOT_USED_PREVIOUS_EPOCH(method) (!(METHOD_FLAG_USED_PREVIOUS_EPOCH(method)))
 #define IS_METHOD_BLESSED(method)                 (METHOD_FLAG_PREDICATE(method, BLESSED_METHOD_BIT))
 
