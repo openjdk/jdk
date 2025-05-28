@@ -208,12 +208,20 @@ public enum VectorShape {
         }
     }
 
-    // non-public support for computing preferred shapes
-
-    /*package-private*/
-    static VectorShape largestShapeFor(Class<?> etype) {
+    /**
+     * Finds the largest vector shape supported by the current
+     * platform for the element type {@code etype}.
+     *
+     * @param etype the element type
+     * @return the largest vector shape supported by the platform
+     * for {@code etype}
+     * @throws IllegalArgumentException if no such vector shape exists
+     */
+    public static VectorShape largestShapeFor(Class<?> etype) {
         return VectorShape.forBitSize(getMaxVectorBitSize(etype));
     }
+
+    // non-public support for computing preferred shapes
 
     /**
      * Finds the vector shape preferred by the current platform
