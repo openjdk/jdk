@@ -83,7 +83,7 @@ public class ResumeClientTLS12withSNI {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
-        Files.deleteIfExists(Path.of(keyFilename)); 
+        Files.deleteIfExists(Path.of(keyFilename));
 
         sun.security.tools.keytool.Main.main(
                 ("-keystore " + keyFilename + " -storepass 123456 -keypass 123456 -dname"
