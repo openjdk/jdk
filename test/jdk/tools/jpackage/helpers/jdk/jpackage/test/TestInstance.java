@@ -48,7 +48,7 @@ import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 final class TestInstance implements ThrowingRunnable {
 
-    final static class TestDesc {
+    static final class TestDesc {
         private TestDesc(Class<?> clazz, String functionName, String functionArgs, String instanceArgs) {
             this.clazz = Objects.requireNonNull(clazz);
             this.functionName = functionName;

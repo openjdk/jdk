@@ -130,7 +130,7 @@ public final class TKit {
     enum RunTestMode {
         FAIL_FAST;
 
-        final static Set<RunTestMode> DEFAULTS = Set.of();
+        static final Set<RunTestMode> DEFAULTS = Set.of();
     }
 
     static void runTests(List<TestInstance> tests) {

@@ -60,7 +60,7 @@ final class TestBuilder implements AutoCloseable {
         return new Builder();
     }
 
-    final static class Builder {
+    static final class Builder {
         private Builder() {
         }
 

@@ -977,7 +977,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             return getPaths.apply(cmd).stream().toList();
         }
 
-        private final static class Builder {
+        private static final class Builder {
 
             Builder(String argName) {
                 this.argName = Objects.requireNonNull(argName);
