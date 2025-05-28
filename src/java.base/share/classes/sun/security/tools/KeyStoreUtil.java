@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import java.io.StreamTokenizer;
@@ -169,11 +168,9 @@ public class KeyStoreUtil {
                     }
                 }
 
-
-                try (InputStream is = url.openStream();
-                     BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
-                    assert is != System.in
-                            : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
+                try (BufferedReader br =
+                     new BufferedReader(new InputStreamReader(
+                         url.openStream()))) {
                     String value = br.readLine();
 
                     if (value == null) {

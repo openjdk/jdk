@@ -302,8 +302,7 @@ public final class DOMImplementationRegistry {
         // try to find services in CLASSPATH
         try {
             InputStream is = getResourceAsStream(classLoader, serviceId);
-            assert is != System.in
-                    : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
+
             if (is != null) {
                 BufferedReader rd;
                 try {

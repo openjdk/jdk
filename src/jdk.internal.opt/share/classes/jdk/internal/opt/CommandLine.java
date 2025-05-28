@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,8 +117,6 @@ public final class CommandLine {
     }
 
     public static void loadCmdFile(InputStream in, List<String> args) throws IOException {
-        assert in != System.in
-                : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
         Reader reader = new InputStreamReader(in);
         loadCmdFileAndCloseReader(reader, args);
     }

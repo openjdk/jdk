@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,8 @@ public class OptionFinder {
         OptionFormat of = null;
         for (URL u : sources) {
             try {
-                InputStream is = u.openStream();
-                assert is != System.in
-                        : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
-                Reader r = new BufferedReader(new InputStreamReader(is));
+                Reader r = new BufferedReader(
+                        new InputStreamReader(u.openStream()));
                 of = new Parser(r).parse(option);
                 if (of != null)
                     break;

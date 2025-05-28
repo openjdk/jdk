@@ -2591,8 +2591,6 @@ public class Basic {
 
         public void run() {
             try {
-                assert is != System.in
-                        : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
                 Reader r = new InputStreamReader(is);
                 char[] buf = new char[4096];
                 int n;

@@ -87,8 +87,6 @@ public class Http1ChunkedTest {
                 System.out.printf("%s: Recieving request...%n", name);
                 try (Socket serverConn = server.accept()) {
                     InputStream sin = serverConn.getInputStream();
-                    assert sin != System.in
-                            : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
                     BufferedReader reader = new BufferedReader(new InputStreamReader(sin));
                     String line;
                     // read headers

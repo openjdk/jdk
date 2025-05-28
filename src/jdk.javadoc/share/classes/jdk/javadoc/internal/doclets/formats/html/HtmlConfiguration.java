@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,8 +353,6 @@ public class HtmlConfiguration extends BaseConfiguration {
                     export(?:\\s+(?:let|const|function|class|var|default|async)|\\s*[{*]))""");
             try (InputStream in = file.openInputStream();
                  BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-                assert in != System.in
-                        : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
                 isModule = reader.lines().anyMatch(s -> modulePattern.matcher(s).find());
             } catch (DocFileIOException | IOException e) {
                 // Errors are handled when copying resources

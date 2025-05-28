@@ -33,8 +33,6 @@ public final class InputRC {
     }
 
     public static void configure(LineReader reader, InputStream is) throws IOException {
-        assert is != System.in
-                : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
         try (InputStreamReader r = new InputStreamReader(is)) {
             configure(reader, r);
         }
