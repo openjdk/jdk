@@ -80,7 +80,12 @@ JfrThreadLocal::JfrThreadLocal() :
   _enqueued_requests(false),
   _vthread(false),
   _notified(false),
-  _dead(false) {
+  _dead(false),
+  _cpu_timer(nullptr),
+  _cpu_time_jfr_locked(UNLOCKED),
+  _has_cpu_time_jfr_requests(false),
+  _cpu_time_jfr_queue(0),
+  _wants_is_thread_in_native_stackwalking(false) {
   Thread* thread = Thread::current_or_null();
   _parent_trace_id = thread != nullptr ? jvm_thread_id(thread) : (traceid)0;
 }
@@ -546,11 +551,11 @@ Arena* JfrThreadLocal::dcmd_arena(JavaThread* jt) {
 
 #ifdef LINUX
 
-void JfrThreadLocal::set_cpu_timer(timer_t timer) {
+void JfrThreadLocal::set_cpu_timer(timer_t* timer) {
   if (_cpu_timer == nullptr) {
     _cpu_timer = JfrCHeapObj::new_array<timer_t>(1);
   }
-  *_cpu_timer = timer;
+  *_cpu_timer = *timer;
 }
 
 void JfrThreadLocal::unset_cpu_timer() {

@@ -1,9 +1,5 @@
 /*
-<<<<<<<< HEAD:test/jdk/jdk/jfr/event/profiling/TestCPUTimeSampleFullStackTrace.java
- * Copyright (c) 2024, SAP SE. All rights reserved.
-========
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
->>>>>>>> bbceab072555d5e2f5d3e99ae07a5ca5e909d7dc:test/langtools/tools/javac/diags/examples/SubtypeDoesntImplementSealed.java
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it

@@ -254,7 +254,7 @@ void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
   tl->cpu_time_jfr_queue().ensure_capacity_for_period(_current_sampling_period_ns / 1000000);
   timer_t timerid;
   if (create_timer_for_thread(thread, timerid)) {
-    tl->set_cpu_timer(timerid);
+    tl->set_cpu_timer(&timerid);
   }
 }
 

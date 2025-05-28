@@ -35,8 +35,6 @@
 
 #ifdef LINUX
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
-// required for timer_t type
-#include <signal.h>
 #endif
 
 class Arena;
@@ -86,7 +84,7 @@ class JfrThreadLocal {
   bool _sampling_critical_section;
 
 #ifdef LINUX
-  timer_t* _cpu_timer = nullptr;
+  timer_t* _cpu_timer;
 
   enum CPUTimeLockState {
     UNLOCKED,
@@ -97,10 +95,10 @@ class JfrThreadLocal {
     // locked for sampling a thread in native state
     NATIVE
   };
-  volatile CPUTimeLockState _cpu_time_jfr_locked = UNLOCKED;
-  volatile bool _has_cpu_time_jfr_requests = false;
-  JfrCPUTimeTraceQueue _cpu_time_jfr_queue{0};
-  volatile bool _wants_is_thread_in_native_stackwalking = false;
+  volatile CPUTimeLockState _cpu_time_jfr_locked;
+  volatile bool _has_cpu_time_jfr_requests;
+  JfrCPUTimeTraceQueue _cpu_time_jfr_queue;
+  volatile bool _wants_is_thread_in_native_stackwalking;
 #endif
 
   JfrBuffer* install_native_buffer() const;
@@ -368,7 +366,7 @@ class JfrThreadLocal {
 
   // CPU time sampling
 #ifdef LINUX
-  void set_cpu_timer(timer_t timer);
+  void set_cpu_timer(timer_t* timer);
   void unset_cpu_timer();
   timer_t* cpu_timer() const;
 
