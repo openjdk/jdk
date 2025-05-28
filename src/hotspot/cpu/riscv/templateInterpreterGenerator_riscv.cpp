@@ -768,7 +768,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // Save ConstMethod* in x15
   Register x15_const_method = x15;
   const Register x15 = noreg;
-  __ ld(x15_const_method, Address(xmethod, Method::const_offset()));     // get ConstMethod
+  __ ld(x15_const_method, Address(xmethod, Method::const_offset()));
 
   // initialize fixed part of activation frame
   if (native_call) {
@@ -802,7 +802,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(fp, Address(sp, 10 * wordSize));
   __ la(fp, Address(sp, 12 * wordSize)); // include ra & fp
 
-  // Save ConstantPool* in t3_constants
+  // Save ConstantPool* in t3_constants for later use to avoid loading multiple times
   Register t3_constants = t3;
   const Register t3 = noreg;
   __ ld(t3_constants, Address(x15_const_method, ConstMethod::constants_offset()));
