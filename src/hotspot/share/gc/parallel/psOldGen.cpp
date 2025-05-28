@@ -67,9 +67,6 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
   MemRegion const reserved_mr = reserved();
   assert(reserved_mr.byte_size() == max_gen_size(), "invariant");
 
-  // Object start stuff: for all reserved memory
-  start_array()->initialize(reserved_mr);
-
   // Card table stuff: for all committed memory
   MemRegion committed_mr((HeapWord*)virtual_space()->low(),
                          (HeapWord*)virtual_space()->high());
@@ -108,6 +105,7 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
                              &ParallelScavengeHeap::heap()->workers());
 
   // Update the start_array
+  _start_array = new ObjectStartArray(reserved_mr);
   start_array()->set_covered_region(committed_mr);
 }
 
@@ -282,7 +280,7 @@ void PSOldGen::complete_loaded_archive_space(MemRegion archive_space) {
   HeapWord* cur = archive_space.start();
   while (cur < archive_space.end()) {
     size_t word_size = cast_to_oop(cur)->size();
-    _start_array.update_for_block(cur, cur + word_size);
+    _start_array->update_for_block(cur, cur + word_size);
     cur += word_size;
   }
 }
