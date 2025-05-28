@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 8349637
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @summary Ensure that vectorization of numberOfLeadingZeros and numberOfTrailingZeros outputs correct values
  * @library /test/lib /
  * @run main/othervm compiler.vectorization.TestVectorZeroCount

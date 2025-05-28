@@ -145,6 +145,17 @@ private:
   size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
   size_t _rw_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the rw region
   size_t _ro_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the ro region
+
+  // The following are parameters that affect MethodData layout.
+  uint    _type_profile_level;
+  int     _type_profile_args_limit;
+  int     _type_profile_parms_limit;
+  intx    _type_profile_width;
+  intx    _bci_profile_width;
+  bool    _profile_traps;
+  bool    _type_profile_casts;
+  int     _spec_trap_limit_extra_entries;
+
   template <typename T> T from_mapped_offset(size_t offset) const {
     return (T)(mapped_base_address() + offset);
   }

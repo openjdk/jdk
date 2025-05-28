@@ -42,12 +42,14 @@ const size_t      ZVirtualToPhysicalRatio       = 16; // 16:1
 const size_t      ZMaxVirtualReservations       = 100; // Each reservation at least 1% of total
 
 // Page size shifts
-const size_t      ZPageSizeSmallShift           = ZGranuleSizeShift;
-extern size_t     ZPageSizeMediumShift;
+const int         ZPageSizeSmallShift           = (int)ZGranuleSizeShift;
+extern int        ZPageSizeMediumMaxShift;
 
 // Page sizes
 const size_t      ZPageSizeSmall                = (size_t)1 << ZPageSizeSmallShift;
-extern size_t     ZPageSizeMedium;
+extern size_t     ZPageSizeMediumMax;
+extern size_t     ZPageSizeMediumMin;
+extern bool       ZPageSizeMediumEnabled;
 
 // Object size limits
 const size_t      ZObjectSizeLimitSmall         = ZPageSizeSmall / 8; // 12.5% max waste
