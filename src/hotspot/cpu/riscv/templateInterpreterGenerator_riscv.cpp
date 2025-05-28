@@ -802,11 +802,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(fp, Address(sp, 10 * wordSize));
   __ la(fp, Address(sp, 12 * wordSize)); // include ra & fp
 
-  // Save ConstantPool* in t3_constants for later use to avoid loading multiple times
-  Register t3_constants = t3;
-  const Register t3 = noreg;
-  __ ld(t3_constants, Address(x15_const_method, ConstMethod::constants_offset()));
-  __ ld(xcpool, Address(t3_constants, ConstantPool::cache_offset()));
+  // Save ConstantPool* in x28_constants for later use to avoid loading multiple times
+  Register x28_constants = x28;
+  const Register x28 = noreg;
+  __ ld(x28_constants, Address(x15_const_method, ConstMethod::constants_offset()));
+  __ ld(xcpool, Address(x28_constants, ConstantPool::cache_offset()));
   __ sd(xcpool, Address(sp, 3 * wordSize));
   __ sub(t0, xlocals, fp);
   __ srai(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
@@ -820,7 +820,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   // Get mirror, Resolve ConstantPool* -> InstanceKlass* -> Java mirror
   // and store it in the frame as GC root for this Method*
-  __ ld(t2, Address(t3_constants, ConstantPool::pool_holder_offset()));
+  __ ld(t2, Address(x28_constants, ConstantPool::pool_holder_offset()));
   __ ld(t2, Address(t2, in_bytes(Klass::java_mirror_offset())));
   __ resolve_oop_handle(t2, t0, t1);
   __ sd(t2, Address(sp, 4 * wordSize));
