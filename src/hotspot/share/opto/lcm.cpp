@@ -795,13 +795,19 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
 }
 
 //------------------------------set_next_call----------------------------------
-void PhaseCFG::set_next_call(Block* block, Node* n, VectorSet& next_call) {
-  if( next_call.test_set(n->_idx) ) return;
-  for( uint i=0; i<n->len(); i++ ) {
-    Node *m = n->in(i);
-    if( !m ) continue;  // must see all nodes in block that precede call
-    if (get_block_for_node(m) == block) {
-      set_next_call(block, m, next_call);
+void PhaseCFG::set_next_call(const Block* block, Node* init, VectorSet& next_call) const {
+  Node_List worklist;
+  worklist.push(init);
+
+  while (worklist.size() > 0) {
+    Node* n = worklist.pop();
+    if (next_call.test_set(n->_idx)) continue;
+    for (uint i = 0; i < n->len(); i++) {
+      Node* m = n->in(i);
+      if (m == nullptr) continue;  // must see all nodes in block that precede call
+      if (get_block_for_node(m) == block) {
+        worklist.push(m);
+      }
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,19 @@
  * questions.
  */
 
-package sun.net.httpserver;
+package sun.tools.jstat;
 
-import java.util.Objects;
+public class Timestamp extends Expression {
 
-abstract sealed class Event {
-
-    final ExchangeImpl exchange;
-
-    protected Event(ExchangeImpl t) {
-        this.exchange = t;
+    public Timestamp() {
+        super();
     }
 
-    /**
-     * Stopping event for the http server.
-     * The event applies to the whole server and is not tied to any particular
-     * exchange.
-     */
-    static final class StopRequested extends Event {
-        StopRequested() {
-            super(null);
-        }
+    public Object getValue() {
+        return System.currentTimeMillis();
     }
 
-    /**
-     * Event indicating that writing is finished for a given exchange.
-     */
-    static final class WriteFinished extends Event {
-        WriteFinished(ExchangeImpl t) {
-            super(Objects.requireNonNull(t));
-            assert !t.writefinished;
-            t.writefinished = true;
-        }
+    public String toString() {
+        return "jstat.timestamp";
     }
 }
