@@ -1839,7 +1839,7 @@ class CountedLoopConverter {
   friend class PhaseIdealLoop;
 
   PhaseIdealLoop* const _phase;
-  Node* const _head; // FIXME: type to LoopNode?
+  Node* const _head;
   IdealLoopTree* const _loop;
   const BasicType _iv_bt;
 
@@ -1850,20 +1850,36 @@ class CountedLoopConverter {
   // stats for PhaseIdealLoop::print_statistics()
   static volatile int _long_loop_counted_loops;
 
-  // To be assigned once a counted loop is confirmed.
-  Node* _limit;
-  jlong _stride_con;
-  Node* _phi;
-  Node* _phi_increment;
-  Node* _stride;
-  bool _includes_limit;
-  BoolTest::mask _mask;
-  Node* _increment;
-  Node* _cmp;
-  float _cl_prob;
-  Node* _sfpt;
-  jlong _final_correction;
-  const TypeInteger* _increment_truncation_type;
+  struct LoopStructure {
+    Node* back_control;
+
+    CmpNode* cmp;
+    Node* incr;
+    Node* limit;
+    BoolTest::mask mask;
+    float cl_prob;
+
+    Node* iv_incr;
+    Node* phi_incr;
+
+    Node* trunc_incr;
+    Node* trunc1;
+    Node* trunc2;
+    const TypeInteger* trunc_type;
+
+    Node* stride;
+
+    PhiNode* phi;
+
+    SafePointNode* sfpt;
+  };
+
+  LoopStructure _structure{};
+
+  bool _includes_limit = false;
+  jlong _stride_con = 0;
+  jlong _final_correction = 0;
+
   bool _insert_stride_overflow_limit_check = false;
   bool _insert_init_trip_limit_check = false;
 
@@ -1878,14 +1894,17 @@ class CountedLoopConverter {
   bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
                                        Node* loop_entry);
 
-  // LoopStructure build_loop_structure() {
-  // }
+  bool build_loop_structure(LoopStructure& structure);
 
   bool is_iv_overflowing(const TypeInteger* init_t, jlong stride_con, Node* phi_increment, BoolTest::mask mask);
-  bool is_infinite_loop(const CountedLoopNode::TruncatedIncrement& increment, const TypeInteger* limit_t,
-                        const Node* incr);
-  bool has_truncation_wrap(const CountedLoopNode::TruncatedIncrement& increment, Node* phi, jlong stride_con);
-  bool has_invalid_safepoint(Node* back_control, Node* iff);
+  bool is_infinite_loop(const Node* increment_trunc1, const TypeInteger* limit_t, const Node* incr);
+  bool has_truncation_wrap(Node* increment_trunc1,
+                           Node* increment_trunc2,
+                           const TypeInteger* trunc_type,
+                           Node* phi,
+                           jlong stride_con);
+  SafePointNode* find_safepoint(Node* iftrue);
+  bool is_safepoint_invalid(SafePointNode* sfpt, Node* iftrue);
 
  public:
   CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)
@@ -1894,7 +1913,7 @@ class CountedLoopConverter {
         _loop(loop),
         _iv_bt(iv_bt) {
     assert(phase != nullptr, ""); // Fail early if mandatory parameters are null.
-    assert(head->is_Loop(), "");
+    assert(head != nullptr, "");
     assert(loop != nullptr, "");
     assert(iv_bt == T_INT || iv_bt == T_LONG, ""); // Loops can be either int or long.
   }
