@@ -364,7 +364,15 @@ void ZHeap::print_globals_on(outputStream* st) const {
   st->print_cr(" Old Collection:     %s/%u", ZGeneration::old()->phase_to_string(), ZGeneration::old()->seqnum());
   st->print_cr(" Offset Max:         " EXACTFMT " (" PTR_FORMAT ")", EXACTFMTARGS(ZAddressOffsetMax), ZAddressOffsetMax);
   st->print_cr(" Page Size Small:    %zuM", ZPageSizeSmall / M);
-  st->print_cr(" Page Size Medium:   %zuM", ZPageSizeMedium / M);
+  if (ZPageSizeMediumEnabled) {
+    if (ZPageSizeMediumMin == ZPageSizeMediumMax) {
+      st->print_cr(" Page Size Medium: %zuM", ZPageSizeMediumMax / M);
+    } else {
+      st->print_cr(" Page Size Medium: Range [%zuM, %zuM]", ZPageSizeMediumMin / M, ZPageSizeMediumMax / M);
+    }
+  } else {
+    st->print_cr(" Page Size Medium: N/A");
+  }
   st->cr();
   st->print_cr("ZGC Metadata Bits:");
   st->print_cr(" LoadGood:           " PTR_FORMAT, ZPointerLoadGoodMask);

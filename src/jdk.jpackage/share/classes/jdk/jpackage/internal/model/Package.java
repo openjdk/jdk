@@ -78,7 +78,7 @@ import java.util.Optional;
  * </tr>
  * </table>
  */
-public interface Package {
+public interface Package extends BundleSpec {
 
     /**
      * Gets the application of this package.
