@@ -1657,10 +1657,13 @@ bool FileMapInfo::map_heap_region_impl() {
   char* addr = (char*)_mapped_heap_memregion.start();
   char* base;
 
-  if (MetaspaceShared::use_windows_memory_mapping()) {
+  if (MetaspaceShared::use_windows_memory_mapping() || UseLargePages) {
+    // With UseLargePages, memory mapping may fail on some OSes if the size is not
+    // large page aligned, so let's use read() instead. In this case, the memory region
+    // is already commited by G1 so we don't need to commit it again.
     if (!read_region(MetaspaceShared::hp, addr,
                      align_up(_mapped_heap_memregion.byte_size(), os::vm_page_size()),
-                     /* do_commit = */ true)) {
+                     /* do_commit = */ !UseLargePages)) {
       dealloc_heap_region();
       aot_log_error(aot)("Failed to read archived heap region into " INTPTR_FORMAT, p2i(addr));
       return false;
