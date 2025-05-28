@@ -22,10 +22,10 @@
  *
  */
 
+#include "ci/ciKlass.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
-#include "ci/ciKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
@@ -806,7 +806,7 @@ class CompileReplay : public StackObj {
     }
     replay_state = this;
     CompileBroker::compile_method(methodHandle(THREAD, method), entry_bci, comp_level,
-                                  methodHandle(), 0, CompileTask::Reason_Replay, THREAD);
+                                  0, CompileTask::Reason_Replay, THREAD);
     replay_state = nullptr;
   }
 

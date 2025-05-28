@@ -38,11 +38,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.util.XmlConsumer;
-import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import jdk.internal.util.Architecture;
-import static jdk.jpackage.internal.OverridableResource.createResource;
 import jdk.jpackage.internal.WixSourceConverter.ResourceGroup;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.model.WinMsiPackage;
 import jdk.jpackage.internal.util.XmlUtils;
 
 /**
@@ -65,11 +65,11 @@ abstract class WixFragmentBuilder {
         defaultResourceName = v;
     }
 
-    void initFromParams(Map<String, ? super Object> params) {
+    void initFromParams(BuildEnv env, WinMsiPackage pkg) {
         wixVariables = null;
         additionalResources = null;
-        configRoot = CONFIG_ROOT.fetchFrom(params);
-        fragmentResource = createResource(defaultResourceName, params).setPublicName(outputFileName);
+        configRoot = env.configDir();
+        fragmentResource = env.createResource(defaultResourceName).setPublicName(outputFileName);
     }
 
     List<String> getLoggableWixFeatures() {
@@ -120,7 +120,7 @@ abstract class WixFragmentBuilder {
         Util;
     }
 
-    final protected Map<WixNamespace, String> getWixNamespaces() {
+    protected final Map<WixNamespace, String> getWixNamespaces() {
         switch (wixType) {
             case Wix3 -> {
                 return Map.of(WixNamespace.Default,
@@ -145,24 +145,24 @@ abstract class WixFragmentBuilder {
         return Architecture.is64bit();
     }
 
-    final protected Path getConfigRoot() {
+    protected final Path getConfigRoot() {
         return configRoot;
     }
 
     protected abstract Collection<XmlConsumer> getFragmentWriters();
 
-    final protected void defineWixVariable(String variableName) {
+    protected final void defineWixVariable(String variableName) {
         setWixVariable(variableName, "yes");
     }
 
-    final protected void setWixVariable(String variableName, String variableValue) {
+    protected final void setWixVariable(String variableName, String variableValue) {
         if (wixVariables == null) {
             wixVariables = new WixVariables();
         }
         wixVariables.setWixVariable(variableName, variableValue);
     }
 
-    final protected void addResource(OverridableResource resource, String saveAsName) {
+    protected final void addResource(OverridableResource resource, String saveAsName) {
         if (additionalResources == null) {
             additionalResources = new ResourceGroup(getWixType());
         }

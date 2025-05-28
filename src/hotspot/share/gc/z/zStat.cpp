@@ -24,9 +24,9 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zDirector.hpp"
 #include "gc/z/zDriver.hpp"
-#include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMethodTable.hpp"
@@ -701,7 +701,7 @@ ZGenerationTracer* ZStatPhaseGeneration::jfr_tracer() const {
 }
 
 void ZStatPhaseGeneration::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
-  ZCollectedHeap::heap()->print_heap_before_gc();
+  ZCollectedHeap::heap()->print_before_gc();
 
   jfr_tracer()->report_start(start);
 
@@ -716,7 +716,7 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
 
   jfr_tracer()->report_end(end);
 
-  ZCollectedHeap::heap()->print_heap_after_gc();
+  ZCollectedHeap::heap()->print_after_gc();
 
   const Tickspan duration = end - start;
   ZStatDurationSample(_sampler, duration);
