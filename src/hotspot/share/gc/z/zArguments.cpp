@@ -121,9 +121,19 @@ void ZArguments::select_max_gc_threads() {
 void ZArguments::initialize() {
   GCArguments::initialize();
 
-  // Enable NUMA by default
-  if (FLAG_IS_DEFAULT(UseNUMA)) {
-    FLAG_SET_DEFAULT(UseNUMA, true);
+  // NUMA settings
+  if (FLAG_IS_DEFAULT(ZFakeNUMA)) {
+    // Enable NUMA by default
+    if (FLAG_IS_DEFAULT(UseNUMA)) {
+      FLAG_SET_DEFAULT(UseNUMA, true);
+    }
+  } else {
+    if (UseNUMA) {
+      if (!FLAG_IS_DEFAULT(UseNUMA)) {
+        warning("ZFakeNUMA is enabled; turning off UseNUMA");
+      }
+      FLAG_SET_ERGO(UseNUMA, false);
+    }
   }
 
   select_max_gc_threads();
@@ -131,6 +141,11 @@ void ZArguments::initialize() {
   // Backwards compatible alias for ZCollectionIntervalMajor
   if (!FLAG_IS_DEFAULT(ZCollectionInterval)) {
     FLAG_SET_ERGO_IF_DEFAULT(ZCollectionIntervalMajor, ZCollectionInterval);
+  }
+
+  // Set an initial TLAB size to avoid depending on the current capacity
+  if (FLAG_IS_DEFAULT(TLABSize)) {
+    FLAG_SET_DEFAULT(TLABSize, 256*K);
   }
 
   // Set medium page size here because MaxTenuringThreshold may use it.
@@ -147,9 +162,8 @@ void ZArguments::initialize() {
     uint tenuring_threshold;
     for (tenuring_threshold = 0; tenuring_threshold < MaxTenuringThreshold; ++tenuring_threshold) {
       // Reduce the number of object ages, if the resulting garbage is too high
-      const size_t medium_page_overhead = ZPageSizeMedium * tenuring_threshold;
-      const size_t small_page_overhead = ZPageSizeSmall * ConcGCThreads * tenuring_threshold;
-      if (small_page_overhead + medium_page_overhead >= ZHeuristics::significant_young_overhead()) {
+      const size_t per_age_overhead = ZHeuristics::relocation_headroom();
+      if (per_age_overhead * tenuring_threshold >= ZHeuristics::significant_young_overhead()) {
         break;
       }
     }

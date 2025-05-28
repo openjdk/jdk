@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,56 +134,6 @@
   #define _native_abi_reg_args_spill(_component) \
           (offset_of(frame::native_abi_reg_args_spill, _component))
 
-  // non-volatile GPRs:
-
-  struct spill_nonvolatiles {
-    uint64_t r14;
-    uint64_t r15;                                 //_16
-    uint64_t r16;
-    uint64_t r17;                                 //_16
-    uint64_t r18;
-    uint64_t r19;                                 //_16
-    uint64_t r20;
-    uint64_t r21;                                 //_16
-    uint64_t r22;
-    uint64_t r23;                                 //_16
-    uint64_t r24;
-    uint64_t r25;                                 //_16
-    uint64_t r26;
-    uint64_t r27;                                 //_16
-    uint64_t r28;
-    uint64_t r29;                                 //_16
-    uint64_t r30;
-    uint64_t r31;                                 //_16
-
-    double f14;
-    double f15;
-    double f16;
-    double f17;
-    double f18;
-    double f19;
-    double f20;
-    double f21;
-    double f22;
-    double f23;
-    double f24;
-    double f25;
-    double f26;
-    double f27;
-    double f28;
-    double f29;
-    double f30;
-    double f31;
-
-    // aligned to frame::alignment_in_bytes (16)
-  };
-
-  enum {
-    spill_nonvolatiles_size = sizeof(spill_nonvolatiles)
-  };
-
-  #define _spill_nonvolatiles_neg(_component) \
-     (int)(-frame::spill_nonvolatiles_size + offset_of(frame::spill_nonvolatiles, _component))
 
   // Frame layout for the Java template interpreter on PPC64.
   //
@@ -230,6 +180,7 @@
   //            [callee's Java result]
   //            [callee's locals w/o arguments]
   //            [outgoing arguments]
+  //            [non-volatiles]
   //            [ENTRY_FRAME_LOCALS]
 
   // ABI for every Java frame, compiled and interpreted
@@ -292,7 +243,6 @@
     uint64_t result_type;
     uint64_t arguments_tos_address;               //_16
     // aligned to frame::alignment_in_bytes (16)
-    uint64_t r[spill_nonvolatiles_size/sizeof(uint64_t)];
   };
 
   enum {
@@ -413,7 +363,7 @@
   inline frame(intptr_t* sp, intptr_t* fp, address pc);
   inline frame(intptr_t* sp, address pc, kind knd = kind::nmethod);
   inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
-  inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map);
+  inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map = nullptr);
   inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map, bool on_heap);
 
  private:

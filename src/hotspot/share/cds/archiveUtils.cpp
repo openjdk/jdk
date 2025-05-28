@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotLogging.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.hpp"
@@ -31,6 +32,7 @@
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -73,34 +75,39 @@ void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, VirtualSpace* vs) {
 }
 
 void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap) {
-  address* rw_bottom = (address*)ArchiveBuilder::current()->rw_region()->base();
-  address* ro_bottom = (address*)ArchiveBuilder::current()->ro_region()->base();
+  address* buff_bottom = (address*)ArchiveBuilder::current()->buffer_bottom();
+  address* rw_bottom   = (address*)ArchiveBuilder::current()->rw_region()->base();
+  address* ro_bottom   = (address*)ArchiveBuilder::current()->ro_region()->base();
+
+  // The bit in _ptrmap that cover the very first word in the rw/ro regions.
+  size_t rw_start = rw_bottom - buff_bottom;
+  size_t ro_start = ro_bottom - buff_bottom;
+
+  // The number of bits used by the rw/ro ptrmaps. We might have lots of zero
+  // bits at the bottom and top of rw/ro ptrmaps, but these zeros will be
+  // removed by FileMapInfo::write_bitmap_region().
+  size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
+  size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
+
+  // The last (exclusive) bit in _ptrmap that covers the rw/ro regions.
+  // Note: _ptrmap is dynamically expanded only when an actual pointer is written, so
+  // it may not be as large as we want.
+  size_t rw_end = MIN2<size_t>(rw_start + rw_size, _ptrmap->size());
+  size_t ro_end = MIN2<size_t>(ro_start + ro_size, _ptrmap->size());
+
+  rw_ptrmap->initialize(rw_size);
+  ro_ptrmap->initialize(ro_size);
+
+  for (size_t rw_bit = rw_start; rw_bit < rw_end; rw_bit++) {
+    rw_ptrmap->at_put(rw_bit - rw_start, _ptrmap->at(rw_bit));
+  }
+
+  for(size_t ro_bit = ro_start; ro_bit < ro_end; ro_bit++) {
+    ro_ptrmap->at_put(ro_bit - ro_start, _ptrmap->at(ro_bit));
+  }
 
   _rw_ptrmap = rw_ptrmap;
   _ro_ptrmap = ro_ptrmap;
-
-  size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
-  size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
-  // ro_start is the first bit in _ptrmap that covers the pointer that would sit at ro_bottom.
-  // E.g., if rw_bottom = (address*)100
-  //          ro_bottom = (address*)116
-  //       then for 64-bit platform:
-  //          ro_start = ro_bottom - rw_bottom = (116 - 100) / sizeof(address) = 2;
-  size_t ro_start = ro_bottom - rw_bottom;
-
-  // Note: ptrmap is big enough only to cover the last pointer in ro_region.
-  // See ArchivePtrMarker::compact()
-  _rw_ptrmap->initialize(rw_size);
-  _ro_ptrmap->initialize(_ptrmap->size() - ro_start);
-
-  for (size_t rw_bit = 0; rw_bit < _rw_ptrmap->size(); rw_bit++) {
-    _rw_ptrmap->at_put(rw_bit, _ptrmap->at(rw_bit));
-  }
-
-  for(size_t ro_bit = ro_start; ro_bit < _ptrmap->size(); ro_bit++) {
-    _ro_ptrmap->at_put(ro_bit-ro_start, _ptrmap->at(ro_bit));
-  }
-  assert(_ptrmap->size() - ro_start == _ro_ptrmap->size(), "must be");
 }
 
 void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
@@ -162,7 +169,7 @@ public:
       }
     } else {
       _ptrmap->clear_bit(offset);
-      DEBUG_ONLY(log_trace(cds, reloc)("Clearing pointer [" PTR_FORMAT  "] -> null @ %9zu", p2i(ptr_loc), offset));
+      DEBUG_ONLY(log_trace(aot, reloc)("Clearing pointer [" PTR_FORMAT  "] -> null @ %9zu", p2i(ptr_loc), offset));
     }
 
     return true;
@@ -201,7 +208,7 @@ char* DumpRegion::expand_top_to(char* newtop) {
       // This is just a sanity check and should not appear in any real world usage. This
       // happens only if you allocate more than 2GB of shared objects and would require
       // millions of shared classes.
-      log_error(cds)("Out of memory in the CDS archive: Please reduce the number of shared classes.");
+      aot_log_error(aot)("Out of memory in the CDS archive: Please reduce the number of shared classes.");
       MetaspaceShared::unrecoverable_writing_error();
     }
   }
@@ -227,7 +234,7 @@ void DumpRegion::commit_to(char* newtop) {
   assert(commit <= uncommitted, "sanity");
 
   if (!_vs->expand_by(commit, false)) {
-    log_error(cds)("Failed to expand shared space to %zu bytes",
+    aot_log_error(aot)("Failed to expand shared space to %zu bytes",
                     need_committed_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
@@ -238,7 +245,7 @@ void DumpRegion::commit_to(char* newtop) {
   } else {
     which = "shared";
   }
-  log_debug(cds)("Expanding %s spaces by %7zu bytes [total %9zu bytes ending at %p]",
+  log_debug(aot)("Expanding %s spaces by %7zu bytes [total %9zu bytes ending at %p]",
                  which, commit, _vs->actual_committed_size(), _vs->high());
 }
 
@@ -264,16 +271,17 @@ void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
 }
 
 void DumpRegion::print(size_t total_bytes) const {
-  log_debug(cds)("%s space: %9zu [ %4.1f%% of total] out of %9zu bytes [%5.1f%% used] at " INTPTR_FORMAT,
+  char* base = used() > 0 ? ArchiveBuilder::current()->to_requested(_base) : nullptr;
+  log_debug(aot)("%s space: %9zu [ %4.1f%% of total] out of %9zu bytes [%5.1f%% used] at " INTPTR_FORMAT,
                  _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
-                 p2i(ArchiveBuilder::current()->to_requested(_base)));
+                 p2i(base));
 }
 
 void DumpRegion::print_out_of_space_msg(const char* failing_region, size_t needed_bytes) {
-  log_error(cds)("[%-8s] " PTR_FORMAT " - " PTR_FORMAT " capacity =%9d, allocated =%9d",
+  aot_log_error(aot)("[%-8s] " PTR_FORMAT " - " PTR_FORMAT " capacity =%9d, allocated =%9d",
                  _name, p2i(_base), p2i(_top), int(_end - _base), int(_top - _base));
   if (strcmp(_name, failing_region) == 0) {
-    log_error(cds)(" required = %d", int(needed_bytes));
+    aot_log_error(aot)(" required = %d", int(needed_bytes));
   }
 }
 
@@ -289,7 +297,10 @@ void DumpRegion::init(ReservedSpace* rs, VirtualSpace* vs) {
 }
 
 void DumpRegion::pack(DumpRegion* next) {
-  assert(!is_packed(), "sanity");
+  if (!is_packed()) {
+    _end = (char*)align_up(_top, MetaspaceShared::core_region_alignment());
+    _is_packed = true;
+  }
   _end = (char*)align_up(_top, MetaspaceShared::core_region_alignment());
   _is_packed = true;
   if (next != nullptr) {
@@ -351,7 +362,7 @@ void ReadClosure::do_tag(int tag) {
 
 void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
   if (ClassListWriter::is_enabled()) {
-    if (SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
+    if (LambdaProxyClassDictionary::is_supported_invokedynamic(bootstrap_specifier)) {
       const constantPoolHandle& pool = bootstrap_specifier->pool();
       if (SystemDictionaryShared::is_builtin_loader(pool->pool_holder()->class_loader_data())) {
         // Currently lambda proxy classes are supported only for the built-in loaders.

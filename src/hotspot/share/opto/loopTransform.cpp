@@ -491,7 +491,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
   assert(!phase->exceeding_node_budget(), "sanity");
 
   // Peeling does loop cloning which can result in O(N^2) node construction.
-  if (_body.size() > 255) {
+  if (_body.size() > 255 && !StressLoopPeeling) {
     return 0;   // Suppress too large body size.
   }
   // Optimistic estimate that approximates loop body complexity via data and
@@ -506,9 +506,25 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
   if (_head->is_CountedLoop()) {
     CountedLoopNode* cl = _head->as_CountedLoop();
     if (cl->is_unroll_only() || cl->trip_count() == 1) {
+      // Peeling is not legal here (cf. assert in do_peeling), we don't even stress peel!
       return 0;
     }
   }
+
+#ifndef PRODUCT
+  // It is now safe to peel or not.
+  if (StressLoopPeeling) {
+    LoopNode* loop_head = _head->as_Loop();
+    static constexpr uint max_peeling_opportunities = 5;
+    if (loop_head->_stress_peeling_attempts < max_peeling_opportunities) {
+      loop_head->_stress_peeling_attempts++;
+      // In case of stress, let's just pick randomly...
+      return ((phase->C->random() % 2) == 0) ? estimate : 0;
+    }
+    return 0;
+  }
+  // ...otherwise, let's apply our heuristic.
+#endif
 
   Node* test = tail();
 
@@ -812,10 +828,14 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
   }
 
   // Step 5: Assertion Predicates initialization
-  if (counted_loop && UseLoopPredicate) {
-    initialize_assertion_predicates_for_peeled_loop(new_head->as_CountedLoop(), head->as_CountedLoop(),
+  if (counted_loop) {
+    CountedLoopNode* cl = head->as_CountedLoop();
+    Node* init = cl->init_trip();
+    Node* init_ctrl = cl->skip_strip_mined()->in(LoopNode::EntryControl);
+    initialize_assertion_predicates_for_peeled_loop(new_head->as_CountedLoop(), cl,
                                                     first_node_index_in_post_loop_body, old_new);
- }
+    cast_incr_before_loop(init, init_ctrl, cl);
+  }
 
   // Now force out all loop-invariant dominating tests.  The optimizer
   // finds some, but we _know_ they are all useless.
@@ -1299,6 +1319,22 @@ Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctr
   return n;
 }
 
+// When a counted loop is created, the loop phi type may be narrowed down. As a consequence, the control input of some
+// nodes may be cleared: in particular in the case of a division by the loop iv, the Div node would lose its control
+// dependency if the loop phi is never zero. After pre/main/post loops are created (and possibly unrolling), the
+// loop phi type is only correct if the loop is indeed reachable: there's an implicit dependency between the loop phi
+// type and the zero trip guard for the main or post loop and as a consequence a dependency between the Div node and the
+// zero trip guard. This makes the dependency explicit by adding a CastII for the loop entry input of the loop phi. If
+// the backedge of the main or post loop is removed, a Div node won't be able to float above the zero trip guard of the
+// loop and can't execute even if the loop is not reached.
+void PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNode* loop) {
+  Node* castii = new CastIINode(ctrl, incr, TypeInt::INT, ConstraintCastNode::UnconditionalDependency);
+  register_new_node(castii, ctrl);
+  Node* phi = loop->phi();
+  assert(phi->in(LoopNode::EntryControl) == incr, "replacing wrong input?");
+  _igvn.replace_input_of(phi, LoopNode::EntryControl, castii);
+}
+
 #ifdef ASSERT
 void PhaseIdealLoop::ensure_zero_trip_guard_proj(Node* node, bool is_main_loop) {
   assert(node->is_IfProj(), "must be the zero trip guard If node");
@@ -1450,11 +1486,11 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   DEBUG_ONLY(const uint last_node_index_from_backedge_goo = Compile::current()->unique() - 1);
 
   DEBUG_ONLY(ensure_zero_trip_guard_proj(outer_main_head->in(LoopNode::EntryControl), true);)
-  if (UseLoopPredicate) {
-    initialize_assertion_predicates_for_main_loop(pre_head, main_head, first_node_index_in_pre_loop_body,
-                                                  last_node_index_in_pre_loop_body,
-                                                  DEBUG_ONLY(last_node_index_from_backedge_goo COMMA) old_new);
-  }
+  initialize_assertion_predicates_for_main_loop(pre_head, main_head, first_node_index_in_pre_loop_body,
+                                                last_node_index_in_pre_loop_body,
+                                                DEBUG_ONLY(last_node_index_from_backedge_goo COMMA) old_new);
+  // CastII for the main loop:
+  cast_incr_before_loop(pre_incr, min_taken, main_head);
 
   // Step B4: Shorten the pre-loop to run only 1 iteration (for now).
   // RCE and alignment may change this later.
@@ -1595,7 +1631,7 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
 // Insert post loops.  Add a post loop to the given loop passed.
 Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                                        CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                                       Node*& incr, Node* limit, CountedLoopNode*& post_head) {
+                                       Node* incr, Node* limit, CountedLoopNode*& post_head) {
   IfNode* outer_main_end = main_end;
   IdealLoopTree* outer_loop = loop;
   if (main_head->is_strip_mined()) {
@@ -1683,9 +1719,8 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   }
 
   DEBUG_ONLY(ensure_zero_trip_guard_proj(post_head->in(LoopNode::EntryControl), false);)
-  if (UseLoopPredicate) {
-    initialize_assertion_predicates_for_post_loop(main_head, post_head, first_node_index_in_cloned_loop_body);
-  }
+  initialize_assertion_predicates_for_post_loop(main_head, post_head, first_node_index_in_cloned_loop_body);
+  cast_incr_before_loop(zer_opaq->in(1), zer_taken, post_head);
   return new_main_exit;
 }
 
@@ -1719,7 +1754,7 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(CountedLoop
                                                                      const uint first_node_index_in_cloned_loop_body,
                                                                      const Node_List& old_new) {
   const NodeInOriginalLoopBody node_in_original_loop_body(first_node_index_in_cloned_loop_body, old_new);
-  create_assertion_predicates_at_loop(peeled_loop_head, remaining_loop_head, node_in_original_loop_body, false);
+  create_assertion_predicates_at_loop(peeled_loop_head, remaining_loop_head, node_in_original_loop_body, true);
 }
 
 // Source Loop: Cloned   - pre_loop_head
@@ -1739,6 +1774,9 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_main_loop(CountedLoopNo
 
 // Source Loop: Original - main_loop_head
 // Target Loop: Cloned   - post_loop_head
+//
+// The post loop is cloned before the pre loop. Do not kill the old Template Assertion Predicates, yet. We need to clone
+// from them when creating the pre loop. Only then we can kill them.
 void PhaseIdealLoop::initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head,
                                                                    CountedLoopNode* post_loop_head,
                                                                    const uint first_node_index_in_cloned_loop_body) {
@@ -1749,9 +1787,9 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_post_loop(CountedLoopNo
 void PhaseIdealLoop::create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head,
                                                          CountedLoopNode* target_loop_head,
                                                          const NodeInLoopBody& _node_in_loop_body,
-                                                         const bool clone_template) {
+                                                         const bool kill_old_template) {
   CreateAssertionPredicatesVisitor create_assertion_predicates_visitor(target_loop_head, this, _node_in_loop_body,
-                                                                       clone_template);
+                                                                       kill_old_template);
   Node* source_loop_entry = source_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
   PredicateIterator predicate_iterator(source_loop_entry);
   predicate_iterator.for_each(create_assertion_predicates_visitor);
@@ -1760,11 +1798,11 @@ void PhaseIdealLoop::create_assertion_predicates_at_loop(CountedLoopNode* source
 void PhaseIdealLoop::create_assertion_predicates_at_main_or_post_loop(CountedLoopNode* source_loop_head,
                                                                       CountedLoopNode* target_loop_head,
                                                                       const NodeInLoopBody& _node_in_loop_body,
-                                                                      bool clone_template) {
+                                                                      const bool kill_old_template) {
   Node* old_target_loop_head_entry = target_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
   const uint node_index_before_new_assertion_predicate_nodes = C->unique();
   const bool need_to_rewire_old_target_loop_entry_dependencies = old_target_loop_head_entry->outcnt() > 1;
-  create_assertion_predicates_at_loop(source_loop_head, target_loop_head, _node_in_loop_body, clone_template);
+  create_assertion_predicates_at_loop(source_loop_head, target_loop_head, _node_in_loop_body, kill_old_template);
   if (need_to_rewire_old_target_loop_entry_dependencies) {
     rewire_old_target_loop_entry_dependency_to_new_entry(target_loop_head, old_target_loop_head_entry,
                                                          node_index_before_new_assertion_predicate_nodes);
@@ -1778,8 +1816,8 @@ void PhaseIdealLoop::create_assertion_predicates_at_main_or_post_loop(CountedLoo
 // to do because these control dependent nodes on the old target loop entry created by clone_up_backedge_goo() were
 // pinned on the loop backedge before. The Assertion Predicates are not control dependent on these nodes in any way.
 void PhaseIdealLoop::rewire_old_target_loop_entry_dependency_to_new_entry(
-    LoopNode* target_loop_head, const Node* old_target_loop_entry,
-    const uint node_index_before_new_assertion_predicate_nodes) {
+  CountedLoopNode* target_loop_head, const Node* old_target_loop_entry,
+  const uint node_index_before_new_assertion_predicate_nodes) {
   Node* new_main_loop_entry = target_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
   if (new_main_loop_entry == old_target_loop_entry) {
     // No Assertion Predicates added.
@@ -1789,6 +1827,7 @@ void PhaseIdealLoop::rewire_old_target_loop_entry_dependency_to_new_entry(
   for (DUIterator_Fast imax, i = old_target_loop_entry->fast_outs(imax); i < imax; i++) {
     Node* out = old_target_loop_entry->fast_out(i);
     if (!out->is_CFG() && out->_idx < node_index_before_new_assertion_predicate_nodes) {
+      assert(out != target_loop_head->init_trip(), "CastII on loop entry?");
       _igvn.replace_input_of(out, 0, new_main_loop_entry);
       set_ctrl(out, new_main_loop_entry);
       --i;
@@ -1868,6 +1907,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
         "odd trip count for maximally unroll");
     // Don't need to adjust limit for maximally unroll since trip count is even.
   } else if (loop_head->has_exact_trip_count() && init->is_Con()) {
+    // The trip count being exact means it has been set (using CountedLoopNode::set_exact_trip_count in compute_trip_count)
+    assert(old_trip_count < max_juint, "sanity");
     // Loop's limit is constant. Loop's init could be constant when pre-loop
     // become peeled iteration.
     jlong init_con = init->get_int();
@@ -1881,8 +1922,10 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     int stride_m    = new_stride_con - (stride_con > 0 ? 1 : -1);
     jlong trip_count = (limit_con - init_con + stride_m)/new_stride_con;
     // New trip count should satisfy next conditions.
-    assert(trip_count > 0 && (julong)trip_count < (julong)max_juint/2, "sanity");
+    assert(trip_count > 0 && (julong)trip_count <= (julong)max_juint/2, "sanity");
     uint new_trip_count = (uint)trip_count;
+    // Since old_trip_count has been set to < max_juint (that is at most 2^32-2),
+    // new_trip_count is lower than or equal to 2^31-1 and the multiplication cannot overflow.
     adjust_min_trip = (old_trip_count != new_trip_count*2);
   }
 
@@ -2678,7 +2721,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
         if (b_test._test == BoolTest::lt) { // Range checks always use lt
           // The underflow and overflow limits: 0 <= scale*I+offset < limit
           add_constraint(stride_con, lscale_con, offset, zero, limit, next_limit_ctrl, &pre_limit, &main_limit);
-          Node* init = cl->init_trip();
+          Node* init = cl->uncasted_init_trip(true);
+
           Node* opaque_init = new OpaqueLoopInitNode(C, init);
           register_new_node(opaque_init, loop_entry);
 

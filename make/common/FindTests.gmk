@@ -58,13 +58,15 @@ ifeq ($(GENERATE_FIND_TESTS_FILE), true)
       $(TOPDIR)/test/make/TestMake.gmk
 	$(call MakeTargetDir)
 	( $(foreach root, $(JTREG_TESTROOTS), \
-	    $(PRINTF) "\n$(root)_JTREG_TEST_GROUPS := " ; \
+	    $(ECHO) ""; \
+	    $(PRINTF) "\n%s_JTREG_TEST_GROUPS := " "$(root)"; \
 	    $(SED) -n -e 's/^\#.*//g' -e 's/\([^ ]*\)\w*=.*/\1/gp' \
 	      $($(root)_JTREG_GROUP_FILES) \
 	      | $(SORT) -u | $(TR) '\n' ' ' ; \
 	  ) \
 	) > $@
-	$(PRINTF) "\nMAKE_TEST_TARGETS := " >> $@
+	$(ECHO) "" >> $@
+	$(PRINTF) "MAKE_TEST_TARGETS := " >> $@
 	$(MAKE) -s --no-print-directory $(MAKE_ARGS) \
 	    SPEC=$(SPEC) -f $(TOPDIR)/test/make/TestMake.gmk print-targets \
 	    TARGETS_FILE=$@

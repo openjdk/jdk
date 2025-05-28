@@ -80,7 +80,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _surviving_young_words(nullptr),
     _surviving_words_length(collection_set->young_region_length() + 1),
     _old_gen_is_full(false),
-    _partial_array_splitter(g1h->partial_array_state_manager(), num_workers),
+    _partial_array_splitter(g1h->partial_array_state_manager(), num_workers, ParGCArrayScanChunk),
     _string_dedup_requests(),
     _max_num_optional_regions(collection_set->num_optional_regions()),
     _numa(g1h->numa()),
@@ -238,8 +238,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayState* state, bool stole
 }
 
 MAYBE_INLINE_EVACUATION
-void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
-                                                  oop from_obj,
+void G1ParScanThreadState::start_partial_objarray(oop from_obj,
                                                   oop to_obj) {
   assert(from_obj->is_forwarded(), "precondition");
   assert(from_obj->forwardee() == to_obj, "precondition");
@@ -251,12 +250,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
     // The source array is unused when processing states.
     _partial_array_splitter.start(_task_queue, nullptr, to_array, array_length);
 
-  // Skip the card enqueue iff the object (to_array) is in survivor region.
-  // However, G1HeapRegion::is_survivor() is too expensive here.
-  // Instead, we use dest_attr.is_young() because the two values are always
-  // equal: successfully allocated young regions must be survivor regions.
-  assert(dest_attr.is_young() == _g1h->heap_region_containing(to_array)->is_survivor(), "must be");
-  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
+  assert(_scanner.skip_card_enqueue_set(), "must be");
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
   // module.
@@ -422,6 +416,45 @@ void G1ParScanThreadState::update_bot_after_copying(oop obj, size_t word_sz) {
   region->update_bot_for_block(obj_start, obj_start + word_sz);
 }
 
+ALWAYSINLINE
+void G1ParScanThreadState::do_iterate_object(oop const obj,
+                                             oop const old,
+                                             Klass* const klass,
+                                             G1HeapRegionAttr const region_attr,
+                                             G1HeapRegionAttr const dest_attr,
+                                             uint age) {
+    // Most objects are not arrays, so do one array check rather than
+    // checking for each array category for each object.
+    if (klass->is_array_klass()) {
+      assert(!klass->is_stack_chunk_instance_klass(), "must be");
+
+      if (klass->is_objArray_klass()) {
+        start_partial_objarray(old, obj);
+      } else {
+        // Nothing needs to be done for typeArrays.  Body doesn't contain
+        // any oops to scan, and the type in the klass will already be handled
+        // by processing the built-in module.
+        assert(klass->is_typeArray_klass(), "invariant");
+      }
+      return;
+    }
+
+    ContinuationGCSupport::transform_stack_chunk(obj);
+
+    // Check for deduplicating young Strings.
+    if (G1StringDedup::is_candidate_from_evacuation(klass,
+                                                    region_attr,
+                                                    dest_attr,
+                                                    age)) {
+      // Record old; request adds a new weak reference, which reference
+      // processing expects to refer to a from-space object.
+      _string_dedup_requests.add(old);
+    }
+
+    assert(_scanner.skip_card_enqueue_set(), "must be");
+    obj->oop_iterate_backwards(&_scanner, klass);
+}
+
 // Private inline function, for direct internal use and providing the
 // implementation of the public not-inline function.
 MAYBE_INLINE_EVACUATION
@@ -446,7 +479,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
 
   // JNI only allows pinning of typeArrays, so we only need to keep those in place.
   if (region_attr.is_pinned() && klass->is_typeArray_klass()) {
-    return handle_evacuation_failure_par(old, old_mark, word_sz, true /* cause_pinned */);
+    return handle_evacuation_failure_par(old, old_mark, klass, region_attr, word_sz, true /* cause_pinned */);
   }
 
   uint age = 0;
@@ -463,7 +496,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     if (obj_ptr == nullptr) {
       // This will either forward-to-self, or detect that someone else has
       // installed a forwarding pointer.
-      return handle_evacuation_failure_par(old, old_mark, word_sz, false /* cause_pinned */);
+      return handle_evacuation_failure_par(old, old_mark, klass, region_attr, word_sz, false /* cause_pinned */);
     }
   }
 
@@ -475,7 +508,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     // Doing this after all the allocation attempts also tests the
     // undo_allocation() method too.
     undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
-    return handle_evacuation_failure_par(old, old_mark, word_sz, false /* cause_pinned */);
+    return handle_evacuation_failure_par(old, old_mark, klass, region_attr, word_sz, false /* cause_pinned */);
   }
 
   // We're going to allocate linearly, so might as well prefetch ahead.
@@ -507,39 +540,16 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       update_bot_after_copying(obj, word_sz);
     }
 
-    // Most objects are not arrays, so do one array check rather than
-    // checking for each array category for each object.
-    if (klass->is_array_klass()) {
-      if (klass->is_objArray_klass()) {
-        start_partial_objarray(dest_attr, old, obj);
-      } else {
-        // Nothing needs to be done for typeArrays.  Body doesn't contain
-        // any oops to scan, and the type in the klass will already be handled
-        // by processing the built-in module.
-        assert(klass->is_typeArray_klass(), "invariant");
-      }
-      return obj;
+    {
+      // Skip the card enqueue iff the object (obj) is in survivor region.
+      // However, G1HeapRegion::is_survivor() is too expensive here.
+      // Instead, we use dest_attr.is_young() because the two values are always
+      // equal: successfully allocated young regions must be survivor regions.
+      assert(dest_attr.is_young() == _g1h->heap_region_containing(obj)->is_survivor(), "must be");
+      G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
+      do_iterate_object(obj, old, klass, region_attr, dest_attr, age);
     }
 
-    ContinuationGCSupport::transform_stack_chunk(obj);
-
-    // Check for deduplicating young Strings.
-    if (G1StringDedup::is_candidate_from_evacuation(klass,
-                                                    region_attr,
-                                                    dest_attr,
-                                                    age)) {
-      // Record old; request adds a new weak reference, which reference
-      // processing expects to refer to a from-space object.
-      _string_dedup_requests.add(old);
-    }
-
-    // Skip the card enqueue iff the object (obj) is in survivor region.
-    // However, G1HeapRegion::is_survivor() is too expensive here.
-    // Instead, we use dest_attr.is_young() because the two values are always
-    // equal: successfully allocated young regions must be survivor regions.
-    assert(dest_attr.is_young() == _g1h->heap_region_containing(obj)->is_survivor(), "must be");
-    G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
-    obj->oop_iterate_backwards(&_scanner, klass);
     return obj;
   } else {
     _plab_allocator->undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
@@ -614,8 +624,14 @@ void G1ParScanThreadStateSet::record_unused_optional_region(G1HeapRegion* hr) {
   }
 }
 
+void G1ParScanThreadState::record_evacuation_failed_region(G1HeapRegion* r, uint worker_id, bool cause_pinned) {
+  if (_evac_failure_regions->record(worker_id, r->hrm_index(), cause_pinned)) {
+    G1HeapRegionPrinter::evac_failure(r);
+  }
+}
+
 NOINLINE
-oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, size_t word_sz, bool cause_pinned) {
+oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, Klass* klass, G1HeapRegionAttr attr, size_t word_sz, bool cause_pinned) {
   assert(_g1h->is_in_cset(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
 
   oop forward_ptr = old->forward_to_self_atomic(m, memory_order_relaxed);
@@ -623,24 +639,22 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // Forward-to-self succeeded. We are the "owner" of the object.
     G1HeapRegion* r = _g1h->heap_region_containing(old);
 
-    if (_evac_failure_regions->record(_worker_id, r->hrm_index(), cause_pinned)) {
-      G1HeapRegionPrinter::evac_failure(r);
-    }
+    record_evacuation_failed_region(r, _worker_id, cause_pinned);
 
     // Mark the failing object in the marking bitmap and later use the bitmap to handle
     // evacuation failure recovery.
     _g1h->mark_evac_failure_object(_worker_id, old, word_sz);
 
-    ContinuationGCSupport::transform_stack_chunk(old);
-
     _evacuation_failed_info.register_copy_failure(word_sz);
 
-    // For iterating objects that failed evacuation currently we can reuse the
-    // existing closure to scan evacuated objects; since we are iterating from a
-    // collection set region (i.e. never a Survivor region), we always need to
-    // gather cards for this case.
-    G1SkipCardEnqueueSetter x(&_scanner, false /* skip_card_enqueue */);
-    old->oop_iterate_backwards(&_scanner);
+    {
+      // For iterating objects that failed evacuation currently we can reuse the
+      // existing closure to scan evacuated objects; since we are iterating from a
+      // collection set region (i.e. never a Survivor region), we always need to
+      // gather cards for this case.
+      G1SkipCardEnqueueSetter x(&_scanner, false /* skip_card_enqueue */);
+      do_iterate_object(old, old, klass, attr, attr, m.age());
+    }
 
     return old;
   } else {

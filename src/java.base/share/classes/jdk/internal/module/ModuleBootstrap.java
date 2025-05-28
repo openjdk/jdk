@@ -141,10 +141,7 @@ public final class ModuleBootstrap {
     private static boolean canUseArchivedBootLayer() {
         return getProperty("jdk.module.upgrade.path") == null &&
                getProperty("jdk.module.patch.0") == null &&       // --patch-module
-               getProperty("jdk.module.limitmods") == null &&     // --limit-modules
-               getProperty("jdk.module.addreads.0") == null &&    // --add-reads
-               getProperty("jdk.module.addexports.0") == null &&  // --add-exports
-               getProperty("jdk.module.addopens.0") == null;      // --add-opens
+               getProperty("jdk.module.limitmods") == null;       // --limit-modules
     }
 
     /**
@@ -453,7 +450,7 @@ public final class ModuleBootstrap {
 
         // --add-reads, --add-exports/--add-opens
         addExtraReads(bootLayer);
-        boolean extraExportsOrOpens = addExtraExportsAndOpens(bootLayer);
+        addExtraExportsAndOpens(bootLayer);
 
         // add enable native access
         addEnableNativeAccess(bootLayer);
@@ -723,15 +720,13 @@ public final class ModuleBootstrap {
      * Process the --add-exports and --add-opens options to export/open
      * additional packages specified on the command-line.
      */
-    private static boolean addExtraExportsAndOpens(ModuleLayer bootLayer) {
-        boolean extraExportsOrOpens = false;
+    private static void addExtraExportsAndOpens(ModuleLayer bootLayer) {
 
         // --add-exports
         String prefix = "jdk.module.addexports.";
         Map<String, List<String>> extraExports = decode(prefix);
         if (!extraExports.isEmpty()) {
             addExtraExportsOrOpens(bootLayer, extraExports, false);
-            extraExportsOrOpens = true;
         }
 
 
@@ -740,10 +735,8 @@ public final class ModuleBootstrap {
         Map<String, List<String>> extraOpens = decode(prefix);
         if (!extraOpens.isEmpty()) {
             addExtraExportsOrOpens(bootLayer, extraOpens, true);
-            extraExportsOrOpens = true;
         }
 
-        return extraExportsOrOpens;
     }
 
     private static void addExtraExportsOrOpens(ModuleLayer bootLayer,

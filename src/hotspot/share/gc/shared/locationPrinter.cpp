@@ -25,9 +25,9 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/locationPrinter.hpp"
 #include "memory/universe.hpp"
-#include "runtime/os.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/os.hpp"
 
 bool LocationPrinter::is_valid_obj(void* obj) {
   if (!is_object_aligned(obj)) {

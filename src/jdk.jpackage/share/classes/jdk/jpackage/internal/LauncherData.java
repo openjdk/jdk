@@ -25,7 +25,7 @@
 package jdk.jpackage.internal;
 
 import jdk.internal.util.OperatingSystem;
-
+import jdk.jpackage.internal.model.ConfigException;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -141,7 +141,7 @@ final class LauncherData {
         launcherData.modulePath = getModulePath(params);
 
         // Try to find module in the specified module path list.
-        ModuleReference moduleRef = JLinkBundlerHelper.createModuleFinder(
+        ModuleReference moduleRef = JLinkRuntimeBuilder.createModuleFinder(
                 launcherData.modulePath).find(moduleName).orElse(null);
 
         if (moduleRef != null) {

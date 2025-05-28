@@ -133,6 +133,10 @@ public:
   void set_profile_trip_cnt(float ptc) { _profile_trip_cnt = ptc; }
   float profile_trip_cnt()             { return _profile_trip_cnt; }
 
+#ifndef PRODUCT
+  uint _stress_peeling_attempts = 0;
+#endif
+
   LoopNode(Node *entry, Node *backedge)
     : RegionNode(3), _loop_flags(0), _unswitch_count(0),
       _profile_trip_cnt(COUNT_UNKNOWN) {
@@ -300,11 +304,14 @@ public:
   void set_post_loop (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Post; _main_idx = main->_idx; }
   void set_normal_loop(                    ) { _loop_flags &= ~PreMainPostFlagsMask; }
 
-  void set_trip_count(uint tc) { _trip_count = tc; }
+  // We use max_juint for the default value of _trip_count to signal it wasn't set.
+  // We shouldn't set _trip_count to max_juint explicitly.
+  void set_trip_count(uint tc) { assert(tc < max_juint, "Cannot set trip count to max_juint"); _trip_count = tc; }
   uint trip_count()            { return _trip_count; }
 
   bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
   void set_exact_trip_count(uint tc) {
+    assert(tc < max_juint, "Cannot set trip count to max_juint");
     _trip_count = tc;
     _loop_flags |= HasExactTripCount;
   }
@@ -364,6 +371,8 @@ public:
 
   Node* is_canonical_loop_entry();
   CountedLoopEndNode* find_pre_loop_end();
+
+  Node* uncasted_init_trip(bool uncasted);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -973,6 +982,8 @@ private:
     return ctrl;
   }
 
+  void cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNode* loop);
+
 #ifdef ASSERT
   static void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
@@ -993,11 +1004,12 @@ private:
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                                      uint first_node_index_in_cloned_loop_body);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
-                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+                                           const NodeInLoopBody& _node_in_loop_body, bool kill_old_template);
   void create_assertion_predicates_at_main_or_post_loop(CountedLoopNode* source_loop_head,
                                                         CountedLoopNode* target_loop_head,
-                                                        const NodeInLoopBody& _node_in_loop_body, bool clone_template);
-  void rewire_old_target_loop_entry_dependency_to_new_entry(LoopNode* target_loop_head,
+                                                        const NodeInLoopBody& _node_in_loop_body,
+                                                        bool kill_old_template);
+  void rewire_old_target_loop_entry_dependency_to_new_entry(CountedLoopNode* target_loop_head,
                                                             const Node* old_target_loop_entry,
                                                             uint node_index_before_new_assertion_predicate_nodes);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
@@ -1351,7 +1363,7 @@ public:
   // Add post loop after the given loop.
   Node *insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                         Node*& incr, Node* limit, CountedLoopNode*& post_head);
+                         Node* incr, Node* limit, CountedLoopNode*& post_head);
 
   // Add a vector post loop between a vector main loop and the current post loop
   void insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new);
@@ -1578,8 +1590,6 @@ public:
 
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );
-
-  bool split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk);
 
   // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.

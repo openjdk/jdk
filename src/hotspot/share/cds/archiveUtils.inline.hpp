@@ -27,6 +27,7 @@
 
 #include "cds/archiveUtils.hpp"
 
+#include "cds/aotLogging.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -46,7 +47,7 @@ inline bool SharedDataRelocator::do_bit(size_t offset) {
   assert(new_ptr != nullptr, "don't point to the bottom of the archive"); // See ArchivePtrMarker::mark_pointer().
   assert(_valid_new_base <= new_ptr && new_ptr < _valid_new_end, "must be");
 
-  DEBUG_ONLY(log_trace(cds, reloc)("Patch2: @%8d [" PTR_FORMAT "] " PTR_FORMAT " -> " PTR_FORMAT,
+  DEBUG_ONLY(aot_log_trace(aot, reloc)("Patch2: @%8d [" PTR_FORMAT "] " PTR_FORMAT " -> " PTR_FORMAT,
                                    (int)offset, p2i(p), p2i(old_ptr), p2i(new_ptr)));
   *p = new_ptr;
   return true; // keep iterating
@@ -78,7 +79,7 @@ Array<T>* ArchiveUtils::archive_ptr_array(GrowableArray<T>* tmp_array) {
   Array<T>* archived_array = ArchiveBuilder::new_ro_array<T>(tmp_array->length());
   for (int i = 0; i < tmp_array->length(); i++) {
       T ptr = tmp_array->at(i);
-      if (!builder->is_in_buffer_space(ptr)) {
+      if (ptr != nullptr && !builder->is_in_buffer_space(ptr)) {
         if (is_dynamic_dump && MetaspaceShared::is_in_shared_metaspace(ptr)) {
           // We have a pointer that lives in the dynamic archive but points into
           // the static archive.
