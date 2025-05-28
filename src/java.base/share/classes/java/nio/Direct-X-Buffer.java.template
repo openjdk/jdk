@@ -115,7 +115,8 @@ class Direct$Type$Buffer$RW$$BO$
             throw x;
         }
 
-        long chunkSize = 1024 * 1024; // 1MB per chunk
+        // Zero in chunks to avoid blocking safepoints for too long
+        long chunkSize = 1024 * 1024;
         long offset = 0;
 
         while (offset < size) {
@@ -123,7 +124,6 @@ class Direct$Type$Buffer$RW$$BO$
             UNSAFE.setMemory(base + offset, len, (byte) 0);
             offset += len;
         }
-
 
         if (pa && (base % ps != 0)) {
             // Round up to page boundary
