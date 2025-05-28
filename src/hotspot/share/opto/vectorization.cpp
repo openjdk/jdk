@@ -482,7 +482,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
 
 // We have two VPointer vp1 and vp2, and would like to create a runtime check that
 // guarantees that the corresponding pointers p1 and p2 do not overlap (alias) for
-// any iv value in the strided range r = [init, init + iv_stride, .. limit].
+// any iv value in the strided range r = [init, init + iv_stride, .. limit).
 //
 //   for all iv in r: p1(iv) + size1 <= p2(iv) OR p2(iv) + size2 <= p1(iv)
 //
@@ -504,6 +504,9 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //        the last iv value which is closest to limit.
 //        Note: stride_iv > 0  ->  limit - stride_iv <= limX < limit
 //              stride_iv < 0  ->  limit < limX <= limit + stride_iv
+//        We have to be a little careful, and cannot just use limit instead of limX as
+//        the last value in r, because the iv never reaches limit in the main loop, and
+//        so we are not sure if the memory access at p(limit) is still in bounds.
 //   (C3) the memory accesses for every iv value in the loop must be in bounds, otherwise
 //        the program has undefined behaviour already.
 //   (C4) abs(iv_scale * stride_iv) < 2^31 is given by the checks in
@@ -515,11 +518,11 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //   vp(iv) = vp(init) - init * iv_scale + iv * iv_scale
 //
 // Hence, p1 and p2 have the linear form:
-//   p1(iv)  = p1(init) - init * iv_scale1 + iv * iv_scale1
+//   p1(iv)  = p1(init) - init * iv_scale1 + iv * iv_scale1             (LINEAR-FORM-INIT)
 //   p2(iv)  = p2(init) - init * iv_scale2 + iv * iv_scale2
 //
 // With the (Alternative Corrolary P) we get the alternative linar form:
-//   p1(iv)  = p1(limX) - limX * iv_scale1 + iv * iv_scale1
+//   p1(iv)  = p1(limX) - limX * iv_scale1 + iv * iv_scale1             (LINEAR-FORM-LIMX)
 //   p2(iv)  = p2(limX) - limX * iv_scale2 + iv * iv_scale2
 //
 //
@@ -578,54 +581,92 @@ void VLoopDependencyGraph::PredsIterator::next() {
 //     (iv - init) * scale_1 >= (iv - init) * iv_scale
 //     (iv - limX) * scale_1 <= (iv - limX) * iv_scale                   (NEG-STRIDE)
 //
-//   We define:
+//   Below, we show that these conditions are equivalent:
+//
+//       p1(init) + size1 <= p2(init)       (if iv_stride >= 0)  |    p2(limX) + size2 <= p1(limX)      (if iv_stride >= 0)   |
+//       p1(limX) + size1 <= p2(limX)       (if iv_stride <= 0)  |    p2(init) + size2 <= p1(init)      (if iv_stride <= 0)   |
+//       ----- is equivalent to -----                            |    ----- is equivalent to -----                            |
+//              (P1-BEFORE-P2)                                   |           (P1-AFTER-P2)                                    |
+//                                                               |                                                            |
+//   Proof:                                                      |                                                            |
+//                                                               |                                                            |
+//     Assume: (P1-BEFORE-P2)                                    |  Assume: (P1-AFTER-P2)                                     |
+//       for all iv in r: p1(iv) + size1 <= p2(iv)               |    for all iv in r: p2(iv) + size2 <= p1(iv)               |
+//       => And since init and limX in r =>                      |    => And since init and limX in r =>                      |
+//       p1(init) + size1 <= p2(init)                            |    p2(init) + size2 <= p1(init)                            |
+//       p1(limX) + size1 <= p2(limX)                            |    p2(limX) + size2 <= p1(limX)                            |
+//                                                               |                                                            |
+//                                                               |                                                            |
+//     Assume: p1(init) + size1 <= p2(init)                      |  Assume: p2(limX) + size2 <= p1(limX)                      |
+//        and: iv_stride >= 0                                    |     and: iv_stride >= 0                                    |
+//                                                               |                                                            |
+//          size1 + p1(iv)                                       |       size2 + p2(iv)                                       |
+//                  --------- apply (LINEAR-FORM-INIT) --------- |               --------- apply (LINEAR-FORM-LIMX) --------- |
+//        = size1 + p1(init) - init * iv_scale1 + iv * iv_scale1 |     = size2 + p2(limX) - init * iv_scale2 + iv * iv_scale2 |
+//                           ------ apply (POS-STRIDE) --------- |                        ------ apply (POS-STRIDE) --------- |
+//       <= size1 + p1(init) - init * iv_scale2 + iv * iv_scale2 |    <= size2 + p2(limX) - init * iv_scale1 + iv * iv_scale1 |
+//          -- assumption --                                     |       -- assumption --                                     |
+//       <=         p2(init) - init * iv_scale2 + iv * iv_scale2 |    <=         p1(limX) - init * iv_scale1 + iv * iv_scale1 |
+//                  --------- apply (LINEAR-FORM-INIT) --------- |               --------- apply (LINEAR-FORM-LIMX) --------- |
+//        =         p2(iv)                                       |     =         p1(iv)                                       |
+//                                                               |                                                            |
+//                                                               |                                                            |
+//     Assume: p1(limX) + size1 <= p2(limX)                      |  Assume: p2(init) + size2 <= p1(init)                      |
+//        and: iv_stride <= 0                                    |     and: iv_stride <= 0                                    |
+//                                                               |                                                            |
+//          size1 + p1(iv)                                       |       size2 + p2(iv)                                       |
+//                  --------- apply (LINEAR-FORM-LIMX) --------- |               --------- apply (LINEAR-FORM-INIT) --------- |
+//        = size1 + p1(limX) - init * iv_scale1 + iv * iv_scale1 |     = size2 + p2(init) - init * iv_scale2 + iv * iv_scale2 |
+//                           ------ apply (NEG-STRIDE) --------- |                        ------ apply (NEG-STRIDE) --------- |
+//       <= size1 + p1(limX) - init * iv_scale2 + iv * iv_scale2 |    <= size2 + p2(init) - init * iv_scale1 + iv * iv_scale1 |
+//          -- assumption --                                     |       -- assumption --                                     |
+//       <=         p2(limX) - init * iv_scale2 + iv * iv_scale2 |    <=         p1(init) - init * iv_scale1 + iv * iv_scale1 |
+//                  --------- apply (LINEAR-FORM-LIMX) --------- |               --------- apply (LINEAR-FORM-INIT) --------- |
+//        =         p2(iv)                                       |     =         p1(iv)                                       |
+//                                                               |                                                            |
+//
+//   However, computing limX is cumbersone, we only have limit readily available.
+//   But we can use the following definition, using (LINEAR-FORM-INIT), so we do
+//   not have to compute p(limX) directly:
+//
+//     p1(limX) = p1(init) - init * iv_scale1 + limX * iv_scale1
+//                         --------------- defines -------------
+//                p1(init) + spanX1
+//
+//     p2(limX) = p2(init) - init * iv_scale2 + limX * iv_scale2
+//                         --------------- defines -------------
+//                p1(init) + spanX2
+//
+// TODO: continue here!
+//
+//     spanX1 = - init * iv_scale1 + limX * iv_scale1
+//     spanX2 = - init * iv_scale2 + limX * iv_scale2
+//
+//   If: iv_stride >= 0
+//     p2(limX) + size2 <
+//
 //     spanX1 = p1(limX) - p1(init) = (limX - init) * iv_scale1
 //     spanX2 = p2(limX) - p2(init) = (limX - init) * iv_scale2
 //
-//   Since computing limX is cumbersome, and we only have limit readily
+
+//   But as mentioned above, computing limX is cumbersome, so we will slightly
+//   strengthen the checks from using limX to limit. But of course we should
+//   not evaluate p(limit), as this may be out of bounds.
+//
+///   Since computing limX is cumbersome, and we only have limit readily
 //   available, we the spans with slightly larger magnitude:
 //     span1 = (limit - init) * iv_scale1
 //     span2 = (limit - init) * iv_scale2
 //
-//   Below, we show that these conditions are equivalent:
-//   TODO: continue working here, show equivalence or what implies what exactly, and that we are not too far off.
-//
-//   p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
-//   p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
-//   ------------------- for --------------------      ------------------ for ---------------------
-//              (P1-BEFORE-P2)                     OR                 (P1-AFTER-P2)
+//   p1(init) + size1 <= p2(init)  OR  p2(limX) + size2 <= p1(limX)      (if iv_stride >= 0)
+//   p1(limX) + size1 <= p2(limX)  OR  p2(init) + size2 <= p1(init)      (if iv_stride <= 0)
 //
 //
-//   p1(init)  + size1 <= p2(init)   OR  p2(limit) + size2 <= p1(limit)    (if iv_stride >= 0)
-//   p1(limit) + size1 <= p2(limit)  OR  p2(init) + size2 <= p1(init)      (if iv_stride <= 0)
-//   ------------ for -------------      ----------- for --------------
-//         (P1-BEFORE-P2)            OR         (P1-AFTER-P2)
+///////   p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
+///////   p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
+///////   ------------ is equivalent to --------------      ------------- is equivalent to -------------
+///////                 (P1-BEFORE-P2)                  OR                 (P1-AFTER-P2)
 //
-//   Proof:
-//     Assume: (P1-BEFORE-P2):
-//       for all iv in r: p1(iv) + size1 <= p2(iv)
-//       => And since init and limit in r =>
-//       p1(init)  + size1 <= p2(init)
-//       p1(limit) + size1 <= p2(limit)  =>   p1(init) + span1 + size1 <= p2(init) + span2
-//
-//
-//     Assume: p1(init) + size1 <= p2(init)  AND  iv_stride >= 0
-//       p1(iv) + size1  = p1(init) - init * iv_scale1 + iv * iv_scale1 + size1
-//                                  ------ apply (POS-STRIDE) ---------
-//                      <= p1(init) - init * iv_scale2 + iv * iv_scale2 + size1
-//                      <= p2(init) - init * iv_scale2 + iv * iv_scale2
-//                       = p2(iv)
-//
-//     Assume: p1(init) + span1 + size1 <= p2(init) + span2  AND  iv_stride <= 0
-//       It follows:  p1(limit) + size1 <= p2(limit)
-//       We use the alternative linear form.
-//       p1(iv) + size1  = p1(limit) - limit * iv_scale1 + iv * iv_scale1 + size1
-//                                   ------ apply (NEG-STRIDE) ---------
-//                      <= p1(limit) - limit * iv_scale2 + iv * iv_scale2 + size1
-//                      <= p2(limit) - limit * iv_scale2 + iv * iv_scale2
-//                       = p2(iv)
-//
-//     The proof for (P1-AFTER-P2) can be done symmetrically.
 //
 bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) const {
   const VPointer& vp1 = *this;
