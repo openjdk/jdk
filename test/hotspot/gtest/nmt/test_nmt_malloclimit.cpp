@@ -99,7 +99,7 @@ TEST(NMT, MallocLimitCategoryEnumNames) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
     if (mem_tag != MemTag::mtNone) {
       expected.set_category_limit(mem_tag, (i + 1) * M, MallocLimitMode::trigger_fatal);
-      option.print("%s%s:%dM", (i > 0 ? "," : ""), NMTUtil::tag_to_enum_name(mem_tag), i + 1);
+      option.print("%s%s:%dM", (i > 0 ? "," : ""), MemTagFactory::name_of(mem_tag), i + 1);
     }
   }
   test(option.base(), expected);
@@ -112,7 +112,7 @@ TEST(NMT, MallocLimitAllCategoriesHaveHumanReadableNames) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
     if (mem_tag != MemTag::mtNone) {
       expected.set_category_limit(mem_tag, (i + 1) * M, MallocLimitMode::trigger_fatal);
-      option.print("%s%s:%dM", (i > 0 ? "," : ""), NMTUtil::tag_to_name(mem_tag), i + 1);
+      option.print("%s%s:%dM", (i > 0 ? "," : ""), MemTagFactory::human_readable_name_of(mem_tag), i + 1);
     }
   }
   test(option.base(), expected);

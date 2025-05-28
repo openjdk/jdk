@@ -28,6 +28,7 @@
 
 #include "memory/allStatic.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -42,10 +43,13 @@ struct malloclimit {
   MallocLimitMode mode; // Behavior flags
 
   malloclimit() : sz(0), mode(MallocLimitMode::trigger_fatal) {}
-  malloclimit& operator=(malloclimit& other) {
+  malloclimit& operator=(const malloclimit& other) {
     this->sz = other.sz; this->mode = other.mode;
+    return *this;
   }
-  malloclimit(const malloclimit& other) {}
+  malloclimit(const malloclimit& other) {
+    *this = other;
+  }
 };
 
 // forward declaration
@@ -64,7 +68,10 @@ public:
   void set_category_limit(MemTag mem_tag, size_t s, MallocLimitMode mode);
 
   const malloclimit* global_limit() const             { return &_glob; }
-  const malloclimit* category_limit(MemTag mem_tag) const { return &_cat.at_grow(mem_tag, {}); }
+  const malloclimit* category_limit(MemTag mem_tag) const {
+    _cat.at_grow(NMTUtil::tag_to_index(mem_tag));
+    return &_cat.at(NMTUtil::tag_to_index(mem_tag));
+  }
 
   void print_on(outputStream* st) const;
 };
