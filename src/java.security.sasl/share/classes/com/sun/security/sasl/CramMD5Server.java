@@ -32,7 +32,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.logging.Level;
 import java.util.Map;
-import java.util.Random;
 import javax.security.sasl.*;
 import javax.security.auth.callback.*;
 
@@ -56,7 +55,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 final class CramMD5Server extends CramMD5Base implements SaslServer {
 
-    /* Secure Random instance to generate nonce */
+    /* SecureRandom instance to generate random digits used in challenge */
     private static final SecureRandom SECURE_RANDOM = JCAUtil.getDefSecureRandom();
 
     private String fqdn;

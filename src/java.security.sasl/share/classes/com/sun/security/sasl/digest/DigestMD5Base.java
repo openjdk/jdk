@@ -29,11 +29,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
-import java.security.*;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.InvalidKeyException;
+import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
 
@@ -129,7 +132,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
 
     protected static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    /* Secure Random instance to generate nonce */
+    /* SecureRandom instance to generate nonce */
     private static final SecureRandom SECURE_RANDOM = JCAUtil.getDefSecureRandom();
 
     /* ------------------- Variable Fields ----------------------- */
@@ -269,8 +272,6 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
      * is slightly faster and a more compact representation of the same info.
      * @return A non-null byte array containing the nonce value for the
      * digest challenge or response.
-     * Using JCAUtil SecureRandom to be more secure and
-     * achieve comparable performance with Random.
      */
 
     /** This array maps the characters to their 6 bit values */
