@@ -36,7 +36,7 @@ import java.util.Map;
 
 /*
  * @test
- * @bug 8328896
+ * @bug 8328896 8357672
  * @summary test that using very large font sizes used don't break later uses
  */
 
