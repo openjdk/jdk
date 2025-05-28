@@ -1015,6 +1015,43 @@ public final class Collections {
     }
 
 
+    // Wrapper Collections
+
+    /*
+     * This segment of the file contains several groups of APIs and implementation
+     * classes for specialized collections. These groups include, in order:
+     *
+     *  - Unmodifiable Wrappers
+     *  - Synchronized Wrappers
+     *  - Checked (dynamically typesafe) Wrappers
+     *  - Empty Collections
+     *  - Singleton Collections
+     *
+     * There are a large number of collection implementations in this file, and
+     * for the sake of brevity, the following style rules are applied here:
+     *
+     * 1. Single-line methods are often written with the implementation on the same
+     * line as the declaration. Sometimes the braces for a group of such methods
+     * are aligned.
+     *
+     * 2. The wrapper collections change the semantics of the collection interfaces,
+     * sometimes in fundamental ways. Thus they shouldn't inherit any default methods
+     * provided by the collection interfaces, as they might not support the right semantics.
+     * Put another way, the wrapper collections must override all default methods. (However,
+     * it's permitted for a subclass of a wrapper to inherit methods from a wrapper
+     * superclass.) Strictly speaking not every default method need be overridden. However,
+     * given the history of bugs introduced by inheritance of default methods, we have
+     * adopted the simpler, blanket rule of avoiding inheriting any default methods. This
+     * rule is enforced by the test test/jdk/java/util/Collections/Wrappers.java .
+     *
+     * 3. Given the large number of overrides that must be present in many implementations,
+     * the @Override annotation is generally not used. For the most part any methods that
+     * aren't declared as proper overrides will be detected through testing.
+     *
+     * (The @Override annotation still occurs in several places in this file. They'll be
+     * removed over time.)
+     */
+
     // Unmodifiable Wrappers
 
     /**
@@ -1539,10 +1576,12 @@ public final class Collections {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void replaceAll(UnaryOperator<E> operator) {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void sort(Comparator<? super E> c) {
             throw new UnsupportedOperationException();
         }
@@ -4004,6 +4043,7 @@ public final class Collections {
                     i.add(typeCheck(e));
                 }
 
+                @Override
                 public void forEachRemaining(Consumer<? super E> action) {
                     i.forEachRemaining(action);
                 }
@@ -4022,11 +4062,13 @@ public final class Collections {
          *         exception may be thrown after some elements of the list have
          *         already been replaced.
          */
+        @Override
         public void replaceAll(UnaryOperator<E> operator) {
             Objects.requireNonNull(operator);
             list.replaceAll(e -> typeCheck(operator.apply(e)));
         }
 
+        @Override
         public void sort(Comparator<? super E> c) {
             list.sort(c);
         }
