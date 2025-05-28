@@ -69,7 +69,6 @@ public @interface PreviewFeature {
 
         //---
         IMPLICIT_CLASSES, //to be removed when boot JDK is 25
-        @JEP(number=487, title="Scoped Values", status="Fourth Preview")
         SCOPED_VALUES,
         @JEP(number=505, title="Structured Concurrency", status="Fifth Preview")
         STRUCTURED_CONCURRENCY,

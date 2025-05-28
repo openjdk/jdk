@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Stress test ScopedValue with many bindings and rebindings
- * @enablePreview
  * @library /test/lib
  * @key randomness
  * @run junit ManyBindings
