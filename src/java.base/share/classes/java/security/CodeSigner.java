@@ -169,6 +169,6 @@ public final class CodeSigner implements Serializable {
         if (signerCertPath == null) {
             throw new InvalidObjectException("signerCertPath is null");
         }
-        myhash = -1;
+        myhash = 0;
     }
 }
