@@ -128,7 +128,7 @@ const size_t minimumSymbolTableSize = 1024;
           "(Deprecated) Use 32-bit class pointers in 64-bit VM. "           \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
-  product(bool, UseCompactObjectHeaders, false, EXPERIMENTAL,               \
+  product(bool, UseCompactObjectHeaders, false,                             \
           "Use compact 64-bit object headers in 64-bit VM")                 \
                                                                             \
   product(int, ObjectAlignmentInBytes, 8,                                   \
@@ -327,6 +327,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseKyberIntrinsics, false, DIAGNOSTIC,                      \
           "Use intrinsics for the vectorized version of Kyber")             \
+                                                                            \
   product(bool, UseDilithiumIntrinsics, false, DIAGNOSTIC,                  \
           "Use intrinsics for the vectorized version of Dilithium")         \
                                                                             \
@@ -649,6 +650,10 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, StressCompiledExceptionHandlers, false,                     \
           "Exercise compiled exception handlers")                           \
+                                                                            \
+  product(bool, DeoptimizeOnAllocationException, false, DIAGNOSTIC,         \
+          "Deoptimize on exception during allocation instead of using the " \
+          "compiled exception handlers")                                    \
                                                                             \
   develop(bool, InterceptOSException, false,                                \
           "Start debugger when an implicit OS (e.g. null pointer) "         \
