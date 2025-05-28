@@ -5260,7 +5260,7 @@ instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval
 
   match(Set res (CompareAndSwapB mem (Binary oldval newval)));
 
-  ins_cost(LOAD_COST + STORE_COST + ALU_COST * 10 + BRANCH_COST * 4);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{
     "cmpxchg $mem, $oldval, $newval\t# (byte) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -5307,7 +5307,7 @@ instruct compareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval
 
   match(Set res (CompareAndSwapS mem (Binary oldval newval)));
 
-  ins_cost(LOAD_COST + STORE_COST + ALU_COST * 11 + BRANCH_COST * 4);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{
     "cmpxchg $mem, $oldval, $newval\t# (short) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -5327,6 +5327,7 @@ instruct compareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval
 %{
   match(Set res (CompareAndSwapI mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 6 + BRANCH_COST * 4);
 
   format %{
@@ -5347,6 +5348,7 @@ instruct compareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval
 %{
   match(Set res (CompareAndSwapL mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 6 + BRANCH_COST * 4);
 
   format %{
@@ -5369,6 +5371,7 @@ instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval
 
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 6 + BRANCH_COST * 4);
 
   format %{
@@ -5391,6 +5394,7 @@ instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval
 
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 8 + BRANCH_COST * 4);
 
   format %{
@@ -5439,11 +5443,11 @@ instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI new
 
   match(Set res (CompareAndSwapB mem (Binary oldval newval)));
 
-  ins_cost(LOAD_COST + STORE_COST + ALU_COST * 10 + BRANCH_COST * 4);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{
     "cmpxchg $mem, $oldval, $newval\t# (byte) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapB"
+    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapBAcq"
   %}
 
   ins_encode %{
@@ -5486,11 +5490,11 @@ instruct compareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI new
 
   match(Set res (CompareAndSwapS mem (Binary oldval newval)));
 
-  ins_cost(LOAD_COST + STORE_COST + ALU_COST * 11 + BRANCH_COST * 4);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{
     "cmpxchg $mem, $oldval, $newval\t# (short) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapS"
+    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapSAcq"
   %}
 
   ins_encode %{
@@ -5508,6 +5512,7 @@ instruct compareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI new
 
   match(Set res (CompareAndSwapI mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 6 + BRANCH_COST * 4);
 
   format %{
@@ -5530,6 +5535,7 @@ instruct compareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL new
 
   match(Set res (CompareAndSwapL mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 6 + BRANCH_COST * 4);
 
   format %{
@@ -5552,6 +5558,7 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
 
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 6 + BRANCH_COST * 4);
 
   format %{
@@ -5574,6 +5581,7 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN new
 
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 8 + BRANCH_COST * 4);
 
   format %{
@@ -5626,7 +5634,7 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
 
-  ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 5);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeB"
@@ -5670,7 +5678,7 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
 
-  ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 6);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeS"
@@ -5688,6 +5696,7 @@ instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %{
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
 
   format %{
@@ -5706,6 +5715,7 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 %{
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
 
   format %{
@@ -5726,6 +5736,7 @@ instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN ne
 
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 3);
 
   format %{
@@ -5746,6 +5757,7 @@ instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP ne
 
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
 
   format %{
@@ -5790,7 +5802,7 @@ instruct compareAndExchangeBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
 
-  ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 5);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{
     "cmpxchg_acq $res = $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeBAcq"
@@ -5834,7 +5846,7 @@ instruct compareAndExchangeSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
 
-  ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 6);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{
     "cmpxchg_acq $res = $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval, #@compareAndExchangeSAcq"
@@ -5854,6 +5866,7 @@ instruct compareAndExchangeIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
 
   format %{
@@ -5874,6 +5887,7 @@ instruct compareAndExchangeLAcq(iRegLNoSp res, indirect mem, iRegL oldval, iRegL
 
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
 
   format %{
@@ -5894,6 +5908,7 @@ instruct compareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRegN
 
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
 
   format %{
@@ -5914,6 +5929,7 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
 
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST);
 
   format %{
@@ -5959,7 +5975,7 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
 
-  ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 6);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{
     "weak_cmpxchg $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -6005,7 +6021,7 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
 
-  ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 7);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{
     "weak_cmpxchg $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -6024,6 +6040,7 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 %{
   match(Set res (WeakCompareAndSwapI mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
@@ -6043,6 +6060,7 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 %{
   match(Set res (WeakCompareAndSwapL mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
@@ -6064,6 +6082,7 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
 
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 4);
 
   format %{
@@ -6085,6 +6104,7 @@ instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
 
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
@@ -6131,7 +6151,7 @@ instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
 
-  ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 6);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{
     "weak_cmpxchg_acq $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -6177,7 +6197,7 @@ instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
 
-  ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 7);
+  ins_cost(2 * VOLATILE_REF_COST);
 
   format %{
     "weak_cmpxchg_acq $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
@@ -6198,6 +6218,7 @@ instruct weakCompareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
 
   match(Set res (WeakCompareAndSwapI mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
@@ -6219,6 +6240,7 @@ instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL
 
   match(Set res (WeakCompareAndSwapL mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
@@ -6240,6 +6262,7 @@ instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN
 
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 4);
 
   format %{
@@ -6261,6 +6284,7 @@ instruct weakCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP
 
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
 
+  // TODO: If UseZacas use "2 * VOLATILE_REF_COST"
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
