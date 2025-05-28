@@ -93,7 +93,7 @@ public class TerminatingThreadLocal<T> extends CarrierThreadLocal<T> {
     }
 
     /**
-     * A per-terminating-thread registry of TerminatingThreadLocal(s) that have been
+     * A per-platform-thread registry of TerminatingThreadLocal(s) that have been
      * registered but later not unregistered in a particular terminating-thread.
      */
     public static final TerminatingThreadLocal<Collection<TerminatingThreadLocal<?>>> REGISTRY =

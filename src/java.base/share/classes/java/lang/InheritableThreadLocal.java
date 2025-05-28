@@ -91,7 +91,6 @@ public class InheritableThreadLocal<T> extends ThreadLocal<T> {
      */
     @Override
     void createMap(Thread t, T firstValue) {
-        var map = new ThreadLocalMap(this, firstValue);
-        t.setInheritableThreadLocals(map);
+        t.setInheritableThreadLocals(new ThreadLocalMap(this, firstValue));
     }
 }

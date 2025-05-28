@@ -79,8 +79,8 @@ class IOVecWrapper {
         protected void threadTerminated(IOVecWrapper[] cache) {
             IOVecWrapper wrapper = cache[0];
             if (wrapper != null) {
-                wrapper.vecArray.free();
                 cache[0] = null;
+                wrapper.vecArray.free();
             }
         }
     };
