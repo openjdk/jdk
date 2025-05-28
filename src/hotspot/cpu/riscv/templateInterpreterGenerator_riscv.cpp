@@ -765,7 +765,7 @@ void TemplateInterpreterGenerator::lock_method() {
 //      xcpool: cp cache
 //      stack_pointer: previous sp
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
-  // Save ConstMethod* in x15
+  // Save ConstMethod* in x15_const_method for later use to avoid loading multiple times
   Register x15_const_method = x15;
   const Register x15 = noreg;
   __ ld(x15_const_method, Address(xmethod, Method::const_offset()));
