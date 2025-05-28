@@ -799,8 +799,9 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
                      "%zuM", MaxHeapSize/M);
       MetaspaceShared::writing_error();
     } else {
+      oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
       aot_log_error(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
-                     java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+                         message == nullptr ? "(null)" : java_lang_String::as_utf8_string(message));
       MetaspaceShared::writing_error(err_msg("Unexpected exception, use -Xlog:aot%s,exceptions=trace for detail",
                                              CDSConfig::new_aot_flags_used() ? "" : ",cds"));
     }
