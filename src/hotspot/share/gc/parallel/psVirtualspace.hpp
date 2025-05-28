@@ -58,9 +58,6 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
 
   ~PSVirtualSpace();
 
-  PSVirtualSpace();
-  void initialize(ReservedSpace rs);
-
   bool is_in_committed(const void* p) const {
     return (p >= committed_low_addr()) && (p < committed_high_addr());
   }

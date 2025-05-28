@@ -923,15 +923,15 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
 
   // (1) Check if we are loading into the same loader as in dump time.
 
-  if (ik->is_shared_boot_class()) {
+  if (ik->defined_by_boot_loader()) {
     if (class_loader() != nullptr) {
       return false;
     }
-  } else if (ik->is_shared_platform_class()) {
+  } else if (ik->defined_by_platform_loader()) {
     if (class_loader() != java_platform_loader()) {
       return false;
     }
-  } else if (ik->is_shared_app_class()) {
+  } else if (ik->defined_by_app_loader()) {
     if (class_loader() != java_system_loader()) {
       return false;
     }
@@ -961,7 +961,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
                                                     PackageEntry* pkg_entry,
                                                     Handle class_loader) {
   int scp_index = ik->shared_classpath_index();
-  assert(!ik->is_shared_unregistered_class(), "this function should be called for built-in classes only");
+  assert(!ik->defined_by_other_loaders(), "this function should be called for built-in classes only");
   assert(scp_index >= 0, "must be");
   const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(scp_index);
   if (!Universe::is_module_initialized()) {
@@ -1023,7 +1023,7 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
   // + Don't do it for unregistered classes -- they can be unloaded so
   //   super_type->class_loader_data() could be stale.
   // + Don't check if loader data is null, ie. the super_type isn't fully loaded.
-  if (!super_type->is_shared_unregistered_class() && super_type->class_loader_data() != nullptr) {
+  if (!super_type->defined_by_other_loaders() && super_type->class_loader_data() != nullptr) {
     // Check if the superclass is loaded by the current class_loader
     Symbol* name = super_type->name();
     InstanceKlass* check = find_instance_klass(THREAD, name, class_loader);
@@ -1226,7 +1226,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     {
       PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
       InstanceKlass* ik = SystemDictionaryShared::find_builtin_class(class_name);
-      if (ik != nullptr && ik->is_shared_boot_class() && !ik->shared_loading_failed()) {
+      if (ik != nullptr && ik->defined_by_boot_loader() && !ik->shared_loading_failed()) {
         SharedClassLoadingMark slm(THREAD, ik);
         k = load_shared_class(ik, class_loader, Handle(), nullptr,  pkg_entry, CHECK_NULL);
       }

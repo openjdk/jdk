@@ -64,16 +64,8 @@ void VM_Version::initialize() {
       FLAG_SET_ERGO(PowerArchitecturePPC64, 10);
     } else if (VM_Version::has_darn()) {
       FLAG_SET_ERGO(PowerArchitecturePPC64, 9);
-    } else if (VM_Version::has_lqarx()) {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 8);
-    } else if (VM_Version::has_popcntw()) {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 7);
-    } else if (VM_Version::has_cmpb()) {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 6);
-    } else if (VM_Version::has_popcntb()) {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 5);
     } else {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 0);
+      FLAG_SET_ERGO(PowerArchitecturePPC64, 8);
     }
   }
 
@@ -81,20 +73,14 @@ void VM_Version::initialize() {
   switch (PowerArchitecturePPC64) {
     case 10: if (!VM_Version::has_brw()    ) break;
     case  9: if (!VM_Version::has_darn()   ) break;
-    case  8: if (!VM_Version::has_lqarx()  ) break;
-    case  7: if (!VM_Version::has_popcntw()) break;
-    case  6: if (!VM_Version::has_cmpb()   ) break;
-    case  5: if (!VM_Version::has_popcntb()) break;
-    case  0: PowerArchitecturePPC64_ok = true; break;
+    case  8: PowerArchitecturePPC64_ok = true; break;
     default: break;
   }
   guarantee(PowerArchitecturePPC64_ok, "PowerArchitecturePPC64 cannot be set to "
             "%zu on this machine", PowerArchitecturePPC64);
 
   // Power 8: Configure Data Stream Control Register.
-  if (PowerArchitecturePPC64 >= 8 && has_mfdscr()) {
-    config_dscr();
-  }
+  config_dscr();
 
   if (!UseSIGTRAP) {
     MSG(TrapBasedICMissChecks);
@@ -109,27 +95,6 @@ void VM_Version::initialize() {
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
-  // Power7 and later.
-  if (PowerArchitecturePPC64 > 6) {
-    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
-      FLAG_SET_ERGO(UsePopCountInstruction, true);
-    }
-  }
-
-  if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
-    FLAG_SET_ERGO(ConditionalMoveLimit, 0);
-  }
-
-  if (PowerArchitecturePPC64 >= 8) {
-    if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
-      FLAG_SET_ERGO(SuperwordUseVSX, true);
-    }
-  } else {
-    if (SuperwordUseVSX) {
-      warning("SuperwordUseVSX specified, but needs at least Power8.");
-      FLAG_SET_DEFAULT(SuperwordUseVSX, false);
-    }
-  }
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
   if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_ERGO(AlignVector, false);
@@ -198,23 +163,7 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
-               (has_fsqrt()   ? " fsqrt"   : ""),
-               (has_isel()    ? " isel"    : ""),
-               (has_lxarxeh() ? " lxarxeh" : ""),
-               (has_cmpb()    ? " cmpb"    : ""),
-               (has_popcntb() ? " popcntb" : ""),
-               (has_popcntw() ? " popcntw" : ""),
-               (has_fcfids()  ? " fcfids"  : ""),
-               (has_vand()    ? " vand"    : ""),
-               (has_lqarx()   ? " lqarx"   : ""),
-               (has_vcipher() ? " aes"     : ""),
-               (has_vpmsumb() ? " vpmsumb" : ""),
-               (has_mfdscr()  ? " mfdscr"  : ""),
-               (has_vsx()     ? " vsx"     : ""),
-               (has_ldbrx()   ? " ldbrx"   : ""),
-               (has_stdbrx()  ? " stdbrx"  : ""),
-               (has_vshasig() ? " sha"     : ""),
+               "ppc64 sha aes%s%s",
                (has_darn()    ? " darn"    : ""),
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
@@ -283,24 +232,12 @@ void VM_Version::initialize() {
   }
 
   // The AES intrinsic stubs require AES instruction support.
-  if (has_vcipher()) {
-    if (FLAG_IS_DEFAULT(UseAES)) {
-      UseAES = true;
-    }
-  } else if (UseAES) {
-    if (!FLAG_IS_DEFAULT(UseAES))
-      warning("AES instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAES, false);
+  if (FLAG_IS_DEFAULT(UseAES)) {
+    UseAES = true;
   }
 
-  if (UseAES && has_vcipher()) {
-    if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-      UseAESIntrinsics = true;
-    }
-  } else if (UseAESIntrinsics) {
-    if (!FLAG_IS_DEFAULT(UseAESIntrinsics))
-      warning("AES intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+  if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+    UseAESIntrinsics = true;
   }
 
   if (UseAESCTRIntrinsics) {
@@ -308,15 +245,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
-  if (VM_Version::has_vsx()) {
-    if (FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
-      UseGHASHIntrinsics = true;
-    }
-  } else if (UseGHASHIntrinsics) {
-    if (!FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
-      warning("GHASH intrinsics are not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  if (FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
+    UseGHASHIntrinsics = true;
   }
 
   if (FLAG_IS_DEFAULT(UseFMA)) {
@@ -328,14 +258,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
   }
 
-  if (has_vshasig()) {
-    if (FLAG_IS_DEFAULT(UseSHA)) {
-      UseSHA = true;
-    }
-  } else if (UseSHA) {
-    if (!FLAG_IS_DEFAULT(UseSHA))
-      warning("SHA instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseSHA, false);
+  if (FLAG_IS_DEFAULT(UseSHA)) {
+    UseSHA = true;
   }
 
   if (UseSHA1Intrinsics) {
@@ -343,7 +267,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
-  if (UseSHA && has_vshasig()) {
+  if (UseSHA) {
     if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
     }
@@ -352,7 +276,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
   }
 
-  if (UseSHA && has_vshasig()) {
+  if (UseSHA) {
     if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
     }
@@ -370,12 +294,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (UseSecondarySupersTable && PowerArchitecturePPC64 < 7) {
-    if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
-      warning("UseSecondarySupersTable requires Power7 or later.");
-    }
-    FLAG_SET_DEFAULT(UseSecondarySupersTable, false);
-  }
 
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {

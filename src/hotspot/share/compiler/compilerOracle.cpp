@@ -317,8 +317,10 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& me
 }
 
 template<typename T>
-static void register_command(TypedMethodOptionMatcher* matcher,
+static bool register_command(TypedMethodOptionMatcher* matcher,
                              CompileCommandEnum option,
+                             char* errorbuf,
+                             const int buf_size,
                              T value) {
   assert(matcher != option_list, "No circular lists please");
   if (option == CompileCommandEnum::Log && !LogCompilation) {
@@ -331,7 +333,17 @@ static void register_command(TypedMethodOptionMatcher* matcher,
     warning("Blackhole compile option is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions");
     // Delete matcher as we don't keep it
     delete matcher;
-    return;
+    return true;
+  }
+
+  if (!UnlockDiagnosticVMOptions) {
+    const char* name = option2name(option);
+    JVMFlag* flag = JVMFlag::find_declared_flag(name);
+    if (flag != nullptr && flag->is_diagnostic()) {
+      jio_snprintf(errorbuf, buf_size, "VM option '%s' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.", name);
+      delete matcher;
+      return false;
+    }
   }
 
   matcher->init(option, option_list);
@@ -346,7 +358,7 @@ static void register_command(TypedMethodOptionMatcher* matcher,
     matcher->print();
   }
 
-  return;
+  return true;
 }
 
 template<typename T>
@@ -714,7 +726,7 @@ static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* 
   return false;
 }
 
-static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
+static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
         TypedMethodOptionMatcher* matcher, CompileCommandEnum option, char* errorbuf, const int buf_size) {
   int bytes_read = 0;
   const char* ccname = option2name(option);
@@ -733,11 +745,10 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
     }
     if (success) {
       total_bytes_read += bytes_read;
-      line += bytes_read;
-      register_command(matcher, option, value);
-      return;
+      return register_command(matcher, option, errorbuf, buf_size, value);
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
+      return false;
     }
   } else if (type == OptionType::Uintx) {
     uintx value;
@@ -751,21 +762,20 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
     }
     if (success) {
       total_bytes_read += bytes_read;
-      line += bytes_read;
-      register_command(matcher, option, value);
+      return register_command(matcher, option, errorbuf, buf_size, value);
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
+      return false;
     }
   } else if (type == OptionType::Ccstr) {
     ResourceMark rm;
     char* value = NEW_RESOURCE_ARRAY(char, strlen(line) + 1);
     if (sscanf(line, "%255[_a-zA-Z0-9]%n", value, &bytes_read) == 1) {
       total_bytes_read += bytes_read;
-      line += bytes_read;
-      register_command(matcher, option, (ccstr) value);
-      return;
+      return register_command(matcher, option, errorbuf, buf_size, (ccstr) value);
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
+      return false;
     }
   } else if (type == OptionType::Ccstrlist) {
     // Accumulates several strings into one. The internal type is ccstr.
@@ -790,6 +800,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
 
         if (!validator.is_valid()) {
           jio_snprintf(errorbuf, buf_size, "Unrecognized intrinsic detected in %s: %s", option2name(option), validator.what());
+          return false;
         }
       }
 #if !defined(PRODUCT) && defined(COMPILER2)
@@ -798,18 +809,21 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
 
         if (!validator.is_valid()) {
           jio_snprintf(errorbuf, buf_size, "Unrecognized tag name in %s: %s", option2name(option), validator.what());
+          return false;
         }
       } else if (option == CompileCommandEnum::TraceMergeStores) {
         TraceMergeStores::TagValidator validator(value, true);
 
         if (!validator.is_valid()) {
           jio_snprintf(errorbuf, buf_size, "Unrecognized tag name in %s: %s", option2name(option), validator.what());
+          return false;
         }
       } else if (option == CompileCommandEnum::PrintIdealPhase) {
         PhaseNameValidator validator(value);
 
         if (!validator.is_valid()) {
           jio_snprintf(errorbuf, buf_size, "Unrecognized phase name in %s: %s", option2name(option), validator.what());
+          return false;
         }
       } else if (option == CompileCommandEnum::TestOptionList) {
         // all values are ok
@@ -819,35 +833,32 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
         assert(false, "Ccstrlist type option missing validator");
       }
 
-      register_command(matcher, option, (ccstr) value);
-      return;
+      return register_command(matcher, option, errorbuf, buf_size, (ccstr) value);
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
+      return false;
     }
   } else if (type == OptionType::Bool) {
     char value[256];
     if (*line == '\0') {
       // Short version of a CompileCommand sets a boolean Option to true
       // -XXCompileCommand=<Option>,<method pattern>
-      register_command(matcher, option, true);
-      return;
+      return register_command(matcher, option, errorbuf, buf_size,true);
     }
     if (sscanf(line, "%255[a-zA-Z]%n", value, &bytes_read) == 1) {
       if (strcasecmp(value, "true") == 0) {
         total_bytes_read += bytes_read;
-        line += bytes_read;
-        register_command(matcher, option, true);
-        return;
+        return register_command(matcher, option, errorbuf, buf_size,true);
       } else if (strcasecmp(value, "false") == 0) {
         total_bytes_read += bytes_read;
-        line += bytes_read;
-        register_command(matcher, option, false);
-        return;
+        return register_command(matcher, option, errorbuf, buf_size,false);
       } else {
         jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
+        return false;
       }
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
+      return false;
     }
   } else if (type == OptionType::Double) {
     char buffer[2][256];
@@ -857,21 +868,21 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
       char value[512] = "";
       jio_snprintf(value, sizeof(value), "%s.%s", buffer[0], buffer[1]);
       total_bytes_read += bytes_read;
-      line += bytes_read;
-      register_command(matcher, option, atof(value));
-      return;
+      return register_command(matcher, option, errorbuf, buf_size, atof(value));
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
+      return false;
     }
   } else {
     jio_snprintf(errorbuf, buf_size, "Type '%s' not supported ", type_str);
+    return false;
   }
 }
 
 // Scan next option and value in line, return MethodMatcher object on success, nullptr on failure.
 // On failure, error_msg contains description for the first error.
 // For future extensions: set error_msg on first error.
-static void scan_option_and_value(enum OptionType type, char* line, int& total_bytes_read,
+static bool scan_option_and_value(enum OptionType type, char* line, int& total_bytes_read,
                                 TypedMethodOptionMatcher* matcher,
                                 char* errorbuf, const int buf_size) {
   total_bytes_read = 0;
@@ -887,21 +898,21 @@ static void scan_option_and_value(enum OptionType type, char* line, int& total_b
     CompileCommandEnum option = match_option_name(option_buf, &bytes_read2, errorbuf, buf_size);
     if (option == CompileCommandEnum::Unknown) {
       assert(*errorbuf != '\0', "error must have been set");
-      return;
+      return false;
     }
     enum OptionType optiontype = option2type(option);
     if (option2type(option) != type) {
       const char* optiontype_name = optiontype2name(optiontype);
       const char* type_name = optiontype2name(type);
       jio_snprintf(errorbuf, buf_size, "Option '%s' with type '%s' doesn't match supplied type '%s'", option_buf, optiontype_name, type_name);
-      return;
+      return false;
     }
-    scan_value(type, line, total_bytes_read, matcher, option, errorbuf, buf_size);
+    return scan_value(type, line, total_bytes_read, matcher, option, errorbuf, buf_size);
   } else {
     const char* type_str = optiontype2name(type);
     jio_snprintf(errorbuf, buf_size, "Option name for type '%s' should be alphanumeric ", type_str);
+    return false;
   }
-  return;
 }
 
 void CompilerOracle::print_parse_error(char* error_msg, char* original_line) {
@@ -996,8 +1007,7 @@ bool CompilerOracle::parse_from_line(char* line) {
       enum OptionType type = parse_option_type(option_type);
       if (type != OptionType::Unknown) {
         // Type (2) option: parse option name and value.
-        scan_option_and_value(type, line, bytes_read, typed_matcher, error_buf, sizeof(error_buf));
-        if (*error_buf != '\0') {
+        if (!scan_option_and_value(type, line, bytes_read, typed_matcher, error_buf, sizeof(error_buf))) {
           print_parse_error(error_buf, original.get());
           return false;
         }
@@ -1011,7 +1021,10 @@ bool CompilerOracle::parse_from_line(char* line) {
           return false;
         }
         if (option2type(option) == OptionType::Bool) {
-          register_command(typed_matcher, option, true);
+          if (!register_command(typed_matcher, option, error_buf, sizeof(error_buf), true)) {
+            print_parse_error(error_buf, original.get());
+            return false;
+          }
         } else {
           jio_snprintf(error_buf, sizeof(error_buf), "  Missing type '%s' before option '%s'",
                        optiontype2name(option2type(option)), option2name(option));
@@ -1041,11 +1054,17 @@ bool CompilerOracle::parse_from_line(char* line) {
     if (*line == '\0') {
       if (option2type(option) == OptionType::Bool) {
         // if this is a bool option this implies true
-        register_command(matcher, option, true);
+        if (!register_command(matcher, option, error_buf, sizeof(error_buf), true)) {
+          print_parse_error(error_buf, original.get());
+          return false;
+        }
         return true;
       } else if (option == CompileCommandEnum::MemStat) {
         // MemStat default action is to collect data but to not print
-        register_command(matcher, option, (uintx)MemStatAction::collect);
+        if (!register_command(matcher, option, error_buf, sizeof(error_buf), (uintx)MemStatAction::collect)) {
+          print_parse_error(error_buf, original.get());
+          return false;
+        }
         return true;
       } else {
         jio_snprintf(error_buf, sizeof(error_buf), "  Option '%s' is not followed by a value", option2name(option));
@@ -1053,8 +1072,7 @@ bool CompilerOracle::parse_from_line(char* line) {
         return false;
       }
     }
-    scan_value(type, line, bytes_read, matcher, option, error_buf, sizeof(error_buf));
-    if (*error_buf != '\0') {
+    if (!scan_value(type, line, bytes_read, matcher, option, error_buf, sizeof(error_buf))) {
       print_parse_error(error_buf, original.get());
       return false;
     }
@@ -1161,8 +1179,9 @@ bool CompilerOracle::parse_compile_only(char* line) {
     if (method_pattern != nullptr) {
       TypedMethodOptionMatcher* matcher = TypedMethodOptionMatcher::parse_method_pattern(method_pattern, error_buf, sizeof(error_buf));
       if (matcher != nullptr) {
-        register_command(matcher, CompileCommandEnum::CompileOnly, true);
-        continue;
+        if (register_command(matcher, CompileCommandEnum::CompileOnly, error_buf, sizeof(error_buf), true)) {
+          continue;
+        }
       }
     }
     ttyLocker ttyl;
