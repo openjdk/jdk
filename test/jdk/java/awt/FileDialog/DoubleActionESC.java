@@ -87,7 +87,7 @@ public class DoubleActionESC {
 
             if (!latch.await(LATCH_TIMEOUT, SECONDS))
             {
-                System.out.println("Latch timout reached");
+                throw new RuntimeException("Latch timout reached");
             }
             EventQueue.invokeAndWait(() -> {
                 if (fd.isVisible())
