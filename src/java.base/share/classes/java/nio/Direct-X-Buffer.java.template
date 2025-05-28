@@ -71,6 +71,7 @@ class Direct$Type$Buffer$RW$$BO$
 #if[byte]
     // Cached unaligned-access capability
     static final boolean UNALIGNED = Bits.unaligned();
+    private static final long MEM_ZERO_CHUNK_SIZE = 1024 * 1024;
 
     private record Deallocator(long address, long size, int capacity) implements Runnable {
         private Deallocator {
@@ -116,11 +117,9 @@ class Direct$Type$Buffer$RW$$BO$
         }
 
         // Zero in chunks to avoid blocking safepoints for too long
-        long chunkSize = 1024 * 1024;
         long offset = 0;
-
         while (offset < size) {
-            long len = Math.min(chunkSize, size - offset);
+            long len = Math.min(MEM_ZERO_CHUNK_SIZE, size - offset);
             UNSAFE.setMemory(base + offset, len, (byte) 0);
             offset += len;
         }
