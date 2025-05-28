@@ -23,40 +23,33 @@
 
 /*
  * @test
- * @bug 8343580
- * @summary Type error with inner classes of generic classes in functions generic by outer
- * @compile T8343580.java
+ * @bug 8357105
+ * @summary Test stacked string concatenations where the toString result
+ *          of the first StringBuilder chain is wired into an uncommon trap
+ *          located in the second one.
+ * @run main/othervm compiler.stringopts.TestStackedConcatsAppendUncommonTrap
+ * @run main/othervm -XX:-TieredCompilation -Xbatch
+ *                   -XX:CompileOnly=compiler.stringopts.TestStackedConcatsAppendUncommonTrap::*
+ *                   compiler.stringopts.TestStackedConcatsAppendUncommonTrap
  */
 
-class T8343580 {
-   static abstract class Getters<T> {
-      abstract class Getter {
-         abstract T get();
-      }
-   }
+package compiler.stringopts;
 
-   static class Usage1<T, G extends Getters<T>> {
-      public T test(G.Getter getter) {
-         return getter.get();
-      }
-   }
+public class TestStackedConcatsAppendUncommonTrap {
 
-   static class Usage2<T, U extends Getters<T>, G extends U> {
-      public T test(G.Getter getter) {
-         return getter.get();
-      }
-   }
+    public static void main (String... args) {
+        for (int i = 0; i < 10000; i++) {
+            String s = f(" ");
+            if (!s.equals("    ")) {
+                throw new RuntimeException("wrong result.");
+            }
+        }
+    }
 
-   static class Usage3<T, U extends T, G extends Getters<T>> {
-      public T test(G.Getter getter) {
-         return getter.get();
-      }
-   }
-
-   class G2<K> extends Getters<K> {}
-   static class Usage4<M, L extends G2<M>> {
-      M test(L.Getter getter) {
-         return getter.get();
-      }
-   }
+    static String f(String c) {
+        String s = " ";
+        s = new StringBuilder().append(s).append(s).toString();
+        s = new StringBuilder().append(s).append(s == c ? s : "  ").toString();
+        return s;
+    }
 }
