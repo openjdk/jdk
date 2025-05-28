@@ -1142,6 +1142,7 @@ public:
 
     int _depth;
     Type _type;
+    // synchronization object (when type == LOCKED) ot its klass (type == ELIMINATED)
     OopHandle _obj;
 
     OwnedLock(int depth, Type type, OopHandle obj): _depth(depth), _type(type), _obj(obj) {}
@@ -1170,8 +1171,8 @@ public:
 
   Handle _thread_h;
   JavaThread* _java_thread;
-  int _depth;
   bool _retry_handshake;
+  int _stack_depth; // length of _methods and _bcis arrays
   GrowableArray<Method*>* _methods;
   GrowableArray<int>* _bcis;
   JavaThreadStatus _thread_status;
@@ -1183,7 +1184,7 @@ public:
   GetThreadSnapshotClosure(Handle thread_h, JavaThread* java_thread):
     HandshakeClosure("GetThreadSnapshotClosure"),
     _thread_h(thread_h), _java_thread(java_thread),
-    _depth(0), _retry_handshake(false),
+    _retry_handshake(false), _stack_depth(0),
     _methods(nullptr), _bcis(nullptr),
     _thread_status(), _name(nullptr),
     _locks(nullptr), _blocker(), _blocker_owner(nullptr) {
@@ -1228,7 +1229,6 @@ private:
             lock_object = OopHandle(oop_storage(), o());
           }
         }
-
         _blocker = Blocker(Blocker::WAITING_ON, lock_object);
       }
     }
@@ -1352,7 +1352,7 @@ public:
       total_count++;
     }
 
-    _depth = total_count;
+    _stack_depth = total_count;
   }
 };
 
@@ -1421,7 +1421,8 @@ public:
 
   static Handle allocate(InstanceKlass* klass, TRAPS) {
     init(klass, CHECK_NH);
-    return klass->allocate_instance_handle(CHECK_NH);
+    Handle h_k = klass->allocate_instance_handle(CHECK_NH);
+    return h_k;
   }
 
   static void set_name(oop snapshot, oop name) {
@@ -1515,14 +1516,11 @@ oop VMThreadSnapshot::get_thread_snapshot(jobject jthread, TRAPS) {
 
   // StackTrace
   InstanceKlass* ste_klass = vmClasses::StackTraceElement_klass();
-  assert(ste_klass != nullptr, "must be loaded in 1.4+");
-  if (ste_klass->should_be_initialized()) {
-    ste_klass->initialize(CHECK_NULL);
-  }
+  assert(ste_klass != nullptr, "must be loaded");
 
-  objArrayHandle trace = oopFactory::new_objArray_handle(ste_klass, cl._depth, CHECK_NULL);
+  objArrayHandle trace = oopFactory::new_objArray_handle(ste_klass, cl._stack_depth, CHECK_NULL);
 
-  for (int i = 0; i < cl._depth; i++) {
+  for (int i = 0; i < cl._stack_depth; i++) {
     methodHandle method(THREAD, cl._methods->at(i));
     oop element = java_lang_StackTraceElement::create(method, cl._bcis->at(i), CHECK_NULL);
     trace->obj_at_put(i, element);
@@ -1546,17 +1544,15 @@ oop VMThreadSnapshot::get_thread_snapshot(jobject jthread, TRAPS) {
   }
 
   // call static StackTraceElement[] StackTraceElement.of(StackTraceElement[] stackTrace)
-  // to properly initialize STE.
-  {
-    JavaValue result(T_OBJECT);
-    JavaCalls::call_static(&result,
-      ste_klass,
-      vmSymbols::java_lang_StackTraceElement_of_name(),
-      vmSymbols::java_lang_StackTraceElement_of_signature(),
-      trace,
-      CHECK_NULL);
-    // the method return the same trace object
-  }
+  // to properly initialize STEs.
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+    ste_klass,
+    vmSymbols::java_lang_StackTraceElement_of_name(),
+    vmSymbols::java_lang_StackTraceElement_of_signature(),
+    trace,
+    CHECK_NULL);
+  // the method return the same trace array
 
   Symbol* snapshot_klass_name = vmSymbols::jdk_internal_vm_ThreadSnapshot();
   Klass* snapshot_klass = SystemDictionary::resolve_or_fail(snapshot_klass_name, true, CHECK_NULL);
