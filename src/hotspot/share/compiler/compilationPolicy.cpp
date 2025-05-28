@@ -433,6 +433,7 @@ void CompilationPolicy::initialize() {
     int count = CICompilerCount;
     bool c1_only = CompilerConfig::is_c1_only();
     bool c2_only = CompilerConfig::is_c2_or_jvmci_compiler_only();
+    int min_count = (c1_only || c2_only) ? 1 : 2;
 
 #ifdef _LP64
     // Turn on ergonomic compiler count selection
@@ -440,10 +441,8 @@ void CompilationPolicy::initialize() {
       FLAG_SET_DEFAULT(CICompilerCountPerCPU, true);
     }
     if (CICompilerCountPerCPU) {
-      int min_count = (c1_only || c2_only) ? 1 : 2;
-      int active_cpus = os::active_processor_count();
       // Simple log n seems to grow too slowly for tiered, try something faster: log n * log log n
-      int log_cpu = log2i(active_cpus);
+      int log_cpu = log2i(os::active_processor_count());
       int loglog_cpu = log2i(MAX2(log_cpu, 1));
       count = MAX2(log_cpu * loglog_cpu * 3 / 2, min_count);
       // Make sure there is enough space in the code cache to hold all the compiler buffers
@@ -468,7 +467,6 @@ void CompilationPolicy::initialize() {
         // Lower the compiler count such that all buffers fit into the code cache
         count = MAX2(max_count, min_count);
       }
-      assert((!c1_only && !c2_only) || count <= active_cpus, "Too many threads: %d", count);
       FLAG_SET_ERGO(CICompilerCount, count);
     }
 #else
@@ -486,8 +484,10 @@ void CompilationPolicy::initialize() {
 #endif
 
     if (c1_only) {
+      // No C2 compiler threads are needed
       set_c1_count(count);
     } else if (c2_only) {
+      // No C1 compiler threads are needed
       set_c2_count(count);
     } else {
 #if INCLUDE_JVMCI
@@ -505,6 +505,9 @@ void CompilationPolicy::initialize() {
     }
     assert(count == c1_count() + c2_count(), "inconsistent compiler thread count");
     set_increase_threshold_at_ratio();
+  } else {
+    // Interpreter mode creates no compilers
+    FLAG_SET_ERGO(CICompilerCount, 0);
   }
   set_start_time(nanos_to_millis(os::javaTimeNanos()));
 }
