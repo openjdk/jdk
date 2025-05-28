@@ -337,7 +337,7 @@ public class Basic {
             } else if (action.equals("testIO")) {
                 String expected = "standard input";
                 char[] buf = new char[expected.length()+1];
-                int n = new InputStreamReader(System.in, System.getProperty("stdin.encoding")).read(buf,0,buf.length);
+                int n = new InputStreamReader(System.in).read(buf,0,buf.length);
                 if (n != expected.length())
                     System.exit(5);
                 if (! new String(buf,0,n).equals(expected))

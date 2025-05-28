@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,8 +304,8 @@ public class Ktab {
         }
         if (password == null) {
             try {
-                BufferedReader cis = new BufferedReader(new InputStreamReader(
-                        System.in, System.getProperty("stdin.encoding")));
+                BufferedReader cis =
+                    new BufferedReader(new InputStreamReader(System.in));
                 System.out.print("Password for " + pname.toString() + ":");
                 System.out.flush();
                 password = cis.readLine().toCharArray();
@@ -412,8 +412,8 @@ public class Ktab {
             pname = new PrincipalName(principal);
             if (!fopt) {
                 String answer;
-                BufferedReader cis = new BufferedReader(new InputStreamReader(
-                        System.in, System.getProperty("stdin.encoding")));
+                BufferedReader cis =
+                    new BufferedReader(new InputStreamReader(System.in));
                 System.out.print("Are you sure you want to delete "+
                         "service key(s) for " + pname.toString() +
                         " (" + (etype==-1?"all etypes":("etype="+etype)) + ", " +

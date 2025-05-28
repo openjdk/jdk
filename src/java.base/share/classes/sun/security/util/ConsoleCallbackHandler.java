@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,8 +130,8 @@ public class ConsoleCallbackHandler implements CallbackHandler {
 
     /* Reads a line of input */
     private String readLine() throws IOException {
-        InputStreamReader reader = new InputStreamReader(System.in, System.getProperty("stdin.encoding"));
-        String result = new BufferedReader(reader).readLine();
+        String result = new BufferedReader
+            (new InputStreamReader(System.in)).readLine();
         if (result == null) {
             throw new IOException("Cannot read from System.in");
         }

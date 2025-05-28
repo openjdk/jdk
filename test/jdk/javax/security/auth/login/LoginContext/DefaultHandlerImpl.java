@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,8 @@ public class DefaultHandlerImpl implements CallbackHandler {
                 // ignore the provided defaultName
                 System.err.print(nc.getPrompt());
                 System.err.flush();
-                Reader stdinReader = new InputStreamReader(System.in, System.getProperty("stdin.encoding")));
-                nc.setName(new BufferedReader(stdinReader).readLine());
+                nc.setName((new BufferedReader
+                        (new InputStreamReader(System.in))).readLine());
 
             } else if (callbacks[i] instanceof PasswordCallback) {
 
