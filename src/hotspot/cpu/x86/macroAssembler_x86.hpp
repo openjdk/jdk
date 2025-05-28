@@ -1317,9 +1317,6 @@ public:
   void ucomisd(XMMRegister dst, Address        src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
-  void unpckhpd(XMMRegister dst, XMMRegister src) { Assembler::unpckhpd(dst, src); }
-  void unpcklpd(XMMRegister dst, XMMRegister src) { Assembler::unpcklpd(dst, src); }
-
   // Bitwise Logical XOR of Packed Double-Precision Floating-Point Values
   void xorpd(XMMRegister dst, XMMRegister    src);
   void xorpd(XMMRegister dst, Address        src) { Assembler::xorpd(dst, src); }
