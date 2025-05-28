@@ -108,12 +108,24 @@ const char* CDSConfig::default_archive_path() {
   // before CDSConfig::ergo_initialize() is called.
   assert(_cds_ergo_initialize_started, "sanity");
   if (_default_archive_path == nullptr) {
-    char jvm_path[JVM_MAXPATHLEN];
-    os::jvm_path(jvm_path, sizeof(jvm_path));
-    char *end = strrchr(jvm_path, *os::file_separator());
-    if (end != nullptr) *end = '\0';
     stringStream tmp;
-    tmp.print("%s%sclasses", jvm_path, os::file_separator());
+    if (is_vm_statically_linked()) {
+      // It's easier to form the path using JAVA_HOME as os::jvm_path
+      // gives the path to the launcher executable on static JDK.
+      const char* subdir = WINDOWS_ONLY("bin") NOT_WINDOWS("lib");
+      tmp.print("%s%s%s%s%s%sclasses",
+                Arguments::get_java_home(), os::file_separator(),
+                subdir, os::file_separator(),
+                Abstract_VM_Version::vm_variant(), os::file_separator());
+    } else {
+      // Assume .jsa is in the same directory where libjvm resides on
+      // non-static JDK.
+      char jvm_path[JVM_MAXPATHLEN];
+      os::jvm_path(jvm_path, sizeof(jvm_path));
+      char *end = strrchr(jvm_path, *os::file_separator());
+      if (end != nullptr) *end = '\0';
+      tmp.print("%s%sclasses", jvm_path, os::file_separator());
+    }
 #ifdef _LP64
     if (!UseCompressedOops) {
       tmp.print_raw("_nocoops");
