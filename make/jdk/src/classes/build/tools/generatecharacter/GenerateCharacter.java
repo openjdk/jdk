@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1154,21 +1154,18 @@ OUTER:  for (int i = 0; i < n; i += m) {
                          long[] table, int extract, int bits, int size,
                          boolean preshifted, int shift, boolean hexFormat,
                          boolean properties, boolean hexComment) {
-
-        String atype = bits == 1 ? (Csyntax ? "unsigned long" : "int") :
-            bits == 2 ? (Csyntax ? "unsigned long" : "int") :
-            bits == 4 ? (Csyntax ? "unsigned long" : "int") :
-            bits == 8 ? (Csyntax ? "unsigned char" : "byte") :
-            bits == 16 ? (Csyntax ? "unsigned short" : "char") :
-            bits == 32 ? (Csyntax ? "unsigned long" : "int") :
-            (Csyntax ? "int64" : "long");
-        long maxPosEntry = bits == 1 ? Integer.MAX_VALUE : // liu
-            bits == 2 ? Integer.MAX_VALUE :
-            bits == 4 ? Integer.MAX_VALUE :
-            bits == 8 ? Byte.MAX_VALUE :
-            bits == 16 ? Short.MAX_VALUE :
-            bits == 32 ? Integer.MAX_VALUE :
-            Long.MAX_VALUE;
+        String atype = switch (bits) {
+            case 1, 2, 4, 32 -> "int";
+            case 8 -> "byte";
+            case 16 -> "char";
+            default -> "long";
+        };
+        long maxPosEntry = switch (bits) {
+            case 1, 2, 4, 32 -> Integer.MAX_VALUE;
+            case 8 -> Byte.MAX_VALUE;
+            case 16 -> Short.MAX_VALUE;
+            default -> Long.MAX_VALUE;
+        };
         int entriesPerChar = bits <= 16 ? (16 / bits) : -(bits / 16);
         boolean shiftEntries = preshifted && shift != 0;
         if (bits == 8 && tableAsString && useCharForByte) {
@@ -1265,7 +1262,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
                 bits == 16 ? 8 : 4);
             int printMask = properties ? 0 :
             Math.min(1 << size,
-                printPerLine >> (castEntries ? (Csyntax ? 2 : 1) : 0)) - 1;
+                printPerLine >> (castEntries ? 1 : 0)) - 1;
             int commentShift = ((1 << size) == table.length) ? 0 : size;
             int commentMask = ((1 << size) == table.length) ? printMask : (1 << size) - 1;
             long val = 0;
@@ -1292,7 +1289,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
                     if (k != packMask)
                         break PRINT;
                 }
-                if (val > maxPosEntry && !Csyntax) { // liu
+                if (val > maxPosEntry) { // liu
                 // For values that are out of range, convert them to in-range negative values.
                 // Actually, output the '-' and convert them to the negative of the corresponding
                 // in-range negative values.  E.g., convert 130 == -126 (in 8 bits) -> 126.
@@ -1308,18 +1305,16 @@ OUTER:  for (int i = 0; i < n; i += m) {
                     else if (bits == 32 || bits < 8)
                         result.append(hex8((int)val));
                     else {
-                        result.append(hex16(val));
-                        if (!Csyntax)
-                            result.append("L");
+                        result.append(hex16(val))
+                              .append("L");
                     }
                 }
                 else {
                     if (bits == 8)
                         result.append(dec3(val));
                     else if (bits == 64) {
-                        result.append(dec5(val));
-                        if (!Csyntax)
-                            result.append("L");
+                        result.append(dec5(val))
+                              .append("L");
                     }
                     else
                         result.append(dec5(val));
@@ -1659,8 +1654,6 @@ OUTER:  for (int i = 0; i < n; i += m) {
                 nomirror = true;
             else if (args[j].equals("-identifiers"))
                 identifiers = true;
-            else if (args[j].equals("-c"))
-                Csyntax = true;
             else if (args[j].equals("-string"))
                 tableAsString = true;
             else if (args[j].equals("-o")) {
@@ -1762,9 +1755,6 @@ OUTER:  for (int i = 0; i < n; i += m) {
                 }
             }
         }
-        if (Csyntax && tableAsString) {
-            FAIL("Can't specify table as string with C syntax");
-        }
         if (sizes == null) {
             desc.append(" [");
             if (identifiers) {
@@ -1799,17 +1789,15 @@ OUTER:  for (int i = 0; i < n; i += m) {
             desc.append(" [-emojidata " + EmojiDataFileName + ']');
         }
         if (TemplateFileName == null) {
-            TemplateFileName = (Csyntax ? DefaultCTemplateFileName
-                  : DefaultJavaTemplateFileName);
+            TemplateFileName = DefaultJavaTemplateFileName;
             desc.append(" [-template " + TemplateFileName + ']');
         }
         if (OutputFileName == null) {
-            OutputFileName = (Csyntax ? DefaultCOutputFileName
-                    : DefaultJavaOutputFileName);
+            OutputFileName = DefaultJavaOutputFileName;
             desc.append(" [-o " + OutputFileName + ']');
         }
-        commentStart = (Csyntax ? "/*" : "//");
-        commentEnd = (Csyntax ? " */" : "");
+        commentStart = "//";
+        commentEnd = "";
         commandLineDescription = desc.toString().replace("\\", "\\\\");
     }
 
@@ -1865,9 +1853,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
                 preshifted[j] = false;
             }
             else preshifted[j] = true;
-            if (Csyntax)
-                zeroextend[j] = 0;
-            else if (len > 0x7F && len <= 0xFF) {
+            if (len > 0x7F && len <= 0xFF) {
                 if (!useCharForByte) {
                     zeroextend[j] = 0xFF;
                 }
