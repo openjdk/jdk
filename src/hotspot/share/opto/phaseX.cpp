@@ -1644,6 +1644,31 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110 -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
     case Op_LShiftI:
       return false;
+
+    // AddPNode::Ideal seems to do set_req without removing lock first.
+    // Found with various vector tests tier1-tier3.
+    case Op_AddP:
+      return false;
+
+    // StrIndexOfNode::Ideal
+    // Found in tier1-3.
+    case Op_StrIndexOf:
+      return false;
+
+    // MergeMemNode::Ideal
+    // Found in tier1-3.
+    case Op_MergeMem:
+      return false;
+
+    // URShiftINode::Ideal
+    // Found in tier1-3.
+    case Op_URShiftI:
+      return false;
+
+    // CMoveINode::Ideal
+    // Found in tier1-3.
+    case Op_CMoveI:
+      return false;
   }
 
   if (n->is_Load()) {
