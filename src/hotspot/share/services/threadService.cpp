@@ -1168,8 +1168,8 @@ public:
     }
   };
 
-  Handle _java_thread;
-  JavaThread* _thread;
+  Handle _thread_h;
+  JavaThread* _java_thread;
   int _depth;
   bool _retry_handshake;
   GrowableArray<Method*>* _methods;
@@ -1180,13 +1180,14 @@ public:
   Blocker _blocker;
   OopHandle _blocker_owner;
 
-  GetThreadSnapshotClosure(JavaThread* calling_thread, Handle java_thread, JavaThread* thread):
+  GetThreadSnapshotClosure(Handle thread_h, JavaThread* java_thread):
     HandshakeClosure("GetThreadSnapshotClosure"),
-    _java_thread(java_thread), _thread(thread),
+    _thread_h(thread_h), _java_thread(java_thread),
     _depth(0), _retry_handshake(false),
     _methods(nullptr), _bcis(nullptr),
     _thread_status(), _name(nullptr),
-    _locks(nullptr), _blocker(), _blocker_owner(nullptr) { }
+    _locks(nullptr), _blocker(), _blocker_owner(nullptr) {
+  }
   virtual ~GetThreadSnapshotClosure() {
     delete _methods;
     delete _bcis;
@@ -1253,8 +1254,8 @@ private:
           // the monitor is associated with an object, i.e., it is locked
 
           if (depth == 0 && _blocker.is_empty()) {
-            ObjectMonitor* pending_moninor = java_lang_VirtualThread::is_instance(_java_thread())
-              ? java_lang_VirtualThread::current_pending_monitor(_java_thread())
+            ObjectMonitor* pending_moninor = java_lang_VirtualThread::is_instance(_thread_h())
+              ? java_lang_VirtualThread::current_pending_monitor(_thread_h())
               : jvf->thread()->current_pending_monitor();
 
             markWord mark = monitor->owner()->mark();
@@ -1267,7 +1268,7 @@ private:
                   // we have marked ourself as pending on this monitor
                   mon == pending_moninor ||
                   // we are not the owner of this monitor
-                  (_thread != nullptr && !mon->is_entered(_thread))) {
+                  (_java_thread != nullptr && !mon->is_entered(_java_thread))) {
                 _blocker = Blocker(Blocker::WAITING_TO_LOCK, OopHandle(oop_storage(), monitor->owner()));
                 continue; // go to next monitor
               }
@@ -1287,42 +1288,30 @@ public:
       return;
     }
 
-    bool is_virtual = java_lang_VirtualThread::is_instance(_java_thread());
-    if (_thread != nullptr) {
+    bool is_virtual = java_lang_VirtualThread::is_instance(_thread_h());
+    if (_java_thread != nullptr) {
       if (is_virtual) {
         // mounted vthread, use carrier thread state
-        oop carrier_thread = java_lang_VirtualThread::carrier_thread(_java_thread());
+        oop carrier_thread = java_lang_VirtualThread::carrier_thread(_thread_h());
         _thread_status = java_lang_Thread::get_thread_status(carrier_thread);
       } else {
-        _thread_status = java_lang_Thread::get_thread_status(_java_thread());
+        _thread_status = java_lang_Thread::get_thread_status(_thread_h());
       }
     } else {
       // unmounted vthread
-      int vt_state = java_lang_VirtualThread::state(_java_thread());
+      int vt_state = java_lang_VirtualThread::state(_thread_h());
       _thread_status = java_lang_VirtualThread::map_state_to_thread_status(vt_state);
     }
-    _name = OopHandle(oop_storage(), java_lang_Thread::name(_java_thread()));
+    _name = OopHandle(oop_storage(), java_lang_Thread::name(_thread_h()));
 
-    if (_thread != nullptr && !_thread->has_last_Java_frame()) {
+    if (_java_thread != nullptr && !_java_thread->has_last_Java_frame()) {
       // stack trace is empty
       return;
     }
 
-    bool walk_cont = false;
+    bool walk_cont = (_java_thread != nullptr) && (_java_thread->vthread_continuation() != nullptr);
 
-    if (is_virtual) {
-      if (_thread != nullptr) {
-        // if (thread->vthread() != _java_thread()) // We might be inside a System.executeOnCarrierThread
-        const ContinuationEntry* ce = _thread->vthread_continuation();
-        if (ce == nullptr || ce->cont_oop(_thread) != java_lang_VirtualThread::continuation(_java_thread())) {
-          // TODO: handle
-        }
-      }
-    } else {
-      walk_cont = (_thread->vthread_continuation() != nullptr);
-    }
-
-    oop park_blocker = java_lang_Thread::park_blocker(_java_thread());
+    oop park_blocker = java_lang_Thread::park_blocker(_thread_h());
     if (park_blocker != nullptr) {
       _blocker = Blocker(Blocker::PARK_BLOCKER, OopHandle(oop_storage(), park_blocker));
       if (park_blocker->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
@@ -1344,9 +1333,9 @@ public:
     _locks = new (mtInternal) GrowableArray<OwnedLock>(init_length, mtInternal);
     int total_count = 0;
 
-    vframeStream vfst(_thread != nullptr
-      ? vframeStream(_thread, false, true, walk_cont)
-      : vframeStream(java_lang_VirtualThread::continuation(_java_thread())));
+    vframeStream vfst(_java_thread != nullptr
+      ? vframeStream(_java_thread, false, true, walk_cont)
+      : vframeStream(java_lang_VirtualThread::continuation(_thread_h())));
 
     for (;
       !vfst.at_end() && (max_depth == 0 || max_depth != total_count);
@@ -1474,7 +1463,7 @@ oop VMThreadSnapshot::get_thread_snapshot(jobject jthread, TRAPS) {
 
   ResourceMark rm(THREAD);
   HandleMark   hm(THREAD);
-  Handle java_thread(THREAD, JNIHandles::resolve(jthread));
+  Handle thread_h(THREAD, JNIHandles::resolve(jthread));
 
   // wrapper to auto delete JvmtiVTMSTransitionDisabler
   class TransitionDisabler {
@@ -1495,29 +1484,29 @@ oop VMThreadSnapshot::get_thread_snapshot(jobject jthread, TRAPS) {
     }
   } transition_disabler;
 
-  JavaThread* thread = nullptr;
-  bool is_virtual = java_lang_VirtualThread::is_instance(java_thread());
+  JavaThread* java_thread = nullptr;
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());
   Handle carrier_thread;
   if (is_virtual) {
     // 1st need to disable mount/unmount transitions
     transition_disabler.init(jthread);
 
-    carrier_thread = Handle(THREAD, java_lang_VirtualThread::carrier_thread(java_thread()));
+    carrier_thread = Handle(THREAD, java_lang_VirtualThread::carrier_thread(thread_h()));
     if (carrier_thread != nullptr) {
-      thread = java_lang_Thread::thread(carrier_thread());
+      java_thread = java_lang_Thread::thread(carrier_thread());
     }
   } else {
-    thread = java_lang_Thread::thread(java_thread());
+    java_thread = java_lang_Thread::thread(thread_h());
   }
 
   // Handshake with target
-  GetThreadSnapshotClosure cl(THREAD, java_thread, thread);
-  if (thread == nullptr) {
+  GetThreadSnapshotClosure cl(thread_h, java_thread);
+  if (java_thread == nullptr) {
     // unmounted vthread, execute on the current thread
     cl.do_thread(nullptr);
   } else {
     do {
-      Handshake::execute(&cl, &tlh, thread);
+      Handshake::execute(&cl, &tlh, java_thread);
     } while (cl.read_reset_retry());
   }
 
