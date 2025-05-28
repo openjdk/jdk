@@ -245,14 +245,7 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
                 && lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getTextRect();
 
-            // If ImageIcon is present, place menuItem text slightly ahead
-            // else place text slightly before so that text appears
-            // to be at the same line as ImageIcon if it was present
-            if (menuItem.getIcon() != null) {
-                rect.x = rect.x + checkIcon.getIconWidth() / 2;
-            } else {
-                rect.x = rect.x - checkIcon.getIconWidth() / 2;
-            }
+            rect.x = rect.x + checkIcon.getIconWidth() / 2;
             lr.setTextRect(rect);
         }
         if (!lh.getText().isEmpty()) {
