@@ -1722,8 +1722,7 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
       if (cnt->Opcode() == Op_ConvI2L) {
          cnt = cnt->in(1);
       } else {
-         assert(cnt->bottom_type()->isa_long() &&
-                cnt->bottom_type()->is_long()->is_con(), "Long constant expected");
+         assert(cnt->bottom_type()->isa_long(), "long type shift count expected");
          cnt = phase->transform(new ConvL2INode(cnt));
       }
     }
