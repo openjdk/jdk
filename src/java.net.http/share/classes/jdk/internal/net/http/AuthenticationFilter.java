@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,7 +328,7 @@ class AuthenticationFilter implements HeaderFilter {
             req = HttpRequestImpl.newInstanceForAuthentication(req);
             addBasicCredentials(req, proxy, pw, isUTF8);
             return req;
-        } else if (au.retries > retry_limit) {
+        } else if (au.retries >= retry_limit) {
             throw new IOException("too many authentication attempts. Limit: " +
                     retry_limit);
         } else {
