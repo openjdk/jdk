@@ -128,7 +128,6 @@ public final class PlatformEventType extends Type {
         switch (getName()) {
             case Type.EVENT_NAME_PREFIX + "ExecutionSample":
             case Type.EVENT_NAME_PREFIX + "NativeMethodSample":
-            case Type.EVENT_NAME_PREFIX + "CPUTimeSample":
                 return true;
         }
         return false;
