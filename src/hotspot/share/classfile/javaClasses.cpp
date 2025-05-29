@@ -1872,7 +1872,7 @@ ByteSize java_lang_Thread::thread_id_offset() {
 }
 
 oop java_lang_Thread::park_blocker(oop java_thread) {
-  return java_thread->obj_field_acquire(_park_blocker_offset);
+  return java_thread->obj_field_access<MO_RELAXED>(_park_blocker_offset);
 }
 
 oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
@@ -5056,7 +5056,7 @@ void java_util_concurrent_locks_AbstractOwnableSynchronizer::compute_offsets() {
 
 oop java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(oop obj) {
   assert(_owner_offset != 0, "Must be initialized");
-  return obj->obj_field_acquire(_owner_offset);
+  return obj->obj_field(_owner_offset);
 }
 
 #if INCLUDE_CDS

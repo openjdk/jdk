@@ -48,9 +48,10 @@
 
 class GCHeapLog;
 class GCHeapSummary;
+class GCMemoryManager;
+class GCMetaspaceLog;
 class GCTimer;
 class GCTracer;
-class GCMemoryManager;
 class MemoryPool;
 class MetaspaceSummary;
 class ReservedHeapSpace;
@@ -94,7 +95,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class MemAllocator;
 
  private:
-  GCHeapLog* _gc_heap_log;
+  GCHeapLog*      _heap_log;
+  GCMetaspaceLog* _metaspace_log;
 
   // Historic gc information
   size_t _capacity_at_last_gc;
@@ -420,6 +422,8 @@ protected:
 
   virtual void initialize_serviceability() = 0;
 
+  void print_relative_to_gc(GCWhen::Type when) const;
+
  public:
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
@@ -434,6 +438,8 @@ protected:
   // some reason a context doesn't allow using the Access API, then this function
   // explicitly checks if the given memory location contains a null value.
   virtual bool contains_null(const oop* p) const;
+
+  void print_invocation_on(outputStream* st, const char* type, GCWhen::Type when) const;
 
   // Print heap information.
   virtual void print_heap_on(outputStream* st) const = 0;
@@ -454,8 +460,8 @@ protected:
   // Default implementation does nothing.
   virtual void print_tracing_info() const = 0;
 
-  void print_heap_before_gc();
-  void print_heap_after_gc();
+  void print_before_gc() const;
+  void print_after_gc() const;
 
   // Registering and unregistering an nmethod (compiled code) with the heap.
   virtual void register_nmethod(nmethod* nm) = 0;

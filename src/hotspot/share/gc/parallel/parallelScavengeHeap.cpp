@@ -93,8 +93,7 @@ jint ParallelScavengeHeap::initialize() {
       old_rs,
       OldSize,
       MinOldSize,
-      MaxOldSize,
-      "old", 1);
+      MaxOldSize);
 
   assert(young_gen()->max_gen_size() == young_rs.size(),"Consistency check");
   assert(old_gen()->max_gen_size() == old_rs.size(), "Consistency check");
@@ -328,7 +327,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       // Did the VM operation execute? If so, return the result directly.
       // This prevents us from looping until time out on requests that can
       // not be satisfied.
-      if (op.prologue_succeeded()) {
+      if (op.gc_succeeded()) {
         assert(is_in_or_null(op.result()), "result not in heap");
 
         // Exit the loop if the gc time limit has been exceeded.
