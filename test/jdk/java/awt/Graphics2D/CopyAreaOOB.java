@@ -39,12 +39,16 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
+import java.awt.image.MultiResolutionImage;
+import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -52,20 +56,32 @@ public class CopyAreaOOB extends Canvas {
     private static Frame frame;
     private static Robot robot;
     private static BufferedImage captureImg;
+    private static Canvas canvas;
+
     private static StringBuffer errorLog = new StringBuffer();
+
+    private static final Point OFF_FRAME_LOC = new Point(50, 50);
+    private static final int SIZE = 400;
 
     public static void main(String[] args) throws Exception {
         try {
             robot = new Robot();
-            EventQueue.invokeAndWait(CopyAreaOOB::createTestUI);
+
+            createTestUI();
             robot.waitForIdle();
             robot.delay(1000);
 
             EventQueue.invokeAndWait(() -> {
-                Point pt1 = frame.getLocationOnScreen();
-                Rectangle rect = new Rectangle(pt1.x, pt1.y, 400, 400);
+                Point pt1 = canvas.getLocationOnScreen();
+                Rectangle rect = new Rectangle(pt1.x, pt1.y, SIZE, SIZE);
                 captureImg = robot.createScreenCapture(rect);
             });
+
+            // added to move mouse pointer away from test UI
+            // so that it is not captured in the screenshot
+            robot.mouseMove(OFF_FRAME_LOC.x, OFF_FRAME_LOC.y);
+            robot.waitForIdle();
+            robot.delay(100);
 
             // Test pixels
             testRegion("green", 0, 0, 400, 10, 0xff00ff00);
@@ -86,8 +102,8 @@ public class CopyAreaOOB extends Canvas {
 
     private static void createTestUI() {
         frame = new Frame();
-        CopyAreaOOB test = new CopyAreaOOB();
-        frame.add(test);
+        canvas = new CopyAreaOOB();
+        frame.add(canvas);
         frame.setUndecorated(true);
         frame.pack();
         frame.setLocationRelativeTo(null);
@@ -111,7 +127,6 @@ public class CopyAreaOOB extends Canvas {
         // copy the region such that part of it goes below the bottom of the
         // destination surface
         g2d.copyArea(0, 10, 50, h - 10, 60, 10);
-        g2d.dispose();
     }
 
     public Dimension getPreferredSize() {
@@ -121,7 +136,7 @@ public class CopyAreaOOB extends Canvas {
     private static void testRegion(String region,
                                    int x1, int y1, int x2, int y2,
                                    int expected) {
-        System.out.print("Testing region: " + region);
+        System.out.print("Test region: " + region);
         for (int y = y1; y < y2; y++) {
             for (int x = x1; x < x2; x++) {
                 int actual = captureImg.getRGB(x, y);
@@ -141,13 +156,17 @@ public class CopyAreaOOB extends Canvas {
     }
 
     private static void saveImages() {
-        GraphicsConfiguration ge = GraphicsEnvironment
-                .getLocalGraphicsEnvironment().getDefaultScreenDevice()
-                .getDefaultConfiguration();
-        BufferedImage screenCapture = robot.createScreenCapture(ge.getBounds());
+        GraphicsConfiguration ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                                                      .getDefaultScreenDevice()
+                                                      .getDefaultConfiguration();
+
+        MultiResolutionImage mrImage = robot.createMultiResolutionScreenCapture(ge.getBounds());
+        List<Image> variants = mrImage.getResolutionVariants();
+        RenderedImage screenCapture = (RenderedImage) variants.get(variants.size() - 1);
+
         try {
             ImageIO.write(screenCapture, "png", new File("fullscreen.png"));
-            ImageIO.write(captureImg, "png", new File("frame.png"));
+            ImageIO.write(captureImg, "png", new File("canvas.png"));
         } catch (IOException e) {
             System.err.println("Can't write image " + e);
         }
