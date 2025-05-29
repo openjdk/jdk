@@ -164,7 +164,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MEd" alt="variant">E, d/M</dateFormatItem>
 						<dateFormatItem id="UMd">U-MM-dd</dateFormatItem>
 						<dateFormatItem id="UMd" alt="variant">d/M/U</dateFormatItem>
-						<dateFormatItem id="yMd" alt="variant">d/M/r</dateFormatItem>
 						<dateFormatItem id="yyyyM">r-MM</dateFormatItem>
 						<dateFormatItem id="yyyyMd">r-MM-dd</dateFormatItem>
 						<dateFormatItem id="yyyyMd" alt="variant">d/M/r</dateFormatItem>

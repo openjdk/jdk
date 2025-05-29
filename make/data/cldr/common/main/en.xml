@@ -480,6 +480,7 @@ annotations.
 			<language type="ojs">Oji-Cree</language>
 			<language type="ojw">Western Ojibwa</language>
 			<language type="oka">Okanagan</language>
+			<language type="oka" alt="variant">Colville Salish</language>
 			<language type="om">Oromo</language>
 			<language type="or">Odia</language>
 			<language type="os">Ossetic</language>
@@ -1338,8 +1339,8 @@ annotations.
 			<key type="i0">Input Method</key>
 			<key type="k0">Keyboard</key>
 			<key type="kv">Highest Ignored</key>
-			<key type="lb">Line Break Strictness</key>
-			<key type="lw">Line Breaks In Words Setting</key>
+			<key type="lb">CJK Line Break</key>
+			<key type="lw">Line Breaks within Words</key>
 			<key type="m0">Transform Rules</key>
 			<key type="ms">Measurement System</key>
 			<key type="mu">Measurement Unit</key>
@@ -1379,12 +1380,15 @@ annotations.
 			<type key="calendar" type="islamic-civil">Hijri Calendar (tabular, civil epoch)</type>
 			<type key="calendar" type="islamic-civil" scope="core">Hijri (tabular, civil epoch)</type>
 			<type key="calendar" type="islamic-rgsa">Hijri Calendar (Saudi Arabia, sighting)</type>
+			<!-- Added values for English -->
+			<type key="calendar" type="islamic-rgsa" scope="core">Hijri, Saudi Arabia sighting</type>
 			<type key="calendar" type="islamic-tbla">Hijri Calendar (tabular, astronomical epoch)</type>
 			<type key="calendar" type="islamic-tbla" scope="core">Hijri (tabular, astronomical epoch)</type>
 			<type key="calendar" type="islamic-umalqura">Hijri Calendar (Umm al-Qura)</type>
 			<type key="calendar" type="islamic-umalqura" scope="core">Hijri (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Gregorian Calendar (Year First)</type>
 			<type key="calendar" type="iso8601" alt="variant">ISO 8601 Order</type>
+			<type key="calendar" type="iso8601" scope="core">Gregorian YMD</type>
 			<type key="calendar" type="japanese">Japanese Calendar</type>
 			<type key="calendar" type="japanese" scope="core">Japanese</type>
 			<type key="calendar" type="persian">Persian Calendar</type>
@@ -1411,7 +1415,9 @@ annotations.
 			<type key="collation" type="ducet">Default Unicode Sort Order</type>
 			<type key="collation" type="ducet" scope="core">Default Unicode</type>
 			<type key="collation" type="emoji">Emoji Sort Order</type>
+			<type key="collation" type="emoji" scope="core">Emoji</type>
 			<type key="collation" type="eor">European Ordering Rules</type>
+			<type key="collation" type="eor" scope="core">European rules</type>
 			<type key="collation" type="phonebook">Phonebook Sort Order</type>
 			<type key="collation" type="phonebook" scope="core">Phonebook</type>
 			<type key="collation" type="phonetic">Phonetic Sort Order</type>
@@ -1421,6 +1427,7 @@ annotations.
 			<type key="collation" type="search">General-Purpose Search</type>
 			<type key="collation" type="search" scope="core">Search</type>
 			<type key="collation" type="searchjl">Search By Hangul Initial Consonant</type>
+			<type key="collation" type="searchjl" scope="core">Korean initial consonant</type>
 			<type key="collation" type="standard">Standard Sort Order</type>
 			<type key="collation" type="standard" scope="core">Standard</type>
 			<type key="collation" type="stroke">Stroke Sort Order</type>
@@ -1468,19 +1475,19 @@ annotations.
 			<type key="d0" type="title">To Titlecase</type>
 			<type key="d0" type="upper">To Uppercase</type>
 			<type key="d0" type="zawgyi">To Zawgyi Myanmar Encoding</type>
-			<type key="em" type="default">Use Default Presentation For Emoji Characters</type>
+			<type key="em" type="default">Default Presentation For Emoji</type>
 			<type key="em" type="default" scope="core">Default</type>
-			<type key="em" type="emoji">Prefer Emoji Presentation For Emoji Characters</type>
+			<type key="em" type="emoji">Emoji Presentation For Emoji</type>
 			<type key="em" type="emoji" scope="core">Emoji</type>
-			<type key="em" type="text">Prefer Text Presentation For Emoji Characters</type>
+			<type key="em" type="text">Text Presentation For Emoji</type>
 			<type key="em" type="text" scope="core">Text</type>
-			<type key="fw" type="fri">First Day of Week Is Friday</type>
-			<type key="fw" type="mon">First Day of Week Is Monday</type>
-			<type key="fw" type="sat">First Day of Week Is Saturday</type>
-			<type key="fw" type="sun">First Day of Week Is Sunday</type>
-			<type key="fw" type="thu">First Day of Week Is Thursday</type>
-			<type key="fw" type="tue">First Day of Week Is Tuesday</type>
-			<type key="fw" type="wed">First Day of Week Is Wednesday</type>
+			<type key="fw" type="fri">First day of week: Friday</type>
+			<type key="fw" type="mon">First day of week: Monday</type>
+			<type key="fw" type="sat">First day of week: Saturday</type>
+			<type key="fw" type="sun">First day of week: Sunday</type>
+			<type key="fw" type="thu">First day of week: Thursday</type>
+			<type key="fw" type="tue">First day of week: Tuesday</type>
+			<type key="fw" type="wed">First day of week: Wednesday</type>
 			<type key="h0" type="hybrid">Hybrid</type>
 			<type key="hc" type="h11">12 Hour System (0–11)</type>
 			<type key="hc" type="h11" scope="core">12 (0–11)</type>
@@ -1524,9 +1531,28 @@ annotations.
 			<type key="k0" type="viqr">Vietnamese VIQR Keyboard</type>
 			<type key="k0" type="windows">Windows Keyboard</type>
 			<type key="kv" type="currency">Ignore Symbols affects spaces, punctuation, all symbols</type>
+			<!-- <type key="ka" type="noignore" scope="core">Punctuation… not ignored</type>
+				 <type key="ka" type="shifted" scope="core">Punctuation… ignored</type>
+				 <type key="kf" type="lower" scope="core">Lowercase &lt; uppercase</type>
+				 <type key="kf" type="upper" scope="core">Uppercase &lt; lowercase</type>
+				 <type key="kr" type="currency" scope="core">Currency reordering code</type>
+				 <type key="kr" type="digit" scope="core">Digit (number) reordering code</type>
+				 <type key="kr" type="punct" scope="core">Punctuation reordering code</type>
+				 <type key="kr" type="space" scope="core">Whitespace reordering code</type>
+				 <type key="kr" type="symbol" scope="core">Symbol reordering code (other than currency)</type>
+				 <type key="ks" type="identic" scope="core">The identical level</type>
+				 <type key="ks" type="level1" scope="core">The primary level</type>
+				 <type key="ks" type="level2" scope="core">The secondary level</type>
+				 <type key="ks" type="level3" scope="core">The tertiary level</type>
+				 <type key="ks" type="level4" scope="core">The quaternary level</type>
+			-->
+			<type key="kv" type="currency" scope="core">Shift Spaces, punctuation, all symbols</type>
 			<type key="kv" type="punct">Ignore Symbols affects spaces and punctuation only</type>
+			<type key="kv" type="punct" scope="core">Shift spaces, punctuation</type>
 			<type key="kv" type="space">Ignore Symbols affects spaces only</type>
+			<type key="kv" type="space" scope="core">Shift spaces, punctuation</type>
 			<type key="kv" type="symbol">Ignore Symbols affects spaces, punctuation, non-currency symbols</type>
+			<type key="kv" type="symbol" scope="core">Shift spaces, punctuation, non-currency symbols</type>
 			<type key="lb" type="loose">Loose Line Break Style</type>
 			<type key="lb" type="loose" scope="core">Loose</type>
 			<type key="lb" type="normal">Normal Line Break Style</type>
@@ -1587,8 +1613,10 @@ annotations.
 			<type key="numbers" type="arab">Arabic-Indic Digits</type>
 			<type key="numbers" type="arabext">Extended Arabic-Indic Digits</type>
 			<type key="numbers" type="arabext" alt="short">X Arabic-Indic Digits</type>
+			<type key="numbers" type="arabext" scope="core">Extended Arabic-Indic</type>
 			<type key="numbers" type="armn">Armenian Numerals</type>
 			<type key="numbers" type="armnlow">Armenian Lowercase Numerals</type>
+			<type key="numbers" type="armnlow" scope="core">Armenian lowercase</type>
 			<type key="numbers" type="bali">Balinese Digits</type>
 			<type key="numbers" type="beng">Bangla Digits</type>
 			<type key="numbers" type="bhks">Bhaiksuki Digits</type>
@@ -1601,29 +1629,38 @@ annotations.
 			<type key="numbers" type="diak">Dives Akuru Digits</type>
 			<type key="numbers" type="ethi">Ethiopic Numerals</type>
 			<type key="numbers" type="finance">Financial Numerals</type>
+			<type key="numbers" type="finance" scope="core">Financial</type>
 			<type key="numbers" type="fullwide">Full-Width Digits</type>
+			<type key="numbers" type="fullwide" scope="core">Full-width</type>
 			<type key="numbers" type="gara">Garay Digits</type>
 			<type key="numbers" type="geor">Georgian Numerals</type>
 			<type key="numbers" type="gong">Gunjala Gondi digits</type>
 			<type key="numbers" type="gonm">Masaram Gondi digits</type>
 			<type key="numbers" type="grek">Greek Numerals</type>
 			<type key="numbers" type="greklow">Greek Lowercase Numerals</type>
+			<type key="numbers" type="greklow" scope="core">Greek lowercase</type>
 			<type key="numbers" type="gujr">Gujarati Digits</type>
 			<type key="numbers" type="gukh">Gurung Khema Digits</type>
 			<type key="numbers" type="guru">Gurmukhi Digits</type>
 			<type key="numbers" type="hanidays">Chinese Calendar Day-of-Month Numerals</type>
+			<type key="numbers" type="hanidays" scope="core">Han-character day-of-month numbering for traditional calendars</type>
 			<type key="numbers" type="hanidec">Chinese Decimal Numerals</type>
+			<type key="numbers" type="hanidec" scope="core">Positional decimal system using Chinese number ideographs as digits</type>
 			<type key="numbers" type="hans">Simplified Chinese Numerals</type>
 			<type key="numbers" type="hansfin">Simplified Chinese Financial Numerals</type>
+			<type key="numbers" type="hansfin" scope="core">Simplified Chinese financial</type>
 			<type key="numbers" type="hant">Traditional Chinese Numerals</type>
 			<type key="numbers" type="hantfin">Traditional Chinese Financial Numerals</type>
+			<type key="numbers" type="hantfin" scope="core">Traditional Chinese financial</type>
 			<type key="numbers" type="hebr">Hebrew Numerals</type>
 			<type key="numbers" type="hmng">Pahawh Hmong Digits</type>
 			<type key="numbers" type="hmnp">Nyiakeng Puachue Hmong Digits</type>
 			<type key="numbers" type="java">Javanese Digits</type>
 			<type key="numbers" type="jpan">Japanese Numerals</type>
 			<type key="numbers" type="jpanfin">Japanese Financial Numerals</type>
+			<type key="numbers" type="jpanfin" scope="core">Japanese financial</type>
 			<type key="numbers" type="jpanyear">Japanese Calendar Gannen Year Numerals</type>
+			<type key="numbers" type="jpanyear" scope="core">Japanese first-year Gannen numbering</type>
 			<type key="numbers" type="kali">Kayah Li Digits</type>
 			<type key="numbers" type="kawi">Kawi Digits</type>
 			<type key="numbers" type="khmr">Khmer Digits</type>
@@ -1631,15 +1668,21 @@ annotations.
 			<type key="numbers" type="krai">Kirat Rai Digits</type>
 			<type key="numbers" type="lana">Tai Tham Hora Digits</type>
 			<type key="numbers" type="lanatham">Tai Tham Tham Digits</type>
+			<type key="numbers" type="lanatham" scope="core">Tai Tham Tham (ecclesiastical)</type>
 			<type key="numbers" type="laoo">Lao Digits</type>
 			<type key="numbers" type="latn">Western Digits</type>
 			<type key="numbers" type="lepc">Lepcha Digits</type>
 			<type key="numbers" type="limb">Limbu Digits</type>
 			<type key="numbers" type="mathbold">Mathematical Bold Digits</type>
+			<type key="numbers" type="mathbold" scope="core">Mathematical bold</type>
 			<type key="numbers" type="mathdbl">Mathematical Double-Struck Digits</type>
+			<type key="numbers" type="mathdbl" scope="core">Mathematical double-struck</type>
 			<type key="numbers" type="mathmono">Mathematical Monospace Digits</type>
+			<type key="numbers" type="mathmono" scope="core">Mathematical monospace</type>
 			<type key="numbers" type="mathsanb">Mathematical Sans-Serif Bold Digits</type>
+			<type key="numbers" type="mathsanb" scope="core">Mathematical sans-serif bold</type>
 			<type key="numbers" type="mathsans">Mathematical Sans-Serif Digits</type>
+			<type key="numbers" type="mathsans" scope="core">Mathematical sans-serif</type>
 			<type key="numbers" type="mlym">Malayalam Digits</type>
 			<type key="numbers" type="modi">Modi Digits</type>
 			<type key="numbers" type="mong">Mongolian Digits</type>
@@ -1647,11 +1690,16 @@ annotations.
 			<type key="numbers" type="mtei">Meetei Mayek Digits</type>
 			<type key="numbers" type="mymr">Myanmar Digits</type>
 			<type key="numbers" type="mymrepka">Myanmar Eastern Pwo Karen Digits</type>
+			<type key="numbers" type="mymrepka" scope="core">Myanmar Eastern Pwo Karen</type>
 			<type key="numbers" type="mymrpao">Myanmar Pao Digits</type>
+			<type key="numbers" type="mymrpao" scope="core">Myanmar Pao</type>
 			<type key="numbers" type="mymrshan">Myanmar Shan Digits</type>
+			<type key="numbers" type="mymrshan" scope="core">Myanmar Shan</type>
 			<type key="numbers" type="mymrtlng">Myanmar Tai Laing Digits</type>
+			<type key="numbers" type="mymrtlng" scope="core">Myanmar Tai Laing</type>
 			<type key="numbers" type="nagm">Nag Mundari Digits</type>
 			<type key="numbers" type="native">Native Digits</type>
+			<type key="numbers" type="native" scope="core">Native digits</type>
 			<type key="numbers" type="newa">Newa Digits</type>
 			<type key="numbers" type="nkoo">N’Ko Digits</type>
 			<type key="numbers" type="olck">Ol Chiki Digits</type>
@@ -1659,11 +1707,15 @@ annotations.
 			<type key="numbers" type="orya">Odia Digits</type>
 			<type key="numbers" type="osma">Osmanya Digits</type>
 			<type key="numbers" type="outlined">Outlined Digits</type>
+			<type key="numbers" type="outlined" scope="core">Outlined</type>
 			<type key="numbers" type="rohg">Hanifi Rohingya digits</type>
 			<type key="numbers" type="roman">Roman Numerals</type>
+			<type key="numbers" type="roman" scope="core">Roman uppercase</type>
 			<type key="numbers" type="romanlow">Roman Lowercase Numerals</type>
+			<type key="numbers" type="romanlow" scope="core">Roman lowercase</type>
 			<type key="numbers" type="saur">Saurashtra Digits</type>
 			<type key="numbers" type="segment">Segmented Digits</type>
+			<type key="numbers" type="segment" scope="core">Segmented</type>
 			<type key="numbers" type="shrd">Sharada Digits</type>
 			<type key="numbers" type="sind">Khudawadi Digits</type>
 			<type key="numbers" type="sinh">Sinhala Lith Digits</type>
@@ -1674,6 +1726,7 @@ annotations.
 			<type key="numbers" type="talu">New Tai Lue Digits</type>
 			<type key="numbers" type="taml">Traditional Tamil Numerals</type>
 			<type key="numbers" type="tamldec">Tamil Digits</type>
+			<type key="numbers" type="tamldec" scope="core">Modern Tamil</type>
 			<type key="numbers" type="telu">Telugu Digits</type>
 			<type key="numbers" type="thai">Thai Digits</type>
 			<type key="numbers" type="tibt">Tibetan Digits</type>
@@ -1681,6 +1734,7 @@ annotations.
 			<type key="numbers" type="tnsa">Tangsa Digits</type>
 			<type key="numbers" type="tols">Tolong Siki Digits</type>
 			<type key="numbers" type="traditional">Traditional Numerals</type>
+			<type key="numbers" type="traditional" scope="core">Traditional numerals</type>
 			<type key="numbers" type="vaii">Vai Digits</type>
 			<type key="numbers" type="wara">Warang Citi Digits</type>
 			<type key="numbers" type="wcho">Wancho Digits</type>
@@ -1697,6 +1751,7 @@ annotations.
 			<type key="ss" type="standard" scope="core">On</type>
 			<type key="t0" type="und">Unspecified Machine Translation</type>
 			<type key="va" type="posix">POSIX Compliant Locale</type>
+			<type key="va" type="posix" scope="core">POSIX variant</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metric</measurementSystemName>
@@ -6738,9 +6793,9 @@ annotations.
 				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
-				<displayName>Kyrgystani Som</displayName>
-				<displayName count="one">Kyrgystani som</displayName>
-				<displayName count="other">Kyrgystani soms</displayName>
+				<displayName>Kyrgyz Som</displayName>
+				<displayName count="one">Kyrgyz som</displayName>
+				<displayName count="other">Kyrgyz soms</displayName>
 				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">

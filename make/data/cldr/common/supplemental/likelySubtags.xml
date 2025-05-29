@@ -1213,7 +1213,14 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Hira" to="ja_Hira_JP"/>		<!--?‧Hiragana‧?	➡ Japanese‧Hiragana‧Japan-->
 		<likelySubtag from="und_Hluw" to="hlu_Hluw_TR"/>		<!--?‧Anatolian Hieroglyphs‧?	➡ Hieroglyphic Luwian‧Anatolian Hieroglyphs‧Türkiye-->
 		<likelySubtag from="und_Hmng" to="hnj_Hmng_LA"/>		<!--?‧Pahawh Hmong‧?	➡ Hmong Njua‧Pahawh Hmong‧Laos-->
-		<likelySubtag from="und_Hmnp" to="hnj_Hmnp_US"/>		<!--?‧Nyiakeng Puachue Hmong‧?	➡ Hmong Njua‧Nyiakeng Puachue Hmong‧United States-->
+		<likelySubtag from="und_Hmnp" to="mww_Hmnp_US"/>		<!--?‧Nyiakeng Puachue Hmong‧?	➡ Hmong Daw‧Nyiakeng Puachue Hmong‧United States-->
+		<likelySubtag from="und_Hmnp_AU" to="hnj_Hmnp_AU"/>		<!--?‧Nyiakeng Puachue Hmong‧Australia	➡ Hmong Njua‧Nyiakeng Puachue Hmong‧Australia-->
+		<likelySubtag from="und_Hmnp_FR" to="hnj_Hmnp_FR"/>		<!--?‧Nyiakeng Puachue Hmong‧France	➡ Hmong Njua‧Nyiakeng Puachue Hmong‧France-->
+		<likelySubtag from="und_Hmnp_GF" to="hnj_Hmnp_GF"/>		<!--?‧Nyiakeng Puachue Hmong‧French Guiana	➡ Hmong Njua‧Nyiakeng Puachue Hmong‧French Guiana-->
+		<likelySubtag from="und_Hmnp_LA" to="hnj_Hmnp_LA"/>		<!--?‧Nyiakeng Puachue Hmong‧Laos	➡ Hmong Njua‧Nyiakeng Puachue Hmong‧Laos-->
+		<likelySubtag from="und_Hmnp_MM" to="hnj_Hmnp_MM"/>		<!--?‧Nyiakeng Puachue Hmong‧Myanmar (Burma)	➡ Hmong Njua‧Nyiakeng Puachue Hmong‧Myanmar (Burma)-->
+		<likelySubtag from="und_Hmnp_SR" to="hnj_Hmnp_SR"/>		<!--?‧Nyiakeng Puachue Hmong‧Suriname	➡ Hmong Njua‧Nyiakeng Puachue Hmong‧Suriname-->
+		<likelySubtag from="und_Hmnp_TH" to="hnj_Hmnp_TH"/>		<!--?‧Nyiakeng Puachue Hmong‧Thailand	➡ Hmong Njua‧Nyiakeng Puachue Hmong‧Thailand-->
 		<likelySubtag from="und_Hung" to="hu_Hung_HU"/>		<!--?‧Old Hungarian‧?	➡ Hungarian‧Old Hungarian‧Hungary-->
 		<likelySubtag from="und_Ital" to="ett_Ital_IT"/>		<!--?‧Old Italic‧?	➡ Etruscan‧Old Italic‧Italy-->
 		<likelySubtag from="und_Jamo" to="ko_Jamo_KR"/>		<!--?‧Jamo‧?	➡ Korean‧Jamo‧South Korea-->

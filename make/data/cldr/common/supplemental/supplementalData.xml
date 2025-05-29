@@ -2589,7 +2589,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="nxq" populationPercent="0.024"/>	<!--Naxi-->
 			<languagePopulation type="khb" populationPercent="0.019" references="R1094"/>	<!--Lü-->
 			<languagePopulation type="tdd" populationPercent="0.019"/>	<!--Tai Nüa-->
-			<languagePopulation type="mww" populationPercent="0.0165"/>	<!--Hmong Daw-->
+			<languagePopulation type="mww" populationPercent="0.017" references="R1385"/>	<!--Hmong Daw-->
 			<languagePopulation type="lcp" populationPercent="0.0058"/>	<!--Western Lawa-->
 			<languagePopulation type="en" populationPercent="0.0045"/>	<!--English-->
 			<languagePopulation type="hnj" populationPercent="0.004" references="R1107"/>	<!--Hmong Njua-->
@@ -2811,6 +2811,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="nl" populationPercent="0.13"/>	<!--Dutch-->
 			<languagePopulation type="eu" populationPercent="0.13"/>	<!--Basque-->
 			<languagePopulation type="frp" populationPercent="0.094"/>	<!--Arpitan-->
+			<languagePopulation type="mww" populationPercent="0.015" references="R1385"/>	<!--Hmong Daw-->
 			<languagePopulation type="ia" populationPercent="0.0002" references="R1298"/>	<!--Interlingua-->
 		</territory>
 		<territory type="GA" gdp="48200000000" literacyPercent="89" population="2455110">	<!--Gabon-->
@@ -3302,6 +3303,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="lo" populationPercent="69" officialStatus="official"/>	<!--Lao-->
 			<languagePopulation type="kjg" populationPercent="5.8" references="R1230"/>	<!--Khmu-->
 			<languagePopulation type="hnj" populationPercent="3" references="R1107"/>	<!--Hmong Njua-->
+			<languagePopulation type="mww" populationPercent="2.3" references="R1385"/>	<!--Hmong Daw-->
 			<languagePopulation type="kdt" populationPercent="0.96" references="R1231"/>	<!--Kuy-->
 		</territory>
 		<territory type="LB" gdp="65820000000" literacyPercent="89.6" population="5364480">	<!--Lebanon-->
@@ -4028,6 +4030,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="mnw" populationPercent="0.17"/>	<!--Mon-->
 			<languagePopulation type="hnj" populationPercent="0.098" references="R1107"/>	<!--Hmong Njua-->
 			<languagePopulation type="shn" populationPercent="0.096"/>	<!--Shan-->
+			<languagePopulation type="mww" populationPercent="0.047" references="R1385"/>	<!--Hmong Daw-->
 			<languagePopulation type="lcp" literacyPercent="25" populationPercent="0.01"/>	<!--Western Lawa-->
 			<languagePopulation type="lwl" populationPercent="0.01"/>	<!--Eastern Lawa-->
 			<languagePopulation type="pi_Thai" populationPercent="0" references="R1006"/>	<!--Pali (Thai)-->
@@ -4166,7 +4169,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="vi" populationPercent="0.34"/>	<!--Vietnamese-->
 			<languagePopulation type="ko" populationPercent="0.3"/>	<!--Korean-->
 			<languagePopulation type="ru" populationPercent="0.24"/>	<!--Russian-->
-			<languagePopulation type="mww" populationPercent="0.066"/>	<!--Hmong Daw-->
+			<languagePopulation type="mww" populationPercent="0.068" references="R1385"/>	<!--Hmong Daw-->
 			<languagePopulation type="nv" populationPercent="0.05"/>	<!--Navajo-->
 			<languagePopulation type="yi" populationPercent="0.049" references="R1262"/>	<!--Yiddish-->
 			<languagePopulation type="pdc" populationPercent="0.039"/>	<!--Pennsylvania German-->
@@ -4180,6 +4183,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="lkt" populationPercent="0.0024" references="R1240"/>	<!--Lakota-->
 			<languagePopulation type="ik" writingPercent="5" populationPercent="0.0023" references="R1017"/>	<!--Inupiaq-->
 			<languagePopulation type="mus" populationPercent="0.0012"/>	<!--Muscogee-->
+			<languagePopulation type="oka" populationPercent="0.0001" references="R1384"/>	<!--Okanagan-->
 			<languagePopulation type="io" populationPercent="0"/>	<!--Ido-->
 			<languagePopulation type="cic" populationPercent="0"/>	<!--Chickasaw-->
 			<languagePopulation type="cad" populationPercent="0"/>	<!--Caddo-->
@@ -4215,6 +4219,7 @@ XXX Code for transations where no currency is involved
 		</territory>
 		<territory type="VN" gdp="1354000000000" literacyPercent="93.4" population="105759000">	<!--Vietnam-->
 			<languagePopulation type="vi" populationPercent="86" officialStatus="official" references="R1218"/>	<!--Vietnamese-->
+			<languagePopulation type="mww" populationPercent="1.4" references="R1385"/>	<!--Hmong Daw-->
 			<languagePopulation type="zh_Hant" populationPercent="1.1"/>	<!--Chinese (Traditional)-->
 			<languagePopulation type="blt" populationPercent="0.69"/>	<!--Tai Dam-->
 			<languagePopulation type="hnj" populationPercent="0.17" references="R1107"/>	<!--Hmong Njua-->
@@ -5718,5 +5723,7 @@ XXX Code for transations where no currency is involved
 		<reference type="R1381" uri="https://www.ethnologue.com/country/mr/languages">Citation from 2016</reference>
 		<reference type="R1382" uri="https://www.axl.cefan.ulaval.ca/asie/irak-1general.htm">[missing]</reference>
 		<reference type="R1383" uri="https://www.axl.cefan.ulaval.ca/asie/iran.htm">[missing]</reference>
+		<reference type="R1384" uri="https://www.census.gov/data/tables/2013/demo/2009-2013-lang-tables.html">[missing]</reference>
+		<reference type="R1385" uri="https://www.ethnologue.com/language/mww/">[missing]</reference>
 	</references>
 </supplementalData>
