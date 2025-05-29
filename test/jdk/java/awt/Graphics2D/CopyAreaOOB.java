@@ -71,17 +71,17 @@ public class CopyAreaOOB extends Canvas {
             robot.waitForIdle();
             robot.delay(1000);
 
-            EventQueue.invokeAndWait(() -> {
-                Point pt1 = canvas.getLocationOnScreen();
-                Rectangle rect = new Rectangle(pt1.x, pt1.y, SIZE, SIZE);
-                captureImg = robot.createScreenCapture(rect);
-            });
-
             // added to move mouse pointer away from test UI
             // so that it is not captured in the screenshot
             robot.mouseMove(OFF_FRAME_LOC.x, OFF_FRAME_LOC.y);
             robot.waitForIdle();
             robot.delay(100);
+
+            EventQueue.invokeAndWait(() -> {
+                Point pt1 = canvas.getLocationOnScreen();
+                Rectangle rect = new Rectangle(pt1.x, pt1.y, SIZE, SIZE);
+                captureImg = robot.createScreenCapture(rect);
+            });
 
             // Test pixels
             testRegion("green", 0, 0, 400, 10, 0xff00ff00);
