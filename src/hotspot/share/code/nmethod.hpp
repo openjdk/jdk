@@ -25,6 +25,8 @@
 #ifndef SHARE_CODE_NMETHOD_HPP
 #define SHARE_CODE_NMETHOD_HPP
 
+#define IMMUTABLE_DATA_REFERENCES   int
+
 #include "code/codeBlob.hpp"
 #include "code/pcDesc.hpp"
 #include "oops/metadata.hpp"
@@ -572,12 +574,12 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return           immutable_data_end() - sizeof(int)     ; }
+  address speculations_end      () const { return           immutable_data_end() - sizeof(IMMUTABLE_DATA_REFERENCES) ; }
 #else
-  address scopes_data_end       () const { return           immutable_data_end() - sizeof(int)     ; }
+  address scopes_data_end       () const { return           immutable_data_end() - sizeof(IMMUTABLE_DATA_REFERENCES) ; }
 #endif
 
-  address immutable_data_references_begin () const { return immutable_data_end() - sizeof(int)     ; }
+  address immutable_data_references_begin () const { return immutable_data_end() - sizeof(IMMUTABLE_DATA_REFERENCES) ; }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
