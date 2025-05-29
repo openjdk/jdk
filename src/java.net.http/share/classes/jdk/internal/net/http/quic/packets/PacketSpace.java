@@ -139,9 +139,9 @@ public sealed interface PacketSpace permits PacketSpaceManager {
     void packetReceived(PacketType packet, long packetNumber, boolean isAckEliciting);
 
     /**
-     * Signals that a packet has been / is being retransmitted.
+     * Signals that a packet has been sent.
      * This method is called by {@link QuicConnectionImpl} when a packet has been
-     * re-encrypted for retransmission.
+     * pushed to the endpoint for sending.
      * <p> The retransmitted packet is taken out the pendingRetransmission list and
      * the new packet is inserted in the pendingAcknowledgement list.
      *
