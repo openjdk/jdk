@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jpackage.internal.model;
 
-package sun.net.httpserver;
-
-class WriteFinishedEvent extends Event {
-    WriteFinishedEvent (ExchangeImpl t) {
-        super (t);
-        assert !t.writefinished;
-        t.writefinished = true;
-    }
+/**
+ * Generic bundling operation.
+ * <p>
+ * Bundling operation is comprised of creating of {@link BundleSpec} instance
+ * and using it as an input for {@link BundleCreator#create()} method to create
+ * a bundle.
+ */
+public interface BundlingOperation {
 }
