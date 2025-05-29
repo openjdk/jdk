@@ -216,6 +216,7 @@ public enum VectorShape {
      * @return the largest vector shape supported by the platform
      * for {@code etype}
      * @throws IllegalArgumentException if no such vector shape exists
+     *         for the element type or the type is not a valid {@code ETYPE}.
      */
     public static VectorShape largestShapeFor(Class<?> etype) {
         return VectorShape.forBitSize(getMaxVectorBitSize(etype));
