@@ -32,30 +32,47 @@
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  * @run junit HttpClientRetryLimitTest
  * @run junit/othervm -Djdk.httpclient.auth.retrylimit=1 HttpClientRetryLimitTest
+ * @run junit/othervm -Djdk.httpclient.auth.retrylimit=0 HttpClientRetryLimitTest
+ * @run junit/othervm -Djdk.httpclient.auth.retrylimit=-1 HttpClientRetryLimitTest
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
-import static jdk.test.lib.Asserts.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class HttpClientRetryLimitTest implements HttpServerAdapters {
+
+class HttpClientRetryLimitTest implements HttpServerAdapters {
 
     private static final int DEFAULT_RETRY_LIMIT = 3;
-    private final int retryLimit = Integer.getInteger("jdk.httpclient.auth.retrylimit", DEFAULT_RETRY_LIMIT);
-    private int countRetries;
+    private static final int RETRY_LIMIT = Integer.getInteger(
+            "jdk.httpclient.auth.retrylimit", DEFAULT_RETRY_LIMIT);
 
-    @Test
-    public void testDefaultSystemProperty() throws Exception {
+    static Stream<HttpClient.Version> args() {
+        return Stream.of(
+                HttpClient.Version.HTTP_1_1,
+                HttpClient.Version.HTTP_2
+        );
+    }
 
-        try (HttpTestServer httpTestServer = HttpTestServer.create(HttpClient.Version.HTTP_1_1)) {
+    @ParameterizedTest
+    @MethodSource("args")
+    public void testDefaultSystemProperty(HttpClient.Version version) throws Exception {
+        AtomicInteger requestCount = new AtomicInteger(0);
+
+        try (HttpTestServer httpTestServer = HttpTestServer.create(version)) {
 
             HttpTestHandler httpTestHandler = t -> {
                 t.getResponseHeaders()
@@ -65,15 +82,12 @@ public class HttpClientRetryLimitTest implements HttpServerAdapters {
 
             httpTestServer.addHandler(httpTestHandler, "/");
             httpTestServer.start();
-
-            countRetries = 0;
             try (
                 HttpClient client = HttpClient.newBuilder()
                         .authenticator(new Authenticator() {
                             @Override
                             protected PasswordAuthentication getPasswordAuthentication() {
-                                countRetries++;
-                                System.out.println("countRetries" + countRetries);
+                                requestCount.incrementAndGet();
                                 return new PasswordAuthentication("username", "password".toCharArray());
                             }
                         })
@@ -81,13 +95,19 @@ public class HttpClientRetryLimitTest implements HttpServerAdapters {
 
                 HttpRequest request = HttpRequest.newBuilder()
                         .GET()
-                        .uri(new URI("http://" + httpTestServer.serverAuthority() + "/"))
+                        .uri(new URI("http://" + httpTestServer.serverAuthority() + "/" + this.getClass().getSimpleName() + "/"))
                         .build();
-
-                client.send(request, HttpResponse.BodyHandlers.ofString());
+                throw assertThrows(IOException.class, () -> client.send(request, HttpResponse.BodyHandlers.discarding()));
             } catch (Exception e) {
-                assertEquals(retryLimit, countRetries,
-                        "Expected number of retries was " + retryLimit + " but actual was "+countRetries);
+                if (RETRY_LIMIT > 0){
+                    assertEquals(RETRY_LIMIT, requestCount.get(),
+                            "Expected number of request retries was " + RETRY_LIMIT + " but actual was "+requestCount);
+                }
+                else{
+                    requestCount.decrementAndGet();
+                    assertEquals(0, requestCount.get(),
+                            "Expected number of request retries was 0 but actual was "+requestCount);
+                }
                 e.printStackTrace();
             }
         }
