@@ -25,7 +25,6 @@
 #ifndef SHARE_JFR_JFR_HPP
 #define SHARE_JFR_JFR_HPP
 
-#include "jni.h"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/exceptions.hpp"
@@ -36,6 +35,7 @@ class ciKlass;
 class ciMethod;
 class GraphBuilder;
 class JavaThread;
+struct JavaVMOption;
 class Klass;
 class outputStream;
 class Parse;
@@ -72,6 +72,8 @@ class Jfr : AllStatic {
   static bool on_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
   static void on_backpatching(const Method* callee_method, JavaThread* jt);
   static void initialize_main_thread(JavaThread* jt);
+  static bool has_sample_request(JavaThread* jt);
+  static void check_and_process_sample_request(JavaThread* jt);
 };
 
 #endif // SHARE_JFR_JFR_HPP
