@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
  *          java.base/sun.util.spi
  *          jdk.localedata
  * @run main Bug8167143 testTimeZone
- * @run main/othervm -Djava.locale.providers=CLDR Bug8167143 testCldr
+ * @run main/othervm Bug8167143 testCldr
  * @run main Bug8167143 testCache
  * @run main Bug8167143 testCandidateLocales
  */
