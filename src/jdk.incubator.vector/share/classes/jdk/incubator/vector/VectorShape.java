@@ -214,7 +214,7 @@ public enum VectorShape {
      *
      * @param etype the element type
      * @return the largest vector shape supported by the platform
-     * for {@code etype}
+     *         for {@code etype}
      * @throws IllegalArgumentException if no such vector shape exists
      *         for the element type or the type is not a valid {@code ETYPE}.
      */
