@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,8 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_JFR_PERIODIC_SAMPLING_JFRCALLTRACE_HPP
-#define SHARE_JFR_PERIODIC_SAMPLING_JFRCALLTRACE_HPP
-
-#include "memory/allocation.hpp"
-
-class frame;
-class Method;
-class JavaThread;
-
-class JfrGetCallTrace : public StackObj {
- private:
-  JavaThread* _thread;
-  bool _in_java;
-
- public:
-  JfrGetCallTrace(bool in_java, JavaThread* thread) : _thread(thread), _in_java(in_java) {}
-  bool find_top_frame(frame& topframe, Method** method, frame& first_frame);
-  bool get_topframe(void* ucontext, frame& top);
-};
-
-#endif // SHARE_JFR_PERIODIC_SAMPLING_JFRCALLTRACE_HPP
+module csp {
+    provides java.nio.charset.spi.CharsetProvider with provider.UppercasingCharsetProvider;
+}

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,8 @@ public:
   intptr_t* last_Java_sp(void) const  { return _last_Java_sp; }
 
   address last_Java_pc(void)          { return _last_Java_pc; }
+
+  intptr_t* last_Java_fp() const      { return *(intptr_t**)_last_Java_sp; }
 
   void set_last_Java_sp(intptr_t* sp) { OrderAccess::release(); _last_Java_sp = sp; }
 

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,13 +21,15 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.jpackage.internal.model;
 
-#include "runtime/atomic.hpp"
-#include "runtime/suspendedThreadTask.hpp"
-
-void SuspendedThreadTask::run() {
-  internal_do_task();
-  _done = true;
+/**
+ * Generic bundling operation.
+ * <p>
+ * Bundling operation is comprised of creating of {@link BundleSpec} instance
+ * and using it as an input for {@link BundleCreator#create()} method to create
+ * a bundle.
+ */
+public interface BundlingOperation {
 }
