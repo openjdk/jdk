@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,9 +109,11 @@ public class setvalue002 {
             return quitDebuggee();
         }
 
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
-            log.complain("TEST FAILURE: Method Debugee.threadByName() returned null for debuggee's thread "
+        ReferenceType debuggeeClass = debuggee.classByName(DEBUGGEE_CLASS); // debuggee main class
+
+        thrRef = debuggee.threadByFieldName(debuggeeClass, "testThread", DEBUGGEE_THRNAME);
+        if (thrRef == null) {
+            log.complain("TEST FAILURE: Method Debugee.threadByFieldName() returned null for debuggee's thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;
             return quitDebuggee();
@@ -208,6 +210,10 @@ public class setvalue002 {
         Iterator iter = fields.iterator();
         while (iter.hasNext()) {
             Field fld = (Field) iter.next();
+            if (fld.name().equals("testThread")) {
+                // skip the static testThread field
+                continue;
+            }
             try {
                 log.display("\nTrying to set value for the field \""
                     + fld.name() + "\"\n\tfrom the debuggee's object reference \""
@@ -229,7 +235,7 @@ public class setvalue002 {
                 log.complain("TEST FAILED: ObjectReference.setValue(): caught unexpected "
                     + e + "\n\tinstead of expected IllegalArgumentException"
                     + "\n\twhen attempted to set value for the field \""
-                    + fld.name() + "\"\n\tfrom the debuggee's object reference \""
+                    + fld.name() + "\"\n\tfrom the de19buggee's object reference \""
                     + objRef
                     + "\n\tusing not valid Field's value from the other object reference \""
                     + fldObjRef + "\"");

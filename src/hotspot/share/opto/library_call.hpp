@@ -369,6 +369,7 @@ class LibraryCallKit : public GraphKit {
 
   // Vector API support
   bool inline_vector_nary_operation(int n);
+  bool inline_vector_call(int arity);
   bool inline_vector_frombits_coerced();
   bool inline_vector_mask_operation();
   bool inline_vector_mem_operation(bool is_store);

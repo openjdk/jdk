@@ -58,8 +58,6 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -132,8 +130,6 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 
 #define MAX_PATH (2 * K)
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 // for multipage initialization error analysis (in 'g_multipage_error')
 #define ERROR_MP_OS_TOO_OLD                          100
 #define ERROR_MP_EXTSHM_ACTIVE                       101
@@ -141,12 +137,6 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 #define ERROR_MP_VMGETINFO_CLAIMS_NO_SUPPORT_FOR_64K 103
 
 // excerpts from sys/systemcfg.h that might be missing on older os levels
-#ifndef PV_7
-  #define PV_7 0x200000          /* Power PC 7 */
-#endif
-#ifndef PV_7_Compat
-  #define PV_7_Compat 0x208000   /* Power PC 7 */
-#endif
 #ifndef PV_8
   #define PV_8 0x300000          /* Power PC 8 */
 #endif
@@ -763,10 +753,23 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   pthread_t tid = 0;
 
   if (ret == 0) {
-    int limit = 3;
-    do {
+    int trials_remaining = 4;
+    useconds_t next_delay = 1000;
+    while (true) {
       ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
-    } while (ret == EAGAIN && limit-- > 0);
+
+      if (ret != EAGAIN) {
+        break;
+      }
+
+      if (--trials_remaining <= 0) {
+        break;
+      }
+
+      log_debug(os, thread)("Failed to start native thread (%s), retrying after %dus.", os::errno_name(ret), next_delay);
+      ::usleep(next_delay);
+      next_delay *= 2;
+    }
   }
 
   if (ret == 0) {
@@ -906,7 +909,7 @@ jlong os::javaTimeNanos() {
 }
 
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;
+  info_ptr->max_value = all_bits_jlong;
   // mread_real_time() is monotonic (see 'os::javaTimeNanos()')
   info_ptr->may_skip_backward = false;
   info_ptr->may_skip_forward = false;
@@ -1236,33 +1239,6 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
     break;
   case PV_8:
     strncpy(buf, "Power PC 8", buflen);
-    break;
-  case PV_7:
-    strncpy(buf, "Power PC 7", buflen);
-    break;
-  case PV_6_1:
-    strncpy(buf, "Power PC 6 DD1.x", buflen);
-    break;
-  case PV_6:
-    strncpy(buf, "Power PC 6", buflen);
-    break;
-  case PV_5:
-    strncpy(buf, "Power PC 5", buflen);
-    break;
-  case PV_5_2:
-    strncpy(buf, "Power PC 5_2", buflen);
-    break;
-  case PV_5_3:
-    strncpy(buf, "Power PC 5_3", buflen);
-    break;
-  case PV_5_Compat:
-    strncpy(buf, "PV_5_Compat", buflen);
-    break;
-  case PV_6_Compat:
-    strncpy(buf, "PV_6_Compat", buflen);
-    break;
-  case PV_7_Compat:
-    strncpy(buf, "PV_7_Compat", buflen);
     break;
   case PV_8_Compat:
     strncpy(buf, "PV_8_Compat", buflen);
@@ -2571,14 +2547,14 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time
   info_ptr->may_skip_forward = false;      // elapsed time not wall time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned
 }
 
 void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;       // will not wrap in less than 64 bits
+  info_ptr->max_value = all_bits_jlong;    // will not wrap in less than 64 bits
   info_ptr->may_skip_backward = false;     // elapsed time not wall time
   info_ptr->may_skip_forward = false;      // elapsed time not wall time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;  // user+system time is returned

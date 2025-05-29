@@ -1001,7 +1001,8 @@ class methodHandle;
   do_intrinsic(_VectorUnaryOp, jdk_internal_vm_vector_VectorSupport, vector_unary_op_name, vector_unary_op_sig, F_S)                           \
    do_signature(vector_unary_op_sig, "(I"                                                                                                      \
                                       "Ljava/lang/Class;"                                                                                      \
-                                      "Ljava/lang/Class;Ljava/lang/Class;"                                                                     \
+                                      "Ljava/lang/Class;"                                                                                      \
+                                      "Ljava/lang/Class;"                                                                                      \
                                       "I"                                                                                                      \
                                       "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                          \
                                       "Ljdk/internal/vm/vector/VectorSupport$VectorMask;"                                                      \
@@ -1021,6 +1022,29 @@ class methodHandle;
                                        "Ljdk/internal/vm/vector/VectorSupport$BinaryOperation;)"                                               \
                                        "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                                 \
    do_name(vector_binary_op_name,     "binaryOp")                                                                                              \
+                                                                                                                                               \
+  do_intrinsic(_VectorUnaryLibOp, jdk_internal_vm_vector_VectorSupport, vector_unary_lib_op_name, vector_unary_lib_op_sig, F_S)                \
+   do_signature(vector_unary_lib_op_sig,"(J"                                                                                                   \
+                                         "Ljava/lang/Class;"                                                                                   \
+                                         "Ljava/lang/Class;"                                                                                   \
+                                         "I"                                                                                                   \
+                                         "Ljava/lang/String;"                                                                                  \
+                                         "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                       \
+                                         "Ljdk/internal/vm/vector/VectorSupport$UnaryOperation;)"                                              \
+                                         "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                      \
+   do_name(vector_unary_lib_op_name, "libraryUnaryOp")                                                                                         \
+                                                                                                                                               \
+  do_intrinsic(_VectorBinaryLibOp, jdk_internal_vm_vector_VectorSupport, vector_binary_lib_op_name, vector_binary_lib_op_sig, F_S)             \
+   do_signature(vector_binary_lib_op_sig,"(J"                                                                                                  \
+                                          "Ljava/lang/Class;"                                                                                  \
+                                          "Ljava/lang/Class;"                                                                                  \
+                                          "I"                                                                                                  \
+                                          "Ljava/lang/String;"                                                                                 \
+                                          "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                               \
+                                          "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                               \
+                                          "Ljdk/internal/vm/vector/VectorSupport$BinaryOperation;)"                                            \
+                                          "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                              \
+   do_name(vector_binary_lib_op_name, "libraryBinaryOp")                                                                                       \
                                                                                                                                                \
   do_intrinsic(_VectorTernaryOp, jdk_internal_vm_vector_VectorSupport, vector_ternary_op_name, vector_ternary_op_sig, F_S)                     \
    do_signature(vector_ternary_op_sig, "(I"                                                                                                    \

@@ -139,6 +139,7 @@ class CompressedKlassPointers : public AllStatic {
 
   // Helper function for common cases.
   static char* reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr);
+  static char* reserve_address_space_below_4G(size_t size, bool aslr);
   static char* reserve_address_space_for_unscaled_encoding(size_t size, bool aslr);
   static char* reserve_address_space_for_zerobased_encoding(size_t size, bool aslr);
   static char* reserve_address_space_for_16bit_move(size_t size, bool aslr);
@@ -213,6 +214,7 @@ public:
 
   // Can only be used after initialization
   static address  base()             { check_init(_base); return  _base; }
+  static address  base_addr()        { return  (address)&_base; }
   static int      shift()            { check_init(_shift); return  _shift; }
 
   static address  klass_range_start()  { return  _klass_range_start; }

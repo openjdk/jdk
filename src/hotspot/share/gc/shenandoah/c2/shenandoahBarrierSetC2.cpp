@@ -896,7 +896,7 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
 
     uint gc_state_idx = Compile::AliasIdxRaw;
     const TypePtr* gc_state_adr_type = nullptr; // debug-mode-only argument
-    debug_only(gc_state_adr_type = phase->C->get_adr_type(gc_state_idx));
+    DEBUG_ONLY(gc_state_adr_type = phase->C->get_adr_type(gc_state_idx));
 
     Node* gc_state    = phase->transform_later(new LoadBNode(ctrl, mem, gc_state_addr, gc_state_adr_type, TypeInt::BYTE, MemNode::unordered));
     Node* stable_and  = phase->transform_later(new AndINode(gc_state, phase->igvn().intcon(ShenandoahHeap::HAS_FORWARDED)));

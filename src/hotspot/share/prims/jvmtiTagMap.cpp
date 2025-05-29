@@ -954,7 +954,7 @@ void IterateOverHeapObjectClosure::do_object(oop o) {
 
   // skip if object is a dormant shared object whose mirror hasn't been loaded
   if (o != nullptr && o->klass()->java_mirror() == nullptr) {
-    log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(o),
+    log_debug(aot, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(o),
                          o->klass()->external_name());
     return;
   }
@@ -1040,7 +1040,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
 
   // skip if object is a dormant shared object whose mirror hasn't been loaded
   if (obj != nullptr &&   obj->klass()->java_mirror() == nullptr) {
-    log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(obj),
+    log_debug(aot, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(obj),
                          obj->klass()->external_name());
     return;
   }

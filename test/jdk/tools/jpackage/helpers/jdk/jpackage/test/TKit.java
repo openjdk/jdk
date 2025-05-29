@@ -34,6 +34,7 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardWatchEventKinds;
@@ -292,8 +293,8 @@ public final class TKit {
         }
     }
 
-    private static Path createUniquePath(String defaultName) {
-        return createUniquePath(defaultName, workDir());
+    static Path createUniquePath(Path pathTemplate) {
+        return createUniquePath(pathTemplate.getFileName().toString(), pathTemplate.getParent());
     }
 
     private static Path createUniquePath(String defaultName, Path basedir) {
@@ -656,7 +657,7 @@ public final class TKit {
     }
 
 
-    public static void assertEquals(String expected, String actual, String msg) {
+    public static void assertEquals(Object expected, Object actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
@@ -668,7 +669,7 @@ public final class TKit {
         traceAssert(concatMessages(String.format("assertEquals(%s)", expected), msg));
     }
 
-    public static void assertNotEquals(String expected, String actual, String msg) {
+    public static void assertNotEquals(Object expected, Object actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
@@ -760,9 +761,9 @@ public final class TKit {
                 try (var files = Files.list(path)) {
                     boolean actualIsEmpty = files.findFirst().isEmpty();
                     if (isEmptyCheck.get()) {
-                        TKit.assertTrue(actualIsEmpty, String.format("Check [%s] is not an empty directory", path));
+                        TKit.assertTrue(actualIsEmpty, String.format("Check [%s] is an empty directory", path));
                     } else {
-                        TKit.assertTrue(!actualIsEmpty, String.format("Check [%s] is an empty directory", path));
+                        TKit.assertTrue(!actualIsEmpty, String.format("Check [%s] is not an empty directory", path));
                     }
                 }
             }).run();
@@ -803,18 +804,22 @@ public final class TKit {
     }
 
     public static DirectoryContentVerifier assertDirectoryContent(Path dir) {
-        return new DirectoryContentVerifier(dir);
+        return new DirectoryContentVerifier(dir, ThrowingSupplier.toSupplier(() -> {
+            try (var files = Files.list(dir)) {
+                return files.map(Path::getFileName).collect(toSet());
+            }
+        }).get());
+    }
+
+    public static DirectoryContentVerifier assertDirectoryContentRecursive(Path dir) {
+        return new DirectoryContentVerifier(dir, ThrowingSupplier.toSupplier(() -> {
+            try (var files = Files.walk(dir).skip(1)) {
+                return files.map(dir::relativize).collect(toSet());
+            }
+        }).get());
     }
 
     public static final class DirectoryContentVerifier {
-        public DirectoryContentVerifier(Path baseDir) {
-            this(baseDir, ThrowingSupplier.toSupplier(() -> {
-                try (var files = Files.list(baseDir)) {
-                    return files.map(Path::getFileName).collect(toSet());
-                }
-            }).get());
-        }
-
         public void match(Path ... expected) {
             DirectoryContentVerifier.this.match(Set.of(expected));
         }
@@ -1124,6 +1129,47 @@ public final class TKit {
 
         return ThrowingSupplier.toSupplier(() -> new PrintStream(
                 new FileOutputStream(LOG_FILE.toFile(), true))).get();
+    }
+
+    public record PathSnapshot(List<String> contentHashes) {
+        public PathSnapshot {
+            contentHashes.forEach(Objects::requireNonNull);
+        }
+
+        public PathSnapshot(Path path) {
+            this(hashRecursive(path));
+        }
+
+        public static void assertEquals(PathSnapshot a, PathSnapshot b, String msg) {
+            assertStringListEquals(a.contentHashes(), b.contentHashes(), msg);
+        }
+
+        private static List<String> hashRecursive(Path path) {
+            try {
+                try (final var walk = Files.walk(path)) {
+                    return walk.sorted().map(p -> {
+                        final String hash;
+                        if (Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS)) {
+                            hash = "";
+                        } else {
+                            hash = hashFile(p);
+                        }
+                        return String.format("%s#%s", path.relativize(p), hash);
+                    }).toList();
+                }
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        private static String hashFile(Path path) {
+            try {
+                final var time = Files.getLastModifiedTime(path, LinkOption.NOFOLLOW_LINKS);
+                return time.toString();
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
     }
 
     private static TestInstance currentTest;

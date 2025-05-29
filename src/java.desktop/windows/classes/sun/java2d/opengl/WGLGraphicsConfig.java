@@ -43,6 +43,7 @@ import sun.awt.Win32GraphicsConfig;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.SurfaceManager;
+import sun.awt.image.VolatileSurfaceManager;
 import sun.awt.windows.WComponentPeer;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
@@ -73,7 +74,8 @@ public final class WGLGraphicsConfig
     private ContextCapabilities oglCaps;
     private final OGLContext context;
     private Object disposerReferent = new Object();
-    private final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
+    private final SurfaceManager.ProxyCache surfaceDataProxyCache =
+            new SurfaceManager.ProxyCache();
 
     public static native int getDefaultPixFmt(int screennum);
     private static native boolean initWGL();
@@ -431,5 +433,11 @@ public final class WGLGraphicsConfig
     @Override
     public ContextCapabilities getContextCapabilities() {
         return oglCaps;
+    }
+
+    @Override
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
+        return new WGLVolatileSurfaceManager(image, context);
     }
 }

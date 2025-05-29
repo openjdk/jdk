@@ -1384,10 +1384,8 @@ public final class Class<T> implements java.io.Serializable,
                         isAnonymousClass() || isArray()) ?
             AccessFlag.Location.INNER_CLASS :
             AccessFlag.Location.CLASS;
-        return AccessFlag.maskToAccessFlags((location == AccessFlag.Location.CLASS) ?
-                                            getClassAccessFlagsRaw() :
-                                            getModifiers(),
-                                            location);
+        return getReflectionFactory().parseAccessFlags((location == AccessFlag.Location.CLASS) ?
+                        getClassAccessFlagsRaw() : getModifiers(), location, this);
     }
 
     /**
@@ -3984,7 +3982,7 @@ public final class Class<T> implements java.io.Serializable,
      */
     @Override
     public Class<?> componentType() {
-        return isArray() ? componentType : null;
+        return getComponentType();
     }
 
     /**
@@ -4125,7 +4123,7 @@ public final class Class<T> implements java.io.Serializable,
      * type is returned.  If the class is a primitive type then the latest class
      * file major version is returned and zero is returned for the minor version.
      */
-    private int getClassFileVersion() {
+    int getClassFileVersion() {
         Class<?> c = isArray() ? elementType() : this;
         return c.getClassFileVersion0();
     }

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -702,6 +703,7 @@
      static_field(Abstract_VM_Version,         _s_internal_vm_info_string,                    const char*)                           \
      static_field(Abstract_VM_Version,         _features,                                     uint64_t)                              \
      static_field(Abstract_VM_Version,         _features_string,                              const char*)                           \
+     static_field(Abstract_VM_Version,         _cpu_info_string,                              const char*)                           \
      static_field(Abstract_VM_Version,         _vm_major_version,                             int)                                   \
      static_field(Abstract_VM_Version,         _vm_minor_version,                             int)                                   \
      static_field(Abstract_VM_Version,         _vm_security_version,                          int)                                   \
@@ -1022,6 +1024,7 @@
         declare_type(ServiceThread, JavaThread)                           \
         declare_type(NotificationThread, JavaThread)                      \
         declare_type(CompilerThread, JavaThread)                          \
+        declare_type(TrainingReplayThread, JavaThread)                    \
         declare_type(StringDedupThread, JavaThread)                       \
         declare_type(AttachListenerThread, JavaThread)                    \
         DEBUG_ONLY(COMPILER2_OR_JVMCI_PRESENT(                            \
@@ -1163,6 +1166,7 @@
   /********************/                                                  \
                                                                           \
   declare_toplevel_type(Abstract_VM_Version)                              \
+  declare_toplevel_type(VM_Version)                                       \
                                                                           \
   /*************/                                                         \
   /* Arguments */                                                         \
@@ -1715,7 +1719,6 @@
   /**********************/                                                \
   NOT_ZERO(PPC64_ONLY(declare_constant(frame::entry_frame_locals_size)))  \
                                                                           \
-  NOT_ZERO(X86_ONLY(declare_constant(frame::entry_frame_call_wrapper_offset)))      \
   declare_constant(frame::pc_return_offset)                               \
                                                                           \
   /*************/                                                         \
@@ -2145,3 +2148,4 @@ void vmStructs_init() {
   VMStructs::init();
 }
 #endif // ASSERT
+

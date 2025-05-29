@@ -22,9 +22,7 @@
  */
 
 // key: compiler.err.import.module.does.not.read.unnamed
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --release ${jdk.version} --enable-preview --limit-modules java.base
+// options: --limit-modules java.base
 
 import module java.compiler;
 

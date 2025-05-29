@@ -108,7 +108,7 @@ static NativeNMethodBarrier* get_nmethod_barrier(nmethod* nm) {
   }
 
   auto barrier = reinterpret_cast<NativeNMethodBarrier*>(barrier_address);
-  debug_only(barrier->verify());
+  DEBUG_ONLY(barrier->verify());
   return barrier;
 }
 
