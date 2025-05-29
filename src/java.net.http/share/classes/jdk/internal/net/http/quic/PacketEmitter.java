@@ -69,16 +69,13 @@ public interface PacketEmitter {
             throws QuicKeyUnavailableException, QuicTransportException;
 
     /**
-     * Emit a non ACK-eliciting packet containing the given ACK frame.
-     * The emitter should call {@link PacketSpace
-     * #packetSent(QuicPacket, long) PacketSpaceManager::packetSent}
-     * when the packet has been scheduled for sending.
+     * Emit a possibly non ACK-eliciting packet containing the given ACK frame.
      * @param packetSpaceManager the packet space manager on behalf
      *                           of which the acknowledgement should
      *                           be sent.
      * @param ackFrame the ACK frame to be sent.
-     * @param sendPing whether a PING frame should be sent
-     * @return the emitted packet number, or -1 if not applicable or not sent.
+     * @param sendPing whether a PING frame should be sent.
+     * @return the emitted packet number, or -1L if not applicable or not emitted
      */
     long emitAckPacket(PacketSpace packetSpaceManager, AckFrame ackFrame, boolean sendPing)
             throws QuicKeyUnavailableException, QuicTransportException;

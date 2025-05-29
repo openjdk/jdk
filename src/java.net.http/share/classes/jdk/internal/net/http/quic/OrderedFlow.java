@@ -116,8 +116,10 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
      *                   frame's offset: the frame with the smaller offset will be sorted
      *                   before the frame with the greater offset
      * @param position   A method reference that returns the position of the frame in the
-     *                   flow. Typically, this is a method reference to {@link
-     *                   QuicFrame#offset() QuicFrame::offset} (or its subclass override)
+     *                   flow. For instance, this would be {@link CryptoFrame#offset()
+     *                   CryptoFrame::offset} if {@code <T>} is {@code CryptoFrame}, or
+     *                   {@link StreamFrame#offset() StreamFrame::offset} if {@code <T>}
+     *                   is {@code StreamFrame}
      * @param length     A method reference that returns the number of bytes in the frame data.
      *                   This is used to compute the expected position of the next
      *                   frame in the flow. For instance, this would be {@link CryptoFrame#length()
