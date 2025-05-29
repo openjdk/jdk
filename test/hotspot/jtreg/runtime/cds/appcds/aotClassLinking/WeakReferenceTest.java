@@ -34,7 +34,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar weakref.jar
  *             WeakReferenceTestApp WeakReferenceTestApp$Inner ShouldNotBeAOTInited ShouldNotBeArchived SharedQueue
  *             WeakReferenceTestBadApp1 WeakReferenceTestBadApp2
- * @run driver WeakReferenceTest AOT
+ * @run driver WeakReferenceTest AOT --two-step-training
  */
 
 import java.lang.ref.WeakReference;
