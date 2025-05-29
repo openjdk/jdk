@@ -873,24 +873,17 @@ class CAccessibility implements PropertyChangeListener {
         // a is root level popupmenu
         AccessibleContext ac = a.getAccessibleContext();
         if (ac != null) {
-            Accessible aComp = null;
             for (int i = 0; i < ac.getAccessibleChildrenCount(); i++) {
                 Accessible child = ac.getAccessibleChild(i);
                 if (child instanceof JMenu subMenu) {
                     JPopupMenu popup = subMenu.getPopupMenu();
                     if (popup.isVisible()) {
-                        aComp = traversePopupMenu((Accessible) popup);
+                        return traversePopupMenu((Accessible) popup);
                     }
                 }
             }
-            // all children are traversed
-            if (aComp != null) {
-                return aComp;
-            }
-            return a;
-        } else {
-            return a;
         }
+        return a;
     }
 
     @Native private static final int JAVA_AX_ROWS = 1;
