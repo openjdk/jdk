@@ -484,7 +484,7 @@ public final class QuicTimerQueue {
         FLOOR(Deadline.MIN, Long.MIN_VALUE),
         /**
          * A {@code Marker} event to pass to {@link ConcurrentSkipListSet#floor(Object)
-         * ConcurrentSkipListSet::ceiling} in order to get the last event in the list,
+         * ConcurrentSkipListSet::floor} in order to get the last event in the list,
          * or {@code null}.
          *
          * @apiNote
