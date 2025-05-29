@@ -1171,7 +1171,6 @@ public:
 
   Handle _thread_h;
   JavaThread* _java_thread;
-  bool _retry_handshake;
   int _stack_depth; // length of _methods and _bcis arrays
   GrowableArray<Method*>* _methods;
   GrowableArray<int>* _bcis;
@@ -1183,8 +1182,7 @@ public:
   GetThreadSnapshotClosure(Handle thread_h, JavaThread* java_thread):
     HandshakeClosure("GetThreadSnapshotClosure"),
     _thread_h(thread_h), _java_thread(java_thread),
-    _retry_handshake(false), _stack_depth(0),
-    _methods(nullptr), _bcis(nullptr),
+    _stack_depth(0), _methods(nullptr), _bcis(nullptr),
     _thread_status(), _name(nullptr),
     _locks(nullptr), _blocker() {
   }
@@ -1199,14 +1197,6 @@ public:
       delete _locks;
     }
     _blocker._obj.release(oop_storage());
-  }
-
-  bool read_reset_retry() {
-    bool ret = _retry_handshake;
-    // If we re-execute the handshake this method need to return false
-    // when the handshake cannot be performed. (E.g. thread terminating)
-    _retry_handshake = false;
-    return ret;
   }
 
 private:
@@ -1281,10 +1271,6 @@ private:
 public:
   void do_thread(Thread* th) override {
     Thread* current = Thread::current();
-    if (!current->is_Java_thread()) {
-      _retry_handshake = true;
-      return;
-    }
 
     bool is_virtual = java_lang_VirtualThread::is_instance(_thread_h());
     if (_java_thread != nullptr) {
@@ -1494,9 +1480,7 @@ oop VMThreadSnapshot::get_thread_snapshot(jobject jthread, TRAPS) {
     // unmounted vthread, execute on the current thread
     cl.do_thread(nullptr);
   } else {
-    do {
-      Handshake::execute(&cl, &tlh, java_thread);
-    } while (cl.read_reset_retry());
+    Handshake::execute(&cl, &tlh, java_thread);
   }
 
   // all info is collected, can enable transitions.
