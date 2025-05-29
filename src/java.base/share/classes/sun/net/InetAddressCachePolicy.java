@@ -80,6 +80,9 @@ public final class InetAddressCachePolicy {
      */
     private static volatile int negativeCachePolicy = NEVER;
 
+    private static final PlatformLogger logger =
+            PlatformLogger.getLogger("sun.net.InetAddressCachePolicy");
+
     /*
      * Initialize
      */
@@ -104,26 +107,42 @@ public final class InetAddressCachePolicy {
                 staleCachePolicy = tmp;
             }
         }
+
+        // Log the resolved InetAddress cache policies
+        if (logger.isLoggable(PlatformLogger.Level.CONFIG)) {
+            logger.config(() -> String.format(
+                    "InetAddressCachePolicy: positive=%s, stale=%s, negative=%s",
+                    cachePolicy, staleCachePolicy, negativeCachePolicy));
+        }
     }
 
     private static Integer getProperty(String cachePolicyProp,
                                        String cachePolicyPropFallback) {
+        String tmpString = null;
         try {
-            String tmpString = Security.getProperty(cachePolicyProp);
+            tmpString = Security.getProperty(cachePolicyProp);
             if (tmpString != null) {
                 return Integer.valueOf(tmpString);
             }
         } catch (NumberFormatException ignored) {
             // Ignore
+            if (logger.isLoggable(PlatformLogger.Level.WARNING)) {
+                logger.warning(() -> "Invalid format for security property '" + cachePolicyProp +
+                        "' incorrectly set as: '" + tmpString + "'");
+            }
         }
 
         try {
-            String tmpString = System.getProperty(cachePolicyPropFallback);
+            tmpString = System.getProperty(cachePolicyPropFallback);
             if (tmpString != null) {
                 return Integer.decode(tmpString);
             }
         } catch (NumberFormatException ignored) {
             // Ignore
+            if (logger.isLoggable(PlatformLogger.Level.WARNING)) {
+                logger.warning(() -> "Invalid format for system property '" + cachePolicyPropFallback +
+                        "' incorrectly set as: '" + tmpString + "'");
+            }
         }
         return null;
     }
