@@ -101,6 +101,7 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/xmlstream.hpp"
 #if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif
@@ -473,6 +474,7 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
 
 // This is factored, since it is both called from a JRT_LEAF (deoptimization) and a JRT_ENTRY (uncommon_trap)
 Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread* current, int exec_mode) {
+  JFR_ONLY(Jfr::check_and_process_sample_request(current);)
   // When we get here we are about to unwind the deoptee frame. In order to
   // catch not yet safe to use frames, the following stack watermark barrier
   // poll will make such frames safe to use.
@@ -842,13 +844,24 @@ void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_arr
 }
 
 #ifndef PRODUCT
+// Return true if the execution after the provided bytecode continues at the
+// next bytecode in the code. This is not the case for gotos, returns, and
+// throws.
 static bool falls_through(Bytecodes::Code bc) {
   switch (bc) {
-    // List may be incomplete.  Here we really only care about bytecodes where compiled code
-    // can deoptimize.
     case Bytecodes::_goto:
     case Bytecodes::_goto_w:
     case Bytecodes::_athrow:
+    case Bytecodes::_areturn:
+    case Bytecodes::_dreturn:
+    case Bytecodes::_freturn:
+    case Bytecodes::_ireturn:
+    case Bytecodes::_lreturn:
+    case Bytecodes::_jsr:
+    case Bytecodes::_ret:
+    case Bytecodes::_return:
+    case Bytecodes::_lookupswitch:
+    case Bytecodes::_tableswitch:
       return false;
     default:
       return true;

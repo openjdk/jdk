@@ -58,6 +58,7 @@
 #define REG_SP Rsp
 #define REG_FP Rbp
 #define REG_PC Rip
+#define REG_BCP R13
 
 JNIEXPORT
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
@@ -318,6 +319,22 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
     return frame(sp + 1, fp, (address)*sp);
   }
   return frame(sp, fp, epc);
+}
+
+#ifdef ASSERT
+static bool is_interpreter(const CONTEXT* uc) {
+  assert(uc != nullptr, "invariant");
+  address pc = reinterpret_cast<address>(uc->REG_PC);
+  assert(pc != nullptr, "invariant");
+  return Interpreter::contains(pc);
+}
+#endif
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  const CONTEXT* const uc = (CONTEXT*)ucVoid;
+  assert(is_interpreter(uc), "invariant");
+  return reinterpret_cast<intptr_t*>(uc->REG_BCP);
 }
 
 // Returns the current stack pointer. Accurate value needed for

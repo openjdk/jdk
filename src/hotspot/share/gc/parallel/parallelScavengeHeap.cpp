@@ -93,8 +93,7 @@ jint ParallelScavengeHeap::initialize() {
       old_rs,
       OldSize,
       MinOldSize,
-      MaxOldSize,
-      "old", 1);
+      MaxOldSize);
 
   assert(young_gen()->max_gen_size() == young_rs.size(),"Consistency check");
   assert(old_gen()->max_gen_size() == old_rs.size(), "Consistency check");
@@ -328,7 +327,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       // Did the VM operation execute? If so, return the result directly.
       // This prevents us from looping until time out on requests that can
       // not be satisfied.
-      if (op.prologue_succeeded()) {
+      if (op.gc_succeeded()) {
         assert(is_in_or_null(op.result()), "result not in heap");
 
         // Exit the loop if the gc time limit has been exceeded.
@@ -502,21 +501,8 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
     full_gc_count = total_full_collections();
   }
 
-  while (true) {
-    VM_ParallelGCCollect op(gc_count, full_gc_count, cause);
-    VMThread::execute(&op);
-
-    if (!GCCause::is_explicit_full_gc(cause)) {
-      return;
-    }
-
-    {
-      MutexLocker ml(Heap_lock);
-      if (full_gc_count != total_full_collections()) {
-        return;
-      }
-    }
-  }
+  VM_ParallelGCCollect op(gc_count, full_gc_count, cause);
+  VMThread::execute(&op);
 }
 
 bool ParallelScavengeHeap::must_clear_all_soft_refs() {

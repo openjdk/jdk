@@ -46,7 +46,10 @@ import java.util.function.Supplier;
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
+ * @param enumType     the class type of the Enum
  * @param firstOrdinal the lowest ordinal used
+ * @param member       an int predicate that can be used to test if an enum is a member
+ *                     of the valid inputs (as there might be "holes")
  * @param delegates    a delegate array of inputs to StableValue mappings
  * @param original     the original Function
  * @param <E>          the type of the input to the function
@@ -64,10 +67,8 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
         final int index = value.ordinal() - firstOrdinal;
-        final StableValueImpl<R> delegate;
         // Since we did the member.test above, we know the index is in bounds
-        delegate = delegates[index];
-        return delegate.orElseSet(new Supplier<R>() {
+        return delegates[index].orElseSet(new Supplier<R>() {
                     @Override public R get() { return original.apply(value); }});
 
     }
@@ -84,8 +85,8 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
 
     @Override
     public String toString() {
+        final Collection<Map.Entry<E, StableValueImpl<R>>> entries = new ArrayList<>(delegates.length);
         final E[] enumElements = enumType.getEnumConstants();
-        final Collection<Map.Entry<E, StableValueImpl<R>>> entries = new ArrayList<>(enumElements.length);
         int ordinal = firstOrdinal;
         for (int i = 0; i < delegates.length; i++, ordinal++) {
             if (member.test(ordinal)) {
@@ -99,7 +100,7 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
     public static <T, E extends Enum<E>, R> Function<T, R> of(Set<? extends T> inputs,
                                                               Function<? super T, ? extends R> original) {
         // The input set is not empty
-        final Class<E> enumType = (Class<E>)inputs.iterator().next().getClass();
+        final Class<E> enumType = ((E) inputs.iterator().next()).getDeclaringClass();
         final BitSet bitSet = new BitSet(enumType.getEnumConstants().length);
         int min = Integer.MAX_VALUE;
         int max = Integer.MIN_VALUE;

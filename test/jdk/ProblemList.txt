@@ -123,7 +123,6 @@ java/awt/Frame/MaximizedToMaximized/MaximizedToMaximized.java 8340374 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linux-all
 java/awt/Frame/InitialIconifiedTest.java 7144049,8203920 macosx-all,linux-all
-java/awt/Frame/ShapeNotSetSometimes/ShapeNotSetSometimes.java 8341370 macosx-all
 java/awt/Frame/FocusTest.java 8341480 macosx-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
