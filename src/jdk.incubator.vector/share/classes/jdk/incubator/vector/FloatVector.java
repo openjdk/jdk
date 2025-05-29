@@ -678,6 +678,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
+            else if (opKind(op, VO_MATHLIB)) {
+                return unaryMathOp(op);
+            }
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
@@ -703,12 +706,22 @@ public abstract class FloatVector extends AbstractVector<Float> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
+            else if (opKind(op, VO_MATHLIB)) {
+                return blend(unaryMathOp(op), m);
+            }
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
             opc, getClass(), maskClass, float.class, length(),
             this, m,
             UN_IMPL.find(op, opc, FloatVector::unaryOperations));
+    }
+
+    @ForceInline
+    final
+    FloatVector unaryMathOp(VectorOperators.Unary op) {
+        return VectorMathLibrary.unaryMathOp(op, opCode(op), species(), FloatVector::unaryOperations,
+                                             this);
     }
 
     private static final
@@ -781,6 +794,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
                     = this.viewAsIntegralLanes().compare(EQ, (int) 0);
                 return this.blend(that, mask.cast(vspecies()));
             }
+            else if (opKind(op, VO_MATHLIB)) {
+                return binaryMathOp(op, that);
+            }
         }
 
         int opc = opCode(op);
@@ -815,6 +831,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
                     = bits.compare(EQ, (int) 0, m.cast(bits.vspecies()));
                 return this.blend(that, mask.cast(vspecies()));
             }
+            else if (opKind(op, VO_MATHLIB)) {
+                return this.blend(binaryMathOp(op, that), m);
+            }
+
         }
 
         int opc = opCode(op);
@@ -822,6 +842,13 @@ public abstract class FloatVector extends AbstractVector<Float> {
             opc, getClass(), maskClass, float.class, length(),
             this, that, m,
             BIN_IMPL.find(op, opc, FloatVector::binaryOperations));
+    }
+
+    @ForceInline
+    final
+    FloatVector binaryMathOp(VectorOperators.Binary op, FloatVector that) {
+        return VectorMathLibrary.binaryMathOp(op, opCode(op), species(), FloatVector::binaryOperations,
+                                              this, that);
     }
 
     private static final

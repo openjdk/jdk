@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,11 +173,14 @@ public final class String
     private final byte coder;
 
     /** Cache the hash code for the string */
+    @Stable
     private int hash; // Default to 0
 
     /**
      * Cache if the hash has been calculated as actually being zero, enabling
-     * us to avoid recalculating this.
+     * us to avoid recalculating this. This field is _not_ annotated @Stable as
+     * the `hashCode()` method reads the field `hash` first anyhow and if `hash`
+     * is the default zero value, is not trusted.
      */
     private boolean hashIsZero; // Default to false;
 
@@ -1736,35 +1739,14 @@ public final class String
     }
 
     /**
-     * Copies characters from this string into the destination character
-     * array.
-     * <p>
-     * The first character to be copied is at index {@code srcBegin};
-     * the last character to be copied is at index {@code srcEnd-1}
-     * (thus the total number of characters to be copied is
-     * {@code srcEnd-srcBegin}). The characters are copied into the
-     * subarray of {@code dst} starting at index {@code dstBegin}
-     * and ending at index:
-     * <blockquote><pre>
-     *     dstBegin + (srcEnd-srcBegin) - 1
-     * </pre></blockquote>
-     *
-     * @param      srcBegin   index of the first character in the string
-     *                        to copy.
-     * @param      srcEnd     index after the last character in the string
-     *                        to copy.
-     * @param      dst        the destination array.
-     * @param      dstBegin   the start offset in the destination array.
-     * @throws    IndexOutOfBoundsException If any of the following
-     *            is true:
-     *            <ul><li>{@code srcBegin} is negative.
-     *            <li>{@code srcBegin} is greater than {@code srcEnd}
-     *            <li>{@code srcEnd} is greater than the length of this
-     *                string
-     *            <li>{@code dstBegin} is negative
-     *            <li>{@code dstBegin+(srcEnd-srcBegin)} is larger than
-     *                {@code dst.length}</ul>
+     * {@inheritDoc CharSequence}
+     * @param srcBegin {@inheritDoc CharSequence}
+     * @param srcEnd   {@inheritDoc CharSequence}
+     * @param dst      {@inheritDoc CharSequence}
+     * @param dstBegin {@inheritDoc CharSequence}
+     * @throws    IndexOutOfBoundsException {@inheritDoc CharSequence}
      */
+    @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         checkBoundsBeginEnd(srcBegin, srcEnd, length());
         checkBoundsOffCount(dstBegin, srcEnd - srcBegin, dst.length);

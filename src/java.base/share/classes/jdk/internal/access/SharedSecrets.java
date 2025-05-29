@@ -69,7 +69,6 @@ public class SharedSecrets {
     private static JavaLangReflectAccess javaLangReflectAccess;
     private static JavaIOAccess javaIOAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
-    private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
     private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
     private static JavaObjectInputStreamReadString javaObjectInputStreamReadString;
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
@@ -285,20 +284,6 @@ public class SharedSecrets {
 
     public static void setJavaIOFileDescriptorAccess(JavaIOFileDescriptorAccess jiofda) {
         javaIOFileDescriptorAccess = jiofda;
-    }
-
-    @SuppressWarnings("removal")
-    public static JavaIOFilePermissionAccess getJavaIOFilePermissionAccess() {
-        var access = javaIOFilePermissionAccess;
-        if (access == null) {
-            ensureClassInitialized(FilePermission.class);
-            access = javaIOFilePermissionAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaIOFilePermissionAccess(JavaIOFilePermissionAccess jiofpa) {
-        javaIOFilePermissionAccess = jiofpa;
     }
 
     public static JavaIOFileDescriptorAccess getJavaIOFileDescriptorAccess() {

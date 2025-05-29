@@ -1232,6 +1232,9 @@ private:
   // Identify processor type and features
   void cpuid();
 
+  // Serialize instruction stream
+  void serialize();
+
   // CRC32C
   void crc32(Register crc, Register v, int8_t sizeInBytes);
   void crc32(Register crc, Address adr, int8_t sizeInBytes);

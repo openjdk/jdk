@@ -26,14 +26,14 @@
 
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/workerThread.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "runtime/atomic.hpp"
 #include "logging/log.hpp"
+#include "runtime/atomic.hpp"
 
 static ReferenceType reference_type(oop reference) {
   return InstanceKlass::cast(reference->klass())->reference_type();

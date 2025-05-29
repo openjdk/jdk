@@ -721,6 +721,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_nary_operation(1);
   case vmIntrinsics::_VectorBinaryOp:
     return inline_vector_nary_operation(2);
+  case vmIntrinsics::_VectorUnaryLibOp:
+    return inline_vector_call(1);
+  case vmIntrinsics::_VectorBinaryLibOp:
+    return inline_vector_call(2);
   case vmIntrinsics::_VectorTernaryOp:
     return inline_vector_nary_operation(3);
   case vmIntrinsics::_VectorFromBitsCoerced:
@@ -7737,6 +7741,7 @@ bool LibraryCallKit::inline_kyberNttMult() {
   ntta = must_be_not_null(ntta, true);
   nttb = must_be_not_null(nttb, true);
   zetas = must_be_not_null(zetas, true);
+
   Node* result_start  = array_element_address(result, intcon(0), T_SHORT);
   assert(result_start, "result is null");
   Node* ntta_start  = array_element_address(ntta, intcon(0), T_SHORT);

@@ -50,7 +50,6 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 import sun.awt.X11.XBaseWindow;
 import com.sun.java.swing.plaf.gtk.GTKConstants.TextDirection;
@@ -70,7 +69,7 @@ public abstract class UNIXToolkit extends SunToolkit
         ANY(0),
         GTK3(Constants.GTK3_MAJOR_NUMBER);
 
-        static class Constants {
+        static final class Constants {
             static final int GTK3_MAJOR_NUMBER = 3;
         }
 
@@ -254,14 +253,12 @@ public abstract class UNIXToolkit extends SunToolkit
         return result;
     }
 
-    private Integer getGnomeShellMajorVersion() {
+    public Integer getGnomeShellMajorVersion() {
         try {
             Process process =
                 new ProcessBuilder("/usr/bin/gnome-shell", "--version")
                         .start();
-            try (InputStreamReader isr = new InputStreamReader(process.getInputStream());
-                 BufferedReader reader = new BufferedReader(isr)) {
-
+            try (BufferedReader reader = process.inputReader()) {
                 if (process.waitFor(2, SECONDS) &&  process.exitValue() == 0) {
                     String line = reader.readLine();
                     if (line != null) {

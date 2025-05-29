@@ -93,7 +93,7 @@ public class LinkableRuntimeImage {
                     // Skip comments
                     continue;
                 }
-                upgradeableFiles.add(scanner.nextLine());
+                upgradeableFiles.add(line);
             }
         } catch (IOException e) {
             throw new AssertionError("Failure to retrieve upgradeable files for " +

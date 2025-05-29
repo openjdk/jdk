@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ public class MethodFinder {
      * <li>have a single argument of type {@code String[]}, {@code String...} or no argument</li>
      * <li>have the return type of void</li>
      * <li>be public, protected or package private</li>
-     * <li>not be abstract</li>
      *</ul>
      *
      * The method returned would be used by a launcher to initiate the execution of an
@@ -82,27 +81,28 @@ public class MethodFinder {
      * @jls 12.1.4 Invoke a main method
      */
     public static Method findMainMethod(Class<?> cls) {
-        boolean isPreview = PreviewFeatures.isEnabled();
-        Method mainMethod = JLA.findMethod(cls, !isPreview, "main", String[].class);
+        Method mainMethod = JLA.findMethod(cls, true, "main", String[].class);
 
-        if (isPreview && mainMethod == null) {
+        if (mainMethod == null) {
+            //if not public method, try to lookup a non-public one
+            mainMethod = JLA.findMethod(cls, false, "main", String[].class);
+        }
+
+        if (mainMethod == null || !isValidMainMethod(mainMethod)) {
             mainMethod = JLA.findMethod(cls, false, "main");
         }
 
-        if (mainMethod == null) {
-            return null;
-        }
-
-        int mods = mainMethod.getModifiers();
-
-        if (Modifier.isAbstract(mods) ||
-                mainMethod.getReturnType() != void.class ||
-                (isPreview && Modifier.isPrivate(mods)) ||
-                (!isPreview && !Modifier.isStatic(mods))) {
+        if (mainMethod == null || !isValidMainMethod(mainMethod)) {
             return null;
         }
 
         return mainMethod;
+    }
+
+    private static boolean isValidMainMethod(Method mainMethodCandidate) {
+        return mainMethodCandidate.getReturnType() == void.class &&
+               !Modifier.isPrivate(mainMethodCandidate.getModifiers());
+
     }
 
 }

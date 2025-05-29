@@ -55,7 +55,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 /**
  * Windows rendition of the component.
  */
-public class WindowsScrollBarUI extends BasicScrollBarUI {
+public final class WindowsScrollBarUI extends BasicScrollBarUI {
     private Grid thumbGrid;
     private Grid highlightGrid;
     private Dimension horizontalThumbSize;
@@ -71,6 +71,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
         return new WindowsScrollBarUI();
     }
 
+    @Override
     protected void installDefaults() {
         super.installDefaults();
 
@@ -100,11 +101,13 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
                 : verticalThumbSize;
     }
 
+    @Override
     public void uninstallUI(JComponent c) {
         super.uninstallUI(c);
         thumbGrid = highlightGrid = null;
     }
 
+    @Override
     protected void configureScrollBarColors() {
         super.configureScrollBarColors();
         Color color = UIManager.getColor("ScrollBar.trackForeground");
@@ -118,6 +121,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
         }
     }
 
+    @Override
     protected JButton createDecreaseButton(int orientation)  {
         return new WindowsArrowButton(orientation,
                                     UIManager.getColor("ScrollBar.thumb"),
@@ -126,6 +130,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
                                     UIManager.getColor("ScrollBar.thumbHighlight"));
     }
 
+    @Override
     protected JButton createIncreaseButton(int orientation)  {
         return new WindowsArrowButton(orientation,
                                     UIManager.getColor("ScrollBar.thumb"),
@@ -161,6 +166,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
         }
     }
 
+    @Override
     protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds){
         boolean v = (scrollbar.getOrientation() == JScrollBar.VERTICAL);
 
@@ -189,6 +195,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
         }
     }
 
+    @Override
     protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
         boolean v = (scrollbar.getOrientation() == JScrollBar.VERTICAL);
 
@@ -231,6 +238,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
     }
 
 
+    @Override
     protected void paintDecreaseHighlight(Graphics g) {
         if (highlightGrid == null) {
             super.paintDecreaseHighlight(g);
@@ -257,6 +265,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
     }
 
 
+    @Override
     protected void paintIncreaseHighlight(Graphics g) {
         if (highlightGrid == null) {
             super.paintDecreaseHighlight(g);
@@ -304,7 +313,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
      * preferred size is always a square.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class WindowsArrowButton extends BasicArrowButton {
+    private final class WindowsArrowButton extends BasicArrowButton {
 
         public WindowsArrowButton(int direction, Color background, Color shadow,
                          Color darkShadow, Color highlight) {
@@ -315,6 +324,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
             super(direction);
         }
 
+        @Override
         public void paint(Graphics g) {
             XPStyle xp = XPStyle.getXP();
             if (xp != null) {
@@ -370,6 +380,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
             }
         }
 
+        @Override
         public Dimension getPreferredSize() {
             int size = 16;
             if (scrollbar != null) {
@@ -398,7 +409,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
      * a WeakRef so that it can be freed when no longer needed. As the
      * Grid is rather expensive to draw, it is drawn in a BufferedImage.
      */
-    private static class Grid {
+    private static final class Grid {
         private static final int BUFFER_SIZE = 64;
         private static HashMap<String, WeakReference<Grid>> map;
 

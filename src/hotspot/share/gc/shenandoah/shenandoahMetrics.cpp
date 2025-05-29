@@ -23,10 +23,10 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahMetrics.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
-#include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahMetrics.hpp"
 
 ShenandoahMetricsSnapshot::ShenandoahMetricsSnapshot() {
   _heap = ShenandoahHeap::heap();
@@ -59,6 +59,7 @@ bool ShenandoahMetricsSnapshot::is_good_progress(ShenandoahGeneration* generatio
   // Under the critical threshold?
   ShenandoahFreeSet* free_set = _heap->free_set();
   size_t free_actual   = free_set->available();
+  assert(free_actual != ShenandoahFreeSet::FreeSetUnderConstruction, "Avoid this race");
 
   // ShenandoahCriticalFreeThreshold is expressed as a percentage.  We multiple this percentage by 1/100th
   // of the generation capacity to determine whether the available memory within the generation exceeds the

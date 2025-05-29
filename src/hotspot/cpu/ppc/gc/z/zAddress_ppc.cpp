@@ -21,8 +21,8 @@
  * questions.
  */
 
-#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "runtime/globals.hpp"

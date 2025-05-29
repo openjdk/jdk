@@ -63,12 +63,7 @@ private:
   static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr,
                             DecoratorSet decorators, PhaseIdealLoop* phase);
   static void test_in_cset(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase);
-  static void move_gc_state_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase);
-  static void merge_back_to_back_tests(Node* n, PhaseIdealLoop* phase);
-  static bool merge_point_safe(Node* region);
-  static bool identical_backtoback_ifs(Node *n, PhaseIdealLoop* phase);
   static void fix_ctrl(Node* barrier, Node* region, const MemoryGraphFixer& fixer, Unique_Node_List& uses, Unique_Node_List& uses_to_ignore, uint last, PhaseIdealLoop* phase);
-  static IfNode* find_unswitching_candidate(const IdealLoopTree *loop, PhaseIdealLoop* phase);
 
   static Node* get_load_addr(PhaseIdealLoop* phase, VectorSet& visited, Node* lrb);
 public:
@@ -80,7 +75,6 @@ public:
 
   static bool expand(Compile* C, PhaseIterGVN& igvn);
   static void pin_and_expand(PhaseIdealLoop* phase);
-  static void optimize_after_expansion(VectorSet& visited, Node_Stack& nstack, Node_List& old_new, PhaseIdealLoop* phase);
 
 #ifdef ASSERT
   static void verify(RootNode* root);

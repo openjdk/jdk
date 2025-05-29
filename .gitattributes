@@ -1,4 +1,5 @@
 *	-text
+*	encoding=utf-8
 *.java	diff=java
 *.c	diff=cpp
 *.h	diff=cpp

@@ -31,8 +31,8 @@
  * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase /test/lib
  * @run main/othervm
- *      -XX:MetaspaceSize=10m
- *      -XX:MaxMetaspaceSize=10m
+ *      -XX:MetaspaceSize=20m
+ *      -XX:MaxMetaspaceSize=20m
  *      -Xlog:gc*:gc.log
  *      metaspace.shrink_grow.ShrinkGrowTest.ShrinkGrowTest
  */

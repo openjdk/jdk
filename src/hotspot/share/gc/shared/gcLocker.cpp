@@ -25,15 +25,15 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
-#include "utilities/spinYield.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/spinYield.hpp"
 #include "utilities/ticks.hpp"
 
 // GCLockerTimingDebugLogger tracks specific timing information for GC lock waits.

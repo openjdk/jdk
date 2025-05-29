@@ -40,6 +40,7 @@
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zStat.hpp"
+#include "gc/z/zStringDedup.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "gc/z/zVerify.hpp"
@@ -559,12 +560,14 @@ public:
 template <typename Allocator>
 class ZRelocateWork : public StackObj {
 private:
-  Allocator* const   _allocator;
-  ZForwarding*       _forwarding;
-  ZPage*             _target[ZAllocator::_relocation_allocators];
-  ZGeneration* const _generation;
-  size_t             _other_promoted;
-  size_t             _other_compacted;
+  Allocator* const    _allocator;
+  ZForwarding*        _forwarding;
+  ZPage*              _target[ZAllocator::_relocation_allocators];
+  ZGeneration* const  _generation;
+  size_t              _other_promoted;
+  size_t              _other_compacted;
+  ZStringDedupContext _string_dedup_context;
+
 
   ZPage* target(ZPageAge age) {
     return _target[static_cast<uint>(age) - 1];
@@ -795,6 +798,13 @@ private:
     update_remset_promoted(to_addr);
   }
 
+  void maybe_string_dedup(zaddress to_addr) {
+    if (_forwarding->is_promotion()) {
+      // Only deduplicate promoted objects, and let short-lived strings simply die instead.
+      _string_dedup_context.request(to_oop(to_addr));
+    }
+  }
+
   bool try_relocate_object(zaddress from_addr) {
     const zaddress to_addr = try_relocate_object_inner(from_addr);
 
@@ -803,6 +813,8 @@ private:
     }
 
     update_remset_for_fields(from_addr, to_addr);
+
+    maybe_string_dedup(to_addr);
 
     return true;
   }
@@ -1176,10 +1188,15 @@ public:
 
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
+    ZStringDedupContext        string_dedup_context;
 
     for (ZPage* page; _iter.next(&page);) {
       page->object_iterate([&](oop obj) {
+        // Remap oops and add remset if needed
         ZIterator::basic_oop_iterate_safe(obj, remap_and_maybe_add_remset);
+
+        // String dedup
+        string_dedup_context.request(obj);
       });
 
       SuspendibleThreadSet::yield();
