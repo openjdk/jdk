@@ -641,6 +641,11 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         }
     }
 
+    private boolean isDynamicEntry(int cpi) {
+        JvmConstant tagAt = getTagAt(cpi);
+        return tagAt != null && tagAt.name.equals("Dynamic");
+    }
+
     @Override
     public List<BootstrapMethodInvocation> lookupBootstrapMethodInvocations(boolean invokeDynamic){
         if (invokeDynamic) {
@@ -651,18 +656,11 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             return IntStream.range(0, numIndys)
                             .mapToObj(i -> lookupBootstrapMethodInvocation(i, Bytecodes.INVOKEDYNAMIC))
                             .toList();
-                    .toList();
         } else {
             return IntStream.range(1, length())
                             .filter(this::isDynamicEntry)
-                            .mapToObj(...);
-                JvmConstant tagAt = getTagAt(cpi);
-                if (tagAt != null && tagAt.name.equals("Dynamic")) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }).mapToObj(cpi -> lookupBootstrapMethodInvocation(cpi, -1)).toList();
+                            .mapToObj(cpi -> lookupBootstrapMethodInvocation(cpi, -1))
+                            .toList();
         }
     }
 
