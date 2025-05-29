@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,26 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.event.tracing;
 
-package jdk.jpackage.internal.model;
-
-import java.io.IOException;
-import java.nio.file.Path;
-
-
-/**
- * Creates native package from the given {@link jdk.jpackage.internal.model.Package} object.
- *
- * @ see ApplicationWriter
- */
-@FunctionalInterface
-public interface PackageWriter {
-    /**
-     * Creates native package from the given {@link jdk.jpackage.internal.model.Package} object in the given directory.
-     * @param pkg the source package
-     * @param dst the directory where to create a native package
-     * @throws PackagerException if packaging error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    void write(Package pkg, Path dst) throws PackagerException, IOException;
+public final class StaticInitializer {
+    public static String TRIGGERED;
+    static {
+        System.out.println("Executing StaticInitializer::<clinit>");
+    }
 }

@@ -53,7 +53,6 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
