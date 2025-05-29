@@ -266,7 +266,6 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     private static byte[] ensureCapacityNewCoder(byte[] value, byte coder, int count,
                                                  int minimumCapacity, byte newCoder) {
-        assert coder == newCoder || newCoder == UTF16 : "bad new coder UTF16 -> LATIN1";
         // overflow-conscious code
         // Compute the new larger size if growth is requested, otherwise keep the capacity the same
         int oldCapacity = value.length >> coder;
@@ -274,7 +273,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int newCapacity = (growth <= 0)
                 ? oldCapacity               // Do not reduce capacity even if requested
                 : newCapacity(value, newCoder, minimumCapacity);
-        assert count <= newCapacity : "count exceeds new capacity";
+        // These asserts increase code size and reduce inlining, hurting performance
+        // assert coder == newCoder || newCoder == UTF16 : "bad new coder UTF16 -> LATIN1";
+        // assert count <= newCapacity : "count exceeds new capacity";
 
         if (coder == newCoder) {
             if (newCapacity > oldCapacity) {
