@@ -38,7 +38,7 @@ char ClasspathStream::separator() {
 
 void ClasspathStream::skip_blank_paths() {
   while (*_cp == separator()) {
-    _cp ++;
+    _cp++;
   }
 }
 
@@ -48,7 +48,7 @@ const char* ClasspathStream::get_next() {
 
   const char* end = _cp + 1;
   while (*end != separator() && *end != '\0') {
-    end ++;
+    end++;
   }
 
   int path_len = end - _cp;

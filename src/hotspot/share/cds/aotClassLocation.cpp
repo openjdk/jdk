@@ -907,7 +907,7 @@ void AOTClassLocationConfig::print_dumptime_classpath(LogStream& ls, int index_s
     const char* path = cs->path();
     if (!cs->from_cpattr()) {
       ls.print("%s", sep);
-      if (do_substitute && remove_prefix_len > 0) {
+      if (do_substitute) {
         path = substitute(path, remove_prefix_len, prepend, prepend_len);
       }
       ls.print("%s", path);
