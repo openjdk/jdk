@@ -393,7 +393,9 @@ static inline bool match_desc(PcDesc* pc, int pc_offset, bool approximate) {
   if (!approximate) {
     return pc->pc_offset() == pc_offset;
   } else {
-    return (pc-1)->pc_offset() < pc_offset && pc_offset <= pc->pc_offset();
+    // Do not look before the sentinel
+    assert(pc_offset > PcDesc::lower_offset_limit, "illegal pc_offset");
+    return pc_offset <= pc->pc_offset() && (pc-1)->pc_offset() < pc_offset;
   }
 }
 

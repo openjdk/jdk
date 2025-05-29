@@ -60,6 +60,7 @@
 #include "oops/compressedKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -231,6 +232,14 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   } else {
     _narrow_klass_pointer_bits = _narrow_klass_shift = -1;
   }
+  _type_profile_level = TypeProfileLevel;
+  _type_profile_args_limit = TypeProfileArgsLimit;
+  _type_profile_parms_limit = TypeProfileParmsLimit;
+  _type_profile_width = TypeProfileWidth;
+  _bci_profile_width = BciProfileWidth;
+  _profile_traps = ProfileTraps;
+  _type_profile_casts = TypeProfileCasts;
+  _spec_trap_limit_extra_entries = SpecTrapLimitExtraEntries;
   _max_heap_size = MaxHeapSize;
   _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
   _has_aot_linked_classes = CDSConfig::is_dumping_aot_linked_classes();
@@ -735,7 +744,7 @@ void FileMapInfo::open_as_output() {
     if (CDSConfig::is_dumping_preimage_static_archive()) {
       log_info(aot)("Writing binary AOTConfiguration file: %s",  _full_path);
     } else {
-      log_info(aot)("Writing binary AOTConfiguration file: %s",  _full_path);
+      log_info(aot)("Writing AOTCache file: %s",  _full_path);
     }
   } else {
     aot_log_info(aot)("Dumping shared data to file: %s", _full_path);
@@ -1922,6 +1931,64 @@ bool FileMapHeader::validate() {
                   _compact_strings ? "enabled" : "disabled",
                   CompactStrings   ? "enabled" : "disabled");
     return false;
+  }
+  if (TrainingData::have_data()) {
+    if (_type_profile_level != TypeProfileLevel) {
+      MetaspaceShared::report_loading_error("The %s's TypeProfileLevel setting (%d)"
+                                            " does not equal the current TypeProfileLevel setting (%d).", file_type,
+                                            _type_profile_level, TypeProfileLevel);
+      return false;
+    }
+    if (_type_profile_args_limit != TypeProfileArgsLimit) {
+      MetaspaceShared::report_loading_error("The %s's TypeProfileArgsLimit setting (%d)"
+                                            " does not equal the current TypeProfileArgsLimit setting (%d).", file_type,
+                                            _type_profile_args_limit, TypeProfileArgsLimit);
+      return false;
+    }
+    if (_type_profile_parms_limit != TypeProfileParmsLimit) {
+      MetaspaceShared::report_loading_error("The %s's TypeProfileParamsLimit setting (%d)"
+                                            " does not equal the current TypeProfileParamsLimit setting (%d).", file_type,
+                                            _type_profile_args_limit, TypeProfileArgsLimit);
+      return false;
+
+    }
+    if (_type_profile_width != TypeProfileWidth) {
+      MetaspaceShared::report_loading_error("The %s's TypeProfileWidth setting (%d)"
+                                            " does not equal the current TypeProfileWidth setting (%d).", file_type,
+                                            (int)_type_profile_width, (int)TypeProfileWidth);
+      return false;
+
+    }
+    if (_bci_profile_width != BciProfileWidth) {
+      MetaspaceShared::report_loading_error("The %s's BciProfileWidth setting (%d)"
+                                            " does not equal the current BciProfileWidth setting (%d).", file_type,
+                                            (int)_bci_profile_width, (int)BciProfileWidth);
+      return false;
+    }
+    if (_type_profile_casts != TypeProfileCasts) {
+      MetaspaceShared::report_loading_error("The %s's TypeProfileCasts setting (%s)"
+                                            " does not equal the current TypeProfileCasts setting (%s).", file_type,
+                                            _type_profile_casts ? "enabled" : "disabled",
+                                            TypeProfileCasts    ? "enabled" : "disabled");
+
+      return false;
+
+    }
+    if (_profile_traps != ProfileTraps) {
+      MetaspaceShared::report_loading_error("The %s's ProfileTraps setting (%s)"
+                                            " does not equal the current ProfileTraps setting (%s).", file_type,
+                                            _profile_traps ? "enabled" : "disabled",
+                                            ProfileTraps   ? "enabled" : "disabled");
+
+      return false;
+    }
+    if (_spec_trap_limit_extra_entries != SpecTrapLimitExtraEntries) {
+      MetaspaceShared::report_loading_error("The %s's SpecTrapLimitExtraEntries setting (%d)"
+                                            " does not equal the current SpecTrapLimitExtraEntries setting (%d).", file_type,
+                                            _spec_trap_limit_extra_entries, SpecTrapLimitExtraEntries);
+      return false;
+
+    }
   }
 
   // This must be done after header validation because it might change the
