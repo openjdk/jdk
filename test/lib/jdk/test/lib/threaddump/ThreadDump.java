@@ -297,16 +297,6 @@ public final class ThreadDump {
         }
 
         /**
-         * Returns the thread ID of the owner thread if the parkBlocker is an AQS.
-         */
-        public OptionalLong exclusiveOwnerThreadId() {
-            String s = getStringProperty("parkBlocker", "exclusiveOwnerThreadId");
-            return (s != null)
-                    ? OptionalLong.of(Long.parseLong(s))
-                    : OptionalLong.empty();
-        }
-
-        /**
          * Returns the object that the thread is blocked entering its monitor.
          */
         public String blockedOn() {
@@ -381,8 +371,8 @@ public final class ThreadDump {
             sb.append(tid);
             String name = name();
             if (name.length() > 0) {
-                sb.append(",");
-                sb.append(name);
+                sb.append(",")
+                  .append(name);
             }
             return sb.toString();
         }

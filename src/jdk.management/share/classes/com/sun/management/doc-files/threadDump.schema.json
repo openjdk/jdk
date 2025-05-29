@@ -76,10 +76,6 @@
                             "object": {
                               "type": "string",
                               "description": "The blocker object responsible for the thread parking."
-                            },
-                            "exclusiveOwnerThreadId": {
-                              "type": "string",
-                              "description": "The thread identifier of the owner when the blocker object has an owner."
                             }
                           },
                           "required": [
