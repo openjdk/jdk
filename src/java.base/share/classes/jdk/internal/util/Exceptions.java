@@ -86,8 +86,8 @@ public final class Exceptions {
      * prefix, the sensitive info itself, a suffix
      * and a replacement string.
      *
-     * The output(boolean enhance) method generates an enhanced
-     * string when enhance is true.
+     * The composeFilteredText(boolean enhance) method generates
+     * an enhanced string when enhance is true.
      * This comprises (enhance == true)
      *     prefix + info + suffix
      * When (enhance == false), then by default the output is:
@@ -121,13 +121,13 @@ public final class Exceptions {
         }
 
         /**
-         * Implementation should call output(boolean flag)
+         * Implementation should call composeFilteredText(boolean flag)
          * where flag contains the boolean value of whether
          * the category is enabled or not.
          */
         public abstract String output();
 
-        protected String output(boolean enhance) {
+        protected String composeFilteredText(boolean enhance) {
             if (enhance) {
                 this.enhanced = true;
                 return prefix + info + suffix;
@@ -144,7 +144,7 @@ public final class Exceptions {
         @Override
         public String output() {
             setup();
-            return super.output(enhancedSocketExceptionText);
+            return super.composeFilteredText(enhancedSocketExceptionText);
         }
     }
 
@@ -155,7 +155,7 @@ public final class Exceptions {
         @Override
         public String output() {
             setup();
-            return super.output(enhancedNonSocketExceptionText);
+            return super.composeFilteredText(enhancedNonSocketExceptionText);
         }
     }
 
@@ -166,7 +166,7 @@ public final class Exceptions {
         @Override
         public String output() {
             setup();
-            return super.output(enhancedJarExceptionText);
+            return super.composeFilteredText(enhancedJarExceptionText);
         }
     }
 
@@ -177,7 +177,7 @@ public final class Exceptions {
         @Override
         public String output() {
             setup();
-            return super.output(enhancedUserExceptionText);
+            return super.composeFilteredText(enhancedUserExceptionText);
         }
     }
 

@@ -270,6 +270,8 @@ module java.base {
         java.prefs,
         java.security.jgss,
         java.smartcardio,
+        java.naming,
+        java.rmi,
         java.net.http,
         jdk.charsets,
         jdk.incubator.vector,

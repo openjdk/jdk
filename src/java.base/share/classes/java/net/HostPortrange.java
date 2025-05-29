@@ -59,7 +59,7 @@ class HostPortrange {
         return hostname.hashCode() + portrange[0] + portrange[1];
     }
 
-    HostPortrange(String scheme, String str) {
+    HostPortrange(String scheme, String hostname) {
         // Parse the host name.  A name has up to three components, the
         // hostname, a port number, or two numbers representing a port
         // range.   "www.example.com:8080-9090" is a valid host name.
@@ -74,19 +74,19 @@ class HostPortrange {
         this.scheme = scheme;
 
         // check for IPv6 address
-        if (str.charAt(0) == '[') {
+        if (hostname.charAt(0) == '[') {
             ipv6 = literal = true;
-            int rb = str.indexOf(']');
+            int rb = hostname.indexOf(']');
             if (rb != -1) {
-                hoststr = str.substring(1, rb);
+                hoststr = hostname.substring(1, rb);
             } else {
                 throw new IllegalArgumentException(
-                           formatMsg("invalid IPv6 address%s",
-                                     filterNonSocketInfo(str).prefixWith(": ")));
+                       formatMsg("invalid IPv6 address%s",
+                                 filterNonSocketInfo(hostname).prefixWith(": ")));
             }
-            int sep = str.indexOf(':', rb + 1);
-            if (sep != -1 && str.length() > sep) {
-                portstr = str.substring(sep + 1);
+            int sep = hostname.indexOf(':', rb + 1);
+            if (sep != -1 && hostname.length() > sep) {
+                portstr = hostname.substring(sep + 1);
             }
             // need to normalize hoststr now
             byte[] ip = IPAddressUtil.textToNumericFormatV6(hoststr);
@@ -103,12 +103,12 @@ class HostPortrange {
         } else {
             // not IPv6 therefore ':' is the port separator
 
-            int sep = str.indexOf(':');
-            if (sep != -1 && str.length() > sep) {
-                hoststr = str.substring(0, sep);
-                portstr = str.substring(sep + 1);
+            int sep = hostname.indexOf(':');
+            if (sep != -1 && hostname.length() > sep) {
+                hoststr = hostname.substring(0, sep);
+                portstr = hostname.substring(sep + 1);
             } else {
-                hoststr = sep == -1 ? str : str.substring(0, sep);
+                hoststr = sep == -1 ? hostname : hostname.substring(0, sep);
             }
             // is this a domain wildcard specification?
             if (hoststr.lastIndexOf('*') > 0) {

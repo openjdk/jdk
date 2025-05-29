@@ -62,6 +62,8 @@ import jdk.internal.util.Exceptions;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * NIO based SocketImpl.
@@ -554,7 +556,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             throw new IOException("Unsupported address type");
         InetSocketAddress isa = (InetSocketAddress) remote;
         if (isa.isUnresolved()) {
-            throw new UnknownHostException(isa.getHostName());
+            throw new UnknownHostException(
+                formatMsg("%s", filterNonSocketInfo(isa.getHostName())));
         }
 
         InetAddress address = isa.getAddress();
