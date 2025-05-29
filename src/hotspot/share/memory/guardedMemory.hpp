@@ -246,7 +246,7 @@ protected:
    */
   void* get_tag() const { return get_head_guard()->get_tag(); }
 
-    /**
+  /**
    * Set the second general purpose tag.
    *
    * @param tag general purpose tag.
