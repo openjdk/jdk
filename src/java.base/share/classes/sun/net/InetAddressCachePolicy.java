@@ -123,6 +123,10 @@ public final class InetAddressCachePolicy {
         try {
             tmpString = Security.getProperty(cachePolicyProp);
             if (tmpString != null) {
+                if (logger.isLoggable(PlatformLogger.Level.CONFIG)) {
+                    logger.config(String.format(
+                            "Security property '%s' resolved to '%s'", cachePolicyProp, tmpString));
+                }
                 return Integer.valueOf(tmpString);
             }
         } catch (NumberFormatException ignored) {
@@ -136,6 +140,10 @@ public final class InetAddressCachePolicy {
         try {
             tmpString = System.getProperty(cachePolicyPropFallback);
             if (tmpString != null) {
+                if (logger.isLoggable(PlatformLogger.Level.CONFIG)) {
+                    logger.config(String.format(
+                            "System property '%s' resolved to '%s'", cachePolicyPropFallback, tmpString));
+                }
                 return Integer.decode(tmpString);
             }
         } catch (NumberFormatException ignored) {
