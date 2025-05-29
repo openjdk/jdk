@@ -632,13 +632,6 @@ abstract class CMap {
 
         char getGlyph(int charCode) {
             if (charCode < 256) {
-                if (charCode < 0x0010) {
-                    switch (charCode) {
-                    case 0x0009:
-                    case 0x000a:
-                    case 0x000d: return CharToGlyphMapper.INVISIBLE_GLYPH_ID;
-                    }
-                }
                 return (char)(0xff & cmap[charCode]);
             } else {
                 return 0;
