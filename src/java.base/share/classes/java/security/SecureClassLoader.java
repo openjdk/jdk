@@ -77,7 +77,7 @@ public class SecureClassLoader extends ClassLoader {
 
     /**
      * Creates a new {@code SecureClassLoader} using the
-     * {@linkplain ClassLoader#getSystemClassLoader() default delegation parent class loader}.
+     * {@linkplain ClassLoader#getSystemClassLoader() system class loader as the parent}.
      */
     protected SecureClassLoader() {
         super();

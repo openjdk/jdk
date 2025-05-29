@@ -94,8 +94,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
 
     /**
      * Constructs a new URLClassLoader for the specified URLs using the
-     * {@linkplain ClassLoader#getSystemClassLoader() default delegation
-     * parent class loader}. The URLs will be searched in the order
+     * {@linkplain ClassLoader#getSystemClassLoader() system class loader
+     * as the parent}. The URLs will be searched in the order
      * specified for classes and resources after first searching in the
      * parent class loader. Any URL that ends with a '/' is assumed to
      * refer to a directory. Otherwise, the URL is assumed to refer to
