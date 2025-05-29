@@ -1157,13 +1157,13 @@ final class CompilerToVM {
     native ResolvedJavaMethod[] getDeclaredMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
-     * Gets the {@link ResolvedJavaMethod}s for all non-initializer methods of {@code klass}.
+     * Gets the {@link ResolvedJavaMethod}s for all methods of {@code klass}.
      */
-    ResolvedJavaMethod[] getNonInitializerMethods(HotSpotResolvedObjectTypeImpl klass) {
-        return getNonInitializerMethods(klass, klass.getKlassPointer());
+    ResolvedJavaMethod[] getAllMethods(HotSpotResolvedObjectTypeImpl klass) {
+        return getAllMethods(klass, klass.getKlassPointer());
     }
 
-    native ResolvedJavaMethod[] getNonInitializerMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
+    native ResolvedJavaMethod[] getAllMethods(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     HotSpotResolvedObjectTypeImpl.FieldInfo[] getDeclaredFieldsInfo(HotSpotResolvedObjectTypeImpl klass) {
         return getDeclaredFieldsInfo(klass, klass.getKlassPointer());

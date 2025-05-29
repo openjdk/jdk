@@ -1020,19 +1020,16 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
-    public void getNonInitializerMethodsTest() {
+    public void getAllMethodsTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
-            Method[] raw = c.getDeclaredMethods();
-            Set<ResolvedJavaMethod> expected = new HashSet<>();
-            for (Method m : raw) {
-                ResolvedJavaMethod resolvedMethod = metaAccess.lookupJavaMethod(m);
-                assertNotNull(resolvedMethod);
-                expected.add(resolvedMethod);
+            Set<ResolvedJavaMethod> allMethods = new HashSet<>(type.getAllMethods(true));
+            boolean included = Arrays.stream(type.getDeclaredMethods()).allMatch(m -> allMethods.contains(m));
+            included = included && Arrays.stream(type.getDeclaredConstructors()).allMatch(m -> allMethods.contains(m));
+            if (included && type.getClassInitializer() != null) {
+                included = allMethods.contains(type.getClassInitializer());
             }
-            Set<ResolvedJavaMethod> actual = new HashSet<>(type.getNonInitializerMethods(false));
-            assertTrue(actual.size() >= expected.size());
-            assertTrue(actual.containsAll(expected));
+            assertTrue(included);
         }
     }
 
