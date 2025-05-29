@@ -25,6 +25,7 @@
   @test
   @bug 8332271
   @summary tests that concurrent access to the clipboard does not crash the JVM
+  @key headful
   @run main ConcurrentClipboardAccessTest
  */
 import java.awt.*;
