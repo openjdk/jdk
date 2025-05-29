@@ -189,16 +189,16 @@ public class ResumeChecksServer extends SSLContextTemplate {
                 break;
             case VERSION_2_TO_3:
                 if (second) {
-                    params.setProtocols(new String[]{"TLSv1.3"});
+                    params.setProtocols(new String[] {"TLSv1.3"});
                 } else {
-                    params.setProtocols(new String[]{"TLSv1.2"});
+                    params.setProtocols(new String[] {"TLSv1.2"});
                 }
                 break;
             case VERSION_3_TO_2:
                 if (second) {
-                    params.setProtocols(new String[]{"TLSv1.2"});
+                    params.setProtocols(new String[] {"TLSv1.2"});
                 } else {
-                    params.setProtocols(new String[]{"TLSv1.3"});
+                    params.setProtocols(new String[] {"TLSv1.3"});
                 }
                 break;
             case CIPHER_SUITE:
