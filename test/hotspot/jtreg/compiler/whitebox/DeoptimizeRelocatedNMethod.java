@@ -28,6 +28,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.gc.Serial
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseSerialGC compiler.whitebox.DeoptimizeRelocatedNMethod
@@ -39,6 +40,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.gc.Parallel
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseParallelGC compiler.whitebox.DeoptimizeRelocatedNMethod
@@ -50,6 +52,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.gc.G1
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseG1GC compiler.whitebox.DeoptimizeRelocatedNMethod
@@ -61,6 +64,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.gc.Shenandoah
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseShenandoahGC compiler.whitebox.DeoptimizeRelocatedNMethod
@@ -72,6 +76,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.gc.Z
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseZGC compiler.whitebox.DeoptimizeRelocatedNMethod

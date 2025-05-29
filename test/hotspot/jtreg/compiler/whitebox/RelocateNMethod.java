@@ -30,6 +30,7 @@
  * @modules java.base/jdk.internal.misc java.management
  *
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.gc.Serial
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -44,6 +45,7 @@
  * @modules java.base/jdk.internal.misc java.management
  *
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.gc.Parallel
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -58,6 +60,7 @@
  * @modules java.base/jdk.internal.misc java.management
  *
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.gc.G1
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -72,6 +75,7 @@
  * @modules java.base/jdk.internal.misc java.management
  *
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.gc.Shenandoah
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -86,6 +90,7 @@
  * @modules java.base/jdk.internal.misc java.management
  *
  * @requires vm.opt.DeoptimizeALot != true
+ * @requires vm.gc.Z
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
