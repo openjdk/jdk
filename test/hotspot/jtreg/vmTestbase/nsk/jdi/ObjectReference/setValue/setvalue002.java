@@ -120,7 +120,7 @@ public class setvalue002 {
                 return quitDebuggee();
             }
             thrRef.suspend();
-            while(!thrRef.isSuspended()) {
+            while (!thrRef.isSuspended()) {
                 num++;
                 if (num > ATTEMPTS) {
                     log.complain("TEST FAILED: Unable to suspend debuggee's thread");
