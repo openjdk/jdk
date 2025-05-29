@@ -176,7 +176,7 @@ public class ShortcutHintTest {
             TKit.assertTextStream(expectedVersionString)
                     .label(String.format("[%s] file", desktopFile))
                     .predicate(String::equals)
-                    .apply(Files.readAllLines(desktopFile).stream());
+                    .apply(Files.readAllLines(desktopFile));
         }).run();
     }
 }

@@ -422,6 +422,18 @@ source_hpp %{
 
 #include "peephole_x86_64.hpp"
 
+bool castLL_is_imm32(const Node* n);
+
+%}
+
+source %{
+
+bool castLL_is_imm32(const Node* n) {
+  assert(n->is_CastLL(), "must be a CastLL");
+  const TypeLong* t = n->bottom_type()->is_long();
+  return (t->_lo == min_jlong || Assembler::is_simm32(t->_lo)) && (t->_hi == max_jlong || Assembler::is_simm32(t->_hi));
+}
+
 %}
 
 // Register masks
@@ -845,7 +857,7 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     Register klass = rscratch1;
 
     __ mov_metadata(klass, C->method()->holder()->constant_encoding());
-    __ clinit_barrier(klass, r15_thread, &L_skip_barrier /*L_fast_path*/);
+    __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
 
     __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
 
@@ -943,7 +955,7 @@ void MachEpilogNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
       code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
-    __ safepoint_poll(*code_stub, r15_thread, true /* at_return */, true /* in_nmethod */);
+    __ safepoint_poll(*code_stub, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -1584,14 +1596,11 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 //=============================================================================
 
 bool Matcher::supports_vector_calling_convention(void) {
-  if (EnableVectorSupport && UseVectorStubs) {
-    return true;
-  }
-  return false;
+  return EnableVectorSupport;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  assert(EnableVectorSupport, "sanity");
   int lo = XMM0_num;
   int hi = XMM0b_num;
   if (ideal_reg == Op_VecX) hi = XMM0d_num;
@@ -1838,20 +1847,19 @@ encode %{
   %}
 
   enc_class clear_avx %{
-    debug_only(int off0 = __ offset());
+    DEBUG_ONLY(int off0 = __ offset());
     if (generate_vzeroupper(Compile::current())) {
       // Clear upper bits of YMM registers to avoid AVX <-> SSE transition penalty
       // Clear upper bits of YMM registers when current compiled code uses
       // wide vectors to avoid AVX <-> SSE transition penalty during call.
       __ vzeroupper();
     }
-    debug_only(int off1 = __ offset());
+    DEBUG_ONLY(int off1 = __ offset());
     assert(off1 - off0 == clear_avx_size(), "correct size prediction");
   %}
 
   enc_class Java_To_Runtime(method meth) %{
-    // No relocation needed
-    __ mov64(r10, (int64_t) $meth$$method);
+    __ lea(r10, RuntimeAddress((address)$meth$$method));
     __ call(r10);
     __ post_call_nop();
   %}
@@ -6258,13 +6266,14 @@ instruct cmovI_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
 instruct cmovI_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src1, rRegI src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpl  $dst, $src1, $src2\n\t"
-            "ecmovnel $dst, $src1, $src2" %}
+            "cmovnel  $dst, $src2" %}
   ins_encode %{
     __ ecmovl(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovl(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovl(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6274,6 +6283,7 @@ instruct cmovI_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI s
 instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
   predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveI (Binary cop cr) (Binary src dst)));
+  effect(TEMP dst);
 
   ins_cost(200); // XXX
   format %{ "cmovpl  $dst, $src\n\t"
@@ -6289,14 +6299,15 @@ instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
 // and parity flag bit is set if any of the operand is a NaN.
 instruct cmovI_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src1, rRegI src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
-  match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
+  match(Set dst (CMoveI (Binary cop cr) (Binary src2 src1)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpl  $dst, $src1, $src2\n\t"
-            "ecmovnel $dst, $src1, $src2" %}
+            "cmovnel  $dst, $src2" %}
   ins_encode %{
     __ ecmovl(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovl(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovl(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6539,6 +6550,7 @@ instruct cmovP_regU_ndd(rRegP dst, cmpOpU cop, rFlagsRegU cr, rRegP src1, rRegP 
 %}
 
 instruct cmovP_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
+  predicate(!UseAPX);
   match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -6547,6 +6559,7 @@ instruct cmovP_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
 %}
 
 instruct cmovP_regUCF_ndd(rRegP dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegP src1, rRegP src2) %{
+  predicate(UseAPX);
   match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
   ins_cost(200);
   format %{ "ecmovq$cop $dst, $src1, $src2\t# unsigned, ptr ndd" %}
@@ -6573,13 +6586,14 @@ instruct cmovP_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) 
 instruct cmovP_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src1, rRegP src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
-            "ecmovneq $dst, $src1, $src2" %}
+            "cmovneq  $dst, $src2" %}
   ins_encode %{
     __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6602,14 +6616,15 @@ instruct cmovP_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) 
 
 instruct cmovP_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src1, rRegP src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
-  match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
+  match(Set dst (CMoveP (Binary cop cr) (Binary src2 src1)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
-            "ecmovneq $dst, $src1, $src2" %}
+            "cmovneq  $dst, $src2" %}
   ins_encode %{
     __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6772,13 +6787,14 @@ instruct cmovL_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
 instruct cmovL_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src1, rRegL src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
-            "ecmovneq $dst, $src1, $src2" %}
+            "cmovneq  $dst, $src2" %}
   ins_encode %{
     __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6801,14 +6817,15 @@ instruct cmovL_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
 
 instruct cmovL_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src1, rRegL src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
-  match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
+  match(Set dst (CMoveL (Binary cop cr) (Binary src2 src1)));
+  effect(TEMP dst);
 
   ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
-            "ecmovneq $dst, $src1, $src2" %}
+            "cmovneq $dst, $src2" %}
   ins_encode %{
     __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
-    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -7396,7 +7413,7 @@ instruct addL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_mem_imm);
 %}
 
-instruct incL_rReg(rRegI dst, immL1 src, rFlagsReg cr)
+instruct incL_rReg(rRegL dst, immL1 src, rFlagsReg cr)
 %{
   predicate(!UseAPX && UseIncDec);
   match(Set dst (AddL dst src));
@@ -7409,7 +7426,7 @@ instruct incL_rReg(rRegI dst, immL1 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val, rFlagsReg cr)
+instruct incL_rReg_ndd(rRegL dst, rRegI src, immL1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL src val));
@@ -7422,7 +7439,7 @@ instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct incL_rReg_mem_ndd(rRegI dst, memory src, immL1 val, rFlagsReg cr)
+instruct incL_rReg_mem_ndd(rRegL dst, memory src, immL1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL (LoadL src) val));
@@ -7605,6 +7622,7 @@ instruct castPP(rRegP dst)
 
 instruct castII(rRegI dst)
 %{
+  predicate(VerifyConstraintCasts == 0);
   match(Set dst (CastII dst));
 
   size(0);
@@ -7614,8 +7632,22 @@ instruct castII(rRegI dst)
   ins_pipe(empty);
 %}
 
+instruct castII_checked(rRegI dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0);
+  match(Set dst (CastII dst));
+
+  effect(KILL cr);
+  format %{ "# cast_checked_II $dst" %}
+  ins_encode %{
+    __ verify_int_in_range(_idx, bottom_type()->is_int(), $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct castLL(rRegL dst)
 %{
+  predicate(VerifyConstraintCasts == 0);
   match(Set dst (CastLL dst));
 
   size(0);
@@ -7623,6 +7655,32 @@ instruct castLL(rRegL dst)
   ins_encode(/* empty encoding */);
   ins_cost(0);
   ins_pipe(empty);
+%}
+
+instruct castLL_checked_L32(rRegL dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0 && castLL_is_imm32(n));
+  match(Set dst (CastLL dst));
+
+  effect(KILL cr);
+  format %{ "# cast_checked_LL $dst" %}
+  ins_encode %{
+    __ verify_long_in_range(_idx, bottom_type()->is_long(), $dst$$Register, noreg);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct castLL_checked(rRegL dst, rRegL tmp, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0 && !castLL_is_imm32(n));
+  match(Set dst (CastLL dst));
+
+  effect(KILL cr, TEMP tmp);
+  format %{ "# cast_checked_LL $dst\tusing $tmp as TEMP" %}
+  ins_encode %{
+    __ verify_long_in_range(_idx, bottom_type()->is_long(), $dst$$Register, $tmp$$Register);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct castFF(regF dst)
@@ -11345,7 +11403,7 @@ instruct xorL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2, rFlagsReg cr
   ins_cost(150);
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ exorq($dst$$Register, $src1$$Address, $src1$$Register, false);
+    __ exorq($dst$$Register, $src1$$Address, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}

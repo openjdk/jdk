@@ -27,11 +27,11 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
@@ -268,12 +268,12 @@ private:
                "Must be marked in incomplete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->gc_generation()->complete_marking_context()->is_marked(obj),
                "Must be marked in complete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete_except_references:
       case ShenandoahVerifier::_verify_marked_complete_satb_empty:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->gc_generation()->complete_marking_context()->is_marked(obj),
               "Must be marked in complete bitmap, except j.l.r.Reference referents");
         break;
       default:
@@ -701,7 +701,7 @@ public:
   virtual void work_humongous(ShenandoahHeapRegion *r, ShenandoahVerifierStack& stack, ShenandoahVerifyOopClosure& cl) {
     size_t processed = 0;
     HeapWord* obj = r->bottom();
-    if (_heap->complete_marking_context()->is_marked(cast_to_oop(obj))) {
+    if (_heap->gc_generation()->complete_marking_context()->is_marked(cast_to_oop(obj))) {
       verify_and_follow(obj, stack, cl, &processed);
     }
     Atomic::add(&_processed, processed, memory_order_relaxed);
@@ -709,7 +709,7 @@ public:
 
   virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
     size_t processed = 0;
-    ShenandoahMarkingContext* ctx = _heap->complete_marking_context();
+    ShenandoahMarkingContext* ctx = _heap->gc_generation()->complete_marking_context();
     HeapWord* tams = ctx->top_at_mark_start(r);
 
     // Bitmaps, before TAMS
@@ -788,9 +788,11 @@ public:
 
 void ShenandoahVerifier::verify_at_safepoint(const char* label,
                                              VerifyRememberedSet remembered,
-                                             VerifyForwarded forwarded, VerifyMarked marked,
+                                             VerifyForwarded forwarded,
+                                             VerifyMarked marked,
                                              VerifyCollectionSet cset,
-                                             VerifyLiveness liveness, VerifyRegions regions,
+                                             VerifyLiveness liveness,
+                                             VerifyRegions regions,
                                              VerifySize sizeness,
                                              VerifyGCState gcstate) {
   guarantee(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "only when nothing else happens");
@@ -989,7 +991,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
         (marked == _verify_marked_complete ||
          marked == _verify_marked_complete_except_references ||
          marked == _verify_marked_complete_satb_empty)) {
-    guarantee(_heap->marking_context()->is_complete(), "Marking context should be complete");
+    guarantee(_heap->gc_generation()->is_mark_complete(), "Marking context should be complete");
     ShenandoahVerifierMarkedRegionTask task(_verification_bit_map, ld, label, options);
     _heap->workers()->run_task(&task);
     count_marked = task.processed();
@@ -1186,7 +1188,7 @@ void ShenandoahVerifier::verify_after_fullgc() {
           "After Full GC",
           _verify_remembered_after_full_gc,  // verify read-write remembered set
           _verify_forwarded_none,      // all objects are non-forwarded
-          _verify_marked_complete,     // all objects are marked in complete bitmap
+          _verify_marked_incomplete,   // all objects are marked in incomplete bitmap
           _verify_cset_none,           // no cset references
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash_nocset, // no trash, no cset
@@ -1294,7 +1296,7 @@ void ShenandoahVerifier::help_verify_region_rem_set(Scanner* scanner, Shenandoah
   ShenandoahOldGeneration* old_gen = _heap->old_generation();
   assert(old_gen->is_mark_complete() || old_gen->is_parsable(), "Sanity");
 
-  ShenandoahMarkingContext* ctx = old_gen->is_mark_complete() ?old_gen->complete_marking_context() : nullptr;
+  ShenandoahMarkingContext* ctx = old_gen->is_mark_complete() ? old_gen->complete_marking_context() : nullptr;
   ShenandoahVerifyRemSetClosure<Scanner> check_interesting_pointers(scanner, message);
   HeapWord* from = r->bottom();
   HeapWord* obj_addr = from;

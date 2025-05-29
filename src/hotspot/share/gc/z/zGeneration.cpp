@@ -160,7 +160,7 @@ void ZGeneration::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
   // the page allocator lock, and trying to satisfy stalled allocations
   // too frequently.
   if (selector->should_free_empty_pages(bulk)) {
-    const size_t freed = ZHeap::heap()->free_empty_pages(selector->empty_pages());
+    const size_t freed = ZHeap::heap()->free_empty_pages(_id, selector->empty_pages());
     increase_freed(freed);
     selector->clear_empty_pages();
   }
@@ -190,17 +190,6 @@ void ZGeneration::select_relocation_set(bool promote_all) {
     for (ZPage* page; pt_iter.next(&page);) {
       if (!page->is_relocatable()) {
         // Not relocatable, don't register
-        // Note that the seqnum can change under our feet here as the page
-        // can be concurrently freed and recycled by a concurrent generation
-        // collection. However this property is stable across such transitions.
-        // If it was not relocatable before recycling, then it won't be
-        // relocatable after it gets recycled either, as the seqnum atomically
-        // becomes allocating for the given generation. The opposite property
-        // also holds: if the page is relocatable, then it can't have been
-        // concurrently freed; if it was re-allocated it would not be
-        // relocatable, and if it was not re-allocated we know that it was
-        // allocated earlier than mark start of the current generation
-        // collection.
         continue;
       }
 
@@ -213,15 +202,14 @@ void ZGeneration::select_relocation_set(bool promote_all) {
 
         // Reclaim empty pages in bulk
 
-        // An active iterator blocks immediate recycle and delete of pages.
-        // The intent it to allow the code that iterates over the pages to
-        // safely read the properties of the pages without them being changed
-        // by another thread. However, this function both iterates over the
-        // pages AND frees/recycles them. We "yield" the iterator, so that we
-        // can perform immediate recycling (as long as no other thread is
-        // iterating over the pages). The contract is that the pages that are
-        // about to be freed are "owned" by this thread, and no other thread
-        // will change their states.
+        // An active iterator blocks immediate deletion of pages. The intent is
+        // to allow the code that iterates over pages to safely read properties
+        // of the pages without them being freed/deleted. However, this
+        // function both iterates over the pages AND frees them. We "yield" the
+        // iterator, so that we can perform immediate deletion (as long as no
+        // other thread is iterating over the pages). The contract is that the
+        // pages that are about to be freed are "owned" by this thread, and no
+        // other thread will change their states.
         pt_iter.yield([&]() {
           free_empty_pages(&selector, 64 /* bulk */);
         });
@@ -291,7 +279,6 @@ void ZGeneration::reset_statistics() {
   _freed = 0;
   _promoted = 0;
   _compacted = 0;
-  _page_allocator->reset_statistics(_id);
 }
 
 size_t ZGeneration::freed() const {
@@ -850,6 +837,9 @@ void ZGenerationYoung::mark_start() {
   // Change good colors
   flip_mark_start();
 
+  // Reset TLAB usage
+  ZHeap::heap()->reset_tlab_used();
+
   // Retire allocating pages
   ZAllocator::eden()->retire_pages();
   for (ZPageAge i = ZPageAge::survivor1; i <= ZPageAge::survivor14; i = static_cast<ZPageAge>(static_cast<uint>(i) + 1)) {
@@ -872,7 +862,7 @@ void ZGenerationYoung::mark_start() {
   _remembered.flip();
 
   // Update statistics
-  stat_heap()->at_mark_start(_page_allocator->stats(this));
+  stat_heap()->at_mark_start(_page_allocator->update_and_stats(this));
 }
 
 void ZGenerationYoung::mark_roots() {
@@ -934,7 +924,7 @@ void ZGenerationYoung::flip_promote(ZPage* from_page, ZPage* to_page) {
   _page_table->replace(from_page, to_page);
 
   // Update statistics
-  _page_allocator->promote_used(from_page->size());
+  _page_allocator->promote_used(from_page, to_page);
   increase_freed(from_page->size());
   increase_promoted(from_page->live_bytes());
 }
@@ -943,7 +933,7 @@ void ZGenerationYoung::in_place_relocate_promote(ZPage* from_page, ZPage* to_pag
   _page_table->replace(from_page, to_page);
 
   // Update statistics
-  _page_allocator->promote_used(from_page->size());
+  _page_allocator->promote_used(from_page, to_page);
 }
 
 void ZGenerationYoung::register_flip_promoted(const ZArray<ZPage*>& pages) {
@@ -1221,7 +1211,7 @@ void ZGenerationOld::mark_start() {
   _mark.start();
 
   // Update statistics
-  stat_heap()->at_mark_start(_page_allocator->stats(this));
+  stat_heap()->at_mark_start(_page_allocator->update_and_stats(this));
 
   // Note that we start a marking cycle.
   // Unlike other GCs, the color switch implicitly changes the nmethods

@@ -1372,6 +1372,31 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(L);
   }
 
+  #if INCLUDE_JFR
+  __ enter_jfr_critical_section();
+
+  // This poll test is to uphold the invariant that a JFR sampled frame
+  // must not return to its caller without a prior safepoint poll check.
+  // The earlier poll check in this routine is insufficient for this purpose
+  // because the thread has transitioned back to Java.
+
+  Label slow_path;
+  Label fast_path;
+  __ safepoint_poll(slow_path, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+  __ j(fast_path);
+
+  __ bind(slow_path);
+  __ push(dtos);
+  __ push(ltos);
+  __ set_last_Java_frame(esp, fp, __ pc(), t0);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), xthread);
+  __ reset_last_Java_frame(true);
+  __ pop(ltos);
+  __ pop(dtos);
+  __ bind(fast_path);
+
+#endif // INCLUDE_JFR
+
   // jvmti support
   // Note: This must happen _after_ handling/throwing any exceptions since
   //       the exception handler code notifies the runtime of method exits
@@ -1385,9 +1410,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ jalr(result_handler);
 
   // remove activation
-  __ ld(esp, Address(fp, frame::interpreter_frame_sender_sp_offset * wordSize)); // get sender sp
+  // get sender sp
+  __ ld(esp, Address(fp, frame::interpreter_frame_sender_sp_offset * wordSize));
   // remove frame anchor
   __ leave();
+
+  JFR_ONLY(__ leave_jfr_critical_section();)
 
   // restore sender sp
   __ mv(sp, esp);
@@ -1725,11 +1753,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(x10);
-  __ sd(x10, Address(xthread, JavaThread::vm_result_offset()));
+  __ sd(x10, Address(xthread, JavaThread::vm_result_oop_offset()));
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, false, true, false);
   // restore exception
-  __ get_vm_result(x10, xthread);
+  __ get_vm_result_oop(x10, xthread);
 
   // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects the

@@ -206,8 +206,8 @@ public:
   void prepare_for_verify() override;
   void verify(VerifyOption option) override;
 
-  void print_on(outputStream* st) const override;
-  void print_on_error(outputStream* st) const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_gc_on(outputStream* st) const override;
   void gc_threads_do(ThreadClosure* tc) const override;
   void print_tracing_info() const override;
 

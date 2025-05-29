@@ -253,7 +253,7 @@ public:
       set_type_at_tos(type);
     }
     void      pop() {
-      debug_only(set_type_at_tos(bottom_type()));
+      DEBUG_ONLY(set_type_at_tos(bottom_type()));
       _stack_size--;
     }
     ciType*   pop_value() {

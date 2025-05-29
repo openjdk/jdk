@@ -82,7 +82,7 @@ public final class LinuxHelper {
         String desktopFileName = String.format("%s-%s.desktop", getPackageName(
                 cmd), Optional.ofNullable(launcherName).orElseGet(
                         () -> cmd.name()).replaceAll("\\s+", "_"));
-        return cmd.appLayout().destktopIntegrationDirectory().resolve(
+        return cmd.appLayout().desktopIntegrationDirectory().resolve(
                 desktopFileName);
     }
 
@@ -309,9 +309,9 @@ public final class LinuxHelper {
 
     static void verifyPackageBundleEssential(JPackageCommand cmd) {
         String packageName = LinuxHelper.getPackageName(cmd);
-        Long packageSize = LinuxHelper.getInstalledPackageSizeKB(cmd);
+        long packageSize = LinuxHelper.getInstalledPackageSizeKB(cmd);
         TKit.trace("InstalledPackageSize: " + packageSize);
-        TKit.assertNotEquals(0L, packageSize, String.format(
+        TKit.assertNotEquals(0, packageSize, String.format(
                 "Check installed size of [%s] package in not zero", packageName));
 
         final boolean checkPrerequisites;
@@ -393,7 +393,7 @@ public final class LinuxHelper {
 
         test.addInstallVerifier(cmd -> {
             // Verify .desktop files.
-            try (var files = Files.list(cmd.appLayout().destktopIntegrationDirectory())) {
+            try (var files = Files.list(cmd.appLayout().desktopIntegrationDirectory())) {
                 List<Path> desktopFiles = files
                         .filter(path -> path.getFileName().toString().endsWith(".desktop"))
                         .toList();
@@ -427,7 +427,7 @@ public final class LinuxHelper {
 
         Map<String, String> data = lines.stream()
         .skip(1)
-        .peek(str -> TKit.assertTextStream("=").predicate(String::contains).apply(Stream.of(str)))
+        .peek(str -> TKit.assertTextStream("=").predicate(String::contains).apply(List.of(str)))
         .map(str -> {
             String components[] = str.split("=(?=.+)");
             if (components.length == 1) {
@@ -470,7 +470,7 @@ public final class LinuxHelper {
 
         for (var e : List.<Map.Entry<Map.Entry<String, Optional<String>>, Function<ApplicationLayout, Path>>>of(
                 Map.entry(Map.entry("Exec", Optional.of(launcherPath)), ApplicationLayout::launchersDirectory),
-                Map.entry(Map.entry("Icon", Optional.empty()), ApplicationLayout::destktopIntegrationDirectory))) {
+                Map.entry(Map.entry("Icon", Optional.empty()), ApplicationLayout::desktopIntegrationDirectory))) {
             var path = e.getKey().getValue().or(() -> Optional.of(data.get(
                     e.getKey().getKey()))).map(Path::of).get();
             TKit.assertFileExists(cmd.pathToUnpackedPackageFile(path));
@@ -533,11 +533,11 @@ public final class LinuxHelper {
                 TKit.assertEquals(fa.getMime(), mimeType, String.format(
                         "Check mime type of [%s] file", testFile));
 
-                String desktopFileName = queryMimeTypeDefaultHandler(mimeType);
+                String desktopFileName = queryMimeTypeDefaultHandler(mimeType).orElse(null);
 
                 Path systemDesktopFile = getSystemDesktopFilesFolder().resolve(
                         desktopFileName);
-                Path appDesktopFile = cmd.appLayout().destktopIntegrationDirectory().resolve(
+                Path appDesktopFile = cmd.appLayout().desktopIntegrationDirectory().resolve(
                         desktopFileName);
 
                 TKit.assertFileExists(systemDesktopFile);
@@ -557,7 +557,7 @@ public final class LinuxHelper {
                 TKit.assertNotEquals(fa.getMime(), mimeType, String.format(
                         "Check mime type of [%s] file", testFile));
 
-                String desktopFileName = queryMimeTypeDefaultHandler(fa.getMime());
+                String desktopFileName = queryMimeTypeDefaultHandler(fa.getMime()).orElse(null);
 
                 TKit.assertNull(desktopFileName, String.format(
                         "Check there is no default handler for [%s] mime type",
@@ -569,7 +569,7 @@ public final class LinuxHelper {
             final Path mimeTypeIconFileName = fa.getLinuxIconFileName();
             if (mimeTypeIconFileName != null) {
                 // Verify there are xdg registration commands for mime icon file.
-                Path mimeTypeIcon = cmd.appLayout().destktopIntegrationDirectory().resolve(
+                Path mimeTypeIcon = cmd.appLayout().desktopIntegrationDirectory().resolve(
                         mimeTypeIconFileName);
 
                 Map<Scriptlet, List<String>> scriptlets = getScriptlets(cmd);
@@ -584,9 +584,9 @@ public final class LinuxHelper {
                 .executeAndGetFirstLineOfOutput();
     }
 
-    private static String queryMimeTypeDefaultHandler(String mimeType) {
+    private static Optional<String> queryMimeTypeDefaultHandler(String mimeType) {
         return Executor.of("xdg-mime", "query", "default", mimeType)
-                .executeAndGetFirstLineOfOutput();
+                .discardStderr().saveFirstLineOfOutput().execute().findFirstLineOfOutput();
     }
 
     private static void verifyIconInScriptlet(Scriptlet scriptletType,
@@ -708,7 +708,7 @@ public final class LinuxHelper {
 
         static final Map<String, Scriptlet> RPM_MAP = Stream.of(values()).collect(
                 Collectors.toMap(v -> v.rpm, v -> v));
-    };
+    }
 
     public static String getDefaultPackageArch(PackageType type) {
         if (archs == null) {

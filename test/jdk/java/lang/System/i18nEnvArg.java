@@ -26,6 +26,7 @@
  * @bug 8285517
  * @summary System.getenv() and argument don't return locale dependent data by JEP400
  * @requires (os.family == "linux")
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @modules jdk.charsets
  * @library /test/lib
  * @build jdk.test.lib.process.*

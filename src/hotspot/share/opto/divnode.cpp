@@ -1319,6 +1319,11 @@ static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
     return TypeClass::ZERO;
   }
 
+  // Mod by zero?  Throw an exception at runtime!
+  if (type_divisor->is_con() && type_divisor->get_con() == 0) {
+    return TypeClass::POS;
+  }
+
   const TypeClass* type_dividend = t1->cast<TypeClass>();
   if (type_dividend->is_con() && type_divisor->is_con()) {
     Unsigned dividend = static_cast<Unsigned>(type_dividend->get_con());

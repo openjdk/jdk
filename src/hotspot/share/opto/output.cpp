@@ -23,6 +23,7 @@
  */
 
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfo.hpp"
 #include "code/debugInfoRec.hpp"
@@ -2971,7 +2972,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
   }
 
   Node *kill = def;             // Rename 'def' to more descriptive 'kill'
-  debug_only( def = (Node*)((intptr_t)0xdeadbeef); )
+  DEBUG_ONLY( def = (Node*)((intptr_t)0xdeadbeef); )
 
   // After some number of kills there _may_ be a later def
   Node *later_def = nullptr;
@@ -3487,6 +3488,7 @@ void PhaseOutput::install_stub(const char* stub_name) {
       } else {
         assert(rs->is_runtime_stub(), "sanity check");
         C->set_stub_entry_point(rs->entry_point());
+        AOTCodeCache::store_code_blob(*rs, AOTCodeEntry::C2Blob, C->stub_id(), stub_name);
       }
     }
   }

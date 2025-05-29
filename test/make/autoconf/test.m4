@@ -92,14 +92,16 @@ AC_DEFUN([TEST_ARG_ENABLE],
 # Use the CUSTOM_EARLY_HOOK to inject our test after basic init is done.
 AC_DEFUN_ONCE([CUSTOM_EARLY_HOOK],
 [
-  $PRINTF "\nStarting configure tests\n"
-  $PRINTF "==============================\n"
+  $ECHO ""
+  $ECHO "Starting configure tests"
+  $ECHO "=============================="
 
   TEST_STRING_OPS
   TEST_ARG_ENABLE
 
   # If no assertions failed, report success
-  $PRINTF "==============================\n"
-  $PRINTF "Configure tests finished successfully\n\n"
+  $ECHO "=============================="
+  $ECHO "Configure tests finished successfully"
+  $ECHO ""
   exit 0
 ])

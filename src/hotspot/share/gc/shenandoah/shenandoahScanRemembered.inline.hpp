@@ -26,18 +26,19 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP
 
-#include "memory/iterator.hpp"
-#include "oops/oop.hpp"
-#include "oops/objArrayOop.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.hpp"
+
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahScanRemembered.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "logging/log.hpp"
+#include "memory/iterator.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.hpp"
 
 // Process all objects starting within count clusters beginning with first_cluster and for which the start address is
 // less than end_of_range.  For any non-array object whose header lies on a dirty card, scan the entire object,

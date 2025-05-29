@@ -6581,7 +6581,7 @@ instruct mulHiL_reg_reg(revenRegL Rdst, roddRegL Rsrc1, iRegL Rsrc2, iRegL Rtmp1
     Register tmp1 = $Rtmp1$$Register;
     Register tmp2 = $Rdst$$Register;
     // z/Architecture has only unsigned multiply (64 * 64 -> 128).
-    // implementing mulhs(a,b) = mulhu(a,b) – (a & (b>>63)) – (b & (a>>63))
+    // implementing mulhs(a,b) = mulhu(a,b) - (a & (b>>63)) - (b & (a>>63))
     __ z_srag(tmp2, src1, 63);  // a>>63
     __ z_srag(tmp1, src2, 63);  // b>>63
     __ z_ngr(tmp2, src2);       // b & (a>>63)
@@ -10080,7 +10080,8 @@ instruct ShouldNotReachHere() %{
   format %{ "ILLTRAP; ShouldNotReachHere" %}
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
   ins_pipe(pipe_class_dummy);

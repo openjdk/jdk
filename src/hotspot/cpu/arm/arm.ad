@@ -1238,11 +1238,11 @@ encode %{
   enc_class save_last_PC %{
     // preserve mark
     address mark = __ inst_mark();
-    debug_only(int off0 = __ offset());
+    DEBUG_ONLY(int off0 = __ offset());
     int ret_addr_offset = as_MachCall()->ret_addr_offset();
     __ adr(LR, mark + ret_addr_offset);
     __ str(LR, Address(Rthread, JavaThread::last_Java_pc_offset()));
-    debug_only(int off1 = __ offset());
+    DEBUG_ONLY(int off1 = __ offset());
     assert(off1 - off0 == 2 * Assembler::InstructionSize, "correct size prediction");
     // restore mark
     __ set_inst_mark(mark);
@@ -1251,11 +1251,11 @@ encode %{
   enc_class preserve_SP %{
     // preserve mark
     address mark = __ inst_mark();
-    debug_only(int off0 = __ offset());
+    DEBUG_ONLY(int off0 = __ offset());
     // FP is preserved across all calls, even compiled calls.
     // Use it to preserve SP in places where the callee might change the SP.
     __ mov(Rmh_SP_save, SP);
-    debug_only(int off1 = __ offset());
+    DEBUG_ONLY(int off1 = __ offset());
     assert(off1 - off0 == 4, "correct size prediction");
     // restore mark
     __ set_inst_mark(mark);
@@ -8992,7 +8992,8 @@ instruct ShouldNotReachHere( )
   format %{ "ShouldNotReachHere" %}
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
   ins_pipe(tail_call);

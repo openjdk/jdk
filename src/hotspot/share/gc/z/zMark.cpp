@@ -27,7 +27,6 @@
 #include "code/nmethod.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/z/zAbort.inline.hpp"
@@ -389,25 +388,6 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   }
 }
 
-static void try_deduplicate(ZMarkContext* context, oop obj) {
-  if (!StringDedup::is_enabled()) {
-    // Not enabled
-    return;
-  }
-
-  if (!java_lang_String::is_instance(obj)) {
-    // Not a String object
-    return;
-  }
-
-  if (java_lang_String::test_and_set_deduplication_requested(obj)) {
-    // Already requested deduplication
-    return;
-  }
-
-  // Request deduplication
-  context->string_dedup_requests()->add(obj);
-}
 
 void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
   // Decode flags
@@ -449,13 +429,7 @@ void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
     if (is_array(addr)) {
       follow_array_object(objArrayOop(to_oop(addr)), finalizable);
     } else {
-      const oop obj = to_oop(addr);
-      follow_object(obj, finalizable);
-
-      if (!finalizable) {
-        // Try deduplicate
-        try_deduplicate(context, obj);
-      }
+      follow_object(to_oop(addr), finalizable);
     }
   }
 }

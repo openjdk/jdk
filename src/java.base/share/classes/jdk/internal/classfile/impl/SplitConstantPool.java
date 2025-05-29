@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.lang.classfile.ClassReader;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
@@ -497,7 +498,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     @Override
     public AbstractPoolEntry.ClassEntryImpl classEntry(Utf8Entry nameEntry) {
         var ne = maybeCloneUtf8Entry(nameEntry);
-        return classEntry(ne, AbstractPoolEntry.isArrayDescriptor(ne));
+        return classEntry(ne, ne.mayBeArrayDescriptor());
     }
 
     AbstractPoolEntry.ClassEntryImpl classEntry(AbstractPoolEntry.Utf8EntryImpl ne, boolean isArray) {
@@ -521,6 +522,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     AbstractPoolEntry.ClassEntryImpl cloneClassEntry(AbstractPoolEntry.ClassEntryImpl e) {
         var ce = tryFindClassEntry(e.hashCode(), e.ref1);
         if (ce != null) {
+            var mySym = e.sym;
+            if (ce.sym == null && mySym != null) {
+                ce.sym = mySym;
+            }
             return ce;
         }
 

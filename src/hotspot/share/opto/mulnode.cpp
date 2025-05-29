@@ -258,7 +258,7 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
 
-  unsigned int abs_con = uabs(con);
+  unsigned int abs_con = g_uabs(con);
   if (abs_con != (unsigned int)con) {
     sign_flip = true;
   }
@@ -493,7 +493,7 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
-  julong abs_con = uabs(con);
+  julong abs_con = g_uabs(con);
   if (abs_con != (julong)con) {
     sign_flip = true;
   }
@@ -924,13 +924,15 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( t12 && t12->is_con() ) { // Shift is by a constant
       int shift = t12->get_con();
       shift &= BitsPerJavaLong - 1;  // semantics of Java shifts
-      const julong sign_bits_mask = ~(((julong)CONST64(1) << (julong)(BitsPerJavaLong - shift)) -1);
-      // If the AND'ing of the 2 masks has no bits, then only original shifted
-      // bits survive.  NO sign-extension bits survive the maskings.
-      if( (sign_bits_mask & mask) == 0 ) {
-        // Use zero-fill shift instead
-        Node *zshift = phase->transform(new URShiftLNode(in1->in(1), in1->in(2)));
-        return new AndLNode(zshift, in(2));
+      if (shift != 0) {
+        const julong sign_bits_mask = ~(((julong)CONST64(1) << (julong)(BitsPerJavaLong - shift)) -1);
+        // If the AND'ing of the 2 masks has no bits, then only original shifted
+        // bits survive.  NO sign-extension bits survive the maskings.
+        if( (sign_bits_mask & mask) == 0 ) {
+          // Use zero-fill shift instead
+          Node *zshift = phase->transform(new URShiftLNode(in1->in(1), in1->in(2)));
+          return new AndLNode(zshift, in(2));
+        }
       }
     }
   }
@@ -2201,8 +2203,13 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
 
 // Returns a lower bound on the number of trailing zeros in expr.
 static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, BasicType bt) {
-  expr = expr->uncast();
   const TypeInteger* type = phase->type(expr)->isa_integer(bt);
+  if (type == nullptr) {
+    return 0;
+  }
+
+  expr = expr->uncast();
+  type = phase->type(expr)->isa_integer(bt);
   if (type == nullptr) {
     return 0;
   }

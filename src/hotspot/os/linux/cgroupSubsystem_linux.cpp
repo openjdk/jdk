@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,6 +297,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     } else {
       log_debug(os, container)("Can't read %s, %s", controllers_file, os::strerror(errno));
       *flags = INVALID_CGROUPS_V2;
+      fclose(controllers);
       return false;
     }
     for (int i = 0; i < CG_INFO_LENGTH; i++) {
@@ -357,7 +358,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
         all_required_controllers_enabled = all_required_controllers_enabled && cg_infos[i]._enabled;
       }
       if (log_is_enabled(Debug, os, container) && !cg_infos[i]._enabled) {
-        log_debug(os, container)("controller %s is not enabled\n", cg_controller_name[i]);
+        log_debug(os, container)("controller %s is not enabled", cg_controller_name[i]);
       }
     }
   }

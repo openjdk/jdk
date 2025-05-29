@@ -248,8 +248,7 @@ public class LinkTaglet extends BaseTaglet {
                     containing = utils.getEnclosingTypeElement(overriddenMethod);
                 }
             }
-            if (refSignature.trim().startsWith("#") &&
-                    ! (utils.isPublic(containing) || utils.isLinkable(containing))) {
+            if (refSignature.trim().startsWith("#") && !utils.isVisible(containing)) {
                 // Since the link is relative and the holder is not even being
                 // documented, this must be an inherited link.  Redirect it.
                 // The current class either overrides the referenced member or

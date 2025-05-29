@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,17 +209,9 @@ public class threadgroup001 {
                                       "threadGroup3Obj",
                                       "threadGroup4Obj"  };
 
-            List            threads;
-            ListIterator    iterator;
-            int             flag;
-            String          threadName;
-            ThreadReference thread;
-
             ThreadReference thread2 = null;
             ThreadReference thread3 = null;
             ThreadReference thread4 = null;
-
-            String threadNames [] = { "Thread2", "Thread3", "Thread4" };
 
             ReferenceType mainthreadClass = null;
             ReferenceType thread2Class    = null;
@@ -244,24 +236,10 @@ public class threadgroup001 {
                              mainthreadClass.getValue(mainthreadClass.fieldByName(groupNames[i1]));
                 }
 
-                log2("      getting a List of all running threads");
-                threads = vm.allThreads();
-
-
                 log2("      getting Thread 2,3,4 mirror objects");
-
-                iterator = threads.listIterator();
-                for ( int i2 = 0; iterator.hasNext(); i2++ ) {
-                    thread = (ThreadReference) iterator.next();
-                    threadName = thread.name();
-                    if (threadName.equals(threadNames[0]))
-                         thread2 = thread;
-                    else if (threadName.equals(threadNames[1]))
-                         thread3 = thread;
-                    else if (threadName.equals(threadNames[2]))
-                         thread4 = thread;
-                }
-
+                thread2 = debuggee.threadByFieldNameOrThrow(mainthreadClass, "thread2", "Thread2");
+                thread3 = debuggee.threadByFieldNameOrThrow(mainthreadClass, "thread3", "Thread3");
+                thread4 = debuggee.threadByFieldNameOrThrow(mainthreadClass, "thread4", "Thread4");
 
                 log2("......checking up Thread2's group");
                 if (!thread2.threadGroup().equals(groups[1])) {

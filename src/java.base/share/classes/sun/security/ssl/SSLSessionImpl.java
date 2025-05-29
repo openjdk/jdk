@@ -27,9 +27,9 @@ package sun.security.ssl;
 import sun.security.provider.X509Factory;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -279,6 +279,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * < 1 byte > Number of requestedServerNames entries
      *   < 1 byte > ServerName length
      *   < length in bytes > ServerName
+     * < 4 bytes > maximumPacketSize
+     * < 4 bytes > negotiatedMaxFragSize
      * < 4 bytes > creationTime
      * < 2 byte > status response length
      *   < 2 byte > status response entry length
@@ -304,120 +306,95 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *       < length in bytes> PSK identity
      *   Anonymous
      *     < 1 byte >
-     * < 4 bytes > maximumPacketSize
-     * < 4 bytes > negotiatedMaxFragSize
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
         boundValues = new ConcurrentHashMap<>();
         this.protocolVersion =
-                ProtocolVersion.valueOf(Short.toUnsignedInt(buf.getShort()));
+                ProtocolVersion.valueOf(Record.getInt16(buf));
 
         // The CH session id may reset this if it's provided
         this.sessionId = new SessionId(true,
                 hc.sslContext.getSecureRandom());
 
         this.cipherSuite =
-                CipherSuite.valueOf(Short.toUnsignedInt(buf.getShort()));
+                CipherSuite.valueOf(Record.getInt16(buf));
 
         // Local Supported signature algorithms
         ArrayList<SignatureScheme> list = new ArrayList<>();
-        int i = Byte.toUnsignedInt(buf.get());
+        int i = Record.getInt8(buf);
         while (i-- > 0) {
             list.add(SignatureScheme.valueOf(
-                    Short.toUnsignedInt(buf.getShort())));
+                    Record.getInt16(buf)));
         }
         this.localSupportedSignAlgs = Collections.unmodifiableCollection(list);
 
         // Peer Supported signature algorithms
-        i = Byte.toUnsignedInt(buf.get());
+        i = Record.getInt8(buf);
         list.clear();
         while (i-- > 0) {
             list.add(SignatureScheme.valueOf(
-                    Short.toUnsignedInt(buf.getShort())));
+                    Record.getInt16(buf)));
         }
         this.peerSupportedSignAlgs = Collections.unmodifiableCollection(list);
 
         // PSK
-        byte[] b;
-        i = Short.toUnsignedInt(buf.getShort());
-        if (i > 0) {
-            b = new byte[i];
-            // Get algorithm string
-            buf.get(b, 0, i);
-            // Encoded length
-            i = Short.toUnsignedInt(buf.getShort());
-            // Encoded SecretKey
-            b = new byte[i];
-            buf.get(b);
+        byte[] b = Record.getBytes16(buf);
+        if (b.length > 0) {
+            b = Record.getBytes16(buf);
             this.preSharedKey = new SecretKeySpec(b, "TlsMasterSecret");
         } else {
             this.preSharedKey = null;
         }
 
         // PSK identity
-        i = buf.get();
-        if (i > 0) {
-            b = new byte[i];
-            buf.get(b);
+        b = Record.getBytes8(buf);
+        if (b.length > 0) {
             this.pskIdentity = b;
         } else {
             this.pskIdentity = null;
         }
 
         // Master secret length of secret key algorithm  (one byte)
-        i = buf.get();
-        if (i > 0) {
-            b = new byte[i];
-            // Get algorithm string
-            buf.get(b, 0, i);
-            // Encoded length
-            i = Short.toUnsignedInt(buf.getShort());
-            // Encoded SecretKey
-            b = new byte[i];
-            buf.get(b);
+        b = Record.getBytes8(buf);
+        if (b.length > 0) {
+            b = Record.getBytes16(buf);
             this.masterSecret = new SecretKeySpec(b, "TlsMasterSecret");
         } else {
             this.masterSecret = null;
         }
+
         // Use extended master secret
-        this.useExtendedMasterSecret = (buf.get() != 0);
+        this.useExtendedMasterSecret = (Record.getInt8(buf) != 0);
 
         // Identification Protocol
-        i = buf.get();
-        if (i == 0) {
+        b = Record.getBytes8(buf);
+        if (b.length == 0) {
             identificationProtocol = null;
         } else {
-            b = new byte[i];
-            buf.get(b);
             identificationProtocol = new String(b);
         }
 
         // SNI
-        i = buf.get();  // length
-        if (i == 0) {
+        b = Record.getBytes8(buf);
+        if (b.length == 0) {
             serverNameIndication = null;
         } else {
-            b = new byte[i];
-            buf.get(b, 0, b.length);
             serverNameIndication = new SNIHostName(b);
         }
 
         // List of SNIServerName
-        int len = Short.toUnsignedInt(buf.getShort());
+        int len = Record.getInt16(buf);
         if (len == 0) {
             this.requestedServerNames = Collections.emptyList();
         } else {
             requestedServerNames = new ArrayList<>();
             while (len > 0) {
-                int l = buf.get();
-                b = new byte[l];
-                buf.get(b, 0, l);
+                b = Record.getBytes8(buf);
                 requestedServerNames.add(new SNIHostName(new String(b)));
                 len--;
             }
         }
-
         maximumPacketSize = buf.getInt();
         negotiatedMaxFragLen = buf.getInt();
 
@@ -427,31 +404,28 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // Get Buffer sizes
 
         // Status Response
-        len = Short.toUnsignedInt(buf.getShort());
+        len = Record.getInt16(buf);
         if (len == 0) {
             statusResponses = Collections.emptyList();
         } else {
             statusResponses = new ArrayList<>();
         }
         while (len-- > 0) {
-            b = new byte[Short.toUnsignedInt(buf.getShort())];
-            buf.get(b);
+            b = Record.getBytes16(buf);
             statusResponses.add(b);
         }
 
         // Get Peer host & port
-        i = Byte.toUnsignedInt(buf.get());
-        if (i == 0) {
+        b = Record.getBytes8(buf);
+        if (b.length == 0) {
             this.host = "";
         } else {
-            b = new byte[i];
-            buf.get(b, 0, i);
             this.host = new String(b);
         }
-        this.port = Short.toUnsignedInt(buf.getShort());
+        this.port = Record.getInt16(buf);
 
         // Peer certs
-        i = buf.get();
+        i = Record.getInt8(buf);
         if (i == 0) {
             this.peerCerts = null;
         } else {
@@ -470,7 +444,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
 
         // Get local certs of PSK
-        switch (buf.get()) {
+        switch (Record.getInt8(buf)) {
             case 0:
                 break;
             case 1:
@@ -492,21 +466,15 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             case 2:
                 // pre-shared key
                 // Length of pre-shared key algorithm  (one byte)
-                i = buf.get();
-                b = new byte[i];
-                buf.get(b, 0, i);
+                b = Record.getBytes8(buf);
                 String alg = new String(b);
-                // Get length of encoding
-                i = Short.toUnsignedInt(buf.getShort());
                 // Get encoding
-                b = new byte[i];
-                buf.get(b);
+                b = Record.getBytes16(buf);
                 this.preSharedKey = new SecretKeySpec(b, alg);
                 // Get identity len
-                i = buf.get();
+                i = Record.getInt8(buf);
                 if (i > 0) {
-                    this.pskIdentity = new byte[buf.get()];
-                    buf.get(pskIdentity);
+                    this.pskIdentity = Record.getBytes8(buf);
                 } else {
                     this.pskIdentity = null;
                 }
@@ -519,6 +487,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 hc.sslContext.engineGetServerSessionContext();
         this.lastUsedTime = System.currentTimeMillis();
     }
+
 
     // Some situations we cannot provide a stateless ticket, but after it
     // has been negotiated
@@ -1300,12 +1269,12 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     /**
      * Use large packet sizes now or follow RFC 2246 packet sizes (2^14)
      * until changed.
-     *
+     * <P>
      * In the TLS specification (section 6.2.1, RFC2246), it is not
      * recommended that the plaintext has more than 2^14 bytes.
      * However, some TLS implementations violate the specification.
      * This is a workaround for interoperability with these stacks.
-     *
+     * <P>
      * Application could accept large fragments up to 2^15 bytes by
      * setting the system property jsse.SSLEngine.acceptLargeFragments
      * to "true".
@@ -1318,7 +1287,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * Expand the buffer size of both SSL/TLS network packet and
      * application data.
      */
-    protected void expandBufferSizes() {
+    void expandBufferSizes() {
         sessionLock.lock();
         try {
             acceptLargeFragments = true;

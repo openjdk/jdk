@@ -35,7 +35,7 @@ import sun.util.logging.PlatformLogger;
 import java.util.*;
 import static sun.awt.X11.XEmbedHelper.*;
 
-public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener, KeyEventPostProcessor, ModalityListener, WindowIDProvider {
+public final class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener, KeyEventPostProcessor, ModalityListener, WindowIDProvider {
     private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed.XEmbedCanvasPeer");
 
     boolean applicationActive; // Whether the application is active(has focus)
@@ -56,6 +56,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         super(target);
     }
 
+    @Override
     protected void postInit(XCreateWindowParams params) {
         super.postInit(params);
 
@@ -68,6 +69,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         target.setFocusTraversalKeysEnabled(false);
     }
 
+    @Override
     protected void preInit(XCreateWindowParams params) {
         super.preInit(params);
 
@@ -168,6 +170,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         xembed.handle = 0;
     }
 
+    @Override
     public void handleEvent(AWTEvent e) {
         super.handleEvent(e);
         if (isXEmbedActive()) {
@@ -188,6 +191,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
+    @Override
     public void dispatchEvent(XEvent ev) {
         super.dispatchEvent(ev);
         switch (ev.get_type()) {
@@ -233,6 +237,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
+    @Override
     public Dimension getPreferredSize() {
         if (isXEmbedActive()) {
             XToolkit.awtLock();
@@ -250,6 +255,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
             return super.getPreferredSize();
         }
     }
+    @Override
     public Dimension getMinimumSize() {
         if (isXEmbedActive()) {
             XToolkit.awtLock();
@@ -267,6 +273,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
             return super.getMinimumSize();
         }
     }
+    @Override
     public void dispose() {
         if (isXEmbedActive()) {
             detachChild();
@@ -282,6 +289,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
     }
 
     // Focusable is true in order to enable focus traversal through this Canvas
+    @Override
     public boolean isFocusable() {
         return true;
     }
@@ -407,6 +415,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         xembed.handle = 0;
     }
 
+    @Override
     public void windowGainedFocus(WindowEvent e) {
         applicationActive = true;
         if (isXEmbedActive()) {
@@ -415,6 +424,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
+    @Override
     public void windowLostFocus(WindowEvent e) {
         applicationActive = false;
         if (isXEmbedActive()) {
@@ -577,6 +587,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
+    @Override
     public boolean postProcessKeyEvent(KeyEvent e) {
         // Processing events only if we are in the focused window but
         // we are not focus owner since otherwise we will get
@@ -632,14 +643,17 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         return result;
     }
 
+    @Override
     public void modalityPushed(ModalityEvent ev) {
         xembed.sendMessage(xembed.handle, XEMBED_MODALITY_ON);
     }
 
+    @Override
     public void modalityPopped(ModalityEvent ev) {
         xembed.sendMessage(xembed.handle, XEMBED_MODALITY_OFF);
     }
 
+    @Override
     public void handleClientMessage(XEvent xev) {
         super.handleClientMessage(xev);
         XClientMessageEvent msg = xev.get_xclient();
@@ -681,7 +695,8 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    private static class XEmbedDropTarget extends DropTarget {
+    private static final class XEmbedDropTarget extends DropTarget {
+        @Override
         public void addDropTargetListener(DropTargetListener dtl)
           throws TooManyListenersException {
             // Drop target listeners registered with this target will never be
@@ -730,7 +745,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
-    class XEmbedServer extends XEmbedHelper implements XEventDispatcher {
+    final class XEmbedServer extends XEmbedHelper implements XEventDispatcher {
         long handle; // Handle to XEmbed client
         long version;
         long flags;
@@ -814,6 +829,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
                 }
             }
         }
+        @Override
         public void dispatchEvent(XEvent xev) {
             int type = xev.get_type();
             switch (type) {
@@ -830,7 +846,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
     }
 
-    static class GrabbedKey {
+    static final class GrabbedKey {
         long keysym;
         long modifiers;
         GrabbedKey(long keysym, long modifiers) {
@@ -867,10 +883,12 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
             }
         }
 
+        @Override
         public int hashCode() {
             return (int)keysym & 0xFFFFFFFF;
         }
 
+        @Override
         public boolean equals(Object o) {
             if (!(o instanceof GrabbedKey)) {
                 return false;
@@ -879,6 +897,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
             return (keysym == key.keysym && modifiers == key.modifiers);
         }
 
+        @Override
         public String toString() {
             return "Key combination[keysym=" + keysym + ", mods=" + modifiers + "]";
         }

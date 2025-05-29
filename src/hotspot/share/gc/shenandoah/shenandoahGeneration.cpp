@@ -23,8 +23,9 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSetPreselector.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -37,8 +38,6 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-
 #include "utilities/quickSort.hpp"
 
 template <bool PREPARE_FOR_CURRENT_CYCLE, bool FULL_GC = false>
@@ -773,10 +772,6 @@ bool ShenandoahGeneration::is_bitmap_clear() {
     }
   }
   return true;
-}
-
-bool ShenandoahGeneration::is_mark_complete() {
-  return _is_marking_complete.is_set();
 }
 
 void ShenandoahGeneration::set_mark_complete() {

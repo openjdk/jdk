@@ -41,25 +41,8 @@ void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   if (UseSIGTRAP) {
     DEBUG_ONLY( __ should_not_reach_here("C1SafepointPollStub::emit_code"); )
   } else {
-    assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
-           "polling page return stub not created yet");
-    address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
-
     __ bind(_entry);
-    // Using pc relative address computation.
-    {
-      Label next_pc;
-      __ bl(next_pc);
-      __ bind(next_pc);
-    }
-    int current_offset = __ offset();
-    __ mflr(R12);
-    __ add_const_optimized(R12, R12, safepoint_offset() - current_offset);
-    __ std(R12, in_bytes(JavaThread::saved_exception_pc_offset()), R16_thread);
-
-    __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
-    __ mtctr(R0);
-    __ bctr();
+    __ jump_to_polling_page_return_handler_blob(safepoint_offset());
   }
 }
 
@@ -74,7 +57,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
     __ bctrl();
     ce->add_call_info_here(_info);
     ce->verify_oop_map(_info);
-    debug_only(__ illtrap());
+    DEBUG_ONLY(__ illtrap());
     return;
   }
 
@@ -98,7 +81,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ bctrl();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ illtrap());
+  DEBUG_ONLY(__ illtrap());
 }
 
 
@@ -115,7 +98,7 @@ void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
   __ bctrl();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ illtrap());
+  DEBUG_ONLY(__ illtrap());
 }
 
 
@@ -156,7 +139,7 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
   __ bctrl();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ illtrap());
+  DEBUG_ONLY(__ illtrap());
 }
 
 
@@ -179,7 +162,7 @@ void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
   __ bctrl();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  debug_only(__ illtrap());
+  DEBUG_ONLY(__ illtrap());
 }
 
 
@@ -193,7 +176,7 @@ void SimpleExceptionStub::emit_code(LIR_Assembler* ce) {
   __ mtctr(R0);
   __ bctrl();
   ce->add_call_info_here(_info);
-  debug_only( __ illtrap(); )
+  DEBUG_ONLY( __ illtrap(); )
 }
 
 
@@ -441,7 +424,7 @@ void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
   __ load_const_optimized(R0, _trap_request); // Pass trap request in R0.
   __ bctrl();
   ce->add_call_info_here(_info);
-  debug_only(__ illtrap());
+  DEBUG_ONLY(__ illtrap());
 }
 
 

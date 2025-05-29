@@ -29,8 +29,10 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.text.MessageFormat;
 import java.util.*;
+import javax.crypto.KDF;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.ClientAuthType.CLIENT_AUTH_REQUIRED;
@@ -40,9 +42,9 @@ import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SessionTicketExtension.SessionTicketSpec;
 import sun.security.util.HexDumpEncoder;
+import sun.security.util.KeyUtil;
 
 import static sun.security.ssl.SSLExtension.*;
-import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
 
 /**
  * Pack of the "pre_shared_key" extension.
@@ -445,13 +447,7 @@ final class PreSharedKeyExtension {
         // localSupportedCertSignAlgs field is populated.  This is particularly
         // important when client authentication was used in an initial session,
         // and it is now being resumed.
-        if (shc.localSupportedCertSignAlgs == null) {
-            shc.localSupportedCertSignAlgs =
-                    SignatureScheme.getSupportedAlgorithms(
-                            shc.sslConfig,
-                            shc.algorithmConstraints, shc.activeProtocols,
-                            CERTIFICATE_SCOPE);
-        }
+        SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
 
         // Validate the required client authentication.
         if (result &&
@@ -566,11 +562,15 @@ final class PreSharedKeyExtension {
         }
 
         SecretKey binderKey = deriveBinderKey(shc, psk, session);
-        byte[] computedBinder =
-                computeBinder(shc, binderKey, session, pskBinderHash);
-        if (!MessageDigest.isEqual(binder, computedBinder)) {
-            throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Incorrect PSK binder value");
+        try {
+            byte[] computedBinder =
+                    computeBinder(shc, binderKey, session, pskBinderHash);
+            if (!MessageDigest.isEqual(binder, computedBinder)) {
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                        "Incorrect PSK binder value");
+            }
+        } finally {
+            KeyUtil.destroySecretKeys(binderKey);
         }
     }
 
@@ -719,21 +719,25 @@ final class PreSharedKeyExtension {
 
             SecretKey binderKey =
                     deriveBinderKey(chc, psk, chc.resumingSession);
-            ClientHelloMessage clientHello = (ClientHelloMessage)message;
-            CHPreSharedKeySpec pskPrototype = createPskPrototype(
-                chc.resumingSession.getSuite().hashAlg.hashLength, identities);
-            HandshakeHash pskBinderHash = chc.handshakeHash.copy();
+            try {
+                ClientHelloMessage clientHello = (ClientHelloMessage)message;
+                CHPreSharedKeySpec pskPrototype = createPskPrototype(
+                    chc.resumingSession.getSuite().hashAlg.hashLength, identities);
+                HandshakeHash pskBinderHash = chc.handshakeHash.copy();
 
-            byte[] binder = computeBinder(chc, binderKey, pskBinderHash,
-                    chc.resumingSession, chc, clientHello, pskPrototype);
+                byte[] binder = computeBinder(chc, binderKey, pskBinderHash,
+                        chc.resumingSession, chc, clientHello, pskPrototype);
 
-            List<byte[]> binders = new ArrayList<>();
-            binders.add(binder);
+                List<byte[]> binders = new ArrayList<>();
+                binders.add(binder);
 
-            CHPreSharedKeySpec pskMessage =
-                    new CHPreSharedKeySpec(identities, binders);
-            chc.handshakeExtensions.put(CH_PRE_SHARED_KEY, pskMessage);
-            return pskMessage.getEncoded();
+                CHPreSharedKeySpec pskMessage =
+                        new CHPreSharedKeySpec(identities, binders);
+                chc.handshakeExtensions.put(CH_PRE_SHARED_KEY, pskMessage);
+                return pskMessage.getEncoded();
+            } finally {
+                KeyUtil.destroySecretKeys(binderKey);
+            }
         }
 
         private CHPreSharedKeySpec createPskPrototype(
@@ -787,12 +791,13 @@ final class PreSharedKeyExtension {
             SSLSessionImpl session, byte[] digest) throws IOException {
         try {
             CipherSuite.HashAlg hashAlg = session.getSuite().hashAlg;
-            HKDF hkdf = new HKDF(hashAlg.name);
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             byte[] label = ("tls13 finished").getBytes();
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     label, new byte[0], hashAlg.hashLength);
-            SecretKey finishedKey = hkdf.expand(
-                    binderKey, hkdfInfo, hashAlg.hashLength, "TlsBinderKey");
+            SecretKey finishedKey = hkdf.deriveKey("TlsBinderKey",
+                    HKDFParameterSpec.expandOnly(binderKey, hkdfInfo,
+                    hashAlg.hashLength));
 
             String hmacAlg =
                 "Hmac" + hashAlg.name.replace("-", "");
@@ -802,6 +807,8 @@ final class PreSharedKeyExtension {
                 return hmac.doFinal(digest);
             } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
                 throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
+            } finally {
+                KeyUtil.destroySecretKeys(finishedKey);
             }
         } catch (GeneralSecurityException ex) {
             throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
@@ -812,16 +819,16 @@ final class PreSharedKeyExtension {
             SecretKey psk, SSLSessionImpl session) throws IOException {
         try {
             CipherSuite.HashAlg hashAlg = session.getSuite().hashAlg;
-            HKDF hkdf = new HKDF(hashAlg.name);
             byte[] zeros = new byte[hashAlg.hashLength];
-            SecretKey earlySecret = hkdf.extract(zeros, psk, "TlsEarlySecret");
-
             byte[] label = ("tls13 res binder").getBytes();
             MessageDigest md = MessageDigest.getInstance(hashAlg.name);
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     label, md.digest(new byte[0]), hashAlg.hashLength);
-            return hkdf.expand(earlySecret,
-                    hkdfInfo, hashAlg.hashLength, "TlsBinderKey");
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
+            HKDFParameterSpec spec = HKDFParameterSpec.ofExtract()
+                    .addSalt(zeros).addIKM(psk)
+                    .thenExpand(hkdfInfo, hashAlg.hashLength);
+            return hkdf.deriveKey("TlsBinderKey", spec);
         } catch (GeneralSecurityException ex) {
             throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
         }

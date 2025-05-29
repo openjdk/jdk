@@ -368,16 +368,12 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
 
     if (mon->first_waiter() != nullptr) {
       // We have one or more waiters. Since this is an inflated monitor
-      // that we own, we can transfer one or more threads from the waitset
-      // to the entry_list here and now, avoiding the slow-path.
+      // that we own, we quickly notify them here and now, avoiding the slow-path.
       if (all) {
-        DTRACE_MONITOR_PROBE(notifyAll, mon, obj, current);
+        mon->quick_notifyAll(current);
       } else {
-        DTRACE_MONITOR_PROBE(notify, mon, obj, current);
+        mon->quick_notify(current);
       }
-      do {
-        mon->notify_internal(current);
-      } while (mon->first_waiter() != nullptr && all);
     }
     return true;
   }
@@ -427,7 +423,7 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
     // Case: TLE inimical operations such as nested/recursive synchronization
 
     if (m->has_owner(current)) {
-      m->_recursions++;
+      m->increment_recursions(current);
       current->inc_held_monitor_count();
       return true;
     }
@@ -444,7 +440,7 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
     lock->set_displaced_header(markWord::unused_mark());
 
     if (!m->has_owner() && m->try_set_owner(current)) {
-      assert(m->_recursions == 0, "invariant");
+      assert(m->recursions() == 0, "invariant");
       current->inc_held_monitor_count();
       return true;
     }
