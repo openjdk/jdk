@@ -47,8 +47,8 @@ public class UUIDTest {
         randomUUIDTest();
         randomUUIDTest_Multi();
         nameUUIDFromBytesTest();
-        unixEpochTimeMillisTest();
-        unixEpochTimeMillisTest_Multi();
+        unixEpochTimeMillis();
+        unixEpochTimeMillis_Multi();
         unixEpochTimeMillis_userInputTest();
         stringTest();
         versionTest();
@@ -86,17 +86,17 @@ public class UUIDTest {
         }
 
         if (!collisions.isEmpty()) {
-            // This is extremely unlikely to happen. If you see this failure,
-            // this highly likely points to the implementation bug, rather than
-            // the odd chance.
-            throw new Exception("UUID collisions detected: " + collisions);
+           // This is extremely unlikely to happen. If you see this failure,
+           // this highly likely points to the implementation bug, rather than
+           // the odd chance.
+           throw new Exception("UUID collisions detected: " + collisions);
         }
     }
 
     private static void randomUUIDTest_Multi() throws Exception {
         List<UUID> uuids = IntStream.range(0, COUNT).parallel()
-                .mapToObj(i -> UUID.randomUUID())
-                .toList();
+                                    .mapToObj(i -> UUID.randomUUID())
+                                    .toList();
 
         List<UUID> collisions = new ArrayList<>();
 
@@ -114,10 +114,10 @@ public class UUIDTest {
         }
 
         if (!collisions.isEmpty()) {
-            // This is extremely unlikely to happen. If you see this failure,
-            // this highly likely points to the implementation bug, rather than
-            // the odd chance.
-            throw new Exception("UUID collisions detected: " + collisions);
+           // This is extremely unlikely to happen. If you see this failure,
+           // this highly likely points to the implementation bug, rather than
+           // the odd chance.
+           throw new Exception("UUID collisions detected: " + collisions);
         }
     }
 
@@ -142,10 +142,10 @@ public class UUIDTest {
         }
 
         if (!collisions.isEmpty()) {
-            // This is extremely unlikely to happen. If you see this failure,
-            // this highly likely points to the implementation bug, rather than
-            // the odd chance.
-            throw new Exception("UUID collisions detected: " + collisions);
+           // This is extremely unlikely to happen. If you see this failure,
+           // this highly likely points to the implementation bug, rather than
+           // the odd chance.
+           throw new Exception("UUID collisions detected: " + collisions);
         }
     }
 
@@ -208,19 +208,19 @@ public class UUIDTest {
             long now = System.currentTimeMillis();
             UUID u = UUID.unixEpochTimeMillis(now);
         } catch (Exception e) {
-            throw new AssertionError("Unexpected exception with valid timestamp: " + e);
+            throw new AssertionError("Unexpected exception for valid timestamp: " + e);
         }
 
         // Should throw for negative timestamp
         try {
             UUID.unixEpochTimeMillis(-1);
-            throw new AssertionError("Expected IllegalArgumentException with negative timestamp");
+            throw new AssertionError("Expected IllegalArgumentException for negative timestamp");
         } catch (IllegalArgumentException expected) {}
 
         // Should throw for timestamp > 48 bits
         try {
             UUID.unixEpochTimeMillis(1L << 48);
-            throw new AssertionError("Expected IllegalArgumentException with timestamp > 48 bits");
+            throw new AssertionError("Expected IllegalArgumentException for timestamp > 48 bits");
         } catch (IllegalArgumentException expected) {}
     }
 
@@ -432,7 +432,7 @@ public class UUIDTest {
             UUID u2 = UUID.fromString(u1.toString());
             if (u1.hashCode() != u2.hashCode()) {
                 throw new Exception("Equal UUIDs with different hash codes: " + u1 + "(" + u1.hashCode() + ") " +
-                        "and " + u2 + "(" + u2.hashCode() + ")");
+                                    "and " + u2 + "(" + u2.hashCode() + ")");
             }
         }
 
@@ -458,16 +458,16 @@ public class UUIDTest {
         UUID id5 = new UUID(35L, 63L);
 
         if ((id.compareTo(id2) >= 0) ||
-                (id2.compareTo(id3) >= 0) ||
-                (id3.compareTo(id4) >= 0) ||
-                (id4.compareTo(id5) >= 0)) {
+            (id2.compareTo(id3) >= 0) ||
+            (id3.compareTo(id4) >= 0) ||
+            (id4.compareTo(id5) >= 0)) {
             throw new RuntimeException("compareTo failure");
         }
 
         if ((id5.compareTo(id4) <= 0) ||
-                (id4.compareTo(id3) <= 0) ||
-                (id3.compareTo(id2) <= 0) ||
-                (id2.compareTo(id) <= 0)) {
+            (id4.compareTo(id3) <= 0) ||
+            (id3.compareTo(id2) <= 0) ||
+            (id2.compareTo(id) <= 0)) {
             throw new RuntimeException("compareTo failure");
         }
 
