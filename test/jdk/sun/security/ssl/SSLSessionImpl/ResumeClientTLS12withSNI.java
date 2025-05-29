@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8350830 8357253
+ * @bug 8350830
  * @summary TLS 1.2 Client session resumption having ServerNameIndication
  * @modules java.base/sun.security.tools.keytool
  * @run main/othervm -Djavax.net.debug=all ResumeClientTLS12withSNI
