@@ -250,7 +250,6 @@ class Bits {                            // package-private
      *        the byte value to set
      */
     static void setMemory(long srcAddr, long size, byte value) {
-        // Zero in chunks to avoid blocking safepoints for too long
         long offset = 0;
         long len = 0;
         while (offset < size) {
