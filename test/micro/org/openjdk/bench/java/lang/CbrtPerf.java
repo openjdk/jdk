@@ -132,6 +132,45 @@ public class CbrtPerf {
         }
     }
 
+    @Warmup(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS)
+    @Measurement(iterations = 4, time = 5, timeUnit = TimeUnit.SECONDS)
+    @Fork(2)
+    @BenchmarkMode(Mode.Throughput)
+    @State(Scope.Thread)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public static class CbrtPerfSpecialValues {
+        public double double0           = 0.0;
+        public double doubleNegative0   = -0.0;
+        public double doubleInf         = Double.POSITIVE_INFINITY;
+        public double doubleNegativeInf = Double.NEGATIVE_INFINITY;
+        public double doubleNaN         = Double.NaN;
+
+        @Benchmark
+        public double  cbrtDouble0() {
+            return  Math.cbrt(double0);
+        }
+
+        @Benchmark
+        public double  cbrtDoubleNegative0() {
+            return  Math.cbrt(doubleNegative0);
+        }
+
+        @Benchmark
+        public double  cbrtDoubleInf() {
+            return  Math.cbrt(doubleInf);
+        }
+
+        @Benchmark
+        public double  cbrtDoubleNegativeInf() {
+            return  Math.cbrt(doubleNegativeInf);
+        }
+
+        @Benchmark
+        public double  cbrtDoubleNaN() {
+            return  Math.cbrt(doubleNaN);
+        }
+    }
+
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(CbrtPerfRanges.class.getSimpleName())
