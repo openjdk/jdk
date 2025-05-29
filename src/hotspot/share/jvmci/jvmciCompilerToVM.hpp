@@ -118,6 +118,7 @@ class CompilerToVM {
 
 #ifdef X86
     static int L1_line_size;
+    static bool supports_avx512_simd_sort;
 #endif
 
     static address dsin;

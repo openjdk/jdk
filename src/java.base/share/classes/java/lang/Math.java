@@ -3419,4 +3419,229 @@ public final class Math {
                                      (FloatConsts.SIGNIFICAND_WIDTH-1))
                                     & FloatConsts.EXP_BIT_MASK);
     }
+
+    /**
+     * Returns the product of the unsigned arguments,
+     * throwing an exception if the result overflows an unsigned {@code int}.
+     *
+     * @param x the first unsigned value
+     * @param y the second unsigned value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an unsigned int
+     * @since 25
+     */
+    public static int unsignedMultiplyExact(int x, int y) {
+        long r = (x & 0xFFFF_FFFFL) * (y & 0xFFFF_FFFFL);
+        if (r >>> 32 != 0) {
+            throw new ArithmeticException("unsigned integer overflow");
+        }
+        return (int)r;
+    }
+
+    /**
+     * Returns the product of the unsigned arguments,
+     * throwing an exception if the result overflows an unsigned {@code long}.
+     *
+     * @param x the first unsigned value
+     * @param y the second unsigned value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an unsigned long
+     * @since 25
+     */
+    public static long unsignedMultiplyExact(long x, int y) {
+        return unsignedMultiplyExact(x, y & 0xFFFF_FFFFL);
+    }
+
+    /**
+     * Returns the product of the unsigned arguments,
+     * throwing an exception if the result overflows an unsigned {@code long}.
+     *
+     * @param x the first unsigned value
+     * @param y the second unsigned value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an unsigned long
+     * @since 25
+     */
+    public static long unsignedMultiplyExact(long x, long y) {
+        long l = x * y;
+        long h = unsignedMultiplyHigh(x, y);
+        if (h == 0) {
+            return l;
+        }
+        throw new ArithmeticException("unsigned long overflow");
+    }
+
+    /**
+     * Returns {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows an {@code int}.
+     * When {@code n} is 0, the returned value is 1.
+     *
+     * @param x the base.
+     * @param n the exponent.
+     * @return {@code x} raised to the power of {@code n}.
+     * @throws ArithmeticException when {@code n} is negative,
+     *      or when the result overflows an int.
+     * @since 25
+     */
+    public static int powExact(int x, int n) {
+        /* See the comment in unsignedPowExact(long,int) for the details. */
+        if (n < 0) {
+            throw new ArithmeticException("negative exponent");
+        }
+        if (n == 0) {
+            return 1;
+        }
+        if (x == 0 || x == 1) {
+            return x;
+        }
+        if (x == -1) {
+            return (n & 0b1) == 0 ? 1 : -1;
+        }
+
+        int p = 1;
+        while (n > 1) {
+            if ((n & 0b1) != 0) {
+                p *= x;
+            }
+            x = multiplyExact(x, x);
+            n >>>= 1;
+        }
+        return multiplyExact(p, x);
+    }
+
+    /**
+     * Returns unsigned {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows an unsigned {@code int}.
+     * When {@code n} is 0, the returned value is 1.
+     *
+     * @param x the unsigned base.
+     * @param n the exponent.
+     * @return {@code x} raised to the power of {@code n}.
+     * @throws ArithmeticException when {@code n} is negative,
+     *      or when the result overflows an unsigned int.
+     * @since 25
+     */
+    public static int unsignedPowExact(int x, int n) {
+        /* See the comment in unsignedPowExact(long,int) for the details. */
+        if (n < 0) {
+            throw new ArithmeticException("negative exponent");
+        }
+        if (n == 0) {
+            return 1;
+        }
+        if (x == 0 || x == 1) {
+            return x;
+        }
+
+        int p = 1;
+        while (n > 1) {
+            if ((n & 0b1) != 0) {
+                p *= x;
+            }
+            x = unsignedMultiplyExact(x, x);
+            n >>>= 1;
+        }
+        return unsignedMultiplyExact(p, x);
+    }
+
+    /**
+     * Returns {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows a {@code long}.
+     * When {@code n} is 0, the returned value is 1.
+     *
+     * @param x the base.
+     * @param n the exponent.
+     * @return {@code x} raised to the power of {@code n}.
+     * @throws ArithmeticException when {@code n} is negative,
+     *      or when the result overflows a long.
+     * @since 25
+     */
+    public static long powExact(long x, int n) {
+        /* See the comment in unsignedPowExact(long,int) for the details. */
+        if (n < 0) {
+            throw new ArithmeticException("negative exponent");
+        }
+        if (n == 0) {
+            return 1;
+        }
+        if (x == 0 || x == 1) {
+            return x;
+        }
+        if (x == -1) {
+            return (n & 0b1) != 0 ? -1 : 1;
+        }
+
+        long p = 1;
+        while (n > 1) {
+            if ((n & 0b1) != 0) {
+                p *= x;
+            }
+            x = multiplyExact(x, x);
+            n >>>= 1;
+        }
+        return multiplyExact(p, x);
+    }
+
+    /**
+     * Returns unsigned {@code x} raised to the power of {@code n},
+     * throwing an exception if the result overflows an unsigned {@code long}.
+     * When {@code n} is 0, the returned value is 1.
+     *
+     * @param x the unsigned base.
+     * @param n the exponent.
+     * @return {@code x} raised to the power of {@code n}.
+     * @throws ArithmeticException when {@code n} is negative,
+     *      or when the result overflows an unsigned long.
+     * @since 25
+     */
+    public static long unsignedPowExact(long x, int n) {
+        if (n < 0) {
+            throw new ArithmeticException("negative exponent");
+        }
+        if (n == 0) {
+            return 1;
+        }
+        /*
+         * To keep the code as simple as possible, there are intentionally
+         * no fast paths, except for |x| <= 1.
+         * The reason is that the number of loop iterations below can be kept
+         * very small when |x| > 1, but not necessarily when |x| <= 1.
+         */
+        if (x == 0 || x == 1) {
+            return x;
+        }
+
+        /*
+         * Let x0 and n0 > 0 be the entry values of x and n, resp.
+         * The useful loop invariants are:
+         *      p * x^n = x0^n0
+         *      |p| < |x|
+         *
+         * Since |x0| >= 2 here, and since |x0|^(2^6) >= 2^Long.SIZE, the squaring
+         * of x in the loop overflows at latest during the 6th iteration,
+         * so by then the method throws.
+         * Thus, the loop executes at most 5 successful iterations, and fails
+         * not later than at the 6th.
+         *
+         * But n is right-shifted at each iteration.
+         * If the method returns, there are thus floor(log2(n0)) iterations.
+         */
+        long p = 1;
+        while (n > 1) {
+            if ((n & 0b1) != 0) {
+                /*
+                 * The invariant |p| < |x| holds, so we have |p*x| < |x*x|.
+                 * That is, if p*x overflows, so does x*x below, which is
+                 * always executed.
+                 * In other words, a plain * can be used here, since we are
+                 * piggybacking on the squaring of x to throw.
+                 */
+                p *= x;
+            }
+            x = unsignedMultiplyExact(x, x);
+            n >>>= 1;
+        }
+        return unsignedMultiplyExact(p, x);
+    }
+
 }

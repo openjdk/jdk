@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,9 +111,12 @@ public class invokemethod010 {
             return quitDebuggee();
         }
 
-        if ((thrRef =
-                debuggee.threadByName(DEBUGGEE_THRNAME)) == null) {
-            log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
+        // debuggee main class
+        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+        thrRef = debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
+        if (thrRef == null) {
+            log.complain("TEST FAILURE: method Debugee.threadByFieldName() returned null for debuggee thread "
                 + DEBUGGEE_THRNAME);
             tot_res = Consts.TEST_FAILED;
             return quitDebuggee();
@@ -139,7 +142,6 @@ public class invokemethod010 {
 
         try {
             // debuggee main class
-            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
             ClassType clsType = (ClassType) rType;
 
             for (int i=0; i<METH_NUM; i++) {

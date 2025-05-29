@@ -107,7 +107,8 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   assert(is_power_of_2(unroll_factor), "can't use this value to calculate the jump target PC");
   andr(tmp2, cnt, unroll_factor - 1);
   adr(tmp1, BR_BASE);
-  sub(tmp1, tmp1, tmp2, ext::sxtw, 3);
+  // For Cortex-A53 offset is 4 because 2 nops are generated.
+  sub(tmp1, tmp1, tmp2, ext::sxtw, VM_Version::supports_a53mac() ? 4 : 3);
   movw(tmp2, 0x1f);
   br(tmp1);
 
@@ -115,6 +116,11 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   for (size_t i = 0; i < unroll_factor; ++i) {
     load(tmp1, Address(post(ary, type2aelembytes(eltype))), eltype);
     maddw(result, result, tmp2, tmp1);
+    // maddw generates an extra nop for Cortex-A53 (see maddw definition in macroAssembler).
+    // Generate 2nd nop to have 4 instructions per iteration.
+    if (VM_Version::supports_a53mac()) {
+      nop();
+    }
   }
   bind(BR_BASE);
   subsw(cnt, cnt, unroll_factor);
