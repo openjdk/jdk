@@ -67,6 +67,8 @@ public class SecureClassLoader extends ClassLoader {
      * @apiNote If the {@code parent} is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
+     * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
+     * for information on the system class loader and other built-in class loaders.
      *
      * @param parent the parent ClassLoader, can be null for the bootstrap
      *               class loader
@@ -90,6 +92,8 @@ public class SecureClassLoader extends ClassLoader {
      * @apiNote If the {@code parent} is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
+     * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
+     * for information on the system class loader and other built-in class loaders.
      *
      * @param name class loader name; or {@code null} if not named
      * @param parent the parent class loader, can be null for the bootstrap

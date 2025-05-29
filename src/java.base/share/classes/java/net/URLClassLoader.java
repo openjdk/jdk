@@ -80,6 +80,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @apiNote If the {@code parent} is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
+     * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
+     * for information on the system class loader and other built-in class loaders.
      *
      * @param      urls the URLs from which to load classes and resources
      * @param      parent the parent class loader for delegation, can be null
@@ -121,6 +123,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @apiNote If the {@code parent} is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
+     * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
+     * for information on the system class loader and other built-in class loaders.
      *
      * @param  urls the URLs from which to load classes and resources
      * @param  parent the parent class loader for delegation, can be null
@@ -148,6 +152,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @apiNote If the {@code parent} is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
+     * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
+     * for information on the system class loader and other built-in class loaders.
      *
      * @param  name class loader name; or {@code null} if not named
      * @param  urls the URLs from which to load classes and resources
@@ -177,6 +183,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @apiNote If the {@code parent} is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
+     * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
+     * for information on the system class loader and other built-in class loaders.
      *
      * @param  name class loader name; or {@code null} if not named
      * @param  urls the URLs from which to load classes and resources
