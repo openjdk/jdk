@@ -767,7 +767,6 @@ void TemplateInterpreterGenerator::lock_method() {
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // Save ConstMethod* in x15_const_method for later use to avoid loading multiple times
   Register x15_const_method = x15;
-  const Register x15 = noreg;
   __ ld(x15_const_method, Address(xmethod, Method::const_offset()));
 
   // initialize fixed part of activation frame
@@ -804,7 +803,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   // Save ConstantPool* in x28_constants for later use to avoid loading multiple times
   Register x28_constants = x28;
-  const Register x28 = noreg;
   __ ld(x28_constants, Address(x15_const_method, ConstMethod::constants_offset()));
   __ ld(xcpool, Address(x28_constants, ConstantPool::cache_offset()));
   __ sd(xcpool, Address(sp, 3 * wordSize));
