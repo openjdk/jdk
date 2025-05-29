@@ -945,12 +945,7 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
     addr = addr2;
   }
 
-  assert(DataLayout::counter_increment == 1,
-          "flow-free idiom only works with 1");
-
-  ldr(rscratch1, addr);
-  add(rscratch1, rscratch1, DataLayout::counter_increment);
-  str(rscratch1, addr);
+  increment(addr, DataLayout::counter_increment);
 }
 
 void InterpreterMacroAssembler::set_mdp_flag_at(Register mdp_in,
