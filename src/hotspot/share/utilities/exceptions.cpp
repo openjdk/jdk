@@ -608,4 +608,14 @@ void Exceptions::log_exception(Handle exception, const char* message) {
                          MAX_LEN, exception->print_value_string(),
                          MAX_LEN, message);
   }
+  LogStreamHandle(Trace, exceptions) st;
+  if (st.is_enabled()) {
+    Thread* t = Thread::current_or_null();
+    if (t != nullptr && t->is_Java_thread()) { // sanity
+      JavaThread *jt = JavaThread::current();
+      if (jt->has_last_Java_frame()) {
+        jt->print_active_stack_on(&st);
+      }
+    }
+  }
 }
