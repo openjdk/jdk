@@ -104,33 +104,36 @@ public class ResumeChecksServer extends SSLContextTemplate {
         client.signal();
 
         switch (testMode) {
-            case BASIC:
-                // Fail if session is not resumed or session's certificates
-                // are not restored correctly.
-                if (secondSession.getCreationTime() > secondStartTime) {
-                    throw new RuntimeException("Session was not reused");
-                } else if (!java.util.Arrays.equals(
-                        firstSession.getLocalCertificates(),
-                        secondSession.getLocalCertificates())) {
-                    throw new RuntimeException("Certificates do not match");
-                }
-                break;
-            case CLIENT_AUTH:
-                // throws an exception if the client is not authenticated
-                secondSession.getPeerCertificates();
-                break;
-            case VERSION_2_TO_3:
-            case VERSION_3_TO_2:
-            case CIPHER_SUITE:
-            case SIGNATURE_SCHEME:
-            case LOCAL_CERTS:
-                // fail if a new session is not created
-                if (secondSession.getCreationTime() <= secondStartTime) {
-                    throw new RuntimeException("Existing session was used");
-                }
-                break;
-            default:
-                throw new RuntimeException("unknown mode: " + testMode);
+        case BASIC:
+            // fail if session is not resumed
+            if (secondSession.getCreationTime() > secondStartTime) {
+                throw new RuntimeException("Session was not reused");
+            }
+
+            // Fail if session's certificates are not restored correctly.
+            if (!java.util.Arrays.equals(
+                    firstSession.getLocalCertificates(),
+                    secondSession.getLocalCertificates())) {
+                throw new RuntimeException("Certificates do not match");
+            }
+
+            break;
+        case CLIENT_AUTH:
+            // throws an exception if the client is not authenticated
+            secondSession.getPeerCertificates();
+            break;
+        case VERSION_2_TO_3:
+        case VERSION_3_TO_2:
+        case CIPHER_SUITE:
+        case SIGNATURE_SCHEME:
+        case LOCAL_CERTS:
+            // fail if a new session is not created
+            if (secondSession.getCreationTime() <= secondStartTime) {
+                throw new RuntimeException("Existing session was used");
+            }
+            break;
+        default:
+            throw new RuntimeException("unknown mode: " + testMode);
         }
     }
 
@@ -174,64 +177,64 @@ public class ResumeChecksServer extends SSLContextTemplate {
             SSLParameters params = sock.getSSLParameters();
 
             switch (mode) {
-                case BASIC:
-                    // do nothing to ensure resumption works
-                    break;
-                case CLIENT_AUTH:
-                    if (second) {
-                        params.setNeedClientAuth(true);
-                    } else {
-                        params.setNeedClientAuth(false);
-                    }
-                    break;
-                case VERSION_2_TO_3:
-                    if (second) {
-                        params.setProtocols(new String[]{"TLSv1.3"});
-                    } else {
-                        params.setProtocols(new String[]{"TLSv1.2"});
-                    }
-                    break;
-                case VERSION_3_TO_2:
-                    if (second) {
-                        params.setProtocols(new String[]{"TLSv1.2"});
-                    } else {
-                        params.setProtocols(new String[]{"TLSv1.3"});
-                    }
-                    break;
-                case CIPHER_SUITE:
-                    if (second) {
-                        params.setCipherSuites(
-                                new String[]{"TLS_AES_128_GCM_SHA256"});
-                    } else {
-                        params.setCipherSuites(
-                                new String[]{"TLS_AES_256_GCM_SHA384"});
-                    }
-                    break;
-                case SIGNATURE_SCHEME:
+            case BASIC:
+                // do nothing to ensure resumption works
+                break;
+            case CLIENT_AUTH:
+                if (second) {
                     params.setNeedClientAuth(true);
-                    AlgorithmConstraints constraints =
-                            params.getAlgorithmConstraints();
-                    if (second) {
-                        params.setAlgorithmConstraints(
-                                new NoSig("ecdsa_secp384r1_sha384"));
-                    } else {
-                        params.setAlgorithmConstraints(
-                                new NoSig("ecdsa_secp521r1_sha512"));
-                    }
-                    break;
-                case LOCAL_CERTS:
-                    if (second) {
-                        // Add first session's certificate signature
-                        // algorithm to constraints so local certificates
-                        // can't be restored from the session ticket.
-                        params.setAlgorithmConstraints(
-                                new NoSig(X509CertImpl.toImpl((X509CertImpl)
-                                                firstSession.getLocalCertificates()[0])
-                                        .getSigAlgName()));
-                    }
-                    break;
-                default:
-                    throw new RuntimeException("unknown mode: " + mode);
+                } else {
+                    params.setNeedClientAuth(false);
+                }
+                break;
+            case VERSION_2_TO_3:
+                if (second) {
+                    params.setProtocols(new String[]{"TLSv1.3"});
+                } else {
+                    params.setProtocols(new String[]{"TLSv1.2"});
+                }
+                break;
+            case VERSION_3_TO_2:
+                if (second) {
+                    params.setProtocols(new String[]{"TLSv1.2"});
+                } else {
+                    params.setProtocols(new String[]{"TLSv1.3"});
+                }
+                break;
+            case CIPHER_SUITE:
+                if (second) {
+                    params.setCipherSuites(
+                        new String[] {"TLS_AES_128_GCM_SHA256"});
+                } else {
+                    params.setCipherSuites(
+                        new String[] {"TLS_AES_256_GCM_SHA384"});
+                }
+                break;
+            case SIGNATURE_SCHEME:
+                params.setNeedClientAuth(true);
+                AlgorithmConstraints constraints =
+                    params.getAlgorithmConstraints();
+                if (second) {
+                    params.setAlgorithmConstraints(
+                            new NoSig("ecdsa_secp384r1_sha384"));
+                } else {
+                    params.setAlgorithmConstraints(
+                            new NoSig("ecdsa_secp521r1_sha512"));
+                }
+                break;
+            case LOCAL_CERTS:
+                if (second) {
+                    // Add first session's certificate signature
+                    // algorithm to constraints so local certificates
+                    // can't be restored from the session ticket.
+                    params.setAlgorithmConstraints(
+                            new NoSig(X509CertImpl.toImpl((X509CertImpl)
+                                            firstSession.getLocalCertificates()[0])
+                                    .getSigAlgName()));
+                }
+                break;
+            default:
+                throw new RuntimeException("unknown mode: " + mode);
             }
             sock.setSSLParameters(params);
             BufferedReader reader = new BufferedReader(

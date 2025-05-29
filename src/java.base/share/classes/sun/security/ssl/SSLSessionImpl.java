@@ -283,12 +283,16 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *   < length in bytes > peer host
      * < 2 bytes> peer port
      * < 1 byte > Number of Peer Certificate entries
-     *   < 4 bytes > Peer certificate length
-     *   < length in bytes> Peer certificate
+     *   For each entry {
+     *     < 4 bytes > Peer certificate length
+     *     < length in bytes> Peer certificate
+     *   }
      * < 1 byte > Number of Local Certificate entries
-     *   < 1 byte > Local Certificate algorithm length
-     *   < length in bytes> Local Certificate algorithm
-     *   < 4 bytes > Certificate checksum
+     *   For each entry {
+     *     < 1 byte > Local Certificate algorithm length
+     *     < length in bytes> Local Certificate algorithm
+     *     < 4 bytes > Certificate checksum
+     *   }
      */
 
     SSLSessionImpl(HandshakeContext hc, ByteBuffer buf) throws IOException {
