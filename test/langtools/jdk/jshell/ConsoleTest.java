@@ -150,6 +150,31 @@ public class ConsoleTest extends KullaTesting {
     }
 
     @Test
+    public void testConsoleUnicodeWritingTest() {
+        StringBuilder sb = new StringBuilder();
+        console = new ThrowingJShellConsole() {
+            @Override
+            public PrintWriter writer() {
+                return new PrintWriter(new Writer() {
+                    @Override
+                    public void write(char[] cbuf, int off, int len) throws IOException {
+                        sb.append(cbuf, off, len);
+                    }
+                    @Override
+                    public void flush() throws IOException {}
+                    @Override
+                    public void close() throws IOException {}
+                });
+            }
+        };
+        int count = 384; // 128-255, 384-511, 640-767, ... (JDK-8355371)
+        String testStr = "\u30A2"; // Japanese katakana (A2 >= 80) (JDK-8354910)
+        assertEval("System.console().writer().write(\"" + testStr + "\".repeat(" + count + "))");
+        String expected = testStr.repeat(count);
+        assertEquals(sb.toString(), expected);
+    }
+
+    @Test
     public void testConsoleMultiThreading() {
         StringBuilder sb = new StringBuilder();
         console = new ThrowingJShellConsole() {

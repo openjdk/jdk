@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,21 @@
  * @bug 4487368
  * @summary Test, if FileInputStream can handle
  *          a leading slash in file name.
+ * @requires (os.family == "windows")
  */
 
 import java.io.*;
 
 public class LeadingSlash {
     public static void main (String args[]) throws Exception {
-        if (File.separatorChar == '\\') {       // Windows
-            File file = null;
-            try {
-                file = File.createTempFile("bug", "4487368");
-                new FileInputStream("\\" + file.getPath()).close();
-                new FileOutputStream("\\" + file.getPath()).close();
-            } finally {
-                if (file != null)
-                    file.delete();
-            }
+        File file = null;
+        try {
+            file = File.createTempFile("bug", "4487368");
+            new FileInputStream("\\" + file.getPath()).close();
+            new FileOutputStream("\\" + file.getPath()).close();
+        } finally {
+            if (file != null)
+                file.delete();
         }
     }
 }

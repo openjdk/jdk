@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,11 @@
  *      8187946 8195478 8181157 8179071 8193552 8202026 8204269 8202537 8208746
  *      8209775 8221432 8227127 8230284 8231273 8233579 8234288 8250665 8255086
  *      8251317 8274658 8283277 8283805 8265315 8287868 8295564 8284840 8296715
- *      8301206 8303472 8317979 8306116 8174269 8333582
+ *      8301206 8303472 8317979 8306116 8174269 8333582 8357075
  * @summary Verify locale data
  * @modules java.base/sun.util.resources
  * @modules jdk.localedata
- * @run main LocaleDataTest -cldr
+ * @run main LocaleDataTest
  *
  */
 
@@ -118,7 +118,7 @@
  *        FormatData/sr-Latn-BA/DayNames/2=utorak</pre>
  *
  *    The command-line syntax of this test is
- *        <tt>java --add-exports java.base/sun.util.resources=ALL-UNNAMED LocaleDataTest.java [-w] [{ -s | <filename> }] [-cldr]</tt>
+ *        <tt>java --add-exports java.base/sun.util.resources=ALL-UNNAMED LocaleDataTest.java [-w] [{ -s | <filename> }]</tt>
  *
  *    This program always sends its results to standard output.   If -w is not specified,
  *    this program prints out only the differences between the data file and the actual
@@ -130,14 +130,11 @@
  *    The user can specify an optional filename or -s.  If the user specifies a filename,
  *    the program uses that file as the data file.  If the user specifies -s, the program
  *    reads its input from standard input rather than from a file.  If the user specifies
- *    neither, the program reads its input from a file called LocaleData in the same
+ *    neither, the program reads its input from a file called LocaleData.cldr in the same
  *    directory the program itself resides in.
  *
  *    The -nothrow option prevents the program from throwing an exception when it
  *    gets an error.  -w implies -nothrow.
- *
- *    -cldr option specifies to test CLDR locale data. The default data file name for this
- *    option is "LocaleData.cldr".
  *
  *    Other command-line options can be specified, but are ignored.
  *
@@ -178,10 +175,9 @@ import sun.util.resources.LocaleData;
 
 public class LocaleDataTest
 {
-    static final String TEXT_RESOURCES_PACKAGE ="sun.text.resources";
-    static final String UTIL_RESOURCES_PACKAGE ="sun.util.resources";
-    static final String DEFAULT_DATAFILE ="LocaleData";
-    static String cldrSuffix = "";
+    static final String TEXT_RESOURCES_PACKAGE = "sun.text.resources.cldr";
+    static final String UTIL_RESOURCES_PACKAGE = "sun.util.resources.cldr";
+    static final String DEFAULT_DATAFILE = "LocaleData.cldr";
 
     public static void main(String[] args) throws Exception {
 
@@ -202,10 +198,6 @@ public class LocaleDataTest
             else if (args[i].equals("-nothrow"))
                 doThrow = false;
 
-            else if (args[i].equals("-cldr")) {
-                cldrSuffix = ".cldr";
-            }
-
             else if (args[i].equals("-s") && in == null)
                 in = new BufferedReader(new EscapeReader(new InputStreamReader(System.in,
                                 "ISO8859_1")));
@@ -214,7 +206,7 @@ public class LocaleDataTest
                                 FileInputStream(args[i]), "ISO8859_1")));
         }
         if (in == null) {
-            File localeData = new File(System.getProperty("test.src", "."), DEFAULT_DATAFILE + cldrSuffix);
+            File localeData = new File(System.getProperty("test.src", "."), DEFAULT_DATAFILE);
             in = new BufferedReader(new EscapeReader(new InputStreamReader(new
                             FileInputStream(localeData), "ISO8859_1")));
         }
@@ -315,7 +307,7 @@ public class LocaleDataTest
             index = key.length();
         resTag = key.substring(oldIndex, index);
 
-        // TimeZone name may have "/" in it, for example "Asia/Taipei", so use "Asia\/Taipei in LocaleData.
+        // TimeZone name may have "/" in it, for example "Asia/Taipei", so use "Asia\/Taipei in LocaleData.cldr.
         if(resTag.endsWith("\\")) {
             resTag = resTag.substring(0, resTag.length() - 1);
             oldIndex = index;
@@ -337,9 +329,9 @@ public class LocaleDataTest
                     || rbName.equals("CurrencyNames")
                     || rbName.equals("LocaleNames")
                     || rbName.equals("TimeZoneNames")) {
-                fullName = UTIL_RESOURCES_PACKAGE + cldrSuffix + "." + rbName;
+                fullName = UTIL_RESOURCES_PACKAGE + "." + rbName;
             } else {
-                fullName = TEXT_RESOURCES_PACKAGE + cldrSuffix + "." + rbName;
+                fullName = TEXT_RESOURCES_PACKAGE + "." + rbName;
             }
             Locale locale;
             if (use_tag) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,16 +193,7 @@ public abstract class Reader implements Readable, Closeable {
                 if (next >= length)
                     return -1;
                 int n = Math.min(length - next, len);
-                switch (cs) {
-                    case String s -> s.getChars(next, next + n, cbuf, off);
-                    case StringBuilder sb -> sb.getChars(next, next + n, cbuf, off);
-                    case StringBuffer sb -> sb.getChars(next, next + n, cbuf, off);
-                    case CharBuffer cb -> cb.get(next, cbuf, off, n);
-                    default -> {
-                        for (int i = 0; i < n; i++)
-                            cbuf[off + i] = cs.charAt(next + i);
-                    }
-                }
+                cs.getChars(next, next + n, cbuf, off);
                 next += n;
                 return n;
             }
