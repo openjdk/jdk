@@ -123,6 +123,7 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
                         MAX_LEN, message ? message : "",
                         p2i(h_exception()), file, line, p2i(thread),
                         Universe::vm_exception()->print_value_string());
+    maybe_log_call_stack();
     // We do not care what kind of exception we get for a thread which
     // is compiling.  We just install a dummy exception object
     thread->set_pending_exception(Universe::vm_exception(), file, line);
@@ -152,6 +153,7 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
                        message ? ": " : "",
                        MAX_LEN, message ? message : "",
                        p2i(h_exception()), file, line, p2i(thread));
+  maybe_log_call_stack();
 
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(h_exception, message);
@@ -608,11 +610,15 @@ void Exceptions::log_exception(Handle exception, const char* message) {
                          MAX_LEN, exception->print_value_string(),
                          MAX_LEN, message);
   }
+  maybe_log_call_stack();
+}
+
+void Exceptions::maybe_log_call_stack() {
   LogStreamHandle(Trace, exceptions) st;
   if (st.is_enabled()) {
     Thread* t = Thread::current_or_null();
     if (t != nullptr && t->is_Java_thread()) { // sanity
-      JavaThread *jt = JavaThread::current();
+      JavaThread* jt = JavaThread::current();
       if (jt->has_last_Java_frame()) {
         jt->print_active_stack_on(&st);
       }
