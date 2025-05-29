@@ -614,7 +614,7 @@ void Exceptions::log_exception(Handle exception, const char* message) {
 }
 
 void Exceptions::maybe_log_call_stack() {
-  LogStreamHandle(Trace, exceptions) st;
+  LogStreamHandle(Info, exceptions, stacktrace) st;
   if (st.is_enabled()) {
     Thread* t = Thread::current_or_null();
     if (t != nullptr && t->is_Java_thread()) { // sanity
