@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 import java.util.regex.Pattern;
 
@@ -358,7 +359,11 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         if (okToSendQuit) {
             sendQuitTo(pid);
         } else if (throwIfNotReady) {
-            final var cmdline = Files.lines(procPid.resolve("cmdline")).findFirst();
+            Optional<String> cmdline = Optional.empty();
+
+            try (final var clf = Files.lines(procPid.resolve("cmdline"))) {
+                cmdline = clf.findFirst();
+            }
 
             var cmd = "null"; // default
 
