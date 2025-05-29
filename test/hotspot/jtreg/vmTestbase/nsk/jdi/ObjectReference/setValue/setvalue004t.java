@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class setvalue004t {
+    static Thread testThread = null;
+
     // tested static final fields
     static final byte    sByteFld = 127;
     static final short   sShortFld = -32768;
@@ -65,7 +67,8 @@ public class setvalue004t {
         ArgumentHandler argHandler = new ArgumentHandler(args);
         IOPipe setvalue004tPipe = argHandler.createDebugeeIOPipe();
 
-        Thread.currentThread().setName(setvalue004.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(setvalue004.DEBUGGEE_THRNAME);
 
         setvalue004tPipe.println(setvalue004.COMMAND_READY);
         String cmd = setvalue004tPipe.readln();

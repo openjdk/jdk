@@ -35,7 +35,7 @@
  *             MethodHandleTestApp MethodHandleTestApp$A MethodHandleTestApp$B
  *             UnsupportedBSMs UnsupportedBSMs$MyEnum
  *             ObjectMethodsTest ObjectMethodsTest$C
- * @run driver MethodHandleTest AOT
+ * @run driver MethodHandleTest AOT --two-step-training
  */
 
 import java.io.Serializable;
@@ -75,7 +75,6 @@ public class MethodHandleTest {
                 return new String[] {
                     "-Xlog:gc,cds+class=debug",
                     "-XX:AOTInitTestClass=MethodHandleTestApp",
-                    "-Xlog:cds+map,cds+map+oops=trace:file=cds.oops.txt:none:filesize=0",
                 };
             } else {
                 return new String[] {};
