@@ -743,14 +743,6 @@ JVM_ENTRY_NO_ENV(jlong, JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jint
 JVM_END
 
 
-void JVMCIRuntime::call_getCompiler(TRAPS) {
-  JVMCIENV_FROM_THREAD(THREAD);
-  JVMCIENV->check_init(CHECK);
-  JVMCIObject jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_CHECK);
-  initialize(JVMCI_CHECK);
-  JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
-}
-
 void JVMCINMethodData::initialize(int nmethod_mirror_index,
                                   int nmethod_entry_patch_offset,
                                   const char* nmethod_mirror_name,
