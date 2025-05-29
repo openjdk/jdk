@@ -2963,7 +2963,7 @@ JVM_END
 
 JVM_ENTRY(jobject, JVM_CreateThreadSnapshot(JNIEnv* env, jobject jthread))
 #if INCLUDE_JVMTI
-  oop snapshot = VMThreadSnapshot::get_thread_snapshot(jthread, THREAD);
+  oop snapshot = ThreadSnapshotFactory::get_thread_snapshot(jthread, THREAD);
   return JNIHandles::make_local(THREAD, snapshot);
 #else
   return nullptr;
