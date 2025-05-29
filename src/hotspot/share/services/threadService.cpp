@@ -1293,7 +1293,7 @@ public:
       return;
     }
 
-    bool walk_cont = (_java_thread != nullptr) && (_java_thread->vthread_continuation() != nullptr);
+    bool vthread_carrier = !is_virtual && (_java_thread != nullptr) && (_java_thread->vthread_continuation() != nullptr);
 
     oop park_blocker = java_lang_Thread::park_blocker(_thread_h());
     if (park_blocker != nullptr) {
@@ -1314,7 +1314,7 @@ public:
     int total_count = 0;
 
     vframeStream vfst(_java_thread != nullptr
-      ? vframeStream(_java_thread, false, true, walk_cont)
+      ? vframeStream(_java_thread, false, true, vthread_carrier)
       : vframeStream(java_lang_VirtualThread::continuation(_thread_h())));
 
     for (;
