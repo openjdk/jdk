@@ -648,7 +648,9 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             if (numIndys == 0) {
                 return List.of();
             }
-            return IntStream.range(0, numIndys).mapToObj(i -> lookupBootstrapMethodInvocation(i, Bytecodes.INVOKEDYNAMIC))
+            return IntStream.range(0, numIndys)
+                            .mapToObj(i -> lookupBootstrapMethodInvocation(i, Bytecodes.INVOKEDYNAMIC))
+                            .toList();
                     .toList();
         } else {
             return IntStream.range(1, length()).filter(cpi -> {
