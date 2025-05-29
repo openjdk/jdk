@@ -3558,10 +3558,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
     /**
      * Emit a possibly non ACK-eliciting packet containing the given ACK frame.
-     * The emitter should call {@link
-     * PacketSpaceManager#packetSent(QuicPacket, long, long)
-     * PacketSpaceManager::packetSent}
-     * when the packet has been scheduled for sending.
      * @param packetSpaceManager the packet space manager on behalf
      *                           of which the acknowledgement should
      *                           be sent.
@@ -3621,10 +3617,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
     /**
      * Retransmit the given packet on behalf of the given packet space
-     * manager. The retransmitter should call {@link
-     * PacketSpace#packetSent(QuicPacket, long, long)
-     * PacketSpaceManager::packetRetransmitted} when the new packet has been
-     * scheduled for sending.
+     * manager.
      * @param packetSpaceManager the packet space manager on behalf of
      *                           which the packet is being retransmitted
      * @param packet the unacknowledged packet which should be retransmitted

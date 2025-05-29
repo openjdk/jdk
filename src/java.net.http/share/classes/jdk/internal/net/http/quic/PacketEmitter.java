@@ -58,10 +58,7 @@ public interface PacketEmitter {
 
     /**
      * Retransmit the given packet on behalf of the given packet space
-     * manager. The retransmitter should call {@link
-     * PacketSpace#packetSent(QuicPacket, long, long)
-     * PacketSpaceManager::packetRetransmitted} when the new packet has been
-     * scheduled for sending.
+     * manager.
      * @param packetSpaceManager the packet space manager on behalf of
      *                           which the packet is being retransmitted
      * @param packet the unacknowledged packet which should be retransmitted
