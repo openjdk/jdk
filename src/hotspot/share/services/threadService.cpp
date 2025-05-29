@@ -1159,7 +1159,7 @@ public:
     };
 
     Type _type;
-    // park blocker or an object the tread waiting on/trying to lock
+    // park blocker or an object the thread waiting on/trying to lock
     OopHandle _obj;
 
     Blocker(Type type, OopHandle obj): _type(type), _obj(obj) {}
