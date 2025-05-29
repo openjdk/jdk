@@ -644,4 +644,22 @@ public class ForkJoinPool20Test extends JSR166TestCase {
         }
     }
 
+    /**
+     * schedule throws RejectedExecutionException if shutdown before
+     * first delayed task is submitted
+     */
+    public void testInitialScheduleAfterShutdown() throws InterruptedException {
+        Runnable r = new NoOpRunnable();
+        boolean rje = false;
+        try (final ForkJoinPool p = new ForkJoinPool(1)) {
+            p.shutdown();
+            assertTrue(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
+            try {
+                p.schedule(r, 1, MILLISECONDS);
+            } catch (RejectedExecutionException ok) {
+                rje = true;
+            }
+        }
+        assertTrue(rje);
+    }
 }

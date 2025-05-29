@@ -23,7 +23,6 @@
 
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zIntrusiveRBTree.inline.hpp"
 #include "gc/z/zList.inline.hpp"
 #include "gc/z/zMappedCache.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
@@ -32,6 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/rbTree.inline.hpp"
 
 class ZMappedCacheEntry {
 private:
@@ -118,7 +118,7 @@ static ZMappedCacheEntry* create_entry(const ZVirtualMemory& vmem) {
   return entry;
 }
 
-int ZMappedCache::EntryCompare::operator()(ZMappedCache::TreeNode* a, ZMappedCache::TreeNode* b) {
+int ZMappedCache::EntryCompare::cmp(const IntrusiveRBNode* a, const IntrusiveRBNode* b) {
   const ZVirtualMemory vmem_a = ZMappedCacheEntry::cast_to_entry(a)->vmem();
   const ZVirtualMemory vmem_b = ZMappedCacheEntry::cast_to_entry(b)->vmem();
 
@@ -128,13 +128,118 @@ int ZMappedCache::EntryCompare::operator()(ZMappedCache::TreeNode* a, ZMappedCac
   return 0; // Overlapping
 }
 
-int ZMappedCache::EntryCompare::operator()(zoffset key, ZMappedCache::TreeNode* node) {
+int ZMappedCache::EntryCompare::cmp(zoffset key, const IntrusiveRBNode* node) {
   const ZVirtualMemory vmem = ZMappedCacheEntry::cast_to_entry(node)->vmem();
 
   if (key < vmem.start()) { return -1; }
   if (key > vmem.end()) { return 1; }
 
   return 0; // Containing
+}
+
+void ZMappedCache::Tree::verify() const {
+#ifdef ASSERT
+  // Verify
+
+  if (size() < 10) {
+    // Only verify whole tree if the node count is low
+    verify_self();
+  }
+
+  // Verify the externally tracked left most and right most nodes
+  verify_left_most();
+  verify_right_most();
+#endif // ASSERT
+}
+
+void ZMappedCache::Tree::verify_left_most() const {
+  assert(leftmost() == _left_most, "must be " PTR_FORMAT " == " PTR_FORMAT,
+          p2i(leftmost()), p2i(this));
+}
+
+void ZMappedCache::Tree::verify_right_most() const {
+  assert(rightmost() == _right_most, "must be " PTR_FORMAT " == " PTR_FORMAT,
+          p2i(rightmost()), p2i(this));
+}
+
+ZMappedCache::Tree::Tree()
+  : TreeImpl(),
+    _left_most(nullptr),
+    _right_most(nullptr) {}
+
+void ZMappedCache::Tree::insert(TreeNode* node, const TreeCursor& cursor) {
+  // Insert in tree
+  TreeImpl::insert_at_cursor(node, cursor);
+
+  if (_left_most == nullptr || EntryCompare::cmp(node, _left_most) < 0) {
+    // Keep track of left most node
+    _left_most = node;
+  }
+
+  if (_right_most == nullptr || EntryCompare::cmp(_right_most, node) < 0) {
+    // Keep track of right most node
+    _right_most = node;
+  }
+
+  // Verify
+  verify();
+}
+
+void ZMappedCache::Tree::remove(TreeNode* node) {
+  if (_left_most == node) {
+    // Keep track of left most node
+    _left_most = node->next();
+  }
+
+  if (_right_most == node) {
+    // Keep track of right most node
+    _right_most = node->prev();
+  }
+
+  // Remove from tree
+  TreeImpl::remove(node);
+}
+
+void ZMappedCache::Tree::replace(TreeNode* old_node, TreeNode* new_node, const TreeCursor& cursor) {
+  if (_left_most == old_node) {
+    // Keep track of left most node
+    _left_most = new_node;
+  }
+
+  if (_right_most == old_node) {
+    // Keep track of right most node
+    _right_most = new_node;
+  }
+
+  // Replace in tree
+  TreeImpl::replace_at_cursor(new_node, cursor);
+
+  // Verify
+  verify();
+}
+
+size_t ZMappedCache::Tree::size_atomic() const {
+  return Atomic::load(&_num_nodes);
+}
+
+const ZMappedCache::TreeNode* ZMappedCache::Tree::left_most() const {
+  verify_left_most();
+  return _left_most;
+}
+
+ZMappedCache::TreeNode* ZMappedCache::Tree::left_most() {
+  verify_left_most();
+  return _left_most;
+}
+
+const ZMappedCache::TreeNode* ZMappedCache::Tree::right_most() const {
+  verify_right_most();
+  return _right_most;
+}
+
+ZMappedCache::TreeNode* ZMappedCache::Tree::right_most() {
+  verify_right_most();
+  return _right_most;
 }
 
 int ZMappedCache::size_class_index(size_t size) {
@@ -162,14 +267,12 @@ int ZMappedCache::guaranteed_size_class_index(size_t size) {
   return MAX2(size_class_power, MinSizeClassShift) - MinSizeClassShift;
 }
 
-void ZMappedCache::tree_insert(const Tree::FindCursor& cursor, const ZVirtualMemory& vmem) {
+void ZMappedCache::cache_insert(const TreeCursor& cursor, const ZVirtualMemory& vmem) {
   ZMappedCacheEntry* const entry = create_entry(vmem);
 
-  // Insert creates a new entry
-  _entry_count += 1;
-
   // Insert in tree
-  _tree.insert(entry->node_addr(), cursor);
+  TreeNode* node = entry->node_addr();
+  _tree.insert(node, cursor);
 
   // Insert in size-class lists
   const size_t size = vmem.size();
@@ -179,16 +282,14 @@ void ZMappedCache::tree_insert(const Tree::FindCursor& cursor, const ZVirtualMem
   }
 }
 
-void ZMappedCache::tree_remove(const Tree::FindCursor& cursor, const ZVirtualMemory& vmem) {
-  ZMappedCacheEntry* entry = ZMappedCacheEntry::cast_to_entry(cursor.node());
-
-  // Remove destroys an old entry
-  _entry_count -= 1;
+void ZMappedCache::cache_remove(const TreeCursor& cursor, const ZVirtualMemory& vmem) {
+  TreeNode* const node = cursor.node();
+  ZMappedCacheEntry* entry = ZMappedCacheEntry::cast_to_entry(node);
 
   // Remove from tree
-  _tree.remove(cursor);
+  _tree.remove(node);
 
-  // Insert in size-class lists
+  // Remove from size-class lists
   const size_t size = vmem.size();
   const int index = size_class_index(size);
   if (index != -1) {
@@ -199,15 +300,16 @@ void ZMappedCache::tree_remove(const Tree::FindCursor& cursor, const ZVirtualMem
   entry->~ZMappedCacheEntry();
 }
 
-void ZMappedCache::tree_replace(const Tree::FindCursor& cursor, const ZVirtualMemory& vmem) {
+void ZMappedCache::cache_replace(const TreeCursor& cursor, const ZVirtualMemory& vmem) {
   ZMappedCacheEntry* const entry = create_entry(vmem);
+  IntrusiveRBNode* const new_node = entry->node_addr();
 
-  ZMappedCache::TreeNode* const node = cursor.node();
-  ZMappedCacheEntry* const old_entry = ZMappedCacheEntry::cast_to_entry(node);
+  ZMappedCache::TreeNode* const old_node = cursor.node();
+  ZMappedCacheEntry* const old_entry = ZMappedCacheEntry::cast_to_entry(old_node);
   assert(old_entry->end() != vmem.end(), "should not replace, use update");
 
   // Replace in tree
-  _tree.replace(entry->node_addr(), cursor);
+  _tree.replace(old_node, new_node, cursor);
 
   // Replace in size-class lists
 
@@ -229,7 +331,7 @@ void ZMappedCache::tree_replace(const Tree::FindCursor& cursor, const ZVirtualMe
   old_entry->~ZMappedCacheEntry();
 }
 
-void ZMappedCache::tree_update(ZMappedCacheEntry* entry, const ZVirtualMemory& vmem) {
+void ZMappedCache::cache_update(ZMappedCacheEntry* entry, const ZVirtualMemory& vmem) {
   assert(entry->end() == vmem.end(), "must be");
 
   // Remove or add to size-class lists if required
@@ -281,7 +383,7 @@ ZVirtualMemory ZMappedCache::remove_vmem(ZMappedCacheEntry* const entry, size_t 
     if (strategy == RemovalStrategy::LowestAddress) {
       const size_t unused_size = size - to_remove;
       const ZVirtualMemory unused_vmem = vmem.shrink_from_back(unused_size);
-      tree_update(entry, unused_vmem);
+      cache_update(entry, unused_vmem);
 
     } else {
       assert(strategy == RemovalStrategy::HighestAddress, "must be LowestAddress or HighestAddress");
@@ -289,16 +391,16 @@ ZVirtualMemory ZMappedCache::remove_vmem(ZMappedCacheEntry* const entry, size_t 
       const size_t unused_size = size - to_remove;
       const ZVirtualMemory unused_vmem = vmem.shrink_from_front(unused_size);
 
-      auto cursor = _tree.get_cursor(entry->node_addr());
-      assert(cursor.is_valid(), "must be");
-      tree_replace(cursor, unused_vmem);
+      TreeCursor cursor = _tree.cursor(entry->node_addr());
+      assert(cursor.valid(), "must be");
+      cache_replace(cursor, unused_vmem);
     }
 
   } else {
     // Whole removal
-    auto cursor = _tree.get_cursor(entry->node_addr());
-    assert(cursor.is_valid(), "must be");
-    tree_remove(cursor, vmem);
+    TreeCursor cursor = _tree.cursor(entry->node_addr());
+    assert(cursor.valid(), "must be");
+    cache_remove(cursor, vmem);
   }
 
   // Update statistics
@@ -312,6 +414,11 @@ ZVirtualMemory ZMappedCache::remove_vmem(ZMappedCacheEntry* const entry, size_t 
 template <typename SelectFunction, typename ConsumeFunction>
 bool ZMappedCache::try_remove_vmem_size_class(size_t min_size, SelectFunction select, ConsumeFunction consume) {
 new_max_size:
+  if (_size < min_size) {
+    // Not enough left in cache to satisfy the min_size
+    return false;
+  }
+
   // Query the max select size possible given the size of the cache
   const size_t max_size = select(_size);
 
@@ -384,7 +491,7 @@ void ZMappedCache::scan_remove_vmem(size_t min_size, SelectFunction select, Cons
 
   if (strategy == RemovalStrategy::HighestAddress) {
     // Scan whole tree starting at the highest address
-    for (ZMappedCache::TreeNode* node = _tree.last(); node != nullptr; node = node->prev()) {
+    for (ZMappedCache::TreeNode* node = _tree.right_most(); node != nullptr; node = node->prev()) {
       ZMappedCacheEntry* const entry = ZMappedCacheEntry::cast_to_entry(node);
 
       const ZVirtualMemory vmem = remove_vmem<RemovalStrategy::HighestAddress>(entry, min_size, select);
@@ -399,7 +506,7 @@ void ZMappedCache::scan_remove_vmem(size_t min_size, SelectFunction select, Cons
     assert(strategy == RemovalStrategy::SizeClasses || strategy == RemovalStrategy::LowestAddress, "unknown strategy");
 
     // Scan whole tree starting at the lowest address
-    for (ZMappedCache::TreeNode* node = _tree.first(); node != nullptr; node = node->next()) {
+    for (ZMappedCache::TreeNode* node = _tree.left_most(); node != nullptr; node = node->next()) {
       ZMappedCacheEntry* const entry = ZMappedCacheEntry::cast_to_entry(node);
 
       const ZVirtualMemory vmem = remove_vmem<RemovalStrategy::LowestAddress>(entry, min_size, select);
@@ -449,7 +556,6 @@ size_t ZMappedCache::remove_discontiguous_with_strategy(size_t size, ZArray<ZVir
 
 ZMappedCache::ZMappedCache()
   : _tree(),
-    _entry_count(0),
     _size_class_lists{},
     _size(0),
     _min(_size) {}
@@ -457,11 +563,11 @@ ZMappedCache::ZMappedCache()
 void ZMappedCache::insert(const ZVirtualMemory& vmem) {
   _size += vmem.size();
 
-  Tree::FindCursor current_cursor = _tree.find(vmem.start());
-  Tree::FindCursor next_cursor = _tree.next(current_cursor);
+  TreeCursor current_cursor = _tree.cursor(vmem.start());
+  TreeCursor next_cursor = _tree.next(current_cursor);
 
   const bool extends_left = current_cursor.found();
-  const bool extends_right = next_cursor.is_valid() && next_cursor.found() &&
+  const bool extends_right = next_cursor.valid() && next_cursor.found() &&
                              ZMappedCacheEntry::cast_to_entry(next_cursor.node())->start() == vmem.end();
 
   if (extends_left && extends_right) {
@@ -477,10 +583,10 @@ void ZMappedCache::insert(const ZVirtualMemory& vmem) {
     new_vmem.grow_from_back(right_vmem.size());
 
     // Remove current (left vmem)
-    tree_remove(current_cursor, left_vmem);
+    cache_remove(current_cursor, left_vmem);
 
     // And update next's start
-    tree_update(next_entry, new_vmem);
+    cache_update(next_entry, new_vmem);
 
     return;
   }
@@ -492,7 +598,7 @@ void ZMappedCache::insert(const ZVirtualMemory& vmem) {
     ZVirtualMemory new_vmem = left_vmem;
     new_vmem.grow_from_back(vmem.size());
 
-    tree_replace(current_cursor, new_vmem);
+    cache_replace(current_cursor, new_vmem);
 
     return;
   }
@@ -507,12 +613,12 @@ void ZMappedCache::insert(const ZVirtualMemory& vmem) {
     new_vmem.grow_from_back(right_vmem.size());
 
     // Update next's start
-    tree_update(next_entry, new_vmem);
+    cache_update(next_entry, new_vmem);
 
     return;
   }
 
-  tree_insert(current_cursor, vmem);
+  cache_insert(current_cursor, vmem);
 }
 
 ZVirtualMemory ZMappedCache::remove_contiguous(size_t size) {
@@ -547,6 +653,37 @@ ZVirtualMemory ZMappedCache::remove_contiguous(size_t size) {
   return result;
 }
 
+ZVirtualMemory ZMappedCache::remove_contiguous_power_of_2(size_t min_size, size_t max_size) {
+  precond(is_aligned(min_size, ZGranuleSize));
+  precond(is_power_of_2(min_size));
+  precond(is_aligned(max_size, ZGranuleSize));
+  precond(is_power_of_2(max_size));
+  precond(min_size <= max_size);
+
+  ZVirtualMemory result;
+
+  const auto select_size_fn = [&](size_t size) {
+    // Always select a power of 2 within the [min_size, max_size] interval.
+    return clamp(round_down_power_of_2(size), min_size, max_size);
+  };
+
+  const auto consume_vmem_fn = [&](ZVirtualMemory vmem) {
+    assert(result.is_null(), "only consume once");
+    assert(min_size <= vmem.size() && vmem.size() <= max_size,
+      "Must be %zu <= %zu <= %zu", min_size, vmem.size(), max_size);
+    assert(is_power_of_2(vmem.size()), "Must be power_of_2(%zu)", vmem.size());
+
+    result = vmem;
+
+    // Only require one vmem
+    return true;
+  };
+
+  scan_remove_vmem<RemovalStrategy::SizeClasses>(min_size, select_size_fn, consume_vmem_fn);
+
+  return result;
+}
+
 size_t ZMappedCache::remove_discontiguous(size_t size, ZArray<ZVirtualMemory>* out) {
   return remove_discontiguous_with_strategy<RemovalStrategy::SizeClasses>(size, out);
 }
@@ -571,10 +708,10 @@ size_t ZMappedCache::remove_from_min(size_t max_size, ZArray<ZVirtualMemory>* ou
 
 void ZMappedCache::print_on(outputStream* st) const {
   // This may be called from error printing where we may not hold the lock, so
-  // values may be inconsistent. As such we read the _entry_count only once. And
-  // use is_empty_error_reporter_safe and size_error_reporter_safe on the size
-  // class lists.
-  const size_t entry_count = Atomic::load(&_entry_count);
+  // values may be inconsistent. As such we read size using _tree.size_atomic()
+  // only once. And use is_empty_error_reporter_safe and
+  // size_error_reporter_safe on the size class lists.
+  const size_t entry_count = _tree.size_atomic();
 
   st->print("Cache ");
   st->fill_to(17);
@@ -592,7 +729,7 @@ void ZMappedCache::print_on(outputStream* st) const {
   }
 
   // Print information on size classes
-  StreamAutoIndentor indentor(st, 1);
+  StreamIndentor si(st, 1);
 
   st->print("size classes ");
   st->fill_to(17);
@@ -621,7 +758,7 @@ void ZMappedCache::print_on(outputStream* st) const {
 
 void ZMappedCache::print_extended_on(outputStream* st) const {
   // Print the ranges and size of all nodes in the tree
-  for (ZMappedCache::TreeNode* node = _tree.first(); node != nullptr; node = node->next()) {
+  for (const ZMappedCache::TreeNode* node = _tree.left_most(); node != nullptr; node = node->next()) {
     const ZVirtualMemory vmem = ZMappedCacheEntry::cast_to_entry(node)->vmem();
 
     st->print_cr(PTR_FORMAT " " PTR_FORMAT " " EXACTFMT,

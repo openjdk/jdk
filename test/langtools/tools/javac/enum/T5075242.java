@@ -25,7 +25,7 @@
  * @test
  * @bug 5075242
  * @summary Cannot make compound type involving Enums
- * @author Peter von der Ah\u00e9
+ * @author Peter von der Ahé
  *
  * @compile T5075242.java
  */

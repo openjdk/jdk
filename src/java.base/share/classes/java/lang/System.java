@@ -124,10 +124,19 @@ public final class System {
      *
      * @apiNote
      * The typical approach to read character data is to wrap {@code System.in}
-     * within an {@link java.io.InputStreamReader InputStreamReader} or other object
-     * that handles character encoding. After this is done, subsequent reading should
-     * use only the wrapper object; operating directly on {@code System.in} results
-     * in unspecified behavior.
+     * within the object that handles character encoding. After this is done,
+     * subsequent reading should use only the wrapper object; continuing to
+     * operate directly on {@code System.in} results in unspecified behavior.
+     * <p>
+     * Here are two common examples. Using an {@link java.io.InputStreamReader
+     * InputStreamReader}:
+     * {@snippet lang=java :
+     *     new InputStreamReader(System.in, System.getProperty("stdin.encoding"));
+     * }
+     * Or using a {@link java.util.Scanner Scanner}:
+     * {@snippet lang=java :
+     *     new Scanner(System.in, System.getProperty("stdin.encoding"));
+     * }
      * <p>
      * For handling interactive input, consider using {@link Console}.
      *
@@ -2109,22 +2118,22 @@ public final class System {
                 return ModuleLayer.layers(loader);
             }
 
-            public int countPositives(byte[] bytes, int offset, int length) {
+            public int uncheckedCountPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
             public int countNonZeroAscii(String s) {
                 return StringCoding.countNonZeroAscii(s);
             }
-            public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
+            public String uncheckedNewStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
             }
-            public char getUTF16Char(byte[] bytes, int index) {
+            public char uncheckedGetUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
             }
-            public void putCharUTF16(byte[] bytes, int index, int ch) {
+            public void uncheckedPutCharUTF16(byte[] bytes, int index, int ch) {
                 StringUTF16.putChar(bytes, index, ch);
             }
-            public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
+            public byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
                 return String.getBytesNoRepl(s, cs);
             }
 
@@ -2136,15 +2145,15 @@ public final class System {
                 return String.getBytesUTF8NoRepl(s);
             }
 
-            public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+            public void uncheckedInflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
                 StringLatin1.inflate(src, srcOff, dst, dstOff, len);
             }
 
-            public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
+            public int uncheckedDecodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
                 return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
 
-            public int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
+            public int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
                 return StringCoding.implEncodeAsciiArray(src, srcOff, dst, dstOff, len);
             }
 
@@ -2180,7 +2189,7 @@ public final class System {
                 return StringConcatHelper.mix(lengthCoder, value);
             }
 
-            public Object stringConcat1(String[] constants) {
+            public Object uncheckedStringConcat1(String[] constants) {
                 return new StringConcatHelper.Concat1(constants);
             }
 
