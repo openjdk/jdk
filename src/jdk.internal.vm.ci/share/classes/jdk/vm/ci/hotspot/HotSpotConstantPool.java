@@ -653,7 +653,9 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                             .toList();
                     .toList();
         } else {
-            return IntStream.range(1, length()).filter(cpi -> {
+            return IntStream.range(1, length())
+                            .filter(this::isDynamicEntry)
+                            .mapToObj(...);
                 JvmConstant tagAt = getTagAt(cpi);
                 if (tagAt != null && tagAt.name.equals("Dynamic")) {
                     return true;
