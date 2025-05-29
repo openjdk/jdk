@@ -112,7 +112,7 @@ public final class InetAddressCachePolicy {
         // Log the resolved InetAddress cache policies
         if (logger.isLoggable(PlatformLogger.Level.CONFIG)) {
             logger.config(String.format(
-                    "InetAddressCachePolicy: positive=%s, stale=%s, negative=%s",
+                    "InetAddressCachePolicy configuration: positive=%s, stale=%s, negative=%s",
                     cachePolicy, staleCachePolicy, negativeCachePolicy));
         }
     }
