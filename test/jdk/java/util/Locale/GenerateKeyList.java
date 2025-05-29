@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /**
  * This is a simple program that will generate a key list that can be used as the basis
  * for a LocaleData file suitable for use with LocaleDataTest.  It always sends its
- * output to standard out.
+ * output to standard out. Run with --add-exports java.base/sun.util.resources=ALL-UNNAMED
  */
+
+import sun.util.resources.LocaleData;
+
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Enumeration;
@@ -32,12 +36,12 @@ import java.io.PrintStream;
 
 public class GenerateKeyList {
     public static void main(String[] args) throws Exception {
-        doOutputFor("sun.util.resources", "CalendarData", System.out);
-        doOutputFor("sun.util.resources", "CurrencyNames", System.out);
-        doOutputFor("sun.util.resources", "LocaleNames", System.out);
-        doOutputFor("sun.util.resources", "TimeZoneNames", System.out);
-        doOutputFor("sun.text.resources", "CollationData", System.out);
-        doOutputFor("sun.text.resources", "FormatData", System.out);
+        doOutputFor("sun.util.resources.cldr", "CalendarData", System.out);
+        doOutputFor("sun.util.resources.cldr", "CurrencyNames", System.out);
+        doOutputFor("sun.util.resources.cldr", "LocaleNames", System.out);
+        doOutputFor("sun.util.resources.cldr", "TimeZoneNames", System.out);
+        doOutputFor("sun.text.resources.cldr", "FormatData", System.out);
+        doOutputFor("sun.text.resources", "CollationData", System.out); // not cldr
     };
 
     public static void doOutputFor(String packageName,
@@ -45,11 +49,11 @@ public class GenerateKeyList {
                     throws Exception {
         Locale[] availableLocales = Locale.getAvailableLocales();
 
-        ResourceBundle bundle = ResourceBundle.getBundle(packageName +
-                        resourceBundleName, Locale.of(""));
+        ResourceBundle bundle = LocaleData.getBundle(packageName +
+                        "." + resourceBundleName, Locale.of(""));
         dumpResourceBundle(resourceBundleName + "/", bundle, out);
         for (int i = 0; i < availableLocales.length; i++) {
-            bundle = ResourceBundle.getBundle(packageName + resourceBundleName,
+            bundle = LocaleData.getBundle(packageName + "." + resourceBundleName,
                             availableLocales[i]);
             dumpResourceBundle(resourceBundleName + "/" + availableLocales[i].toString(),
                             bundle, out);
