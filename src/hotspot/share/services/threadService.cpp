@@ -1179,7 +1179,6 @@ public:
   OopHandle _name;
   GrowableArray<OwnedLock>* _locks;
   Blocker _blocker;
-  OopHandle _blocker_owner;
 
   GetThreadSnapshotClosure(Handle thread_h, JavaThread* java_thread):
     HandshakeClosure("GetThreadSnapshotClosure"),
@@ -1187,7 +1186,7 @@ public:
     _retry_handshake(false), _stack_depth(0),
     _methods(nullptr), _bcis(nullptr),
     _thread_status(), _name(nullptr),
-    _locks(nullptr), _blocker(), _blocker_owner(nullptr) {
+    _locks(nullptr), _blocker() {
   }
   virtual ~GetThreadSnapshotClosure() {
     delete _methods;
@@ -1200,7 +1199,6 @@ public:
       delete _locks;
     }
     _blocker._obj.release(oop_storage());
-    _blocker_owner.release(oop_storage());
   }
 
   bool read_reset_retry() {
@@ -1314,10 +1312,6 @@ public:
     oop park_blocker = java_lang_Thread::park_blocker(_thread_h());
     if (park_blocker != nullptr) {
       _blocker = Blocker(Blocker::PARK_BLOCKER, OopHandle(oop_storage(), park_blocker));
-      if (park_blocker->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
-        oop blocker_owner = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(park_blocker);
-        _blocker_owner = OopHandle(oop_storage(), blocker_owner);
-      }
     }
 
     ResourceMark rm(current);
@@ -1399,7 +1393,6 @@ class jdk_internal_vm_ThreadSnapshot: AllStatic {
   static int _locks_offset;
   static int _blockerTypeOrdinal_offset;
   static int _blockerObject_offset;
-  static int _blockerOwner_offset;
 
   static void compute_offsets(InstanceKlass* klass, TRAPS) {
     JavaClasses::compute_offset(_name_offset, klass, "name", vmSymbols::string_signature(), false);
@@ -1409,7 +1402,6 @@ class jdk_internal_vm_ThreadSnapshot: AllStatic {
     JavaClasses::compute_offset(_locks_offset, klass, "locks", vmSymbols::jdk_internal_vm_ThreadLock_array(), false);
     JavaClasses::compute_offset(_blockerTypeOrdinal_offset, klass, "blockerTypeOrdinal", vmSymbols::int_signature(), false);
     JavaClasses::compute_offset(_blockerObject_offset, klass, "blockerObject", vmSymbols::object_signature(), false);
-    JavaClasses::compute_offset(_blockerOwner_offset, klass, "blockerOwner", vmSymbols::object_signature(), false);
   }
 public:
   static void init(InstanceKlass* klass, TRAPS) {
@@ -1444,9 +1436,6 @@ public:
     snapshot->int_field_put(_blockerTypeOrdinal_offset, type_ordinal);
     snapshot->obj_field_put(_blockerObject_offset, lock);
   }
-  static void set_blocker_owner(oop snapshot, oop owner) {
-    snapshot->obj_field_put(_blockerOwner_offset, owner);
-  }
 };
 
 bool jdk_internal_vm_ThreadSnapshot::_inited = false;
@@ -1457,7 +1446,6 @@ int jdk_internal_vm_ThreadSnapshot::_stackTrace_offset;
 int jdk_internal_vm_ThreadSnapshot::_locks_offset;
 int jdk_internal_vm_ThreadSnapshot::_blockerTypeOrdinal_offset;
 int jdk_internal_vm_ThreadSnapshot::_blockerObject_offset;
-int jdk_internal_vm_ThreadSnapshot::_blockerOwner_offset;
 
 oop VMThreadSnapshot::get_thread_snapshot(jobject jthread, TRAPS) {
   ThreadsListHandle tlh(THREAD);
@@ -1568,7 +1556,6 @@ oop VMThreadSnapshot::get_thread_snapshot(jobject jthread, TRAPS) {
   jdk_internal_vm_ThreadSnapshot::set_locks(snapshot(), locks());
   if (!cl._blocker.is_empty()) {
     jdk_internal_vm_ThreadSnapshot::set_blocker(snapshot(), cl._blocker._type, cl._blocker._obj.resolve());
-    jdk_internal_vm_ThreadSnapshot::set_blocker_owner(snapshot(), cl._blocker_owner.resolve());
   }
   return snapshot();
 }
