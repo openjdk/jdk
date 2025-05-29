@@ -26,6 +26,7 @@
 package sun.net;
 
 import java.security.Security;
+import sun.util.logging.PlatformLogger;
 
 public final class InetAddressCachePolicy {
 
@@ -110,7 +111,7 @@ public final class InetAddressCachePolicy {
 
         // Log the resolved InetAddress cache policies
         if (logger.isLoggable(PlatformLogger.Level.CONFIG)) {
-            logger.config(() -> String.format(
+            logger.config(String.format(
                     "InetAddressCachePolicy: positive=%s, stale=%s, negative=%s",
                     cachePolicy, staleCachePolicy, negativeCachePolicy));
         }
@@ -127,7 +128,7 @@ public final class InetAddressCachePolicy {
         } catch (NumberFormatException ignored) {
             // Ignore
             if (logger.isLoggable(PlatformLogger.Level.WARNING)) {
-                logger.warning(() -> "Invalid format for security property '" + cachePolicyProp +
+                logger.warning("Invalid format for security property '" + cachePolicyProp +
                         "' incorrectly set as: '" + tmpString + "'");
             }
         }
@@ -140,7 +141,7 @@ public final class InetAddressCachePolicy {
         } catch (NumberFormatException ignored) {
             // Ignore
             if (logger.isLoggable(PlatformLogger.Level.WARNING)) {
-                logger.warning(() -> "Invalid format for system property '" + cachePolicyPropFallback +
+                logger.warning("Invalid format for system property '" + cachePolicyPropFallback +
                         "' incorrectly set as: '" + tmpString + "'");
             }
         }
