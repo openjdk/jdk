@@ -811,12 +811,12 @@ public sealed class ICC_Profile implements Serializable
         }
 
         try {
-            if (getColorSpaceType(p) == ColorSpace.TYPE_GRAY
+            if (getColorSpaceType(data) == ColorSpace.TYPE_GRAY
                     && getData(p, icSigMediaWhitePointTag) != null
                     && getData(p, icSigGrayTRCTag) != null) {
                 return new ICC_ProfileGray(p);
             }
-            if (getColorSpaceType(p) == ColorSpace.TYPE_RGB
+            if (getColorSpaceType(data) == ColorSpace.TYPE_RGB
                     && getData(p, icSigMediaWhitePointTag) != null
                     && getData(p, icSigRedColorantTag) != null
                     && getData(p, icSigGreenColorantTag) != null
@@ -1028,13 +1028,8 @@ public sealed class ICC_Profile implements Serializable
         if (info != null) {
             return info.colorSpaceType;
         }
-        return getColorSpaceType(cmmProfile());
-    }
-
-    private static int getColorSpaceType(Profile p) {
-        byte[] theHeader = getData(p, icSigHead);
-        int theColorSpaceSig = intFromBigEndian(theHeader, icHdrColorSpace);
-        return iccCStoJCS(theColorSpaceSig);
+        byte[] theHeader = getData(cmmProfile(), icSigHead);
+        return getColorSpaceType(theHeader);
     }
 
     private static int getColorSpaceType(byte[] theHeader) {
@@ -1057,8 +1052,7 @@ public sealed class ICC_Profile implements Serializable
      */
     public int getPCSType() {
         byte[] theHeader = getData(icSigHead);
-        int thePCSSig = intFromBigEndian(theHeader, icHdrPcs);
-        return iccCStoJCS(thePCSSig);
+        return getPCSType(theHeader);
     }
 
     private static int getPCSType(byte[] theHeader) {
