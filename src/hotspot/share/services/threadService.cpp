@@ -1142,7 +1142,7 @@ public:
 
     int _depth;
     Type _type;
-    // synchronization object (when type == LOCKED) ot its klass (type == ELIMINATED)
+    // synchronization object (when type == LOCKED) or its klass (type == ELIMINATED)
     OopHandle _obj;
 
     OwnedLock(int depth, Type type, OopHandle obj): _depth(depth), _type(type), _obj(obj) {}
