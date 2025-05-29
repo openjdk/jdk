@@ -294,6 +294,7 @@ public final class QuicTimerQueue {
             }
             Deadline minDeadLine = Deadline.MAX;
             while ((event = due.poll()) != null) {
+                if (closed) return;
                 Deadline nextDeadline = event.handle();
                 if (Deadline.MAX.equals(nextDeadline)) continue;
                 rescheduled.add(event);
@@ -318,14 +319,24 @@ public final class QuicTimerQueue {
             }
 
         } catch (Throwable t) {
-            if (Log.errors()) {
-                Log.logError(Thread.currentThread().getName()+
-                        ": Unexpected exception while processing due events: " + t);
-                Log.logError(t);
-            } else if (debug.on()) {
-                debug.log("Unexpected exception while processing due events", t);
+            if (!closed) {
+                if (Log.errors()) {
+                    Log.logError(Thread.currentThread().getName() +
+                            ": Unexpected exception while processing due events: " + t);
+                    Log.logError(t);
+                } else if (debug.on()) {
+                    debug.log("Unexpected exception while processing due events", t);
+                }
+                throw t;
+            } else {
+                if (Log.errors()) {
+                    Log.logError(Thread.currentThread().getName() +
+                            ": Ignoring exception while closing: " + t);
+                    Log.logError(t);
+                } else if (debug.on()) {
+                    debug.log("Ignoring exception while closing: " + t);
+                }
             }
-            throw t;
         }
     }
 
@@ -453,6 +464,7 @@ public final class QuicTimerQueue {
     public void stop() {
         closed = true;
         do {
+            processor.stop();
             due.clear();
             rescheduled.clear();
             scheduled.clear();
