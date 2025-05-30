@@ -120,9 +120,9 @@ void VM_Version::initialize() {
     ContendedPaddingWidth = dcache_line;
   }
 
-  if (CryptoPmullForCRC32LowLimit & 127) {
+  if (!(is_aligned(CryptoPmullForCRC32LowLimit, 128))) {
     warning("CryptoPmullForCRC32LowLimit must be a multiple of 128");
-    CryptoPmullForCRC32LowLimit &= ~127;
+    CryptoPmullForCRC32LowLimit = align_down(CryptoPmullForCRC32LowLimit, 128);
   }
 
   if (os::supports_map_sync()) {
