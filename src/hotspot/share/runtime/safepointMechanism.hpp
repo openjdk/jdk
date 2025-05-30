@@ -52,7 +52,7 @@ class SafepointMechanism : public AllStatic {
 
   static inline bool has_pending_safepoint(JavaThread* thread);
 
-  static void process(JavaThread *thread, ResourceHashtable<const char*, bool>& operations_filter);
+  static void process(JavaThread *thread, ResourceHashtable<HandshakeFilterOperation, bool>& operations_filter);
 
   static void default_initialize();
 
@@ -82,8 +82,8 @@ class SafepointMechanism : public AllStatic {
   static inline bool should_process(JavaThread* thread, bool allow_suspend = true);
 
   // Processes a pending requested operation.
-  static inline void process_if_requested(JavaThread* thread, ResourceHashtable<const char*, bool>& operations_filter);
-  static inline void process_if_requested_with_exit_check(JavaThread* thread, ResourceHashtable<const char*, bool>& operations_filter);
+  static inline void process_if_requested(JavaThread* thread, ResourceHashtable<HandshakeFilterOperation, bool>& operations_filter);
+  static inline void process_if_requested_with_exit_check(JavaThread* thread, ResourceHashtable<HandshakeFilterOperation, bool>& operations_filter);
   // Compute what the poll values should be and install them.
   static void update_poll_values(JavaThread* thread);
 

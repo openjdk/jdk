@@ -1271,8 +1271,8 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
   ResourceMark rm;
-  ResourceHashtable<const char *, bool> operations_filter;
-  operations_filter.put("check_async_exception", true); /* check asyncs */
+  ResourceHashtable<HandshakeFilterOperation, bool> operations_filter;
+  operations_filter.put(HandshakeFilterOperation::check_async_exception, true); /* check asyncs */
   SafepointMechanism::process_if_requested_with_exit_check(thread, operations_filter);
 
   // After returning from native, it could be that the stack frames are not
