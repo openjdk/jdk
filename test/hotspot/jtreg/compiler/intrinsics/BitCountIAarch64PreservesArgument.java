@@ -42,14 +42,15 @@
 package compiler.intrinsics;
 
 public class BitCountIAarch64PreservesArgument {
-    static long lFld = 0x3e34_3acb_0fb0_67a6L;
+    static long lFld;
     static long result;
 
     public static void main(String[] args) {
+        lFld = 0xfedc_ba98_7654_3210L;
         for (int i = 0; i < 10_000; i++) {
             test();
-            if (result != 0x3e34_3acb_0fb0_67a6L) {
-                // Wrongly outputs the cut input 0x0fb0_67a6 == 263219110
+            if (result != 0xfedc_ba98_7654_3210L) {
+                // Wrongly outputs the cut input 0x7654_3210 == 1985229328
                 throw new RuntimeException("Wrong result: " + result);
             }
         }
@@ -58,7 +59,7 @@ public class BitCountIAarch64PreservesArgument {
     static void test() {
         long x = lFld;
         try {
-            result = Integer.bitCount((int) x); // Cut input: 0x0fb0_67a6 == 263219110
+            result = Integer.bitCount((int) x); // Cut input: 0x7654_3210 == 1985229328
             throw new RuntimeException();
         } catch (RuntimeException _) {
         }
