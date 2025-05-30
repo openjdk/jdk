@@ -1276,8 +1276,6 @@ public final class BindServer {
             super("StreamRedirectingThread");
             this.prefix = prefix;
             this.owner = owner;
-            assert is != System.in
-                    : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
             bin = new BufferedReader(new InputStreamReader(is));
         }
 
