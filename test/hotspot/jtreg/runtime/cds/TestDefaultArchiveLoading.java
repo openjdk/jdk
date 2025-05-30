@@ -48,6 +48,7 @@
  * @test id=coops_nocoh
  * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
+ * @requires vm.gc != "Z"
  * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -59,6 +60,7 @@
  * @test id=coops_coh
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
  * @requires vm.cds
+ * @requires vm.gc != "Z"
  * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -131,7 +133,7 @@ public class TestDefaultArchiveLoading {
             default: throw new RuntimeException("Invalid argument " + args[0]);
         }
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:" + coh + "UseCompactObjectHeaders",
                 "-XX:" + coops + "UseCompressedOops",
                 "-Xlog:cds",
