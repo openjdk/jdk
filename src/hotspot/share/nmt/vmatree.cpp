@@ -306,7 +306,7 @@ void VMATree::SummaryDiff::print_on(outputStream* out) {
     if (tag[i].reserve == 0 && tag[i].commit == 0) {
       continue;
     }
-    out->print_cr("Tag %s R: " INT64_FORMAT " C: " INT64_FORMAT, NMTUtil::tag_to_enum_name((MemTag)i), tag[i].reserve,
+    out->print_cr("Tag %s R: " INT64_FORMAT " C: " INT64_FORMAT, MemTagFactory::name_of((MemTag)i), tag[i].reserve,
                   tag[i].commit);
   }
 }

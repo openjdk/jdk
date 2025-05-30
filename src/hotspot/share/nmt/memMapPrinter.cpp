@@ -70,7 +70,7 @@ static const char* get_shortname_for_mem_tag(MemTag mem_tag) {
 #define DO(t, shortname, text) if (t == mem_tag) return shortname;
   NMT_FLAGS_DO(DO)
 #undef DO
-  return NMTUtil::tag_to_enum_name(mem_tag);
+  return MemTagFactory::name_of(mem_tag);
 }
 
 /// NMT virtual memory

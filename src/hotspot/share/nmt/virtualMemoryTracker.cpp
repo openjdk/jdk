@@ -735,7 +735,7 @@ public:
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
     if (rgn->contain_address(_p)) {
       _st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag %s",
-        p2i(_p), p2i(rgn->base()), p2i(rgn->base() + rgn->size()), NMTUtil::tag_to_enum_name(rgn->mem_tag()));
+        p2i(_p), p2i(rgn->base()), p2i(rgn->base() + rgn->size()), MemTagFactory::name_of(rgn->mem_tag()));
       if (MemTracker::tracking_level() == NMT_detail) {
         _stackprinter.print_stack(rgn->call_stack());
         _st->cr();

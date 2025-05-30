@@ -139,7 +139,7 @@ bool MallocMemorySummary::category_limit_reached(MemTag mem_tag, size_t s, size_
 
 #define FORMATTED \
   "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
-  NMTUtil::tag_to_enum_name(mem_tag), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+  MemTagFactory::name_of(mem_tag), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
 
   // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
   // We don't want to risk recursive assertion or torn hs-err logs.
@@ -308,7 +308,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
                  p2i(p), where,
                  (block->is_dead() ? "dead" : "live"),
                  p2i(block + 1), // lets print the payload start, not the header
-                 block->size(), NMTUtil::tag_to_enum_name(block->mem_tag()));
+                 block->size(), MemTagFactory::name_of(block->mem_tag()));
     if (MemTracker::tracking_level() == NMT_detail) {
       NativeCallStack ncs;
       if (MallocSiteTable::access_stack(ncs, *block)) {
