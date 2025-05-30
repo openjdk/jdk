@@ -25,8 +25,6 @@
 #ifndef SHARE_CODE_NMETHOD_HPP
 #define SHARE_CODE_NMETHOD_HPP
 
-#define IMMUTABLE_DATA_REFERENCES   int
-
 #include "code/codeBlob.hpp"
 #include "code/pcDesc.hpp"
 #include "oops/metadata.hpp"
@@ -170,6 +168,8 @@ class nmethod : public CodeBlob {
   friend class CodeCache;  // scavengable oops
   friend class JVMCINMethodData;
   friend class DeoptimizationScope;
+
+  using ImmutableDataReferences = int;
 
  private:
 
@@ -574,12 +574,12 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return           immutable_data_end() - sizeof(IMMUTABLE_DATA_REFERENCES) ; }
+  address speculations_end      () const { return           immutable_data_end() - sizeof(ImmutableDataReferences) ; }
 #else
-  address scopes_data_end       () const { return           immutable_data_end() - sizeof(IMMUTABLE_DATA_REFERENCES) ; }
+  address scopes_data_end       () const { return           immutable_data_end() - sizeof(ImmutableDataReferences) ; }
 #endif
 
-  address immutable_data_references_begin () const { return immutable_data_end() - sizeof(IMMUTABLE_DATA_REFERENCES) ; }
+  address immutable_data_references_begin () const { return immutable_data_end() - sizeof(ImmutableDataReferences) ; }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
