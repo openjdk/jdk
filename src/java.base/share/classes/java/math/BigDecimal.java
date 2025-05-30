@@ -480,16 +480,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     public static final BigDecimal TEN =
         ZERO_THROUGH_TEN[10];
 
-    /**
-     * The value 0.1, with a scale of 1.
-     */
-    private static final BigDecimal ONE_TENTH = valueOf(1L, 1);
-
-    /**
-     * The value 0.5, with a scale of 1.
-     */
-    private static final BigDecimal ONE_HALF = valueOf(5L, 1);
-
     // Constructors
 
     /**
