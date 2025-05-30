@@ -90,8 +90,7 @@ public class DoubleActionESC {
                 throw new RuntimeException("Test failed: Latch timout reached");
             }
             EventQueue.invokeAndWait(() -> {
-                if (fd.isVisible())
-                {
+                if (fd.isVisible()) {
                     throw new RuntimeException("File Dialog is not closed");
                 }
             });
