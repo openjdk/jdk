@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5097243 8355478
+ * @bug 5097243
  * @summary Tests that FileDialog can be closed by ESC any time when GtkFileDialog is disabled
  * @key headful
  * @run main DoubleActionESCWithGtkDisabled
