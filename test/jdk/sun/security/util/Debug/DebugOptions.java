@@ -75,7 +75,7 @@ public class DebugOptions {
                 Arguments.of("all",
                         EXPECTED_ALL_REGEX,
                         "properties:"),
-                // expect thread and timestamp info 
+                // expect thread and timestamp info
                 Arguments.of("all+thread",
                         EXPECTED_ALL_REGEX,
                         "properties:")
