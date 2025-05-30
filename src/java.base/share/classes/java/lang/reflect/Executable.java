@@ -703,7 +703,7 @@ public abstract sealed class Executable extends AccessibleObject
         if ((declAnnos = declaredAnnotations) == null) {
             synchronized (this) {
                 if ((declAnnos = declaredAnnotations) == null) {
-                    Executable root = (Executable)getRoot();
+                    Executable root = getRoot();
                     if (root != null) {
                         declAnnos = root.declaredAnnotations();
                     } else {
