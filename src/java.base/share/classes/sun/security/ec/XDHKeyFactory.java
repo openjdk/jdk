@@ -170,7 +170,7 @@ public class XDHKeyFactory extends KeyFactorySpi {
                 yield result;
             }
             case null -> throw new InvalidKeySpecException(
-                "keySpec most not be null");
+                "keySpec must not be null");
             default ->
                 throw new InvalidKeySpecException(keySpec.getClass().getName() +
                     " not supported.");
@@ -205,7 +205,7 @@ public class XDHKeyFactory extends KeyFactorySpi {
                 }
             }
             case null -> throw new InvalidKeySpecException(
-                "keySpec most not be null");
+                "keySpec must not be null");
             default ->
                 throw new InvalidKeySpecException(keySpec.getClass().getName() +
                     " not supported.");

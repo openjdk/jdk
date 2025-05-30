@@ -220,7 +220,7 @@ public final class ECKeyFactory extends KeyFactorySpi {
                 yield new ECPublicKeyImpl(p8key.getPubKeyEncoded());
             }
             case null -> throw new InvalidKeySpecException(
-                "keySpec most not be null");
+                "keySpec must not be null");
             default ->
                 throw new InvalidKeySpecException(keySpec.getClass().getName() +
                     " not supported.");
@@ -242,7 +242,7 @@ public final class ECKeyFactory extends KeyFactorySpi {
             case ECPrivateKeySpec e ->
                 new ECPrivateKeyImpl(e.getS(), e.getParams());
             case null -> throw new InvalidKeySpecException(
-                "keySpec most not be null");
+                "keySpec must not be null");
             default ->
                 throw new InvalidKeySpecException(keySpec.getClass().getName() +
                     " not supported.");

@@ -159,7 +159,7 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
                 yield new EdDSAPublicKeyImpl(p8key.getPubKeyEncoded());
             }
             case null -> throw new InvalidKeySpecException(
-                "keySpec most not be null");
+                "keySpec must not be null");
             default ->
                 throw new InvalidKeySpecException(keySpec.getClass().getName() +
                     " not supported.");
@@ -194,7 +194,7 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
                 }
             }
             case null -> throw new InvalidKeySpecException(
-                "keySpec most not be null");
+                "keySpec must not be null");
             default ->
                 throw new InvalidKeySpecException(keySpec.getClass().getName() +
                     " not supported.");
