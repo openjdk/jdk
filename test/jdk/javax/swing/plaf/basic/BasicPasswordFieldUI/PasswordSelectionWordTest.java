@@ -26,7 +26,7 @@
  * @key headful
  * @bug 4231444 8354646
  * @summary Password fields' ActionMap needs to replace
- * DefaultEditorKit.selectLineAction with DefaultEditorKit.selectWordAction.
+ * DefaultEditorKit.selectWordAction with DefaultEditorKit.selectLineAction.
  * When we failed to do this: the user could double-click words and
  * identify spaces in the password. 8354646 is an offshoot of 4231444 that
  * reproduced in Aqua because AquaTextPasswordFieldUI does NOT extend
