@@ -225,6 +225,7 @@ void FieldInfoStream::print_from_fieldinfo_stream(Array<u1>* fis, outputStream* 
 }
 
 class FieldInfoComparator: public PackedTableLookup::Comparator {
+friend class FieldInfoStream;
 private:
   const FieldInfoReader *_reader;
   ConstantPool *_cp;
@@ -271,7 +272,20 @@ void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* f
 
   FieldInfoComparator comparator(&reader, cp, nullptr, nullptr);
   // Check 1: assert that elements have the correct order based on the comparison function
-  lookup.validate_order(comparator, search_table);
+  uint32_t err_pivot;
+  if (!lookup.validate_order(comparator, search_table, &err_pivot)) {
+    char *msg;
+    reader.set_position_and_next_index(err_pivot, -1);
+    FieldInfo fi;
+    reader.read_field_info(fi);
+    ResourceMark rm;
+    if (asprintf(&msg, "Invalid order %s(%p) %s(%p) vs. %s(%p) %s(%p)",
+      comparator._name->as_C_string(), comparator._name, comparator._signature->as_C_string(), comparator._signature,
+      fi.name(cp)->as_C_string(), fi.name(cp), fi.signature(cp)->as_C_string(), fi.signature(cp)) < 0) {
+        msg = const_cast<char *>("cannot format");
+    }
+    report_vm_error(__FILE__, __LINE__, msg);
+  }
 
   // Check 2: Iterate through the original stream (not just search_table) and try if lookup works as expected
   reader.set_position_and_next_index(0, 0);

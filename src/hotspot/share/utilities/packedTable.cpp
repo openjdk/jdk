@@ -93,17 +93,18 @@ bool PackedTableLookup::search(Comparator& comparator, const Array<u1>* search_t
 }
 
 #ifdef ASSERT
-void PackedTableLookup::validate_order(Comparator &comparator, const Array<u1> *search_table) const {
+bool PackedTableLookup::validate_order(Comparator &comparator, const Array<u1> *search_table, uint32_t *err_pivot) const {
   const u1* data = search_table->data();
   size_t length = static_cast<size_t>(search_table->length());
   for (size_t offset = 0; offset < length; offset += _element_bytes) {
     uint64_t value = read_value(data, length, offset);
     uint32_t pivot = value & _pivot_mask;
 
-    if (offset != 0) {
-      assert(comparator.compare_to(pivot) < 0, "not sorted");
+    if (offset != 0 && comparator.compare_to(pivot) >= 0) {
+      return false;
     }
     comparator.reset(pivot);
   }
+  return true;
 }
 #endif
