@@ -132,7 +132,7 @@ size_t NMTUsage::total_committed() const {
 
 size_t NMTUsage::reserved(MemTag mem_tag) const {
   int index = NMTUtil::tag_to_index(mem_tag);
-  return _malloc_by_type.at_grow(index) + _vm_by_type.at_grow(index).reserved;
+  return const_cast<GrowableArrayCHeap<size_t, mtNMT>&>(_malloc_by_type).at_grow(index) + _vm_by_type.at_grow(index).reserved;
 }
 
 size_t NMTUsage::committed(MemTag mem_tag) const {
