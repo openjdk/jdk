@@ -97,6 +97,9 @@ public class Bug8167143 {
             case "testCandidateLocales":
                 testCandidateLocales();
                 break;
+            case "testCompat":
+                testImplicitCompatLocales();
+                break;
             default:
                 throw new RuntimeException("no test was specified.");
         }
@@ -223,6 +226,50 @@ public class Bug8167143 {
         if ((expectedList.size() > 0)) {
             throw new RuntimeException(" retrievedList contain extra candidate locales " + expectedList
                     + "for locale " + locale);
+        }
+    }
+
+    /**
+     * checks that locales nn-NO  and nb-NO should be present in list of supported locales for
+     * all Providers for COMPAT.
+     */
+    private static void testImplicitCompatLocales() {
+        LocaleProviderAdapter jre = LocaleProviderAdapter.forJRE();
+        checkPresenceCompat("BreakIteratorProvider",
+                jre.getBreakIteratorProvider().getAvailableLocales());
+        checkPresenceCompat("CollatorProvider",
+                jre.getCollatorProvider().getAvailableLocales());
+        checkPresenceCompat("DateFormatProvider",
+                jre.getDateFormatProvider().getAvailableLocales());
+        checkPresenceCompat("DateFormatSymbolsProvider",
+                jre.getDateFormatSymbolsProvider().getAvailableLocales());
+        checkPresenceCompat("DecimalFormatSymbolsProvider",
+                jre.getDecimalFormatSymbolsProvider().getAvailableLocales());
+        checkPresenceCompat("NumberFormatProvider",
+                jre.getNumberFormatProvider().getAvailableLocales());
+        checkPresenceCompat("CurrencyNameProvider",
+                jre.getCurrencyNameProvider().getAvailableLocales());
+        checkPresenceCompat("LocaleNameProvider",
+                jre.getLocaleNameProvider().getAvailableLocales());
+        checkPresenceCompat("TimeZoneNameProvider",
+                jre.getTimeZoneNameProvider().getAvailableLocales());
+        checkPresenceCompat("CalendarDataProvider",
+                jre.getCalendarDataProvider().getAvailableLocales());
+        checkPresenceCompat("CalendarNameProvider",
+                jre.getCalendarNameProvider().getAvailableLocales());
+        checkPresenceCompat("CalendarProvider",
+                jre.getCalendarProvider().getAvailableLocales());
+    }
+
+    private static void checkPresenceCompat(String testName, Locale[] got) {
+        List<Locale> gotLocalesList = Arrays.asList(got);
+        List<Locale> gotList = new ArrayList<>(gotLocalesList);
+        if (!gotList.removeAll(COMPAT_IMPLICIT_LOCS)) {
+            // check which Implicit locale are not present in retrievedLocales List.
+            List<Locale> implicitLocales = new ArrayList<>(COMPAT_IMPLICIT_LOCS);
+            implicitLocales.removeAll(gotList);
+            throw new RuntimeException("Locales those not correctly reflected are "
+                    + implicitLocales + " for test " + testName);
         }
     }
 }
