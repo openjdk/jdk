@@ -414,17 +414,17 @@ class UnixSecureDirectoryStream
                 if (!ds.isOpen())
                     throw new ClosedDirectoryStreamException();
 
+                int mode = UnixFileModeAttribute.toUnixMode(perms);
                 if (file == null)
-                    fchmod(dfd, UnixFileModeAttribute.toUnixMode(perms));
+                    fchmod(dfd, mode);
                 else if (followLinks)
-                    fchmodat(dfd, file, UnixFileModeAttribute.toUnixMode(perms), 0);
+                    fchmodat(dfd, file, mode, 0);
                 else if (fchmodatNoFollowSupported())
-                    fchmodat(dfd, file, UnixFileModeAttribute.toUnixMode(perms),
-                             AT_SYMLINK_NOFOLLOW);
+                    fchmodat(dfd, file, mode, AT_SYMLINK_NOFOLLOW);
                 else {
                     int fd = open();
                     try {
-                        fchmod(fd, UnixFileModeAttribute.toUnixMode(perms));
+                        fchmod(fd, mode);
                     } finally {
                         if (fd >= 0)
                             UnixNativeDispatcher.close(fd, e-> null);
