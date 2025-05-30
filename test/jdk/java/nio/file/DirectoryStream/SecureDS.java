@@ -190,7 +190,7 @@ public class SecureDS {
         // Test setting permission on directory with no permissions
         setPosixFilePermissions(aDir, noperms);
         assertTrue(getPosixFilePermissions(aDir).equals(noperms));
-        PosixFileAttributeView view = stream.getFileAttributeView(aDir, PosixFileAttributeView.class);
+        PosixFileAttributeView view = stream.getFileAttributeView(PosixFileAttributeView.class);
         view.setPermissions(permsDir);
         assertTrue(getPosixFilePermissions(aDir).equals(permsDir));
 
