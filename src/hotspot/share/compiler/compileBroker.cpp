@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -347,6 +348,13 @@ void CompileQueue::add(CompileTask* task) {
     task->log_task_queued();
   }
 
+  if (TrainingData::need_data() && !CDSConfig::is_dumping_final_static_archive()) {
+    CompileTrainingData* ctd = CompileTrainingData::make(task);
+    if (ctd != nullptr) {
+      task->set_training_data(ctd);
+    }
+  }
+
   // Notify CompilerThreads that a task is available.
   MethodCompileQueue_lock->notify_all();
 }
@@ -441,7 +449,7 @@ CompileTask* CompileQueue::get(CompilerThread* thread) {
   CompileTask* task;
   {
     NoSafepointVerifier nsv;
-    task = CompilationPolicy::select_task(this);
+    task = CompilationPolicy::select_task(this, thread);
     if (task != nullptr) {
       task = task->select_for_compilation();
     }
@@ -781,6 +789,10 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
   _initialized = true;
 }
 
+void TrainingReplayThread::training_replay_thread_entry(JavaThread* thread, TRAPS) {
+  CompilationPolicy::replay_training_at_init_loop(thread);
+}
+
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
 // Entry for DeoptimizeObjectsALotThread. The threads are started in
 // CompileBroker::init_compiler_threads() iff DeoptimizeObjectsALot is enabled
@@ -858,6 +870,9 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
       new_thread = new DeoptimizeObjectsALotThread();
       break;
 #endif // ASSERT
+    case training_replay_t:
+      new_thread = new TrainingReplayThread();
+      break;
     default:
       ShouldNotReachHere();
   }
@@ -1013,6 +1028,16 @@ void CompileBroker::init_compiler_threads() {
     }
   }
 #endif // defined(ASSERT) && COMPILER2_OR_JVMCI
+}
+
+void CompileBroker::init_training_replay() {
+  // Ensure any exceptions lead to vm_exit_during_initialization.
+  EXCEPTION_MARK;
+  if (TrainingData::have_data()) {
+    Handle thread_oop = JavaThread::create_system_thread_object("Training replay thread", CHECK);
+    jobject thread_handle = JNIHandles::make_local(THREAD, thread_oop());
+    make_thread(training_replay_t, thread_handle, nullptr, nullptr, THREAD);
+  }
 }
 
 void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
