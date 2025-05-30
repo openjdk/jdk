@@ -24,4 +24,4 @@
 
 #include <nmt/memTagFactory.hpp>
 
-Deferred<MemTagFactory> MemTagFactory::_instance;
+Deferred<MemTagFactory::Instance> MemTagFactory::_instance;
