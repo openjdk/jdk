@@ -208,19 +208,19 @@ public class UUIDTest {
             long now = System.currentTimeMillis();
             UUID u = UUID.unixEpochTimeMillis(now);
         } catch (Exception e) {
-            throw new AssertionError("Unexpected exception for valid timestamp: " + e);
+            throw new AssertionError("Unexpected exception with valid timestamp: " + e);
         }
 
         // Should throw for negative timestamp
         try {
             UUID.unixEpochTimeMillis(-1);
-            throw new AssertionError("Expected IllegalArgumentException for negative timestamp");
+            throw new AssertionError("Expected IllegalArgumentException with negative timestamp");
         } catch (IllegalArgumentException expected) {}
 
         // Should throw for timestamp > 48 bits
         try {
             UUID.unixEpochTimeMillis(1L << 48);
-            throw new AssertionError("Expected IllegalArgumentException for timestamp > 48 bits");
+            throw new AssertionError("Expected IllegalArgumentException with timestamp > 48 bits");
         } catch (IllegalArgumentException expected) {}
     }
 
