@@ -918,9 +918,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int count = this.count;
         byte[] value = ensureCapacitySameCoder(this.value, coder, count + 2);
         if (isLatin1(coder)) {
-            DecimalDigits.putPairLatin1(value, count, i);
+            DecimalDigits.uncheckedPutPairLatin1(value, count, i);
         } else {
-            DecimalDigits.putPairUTF16(value, count, i);
+            DecimalDigits.uncheckedPutPairUTF16(value, count, i);
         }
         this.value = value;
         this.count = count + 2;
@@ -944,9 +944,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int spaceNeeded = count + DecimalDigits.stringSize(i);
         byte[] value = ensureCapacitySameCoder(this.value, coder, spaceNeeded);
         if (isLatin1(coder)) {
-            DecimalDigits.getCharsLatin1(i, spaceNeeded, value);
+            DecimalDigits.uncheckedGetCharsLatin1(i, spaceNeeded, value);
         } else {
-            DecimalDigits.getCharsUTF16(i, spaceNeeded, value);
+            DecimalDigits.uncheckedGetCharsUTF16(i, spaceNeeded, value);
         }
         this.value = value;
         this.count = spaceNeeded;
@@ -971,9 +971,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int spaceNeeded = count + DecimalDigits.stringSize(l);
         byte[] value = ensureCapacitySameCoder(this.value, coder, spaceNeeded);
         if (isLatin1(coder)) {
-            DecimalDigits.getCharsLatin1(l, spaceNeeded, value);
+            DecimalDigits.uncheckedGetCharsLatin1(l, spaceNeeded, value);
         } else {
-            DecimalDigits.getCharsUTF16(l, spaceNeeded, value);
+            DecimalDigits.uncheckedGetCharsUTF16(l, spaceNeeded, value);
         }
         this.value = value;
         this.count = spaceNeeded;

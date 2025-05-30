@@ -87,7 +87,7 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 #if INCLUDE_JFR
-#include "jfr/jfr.hpp"
+#include "jfr/jfr.inline.hpp"
 #endif
 
 // Shared runtime stub routines reside in their own unique blob with a
@@ -441,7 +441,7 @@ double SharedRuntime::dabs(double f)  {
 
 #endif
 
-#if defined(__SOFTFP__) || defined(PPC)
+#if defined(__SOFTFP__)
 double SharedRuntime::dsqrt(double f) {
   return sqrt(f);
 }
@@ -2456,7 +2456,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(int total_args_passed, BasicT
 #if INCLUDE_CDS
   // if we are building the archive then the archived adapter table is
   // not valid and we need to use the ones added to the runtime table
-  if (!AOTCodeCache::is_dumping_adapter()) {
+  if (AOTCodeCache::is_using_adapter()) {
     // Search archived table first. It is read-only table so can be searched without lock
     entry = _aot_adapter_handler_table.lookup(fp, fp->compute_hash(), 0 /* unused */);
     if (entry != nullptr) {
@@ -2566,7 +2566,7 @@ void AdapterHandlerLibrary::initialize() {
 
 #if INCLUDE_CDS
   // Link adapters in AOT Cache to their code in AOT Code Cache
-  if (!_aot_adapter_handler_table.empty()) {
+  if (AOTCodeCache::is_using_adapter() && !_aot_adapter_handler_table.empty()) {
     link_aot_adapters();
     lookup_simple_adapters();
     return;
@@ -2898,7 +2898,7 @@ public:
   {}
 
   bool do_entry(AdapterFingerPrint* fp, AdapterHandlerEntry* entry) {
-    LogStreamHandle(Trace, cds) lsh;
+    LogStreamHandle(Trace, aot) lsh;
     if (ArchiveBuilder::current()->has_been_archived((address)entry)) {
       assert(ArchiveBuilder::current()->has_been_archived((address)fp), "must be");
       AdapterFingerPrint* buffered_fp = ArchiveBuilder::current()->get_buffered_addr(fp);
@@ -2912,11 +2912,11 @@ public:
       if (lsh.is_enabled()) {
         address fp_runtime_addr = (address)buffered_fp + ArchiveBuilder::current()->buffer_to_requested_delta();
         address entry_runtime_addr = (address)buffered_entry + ArchiveBuilder::current()->buffer_to_requested_delta();
-        log_trace(cds)("Added fp=%p (%s), entry=%p to the archived adater table", buffered_fp, buffered_fp->as_basic_args_string(), buffered_entry);
+        log_trace(aot)("Added fp=%p (%s), entry=%p to the archived adater table", buffered_fp, buffered_fp->as_basic_args_string(), buffered_entry);
       }
     } else {
       if (lsh.is_enabled()) {
-        log_trace(cds)("Skipping adapter handler %p (fp=%s) as it is not archived", entry, fp->as_basic_args_string());
+        log_trace(aot)("Skipping adapter handler %p (fp=%s) as it is not archived", entry, fp->as_basic_args_string());
       }
     }
     return true;
@@ -2964,7 +2964,7 @@ void AdapterHandlerEntry::link() {
   if (AOTCodeCache::is_using_adapter()) {
     adapter_blob = AdapterHandlerLibrary::link_aot_adapter_handler(this);
     if (adapter_blob == nullptr) {
-      log_warning(cds)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
+      log_warning(aot)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
       generate_code = true;
     }
   } else {
@@ -2988,6 +2988,7 @@ void AdapterHandlerEntry::link() {
 }
 
 void AdapterHandlerLibrary::link_aot_adapters() {
+  assert(AOTCodeCache::is_using_adapter(), "AOT adapters code should be available");
   _aot_adapter_handler_table.iterate([](AdapterHandlerEntry* entry) {
     assert(!entry->is_linked(), "AdapterHandlerEntry is already linked!");
     entry->link();
@@ -3052,7 +3053,7 @@ void AdapterHandlerEntry::relocate(address new_base) {
 }
 
 void AdapterHandlerEntry::metaspace_pointers_do(MetaspaceClosure* it) {
-  LogStreamHandle(Trace, cds) lsh;
+  LogStreamHandle(Trace, aot) lsh;
   if (lsh.is_enabled()) {
     lsh.print("Iter(AdapterHandlerEntry): %p(%s)", this, _fingerprint->as_basic_args_string());
     lsh.cr();
@@ -3279,7 +3280,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 
 JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
   assert(current == JavaThread::current(), "pre-condition");
-
+  JFR_ONLY(Jfr::check_and_process_sample_request(current);)
   // During OSR migration, we unwind the interpreted frame and replace it with a compiled
   // frame. The stack watermark code below ensures that the interpreted frame is processed
   // before it gets unwound. This is helpful as the size of the compiled frame could be
@@ -3374,10 +3375,12 @@ JRT_END
 bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
   bool found = false;
 #if INCLUDE_CDS
-  auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
-    return (found = (b == CodeCache::find_blob(handler->get_i2c_entry())));
-  };
-  _aot_adapter_handler_table.iterate(findblob_archived_table);
+  if (AOTCodeCache::is_using_adapter()) {
+    auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
+      return (found = (b == CodeCache::find_blob(handler->get_i2c_entry())));
+    };
+    _aot_adapter_handler_table.iterate(findblob_archived_table);
+  }
 #endif // INCLUDE_CDS
   if (!found) {
     auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
@@ -3401,18 +3404,19 @@ uint32_t AdapterHandlerLibrary::id(AdapterFingerPrint* fingerprint) {
 void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b) {
   bool found = false;
 #if INCLUDE_CDS
-  auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
-    if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
-      found = true;
-      st->print("Adapter for signature: ");
-      handler->print_adapter_on(st);
-      return true;
-    } else {
-      return false; // keep looking
-
-    }
-  };
-  _aot_adapter_handler_table.iterate(findblob_archived_table);
+  if (AOTCodeCache::is_using_adapter()) {
+    auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
+      if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
+        found = true;
+        st->print("Adapter for signature: ");
+        handler->print_adapter_on(st);
+        return true;
+      } else {
+        return false; // keep looking
+      }
+    };
+    _aot_adapter_handler_table.iterate(findblob_archived_table);
+  }
 #endif // INCLUDE_CDS
   if (!found) {
     auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {

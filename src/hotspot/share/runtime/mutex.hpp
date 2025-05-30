@@ -49,6 +49,16 @@
 // A thread is not allowed to safepoint while holding a mutex whose rank
 // is nosafepoint or lower.
 
+// The Mutex class used to explicitly guarantee fence(); lock(); acquire(); semantics with
+// a hand crafted implementation. That may or may not be a desirable contract for a Mutex,
+// but is nevertheless something that older HotSpot code may or may not rely on for correctness.
+// Newer code is encouraged not to rely more on this feature, but it is not generally safe to
+// remove the fences, until all usages of Mutex have been evaluated on a case-by-case basis, whether
+// they actually rely on this stronger contract, or not.
+
+// Having a fence does not have any significant impact on peformance, as this is an internal VM
+// mutex and is generally not in hot code paths.
+
 class Mutex : public CHeapObj<mtSynchronizer> {
 
   friend class VMStructs;

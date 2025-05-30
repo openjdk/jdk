@@ -57,6 +57,8 @@ import sun.java2d.cmm.Profile;
 import sun.java2d.cmm.ProfileDataVerifier;
 import sun.java2d.cmm.ProfileDeferralInfo;
 
+import static sun.java2d.cmm.ProfileDataVerifier.HEADER_SIZE;
+
 /**
  * A representation of color profile data for device independent and device
  * dependent color spaces based on the International Color Consortium
@@ -764,8 +766,6 @@ public sealed class ICC_Profile implements Serializable
      */
     public static final int icXYZNumberX = 8;
 
-    private static final int HEADER_SIZE = 128;
-
     /**
      * Constructs an {@code ICC_Profile} object with a given ID.
      */
@@ -913,11 +913,11 @@ public sealed class ICC_Profile implements Serializable
 
     static byte[] getProfileDataFromStream(InputStream s) throws IOException {
         BufferedInputStream bis = new BufferedInputStream(s);
-        bis.mark(128); // 128 is the length of the ICC profile header
+        bis.mark(HEADER_SIZE);
 
-        byte[] header = bis.readNBytes(128);
-        if (header.length < 128 || header[36] != 0x61 || header[37] != 0x63 ||
-            header[38] != 0x73 || header[39] != 0x70) {
+        byte[] header = bis.readNBytes(HEADER_SIZE);
+        if (header.length < HEADER_SIZE || header[36] != 0x61 ||
+            header[37] != 0x63 || header[38] != 0x73 || header[39] != 0x70) {
             return null;   /* not a valid profile */
         }
         int profileSize = intFromBigEndian(header, 0);
