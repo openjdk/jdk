@@ -238,46 +238,93 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
   jlong hi = bt == T_INT ? max_jint : max_jlong;
   jlong lo = bt == T_INT ? min_jint : min_jlong;
   assert(bt == T_INT || bt == T_LONG, "");
-  if (mask_type->is_con() && mask_type->get_con_as_long(bt) != -1L) {
+
+  // Rule 1: Bit compression selects the source bits corresponding to true mask bits,
+  // packs them and places them contiguously at destination bit positions
+  // starting from least significant bit, remaining higher order bits are set
+  // to zero.
+
+  // Rule 2: Bit expansion is a reverse process, which sequentially reads source bits
+  // starting from LSB and places them at bit positions in result value where
+  // corresponding mask bits are 1. Thus, bit expansion for non-negative mask
+  // value will always generate a +ve value, this is because sign bit of result
+  // will never be set to 1 as corresponding mask bit is always 0.
+
+  // Case A) Constant mask
+  if (mask_type->is_con()) {
+    // Case A.1 bit compression:-
+    // Result.Hi = popcount(1 << mask_bits - 1)
+    // Result.Lo = min iff mask == -1 assuming all source bits apart from most
+    //                                significant bit were set to 0
+    //       else
+    // Result.Lo = 0 iff atleast one mask bit is zero, corresponding source
+    // bit will be masked, hence result of bit compression will be a +ve
+    // value.
+    // e.g.
+    //  src = 0xXXXXXXXX (non-constant source)
+    //  mask = 0xEFFFFFFF (constant mask)
+    //  result.hi = 0x7FFFFFFF
+    //  result.lo = 0
     jlong maskcon = mask_type->get_con_as_long(bt);
-    int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
     if (opc == Op_CompressBits) {
-      // Bit compression selects the source bits corresponding to true mask bits
-      // and lays them out contiguously at destination bit positions starting from
-      // LSB, remaining higher order bits are set to zero.
-      // Thus, it will always generate a +ve value i.e. sign bit set to 0 if
-      // any bit of constant mask value is zero.
-      lo = 0L;
-      hi = (1UL << bitcount) - 1;
+      int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
+      hi = maskcon == -1L ? hi : (1UL << bitcount) - 1;
+      lo = maskcon == -1L ? lo : 0L;
     } else {
+    // Case A.2 bit expansion:-
+    //   Case A.2.1 constant mask >= 0
+    //     Result.Hi = mask, optimistically assuming all source bits
+    //     read starting from least significant bit positions are 1.
+    //     Result.Lo = 0
+    //   e.g.
+    //    src = 0xXXXXXXXX (non-constant source)
+    //    mask = 0x7FFFFFFF (constant mask >= 0)
+    //    result.hi = 0x7FFFFFFF
+    //    result.lo = 0
+
+    //   Case A.2.2) mask < 0
+    //     For constant mask strictly less than zero, maximum result value will be
+    //     same as mask value with its sign bit flipped, assuming all but last read
+    //     source bits are set to 1.
+    //
+    //     To compute minimum result value we assume all but last read source bit as zero,
+    //     this is because sign bit of result will always be set to 1 while other bit
+    //     corresponding to set mask bit should be zero.
+    //   e.g.
+    //    src = 0xXXXXXXXX (non-constant source)
+    //    mask = 0xEFFFFFFF (constant mask)
+    //    result.hi = 0xEFFFFFFF ^ 0x80000000 = 0x6FFFFFFF
+    //    result.lo = 0x80000000
+    //
       assert(opc == Op_ExpandBits, "");
-      // Expansion sequentially reads source bits starting from LSB
-      // and places them over destination at bit positions corresponding
-      // set mask bit. Thus bit expansion for non-negative mask value
-      // will always generate a +ve value.
       hi = maskcon >= 0L ? maskcon : maskcon ^ lo;
       lo = maskcon >= 0L ? 0L : lo;
     }
   }
 
+  // Case B) Non-constant mask.
   if (!mask_type->is_con()) {
     if ( opc == Op_CompressBits) {
-      // Pattern: Integer/Long.compress(src_type, mask_type)
       int result_bit_width;
       int mask_bit_width = bt == T_INT ? 32 : 64;
       if ((mask_type->lo_as_long() < 0L && mask_type->hi_as_long() >= -1L)) {
-        // Case 1) Mask value range includes -1, this negates the possibility of
-        // strictly non-negative result value range.
+        // Case B.1 Since mask value range includes -1 value, hence there is atleast one
+        // mask value for which iff all corresponding input bits are set then bit compression
+        // will result in a -ve value, therefore this case negates the possibility of
+        // strictly non-negative bit compression result.
         result_bit_width = mask_bit_width;
       } else if (mask_type->hi_as_long() < -1L) {
-        // Case 2) Mask value range is less than -1, this indicates presence of at least
-        // one zero bit in the mask value, thereby constraining the result of compression
-        // to a +ve value range.
+        // Case B.2 Mask value range is strictly less than -1, this indicates presence of at least
+        // one unset(zero) bit in mask value, thus as per Rule 1, bit compression will always
+        // result in a non-negative value. This guarantees that MSB bit of result value will
+        // always be set to zero.
         result_bit_width = mask_bit_width - 1;
       } else {
-        // Case 3) Mask value range only includes +ve values, thus we can
-        // identify leading known zero bits of mask value and use this to
-        // constrain upper bound of result value range.
+        // Case B.3 Mask value range only includes non-negative values. Since all integral
+        // types honours an invariant that TypeInteger._lo <= TypeInteger._hi, thus computing
+        // leading zero bits of upper bound of mask value will allow us to ascertain
+        // optimistic upper bound of result i.e. all the bits other than leading zero bits
+        // can be assumed holding 1 value.
         assert(mask_type->lo_as_long() >= 0, "");
         jlong clz = count_leading_zeros(mask_type->hi_as_long());
         // Here, result of clz is w.r.t to long argument, hence for integer argument
@@ -288,18 +335,38 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       // If number of bits required to accommodated mask value range is less than the
       // full bit width of integral type, then MSB bit is guaranteed to be zero, thus
       // compression result will never be a -ve value and we can safely set the
-      // lower bound of the result value range to zero.
+      // lower bound of bit compression to zero.
       lo = result_bit_width == mask_bit_width ? lo : 0L;
 
       assert(hi == (bt == T_INT) ? max_jint : max_jlong, "");
       assert((lo == (bt == T_INT) ? min_jint : min_jlong) || lo == 0, "");
 
-      // Following rules applies to upper bound estimation of results value range
-      // res.hi = src.hi iff src.hi > 0 else max_value
-      // if result_bit_width < mask_bit_width, then we can further constrain res.hi as follows.
-      // res.hi = MIN(res.hi, (1L << result_bit_width) - 1)
+      // As per Rule 1, bit compression packs the source bits corresponding to
+      // set mask bits, hence for a non-negative input, result of compression will
+      // always be less that equal to input.
+      // e.g.
+      //    input = 0x0000F0F0
+      //    mask  = 0xFFFFFF00
+      // Lemma 1: For strictly non-negative input, result of compression will never be greater
+      // than input.
+      // Proof: Since input is a non-negative value, hence, its most significant bit will
+      // always be 0, thus even if corresponding MSB of mask is one results will be a +ve
+      // value. Bit compression discards the input bits corresponding zero mask bits, hence
+      // in order to consider all the set input bits, corresponding mask bits must also be
+      // set. If a mask bit corresponding to set input bit is zero then that input bit will
+      // not take part in bit compression, which means that maximum possible result value
+      // can never be greater than non-negative input.
+      //
+      // Rule 3:
+      // We can further constrain the upper bound of bit compression if number of bits which
+      // can be set to 1 is less than the maximum number of bits of integral type.
+      // by using following equation.
+      // res.hi = MIN(res.hi, (1UL << result_bit_width) - 1)
+
+      // Using Lemma 1, for non-negative input, upper bound of bit compression is equal to input.
       hi = src_type->hi_as_long() >= 0 ? src_type->hi_as_long() : hi;
-      hi = result_bit_width < mask_bit_width ? MIN2((jlong)((1L << result_bit_width) - 1L), hi) : hi;
+      // Tightening upper bound of bit compression as per Rule 3.
+      hi = result_bit_width < mask_bit_width ? MIN2((jlong)((1UL << result_bit_width) - 1L), hi) : hi;
     } else {
       assert(opc == Op_ExpandBits, "");
       jlong max_mask = mask_type->hi_as_long();
