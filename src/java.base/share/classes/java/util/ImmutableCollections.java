@@ -1324,6 +1324,9 @@ class ImmutableCollections {
         @Override public boolean replace(K key, V oldValue, V newValue) { throw uoe(); }
         @Override public void replaceAll(BiFunction<? super K,? super V,? extends V> f) { throw uoe(); }
 
+        @Override public abstract Set<K> keySet();
+        @Override public abstract Collection<V> values();
+
         /**
          * @implNote {@code null} values are disallowed in these immutable maps,
          * so we can improve upon the default implementation since a
@@ -1692,6 +1695,35 @@ class ImmutableCollections {
         @Override
         public V get(Object key) {
             return getOrDefault(key, null);
+        }
+
+        @Override
+        public Set<K> keySet() {
+            Set<K> ks = keySet;
+            if (ks == null) {
+                ks = new AbstractImmutableSet<>() {
+                    @Override
+                    public int size() {
+                        return delegate.size();
+                    }
+
+                    @Override
+                    public Iterator<K> iterator() {
+                        return new KeyIterator();
+                    }
+
+                    @Override
+                    public int hashCode() {
+                        int hash = 0;
+                        for (K k : delegate.keySet()) {
+                            hash += k.hashCode();
+                        }
+                        return hash;
+                    }
+                };
+                keySet = ks;
+            }
+            return ks;
         }
 
         @ForceInline
