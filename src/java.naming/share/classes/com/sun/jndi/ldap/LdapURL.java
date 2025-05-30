@@ -121,8 +121,8 @@ public final class LdapURL extends Uri {
 
     @Override
     protected MalformedURLException newInvalidURISchemeException(String uri) {
-        return new MalformedURLException(formatMsg("Not an LDAP URL: %s",
-                                                   filterNonSocketInfo(uri)));
+        return new MalformedURLException(formatMsg("Not an LDAP URL%s",
+                                                   filterNonSocketInfo(uri).prefixWith(": ")));
     }
 
     @Override

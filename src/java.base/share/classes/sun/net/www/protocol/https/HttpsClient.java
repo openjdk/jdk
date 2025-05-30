@@ -560,9 +560,9 @@ final class HttpsClient extends HttpClient
         serverSocket.close();
         session.invalidate();
 
-        throw new IOException(formatMsg("HTTPS hostname wrong: %s",
+        throw new IOException(formatMsg("Wrong HTTPS hostname%s",
                                         filterNonSocketInfo(url.getHost())
-                                            .prefixWith("should be <")
+                                            .prefixWith(": should be <")
                                             .suffixWith(">")));
     }
 

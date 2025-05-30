@@ -235,7 +235,7 @@ public class Uri {
     }
 
     private MalformedURLException newMalformedURLException(String prefix, String msg) {
-        return new MalformedURLException(formatMsg(prefix + " %s", filterNonSocketInfo(msg)));
+        return new MalformedURLException(prefix + formatMsg(filterNonSocketInfo(msg).withPrefix(prefix.isEmpty()? "" : ": "));
     }
 
     /*
@@ -247,7 +247,7 @@ public class Uri {
             if (!isSchemeOnly(uri)) {
                 URI u = new URI(uri);
                 scheme = u.getScheme();
-                if (scheme == null) throw newMalformedURLException("Invalid URI:", uri);
+                if (scheme == null) throw newMalformedURLException("Invalid URI", uri);
                 var auth = u.getRawAuthority();
                 hasAuthority = auth != null;
                 if (hasAuthority) {
@@ -259,7 +259,7 @@ public class Uri {
                             + (port == -1 ? "" : (":" + port));
                     if (!hostport.equals(auth)) {
                         // throw if we have user info or regname
-                        throw newMalformedURLException("unsupported authority:", auth);
+                        throw newMalformedURLException("unsupported authority", auth);
                     }
                 }
                 path = u.getRawPath();
@@ -268,7 +268,7 @@ public class Uri {
                 }
                 if (u.getRawFragment() != null) {
                     if (!acceptsFragment()) {
-                        throw newMalformedURLException("URI fragments not supported:", uri);
+                        throw newMalformedURLException("URI fragments not supported", uri);
                     }
                     fragment = "#" + u.getRawFragment();
                 }
@@ -305,11 +305,11 @@ public class Uri {
         int qmark = uri.indexOf('?');
         int fmark = uri.indexOf('#');
         if (i < 0 || slash > 0 && i > slash || qmark > 0 && i > qmark || fmark > 0 && i > fmark) {
-            throw newMalformedURLException("Invalid URI:", uri);
+            throw newMalformedURLException("Invalid URI", uri);
         }
         if (fmark > -1) {
             if (!acceptsFragment()) {
-                throw newMalformedURLException("URI fragments not supported:", uri);
+                throw newMalformedURLException("URI fragments not supported", uri);
             }
         }
         if (i == uri.length() - 1) {
@@ -355,10 +355,10 @@ public class Uri {
                     String f = u.getRawFragment();
                     String ui = u.getRawUserInfo();
                     if (ui != null) {
-                        throw newMalformedURLException("user info not supported in authority:", ui);
+                        throw newMalformedURLException("user info not supported in authority", ui);
                     }
                     if (!"/".equals(p)) {
-                        throw newMalformedURLException("invalid authority:", auth);
+                        throw newMalformedURLException("invalid authority", auth);
                     }
                     if (q != null) {
                         throw newMalformedURLException("invalid trailing characters in authority: ?", q);
@@ -371,7 +371,7 @@ public class Uri {
                     if (!auth.equals(hostport)) {
                         // throw if we have user info or regname
                         throw newMalformedURLException("Authority component is not server-based, " +
-                                              "or contains user info. Unsupported authority:", auth);
+                                              "or contains user info. Unsupported authority", auth);
                     }
                 } catch (URISyntaxException e) {
                     var mue = newMalformedURLException("", e.getMessage());

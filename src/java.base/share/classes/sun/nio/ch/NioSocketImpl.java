@@ -557,7 +557,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         InetSocketAddress isa = (InetSocketAddress) remote;
         if (isa.isUnresolved()) {
             throw new UnknownHostException(
-                formatMsg("%s", filterNonSocketInfo(isa.getHostName())));
+                formatMsg(filterNonSocketInfo(isa.getHostName())));
         }
 
         InetAddress address = isa.getAddress();

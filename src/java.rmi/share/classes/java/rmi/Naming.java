@@ -224,7 +224,7 @@ public final class Naming {
     }
 
     private static MalformedURLException newMalformedURLException(String prefix, String msg) {
-        return new MalformedURLException(formatMsg(prefix + " %s", filterNonSocketInfo(msg)));
+        return new MalformedURLException(prefix + formatMsg(filterNonSocketInfo(msg).prefixWith(": "));
     }
 
     /**
@@ -247,7 +247,7 @@ public final class Naming {
              * Convert the authority to a localhost:<port> form
              */
             MalformedURLException mue = newMalformedURLException(
-                "invalid URL String:", str);
+                "invalid URL String", str);
             mue.initCause(ex);
             int indexSchemeEnd = str.indexOf(':');
             int indexAuthorityBegin = str.indexOf("//:");
@@ -279,17 +279,17 @@ public final class Naming {
         URI uri = new URI(str);
         if (uri.isOpaque()) {
             throw newMalformedURLException(
-                "not a hierarchical URL:", str);
+                "not a hierarchical URL", str);
         }
         if (uri.getFragment() != null) {
             throw newMalformedURLException(
-                "invalid character, '#', in URL name:", str);
+                "invalid character, '#', in URL name", str);
         } else if (uri.getQuery() != null) {
             throw newMalformedURLException(
-                "invalid character, '?', in URL name:", str);
+                "invalid character, '?', in URL name", str);
         } else if (uri.getUserInfo() != null) {
             throw newMalformedURLException(
-                "invalid character, '@', in URL host:", str);
+                "invalid character, '@', in URL host", str);
         }
         String scheme = uri.getScheme();
         if (scheme != null && !scheme.equals("rmi")) {

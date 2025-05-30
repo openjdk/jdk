@@ -96,7 +96,7 @@ class SocketAdaptor
                 throw new SocketException("Already connected");
             close();
             throw new UnknownHostException(
-                formatMsg("%s", filterNonSocketInfo(remote.toString())));
+                formatMsg(filterNonSocketInfo(remote.toString())));
         }
         if (timeout < 0)
             throw new IllegalArgumentException("connect: timeout can't be negative");
