@@ -39,6 +39,7 @@ import java.security.InvalidKeyException;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.security.InvalidAlgorithmParameterException;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
