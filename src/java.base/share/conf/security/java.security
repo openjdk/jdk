@@ -1280,6 +1280,8 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # Exception messages may include potentially sensitive information such as file
 # names, host names, or port numbers. By default, socket related exceptions
 # have this information restricted (meaning the sensitive details are removed).
+# Exception messages relating to Jar files and exceptions containing user
+# identity information are also restricted by default.
 # This property can be used to relax this restriction or to place further
 # restrictions on other categories, defined below. The property
 # accepts one or more comma separated values, each of which represents a
