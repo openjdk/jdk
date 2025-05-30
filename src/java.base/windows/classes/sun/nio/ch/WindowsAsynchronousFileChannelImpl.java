@@ -448,11 +448,11 @@ public class WindowsAsynchronousFileChannelImpl
             // Substitute a native buffer if not direct
             if (dst.isDirect()) {
                 buf = dst;
-                address = ((DirectBuffer)dst).address() + pos;
                 IOUtil.acquireScope(dst, true);
+                address = ((DirectBuffer)dst).address() + pos;
             } else {
                 buf = Util.getTemporaryDirectBuffer(rem);
-                address = ((DirectBuffer)buf).address();
+                address = IOUtil.bufferAddress(buf) + pos;
             }
 
             boolean pending = false;
@@ -631,8 +631,8 @@ public class WindowsAsynchronousFileChannelImpl
             // Substitute a native buffer if not direct
             if (src.isDirect()) {
                 buf = src;
-                address = ((DirectBuffer)src).address() + pos;
                 IOUtil.acquireScope(src, true);
+                address = ((DirectBuffer)src).address() + pos;
             } else {
                 buf = Util.getTemporaryDirectBuffer(rem);
                 buf.put(src);
@@ -640,7 +640,7 @@ public class WindowsAsynchronousFileChannelImpl
                 // temporarily restore position as we don't know how many bytes
                 // will be written
                 src.position(pos);
-                address = ((DirectBuffer)buf).address();
+                address = IOUtil.bufferAddress(buf) + pos;
             }
 
             try {
