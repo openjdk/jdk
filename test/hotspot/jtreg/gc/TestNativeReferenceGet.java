@@ -38,7 +38,7 @@ package gc;
  * @run main/othervm
  *    -Xbootclasspath/a:.
  *    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *    -XX:DisableIntrinsic=_Reference_get
+ *    -XX:DisableIntrinsic=_Reference_get0
  *    gc.TestNativeReferenceGet
  */
 

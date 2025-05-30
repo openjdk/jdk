@@ -357,14 +357,16 @@ public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
      *           {@code null} if this reference object has been cleared
      * @see #refersTo
      */
-    @IntrinsicCandidate
     public T get() {
         return get0();
     }
 
-    /* Implementation of unintrinsified get().  Making get() native may lead
-     * C2 to sometimes prefer the native implementation over the intrinsic.
+    /* Implementation of get().  This method exists to avoid making get() all
+     * of virtual, native, and intrinsic candidate. That could have the
+     * undesirable effect of having the native method used instead of the
+     * intrinsic when devirtualization fails.
      */
+    @IntrinsicCandidate
     private native T get0();
 
     /**
