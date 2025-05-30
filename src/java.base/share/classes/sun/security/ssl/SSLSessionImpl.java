@@ -27,6 +27,7 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
