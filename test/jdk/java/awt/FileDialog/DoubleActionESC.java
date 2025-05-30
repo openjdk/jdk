@@ -85,8 +85,7 @@ public class DoubleActionESC {
                 robot.delay(1000);
             }
 
-            if (!latch.await(LATCH_TIMEOUT, SECONDS))
-            {
+            if (!latch.await(LATCH_TIMEOUT, SECONDS)) {
                 throw new RuntimeException("Test failed: Latch timout reached");
             }
             EventQueue.invokeAndWait(() -> {
