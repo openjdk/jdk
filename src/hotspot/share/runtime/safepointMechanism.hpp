@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_SAFEPOINTMECHANISM_HPP
 
 #include "runtime/globals.hpp"
+#include "runtime/handshake.hpp"
 #include "runtime/osInfo.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
