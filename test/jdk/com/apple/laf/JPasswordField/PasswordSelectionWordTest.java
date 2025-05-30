@@ -28,9 +28,10 @@
  * @summary The AquaTextPasswordFieldUI's ActionMap needs to replace
  * DefaultEditorKit.selectLineAction with DefaultEditorKit.selectWordAction.
  * When we failed to do this: the user could double-click words and
- * identify spaces in the password.
+ * identify spaces in the password. This test is not restricted to mac OS
+ * because this should work in any L&F where the "PasswordField" UI extends
+ * BasicTextFieldUI.
  *
- * @requires (os.family == "mac")
  * @run main PasswordSelectionWordTest
  */
 
