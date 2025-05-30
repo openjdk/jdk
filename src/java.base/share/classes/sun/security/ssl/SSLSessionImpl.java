@@ -274,8 +274,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * < 1 byte > serverNameIndication length
      *   < length in bytes > serverNameIndication
      * < 1 byte > Number of requestedServerNames entries
-     *   < 1 byte > ServerName length
-     *   < length in bytes > ServerName
+     *   For each entry {
+     *     < 1 byte > ServerName length
+     *     < length in bytes > ServerName
+     *   }
      * < 4 bytes > maximumPacketSize
      * < 4 bytes > negotiatedMaxFragSize
      * < 4 bytes > creationTime
