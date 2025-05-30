@@ -101,6 +101,7 @@ bool PackedTableLookup::validate_order(Comparator &comparator, const Array<u1> *
     uint32_t pivot = value & _pivot_mask;
 
     if (offset != 0 && comparator.compare_to(pivot) >= 0) {
+      *err_pivot = pivot;
       return false;
     }
     comparator.reset(pivot);
