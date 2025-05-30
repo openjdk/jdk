@@ -76,14 +76,6 @@ public class CopyAreaOOB extends Canvas {
             createTestUI();
             robot.delay(1000);
 
-            // Test pixels
-            testRegion("green", 0, 0, 400, 10, 0xff00ff00);
-            testRegion("original-red", 0, 10, 50, 400, 0xffff0000);
-            testRegion("background", 50, 10, 60, 400, 0xff000000);
-            testRegion("in-between", 60, 10, 110, 20, 0xff000000);
-            testRegion("copied-red", 60, 20, 110, 400, 0xffff0000);
-            testRegion("background", 110, 10, 400, 400, 0xff000000);
-
             if (!errorLog.isEmpty()) {
                 saveImages();
                 throw new RuntimeException("Test failed: \n" + errorLog.toString());
@@ -128,6 +120,14 @@ public class CopyAreaOOB extends Canvas {
         Point pt1 = this.getLocationOnScreen();
         Rectangle rect = new Rectangle(pt1.x, pt1.y, SIZE, SIZE);
         captureImg = robot.createScreenCapture(rect);
+
+        // Test pixels
+        testRegion("green", 0, 0, 400, 10, 0xff00ff00);
+        testRegion("original-red", 0, 10, 50, 400, 0xffff0000);
+        testRegion("background", 50, 10, 60, 400, 0xff000000);
+        testRegion("in-between", 60, 10, 110, 20, 0xff000000);
+        testRegion("copied-red", 60, 20, 110, 400, 0xffff0000);
+        testRegion("background", 110, 10, 400, 400, 0xff000000);
     }
 
     public Dimension getPreferredSize() {
