@@ -77,7 +77,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * the URL is assumed to refer to a JAR file which will be downloaded and
      * opened as needed.
      *
-     * @apiNote If the {@code parent} is specified as {@code null} (for the
+     * @apiNote If {@code parent} is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
      * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
@@ -120,7 +120,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * factory argument will be used as the stream handler factory to
      * obtain protocol handlers when creating new jar URLs.
      *
-     * @apiNote If the {@code parent} is specified as {@code null} (for the
+     * @apiNote If {@code parent} is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
      * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
@@ -149,7 +149,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * Otherwise, the URL is assumed to refer to a JAR file which will be
      * downloaded and opened as needed.
      *
-     * @apiNote If the {@code parent} is specified as {@code null} (for the
+     * @apiNote If {@code parent} is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
      * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
@@ -180,7 +180,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * The factory argument will be used as the stream handler factory to
      * obtain protocol handlers when creating new jar URLs.
      *
-     * @apiNote If the {@code parent} is specified as {@code null} (for the
+     * @apiNote If {@code parent} is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
      * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}

@@ -64,7 +64,7 @@ public class SecureClassLoader extends ClassLoader {
      * Creates a new {@code SecureClassLoader} using the specified parent
      * class loader for delegation.
      *
-     * @apiNote If the {@code parent} is specified as {@code null} (for the
+     * @apiNote If {@code parent} is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
      * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
@@ -89,7 +89,7 @@ public class SecureClassLoader extends ClassLoader {
      * Creates a new {@code SecureClassLoader} of the specified name and
      * using the specified parent class loader for delegation.
      *
-     * @apiNote If the {@code parent} is specified as {@code null} (for the
+     * @apiNote If {@code parent} is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
      * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
