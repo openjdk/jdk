@@ -449,8 +449,8 @@ public class DefaultMethodBeanPropertyTest {
                 md.setDisplayName("display name");
                 MethodDescriptor res[] = { md };
                 return res;
-            } catch (Exception e) {
-                throw new Error(e);
+            } catch (Exception exception) {
+                throw new Error("unexpected exception", exception);
             }
         }
     }
