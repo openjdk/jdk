@@ -2846,6 +2846,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         final QuicPacket packet = protectionRecord.packet();
         final PacketSpace packetSpace = packetSpace(packet.numberSpace());
         packetSpace.packetSent(packet, retransmittedPacketNumber, packetNumber);
+        // RFC-9000, section 10.1: An endpoint also restarts its idle timer when sending
+        // an ack-eliciting packet ...
+        if (packet.isAckEliciting()) {
+            this.terminator.keepAlive();
+        }
     }
 
     /**

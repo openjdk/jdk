@@ -146,7 +146,6 @@ public sealed class PacketSpaceManager implements PacketSpace
     private final Supplier<String> debugStrSupplier;
     private final PacketNumberSpace packetNumberSpace;
     private final PacketEmitter packetEmitter;
-    private final ConnectionTerminator terminator;
     private final ReentrantLock transferLock = new ReentrantLock();
     // The next packet number to use in this space
     private final AtomicLong nextPN = new AtomicLong();
@@ -444,6 +443,11 @@ public sealed class PacketSpaceManager implements PacketSpace
                     }
                     if (!sentNew) {
                         break;
+                    } else {
+                        if (needBackoff && packetsSent == 0 && Log.quicRetransmit()) {
+                            Log.logQuic("%s OUT: transmitted new packet on PTO".formatted(
+                                    packetEmitter.logTag()));
+                        }
                     }
                     packetsSent++;
                 }
@@ -897,7 +901,6 @@ public sealed class PacketSpaceManager implements PacketSpace
                               final PacketNumberSpace packetNumberSpace) {
         this(packetNumberSpace, connection.emitter(), TimeSource.source(),
                 connection.rttEstimator, connection.congestionController, connection.getTLSEngine(),
-                connection.connectionTerminator(),
                 () -> connection.dbgTag() + "[" + packetNumberSpace.name() + "]");
     }
 
@@ -916,7 +919,6 @@ public sealed class PacketSpaceManager implements PacketSpace
                               QuicRttEstimator rttEstimator,
                               QuicCongestionController congestionController,
                               QuicTLSEngine quicTLSEngine,
-                              ConnectionTerminator terminator,
                               Supplier<String> debugStrSupplier) {
         largestProcessedPN = largestReceivedAckedPN = largestAckElicitingReceivedPN
                 = largestAckElicitingSentPN = largestSentAckedPN = largestAckedPNReceivedByPeer = -1L;
@@ -927,7 +929,6 @@ public sealed class PacketSpaceManager implements PacketSpace
         this.congestionController = congestionController;
         this.packetNumberSpace = packetNumberSpace;
         this.packetEmitter = packetEmitter;
-        this.terminator = terminator;
         this.emittedAckTracker = new EmittedAckTracker();
         this.packetTransmissionTask = new PacketTransmissionTask();
         this.quicTLSEngine = quicTLSEngine;
@@ -1236,14 +1237,6 @@ public sealed class PacketSpaceManager implements PacketSpace
     public void packetSent(QuicPacket packet, long previousPacketNumber, long packetNumber) {
         if (packetNumber < 0) {
             throw new IllegalArgumentException("Invalid packet number: " + packetNumber);
-        }
-        // RFC-9000, section 10.1: An endpoint also restarts its idle timer when sending
-        // an ack-eliciting packet ...
-        // TODO: terminator is only null when PacketSpaceManager is constructed in
-        // PacketSpaceManagerTest. That test needs a rethink and we shouldn't
-        // ever allow terminator to be null.
-        if (this.terminator != null && packet.isAckEliciting()) {
-            this.terminator.keepAlive();
         }
         largestAckSent(AckFrame.largestAcknowledgedInPacket(packet));
         if (previousPacketNumber >= 0) {

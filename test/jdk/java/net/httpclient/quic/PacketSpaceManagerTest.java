@@ -599,7 +599,7 @@ public class PacketSpaceManagerTest {
                 public void packetDiscarded(Collection<QuicPacket> discardedPackets) { }
             };
             manager = new PacketSpaceManager(space, this, timeSource,
-                    rttEstimator, congestionController, new DummyQuicTLSEngine(), null,
+                    rttEstimator, congestionController, new DummyQuicTLSEngine(),
                     this::toString);
             maxPacketNumber = test.packets().stream().mapToLong(Packet::packetNumber)
                     .max().getAsLong();
@@ -1041,7 +1041,7 @@ public class PacketSpaceManagerTest {
         void debugDeadline(String desc, Deadline start, Deadline now, Deadline deadline) {
             long nextMs = deadline.equals(Deadline.MAX) ? 0 :
                     now.until(deadline, ChronoUnit.MILLIS);
-            long at = deadline.equals(Deadline.MAX.MAX) ? 0 :
+            long at = deadline.equals(Deadline.MAX) ? 0 :
                     start.until(deadline, ChronoUnit.MILLIS);
             String when = deadline.equals(Deadline.MAX) ? "never"
                     : nextMs >= 0 ? ("at %d in %dms".formatted(at, nextMs))
