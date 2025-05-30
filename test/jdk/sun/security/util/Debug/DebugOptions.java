@@ -55,11 +55,11 @@ public class DebugOptions {
 
     private static Stream<Arguments> patternMatches() {
         return Stream.of(
-                // thread and timestamp info on by default now
+                // test for thread and timestamp info
                 Arguments.of("properties",
                         EXPECTED_PROP_REGEX,
                         "properties:"),
-                // thread and timestamp info on by default now
+                // test for thread and timestamp info
                 Arguments.of("properties+thread",
                         EXPECTED_PROP_REGEX,
                         "properties:"),
@@ -75,7 +75,7 @@ public class DebugOptions {
                 Arguments.of("all",
                         EXPECTED_ALL_REGEX,
                         "properties:"),
-                // thread and timestamp info on by default now
+                // expect thread and timestamp info 
                 Arguments.of("all+thread",
                         EXPECTED_ALL_REGEX,
                         "properties:")

@@ -59,7 +59,7 @@ public class LoginModuleDebug {
                         "bar",
                         "",
                         "krb5loginmodule"),
-                // thread and timestamp on by default now
+                // test for thread and timestamp info
                 Arguments.of("debug",
                         "true+thread",
                         "krb5loginmodule\\[.*\\|main|" + DATE_REGEX + ".*\\]:",
