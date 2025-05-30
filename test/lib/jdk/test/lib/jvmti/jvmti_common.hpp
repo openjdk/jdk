@@ -463,6 +463,8 @@ static unsigned char* jni_array_to_jvmti_allocated(jvmtiEnv *jvmti, JNIEnv *jni,
     check_jvmti_status(jni, err, "JVMTI Allocate returned an error code");
 
     memcpy(new_arr, jni_arr, (size_t)len);
+    jni->ReleaseByteArrayElements(arr, jni_arr, 0);
+
     *len_ptr = len;
     return new_arr;
 }
