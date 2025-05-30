@@ -1270,6 +1270,7 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   // Enable WXWrite: called directly from interpreter native wrapper.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
+  ResourceMark rm;
   ResourceHashtable<const char *, bool> operations_filter;
   operations_filter.put("check_async_exception", true); /* check asyncs */
   SafepointMechanism::process_if_requested_with_exit_check(thread, operations_filter);

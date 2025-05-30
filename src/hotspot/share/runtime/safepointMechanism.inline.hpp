@@ -67,6 +67,7 @@ bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) 
   if (!local_poll_armed(thread)) {
     return false;
   }
+  ResourceMark rm;
   ResourceHashtable<const char*, bool> operations_filter;
   operations_filter.put("allow_suspend", allow_suspend);
   operations_filter.put("check_async_exception", false);
