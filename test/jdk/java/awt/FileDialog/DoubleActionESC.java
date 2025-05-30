@@ -86,7 +86,7 @@ public class DoubleActionESC {
             }
 
             if (!latch.await(LATCH_TIMEOUT, SECONDS)) {
-                throw new RuntimeException("Test failed: Latch timout reached");
+                throw new RuntimeException("Test failed: Latch timeout reached");
             }
             EventQueue.invokeAndWait(() -> {
                 if (fd.isVisible()) {
