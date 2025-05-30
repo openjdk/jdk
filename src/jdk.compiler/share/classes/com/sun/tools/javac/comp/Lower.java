@@ -2060,7 +2060,7 @@ public class Lower extends TreeTranslator {
         } else {
             make_at(tree.pos());
             T result = super.translate(tree);
-            if (endPosTable != null && result != null && result != tree) {
+            if (endPosTable != null && result != tree) {
                 endPosTable.replaceTree(tree, result);
             }
             return result;

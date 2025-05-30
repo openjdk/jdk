@@ -76,7 +76,7 @@ public interface EndPosTable {
      * the new tree, the position of the new tree will be that of the old
      * tree.
      * @param oldtree a JCTree to be replaced
-     * @param newtree a JCTree to be replaced with
+     * @param newtree a JCTree to be replaced with, or null to just remove {@code oldtree}
      * @return position of the old tree or Positions.NOPOS for non-existent mapping
      */
     int replaceTree(JCTree oldtree, JCTree newtree);
