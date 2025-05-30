@@ -1324,6 +1324,8 @@ class ImmutableCollections {
         @Override public boolean replace(K key, V oldValue, V newValue) { throw uoe(); }
         @Override public void replaceAll(BiFunction<? super K,? super V,? extends V> f) { throw uoe(); }
 
+        // Subclasses of AbstractImmutableMap should override keySet and values with implementations
+        // that throw UnsupportedOperationException on attempts to modify them.
         @Override public abstract Set<K> keySet();
         @Override public abstract Collection<V> values();
 
