@@ -84,7 +84,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * for information on the system class loader and other built-in class loaders.
      *
      * @param      urls the URLs from which to load classes and resources
-     * @param      parent the parent class loader for delegation, can be null
+     * @param      parent the parent class loader for delegation, can be {@code null}
      *                    for the bootstrap class loader
      * @throws     NullPointerException if {@code urls} or any of its
      *             elements is {@code null}.
@@ -127,7 +127,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * for information on the system class loader and other built-in class loaders.
      *
      * @param  urls the URLs from which to load classes and resources
-     * @param  parent the parent class loader for delegation, can be null
+     * @param  parent the parent class loader for delegation, can be {@code null}
      *                for the bootstrap class loader
      * @param  factory the URLStreamHandlerFactory to use when creating URLs
      *
@@ -157,7 +157,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      *
      * @param  name class loader name; or {@code null} if not named
      * @param  urls the URLs from which to load classes and resources
-     * @param  parent the parent class loader for delegation, can be null
+     * @param  parent the parent class loader for delegation, can be {@code null}
      *                for the bootstrap class loader
      *
      * @throws IllegalArgumentException if the given name is empty.
@@ -188,7 +188,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      *
      * @param  name class loader name; or {@code null} if not named
      * @param  urls the URLs from which to load classes and resources
-     * @param  parent the parent class loader for delegation, can be null
+     * @param  parent the parent class loader for delegation, can be {@code null}
      *                for the bootstrap class loader
      * @param  factory the URLStreamHandlerFactory to use when creating URLs
      *

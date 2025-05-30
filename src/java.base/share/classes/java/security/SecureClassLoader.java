@@ -70,7 +70,7 @@ public class SecureClassLoader extends ClassLoader {
      * See {@linkplain ClassLoader##builtinLoaders Run-time Built-in Class Loaders}
      * for information on the system class loader and other built-in class loaders.
      *
-     * @param parent the parent ClassLoader, can be null for the bootstrap
+     * @param parent the parent ClassLoader, can be {@code null} for the bootstrap
      *               class loader
      */
     protected SecureClassLoader(ClassLoader parent) {
@@ -96,7 +96,7 @@ public class SecureClassLoader extends ClassLoader {
      * for information on the system class loader and other built-in class loaders.
      *
      * @param name class loader name; or {@code null} if not named
-     * @param parent the parent class loader, can be null for the bootstrap
+     * @param parent the parent class loader, can be {@code null} for the bootstrap
      *               class loader
      *
      * @throws IllegalArgumentException if the given name is empty.
