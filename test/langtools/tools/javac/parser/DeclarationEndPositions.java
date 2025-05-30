@@ -71,7 +71,7 @@ public class DeclarationEndPositions {
             public Void scan(Tree node, Void aVoid) {
                 if (nodeType.isInstance(node)) {
                     JCTree tree = (JCTree)node;
-                    int actual = TreeInfo.endPos(unit.endPositions, tree);
+                    int actual = TreeInfo.getEndPos(tree, unit.endPositions);
                     int expected = marker.indexOf('^') + 1;
                     if (actual != expected) {
                         throw new AssertionError(String.format(

@@ -38,9 +38,6 @@ import com.sun.tools.javac.util.Position;
  *  <li>{@link JCTree.JCClassDecl}
  *  <li>{@link JCTree.JCMethodDecl}
  *  <li>{@link JCTree.JCVariableDecl}
- *  <li>{@link JCTree.JCBlock}
- *  <li>{@link JCTree.JCSwitch}
- *  <li>{@link JCTree.JCSwitchExpression}
  * </ul>
  *
  * <p><b>This is NOT part of any supported API.
