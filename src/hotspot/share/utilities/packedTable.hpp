@@ -22,6 +22,8 @@
  *
  */
 
+#include "oops/array.hpp"
+
 /*
  * Base for space-optimized structure supporting binary search. Each element
  * consists of up to 32-bit pivot, and up to 32-bit payload; these are packed
