@@ -10,16 +10,16 @@ import java.lang.annotation.Target;
  * information.
  * <p>
  * Contextual information is data that applies to all events happening in the
- * same thread from the beginning to the end of the event with a field
- * annotated with {@code Contextual}.
+ * same thread from the beginning to the end of the event with a field annotated
+ * with {@code Contextual}.
  * <p>
- * For example, to trace requests or transactions in a system, a trace event
- * can be created to provide context.
- * {@snippet class="Snippets" region="ContextualTrace"}
+ * For example, to trace requests or transactions in a system, a trace event can
+ * be created to provide context.
+ * {@snippet class = "Snippets" region = "ContextualTrace"}
  * <p>
- * To track details within an order service, an order event can be created
- * where only the order ID provides context.
- * {@snippet class="Snippets" region="ContextualOrder"}
+ * To track details within an order service, an order event can be created where
+ * only the order ID provides context.
+ * {@snippet class = "Snippets" region = "ContextualOrder"}
  * <p>
  * If an order in the order service stalls due to lock contention, a user
  * interface can display contextual information together with the
@@ -46,22 +46,21 @@ import java.lang.annotation.Target;
  *   }
  * }
  * <p>
- * The difference between {@link Relational} and {@link Contextual}
- * annotations is that {@link Relational} ties event data together to form a
- * global data structure, similar to a foreign key in a relational database,
- * but {@link Contextual} represents a state that applies to all events that
- * happen at the same time, in the same thread.
- *
- * A field can be both contextual and relational at the same time.
+ * The difference between {@link Relational} and {@link Contextual} annotations
+ * is that {@link Relational} ties event data together to form a global data
+ * structure, similar to a foreign key in a relational database, but
+ * {@link Contextual} represents a state that applies to all events that happen
+ * at the same time, in the same thread. A field can be both contextual and
+ * relational at the same time.
  * <p>
  * A contextual field may incur overhead on a parser reading a recording file,
- * since it must track active context, so it should be used sparingly and
- * only where appropriate.
+ * since it must track active context, so it should be used sparingly and only
+ * where appropriate.
  *
  * @since 25
  */
 @MetadataDefinition
-@Label("Contextual")
+@Label("Context")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 public @interface Contextual {
