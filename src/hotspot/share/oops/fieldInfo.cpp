@@ -302,7 +302,7 @@ int FieldInfoReader::search_table_lookup(const Array<u1> *search_table, const Sy
   FieldInfoComparator comp(this, cp, name, signature);
   PackedTableLookup lookup(_r.limit() - 1, java_fields - 1);
   uint32_t position;
-  static_assert(sizeof(uint32_t) == sizeof(_next_index));
+  static_assert(sizeof(uint32_t) == sizeof(_next_index), "field size assert");
   if (lookup.search(comp, search_table, &position, reinterpret_cast<uint32_t *>(&_next_index))) {
     _r.set_position(static_cast<int>(position));
     return _next_index;
