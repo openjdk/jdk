@@ -27,28 +27,32 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.security.Principal;
-import java.security.PrivateKey;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.Adler32;
+import javax.crypto.KDF;
+import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.net.ssl.ExtendedSSLSession;
-import javax.net.ssl.SNIHostName;
-import javax.net.ssl.SNIServerName;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSessionBindingEvent;
-import javax.net.ssl.SSLSessionBindingListener;
-import javax.net.ssl.SSLSessionContext;
+import javax.net.ssl.*;
+
+import sun.security.ssl.CipherSuite.HashAlg;
+import sun.security.internal.spec.TlsPrfParameterSpec;
+import static sun.security.ssl.CipherSuite.HashAlg.H_NONE;
+import static sun.security.ssl.ProtocolVersion.*;
+import sun.security.util.KeyUtil;
 import sun.security.provider.X509Factory;
 import sun.security.ssl.X509Authentication.X509Possession;
 
@@ -99,6 +103,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private Collection<SignatureScheme> peerSupportedSignAlgs; //for certificate
     private boolean             useDefaultPeerSignAlgs = false;
     private List<byte[]>        statusResponses;
+    private SecretKey           exporterMasterSecret;  // TLSv1.3+ exporter info
+    private RandomCookie        clientRandom;          // TLSv1.2- exporter info
+    private RandomCookie        serverRandom;
     private SecretKey           resumptionMasterSecret;
     private SecretKey           preSharedKey;
     private byte[]              pskIdentity;
@@ -610,6 +617,15 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
     void setMasterSecret(SecretKey secret) {
         masterSecret = secret;
+    }
+
+    void setExporterMasterSecret(SecretKey secret) {
+        exporterMasterSecret = secret;
+    }
+
+    void setRandoms(RandomCookie client, RandomCookie server) {
+        clientRandom = client;
+        serverRandom = server;
     }
 
     void setResumptionMasterSecret(SecretKey secret) {
@@ -1395,6 +1411,269 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     @Override
     public List<SNIServerName> getRequestedServerNames() {
         return requestedServerNames;
+    }
+
+    /*
+     * keyAlg is used for switching between Keys/Data.  If keyAlg is
+     * non-null, we are producing a Key, otherwise data.
+     */
+    public Object exportKeyingMaterial(
+            String keyAlg, String label, byte[] context, int length)
+            throws SSLKeyException {
+
+        // Global preconditions
+
+        Objects.requireNonNull(label, "label can not be null");
+        if (length < 1) {
+            throw new IllegalArgumentException(
+                    "length must be positive");
+        }
+
+        // Calculations are primarily based on protocol version.
+        if (protocolVersion.useTLS13PlusSpec()) {
+
+            // Unlikely, but check anyway.
+            if (exporterMasterSecret == null) {
+                throw new IllegalStateException(
+                        "Exporter master secret not captured");
+            }
+
+            // TLS 1.3+ using HKDF-based calcs.
+            //     TLS 1.3 (RFC 8446)
+
+            // Check the label/context lengths:
+            //       struct {
+            //           uint16 length = Length;
+            //           opaque label<7..255> = "tls13 " + Label;
+            //           opaque context<0..255> = Context;
+            //       } HkdfLabel;
+            // label can have 249 bytes (+6 for "tls13 "), and context 255
+
+            // RFC 8446 allows for length of 2^16-1 (65536), but RFC 5869
+            // states:
+            //
+            //     L    length of output keying material in octets
+            //          (<= 255*HashLen)
+            if (length > (255 * cipherSuite.hashAlg.hashLength )) {
+                throw new IllegalArgumentException(
+                        "length is too large");
+            }
+
+            byte[] hkdfInfoLabel =
+                        ("tls13 " + label).getBytes(StandardCharsets.UTF_8);
+            if ((hkdfInfoLabel.length < 7) || hkdfInfoLabel.length > 255) {
+                throw new IllegalArgumentException(
+                        "label length outside range");
+            }
+
+            // If no context (null) is provided, RFC 8446 requires an empty
+            // context be used, unlike RFC 5705.
+            context = (context != null ? context : new byte[0]);
+            if (context.length > 255) {
+                throw new IllegalArgumentException(
+                        "context length outside range");
+            }
+
+            // Do RFC 8446:7.1-7.5 calculations
+
+            /*
+             * TLS-Exporter(label, context_value, key_length) =
+             *     HKDF-Expand-Label(Derive-Secret(Secret, label, ""),
+             *         "exporter", Hash(context_value), key_length)
+             *
+             * Derive-Secret(Secret, Label, Messages) =
+             *     HKDF-Expand-Label(Secret, Label,
+             *         Transcript-Hash(Messages), Hash.length)
+             */
+
+            try {
+                // Use the ciphersuite's hashAlg for these calcs.
+                HashAlg hashAlg = cipherSuite.hashAlg;
+                KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
+
+                // First calculate the inner Derive-Secret(Secret, label, "")
+                MessageDigest md;
+                byte[] emptyHash;
+
+                // Create the "" digest...
+                try {
+                    md = MessageDigest.getInstance(hashAlg.toString());
+                    emptyHash = md.digest();
+                } catch (NoSuchAlgorithmException nsae) {
+                    throw new ProviderException(
+                            "Hash algorithm " + cipherSuite.hashAlg.name +
+                                    " is not available", nsae);
+                }
+
+                // ...then the hkdfInfo...
+                byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
+                        hkdfInfoLabel, emptyHash, hashAlg.hashLength);
+
+                // ...then the "inner" HKDF-Expand-Label() to get the
+                // derivedSecret that is used as the Secret in the "outer"
+                // HKDF-Expand-Label().
+                SecretKey derivedSecret = hkdf.deriveKey("TlsKey",
+                        HKDFParameterSpec.expandOnly(exporterMasterSecret,
+                        hkdfInfo, hashAlg.hashLength));
+                try {
+                    // Now do the "outer" HKDF-Expand-Label.
+                    //     HKDF-Expand-Label(derivedSecret, "exporter",
+                    //         Hash(context_value), key_length)
+
+                    // If a context was supplied, use it, otherwise, use the
+                    // previous hashed value of ""...
+                    byte[] hash = ((context.length > 0) ?
+                            md.digest(context) : emptyHash);
+
+                    // ...now the hkdfInfo...
+                    hkdfInfo = SSLSecretDerivation.createHkdfInfo(
+                            ("tls13 exporter").getBytes(StandardCharsets.UTF_8),
+                            hash, length);
+
+                    // ...now the final expand.
+                    return ((keyAlg != null) ?
+                            hkdf.deriveKey(keyAlg,
+                                    HKDFParameterSpec.expandOnly(derivedSecret,
+                                            hkdfInfo, length)) :
+                            hkdf.deriveData(
+                                    HKDFParameterSpec.expandOnly(derivedSecret,
+                                            hkdfInfo, length)));
+                } finally {
+                    KeyUtil.destroySecretKeys(derivedSecret);
+                }
+            } catch (Exception e) {
+                // For whatever reason, we couldn't generate.  Wrap and return.
+                throw new SSLKeyException("Couldn't generate Exporter/HKDF", e);
+            }
+        } else if (protocolVersion.useTLS10PlusSpec()) {
+
+            // Unlikely, but check if randoms were not captured.
+            if (clientRandom == null || serverRandom == null) {
+                throw new IllegalStateException("Random nonces not captured");
+            }
+
+            // RFC 7505 using PRF-based calcs.
+            //     TLS 1/1.1/1.2 (RFCs 2246/4346/5246) or
+            //     DTLS 1.0/1.2 (RFCs 4347/6347)
+
+            // Note:  In RFC 7627:
+            //
+            //   If a client or server chooses to continue with a full handshake
+            //   without the extended master secret extension ... they MUST NOT
+            //   export any key material based on the new master secret for any
+            //   subsequent application-level authentication ... it MUST
+            //   disable [RFC5705] ...
+            if (!useExtendedMasterSecret) {
+                throw new SSLKeyException(
+                        "Exporters require extended master secrets");
+            }
+
+            // Check for a "disambiguating label string" (i.e. non-empty).
+            // Don't see a max length restriction.
+            if (label.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "label length outside range");
+            }
+
+            // context length must fit in 2 unsigned bytes.
+            if ((context != null) && (context.length > 0xFFFF)) {
+                throw new IllegalArgumentException(
+                        "Only 16-bit context lengths supported");
+            }
+
+            // Perform RFC 5705 calculations using the internal SunJCE PRF.
+            String prfAlg;
+            HashAlg hashAlg;
+            if (protocolVersion == TLS12) {
+                prfAlg = "SunTls12Prf";
+                hashAlg = cipherSuite.hashAlg;
+            } else {  //  all other cases
+                prfAlg = "SunTlsPrf";
+                hashAlg = H_NONE;
+            }
+
+            // Make a seed with randoms and optional context
+            // Note that if context is null, it is omitted from the calc
+            byte[] clientRandomBytes = clientRandom.randomBytes;
+            byte[] serverRandomBytes = serverRandom.randomBytes;
+            byte[] seed = new byte[
+                    clientRandomBytes.length + serverRandomBytes.length +
+                            ((context != null) ? (2 + context.length) : 0)];
+
+            int pos = 0;
+            System.arraycopy(
+                    clientRandomBytes, 0, seed, pos, clientRandomBytes.length);
+            pos += clientRandomBytes.length;
+            System.arraycopy(
+                    serverRandomBytes, 0, seed, pos, serverRandomBytes.length);
+            pos += serverRandomBytes.length;
+            if (context != null) {
+                // RFC 5705, "If no context is provided, ..."
+                seed[pos++] = (byte) ((context.length >> 8) & 0xFF);
+                seed[pos++] = (byte) ((context.length) & 0xFF);
+                System.arraycopy(
+                        context, 0, seed, pos, context.length);
+            }
+
+            // Call the PRF function.
+            try {
+                @SuppressWarnings("deprecation")
+                TlsPrfParameterSpec spec = new TlsPrfParameterSpec(
+                        masterSecret, (keyAlg == null) ? "TlsKey" : keyAlg,
+                        label, seed, length,
+                        hashAlg.name, hashAlg.hashLength, hashAlg.blockSize);
+                KeyGenerator kg = KeyGenerator.getInstance(prfAlg);
+                kg.init(spec);
+                SecretKey key = kg.generateKey();
+                if (keyAlg != null) {
+                    return key;
+                } else {
+                    byte[] b = key.getEncoded();
+                    if (b == null) {
+                        throw new UnsupportedOperationException(
+                                "Could not extract encoding from SecretKey");
+                    }
+                    return b;
+                }
+            } catch (NoSuchAlgorithmException |
+                     InvalidAlgorithmParameterException e) {
+                throw new SSLKeyException("Could not generate Exporter/PRF", e);
+            }
+        } else {
+            // SSLv3 is vulnerable to a triple handshake attack and can't be
+            // mitigated by RFC 7627.  Don't support this or any other
+            // unknown protocol.
+            throw new SSLKeyException(
+                    "Exporters not supported in " + protocolVersion);
+        }
+    }
+
+    /**
+     * Generate Exported Key Material (EKM) calculated according to the
+     * algorithms defined in RFCs 5705/8446.
+     */
+    @Override
+    public SecretKey exportKeyingMaterialKey(String keyAlg,
+            String label, byte[] context, int length) throws SSLKeyException {
+
+        Objects.requireNonNull(keyAlg, "keyAlg can not be null");
+        if (keyAlg.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "keyAlg is empty");
+        }
+
+        return (SecretKey) exportKeyingMaterial(keyAlg, label, context,
+                length);
+    }
+
+    /**
+     * Generate Exported Key Material (EKM) calculated according to the
+     * algorithms defined in RFCs 5705/8446.
+     */
+    @Override
+    public byte[] exportKeyingMaterialData(
+            String label, byte[] context, int length) throws SSLKeyException {
+        return (byte[])exportKeyingMaterial(null, label, context, length);
     }
 
     /** Returns a string representation of this SSL session */
