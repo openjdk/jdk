@@ -435,7 +435,7 @@ public abstract sealed class Executable extends AccessibleObject
     }
 
     // State is shared on the root object
-    private record ParameterState(@Stable int[] flags) {}
+    private record ParameterState(@Stable char[] flags) {}
     private @Stable ParameterState parameterState;
 
     private ParameterState parameterState() {
@@ -452,7 +452,7 @@ public abstract sealed class Executable extends AccessibleObject
             return parameterState = root.parameterState();
         }
 
-        int[] flags;
+        char[] flags;
         try {
             flags = getParameterFlags0();
         } catch (IllegalArgumentException e) {
@@ -523,7 +523,7 @@ public abstract sealed class Executable extends AccessibleObject
      * parameters and may throw IAE for malformed UTF-8 entry offset in
      * the parameters.
      */
-    private native int[] getParameterFlags0() throws IllegalArgumentException;
+    private native char[] getParameterFlags0() throws IllegalArgumentException;
 
     /**
      * Obtains parameter names for this method. Does not validate the parameters.

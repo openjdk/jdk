@@ -33,7 +33,7 @@ Java_java_lang_reflect_Executable_getParameterNames0(JNIEnv *env,
   return JVM_GetMethodParameterNames(env, method);
 }
 
-JNIEXPORT jobject JNICALL
+JNIEXPORT jcharArray JNICALL
 Java_java_lang_reflect_Executable_getParameterFlags0(JNIEnv *env,
                                                      jobject method) {
   return JVM_GetMethodParameterFlags(env, method);

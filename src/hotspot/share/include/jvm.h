@@ -708,7 +708,7 @@ JNIEXPORT jbyte JNICALL JVM_ConstantPoolGetTagAt
 JNIEXPORT jobjectArray JNICALL
 JVM_GetMethodParameterNames(JNIEnv *env, jobject method);
 
-JNIEXPORT jintArray JNICALL
+JNIEXPORT jcharArray JNICALL
 JVM_GetMethodParameterFlags(JNIEnv *env, jobject method);
 
 /*

@@ -1519,15 +1519,19 @@ JVM_ENTRY(jobjectArray, JVM_GetMethodParameterNames(JNIEnv *env, jobject method)
       // For a 0 index, give a null symbol
       Symbol* sym = 0 != params[i].name_cp_index ?
         mh->constants()->symbol_at(params[i].name_cp_index) : nullptr;
-      Handle name = java_lang_String::create_from_symbol(sym, CHECK_NULL);
-      result->obj_at_put(i, name());
+      if (nullptr != sym) {
+        Handle name = java_lang_String::create_from_symbol(sym, CHECK_NULL);
+        result->obj_at_put(i, name());
+      } else {
+        result->obj_at_put(i, nullptr);
+      }
     }
     return (jobjectArray)JNIHandles::make_local(THREAD, result());
   }
 }
 JVM_END
 
-JVM_ENTRY(jintArray, JVM_GetMethodParameterFlags(JNIEnv *env, jobject method))
+JVM_ENTRY(jcharArray, JVM_GetMethodParameterFlags(JNIEnv *env, jobject method))
 {
   // method is a handle to a java.lang.reflect.Method object
   Method* method_ptr = jvm_get_method_common(method);
@@ -1538,7 +1542,7 @@ JVM_ENTRY(jintArray, JVM_GetMethodParameterFlags(JNIEnv *env, jobject method))
     // A -1 return value from method_parameters_length means there is no
     // parameter data.
     assert(num_params == -1, "num_params should be -1 if it is less than zero");
-    return (jintArray)nullptr;
+    return (jcharArray)nullptr;
   } else {
     // Otherwise, we return something up to reflection, even if it is
     // a zero-length array.  Why?  Because in some cases this can
@@ -1558,15 +1562,15 @@ JVM_ENTRY(jintArray, JVM_GetMethodParameterFlags(JNIEnv *env, jobject method))
 
     }
 
-    typeArrayOop all_flags_oop = oopFactory::new_intArray(num_params, CHECK_NULL);
+    typeArrayOop all_flags_oop = oopFactory::new_charArray(num_params, CHECK_NULL);
     typeArrayHandle all_flags (THREAD, all_flags_oop);
 
     for (int i = 0; i < num_params; i++) {
       MethodParametersElement* params = mh->method_parameters_start();
       int flags = params[i].flags;
-      all_flags->int_at_put(i, flags);
+      all_flags->char_at_put(i, flags);
     }
-    return (jintArray)JNIHandles::make_local(THREAD, all_flags());
+    return (jcharArray)JNIHandles::make_local(THREAD, all_flags());
   }
 }
 JVM_END
