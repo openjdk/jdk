@@ -29,11 +29,12 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.*;
 
-public class X11Dingbats extends Charset {
+public final class X11Dingbats extends Charset {
     public X11Dingbats () {
         super("X11Dingbats", null);
     }
 
+    @Override
     public CharsetEncoder newEncoder() {
         return new Encoder(this);
     }
@@ -41,19 +42,22 @@ public class X11Dingbats extends Charset {
     /* Seems like supporting a decoder is required, but we aren't going
      * to be publicly exposing this class, so no need to waste work
      */
+    @Override
     public CharsetDecoder newDecoder() {
         throw new Error("Decoder is not supported by X11Dingbats Charset");
     }
 
+    @Override
     public boolean contains(Charset cs) {
         return cs instanceof X11Dingbats;
     }
 
-    private static class Encoder extends CharsetEncoder {
+    private static final class Encoder extends CharsetEncoder {
         public Encoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
         }
 
+        @Override
         public boolean canEncode(char ch) {
             if (ch >= 0x2701 && ch <= 0x275e) { // direct map
                 return true;
@@ -64,6 +68,7 @@ public class X11Dingbats extends Charset {
             return false;
         }
 
+        @Override
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
             char[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
@@ -125,6 +130,7 @@ public class X11Dingbats extends Charset {
             (byte)0x00, (byte)0x00, (byte)0x00};
 
         /* The default implementation creates a decoder and we don't have one */
+        @Override
         public boolean isLegalReplacement(byte[] repl) {
             return true;
         }
