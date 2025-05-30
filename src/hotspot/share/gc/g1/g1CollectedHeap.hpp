@@ -90,7 +90,7 @@ class WorkerThreads;
 typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
 
-typedef int RegionIdx_t;   // needs to hold [ 0..max_reserved_regions() )
+typedef int RegionIdx_t;   // needs to hold [ 0..max_num_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
 
 // The G1 STW is alive closure.
@@ -481,7 +481,7 @@ private:
   //    be accounted for in case shrinking of the heap happens.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
-  bool do_full_collection(bool clear_all_soft_refs,
+  void do_full_collection(bool clear_all_soft_refs,
                           bool do_maximal_compaction,
                           size_t allocation_word_size);
 
@@ -489,13 +489,12 @@ private:
   void do_full_collection(bool clear_all_soft_refs) override;
 
   // Helper to do a full collection that clears soft references.
-  bool upgrade_to_full_collection();
+  void upgrade_to_full_collection();
 
   // Callback from VM_G1CollectForAllocation operation.
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
-  HeapWord* satisfy_failed_allocation(size_t word_size,
-                                      bool* succeeded);
+  HeapWord* satisfy_failed_allocation(size_t word_size);
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
@@ -510,8 +509,7 @@ private:
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
                                              bool do_gc,
                                              bool maximal_compaction,
-                                             bool expect_null_mutator_alloc_region,
-                                             bool* gc_succeeded);
+                                             bool expect_null_mutator_alloc_region);
 
   // Attempting to expand the heap sufficiently
   // to support an allocation of the given "word_size".  If
@@ -742,12 +740,10 @@ private:
                                 GCCause::Cause gc_cause);
 
   // Perform an incremental collection at a safepoint, possibly
-  // followed by a by-policy upgrade to a full collection.  Returns
-  // false if unable to do the collection due to the GC locker being
-  // active, true otherwise.
+  // followed by a by-policy upgrade to a full collection.
   // precondition: at safepoint on VM thread
   // precondition: !is_stw_gc_active()
-  bool do_collection_pause_at_safepoint();
+  void do_collection_pause_at_safepoint();
 
   // Helper for do_collection_pause_at_safepoint, containing the guts
   // of the incremental collection pause, executed by the vm thread.
@@ -971,7 +967,7 @@ public:
   // But G1CollectedHeap doesn't yet support this.
 
   bool is_maximal_no_gc() const override {
-    return _hrm.available() == 0;
+    return _hrm.num_inactive_regions() == 0;
   }
 
   // Returns true if an incremental GC should be upgrade to a full gc. This
@@ -981,27 +977,24 @@ public:
   }
 
   // The current number of regions in the heap.
-  uint num_regions() const { return _hrm.length(); }
+  uint num_committed_regions() const { return _hrm.num_committed_regions(); }
 
-  // The max number of regions reserved for the heap. Except for static array
-  // sizing purposes you probably want to use max_regions().
-  uint max_reserved_regions() const { return _hrm.reserved_length(); }
-
-  // Max number of regions that can be committed.
-  uint max_regions() const { return _hrm.max_length(); }
+  // The max number of regions reserved for the heap.
+  uint max_num_regions() const { return _hrm.max_num_regions(); }
 
   // The number of regions that are completely free.
   uint num_free_regions() const { return _hrm.num_free_regions(); }
 
+  // The number of regions that are not completely free.
+  uint num_used_regions() const { return _hrm.num_used_regions(); }
+
   // The number of regions that can be allocated into.
-  uint num_free_or_available_regions() const { return num_free_regions() + _hrm.available(); }
+  uint num_available_regions() const { return _hrm.num_available_regions(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const {
     return _hrm.get_auxiliary_data_memory_usage();
   }
 
-  // The number of regions that are not completely free.
-  uint num_used_regions() const { return num_regions() - num_free_regions(); }
 
 #ifdef ASSERT
   bool is_on_master_free_list(G1HeapRegion* hr) {

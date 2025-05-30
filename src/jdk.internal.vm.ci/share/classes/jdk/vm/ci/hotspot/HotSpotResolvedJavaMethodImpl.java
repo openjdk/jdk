@@ -489,7 +489,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             // case of a deoptimization.
             info = DefaultProfilingInfo.get(TriState.FALSE);
         } else {
-            info = new HotSpotProfilingInfo(methodData, this, includeNormal, includeOSR);
+            info = new HotSpotProfilingInfoImpl(methodData, this, includeNormal, includeOSR);
         }
         return info;
     }
