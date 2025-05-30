@@ -372,8 +372,6 @@ public class Main {
                         System.exit(EXIT_NO_ENCODING_FOUND);
             }
         } else {
-            assert is != System.in
-                    : "Unexpected `System.in`! It requires `stdin.encoding` to be passed to `InputStreamReader::new`";
             reader = new BufferedReader(new InputStreamReader(is));
         }
         return evaluateReader(se, reader, name);
