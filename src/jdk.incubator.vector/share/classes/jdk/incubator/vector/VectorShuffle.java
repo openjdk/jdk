@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
 package jdk.incubator.vector;
 
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Arrays;
 import java.util.function.IntUnaryOperator;
@@ -315,6 +319,52 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
     }
 
     /**
+     * Loads a shuffle from a {@linkplain MemorySegment memory segment}
+     * starting at an offset into the memory segment.
+     * Bytes are composed into shuffle lanes according
+     * to the specified byte order.
+     * The shuffle is arranged into lanes according to
+     * <a href="Vector.html#lane-order">memory ordering</a>.
+     * <p>
+     * The following pseudocode illustrates the behavior:
+     * <pre>{@code
+     * var slice = ms.asSlice(offset);
+     * int[] ar = new int[species.length()];
+     * for (int n = 0; n < ar.length; n++) {
+     *     ar[n] = slice.getAtIndex(ValuaLayout.JAVA_INT_UNALIGNED, n);
+     * }
+     * VectorShuffle<E> r = VectorShuffle.fromArray(species, ar, 0);
+     * }</pre>
+     *
+     * @implNote
+     * This operation is likely to be more efficient if
+     * the specified byte order is the same as
+     * {@linkplain ByteOrder#nativeOrder()
+     * the platform native order},
+     * since this method will not need to reorder
+     * the bytes of lane values.
+     *
+     * @param species the shuffle species
+     * @param ms the source indexes in memory which the shuffle will draw from
+     * @param offset the offset into the segment
+     * @param bo the byte order
+     * @param <E> the boxed element type
+     * @return a shuffle where each lane's source index is set to the given
+     *         {@code int} value, partially wrapped if exceptional
+     * @throws IndexOutOfBoundsException if {@code offset < 0}, or
+     *         {@code offset > sourceIndexes.byteSize() - VLENGTH * 4}
+     * @since 25
+     */
+    @ForceInline
+    public static final <E> VectorShuffle<E> fromMemorySegment(VectorSpecies<E> species, MemorySegment ms,
+                                                               long offset, ByteOrder bo) {
+        long memsize = species.length() * 4;
+        MemorySegment arraySlice = ms.asSlice(offset, memsize);
+        int[] indices = arraySlice.toArray(ValueLayout.JAVA_INT_UNALIGNED.withOrder(bo));
+        return species.shuffleFromArray(indices,0);
+    }
+
+    /**
      * Creates a shuffle for a given species from
      * the successive values of an operator applied to
      * the range {@code [0..VLENGTH-1]}.
@@ -522,6 +572,45 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      *         {@code offset > a.length - this.length()}
      */
     public abstract void intoArray(int[] a, int offset);
+
+    /**
+     * Stores this shuffle into a {@linkplain MemorySegment memory segment}
+     * starting at an offset using explicit byte order.
+     * <p>
+     * Bytes are extracted from shuffle lanes according
+     * to the specified byte ordering.
+     * The shuffle lanes are stored according to their
+     * <a href="Vector.html#lane-order">memory ordering</a>.
+     * <p>
+     * The following pseudocode illustrates the behavior:
+     * <pre>{@code
+     * int[] a = this.toArray();
+     * var slice = ms.asSlice(offset)
+     * for (int n = 0; n < a.length; n++) {
+     *     slice.setAtIndex(ValueLayout.JAVA_INT_UNALIGNED, n, a[n]);
+     * }
+     * }</pre>
+     *
+     * @implNote
+     * This operation is likely to be more efficient if
+     * the specified byte order is the same as
+     * {@linkplain ByteOrder#nativeOrder()
+     * the platform native order},
+     * since this method will not need to reorder
+     * the bytes of lane values.
+     *
+     * @apiNote Shuffle source indexes are always in the
+     * range from {@code -VLENGTH} to {@code VLENGTH-1}.
+     * @param ms the memory segment
+     * @param offset the offset into the segment
+     * @param bo the byte order
+     * @throws IndexOutOfBoundsException if {@code offset < 0} or
+     *        {@code offset > a.byteSize() - this.length() * 4}
+     * @throws IllegalArgumentException if the segment {@code ms} is read-only
+     * @since 25
+     */
+    public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
+
 
     /**
      * Converts this shuffle into a vector, creating a vector
