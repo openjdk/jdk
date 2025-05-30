@@ -323,6 +323,27 @@ class MacroAssembler: public Assembler {
     extr(Rd, Rn, Rn, imm);
   }
 
+  inline void rolw(Register Rd, Register Rn, unsigned imm) {
+    extrw(Rd, Rn, Rn, ((32 - imm) & 31));
+  }
+
+  inline void rol(Register Rd, Register Rn, unsigned imm) {
+    extr(Rd, Rn, Rn, ((64 - imm) & 63));
+  }
+
+  using Assembler::rax1;
+  using Assembler::eor3;
+
+  inline void rax1(Register Rd, Register Rn, Register Rm) {
+    eor(Rd, Rn, Rm, ROR, 63); // Rd = Rn ^ rol(Rm, 1)
+  }
+
+  inline void eor3(Register Rd, Register Rn, Register Rm, Register Rk) {
+    assert(Rd != Rn);
+    eor(Rd, Rm, Rk);
+    eor(Rd, Rd, Rn);
+  }
+
   inline void sxtbw(Register Rd, Register Rn) {
     sbfmw(Rd, Rn, 0, 7);
   }

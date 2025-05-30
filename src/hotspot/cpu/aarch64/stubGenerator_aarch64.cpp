@@ -7081,6 +7081,121 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void bcax5(Register a0, Register a1, Register a2, Register a3, Register a4,
+             Register tmp0, Register tmp1, Register tmp2) {
+    __ bic(tmp0, a2, a1); // for a0
+    __ bic(tmp1, a3, a2); // for a1
+    __ bic(tmp2, a4, a3); // for a2
+    __ eor(a2, a2, tmp2);
+    __ bic(tmp2, a0, a4); // for a3
+    __ eor(a3, a3, tmp2);
+    __ bic(tmp2, a1, a0); // for a4
+    __ eor(a0, a0, tmp0);
+    __ eor(a1, a1, tmp1);
+    __ eor(a4, a4, tmp2);
+  }
+
+  void keccak_round_gpr(bool can_use_fp, bool can_use_r18, Register rc,
+                        Register a0, Register a1, Register a2, Register a3, Register a4,
+                        Register a5, Register a6, Register a7, Register a8, Register a9,
+                        Register a10, Register a11, Register a12, Register a13, Register a14,
+                        Register a15, Register a16, Register a17, Register a18, Register a19,
+                        Register a20, Register a21, Register a22, Register a23, Register a24,
+                        Register tmp0, Register tmp1, Register tmp2) {
+    __ eor3(tmp1, a4, a9, a14);
+    __ eor3(tmp0, tmp1, a19, a24); // tmp0 = a4^a9^a14^a19^a24 = c4
+    __ eor3(tmp2, a1, a6, a11);
+    __ eor3(tmp1, tmp2, a16, a21); // tmp1 = a1^a6^a11^a16^a21 = c1
+    __ rax1(tmp2, tmp0, tmp1); // d0
+    {
+
+      Register tmp3, tmp4;
+      if (can_use_fp && can_use_r18) {
+        tmp3 = rfp;
+        tmp4 = r18_tls;
+      } else {
+        tmp3 = a4;
+        tmp4 = a9;
+        __ stp(tmp3, tmp4, __ pre(sp, -16));
+      }
+
+      __ eor3(tmp3, a0, a5, a10);
+      __ eor3(tmp4, tmp3, a15, a20); // tmp4 = a0^a5^a10^a15^a20 = c0
+      __ eor(a0, a0, tmp2);
+      __ eor(a5, a5, tmp2);
+      __ eor(a10, a10, tmp2);
+      __ eor(a15, a15, tmp2);
+      __ eor(a20, a20, tmp2); // d0(tmp2)
+      __ eor3(tmp3, a2, a7, a12);
+      __ eor3(tmp2, tmp3, a17, a22); // tmp2 = a2^a7^a12^a17^a22 = c2
+      __ rax1(tmp3, tmp4, tmp2); // d1
+      __ eor(a1, a1, tmp3);
+      __ eor(a6, a6, tmp3);
+      __ eor(a11, a11, tmp3);
+      __ eor(a16, a16, tmp3);
+      __ eor(a21, a21, tmp3); // d1(tmp3)
+      __ rax1(tmp3, tmp2, tmp0); // d3
+      __ eor3(tmp2, a3, a8, a13);
+      __ eor3(tmp0, tmp2, a18, a23);  // tmp0 = a3^a8^a13^a18^a23 = c3
+      __ eor(a3, a3, tmp3);
+      __ eor(a8, a8, tmp3);
+      __ eor(a13, a13, tmp3);
+      __ eor(a18, a18, tmp3);
+      __ eor(a23, a23, tmp3);
+      __ rax1(tmp2, tmp1, tmp0); // d2
+      __ eor(a2, a2, tmp2);
+      __ eor(a7, a7, tmp2);
+      __ eor(a12, a12, tmp2);
+      __ rax1(tmp0, tmp0, tmp4); // d4
+      if (!can_use_fp || !can_use_r18) {
+        __ ldp(tmp3, tmp4, __ post(sp, 16));
+      }
+      __ eor(a17, a17, tmp2);
+      __ eor(a22, a22, tmp2);
+      __ eor(a4, a4, tmp0);
+      __ eor(a9, a9, tmp0);
+      __ eor(a14, a14, tmp0);
+      __ eor(a19, a19, tmp0);
+      __ eor(a24, a24, tmp0);
+    }
+
+    __ rol(tmp0, a10, 3);
+    __ rol(a10, a1, 1);
+    __ rol(a1, a6, 44);
+    __ rol(a6, a9, 20);
+    __ rol(a9, a22, 61);
+    __ rol(a22, a14, 39);
+    __ rol(a14, a20, 18);
+    __ rol(a20, a2, 62);
+    __ rol(a2, a12, 43);
+    __ rol(a12, a13, 25);
+    __ rol(a13, a19, 8) ;
+    __ rol(a19, a23, 56);
+    __ rol(a23, a15, 41);
+    __ rol(a15, a4, 27);
+    __ rol(a4, a24, 14);
+    __ rol(a24, a21, 2);
+    __ rol(a21, a8, 55);
+    __ rol(a8, a16, 45);
+    __ rol(a16, a5, 36);
+    __ rol(a5, a3, 28);
+    __ rol(a3, a18, 21);
+    __ rol(a18, a17, 15);
+    __ rol(a17, a11, 10);
+    __ rol(a11, a7, 6);
+    __ mov(a7, tmp0);
+
+    bcax5(a0, a1, a2, a3, a4, tmp0, tmp1, tmp2);
+    bcax5(a5, a6, a7, a8, a9, tmp0, tmp1, tmp2);
+    bcax5(a10, a11, a12, a13, a14, tmp0, tmp1, tmp2);
+    bcax5(a15, a16, a17, a18, a19, tmp0, tmp1, tmp2);
+    bcax5(a20, a21, a22, a23, a24, tmp0, tmp1, tmp2);
+
+    __ ldr(tmp1, __ post(rc, 8));
+    __ eor(a0, a0, tmp1);
+
+  }
+
   // Arguments:
   //
   // Inputs:
@@ -7134,8 +7249,8 @@ class StubGenerator: public StubCodeGenerator {
              a5 = r5,
              a6 = r6,
              a7 = r7,
-             a8 = r8,
-             a9 = r9,
+             a8 = rscratch1, // r8
+             a9 = rscratch2, // r9
              a10 = r10,
              a11 = r11,
              a12 = r12,
@@ -7152,7 +7267,7 @@ class StubGenerator: public StubCodeGenerator {
              a23 = r23,
              a24 = r24;
 
-    Register tmp1 = block_size, tmp2 = buf, tmp3 = state, tmp4 = r30;
+    Register tmp0 = block_size, tmp1 = buf, tmp2 = state, tmp3 = r30;
 
     Label sha3_loop, rounds24_preloop, loop_body;
     Label sha3_512_or_sha3_384, shake128;
@@ -7170,7 +7285,7 @@ class StubGenerator: public StubCodeGenerator {
     if (multi_block) {
       __ stpw(ofs, limit, Address(sp, 8));
     }
-    // 16 bytes at st+16 will be used to keep buf and loop counter
+    // 8 bytes at sp+16 will be used to keep buf
     __ stp(r19, r20, Address(sp, 32));
     __ stp(r21, r22, Address(sp, 48));
     __ stp(r23, r24, Address(sp, 64));
@@ -7200,239 +7315,94 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(sha3_loop);
 
     // load input
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a0, a0, tmp4);
-    __ eor(a1, a1, tmp3);
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a2, a2, tmp4);
-    __ eor(a3, a3, tmp3);
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a4, a4, tmp4);
-    __ eor(a5, a5, tmp3);
-    __ ldr(tmp4, __ post(buf, 8));
-    __ eor(a6, a6, tmp4);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a0, a0, tmp3);
+    __ eor(a1, a1, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a2, a2, tmp3);
+    __ eor(a3, a3, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a4, a4, tmp3);
+    __ eor(a5, a5, tmp2);
+    __ ldr(tmp3, __ post(buf, 8));
+    __ eor(a6, a6, tmp3);
 
     // block_size == 72, SHA3-512; block_size == 104, SHA3-384
     __ tbz(block_size, 7, sha3_512_or_sha3_384);
 
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a7, a7, tmp4);
-    __ eor(a8, a8, tmp3);
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a9, a9, tmp4);
-    __ eor(a10, a10, tmp3);
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a11, a11, tmp4);
-    __ eor(a12, a12, tmp3);
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a13, a13, tmp4);
-    __ eor(a14, a14, tmp3);
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a15, a15, tmp4);
-    __ eor(a16, a16, tmp3);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a7, a7, tmp3);
+    __ eor(a8, a8, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a9, a9, tmp3);
+    __ eor(a10, a10, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a11, a11, tmp3);
+    __ eor(a12, a12, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a13, a13, tmp3);
+    __ eor(a14, a14, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a15, a15, tmp3);
+    __ eor(a16, a16, tmp2);
 
     // block_size == 136, bit4 == 0 and bit5 == 0, SHA3-256 or SHAKE256
-    __ andw(tmp3, block_size, 48);
-    __ cbzw(tmp3, rounds24_preloop);
+    __ andw(tmp2, block_size, 48);
+    __ cbzw(tmp2, rounds24_preloop);
     __ tbnz(block_size, 5, shake128);
     // block_size == 144, bit5 == 0, SHA3-244
-    __ ldr(tmp4, __ post(buf, 8));
-    __ eor(a17, a17, tmp4);
+    __ ldr(tmp3, __ post(buf, 8));
+    __ eor(a17, a17, tmp3);
     __ b(rounds24_preloop);
 
     __ BIND(shake128);
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a17, a17, tmp4);
-    __ eor(a18, a18, tmp3);
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a19, a19, tmp4);
-    __ eor(a20, a20, tmp3);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a17, a17, tmp3);
+    __ eor(a18, a18, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a19, a19, tmp3);
+    __ eor(a20, a20, tmp2);
     __ b(rounds24_preloop); // block_size == 168, SHAKE128
 
     __ BIND(sha3_512_or_sha3_384);
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a7, a7, tmp4);
-    __ eor(a8, a8, tmp3);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a7, a7, tmp3);
+    __ eor(a8, a8, tmp2);
     __ tbz(block_size, 5, rounds24_preloop); // SHA3-512
 
     // SHA3-384
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a9, a9, tmp4);
-    __ eor(a10, a10, tmp3);
-    __ ldp(tmp4, tmp3, __ post(buf, 16));
-    __ eor(a11, a11, tmp4);
-    __ eor(a12, a12, tmp3);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a9, a9, tmp3);
+    __ eor(a10, a10, tmp2);
+    __ ldp(tmp3, tmp2, __ post(buf, 16));
+    __ eor(a11, a11, tmp3);
+    __ eor(a12, a12, tmp2);
 
     __ BIND(rounds24_preloop);
-    __ mov(tmp1, 24);
-    __ stp(buf, tmp1, Address(sp, 16));
-    __ lea(tmp4, ExternalAddress((address) round_consts));
+    __ fmovs(v0, 24.0); // float loop counter,
+    __ fmovs(v1, 1.0);  // exact representation
+
+    __ str(buf, Address(sp, 16));
+    __ lea(tmp3, ExternalAddress((address) round_consts));
 
     __ BIND(loop_body);
-
-    __ eor(tmp1, a4, a9); // tmp1 = a4^a9
-    __ eor(tmp2, a14, a19); // tmp2 = a14^a19
-    __ eor(tmp3, a1, a6); // tmp3 = a1^a6
-    __ eor(tmp1, tmp1, tmp2); // tmp1 = a4^a9^a14^19
-    __ eor(tmp2, a11, a16); // tmp2 = a11^16
-    __ eor(tmp1, tmp1, a24); // tmp1 = a4^a9^a14^a19^a24 = c4
-    __ eor(tmp2, tmp2, tmp3); // tmp2 = a1^a6^a11^a16
-    __ eor(tmp2, tmp2, a21); // tmp2 = a1^a6^a11^a16^a21 = c1
-    __ eor(tmp3, tmp1, tmp2, __ ROR, 63); // d0
-    {
-      Register tmp5, tmp6;
-      if (can_use_fp && can_use_r18) {
-        tmp5 = rfp;
-        tmp6 = r18_tls;
-      } else {
-        tmp5 = a4;
-        tmp6 = a9;
-        __ stp(tmp5, tmp6, __ pre(sp, -16));
-      }
-      __ eor(tmp6, a0, a5); // tmp6 = a0^a5
-      __ eor(a0, a0, tmp3);
-      __ eor(a5, a5, tmp3);
-      __ eor(tmp5, a10, a15); // tmp5 = a10^a15
-      __ eor(a10, a10, tmp3);
-      __ eor(a15, a15, tmp3);
-      __ eor(tmp6, tmp6, tmp5); // tmp6 = a0^a5^a10^a15
-      __ eor(tmp6, tmp6, a20); // tmp6 = a0^a5^a10^a15^a20 = c0
-      __ eor(a20, a20, tmp3); // d0(tmp3)
-      __ eor(tmp5, a2, a7); // tmp5 = a2^a7
-      __ eor(tmp3, a12, a17); // tmp3 = a12^a17
-      __ eor(tmp3, tmp3, tmp5); // tmp3 = a2^a7^a12^a17
-      __ eor(tmp3, tmp3, a22); // tmp3 = a2^a7^a12^a17^a22 = c2
-      __ eor(tmp5, tmp6, tmp3, __ ROR, 63); // d1.
-      __ eor(a1, a1, tmp5);
-      __ eor(a6, a6, tmp5);
-      __ eor(a11, a11, tmp5);
-      __ eor(a16, a16, tmp5);
-      __ eor(a21, a21, tmp5); // d1(tmp5)
-      __ eor(tmp5, tmp3, tmp1, __ ROR, 63); // d3
-      __ eor(tmp1, a3, a8); // tmp1 = a3^a8
-      __ eor(a3, a3, tmp5);
-      __ eor(a8, a8, tmp5);
-      __ eor(tmp3, a13, a18); // tmp3 = a13^a18
-      __ eor(a13, a13, tmp5);
-      __ eor(a18, a18, tmp5);
-      __ eor(tmp1, tmp1, tmp3); // tmp1 = a3^a8^a13^a18
-      __ eor(tmp1, tmp1, a23);  // tmp1 = a3^a8^a13^a18^a23 = c3
-      __ eor(a23, a23, tmp5);
-      __ eor(tmp3, tmp2, tmp1, __ ROR, 63); // d2
-      __ eor(a2, a2, tmp3);
-      __ eor(a7, a7, tmp3);
-      __ eor(a12, a12, tmp3);
-      __ eor(tmp1, tmp1, tmp6, __ ROR, 63); // d4
-      if (!can_use_fp || !can_use_r18) {
-        __ ldp(tmp5, tmp6, __ post(sp, 16));
-      }
-      __ eor(a17, a17, tmp3);
-      __ eor(a22, a22, tmp3);
-      __ eor(a4, a4, tmp1);
-      __ eor(a9, a9, tmp1);
-      __ eor(a14, a14, tmp1);
-      __ eor(a19, a19, tmp1);
-      __ eor(a24, a24, tmp1);
-    }
-
-    __ ror(tmp1, a10, 64 - 3);
-    __ ror(a10, a1, 64 - 1);
-    __ ror(a1, a6, 64 - 44);
-    __ ror(a6, a9, 64 - 20);
-    __ ror(a9, a22, 64 - 61);
-    __ ror(a22, a14, 64 - 39);
-    __ ror(a14, a20, 64 - 18);
-    __ ror(a20, a2, 64 - 62);
-    __ ror(a2, a12, 64 - 43);
-    __ ror(a12, a13, 64 - 25);
-    __ ror(a13, a19, 64 - 8) ;
-    __ ror(a19, a23, 64 - 56);
-    __ ror(a23, a15, 64 - 41);
-    __ ror(a15, a4, 64 - 27);
-    __ ror(a4, a24, 64 - 14);
-    __ ror(a24, a21, 64 - 2);
-    __ ror(a21, a8, 64 - 55);
-    __ ror(a8, a16, 64 - 45);
-    __ ror(a16, a5, 64 - 36);
-    __ ror(a5, a3, 64 - 28);
-    __ ror(a3, a18, 64 - 21);
-    __ ror(a18, a17, 64 - 15);
-    __ ror(a17, a11, 64 - 10);
-    __ ror(a11, a7, 64 - 6);
-    __ mov(a7, tmp1);
-
-    __ bic(tmp1, a2, a1); // for a0
-    __ bic(tmp2, a3, a2); // for a1
-    __ bic(tmp3, a4, a3); // for a2
-    __ eor(a2, a2, tmp3);
-    __ bic(tmp3, a0, a4); // for a3
-    __ eor(a3, a3, tmp3);
-    __ bic(tmp3, a1, a0); // for a4
-    __ eor(a0, a0, tmp1);
-    __ eor(a1, a1, tmp2);
-    __ eor(a4, a4, tmp3);
-
-    __ bic(tmp1, a7, a6); // for a5
-    __ bic(tmp2, a8, a7); // for a6
-    __ bic(tmp3, a9, a8); // for a7
-    __ eor(a7, a7, tmp3);
-    __ bic(tmp3, a5, a9); // for a8
-    __ eor(a8, a8, tmp3);
-    __ bic(tmp3, a6, a5); // for a9
-    __ eor(a5, a5, tmp1);
-    __ eor(a6, a6, tmp2);
-    __ eor(a9, a9, tmp3);
-
-    __ bic(tmp1, a12, a11); // for a10
-    __ bic(tmp2, a13, a12); // for a11
-    __ bic(tmp3, a14, a13); // for a12
-    __ eor(a12, a12, tmp3);
-    __ bic(tmp3, a10, a14); // for a13
-    __ eor(a13, a13, tmp3);
-    __ bic(tmp3, a11, a10); // for a14
-    __ eor(a10, a10, tmp1);
-    __ eor(a11, a11, tmp2);
-    __ eor(a14, a14, tmp3);
-
-    __ bic(tmp1, a17, a16); // for a15
-    __ bic(tmp2, a18, a17); // for a16
-    __ bic(tmp3, a19, a18); // for a17
-    __ eor(a17, a17, tmp3);
-    __ bic(tmp3, a15, a19); // for a18
-    __ eor(a18, a18, tmp3);
-    __ bic(tmp3, a16, a15); // for a19
-    __ eor(a15, a15, tmp1);
-    __ eor(a16, a16, tmp2);
-    __ eor(a19, a19, tmp3);
-
-    __ bic(tmp1, a22, a21); // for a20
-    __ bic(tmp2, a23, a22); // for a21
-    __ bic(tmp3, a24, a23); // for a22
-    __ eor(a22, a22, tmp3);
-    __ bic(tmp3, a20, a24); // for a23
-    __ eor(a23, a23, tmp3);
-    __ bic(tmp3, a21, a20); // for a24
-    __ eor(a20, a20, tmp1);
-    __ eor(a21, a21, tmp2);
-    __ eor(a24, a24, tmp3);
-
-    __ ldr(tmp1, Address(sp, 24)); // loop counter
-    __ ldr(tmp2, __ post(tmp4, 8));
-    __ eor(a0, a0, tmp2);
-
-    __ subsw(tmp1, tmp1, 1); // decrease loop counter
-    __ str(tmp1, Address(sp, 24)); // save loop counter
+    keccak_round_gpr(can_use_fp, can_use_r18, tmp3,
+                     a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
+                     a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24,
+                     tmp0, tmp1, tmp2);
+    __ fsubs(v0, v0, v1);
+    __ fcmps(v0, 0.0);
     __ br(__ NE, loop_body);
 
     if (multi_block) {
       __ ldrw(block_size, sp); // block_size
-      __ ldpw(tmp3, tmp2, Address(sp, 8)); // offset, limit
-      __ addw(tmp3, tmp3, block_size);
-      __ cmpw(tmp3, tmp2);
-      __ strw(tmp3, Address(sp, 8)); // store offset in case we're jumping
+      __ ldpw(tmp2, tmp1, Address(sp, 8)); // offset, limit
+      __ addw(tmp2, tmp2, block_size);
+      __ cmpw(tmp2, tmp1);
+      __ strw(tmp2, Address(sp, 8)); // store offset in case we're jumping
       __ ldr(buf, Address(sp, 16)); // restore buf in case we're jumping
       __ br(Assembler::LE, sha3_loop);
-      __ movw(c_rarg0, tmp3); // return offset
+      __ movw(c_rarg0, tmp2); // return offset
     }
     if (can_use_fp && can_use_r18) {
       __ ldp(r18_tls, state, Address(sp, 112));
