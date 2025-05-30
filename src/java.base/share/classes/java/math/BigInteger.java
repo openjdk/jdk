@@ -189,7 +189,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * value.  Note that this implies that the BigInteger zero has a
      * zero-length mag array.
      */
-    @Stable
     final int[] mag;
 
     // The following fields are stable variables. A stable variable's value
