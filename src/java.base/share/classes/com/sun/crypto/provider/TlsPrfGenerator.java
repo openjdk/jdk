@@ -147,7 +147,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
         throw new InvalidParameterException(MSG);
     }
 
-    SecretKey engineGenerateKey0(boolean tls12) {
+    protected SecretKey engineGenerateKey0(boolean tls12) {
         if (spec == null) {
             throw new IllegalStateException(
                 "TlsPrfGenerator must be initialized");

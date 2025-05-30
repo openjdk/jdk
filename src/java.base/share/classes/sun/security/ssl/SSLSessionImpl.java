@@ -1490,7 +1490,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
             // Unlikely, but check anyway.
             if (exporterMasterSecret == null) {
-                throw new RuntimeException(
+                throw new IllegalStateException(
                         "Exporter master secret not captured");
             }
 
@@ -1605,7 +1605,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
             // Unlikely, but check if randoms were not captured.
             if (clientRandom == null || serverRandom == null) {
-                throw new RuntimeException("Random nonces not captured");
+                throw new IllegalStateException("Random nonces not captured");
             }
 
             // RFC 7505 using PRF-based calcs.

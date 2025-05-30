@@ -81,8 +81,7 @@ public class TlsPrfParameterSpec implements AlgorithmParameterSpec {
      * Constructs a new TlsPrfParameterSpec.
      *
      * @param secret the secret to use in the calculation (or null)
-     * @param keyAlg the algorithm name that the generated SecretKey should
-     *               have, or null if the default should be used
+     * @param keyAlg the algorithm name for the generated {@code SecretKey}
      * @param label the label to use in the calculation
      * @param seed the random seed to use in the calculation
      * @param outputLength the length in bytes of the output key to be produced

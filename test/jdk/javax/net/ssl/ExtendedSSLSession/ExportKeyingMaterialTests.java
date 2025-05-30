@@ -468,6 +468,14 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
                 log("too large length test passed in TLSv1.3");
             }
 
+            // Do a null/byte[0] comparison.  Exporters should be the same.
+            clientBytes = clientSession.exportKeyingMaterialData("hello",
+                    null, 128);
+            serverBytes = serverSession.exportKeyingMaterialData("hello",
+                    new byte[0], 128);
+            assertEqualsByteArray(clientBytes, serverBytes,
+                    "Data: null vs. empty context should be the same");
+
             break;
 
         case "TLSv1":
@@ -484,6 +492,16 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
             } catch (IllegalArgumentException e) {
                 log("large context passed in TLSv1/TLSv1.1/TLSv1.2");
             }
+
+            // Do a null/byte[0] comparison.  Should NOT be the same.
+            clientBytes = clientSession.exportKeyingMaterialData(
+                    "hello", null, 128);
+            serverBytes = serverSession.exportKeyingMaterialData(
+                    "hello", new byte[0], 128);
+            assertNotEqualsByteArray(clientBytes, serverBytes,
+                    "empty vs. null context but exporters same");
+            log("Data: empty vs. null context, " +
+                    "different exporters test passed");
 
             break;
 

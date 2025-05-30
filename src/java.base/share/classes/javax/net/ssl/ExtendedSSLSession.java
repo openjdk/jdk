@@ -173,7 +173,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * values depending on whether {@code context} is null or non-null/empty.
      * RFC 8446 (TLSv1.3) treats a null context as non-null/empty.
      * <P>
-     * The {@code label} {@code String} will be converted to bytes using
+     * {@code label} will be converted to bytes using
      * the {@link java.nio.charset.StandardCharsets#UTF_8}
      * character encoding.
      *
@@ -203,6 +203,9 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *         {@code length} is non-positive, or if the {@code label} or
      *         {@code context} length can not be accommodated
      * @throws NullPointerException if {@code keyAlg} or {@code label} is null
+     * @throws IllegalStateException if this session does not have the
+     *         necessary key generation material (for example, a session
+     *         under construction during handshaking)
      * @throws UnsupportedOperationException if the underlying provider
      *         does not implement the operation
      *
@@ -225,7 +228,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * values depending on whether {@code context} is null or non-null/empty.
      * RFC 8446 (TLSv1.3) treats a null context as non-null/empty.
      * <P>
-     * The {@code label} {@code String} will be converted to bytes using
+     * {@code label} will be converted to bytes using
      * the {@link java.nio.charset.StandardCharsets#UTF_8}
      * character encoding.
      * <P>
@@ -254,6 +257,9 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *         or if the {@code label} or {@code context} length can
      *         not be accommodated
      * @throws NullPointerException if {@code label} is null
+     * @throws IllegalStateException if this session does not have the
+     *         necessary key generation material (for example, a session
+     *         under construction during handshaking)
      * @throws UnsupportedOperationException if the underlying provider
      *         does not implement the operation, or if the derived
      *         keying material is not extractable
