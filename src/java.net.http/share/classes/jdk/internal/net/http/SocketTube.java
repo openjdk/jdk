@@ -557,34 +557,15 @@ final class SocketTube implements FlowTube {
             implements Flow.Publisher<List<ByteBuffer>> {
         private final InternalReadSubscription subscriptionImpl
                 = new InternalReadSubscription();
-        ConcurrentLinkedQueue<ReadSubscription> pendingSubscriptions = new ConcurrentLinkedQueue<>();
+        private final ConcurrentLinkedQueue<ReadSubscription> pendingSubscriptions
+                = new ConcurrentLinkedQueue<>();
         private volatile ReadSubscription subscription;
 
         @Override
         public void subscribe(Flow.Subscriber<? super List<ByteBuffer>> s) {
             Objects.requireNonNull(s);
-
-            TubeSubscriber sub = FlowTube.asTubeSubscriber(s);
-            ReadSubscription previous;
-            while ((previous = pendingSubscriptions.poll()) != null) {
-                if (debug.on())
-                    debug.log("read publisher: dropping pending subscriber: "
-                              + previous.subscriber);
-                previous.errorRef.compareAndSet(null, errorRef.get());
-                // make sure no data will be routed to the old subscriber.
-                previous.stopReading();
-                previous.signalOnSubscribe();
-                if (subscriptionImpl.completed) {
-                    previous.signalCompletion();
-                } else {
-                    previous.subscriber.dropSubscription();
-                }
-            }
-            ReadSubscription target = new ReadSubscription(subscriptionImpl, sub);
-            pendingSubscriptions.offer(target);
-
-            if (debug.on()) debug.log("read publisher got new subscriber: " + s);
-            subscriptionImpl.signalSubscribe();
+            if (debug.on()) debug.log("Offering new subscriber: %s", s);
+            subscriptionImpl.offer(FlowTube.asTubeSubscriber(s));
             debugState("leaving read.subscribe: ");
         }
 
@@ -953,7 +934,32 @@ final class SocketTube implements FlowTube {
                 }
             }
 
-            boolean handlePending() {
+            synchronized void offer(TubeSubscriber sub) {
+                ReadSubscription previous;
+                while ((previous = pendingSubscriptions.poll()) != null) {
+                    if (debug.on())
+                        debug.log("read publisher: dropping pending subscriber: "
+                                + previous.subscriber);
+                    previous.errorRef.compareAndSet(null, errorRef.get());
+                    // make sure no data will be routed to the old subscriber.
+                    previous.stopReading();
+                    previous.signalOnSubscribe();
+                    if (completed) {
+                        previous.signalCompletion();
+                    } else {
+                        previous.subscriber.dropSubscription();
+                    }
+                }
+                ReadSubscription target = new ReadSubscription(this, sub);
+                pendingSubscriptions.offer(target);
+
+                if (debug.on()) {
+                    debug.log("read publisher got new subscriber: " + sub);
+                }
+                signalSubscribe();
+            }
+
+            synchronized boolean handlePending() {
                 ReadSubscription pending;
                 boolean subscribed = false;
                 ReadSubscription current = subscription;
@@ -962,10 +968,14 @@ final class SocketTube implements FlowTube {
                     if (debug.on())
                         debug.log("handling pending subscription for %s",
                             pending.subscriber);
-                    if (current != null && current != pending && !completed) {
-                        debug.log("dropping pending subscription for current %s",
+                    if (current != null && !completed) {
+                        debug.log("dropping subscription for current %s",
                                 current.subscriber);
+                        current.stopReading();
                         current.subscriber.dropSubscription();
+                    }
+                    if (!pendingSubscriptions.isEmpty()) {
+                        pending.stopReading();
                     }
                     if (debug.on()) debug.log("read demand reset to 0");
                     subscriptionImpl.demand.reset(); // subscriber will increase demand if it needs to.
