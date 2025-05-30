@@ -43,6 +43,7 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.image.MultiResolutionImage;
 import java.awt.image.RenderedImage;
@@ -56,7 +57,6 @@ public class CopyAreaOOB extends Canvas {
     private static Frame frame;
     private static Robot robot;
     private static BufferedImage captureImg;
-    private static Canvas canvas;
 
     private static StringBuffer errorLog = new StringBuffer();
 
@@ -67,21 +67,14 @@ public class CopyAreaOOB extends Canvas {
         try {
             robot = new Robot();
 
-            createTestUI();
-            robot.waitForIdle();
-            robot.delay(1000);
-
             // added to move mouse pointer away from test UI
             // so that it is not captured in the screenshot
             robot.mouseMove(OFF_FRAME_LOC.x, OFF_FRAME_LOC.y);
             robot.waitForIdle();
             robot.delay(100);
 
-            EventQueue.invokeAndWait(() -> {
-                Point pt1 = canvas.getLocationOnScreen();
-                Rectangle rect = new Rectangle(pt1.x, pt1.y, SIZE, SIZE);
-                captureImg = robot.createScreenCapture(rect);
-            });
+            createTestUI();
+            robot.delay(1000);
 
             // Test pixels
             testRegion("green", 0, 0, 400, 10, 0xff00ff00);
@@ -101,10 +94,10 @@ public class CopyAreaOOB extends Canvas {
     }
 
     private static void createTestUI() {
+        CopyAreaOOB canvas = new CopyAreaOOB();
         frame = new Frame();
-        canvas = new CopyAreaOOB();
-        frame.add(canvas);
         frame.setUndecorated(true);
+        frame.add(canvas);
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
@@ -127,10 +120,18 @@ public class CopyAreaOOB extends Canvas {
         // copy the region such that part of it goes below the bottom of the
         // destination surface
         g2d.copyArea(0, 10, 50, h - 10, 60, 10);
+
+        Toolkit.getDefaultToolkit().sync();
+
+        robot.delay(500);
+
+        Point pt1 = this.getLocationOnScreen();
+        Rectangle rect = new Rectangle(pt1.x, pt1.y, SIZE, SIZE);
+        captureImg = robot.createScreenCapture(rect);
     }
 
     public Dimension getPreferredSize() {
-        return new Dimension(400, 400);
+        return new Dimension(SIZE, SIZE);
     }
 
     private static void testRegion(String region,
@@ -143,11 +144,11 @@ public class CopyAreaOOB extends Canvas {
                 if (actual != expected) {
                     System.out.print(" Status: FAILED\n");
                     errorLog.append("Test failed for " + region
-                                               + " region at x: " + x + " y: " + y
-                                               + " (expected: "
-                                               + Integer.toHexString(expected)
-                                               + " actual: "
-                                               + Integer.toHexString(actual) + ")\n");
+                                                + " region at x: " + x + " y: " + y
+                                                + " (expected: "
+                                                + Integer.toHexString(expected)
+                                                + " actual: "
+                                                + Integer.toHexString(actual) + ")\n");
                     return;
                 }
             }
