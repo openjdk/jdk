@@ -28,10 +28,12 @@
  *          from interfaces
  */
 
+import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.MethodDescriptor;
 import java.beans.PropertyDescriptor;
+import java.beans.SimpleBeanInfo;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
@@ -417,6 +419,81 @@ public class DefaultMethodBeanPropertyTest {
         );
     }
 
+//////////////////////////////////////
+//                                  //
+//          SCENARIO 10              //
+//                                  //
+//////////////////////////////////////
+
+    public static class A10 {
+        public Object getProp() {
+            return null;
+        }
+    }
+
+    public static interface B10 {
+        Object getProp();
+    }
+
+    public static class C10_1 extends A10 implements B10 {
+    }
+
+    public static class C10_2 extends A10 implements B10 {
+    }
+
+    public static class A10BeanInfo extends SimpleBeanInfo {
+        public MethodDescriptor[] getMethodDescriptors() {
+            try {
+                Class params[] = {};
+                MethodDescriptor md = new MethodDescriptor(A10.class.getDeclaredMethod("getProp", params));
+                md.setDisplayName("display name");
+                MethodDescriptor res[] = { md };
+                return res;
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+        }
+    }
+
+    public static class C10_1BeanInfo extends SimpleBeanInfo {
+        public BeanInfo[] getAdditionalBeanInfo() {
+            try {
+                BeanInfo res[] = {
+                    Introspector.getBeanInfo(A10.class),
+                    Introspector.getBeanInfo(B10.class)
+                };
+                return res;
+            } catch (IntrospectionException exception) {
+                throw new Error("unexpected exception", exception);
+            }
+        }
+    }
+
+    public static class C10_2BeanInfo extends SimpleBeanInfo {
+        public BeanInfo[] getAdditionalBeanInfo() {
+            try {
+                BeanInfo res[] = {
+                    Introspector.getBeanInfo(B10.class),
+                    Introspector.getBeanInfo(A10.class)
+                };
+                return res;
+            } catch (IntrospectionException exception) {
+                throw new Error("unexpected exception", exception);
+            }
+        }
+    }
+
+    public static void testScenario10() {
+        {
+            var md = getMethodDescriptor(C10_1.class, A10.class, "getProp");
+            assertEquals("display name", md.getDisplayName(), "getDisplayName()");
+        }
+        {
+            var md = getMethodDescriptor(C10_2.class, A10.class, "getProp");
+            assertEquals("display name", md.getDisplayName(), "getDisplayName()");
+        }
+    }
+
 // Helper methods
 
     private static void verifyEquality(String title, Set<String> expected, Set<String> actual) {
@@ -464,6 +541,25 @@ public class DefaultMethodBeanPropertyTest {
         }
     }
 
+    private static MethodDescriptor getMethodDescriptor(Class cls, Class stop, String name) {
+        try {
+            for (var md : Introspector.getBeanInfo(cls, stop).getMethodDescriptors()) {
+                if (md.getName().equals(name)) {
+                    return md;
+                }
+            }
+            return null;
+        } catch (IntrospectionException exception) {
+            throw new Error("unexpected exception", exception);
+        }
+    }
+
+    private static void assertEquals(Object expected, Object actual, String msg) {
+        if (!expected.equals(actual)) {
+            throw new Error(msg + ":\nACTUAL: " + actual + "\nEXPECTED: " + expected);
+        }
+    }
+
 // Main method
 
     public static void main(String[] args) throws Exception {
@@ -476,5 +572,6 @@ public class DefaultMethodBeanPropertyTest {
         testScenario7();
         testScenario8();
         testScenario9();
+        testScenario10();
     }
 }
