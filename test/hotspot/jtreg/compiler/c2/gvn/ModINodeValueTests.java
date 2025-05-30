@@ -24,7 +24,9 @@ package compiler.c2.gvn;
 
 import compiler.lib.generators.Generator;
 import compiler.lib.generators.Generators;
+import compiler.lib.generators.RestrictableGenerator;
 import compiler.lib.ir_framework.DontCompile;
+import compiler.lib.ir_framework.ForceInline;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
@@ -41,9 +43,9 @@ import jdk.test.lib.Asserts;
  * @run driver compiler.c2.gvn.ModINodeValueTests
  */
 public class ModINodeValueTests {
-    private static final Generator<Integer> INT_GEN = Generators.G.ints();
-    private static final int POS_INT = Generators.G.ints().restricted(1, Integer.MAX_VALUE).next();
-    private static final int NEG_INT = Generators.G.ints().restricted(Integer.MIN_VALUE, -1).next();
+    private static final RestrictableGenerator<Integer> INT_GEN = Generators.G.ints();
+    private static final int POS_INT = INT_GEN.restricted(1, Integer.MAX_VALUE).next();
+    private static final int NEG_INT = INT_GEN.restricted(Integer.MIN_VALUE, -1).next();
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -55,7 +57,8 @@ public class ModINodeValueTests {
         "modByKnownBoundsUpper", "modByKnownBoundsUpperInRange",
         "modByKnownBoundsLower", "modByKnownBoundsLowerInRange",
         "modByKnownBoundsLimitedByDividendUpper", "modByKnownBoundsLimitedByDividendUpperInRange",
-        "modByKnownBoundsLimitedByDividendLower", "modByKnownBoundsLimitedByDividendLowerInRange"
+        "modByKnownBoundsLimitedByDividendLower", "modByKnownBoundsLimitedByDividendLowerInRange",
+        "testRandomLimits"
     })
     public void runMethod() {
         int a = INT_GEN.next();
@@ -84,12 +87,26 @@ public class ModINodeValueTests {
         Asserts.assertEQ(((byte) x) % (((char) y) + 1) >= 127, modByKnownBoundsLimitedByDividendUpperInRange(x, y));
         Asserts.assertEQ(((byte) x) % (((char) y) + 1) < -128, modByKnownBoundsLimitedByDividendLower(x, y));
         Asserts.assertEQ(((byte) x) % (((char) y) + 1) <= -128, modByKnownBoundsLimitedByDividendLowerInRange(x, y));
+
+        int res;
+        try {
+            res = testRandomLimitsInterpreted(x, y);
+        } catch (ArithmeticException _) {
+            try {
+                testRandomLimits(x, y);
+                Asserts.fail("Expected ArithmeticException");
+                return; // unreachable
+            } catch (ArithmeticException _) {
+                return; // test succeeded, no result to assert
+            }
+        }
+        Asserts.assertEQ(res, testRandomLimits(x, y));
     }
 
     @Test
     @IR(failOn = {IRNode.MOD_I, IRNode.CMP_I})
     // The sign of the result of % is the same as the sign of the dividend,
-    // i.e., posVal % x < 0 => false.
+    // i.e., POS_INT % x < 0 => false.
     public boolean nonNegativeDividend(int x) {
         return x != 0 && POS_INT % x < 0;
     }
@@ -97,7 +114,7 @@ public class ModINodeValueTests {
     @Test
     @IR(counts = {IRNode.MOD_I, "1"})
     // The sign of the result of % is the same as the sign of the dividend,
-    // i.e., posVal % x < 0 => false.
+    // i.e., POS_INT % x < 0 => false.
     // This uses <= to verify the % is not optimized away
     public boolean nonNegativeDividendInRange(int x) {
         return x != 0 && POS_INT % x <= 0;
@@ -106,7 +123,7 @@ public class ModINodeValueTests {
     @Test
     @IR(failOn = {IRNode.MOD_I, IRNode.CMP_I})
     // The sign of the result of % is the same as the sign of the dividend,
-    // i.e., negValue % x > 0 => false.
+    // i.e., NEG_INT % x > 0 => false.
     public boolean negativeDividend(int x) {
         return x != 0 && NEG_INT % x > 0;
     }
@@ -114,7 +131,7 @@ public class ModINodeValueTests {
     @Test
     @IR(counts = {IRNode.MOD_I, "1"})
     // The sign of the result of % is the same as the sign of the dividend,
-    // i.e., negValue % x > 0 => false.
+    // i.e., NEG_INT % x > 0 => false.
     // This uses >= to verify the % is not optimized away
     public boolean negativeDividendInRange(int x) {
         return x != 0 && NEG_INT % x >= 0;
@@ -198,5 +215,78 @@ public class ModINodeValueTests {
         // e % d => [-128, 127]
         // in bounds, cannot optimize
         return ((byte) x) % (((char) y) + 1) <= -128;
+    }
+
+    private static final int LIMIT_1 = INT_GEN.next();
+    private static final int LIMIT_2 = INT_GEN.next();
+    private static final int LIMIT_3 = INT_GEN.next();
+    private static final int LIMIT_4 = INT_GEN.next();
+    private static final int LIMIT_5 = INT_GEN.next();
+    private static final int LIMIT_6 = INT_GEN.next();
+    private static final int LIMIT_7 = INT_GEN.next();
+    private static final int LIMIT_8 = INT_GEN.next();
+    private static final Range RANGE_1 = Range.generate(INT_GEN);
+    private static final Range RANGE_2 = Range.generate(INT_GEN);
+
+    @Test
+    public int testRandomLimits(int x, int y) {
+        x = RANGE_1.clamp(x);
+        y = RANGE_2.clamp(y);
+        int z = x % y;
+
+        int sum = 0;
+        if (z < LIMIT_1) sum += 1;
+        if (z < LIMIT_2) sum += 2;
+        if (z < LIMIT_3) sum += 4;
+        if (z < LIMIT_4) sum += 8;
+        if (z > LIMIT_5) sum += 16;
+        if (z > LIMIT_6) sum += 32;
+        if (z > LIMIT_7) sum += 64;
+        if (z > LIMIT_8) sum += 128;
+
+        return sum;
+    }
+
+    @DontCompile
+    public int testRandomLimitsInterpreted(int x, int y) {
+        x = RANGE_1.clamp(x);
+        y = RANGE_2.clamp(y);
+        int z = x % y;
+
+        int sum = 0;
+        if (z < LIMIT_1) sum += 1;
+        if (z < LIMIT_2) sum += 2;
+        if (z < LIMIT_3) sum += 4;
+        if (z < LIMIT_4) sum += 8;
+        if (z > LIMIT_5) sum += 16;
+        if (z > LIMIT_6) sum += 32;
+        if (z > LIMIT_7) sum += 64;
+        if (z > LIMIT_8) sum += 128;
+
+        return sum;
+    }
+
+    record Range(int lo, int hi) {
+        Range {
+            if (lo > hi) {
+                throw new IllegalArgumentException("lo > hi");
+            }
+        }
+
+        @ForceInline
+        int clamp(int v) {
+            return Math.min(hi, Math.max(v, lo));
+        }
+
+        static Range generate(Generator<Integer> g) {
+            var a = g.next();
+            var b = g.next();
+            if (a > b) {
+                var tmp = a;
+                a = b;
+                b = tmp;
+            }
+            return new Range(a, b);
+        }
     }
 }

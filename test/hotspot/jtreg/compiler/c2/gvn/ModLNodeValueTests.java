@@ -25,6 +25,7 @@ package compiler.c2.gvn;
 import compiler.lib.generators.Generator;
 import compiler.lib.generators.Generators;
 import compiler.lib.ir_framework.DontCompile;
+import compiler.lib.ir_framework.ForceInline;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
@@ -55,7 +56,8 @@ public class ModLNodeValueTests {
         "modByKnownBoundsUpper", "modByKnownBoundsUpperInRange",
         "modByKnownBoundsLower", "modByKnownBoundsLowerInRange",
         "modByKnownBoundsLimitedByDividendUpper", "modByKnownBoundsLimitedByDividendUpperInRange",
-        "modByKnownBoundsLimitedByDividendLower", "modByKnownBoundsLimitedByDividendLowerInRange"
+        "modByKnownBoundsLimitedByDividendLower", "modByKnownBoundsLimitedByDividendLowerInRange",
+        "testRandomLimits"
     })
     public void runMethod() {
         long a = LONG_GEN.next();
@@ -84,6 +86,20 @@ public class ModLNodeValueTests {
         Asserts.assertEQ(((byte) x) % (((char) y) + 1L) >= 127, modByKnownBoundsLimitedByDividendUpperInRange(x, y));
         Asserts.assertEQ(((byte) x) % (((char) y) + 1L) < -128, modByKnownBoundsLimitedByDividendLower(x, y));
         Asserts.assertEQ(((byte) x) % (((char) y) + 1L) <= -128, modByKnownBoundsLimitedByDividendLowerInRange(x, y));
+
+        int res;
+        try {
+            res = testRandomLimitsInterpreted(x, y);
+        } catch (ArithmeticException _) {
+            try {
+                testRandomLimits(x, y);
+                Asserts.fail("Expected ArithmeticException");
+                return; // unreachable
+            } catch (ArithmeticException _) {
+                return; // test succeeded, no result to assert
+            }
+        }
+        Asserts.assertEQ(res, testRandomLimits(x, y));
     }
 
     @Test
@@ -198,5 +214,79 @@ public class ModLNodeValueTests {
         // e % d => [-128, 127]
         // in bounds, cannot optimize
         return ((byte) x) % (((char) y) + 1L) <= -128;
+    }
+
+
+    private static final long LIMIT_1 = LONG_GEN.next();
+    private static final long LIMIT_2 = LONG_GEN.next();
+    private static final long LIMIT_3 = LONG_GEN.next();
+    private static final long LIMIT_4 = LONG_GEN.next();
+    private static final long LIMIT_5 = LONG_GEN.next();
+    private static final long LIMIT_6 = LONG_GEN.next();
+    private static final long LIMIT_7 = LONG_GEN.next();
+    private static final long LIMIT_8 = LONG_GEN.next();
+    private static final Range RANGE_1 = Range.generate(LONG_GEN);
+    private static final Range RANGE_2 = Range.generate(LONG_GEN);
+
+    @Test
+    public int testRandomLimits(long x, long y) {
+        x = RANGE_1.clamp(x);
+        y = RANGE_2.clamp(y);
+        long z = x % y;
+
+        int sum = 0;
+        if (z < LIMIT_1) sum += 1;
+        if (z < LIMIT_2) sum += 2;
+        if (z < LIMIT_3) sum += 4;
+        if (z < LIMIT_4) sum += 8;
+        if (z > LIMIT_5) sum += 16;
+        if (z > LIMIT_6) sum += 32;
+        if (z > LIMIT_7) sum += 64;
+        if (z > LIMIT_8) sum += 128;
+
+        return sum;
+    }
+
+    @DontCompile
+    public int testRandomLimitsInterpreted(long x, long y) {
+        x = RANGE_1.clamp(x);
+        y = RANGE_2.clamp(y);
+        long z = x % y;
+
+        int sum = 0;
+        if (z < LIMIT_1) sum += 1;
+        if (z < LIMIT_2) sum += 2;
+        if (z < LIMIT_3) sum += 4;
+        if (z < LIMIT_4) sum += 8;
+        if (z > LIMIT_5) sum += 16;
+        if (z > LIMIT_6) sum += 32;
+        if (z > LIMIT_7) sum += 64;
+        if (z > LIMIT_8) sum += 128;
+
+        return sum;
+    }
+
+    record Range(long lo, long hi) {
+        Range {
+            if (lo > hi) {
+                throw new IllegalArgumentException("lo > hi");
+            }
+        }
+
+        @ForceInline
+        long clamp(long v) {
+            return Math.min(hi, Math.max(v, lo));
+        }
+
+        static Range generate(Generator<Long> g) {
+            var a = g.next();
+            var b = g.next();
+            if (a > b) {
+                var tmp = a;
+                a = b;
+                b = tmp;
+            }
+            return new Range(a, b);
+        }
     }
 }
