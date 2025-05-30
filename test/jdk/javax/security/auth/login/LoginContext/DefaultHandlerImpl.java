@@ -76,7 +76,7 @@ public class DefaultHandlerImpl implements CallbackHandler {
                 // ignore the provided defaultName
                 System.err.print(nc.getPrompt());
                 System.err.flush();
-                Reader stdinReader = new InputStreamReader(System.in, System.getProperty("stdin.encoding")));
+                Reader stdinReader = new InputStreamReader(System.in, System.getProperty("stdin.encoding"));
                 nc.setName(new BufferedReader(stdinReader).readLine());
 
             } else if (callbacks[i] instanceof PasswordCallback) {
