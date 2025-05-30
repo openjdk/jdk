@@ -4534,12 +4534,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             this.type = type;
             this.cmin = cmin;
             this.cmax = cmax;
+            /*
             if (node instanceof SliceNode s && s.length() <= 0) {
                 //We are dealing with a zero length match
                 //Tune quantifier attempts downward
                 this.cmin = this.cmin <= 0 ? 0 : 1;
                 this.cmax = 1;
             }
+             */
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
             int j;
@@ -4691,6 +4693,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             this.groupIndex = group;
             this.capture = capture;
 
+            /*
             if (node instanceof SliceNode s && s.length() <= 0) {
                 //We are dealing with a zero length match
                 this.cmin = this.cmin <= 0 ? 0 : 1;
@@ -4700,6 +4703,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 this.cmin = this.cmin <= 0 ? 0 : 1;
                 this.cmax = 1;
             }
+             */
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
             int[] groups = matcher.groups;
