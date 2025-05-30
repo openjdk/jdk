@@ -25,6 +25,7 @@
  * @test
  * @bug 8353266
  * @summary Integer.bitCount modifies input register
+ * @library /test/lib /
  *
  * @run main/othervm
  *      -Xbatch
@@ -35,11 +36,14 @@
 /**
  * @test
  * @bug 8353266
+ * @library /test/lib /
  *
  * @run main compiler.intrinsics.BitCountIAarch64PreservesArgument
  */
 
 package compiler.intrinsics;
+
+import static compiler.lib.generators.Generators.G;
 
 public class BitCountIAarch64PreservesArgument {
     static long lFld;
@@ -51,7 +55,15 @@ public class BitCountIAarch64PreservesArgument {
             test();
             if (result != 0xfedc_ba98_7654_3210L) {
                 // Wrongly outputs the cut input 0x7654_3210 == 1985229328
-                throw new RuntimeException("Wrong result: " + result);
+                throw new RuntimeException("Wrong result. lFld=" + lFld + "; result=" + result);
+            }
+        }
+
+        lFld = G.longs().next();
+        for (int i = 0; i < 10_000; i++) {
+            test();
+            if (result != lFld) {
+                throw new RuntimeException("Wrong result. lFld=" + lFld + "; result=" + result);
             }
         }
     }
