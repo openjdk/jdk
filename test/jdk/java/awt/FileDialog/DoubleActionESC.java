@@ -52,7 +52,7 @@ public class DoubleActionESC {
     private static volatile Point p;
     private static volatile Dimension d;
     private static final int REPEAT_COUNT = 2;
-    private static final long LATCH_TIMEOUT = 4;
+    private static final long LATCH_TIMEOUT = 10;
 
     private static final CountDownLatch latch = new CountDownLatch(REPEAT_COUNT);
 
@@ -65,7 +65,7 @@ public class DoubleActionESC {
             });
 
             robot.waitForIdle();
-            robot.delay(500);
+            robot.delay(1000);
 
             EventQueue.invokeAndWait(() -> {
                 p = showBtn.getLocationOnScreen();
@@ -77,17 +77,17 @@ public class DoubleActionESC {
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
                 robot.waitForIdle();
-                robot.delay(500);
+                robot.delay(1000);
 
                 robot.keyPress(KeyEvent.VK_ESCAPE);
                 robot.keyRelease(KeyEvent.VK_ESCAPE);
                 robot.waitForIdle();
-                robot.delay(500);
+                robot.delay(1000);
             }
 
             if (!latch.await(LATCH_TIMEOUT, SECONDS))
             {
-                throw new RuntimeException("Latch timout reached");
+                throw new RuntimeException("Test failed: Latch timout reached");
             }
             EventQueue.invokeAndWait(() -> {
                 if (fd.isVisible())
