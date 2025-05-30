@@ -37,7 +37,7 @@ const char* VMATree::statetype_strings[3] = {
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
                                                const RegionData& metadata, bool use_tag_inplace) {
   assert(!use_tag_inplace || metadata.mem_tag == mtNone,
-         "If using use_tag_inplace, then the supplied tag should be mtNone, was instead: %s", NMTUtil::tag_to_name(metadata.mem_tag));
+         "If using use_tag_inplace, then the supplied tag should be mtNone, was instead: %s", MemTagFactory::human_readable_name_of(metadata.mem_tag));
   if (A == B) {
     // A 0-sized mapping isn't worth recording.
     return SummaryDiff();
@@ -219,7 +219,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 #ifdef ASSERT
 void VMATree::print_on(outputStream* out) {
   visit_in_order([&](TreapNode* current) {
-    out->print("%zu (%s) - %s - ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
+    out->print("%zu (%s) - %s - ", current->key(), MemTagFactory::human_readable_name_of(out_state(current).mem_tag()),
                statetype_to_string(out_state(current).type()));
   });
   out->cr();

@@ -88,7 +88,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
                        start_addr, end_addr,
                        NMTUtil::amount_in_scale(end_addr - start_addr, scale),
                        NMTUtil::scale_name(scale),
-                       NMTUtil::tag_to_name(prev->val().out.mem_tag()));
+                       MemTagFactory::human_readable_name_of(prev->val().out.mem_tag()));
       {
         StreamIndentor si(stream, 4);
         _stack_storage.get(prev->val().out.stack()).print_on(stream);

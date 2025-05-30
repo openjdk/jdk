@@ -717,7 +717,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     // may invalidate the old block, including its header.
     MallocHeader* header = MallocHeader::resolve_checked(memblock);
     assert(mem_tag == header->mem_tag(), "weird NMT type mismatch (new:\"%s\" != old:\"%s\")\n",
-           NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
+           MemTagFactory::human_readable_name_of(mem_tag), MemTagFactory::human_readable_name_of(header->mem_tag()));
     const MallocHeader::FreeInfo free_info = header->free_info();
 
     header->mark_block_as_dead();
