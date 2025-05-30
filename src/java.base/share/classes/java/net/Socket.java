@@ -965,8 +965,9 @@ public class Socket implements java.io.Closeable {
             }
             long start = SocketReadEvent.timestamp();
             int nbytes = implRead(b, off, len);
-            long duration = SocketReadEvent.timestamp() - start;
-            if (SocketReadEvent.shouldCommit(duration)) {
+            long end = SocketReadEvent.timestamp();
+            long duration = end - start;
+            if (SocketReadEvent.shouldThrottleCommit(duration, end)) {
                 SocketReadEvent.emit(start, duration, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
             }
             return nbytes;
@@ -1081,8 +1082,9 @@ public class Socket implements java.io.Closeable {
             }
             long start = SocketWriteEvent.timestamp();
             implWrite(b, off, len);
-            long duration = SocketWriteEvent.timestamp() - start;
-            if (SocketWriteEvent.shouldCommit(duration)) {
+            long end = SocketWriteEvent.timestamp();
+            long duration = end - start;
+            if (SocketWriteEvent.shouldThrottleCommit(duration, end)) {
                 SocketWriteEvent.emit(start, duration, len, parent.getRemoteSocketAddress());
             }
         }
