@@ -72,16 +72,16 @@ public class SerializerMessages_sv extends ListResourceBundle {
     public Object[][] getContents() {
         Object[][] contents = new Object[][] {
             {   MsgKey.BAD_MSGKEY,
-                "Meddelandenyckeln ''{0}'' \u00E4r inte i meddelandeklassen ''{1}''" },
+                "Meddelandenyckeln ''{0}'' är inte i meddelandeklassen ''{1}''" },
 
             {   MsgKey.BAD_MSGFORMAT,
-                "Formatet p\u00E5 meddelandet ''{0}'' i meddelandeklassen ''{1}'' underk\u00E4ndes." },
+                "Formatet på meddelandet ''{0}'' i meddelandeklassen ''{1}'' underkändes." },
 
             {   MsgKey.ER_SERIALIZER_NOT_CONTENTHANDLER,
                 "Serializerklassen ''{0}'' implementerar inte org.xml.sax.ContentHandler." },
 
             {   MsgKey.ER_RESOURCE_COULD_NOT_FIND,
-                    "Resursen [ {0} ] kunde inte h\u00E4mtas.\n {1}" },
+                    "Resursen [ {0} ] kunde inte hämtas.\n {1}" },
 
             {   MsgKey.ER_RESOURCE_COULD_NOT_LOAD,
                     "Resursen [ {0} ] kunde inte laddas: {1} \n {2} \t {3}" },
@@ -90,13 +90,13 @@ public class SerializerMessages_sv extends ListResourceBundle {
                     "Buffertstorlek <=0" },
 
             {   MsgKey.ER_INVALID_UTF16_SURROGATE,
-                    "Ogiltigt UTF-16-surrogat uppt\u00E4ckt: {0} ?" },
+                    "Ogiltigt UTF-16-surrogat upptäckt: {0} ?" },
 
             {   MsgKey.ER_OIERROR,
                 "IO-fel" },
 
             {   MsgKey.ER_ILLEGAL_ATTRIBUTE_POSITION,
-                "Kan inte l\u00E4gga till attributet {0} efter underordnade noder eller innan ett element har skapats. Attributet ignoreras." },
+                "Kan inte lägga till attributet {0} efter underordnade noder eller innan ett element har skapats. Attributet ignoreras." },
 
             /*
              * Note to translators:  The stylesheet contained a reference to a
@@ -104,7 +104,7 @@ public class SerializerMessages_sv extends ListResourceBundle {
              * text is the name of the prefix.
              */
             {   MsgKey.ER_NAMESPACE_PREFIX,
-                "Namnrymd f\u00F6r prefix ''{0}'' har inte deklarerats." },
+                "Namnrymd för prefix ''{0}'' har inte deklarerats." },
 
             /*
              * Note to translators:  This message is reported if the stylesheet
@@ -113,7 +113,7 @@ public class SerializerMessages_sv extends ListResourceBundle {
              * specifies the name of the attribute.
              */
             {   MsgKey.ER_STRAY_ATTRIBUTE,
-                "Attributet ''{0}'' finns utanf\u00F6r elementet." },
+                "Attributet ''{0}'' finns utanför elementet." },
 
             /*
              * Note to translators:  As with the preceding message, a namespace
@@ -123,46 +123,46 @@ public class SerializerMessages_sv extends ListResourceBundle {
              * namespace declaration.
              */
             {   MsgKey.ER_STRAY_NAMESPACE,
-                "Namnrymdsdeklarationen ''{0}''=''{1}'' finns utanf\u00F6r element." },
+                "Namnrymdsdeklarationen ''{0}''=''{1}'' finns utanför element." },
 
             {   MsgKey.ER_COULD_NOT_LOAD_RESOURCE,
-                "Kunde inte ladda ''{0}'' (kontrollera CLASSPATH), anv\u00E4nder nu enbart standardv\u00E4rden" },
+                "Kunde inte ladda ''{0}'' (kontrollera CLASSPATH), använder nu enbart standardvärden" },
 
             {   MsgKey.ER_ILLEGAL_CHARACTER,
-                "F\u00F6rs\u00F6k att skriva utdatatecken med integralv\u00E4rdet {0} som inte \u00E4r representerat i angiven utdatakodning av {1}." },
+                "Försök att skriva utdatatecken med integralvärdet {0} som inte är representerat i angiven utdatakodning av {1}." },
 
             {   MsgKey.ER_COULD_NOT_LOAD_METHOD_PROPERTY,
-                "Kunde inte ladda egenskapsfilen ''{0}'' f\u00F6r utdatametoden ''{1}'' (kontrollera CLASSPATH)" },
+                "Kunde inte ladda egenskapsfilen ''{0}'' för utdatametoden ''{1}'' (kontrollera CLASSPATH)" },
 
             {   MsgKey.ER_INVALID_PORT,
                 "Ogiltigt portnummer" },
 
             {   MsgKey.ER_PORT_WHEN_HOST_NULL,
-                "Port kan inte st\u00E4llas in n\u00E4r v\u00E4rd \u00E4r null" },
+                "Port kan inte ställas in när värd är null" },
 
             {   MsgKey.ER_HOST_ADDRESS_NOT_WELLFORMED,
-                "V\u00E4rd \u00E4r inte en v\u00E4lformulerad adress" },
+                "Värd är inte en välformulerad adress" },
 
             {   MsgKey.ER_SCHEME_NOT_CONFORMANT,
-                "Schemat \u00E4r inte likformigt." },
+                "Schemat är inte likformigt." },
 
             {   MsgKey.ER_SCHEME_FROM_NULL_STRING,
-                "Kan inte st\u00E4lla in schema fr\u00E5n null-str\u00E4ng" },
+                "Kan inte ställa in schema från null-sträng" },
 
             {   MsgKey.ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
-                "S\u00F6kv\u00E4gen inneh\u00E5ller en ogiltig escape-sekvens" },
+                "Sökvägen innehåller en ogiltig escape-sekvens" },
 
             {   MsgKey.ER_PATH_INVALID_CHAR,
-                "S\u00F6kv\u00E4gen inneh\u00E5ller ett ogiltigt tecken: {0}" },
+                "Sökvägen innehåller ett ogiltigt tecken: {0}" },
 
             {   MsgKey.ER_FRAG_INVALID_CHAR,
-                "Fragment inneh\u00E5ller ett ogiltigt tecken" },
+                "Fragment innehåller ett ogiltigt tecken" },
 
             {   MsgKey.ER_FRAG_WHEN_PATH_NULL,
-                "Fragment kan inte st\u00E4llas in n\u00E4r s\u00F6kv\u00E4g \u00E4r null" },
+                "Fragment kan inte ställas in när sökväg är null" },
 
             {   MsgKey.ER_FRAG_FOR_GENERIC_URI,
-                "Fragment kan bara st\u00E4llas in f\u00F6r en allm\u00E4n URI" },
+                "Fragment kan bara ställas in för en allmän URI" },
 
             {   MsgKey.ER_NO_SCHEME_IN_URI,
                 "Schema saknas i URI" },
@@ -171,22 +171,22 @@ public class SerializerMessages_sv extends ListResourceBundle {
                 "Kan inte initiera URI med tomma parametrar" },
 
             {   MsgKey.ER_NO_FRAGMENT_STRING_IN_PATH,
-                "Fragment kan inte anges i b\u00E5de s\u00F6kv\u00E4gen och fragmentet" },
+                "Fragment kan inte anges i både sökvägen och fragmentet" },
 
             {   MsgKey.ER_NO_QUERY_STRING_IN_PATH,
-                "Fr\u00E5gestr\u00E4ng kan inte anges i b\u00E5de s\u00F6kv\u00E4gen och fr\u00E5gestr\u00E4ngen" },
+                "Frågesträng kan inte anges i både sökvägen och frågesträngen" },
 
             {   MsgKey.ER_NO_PORT_IF_NO_HOST,
-                "Port f\u00E5r inte anges om v\u00E4rden inte \u00E4r angiven" },
+                "Port får inte anges om värden inte är angiven" },
 
             {   MsgKey.ER_NO_USERINFO_IF_NO_HOST,
-                "Anv\u00E4ndarinfo f\u00E5r inte anges om v\u00E4rden inte \u00E4r angiven" },
+                "Användarinfo får inte anges om värden inte är angiven" },
 
             {   MsgKey.ER_XML_VERSION_NOT_SUPPORTED,
-                "Varning:  Versionen av utdatadokumentet som beg\u00E4rts \u00E4r ''{0}''.  Den h\u00E4r versionen av XML st\u00F6ds inte.  Versionen av utdatadokumentet kommer att vara ''1.0''." },
+                "Varning:  Versionen av utdatadokumentet som begärts är ''{0}''.  Den här versionen av XML stöds inte.  Versionen av utdatadokumentet kommer att vara ''1.0''." },
 
             {   MsgKey.ER_SCHEME_REQUIRED,
-                "Schema kr\u00E4vs!" },
+                "Schema krävs!" },
 
             /*
              * Note to translators:  The words 'Properties' and
@@ -194,41 +194,41 @@ public class SerializerMessages_sv extends ListResourceBundle {
              * and should not be translated.
              */
             {   MsgKey.ER_FACTORY_PROPERTY_MISSING,
-                "Egenskapsobjektet som \u00F6verf\u00F6rts till SerializerFactory har ingen ''{0}''-egenskap." },
+                "Egenskapsobjektet som överförts till SerializerFactory har ingen ''{0}''-egenskap." },
 
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
-                "Varning: Kodningen ''{0}'' st\u00F6ds inte av Java runtime." },
+                "Varning: Kodningen ''{0}'' stöds inte av Java runtime." },
 
              {MsgKey.ER_FEATURE_NOT_FOUND,
-             "Parametern ''{0}'' k\u00E4nns inte igen."},
+             "Parametern ''{0}'' känns inte igen."},
 
              {MsgKey.ER_FEATURE_NOT_SUPPORTED,
-             "Parametern ''{0}'' k\u00E4nns igen men det beg\u00E4rda v\u00E4rdet kan inte anges."},
+             "Parametern ''{0}'' känns igen men det begärda värdet kan inte anges."},
 
              {MsgKey.ER_STRING_TOO_LONG,
-             "Resultatstr\u00E4ngen \u00E4r f\u00F6r l\u00E5ng och ryms inte i DOMString: ''{0}''."},
+             "Resultatsträngen är för lång och ryms inte i DOMString: ''{0}''."},
 
              {MsgKey.ER_TYPE_MISMATCH_ERR,
-             "V\u00E4rdetypen f\u00F6r detta parameternamn \u00E4r inkompatibelt med f\u00F6rv\u00E4ntad v\u00E4rdetyp. "},
+             "Värdetypen för detta parameternamn är inkompatibelt med förväntad värdetyp. "},
 
              {MsgKey.ER_NO_OUTPUT_SPECIFIED,
              "Den utdatadestination som data ska skrivas till var null."},
 
              {MsgKey.ER_UNSUPPORTED_ENCODING,
-             "En kodning som inte st\u00F6ds har p\u00E5tr\u00E4ffats."},
+             "En kodning som inte stöds har påträffats."},
 
              {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
              "Noden kunde inte serialiseras."},
 
              {MsgKey.ER_CDATA_SECTIONS_SPLIT,
-             "CDATA-sektionen inneh\u00E5ller en eller flera avslutningsmark\u00F6rer (']]>')."},
+             "CDATA-sektionen innehåller en eller flera avslutningsmarkörer (']]>')."},
 
              {MsgKey.ER_WARNING_WF_NOT_CHECKED,
-                 "En instans av Well-Formedness-kontrollen kunde inte skapas. Parametern well-formed har angetts till sant men Well-Formedness-kontrollen kan inte utf\u00F6ras."
+                 "En instans av Well-Formedness-kontrollen kunde inte skapas. Parametern well-formed har angetts till sant men Well-Formedness-kontrollen kan inte utföras."
              },
 
              {MsgKey.ER_WF_INVALID_CHARACTER,
-                 "Noden ''{0}'' inneh\u00E5ller ogiltiga XML-tecken."
+                 "Noden ''{0}'' innehåller ogiltiga XML-tecken."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
@@ -240,11 +240,11 @@ public class SerializerMessages_sv extends ListResourceBundle {
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
-                 "Ett ogiltigt XML-tecken (Unicode: 0x{0}) hittades i inneh\u00E5llet i CDATASection."
+                 "Ett ogiltigt XML-tecken (Unicode: 0x{0}) hittades i innehållet i CDATASection."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
-                 "Ett ogiltigt XML-tecken (Unicode: 0x{0}) hittades i teckendatainneh\u00E5llet f\u00F6r noden."
+                 "Ett ogiltigt XML-tecken (Unicode: 0x{0}) hittades i teckendatainnehållet för noden."
              },
 
              { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
@@ -252,19 +252,19 @@ public class SerializerMessages_sv extends ListResourceBundle {
              },
 
              { MsgKey.ER_WF_DASH_IN_COMMENT,
-                 "Str\u00E4ngen \"--\" \u00E4r inte till\u00E5ten inom kommentarer."
+                 "Strängen \"--\" är inte tillåten inom kommentarer."
              },
 
              {MsgKey.ER_WF_LT_IN_ATTVAL,
-                 "Attributv\u00E4rdet \"{1}\" som associeras med elementtyp \"{0}\" f\u00E5r inte inneh\u00E5lla n\u00E5got ''<''-tecken."
+                 "Attributvärdet \"{1}\" som associeras med elementtyp \"{0}\" får inte innehålla något ''<''-tecken."
              },
 
              {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
-                 "Den otolkade enhetsreferensen \"&{0};\" \u00E4r inte till\u00E5ten."
+                 "Den otolkade enhetsreferensen \"&{0};\" är inte tillåten."
              },
 
              {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
-                 "Den externa enhetsreferensen \"&{0};\" till\u00E5ts inte i ett attributv\u00E4rde."
+                 "Den externa enhetsreferensen \"&{0};\" tillåts inte i ett attributvärde."
              },
 
              {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
@@ -272,23 +272,23 @@ public class SerializerMessages_sv extends ListResourceBundle {
              },
 
              {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
-                 "Det lokala namnet p\u00E5 elementet \"{0}\" \u00E4r null."
+                 "Det lokala namnet på elementet \"{0}\" är null."
              },
 
              {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
-                 "Det lokala namnet p\u00E5 attributet \"{0}\" \u00E4r null."
+                 "Det lokala namnet på attributet \"{0}\" är null."
              },
 
              { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
-                 "Ers\u00E4ttningstexten f\u00F6r enhetsnoden \"{0}\" inneh\u00E5ller elementnoden \"{1}\" med ett obundet prefix, \"{2}\"."
+                 "Ersättningstexten för enhetsnoden \"{0}\" innehåller elementnoden \"{1}\" med ett obundet prefix, \"{2}\"."
              },
 
              { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
-                 "Ers\u00E4ttningstexten f\u00F6r enhetsnoden \"{0}\" inneh\u00E5ller attributnoden \"{1}\" med ett obundet prefix, \"{2}\"."
+                 "Ersättningstexten för enhetsnoden \"{0}\" innehåller attributnoden \"{1}\" med ett obundet prefix, \"{2}\"."
              },
 
              { MsgKey.ER_WRITING_INTERNAL_SUBSET,
-                 "Ett fel intr\u00E4ffade vid skrivning till den interna delm\u00E4ngden."
+                 "Ett fel inträffade vid skrivning till den interna delmängden."
              },
 
         };
