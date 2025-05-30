@@ -339,7 +339,7 @@ class MacroAssembler: public Assembler {
   }
 
   inline void eor3(Register Rd, Register Rn, Register Rm, Register Rk) {
-    assert(Rd != Rn);
+    assert(Rd != Rn, "Use tmp register");
     eor(Rd, Rm, Rk);
     eor(Rd, Rd, Rn);
   }
