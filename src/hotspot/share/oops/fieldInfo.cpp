@@ -272,9 +272,10 @@ void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* f
 
   FieldInfoComparator comparator(&reader, cp, nullptr, nullptr);
   // Check 1: assert that elements have the correct order based on the comparison function
-  uint32_t err_pivot;
+  uint32_t err_pivot = -1;
   if (!lookup.validate_order(comparator, search_table, &err_pivot)) {
     char *msg;
+    assert(err_pivot < (uint32_t) fis->length(), "invalid pivot %u", err_pivot);
     reader.set_position_and_next_index(err_pivot, -1);
     FieldInfo fi;
     reader.read_field_info(fi);
