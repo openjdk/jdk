@@ -3753,70 +3753,6 @@ void reflect_ConstantPool::serialize_offsets(SerializeClosure* f) {
 }
 #endif
 
-int java_lang_reflect_Parameter::_name_offset;
-int java_lang_reflect_Parameter::_modifiers_offset;
-int java_lang_reflect_Parameter::_index_offset;
-int java_lang_reflect_Parameter::_executable_offset;
-
-#define PARAMETER_FIELDS_DO(macro) \
-  macro(_name_offset,        k, vmSymbols::name_name(),        string_signature, false); \
-  macro(_modifiers_offset,   k, vmSymbols::modifiers_name(),   int_signature,    false); \
-  macro(_index_offset,       k, vmSymbols::index_name(),       int_signature,    false); \
-  macro(_executable_offset,  k, vmSymbols::executable_name(),  executable_signature, false)
-
-void java_lang_reflect_Parameter::compute_offsets() {
-  InstanceKlass* k = vmClasses::reflect_Parameter_klass();
-  PARAMETER_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void java_lang_reflect_Parameter::serialize_offsets(SerializeClosure* f) {
-  PARAMETER_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-}
-#endif
-
-Handle java_lang_reflect_Parameter::create(TRAPS) {
-  assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
-  Symbol* name = vmSymbols::java_lang_reflect_Parameter();
-  Klass* k = SystemDictionary::resolve_or_fail(name, true, CHECK_NH);
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  // Ensure it is initialized
-  ik->initialize(CHECK_NH);
-  return ik->allocate_instance_handle(THREAD);
-}
-
-oop java_lang_reflect_Parameter::name(oop param) {
-  return param->obj_field(_name_offset);
-}
-
-void java_lang_reflect_Parameter::set_name(oop param, oop value) {
-  param->obj_field_put(_name_offset, value);
-}
-
-int java_lang_reflect_Parameter::modifiers(oop param) {
-  return param->int_field(_modifiers_offset);
-}
-
-void java_lang_reflect_Parameter::set_modifiers(oop param, int value) {
-  param->int_field_put(_modifiers_offset, value);
-}
-
-int java_lang_reflect_Parameter::index(oop param) {
-  return param->int_field(_index_offset);
-}
-
-void java_lang_reflect_Parameter::set_index(oop param, int value) {
-  param->int_field_put(_index_offset, value);
-}
-
-oop java_lang_reflect_Parameter::executable(oop param) {
-  return param->obj_field(_executable_offset);
-}
-
-void java_lang_reflect_Parameter::set_executable(oop param, oop value) {
-  param->obj_field_put(_executable_offset, value);
-}
-
 // java_lang_Module
 
 int java_lang_Module::_loader_offset;
@@ -5397,7 +5333,6 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
   f(java_lang_reflect_Field) \
   f(java_lang_reflect_RecordComponent) \
   f(reflect_ConstantPool) \
-  f(java_lang_reflect_Parameter) \
   f(java_lang_Module) \
   f(java_lang_StackTraceElement) \
   f(java_lang_ClassFrameInfo) \

@@ -115,10 +115,6 @@ class Reflection: public AllStatic {
   static oop new_constructor(const methodHandle& method, TRAPS);
   // Create a java.lang.reflect.Field object based on a field descriptor
   static oop new_field(fieldDescriptor* fd, TRAPS);
-  // Create a java.lang.reflect.Parameter object based on a
-  // MethodParameterElement
-  static oop new_parameter(Handle method, int index, Symbol* sym,
-                           int flags, TRAPS);
   // Method invocation through java.lang.reflect.Method
   static oop      invoke_method(oop method_mirror,
                                Handle receiver,

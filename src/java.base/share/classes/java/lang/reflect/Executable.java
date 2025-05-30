@@ -410,87 +410,129 @@ public abstract sealed class Executable extends AccessibleObject
      * a MethodParameters attribute that is improperly formatted.
      */
     public Parameter[] getParameters() {
-        // TODO: This may eventually need to be guarded by security
-        // mechanisms similar to those in Field, Method, etc.
-        //
-        // Need to copy the cached array to prevent users from messing
-        // with it.  Since parameters are immutable, we can
-        // shallow-copy.
-        return parameterData().parameters.clone();
+        var cache = parametersCache;
+        if (cache == null) {
+            cache = createParameters();
+            parametersCache = cache;
+        }
+        return cache.clone();
     }
 
-    private Parameter[] synthesizeAllParams() {
+    // Cannot be shared on root objects; a Parameter is specific to an Executable
+    private @Stable Parameter[] parametersCache;
+
+    private Parameter[] createParameters() {
+        parameterState(); // Eager validation
         final int realparams = getParameterCount();
         final Parameter[] out = new Parameter[realparams];
         for (int i = 0; i < realparams; i++)
-            // TODO: is there a way to synthetically derive the
-            // modifiers?  Probably not in the general case, since
-            // we'd have no way of knowing about them, but there
-            // may be specific cases.
-            out[i] = new Parameter("arg" + i, 0, this, i);
+            out[i] = new Parameter(this, i);
         return out;
     }
 
-    private void verifyParameters(final Parameter[] parameters) {
+    boolean hasRealParameterData() {
+        return parameterState().flags != null;
+    }
+
+    // State is shared on the root object
+    private record ParameterState(@Stable int[] flags) {}
+    private @Stable ParameterState parameterState;
+
+    private ParameterState parameterState() {
+        var state = parameterState;
+        if (state != null)
+            return state;
+
+        return computeParameterState();
+    }
+
+    private ParameterState computeParameterState() {
+        var root = getRoot();
+        if (root != null) {
+            return parameterState = root.parameterState();
+        }
+
+        int[] flags;
+        try {
+            flags = getParameterFlags0();
+        } catch (IllegalArgumentException e) {
+            throw new MalformedParametersException("Invalid constant pool index");
+        }
+
+        if (flags == null)
+            return parameterState = new ParameterState(null);
+
         final int mask = Modifier.FINAL | Modifier.SYNTHETIC | Modifier.MANDATED;
 
-        if (getParameterCount() != parameters.length)
+        if (getParameterCount() != flags.length)
             throw new MalformedParametersException("Wrong number of parameters in MethodParameters attribute");
 
-        for (Parameter parameter : parameters) {
-            final String name = parameter.getRealName();
-            final int mods = parameter.getModifiers();
 
-            if (name != null) {
-                if (name.isEmpty() || name.indexOf('.') != -1 ||
-                    name.indexOf(';') != -1 || name.indexOf('[') != -1 ||
-                    name.indexOf('/') != -1) {
-                    throw new MalformedParametersException("Invalid parameter name \"" + name + "\"");
-                }
-            }
-
+        for (int mods : flags) {
             if (mods != (mods & mask)) {
                 throw new MalformedParametersException("Invalid parameter modifiers");
             }
         }
-    }
 
+        var names = getParameterNames0(); // Do not cache, reduce memory pressure
+        assert names.length == flags.length; // Ensured by VM
 
-    boolean hasRealParameterData() {
-        return parameterData().isReal;
-    }
-
-    private ParameterData parameterData() {
-        ParameterData parameterData = this.parameterData;
-        if (parameterData != null) {
-            return parameterData;
+        for (var name : names) {
+            if (name != null) {
+                if (name.isEmpty() || name.indexOf('.') != -1 ||
+                        name.indexOf(';') != -1 || name.indexOf('[') != -1 ||
+                        name.indexOf('/') != -1) {
+                    throw new MalformedParametersException("Invalid parameter name \"" + name + "\"");
+                }
+            }
         }
 
-        Parameter[] tmp;
-        // Go to the JVM to get them
-        try {
-            tmp = getParameters0();
-        } catch (IllegalArgumentException e) {
-            // Rethrow ClassFormatErrors
-            throw new MalformedParametersException("Invalid constant pool index");
-        }
-
-        // If we get back nothing, then synthesize parameters
-        if (tmp == null) {
-            tmp = synthesizeAllParams();
-            parameterData = new ParameterData(tmp, false);
-        } else {
-            verifyParameters(tmp);
-            parameterData = new ParameterData(tmp, true);
-        }
-        return this.parameterData = parameterData;
+        return parameterState = new ParameterState(flags);
     }
 
-    private transient @Stable ParameterData parameterData;
+    // Names are cached only if they are actually used, even though they are
+    // eagerly fetched for validation. Shared on root object
+    private @Stable String[] realParameterNames;
 
-    record ParameterData(@Stable Parameter[] parameters, boolean isReal) {}
+    int parameterFlag(int index) {
+        var flags = parameterState().flags;
+        if (flags == null)
+            return 0;
+        return flags[index];
+    }
 
-    private native Parameter[] getParameters0();
+    String realParameterName(int index) {
+        var state = parameterState();
+        if (state.flags == null)
+            return null;
+
+        var root = getRoot();
+        if (root != null) {
+            return root.realParameterName(index);
+        }
+        var array = realParameterNames;
+        if (array == null) {
+            array = getParameterNames0();
+            realParameterNames = array;
+        }
+        return array[index];
+    }
+
+    /**
+     * Obtains basic parameter flags for this method. Validates the
+     * parameters and may throw IAE for malformed UTF-8 entry offset in
+     * the parameters.
+     */
+    private native int[] getParameterFlags0() throws IllegalArgumentException;
+
+    /**
+     * Obtains parameter names for this method. Does not validate the parameters.
+     * Must be called after a getParameterFlags0 call.
+     */
+    private native String[] getParameterNames0();
+
+    // end parameters
+
     native byte[] getTypeAnnotationBytes0();
 
     // Needed by reflectaccess
@@ -826,4 +868,7 @@ public abstract sealed class Executable extends AccessibleObject
                 getGenericExceptionTypes(),
                 TypeAnnotation.TypeAnnotationTarget.THROWS);
     }
+
+    @Override
+    abstract Executable getRoot();
 }

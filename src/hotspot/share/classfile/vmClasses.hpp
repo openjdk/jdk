@@ -106,7 +106,6 @@ public:
   static bool Object_klass_loaded()         { return is_loaded(VM_CLASS_AT(Object_klass));             }
   static bool Class_klass_loaded()          { return is_loaded(VM_CLASS_AT(Class_klass));              }
   static bool Cloneable_klass_loaded()      { return is_loaded(VM_CLASS_AT(Cloneable_klass));          }
-  static bool Parameter_klass_loaded()      { return is_loaded(VM_CLASS_AT(reflect_Parameter_klass));  }
   static bool ClassLoader_klass_loaded()    { return is_loaded(VM_CLASS_AT(ClassLoader_klass));        }
 };
 

@@ -1497,20 +1497,48 @@ static void bounds_check(const constantPoolHandle& cp, jint index, TRAPS) {
   }
 }
 
-JVM_ENTRY(jobjectArray, JVM_GetMethodParameters(JNIEnv *env, jobject method))
+JVM_ENTRY(jobjectArray, JVM_GetMethodParameterNames(JNIEnv *env, jobject method))
 {
   // method is a handle to a java.lang.reflect.Method object
   Method* method_ptr = jvm_get_method_common(method);
   methodHandle mh (THREAD, method_ptr);
-  Handle reflected_method (THREAD, JNIHandles::resolve_non_null(method));
   const int num_params = mh->method_parameters_length();
 
   if (num_params < 0) {
     // A -1 return value from method_parameters_length means there is no
-    // parameter data.  Return null to indicate this to the reflection
-    // API.
+    // parameter data.
     assert(num_params == -1, "num_params should be -1 if it is less than zero");
     return (jobjectArray)nullptr;
+  } else {
+    // This is called after JVM_GetMethodParameterFlags, which has already done validation.
+    objArrayOop result_oop = oopFactory::new_objArray(vmClasses::String_klass(), num_params, CHECK_NULL);
+    objArrayHandle result (THREAD, result_oop);
+
+    for (int i = 0; i < num_params; i++) {
+      MethodParametersElement* params = mh->method_parameters_start();
+      // For a 0 index, give a null symbol
+      Symbol* sym = 0 != params[i].name_cp_index ?
+        mh->constants()->symbol_at(params[i].name_cp_index) : nullptr;
+      Handle name = java_lang_String::create_from_symbol(sym, CHECK_NULL);
+      result->obj_at_put(i, name());
+    }
+    return (jobjectArray)JNIHandles::make_local(THREAD, result());
+  }
+}
+JVM_END
+
+JVM_ENTRY(jintArray, JVM_GetMethodParameterFlags(JNIEnv *env, jobject method))
+{
+  // method is a handle to a java.lang.reflect.Method object
+  Method* method_ptr = jvm_get_method_common(method);
+  methodHandle mh (THREAD, method_ptr);
+  const int num_params = mh->method_parameters_length();
+
+  if (num_params < 0) {
+    // A -1 return value from method_parameters_length means there is no
+    // parameter data.
+    assert(num_params == -1, "num_params should be -1 if it is less than zero");
+    return (jintArray)nullptr;
   } else {
     // Otherwise, we return something up to reflection, even if it is
     // a zero-length array.  Why?  Because in some cases this can
@@ -1525,25 +1553,20 @@ JVM_ENTRY(jobjectArray, JVM_GetMethodParameters(JNIEnv *env, jobject method))
 
       if (0 != index && !mh->constants()->tag_at(index).is_utf8()) {
         THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
-                       "Wrong type at constant pool index");
+                       "Invalid constant pool index");
       }
 
     }
 
-    objArrayOop result_oop = oopFactory::new_objArray(vmClasses::reflect_Parameter_klass(), num_params, CHECK_NULL);
-    objArrayHandle result (THREAD, result_oop);
+    typeArrayOop all_flags_oop = oopFactory::new_intArray(num_params, CHECK_NULL);
+    typeArrayHandle all_flags (THREAD, all_flags_oop);
 
     for (int i = 0; i < num_params; i++) {
       MethodParametersElement* params = mh->method_parameters_start();
-      // For a 0 index, give a null symbol
-      Symbol* sym = 0 != params[i].name_cp_index ?
-        mh->constants()->symbol_at(params[i].name_cp_index) : nullptr;
       int flags = params[i].flags;
-      oop param = Reflection::new_parameter(reflected_method, i, sym,
-                                            flags, CHECK_NULL);
-      result->obj_at_put(i, param);
+      all_flags->int_at_put(i, flags);
     }
-    return (jobjectArray)JNIHandles::make_local(THREAD, result());
+    return (jintArray)JNIHandles::make_local(THREAD, all_flags());
   }
 }
 JVM_END

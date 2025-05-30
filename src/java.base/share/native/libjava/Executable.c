@@ -28,9 +28,15 @@
 #include "java_lang_reflect_Executable.h"
 
 JNIEXPORT jobject JNICALL
-Java_java_lang_reflect_Executable_getParameters0(JNIEnv *env,
+Java_java_lang_reflect_Executable_getParameterNames0(JNIEnv *env,
                                                  jobject method) {
-  return JVM_GetMethodParameters(env, method);
+  return JVM_GetMethodParameterNames(env, method);
+}
+
+JNIEXPORT jobject JNICALL
+Java_java_lang_reflect_Executable_getParameterFlags0(JNIEnv *env,
+                                                     jobject method) {
+  return JVM_GetMethodParameterFlags(env, method);
 }
 
 JNIEXPORT jbyteArray JNICALL
