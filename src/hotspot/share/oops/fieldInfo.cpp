@@ -274,18 +274,28 @@ void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* f
   // Check 1: assert that elements have the correct order based on the comparison function
   uint32_t err_pivot = -1;
   if (!lookup.validate_order(comparator, search_table, &err_pivot)) {
-    char *msg;
     assert(err_pivot < (uint32_t) fis->length(), "invalid pivot %u", err_pivot);
-    reader.set_position_and_next_index(err_pivot, -1);
-    FieldInfo fi;
-    reader.read_field_info(fi);
+
     ResourceMark rm;
-    if (asprintf(&msg, "Invalid order %s(%p) %s(%p) vs. %s(%p) %s(%p)",
-      comparator._name->as_C_string(), comparator._name, comparator._signature->as_C_string(), comparator._signature,
-      fi.name(cp)->as_C_string(), fi.name(cp), fi.signature(cp)->as_C_string(), fi.signature(cp)) < 0) {
-        msg = const_cast<char *>("cannot format");
+    fprintf(stderr, "ACTUAL FIELDS (%d + %d) -> %d, %d:\n", java_fields, injected_fields, fis->length(), search_table->length());
+    while (reader.has_next()) {
+      FieldInfo fi;
+      reader.read_field_info(fi);
+      fprintf(stderr, "FIELD %s(%p) %s(%p)\n", fi.name(cp)->as_C_string(), fi.name(cp), fi.signature(cp)->as_C_string(), fi.signature(cp));
     }
-    report_vm_error(__FILE__, __LINE__, msg);
+
+    char *msg;
+    {
+      reader.set_position_and_next_index(err_pivot, -1);
+      FieldInfo fi;
+      reader.read_field_info(fi);
+      if (asprintf(&msg, "Invalid order %s(%p) %s(%p) vs. %s(%p) %s(%p)",
+        comparator._name->as_C_string(), comparator._name, comparator._signature->as_C_string(), comparator._signature,
+        fi.name(cp)->as_C_string(), fi.name(cp), fi.signature(cp)->as_C_string(), fi.signature(cp)) < 0) {
+          msg = const_cast<char *>("cannot format");
+      }
+      report_vm_error(__FILE__, __LINE__, msg);
+    }
   }
 
   // Check 2: Iterate through the original stream (not just search_table) and try if lookup works as expected
