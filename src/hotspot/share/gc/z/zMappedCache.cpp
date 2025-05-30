@@ -556,7 +556,7 @@ size_t ZMappedCache::remove_discontiguous_with_strategy(size_t size, ZArray<ZVir
 
 ZMappedCache::ZMappedCache()
   : _tree(),
-    _size_class_lists{},
+    _size_class_lists(),
     _size(0),
     _min(_size) {}
 
