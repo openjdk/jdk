@@ -24,7 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -55,58 +54,10 @@ final class MacDmgPackageBuilder {
 
     MacDmgPackage create() throws ConfigException {
         final var superPkgBuilder = pkgBuilder.pkgBuilder();
-        var installDirDeleteRoot = new Object() { Path path; };
-        superPkgBuilder.installDir().ifPresent(installDir -> {
-            if (Files.exists(installDir) && !Files.isDirectory(installDir)) {
-                    throw new RuntimeException(
-                             I18N.format("message.install-dir-invalid",
-                             installDir.toString()));
-            }
-
-            if (!Files.exists(installDir)) {
-                try {
-                    // Install dir can have multiple non-existing directories.
-                    // We need to find first non-existing directory, so we can
-                    // delete it.
-                    Path parent = installDir.getParent();
-                    Path deleteRoot = null;
-                    while (parent != null) {
-                        if (!Files.exists(parent.getParent())) {
-                            parent = parent.getParent();
-                        } else {
-                            deleteRoot = parent;
-                            break;
-                        }
-                    }
-
-                    if (parent == null) {
-                        throw new RuntimeException(
-                             I18N.format("message.install-dir-invalid",
-                             installDir.toString()));
-                    }
-
-                    installDirDeleteRoot.path = deleteRoot;
-
-                    try {
-                        Files.createDirectories(installDir);
-                    } catch (Exception ex) {
-                        throw new RuntimeException(
-                             I18N.format("message.install-dir-create",
-                             installDir.toString(),
-                             ex.getLocalizedMessage()));
-                    }
-                } catch (Exception ex) {
-                    Log.verbose(ex);
-                    throw new RuntimeException(ex);
-                }
-            }
-        });
-
         final var pkg = pkgBuilder.create();
 
         return MacDmgPackage.create(pkg, new MacDmgPackageMixin.Stub(
                 Optional.ofNullable(icon).or((pkg.app())::icon),
-                Optional.ofNullable(installDirDeleteRoot.path),
                 validatedDmgContent()));
     }
 

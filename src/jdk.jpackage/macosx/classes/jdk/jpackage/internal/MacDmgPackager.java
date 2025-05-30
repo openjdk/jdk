@@ -285,7 +285,9 @@ record MacDmgPackager(MacDmgPackage pkg, BuildEnv env, Path hdiutil, Path output
             // Return "Applications" for "/Applications/foo.app"
             return defaultInstallDir.getParent().getFileName().toString();
         } else {
-            return pkg.installDir().getParent().toString();
+            // If we returning full path we need to replace '/' with ':'.
+            // In this case macOS will display link name as "/Users/USER/MyCompany/MyApp".
+            return pkg.installDir().getParent().toString().replace('/', ':');
         }
     }
 
@@ -424,14 +426,6 @@ record MacDmgPackager(MacDmgPackage pkg, BuildEnv env, Path hdiutil, Path output
             }
 
         } finally {
-            // Delete root of install dir if set (jpackage created)
-            pkg.installDirDeleteRoot().ifPresent(path -> {
-                try {
-                    FileUtils.deleteRecursive(path);
-                } catch (IOException e) {
-                    Log.verbose(e.getMessage());
-                }
-            });
             // Detach the temporary image
             pb = new ProcessBuilder(
                     hdiutil.toString(),
