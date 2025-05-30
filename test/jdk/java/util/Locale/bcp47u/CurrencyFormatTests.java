@@ -27,7 +27,7 @@
  * @bug 8215181 8230284 8231273 8284840
  * @summary Tests the "u-cf" extension
  * @modules jdk.localedata
- * @run testng/othervm CurrencyFormatTests
+ * @run testng CurrencyFormatTests
  */
 
 import static org.testng.Assert.assertEquals;

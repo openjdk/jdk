@@ -31,7 +31,7 @@
  * @comment Locale providers: CLDR,SPI
  * @run main/othervm -Djava.locale.providers=CLDR,SPI NarrowNamesTest CLDR,SPI
  * @comment Locale providers: CLDR
- * @run main/othervm NarrowNamesTest CLDR
+ * @run main NarrowNamesTest CLDR
  */
 
 import java.time.LocalDateTime;

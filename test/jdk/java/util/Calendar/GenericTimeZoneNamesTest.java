@@ -26,12 +26,9 @@
  * @bug 8003267
  * @summary Unit test for generic time zone names support. This test is locale
  *          data-dependent and assumes that both JRE and CLDR have the same
- *          geneic time zone names in English.
+ *          generic time zone names in English.
  * @modules java.base/sun.util.locale.provider
- * @comment Locale providers: default
  * @run main GenericTimeZoneNamesTest en-US
- * @comment Locale providers: CLDR
- * @run main/othervm GenericTimeZoneNamesTest en-US
 */
 
 import java.util.Locale;

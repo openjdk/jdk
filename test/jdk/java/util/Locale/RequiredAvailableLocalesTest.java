@@ -25,7 +25,7 @@
  * @bug 8276186 8174269
  * @summary Checks whether getAvailableLocales() returns at least Locale.ROOT and
  *      Locale.US instances.
- * @run testng/othervm RequiredAvailableLocalesTest
+ * @run testng RequiredAvailableLocalesTest
  */
 
 import java.lang.invoke.MethodHandles;

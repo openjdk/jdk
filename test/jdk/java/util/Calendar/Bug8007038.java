@@ -29,7 +29,7 @@
  * @modules java.base/sun.util.locale.provider
  * @modules jdk.localedata
  * @compile -XDignore.symbol.file Bug8007038.java
- * @run main/othervm Bug8007038 CLDR
+ * @run main Bug8007038 CLDR
  */
 
 import java.util.*;

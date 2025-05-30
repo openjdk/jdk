@@ -26,7 +26,7 @@
  * @bug 8134250 8134520
  * @modules jdk.localedata
  * @summary Tests CLDR/LDML features are correctly reflected in JDK.
- * @run main/othervm Bug8134250
+ * @run main Bug8134250
  */
 
 // Note this test highly depends on a particular version of CLDR. Results

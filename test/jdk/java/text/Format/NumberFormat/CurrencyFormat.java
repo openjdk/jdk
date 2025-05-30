@@ -28,7 +28,7 @@
  * @summary Basic tests for currency formatting.
  *          Tests both COMPAT and CLDR data.
  * @modules jdk.localedata
- * @run junit/othervm CurrencyFormat
+ * @run junit CurrencyFormat
  */
 
 import java.io.File;

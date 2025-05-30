@@ -26,7 +26,7 @@
  * @bug 8275721 8174269
  * @modules jdk.localedata
  * @summary Checks Chinese time zone names for `UTC` using CLDR are consistent
- * @run testng/othervm ChineseTimeZoneNameTest
+ * @run testng ChineseTimeZoneNameTest
  */
 
 import java.time.Instant;

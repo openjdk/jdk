@@ -28,7 +28,7 @@
  * @modules java.base/sun.util.locale.provider
  *          jdk.localedata
  * @compile -XDignore.symbol.file CldrFormatNamesTest.java
- * @run main/othervm CldrFormatNamesTest
+ * @run main CldrFormatNamesTest
  */
 
 import java.util.*;

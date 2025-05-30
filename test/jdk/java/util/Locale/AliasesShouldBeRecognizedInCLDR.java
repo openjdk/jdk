@@ -26,7 +26,7 @@
  * @bug 8179071 8202537 8231273 8251317
  * @summary Test that language aliases of CLDR supplemental metadata are handled correctly.
  * @modules jdk.localedata
- * @run junit/othervm AliasesShouldBeRecognizedInCLDR
+ * @run junit AliasesShouldBeRecognizedInCLDR
  */
 
 /*

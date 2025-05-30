@@ -35,7 +35,7 @@
  *          java.base/sun.util.spi
  *          jdk.localedata
  * @run main Bug8167273 testEraName
- * @run main/othervm Bug8167273 testCldr
+ * @run main Bug8167273 testCldr
  * @run main Bug8167273 testEmptyEraNames
  */
 import java.text.DateFormatSymbols;

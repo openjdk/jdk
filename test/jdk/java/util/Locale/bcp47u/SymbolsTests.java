@@ -28,7 +28,7 @@
  * @summary Tests *FormatSymbols class deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
- * @run testng/othervm SymbolsTests
+ * @run testng SymbolsTests
  */
 
 import static org.testng.Assert.assertEquals;

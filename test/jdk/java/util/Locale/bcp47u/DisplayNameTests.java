@@ -27,7 +27,7 @@
  * @bug 8176841 8202537
  * @summary Tests the display names for BCP 47 U extensions
  * @modules jdk.localedata
- * @run testng/othervm DisplayNameTests
+ * @run testng DisplayNameTests
  */
 
 import static org.testng.Assert.assertEquals;

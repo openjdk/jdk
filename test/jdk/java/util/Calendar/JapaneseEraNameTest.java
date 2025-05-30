@@ -27,8 +27,7 @@
  * @summary Test the localized Japanese new era name (May 1st. 2019-)
  *      is retrieved no matter CLDR provider contains the name or not.
  * @modules jdk.localedata
- * @run testng/othervm JapaneseEraNameTest
- * @run testng/othervm JapaneseEraNameTest
+ * @run testng JapaneseEraNameTest
  */
 
 import static java.util.Calendar.*;
