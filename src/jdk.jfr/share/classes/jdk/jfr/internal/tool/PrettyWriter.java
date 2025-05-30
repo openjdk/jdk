@@ -66,23 +66,25 @@ import jdk.jfr.internal.util.ValueFormatter;
  * This class is also used by {@link RecordedObject#toString()}
  */
 public final class PrettyWriter extends EventPrintWriter {
-    private static record Timestamp(RecordedEvent event, long seconds, int nanosCompare, boolean start, boolean contextual) implements Comparable<Timestamp> {
-        public static Timestamp create(RecordedEvent event, boolean start, boolean contextual) {
-            Instant time = start ? event.getStartTime() : event.getEndTime();
-            // If two timestamps have the same nanos value, but one is a
-            // start timestamp and the other is an end timestamp, the start
-            // timestamp comes first. This ensures that non-durational events
-            // are treated as expected. To avoid checking this with every
-            // comparison, we can just multiply the nanos value by two and add
-            // one if it's an end timestamp to ensure correct ordering when
-            // comparing.
-            long seconds = time.getEpochSecond();
-            int nanos = time.getNano();
-            if (start) {
-                return new Timestamp(event, seconds, 2 * nanos, start, contextual);
-            } else {
-                return new Timestamp(event, seconds, 2 * nanos + 1, start, contextual);
-            }
+    private static record Timestamp(RecordedEvent event, long seconds, int nanosCompare, boolean contextual) implements Comparable<Timestamp> {
+        // If the start timestamp from a contextual event has the same start timestamp
+        // as an ordinary instant event, the contextual event should be processed first
+        // One way to ensure this is to multiply the nanos value and add 1 ns to the end
+        // timestamp so the context event always comes first in a comparison.
+        // This also prevents a contextual start time to be processed after a contextual
+        // end time, if the event is instantaneous.
+        public static Timestamp createStart(RecordedEvent event, boolean contextual) {
+            Instant time = event.getStartTime(); // Method allocates, so store seconds and nanos
+            return new Timestamp(event, time.getEpochSecond(), 2 * time.getNano(), contextual);
+        }
+
+        public static Timestamp createEnd(RecordedEvent event, boolean contextual) {
+            Instant time = event.getEndTime(); // Method allocates, so store seconds and nanos
+            return new Timestamp(event, time.getEpochSecond(), 2 * time.getNano() + 1, contextual);
+        }
+
+        public boolean start() {
+            return (nanosCompare & 1L) == 0;
         }
 
         @Override
@@ -113,7 +115,7 @@ public final class PrettyWriter extends EventPrintWriter {
     // EVENT_WINDOW_SIZE of 1 000 000 events will likely cover more than one batch.
     // Having at least two batches in a window avoids boundary issues.
     // At the same time, a too large window, means it will take more time
-    // before the first event is printed and tool will feel unresponsive.
+    // before the first event is printed and the tool will feel unresponsive.
     private static final int EVENT_WINDOW_SIZE = 1_000_000;
     private final PriorityQueue<Timestamp> timeline = new PriorityQueue<>(EVENT_WINDOW_SIZE + 4);
     private final Map<Long, TypeInformation> typeInformation = new HashMap<>();
@@ -132,14 +134,16 @@ public final class PrettyWriter extends EventPrintWriter {
 
     void print(Path source) throws IOException {
         printBegin();
+        int counter = 0;
         try (RecordingFile file = new RecordingFile(source)) {
             while (file.hasMoreEvents()) {
                 RecordedEvent event = file.readEvent();
                 if (typeInformation(event).contextual()) {
-                    addEvent(event, true);
+                    timeline.add(Timestamp.createStart(event, true));
+                    timeline.add(Timestamp.createEnd(event, true));
                 }
                 if (acceptEvent(event)) {
-                    addEvent(event, false);
+                    timeline.add(Timestamp.createEnd(event, false));
                 }
                 // There should not be a limit on the size of the recording files that
                 // the 'jfr' tool can process. To avoid OutOfMemoryError and time complexity
@@ -148,6 +152,9 @@ public final class PrettyWriter extends EventPrintWriter {
                 while (timeline.size() > EVENT_WINDOW_SIZE) {
                     print(timeline.remove());
                     flush(false);
+                }
+                if ((++counter % EVENT_WINDOW_SIZE) == 0) {
+                    contexts.entrySet().removeIf(c -> c.getValue().isEmpty());
                 }
             }
             while (!timeline.isEmpty()) {
@@ -182,43 +189,34 @@ public final class PrettyWriter extends EventPrintWriter {
         return new TypeInformation(eventType.getId(), contextualFields, contextual, simpleName);
     }
 
-    private boolean print(Timestamp t) {
+    private void print(Timestamp t) {
         RecordedEvent event = t.event();
         RecordedThread rt = event.getThread();
         if (rt != null) {
             processThreadedTimestamp(rt, t);
         } else {
-            if (!t.contextual() && !t.start) {
+            if (!t.contextual()) {
                 print(event);
             }
         }
-        return true;
     }
 
     public void processThreadedTimestamp(RecordedThread thread, Timestamp t) {
         RecordedEvent event = t.event();
         var contextEvents = contexts.computeIfAbsent(thread.getId(), k -> new LinkedHashSet<>(1));
         if (t.contextual) {
-            if (t.start) {
+            if (t.start()) {
                 contextEvents.add(event);
             } else {
                 contextEvents.remove(event);
             }
             return;
         }
-        // Print events in the order they were committed (end time).
-        if (!t.start) {
-            if (typeInformation(event).contextual()) {
-                print(event);
-            } else {
-                print(event, contextEvents);
-            }
+        if (typeInformation(event).contextual()) {
+            print(event);
+        } else {
+            print(event, contextEvents);
         }
-    }
-
-    public void addEvent(RecordedEvent event, boolean asContextual) {
-        timeline.add(Timestamp.create(event, true, asContextual));
-        timeline.add(Timestamp.create(event, false, asContextual));
     }
 
     @Override
