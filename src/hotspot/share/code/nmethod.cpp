@@ -1566,6 +1566,8 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
     }
   }
 
+  ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
+
   MutexLocker ml_NMethodState_lock(NMethodState_lock, Mutex::_no_safepoint_check_flag);
 
   // Verify the nm we copied from is still valid
@@ -1581,6 +1583,8 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
       return nm_copy;
     }
   }
+
+  nm_copy->make_not_used();
 
   return nullptr;
 }
