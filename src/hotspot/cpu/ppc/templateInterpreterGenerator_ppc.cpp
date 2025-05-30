@@ -1078,7 +1078,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   // PPC64 specific:
   switch (kind) {
-    case Interpreter::java_lang_math_sqrt: use_instruction = VM_Version::has_fsqrt(); break;
+    case Interpreter::java_lang_math_sqrt: use_instruction = true; break;
     case Interpreter::java_lang_math_abs:  use_instruction = true; break;
     case Interpreter::java_lang_math_fmaF:
     case Interpreter::java_lang_math_fmaD: use_instruction = UseFMA; break;
@@ -1091,7 +1091,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
     case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
-    case Interpreter::java_lang_math_sqrt : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);  break;
+    case Interpreter::java_lang_math_sqrt : /* run interpreted */  break;
     case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;
     case Interpreter::java_lang_math_log10: runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10); break;
     case Interpreter::java_lang_math_pow  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dpow); num_args = 2; break;
@@ -1584,6 +1584,24 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ st_ptr(R0, JavaThread::pending_jni_exception_check_fn_offset(), R16_thread);
   }
 
+  #if INCLUDE_JFR
+  __ enter_jfr_critical_section();
+
+  // This poll test is to uphold the invariant that a JFR sampled frame
+  // must not return to its caller without a prior safepoint poll check.
+  // The earlier poll check in this routine is insufficient for this purpose
+  // because the thread has transitioned back to Java.
+
+  Label slow_path, fast_path;
+  __ safepoint_poll(slow_path, R11_scratch1, true /* at_return */, false /* in_nmethod */);
+  __ b(fast_path);
+  __ bind(slow_path);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), R16_thread);
+  __ align(32);
+  __ bind(fast_path);
+
+#endif // INCLUDE_JFR
+
   __ reset_last_Java_frame();
 
   // Jvmdi/jvmpi support. Whether we've got an exception pending or
@@ -1625,11 +1643,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ lfd(F1_RET, _ijava_state_neg(fresult), R11_scratch1);
   __ call_stub(result_handler_addr);
 
-  __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
+  __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R12_scratch2, R11_scratch1, R0);
+  JFR_ONLY(__ leave_jfr_critical_section();)
 
   // Must use the return pc which was loaded from the caller's frame
   // as the VM uses return-pc-patching for deoptimization.
-  __ mtlr(R0);
+  __ mtlr(R12_scratch2);
   __ blr();
 
   //-----------------------------------------------------------------------------

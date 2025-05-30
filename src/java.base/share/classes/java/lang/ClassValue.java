@@ -35,12 +35,37 @@ import static java.lang.ClassValue.ClassValueMap.probeHomeLocation;
 import static java.lang.ClassValue.ClassValueMap.probeBackupLocations;
 
 /**
- * Lazily associate a computed value with (potentially) every type.
+ * Lazily associate a computed value with any {@code Class} object.
  * For example, if a dynamic language needs to construct a message dispatch
  * table for each class encountered at a message send call site,
  * it can use a {@code ClassValue} to cache information needed to
  * perform the message send quickly, for each class encountered.
- * @param <T> the type of the derived value
+ * <p>
+ * The basic operation of a {@code ClassValue} is {@link #get get}, which
+ * returns the associated value, initially created by an invocation to {@link
+ * #computeValue computeValue}; multiple invocations may happen under race, but
+ * exactly one value is associated to a {@code Class} and returned.
+ * <p>
+ * Another operation is {@link #remove remove}: it clears the associated value
+ * (if it exists), and ensures the next associated value is computed with input
+ * states up-to-date with the removal.
+ * <p>
+ * For a particular association, there is a total order for accesses to the
+ * associated value.  Accesses are atomic; they include:
+ * <ul>
+ * <li>A read-only access by {@code get}</li>
+ * <li>An attempt to associate the return value of a {@code computeValue} by
+ * {@code get}</li>
+ * <li>Clearing of an association by {@code remove}</li>
+ * </ul>
+ * A {@code get} call always include at least one access; a {@code remove} call
+ * always has exactly one access; a {@code computeValue} call always happens
+ * between two accesses.  This establishes the order of {@code computeValue}
+ * calls with respect to {@code remove} calls and determines whether the
+ * results of a {@code computeValue} can be successfully associated by a {@code
+ * get}.
+ *
+ * @param <T> the type of the associated value
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
@@ -53,48 +78,58 @@ public abstract class ClassValue<T> {
     }
 
     /**
-     * Computes the given class's derived value for this {@code ClassValue}.
+     * Computes the value to associate to the given {@code Class}.
      * <p>
-     * This method will be invoked within the first thread that accesses
-     * the value with the {@link #get get} method.
+     * This method is invoked when the initial read-only access by {@link #get
+     * get} finds no associated value.
      * <p>
-     * Normally, this method is invoked at most once per class,
-     * but it may be invoked again if there has been a call to
-     * {@link #remove remove}.
+     * If this method throws an exception, the initiating {@code get} call will
+     * not attempt to associate a value, and may terminate by returning the
+     * associated value if it exists, or by propagating that exception otherwise.
      * <p>
-     * If this method throws an exception, the corresponding call to {@code get}
-     * will terminate abnormally with that exception, and no class value will be recorded.
+     * Otherwise, the value is computed and returned.  An attempt to associate
+     * the return value happens, with one of the following outcomes:
+     * <ul>
+     * <li>The associated value is present; it is returned and no association
+     * is done.</li>
+     * <li>The most recent {@link #remove remove} call, if it exists, does not
+     * happen-before (JLS {@jls 17.4.5}) the finish of the {@code computeValue}
+     * that computed the value to associate.  A new invocation to {@code
+     * computeValue}, which that {@code remove} call happens-before, will
+     * re-establish this happens-before relationship.</li>
+     * <li>Otherwise, this value is successfully associated and returned.</li>
+     * </ul>
      *
-     * @param type the type whose class value must be computed
-     * @return the newly computed value associated with this {@code ClassValue}, for the given class or interface
+     * @apiNote
+     * A {@code computeValue} call may, due to class loading or other
+     * circumstances, recursively call {@code get} or {@code remove} for the
+     * same {@code type}.  The recursive {@code get}, if the recursion stops,
+     * successfully finishes and this initiating {@code get} observes the
+     * associated value from recursion.  The recursive {@code remove} is no-op,
+     * since being on the same thread, the {@code remove} already happens-before
+     * the finish of this {@code computeValue}; the result from this {@code
+     * computeValue} still may be associated.
+     *
+     * @param type the {@code Class} to associate a value to
+     * @return the newly computed value to associate
      * @see #get
      * @see #remove
      */
     protected abstract T computeValue(Class<?> type);
 
     /**
-     * Returns the value for the given class.
-     * If no value has yet been computed, it is obtained by
-     * an invocation of the {@link #computeValue computeValue} method.
+     * {@return the value associated to the given {@code Class}}
      * <p>
-     * The actual installation of the value on the class
-     * is performed atomically.
-     * At that point, if several racing threads have
-     * computed values, one is chosen, and returned to
-     * all the racing threads.
+     * This method first performs a read-only access, and returns the associated
+     * value if it exists.  Otherwise, this method tries to associate a value
+     * from a {@link #computeValue computeValue} invocation until the associated
+     * value exists, which could be associated by a competing thread.
      * <p>
-     * The {@code type} parameter is typically a class, but it may be any type,
-     * such as an interface, a primitive type (like {@code int.class}), or {@code void.class}.
-     * <p>
-     * In the absence of {@code remove} calls, a class value has a simple
-     * state diagram:  uninitialized and initialized.
-     * When {@code remove} calls are made,
-     * the rules for value observation are more complex.
-     * See the documentation for {@link #remove remove} for more information.
+     * This method may throw an exception from a {@code computeValue} invocation.
+     * In this case, no association happens.
      *
-     * @param type the type whose class value must be computed or retrieved
-     * @return the current value associated with this {@code ClassValue}, for the given class or interface
-     * @throws NullPointerException if the argument is null
+     * @param type the {@code Class} to retrieve the associated value for
+     * @throws NullPointerException if the argument is {@code null}
      * @see #remove
      * @see #computeValue
      */
@@ -108,7 +143,7 @@ public abstract class ClassValue<T> {
             // invariant:  No false positive matches.  False negatives are OK if rare.
             // The key fact that makes this work: if this.version == e.version,
             // then this thread has a right to observe (final) e.value.
-            return e.value();
+            return e.value;
         // The fast path can fail for any of these reasons:
         // 1. no entry has been computed yet
         // 2. hash code collision (before or after reduction mod cache.length)
@@ -118,67 +153,24 @@ public abstract class ClassValue<T> {
     }
 
     /**
-     * Removes the associated value for the given class.
-     * If this value is subsequently {@linkplain #get read} for the same class,
-     * its value will be reinitialized by invoking its {@link #computeValue computeValue} method.
-     * This may result in an additional invocation of the
-     * {@code computeValue} method for the given class.
-     * <p>
-     * In order to explain the interaction between {@code get} and {@code remove} calls,
-     * we must model the state transitions of a class value to take into account
-     * the alternation between uninitialized and initialized states.
-     * To do this, number these states sequentially from zero, and note that
-     * uninitialized (or removed) states are numbered with even numbers,
-     * while initialized (or re-initialized) states have odd numbers.
-     * <p>
-     * When a thread {@code T} removes a class value in state {@code 2N},
-     * nothing happens, since the class value is already uninitialized.
-     * Otherwise, the state is advanced atomically to {@code 2N+1}.
-     * <p>
-     * When a thread {@code T} queries a class value in state {@code 2N},
-     * the thread first attempts to initialize the class value to state {@code 2N+1}
-     * by invoking {@code computeValue} and installing the resulting value.
-     * <p>
-     * When {@code T} attempts to install the newly computed value,
-     * if the state is still at {@code 2N}, the class value will be initialized
-     * with the computed value, advancing it to state {@code 2N+1}.
-     * <p>
-     * Otherwise, whether the new state is even or odd,
-     * {@code T} will discard the newly computed value
-     * and retry the {@code get} operation.
-     * <p>
-     * Discarding and retrying is an important proviso,
-     * since otherwise {@code T} could potentially install
-     * a disastrously stale value.  For example:
-     * <ul>
-     * <li>{@code T} calls {@code CV.get(C)} and sees state {@code 2N}
-     * <li>{@code T} quickly computes a time-dependent value {@code V0} and gets ready to install it
-     * <li>{@code T} is hit by an unlucky paging or scheduling event, and goes to sleep for a long time
-     * <li>...meanwhile, {@code T2} also calls {@code CV.get(C)} and sees state {@code 2N}
-     * <li>{@code T2} quickly computes a similar time-dependent value {@code V1} and installs it on {@code CV.get(C)}
-     * <li>{@code T2} (or a third thread) then calls {@code CV.remove(C)}, undoing {@code T2}'s work
-     * <li> the previous actions of {@code T2} are repeated several times
-     * <li> also, the relevant computed values change over time: {@code V1}, {@code V2}, ...
-     * <li>...meanwhile, {@code T} wakes up and attempts to install {@code V0}; <em>this must fail</em>
-     * </ul>
-     * We can assume in the above scenario that {@code CV.computeValue} uses locks to properly
-     * observe the time-dependent states as it computes {@code V1}, etc.
-     * This does not remove the threat of a stale value, since there is a window of time
-     * between the return of {@code computeValue} in {@code T} and the installation
-     * of the new value.  No user synchronization is possible during this time.
+     * Removes the associated value for the given {@code Class} and invalidates
+     * all out-of-date computations.  If this association is subsequently
+     * {@linkplain #get accessed}, this removal happens-before (JLS {@jls
+     * 17.4.5}) the finish of the {@link #computeValue computeValue} call that
+     * returned the associated value.
      *
      * @param type the type whose class value must be removed
-     * @throws NullPointerException if the argument is null
+     * @throws NullPointerException if the argument is {@code null}
      */
     public void remove(Class<?> type) {
         ClassValueMap map = getMap(type);
-        map.removeEntry(this);
+        map.removeAccess(this);
     }
 
     // Possible functionality for JSR 292 MR 1
     /*public*/ void put(Class<?> type, T value) {
         ClassValueMap map = getMap(type);
-        map.changeEntry(this, value);
+        map.forcedAssociateAccess(this, value);
     }
 
     //| --------
@@ -190,6 +182,7 @@ public abstract class ClassValue<T> {
         // racing type.classValueMap{.cacheArray} : null => new Entry[X] <=> new Entry[Y]
         ClassValueMap map = type.classValueMap;
         if (map == null)  return EMPTY_CACHE;
+        // reads non-null due to StoreStore barrier in critical section in initializeMap
         Entry<?>[] cache = map.getCache();
         return cache;
         // invariant:  returned value is safe to dereference and check for an Entry
@@ -207,7 +200,7 @@ public abstract class ClassValue<T> {
     private T getFromBackup(Entry<?>[] cache, Class<?> type) {
         Entry<T> e = probeBackupLocations(cache, this);
         if (e != null)
-            return e.value();
+            return e.value;
         return getFromHashMap(type);
     }
 
@@ -220,21 +213,44 @@ public abstract class ClassValue<T> {
     private T getFromHashMap(Class<?> type) {
         // The fail-safe recovery is to fall back to the underlying classValueMap.
         ClassValueMap map = getMap(type);
-        for (;;) {
-            Entry<T> e = map.startEntry(this);
-            if (!e.isPromise())
-                return e.value();
+        var accessed = map.readAccess(this);
+        if (accessed instanceof Entry) {
+            @SuppressWarnings("unchecked")
+            var cast = (Entry<T>) accessed;
+            return cast.value;
+        }
+
+        RemovalToken token = (RemovalToken) accessed; // nullable
+        for (; ; ) {
+            T value;
             try {
-                // Try to make a real entry for the promised version.
-                e = makeEntry(e.version(), computeValue(type));
-            } finally {
-                // Whether computeValue throws or returns normally,
-                // be sure to remove the empty entry.
-                e = map.finishEntry(this, e);
+                value = computeValue(type);
+            } catch (Throwable ex) {
+                // no value is associated, but there may be already associated
+                // value. Return that if it exists.
+                accessed = map.readAccess(this);
+                if (accessed instanceof Entry) {
+                    @SuppressWarnings("unchecked")
+                    var cast = (Entry<T>) accessed;
+                    return cast.value;
+                }
+                // report failure here, but allow other callers to try again
+                if (ex instanceof RuntimeException rte) {
+                    throw rte;
+                } else {
+                    throw ex instanceof Error err ? err : new Error(ex);
+                }
             }
-            if (e != null)
-                return e.value();
-            // else try again, in case a racing thread called remove (so e == null)
+            // computeValue succeed, proceed to associate
+            accessed = map.associateAccess(this, token, value);
+            if (accessed instanceof Entry) {
+                @SuppressWarnings("unchecked")
+                var cast = (Entry<T>) accessed;
+                return cast.value;
+            } else {
+                token = (RemovalToken) accessed;
+                // repeat
+            }
         }
     }
 
@@ -242,7 +258,7 @@ public abstract class ClassValue<T> {
     boolean match(Entry<?> e) {
         // racing e.version : null (blank) => unique Version token => null (GC-ed version)
         // non-racing this.version : v1 => v2 => ... (updates are read faithfully from volatile)
-        return (e != null && e.get() == this.version);
+        return (e != null && e.version() == this.version);
         // invariant:  No false positives on version match.  Null is OK for false negative.
         // invariant:  If version matches, then e.value is readable (final set in Entry.<init>)
     }
@@ -300,45 +316,63 @@ public abstract class ClassValue<T> {
      * before this.version.
      */
     private volatile Version<T> version = new Version<>(this);
-    Version<T> version() { return version; }
+
     void bumpVersion() { version = new Version<>(this); }
-    static class Version<T> {
-        private final ClassValue<T> classValue;
-        private final Entry<T> promise = new Entry<>(this);
-        Version(ClassValue<T> classValue) { this.classValue = classValue; }
-        ClassValue<T> classValue() { return classValue; }
-        Entry<T> promise() { return promise; }
-        boolean isLive() { return classValue.version() == this; }
+
+    record Version<T>(/* Object identity, */ClassValue<T> classValue) {
+        boolean isLive() {
+            return classValue.version == this;
+        }
+    }
+
+    /**
+     * Besides a value (represented by an Entry), a "removal token" object,
+     * including the value {@code null}, can be present at a ClassValue-Class
+     * coordinate.  A removal token indicates whether the value from a
+     * computation is up-to-date; the value is up-to-date if the token is the
+     * same before and after computation (no removal during this period), or if
+     * the token is from the same thread (removed during computeValue).
+     * {@code null} is the initial state, meaning all computations are valid.
+     * Later tokens are always non-null, no matter if they replace existing
+     * entries or outdated tokens.
+     */
+    private static final class RemovalToken {
+        // Use thread ID, which presumably don't duplicate and is cheaper than WeakReference
+        private final long actorId;
+
+        private RemovalToken() {
+            this.actorId = Thread.currentThread().threadId();
+        }
+
+        // Arguments are intentionally nullable, to allow initial tokens
+        private static boolean allowsAssociation(RemovalToken current, RemovalToken start) {
+            // No removal token after the initial can be null
+            assert current != null || start == null : current + " : " + start;
+            return current == start || current.actorId == Thread.currentThread().threadId();
+        }
     }
 
     /** One binding of a value to a class via a ClassValue.
+     *  Shared for the map and the cache array.
+     *  The version is only meaningful for the cache array; whatever in the map
+     *  is authentic, but state informs the cache an entry may be out-of-date.
      *  States are:<ul>
-     *  <li> promise if value == Entry.this
-     *  <li> else dead if version == null
-     *  <li> else stale if version != classValue.version
+     *  <li> dead if version == null
+     *  <li> stale if version != classValue.version
      *  <li> else live </ul>
-     *  Promises are never put into the cache; they only live in the
-     *  backing map while a computeValue call is in flight.
      *  Once an entry goes stale, it can be reset at any time
      *  into the dead state.
      */
-    static class Entry<T> extends WeakReference<Version<T>> {
-        final Object value;  // usually of type T, but sometimes (Entry)this
+    static final class Entry<T> {
+        final T value;
+        final WeakReference<Version<T>> version; // The version exists only for cache invalidation
+
         Entry(Version<T> version, T value) {
-            super(version);
-            this.value = value;  // for a regular entry, value is of type T
+            this.value = value;
+            this.version = new WeakReference<>(version);
         }
-        private void assertNotPromise() { assert(!isPromise()); }
-        /** For creating a promise. */
-        Entry(Version<T> version) {
-            super(version);
-            this.value = this;  // for a promise, value is not of type T, but Entry!
-        }
-        /** Fetch the value.  This entry must not be a promise. */
-        @SuppressWarnings("unchecked")  // if !isPromise, type is T
-        T value() { assertNotPromise(); return (T) value; }
-        boolean isPromise() { return value == this; }
-        Version<T> version() { return get(); }
+
+        Version<T> version() { return version.get(); }
         ClassValue<T> classValueOrNull() {
             Version<T> v = version();
             return (v == null) ? null : v.classValue();
@@ -346,17 +380,12 @@ public abstract class ClassValue<T> {
         boolean isLive() {
             Version<T> v = version();
             if (v == null)  return false;
-            if (v.isLive())  return true;
-            clear();
+            if (v.isLive()) return true;
+            version.clear();
             return false;
         }
         Entry<T> refreshVersion(Version<T> v2) {
-            assertNotPromise();
-            @SuppressWarnings("unchecked")  // if !isPromise, type is T
-            Entry<T> e2 = new Entry<>(v2, (T) value);
-            clear();
-            // value = null -- caller must drop
-            return e2;
+            return version.refersTo(v2) ? this : new Entry<>(v2, value);
         }
         static final Entry<?> DEAD_ENTRY = new Entry<>(null, null);
     }
@@ -379,11 +408,12 @@ public abstract class ClassValue<T> {
             // happens about once per type
             if ((map = type.classValueMap) == null) {
                 map = new ClassValueMap();
-                // Place a Store fence after construction and before publishing to emulate
-                // ClassValueMap containing final fields. This ensures it can be
-                // published safely in the non-volatile field Class.classValueMap,
-                // since stores to the fields of ClassValueMap will not be reordered
-                // to occur after the store to the field type.classValueMap
+                // getCacheCarefully anticipates entry array to be non-null when
+                // a ClassValueMap is published to it.  However, ClassValueMap
+                // has no final field, so compiler does not emit a fence, and
+                // we must manually issue a Store-Store barrier to prevent
+                // the assignment below to be reordered with the store to
+                // entry array in the constructor above
                 UNSAFE.storeFence();
 
                 type.classValueMap = map;
@@ -412,9 +442,10 @@ public abstract class ClassValue<T> {
 
     /** A backing map for all ClassValues.
      *  Gives a fully serialized "true state" for each pair (ClassValue cv, Class type).
+     *  The state may be assigned value or unassigned token.
      *  Also manages an unserialized fast-path cache.
      */
-    static class ClassValueMap extends WeakHashMap<ClassValue.Identity, Entry<?>> {
+    static final class ClassValueMap extends WeakHashMap<ClassValue.Identity, Object> {
         private Entry<?>[] cacheArray;
         private int cacheLoad, cacheLoadLimit;
 
@@ -433,106 +464,56 @@ public abstract class ClassValue<T> {
 
         Entry<?>[] getCache() { return cacheArray; }
 
-        /** Initiate a query.  Store a promise (placeholder) if there is no value yet. */
-        synchronized
-        <T> Entry<T> startEntry(ClassValue<T> classValue) {
-            @SuppressWarnings("unchecked")  // one map has entries for all value types <T>
-            Entry<T> e = (Entry<T>) get(classValue.identity);
-            Version<T> v = classValue.version();
-            if (e == null) {
-                e = v.promise();
-                // The presence of a promise means that a value is pending for v.
-                // Eventually, finishEntry will overwrite the promise.
-                put(classValue.identity, e);
-                // Note that the promise is never entered into the cache!
-                return e;
-            } else if (e.isPromise()) {
-                // Somebody else has asked the same question.
-                // Let the races begin!
-                if (e.version() != v) {
-                    e = v.promise();
-                    put(classValue.identity, e);
+        // A simple read access to this map, for the initial step of get or failure recovery.
+        // This may refresh the entry for the cache, but the associated value always stays the same.
+        synchronized <T> Object readAccess(ClassValue<T> classValue) {
+            var item = get(classValue.identity);
+            if (item instanceof Entry) {
+                @SuppressWarnings("unchecked")
+                var entry = (Entry<T>) item;
+                // cache refresh
+                var updated = entry.refreshVersion(classValue.version);
+                if (updated != entry) {
+                    put(classValue.identity, updated);
                 }
-                return e;
-            } else {
-                // there is already a completed entry here; report it
-                if (e.version() != v) {
-                    // There is a stale but valid entry here; make it fresh again.
-                    // Once an entry is in the hash table, we don't care what its version is.
-                    e = e.refreshVersion(v);
-                    put(classValue.identity, e);
-                }
+            }
+            return item;
+        }
+
+        // An association attempt, for when a computeValue returns a value.
+        synchronized <T> Object associateAccess(ClassValue<T> classValue, RemovalToken startToken, T value) {
+            var item = readAccess(classValue);
+            if (item instanceof Entry)
+                return item; // value already associated
+            var currentToken = (RemovalToken) item;
+            if (RemovalToken.allowsAssociation(currentToken, startToken)) {
+                var entry = makeEntry(classValue.version, value);
+                put(classValue.identity, entry);
                 // Add to the cache, to enable the fast path, next time.
                 checkCacheLoad();
-                addToCache(classValue, e);
-                return e;
+                addToCache(classValue, entry);
+                return entry;
             }
+            return currentToken;
         }
 
-        /** Finish a query.  Overwrite a matching placeholder.  Drop stale incoming values. */
-        synchronized
-        <T> Entry<T> finishEntry(ClassValue<T> classValue, Entry<T> e) {
-            @SuppressWarnings("unchecked")  // one map has entries for all value types <T>
-            Entry<T> e0 = (Entry<T>) get(classValue.identity);
-            if (e == e0) {
-                // We can get here during exception processing, unwinding from computeValue.
-                assert(e.isPromise());
-                remove(classValue.identity);
-                return null;
-            } else if (e0 != null && e0.isPromise() && e0.version() == e.version()) {
-                // If e0 matches the intended entry, there has not been a remove call
-                // between the previous startEntry and now.  So now overwrite e0.
-                Version<T> v = classValue.version();
-                if (e.version() != v)
-                    e = e.refreshVersion(v);
-                put(classValue.identity, e);
-                // Add to the cache, to enable the fast path, next time.
-                checkCacheLoad();
-                addToCache(classValue, e);
-                return e;
-            } else {
-                // Some sort of mismatch; caller must try again.
-                return null;
-            }
+        // A removal, requiring subsequent associations to be up-to-date with it.
+        synchronized void removeAccess(ClassValue<?> classValue) {
+            // Always put in a token to invalidate ongoing computations
+            put(classValue.identity, new RemovalToken());
+            classValue.bumpVersion();
+            removeStaleEntries(classValue);
         }
 
-        /** Remove an entry. */
-        synchronized
-        void removeEntry(ClassValue<?> classValue) {
-            Entry<?> e = remove(classValue.identity);
-            // e == null: Uninitialized, and no pending calls to computeValue.
-            // remove(identity) didn't change anything.  No change.
-            // e.isPromise(): computeValue already used outdated values.
-            // remove(identity) discarded the outdated computation promise.
-            // finishEntry will retry when it discovers the promise is removed.
-            // No cache invalidation.  No further action needed.
-            if (e != null && !e.isPromise()) {
-                // Initialized.
-                // Bump forward to invalidate racy-read cached entries.
-                classValue.bumpVersion();
-                // Make all cache elements for this guy go stale.
-                removeStaleEntries(classValue);
-            }
-        }
-
-        /** Change the value for an entry. */
-        synchronized
-        <T> void changeEntry(ClassValue<T> classValue, T value) {
-            @SuppressWarnings("unchecked")  // one map has entries for all value types <T>
-            Entry<T> e0 = (Entry<T>) get(classValue.identity);
-            Version<T> version = classValue.version();
-            if (e0 != null) {
-                if (e0.version() == version && e0.value() == value)
-                    // no value change => no version change needed
-                    return;
-                classValue.bumpVersion();
-                removeStaleEntries(classValue);
-            }
-            Entry<T> e = makeEntry(version, value);
-            put(classValue.identity, e);
+        // A forced association, requires cache to flush.
+        synchronized <T> void forcedAssociateAccess(ClassValue<T> classValue, T value) {
+            classValue.bumpVersion();
+            removeStaleEntries();
+            var entry = makeEntry(classValue.version, value);
+            put(classValue.identity, entry);
             // Add to the cache, to enable the fast path, next time.
             checkCacheLoad();
-            addToCache(classValue, e);
+            addToCache(classValue, entry);
         }
 
         //| --------
