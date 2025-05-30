@@ -242,7 +242,7 @@ public final class Exceptions {
      * Simplification of above. Equivalent to:
      *       formatMsg("%s", SensitiveInfo[1]); // ie with one arg
      */
-    private static String formatMsg(SensitiveInfo info) {
+    public static String formatMsg(SensitiveInfo info) {
         return trim(info.output());
     }
 

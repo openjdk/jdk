@@ -224,7 +224,8 @@ public final class Naming {
     }
 
     private static MalformedURLException newMalformedURLException(String prefix, String msg) {
-        return new MalformedURLException(prefix + formatMsg(filterNonSocketInfo(msg).prefixWith(": "));
+        return new MalformedURLException(
+            prefix + formatMsg(filterNonSocketInfo(msg).prefixWith(": ")));
     }
 
     /**
@@ -293,7 +294,7 @@ public final class Naming {
         }
         String scheme = uri.getScheme();
         if (scheme != null && !scheme.equals("rmi")) {
-            throw newMalformedURLException("invalid URL scheme:", str);
+            throw newMalformedURLException("invalid URL scheme", str);
         }
 
         String name = uri.getPath();

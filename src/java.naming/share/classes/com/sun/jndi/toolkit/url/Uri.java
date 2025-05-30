@@ -235,7 +235,9 @@ public class Uri {
     }
 
     private MalformedURLException newMalformedURLException(String prefix, String msg) {
-        return new MalformedURLException(prefix + formatMsg(filterNonSocketInfo(msg).withPrefix(prefix.isEmpty()? "" : ": "));
+        return new MalformedURLException(prefix +
+                                         formatMsg(filterNonSocketInfo(msg)
+                                             .prefixWith(prefix.isEmpty()? "" : ": ")));
     }
 
     /*
