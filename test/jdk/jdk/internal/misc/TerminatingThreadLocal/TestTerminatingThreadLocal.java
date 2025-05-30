@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @bug 8202788 8291897
+ * @bug 8202788 8291897 8357637
  * @summary TerminatingThreadLocal unit test
  * @modules java.base/java.lang:+open java.base/jdk.internal.misc
  * @requires vm.continuations
@@ -161,7 +161,7 @@ public class TestTerminatingThreadLocal {
      * threadLocal field of the current Thread.
      */
     @Test
-    public void testClearingThreadLocals() throws Exception {
+    public void testClearingThreadLocals() throws Throwable {
         var terminatedValues = new CopyOnWriteArrayList<Object>();
 
         var tl = new ThreadLocal<String>();
@@ -171,12 +171,12 @@ public class TestTerminatingThreadLocal {
                 terminatedValues.add(value);
             }
         };
-        var exRef = new AtomicReference<Exception>();
+        var throwableRef = new AtomicReference<Throwable>();
 
         String tlValue = "abc";
         String ttlValue = "xyz";
 
-        Thread thread = new Thread(() -> {
+        Thread thread = Thread.ofPlatform().start(() -> {
             try {
                 tl.set(tlValue);
                 ttl.set(ttlValue);
@@ -191,14 +191,13 @@ public class TestTerminatingThreadLocal {
 
                 assertNull(tl.get());
                 assertEquals(ttl.get(), ttlValue);
-            } catch (Exception ex) {
-                exRef.set(ex);
+            } catch (Throwable t) {
+                throwableRef.set(t);
             }
         });
-        thread.start();
         thread.join();
-        if (exRef.get() instanceof Exception ex) {
-            throw ex;
+        if (throwableRef.get() instanceof Throwable t) {
+            throw t;
         }
 
         assertEquals(terminatedValues, List.of(ttlValue));
