@@ -498,9 +498,9 @@ public:
   );
 
   // Relocate the nmethod to the code heap identified by code_blob_type.
-  // Returns nullptr if the code heap does not have enough space or the
-  // nmethod is unrelocatable, otherwise the relocated nmethod.
-  // The original nmethod will be marked not entrant.
+  // Returns nullptr if the code heap does not have enough space, the
+  // nmethod is unrelocatable, or the nmethod is invalidated during relocation,
+  // otherwise the relocated nmethod. The original nmethod will be marked not entrant.
   nmethod* relocate(CodeBlobType code_blob_type);
 
   static nmethod* new_native_nmethod(const methodHandle& method,
