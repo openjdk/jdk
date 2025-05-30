@@ -1140,13 +1140,13 @@ public:
       ELIMINATED = 1,
     };
 
-    int _depth;
+    int _frame_depth;
     Type _type;
-    // synchronization object (when type == LOCKED) ot its klass (type == ELIMINATED)
+    // synchronization object (when type == LOCKED) or its klass (type == ELIMINATED)
     OopHandle _obj;
 
-    OwnedLock(int depth, Type type, OopHandle obj): _depth(depth), _type(type), _obj(obj) {}
-    OwnedLock(): _depth(0), _type(NOTHING), _obj(nullptr) {}
+    OwnedLock(int depth, Type type, OopHandle obj): _frame_depth(depth), _type(type), _obj(obj) {}
+    OwnedLock(): _frame_depth(0), _type(NOTHING), _obj(nullptr) {}
   };
 
   struct Blocker {
@@ -1159,6 +1159,7 @@ public:
     };
 
     Type _type;
+    // park blocker or an object the thread waiting on/trying to lock
     OopHandle _obj;
 
     Blocker(Type type, OopHandle obj): _type(type), _obj(obj) {}
@@ -1171,25 +1172,25 @@ public:
 
   Handle _thread_h;
   JavaThread* _java_thread;
-  int _stack_depth; // length of _methods and _bcis arrays
+  int _frame_count; // length of _methods and _bcis arrays
   GrowableArray<Method*>* _methods;
   GrowableArray<int>* _bcis;
   JavaThreadStatus _thread_status;
-  OopHandle _name;
+  OopHandle _thread_name;
   GrowableArray<OwnedLock>* _locks;
   Blocker _blocker;
 
   GetThreadSnapshotClosure(Handle thread_h, JavaThread* java_thread):
     HandshakeClosure("GetThreadSnapshotClosure"),
     _thread_h(thread_h), _java_thread(java_thread),
-    _stack_depth(0), _methods(nullptr), _bcis(nullptr),
-    _thread_status(), _name(nullptr),
+    _frame_count(0), _methods(nullptr), _bcis(nullptr),
+    _thread_status(), _thread_name(nullptr),
     _locks(nullptr), _blocker() {
   }
   virtual ~GetThreadSnapshotClosure() {
     delete _methods;
     delete _bcis;
-    _name.release(oop_storage());
+    _thread_name.release(oop_storage());
     if (_locks != nullptr) {
       for (int i = 0; i < _locks->length(); i++) {
         _locks->at(i)._obj.release(oop_storage());
@@ -1286,7 +1287,7 @@ public:
       int vt_state = java_lang_VirtualThread::state(_thread_h());
       _thread_status = java_lang_VirtualThread::map_state_to_thread_status(vt_state);
     }
-    _name = OopHandle(oop_storage(), java_lang_Thread::name(_thread_h()));
+    _thread_name = OopHandle(oop_storage(), java_lang_Thread::name(_thread_h()));
 
     if (_java_thread != nullptr && !_java_thread->has_last_Java_frame()) {
       // stack trace is empty
@@ -1332,7 +1333,7 @@ public:
       total_count++;
     }
 
-    _stack_depth = total_count;
+    _frame_count = total_count;
   }
 };
 
@@ -1433,7 +1434,7 @@ int jdk_internal_vm_ThreadSnapshot::_locks_offset;
 int jdk_internal_vm_ThreadSnapshot::_blockerTypeOrdinal_offset;
 int jdk_internal_vm_ThreadSnapshot::_blockerObject_offset;
 
-oop VMThreadSnapshot::get_thread_snapshot(jobject jthread, TRAPS) {
+oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   ThreadsListHandle tlh(THREAD);
 
   ResourceMark rm(THREAD);
@@ -1490,9 +1491,9 @@ oop VMThreadSnapshot::get_thread_snapshot(jobject jthread, TRAPS) {
   InstanceKlass* ste_klass = vmClasses::StackTraceElement_klass();
   assert(ste_klass != nullptr, "must be loaded");
 
-  objArrayHandle trace = oopFactory::new_objArray_handle(ste_klass, cl._stack_depth, CHECK_NULL);
+  objArrayHandle trace = oopFactory::new_objArray_handle(ste_klass, cl._frame_count, CHECK_NULL);
 
-  for (int i = 0; i < cl._stack_depth; i++) {
+  for (int i = 0; i < cl._frame_count; i++) {
     methodHandle method(THREAD, cl._methods->at(i));
     oop element = java_lang_StackTraceElement::create(method, cl._bcis->at(i), CHECK_NULL);
     trace->obj_at_put(i, element);
@@ -1510,7 +1511,7 @@ oop VMThreadSnapshot::get_thread_snapshot(jobject jthread, TRAPS) {
       GetThreadSnapshotClosure::OwnedLock* lock_info = cl._locks->adr_at(n);
 
       Handle lock = jdk_internal_vm_ThreadLock::create(lock_klass,
-        lock_info->_depth, lock_info->_type, lock_info->_obj, CHECK_NULL);
+        lock_info->_frame_depth, lock_info->_type, lock_info->_obj, CHECK_NULL);
       locks->obj_at_put(n, lock());
     }
   }
@@ -1533,7 +1534,7 @@ oop VMThreadSnapshot::get_thread_snapshot(jobject jthread, TRAPS) {
   }
 
   Handle snapshot = jdk_internal_vm_ThreadSnapshot::allocate(InstanceKlass::cast(snapshot_klass), CHECK_NULL);
-  jdk_internal_vm_ThreadSnapshot::set_name(snapshot(), cl._name.resolve());
+  jdk_internal_vm_ThreadSnapshot::set_name(snapshot(), cl._thread_name.resolve());
   jdk_internal_vm_ThreadSnapshot::set_thread_status(snapshot(), (int)cl._thread_status);
   jdk_internal_vm_ThreadSnapshot::set_carrier_thread(snapshot(), carrier_thread());
   jdk_internal_vm_ThreadSnapshot::set_stack_trace(snapshot(), trace());
