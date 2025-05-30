@@ -382,7 +382,7 @@ public interface JavaLangAccess {
      * Appends the 2 width string representation of the {@code int}
      * argument to StringBuilder.
      */
-    void appendPair(StringBuilder buf, int v);
+    void appendTwoDigitNumber(StringBuilder buf, int v);
 
     /**
      * Encode the given string into a sequence of bytes using utf8.

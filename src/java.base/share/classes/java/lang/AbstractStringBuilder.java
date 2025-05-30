@@ -913,7 +913,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @param   i   an {@code int}.
      * @return  a reference to this object.
      */
-    void appendPair(int i) {
+    void appendTwoDigitNumber(int i) {
         byte coder = this.coder;
         int count = this.count;
         byte[] value = ensureCapacitySameCoder(this.value, coder, count + 2);

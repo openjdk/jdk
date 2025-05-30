@@ -3074,7 +3074,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         protected final void printValueFixedWidth2NotNegative(StringBuilder buf, int value) {
-            JLA.appendPair(buf, value2(value));
+            JLA.appendTwoDigitNumber(buf, value2(value));
         }
 
         protected final void printValueFixWidth3NotNegative(StringBuilder buf, int value) {
@@ -3094,8 +3094,8 @@ public final class DateTimeFormatterBuilder {
                 maxWidthError(value);
             }
             int value2 = value / 100;
-            JLA.appendPair(buf, value / 100);
-            JLA.appendPair(buf, value - value2 * 100);
+            JLA.appendTwoDigitNumber(buf, value / 100);
+            JLA.appendTwoDigitNumber(buf, value - value2 * 100);
         }
 
         protected final void printValueWidth4ExceedsPad(StringBuilder buf, int value) {
@@ -3109,8 +3109,8 @@ public final class DateTimeFormatterBuilder {
                 buf.append('-');
             }
             if (value < 10000) {
-                JLA.appendPair(buf, value / 100);
-                JLA.appendPair(buf, value % 100);
+                JLA.appendTwoDigitNumber(buf, value / 100);
+                JLA.appendTwoDigitNumber(buf, value % 100);
             } else {
                 buf.append(value);
             }
