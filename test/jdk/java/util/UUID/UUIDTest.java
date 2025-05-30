@@ -47,8 +47,8 @@ public class UUIDTest {
         randomUUIDTest();
         randomUUIDTest_Multi();
         nameUUIDFromBytesTest();
-        unixEpochTimeMillis();
-        unixEpochTimeMillis_Multi();
+        unixEpochTimeMillisTest();
+        unixEpochTimeMillisTest_Multi();
         unixEpochTimeMillis_userInputTest();
         stringTest();
         versionTest();
