@@ -276,12 +276,16 @@ void FieldInfoStream::validate_search_table(ConstantPool* cp, const Array<u1>* f
   if (!lookup.validate_order(comparator, search_table, &err_pivot)) {
     assert(err_pivot < (uint32_t) fis->length(), "invalid pivot %u", err_pivot);
 
+    lookup.dump(search_table);
+
     ResourceMark rm;
     fprintf(stderr, "ACTUAL FIELDS (%d + %d) -> %d, %d:\n", java_fields, injected_fields, fis->length(), search_table->length());
+    int i = 0;
     while (reader.has_next()) {
       FieldInfo fi;
+      int pos = reader.position();
       reader.read_field_info(fi);
-      fprintf(stderr, "FIELD %s(%p) %s(%p)\n", fi.name(cp)->as_C_string(), fi.name(cp), fi.signature(cp)->as_C_string(), fi.signature(cp));
+      fprintf(stderr, "FIELD %2d|%3d %s(%p) %s(%p)\n", i++, pos, fi.name(cp)->as_C_string(), fi.name(cp), fi.signature(cp)->as_C_string(), fi.signature(cp));
     }
 
     char *msg;

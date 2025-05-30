@@ -108,4 +108,18 @@ bool PackedTableLookup::validate_order(Comparator &comparator, const Array<u1> *
   }
   return true;
 }
+
+void PackedTableLookup::dump(const Array<u1> *search_table) const {
+  fprintf(stderr, "TABLE %u bytes/item, pivot mask %x, payload shift %u mask %x\n",
+    _element_bytes, _pivot_mask, _payload_shift, _payload_mask);
+  const u1* data = search_table->data();
+  size_t length = static_cast<size_t>(search_table->length());
+  for (size_t offset = 0; offset < length; offset += _element_bytes) {
+    uint64_t value = read_value(data, length, offset);
+    uint32_t pivot = value & _pivot_mask;
+    uint32_t payload = (value >> _payload_shift) & _payload_mask;
+
+    fprintf(stderr, "%zu: %u (0x%x) %u (0x%x)\n", offset, pivot, pivot, payload, payload);
+  }
+}
 #endif

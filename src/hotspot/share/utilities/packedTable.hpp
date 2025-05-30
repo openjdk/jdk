@@ -73,4 +73,5 @@ public:
 
   bool search(Comparator& comparator, const Array<u1>* search_table, uint32_t* found_pivot, uint32_t* found_payload) const;
   DEBUG_ONLY(bool validate_order(Comparator &comparator, const Array<u1> *search_table, uint32_t *err_pivot) const);
+  DEBUG_ONLY(void dump(const Array<u1> *search_table) const);
 };
