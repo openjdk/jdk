@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -995,6 +995,8 @@ public:
   void andpd(XMMRegister dst, Address        src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
+  void andnpd(XMMRegister dst, XMMRegister src) { Assembler::andnpd(dst, src); }
+
   void andps(XMMRegister dst, XMMRegister    src) { Assembler::andps(dst, src); }
   void andps(XMMRegister dst, Address        src) { Assembler::andps(dst, src); }
   void andps(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
@@ -1006,6 +1008,8 @@ public:
   void comisd(XMMRegister dst, XMMRegister    src) { Assembler::comisd(dst, src); }
   void comisd(XMMRegister dst, Address        src) { Assembler::comisd(dst, src); }
   void comisd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
+  void orpd(XMMRegister dst, XMMRegister src) { Assembler::orpd(dst, src); }
 
   void cmp32_mxcsr_std(Address mxcsr_save, Register tmp, Register rscratch = noreg);
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
@@ -1241,6 +1245,10 @@ public:
   void evmovdquq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
   void evmovdqaq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
 
+  void movapd(XMMRegister dst, XMMRegister src) { Assembler::movapd(dst, src); }
+  void movapd(XMMRegister dst, Address src) { Assembler::movapd(dst, src); }
+  void movapd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
   // Move Aligned Double Quadword
   void movdqa(XMMRegister dst, XMMRegister    src) { Assembler::movdqa(dst, src); }
   void movdqa(XMMRegister dst, Address        src) { Assembler::movdqa(dst, src); }
@@ -1309,6 +1317,9 @@ public:
   void ucomisd(XMMRegister dst, XMMRegister    src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, Address        src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
+  void unpckhpd(XMMRegister dst, XMMRegister src) { Assembler::unpckhpd(dst, src); }
+  void unpcklpd(XMMRegister dst, XMMRegister src) { Assembler::unpcklpd(dst, src); }
 
   // Bitwise Logical XOR of Packed Double-Precision Floating-Point Values
   void xorpd(XMMRegister dst, XMMRegister    src);

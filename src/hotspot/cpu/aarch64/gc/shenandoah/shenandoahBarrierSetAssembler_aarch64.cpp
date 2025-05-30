@@ -234,6 +234,8 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   assert(dst != rscratch2, "need rscratch2");
   assert_different_registers(load_addr.base(), load_addr.index(), rscratch1, rscratch2);
 
+  __ block_comment("load_reference_barrier {");
+
   bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
   bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
   bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
@@ -306,6 +308,8 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   __ bind(heap_stable);
   __ leave();
+
+  __ block_comment("} load_reference_barrier");
 }
 
 //

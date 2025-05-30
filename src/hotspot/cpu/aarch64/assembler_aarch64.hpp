@@ -3192,6 +3192,20 @@ public:
     f(0b000001, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
 
+  void ins(FloatRegister Vd, int index1, SIMD_RegVariant T, FloatRegister Vs, int index2) {
+    starti;
+    assert(T != Q, "invalid size");
+    // switch(T) {
+    //   case D: f(index1, 20);    f(0b1000, 19, 16); break;
+    //   case S: f(index1, 20, 19); f(0b100, 18, 16); break;
+    //   default: ShouldNotReachHere(); break;
+    // }
+    f(0b01101110000, 31, 21);
+    f((1 << T) | (index1 << (T + 1)), 20, 16);
+    f(0, 15), f(index2, 14, 11);
+    f(1, 10), rf(Vs, 5), rf(Vd, 0);
+  }
+
   // Advanced SIMD scalar copy
   void dup(FloatRegister Vd, SIMD_RegVariant T, FloatRegister Vn, int index = 0)
   {
