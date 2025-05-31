@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,10 +268,10 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * SequencedSet#addLast addLast} methods throw {@link UnsupportedOperationException}.
      * Its {@link SequencedSet#getFirst getFirst} and {@link SequencedSet#getLast getLast}
      * methods are implemented in terms of the {@link #firstEntry firstEntry} and {@link
-     * #lastEntry lastEntry} methods of this class, respectively. Its {@link
+     * #lastEntry lastEntry} methods of this interface, respectively. Its {@link
      * SequencedSet#removeFirst removeFirst} and {@link SequencedSet#removeLast removeLast}
      * methods are implemented in terms of the {@link #pollFirstEntry pollFirstEntry} and
-     * {@link #pollLastEntry pollLastEntry} methods of this class, respectively.
+     * {@link #pollLastEntry pollLastEntry} methods of this interface, respectively.
      * Its {@link SequencedSet#reversed reversed} method returns the {@link
      * #sequencedKeySet sequencedKeySet} view of the {@link #reversed reversed} view of
      * this map. Each of its other methods calls the corresponding method of the {@link
@@ -317,10 +317,10 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * SequencedCollection#addLast addLast} methods throw {@link UnsupportedOperationException}.
      * Its {@link SequencedCollection#getFirst getFirst} and {@link SequencedCollection#getLast getLast}
      * methods are implemented in terms of the {@link #firstEntry firstEntry} and {@link
-     * #lastEntry lastEntry} methods of this class, respectively. Its {@link
+     * #lastEntry lastEntry} methods of this interface, respectively. Its {@link
      * SequencedCollection#removeFirst removeFirst} and {@link SequencedCollection#removeLast removeLast}
      * methods are implemented in terms of the {@link #pollFirstEntry pollFirstEntry} and
-     * {@link #pollLastEntry pollLastEntry} methods of this class, respectively.
+     * {@link #pollLastEntry pollLastEntry} methods of this interface, respectively.
      * Its {@link SequencedCollection#reversed reversed} method returns the {@link
      * #sequencedValues sequencedValues} view of the {@link #reversed reversed} view of
      * this map. Its {@link Object#equals equals} and {@link Object#hashCode hashCode} methods
@@ -361,10 +361,10 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * SequencedSet#addLast addLast} methods throw {@link UnsupportedOperationException}.
      * Its {@link SequencedSet#getFirst getFirst} and {@link SequencedSet#getLast getLast}
      * methods are implemented in terms of the {@link #firstEntry firstEntry} and {@link
-     * #lastEntry lastEntry} methods of this class, respectively. Its {@link
+     * #lastEntry lastEntry} methods of this interface, respectively. Its {@link
      * SequencedSet#removeFirst removeFirst} and {@link SequencedSet#removeLast removeLast}
      * methods are implemented in terms of the {@link #pollFirstEntry pollFirstEntry} and
-     * {@link #pollLastEntry pollLastEntry} methods of this class, respectively.
+     * {@link #pollLastEntry pollLastEntry} methods of this interface, respectively.
      * Its {@link SequencedSet#reversed reversed} method returns the {@link
      * #sequencedEntrySet sequencedEntrySet} view of the {@link #reversed reversed} view of
      * this map. Each of its other methods calls the corresponding method of the {@link

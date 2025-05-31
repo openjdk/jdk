@@ -878,7 +878,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     /* non-public */ abstract static class ViewCollection<E> implements Collection<E> {
         UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
         // convert null entry return values into NSEE
-        <T> T nsee(T entry) {
+        static <T extends Map.Entry<?,?>> T nsee(T entry) {
             if (entry == null) {
                 throw new NoSuchElementException();
             } else {
