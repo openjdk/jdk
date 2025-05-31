@@ -662,6 +662,22 @@ class MacroAssembler: public Assembler {
   void cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
   void cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
 
+  void cmov_fp_eq(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_ne(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_le(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_leu(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_ge(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_geu(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_lt(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_ltu(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_gt(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single);
+  void cmov_fp_gtu(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single);
+
+  void cmov_fp_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
