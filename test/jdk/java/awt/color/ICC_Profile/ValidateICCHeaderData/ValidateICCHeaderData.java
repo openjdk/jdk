@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8337703
+ * @bug 8337703 8347377 8358057
  * @summary To verify if ICC_Profile's setData() and getInstance() methods
  *          validate header data and throw IAE for invalid values.
  * @run main ValidateICCHeaderData
