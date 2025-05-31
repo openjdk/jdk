@@ -223,6 +223,54 @@ public class Options {
         return !isSet(option, lc, true);
     }
 
+    /**
+     * Collect the set of {@link LintCategory}s specified by option flag(s) of the form
+     * {@code -Flag} and/or {@code -Flag:[-]key,[-]key,...}.
+     *
+     * <p>
+     * The set of categories is calculated as folllows. First, an initial set is created:
+     * <ul>
+     *  <li>If {@code -Flag} or {@code -Flag:all} appears, the initial set contains all categories; otherwise,
+     *  <li>If {@code -Flag:none} appears, the initial set is empty; otherwise,
+     *  <li>The {@code defaults} parameter is invoked to construct an initial set.
+     * </ul>
+     * Next, for each lint category key {@code key}:
+     * <ul>
+     *  <li>If {@code -Flag:key} flag appears, the corresponding category is added to the set; otherwise
+     *  <li>If {@code -Flag:-key} flag appears, the corresponding category is removed to the set
+     * </ul>
+     * Unrecognized {@code key}s are ignored.
+     *
+     * @param option the plain option
+     * @param defaults populates the default set, or null for an empty default set
+     * @return the specified set of categories
+     */
+    public EnumSet<LintCategory> getLintCategories(Option option, Supplier<? extends EnumSet<LintCategory>> defaults) {
+
+        // Create the initial set
+        EnumSet<LintCategory> categories;
+        Option customOption = option.getCustom();
+        if (isSet(option) || isSet(customOption, Option.LINT_CUSTOM_ALL)) {
+            categories = EnumSet.allOf(LintCategory.class);
+        } else if (isSet(customOption, Option.LINT_CUSTOM_NONE)) {
+            categories = EnumSet.noneOf(LintCategory.class);
+        } else {
+            categories = defaults.get();
+        }
+
+        // Apply specific overrides
+        for (LintCategory category : LintCategory.values()) {
+            if (isExplicitlyEnabled(option, category)) {
+                categories.add(category);
+            } else if (isExplicitlyDisabled(option, category)) {
+                categories.remove(category);
+            }
+        }
+
+        // Done
+        return categories;
+    }
+
     public void put(String name, String value) {
         values.put(name, value);
         initialized = true;
