@@ -52,9 +52,13 @@ class ThreadSnapshot {
 
     /**
      * Take a snapshot of a Thread to get all information about the thread.
+     * @throws UnsupportedOperationException if not supported by VM
      */
     static ThreadSnapshot of(Thread thread) {
         ThreadSnapshot snapshot = create(thread);
+        if (snapshot == null) {
+            throw new UnsupportedOperationException();
+        }
         if (snapshot.stackTrace == null) {
             snapshot.stackTrace = EMPTY_STACK;
         }
