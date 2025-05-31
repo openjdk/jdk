@@ -45,7 +45,7 @@ public class TestArrayFillIntrinsic {
         // replacing it with an intrinsic call even if OptimizeFill is enabled.
         TestFramework framework = new TestFramework();
         framework.addScenarios(new Scenario(0),
-                               new Scenario(1, "-XX:LoopUnrollLimit=0", "-XX:+OptimizeFill"));
+                               new Scenario(1, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=0", "-XX:+OptimizeFill"));
         framework.start();
     }
 

@@ -44,7 +44,7 @@ public class TestConvI2LCastLongLoop {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED", "-XX:LoopMaxUnroll=0", "-XX:-UseCountedLoopSafepoints");
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopMaxUnroll=0", "-XX:-UseCountedLoopSafepoints");
     }
 
     static int size = 1024;
