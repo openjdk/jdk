@@ -32,6 +32,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 
 import java.util.Map;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.RuntimeLayout;
 
 final class BuildEnvFromParams {
 
@@ -47,11 +48,12 @@ final class BuildEnvFromParams {
         final var pkg = FromParams.getCurrentPackage(params);
 
         if (app.isRuntime()) {
-            PREDEFINED_RUNTIME_IMAGE.copyInto(params, builder::appImageDir);
+            builder.appImageDir(PREDEFINED_RUNTIME_IMAGE.fetchFrom(params));
+            builder.appImageLayout(RuntimeLayout.DEFAULT);
         } else if (StandardBundlerParam.hasPredefinedAppImage(params)) {
             PREDEFINED_APP_IMAGE.copyInto(params, builder::appImageDir);
         } else if (pkg.isPresent()) {
-            builder.appImageDirForPackage();
+            builder.appImageDirFor(pkg.orElseThrow());
         } else {
             builder.appImageDirFor(app);
         }
